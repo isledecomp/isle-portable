@@ -1,0 +1,200 @@
+#ifndef LEGOANIMATIONMANAGER_H
+#define LEGOANIMATIONMANAGER_H
+
+#include "actionsfwd.h"
+#include "decomp.h"
+#include "legolocations.h"
+#include "legotraninfolist.h"
+#include "mxcore.h"
+#include "mxgeometry/mxgeometry3d.h"
+
+class AnimState;
+class LegoAnimPresenter;
+class LegoEntity;
+class LegoExtraActor;
+class LegoFile;
+class LegoPathBoundary;
+class LegoROIList;
+class LegoWorld;
+struct ModelInfo;
+class MxDSAction;
+
+// VTABLE: LEGO1 0x100d8c18
+// SIZE 0x500
+class LegoAnimationManager : public MxCore {
+public:
+	// SIZE 0x18
+	struct Character {
+		char* m_name;        // 0x00
+		MxBool m_unk0x04;    // 0x04
+		MxS8 m_vehicleId;    // 0x05
+		undefined m_unk0x06; // 0x06 (unused?)
+		MxBool m_unk0x07;    // 0x07
+		MxBool m_unk0x08;    // 0x08
+		MxBool m_unk0x09;    // 0x09
+		MxU32 m_unk0x0c;     // 0x0c
+		MxS32 m_unk0x10;     // 0x10
+		MxBool m_active;     // 0x14
+		MxU8 m_unk0x15;      // 0x15
+		MxU8 m_unk0x16;      // 0x16
+	};
+
+	// SIZE 0x08
+	struct Vehicle {
+		char* m_name;     // 0x00
+		MxBool m_unk0x04; // 0x04
+		MxBool m_unk0x05; // 0x05
+	};
+
+	// SIZE 0x18
+	struct Extra {
+		LegoROI* m_roi;      // 0x00
+		MxS32 m_characterId; // 0x04
+		MxLong m_unk0x08;    // 0x08
+		undefined m_unk0x0c; // 0x0c
+		MxBool m_unk0x0d;    // 0x0d
+		float m_unk0x10;     // 0x10
+		MxBool m_unk0x14;    // 0x14
+	};
+
+	LegoAnimationManager();
+	~LegoAnimationManager() override;
+
+	MxLong Notify(MxParam& p_param) override; // vtable+0x04
+	MxResult Tickle() override;               // vtable+0x08
+
+	// FUNCTION: LEGO1 0x1005ec80
+	inline const char* ClassName() const override // vtable+0x0c
+	{
+		// STRING: LEGO1 0x100f7508
+		return "LegoAnimationManager";
+	}
+
+	// FUNCTION: LEGO1 0x1005ec90
+	inline MxBool IsA(const char* p_name) const override // vtable+0x10
+	{
+		return !strcmp(p_name, ClassName()) || MxCore::IsA(p_name);
+	}
+
+	void Reset(MxBool p_und);
+	void Suspend();
+	void Resume();
+	void FUN_1005f6d0(MxBool p_unk0x400);
+	void FUN_1005f700(MxBool p_unk0x3a);
+	MxResult LoadScriptInfo(MxS32 p_scriptIndex);
+	MxBool FindVehicle(const char* p_name, MxU32& p_index);
+	MxResult ReadAnimInfo(LegoFile* p_file, AnimInfo* p_info);
+	MxResult ReadModelInfo(LegoFile* p_file, ModelInfo* p_info);
+	void FUN_10060570(MxBool p_unk0x1a);
+	MxResult StartEntityAction(MxDSAction& p_dsAction, LegoEntity* p_entity);
+	MxResult FUN_10060dc0(
+		IsleScript::Script p_objectId,
+		MxMatrix* p_matrix,
+		MxBool p_param3,
+		MxBool p_param4,
+		LegoROI* p_roi,
+		MxBool p_param6,
+		MxBool p_param7,
+		MxBool p_param8,
+		MxBool p_param9
+	);
+	void FUN_10061010(MxBool p_und);
+	LegoTranInfo* GetTranInfo(MxU32 p_index);
+	void FUN_10062770();
+	void PurgeExtra(MxBool p_und);
+	void AddExtra(MxS32 p_location, MxBool p_und);
+	void FUN_10063270(LegoROIList*, LegoAnimPresenter*);
+	void FUN_10063780(LegoROIList* p_list);
+	void FUN_10064670(Vector3*);
+	void FUN_10064740(Vector3*);
+
+	static void configureLegoAnimationManager(MxS32 p_legoAnimationManagerConfig);
+
+	// SYNTHETIC: LEGO1 0x1005ed10
+	// LegoAnimationManager::`scalar deleting destructor'
+
+private:
+	void Init();
+	MxResult FUN_100605e0(
+		MxU32 p_index,
+		MxBool p_unk0x0a,
+		MxMatrix* p_matrix,
+		MxBool p_bool1,
+		LegoROI* p_roi,
+		MxBool p_bool2,
+		MxBool p_bool3,
+		MxBool p_bool4,
+		MxBool p_bool5
+	);
+	MxResult FUN_100609f0(MxU32 p_objectId, MxMatrix* p_matrix, MxBool p_und1, MxBool p_und2);
+	void DeleteAnimations();
+	void FUN_10061530();
+	MxResult FUN_100617c0(MxS32 p_unk0x08, MxU16& p_unk0x0e, MxU16& p_unk0x10);
+	MxU16 FUN_10062110(
+		LegoROI* p_roi,
+		Vector3& p_direction,
+		Vector3& p_position,
+		LegoPathBoundary* p_boundary,
+		float p_speed,
+		MxU8 p_unk0x0c,
+		MxBool p_unk0x14
+	);
+	MxS8 GetCharacterIndex(const char* p_name);
+	MxBool FUN_100623a0(AnimInfo& p_info);
+	MxBool ModelExists(AnimInfo& p_info, const char* p_name);
+	void FUN_10062580(AnimInfo& p_info);
+	MxBool FUN_10062650(Vector3& p_position, float p_und, LegoROI* p_roi);
+	MxBool FUN_10062710(AnimInfo& p_info);
+	void FUN_10063aa0();
+	MxBool FUN_10063b90(LegoWorld* p_world, LegoExtraActor* p_actor, MxU8 p_unk0x14, MxU32 p_characterId);
+	void FUN_10063d10();
+	MxBool FUN_10063fb0(LegoLocation::Boundary* p_boundary, LegoWorld* p_world);
+	MxBool FUN_10064120(LegoLocation::Boundary* p_boundary, MxBool, MxBool);
+	void FUN_100648f0(LegoTranInfo*, MxLong);
+	void FUN_10064b50(MxLong p_time);
+
+	MxS32 m_scriptIndex;               // 0x08
+	MxU16 m_animCount;                 // 0x0c
+	MxU16 m_unk0x0e;                   // 0x0e
+	MxU16 m_unk0x10;                   // 0x10
+	AnimInfo* m_anims;                 // 0x14
+	undefined2 m_unk0x18;              // 0x18
+	MxBool m_unk0x1a;                  // 0x1a
+	MxU32 m_unk0x1c;                   // 0x1c
+	LegoTranInfoList* m_tranInfoList;  // 0x20
+	LegoTranInfoList* m_tranInfoList2; // 0x24
+	MxPresenter* m_unk0x28[2];         // 0x28
+	MxLong m_unk0x30[2];               // 0x30
+	MxBool m_unk0x38;                  // 0x38
+	MxBool m_unk0x39;                  // 0x39
+	MxBool m_unk0x3a;                  // 0x3a
+	Extra m_extras[40];                // 0x3c
+	MxU32 m_lastExtraCharacterId;      // 0x3fc
+	MxBool m_unk0x400;                 // 0x400
+	MxBool m_unk0x401;                 // 0x401
+	MxBool m_unk0x402;                 // 0x402
+	MxLong m_unk0x404;                 // 0x404
+	MxLong m_unk0x408;                 // 0x408
+	MxLong m_unk0x40c;                 // 0x40c
+	MxLong m_unk0x410;                 // 0x410
+	MxU32 m_unk0x414;                  // 0x414
+	MxU32 m_numAllowedExtras;          // 0x418
+	undefined4 m_unk0x41c;             // 0x41c
+	AnimState* m_animState;            // 0x420
+	LegoROIList* m_unk0x424;           // 0x424
+	MxBool m_unk0x428;                 // 0x428
+	MxBool m_unk0x429;                 // 0x429
+	MxBool m_unk0x42a;                 // 0x42a
+	MxBool m_suspended;                // 0x42b
+	LegoTranInfo* m_unk0x42c;          // 0x42c
+	MxBool m_unk0x430;                 // 0x430
+	undefined4 m_unk0x434[2];          // 0x434
+	MxMatrix m_unk0x43c;               // 0x43c
+	MxMatrix m_unk0x484;               // 0x484
+	UnknownMx4DPointFloat m_unk0x4cc;  // 0x4cc
+};
+
+// TEMPLATE: LEGO1 0x10061750
+// MxListCursor<LegoTranInfo *>::MxListCursor<LegoTranInfo *>
+
+#endif // LEGOANIMATIONMANAGER_H

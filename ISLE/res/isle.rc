@@ -1,0 +1,35 @@
+#include "resource.h"
+
+ISLE_ARROW 	CURSOR 	"arrow.cur"
+ISLE_NO 		CURSOR 	"no.cur"
+ISLE_BUSY 	CURSOR 	"busy.cur"
+APP_ICON 		ICON 		"isle.ico"
+
+1 VERSIONINFO
+FILEVERSION 1,1,0,0
+PRODUCTVERSION 1,1,0,0
+FILEOS 0x40004
+FILETYPE 0x1
+{
+BLOCK "StringFileInfo"
+{
+	BLOCK "040904b0"
+	{
+		VALUE "Comments", "DG JB AG RC EE"
+		VALUE "CompanyName", "Mindscape"
+		VALUE "FileDescription", "isle"
+		VALUE "FileVersion", "1, 1, 0, 0"
+		VALUE "InternalName", "isle"
+		VALUE "LegalCopyright", "Copyright \xA9 1997"
+		VALUE "OriginalFilename", "isle.exe"
+		VALUE "ProductName", "Adventures on LEGO Island"
+		VALUE "ProductVersion", "1, 1, 0, 0"
+		VALUE "SpecialBuild", "Very"
+	}
+}
+
+BLOCK "VarFileInfo"
+{
+	VALUE "Translation", 0x0409, 0x04B0
+}
+}
