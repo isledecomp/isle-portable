@@ -1,0 +1,3 @@
+[submodule "3rdparty/libsmacker"]
+	path = 3rdparty/libsmacker
+	url = https://github.com/foxtacles/libsmacker
