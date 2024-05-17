@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 # MSVC runtime library flags are selected by an abstraction
 cmake_policy(SET CMP0091 NEW)
 
-project(isle CXX)
+project(isle CXX C)
 
 include(CheckCXXSourceCompiles)
 include(CMakeDependentOption)
@@ -76,10 +76,6 @@ if(ISLE_USE_DX5_LIBS)
     target_link_directories(DirectX5::DirectX5 INTERFACE "${CMAKE_SOURCE_DIR}/3rdparty/dx5/lib")
 endif()
 
-add_library(Smacker::Smacker STATIC IMPORTED)
-set_property(TARGET Smacker::Smacker PROPERTY IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/3rdparty/smacker/smack.lib")
-set_property(TARGET Smacker::Smacker PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_SOURCE_DIR}/3rdparty/smacker")
-
 add_library(Vec::Vec INTERFACE IMPORTED)
 target_include_directories(Vec::Vec INTERFACE "${CMAKE_SOURCE_DIR}/3rdparty/vec")
 
@@ -87,6 +83,14 @@ add_library(SmartHeap::SmartHeap STATIC IMPORTED)
 set_property(TARGET SmartHeap::SmartHeap PROPERTY IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/3rdparty/smartheap/SHLW32MT.LIB")
 set_property(TARGET SmartHeap::SmartHeap PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_SOURCE_DIR}/3rdparty/smartheap")
 set_property(TARGET SmartHeap::SmartHeap PROPERTY INTERFACE_COMPILE_OPTIONS "/FI${CMAKE_SOURCE_DIR}/3rdparty/smartheap/SMRTHEAP.HPP")
+
+add_library(libsmacker STATIC
+  3rdparty/libsmacker/smacker.c
+)
+register_lego1_target(libsmacker)
+set_property(TARGET libsmacker PROPERTY ARCHIVE_OUTPUT_NAME "libsmacker$<$<CONFIG:Debug>:d>")
+set_property(TARGET libsmacker PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_SOURCE_DIR}/3rdparty/libsmacker")
+target_include_directories(libsmacker PRIVATE "${CMAKE_SOURCE_DIR}/3rdparty/libsmacker")
 
 add_library(tglrl STATIC
   LEGO1/tgl/d3drm/camera.cpp
@@ -279,7 +283,7 @@ add_library(omni STATIC
 register_lego1_target(omni)
 set_property(TARGET omni PROPERTY ARCHIVE_OUTPUT_NAME "omni$<$<CONFIG:Debug>:d>")
 target_include_directories(omni PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include" "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/util")
-target_link_libraries(omni PRIVATE dsound winmm Smacker::Smacker)
+target_link_libraries(omni PRIVATE dsound winmm libsmacker)
 
 add_library(lego1 SHARED
   LEGO1/define.cpp
@@ -524,6 +528,9 @@ if (MSVC)
     endif()
   endif()
 endif()
+
+target_link_options(isle PRIVATE "/SAFESEH:NO")
+target_link_options(lego1 PRIVATE "/SAFESEH:NO")
 
 if (MSVC_FOR_DECOMP)
     foreach(tgt IN LISTS lego1_targets)
