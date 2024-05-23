@@ -74,7 +74,7 @@ MxResult MxSmack::LoadFrame(
 		}
 	}
 
-	// TODO isle24: Calculate changed rects
+	// [library:libsmacker] Calculate changed rects
 	MxRect32* newRect = new MxRect32(0, 0, w - 1, h - 1);
 	p_list->Append(newRect);
 	return SUCCESS;

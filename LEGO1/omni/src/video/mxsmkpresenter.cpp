@@ -98,7 +98,7 @@ void MxSmkPresenter::LoadFrame(MxStreamChunk* p_chunk)
 // FUNCTION: LEGO1 0x100b4260
 void MxSmkPresenter::VTable0x88()
 {
-	// TODO isle24
+	// [library:libsmacker] Figure out if this functionality is still required
 }
 
 // FUNCTION: LEGO1 0x100b42c0
