@@ -1,0 +1,2 @@
+clang==16.*
+pyyaml
