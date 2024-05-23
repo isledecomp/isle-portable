@@ -41,7 +41,7 @@ void MxLoopingSmkPresenter::Destroy(MxBool p_fromDestructor)
 // FUNCTION: LEGO1 0x100b4a00
 void MxLoopingSmkPresenter::VTable0x88()
 {
-	// TODO isle24
+	// [library:libsmacker] Figure out if this functionality is still required
 }
 
 // FUNCTION: LEGO1 0x100b4a30
