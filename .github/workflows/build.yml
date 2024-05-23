@@ -44,6 +44,8 @@ jobs:
           arch: amd64_x86  # Use the 64-bit x64-native cross tools to build 32-bit x86 code
 
       - uses: actions/checkout@v4
+        with:
+          submodules: true
 
       - name: Build
         run: |
