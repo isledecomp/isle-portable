@@ -109,26 +109,26 @@ MxU32 LegoExtraActor::VTable0x90(float p_time, Matrix4& p_transform)
 }
 
 // FUNCTION: LEGO1 0x1002aa90
-void LegoExtraActor::VTable0xa4(MxU8& p_und1, MxS32& p_und2)
+void LegoExtraActor::VTable0xa4(MxBool& p_und1, MxS32& p_und2)
 {
 	switch (m_unk0x0c) {
 	case 1:
-		p_und1 = 1;
+		p_und1 = TRUE;
 		p_und2 = 1;
 		break;
 	case 2:
-		p_und1 = 0;
+		p_und1 = FALSE;
 		p_und2 = 1;
 		break;
 	default:
-		p_und1 = 1;
+		p_und1 = TRUE;
 		p_und2 = rand() % p_und2 + 1;
 		break;
 	}
 }
 
 // FUNCTION: LEGO1 0x1002aae0
-MxResult LegoExtraActor::VTable0xc8()
+MxResult LegoExtraActor::FUN_1002aae0()
 {
 	LegoPathBoundary* oldEdge = m_boundary;
 	Vector3 rightRef(m_unk0xec[0]);
@@ -151,7 +151,7 @@ MxResult LegoExtraActor::VTable0xc8()
 		m_boundary = oldEdge;
 	}
 
-	LegoPathActor::WaitForAnimation();
+	LegoPathActor::VTable0x9c();
 	return SUCCESS;
 }
 
@@ -203,7 +203,7 @@ MxResult LegoExtraActor::VTable0x94(LegoPathActor* p_actor, MxBool p_bool)
 		}
 
 		m_unk0x15 = 100;
-		VTable0xc8();
+		FUN_1002aae0();
 	}
 	else {
 		MxU32 b = FALSE;
@@ -280,10 +280,10 @@ MxResult LegoExtraActor::VTable0x94(LegoPathActor* p_actor, MxBool p_bool)
 }
 
 // FUNCTION: LEGO1 0x1002b290
-MxResult LegoExtraActor::WaitForAnimation()
+MxResult LegoExtraActor::VTable0x9c()
 {
 	LegoPathBoundary* oldBoundary = m_boundary;
-	MxResult result = LegoPathActor::WaitForAnimation();
+	MxResult result = LegoPathActor::VTable0x9c();
 
 	if (m_boundary != oldBoundary) {
 		MxU32 b = FALSE;
@@ -400,6 +400,7 @@ void LegoExtraActor::SetWorldSpeed(MxFloat p_worldSpeed)
 	if (m_curAnim == 0 && p_worldSpeed > 0) {
 		VTable0xc4();
 	}
+
 	LegoAnimActor::SetWorldSpeed(p_worldSpeed);
 }
 

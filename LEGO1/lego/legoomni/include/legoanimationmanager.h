@@ -13,8 +13,10 @@ class LegoAnimPresenter;
 class LegoEntity;
 class LegoExtraActor;
 class LegoFile;
+class LegoPathActor;
 class LegoPathBoundary;
 class LegoROIList;
+struct LegoUnknown100db7f4;
 class LegoWorld;
 struct ModelInfo;
 class MxDSAction;
@@ -32,11 +34,11 @@ public:
 		MxBool m_unk0x07;    // 0x07
 		MxBool m_unk0x08;    // 0x08
 		MxBool m_unk0x09;    // 0x09
-		MxU32 m_unk0x0c;     // 0x0c
+		MxS32 m_unk0x0c;     // 0x0c
 		MxS32 m_unk0x10;     // 0x10
 		MxBool m_active;     // 0x14
 		MxU8 m_unk0x15;      // 0x15
-		MxU8 m_unk0x16;      // 0x16
+		MxS8 m_unk0x16;      // 0x16
 	};
 
 	// SIZE 0x08
@@ -51,9 +53,9 @@ public:
 		LegoROI* m_roi;      // 0x00
 		MxS32 m_characterId; // 0x04
 		MxLong m_unk0x08;    // 0x08
-		undefined m_unk0x0c; // 0x0c
+		MxBool m_unk0x0c;    // 0x0c
 		MxBool m_unk0x0d;    // 0x0d
-		float m_unk0x10;     // 0x10
+		float m_speed;       // 0x10
 		MxBool m_unk0x14;    // 0x14
 	};
 
@@ -80,11 +82,13 @@ public:
 	void Suspend();
 	void Resume();
 	void FUN_1005f6d0(MxBool p_unk0x400);
-	void FUN_1005f700(MxBool p_unk0x3a);
+	void EnableCamAnims(MxBool p_enableCamAnims);
 	MxResult LoadScriptInfo(MxS32 p_scriptIndex);
 	MxBool FindVehicle(const char* p_name, MxU32& p_index);
 	MxResult ReadAnimInfo(LegoFile* p_file, AnimInfo* p_info);
 	MxResult ReadModelInfo(LegoFile* p_file, ModelInfo* p_info);
+	void FUN_100604d0(MxBool p_unk0x08);
+	void FUN_10060540(MxBool p_unk0x29);
 	void FUN_10060570(MxBool p_unk0x1a);
 	MxResult StartEntityAction(MxDSAction& p_dsAction, LegoEntity* p_entity);
 	MxResult FUN_10060dc0(
@@ -98,6 +102,7 @@ public:
 		MxBool p_param8,
 		MxBool p_param9
 	);
+	void CameraTriggerFire(LegoPathActor* p_actor, MxBool, MxU32 p_location, MxBool p_bool);
 	void FUN_10061010(MxBool p_und);
 	LegoTranInfo* GetTranInfo(MxU32 p_index);
 	void FUN_10062770();
@@ -105,8 +110,8 @@ public:
 	void AddExtra(MxS32 p_location, MxBool p_und);
 	void FUN_10063270(LegoROIList*, LegoAnimPresenter*);
 	void FUN_10063780(LegoROIList* p_list);
-	void FUN_10064670(Vector3*);
-	void FUN_10064740(Vector3*);
+	MxResult FUN_10064670(Vector3* p_position);
+	MxResult FUN_10064740(Vector3* p_position);
 
 	static void configureLegoAnimationManager(MxS32 p_legoAnimationManagerConfig);
 
@@ -149,7 +154,21 @@ private:
 	MxBool FUN_10063b90(LegoWorld* p_world, LegoExtraActor* p_actor, MxU8 p_unk0x14, MxU32 p_characterId);
 	void FUN_10063d10();
 	MxBool FUN_10063fb0(LegoLocation::Boundary* p_boundary, LegoWorld* p_world);
-	MxBool FUN_10064120(LegoLocation::Boundary* p_boundary, MxBool, MxBool);
+	MxBool FUN_10064010(LegoPathBoundary* p_boundary, LegoUnknown100db7f4* p_edge, float p_destScale);
+	MxBool FUN_10064120(LegoLocation::Boundary* p_boundary, MxBool p_bool1, MxBool p_bool2);
+	MxResult FUN_10064380(
+		const char* p_name,
+		const char* p_boundaryName,
+		MxS32 p_src,
+		float p_srcScale,
+		MxS32 p_dest,
+		float p_destScale,
+		MxU32 p_undIdx1,
+		MxS32 p_unk0x0c,
+		MxU32 p_undIdx2,
+		MxS32 p_unk0x10,
+		float p_speed
+	);
 	void FUN_100648f0(LegoTranInfo*, MxLong);
 	void FUN_10064b50(MxLong p_time);
 
@@ -166,8 +185,8 @@ private:
 	MxPresenter* m_unk0x28[2];         // 0x28
 	MxLong m_unk0x30[2];               // 0x30
 	MxBool m_unk0x38;                  // 0x38
-	MxBool m_unk0x39;                  // 0x39
-	MxBool m_unk0x3a;                  // 0x3a
+	MxBool m_animRunning;              // 0x39
+	MxBool m_enableCamAnims;           // 0x3a
 	Extra m_extras[40];                // 0x3c
 	MxU32 m_lastExtraCharacterId;      // 0x3fc
 	MxBool m_unk0x400;                 // 0x400
@@ -182,13 +201,14 @@ private:
 	undefined4 m_unk0x41c;             // 0x41c
 	AnimState* m_animState;            // 0x420
 	LegoROIList* m_unk0x424;           // 0x424
-	MxBool m_unk0x428;                 // 0x428
+	MxBool m_suspendedEnableCamAnims;  // 0x428
 	MxBool m_unk0x429;                 // 0x429
 	MxBool m_unk0x42a;                 // 0x42a
 	MxBool m_suspended;                // 0x42b
 	LegoTranInfo* m_unk0x42c;          // 0x42c
 	MxBool m_unk0x430;                 // 0x430
-	undefined4 m_unk0x434[2];          // 0x434
+	MxLong m_unk0x434;                 // 0x434
+	MxLong m_unk0x438;                 // 0x438
 	MxMatrix m_unk0x43c;               // 0x43c
 	MxMatrix m_unk0x484;               // 0x484
 	UnknownMx4DPointFloat m_unk0x4cc;  // 0x4cc

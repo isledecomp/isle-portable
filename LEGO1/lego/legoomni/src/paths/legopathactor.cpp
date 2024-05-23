@@ -5,6 +5,7 @@
 #include "legocameracontroller.h"
 #include "legonavcontroller.h"
 #include "legopathboundary.h"
+#include "legopathedgecontainer.h"
 #include "legosoundmanager.h"
 #include "legoworld.h"
 #include "misc.h"
@@ -15,6 +16,7 @@
 #include <vec.h>
 
 DECOMP_SIZE_ASSERT(LegoPathActor, 0x154)
+DECOMP_SIZE_ASSERT(LegoPathEdgeContainer, 0x3c)
 
 #ifndef M_PI
 #define M_PI 3.1416
@@ -40,21 +42,21 @@ LegoPathActor::LegoPathActor()
 	m_unk0x7c = 0;
 	m_userNavFlag = FALSE;
 	m_state = 0;
-	m_unk0x134 = NULL;
+	m_grec = NULL;
 	m_controller = NULL;
 	m_unk0xe8 = 0;
 	m_unk0x148 = 0;
 	m_unk0x14c = 0;
-	m_unk0x140 = 0.0099999998f;
-	m_unk0x144 = 0.80000001f;
+	m_unk0x140 = 0.0099999999f;
+	m_unk0x144 = 0.8f;
 	m_unk0x150 = 2.0f;
 }
 
-// STUB: LEGO1 0x1002d820
+// FUNCTION: LEGO1 0x1002d820
 LegoPathActor::~LegoPathActor()
 {
-	if (m_unk0x134) {
-		delete m_unk0x134;
+	if (m_grec) {
+		delete m_grec;
 	}
 }
 
@@ -90,10 +92,10 @@ MxResult LegoPathActor::VTable0x88(
 	float p_destScale
 )
 {
-	Vector3* v1 = p_srcEdge.GetOpposingPoint(p_boundary);
-	Vector3* v2 = p_srcEdge.GetPoint(p_boundary);
-	Vector3* v3 = p_destEdge.GetOpposingPoint(p_boundary);
-	Vector3* v4 = p_destEdge.GetPoint(p_boundary);
+	Vector3* v1 = p_srcEdge.GetOpposingPoint(*p_boundary);
+	Vector3* v2 = p_srcEdge.CCWVertex(*p_boundary);
+	Vector3* v3 = p_destEdge.GetOpposingPoint(*p_boundary);
+	Vector3* v4 = p_destEdge.CCWVertex(*p_boundary);
 
 	Mx3DPointFloat p1, p2, p3, p4, p5;
 
@@ -135,7 +137,7 @@ MxResult LegoPathActor::VTable0x88(
 	}
 
 	right.EqualsCross(&up, &dir);
-	m_roi->FUN_100a46b0(matrix);
+	m_roi->UpdateTransformationRelativeToParent(matrix);
 
 	if (!m_cameraFlag || !m_userNavFlag) {
 		p5.EqualsCross(p_boundary->GetUnknown0x14(), &p3);
@@ -167,8 +169,8 @@ MxResult LegoPathActor::VTable0x84(
 	float p_destScale
 )
 {
-	Vector3* v3 = p_destEdge.GetOpposingPoint(p_boundary);
-	Vector3* v4 = p_destEdge.GetPoint(p_boundary);
+	Vector3* v3 = p_destEdge.GetOpposingPoint(*p_boundary);
+	Vector3* v4 = p_destEdge.CCWVertex(*p_boundary);
 
 	Mx3DPointFloat p2, p3, p5;
 
@@ -201,7 +203,7 @@ MxResult LegoPathActor::VTable0x84(
 	}
 
 	right.EqualsCross(&up, &dir);
-	m_roi->FUN_100a46b0(matrix);
+	m_roi->UpdateTransformationRelativeToParent(matrix);
 
 	if (!m_cameraFlag || !m_userNavFlag) {
 		p5.EqualsCross(p_boundary->GetUnknown0x14(), &p3);
@@ -224,6 +226,7 @@ MxResult LegoPathActor::VTable0x84(
 }
 
 // FUNCTION: LEGO1 0x1002e100
+// FUNCTION: BETA10 0x100b0520
 MxS32 LegoPathActor::VTable0x8c(float p_time, Matrix4& p_transform)
 {
 	if (m_userNavFlag && m_state == 0) {
@@ -263,7 +266,7 @@ MxS32 LegoPathActor::VTable0x8c(float p_time, Matrix4& p_transform)
 			LegoPathBoundary* oldBoundary = m_boundary;
 
 			if (m_unk0xe9 != 0) {
-				WaitForAnimation();
+				VTable0x9c();
 
 				if (m_boundary == oldBoundary) {
 					MxLong time = Timer()->GetTime();
@@ -343,7 +346,7 @@ MxS32 LegoPathActor::VTable0x8c(float p_time, Matrix4& p_transform)
 			pos2 = pos1;
 
 			if (m_unk0xe9 != 0) {
-				WaitForAnimation();
+				VTable0x9c();
 			}
 
 			return 0;
@@ -414,10 +417,11 @@ void LegoPathActor::VTable0x70(float p_time)
 	}
 }
 
-// STUB: LEGO1 0x1002e8b0
-void LegoPathActor::VTable0x98()
+// FUNCTION: LEGO1 0x1002e8b0
+// FUNCTION: BETA10 0x100af2f7
+void LegoPathActor::SwitchBoundary(LegoPathBoundary*& p_boundary, LegoUnknown100db7f4*& p_edge, float& p_unk0xe4)
 {
-	// TODO
+	m_boundary->SwitchBoundary(this, p_boundary, p_edge, p_unk0xe4);
 }
 
 // FUNCTION: LEGO1 0x1002e8d0
@@ -463,11 +467,77 @@ MxU32 LegoPathActor::VTable0x6c(
 	return 0;
 }
 
-// STUB: LEGO1 0x1002ebe0
-MxS32 LegoPathActor::VTable0x68(Vector3&, Vector3&, Vector3&)
+// FUNCTION: LEGO1 0x1002ebe0
+// FUNCTION: BETA10 0x100af35e
+MxS32 LegoPathActor::VTable0x68(Vector3& p_v1, Vector3& p_v2, Vector3& p_v3)
 {
-	// TODO
-	return 0;
+	Mx3DPointFloat v2(p_v2);
+	((Vector3&) v2).Sub(&p_v1);
+
+	float len = v2.LenSquared();
+
+	if (len <= 0.001) {
+		return 0;
+	}
+
+	len = sqrt(len);
+	((Vector3&) v2).Div(len);
+
+	float radius = m_roi->GetWorldBoundingSphere().Radius();
+	list<LegoPathBoundary*> boundaries;
+
+	return FUN_1002edd0(boundaries, m_boundary, p_v1, v2, len, radius, p_v3, 0);
+}
+
+// FUNCTION: LEGO1 0x1002edd0
+inline MxU32 LegoPathActor::FUN_1002edd0(
+	list<LegoPathBoundary*>& p_boundaries,
+	LegoPathBoundary* p_boundary,
+	Vector3& p_v1,
+	Vector3& p_v2,
+	float p_f1,
+	float p_f2,
+	Vector3& p_v3,
+	MxS32 p_und
+)
+{
+	MxU32 result = VTable0x6c(p_boundary, p_v1, p_v2, p_f1, p_f2, p_v3);
+
+	if (result == 0) {
+		p_boundaries.push_back(p_boundary);
+
+		if (p_und >= 2) {
+			return 0;
+		}
+
+		LegoS32 numEdges = p_boundary->GetNumEdges();
+		for (MxS32 i = 0; i < numEdges; i++) {
+			LegoUnknown100db7f4* edge = ((LegoUnknown100db7f4*) p_boundary->GetEdges()[i]);
+			LegoPathBoundary* boundary = (LegoPathBoundary*) edge->OtherFace(p_boundary);
+
+			if (boundary != NULL) {
+				list<LegoPathBoundary*>::iterator it;
+
+				for (it = p_boundaries.begin(); it != p_boundaries.end(); it++) {
+					if ((*it) == boundary) {
+						break;
+					}
+				}
+
+				if (it == p_boundaries.end()) {
+					result = FUN_1002edd0(p_boundaries, boundary, p_v1, p_v2, p_f1, p_f2, p_v3, p_und + 1);
+
+					if (result != 0) {
+						return result;
+					}
+				}
+			}
+		}
+
+		result = 0;
+	}
+
+	return result;
 }
 
 // STUB: LEGO1 0x1002f020
@@ -476,21 +546,131 @@ void LegoPathActor::ParseAction(char* p_extra)
 	LegoActor::ParseAction(p_extra);
 }
 
-// STUB: LEGO1 0x1002f1b0
-MxResult LegoPathActor::WaitForAnimation()
+// FUNCTION: LEGO1 0x1002f1b0
+// FUNCTION: BETA10 0x100af899
+MxResult LegoPathActor::VTable0x9c()
 {
-	// TODO
+	Mx3DPointFloat local34;
+	Mx3DPointFloat local48;
+	MxU32 local1c = 1;
+	MxU32 local20 = 1;
+
+	if (m_grec != NULL) {
+		if (m_grec->GetBit1()) {
+			local1c = 0;
+			local20 = 0;
+
+			Mx3DPointFloat vec;
+			switch (m_controller->FUN_1004a240(*m_grec, local34, local48, m_unk0xe4, m_destEdge, m_boundary)) {
+			case 0:
+			case 1:
+				break;
+			default:
+				return FAILURE;
+			}
+		}
+		else {
+			delete m_grec;
+			m_grec = NULL;
+		}
+	}
+
+	if (local1c != 0) {
+		SwitchBoundary(m_boundary, m_destEdge, m_unk0xe4);
+	}
+
+	if (local20 != 0) {
+		Mx3DPointFloat local78;
+
+		Vector3& v1 = *m_destEdge->GetOpposingPoint(*m_boundary);
+		Vector3& v2 = *m_destEdge->CCWVertex(*m_boundary);
+
+		LERP3(local34, v1, v2, m_unk0xe4);
+
+		m_destEdge->FUN_1002ddc0(*m_boundary, local78);
+		local48.EqualsCross(m_boundary->GetUnknown0x14(), &local78);
+		local48.Unitize();
+	}
+
+	Vector3 rightRef(m_unk0xec[0]);
+	Vector3 upRef(m_unk0xec[1]);
+	Vector3 dirRef(m_unk0xec[2]);
+
+	upRef = *m_boundary->GetUnknown0x14();
+
+	rightRef.EqualsCross(&upRef, &dirRef);
+	rightRef.Unitize();
+
+	dirRef.EqualsCross(&rightRef, &upRef);
+	dirRef.Unitize();
+
+	Mx3DPointFloat localc0(m_unk0xec[3]);
+	Mx3DPointFloat local84(m_unk0xec[2]);
+	Mx3DPointFloat local70(local34);
+
+	((Vector3&) local70).Sub(&localc0);
+	float len = local70.LenSquared();
+	if (len >= 0.0f) {
+		len = sqrt(len);
+		((Vector3&) local84).Mul(len);
+		((Vector3&) local48).Mul(len);
+	}
+
+	if (!m_userNavFlag) {
+		((Vector3&) local84).Mul(-1.0f);
+	}
+
+	if (VTable0x80(localc0, local84, local34, local48) != SUCCESS) {
+		return FAILURE;
+	}
+
+	m_unk0x7c = 0.0f;
 	return SUCCESS;
 }
 
-// STUB: LEGO1 0x1002f650
-void LegoPathActor::VTable0xa4(MxU8&, MxS32&)
+// FUNCTION: LEGO1 0x1002f650
+// FUNCTION: BETA10 0x100afd67
+void LegoPathActor::VTable0xa4(MxBool& p_und1, MxS32& p_und2)
 {
-	// TODO
+	switch (GetActorId()) {
+	case 1:
+		p_und1 = TRUE;
+		p_und2 = 2;
+		break;
+	case 2:
+		p_und1 = FALSE;
+		p_und2 = 1;
+		break;
+	case 3:
+		p_und1 = TRUE;
+		p_und2 = 1;
+		break;
+	case 4:
+	case 6:
+		p_und1 = TRUE;
+		p_und2 = rand() % p_und2 + 1;
+		break;
+	case 5:
+		p_und1 = FALSE;
+		p_und2 = 2;
+		break;
+	default:
+		p_und1 = TRUE;
+		p_und2 = 1;
+		break;
+	}
 }
 
-// STUB: LEGO1 0x1002f700
+// FUNCTION: LEGO1 0x1002f700
+// FUNCTION: BETA10 0x100afe4c
 void LegoPathActor::VTable0xa8()
 {
-	// TODO
+	m_lastTime = Timer()->GetTime();
+	m_roi->FUN_100a58f0(m_unk0xec);
+	m_roi->VTable0x14();
+
+	if (m_userNavFlag) {
+		m_roi->WrappedSetLocalTransform(m_unk0xec);
+		FUN_10010c30();
+	}
 }
