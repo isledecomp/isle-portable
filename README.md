@@ -25,7 +25,7 @@ To achieve our goal of platform independence, we need to replace any Windows-onl
 | [Smacker](https://github.com/isledecomp/isle/tree/master/3rdparty/smacker) | [libsmacker](https://github.com/foxtacles/libsmacker) | ✅ | [Open issues](https://github.com/search?q=repo%3Aisledecomp%2Fisle-portable%20%22%2F%2F%20%5Blibrary%3Alibsmacker%5D%22&type=code) |
 | Filesystem | C standard library | ❌ | [Open issues](https://github.com/search?q=repo%3Aisledecomp%2Fisle-portable+%22%2F%2F+%5Blibrary%3Afilesystem%5D%22&type=code) |
 | Threads, Mutexes (Synchronization) | [SDL3](https://www.libsdl.org/) | ❌ | [Open issues](https://github.com/search?q=repo%3Aisledecomp%2Fisle-portable+%22%2F%2F+%5Blibrary%3Asynchronization%5D%22&type=code) |
-| Keyboard, Mouse, Joystick (Input) | [SDL3](https://www.libsdl.org/) | ❌ | [Open issues](https://github.com/search?q=repo%3Aisledecomp%2Fisle-portable+%22%2F%2F+%5Blibrary%3Ainput%5D%22&type=code) |
+| Keyboard, Mouse, Joystick, DirectInput (Input) | [SDL3](https://www.libsdl.org/) | ❌ | [Open issues](https://github.com/search?q=repo%3Aisledecomp%2Fisle-portable+%22%2F%2F+%5Blibrary%3Ainput%5D%22&type=code) |
 | WinMM, DirectSound (Audio) | [SDL3](https://www.libsdl.org/) | ❌ | [Open issues](https://github.com/search?q=repo%3Aisledecomp%2Fisle-portable+%22%2F%2F+%5Blibrary%3Aaudio%5D%22&type=code) |
 | DirectDraw (2D video) | [SDL3](https://www.libsdl.org/) | ❌ | [Open issues](https://github.com/search?q=repo%3Aisledecomp%2Fisle-portable+%22%2F%2F+%5Blibrary%3A2d%5D%22&type=code) |
 | Direct3D (3D video) | [SDL3](https://www.libsdl.org/), OpenGL ES (**TBD**) | ❌ | [Open issues](https://github.com/search?q=repo%3Aisledecomp%2Fisle-portable+%22%2F%2F+%5Blibrary%3A3d%5D%22&type=code) |
