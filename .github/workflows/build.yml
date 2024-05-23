@@ -13,9 +13,22 @@ jobs:
       fail-fast: false
       matrix:
         toolchain:
-        - { name: 'MSVC', shell: 'sh', setup-cmake: true, setup-ninja: true, setup-msvc: true }
+        - { name: 'MSVC',           shell: 'sh',        setup-cmake: true, setup-ninja: true, setup-msvc: true }
+        - { name: 'msys2 mingw32',  shell: 'msys2 {0}', msystem: mingw32, msys-env: mingw-w64-i686,        clang-tidy: true, werror: true }
+        - { name: 'msys2 clang32',  shell: 'msys2 {0}', msystem: clang32, msys-env: mingw-w64-clang-i686,  clang-tidy: true, werror: true, no-dx5-libs: true }
 
     steps:
+      - name: Set up MSYS2
+        if: ${{ !!matrix.toolchain.msystem }}
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{ matrix.toolchain.msystem }}
+          install: >-
+            ${{ matrix.toolchain.msys-env }}-cc
+            ${{ matrix.toolchain.msys-env }}-cmake
+            ${{ matrix.toolchain.msys-env }}-ninja
+            ${{ matrix.toolchain.msys-env }}-clang-tools-extra
+
       - name: Setup cmake
         if: matrix.toolchain.setup-cmake
         uses: jwlawson/actions-setup-cmake@v1.13
@@ -31,8 +44,6 @@ jobs:
           arch: amd64_x86  # Use the 64-bit x64-native cross tools to build 32-bit x86 code
 
       - uses: actions/checkout@v4
-        with:
-          submodules: true
 
       - name: Build
         run: |
