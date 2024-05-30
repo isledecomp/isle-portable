@@ -5,6 +5,8 @@
 #include "mxcriticalsection.h"
 #include "mxstring.h"
 
+#include <windows.h>
+
 class MxAtomSet;
 class MxDSAction;
 class MxEntity;
