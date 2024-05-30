@@ -299,7 +299,7 @@ add_library(omni STATIC
 register_lego1_target(omni)
 set_property(TARGET omni PROPERTY ARCHIVE_OUTPUT_NAME "omni$<$<CONFIG:Debug>:d>")
 target_include_directories(omni PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include" "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/util")
-target_link_libraries(omni PRIVATE dsound winmm libsmacker SDL3::SDL3)
+target_link_libraries(omni PRIVATE dsound winmm libsmacker)
 
 add_library(lego1 SHARED
   LEGO1/define.cpp
@@ -462,7 +462,7 @@ target_include_directories(lego1 PUBLIC "${CMAKE_SOURCE_DIR}/LEGO1/lego/legoomni
 target_link_libraries(lego1 PRIVATE tglrl viewmanager realtime mxdirectx roi geom anim Vec::Vec dinput dxguid misc 3dmanager omni)
 
 foreach(tgt IN LISTS lego1_targets)
-  target_link_libraries(${tgt} PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5>)
+  target_link_libraries(${tgt} PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5> SDL3::SDL3)
 endforeach()
 
 # Make sure filenames are ALL CAPS
@@ -479,7 +479,7 @@ if (ISLE_BUILD_APP)
   target_compile_definitions(isle PRIVATE ISLE_APP)
 
   # Use internal DirectX 5 if required
-  target_link_libraries(isle PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5>)
+  target_link_libraries(isle PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5> SDL3::SDL3)
 
   # Link DSOUND, WINMM, and LEGO1
   target_link_libraries(isle PRIVATE dsound winmm lego1)

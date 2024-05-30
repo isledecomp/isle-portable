@@ -1,7 +1,7 @@
 #ifndef MXCRITICALSECTION_H
 #define MXCRITICALSECTION_H
 
-#include <windows.h>
+#include <SDL3/SDL_mutex.h>
 
 // SIZE 0x1c
 class MxCriticalSection {
@@ -15,8 +15,11 @@ public:
 	void Leave();
 
 private:
-	CRITICAL_SECTION m_criticalSection; // 0x00
-	HANDLE m_mutex;                     // 0x18
+	// [library:synchronization]
+	// SDL uses the most efficient mutex implementation available on the target platform.
+	// Originally this class allowed working with either a Win32 CriticalSection or Mutex,
+	// but only CriticalSection was ever used and we don't need both anyway.
+	SDL_Mutex* m_mutex;
 };
 
 #endif // MXCRITICALSECTION_H
