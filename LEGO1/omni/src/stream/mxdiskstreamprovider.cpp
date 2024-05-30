@@ -70,7 +70,7 @@ MxDiskStreamProvider::~MxDiskStreamProvider()
 
 	if (m_remainingWork) {
 		m_remainingWork = FALSE;
-		m_busySemaphore.Release(1);
+		m_busySemaphore.Release();
 		m_thread.Terminate();
 	}
 
@@ -164,7 +164,7 @@ void MxDiskStreamProvider::VTable0x20(MxDSAction* p_action)
 MxResult MxDiskStreamProvider::WaitForWorkToComplete()
 {
 	while (m_remainingWork) {
-		m_busySemaphore.Wait(INFINITE);
+		m_busySemaphore.Wait();
 		if (m_unk0x35) {
 			PerformWork();
 		}
@@ -205,7 +205,7 @@ MxResult MxDiskStreamProvider::FUN_100d1780(MxDSStreamingAction* p_action)
 	}
 
 	m_unk0x35 = TRUE;
-	m_busySemaphore.Release(1);
+	m_busySemaphore.Release();
 	return SUCCESS;
 }
 
@@ -222,7 +222,7 @@ void MxDiskStreamProvider::PerformWork()
 
 			if (streamingAction && !FUN_100d1af0(streamingAction)) {
 				m_thread.Sleep(500);
-				m_busySemaphore.Release(1);
+				m_busySemaphore.Release();
 				return;
 			}
 		}
