@@ -106,13 +106,13 @@ public:
 	void Destroy(MxBool p_fromDestructor) override;   // vtable+0x1c
 
 	// FUNCTION: LEGO1 0x10002e70
-	virtual MxU32 VTable0xcc() { return 0; } // vtable+0xcc
+	virtual MxU32 HandleClick() { return 0; } // vtable+0xcc
 
 	// FUNCTION: LEGO1 0x10002df0
 	virtual MxU32 VTable0xd0() { return 0; } // vtable+0xd0
 
 	// FUNCTION: LEGO1 0x10002e80
-	virtual MxU32 VTable0xd4(LegoControlManagerEvent&) { return 0; } // vtable+0xd4
+	virtual MxU32 HandleControl(LegoControlManagerEvent&) { return 0; } // vtable+0xd4
 
 	// FUNCTION: LEGO1 0x10002e90
 	virtual MxU32 VTable0xd8(LegoEndAnimNotificationParam&) { return 0; } // vtable+0xd8
@@ -128,16 +128,13 @@ public:
 	// SYNTHETIC: LEGO1 0x10002ff0
 	// IslePathActor::`scalar deleting destructor'
 
-	inline void SetWorld(LegoWorld* p_world) { m_world = p_world; }
-	inline LegoWorld* GetWorld() { return m_world; }
-
 	void FUN_1001b660();
 
 	static void RegisterSpawnLocations();
 
 protected:
 	LegoWorld* m_world;        // 0x154
-	IslePathActor* m_unk0x158; // 0x158
+	LegoPathActor* m_unk0x158; // 0x158
 	MxFloat m_unk0x15c;        // 0x15c
 };
 

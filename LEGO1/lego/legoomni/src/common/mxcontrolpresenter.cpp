@@ -184,7 +184,7 @@ MxBool MxControlPresenter::FUN_10044480(LegoControlManagerEvent* p_event, MxPres
 				p_event->SetClickedObjectId(m_action->GetObjectId());
 				p_event->SetClickedAtom(m_action->GetAtomId().GetInternal());
 				VTable0x6c(0);
-				p_event->SetType(c_notificationClick);
+				p_event->SetType(c_notificationControl);
 				p_event->SetUnknown0x28(m_unk0x4e);
 				return TRUE;
 			}
@@ -194,7 +194,7 @@ MxBool MxControlPresenter::FUN_10044480(LegoControlManagerEvent* p_event, MxPres
 				p_event->SetClickedObjectId(m_action->GetObjectId());
 				p_event->SetClickedAtom(m_action->GetAtomId().GetInternal());
 				VTable0x6c(m_unk0x56);
-				p_event->SetType(c_notificationClick);
+				p_event->SetType(c_notificationControl);
 				p_event->SetUnknown0x28(m_unk0x4e);
 				return TRUE;
 			}
@@ -206,9 +206,9 @@ MxBool MxControlPresenter::FUN_10044480(LegoControlManagerEvent* p_event, MxPres
 }
 
 // FUNCTION: LEGO1 0x10044540
-void MxControlPresenter::VTable0x6c(MxS16 p_val)
+void MxControlPresenter::VTable0x6c(MxS16 p_unk0x4e)
 {
-	if (p_val == -1) {
+	if (p_unk0x4e == -1) {
 		if ((MxS16) ((MxDSMultiAction*) m_action)->GetActionList()->GetCount() - m_unk0x4e == 1) {
 			m_unk0x4e = 0;
 		}
@@ -217,7 +217,7 @@ void MxControlPresenter::VTable0x6c(MxS16 p_val)
 		}
 	}
 	else {
-		m_unk0x4e = p_val;
+		m_unk0x4e = p_unk0x4e;
 	}
 
 	m_action->SetUnknown90(Timer()->GetTime());

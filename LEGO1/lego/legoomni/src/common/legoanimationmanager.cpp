@@ -25,6 +25,7 @@
 #include "mxticklemanager.h"
 #include "mxtimer.h"
 #include "mxutilities.h"
+#include "realtime/realtime.h"
 #include "viewmanager/viewmanager.h"
 
 #include <io.h>
@@ -51,7 +52,7 @@ LegoAnimationManager::Vehicle g_vehicles[] = {
 };
 
 // GLOBAL: LEGO1 0x100f6d58
-const char* g_unk0x100f6d58[11][17] = {
+const char* g_cycles[11][17] = {
 	{"CNs001xx",
 	 "CNs002xx",
 	 "CNs003xx",
@@ -346,7 +347,7 @@ LegoAnimationManager::~LegoAnimationManager()
 			LegoPathActor* actor = CharacterManager()->GetActor(roi->GetName());
 
 			if (actor != NULL && actor->GetController() != NULL && CurrentWorld() != NULL) {
-				CurrentWorld()->RemovePathActor(actor);
+				CurrentWorld()->RemoveActor(actor);
 				actor->SetController(NULL);
 			}
 
@@ -466,7 +467,7 @@ void LegoAnimationManager::Suspend()
 		m_unk0x401 = FALSE;
 
 		for (i = 0; i < (MxS32) sizeOfArray(g_characters); i++) {
-			g_characters[i].m_unk0x04 = FALSE;
+			g_characters[i].m_inExtras = FALSE;
 		}
 	}
 }
@@ -530,7 +531,7 @@ void LegoAnimationManager::Init()
 
 	for (i = 0; i < (MxS32) sizeOfArray(g_characters); i++) {
 		g_characters[i].m_active = FALSE;
-		g_characters[i].m_unk0x04 = FALSE;
+		g_characters[i].m_inExtras = FALSE;
 	}
 
 	for (i = 0; i < (MxS32) sizeOfArray(g_vehicles); i++) {
@@ -994,7 +995,7 @@ MxResult LegoAnimationManager::FUN_100605e0(
 				FUN_100648f0(tranInfo, m_unk0x404);
 			}
 			else if (p_unk0x0a) {
-				IslePathActor* actor = CurrentActor();
+				LegoPathActor* actor = CurrentActor();
 
 				if (actor != NULL) {
 					actor->SetState(4);
@@ -1395,7 +1396,6 @@ MxLong LegoAnimationManager::Notify(MxParam& p_param)
 
 					if (roi != NULL) {
 						LegoExtraActor* actor = CharacterManager()->GetActor(roi->GetName());
-
 						if (actor != NULL) {
 							actor->Restart();
 						}
@@ -1432,7 +1432,7 @@ MxResult LegoAnimationManager::Tickle()
 		return SUCCESS;
 	}
 
-	IslePathActor* actor = CurrentActor();
+	LegoPathActor* actor = CurrentActor();
 	LegoROI* roi;
 
 	if (actor == NULL || (roi = actor->GetROI()) == NULL) {
@@ -1468,7 +1468,7 @@ MxResult LegoAnimationManager::Tickle()
 				}
 
 				m_extras[i].m_roi = NULL;
-				g_characters[m_extras[i].m_characterId].m_unk0x04 = FALSE;
+				g_characters[m_extras[i].m_characterId].m_inExtras = FALSE;
 				g_characters[m_extras[i].m_characterId].m_unk0x07 = FALSE;
 				m_extras[i].m_characterId = -1;
 				m_extras[i].m_unk0x0d = FALSE;
@@ -1655,7 +1655,7 @@ MxBool LegoAnimationManager::FUN_100623a0(AnimInfo& p_info)
 
 			LegoEntityListCursor cursor(entityList);
 			LegoEntity* entity;
-			IslePathActor* actor = CurrentActor();
+			LegoPathActor* actor = CurrentActor();
 
 			while (cursor.Next(entity)) {
 				if (entity != actor && entity->IsA("LegoPathActor")) {
@@ -1837,7 +1837,7 @@ void LegoAnimationManager::PurgeExtra(MxBool p_und)
 					}
 
 					m_extras[i].m_roi = NULL;
-					g_characters[m_extras[i].m_characterId].m_unk0x04 = FALSE;
+					g_characters[m_extras[i].m_characterId].m_inExtras = FALSE;
 					g_characters[m_extras[i].m_characterId].m_unk0x07 = FALSE;
 					m_extras[i].m_characterId = -1;
 				}
@@ -1858,7 +1858,7 @@ void LegoAnimationManager::AddExtra(MxS32 p_location, MxBool p_und)
 		if (world != NULL) {
 			PurgeExtra(FALSE);
 
-			IslePathActor* actor = CurrentActor();
+			LegoPathActor* actor = CurrentActor();
 			if (actor == NULL || actor->GetWorldSpeed() <= 20.0f) {
 				MxU32 i;
 				for (i = 0; i < m_numAllowedExtras && m_extras[i].m_roi != NULL; i++) {
@@ -1928,7 +1928,7 @@ void LegoAnimationManager::AddExtra(MxS32 p_location, MxBool p_und)
 							tryNextCharacter:
 								if (g_characters[m_lastExtraCharacterId].m_unk0x09 &&
 									g_characters[m_lastExtraCharacterId].m_unk0x08 &&
-									!g_characters[m_lastExtraCharacterId].m_unk0x04 &&
+									!g_characters[m_lastExtraCharacterId].m_inExtras &&
 									g_characters[m_lastExtraCharacterId].m_active == active) {
 									if (!CharacterManager()->FUN_10083b20(g_characters[m_lastExtraCharacterId].m_name
 										)) {
@@ -1973,7 +1973,7 @@ void LegoAnimationManager::AddExtra(MxS32 p_location, MxBool p_und)
 											if (FUN_10063b90(
 													world,
 													actor,
-													CharacterManager()->FUN_10085180(m_extras[i].m_roi),
+													CharacterManager()->GetMood(m_extras[i].m_roi),
 													m_lastExtraCharacterId
 												)) {
 												m_extras[i].m_unk0x14 = TRUE;
@@ -1994,7 +1994,7 @@ void LegoAnimationManager::AddExtra(MxS32 p_location, MxBool p_und)
 											actor->SetWorldSpeed(speed);
 
 											m_extras[i].m_characterId = m_lastExtraCharacterId;
-											g_characters[m_lastExtraCharacterId].m_unk0x04 = TRUE;
+											g_characters[m_lastExtraCharacterId].m_inExtras = TRUE;
 											m_extras[i].m_unk0x08 = Timer()->GetTime();
 											m_extras[i].m_speed = -1;
 											m_extras[i].m_unk0x0d = FALSE;
@@ -2029,10 +2029,242 @@ void LegoAnimationManager::AddExtra(MxS32 p_location, MxBool p_und)
 	}
 }
 
-// STUB: LEGO1 0x10063270
-void LegoAnimationManager::FUN_10063270(LegoROIList*, LegoAnimPresenter*)
+// FUNCTION: LEGO1 0x10062e20
+// FUNCTION: BETA10 0x100444cb
+MxBool LegoAnimationManager::FUN_10062e20(LegoROI* p_roi, LegoAnimPresenter* p_presenter)
 {
-	// TODO
+	LegoWorld* world = CurrentWorld();
+
+	if (world == NULL || m_suspended || !m_unk0x400) {
+		return FALSE;
+	}
+
+	MxBool inExtras = FALSE;
+	const char* name = p_roi->GetName();
+
+	LegoExtraActor* actor = CharacterManager()->GetActor(name);
+	if (actor != NULL) {
+		MxS32 characterId = -1;
+		MxS32 i;
+
+		for (i = 0; i < (MxS32) sizeOfArray(g_characters); i++) {
+			if (!strcmpi(name, g_characters[i].m_name)) {
+				characterId = i;
+				break;
+			}
+		}
+
+		if (characterId == -1) {
+			return FALSE;
+		}
+
+		if (!g_characters[characterId].m_inExtras) {
+			for (i = 0; i < (MxS32) sizeOfArray(m_extras); i++) {
+				if (m_extras[i].m_roi == NULL) {
+					m_extras[i].m_roi = p_roi;
+					break;
+				}
+			}
+
+			if (i == (MxS32) sizeOfArray(m_extras)) {
+				return FALSE;
+			}
+		}
+		else {
+			inExtras = TRUE;
+
+			for (i = 0; i < (MxS32) sizeOfArray(m_extras); i++) {
+				if (m_extras[i].m_roi == p_roi) {
+					break;
+				}
+			}
+
+			if (i == (MxS32) sizeOfArray(m_extras)) {
+				return FALSE;
+			}
+		}
+
+		if (g_characters[characterId].m_unk0x07) {
+			m_unk0x414--;
+
+			if (actor->GetBoundary() == NULL) {
+				g_characters[characterId].m_unk0x07 = FALSE;
+
+				if (g_characters[characterId].m_unk0x0c < 0) {
+					g_characters[characterId].m_unk0x0c = 0;
+				}
+
+				if (g_characters[characterId].m_unk0x10 < 0) {
+					g_characters[characterId].m_unk0x10 = 0;
+				}
+
+				m_extras[i].m_roi = NULL;
+				g_characters[characterId].m_unk0x07 = FALSE;
+				g_characters[characterId].m_inExtras = FALSE;
+				return FALSE;
+			}
+
+			CharacterManager()->FUN_10083db0(p_roi);
+		}
+		else {
+			if (inExtras) {
+				return FALSE;
+			}
+		}
+
+		if (GameState()->GetCurrentAct() != LegoGameState::e_act1 && !strcmp(name, "brickstr")) {
+			return FALSE;
+		}
+
+		MxBool local24 = inExtras && g_characters[characterId].m_unk0x07 &&
+						 (g_characters[characterId].m_unk0x0c < 0 || g_characters[characterId].m_unk0x10 < 0);
+
+		MxResult result = 1; // Not a valid MxResult value
+
+		if (!local24) {
+			MxU8 unk0x0c;
+
+			switch (rand() % 3) {
+			case 0:
+				unk0x0c = 1;
+				break;
+			case 1:
+				unk0x0c = 2;
+				break;
+			case 2:
+				unk0x0c = 0;
+				break;
+			}
+
+			actor->SetUnknown0x0c(unk0x0c);
+
+			Mx3DPointFloat position;
+			Mx3DPointFloat direction;
+
+			position = p_roi->GetWorldPosition();
+			direction = p_roi->GetWorldDirection();
+
+			((Vector3&) direction).Mul(-1.0f);
+			m_extras[i].m_speed = -1.0f;
+
+			if (inExtras) {
+				actor->ClearMaps();
+			}
+
+			if (FUN_10063b90(world, actor, CharacterManager()->GetMood(p_roi), characterId)) {
+				m_extras[i].m_unk0x14 = TRUE;
+			}
+			else {
+				m_extras[i].m_unk0x14 = FALSE;
+			}
+
+			result = world->PlaceActor(actor, p_presenter, position, direction);
+		}
+
+		if (result != SUCCESS && g_characters[characterId].m_unk0x07) {
+			result = world->PlaceActor(actor);
+		}
+
+		g_characters[characterId].m_unk0x07 = FALSE;
+
+		if (result != SUCCESS) {
+			m_extras[i].m_roi = NULL;
+			g_characters[characterId].m_inExtras = FALSE;
+		}
+		else {
+			m_extras[i].m_characterId = characterId;
+			m_extras[i].m_unk0x08 = Timer()->GetTime();
+			m_extras[i].m_unk0x0c = TRUE;
+			m_extras[i].m_unk0x0d = FALSE;
+			g_characters[characterId].m_inExtras = TRUE;
+			actor->SetWorldSpeed(0.0f);
+			m_unk0x414++;
+			return TRUE;
+		}
+	}
+
+	return FALSE;
+}
+
+// FUNCTION: LEGO1 0x10063270
+// FUNCTION: BETA10 0x10044b9a
+void LegoAnimationManager::FUN_10063270(LegoROIList* p_list, LegoAnimPresenter* p_presenter)
+{
+	if (p_list != NULL) {
+		LegoWorld* world = CurrentWorld();
+		LegoROI* roi;
+		MxU32 i;
+
+		for (i = 0; i < sizeOfArray(g_vehicles); i++) {
+			roi = Lego()->FindROI(g_vehicles[i].m_name);
+
+			if (roi != NULL) {
+				if (!g_vehicles[i].m_unk0x05 && roi->GetVisibility()) {
+					g_vehicles[i].m_unk0x04 = TRUE;
+				}
+				else {
+					g_vehicles[i].m_unk0x04 = FALSE;
+				}
+			}
+		}
+
+		LegoROIListCursor cursor(p_list);
+
+		while (cursor.Next(roi)) {
+			if (roi->GetVisibility() && FUN_10062e20(roi, p_presenter)) {
+				cursor.Detach();
+				FUN_10063950(roi);
+			}
+			else {
+				LegoExtraActor* actor = CharacterManager()->GetActor(roi->GetName());
+
+				if (actor != NULL) {
+					for (MxS32 i = 0; i < (MxS32) sizeOfArray(m_extras); i++) {
+						if (m_extras[i].m_roi == roi) {
+							if (actor->GetController() != NULL) {
+								actor->GetController()->RemoveActor(actor);
+								actor->SetController(NULL);
+							}
+
+							if (m_extras[i].m_unk0x14) {
+								m_extras[i].m_unk0x14 = FALSE;
+
+								MxS32 vehicleId = g_characters[m_extras[i].m_characterId].m_vehicleId;
+								if (vehicleId >= 0) {
+									g_vehicles[vehicleId].m_unk0x05 = FALSE;
+
+									LegoROI* roi = Lego()->FindROI(g_vehicles[vehicleId].m_name);
+									if (roi != NULL) {
+										roi->SetVisibility(FALSE);
+									}
+								}
+							}
+
+							m_extras[i].m_roi = NULL;
+							g_characters[m_extras[i].m_characterId].m_inExtras = FALSE;
+							g_characters[m_extras[i].m_characterId].m_unk0x07 = FALSE;
+							m_extras[i].m_characterId = -1;
+							m_extras[i].m_unk0x0d = FALSE;
+							m_unk0x414--;
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		FUN_10063e40(p_presenter);
+
+		for (i = 0; i < sizeOfArray(g_vehicles); i++) {
+			if (!g_vehicles[i].m_unk0x05) {
+				roi = Lego()->FindROI(g_vehicles[i].m_name);
+
+				if (roi != NULL) {
+					roi->SetVisibility(FALSE);
+				}
+			}
+		}
+	}
 }
 
 // FUNCTION: LEGO1 0x10063780
@@ -2053,6 +2285,19 @@ void LegoAnimationManager::FUN_10063780(LegoROIList* p_list)
 	}
 }
 
+// FUNCTION: LEGO1 0x10063950
+void LegoAnimationManager::FUN_10063950(LegoROI* p_roi)
+{
+	if (m_unk0x424 != NULL) {
+		LegoROIListCursor cursor(m_unk0x424);
+
+		if (cursor.Find(p_roi)) {
+			CharacterManager()->FUN_10083db0(p_roi);
+			cursor.Detach();
+		}
+	}
+}
+
 // FUNCTION: LEGO1 0x10063aa0
 void LegoAnimationManager::FUN_10063aa0()
 {
@@ -2064,17 +2309,67 @@ void LegoAnimationManager::FUN_10063aa0()
 	}
 }
 
-// STUB: LEGO1 0x10063b90
+// FUNCTION: LEGO1 0x10063b90
 // FUNCTION: BETA10 0x10044d46
-MxBool LegoAnimationManager::FUN_10063b90(
-	LegoWorld* p_world,
-	LegoExtraActor* p_actor,
-	MxU8 p_unk0x14,
-	MxU32 p_characterId
-)
+MxBool LegoAnimationManager::FUN_10063b90(LegoWorld* p_world, LegoExtraActor* p_actor, MxU8 p_mood, MxU32 p_characterId)
 {
-	// TODO
-	return TRUE;
+	const char** cycles = g_cycles[g_characters[p_characterId].m_unk0x16];
+	const char* vehicleWC;
+
+	if (g_characters[p_characterId].m_vehicleId >= 0 && g_vehicles[g_characters[p_characterId].m_vehicleId].m_unk0x04 &&
+		(vehicleWC = cycles[10]) != NULL) {
+		LegoLocomotionAnimPresenter* presenter =
+			(LegoLocomotionAnimPresenter*) p_world->Find("LegoAnimPresenter", vehicleWC);
+
+		if (presenter != NULL) {
+			presenter->FUN_1006d680(p_actor, 1.7f);
+		}
+
+		g_vehicles[g_characters[p_characterId].m_vehicleId].m_unk0x04 = FALSE;
+		g_vehicles[g_characters[p_characterId].m_vehicleId].m_unk0x05 = TRUE;
+		return TRUE;
+	}
+	else {
+		vehicleWC = cycles[p_mood];
+		if (vehicleWC != NULL) {
+			LegoLocomotionAnimPresenter* presenter =
+				(LegoLocomotionAnimPresenter*) p_world->Find("LegoAnimPresenter", vehicleWC);
+
+			if (presenter != NULL) {
+				presenter->FUN_1006d680(p_actor, 0.7f);
+			}
+		}
+
+		if (p_mood >= 2) {
+			p_mood--;
+		}
+
+		vehicleWC = cycles[p_mood + 4];
+		if (vehicleWC != NULL) {
+			LegoLocomotionAnimPresenter* presenter =
+				(LegoLocomotionAnimPresenter*) p_world->Find("LegoAnimPresenter", vehicleWC);
+
+			if (presenter != NULL) {
+				presenter->FUN_1006d680(p_actor, 4.0f);
+			}
+		}
+
+		if (p_mood >= 1) {
+			p_mood--;
+		}
+
+		vehicleWC = cycles[p_mood + 7];
+		if (vehicleWC != NULL) {
+			LegoLocomotionAnimPresenter* presenter =
+				(LegoLocomotionAnimPresenter*) p_world->Find("LegoAnimPresenter", vehicleWC);
+
+			if (presenter != NULL) {
+				presenter->FUN_1006d680(p_actor, 0.0f);
+			}
+		}
+
+		return FALSE;
+	}
 }
 
 // FUNCTION: LEGO1 0x10063d10
@@ -2116,6 +2411,23 @@ void LegoAnimationManager::FUN_10063d10()
 					}
 				}
 			}
+		}
+	}
+}
+
+// FUNCTION: LEGO1 0x10063e40
+void LegoAnimationManager::FUN_10063e40(LegoAnimPresenter* p_presenter)
+{
+	if (m_unk0x424 != NULL) {
+		LegoROIListCursor cursor(m_unk0x424);
+		LegoROI* roi;
+
+		while (cursor.Next(roi)) {
+			if (!FUN_10062e20(roi, p_presenter)) {
+				CharacterManager()->FUN_10083db0(roi);
+			}
+
+			cursor.Detach();
 		}
 	}
 }
@@ -2163,7 +2475,7 @@ MxBool LegoAnimationManager::FUN_10064120(LegoLocation::Boundary* p_boundary, Mx
 {
 	MxU32 local2c = 12;
 	float destScale = ((rand() * 0.5) / 32767.0) + 0.25;
-	IslePathActor* actor = CurrentActor();
+	LegoPathActor* actor = CurrentActor();
 
 	if (actor == NULL) {
 		return FALSE;
@@ -2329,15 +2641,15 @@ MxResult LegoAnimationManager::FUN_10064380(
 		}
 
 		MxS32 characterId = m_extras[i].m_characterId;
-		const char** unk0x100f6d58 = g_unk0x100f6d58[g_characters[characterId].m_unk0x16];
+		const char** cycles = g_cycles[g_characters[characterId].m_unk0x16];
 
 		LegoLocomotionAnimPresenter* presenter =
-			(LegoLocomotionAnimPresenter*) world->Find("LegoAnimPresenter", unk0x100f6d58[p_undIdx1]);
+			(LegoLocomotionAnimPresenter*) world->Find("LegoAnimPresenter", cycles[p_undIdx1]);
 		if (presenter != NULL) {
 			presenter->FUN_1006d680(actor, 0.0f);
 		}
 
-		presenter = (LegoLocomotionAnimPresenter*) world->Find("LegoAnimPresenter", unk0x100f6d58[p_undIdx2]);
+		presenter = (LegoLocomotionAnimPresenter*) world->Find("LegoAnimPresenter", cycles[p_undIdx2]);
 		if (presenter != NULL) {
 			presenter->FUN_1006d680(actor, 4.0f);
 		}
@@ -2348,7 +2660,7 @@ MxResult LegoAnimationManager::FUN_10064380(
 
 		g_characters[characterId].m_unk0x0c = p_unk0x0c;
 		g_characters[characterId].m_unk0x10 = p_unk0x10;
-		g_characters[characterId].m_unk0x04 = TRUE;
+		g_characters[characterId].m_inExtras = TRUE;
 		return SUCCESS;
 	}
 
@@ -2411,11 +2723,61 @@ MxResult LegoAnimationManager::FUN_10064740(Vector3* p_position)
 	return FAILURE;
 }
 
-// STUB: LEGO1 0x100648f0
-// FUNCTION: BETA10 0x10045daf
-void LegoAnimationManager::FUN_100648f0(LegoTranInfo*, MxLong)
+// FUNCTION: LEGO1 0x10064880
+// FUNCTION: BETA10 0x10045d02
+MxResult LegoAnimationManager::FUN_10064880(const char* p_name, MxS32 p_unk0x0c, MxS32 p_unk0x10)
 {
-	// TODO
+	for (MxS32 i = 0; i < (MxS32) sizeOfArray(m_extras); i++) {
+		LegoROI* roi = m_extras[i].m_roi;
+
+		if (roi != NULL) {
+			if (!strcmpi(roi->GetName(), p_name)) {
+				g_characters[m_extras[i].m_characterId].m_unk0x0c = p_unk0x0c;
+				g_characters[m_extras[i].m_characterId].m_unk0x10 = p_unk0x10;
+				return SUCCESS;
+			}
+		}
+	}
+
+	return FAILURE;
+}
+
+// FUNCTION: LEGO1 0x100648f0
+// FUNCTION: BETA10 0x10045daf
+void LegoAnimationManager::FUN_100648f0(LegoTranInfo* p_tranInfo, MxLong p_unk0x404)
+{
+	if (m_unk0x402 && p_tranInfo->m_unk0x14) {
+		p_tranInfo->m_flags |= LegoTranInfo::c_bit1;
+		m_unk0x430 = TRUE;
+		m_unk0x42c = p_tranInfo;
+		m_unk0x434 = p_unk0x404;
+		m_unk0x438 = p_unk0x404 + 1000;
+
+		ViewROI* viewROI = VideoManager()->GetViewROI();
+		m_unk0x43c = viewROI->GetLocal2World();
+		p_tranInfo->m_unk0x2c = m_unk0x43c;
+
+		LegoPathActor* actor = CurrentActor();
+		if (actor != NULL) {
+			actor->SetState(4);
+			actor->SetWorldSpeed(0.0f);
+		}
+
+		LegoLocation* location = NavController()->GetLocation(p_tranInfo->m_location);
+		if (location != NULL) {
+			CalcLocalTransform(location->m_position, location->m_direction, location->m_up, m_unk0x484);
+			m_unk0x4cc.Unknown1(m_unk0x43c, m_unk0x484);
+			m_unk0x4cc.Unknown7();
+		}
+		else {
+			p_tranInfo->m_flags &= ~LegoTranInfo::c_bit1;
+			m_unk0x430 = FALSE;
+		}
+
+		Mx3DPointFloat vec;
+		vec.Clear();
+		viewROI->FUN_100a5a30(vec);
+	}
 }
 
 // FUNCTION: LEGO1 0x10064b50
@@ -2439,7 +2801,7 @@ void LegoAnimationManager::FUN_10064b50(MxLong p_time)
 			sub[1] = (m_unk0x484[3][1] - m_unk0x43c[3][1]) * und;
 			sub[2] = (m_unk0x484[3][2] - m_unk0x43c[3][2]) * und;
 
-			m_unk0x4cc.Unknown_100040a0(mat, (float) (p_time - m_unk0x434) / 1000.0f);
+			m_unk0x4cc.Unknown6(mat, (float) (p_time - m_unk0x434) / 1000.0f);
 
 			VPV3(mat[3], m_unk0x43c[3], sub);
 			mat[3][4] = 1.0f;

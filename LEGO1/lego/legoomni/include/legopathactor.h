@@ -126,6 +126,7 @@ public:
 	inline LegoPathBoundary* GetBoundary() { return m_boundary; }
 	inline MxU32 GetState() { return m_state; }
 	inline LegoPathController* GetController() { return m_controller; }
+	inline MxBool GetCollideBox() { return m_collideBox; }
 
 	inline void SetBoundary(LegoPathBoundary* p_boundary) { m_boundary = p_boundary; }
 	inline void SetState(MxU32 p_state) { m_state = p_state; }
@@ -155,7 +156,7 @@ protected:
 	MxU32 m_state;                    // 0xdc
 	LegoUnknown100db7f4* m_destEdge;  // 0xe0
 	MxFloat m_unk0xe4;                // 0xe4
-	undefined m_unk0xe8;              // 0xe8
+	MxBool m_collideBox;              // 0xe8
 	undefined m_unk0xe9;              // 0xe9
 	MxBool m_userNavFlag;             // 0xea
 	MxMatrix m_unk0xec;               // 0xec
