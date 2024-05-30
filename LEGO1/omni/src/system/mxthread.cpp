@@ -5,6 +5,7 @@
 #include "mxtimer.h"
 
 #include <process.h>
+#include <windows.h>
 
 DECOMP_SIZE_ASSERT(MxThread, 0x1c)
 DECOMP_SIZE_ASSERT(MxTickleThread, 0x20)
@@ -81,7 +82,7 @@ void MxThread::Sleep(MxS32 p_milliseconds)
 void MxThread::Terminate()
 {
 	m_running = FALSE;
-	m_semaphore.Wait(INFINITE);
+	m_semaphore.Wait();
 }
 
 // FUNCTION: LEGO1 0x100bf680
@@ -93,6 +94,6 @@ unsigned MxThread::ThreadProc(void* p_thread)
 // FUNCTION: LEGO1 0x100bf690
 MxResult MxThread::Run()
 {
-	m_semaphore.Release(1);
+	m_semaphore.Release();
 	return SUCCESS;
 }

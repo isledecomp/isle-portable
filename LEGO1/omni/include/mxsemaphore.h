@@ -3,7 +3,7 @@
 
 #include "mxtypes.h"
 
-#include <windows.h>
+#include <SDL3/SDL_mutex.h>
 
 // VTABLE: LEGO1 0x100dccf0
 // SIZE 0x08
@@ -12,15 +12,15 @@ public:
 	MxSemaphore();
 
 	// FUNCTION: LEGO1 0x100c87e0
-	~MxSemaphore() { CloseHandle(m_hSemaphore); }
+	~MxSemaphore() { SDL_DestroySemaphore(m_semaphore); }
 
 	virtual MxResult Init(MxU32 p_initialCount, MxU32 p_maxCount);
 
-	void Wait(MxU32 p_timeoutMS);
-	void Release(MxU32 p_releaseCount);
+	void Wait();
+	void Release();
 
 private:
-	HANDLE m_hSemaphore; // 0x04
+	SDL_Semaphore* m_semaphore; // 0x04
 };
 
 #endif // MX_SEMAPHORE_H
