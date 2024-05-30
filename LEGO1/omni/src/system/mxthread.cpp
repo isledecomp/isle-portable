@@ -16,6 +16,9 @@ MxThread::MxThread()
 // FUNCTION: LEGO1 0x100bf5a0
 MxThread::~MxThread()
 {
+	if (m_thread) {
+		SDL_WaitThread(m_thread, NULL);
+	}
 }
 
 // FUNCTION: LEGO1 0x100bf610
