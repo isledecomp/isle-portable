@@ -16,9 +16,11 @@ MxResult MxSemaphore::Init(MxU32 p_initialCount, MxU32 p_maxCount)
 {
 	// [library:synchronization] No support for max count, but shouldn't be necessary
 	MxResult result = FAILURE;
+
 	if ((m_semaphore = SDL_CreateSemaphore(p_initialCount))) {
 		result = SUCCESS;
 	}
+
 	return result;
 }
 

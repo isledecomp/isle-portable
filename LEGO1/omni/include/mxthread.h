@@ -5,6 +5,8 @@
 #include "mxsemaphore.h"
 #include "mxtypes.h"
 
+#include <SDL3/SDL_thread.h>
+
 class MxCore;
 
 // VTABLE: LEGO1 0x100dc860
@@ -33,10 +35,9 @@ public:
 private:
 	static unsigned ThreadProc(void* p_thread);
 
-	MxULong m_hThread;       // 0x04
-	MxU32 m_threadId;        // 0x08
-	MxBool m_running;        // 0x0c
-	MxSemaphore m_semaphore; // 0x10
+	SDL_Thread* m_thread;
+	MxBool m_running;
+	MxSemaphore m_semaphore;
 
 protected:
 	MxCore* m_target; // 0x18

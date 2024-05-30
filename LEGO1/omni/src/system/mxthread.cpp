@@ -2,28 +2,24 @@
 
 #include "decomp.h"
 
-#include <process.h>
-#include <windows.h>
+#include <SDL3/SDL_timer.h>
 
 DECOMP_SIZE_ASSERT(MxThread, 0x1c)
 
 // FUNCTION: LEGO1 0x100bf510
 MxThread::MxThread()
 {
-	m_hThread = NULL;
+	m_thread = NULL;
 	m_running = TRUE;
-	m_threadId = 0;
 }
 
 // FUNCTION: LEGO1 0x100bf5a0
 MxThread::~MxThread()
 {
-	if (m_hThread) {
-		CloseHandle((HANDLE) m_hThread);
+	if (m_thread) {
+		SDL_WaitThread(m_thread, NULL);
 	}
 }
-
-typedef unsigned(__stdcall* ThreadFunc)(void*);
 
 // FUNCTION: LEGO1 0x100bf610
 MxResult MxThread::Start(MxS32 p_stack, MxS32 p_flag)
@@ -31,10 +27,20 @@ MxResult MxThread::Start(MxS32 p_stack, MxS32 p_flag)
 	MxResult result = FAILURE;
 
 	if (m_semaphore.Init(0, 1) == SUCCESS) {
-		if ((m_hThread =
-				 _beginthreadex(NULL, p_stack << 2, (ThreadFunc) &MxThread::ThreadProc, this, p_flag, &m_threadId))) {
+		const SDL_PropertiesID props = SDL_CreateProperties();
+		SDL_SetProperty(
+			props,
+			SDL_PROP_THREAD_CREATE_ENTRY_FUNCTION_POINTER,
+			(SDL_FunctionPointer) &MxThread::ThreadProc
+		);
+		SDL_SetProperty(props, SDL_PROP_THREAD_CREATE_USERDATA_POINTER, this);
+		SDL_SetNumberProperty(props, SDL_PROP_THREAD_CREATE_STACKSIZE_NUMBER, p_stack << 2);
+
+		if ((m_thread = SDL_CreateThreadWithProperties(props))) {
 			result = SUCCESS;
 		}
+
+		SDL_DestroyProperties(props);
 	}
 
 	return result;
@@ -43,7 +49,7 @@ MxResult MxThread::Start(MxS32 p_stack, MxS32 p_flag)
 // FUNCTION: LEGO1 0x100bf660
 void MxThread::Sleep(MxS32 p_milliseconds)
 {
-	::Sleep(p_milliseconds);
+	SDL_Delay(p_milliseconds);
 }
 
 // FUNCTION: LEGO1 0x100bf670
