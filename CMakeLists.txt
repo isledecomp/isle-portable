@@ -5,6 +5,27 @@ cmake_policy(SET CMP0091 NEW)
 
 project(isle CXX C)
 
+# By configuring CMake with -DDOWNLOAD_DEPENDENCIES=ON/OFF,
+# users can choose between downloading dependencies or using system libraries
+option(DOWNLOAD_DEPENDENCIES "Download dependencies" TRUE)
+
+if(DOWNLOAD_DEPENDENCIES)
+    # FetchContent downloads and configures dependencies
+    include(FetchContent)
+    FetchContent_Declare(
+        SDL3
+        GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
+        GIT_TAG "main"
+        EXCLUDE_FROM_ALL
+    )
+    FetchContent_MakeAvailable(SDL3)
+else()
+    # find_package looks for already-installed system packages.
+    # Configure with `-DCMAKE_PREFIX_PATH="/path/to/package1;/path/to/package2"`
+    # to add search paths.
+    find_package(SDL3 CONFIG REQUIRED)
+endif()
+
 include(CheckCXXSourceCompiles)
 include(CMakeDependentOption)
 include(CMakePushCheckState)
@@ -277,7 +298,7 @@ add_library(omni STATIC
 register_lego1_target(omni)
 set_property(TARGET omni PROPERTY ARCHIVE_OUTPUT_NAME "omni$<$<CONFIG:Debug>:d>")
 target_include_directories(omni PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include" "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/util")
-target_link_libraries(omni PRIVATE dsound winmm libsmacker)
+target_link_libraries(omni PRIVATE dsound winmm libsmacker SDL3::SDL3)
 
 add_library(lego1 SHARED
   LEGO1/define.cpp
