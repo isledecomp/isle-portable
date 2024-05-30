@@ -19,12 +19,12 @@ jobs:
         # - { name: 'msys2 clang32',  shell: 'msys2 {0}', msystem: clang32, msys-env: mingw-w64-clang-i686,  clang-tidy: true, werror: true, no-dx5-libs: true }
 
     steps:
-      - name: Set up SDL
-        id: sdl
-        uses: libsdl-org/setup-sdl@main
-        with:
-          version: sdl3-head
-          cmake-arguments: -DCMAKE_CXX_FLAGS=-m32 -DCMAKE_C_FLAGS=-m32
+      # Figure out how to build for 32-bit arch
+      # - name: Set up SDL
+      #   id: sdl
+      #   uses: libsdl-org/setup-sdl@main
+      #   with:
+      #     version: sdl3-head
 
       - name: Set up MSYS2
         if: ${{ !!matrix.toolchain.msystem }}
@@ -56,12 +56,12 @@ jobs:
           submodules: true
 
       - name: Build
+        # Add -DDOWNLOAD_DEPENDENCIES=OFF once setup-sdl works
         run: |
           cmake -S . -B build -GNinja \
             -DCMAKE_BUILD_TYPE=Debug \
             -DISLE_USE_DX5_LIBS=${{ !matrix.toolchain.no-dx5-libs }} \
             -DENABLE_CLANG_TIDY=${{ !!matrix.toolchain.clang-tidy }} \
             -DISLE_WERROR=${{ !!matrix.toolchain.werror }} \
-            -DDOWNLOAD_DEPENDENCIES=OFF \
             -Werror=dev
           cmake --build build -- -k0
