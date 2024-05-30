@@ -24,6 +24,7 @@ jobs:
         uses: libsdl-org/setup-sdl@main
         with:
           version: sdl3-head
+          cmake-arguments: -DCMAKE_CXX_FLAGS=-m32 -DCMAKE_C_FLAGS=-m32
 
       - name: Set up MSYS2
         if: ${{ !!matrix.toolchain.msystem }}
