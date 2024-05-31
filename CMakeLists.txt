@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 
 # MSVC runtime library flags are selected by an abstraction
 cmake_policy(SET CMP0091 NEW)
+cmake_policy(SET CMP0077 NEW)
 
 project(isle CXX C)
 
