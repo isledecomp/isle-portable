@@ -43,10 +43,10 @@ DECOMP_SIZE_ASSERT(IsleApp, 0x8c)
 IsleApp* g_isle = NULL;
 
 // GLOBAL: ISLE 0x410034
-unsigned char g_mousedown = 0;
+unsigned char g_mousedown = FALSE;
 
 // GLOBAL: ISLE 0x410038
-unsigned char g_mousemoved = 0;
+unsigned char g_mousemoved = FALSE;
 
 // GLOBAL: ISLE 0x41003c
 BOOL g_closed = FALSE;
@@ -344,7 +344,7 @@ int SDL_AppEvent(void* appstate, const SDL_Event* event)
 		break;
 	}
 	case SDL_EVENT_MOUSE_MOTION:
-		g_mousemoved = 1;
+		g_mousemoved = TRUE;
 
 		if (InputManager()) {
 			InputManager()->QueueEvent(
