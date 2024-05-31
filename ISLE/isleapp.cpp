@@ -754,7 +754,7 @@ void IsleApp::LoadConfig()
 		strcpy(m_deviceId, deviceId);
 	}
 
-	// [library:config] The original does not save any data if no savepath is given.
+	// [library:config] The original game does not save any data if no savepath is given.
 	// Instead, we use SDLs prefPath as a default fallback and always save data.
 	const char* savePath = iniparser_getstring(dict, "isle:savepath", prefPath);
 	m_savePath = new char[strlen(savePath) + 1];
