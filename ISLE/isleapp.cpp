@@ -22,6 +22,7 @@
 #include "mxticklemanager.h"
 #include "mxtimer.h"
 #include "mxtransitionmanager.h"
+#include "mxutilities.h"
 #include "mxvariabletable.h"
 #include "res/resource.h"
 #include "roi/legoroi.h"
@@ -31,8 +32,10 @@
 #include <SDL3/SDL_filesystem.h>
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_main.h>
+#include <SDL3/SDL_messagebox.h>
 #include <dsound.h>
 #include <iniparser.h>
+#include <time.h>
 
 DECOMP_SIZE_ASSERT(IsleApp, 0x8c)
 
@@ -69,14 +72,10 @@ int g_targetDepth = 16;
 // GLOBAL: ISLE 0x410064
 BOOL g_reqEnableRMDevice = FALSE;
 
-// STRING: ISLE 0x4101c4
-#define WNDCLASS_NAME "Lego Island MainNoM App"
-
 // STRING: ISLE 0x4101dc
-#define WINDOW_TITLE "LEGO\xAE"
+#define WINDOW_TITLE "LEGO®"
 
 // Might be static functions of IsleApp
-BOOL FindExistingInstance();
 BOOL StartDirectSound();
 
 // FUNCTION: ISLE 0x401000
@@ -191,16 +190,19 @@ BOOL IsleApp::SetupLegoOmni()
 	char mediaPath[256];
 	GetProfileStringA("LEGO Island", "MediaPath", "", mediaPath, sizeof(mediaPath));
 
+	// [library:window] For now, get the underlying Windows HWND to pass into Omni
+	HWND hwnd =
+		(HWND) SDL_GetProperty(SDL_GetWindowProperties(m_windowHandle), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
+
 #ifdef COMPAT_MODE
 	BOOL failure;
 	{
-		MxOmniCreateParam param(mediaPath, (struct HWND__*) m_windowHandle, m_videoParam, MxOmniCreateFlags());
+		MxOmniCreateParam param(mediaPath, (struct HWND__*) hwnd, m_videoParam, MxOmniCreateFlags());
 		failure = Lego()->Create(param) == FAILURE;
 	}
 #else
-	BOOL failure =
-		Lego()->Create(MxOmniCreateParam(mediaPath, (struct HWND__*) m_windowHandle, m_videoParam, MxOmniCreateFlags())
-		) == FAILURE;
+	BOOL failure = Lego()->Create(MxOmniCreateParam(mediaPath, (struct HWND__*) hwnd, m_videoParam, MxOmniCreateFlags())
+				   ) == FAILURE;
 #endif
 
 	if (!failure) {
@@ -244,45 +246,29 @@ void IsleApp::SetupVideoFlags(
 int SDL_AppInit(void** appstate, int argc, char** argv)
 {
 	// Add subsystems as necessary later
-	SDL_Init(SDL_INIT_TIMER);
-
-	// Look for another instance, if we find one, bring it to the foreground instead
-	if (!FindExistingInstance()) {
-		return 1;
-	}
-
-	// Attempt to create DirectSound instance
-	BOOL soundReady = FALSE;
-	for (int i = 0; i < 20; i++) {
-		if (StartDirectSound()) {
-			soundReady = TRUE;
-			break;
-		}
-		Sleep(500);
-	}
-
-	// Throw error if sound unavailable
-	if (!soundReady) {
-		MessageBoxA(
-			NULL,
-			"\"LEGO\xAE Island\" is not detecting a DirectSound compatible sound card.  Please quit all other "
-			"applications and try again.",
-			"Lego Island Error",
-			MB_OK
+	if (SDL_Init(SDL_INIT_VIDEO) != 0 || SDL_Init(SDL_INIT_TIMER) != 0) {
+		SDL_ShowSimpleMessageBox(
+			SDL_MESSAGEBOX_ERROR,
+			"LEGO® Island Error",
+			"\"LEGO® Island\" failed to start.  Please quit all other applications and try again.",
+			NULL
 		);
-		return -1;
 	}
+
+	// [library:window]
+	// Original game checks for an existing instance here.
+	// We don't really need that.
 
 	// Create global app instance
 	g_isle = new IsleApp();
 
 	// Create window
-	if (g_isle->SetupWindow(GetModuleHandle(NULL), NULL) != SUCCESS) {
-		MessageBoxA(
-			NULL,
-			"\"LEGO\xAE Island\" failed to start.  Please quit all other applications and try again.",
-			"LEGO\xAE Island Error",
-			MB_OK
+	if (g_isle->SetupWindow() != SUCCESS) {
+		SDL_ShowSimpleMessageBox(
+			SDL_MESSAGEBOX_ERROR,
+			"LEGO® Island Error",
+			"\"LEGO® Island\" failed to start.  Please quit all other applications and try again.",
+			NULL
 		);
 		return -1;
 	}
@@ -294,34 +280,13 @@ int SDL_AppInit(void** appstate, int argc, char** argv)
 
 int SDL_AppIterate(void* appstate)
 {
-	MSG msg;
-
 	if (g_closed) {
 		return 1;
 	}
 
-	while (!PeekMessageA(&msg, NULL, 0, 0, PM_NOREMOVE)) {
-		if (g_isle) {
-			g_isle->Tick(1);
-		}
-	}
+	g_isle->Tick(0);
 
-	if (g_isle) {
-		g_isle->Tick(0);
-	}
-
-	while (!g_closed) {
-		if (!PeekMessageA(&msg, NULL, 0, 0, PM_REMOVE)) {
-			break;
-		}
-
-		MSG nextMsg;
-		if (!g_isle || !g_isle->GetWindowHandle() || msg.message != WM_MOUSEMOVE ||
-			!PeekMessageA(&nextMsg, NULL, 0, 0, PM_NOREMOVE) || nextMsg.message != WM_MOUSEMOVE) {
-			TranslateMessage(&msg);
-			DispatchMessageA(&msg);
-		}
-
+	if (!g_closed) {
 		if (g_reqEnableRMDevice) {
 			g_reqEnableRMDevice = FALSE;
 			VideoManager()->EnableRMDevice();
@@ -347,222 +312,122 @@ int SDL_AppIterate(void* appstate)
 
 int SDL_AppEvent(void* appstate, const SDL_Event* event)
 {
-	// Process events here once we use SDL window
+	char asd[123];
+	sprintf(asd, "Event: %d\n", event->type);
+	OutputDebugString(asd);
+
+	if (!g_isle) {
+		return 0;
+	}
+
+	// [library:window] Remaining functionality to be implemented:
+	// WM_TIMER - use SDL_Timer functionality instead
+	// WM_SETCURSOR - update cursor
+	// 0x5400 - custom LEGO Island SetupCursor event
+
+	switch (event->type) {
+	case SDL_EVENT_WINDOW_FOCUS_GAINED:
+		g_isle->SetWindowActive(TRUE);
+		break;
+	case SDL_EVENT_WINDOW_FOCUS_LOST:
+		g_isle->SetWindowActive(FALSE);
+		break;
+	case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+		if (!g_closed) {
+			delete g_isle;
+			g_isle = NULL;
+			g_closed = TRUE;
+		}
+		break;
+	case SDL_EVENT_KEY_DOWN: {
+		if (event->key.repeat) {
+			break;
+		}
+
+		SDL_Keycode keyCode = event->key.keysym.sym;
+		if (InputManager()) {
+			InputManager()->QueueEvent(c_notificationKeyPress, keyCode, 0, 0, keyCode);
+		}
+		break;
+	}
+	case SDL_EVENT_MOUSE_MOTION:
+		g_mousemoved = 1;
+
+		if (InputManager()) {
+			InputManager()->QueueEvent(
+				c_notificationMouseMove,
+				IsleApp::MapMouseButtonFlagsToModifier(event->motion.state),
+				event->motion.x,
+				event->motion.y,
+				0
+			);
+		}
+
+		if (g_isle->GetDrawCursor()) {
+			VideoManager()->MoveCursor(Min((int) event->motion.x, 639), Min((int) event->motion.x, 479));
+		}
+		break;
+	case SDL_EVENT_MOUSE_BUTTON_DOWN:
+		g_mousedown = TRUE;
+
+		if (InputManager()) {
+			InputManager()->QueueEvent(
+				c_notificationButtonDown,
+				IsleApp::MapMouseButtonFlagsToModifier(SDL_GetMouseState(NULL, NULL)),
+				event->button.x,
+				event->button.y,
+				0
+			);
+		}
+		break;
+	case SDL_EVENT_MOUSE_BUTTON_UP:
+		g_mousedown = FALSE;
+
+		if (InputManager()) {
+			InputManager()->QueueEvent(
+				c_notificationButtonUp,
+				IsleApp::MapMouseButtonFlagsToModifier(SDL_GetMouseState(NULL, NULL)),
+				event->button.x,
+				event->button.y,
+				0
+			);
+		}
+		break;
+	}
+
 	return 0;
 }
 
 void SDL_AppQuit(void* appstate)
 {
-	DestroyWindow((HWND) appstate);
+	if (appstate != NULL) {
+		SDL_DestroyWindow((SDL_Window*) appstate);
+	}
+
 	SDL_Quit();
 }
 
-// FUNCTION: ISLE 0x401ca0
-BOOL FindExistingInstance()
+MxU8 IsleApp::MapMouseButtonFlagsToModifier(SDL_MouseButtonFlags p_flags)
 {
-	HWND hWnd = FindWindowA(WNDCLASS_NAME, WINDOW_TITLE);
-	if (hWnd) {
-		if (SetForegroundWindow(hWnd)) {
-			ShowWindow(hWnd, SW_RESTORE);
-		}
-		return 0;
-	}
-	return 1;
-}
+	// [library:window]
+	// Map button states to Windows button states (LegoEventNotificationParam)
+	// Not mapping mod keys SHIFT and CTRL since they are not used by the game.
 
-// FUNCTION: ISLE 0x401ce0
-BOOL StartDirectSound()
-{
-	LPDIRECTSOUND lpDS = NULL;
-	HRESULT ret = DirectSoundCreate(NULL, &lpDS, NULL);
-	if (ret == DS_OK && lpDS != NULL) {
-		lpDS->Release();
-		return TRUE;
+	MxU8 modifier = 0;
+	if (p_flags & SDL_BUTTON_LMASK) {
+		modifier |= LegoEventNotificationParam::c_lButtonState;
+	}
+	if (p_flags & SDL_BUTTON_RMASK) {
+		modifier |= LegoEventNotificationParam::c_rButtonState;
 	}
 
-	return FALSE;
-}
-
-// FUNCTION: ISLE 0x401d20
-LRESULT WINAPI WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-	NotificationId type;
-	unsigned char keyCode = 0;
-
-	if (!g_isle) {
-		return DefWindowProcA(hWnd, uMsg, wParam, lParam);
-	}
-
-	switch (uMsg) {
-	case WM_PAINT:
-		return DefWindowProcA(hWnd, uMsg, wParam, lParam);
-	case WM_ACTIVATE:
-		return DefWindowProcA(hWnd, uMsg, wParam, lParam);
-	case WM_ACTIVATEAPP:
-		if (g_isle) {
-			if ((wParam != 0) && (g_isle->GetFullScreen())) {
-				MoveWindow(
-					hWnd,
-					g_windowRect.left,
-					g_windowRect.top,
-					(g_windowRect.right - g_windowRect.left) + 1,
-					(g_windowRect.bottom - g_windowRect.top) + 1,
-					TRUE
-				);
-			}
-			g_isle->SetWindowActive(wParam);
-		}
-		return DefWindowProcA(hWnd, uMsg, wParam, lParam);
-	case WM_CLOSE:
-		if (!g_closed && g_isle) {
-			if (g_isle) {
-				delete g_isle;
-			}
-			g_isle = NULL;
-			g_closed = TRUE;
-			return 0;
-		}
-		return DefWindowProcA(hWnd, uMsg, wParam, lParam);
-	case WM_GETMINMAXINFO:
-		((MINMAXINFO*) lParam)->ptMaxTrackSize.x = (g_windowRect.right - g_windowRect.left) + 1;
-		((MINMAXINFO*) lParam)->ptMaxTrackSize.y = (g_windowRect.bottom - g_windowRect.top) + 1;
-		((MINMAXINFO*) lParam)->ptMinTrackSize.x = (g_windowRect.right - g_windowRect.left) + 1;
-		((MINMAXINFO*) lParam)->ptMinTrackSize.y = (g_windowRect.bottom - g_windowRect.top) + 1;
-		return 0;
-	case WM_ENTERMENULOOP:
-		return DefWindowProcA(hWnd, uMsg, wParam, lParam);
-	case WM_SYSCOMMAND:
-		if (wParam == SC_SCREENSAVE) {
-			return 0;
-		}
-		if (wParam == SC_CLOSE && g_closed == FALSE) {
-			if (g_isle) {
-				if (g_rmDisabled) {
-					ShowWindow(g_isle->GetWindowHandle(), SW_RESTORE);
-				}
-				PostMessageA(g_isle->GetWindowHandle(), WM_CLOSE, 0, 0);
-				return 0;
-			}
-		}
-		else if (g_isle && g_isle->GetFullScreen() && (wParam == SC_MOVE || wParam == SC_KEYMENU)) {
-			return 0;
-		}
-		return DefWindowProcA(hWnd, uMsg, wParam, lParam);
-	case WM_EXITMENULOOP:
-		return DefWindowProcA(hWnd, uMsg, wParam, lParam);
-	case WM_MOVING:
-		if (g_isle && g_isle->GetFullScreen()) {
-			GetWindowRect(hWnd, (LPRECT) lParam);
-			return 0;
-		}
-		return DefWindowProcA(hWnd, uMsg, wParam, lParam);
-	case WM_NCPAINT:
-		if (g_isle && g_isle->GetFullScreen()) {
-			return 0;
-		}
-		return DefWindowProcA(hWnd, uMsg, wParam, lParam);
-	case WM_DISPLAYCHANGE:
-		if (g_isle && VideoManager() && g_isle->GetFullScreen() && VideoManager()->GetDirect3D()) {
-			if (VideoManager()->GetDirect3D()->AssignedDevice()) {
-				int targetDepth = wParam;
-				int targetWidth = LOWORD(lParam);
-				int targetHeight = HIWORD(lParam);
-
-				if (g_waitingForTargetDepth) {
-					g_waitingForTargetDepth = FALSE;
-					g_targetDepth = targetDepth;
-				}
-				else {
-					BOOL valid = FALSE;
-
-					if (g_targetWidth == targetWidth && g_targetHeight == targetHeight &&
-						g_targetDepth == targetDepth) {
-						valid = TRUE;
-					}
-
-					if (g_rmDisabled) {
-						if (valid) {
-							g_reqEnableRMDevice = TRUE;
-						}
-					}
-					else if (!valid) {
-						g_rmDisabled = TRUE;
-						Lego()->StartTimer();
-						VideoManager()->DisableRMDevice();
-					}
-				}
-			}
-		}
-		return DefWindowProcA(hWnd, uMsg, wParam, lParam);
-	case WM_KEYDOWN:
-		// While this probably should be (HIWORD(lParam) & KF_REPEAT), this seems
-		// to be what the assembly is actually doing
-		if (lParam & (KF_REPEAT << 16)) {
-			return DefWindowProcA(hWnd, uMsg, wParam, lParam);
-		}
-		type = c_notificationKeyPress;
-		keyCode = wParam;
-		break;
-	case WM_MOUSEMOVE:
-		g_mousemoved = 1;
-		type = c_notificationMouseMove;
-		break;
-	case WM_TIMER:
-		type = c_notificationTimer;
-		break;
-	case WM_LBUTTONDOWN:
-		g_mousedown = 1;
-		type = c_notificationButtonDown;
-		break;
-	case WM_LBUTTONUP:
-		g_mousedown = 0;
-		type = c_notificationButtonUp;
-		break;
-	case 0x5400:
-		if (g_isle) {
-			g_isle->SetupCursor(wParam);
-			return 0;
-		}
-		break;
-	case WM_SETCURSOR:
-		if (g_isle && (g_isle->GetCursorCurrent() == g_isle->GetCursorBusy() ||
-					   g_isle->GetCursorCurrent() == g_isle->GetCursorNo() || !g_isle->GetCursorCurrent())) {
-			SetCursor(g_isle->GetCursorCurrent());
-			return 0;
-		}
-		break;
-	default:
-		return DefWindowProcA(hWnd, uMsg, wParam, lParam);
-	}
-
-	if (g_isle) {
-		if (InputManager()) {
-			InputManager()->QueueEvent(type, wParam, LOWORD(lParam), HIWORD(lParam), keyCode);
-		}
-		if (g_isle && g_isle->GetDrawCursor() && type == c_notificationMouseMove) {
-			int x = LOWORD(lParam);
-			int y = HIWORD(lParam);
-			if (x >= 640) {
-				x = 639;
-			}
-			if (y >= 480) {
-				y = 479;
-			}
-			VideoManager()->MoveCursor(x, y);
-		}
-	}
-
-	return 0;
+	return modifier;
 }
 
 // FUNCTION: ISLE 0x4023e0
-MxResult IsleApp::SetupWindow(HINSTANCE hInstance, LPSTR lpCmdLine)
+MxResult IsleApp::SetupWindow()
 {
-	WNDCLASSA wndclass;
-	ZeroMemory(&wndclass, sizeof(WNDCLASSA));
-
 	LoadConfig();
-
 	SetupVideoFlags(
 		m_fullScreen,
 		m_flipSurfaces,
@@ -577,81 +442,19 @@ MxResult IsleApp::SetupWindow(HINSTANCE hInstance, LPSTR lpCmdLine)
 
 	MxOmni::SetSound3D(m_use3dSound);
 
-	srand(timeGetTime() / 1000);
-	SystemParametersInfoA(SPI_SETMOUSETRAILS, 0, NULL, 0);
-
-	ZeroMemory(&wndclass, sizeof(WNDCLASSA));
-
-	wndclass.cbClsExtra = 0;
-	wndclass.style = CS_HREDRAW | CS_VREDRAW;
-	wndclass.lpfnWndProc = WndProc;
-	wndclass.cbWndExtra = 0;
-	wndclass.hIcon = LoadIconA(hInstance, MAKEINTRESOURCEA(APP_ICON));
-	wndclass.hCursor = m_cursorArrow = m_cursorCurrent = LoadCursorA(hInstance, MAKEINTRESOURCEA(ISLE_ARROW));
-	m_cursorBusy = LoadCursorA(hInstance, MAKEINTRESOURCEA(ISLE_BUSY));
-	m_cursorNo = LoadCursorA(hInstance, MAKEINTRESOURCEA(ISLE_NO));
-	wndclass.hInstance = hInstance;
-	wndclass.hbrBackground = (HBRUSH) GetStockObject(BLACK_BRUSH);
-	wndclass.lpszClassName = WNDCLASS_NAME;
-
-	if (!RegisterClassA(&wndclass)) {
-		return FAILURE;
-	}
+	srand(time(NULL));
 
 	if (m_fullScreen) {
-		AdjustWindowRectEx(&g_windowRect, WS_CAPTION | WS_SYSMENU, 0, WS_EX_APPWINDOW);
-
-		m_windowHandle = CreateWindowExA(
-			WS_EX_APPWINDOW,
-			WNDCLASS_NAME,
-			WINDOW_TITLE,
-			WS_CAPTION | WS_SYSMENU,
-			g_windowRect.left,
-			g_windowRect.top,
-			g_windowRect.right - g_windowRect.left + 1,
-			g_windowRect.bottom - g_windowRect.top + 1,
-			NULL,
-			NULL,
-			hInstance,
-			NULL
-		);
+		m_windowHandle = SDL_CreateWindow(WINDOW_TITLE, g_windowRect.right, g_windowRect.bottom, SDL_WINDOW_FULLSCREEN);
 	}
 	else {
-		AdjustWindowRectEx(&g_windowRect, WS_CAPTION | WS_SYSMENU, 0, WS_EX_APPWINDOW);
-
-		m_windowHandle = CreateWindowExA(
-			WS_EX_APPWINDOW,
-			WNDCLASS_NAME,
-			WINDOW_TITLE,
-			WS_CAPTION | WS_SYSMENU | WS_MAXIMIZEBOX | WS_MINIMIZEBOX,
-			CW_USEDEFAULT,
-			CW_USEDEFAULT,
-			g_windowRect.right - g_windowRect.left + 1,
-			g_windowRect.bottom - g_windowRect.top + 1,
-			NULL,
-			NULL,
-			hInstance,
-			NULL
-		);
+		m_windowHandle = SDL_CreateWindow(WINDOW_TITLE, g_windowRect.right, g_windowRect.bottom, 0);
 	}
 
 	if (!m_windowHandle) {
 		return FAILURE;
 	}
 
-	if (m_fullScreen) {
-		MoveWindow(
-			m_windowHandle,
-			g_windowRect.left,
-			g_windowRect.top,
-			(g_windowRect.right - g_windowRect.left) + 1,
-			(g_windowRect.bottom - g_windowRect.top) + 1,
-			TRUE
-		);
-	}
-
-	ShowWindow(m_windowHandle, SW_SHOWNORMAL);
-	UpdateWindow(m_windowHandle);
 	if (!SetupLegoOmni()) {
 		return FAILURE;
 	}
@@ -685,18 +488,6 @@ MxResult IsleApp::SetupWindow(HINSTANCE hInstance, LPSTR lpCmdLine)
 			LegoOmni::GetInstance()->GetInputManager()->SetJoystickIndex(m_joystickIndex);
 		}
 	}
-	if (m_fullScreen) {
-		MoveWindow(
-			m_windowHandle,
-			g_windowRect.left,
-			g_windowRect.top,
-			(g_windowRect.right - g_windowRect.left) + 1,
-			(g_windowRect.bottom - g_windowRect.top) + 1,
-			TRUE
-		);
-	}
-	ShowWindow(m_windowHandle, SW_SHOWNORMAL);
-	UpdateWindow(m_windowHandle);
 
 	return SUCCESS;
 }
@@ -754,7 +545,8 @@ void IsleApp::LoadConfig()
 		strcpy(m_deviceId, deviceId);
 	}
 
-	// [library:config] The original game does not save any data if no savepath is given.
+	// [library:config]
+	// The original game does not save any data if no savepath is given.
 	// Instead, we use SDLs prefPath as a default fallback and always save data.
 	const char* savePath = iniparser_getstring(dict, "isle:savepath", prefPath);
 	m_savePath = new char[strlen(savePath) + 1];
