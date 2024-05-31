@@ -314,6 +314,7 @@ int SDL_AppEvent(void* appstate, const SDL_Event* event)
 	}
 
 	// [library:window] Remaining functionality to be implemented:
+	// Full screen - crashes when minimizing/maximizing
 	// WM_TIMER - use SDL_Timer functionality instead
 	// WM_SETCURSOR - update cursor
 	// 0x5400 - custom LEGO Island SetupCursor event
