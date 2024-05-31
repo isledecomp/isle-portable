@@ -19,10 +19,10 @@
 #include "mxvideomanager.h"
 
 // GLOBAL: LEGO1 0x101015b8
-char g_hdPath[1024] = "";
+MxString g_hdPath = "";
 
 // GLOBAL: LEGO1 0x101019b8
-char g_cdPath[1024] = "E:";
+MxString g_cdPath = "E:";
 
 // GLOBAL: LEGO1 0x10101db8
 MxBool g_use3dSound = FALSE;
@@ -362,25 +362,25 @@ MxLong MxOmni::HandleEndAction(MxParam& p_param)
 // FUNCTION: LEGO1 0x100b0900
 const char* MxOmni::GetHD()
 {
-	return g_hdPath;
+	return g_hdPath.GetData();
 }
 
 // FUNCTION: LEGO1 0x100b0910
 void MxOmni::SetHD(const char* p_hd)
 {
-	strcpy(g_hdPath, p_hd);
+	g_hdPath = p_hd;
 }
 
 // FUNCTION: LEGO1 0x100b0940
 const char* MxOmni::GetCD()
 {
-	return g_cdPath;
+	return g_cdPath.GetData();
 }
 
 // FUNCTION: LEGO1 0x100b0950
 void MxOmni::SetCD(const char* p_cd)
 {
-	strcpy(g_cdPath, p_cd);
+	g_cdPath = p_cd;
 }
 
 // FUNCTION: LEGO1 0x100b0980

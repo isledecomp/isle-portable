@@ -19,6 +19,15 @@ if(DOWNLOAD_DEPENDENCIES)
         EXCLUDE_FROM_ALL
     )
     FetchContent_MakeAvailable(SDL3)
+
+    FetchContent_Declare(
+        iniparser
+        GIT_REPOSITORY "https://github.com/ndevilla/iniparser.git"
+        GIT_TAG "main"
+        EXCLUDE_FROM_ALL
+    )
+    set(BUILD_DOCS off)
+    FetchContent_MakeAvailable(iniparser)
 else()
     # find_package looks for already-installed system packages.
     # Configure with `-DCMAKE_PREFIX_PATH="/path/to/package1;/path/to/package2"`
@@ -479,7 +488,7 @@ if (ISLE_BUILD_APP)
   target_compile_definitions(isle PRIVATE ISLE_APP)
 
   # Use internal DirectX 5 if required
-  target_link_libraries(isle PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5> SDL3::SDL3)
+  target_link_libraries(isle PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5> SDL3::SDL3 iniparser-static)
 
   # Link DSOUND, WINMM, and LEGO1
   target_link_libraries(isle PRIVATE dsound winmm lego1)
