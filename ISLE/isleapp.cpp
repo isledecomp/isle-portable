@@ -27,6 +27,8 @@
 #include "roi/legoroi.h"
 #include "viewmanager/viewmanager.h"
 
+#define SDL_MAIN_USE_CALLBACKS
+#include <SDL3/SDL_main.h>
 #include <dsound.h>
 
 DECOMP_SIZE_ASSERT(IsleApp, 0x8c)
@@ -236,12 +238,11 @@ void IsleApp::SetupVideoFlags(
 	}
 }
 
-// FUNCTION: ISLE 0x401610
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
+int SDL_AppInit(void** appstate, int argc, char** argv)
 {
 	// Look for another instance, if we find one, bring it to the foreground instead
 	if (!FindExistingInstance()) {
-		return 0;
+		return 1;
 	}
 
 	// Attempt to create DirectSound instance
@@ -263,86 +264,90 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			"Lego Island Error",
 			MB_OK
 		);
-		return 0;
+		return -1;
 	}
 
 	// Create global app instance
 	g_isle = new IsleApp();
 
 	// Create window
-	if (g_isle->SetupWindow(hInstance, lpCmdLine) != SUCCESS) {
+	if (g_isle->SetupWindow(GetModuleHandle(NULL), NULL) != SUCCESS) {
 		MessageBoxA(
 			NULL,
 			"\"LEGO\xAE Island\" failed to start.  Please quit all other applications and try again.",
 			"LEGO\xAE Island Error",
 			MB_OK
 		);
-		return 0;
+		return -1;
 	}
 
 	// Get reference to window
-	HWND window;
-	if (g_isle->GetWindowHandle()) {
-		window = g_isle->GetWindowHandle();
-	}
+	*appstate = g_isle->GetWindowHandle();
+	return 0;
+}
 
-	// Load accelerators (this call actually achieves nothing - there is no "AppAccel" resource in the original - but
-	// we'll keep this for authenticity) This line may actually be here because it's in DFVIEW, an example project that
-	// ships with MSVC420, and was such a clean example of a Win32 app, that it was later adapted into an "ExeSkeleton"
-	// sample for MSVC600. It's quite possible Mindscape derived this app from that example since they no longer had the
-	// luxury of the MFC AppWizard which we know they used for the frontend used during development (ISLEMFC.EXE,
-	// MAIN.EXE, et al.)
-	LoadAcceleratorsA(hInstance, "AppAccel");
-
+int SDL_AppIterate(void* appstate)
+{
 	MSG msg;
 
+	if (g_closed) {
+		return 1;
+	}
+
+	while (!PeekMessageA(&msg, NULL, 0, 0, PM_NOREMOVE)) {
+		if (g_isle) {
+			g_isle->Tick(1);
+		}
+	}
+
+	if (g_isle) {
+		g_isle->Tick(0);
+	}
+
 	while (!g_closed) {
-		while (!PeekMessageA(&msg, NULL, 0, 0, PM_NOREMOVE)) {
-			if (g_isle) {
-				g_isle->Tick(1);
-			}
+		if (!PeekMessageA(&msg, NULL, 0, 0, PM_REMOVE)) {
+			break;
 		}
 
-		if (g_isle) {
+		MSG nextMsg;
+		if (!g_isle || !g_isle->GetWindowHandle() || msg.message != WM_MOUSEMOVE ||
+			!PeekMessageA(&nextMsg, NULL, 0, 0, PM_NOREMOVE) || nextMsg.message != WM_MOUSEMOVE) {
+			TranslateMessage(&msg);
+			DispatchMessageA(&msg);
+		}
+
+		if (g_reqEnableRMDevice) {
+			g_reqEnableRMDevice = FALSE;
+			VideoManager()->EnableRMDevice();
+			g_rmDisabled = FALSE;
+			Lego()->StopTimer();
+		}
+
+		if (g_closed) {
+			return 1;
+		}
+
+		if (g_mousedown && g_mousemoved && g_isle) {
 			g_isle->Tick(0);
 		}
 
-		while (!g_closed) {
-			if (!PeekMessageA(&msg, NULL, 0, 0, PM_REMOVE)) {
-				break;
-			}
-
-			MSG nextMsg;
-			if (!g_isle || !g_isle->GetWindowHandle() || msg.message != WM_MOUSEMOVE ||
-				!PeekMessageA(&nextMsg, NULL, 0, 0, PM_NOREMOVE) || nextMsg.message != WM_MOUSEMOVE) {
-				TranslateMessage(&msg);
-				DispatchMessageA(&msg);
-			}
-
-			if (g_reqEnableRMDevice) {
-				g_reqEnableRMDevice = FALSE;
-				VideoManager()->EnableRMDevice();
-				g_rmDisabled = FALSE;
-				Lego()->StopTimer();
-			}
-
-			if (g_closed) {
-				break;
-			}
-
-			if (g_mousedown && g_mousemoved && g_isle) {
-				g_isle->Tick(0);
-			}
-
-			if (g_mousemoved) {
-				g_mousemoved = FALSE;
-			}
+		if (g_mousemoved) {
+			g_mousemoved = FALSE;
 		}
 	}
 
-	DestroyWindow(window);
+	return 0;
+}
 
-	return msg.wParam;
+int SDL_AppEvent(void* appstate, const SDL_Event* event)
+{
+	// Process events here once we use SDL window
+	return 0;
+}
+
+void SDL_AppQuit(void* appstate)
+{
+	DestroyWindow((HWND) appstate);
 }
 
 // FUNCTION: ISLE 0x401ca0
