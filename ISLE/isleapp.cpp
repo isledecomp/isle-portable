@@ -242,6 +242,8 @@ void IsleApp::SetupVideoFlags(
 
 int SDL_AppInit(void** appstate, int argc, char** argv)
 {
+	*appstate = NULL;
+
 	// Add subsystems as necessary later
 	if (SDL_Init(SDL_INIT_VIDEO) != 0 || SDL_Init(SDL_INIT_TIMER) != 0) {
 		SDL_ShowSimpleMessageBox(
@@ -250,6 +252,7 @@ int SDL_AppInit(void** appstate, int argc, char** argv)
 			"\"LEGO® Island\" failed to start.  Please quit all other applications and try again.",
 			NULL
 		);
+		return -1;
 	}
 
 	// [library:window]
