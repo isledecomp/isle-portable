@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 # MSVC runtime library flags are selected by an abstraction
 cmake_policy(SET CMP0091 NEW)
 
+# To set BUILD_* variables for iniparser below. Is there another way?
+set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+
 project(isle CXX C)
 
 # By configuring CMake with -DDOWNLOAD_DEPENDENCIES=ON/OFF,
@@ -19,11 +22,23 @@ if(DOWNLOAD_DEPENDENCIES)
         EXCLUDE_FROM_ALL
     )
     FetchContent_MakeAvailable(SDL3)
+
+    FetchContent_Declare(
+        iniparser
+        GIT_REPOSITORY "https://github.com/ndevilla/iniparser.git"
+        GIT_TAG "main"
+        EXCLUDE_FROM_ALL
+    )
+    set(BUILD_DOCS off)
+    set(BUILD_SHARED_LIBS off)
+    FetchContent_MakeAvailable(iniparser)
 else()
     # find_package looks for already-installed system packages.
     # Configure with `-DCMAKE_PREFIX_PATH="/path/to/package1;/path/to/package2"`
     # to add search paths.
     find_package(SDL3 CONFIG REQUIRED)
+
+    # TODO add iniparser?
 endif()
 
 include(CheckCXXSourceCompiles)
@@ -479,7 +494,10 @@ if (ISLE_BUILD_APP)
   target_compile_definitions(isle PRIVATE ISLE_APP)
 
   # Use internal DirectX 5 if required
-  target_link_libraries(isle PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5> SDL3::SDL3)
+  target_link_libraries(isle PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5>)
+
+  # Link SDL and iniparser
+  target_link_libraries(isle PRIVATE SDL3::SDL3 iniparser-static)
 
   # Link DSOUND, WINMM, and LEGO1
   target_link_libraries(isle PRIVATE dsound winmm lego1)
