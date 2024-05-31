@@ -312,10 +312,6 @@ int SDL_AppIterate(void* appstate)
 
 int SDL_AppEvent(void* appstate, const SDL_Event* event)
 {
-	char asd[123];
-	sprintf(asd, "Event: %d\n", event->type);
-	OutputDebugString(asd);
-
 	if (!g_isle) {
 		return 0;
 	}
@@ -364,7 +360,7 @@ int SDL_AppEvent(void* appstate, const SDL_Event* event)
 		}
 
 		if (g_isle->GetDrawCursor()) {
-			VideoManager()->MoveCursor(Min((int) event->motion.x, 639), Min((int) event->motion.x, 479));
+			VideoManager()->MoveCursor(Min((int) event->motion.x, 639), Min((int) event->motion.y, 479));
 		}
 		break;
 	case SDL_EVENT_MOUSE_BUTTON_DOWN:
