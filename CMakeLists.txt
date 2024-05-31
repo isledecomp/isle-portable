@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 # MSVC runtime library flags are selected by an abstraction
 cmake_policy(SET CMP0091 NEW)
 
-# To set BUILD_DOCS for iniparser below. Is there another solution?
+# To set BUILD_* variables for iniparser below. Is there another way?
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
 project(isle CXX C)
@@ -37,6 +37,8 @@ else()
     # Configure with `-DCMAKE_PREFIX_PATH="/path/to/package1;/path/to/package2"`
     # to add search paths.
     find_package(SDL3 CONFIG REQUIRED)
+
+    # TODO add iniparser?
 endif()
 
 include(CheckCXXSourceCompiles)
