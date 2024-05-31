@@ -30,6 +30,7 @@ if(DOWNLOAD_DEPENDENCIES)
         EXCLUDE_FROM_ALL
     )
     set(BUILD_DOCS off)
+    set(BUILD_SHARED_LIBS off)
     FetchContent_MakeAvailable(iniparser)
 else()
     # find_package looks for already-installed system packages.
