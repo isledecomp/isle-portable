@@ -28,8 +28,11 @@
 #include "viewmanager/viewmanager.h"
 
 #define SDL_MAIN_USE_CALLBACKS
+#include <SDL3/SDL_filesystem.h>
+#include <SDL3/SDL_init.h>
 #include <SDL3/SDL_main.h>
 #include <dsound.h>
+#include <iniparser.h>
 
 DECOMP_SIZE_ASSERT(IsleApp, 0x8c)
 
@@ -240,6 +243,9 @@ void IsleApp::SetupVideoFlags(
 
 int SDL_AppInit(void** appstate, int argc, char** argv)
 {
+	// Add subsystems as necessary later
+	SDL_Init(SDL_INIT_TIMER);
+
 	// Look for another instance, if we find one, bring it to the foreground instead
 	if (!FindExistingInstance()) {
 		return 1;
@@ -348,6 +354,7 @@ int SDL_AppEvent(void* appstate, const SDL_Event* event)
 void SDL_AppQuit(void* appstate)
 {
 	DestroyWindow((HWND) appstate);
+	SDL_Quit();
 }
 
 // FUNCTION: ISLE 0x401ca0
@@ -694,97 +701,42 @@ MxResult IsleApp::SetupWindow(HINSTANCE hInstance, LPSTR lpCmdLine)
 	return SUCCESS;
 }
 
-// FUNCTION: ISLE 0x402740
-BOOL IsleApp::ReadReg(LPCSTR name, LPSTR outValue, DWORD outSize)
-{
-	HKEY hKey;
-	DWORD valueType;
-
-	BOOL out = FALSE;
-	DWORD size = outSize;
-	if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, "SOFTWARE\\Mindscape\\LEGO Island", 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
-		if (RegQueryValueExA(hKey, name, NULL, &valueType, (LPBYTE) outValue, &size) == ERROR_SUCCESS) {
-			if (RegCloseKey(hKey) == ERROR_SUCCESS) {
-				out = TRUE;
-			}
-		}
-	}
-
-	return out;
-}
-
-// FUNCTION: ISLE 0x4027b0
-BOOL IsleApp::ReadRegBool(LPCSTR name, BOOL* out)
-{
-	char buffer[256];
-
-	BOOL read = ReadReg(name, buffer, sizeof(buffer));
-	if (read) {
-		if (strcmp("YES", buffer) == 0) {
-			*out = TRUE;
-			return read;
-		}
-
-		if (strcmp("NO", buffer) == 0) {
-			*out = FALSE;
-			return read;
-		}
-
-		read = FALSE;
-	}
-	return read;
-}
-
-// FUNCTION: ISLE 0x402880
-BOOL IsleApp::ReadRegInt(LPCSTR name, int* out)
-{
-	char buffer[256];
-
-	BOOL read = ReadReg(name, buffer, sizeof(buffer));
-	if (read) {
-		*out = atoi(buffer);
-	}
-
-	return read;
-}
-
 // FUNCTION: ISLE 0x4028d0
 void IsleApp::LoadConfig()
 {
-	char buffer[1024];
+	char* basePath = SDL_GetBasePath();
+	char* prefPath = SDL_GetPrefPath("isledecomp", "isle");
+	char* iniConfig = new char[strlen(prefPath) + strlen("isle.ini") + 1]();
+	strcat(iniConfig, prefPath);
+	strcat(iniConfig, "isle.ini");
+	dictionary* dict = iniparser_load(iniConfig);
 
-	if (!ReadReg("diskpath", buffer, sizeof(buffer))) {
-		strcpy(buffer, MxOmni::GetHD());
-	}
-
-	m_hdPath = new char[strlen(buffer) + 1];
-	strcpy(m_hdPath, buffer);
+	const char* hdPath = iniparser_getstring(dict, "isle:diskpath", basePath);
+	m_hdPath = new char[strlen(hdPath) + 1];
+	strcpy(m_hdPath, hdPath);
 	MxOmni::SetHD(m_hdPath);
 
-	if (!ReadReg("cdpath", buffer, sizeof(buffer))) {
-		strcpy(buffer, MxOmni::GetCD());
-	}
-
-	m_cdPath = new char[strlen(buffer) + 1];
-	strcpy(m_cdPath, buffer);
+	const char* cdPath = iniparser_getstring(dict, "isle:cdpath", MxOmni::GetCD());
+	m_cdPath = new char[strlen(cdPath) + 1];
+	strcpy(m_cdPath, cdPath);
 	MxOmni::SetCD(m_cdPath);
 
-	ReadRegBool("Flip Surfaces", &m_flipSurfaces);
-	ReadRegBool("Full Screen", &m_fullScreen);
-	ReadRegBool("Wide View Angle", &m_wideViewAngle);
-	ReadRegBool("3DSound", &m_use3dSound);
-	ReadRegBool("Music", &m_useMusic);
-	ReadRegBool("UseJoystick", &m_useJoystick);
-	ReadRegInt("JoystickIndex", &m_joystickIndex);
-	ReadRegBool("Draw Cursor", &m_drawCursor);
+	m_flipSurfaces = iniparser_getboolean(dict, "isle:Flip Surfaces", m_flipSurfaces);
+	m_fullScreen = iniparser_getboolean(dict, "isle:Full Screen", m_fullScreen);
+	m_wideViewAngle = iniparser_getboolean(dict, "isle:Wide View Angle", m_wideViewAngle);
+	m_use3dSound = iniparser_getboolean(dict, "isle:3DSound", m_use3dSound);
+	m_useMusic = iniparser_getboolean(dict, "isle:Music", m_useMusic);
+	m_useJoystick = iniparser_getboolean(dict, "isle:UseJoystick", m_useJoystick);
+	m_joystickIndex = iniparser_getint(dict, "isle:JoystickIndex", m_joystickIndex);
+	m_drawCursor = iniparser_getboolean(dict, "isle:Draw Cursor", m_drawCursor);
 
-	int backBuffersInVRAM;
-	if (ReadRegBool("Back Buffers in Video RAM", &backBuffersInVRAM)) {
+	int backBuffersInVRAM = iniparser_getboolean(dict, "isle:Back Buffers in Video RAM", -1);
+	if (backBuffersInVRAM != -1) {
 		m_backBuffersInVram = !backBuffersInVRAM;
 	}
 
-	int bitDepth;
-	if (ReadRegInt("Display Bit Depth", &bitDepth)) {
+	int bitDepth = iniparser_getint(dict, "isle:Display Bit Depth", -1);
+	if (bitDepth != -1) {
 		if (bitDepth == 8) {
 			m_using8bit = TRUE;
 		}
@@ -793,25 +745,25 @@ void IsleApp::LoadConfig()
 		}
 	}
 
-	if (!ReadReg("Island Quality", buffer, sizeof(buffer))) {
-		strcpy(buffer, "1");
-	}
-	m_islandQuality = atoi(buffer);
+	m_islandQuality = iniparser_getint(dict, "isle:Island Quality", 1);
+	m_islandTexture = iniparser_getint(dict, "isle:Island Texture", 1);
 
-	if (!ReadReg("Island Texture", buffer, sizeof(buffer))) {
-		strcpy(buffer, "1");
-	}
-	m_islandTexture = atoi(buffer);
-
-	if (ReadReg("3D Device ID", buffer, sizeof(buffer))) {
-		m_deviceId = new char[strlen(buffer) + 1];
-		strcpy(m_deviceId, buffer);
+	const char* deviceId = iniparser_getstring(dict, "isle:3D Device ID", NULL);
+	if (deviceId != NULL) {
+		m_deviceId = new char[strlen(deviceId) + 1];
+		strcpy(m_deviceId, deviceId);
 	}
 
-	if (ReadReg("savepath", buffer, sizeof(buffer))) {
-		m_savePath = new char[strlen(buffer) + 1];
-		strcpy(m_savePath, buffer);
-	}
+	// [library:config] The original game does not save any data if no savepath is given.
+	// Instead, we use SDLs prefPath as a default fallback and always save data.
+	const char* savePath = iniparser_getstring(dict, "isle:savepath", prefPath);
+	m_savePath = new char[strlen(savePath) + 1];
+	strcpy(m_savePath, savePath);
+
+	iniparser_freedict(dict);
+	delete[] iniConfig;
+	SDL_free(prefPath);
+	SDL_free(basePath);
 }
 
 // FUNCTION: ISLE 0x402c20

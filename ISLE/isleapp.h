@@ -28,10 +28,6 @@ public:
 	);
 	MxResult SetupWindow(HINSTANCE hInstance, LPSTR lpCmdLine);
 
-	BOOL ReadReg(LPCSTR name, LPSTR outValue, DWORD outSize);
-	BOOL ReadRegBool(LPCSTR name, BOOL* out);
-	BOOL ReadRegInt(LPCSTR name, int* out);
-
 	void LoadConfig();
 	void Tick(BOOL sleepIfNotNextFrame);
 	void SetupCursor(WPARAM wParam);
@@ -47,10 +43,10 @@ public:
 	inline void SetWindowActive(BOOL p_windowActive) { m_windowActive = p_windowActive; }
 
 private:
-	LPSTR m_hdPath;            // 0x00
-	LPSTR m_cdPath;            // 0x04
-	LPSTR m_deviceId;          // 0x08
-	LPSTR m_savePath;          // 0x0c
+	char* m_hdPath;            // 0x00
+	char* m_cdPath;            // 0x04
+	char* m_deviceId;          // 0x08
+	char* m_savePath;          // 0x0c
 	BOOL m_fullScreen;         // 0x10
 	BOOL m_flipSurfaces;       // 0x14
 	BOOL m_backBuffersInVram;  // 0x18
