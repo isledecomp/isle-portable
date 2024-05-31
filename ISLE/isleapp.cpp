@@ -75,9 +75,6 @@ BOOL g_reqEnableRMDevice = FALSE;
 // STRING: ISLE 0x4101dc
 #define WINDOW_TITLE "LEGO®"
 
-// Might be static functions of IsleApp
-BOOL StartDirectSound();
-
 // FUNCTION: ISLE 0x401000
 IsleApp::IsleApp()
 {
