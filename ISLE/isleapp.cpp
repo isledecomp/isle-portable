@@ -250,7 +250,7 @@ int SDL_AppInit(void** appstate, int argc, char** argv)
 			"\"LEGO® Island\" failed to start.  Please quit all other applications and try again.",
 			NULL
 		);
-		return -1;
+		return SDL_APP_FAILURE;
 	}
 
 	// [library:window]
@@ -268,18 +268,18 @@ int SDL_AppInit(void** appstate, int argc, char** argv)
 			"\"LEGO® Island\" failed to start.  Please quit all other applications and try again.",
 			NULL
 		);
-		return -1;
+		return SDL_APP_FAILURE;
 	}
 
 	// Get reference to window
 	*appstate = g_isle->GetWindowHandle();
-	return 0;
+	return SDL_APP_CONTINUE;
 }
 
 int SDL_AppIterate(void* appstate)
 {
 	if (g_closed) {
-		return 1;
+		return SDL_APP_SUCCESS;
 	}
 
 	g_isle->Tick();
@@ -293,7 +293,7 @@ int SDL_AppIterate(void* appstate)
 		}
 
 		if (g_closed) {
-			return 1;
+			return SDL_APP_SUCCESS;
 		}
 
 		if (g_mousedown && g_mousemoved && g_isle) {
@@ -305,13 +305,13 @@ int SDL_AppIterate(void* appstate)
 		}
 	}
 
-	return 0;
+	return SDL_APP_CONTINUE;
 }
 
 int SDL_AppEvent(void* appstate, const SDL_Event* event)
 {
 	if (!g_isle) {
-		return 0;
+		return SDL_APP_CONTINUE;
 	}
 
 	// [library:window]
@@ -391,7 +391,7 @@ int SDL_AppEvent(void* appstate, const SDL_Event* event)
 		break;
 	}
 
-	return 0;
+	return SDL_APP_CONTINUE;
 }
 
 void SDL_AppQuit(void* appstate)
