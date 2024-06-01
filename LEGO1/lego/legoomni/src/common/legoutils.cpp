@@ -452,10 +452,10 @@ void FUN_1003ef00(MxBool p_enable)
 // FUNCTION: LEGO1 0x1003ef40
 void SetAppCursor(Cursor p_cursor)
 {
-	static Uint32 userEvent = SDL_RegisterEvents(1);
+	static Uint32 g_userEvent = SDL_RegisterEvents(1);
 
 	SDL_Event event;
-	event.user.type = userEvent;
+	event.user.type = g_userEvent;
 	event.user.code = WM_ISLE_SETCURSOR;
 	event.user.data1 = (void*) p_cursor;
 	SDL_PushEvent(&event);
