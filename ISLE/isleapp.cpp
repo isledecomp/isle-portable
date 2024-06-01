@@ -9,6 +9,7 @@
 #include "legomain.h"
 #include "legomodelpresenter.h"
 #include "legopartpresenter.h"
+#include "legoutils.h"
 #include "legovideomanager.h"
 #include "legoworldpresenter.h"
 #include "misc.h"
@@ -318,8 +319,6 @@ int SDL_AppEvent(void* appstate, const SDL_Event* event)
 	// Remaining functionality to be implemented:
 	// Full screen - crashes when minimizing/maximizing
 	// WM_TIMER - use SDL_Timer functionality instead
-	// WM_SETCURSOR - update cursor
-	// 0x5400 - custom LEGO Island SetupCursor event
 
 	switch (event->type) {
 	case SDL_EVENT_WINDOW_FOCUS_GAINED:
@@ -391,6 +390,14 @@ int SDL_AppEvent(void* appstate, const SDL_Event* event)
 		break;
 	}
 
+	if (event->type >= SDL_EVENT_USER && event->type <= SDL_EVENT_LAST - 1) {
+		switch (event->user.code) {
+		case WM_ISLE_SETCURSOR:
+			g_isle->SetupCursor((Cursor) (MxS32) event->user.data1);
+			break;
+		}
+	}
+
 	return SDL_APP_CONTINUE;
 }
 
@@ -439,6 +446,12 @@ MxResult IsleApp::SetupWindow()
 	MxOmni::SetSound3D(m_use3dSound);
 
 	srand(time(NULL));
+
+	// [library:window] Use original game cursors in the resources instead?
+	m_cursorCurrent = m_cursorArrow = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
+	m_cursorBusy = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_WAIT);
+	m_cursorNo = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_NO);
+	SDL_SetCursor(m_cursorCurrent);
 
 	if (m_fullScreen) {
 		m_windowHandle = SDL_CreateWindow(WINDOW_TITLE, g_targetWidth, g_targetHeight, SDL_WINDOW_FULLSCREEN);
@@ -635,30 +648,36 @@ inline void IsleApp::Tick()
 }
 
 // FUNCTION: ISLE 0x402e80
-void IsleApp::SetupCursor(WPARAM wParam)
+void IsleApp::SetupCursor(Cursor p_cursor)
 {
-	switch (wParam) {
-	case 0:
+	switch (p_cursor) {
+	case e_cursorArrow:
 		m_cursorCurrent = m_cursorArrow;
 		break;
-	case 1:
+	case e_cursorBusy:
 		m_cursorCurrent = m_cursorBusy;
 		break;
-	case 2:
+	case e_cursorNo:
 		m_cursorCurrent = m_cursorNo;
 		break;
-	case 0xB:
+	case e_cursorNone:
 		m_cursorCurrent = NULL;
-	case 3:
-	case 4:
-	case 5:
-	case 6:
-	case 7:
-	case 8:
-	case 9:
-	case 0xA:
+	case e_cursorUnused3:
+	case e_cursorUnused4:
+	case e_cursorUnused5:
+	case e_cursorUnused6:
+	case e_cursorUnused7:
+	case e_cursorUnused8:
+	case e_cursorUnused9:
+	case e_cursorUnused10:
 		break;
 	}
 
-	SetCursor(m_cursorCurrent);
+	if (m_cursorCurrent != NULL) {
+		SDL_SetCursor(m_cursorCurrent);
+		SDL_ShowCursor();
+	}
+	else {
+		SDL_HideCursor();
+	}
 }
