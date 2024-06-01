@@ -36,8 +36,8 @@ private:
 	static unsigned ThreadProc(void* p_thread);
 
 	SDL_Thread* m_thread;
-	MxBool m_running;
-	MxSemaphore m_semaphore;
+	MxBool m_running;        // 0x0c
+	MxSemaphore m_semaphore; // 0x10
 
 protected:
 	MxCore* m_target; // 0x18

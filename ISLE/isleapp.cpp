@@ -33,7 +33,7 @@
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_main.h>
 #include <SDL3/SDL_messagebox.h>
-#include <dsound.h>
+#include <SDL3/SDL_timer.h>
 #include <iniparser.h>
 #include <time.h>
 
@@ -43,34 +43,31 @@ DECOMP_SIZE_ASSERT(IsleApp, 0x8c)
 IsleApp* g_isle = NULL;
 
 // GLOBAL: ISLE 0x410034
-unsigned char g_mousedown = FALSE;
+MxU8 g_mousedown = FALSE;
 
 // GLOBAL: ISLE 0x410038
-unsigned char g_mousemoved = FALSE;
+MxU8 g_mousemoved = FALSE;
 
 // GLOBAL: ISLE 0x41003c
-BOOL g_closed = FALSE;
-
-// GLOBAL: ISLE 0x410040
-RECT g_windowRect = {0, 0, 640, 480};
+MxS32 g_closed = FALSE;
 
 // GLOBAL: ISLE 0x410050
-BOOL g_rmDisabled = FALSE;
+MxS32 g_rmDisabled = FALSE;
 
 // GLOBAL: ISLE 0x410054
-BOOL g_waitingForTargetDepth = TRUE;
+MxS32 g_waitingForTargetDepth = TRUE;
 
 // GLOBAL: ISLE 0x410058
-int g_targetWidth = 640;
+MxS32 g_targetWidth = 640;
 
 // GLOBAL: ISLE 0x41005c
-int g_targetHeight = 480;
+MxS32 g_targetHeight = 480;
 
 // GLOBAL: ISLE 0x410060
-int g_targetDepth = 16;
+MxS32 g_targetDepth = 16;
 
 // GLOBAL: ISLE 0x410064
-BOOL g_reqEnableRMDevice = FALSE;
+MxS32 g_reqEnableRMDevice = FALSE;
 
 // STRING: ISLE 0x4101dc
 #define WINDOW_TITLE "LEGO®"
@@ -154,7 +151,7 @@ void IsleApp::Close()
 	if (Lego()) {
 		GameState()->Save(0);
 		if (InputManager()) {
-			InputManager()->QueueEvent(c_notificationKeyPress, 0, 0, 0, VK_SPACE);
+			InputManager()->QueueEvent(c_notificationKeyPress, 0, 0, 0, SDLK_SPACE);
 		}
 
 		VideoManager()->Get3DManager()->GetLego3DView()->GetViewManager()->RemoveAll(NULL);
@@ -181,9 +178,9 @@ void IsleApp::Close()
 }
 
 // FUNCTION: ISLE 0x4013b0
-BOOL IsleApp::SetupLegoOmni()
+MxS32 IsleApp::SetupLegoOmni()
 {
-	BOOL result = FALSE;
+	MxS32 result = FALSE;
 	char mediaPath[256];
 	GetProfileStringA("LEGO Island", "MediaPath", "", mediaPath, sizeof(mediaPath));
 
@@ -192,14 +189,15 @@ BOOL IsleApp::SetupLegoOmni()
 		(HWND) SDL_GetProperty(SDL_GetWindowProperties(m_windowHandle), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
 
 #ifdef COMPAT_MODE
-	BOOL failure;
+	MxS32 failure;
 	{
 		MxOmniCreateParam param(mediaPath, (struct HWND__*) hwnd, m_videoParam, MxOmniCreateFlags());
 		failure = Lego()->Create(param) == FAILURE;
 	}
 #else
-	BOOL failure = Lego()->Create(MxOmniCreateParam(mediaPath, (struct HWND__*) hwnd, m_videoParam, MxOmniCreateFlags())
-				   ) == FAILURE;
+	MxS32 failure =
+		Lego()->Create(MxOmniCreateParam(mediaPath, (struct HWND__*) hwnd, m_videoParam, MxOmniCreateFlags())) ==
+		FAILURE;
 #endif
 
 	if (!failure) {
@@ -213,14 +211,14 @@ BOOL IsleApp::SetupLegoOmni()
 
 // FUNCTION: ISLE 0x401560
 void IsleApp::SetupVideoFlags(
-	BOOL fullScreen,
-	BOOL flipSurfaces,
-	BOOL backBuffers,
-	BOOL using8bit,
-	BOOL using16bit,
-	BOOL param_6,
-	BOOL param_7,
-	BOOL wideViewAngle,
+	MxS32 fullScreen,
+	MxS32 flipSurfaces,
+	MxS32 backBuffers,
+	MxS32 using8bit,
+	MxS32 using16bit,
+	MxS32 param_6,
+	MxS32 param_7,
+	MxS32 wideViewAngle,
 	char* deviceId
 )
 {
@@ -284,7 +282,7 @@ int SDL_AppIterate(void* appstate)
 		return 1;
 	}
 
-	g_isle->Tick(0);
+	g_isle->Tick();
 
 	if (!g_closed) {
 		if (g_reqEnableRMDevice) {
@@ -299,7 +297,7 @@ int SDL_AppIterate(void* appstate)
 		}
 
 		if (g_mousedown && g_mousemoved && g_isle) {
-			g_isle->Tick(0);
+			g_isle->Tick();
 		}
 
 		if (g_mousemoved) {
@@ -316,7 +314,8 @@ int SDL_AppEvent(void* appstate, const SDL_Event* event)
 		return 0;
 	}
 
-	// [library:window] Remaining functionality to be implemented:
+	// [library:window]
+	// Remaining functionality to be implemented:
 	// Full screen - crashes when minimizing/maximizing
 	// WM_TIMER - use SDL_Timer functionality instead
 	// WM_SETCURSOR - update cursor
@@ -361,7 +360,7 @@ int SDL_AppEvent(void* appstate, const SDL_Event* event)
 		}
 
 		if (g_isle->GetDrawCursor()) {
-			VideoManager()->MoveCursor(Min((int) event->motion.x, 639), Min((int) event->motion.y, 479));
+			VideoManager()->MoveCursor(Min((MxS32) event->motion.x, 639), Min((MxS32) event->motion.y, 479));
 		}
 		break;
 	case SDL_EVENT_MOUSE_BUTTON_DOWN:
@@ -442,10 +441,10 @@ MxResult IsleApp::SetupWindow()
 	srand(time(NULL));
 
 	if (m_fullScreen) {
-		m_windowHandle = SDL_CreateWindow(WINDOW_TITLE, g_windowRect.right, g_windowRect.bottom, SDL_WINDOW_FULLSCREEN);
+		m_windowHandle = SDL_CreateWindow(WINDOW_TITLE, g_targetWidth, g_targetHeight, SDL_WINDOW_FULLSCREEN);
 	}
 	else {
-		m_windowHandle = SDL_CreateWindow(WINDOW_TITLE, g_windowRect.right, g_windowRect.bottom, 0);
+		m_windowHandle = SDL_CreateWindow(WINDOW_TITLE, g_targetWidth, g_targetHeight, 0);
 	}
 
 	if (!m_windowHandle) {
@@ -460,7 +459,7 @@ MxResult IsleApp::SetupWindow()
 	GameState()->SerializePlayersInfo(1);
 	GameState()->SerializeScoreHistory(1);
 
-	int iVar10;
+	MxS32 iVar10;
 	switch (m_islandQuality) {
 	case 0:
 		iVar10 = 1;
@@ -472,7 +471,7 @@ MxResult IsleApp::SetupWindow()
 		iVar10 = 100;
 	}
 
-	int uVar1 = (m_islandTexture == 0);
+	MxS32 uVar1 = (m_islandTexture == 0);
 	LegoModelPresenter::configureLegoModelPresenter(uVar1);
 	LegoPartPresenter::configureLegoPartPresenter(uVar1, iVar10);
 	LegoWorldPresenter::configureLegoWorldPresenter(m_islandQuality);
@@ -518,12 +517,12 @@ void IsleApp::LoadConfig()
 	m_joystickIndex = iniparser_getint(dict, "isle:JoystickIndex", m_joystickIndex);
 	m_drawCursor = iniparser_getboolean(dict, "isle:Draw Cursor", m_drawCursor);
 
-	int backBuffersInVRAM = iniparser_getboolean(dict, "isle:Back Buffers in Video RAM", -1);
+	MxS32 backBuffersInVRAM = iniparser_getboolean(dict, "isle:Back Buffers in Video RAM", -1);
 	if (backBuffersInVRAM != -1) {
 		m_backBuffersInVram = !backBuffersInVRAM;
 	}
 
-	int bitDepth = iniparser_getint(dict, "isle:Display Bit Depth", -1);
+	MxS32 bitDepth = iniparser_getint(dict, "isle:Display Bit Depth", -1);
 	if (bitDepth != -1) {
 		if (bitDepth == 8) {
 			m_using8bit = TRUE;
@@ -556,16 +555,16 @@ void IsleApp::LoadConfig()
 }
 
 // FUNCTION: ISLE 0x402c20
-inline void IsleApp::Tick(BOOL sleepIfNotNextFrame)
+inline void IsleApp::Tick()
 {
 	// GLOBAL: ISLE 0x4101c0
 	static MxLong g_lastFrameTime = 0;
 
 	// GLOBAL: ISLE 0x4101bc
-	static int g_startupDelay = 200;
+	static MxS32 g_startupDelay = 200;
 
 	if (!m_windowActive) {
-		Sleep(0);
+		SDL_Delay(1);
 		return;
 	}
 
@@ -584,54 +583,54 @@ inline void IsleApp::Tick(BOOL sleepIfNotNextFrame)
 		g_lastFrameTime = -m_frameDelta;
 	}
 
-	if (m_frameDelta + g_lastFrameTime < currentTime) {
-		if (!Lego()->IsTimerRunning()) {
-			TickleManager()->Tickle();
-		}
-		g_lastFrameTime = currentTime;
+	if (m_frameDelta + g_lastFrameTime >= currentTime) {
+		SDL_Delay(1);
+		return;
+	}
 
-		if (g_startupDelay == 0) {
-			return;
-		}
+	if (!Lego()->IsTimerRunning()) {
+		TickleManager()->Tickle();
+	}
+	g_lastFrameTime = currentTime;
 
-		g_startupDelay--;
-		if (g_startupDelay != 0) {
-			return;
-		}
+	if (g_startupDelay == 0) {
+		return;
+	}
 
-		LegoOmni::GetInstance()->CreateBackgroundAudio();
-		BackgroundAudioManager()->Enable(this->m_useMusic);
+	g_startupDelay--;
+	if (g_startupDelay != 0) {
+		return;
+	}
 
-		MxStreamController* stream = Streamer()->Open("\\lego\\scripts\\isle\\isle", MxStreamer::e_diskStream);
-		MxDSAction ds;
+	LegoOmni::GetInstance()->CreateBackgroundAudio();
+	BackgroundAudioManager()->Enable(m_useMusic);
 
+	MxStreamController* stream = Streamer()->Open("\\lego\\scripts\\isle\\isle", MxStreamer::e_diskStream);
+	MxDSAction ds;
+
+	if (!stream) {
+		stream = Streamer()->Open("\\lego\\scripts\\nocd", MxStreamer::e_diskStream);
 		if (!stream) {
-			stream = Streamer()->Open("\\lego\\scripts\\nocd", MxStreamer::e_diskStream);
-			if (!stream) {
-				return;
-			}
-
-			ds.SetAtomId(stream->GetAtom());
-			ds.SetUnknown24(-1);
-			ds.SetObjectId(0);
-			VideoManager()->EnableFullScreenMovie(TRUE, TRUE);
-
-			if (Start(&ds) != SUCCESS) {
-				return;
-			}
+			return;
 		}
-		else {
-			ds.SetAtomId(stream->GetAtom());
-			ds.SetUnknown24(-1);
-			ds.SetObjectId(0);
-			if (Start(&ds) != SUCCESS) {
-				return;
-			}
-			m_gameStarted = TRUE;
+
+		ds.SetAtomId(stream->GetAtom());
+		ds.SetUnknown24(-1);
+		ds.SetObjectId(0);
+		VideoManager()->EnableFullScreenMovie(TRUE, TRUE);
+
+		if (Start(&ds) != SUCCESS) {
+			return;
 		}
 	}
-	else if (sleepIfNotNextFrame != 0) {
-		Sleep(0);
+	else {
+		ds.SetAtomId(stream->GetAtom());
+		ds.SetUnknown24(-1);
+		ds.SetObjectId(0);
+		if (Start(&ds) != SUCCESS) {
+			return;
+		}
+		m_gameStarted = TRUE;
 	}
 }
 
