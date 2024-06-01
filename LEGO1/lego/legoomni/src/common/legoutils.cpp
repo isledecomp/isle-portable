@@ -27,6 +27,7 @@
 #include "realtime/realtime.h"
 #include "scripts.h"
 
+#include <SDL3/SDL_events.h>
 #include <process.h>
 #include <string.h>
 #include <vec.h>
@@ -451,7 +452,13 @@ void FUN_1003ef00(MxBool p_enable)
 // FUNCTION: LEGO1 0x1003ef40
 void SetAppCursor(Cursor p_cursor)
 {
-	PostMessageA(MxOmni::GetInstance()->GetWindowHandle(), WM_ISLE_SETCURSOR, p_cursor, 0);
+	static Uint32 userEvent = SDL_RegisterEvents(1);
+
+	SDL_Event event;
+	event.user.type = userEvent;
+	event.user.code = WM_ISLE_SETCURSOR;
+	event.user.data1 = (void*) p_cursor;
+	SDL_PushEvent(&event);
 }
 
 // FUNCTION: LEGO1 0x1003ef60
