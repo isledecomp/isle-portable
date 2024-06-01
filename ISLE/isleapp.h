@@ -16,60 +16,60 @@ public:
 
 	void Close();
 
-	BOOL SetupLegoOmni();
+	MxS32 SetupLegoOmni();
 	void SetupVideoFlags(
-		BOOL fullScreen,
-		BOOL flipSurfaces,
-		BOOL backBuffers,
-		BOOL using8bit,
-		BOOL using16bit,
-		BOOL param_6,
-		BOOL param_7,
-		BOOL wideViewAngle,
+		MxS32 fullScreen,
+		MxS32 flipSurfaces,
+		MxS32 backBuffers,
+		MxS32 using8bit,
+		MxS32 using16bit,
+		MxS32 param_6,
+		MxS32 param_7,
+		MxS32 wideViewAngle,
 		char* deviceId
 	);
 	MxResult SetupWindow();
 
 	void LoadConfig();
-	void Tick(BOOL sleepIfNotNextFrame);
+	void Tick();
 	void SetupCursor(WPARAM wParam);
 
 	static MxU8 MapMouseButtonFlagsToModifier(SDL_MouseButtonFlags p_flags);
 
 	inline SDL_Window* GetWindowHandle() { return m_windowHandle; }
 	inline MxLong GetFrameDelta() { return m_frameDelta; }
-	inline BOOL GetFullScreen() { return m_fullScreen; }
+	inline MxS32 GetFullScreen() { return m_fullScreen; }
 	inline HCURSOR GetCursorCurrent() { return m_cursorCurrent; }
 	inline HCURSOR GetCursorBusy() { return m_cursorBusy; }
 	inline HCURSOR GetCursorNo() { return m_cursorNo; }
-	inline BOOL GetDrawCursor() { return m_drawCursor; }
+	inline MxS32 GetDrawCursor() { return m_drawCursor; }
 
-	inline void SetWindowActive(BOOL p_windowActive) { m_windowActive = p_windowActive; }
+	inline void SetWindowActive(MxS32 p_windowActive) { m_windowActive = p_windowActive; }
 
 private:
 	char* m_hdPath;             // 0x00
 	char* m_cdPath;             // 0x04
 	char* m_deviceId;           // 0x08
 	char* m_savePath;           // 0x0c
-	BOOL m_fullScreen;          // 0x10
-	BOOL m_flipSurfaces;        // 0x14
-	BOOL m_backBuffersInVram;   // 0x18
-	BOOL m_using8bit;           // 0x1c
-	BOOL m_using16bit;          // 0x20
-	int m_unk0x24;              // 0x24
-	BOOL m_use3dSound;          // 0x28
-	BOOL m_useMusic;            // 0x2c
-	BOOL m_useJoystick;         // 0x30
-	int m_joystickIndex;        // 0x34
-	BOOL m_wideViewAngle;       // 0x38
-	int m_islandQuality;        // 0x3c
-	int m_islandTexture;        // 0x40
-	BOOL m_gameStarted;         // 0x44
+	MxS32 m_fullScreen;         // 0x10
+	MxS32 m_flipSurfaces;       // 0x14
+	MxS32 m_backBuffersInVram;  // 0x18
+	MxS32 m_using8bit;          // 0x1c
+	MxS32 m_using16bit;         // 0x20
+	MxS32 m_unk0x24;            // 0x24
+	MxS32 m_use3dSound;         // 0x28
+	MxS32 m_useMusic;           // 0x2c
+	MxS32 m_useJoystick;        // 0x30
+	MxS32 m_joystickIndex;      // 0x34
+	MxS32 m_wideViewAngle;      // 0x38
+	MxS32 m_islandQuality;      // 0x3c
+	MxS32 m_islandTexture;      // 0x40
+	MxS32 m_gameStarted;        // 0x44
 	MxLong m_frameDelta;        // 0x48
 	MxVideoParam m_videoParam;  // 0x4c
-	BOOL m_windowActive;        // 0x70
+	MxS32 m_windowActive;       // 0x70
 	SDL_Window* m_windowHandle; // 0x74
-	BOOL m_drawCursor;          // 0x78
+	MxS32 m_drawCursor;         // 0x78
 	HCURSOR m_cursorArrow;      // 0x7c
 	HCURSOR m_cursorBusy;       // 0x80
 	HCURSOR m_cursorNo;         // 0x84

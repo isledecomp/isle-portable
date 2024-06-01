@@ -1,12 +1,12 @@
 #include "mxcriticalsection.h"
 
 #include "decomp.h"
-#include "platform.h"
+#include "mxtypes.h"
 
 DECOMP_SIZE_ASSERT(MxCriticalSection, 0x1c)
 
 // GLOBAL: LEGO1 0x10101e78
-BOOL g_useMutex = FALSE;
+MxS32 g_useMutex = FALSE;
 
 // FUNCTION: LEGO1 0x100b6d20
 MxCriticalSection::MxCriticalSection()

@@ -38,9 +38,6 @@ LegoInputManager::LegoInputManager()
 	m_controlManager = NULL;
 	m_unk0x81 = FALSE;
 	m_unk0x88 = FALSE;
-	m_directInput = NULL;
-	m_directInputDevice = NULL;
-	m_kbStateSuccess = FALSE;
 	m_unk0x195 = 0;
 	m_joyid = -1;
 	m_joystickIndex = -1;
@@ -79,10 +76,9 @@ MxResult LegoInputManager::Create(HWND p_hwnd)
 		m_eventQueue = new LegoEventQueue;
 	}
 
-	CreateAndAcquireKeyboard(p_hwnd);
 	GetJoystickId();
 
-	if (!m_keyboardNotifyList || !m_eventQueue || !m_directInputDevice) {
+	if (!m_keyboardNotifyList || !m_eventQueue) {
 		Destroy();
 		result = FAILURE;
 	}
@@ -93,8 +89,6 @@ MxResult LegoInputManager::Create(HWND p_hwnd)
 // FUNCTION: LEGO1 0x1005bfe0
 void LegoInputManager::Destroy()
 {
-	ReleaseDX();
-
 	if (m_keyboardNotifyList) {
 		delete m_keyboardNotifyList;
 	}
@@ -110,55 +104,10 @@ void LegoInputManager::Destroy()
 	}
 }
 
-// FUNCTION: LEGO1 0x1005c030
-void LegoInputManager::CreateAndAcquireKeyboard(HWND p_hwnd)
-{
-	HINSTANCE hinstance = (HINSTANCE) GetWindowLong(p_hwnd, GWL_HINSTANCE);
-	HRESULT hresult = DirectInputCreate(hinstance, 0x500, &m_directInput, NULL); // 0x500 for DX5
-
-	if (hresult == DI_OK) {
-		HRESULT createdeviceresult = m_directInput->CreateDevice(GUID_SysKeyboard, &m_directInputDevice, NULL);
-		if (createdeviceresult == DI_OK) {
-			m_directInputDevice->SetCooperativeLevel(p_hwnd, DISCL_NONEXCLUSIVE | DISCL_FOREGROUND);
-			m_directInputDevice->SetDataFormat(&c_dfDIKeyboard);
-			m_directInputDevice->Acquire();
-		}
-	}
-}
-
-// FUNCTION: LEGO1 0x1005c0a0
-void LegoInputManager::ReleaseDX()
-{
-	if (m_directInputDevice != NULL) {
-		m_directInputDevice->Unacquire();
-		m_directInputDevice->Release();
-		m_directInputDevice = NULL;
-	}
-
-	if (m_directInput != NULL) {
-		m_directInput->Release();
-		m_directInput = NULL;
-	}
-}
-
 // FUNCTION: LEGO1 0x1005c0f0
 void LegoInputManager::GetKeyboardState()
 {
-	m_kbStateSuccess = FALSE;
-
-	if (m_directInputDevice) {
-		HRESULT hr = m_directInputDevice->GetDeviceState(sizeOfArray(m_keyboardState), &m_keyboardState);
-
-		if (hr == DIERR_INPUTLOST || hr == DIERR_NOTACQUIRED) {
-			if (m_directInputDevice->Acquire() == S_OK) {
-				hr = m_directInputDevice->GetDeviceState(sizeOfArray(m_keyboardState), &m_keyboardState);
-			}
-		}
-
-		if (hr == S_OK) {
-			m_kbStateSuccess = TRUE;
-		}
-	}
+	m_keyboardState = SDL_GetKeyboardState(NULL);
 }
 
 // FUNCTION: LEGO1 0x1005c160
@@ -166,39 +115,29 @@ MxResult LegoInputManager::GetNavigationKeyStates(MxU32& p_keyFlags)
 {
 	GetKeyboardState();
 
-	if (!m_kbStateSuccess) {
-		return FAILURE;
-	}
-
 	if (g_unk0x100f67b8) {
-		if (m_keyboardState[DIK_LEFT] & 0x80 && GetAsyncKeyState(VK_LEFT) == 0) {
-			m_keyboardState[DIK_LEFT] = 0;
-		}
-
-		if (m_keyboardState[DIK_RIGHT] & 0x80 && GetAsyncKeyState(VK_RIGHT) == 0) {
-			m_keyboardState[DIK_RIGHT] = 0;
-		}
+		// [library:input] Figure out if we still need the logic that was here.
 	}
 
 	MxU32 keyFlags = 0;
 
-	if ((m_keyboardState[DIK_NUMPAD8] | m_keyboardState[DIK_UP]) & 0x80) {
+	if (m_keyboardState[SDL_SCANCODE_KP_8] || m_keyboardState[SDL_SCANCODE_UP]) {
 		keyFlags |= c_up;
 	}
 
-	if ((m_keyboardState[DIK_NUMPAD2] | m_keyboardState[DIK_DOWN]) & 0x80) {
+	if ((m_keyboardState[SDL_SCANCODE_KP_2] || m_keyboardState[SDL_SCANCODE_DOWN])) {
 		keyFlags |= c_down;
 	}
 
-	if ((m_keyboardState[DIK_NUMPAD4] | m_keyboardState[DIK_LEFT]) & 0x80) {
+	if ((m_keyboardState[SDL_SCANCODE_KP_4] || m_keyboardState[SDL_SCANCODE_LEFT])) {
 		keyFlags |= c_left;
 	}
 
-	if ((m_keyboardState[DIK_NUMPAD6] | m_keyboardState[DIK_RIGHT]) & 0x80) {
+	if ((m_keyboardState[SDL_SCANCODE_KP_6] || m_keyboardState[SDL_SCANCODE_RIGHT])) {
 		keyFlags |= c_right;
 	}
 
-	if ((m_keyboardState[DIK_LCONTROL] | m_keyboardState[DIK_RCONTROL]) & 0x80) {
+	if (m_keyboardState[SDL_SCANCODE_LCTRL] || m_keyboardState[SDL_SCANCODE_RCTRL]) {
 		keyFlags |= c_bit5;
 	}
 

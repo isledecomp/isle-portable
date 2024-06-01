@@ -7,6 +7,7 @@
 #include "mxpresenter.h"
 #include "mxqueue.h"
 
+#include <SDL3/SDL_keyboard.h>
 #include <dinput.h>
 
 class LegoCameraController;
@@ -94,8 +95,6 @@ public:
 
 	MxResult Create(HWND p_hwnd);
 	void Destroy() override;
-	void CreateAndAcquireKeyboard(HWND p_hwnd);
-	void ReleaseDX();
 	MxResult GetJoystickId();
 	MxResult GetJoystickState(MxU32* p_joystickX, MxU32* p_joystickY, DWORD* p_buttonsState, MxU32* p_povPosition);
 	void StartAutoDragTimer();
@@ -132,31 +131,28 @@ public:
 	// LegoInputManager::`scalar deleting destructor'
 
 private:
-	MxCriticalSection m_criticalSection;     // 0x58
-	LegoNotifyList* m_keyboardNotifyList;    // 0x5c
-	LegoCameraController* m_camera;          // 0x60
-	LegoWorld* m_world;                      // 0x64
-	LegoEventQueue* m_eventQueue;            // 0x68
-	MxS32 m_x;                               // 0x6c
-	MxS32 m_y;                               // 0x70
-	MxS32 m_unk0x74;                         // 0x74
-	UINT m_autoDragTimerID;                  // 0x78
-	UINT m_autoDragTime;                     // 0x7c
-	MxBool m_unk0x80;                        // 0x80
-	MxBool m_unk0x81;                        // 0x81
-	LegoControlManager* m_controlManager;    // 0x84
-	MxBool m_unk0x88;                        // 0x88
-	IDirectInput* m_directInput;             // 0x8c
-	IDirectInputDevice* m_directInputDevice; // 0x90
-	MxBool m_kbStateSuccess;                 // 0x94
-	MxU8 m_keyboardState[256];               // 0x95
-	MxBool m_unk0x195;                       // 0x195
-	MxS32 m_joyid;                           // 0x198
-	MxS32 m_joystickIndex;                   // 0x19c
-	JOYCAPS m_joyCaps;                       // 0x200
-	MxBool m_useJoystick;                    // 0x334
-	MxBool m_unk0x335;                       // 0x335
-	MxBool m_unk0x336;                       // 0x336
+	MxCriticalSection m_criticalSection;  // 0x58
+	LegoNotifyList* m_keyboardNotifyList; // 0x5c
+	LegoCameraController* m_camera;       // 0x60
+	LegoWorld* m_world;                   // 0x64
+	LegoEventQueue* m_eventQueue;         // 0x68
+	MxS32 m_x;                            // 0x6c
+	MxS32 m_y;                            // 0x70
+	MxS32 m_unk0x74;                      // 0x74
+	UINT m_autoDragTimerID;               // 0x78
+	UINT m_autoDragTime;                  // 0x7c
+	MxBool m_unk0x80;                     // 0x80
+	MxBool m_unk0x81;                     // 0x81
+	LegoControlManager* m_controlManager; // 0x84
+	MxBool m_unk0x88;                     // 0x88
+	const Uint8* m_keyboardState;
+	MxBool m_unk0x195;     // 0x195
+	MxS32 m_joyid;         // 0x198
+	MxS32 m_joystickIndex; // 0x19c
+	JOYCAPS m_joyCaps;     // 0x200
+	MxBool m_useJoystick;  // 0x334
+	MxBool m_unk0x335;     // 0x335
+	MxBool m_unk0x336;     // 0x336
 };
 
 // TEMPLATE: LEGO1 0x10028850
