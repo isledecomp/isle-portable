@@ -448,9 +448,9 @@ MxResult IsleApp::SetupWindow()
 	srand(time(NULL));
 
 	// [library:window] Use original game cursors in the resources instead?
-	m_cursorCurrent = m_cursorArrow = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
+	m_cursorCurrent = m_cursorArrow = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_DEFAULT);
 	m_cursorBusy = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_WAIT);
-	m_cursorNo = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_NO);
+	m_cursorNo = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_NOT_ALLOWED);
 	SDL_SetCursor(m_cursorCurrent);
 
 	if (m_fullScreen) {
