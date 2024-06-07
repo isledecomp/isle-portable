@@ -122,6 +122,26 @@ set_property(TARGET libsmacker PROPERTY ARCHIVE_OUTPUT_NAME "libsmacker$<$<CONFI
 set_property(TARGET libsmacker PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_SOURCE_DIR}/3rdparty/libsmacker")
 target_include_directories(libsmacker PRIVATE "${CMAKE_SOURCE_DIR}/3rdparty/libsmacker")
 
+add_library(miniaudio STATIC
+  3rdparty/miniaudio/extras/miniaudio_split/miniaudio.c
+)
+register_lego1_target(miniaudio)
+set_property(TARGET miniaudio PROPERTY ARCHIVE_OUTPUT_NAME "miniaudio$<$<CONFIG:Debug>:d>")
+set_property(TARGET miniaudio PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_SOURCE_DIR}/3rdparty/miniaudio/extras/miniaudio_split")
+target_include_directories(miniaudio PRIVATE "${CMAKE_SOURCE_DIR}/3rdparty/miniaudio/extras/miniaudio_split")
+# Disable most features since we don't need them.
+target_compile_definitions(miniaudio PUBLIC
+  MA_ENABLE_ONLY_SPECIFIC_BACKENDS
+  MA_NO_DECODING
+  MA_NO_ENCODING
+  MA_NO_WAV
+  MA_NO_FLAC
+  MA_NO_MP3
+  MA_NO_DEVICE_IO
+  MA_NO_RESOURCE_MANAGER
+  MA_NO_GENERATION
+)
+
 add_library(tglrl STATIC
   LEGO1/tgl/d3drm/camera.cpp
   LEGO1/tgl/d3drm/device.cpp
@@ -314,7 +334,7 @@ add_library(omni STATIC
 register_lego1_target(omni)
 set_property(TARGET omni PROPERTY ARCHIVE_OUTPUT_NAME "omni$<$<CONFIG:Debug>:d>")
 target_include_directories(omni PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include" "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/util")
-target_link_libraries(omni PRIVATE dsound winmm libsmacker)
+target_link_libraries(omni PRIVATE dsound winmm libsmacker miniaudio)
 
 add_library(lego1 SHARED
   LEGO1/define.cpp
