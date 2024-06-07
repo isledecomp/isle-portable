@@ -10,6 +10,16 @@ class LegoCacheSound;
 // SIZE 0x78
 class LegoActor : public LegoEntity {
 public:
+	enum {
+		c_none = 0,
+		c_pepper,
+		c_mama,
+		c_papa,
+		c_nick,
+		c_laura,
+		c_brickster
+	};
+
 	LegoActor();
 	~LegoActor() override;
 
@@ -53,7 +63,7 @@ public:
 	static const char* GetActorName(MxU8 p_id);
 
 protected:
-	void FUN_1002d6e0(MxBool);
+	void Mute(MxBool p_muted);
 
 	MxFloat m_frequencyFactor; // 0x68
 	LegoCacheSound* m_sound;   // 0x6c
