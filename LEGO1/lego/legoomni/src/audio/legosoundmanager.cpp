@@ -87,7 +87,7 @@ void LegoSoundManager::UpdateListener(
 	if (MxOmni::IsSound3D()) {
 		// [library:audio]
 		// miniaudio expects the right-handed OpenGL coordinate system, while LEGO Island
-		// uses DirectX' left-handed system? Figure out the proper conversions
+		// uses DirectX' left-handed system. The Z-axis needs to be inverted.
 
 		if (p_position != NULL) {
 			ma_engine_listener_set_position(&m_engine, 0, p_position[0], p_position[1], -p_position[2]);
