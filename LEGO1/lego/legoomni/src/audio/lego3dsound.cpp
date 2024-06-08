@@ -46,7 +46,7 @@ MxResult Lego3DSound::Create(ma_sound* p_sound, const char* p_name, MxS32 p_volu
 
 		ma_sound_set_min_distance(m_sound, 15.0f);
 		ma_sound_set_max_distance(m_sound, 100.0f);
-		ma_sound_set_position(m_sound, 0.0f, 0.0f, -40.0f);
+		ma_sound_set_position(m_sound, 0.0f, 0.0f, 40.0f);
 
 		// [library:audio] Which rolloff?
 		ma_sound_set_rolloff(m_sound, 1.0f);
@@ -88,7 +88,7 @@ MxResult Lego3DSound::Create(ma_sound* p_sound, const char* p_name, MxS32 p_volu
 
 	if (MxOmni::IsSound3D()) {
 		const float* position = m_positionROI->GetWorldPosition();
-		ma_sound_set_position(m_sound, position[0], position[1], position[2]);
+		ma_sound_set_position(m_sound, position[0], position[1], -position[2]);
 	}
 
 	LegoEntity* entity = m_roi->GetEntity();
@@ -144,7 +144,7 @@ MxU32 Lego3DSound::UpdatePosition(ma_sound* p_sound)
 		}
 
 		if (m_sound != NULL) {
-			ma_sound_set_position(m_sound, position[0], position[1], position[2]);
+			ma_sound_set_position(m_sound, position[0], position[1], -position[2]);
 		}
 		else {
 			MxS32 newVolume = m_volume;
@@ -221,7 +221,7 @@ void Lego3DSound::FUN_10011a60(ma_sound* p_sound, const char* p_name)
 		if (m_sound != NULL) {
 			ma_sound_set_spatialization_enabled(m_sound, MA_TRUE);
 			const float* position = m_positionROI->GetWorldPosition();
-			ma_sound_set_position(m_sound, position[0], position[1], position[2]);
+			ma_sound_set_position(m_sound, position[0], position[1], -position[2]);
 		}
 		else {
 			const float* position = m_positionROI->GetWorldPosition();
