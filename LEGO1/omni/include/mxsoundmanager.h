@@ -34,7 +34,7 @@ protected:
 	// [library:audio]
 	// Upscaling everything to 44.1KHz, since we have various sample rates throughout the game.
 	// Not sure how DirectSound handles this when different buffers have different rates.
-	const ma_uint32 sampleRate = 44100;
+	static const MxU32 sampleRate = 44100;
 
 	static void SDLCALL
 	AudioStreamCallback(void* p_userdata, SDL_AudioStream* p_stream, int p_additionalAmount, int p_totalAmount);
