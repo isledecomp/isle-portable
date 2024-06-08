@@ -140,6 +140,7 @@ target_compile_definitions(miniaudio PUBLIC
   MA_NO_DEVICE_IO
   MA_NO_RESOURCE_MANAGER
   MA_NO_GENERATION
+  MA_NO_THREADING
 )
 
 add_library(tglrl STATIC
