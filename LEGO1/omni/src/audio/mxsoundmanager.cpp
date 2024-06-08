@@ -127,7 +127,7 @@ done:
 	return status;
 }
 
-void SDLCALL MxSoundManager::AudioStreamCallback(
+void MxSoundManager::AudioStreamCallback(
 	void* p_userdata,
 	SDL_AudioStream* p_stream,
 	int p_additionalAmount,

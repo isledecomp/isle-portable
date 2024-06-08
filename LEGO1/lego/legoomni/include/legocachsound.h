@@ -56,7 +56,7 @@ private:
 	MxString FUN_10006d80(const MxString& p_str);
 
 	// [library:audio] WAVE_FORMAT_PCM (audio in .SI files only used this format)
-	static const MxU32 supportedFormatTag = 1;
+	static const MxU32 g_supportedFormatTag = 1;
 
 	ma_audio_buffer m_buffer;
 	ma_sound m_cacheSound;

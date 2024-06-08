@@ -79,13 +79,13 @@ protected:
 	MxBool WriteToSoundBuffer(void* p_audioPtr, MxU32 p_length);
 
 	// [library:audio] One chunk has up to 1 second worth of frames
-	static const MxU32 millisecondsPerChunk = 1000;
+	static const MxU32 g_millisecondsPerChunk = 1000;
 
 	// [library:audio] Store up to 2 chunks worth of frames (same as in original game)
-	static const MxU32 rbSizeInMilliseconds = millisecondsPerChunk * 2;
+	static const MxU32 g_rbSizeInMilliseconds = g_millisecondsPerChunk * 2;
 
 	// [library:audio] WAVE_FORMAT_PCM (audio in .SI files only used this format)
-	static const MxU32 supportedFormatTag = 1;
+	static const MxU32 g_supportedFormatTag = 1;
 
 	WaveFormat* m_waveFormat; // 0x54
 	ma_pcm_rb m_rb;

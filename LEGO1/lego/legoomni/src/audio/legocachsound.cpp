@@ -48,7 +48,7 @@ MxResult LegoCacheSound::Create(
 	// [library:audio] These should never be null
 	assert(p_data != NULL && p_dataSize != 0);
 
-	assert(p_pwfx.m_formatTag == supportedFormatTag);
+	assert(p_pwfx.m_formatTag == g_supportedFormatTag);
 	assert(p_pwfx.m_bitsPerSample == 8 || p_pwfx.m_bitsPerSample == 16);
 
 	CopyData(p_data, p_dataSize);

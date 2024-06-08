@@ -56,11 +56,11 @@ void MxWavePresenter::Destroy(MxBool p_fromDestructor)
 MxBool MxWavePresenter::WriteToSoundBuffer(void* p_audioPtr, MxU32 p_length)
 {
 	ma_uint32 requestedFrames =
-		ma_calculate_buffer_size_in_frames_from_milliseconds(millisecondsPerChunk, m_waveFormat->m_samplesPerSec);
+		ma_calculate_buffer_size_in_frames_from_milliseconds(g_millisecondsPerChunk, m_waveFormat->m_samplesPerSec);
 	ma_uint32 acquiredFrames = requestedFrames;
-	void* p_bufferOut;
+	void* bufferOut;
 
-	ma_pcm_rb_acquire_write(&m_rb, &acquiredFrames, &p_bufferOut);
+	ma_pcm_rb_acquire_write(&m_rb, &acquiredFrames, &bufferOut);
 
 	// [library:audio] If there isn't enough space in the buffer for a full chunk, try again later.
 	if (acquiredFrames != requestedFrames) {
@@ -71,11 +71,11 @@ MxBool MxWavePresenter::WriteToSoundBuffer(void* p_audioPtr, MxU32 p_length)
 	ma_uint32 acquiredBytes = acquiredFrames * ma_get_bytes_per_frame(m_rb.format, m_rb.channels);
 	assert(p_length <= acquiredBytes);
 
-	memcpy(p_bufferOut, p_audioPtr, p_length);
+	memcpy(bufferOut, p_audioPtr, p_length);
 
 	// [library:audio] Pad with silence data if we don't have a full chunk.
 	if (p_length < acquiredBytes) {
-		memset((ma_uint8*) p_bufferOut + p_length, m_silenceData, acquiredBytes - p_length);
+		memset((ma_uint8*) bufferOut + p_length, m_silenceData, acquiredBytes - p_length);
 	}
 
 	ma_pcm_rb_commit_write(&m_rb, acquiredFrames);
@@ -105,7 +105,7 @@ void MxWavePresenter::StartingTickle()
 		MxBool success = FALSE;
 		m_chunkLength = chunk->GetLength();
 
-		assert(m_waveFormat->m_formatTag == supportedFormatTag);
+		assert(m_waveFormat->m_formatTag == g_supportedFormatTag);
 		assert(m_waveFormat->m_bitsPerSample == 8 || m_waveFormat->m_bitsPerSample == 16);
 
 		// [library:audio]
@@ -132,7 +132,7 @@ void MxWavePresenter::StartingTickle()
 				m_waveFormat->m_bitsPerSample == 16 ? ma_format_s16 : ma_format_u8,
 				m_waveFormat->m_channels,
 				ma_calculate_buffer_size_in_frames_from_milliseconds(
-					rbSizeInMilliseconds,
+					g_rbSizeInMilliseconds,
 					m_waveFormat->m_samplesPerSec
 				),
 				NULL,

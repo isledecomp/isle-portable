@@ -35,8 +35,12 @@ protected:
 	// Not sure how DirectSound handles this when different buffers have different rates.
 	static const MxU32 sampleRate = 44100;
 
-	static void SDLCALL
-	AudioStreamCallback(void* p_userdata, SDL_AudioStream* p_stream, int p_additionalAmount, int p_totalAmount);
+	static void AudioStreamCallback(
+		void* p_userdata,
+		SDL_AudioStream* p_stream,
+		int p_additionalAmount,
+		int p_totalAmount
+	);
 
 	ma_engine m_engine;
 	SDL_AudioStream* m_stream;
