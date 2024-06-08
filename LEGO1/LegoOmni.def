@@ -82,7 +82,6 @@ EXPORTS
 ?MSoundManager@@YAPAVMxSoundManager@@XZ
 ?MakeSourceName@@YAXPADPBD@Z
 ?MoveCursor@LegoVideoManager@@QAEXHH@Z
-?MusicManager@@YAPAVMxMusicManager@@XZ
 ?NotificationManager@@YAPAVMxNotificationManager@@XZ
 ?Notify@MxCore@@UAEJAAVMxParam@@@Z
 ?Open@MxDSFile@@UAEJK@Z

@@ -6,7 +6,6 @@
 #include "mxdsmultiaction.h"
 #include "mxeventmanager.h"
 #include "mxmisc.h"
-#include "mxmusicmanager.h"
 #include "mxnotificationmanager.h"
 #include "mxobjectfactory.h"
 #include "mxomnicreateparam.h"
@@ -63,7 +62,6 @@ void MxOmni::Init()
 	m_notificationManager = NULL;
 	m_videoManager = NULL;
 	m_soundManager = NULL;
-	m_musicManager = NULL;
 	m_eventManager = NULL;
 	m_timer = NULL;
 	m_streamer = NULL;
@@ -149,15 +147,6 @@ MxResult MxOmni::Create(MxOmniCreateParam& p_param)
 		}
 	}
 
-	if (p_param.CreateFlags().CreateMusicManager()) {
-		if ((m_musicManager = new MxMusicManager())) {
-			if (m_musicManager->Create(50, 0) != SUCCESS) {
-				delete m_musicManager;
-				m_musicManager = NULL;
-			}
-		}
-	}
-
 	if (p_param.CreateFlags().CreateEventManager()) {
 		if ((m_eventManager = new MxEventManager())) {
 			if (m_eventManager->Create(50, 0) != SUCCESS) {
@@ -198,7 +187,6 @@ void MxOmni::Destroy()
 
 	delete m_eventManager;
 	delete m_soundManager;
-	delete m_musicManager;
 	delete m_videoManager;
 	delete m_streamer;
 	delete m_timer;

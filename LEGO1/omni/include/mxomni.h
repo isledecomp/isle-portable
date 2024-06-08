@@ -11,7 +11,6 @@ class MxAtomSet;
 class MxDSAction;
 class MxEntity;
 class MxEventManager;
-class MxMusicManager;
 class MxNotificationManager;
 class MxNotificationParam;
 class MxObjectFactory;
@@ -86,9 +85,6 @@ public:
 	// FUNCTION: BETA10 0x101251c0
 	MxVariableTable* GetVariableTable() const { return this->m_variableTable; }
 
-	// FUNCTION: BETA10 0x101251e0
-	MxMusicManager* GetMusicManager() const { return this->m_musicManager; }
-
 	// FUNCTION: BETA10 0x10125200
 	MxEventManager* GetEventManager() const { return this->m_eventManager; }
 
@@ -111,7 +107,6 @@ protected:
 	MxNotificationManager* m_notificationManager; // 0x28
 	MxVideoManager* m_videoManager;               // 0x2c
 	MxSoundManager* m_soundManager;               // 0x30
-	MxMusicManager* m_musicManager;               // 0x34
 	MxEventManager* m_eventManager;               // 0x38
 	MxTimer* m_timer;                             // 0x3c
 	MxStreamer* m_streamer;                       // 0x40

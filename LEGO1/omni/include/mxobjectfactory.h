@@ -12,11 +12,9 @@
 	X(MxSmkPresenter)                                                                                                  \
 	X(MxStillPresenter)                                                                                                \
 	X(MxWavePresenter)                                                                                                 \
-	X(MxMIDIPresenter)                                                                                                 \
 	X(MxEventPresenter)                                                                                                \
 	X(MxLoopingFlcPresenter)                                                                                           \
-	X(MxLoopingSmkPresenter)                                                                                           \
-	X(MxLoopingMIDIPresenter)
+	X(MxLoopingSmkPresenter)
 
 // VTABLE: LEGO1 0x100dc220
 class MxObjectFactory : public MxCore {
