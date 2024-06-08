@@ -47,12 +47,7 @@ MxResult Lego3DSound::Create(ma_sound* p_sound, const char* p_name, MxS32 p_volu
 		ma_sound_set_min_distance(m_sound, 15.0f);
 		ma_sound_set_max_distance(m_sound, 100.0f);
 		ma_sound_set_position(m_sound, 0.0f, 0.0f, 40.0f);
-
-		// [library:audio] Which rolloff?
-		ma_sound_set_rolloff(m_sound, 1.0f);
-
-		// [library:audio] Do we need this?
-		// m_ds3dBuffer->SetConeOutsideVolume(-10000, DS3D_IMMEDIATE);
+		ma_sound_set_rolloff(m_sound, 10.0f);
 	}
 
 	if (m_sound == NULL || p_name == NULL) {
