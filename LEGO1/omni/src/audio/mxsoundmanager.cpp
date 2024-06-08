@@ -188,15 +188,15 @@ MxPresenter* MxSoundManager::FUN_100aebd0(const MxAtomId& p_atomId, MxU32 p_obje
 }
 
 // FUNCTION: LEGO1 0x100aecf0
-MxS32 MxSoundManager::GetAttenuation(MxU32 p_volume)
+float MxSoundManager::GetAttenuation(MxU32 p_volume)
 {
-	// The unit for p_volume is percent, rounded to integer.
-	// Convert to DSOUND attenuation units: -10000 (silent) to 0 (loudest).
+	// [library:audio] Convert DSOUND attenutation units to linear miniaudio volume
+
 	if (p_volume == 0) {
-		return DSBVOLUME_MIN;
+		return 0.0f;
 	}
 
-	return g_volumeAttenuation[p_volume - 1];
+	return ma_volume_db_to_linear((float) g_volumeAttenuation[p_volume - 1] / 100.0f);
 }
 
 // FUNCTION: LEGO1 0x100aed10

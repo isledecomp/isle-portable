@@ -22,8 +22,6 @@ void MxWavePresenter::Init()
 	SDL_zero(m_rb);
 	SDL_zero(m_sound);
 	m_chunkLength = 0;
-	m_lockSize = 0;
-	m_writtenChunks = 0;
 	m_started = FALSE;
 	m_is3d = FALSE;
 	m_paused = FALSE;
@@ -267,7 +265,8 @@ void MxWavePresenter::SetVolume(MxS32 p_volume)
 	m_volume = p_volume;
 	if (ma_sound_get_engine(&m_sound)) {
 		MxS32 volume = p_volume * MxOmni::GetInstance()->GetSoundManager()->GetVolume() / 100;
-		ma_sound_set_volume(&m_sound, (float) volume / 100.0f);
+		float attenuation = MxOmni::GetInstance()->GetSoundManager()->GetAttenuation(volume);
+		ma_sound_set_volume(&m_sound, attenuation);
 	}
 
 	m_criticalSection.Leave();
@@ -280,7 +279,6 @@ void MxWavePresenter::Enable(MxBool p_enable)
 		MxSoundPresenter::Enable(p_enable);
 
 		if (p_enable) {
-			m_writtenChunks = 0;
 			m_started = FALSE;
 		}
 		else if (ma_sound_get_engine(&m_sound)) {

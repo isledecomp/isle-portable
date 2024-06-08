@@ -24,7 +24,7 @@ public:
 
 	inline ma_engine* GetEngine() { return &m_engine; }
 
-	MxS32 GetAttenuation(MxU32 p_volume);
+	float GetAttenuation(MxU32 p_volume);
 
 protected:
 	void Init();

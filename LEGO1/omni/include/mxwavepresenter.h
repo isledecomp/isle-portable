@@ -90,13 +90,11 @@ protected:
 	WaveFormat* m_waveFormat; // 0x54
 	ma_pcm_rb m_rb;
 	ma_sound m_sound;
-	MxU32 m_chunkLength;  // 0x5c
-	MxU32 m_lockSize;     // 0x60
-	MxU8 m_writtenChunks; // 0x64
-	MxBool m_started;     // 0x65
-	MxBool m_is3d;        // 0x66
-	MxS8 m_silenceData;   // 0x67
-	MxBool m_paused;      // 0x68
+	MxU32 m_chunkLength; // 0x5c
+	MxBool m_started;    // 0x65
+	MxBool m_is3d;       // 0x66
+	MxS8 m_silenceData;  // 0x67
+	MxBool m_paused;     // 0x68
 };
 
 #endif // MXWAVEPRESENTER_H
