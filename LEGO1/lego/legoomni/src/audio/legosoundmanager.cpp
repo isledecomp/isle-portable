@@ -43,6 +43,7 @@ MxResult LegoSoundManager::Create(MxU32 p_frequencyMS, MxBool p_createThread)
 	MxResult result = FAILURE;
 
 	if (MxSoundManager::Create(10, FALSE) == SUCCESS) {
+		/*
 		m_criticalSection.Enter();
 		locked = TRUE;
 
@@ -66,7 +67,7 @@ MxResult LegoSoundManager::Create(MxU32 p_frequencyMS, MxBool p_createThread)
 			}
 		}
 
-		m_cacheSoundManager = new LegoCacheSoundManager;
+		m_cacheSoundManager = new LegoCacheSoundManager;*/
 		result = SUCCESS;
 	}
 
@@ -91,7 +92,7 @@ void LegoSoundManager::Destroy()
 // FUNCTION: LEGO1 0x1002a3a0
 MxResult LegoSoundManager::Tickle()
 {
-	MxSoundManager::Tickle();
+	return MxSoundManager::Tickle();
 
 	AUTOLOCK(m_criticalSection);
 	return m_cacheSoundManager->Tickle();

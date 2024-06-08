@@ -42,6 +42,7 @@ MxResult LegoCacheSound::Create(
 	MxU32 p_dataSize
 )
 {
+	/*
 	WAVEFORMATEX wfx;
 	wfx.wFormatTag = p_pwfx->wf.wFormatTag;
 	wfx.nChannels = p_pwfx->wf.nChannels;
@@ -87,7 +88,7 @@ MxResult LegoCacheSound::Create(
 	}
 
 	m_unk0x48 = FUN_10006d80(p_mediaSrcPath);
-	m_wfx = *p_pwfx;
+	m_wfx = *p_pwfx;*/
 	return SUCCESS;
 }
 
