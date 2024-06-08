@@ -43,7 +43,6 @@ void LegoLoadCacheSoundPresenter::Destroy(MxBool p_fromDestructor)
 void LegoLoadCacheSoundPresenter::ReadyTickle()
 {
 	MxStreamChunk* chunk = NextChunk();
-	return EndAction();
 
 	if (chunk) {
 		WaveFormat* header = (WaveFormat*) chunk->GetData();
@@ -54,7 +53,7 @@ void LegoLoadCacheSoundPresenter::ReadyTickle()
 		m_pData = data;
 
 		m_cacheSound = new LegoCacheSound();
-		// m_pcmWaveFormat = header->m_pcmWaveFormat;
+		m_waveFormat = *header;
 
 		m_subscriber->FreeDataChunk(chunk);
 		ProgressTickleState(e_streaming);
@@ -70,7 +69,7 @@ void LegoLoadCacheSoundPresenter::StreamingTickle()
 	if (chunk) {
 		if (chunk->GetChunkFlags() & DS_CHUNK_END_OF_STREAM) {
 			m_cacheSound->Create(
-				&m_pcmWaveFormat,
+				m_waveFormat,
 				((MxDSSound*) m_action)->GetMediaSrcPath(),
 				((MxDSSound*) m_action)->GetVolume(),
 				m_data + 2,

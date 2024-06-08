@@ -334,7 +334,7 @@ add_library(omni STATIC
 register_lego1_target(omni)
 set_property(TARGET omni PROPERTY ARCHIVE_OUTPUT_NAME "omni$<$<CONFIG:Debug>:d>")
 target_include_directories(omni PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include" "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/util")
-target_link_libraries(omni PRIVATE dsound winmm libsmacker miniaudio)
+target_link_libraries(omni PRIVATE winmm libsmacker miniaudio)
 
 add_library(lego1 SHARED
   LEGO1/define.cpp
@@ -497,7 +497,7 @@ if (ISLE_BUILD_APP)
   target_link_libraries(isle PRIVATE SDL3::SDL3 iniparser-static)
 
   # Link DSOUND, WINMM, and LEGO1
-  target_link_libraries(isle PRIVATE dsound winmm lego1)
+  target_link_libraries(isle PRIVATE winmm lego1)
 
   # Make sure filenames are ALL CAPS
   set_property(TARGET isle PROPERTY OUTPUT_NAME ISLE)

@@ -4,7 +4,7 @@
 #include "decomp.h"
 #include "mxtypes.h"
 
-#include <dsound.h>
+#include <miniaudio.h>
 
 class LegoActor;
 class LegoROI;
@@ -17,10 +17,10 @@ public:
 	virtual ~Lego3DSound();
 
 	void Init();
-	MxResult Create(LPDIRECTSOUNDBUFFER p_directSoundBuffer, const char* p_name, MxS32 p_volume);
+	MxResult Create(ma_sound* p_sound, const char* p_name, MxS32 p_volume);
 	void Destroy();
-	MxU32 UpdatePosition(LPDIRECTSOUNDBUFFER p_directSoundBuffer);
-	void FUN_10011a60(LPDIRECTSOUNDBUFFER p_directSoundBuffer, const char* p_name);
+	MxU32 UpdatePosition(ma_sound* p_sound);
+	void FUN_10011a60(ma_sound* p_sound, const char* p_name);
 	void Reset();
 	MxS32 SetDistance(MxS32 p_min, MxS32 p_max);
 
@@ -28,15 +28,14 @@ public:
 	// Lego3DSound::`scalar deleting destructor'
 
 private:
-	LPDIRECTSOUND3DBUFFER m_ds3dBuffer; // 0x08
-	LegoROI* m_roi;                     // 0x0c
-	LegoROI* m_positionROI;             // 0x10
-	MxBool m_enabled;                   // 0x14
-	MxBool m_isActor;                   // 0x15
-	LegoActor* m_actor;                 // 0x18
-	double m_frequencyFactor;           // 0x20
-	DWORD m_dwFrequency;                // 0x28
-	MxS32 m_volume;                     // 0x2c
+	ma_sound* m_sound;
+	LegoROI* m_roi;           // 0x0c
+	LegoROI* m_positionROI;   // 0x10
+	MxBool m_enabled;         // 0x14
+	MxBool m_isActor;         // 0x15
+	LegoActor* m_actor;       // 0x18
+	double m_frequencyFactor; // 0x20
+	MxS32 m_volume;           // 0x2c
 };
 
 // GLOBAL: LEGO1 0x100db6c0

@@ -197,7 +197,8 @@ void MxWavePresenter::StreamingTickle()
 // FUNCTION: LEGO1 0x100b20c0
 void MxWavePresenter::DoneTickle()
 {
-	if (!ma_sound_get_engine(&m_sound) || m_action->GetFlags() & MxDSAction::c_bit7 || !ma_sound_is_playing(&m_sound)) {
+	if (!ma_sound_get_engine(&m_sound) || m_action->GetFlags() & MxDSAction::c_bit7 ||
+		ma_pcm_rb_pointer_distance(&m_rb) == 0) {
 		MxMediaPresenter::DoneTickle();
 	}
 }

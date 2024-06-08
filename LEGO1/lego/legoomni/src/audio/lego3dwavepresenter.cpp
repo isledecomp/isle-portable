@@ -40,23 +40,20 @@ void Lego3DWavePresenter::StartingTickle()
 
 	MxWavePresenter::StartingTickle();
 
-	/*
-		if (m_dsBuffer != NULL) {
-			MxU16 extraLength;
-			char* buff;
-			m_action->GetExtra(extraLength, buff);
+	if (ma_sound_get_engine(&(MxWavePresenter::m_sound))) {
+		MxU16 extraLength;
+		char* buff;
+		m_action->GetExtra(extraLength, buff);
 
-			if (!strcmp(buff, "FROM_PARENT") && m_compositePresenter != NULL) {
-				m_compositePresenter->GetAction()->GetExtra(extraLength, buff);
-			}
-
-			if (m_sound.Create(m_dsBuffer, buff, m_volume) != SUCCESS) {
-				m_dsBuffer->Release();
-				m_dsBuffer = NULL;
-				EndAction();
-			}
+		if (!strcmp(buff, "FROM_PARENT") && m_compositePresenter != NULL) {
+			m_compositePresenter->GetAction()->GetExtra(extraLength, buff);
 		}
-		*/
+
+		if (m_sound.Create(&(MxWavePresenter::m_sound), buff, m_volume) != SUCCESS) {
+			ma_sound_uninit(&(MxWavePresenter::m_sound));
+			EndAction();
+		}
+	}
 }
 
 // FUNCTION: LEGO1 0x1004a8b0

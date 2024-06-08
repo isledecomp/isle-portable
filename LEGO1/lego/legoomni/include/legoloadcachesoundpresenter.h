@@ -36,12 +36,12 @@ private:
 	void Init();
 	void Destroy(MxBool p_fromDestructor);
 
-	LegoCacheSound* m_cacheSound;  // 0x6c
-	MxU8* m_data;                  // 0x70
-	MxU8* m_pData;                 // 0x74
-	MxU32 m_dataSize;              // 0x78
-	MxBool m_unk0x7c;              // 0x7c
-	PCMWAVEFORMAT m_pcmWaveFormat; // 0x7d
+	LegoCacheSound* m_cacheSound; // 0x6c
+	MxU8* m_data;                 // 0x70
+	MxU8* m_pData;                // 0x74
+	MxU32 m_dataSize;             // 0x78
+	MxBool m_unk0x7c;             // 0x7c
+	WaveFormat m_waveFormat;      // 0x7d
 };
 
 // SYNTHETIC: LEGO1 0x10018460

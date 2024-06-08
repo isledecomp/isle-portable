@@ -27,7 +27,6 @@ private:
 	void Init();
 	void Destroy(MxBool p_fromDestructor);
 
-	LPDIRECTSOUND3DLISTENER m_listener;         // 0x3c
 	LegoCacheSoundManager* m_cacheSoundManager; // 0x40
 };
 
