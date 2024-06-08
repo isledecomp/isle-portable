@@ -50,7 +50,6 @@ void Lego3DWavePresenter::StartingTickle()
 		}
 
 		if (m_sound.Create(&(MxWavePresenter::m_sound), buff, m_volume) != SUCCESS) {
-			ma_sound_uninit(&(MxWavePresenter::m_sound));
 			EndAction();
 		}
 	}
@@ -61,5 +60,5 @@ void Lego3DWavePresenter::StartingTickle()
 void Lego3DWavePresenter::StreamingTickle()
 {
 	MxWavePresenter::StreamingTickle();
-	// m_sound.UpdatePosition(m_dsBuffer);
+	m_sound.UpdatePosition(&(MxWavePresenter::m_sound));
 }

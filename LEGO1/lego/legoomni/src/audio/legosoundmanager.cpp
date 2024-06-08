@@ -69,7 +69,7 @@ void LegoSoundManager::Destroy()
 // FUNCTION: LEGO1 0x1002a3a0
 MxResult LegoSoundManager::Tickle()
 {
-	return MxSoundManager::Tickle();
+	MxSoundManager::Tickle();
 
 	AUTOLOCK(m_criticalSection);
 	return m_cacheSoundManager->Tickle();
