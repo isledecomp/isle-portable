@@ -156,6 +156,8 @@ void MxWavePresenter::StartingTickle()
 			goto done;
 		}
 
+		ma_sound_set_looping(&m_sound, MA_TRUE);
+
 		SetVolume(((MxDSSound*) m_action)->GetVolume());
 		ProgressTickleState(e_streaming);
 		success = TRUE;
