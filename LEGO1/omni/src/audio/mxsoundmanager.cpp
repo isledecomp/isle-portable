@@ -84,7 +84,7 @@ MxResult MxSoundManager::Create(MxU32 p_frequencyMS, MxBool p_createThread)
 	ma_engine_config engineConfig = ma_engine_config_init();
 	engineConfig.noDevice = MA_TRUE;
 	engineConfig.channels = MxOmni::IsSound3D() ? 2 : 1;
-	engineConfig.sampleRate = sampleRate;
+	engineConfig.sampleRate = g_sampleRate;
 
 	if (ma_engine_init(&engineConfig, &m_engine) != MA_SUCCESS) {
 		goto done;
@@ -134,15 +134,15 @@ void MxSoundManager::AudioStreamCallback(
 	int p_totalAmount
 )
 {
-	static MxU8 buffer[4096];
+	static MxU8 g_buffer[4096];
 
 	MxSoundManager* manager = (MxSoundManager*) p_userdata;
 	ma_uint32 bytesPerFrame = ma_get_bytes_per_frame(ma_format_f32, ma_engine_get_channels(&manager->m_engine));
-	ma_uint32 bufferSizeInFrames = (ma_uint32) SDL_min(sizeof(buffer), p_additionalAmount) / bytesPerFrame;
+	ma_uint32 bufferSizeInFrames = (ma_uint32) SDL_min(sizeof(g_buffer), p_additionalAmount) / bytesPerFrame;
 	ma_uint64 framesRead;
 
-	if (ma_engine_read_pcm_frames(&manager->m_engine, buffer, bufferSizeInFrames, &framesRead) == MA_SUCCESS) {
-		SDL_PutAudioStreamData(manager->m_stream, buffer, framesRead * bytesPerFrame);
+	if (ma_engine_read_pcm_frames(&manager->m_engine, g_buffer, bufferSizeInFrames, &framesRead) == MA_SUCCESS) {
+		SDL_PutAudioStreamData(manager->m_stream, g_buffer, framesRead * bytesPerFrame);
 	}
 }
 
