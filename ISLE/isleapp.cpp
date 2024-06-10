@@ -310,15 +310,17 @@ int SDL_AppEvent(void* appstate, const SDL_Event* event)
 
 	// [library:window]
 	// Remaining functionality to be implemented:
-	// Full screen - crashes when minimizing/maximizing
+	// Full screen - crashes when minimizing/maximizing, but this will probably be fixed once DirectDraw is replaced
 	// WM_TIMER - use SDL_Timer functionality instead
 
 	switch (event->type) {
 	case SDL_EVENT_WINDOW_FOCUS_GAINED:
 		g_isle->SetWindowActive(TRUE);
+		Lego()->StopTimer();
 		break;
 	case SDL_EVENT_WINDOW_FOCUS_LOST:
 		g_isle->SetWindowActive(FALSE);
+		Lego()->StartTimer();
 		break;
 	case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
 		if (!g_closed) {
