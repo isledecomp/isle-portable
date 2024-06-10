@@ -340,6 +340,7 @@ add_library(lego1 SHARED
   LEGO1/lego/legoomni/src/actors/act3shark.cpp
   LEGO1/lego/legoomni/src/actors/ambulance.cpp
   LEGO1/lego/legoomni/src/actors/bike.cpp
+  LEGO1/lego/legoomni/src/actors/buildingentity.cpp
   LEGO1/lego/legoomni/src/actors/buildings.cpp
   LEGO1/lego/legoomni/src/actors/bumpbouy.cpp
   LEGO1/lego/legoomni/src/actors/doors.cpp
@@ -363,8 +364,6 @@ add_library(lego1 SHARED
   LEGO1/lego/legoomni/src/audio/legoloadcachesoundpresenter.cpp
   LEGO1/lego/legoomni/src/audio/legosoundmanager.cpp
   LEGO1/lego/legoomni/src/audio/mxbackgroundaudiomanager.cpp
-  LEGO1/lego/legoomni/src/build/buildingentity.cpp
-  LEGO1/lego/legoomni/src/build/legobuildingmanager.cpp
   LEGO1/lego/legoomni/src/build/legocarbuild.cpp
   LEGO1/lego/legoomni/src/build/legocarbuildpresenter.cpp
   LEGO1/lego/legoomni/src/common/legoactioncontrolpresenter.cpp
@@ -372,6 +371,7 @@ add_library(lego1 SHARED
   LEGO1/lego/legoomni/src/common/legoanimationmanager.cpp
   LEGO1/lego/legoomni/src/common/legoanimmmpresenter.cpp
   LEGO1/lego/legoomni/src/common/legobackgroundcolor.cpp
+  LEGO1/lego/legoomni/src/common/legobuildingmanager.cpp
   LEGO1/lego/legoomni/src/common/legocharactermanager.cpp
   LEGO1/lego/legoomni/src/common/legofullscreenmovie.cpp
   LEGO1/lego/legoomni/src/common/legogamestate.cpp

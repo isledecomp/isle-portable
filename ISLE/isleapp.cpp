@@ -160,7 +160,7 @@ void IsleApp::Close()
 		Lego()->RemoveWorld(ds.GetAtomId(), ds.GetObjectId());
 		Lego()->DeleteObject(ds);
 		TransitionManager()->SetWaitIndicator(NULL);
-		Lego()->StopTimer();
+		Lego()->Resume();
 
 		while (Streamer()->Close(NULL) == SUCCESS) {
 		}
@@ -283,7 +283,7 @@ int SDL_AppIterate(void* appstate)
 			g_reqEnableRMDevice = FALSE;
 			VideoManager()->EnableRMDevice();
 			g_rmDisabled = FALSE;
-			Lego()->StopTimer();
+			Lego()->Resume();
 		}
 
 		if (g_closed) {
@@ -596,7 +596,7 @@ inline void IsleApp::Tick()
 		return;
 	}
 
-	if (!Lego()->IsTimerRunning()) {
+	if (!Lego()->IsPaused()) {
 		TickleManager()->Tickle();
 	}
 	g_lastFrameTime = currentTime;
