@@ -316,11 +316,11 @@ int SDL_AppEvent(void* appstate, const SDL_Event* event)
 	switch (event->type) {
 	case SDL_EVENT_WINDOW_FOCUS_GAINED:
 		g_isle->SetWindowActive(TRUE);
-		Lego()->StopTimer();
+		Lego()->Resume();
 		break;
 	case SDL_EVENT_WINDOW_FOCUS_LOST:
 		g_isle->SetWindowActive(FALSE);
-		Lego()->StartTimer();
+		Lego()->Pause();
 		break;
 	case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
 		if (!g_closed) {
