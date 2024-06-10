@@ -595,7 +595,7 @@ inline void IsleApp::Tick()
 		return;
 	}
 
-	if (!Lego()->IsTimerRunning()) {
+	if (!Lego()->IsPaused()) {
 		TickleManager()->Tickle();
 	}
 	g_lastFrameTime = currentTime;
