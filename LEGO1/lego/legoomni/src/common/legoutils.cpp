@@ -10,6 +10,7 @@
 #include "legoinputmanager.h"
 #include "legomain.h"
 #include "legonamedtexture.h"
+#include "legopathstruct.h"
 #include "legosoundmanager.h"
 #include "legovideomanager.h"
 #include "legoworld.h"
@@ -20,7 +21,6 @@
 #include "mxmisc.h"
 #include "mxnotificationmanager.h"
 #include "mxstreamer.h"
-#include "mxtype19notificationparam.h"
 #include "mxtypes.h"
 #include "mxutilities.h"
 #include "mxvariabletable.h"
@@ -35,7 +35,24 @@
 // FUNCTION: LEGO1 0x1003dd70
 LegoROI* PickROI(MxLong p_a, MxLong p_b)
 {
-	return (LegoROI*) VideoManager()->Get3DManager()->GetLego3DView()->Pick(p_a, p_b);
+	LegoVideoManager* videoManager = VideoManager();
+	Lego3DView* view = videoManager->Get3DManager()->GetLego3DView();
+	return (LegoROI*) view->Pick(p_a, p_b);
+}
+
+// FUNCTION: LEGO1 0x1003dd90
+// FUNCTION: BETA10 0x100d3449
+LegoROI* PickParentROI(MxLong p_a, MxLong p_b)
+{
+	LegoVideoManager* videoManager = VideoManager();
+	Lego3DView* view = videoManager->Get3DManager()->GetLego3DView();
+	LegoROI* roi = (LegoROI*) view->Pick(p_a, p_b);
+
+	while (roi != NULL && roi->GetParentROI() != NULL) {
+		roi = (LegoROI*) roi->GetParentROI();
+	}
+
+	return roi;
 }
 
 // STUB: LEGO1 0x1003ddc0
@@ -351,7 +368,7 @@ void PlayCamAnim(LegoPathActor* p_actor, MxBool p_unused, MxU32 p_location, MxBo
 	MxLong result = 0;
 
 	if (world != NULL) {
-		MxType19NotificationParam param(c_notificationType19, p_actor, 0x43, p_location);
+		LegoPathStructEvent param(c_notificationPathStruct, p_actor, LegoPathStruct::c_camAnim, p_location);
 		result = world->Notify(param);
 	}
 
@@ -474,8 +491,8 @@ MxBool FUN_1003ef60()
 		GameState()->m_currentArea != LegoGameState::e_elevdown &&
 		GameState()->m_currentArea != LegoGameState::e_garadoor &&
 		GameState()->m_currentArea != LegoGameState::e_polidoor) {
-		if (CurrentActor() == NULL || !CurrentActor()->IsA("TowTrack")) {
-			if (CurrentActor() == NULL || !CurrentActor()->IsA("Ambulance")) {
+		if (UserActor() == NULL || !UserActor()->IsA("TowTrack")) {
+			if (UserActor() == NULL || !UserActor()->IsA("Ambulance")) {
 				MxU32 unk0x18 = act1State->GetUnknown18();
 
 				if (unk0x18 != 10 && unk0x18 != 8 && unk0x18 != 3) {

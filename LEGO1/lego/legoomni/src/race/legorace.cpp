@@ -36,7 +36,7 @@ LegoRace::LegoRace()
 }
 
 // FUNCTION: LEGO1 0x10015b70
-MxLong LegoRace::HandleType19Notification(MxType19NotificationParam&)
+MxLong LegoRace::HandlePathStruct(LegoPathStructEvent&)
 {
 	return 0;
 }
@@ -61,9 +61,9 @@ MxResult LegoRace::Create(MxDSAction& p_dsAction)
 	if (result == SUCCESS) {
 		m_act1State = (Act1State*) GameState()->GetState("Act1State");
 		ControlManager()->Register(this);
-		m_pathActor = CurrentActor();
+		m_pathActor = UserActor();
 		m_pathActor->SetWorldSpeed(0);
-		SetCurrentActor(NULL);
+		SetUserActor(NULL);
 	}
 
 	return result;
@@ -74,7 +74,7 @@ LegoRace::~LegoRace()
 {
 	g_unk0x100f119c = FALSE;
 	if (m_pathActor) {
-		SetCurrentActor(m_pathActor);
+		SetUserActor(m_pathActor);
 		NavController()->ResetMaxLinearVel(m_pathActor->GetMaxLinearVel());
 		m_pathActor = NULL;
 	}
@@ -101,8 +101,8 @@ MxLong LegoRace::Notify(MxParam& p_param)
 		case c_notificationClick:
 			result = HandleClick((LegoEventNotificationParam&) p_param);
 			break;
-		case c_notificationType19:
-			result = HandleType19Notification((MxType19NotificationParam&) p_param);
+		case c_notificationPathStruct:
+			result = HandlePathStruct((LegoPathStructEvent&) p_param);
 			break;
 		case c_notificationTransitioned:
 			GameState()->SwitchArea(m_destLocation);
@@ -118,7 +118,7 @@ MxLong LegoRace::Notify(MxParam& p_param)
 void LegoRace::Enable(MxBool p_enable)
 {
 	if (GetUnknown0xd0Empty() != p_enable && !p_enable) {
-		Remove(CurrentActor());
+		Remove(UserActor());
 
 		MxU8 oldActorId = GameState()->GetActorId();
 		GameState()->RemoveActor();
@@ -134,11 +134,16 @@ RaceState::RaceState()
 	// TODO
 }
 
-// STUB: LEGO1 0x10016140
-MxResult RaceState::Serialize(LegoFile* p_legoFile)
+// FUNCTION: LEGO1 0x10016140
+MxResult RaceState::Serialize(LegoFile* p_file)
 {
-	// TODO
-	return LegoState::Serialize(p_legoFile);
+	LegoState::Serialize(p_file);
+
+	for (MxS16 i = 0; i < 5; i++) {
+		m_state[i].Serialize(p_file);
+	}
+
+	return SUCCESS;
 }
 
 // FUNCTION: LEGO1 0x10016280

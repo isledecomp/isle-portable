@@ -9,39 +9,12 @@
 // SIZE 0x08
 class LegoState : public MxCore {
 public:
-	// FUNCTION: LEGO1 0x10005f40
-	~LegoState() override {}
-
-	// FUNCTION: LEGO1 0x100060d0
-	inline const char* ClassName() const override // vtable+0x0c
-	{
-		// STRING: LEGO1 0x100f01b8
-		return "LegoState";
-	}
-
-	// FUNCTION: LEGO1 0x100060e0
-	inline MxBool IsA(const char* p_name) const override // vtable+0x10
-	{
-		return !strcmp(p_name, LegoState::ClassName()) || MxCore::IsA(p_name);
-	}
-
-	// FUNCTION: LEGO1 0x10005f90
-	virtual MxBool IsSerializable() { return TRUE; } // vtable+0x14
-
-	// FUNCTION: LEGO1 0x10005fa0
-	virtual MxBool SetFlag() { return FALSE; } // vtable+0x18
-
-	// FUNCTION: LEGO1 0x10005fb0
-	virtual MxResult Serialize(LegoFile* p_legoFile)
-	{
-		if (p_legoFile->IsWriteMode()) {
-			p_legoFile->WriteString(ClassName());
-		}
-		return SUCCESS;
-	} // vtable+0x1c
-
-	// SYNTHETIC: LEGO1 0x10006160
-	// LegoState::`scalar deleting destructor'
+	enum ScoreColor {
+		e_grey = 0,
+		e_yellow,
+		e_blue,
+		e_red
+	};
 
 	// SIZE 0x0c
 	class Playlist {
@@ -85,12 +58,58 @@ public:
 
 		inline void SetUnknown0x08(MxS16 p_unk0x08) { m_nextIndex = p_unk0x08; }
 
+		inline MxResult ReadFromFile(LegoFile* p_file)
+		{
+			Read(p_file, &m_nextIndex);
+			return SUCCESS;
+		}
+
+		inline MxResult WriteToFile(LegoFile* p_file)
+		{
+			Write(p_file, m_nextIndex);
+			return SUCCESS;
+		}
+
 	private:
 		MxU32* m_objectIds; // 0x00
 		MxS16 m_length;     // 0x04
 		MxS16 m_mode;       // 0x06
 		MxS16 m_nextIndex;  // 0x08
 	};
+
+	// FUNCTION: LEGO1 0x10005f40
+	~LegoState() override {}
+
+	// FUNCTION: LEGO1 0x100060d0
+	inline const char* ClassName() const override // vtable+0x0c
+	{
+		// STRING: LEGO1 0x100f01b8
+		return "LegoState";
+	}
+
+	// FUNCTION: LEGO1 0x100060e0
+	inline MxBool IsA(const char* p_name) const override // vtable+0x10
+	{
+		return !strcmp(p_name, LegoState::ClassName()) || MxCore::IsA(p_name);
+	}
+
+	// FUNCTION: LEGO1 0x10005f90
+	virtual MxBool IsSerializable() { return TRUE; } // vtable+0x14
+
+	// FUNCTION: LEGO1 0x10005fa0
+	virtual MxBool SetFlag() { return FALSE; } // vtable+0x18
+
+	// FUNCTION: LEGO1 0x10005fb0
+	virtual MxResult Serialize(LegoFile* p_file)
+	{
+		if (p_file->IsWriteMode()) {
+			p_file->WriteString(ClassName());
+		}
+		return SUCCESS;
+	} // vtable+0x1c
+
+	// SYNTHETIC: LEGO1 0x10006160
+	// LegoState::`scalar deleting destructor'
 };
 
 #endif // LEGOSTATE_H
