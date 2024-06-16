@@ -48,36 +48,36 @@ void IslePathActor::Destroy(MxBool p_fromDestructor)
 // FUNCTION: LEGO1 0x1001a2c0
 MxLong IslePathActor::Notify(MxParam& p_param)
 {
-	MxLong ret = 0;
+	MxLong result = 0;
 
-	switch (((MxNotificationParam&) p_param).GetType()) {
+	switch (((MxNotificationParam&) p_param).GetNotification()) {
 	case c_notificationType0:
-		ret = HandleNotification0();
+		result = HandleNotification0();
 		break;
 	case c_notificationClick:
-		ret = HandleClick();
+		result = HandleClick();
 		break;
 	case c_notificationControl:
-		ret = HandleControl((LegoControlManagerEvent&) p_param);
+		result = HandleControl((LegoControlManagerEvent&) p_param);
 		break;
 	case c_notificationEndAnim:
-		ret = HandleEndAnim((LegoEndAnimNotificationParam&) p_param);
+		result = HandleEndAnim((LegoEndAnimNotificationParam&) p_param);
 		break;
-	case c_notificationType19:
-		ret = HandleNotification19((MxType19NotificationParam&) p_param);
+	case c_notificationPathStruct:
+		result = HandlePathStruct((LegoPathStructEvent&) p_param);
 		break;
 	}
 
-	return ret;
+	return result;
 }
 
 // FUNCTION: LEGO1 0x1001a350
 void IslePathActor::Enter()
 {
 	m_roi->SetVisibility(FALSE);
-	if (CurrentActor() != this) {
+	if (UserActor() != this) {
 		m_previousVel = NavController()->GetMaxLinearVel();
-		m_previousActor = CurrentActor();
+		m_previousActor = UserActor();
 		if (m_previousActor) {
 			m_previousActor->ResetWorldTransform(FALSE);
 			m_previousActor->SetUserNavFlag(FALSE);
@@ -91,7 +91,7 @@ void IslePathActor::Enter()
 
 		NavController()->ResetMaxLinearVel(m_maxLinearVel);
 
-		SetCurrentActor(this);
+		SetUserActor(this);
 		FUN_1001b660();
 		FUN_10010c30();
 	}
@@ -110,7 +110,7 @@ void IslePathActor::Exit()
 	SetUserNavFlag(FALSE);
 
 	if (m_previousActor != NULL) {
-		SetCurrentActor(m_previousActor);
+		SetUserActor(m_previousActor);
 		NavController()->ResetMaxLinearVel(m_previousVel);
 		m_previousActor->ResetWorldTransform(TRUE);
 		m_previousActor->SetUserNavFlag(TRUE);
@@ -510,7 +510,7 @@ void IslePathActor::RegisterSpawnLocations()
 
 // FUNCTION: LEGO1 0x1001b2a0
 // FUNCTION: BETA10 0x100369c6
-void IslePathActor::SpawnPlayer(LegoGameState::Area p_area, MxBool p_und, MxU8 p_flags)
+void IslePathActor::SpawnPlayer(LegoGameState::Area p_area, MxBool p_enter, MxU8 p_flags)
 {
 	MxS16 i;
 
@@ -531,7 +531,7 @@ void IslePathActor::SpawnPlayer(LegoGameState::Area p_area, MxBool p_und, MxU8 p
 
 		m_world = world;
 
-		if (p_und) {
+		if (p_enter) {
 			Enter();
 		}
 

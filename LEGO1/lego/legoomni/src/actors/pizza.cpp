@@ -8,7 +8,7 @@
 #include "mxticklemanager.h"
 
 DECOMP_SIZE_ASSERT(Pizza, 0x9c)
-DECOMP_SIZE_ASSERT(PizzaMissionState, 0xb0)
+DECOMP_SIZE_ASSERT(PizzaMissionState, 0xb4)
 DECOMP_SIZE_ASSERT(PizzaMissionState::Entry, 0x20)
 
 // FUNCTION: LEGO1 0x10037ef0
@@ -99,11 +99,29 @@ undefined4 Pizza::HandleEndAction(MxEndActionNotificationParam&)
 	return 0;
 }
 
-// STUB: LEGO1 0x100393c0
-MxResult PizzaMissionState::Serialize(LegoFile* p_legoFile)
+// STUB: LEGO1 0x10039030
+PizzaMissionState::PizzaMissionState()
 {
 	// TODO
-	return LegoState::Serialize(p_legoFile);
+}
+
+// FUNCTION: LEGO1 0x100393c0
+MxResult PizzaMissionState::Serialize(LegoFile* p_file)
+{
+	LegoState::Serialize(p_file);
+
+	if (p_file->IsReadMode()) {
+		for (MxS16 i = 0; i < 5; i++) {
+			m_state[i].ReadFromFile(p_file);
+		}
+	}
+	else if (p_file->IsWriteMode()) {
+		for (MxS16 i = 0; i < 5; i++) {
+			m_state[i].WriteToFile(p_file);
+		}
+	}
+
+	return SUCCESS;
 }
 
 // FUNCTION: LEGO1 0x10039510

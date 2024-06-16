@@ -64,7 +64,7 @@ MxBool LegoCarBuild::Escape()
 }
 
 // FUNCTION: LEGO1 0x10025f30
-LegoVehicleBuildState::LegoVehicleBuildState(char* p_classType)
+LegoVehicleBuildState::LegoVehicleBuildState(const char* p_classType)
 {
 	m_className = p_classType;
 	m_unk0x4c = 0;
@@ -73,9 +73,23 @@ LegoVehicleBuildState::LegoVehicleBuildState(char* p_classType)
 	m_placedPartCount = 0;
 }
 
-// STUB: LEGO1 0x10026120
-MxResult LegoVehicleBuildState::Serialize(LegoFile* p_legoFile)
+// FUNCTION: LEGO1 0x10026120
+MxResult LegoVehicleBuildState::Serialize(LegoFile* p_file)
 {
-	// TODO
-	return LegoState::Serialize(p_legoFile);
+	LegoState::Serialize(p_file);
+
+	if (p_file->IsReadMode()) {
+		Read(p_file, &m_unk0x4c);
+		Read(p_file, &m_unk0x4d);
+		Read(p_file, &m_unk0x4e);
+		Read(p_file, &m_placedPartCount);
+	}
+	else {
+		Write(p_file, m_unk0x4c);
+		Write(p_file, m_unk0x4d);
+		Write(p_file, m_unk0x4e);
+		Write(p_file, m_placedPartCount);
+	}
+
+	return SUCCESS;
 }

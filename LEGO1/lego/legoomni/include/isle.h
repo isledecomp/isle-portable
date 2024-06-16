@@ -15,7 +15,7 @@ class Jetski;
 class JukeBoxEntity;
 class LegoNamedTexture;
 class Motocycle;
-class MxType19NotificationParam;
+class LegoPathStructEvent;
 class Pizza;
 class Pizzeria;
 class RaceCar;
@@ -88,8 +88,8 @@ public:
 		return !strcmp(p_name, Act1State::ClassName()) || LegoState::IsA(p_name);
 	}
 
-	MxBool SetFlag() override;                         // vtable+0x18
-	MxResult Serialize(LegoFile* p_legoFile) override; // vtable+0x1c
+	MxBool SetFlag() override;                     // vtable+0x18
+	MxResult Serialize(LegoFile* p_file) override; // vtable+0x1c
 
 	void FUN_10034660();
 	void FUN_100346a0();
@@ -199,7 +199,7 @@ public:
 protected:
 	MxLong HandleEndAction(MxEndActionNotificationParam& p_param);
 	MxLong HandleControl(LegoControlManagerEvent& p_param);
-	MxLong HandleType19Notification(MxType19NotificationParam& p_param);
+	MxLong HandlePathStruct(LegoPathStructEvent& p_param);
 	MxLong HandleTransitionEnd();
 	void HandleElevatorEndAction();
 	void UpdateGlobe();
