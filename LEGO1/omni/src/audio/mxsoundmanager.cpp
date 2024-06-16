@@ -37,8 +37,8 @@ MxSoundManager::~MxSoundManager()
 // FUNCTION: LEGO1 0x100ae830
 void MxSoundManager::Init()
 {
-	m_directSound = NULL;
-	m_dsBuffer = NULL;
+	SDL_zero(m_engine);
+	m_stream = NULL;
 }
 
 // FUNCTION: LEGO1 0x100ae840
@@ -54,9 +54,11 @@ void MxSoundManager::Destroy(MxBool p_fromDestructor)
 
 	m_criticalSection.Enter();
 
-	if (m_dsBuffer) {
-		m_dsBuffer->Release();
+	if (m_stream) {
+		SDL_DestroyAudioStream(m_stream);
 	}
+
+	ma_engine_uninit(&m_engine);
 
 	Init();
 	m_criticalSection.Leave();
@@ -79,56 +81,27 @@ MxResult MxSoundManager::Create(MxU32 p_frequencyMS, MxBool p_createThread)
 	m_criticalSection.Enter();
 	locked = TRUE;
 
-	if (DirectSoundCreate(NULL, &m_directSound, NULL) != DS_OK) {
+	ma_engine_config engineConfig = ma_engine_config_init();
+	engineConfig.noDevice = MA_TRUE;
+	engineConfig.channels = MxOmni::IsSound3D() ? 2 : 1;
+	engineConfig.sampleRate = g_sampleRate;
+
+	if (ma_engine_init(&engineConfig, &m_engine) != MA_SUCCESS) {
 		goto done;
 	}
 
-	if (m_directSound->SetCooperativeLevel(MxOmni::GetInstance()->GetWindowHandle(), DSSCL_PRIORITY) != DS_OK) {
+	SDL_AudioSpec spec;
+	SDL_zero(spec);
+	spec.freq = ma_engine_get_sample_rate(&m_engine);
+	spec.format = SDL_AUDIO_F32;
+	spec.channels = ma_engine_get_channels(&m_engine);
+
+	if ((m_stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, &AudioStreamCallback, this)) ==
+		NULL) {
 		goto done;
 	}
 
-	DSBUFFERDESC desc;
-	memset(&desc, 0, sizeof(desc));
-	desc.dwSize = sizeof(desc);
-
-	if (MxOmni::IsSound3D()) {
-		desc.dwFlags = DSBCAPS_PRIMARYBUFFER | DSBCAPS_CTRL3D;
-	}
-	else {
-		desc.dwFlags = DSBCAPS_PRIMARYBUFFER | DSBCAPS_CTRLVOLUME;
-	}
-
-	if (m_directSound->CreateSoundBuffer(&desc, &m_dsBuffer, NULL) != DS_OK) {
-		if (!MxOmni::IsSound3D()) {
-			goto done;
-		}
-
-		MxOmni::SetSound3D(FALSE);
-		desc.dwFlags = DSBCAPS_PRIMARYBUFFER | DSBCAPS_CTRLVOLUME;
-
-		if (m_directSound->CreateSoundBuffer(&desc, &m_dsBuffer, NULL) != DS_OK) {
-			goto done;
-		}
-	}
-
-	WAVEFORMATEX format;
-
-	format.wFormatTag = WAVE_FORMAT_PCM;
-
-	if (MxOmni::IsSound3D()) {
-		format.nChannels = 2;
-	}
-	else {
-		format.nChannels = 1;
-	}
-
-	format.nSamplesPerSec = 11025; // KHz
-	format.wBitsPerSample = 16;
-	format.nBlockAlign = format.nChannels * 2;
-	format.nAvgBytesPerSec = format.nBlockAlign * 11025;
-	format.cbSize = 0;
-
-	status = m_dsBuffer->SetFormat(&format);
+	SDL_ResumeAudioDevice(SDL_GetAudioStreamDevice(m_stream));
 
 	if (p_createThread) {
 		m_thread = new MxTickleThread(this, p_frequencyMS);
@@ -152,6 +125,25 @@ done:
 		m_criticalSection.Leave();
 	}
 	return status;
+}
+
+void MxSoundManager::AudioStreamCallback(
+	void* p_userdata,
+	SDL_AudioStream* p_stream,
+	int p_additionalAmount,
+	int p_totalAmount
+)
+{
+	static MxU8 g_buffer[4096];
+
+	MxSoundManager* manager = (MxSoundManager*) p_userdata;
+	ma_uint32 bytesPerFrame = ma_get_bytes_per_frame(ma_format_f32, ma_engine_get_channels(&manager->m_engine));
+	ma_uint32 bufferSizeInFrames = (ma_uint32) SDL_min(sizeof(g_buffer), p_additionalAmount) / bytesPerFrame;
+	ma_uint64 framesRead;
+
+	if (ma_engine_read_pcm_frames(&manager->m_engine, g_buffer, bufferSizeInFrames, &framesRead) == MA_SUCCESS) {
+		SDL_PutAudioStreamData(manager->m_stream, g_buffer, framesRead * bytesPerFrame);
+	}
 }
 
 // FUNCTION: LEGO1 0x100aeab0
@@ -196,15 +188,15 @@ MxPresenter* MxSoundManager::FUN_100aebd0(const MxAtomId& p_atomId, MxU32 p_obje
 }
 
 // FUNCTION: LEGO1 0x100aecf0
-MxS32 MxSoundManager::GetAttenuation(MxU32 p_volume)
+float MxSoundManager::GetAttenuation(MxU32 p_volume)
 {
-	// The unit for p_volume is percent, rounded to integer.
-	// Convert to DSOUND attenuation units: -10000 (silent) to 0 (loudest).
+	// [library:audio] Convert DSOUND attenutation units to linear miniaudio volume
+
 	if (p_volume == 0) {
-		return DSBVOLUME_MIN;
+		return 0.0f;
 	}
 
-	return g_volumeAttenuation[p_volume - 1];
+	return ma_volume_db_to_linear((float) g_volumeAttenuation[p_volume - 1] / 100.0f);
 }
 
 // FUNCTION: LEGO1 0x100aed10

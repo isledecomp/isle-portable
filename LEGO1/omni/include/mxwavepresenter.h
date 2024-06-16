@@ -4,7 +4,7 @@
 #include "decomp.h"
 #include "mxsoundpresenter.h"
 
-#include <dsound.h>
+#include <miniaudio.h>
 
 // VTABLE: LEGO1 0x100d49a8
 // SIZE 0x6c
@@ -56,12 +56,19 @@ public:
 	// FUNCTION: LEGO1 0x1000d6b0
 	virtual MxBool IsPaused() { return m_paused; } // vtable+0x6c
 
+#pragma pack(push, 1)
 	// SIZE 0x18
 	struct WaveFormat {
-		PCMWAVEFORMAT m_pcmWaveFormat; // 0x00
-		MxU32 m_dataSize;              // 0x10
-		MxU32 m_flags;                 // 0x14
+		MxU16 m_formatTag;      // 0x00
+		MxU16 m_channels;       // 0x02
+		MxU32 m_samplesPerSec;  // 0x04
+		MxU32 m_avgBytesPerSec; // 0x08
+		MxU16 m_blockAlign;     // 0x0c
+		MxU16 m_bitsPerSample;  // 0x0e
+		MxU32 m_dataSize;       // 0x10
+		MxU32 m_flags;          // 0x14
 	};
+#pragma pack(pop)
 
 	// SYNTHETIC: LEGO1 0x1000d810
 	// MxWavePresenter::`scalar deleting destructor'
@@ -69,20 +76,25 @@ public:
 protected:
 	void Init();
 	void Destroy(MxBool p_fromDestructor);
+	MxBool WriteToSoundBuffer(void* p_audioPtr, MxU32 p_length);
 
-	MxS8 GetPlayedChunks();
-	MxBool FUN_100b1ba0();
-	void WriteToSoundBuffer(void* p_audioPtr, MxU32 p_length);
+	// [library:audio] One chunk has up to 1 second worth of frames
+	static const MxU32 g_millisecondsPerChunk = 1000;
 
-	WaveFormat* m_waveFormat;       // 0x54
-	LPDIRECTSOUNDBUFFER m_dsBuffer; // 0x58
-	MxU32 m_chunkLength;            // 0x5c
-	MxU32 m_lockSize;               // 0x60
-	MxU8 m_writtenChunks;           // 0x64
-	MxBool m_started;               // 0x65
-	MxBool m_is3d;                  // 0x66
-	MxS8 m_silenceData;             // 0x67
-	MxBool m_paused;                // 0x68
+	// [library:audio] Store up to 2 chunks worth of frames (same as in original game)
+	static const MxU32 g_rbSizeInMilliseconds = g_millisecondsPerChunk * 2;
+
+	// [library:audio] WAVE_FORMAT_PCM (audio in .SI files only used this format)
+	static const MxU32 g_supportedFormatTag = 1;
+
+	WaveFormat* m_waveFormat; // 0x54
+	ma_pcm_rb m_rb;
+	ma_sound m_sound;
+	MxU32 m_chunkLength; // 0x5c
+	MxBool m_started;    // 0x65
+	MxBool m_is3d;       // 0x66
+	MxS8 m_silenceData;  // 0x67
+	MxBool m_paused;     // 0x68
 };
 
 #endif // MXWAVEPRESENTER_H

@@ -11,9 +11,7 @@
 #include "mxeventpresenter.h"
 #include "mxflcpresenter.h"
 #include "mxloopingflcpresenter.h"
-#include "mxloopingmidipresenter.h"
 #include "mxloopingsmkpresenter.h"
-#include "mxmidipresenter.h"
 #include "mxmisc.h"
 #include "mxnotificationmanager.h"
 #include "mxobjectfactory.h"
@@ -210,8 +208,8 @@ const char* PresenterNameDispatch(const MxDSAction& p_action)
 			format = ((MxDSSound&) p_action).GetMediaFormat();
 			switch (format) {
 			case FOURCC(' ', 'M', 'I', 'D'):
-				name = !p_action.IsLooping() ? MxMIDIPresenter::HandlerClassName()
-											 : MxLoopingMIDIPresenter::HandlerClassName();
+				// [library:audio] No MIDI files are used in the retail version of the game.
+				assert(FALSE);
 				break;
 			case FOURCC(' ', 'W', 'A', 'V'):
 				name = MxWavePresenter::HandlerClassName();

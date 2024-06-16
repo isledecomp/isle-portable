@@ -1,3 +1,6 @@
 [submodule "3rdparty/libsmacker"]
 	path = 3rdparty/libsmacker
 	url = https://github.com/foxtacles/libsmacker
+[submodule "3rdparty/miniaudio"]
+	path = 3rdparty/miniaudio
+	url = https://github.com/mackron/miniaudio
