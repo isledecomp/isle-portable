@@ -76,14 +76,6 @@ MxVariableTable* VariableTable()
 	return MxOmni::GetInstance()->GetVariableTable();
 }
 
-// FUNCTION: LEGO1 0x100acf30
-// FUNCTION: BETA10 0x10124faf
-MxMusicManager* MusicManager()
-{
-	assert(MxOmni::GetInstance());
-	return MxOmni::GetInstance()->GetMusicManager();
-}
-
 // FUNCTION: LEGO1 0x100acf40
 // FUNCTION: BETA10 0x10124ff6
 MxEventManager* EventManager()

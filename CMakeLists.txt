@@ -122,6 +122,27 @@ set_property(TARGET libsmacker PROPERTY ARCHIVE_OUTPUT_NAME "libsmacker$<$<CONFI
 set_property(TARGET libsmacker PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_SOURCE_DIR}/3rdparty/libsmacker")
 target_include_directories(libsmacker PRIVATE "${CMAKE_SOURCE_DIR}/3rdparty/libsmacker")
 
+add_library(miniaudio STATIC
+  3rdparty/miniaudio/extras/miniaudio_split/miniaudio.c
+)
+register_lego1_target(miniaudio)
+set_property(TARGET miniaudio PROPERTY ARCHIVE_OUTPUT_NAME "miniaudio$<$<CONFIG:Debug>:d>")
+set_property(TARGET miniaudio PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_SOURCE_DIR}/3rdparty/miniaudio/extras/miniaudio_split")
+target_include_directories(miniaudio PRIVATE "${CMAKE_SOURCE_DIR}/3rdparty/miniaudio/extras/miniaudio_split")
+# Disable most features since we don't need them.
+target_compile_definitions(miniaudio PUBLIC
+  MA_ENABLE_ONLY_SPECIFIC_BACKENDS
+  MA_NO_DECODING
+  MA_NO_ENCODING
+  MA_NO_WAV
+  MA_NO_FLAC
+  MA_NO_MP3
+  MA_NO_DEVICE_IO
+  MA_NO_RESOURCE_MANAGER
+  MA_NO_GENERATION
+  MA_NO_THREADING
+)
+
 add_library(tglrl STATIC
   LEGO1/tgl/d3drm/camera.cpp
   LEGO1/tgl/d3drm/device.cpp
@@ -243,10 +264,6 @@ add_library(omni STATIC
   LEGO1/omni/src/action/mxdsstreamingaction.cpp
   LEGO1/omni/src/audio/mxaudiomanager.cpp
   LEGO1/omni/src/audio/mxaudiopresenter.cpp
-  LEGO1/omni/src/audio/mxloopingmidipresenter.cpp
-  LEGO1/omni/src/audio/mxmidipresenter.cpp
-  LEGO1/omni/src/audio/mxmusicmanager.cpp
-  LEGO1/omni/src/audio/mxmusicpresenter.cpp
   LEGO1/omni/src/audio/mxsoundmanager.cpp
   LEGO1/omni/src/audio/mxsoundpresenter.cpp
   LEGO1/omni/src/audio/mxwavepresenter.cpp
@@ -314,7 +331,7 @@ add_library(omni STATIC
 register_lego1_target(omni)
 set_property(TARGET omni PROPERTY ARCHIVE_OUTPUT_NAME "omni$<$<CONFIG:Debug>:d>")
 target_include_directories(omni PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include" "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/util")
-target_link_libraries(omni PRIVATE dsound winmm libsmacker)
+target_link_libraries(omni PRIVATE winmm libsmacker miniaudio)
 
 add_library(lego1 SHARED
   LEGO1/define.cpp
@@ -454,7 +471,7 @@ target_include_directories(lego1 PUBLIC "${CMAKE_SOURCE_DIR}/LEGO1/lego/legoomni
 target_include_directories(lego1 PUBLIC "${CMAKE_SOURCE_DIR}/LEGO1/lego/legoomni/include/actions")
 
 # Link libraries
-target_link_libraries(lego1 PRIVATE tglrl viewmanager realtime mxdirectx roi geom anim Vec::Vec dxguid misc 3dmanager omni)
+target_link_libraries(lego1 PRIVATE tglrl viewmanager realtime mxdirectx roi geom anim Vec::Vec dxguid misc 3dmanager miniaudio omni)
 
 foreach(tgt IN LISTS lego1_targets)
   target_link_libraries(${tgt} PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5> SDL3::SDL3)
@@ -480,7 +497,7 @@ if (ISLE_BUILD_APP)
   target_link_libraries(isle PRIVATE SDL3::SDL3 iniparser-static)
 
   # Link DSOUND, WINMM, and LEGO1
-  target_link_libraries(isle PRIVATE dsound winmm lego1)
+  target_link_libraries(isle PRIVATE winmm lego1)
 
   # Make sure filenames are ALL CAPS
   set_property(TARGET isle PROPERTY OUTPUT_NAME ISLE)

@@ -5,7 +5,8 @@
 #include "mxatom.h"
 #include "mxaudiomanager.h"
 
-#include <dsound.h>
+#include <SDL3/SDL_audio.h>
+#include <miniaudio.h>
 
 // VTABLE: LEGO1 0x100dc128
 // SIZE 0x3c
@@ -20,17 +21,29 @@ public:
 	virtual void Pause();                                                // vtable+0x34
 	virtual void Resume();                                               // vtable+0x38
 
-	inline LPDIRECTSOUND GetDirectSound() { return m_directSound; }
+	inline ma_engine* GetEngine() { return &m_engine; }
 
-	MxS32 GetAttenuation(MxU32 p_volume);
+	float GetAttenuation(MxU32 p_volume);
 
 protected:
 	void Init();
 	void Destroy(MxBool p_fromDestructor);
 	MxPresenter* FUN_100aebd0(const MxAtomId& p_atomId, MxU32 p_objectId);
 
-	LPDIRECTSOUND m_directSound;    // 0x30
-	LPDIRECTSOUNDBUFFER m_dsBuffer; // 0x34
+	// [library:audio]
+	// Upscaling everything to 44.1KHz, since we have various sample rates throughout the game.
+	// Not sure how DirectSound handles this when different buffers have different rates.
+	static const MxU32 g_sampleRate = 44100;
+
+	static void AudioStreamCallback(
+		void* p_userdata,
+		SDL_AudioStream* p_stream,
+		int p_additionalAmount,
+		int p_totalAmount
+	);
+
+	ma_engine m_engine;
+	SDL_AudioStream* m_stream;
 	undefined m_unk0x38[4];
 };
 

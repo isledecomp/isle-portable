@@ -6,7 +6,6 @@
 class MxAtomSet;
 class MxDSAction;
 class MxEventManager;
-class MxMusicManager;
 class MxNotificationManager;
 class MxObjectFactory;
 class MxSoundManager;
@@ -21,7 +20,6 @@ MxTimer* Timer();
 MxStreamer* Streamer();
 MxSoundManager* MSoundManager();
 MxVariableTable* VariableTable();
-MxMusicManager* MusicManager();
 MxEventManager* EventManager();
 MxResult Start(MxDSAction*);
 MxNotificationManager* NotificationManager();

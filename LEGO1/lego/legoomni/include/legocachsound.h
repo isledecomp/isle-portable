@@ -5,6 +5,7 @@
 #include "lego3dsound.h"
 #include "mxcore.h"
 #include "mxstring.h"
+#include "mxwavepresenter.h"
 
 // VTABLE: LEGO1 0x100d4718
 // SIZE 0x88
@@ -27,7 +28,7 @@ public:
 	}
 
 	virtual MxResult Create(
-		LPPCMWAVEFORMAT p_pwfx,
+		MxWavePresenter::WaveFormat& p_pwfx,
 		MxString p_mediaSrcPath,
 		MxS32 p_volume,
 		MxU8* p_data,
@@ -54,20 +55,24 @@ private:
 	void CopyData(MxU8* p_data, MxU32 p_dataSize);
 	MxString FUN_10006d80(const MxString& p_str);
 
-	LPDIRECTSOUNDBUFFER m_dsBuffer; // 0x08
-	undefined m_unk0x0c[4];         // 0x0c
-	Lego3DSound m_sound;            // 0x10
-	MxU8* m_data;                   // 0x40
-	MxU32 m_dataSize;               // 0x44
-	MxString m_unk0x48;             // 0x48
-	MxBool m_unk0x58;               // 0x58
-	PCMWAVEFORMAT m_wfx;            // 0x59
-	MxBool m_looping;               // 0x69
-	MxBool m_unk0x6a;               // 0x6a
-	MxS32 m_volume;                 // 0x6c
-	MxBool m_unk0x70;               // 0x70
-	MxString m_unk0x74;             // 0x74
-	MxBool m_muted;                 // 0x84
+	// [library:audio] WAVE_FORMAT_PCM (audio in .SI files only used this format)
+	static const MxU32 g_supportedFormatTag = 1;
+
+	ma_audio_buffer m_buffer;
+	ma_sound m_cacheSound;
+	undefined m_unk0x0c[4];            // 0x0c
+	Lego3DSound m_sound;               // 0x10
+	MxU8* m_data;                      // 0x40
+	MxU32 m_dataSize;                  // 0x44
+	MxString m_unk0x48;                // 0x48
+	MxBool m_unk0x58;                  // 0x58
+	MxWavePresenter::WaveFormat m_wfx; // 0x59
+	MxBool m_looping;                  // 0x69
+	MxBool m_unk0x6a;                  // 0x6a
+	MxS32 m_volume;                    // 0x6c
+	MxBool m_unk0x70;                  // 0x70
+	MxString m_unk0x74;                // 0x74
+	MxBool m_muted;                    // 0x84
 };
 
 #endif // LEGOCACHSOUND_H
