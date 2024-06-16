@@ -96,7 +96,7 @@ MxResult MxSoundManager::Create(MxU32 p_frequencyMS, MxBool p_createThread)
 	spec.format = SDL_AUDIO_F32;
 	spec.channels = ma_engine_get_channels(&m_engine);
 
-	if ((m_stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_OUTPUT, &spec, &AudioStreamCallback, this)) ==
+	if ((m_stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, &AudioStreamCallback, this)) ==
 		NULL) {
 		goto done;
 	}
