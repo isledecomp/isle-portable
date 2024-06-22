@@ -3,12 +3,11 @@
 
 #include "mxtypes.h"
 #include "mxvideoparam.h"
+#include "lego/legoomni/include/legoutils.h"
 
 #include <SDL3/SDL_mouse.h>
 #include <SDL3/SDL_video.h>
 #include <windows.h>
-
-enum Cursor;
 
 // SIZE 0x8c
 class IsleApp {
