@@ -111,6 +111,8 @@ if(ISLE_USE_DX5_LIBS)
     target_link_directories(DirectX5::DirectX5 INTERFACE "${CMAKE_SOURCE_DIR}/3rdparty/dx5/lib")
 endif()
 
+add_subdirectory(3rdparty/d3drm)
+
 add_library(Vec::Vec INTERFACE IMPORTED)
 target_include_directories(Vec::Vec INTERFACE "${CMAKE_SOURCE_DIR}/3rdparty/vec")
 
@@ -157,7 +159,13 @@ add_library(tglrl STATIC
 register_lego1_target(tglrl)
 set_property(TARGET tglrl PROPERTY ARCHIVE_OUTPUT_NAME "tglrl40$<$<CONFIG:Debug>:d>")
 target_include_directories(tglrl PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/util")
-target_link_libraries(tglrl PRIVATE d3drm)
+
+option(D3DRM_FROM_WINE "Use d3drm from wine" OFF)
+if(D3DRM_FROM_WINE)
+    target_link_libraries(tglrl PRIVATE d3drm-wine)
+else()
+    target_link_libraries(tglrl PRIVATE d3drm)
+endif()
 
 add_library(realtime STATIC
   LEGO1/realtime/matrix.cpp

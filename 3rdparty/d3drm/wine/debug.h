@@ -129,6 +129,7 @@ extern DECLSPEC_EXPORT int __cdecl __wine_dbg_header( enum __wine_debug_class cl
 # define __wine_dbg_cdecl
 #endif
 
+#if 0
 static const char * __wine_dbg_cdecl wine_dbg_vsprintf( const char *format, va_list args ) __WINE_PRINTF_ATTR(1,0);
 static inline const char * __wine_dbg_cdecl wine_dbg_vsprintf( const char *format, va_list args )
 {
@@ -475,6 +476,7 @@ static inline const char *wine_dbgstr_variant( const VARIANT *v )
         return wine_dbg_sprintf( "%p {vt %s}", v, wine_dbgstr_vt(V_VT(v)) );
     }
 }
+#endif
 
 #endif /* defined(__oaidl_h__) && defined(V_VT) */
 
@@ -513,6 +515,7 @@ static inline const char *wine_dbgstr_variant( const VARIANT *v )
 #ifdef __WINESRC__
 /* Wine uses shorter names that are very likely to conflict with other software */
 
+#if 0
 static inline const char *debugstr_an( const char * s, int n ) { return wine_dbgstr_an( s, n ); }
 static inline const char *debugstr_wn( const WCHAR *s, int n ) { return wine_dbgstr_wn( s, n ); }
 static inline const char *debugstr_guid( const struct _GUID *id ) { return wine_dbgstr_guid(id); }
@@ -528,6 +531,7 @@ static inline const char *debugstr_hstring( struct HSTRING__ *s ) { return wine_
 static inline const char *debugstr_vt( VARTYPE vt ) { return wine_dbgstr_vt( vt ); }
 static inline const char *debugstr_variant( const VARIANT *v ) { return wine_dbgstr_variant( v ); }
 #endif
+#endif
 
 #define TRACE                      WINE_TRACE
 #define TRACE_(ch)                 WINE_TRACE_(ch)
@@ -541,10 +545,16 @@ static inline const char *debugstr_variant( const VARIANT *v ) { return wine_dbg
 #define FIXME_(ch)                 WINE_FIXME_(ch)
 #define FIXME_ON(ch)               WINE_FIXME_ON(ch)
 
+#if 0
 #undef ERR  /* Solaris got an 'ERR' define in <sys/reg.h> */
 #define ERR                        WINE_ERR
 #define ERR_(ch)                   WINE_ERR_(ch)
 #define ERR_ON(ch)                 WINE_ERR_ON(ch)
+#else
+static void ERR(const char *msg) {
+    /* Do something */
+}
+#endif
 
 #define MESSAGE                    WINE_MESSAGE
 

@@ -1400,7 +1400,7 @@ static HRESULT WINAPI d3drm3_CreateObject(IDirect3DRM3 *iface,
         return E_NOTIMPL;
     }
 
-    for (i = 0; i < ARRAY_SIZE(object_table); ++i)
+    for (i = 0; i < ARRAYSIZE(object_table); ++i)
     {
         if (IsEqualGUID(clsid, object_table[i].clsid))
         {
@@ -1412,7 +1412,7 @@ static HRESULT WINAPI d3drm3_CreateObject(IDirect3DRM3 *iface,
             break;
         }
     }
-    if (i == ARRAY_SIZE(object_table))
+    if (i == ARRAYSIZE(object_table))
     {
         FIXME("%s not implemented. Returning CLASSFACTORY_E_FIRST.\n", debugstr_guid(clsid));
         *out = NULL;
