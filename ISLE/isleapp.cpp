@@ -334,7 +334,7 @@ int SDL_AppEvent(void* appstate, const SDL_Event* event)
 			break;
 		}
 
-		SDL_Keycode keyCode = event->key.keysym.sym;
+		SDL_Keycode keyCode = event->key.key;
 		if (InputManager()) {
 			InputManager()->QueueEvent(c_notificationKeyPress, keyCode, 0, 0, keyCode);
 		}
