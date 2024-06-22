@@ -551,8 +551,10 @@ if (MSVC)
   endif()
 endif()
 
-target_link_options(isle PRIVATE "/SAFESEH:NO")
-target_link_options(lego1 PRIVATE "/SAFESEH:NO")
+if(MSVC)
+  target_link_options(isle PRIVATE "/SAFESEH:NO")
+  target_link_options(lego1 PRIVATE "/SAFESEH:NO")
+endif()
 
 if (MSVC_FOR_DECOMP)
     foreach(tgt IN LISTS lego1_targets)
