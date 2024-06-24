@@ -97,6 +97,12 @@ function(add_cxx_warning WARNING)
     endif()
 endfunction()
 
+if(NOT MINGW)
+    set(NOT_MINGW TRUE)
+else()
+    set(NOT_MINGW FALSE)
+endif()
+
 add_subdirectory(3rdparty EXCLUDE_FROM_ALL SYSTEM)
 
 message(STATUS "MSVC for decompilation: ${MSVC_FOR_DECOMP}")
@@ -104,14 +110,17 @@ message(STATUS "MSVC for decompilation: ${MSVC_FOR_DECOMP}")
 option(ISLE_WERROR "Treat warnings as errors" OFF)
 option(ISLE_BUILD_APP "Build ISLE.EXE application" ON)
 cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "NOT MINGW" OFF)
-option(ISLE_USE_DX5 "Build with internal DirectX 5 SDK" ON)
-cmake_dependent_option(ISLE_USE_DX5_LIBS "Build with internal DirectX 5 SDK Libraries" ON ISLE_USE_DX5 OFF)
+option(ISLE_USE_DX5 "Build with internal DirectX 5 SDK" ${NOT_MINGW})
+cmake_dependent_option(ISLE_D3DRM_FROM_WINE "Use d3drm from wine" "${MINGW}" "NOT ISLE_USE_DX5" OFF)
+
+message(STATUS "Using internal DirectX5 SDK: ${ISLE_USE_DX5}")
+message(STATUS "Using d3drm from wine:       ${ISLE_D3DRM_FROM_WINE}")
 
 add_cxx_warning(parentheses)
 
 add_library(DirectX5::DirectX5 INTERFACE IMPORTED)
 target_include_directories(DirectX5::DirectX5 INTERFACE "${CMAKE_SOURCE_DIR}/3rdparty/dx5/inc")
-if(ISLE_USE_DX5_LIBS)
+if(ISLE_USE_DX5)
     target_link_directories(DirectX5::DirectX5 INTERFACE "${CMAKE_SOURCE_DIR}/3rdparty/dx5/lib")
 endif()
 
@@ -135,9 +144,7 @@ add_library(tglrl STATIC
 register_lego1_target(tglrl)
 set_property(TARGET tglrl PROPERTY ARCHIVE_OUTPUT_NAME "tglrl40$<$<CONFIG:Debug>:d>")
 target_include_directories(tglrl PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/util")
-
-option(D3DRM_FROM_WINE "Use d3drm from wine" OFF)
-if(D3DRM_FROM_WINE)
+if(ISLE_D3DRM_FROM_WINE)
     target_link_libraries(tglrl PRIVATE d3drm-wine)
 else()
     target_link_libraries(tglrl PRIVATE d3drm)
