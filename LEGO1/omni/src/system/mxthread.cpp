@@ -28,7 +28,7 @@ MxResult MxThread::Start(MxS32 p_stack, MxS32 p_flag)
 
 	if (m_semaphore.Init(0, 1) == SUCCESS) {
 		const SDL_PropertiesID props = SDL_CreateProperties();
-		SDL_SetProperty(props, SDL_PROP_THREAD_CREATE_ENTRY_FUNCTION_POINTER, (void*)MxThread::ThreadProc);
+		SDL_SetProperty(props, SDL_PROP_THREAD_CREATE_ENTRY_FUNCTION_POINTER, (void*) MxThread::ThreadProc);
 		SDL_SetProperty(props, SDL_PROP_THREAD_CREATE_USERDATA_POINTER, this);
 		SDL_SetNumberProperty(props, SDL_PROP_THREAD_CREATE_STACKSIZE_NUMBER, p_stack << 2);
 
