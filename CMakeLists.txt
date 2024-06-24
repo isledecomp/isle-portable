@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.25 FATAL_ERROR)
 
 # MSVC runtime library flags are selected by an abstraction
 cmake_policy(SET CMP0091 NEW)
@@ -7,6 +7,10 @@ cmake_policy(SET CMP0091 NEW)
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
 project(isle CXX C)
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}" CACHE PATH "Directory where to put executables and dll")
 
 # By configuring CMake with -DDOWNLOAD_DEPENDENCIES=ON/OFF,
 # users can choose between downloading dependencies or using system libraries
@@ -38,7 +42,7 @@ else()
     # to add search paths.
     find_package(SDL3 CONFIG REQUIRED)
 
-    # TODO add iniparser?
+    find_package(iniparser REQUIRED COMPONENTS static)
 endif()
 
 include(CheckCXXSourceCompiles)
@@ -95,53 +99,38 @@ function(add_cxx_warning WARNING)
     endif()
 endfunction()
 
+if(NOT MINGW)
+    set(NOT_MINGW TRUE)
+else()
+    set(NOT_MINGW FALSE)
+endif()
+
+add_subdirectory(3rdparty EXCLUDE_FROM_ALL SYSTEM)
+
 message(STATUS "MSVC for decompilation: ${MSVC_FOR_DECOMP}")
 
 option(ISLE_WERROR "Treat warnings as errors" OFF)
 option(ISLE_BUILD_APP "Build ISLE.EXE application" ON)
 cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "NOT MINGW" OFF)
-option(ISLE_USE_DX5 "Build with internal DirectX 5 SDK" ON)
-cmake_dependent_option(ISLE_USE_DX5_LIBS "Build with internal DirectX 5 SDK Libraries" ON ISLE_USE_DX5 OFF)
+option(ISLE_USE_DX5 "Build with internal DirectX 5 SDK" ${NOT_MINGW})
+cmake_dependent_option(ISLE_D3DRM_FROM_WINE "Use d3drm from wine" "${MINGW}" "NOT ISLE_USE_DX5" OFF)
+
+message(STATUS "Using internal DirectX5 SDK: ${ISLE_USE_DX5}")
+message(STATUS "Using d3drm from wine:       ${ISLE_D3DRM_FROM_WINE}")
 
 add_cxx_warning(parentheses)
 
 add_library(DirectX5::DirectX5 INTERFACE IMPORTED)
 target_include_directories(DirectX5::DirectX5 INTERFACE "${CMAKE_SOURCE_DIR}/3rdparty/dx5/inc")
-if(ISLE_USE_DX5_LIBS)
+if(ISLE_USE_DX5)
     target_link_directories(DirectX5::DirectX5 INTERFACE "${CMAKE_SOURCE_DIR}/3rdparty/dx5/lib")
 endif()
+
+add_subdirectory(3rdparty/d3drm)
 
 add_library(Vec::Vec INTERFACE IMPORTED)
 target_include_directories(Vec::Vec INTERFACE "${CMAKE_SOURCE_DIR}/3rdparty/vec")
 
-add_library(libsmacker STATIC
-  3rdparty/libsmacker/smacker.c
-)
-register_lego1_target(libsmacker)
-set_property(TARGET libsmacker PROPERTY ARCHIVE_OUTPUT_NAME "libsmacker$<$<CONFIG:Debug>:d>")
-set_property(TARGET libsmacker PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_SOURCE_DIR}/3rdparty/libsmacker")
-target_include_directories(libsmacker PRIVATE "${CMAKE_SOURCE_DIR}/3rdparty/libsmacker")
-
-add_library(miniaudio STATIC
-  3rdparty/miniaudio/extras/miniaudio_split/miniaudio.c
-)
-register_lego1_target(miniaudio)
-set_property(TARGET miniaudio PROPERTY ARCHIVE_OUTPUT_NAME "miniaudio$<$<CONFIG:Debug>:d>")
-set_property(TARGET miniaudio PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_SOURCE_DIR}/3rdparty/miniaudio/extras/miniaudio_split")
-target_include_directories(miniaudio PRIVATE "${CMAKE_SOURCE_DIR}/3rdparty/miniaudio/extras/miniaudio_split")
-# Disable most features since we don't need them.
-target_compile_definitions(miniaudio PUBLIC
-  MA_ENABLE_ONLY_SPECIFIC_BACKENDS
-  MA_NO_DECODING
-  MA_NO_ENCODING
-  MA_NO_WAV
-  MA_NO_FLAC
-  MA_NO_MP3
-  MA_NO_DEVICE_IO
-  MA_NO_RESOURCE_MANAGER
-  MA_NO_GENERATION
-  MA_NO_THREADING
-)
 
 add_library(tglrl STATIC
   LEGO1/tgl/d3drm/camera.cpp
@@ -157,7 +146,11 @@ add_library(tglrl STATIC
 register_lego1_target(tglrl)
 set_property(TARGET tglrl PROPERTY ARCHIVE_OUTPUT_NAME "tglrl40$<$<CONFIG:Debug>:d>")
 target_include_directories(tglrl PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/util")
-target_link_libraries(tglrl PRIVATE d3drm)
+if(ISLE_D3DRM_FROM_WINE)
+    target_link_libraries(tglrl PRIVATE d3drm-wine)
+else()
+    target_link_libraries(tglrl PRIVATE d3drm)
+endif()
 
 add_library(realtime STATIC
   LEGO1/realtime/matrix.cpp
@@ -551,8 +544,10 @@ if (MSVC)
   endif()
 endif()
 
-target_link_options(isle PRIVATE "/SAFESEH:NO")
-target_link_options(lego1 PRIVATE "/SAFESEH:NO")
+if(MSVC)
+  target_link_options(isle PRIVATE "/SAFESEH:NO")
+  target_link_options(lego1 PRIVATE "/SAFESEH:NO")
+endif()
 
 if (MSVC_FOR_DECOMP)
     foreach(tgt IN LISTS lego1_targets)

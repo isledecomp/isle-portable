@@ -23,7 +23,6 @@ DllMain@12
 _Z10PickEntityii
 _Z12EventManagerv
 _Z12InputManagerv
-_Z12MusicManagerv
 _Z12SoundManagerv
 _Z12VideoManagerv
 _Z13MSoundManagerv
