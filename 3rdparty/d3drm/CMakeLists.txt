@@ -1,9 +1,6 @@
+project(wine_d3drm LANGUAGES C)
 
-
-enable_language(C)
-enable_language(RC)
-
-add_library(d3drm-wine SHARED
+add_library(d3drm-wine SHARED EXCLUDE_FROM_ALL
     d3drm.c
     d3drm_main.c
     d3drm_private.h

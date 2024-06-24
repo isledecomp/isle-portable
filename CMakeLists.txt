@@ -95,6 +95,8 @@ function(add_cxx_warning WARNING)
     endif()
 endfunction()
 
+add_subdirectory(3rdparty EXCLUDE_FROM_ALL)
+
 message(STATUS "MSVC for decompilation: ${MSVC_FOR_DECOMP}")
 
 option(ISLE_WERROR "Treat warnings as errors" OFF)
@@ -116,34 +118,6 @@ add_subdirectory(3rdparty/d3drm)
 add_library(Vec::Vec INTERFACE IMPORTED)
 target_include_directories(Vec::Vec INTERFACE "${CMAKE_SOURCE_DIR}/3rdparty/vec")
 
-add_library(libsmacker STATIC
-  3rdparty/libsmacker/smacker.c
-)
-register_lego1_target(libsmacker)
-set_property(TARGET libsmacker PROPERTY ARCHIVE_OUTPUT_NAME "libsmacker$<$<CONFIG:Debug>:d>")
-set_property(TARGET libsmacker PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_SOURCE_DIR}/3rdparty/libsmacker")
-target_include_directories(libsmacker PRIVATE "${CMAKE_SOURCE_DIR}/3rdparty/libsmacker")
-
-add_library(miniaudio STATIC
-  3rdparty/miniaudio/extras/miniaudio_split/miniaudio.c
-)
-register_lego1_target(miniaudio)
-set_property(TARGET miniaudio PROPERTY ARCHIVE_OUTPUT_NAME "miniaudio$<$<CONFIG:Debug>:d>")
-set_property(TARGET miniaudio PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_SOURCE_DIR}/3rdparty/miniaudio/extras/miniaudio_split")
-target_include_directories(miniaudio PRIVATE "${CMAKE_SOURCE_DIR}/3rdparty/miniaudio/extras/miniaudio_split")
-# Disable most features since we don't need them.
-target_compile_definitions(miniaudio PUBLIC
-  MA_ENABLE_ONLY_SPECIFIC_BACKENDS
-  MA_NO_DECODING
-  MA_NO_ENCODING
-  MA_NO_WAV
-  MA_NO_FLAC
-  MA_NO_MP3
-  MA_NO_DEVICE_IO
-  MA_NO_RESOURCE_MANAGER
-  MA_NO_GENERATION
-  MA_NO_THREADING
-)
 
 add_library(tglrl STATIC
   LEGO1/tgl/d3drm/camera.cpp
