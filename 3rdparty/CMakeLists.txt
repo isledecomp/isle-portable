@@ -1,3 +1,5 @@
+set(CMAKE_C_CLANG_TIDY)
+
 add_library(miniaudio STATIC
     miniaudio/extras/miniaudio_split/miniaudio.c
 )
