@@ -18,6 +18,7 @@ add_library(d3drm-wine SHARED EXCLUDE_FROM_ALL
 
     d3drm.def
 )
+target_include_directories(d3drm-wine SYSTEM INTERFACE "${CMAKE_CURRENT_LIST_DIR}/include")
 target_link_libraries(d3drm-wine PRIVATE d3dxof ddraw)
 set_property(TARGET d3drm-wine PROPERTY PREFIX "")
 set_property(TARGET d3drm-wine PROPERTY OUTPUT_NAME "d3drm")
