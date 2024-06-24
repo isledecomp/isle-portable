@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.25 FATAL_ERROR)
 
 # MSVC runtime library flags are selected by an abstraction
 cmake_policy(SET CMP0091 NEW)
@@ -95,7 +95,7 @@ function(add_cxx_warning WARNING)
     endif()
 endfunction()
 
-add_subdirectory(3rdparty EXCLUDE_FROM_ALL)
+add_subdirectory(3rdparty EXCLUDE_FROM_ALL SYSTEM)
 
 message(STATUS "MSVC for decompilation: ${MSVC_FOR_DECOMP}")
 
