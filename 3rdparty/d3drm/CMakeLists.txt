@@ -1,5 +1,7 @@
 project(wine_d3drm LANGUAGES C)
 
+set(CMAKE_C_CLANG_TIDY)
+
 add_library(d3drm-wine SHARED EXCLUDE_FROM_ALL
     d3drm.c
     d3drm_main.c
