@@ -10,6 +10,8 @@ project(isle CXX C)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}" CACHE PATH "Directory where to put executables and dll")
+
 # By configuring CMake with -DDOWNLOAD_DEPENDENCIES=ON/OFF,
 # users can choose between downloading dependencies or using system libraries
 option(DOWNLOAD_DEPENDENCIES "Download dependencies" TRUE)
