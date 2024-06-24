@@ -33,7 +33,7 @@ public:
 	virtual ~MxThread();
 
 private:
-	static unsigned ThreadProc(void* p_thread);
+	static int SDLCALL ThreadProc(void* p_thread);
 
 	SDL_Thread* m_thread;
 	MxBool m_running;        // 0x0c

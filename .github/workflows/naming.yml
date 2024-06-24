@@ -29,7 +29,7 @@ jobs:
           --recurse \
           --style tools/ncc/ncc.style \
           --skip tools/ncc/skip.yml \
-          --definition WINAPI FAR BOOL CALLBACK HWND__=HWND \
+          --definition WINAPI FAR BOOL CALLBACK HWND__=HWND SDLCALL \
           --include \
             util \
             LEGO1 \

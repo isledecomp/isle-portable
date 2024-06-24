@@ -1,14 +1,13 @@
 #ifndef ISLEAPP_H
 #define ISLEAPP_H
 
+#include "legoutils.h"
 #include "mxtypes.h"
 #include "mxvideoparam.h"
 
 #include <SDL3/SDL_mouse.h>
 #include <SDL3/SDL_video.h>
 #include <windows.h>
-
-enum Cursor;
 
 // SIZE 0x8c
 class IsleApp {

@@ -73,6 +73,7 @@ MxResult MxSoundManager::Create(MxU32 p_frequencyMS, MxBool p_createThread)
 {
 	MxResult status = FAILURE;
 	MxBool locked = FALSE;
+	ma_engine_config engineConfig;
 
 	if (MxAudioManager::Create() != SUCCESS) {
 		goto done;
@@ -81,7 +82,7 @@ MxResult MxSoundManager::Create(MxU32 p_frequencyMS, MxBool p_createThread)
 	m_criticalSection.Enter();
 	locked = TRUE;
 
-	ma_engine_config engineConfig = ma_engine_config_init();
+	engineConfig = ma_engine_config_init();
 	engineConfig.noDevice = MA_TRUE;
 	engineConfig.channels = MxOmni::IsSound3D() ? 2 : 1;
 	engineConfig.sampleRate = g_sampleRate;
