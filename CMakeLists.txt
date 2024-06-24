@@ -8,6 +8,8 @@ set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
 project(isle CXX C)
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+
 # By configuring CMake with -DDOWNLOAD_DEPENDENCIES=ON/OFF,
 # users can choose between downloading dependencies or using system libraries
 option(DOWNLOAD_DEPENDENCIES "Download dependencies" TRUE)
@@ -38,7 +40,7 @@ else()
     # to add search paths.
     find_package(SDL3 CONFIG REQUIRED)
 
-    # TODO add iniparser?
+    find_package(iniparser REQUIRED COMPONENTS static)
 endif()
 
 include(CheckCXXSourceCompiles)
