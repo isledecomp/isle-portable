@@ -1,9 +1,9 @@
 #ifndef ISLEAPP_H
 #define ISLEAPP_H
 
+#include "lego/legoomni/include/legoutils.h"
 #include "mxtypes.h"
 #include "mxvideoparam.h"
-#include "lego/legoomni/include/legoutils.h"
 
 #include <SDL3/SDL_mouse.h>
 #include <SDL3/SDL_video.h>
