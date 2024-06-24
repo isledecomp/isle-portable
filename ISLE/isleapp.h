@@ -1,7 +1,7 @@
 #ifndef ISLEAPP_H
 #define ISLEAPP_H
 
-#include "lego/legoomni/include/legoutils.h"
+#include "legoutils.h"
 #include "mxtypes.h"
 #include "mxvideoparam.h"
 
