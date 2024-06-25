@@ -496,6 +496,8 @@ if (ISLE_BUILD_APP)
   # Link DSOUND, WINMM, and LEGO1
   target_link_libraries(isle PRIVATE winmm lego1)
 
+  target_include_directories(isle PRIVATE $<$<BOOL:${ISLE_D3DRM_FROM_WINE}>:$<TARGET_PROPERTY:d3drm-wine,INTERFACE_INCLUDE_DIRECTORIES>>)
+
   # Make sure filenames are ALL CAPS
   set_property(TARGET isle PROPERTY OUTPUT_NAME ISLE)
   set_property(TARGET isle PROPERTY SUFFIX ".EXE")
