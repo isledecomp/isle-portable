@@ -998,7 +998,7 @@ MxResult LegoAnimationManager::FUN_100605e0(
 				FUN_100648f0(tranInfo, m_unk0x404);
 			}
 			else if (p_unk0x0a) {
-				LegoPathActor* actor = CurrentActor();
+				LegoPathActor* actor = UserActor();
 
 				if (actor != NULL) {
 					actor->SetState(4);
@@ -1366,11 +1366,11 @@ LegoTranInfo* LegoAnimationManager::GetTranInfo(MxU32 p_index)
 MxLong LegoAnimationManager::Notify(MxParam& p_param)
 {
 	if (((MxNotificationParam&) p_param).GetSender() == this) {
-		if (((MxNotificationParam&) p_param).GetType() == c_notificationEndAnim) {
+		if (((MxNotificationParam&) p_param).GetNotification() == c_notificationEndAnim) {
 			FUN_100605e0(m_unk0x18, TRUE, NULL, TRUE, NULL, FALSE, TRUE, TRUE, TRUE);
 		}
 	}
-	else if (((MxNotificationParam&) p_param).GetType() == c_notificationEndAnim && m_tranInfoList != NULL) {
+	else if (((MxNotificationParam&) p_param).GetNotification() == c_notificationEndAnim && m_tranInfoList != NULL) {
 		LegoTranInfoListCursor cursor(m_tranInfoList);
 		LegoTranInfo* tranInfo;
 
@@ -1435,7 +1435,7 @@ MxResult LegoAnimationManager::Tickle()
 		return SUCCESS;
 	}
 
-	LegoPathActor* actor = CurrentActor();
+	LegoPathActor* actor = UserActor();
 	LegoROI* roi;
 
 	if (actor == NULL || (roi = actor->GetROI()) == NULL) {
@@ -1658,7 +1658,7 @@ MxBool LegoAnimationManager::FUN_100623a0(AnimInfo& p_info)
 
 			LegoEntityListCursor cursor(entityList);
 			LegoEntity* entity;
-			LegoPathActor* actor = CurrentActor();
+			LegoPathActor* actor = UserActor();
 
 			while (cursor.Next(entity)) {
 				if (entity != actor && entity->IsA("LegoPathActor")) {
@@ -1861,7 +1861,7 @@ void LegoAnimationManager::AddExtra(MxS32 p_location, MxBool p_und)
 		if (world != NULL) {
 			PurgeExtra(FALSE);
 
-			LegoPathActor* actor = CurrentActor();
+			LegoPathActor* actor = UserActor();
 			if (actor == NULL || actor->GetWorldSpeed() <= 20.0f) {
 				MxU32 i;
 				for (i = 0; i < m_numAllowedExtras && m_extras[i].m_roi != NULL; i++) {
@@ -2478,7 +2478,7 @@ MxBool LegoAnimationManager::FUN_10064120(LegoLocation::Boundary* p_boundary, Mx
 {
 	MxU32 local2c = 12;
 	float destScale = ((rand() * 0.5) / 32767.0) + 0.25;
-	LegoPathActor* actor = CurrentActor();
+	LegoPathActor* actor = UserActor();
 
 	if (actor == NULL) {
 		return FALSE;
@@ -2760,7 +2760,7 @@ void LegoAnimationManager::FUN_100648f0(LegoTranInfo* p_tranInfo, MxLong p_unk0x
 		m_unk0x43c = viewROI->GetLocal2World();
 		p_tranInfo->m_unk0x2c = m_unk0x43c;
 
-		LegoPathActor* actor = CurrentActor();
+		LegoPathActor* actor = UserActor();
 		if (actor != NULL) {
 			actor->SetState(4);
 			actor->SetWorldSpeed(0.0f);
@@ -2790,7 +2790,7 @@ void LegoAnimationManager::FUN_10064b50(MxLong p_time)
 	if (m_unk0x430 && m_unk0x42c != NULL) {
 		MxMatrix mat;
 
-		if (p_time < 0 || p_time <= m_unk0x438) {
+		if (p_time < 0 || m_unk0x438 <= p_time) {
 			m_unk0x430 = FALSE;
 			m_unk0x42c->m_flags &= ~LegoTranInfo::c_bit1;
 			m_unk0x42c = NULL;
@@ -2807,7 +2807,7 @@ void LegoAnimationManager::FUN_10064b50(MxLong p_time)
 			m_unk0x4cc.Unknown6(mat, (float) (p_time - m_unk0x434) / 1000.0f);
 
 			VPV3(mat[3], m_unk0x43c[3], sub);
-			mat[3][4] = 1.0f;
+			mat[3][3] = 1.0f;
 		}
 
 		LegoROI* viewROI = VideoManager()->GetViewROI();
@@ -2850,11 +2850,66 @@ void AnimState::FUN_10065240(MxU32, AnimInfo*, MxU32)
 	// TODO
 }
 
-// STUB: LEGO1 0x100652d0
-MxResult AnimState::Serialize(LegoFile* p_legoFile)
+// FUNCTION: LEGO1 0x100652d0
+// FUNCTION: BETA10 0x10046621
+MxResult AnimState::Serialize(LegoFile* p_file)
 {
-	// TODO
-	return LegoState::Serialize(p_legoFile);
+	// These two are equivalent up to the order of some deallocation.
+	// Choose as needed to get 100 %.
+	// Option 1:
+	// LegoState::Serialize(p_file);
+	// Option 2:
+	if (p_file->IsWriteMode()) {
+		p_file->WriteString(ClassName());
+	}
+
+	if (p_file->IsReadMode()) {
+		Read(p_file, &m_unk0x08);
+
+		// m_unk0x10_len and m_unk0x10
+		if (m_unk0x10) {
+			delete[] m_unk0x10;
+		}
+		Read(p_file, &m_unk0x0c);
+		if (m_unk0x0c != 0) {
+			m_unk0x10 = new undefined2[m_unk0x0c];
+		}
+		else {
+			m_unk0x10 = NULL;
+		}
+		for (MxS32 i = 0; i < m_unk0x0c; i++) {
+			Read(p_file, &m_unk0x10[i]);
+		}
+
+		// m_unk0x18_len and m_unk0x18
+		// Note that here we read first and then free memory in contrast to above
+		Read(p_file, &m_unk0x14);
+		if (m_unk0x18) {
+			delete[] m_unk0x18;
+		}
+		if (m_unk0x14 != 0) {
+			m_unk0x18 = new undefined[m_unk0x14];
+		}
+		else {
+			m_unk0x18 = NULL;
+		}
+		for (MxS32 j = 0; j < m_unk0x14; j++) {
+			Read(p_file, &m_unk0x18[j]);
+		}
+	}
+	else if (p_file->IsWriteMode()) {
+		Write(p_file, m_unk0x08);
+		Write(p_file, m_unk0x0c);
+		for (MxS32 i = 0; i < m_unk0x0c; i++) {
+			Write(p_file, m_unk0x10[i]);
+		}
+		Write(p_file, m_unk0x14);
+		for (MxS32 j = 0; j < m_unk0x14; j++) {
+			Write(p_file, m_unk0x18[j]);
+		}
+	}
+
+	return SUCCESS;
 }
 
 // STUB: LEGO1 0x100654f0

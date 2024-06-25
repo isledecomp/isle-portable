@@ -284,7 +284,7 @@ void LegoInputManager::QueueEvent(NotificationId p_id, MxU8 p_modifier, MxLong p
 {
 	LegoEventNotificationParam param = LegoEventNotificationParam(p_id, NULL, p_modifier, p_x, p_y, p_key);
 
-	if (((!m_unk0x88) || ((m_unk0x335 && (param.GetType() == c_notificationButtonDown)))) ||
+	if (((!m_unk0x88) || ((m_unk0x335 && (param.GetNotification() == c_notificationButtonDown)))) ||
 		((m_unk0x336 && (p_key == VK_SPACE)))) {
 		ProcessOneEvent(param);
 	}
@@ -308,12 +308,12 @@ MxBool LegoInputManager::ProcessOneEvent(LegoEventNotificationParam& p_param)
 {
 	MxBool processRoi;
 
-	if (p_param.GetType() == c_notificationKeyPress) {
+	if (p_param.GetNotification() == c_notificationKeyPress) {
 		if (!Lego()->IsPaused() || p_param.GetKey() == VK_PAUSE) {
 			if (p_param.GetKey() == VK_SHIFT) {
 				if (m_unk0x195) {
 					m_unk0x80 = FALSE;
-					p_param.SetType(c_notificationDrag);
+					p_param.SetNotification(c_notificationDrag);
 
 					if (m_camera) {
 						m_camera->Notify(p_param);
@@ -339,7 +339,7 @@ MxBool LegoInputManager::ProcessOneEvent(LegoEventNotificationParam& p_param)
 			processRoi = TRUE;
 
 			if (m_unk0x335 != 0) {
-				if (p_param.GetType() == c_notificationButtonDown) {
+				if (p_param.GetNotification() == c_notificationButtonDown) {
 					LegoEventNotificationParam notification(c_notificationKeyPress, NULL, 0, 0, 0, VK_SPACE);
 					LegoNotifyListCursor cursor(m_keyboardNotifyList);
 					MxCore* target;
@@ -354,7 +354,7 @@ MxBool LegoInputManager::ProcessOneEvent(LegoEventNotificationParam& p_param)
 				return TRUE;
 			}
 
-			if (m_unk0x195 && p_param.GetType() == c_notificationButtonDown) {
+			if (m_unk0x195 && p_param.GetNotification() == c_notificationButtonDown) {
 				m_unk0x195 = 0;
 				return TRUE;
 			}
@@ -363,7 +363,7 @@ MxBool LegoInputManager::ProcessOneEvent(LegoEventNotificationParam& p_param)
 				return TRUE;
 			}
 
-			if (p_param.GetType() == c_notificationButtonDown) {
+			if (p_param.GetNotification() == c_notificationButtonDown) {
 				MxPresenter* presenter = VideoManager()->GetPresenterAt(p_param.GetX(), p_param.GetY());
 
 				if (presenter) {
@@ -383,7 +383,7 @@ MxBool LegoInputManager::ProcessOneEvent(LegoEventNotificationParam& p_param)
 					}
 				}
 			}
-			else if (p_param.GetType() == c_notificationButtonUp) {
+			else if (p_param.GetNotification() == c_notificationButtonUp) {
 				if (g_unk0x100f31b0 != -1 || m_controlManager->GetUnknown0x10() ||
 					m_controlManager->GetUnknown0x0c() == 1) {
 					MxBool result = m_controlManager->FUN_10029210(p_param, NULL);
@@ -396,7 +396,7 @@ MxBool LegoInputManager::ProcessOneEvent(LegoEventNotificationParam& p_param)
 			}
 
 			if (FUN_1005cdf0(p_param)) {
-				if (processRoi && p_param.GetType() == c_notificationClick) {
+				if (processRoi && p_param.GetNotification() == c_notificationClick) {
 					LegoROI* roi = PickROI(p_param.GetX(), p_param.GetY());
 					p_param.SetROI(roi);
 
@@ -432,13 +432,13 @@ MxBool LegoInputManager::FUN_1005cdf0(LegoEventNotificationParam& p_param)
 		StopAutoDragTimer();
 
 		if (m_unk0x80) {
-			p_param.SetType(c_notificationDrag);
+			p_param.SetNotification(c_notificationDrag);
 			result = TRUE;
 		}
 		else if (m_unk0x81) {
 			p_param.SetX(m_x);
 			p_param.SetY(m_y);
-			p_param.SetType(c_notificationClick);
+			p_param.SetNotification(c_notificationClick);
 			result = TRUE;
 		}
 
@@ -470,14 +470,14 @@ MxBool LegoInputManager::FUN_1005cdf0(LegoEventNotificationParam& p_param)
 				if (m_unk0x195 || (diffX * diffX) + (diffY * diffY) > m_unk0x74) {
 					StopAutoDragTimer();
 					m_unk0x80 = TRUE;
-					p_param.SetType(c_notificationDragEnd);
+					p_param.SetNotification(c_notificationDragEnd);
 					result = TRUE;
 					p_param.SetX(m_x);
 					p_param.SetY(m_y);
 				}
 			}
 			else {
-				p_param.SetType(c_notificationDragStart);
+				p_param.SetNotification(c_notificationDragStart);
 				result = TRUE;
 			}
 		}
@@ -491,7 +491,7 @@ MxBool LegoInputManager::FUN_1005cdf0(LegoEventNotificationParam& p_param)
 				p_param.SetX(m_x);
 				p_param.SetY(m_y);
 				p_param.SetModifier(LegoEventNotificationParam::c_lButtonState);
-				p_param.SetType(c_notificationDragEnd);
+				p_param.SetNotification(c_notificationDragEnd);
 				result = TRUE;
 			}
 			else {

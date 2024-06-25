@@ -65,7 +65,7 @@ void LegoOmni::Init()
 	m_worldList = NULL;
 	m_currentWorld = NULL;
 	m_exit = FALSE;
-	m_currentActor = NULL;
+	m_userActor = NULL;
 	m_characterManager = NULL;
 	m_plantManager = NULL;
 	m_gameState = NULL;
@@ -564,7 +564,7 @@ MxLong LegoOmni::Notify(MxParam& p_param)
 {
 	MxBool isCD = FALSE;
 
-	if (((MxNotificationParam&) p_param).GetType() == c_notificationEndAction &&
+	if (((MxNotificationParam&) p_param).GetNotification() == c_notificationEndAction &&
 		((MxActionNotificationParam&) p_param).GetAction()->GetAtomId() == *g_nocdSourceName) {
 		isCD = TRUE;
 	}

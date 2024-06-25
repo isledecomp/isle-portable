@@ -21,8 +21,8 @@ BuildingEntity::~BuildingEntity()
 // FUNCTION: LEGO1 0x100150a0
 MxLong BuildingEntity::Notify(MxParam& p_param)
 {
-	if (((MxNotificationParam&) p_param).GetType() == c_notificationClick) {
-		return VTable0x50(p_param);
+	if (((MxNotificationParam&) p_param).GetNotification() == c_notificationClick) {
+		return HandleClick((LegoEventNotificationParam&) p_param);
 	}
 
 	return 0;
