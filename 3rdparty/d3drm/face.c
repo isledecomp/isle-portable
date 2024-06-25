@@ -627,8 +627,15 @@ HRESULT d3drm_face_create(struct d3drm_face **face)
     if (!(object = calloc(1, sizeof(*object))))
         return E_OUTOFMEMORY;
 
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+#endif
     object->IDirect3DRMFace_iface.lpVtbl = &d3drm_face1_vtbl;
     object->IDirect3DRMFace2_iface.lpVtbl = &d3drm_face2_vtbl;
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
     object->ref = 1;
 
     d3drm_object_init(&object->obj, classname);

@@ -2328,9 +2328,16 @@ HRESULT WINAPI Direct3DRMCreate(IDirect3DRM **d3drm)
     if (!(object = calloc(1, sizeof(*object))))
         return E_OUTOFMEMORY;
 
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+#endif
     object->IDirect3DRM_iface.lpVtbl = &d3drm1_vtbl;
     object->IDirect3DRM2_iface.lpVtbl = &d3drm2_vtbl;
     object->IDirect3DRM3_iface.lpVtbl = &d3drm3_vtbl;
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
     object->ref1 = 1;
     object->iface_count = 1;
 
