@@ -374,6 +374,7 @@ add_library(lego1 SHARED
   LEGO1/lego/legoomni/src/common/legoobjectfactory.cpp
   LEGO1/lego/legoomni/src/common/legophoneme.cpp
   LEGO1/lego/legoomni/src/common/legoplantmanager.cpp
+  LEGO1/lego/legoomni/src/common/legoplants.cpp
   LEGO1/lego/legoomni/src/common/legostate.cpp
   LEGO1/lego/legoomni/src/common/legotextureinfo.cpp
   LEGO1/lego/legoomni/src/common/legoutils.cpp
@@ -468,6 +469,7 @@ target_link_libraries(lego1 PRIVATE tglrl viewmanager realtime mxdirectx roi geo
 
 foreach(tgt IN LISTS lego1_targets)
   target_link_libraries(${tgt} PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5> SDL3::SDL3)
+  target_compile_definitions(${tgt} PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DIRECTX5_SDK>)
 endforeach()
 
 # Make sure filenames are ALL CAPS
