@@ -1,0 +1,22 @@
+EXPORTS
+    D3DRMColorGetAlpha
+    D3DRMColorGetBlue
+    D3DRMColorGetGreen
+    D3DRMColorGetRed
+    D3DRMCreateColorRGB
+    D3DRMCreateColorRGBA
+    D3DRMMatrixFromQuaternion
+    D3DRMQuaternionFromRotation
+    D3DRMQuaternionMultiply
+    D3DRMQuaternionSlerp
+    D3DRMVectorAdd
+    D3DRMVectorCrossProduct
+    D3DRMVectorDotProduct
+    D3DRMVectorModulus
+    D3DRMVectorNormalize
+    D3DRMVectorRandom
+    D3DRMVectorReflect
+    D3DRMVectorRotate
+    D3DRMVectorScale
+    D3DRMVectorSubtract
+    Direct3DRMCreate

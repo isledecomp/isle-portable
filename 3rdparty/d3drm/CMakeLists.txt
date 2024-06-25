@@ -17,9 +17,12 @@ add_library(d3drm-wine SHARED EXCLUDE_FROM_ALL
     texture.c
     version.rc
     viewport.c
-
-    d3drm.def
 )
+if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+    target_sources(d3drm-wine PRIVATE d3drm32.def)
+else()
+    target_sources(d3drm-wine PRIVATE d3drm64.def)
+endif()
 target_include_directories(d3drm-wine SYSTEM PUBLIC "${CMAKE_CURRENT_LIST_DIR}/include")
 target_link_libraries(d3drm-wine PRIVATE d3dxof ddraw)
 set_property(TARGET d3drm-wine PROPERTY PREFIX "")
