@@ -501,7 +501,8 @@ MxAtomId* LegoOmni::GetScriptAtom(MxU32 p_index)
 MxS32 LegoOmni::GetScriptIndex(const char* p_key)
 {
 	for (MxS32 i = 0; i < 19; i++) {
-		if ((MxS32) &m_scripts[i] != -4 && !strcmpi(m_scripts[i].GetKey(), p_key)) {
+		// FIXME: this looks very fishy. Is this guarding against out-of-bounds access?
+		if ((MxS32*) (&m_scripts[i]) != (MxS32*) -4 && !strcmpi(m_scripts[i].GetKey(), p_key)) {
 			return m_scripts[i].GetIndex();
 		}
 	}
