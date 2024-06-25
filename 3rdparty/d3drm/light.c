@@ -101,7 +101,7 @@ static HRESULT WINAPI d3drm_light_DeleteDestroyCallback(IDirect3DRMLight *iface,
     return d3drm_object_delete_destroy_callback(&light->obj, cb, ctx);
 }
 
-static HRESULT WINAPI d3drm_light_SetAppData(IDirect3DRMLight *iface, DWORD data)
+static HRESULT WINAPI d3drm_light_SetAppData(IDirect3DRMLight *iface, LPVOID data)
 {
     struct d3drm_light *light = impl_from_IDirect3DRMLight(iface);
 
@@ -112,7 +112,7 @@ static HRESULT WINAPI d3drm_light_SetAppData(IDirect3DRMLight *iface, DWORD data
     return D3DRM_OK;
 }
 
-static DWORD WINAPI d3drm_light_GetAppData(IDirect3DRMLight *iface)
+static LPVOID WINAPI d3drm_light_GetAppData(IDirect3DRMLight *iface)
 {
     struct d3drm_light *light = impl_from_IDirect3DRMLight(iface);
 

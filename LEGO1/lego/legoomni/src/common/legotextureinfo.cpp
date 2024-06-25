@@ -127,7 +127,7 @@ LegoTextureInfo* LegoTextureInfo::Create(const char* p_name, LegoTexture* p_text
 		goto done;
 	}
 
-	textureInfo->m_texture->SetAppData((DWORD) textureInfo);
+	textureInfo->m_texture->SetAppData((LPD3DRM_APPDATA) textureInfo);
 	return textureInfo;
 
 done:

@@ -421,7 +421,7 @@ static HRESULT WINAPI d3drm_texture1_DeleteDestroyCallback(IDirect3DRMTexture *i
     return IDirect3DRMTexture3_DeleteDestroyCallback(&texture->IDirect3DRMTexture3_iface, cb, ctx);
 }
 
-static HRESULT WINAPI d3drm_texture1_SetAppData(IDirect3DRMTexture *iface, DWORD data)
+static HRESULT WINAPI d3drm_texture1_SetAppData(IDirect3DRMTexture *iface, LPVOID data)
 {
     struct d3drm_texture *texture = impl_from_IDirect3DRMTexture(iface);
 
@@ -430,7 +430,7 @@ static HRESULT WINAPI d3drm_texture1_SetAppData(IDirect3DRMTexture *iface, DWORD
     return IDirect3DRMTexture3_SetAppData(&texture->IDirect3DRMTexture3_iface, data);
 }
 
-static DWORD WINAPI d3drm_texture1_GetAppData(IDirect3DRMTexture *iface)
+static LPVOID WINAPI d3drm_texture1_GetAppData(IDirect3DRMTexture *iface)
 {
     struct d3drm_texture *texture = impl_from_IDirect3DRMTexture(iface);
 
@@ -730,7 +730,7 @@ static HRESULT WINAPI d3drm_texture2_DeleteDestroyCallback(IDirect3DRMTexture2 *
     return IDirect3DRMTexture3_DeleteDestroyCallback(&texture->IDirect3DRMTexture3_iface, cb, ctx);
 }
 
-static HRESULT WINAPI d3drm_texture2_SetAppData(IDirect3DRMTexture2 *iface, DWORD data)
+static HRESULT WINAPI d3drm_texture2_SetAppData(IDirect3DRMTexture2 *iface, LPVOID data)
 {
     struct d3drm_texture *texture = impl_from_IDirect3DRMTexture2(iface);
 
@@ -739,7 +739,7 @@ static HRESULT WINAPI d3drm_texture2_SetAppData(IDirect3DRMTexture2 *iface, DWOR
     return IDirect3DRMTexture3_SetAppData(&texture->IDirect3DRMTexture3_iface, data);
 }
 
-static DWORD WINAPI d3drm_texture2_GetAppData(IDirect3DRMTexture2 *iface)
+static LPVOID WINAPI d3drm_texture2_GetAppData(IDirect3DRMTexture2 *iface)
 {
     struct d3drm_texture *texture = impl_from_IDirect3DRMTexture2(iface);
 
@@ -1090,7 +1090,7 @@ static HRESULT WINAPI d3drm_texture3_DeleteDestroyCallback(IDirect3DRMTexture3 *
     return d3drm_object_delete_destroy_callback(&texture->obj, cb, ctx);
 }
 
-static HRESULT WINAPI d3drm_texture3_SetAppData(IDirect3DRMTexture3 *iface, DWORD data)
+static HRESULT WINAPI d3drm_texture3_SetAppData(IDirect3DRMTexture3 *iface, LPVOID data)
 {
     struct d3drm_texture *texture = impl_from_IDirect3DRMTexture3(iface);
 
@@ -1101,7 +1101,7 @@ static HRESULT WINAPI d3drm_texture3_SetAppData(IDirect3DRMTexture3 *iface, DWOR
     return D3DRM_OK;
 }
 
-static DWORD WINAPI d3drm_texture3_GetAppData(IDirect3DRMTexture3 *iface)
+static LPVOID WINAPI d3drm_texture3_GetAppData(IDirect3DRMTexture3 *iface)
 {
     struct d3drm_texture *texture = impl_from_IDirect3DRMTexture3(iface);
 

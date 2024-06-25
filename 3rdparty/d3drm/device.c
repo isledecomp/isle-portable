@@ -471,7 +471,7 @@ static HRESULT WINAPI d3drm_device1_DeleteDestroyCallback(IDirect3DRMDevice *ifa
     return d3drm_device3_DeleteDestroyCallback(&device->IDirect3DRMDevice3_iface, cb, ctx);
 }
 
-static HRESULT WINAPI d3drm_device3_SetAppData(IDirect3DRMDevice3 *iface, DWORD data)
+static HRESULT WINAPI d3drm_device3_SetAppData(IDirect3DRMDevice3 *iface, LPVOID data)
 {
     struct d3drm_device *device = impl_from_IDirect3DRMDevice3(iface);
 
@@ -482,7 +482,7 @@ static HRESULT WINAPI d3drm_device3_SetAppData(IDirect3DRMDevice3 *iface, DWORD 
     return D3DRM_OK;
 }
 
-static HRESULT WINAPI d3drm_device2_SetAppData(IDirect3DRMDevice2 *iface, DWORD data)
+static HRESULT WINAPI d3drm_device2_SetAppData(IDirect3DRMDevice2 *iface, LPVOID data)
 {
     struct d3drm_device *device = impl_from_IDirect3DRMDevice2(iface);
 
@@ -491,7 +491,7 @@ static HRESULT WINAPI d3drm_device2_SetAppData(IDirect3DRMDevice2 *iface, DWORD 
     return d3drm_device3_SetAppData(&device->IDirect3DRMDevice3_iface, data);
 }
 
-static HRESULT WINAPI d3drm_device1_SetAppData(IDirect3DRMDevice *iface, DWORD data)
+static HRESULT WINAPI d3drm_device1_SetAppData(IDirect3DRMDevice *iface, LPVOID data)
 {
     struct d3drm_device *device = impl_from_IDirect3DRMDevice(iface);
 
@@ -500,7 +500,7 @@ static HRESULT WINAPI d3drm_device1_SetAppData(IDirect3DRMDevice *iface, DWORD d
     return d3drm_device3_SetAppData(&device->IDirect3DRMDevice3_iface, data);
 }
 
-static DWORD WINAPI d3drm_device3_GetAppData(IDirect3DRMDevice3 *iface)
+static LPVOID WINAPI d3drm_device3_GetAppData(IDirect3DRMDevice3 *iface)
 {
     struct d3drm_device *device = impl_from_IDirect3DRMDevice3(iface);
 
@@ -509,7 +509,7 @@ static DWORD WINAPI d3drm_device3_GetAppData(IDirect3DRMDevice3 *iface)
     return device->obj.appdata;
 }
 
-static DWORD WINAPI d3drm_device2_GetAppData(IDirect3DRMDevice2 *iface)
+static LPVOID WINAPI d3drm_device2_GetAppData(IDirect3DRMDevice2 *iface)
 {
     struct d3drm_device *device = impl_from_IDirect3DRMDevice2(iface);
 
@@ -518,7 +518,7 @@ static DWORD WINAPI d3drm_device2_GetAppData(IDirect3DRMDevice2 *iface)
     return d3drm_device3_GetAppData(&device->IDirect3DRMDevice3_iface);
 }
 
-static DWORD WINAPI d3drm_device1_GetAppData(IDirect3DRMDevice *iface)
+static LPVOID WINAPI d3drm_device1_GetAppData(IDirect3DRMDevice *iface)
 {
     struct d3drm_device *device = impl_from_IDirect3DRMDevice(iface);
 
@@ -1568,7 +1568,7 @@ static HRESULT WINAPI d3drm_device_win_DeleteDestroyCallback(IDirect3DRMWinDevic
     return E_NOTIMPL;
 }
 
-static HRESULT WINAPI d3drm_device_win_SetAppData(IDirect3DRMWinDevice *iface, DWORD data)
+static HRESULT WINAPI d3drm_device_win_SetAppData(IDirect3DRMWinDevice *iface, LPVOID data)
 {
     struct d3drm_device *device = impl_from_IDirect3DRMWinDevice(iface);
 
@@ -1577,7 +1577,7 @@ static HRESULT WINAPI d3drm_device_win_SetAppData(IDirect3DRMWinDevice *iface, D
     return d3drm_device3_SetAppData(&device->IDirect3DRMDevice3_iface, data);
 }
 
-static DWORD WINAPI d3drm_device_win_GetAppData(IDirect3DRMWinDevice *iface)
+static LPVOID WINAPI d3drm_device_win_GetAppData(IDirect3DRMWinDevice *iface)
 {
     struct d3drm_device *device = impl_from_IDirect3DRMWinDevice(iface);
 

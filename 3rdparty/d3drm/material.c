@@ -102,7 +102,7 @@ static HRESULT WINAPI d3drm_material_DeleteDestroyCallback(IDirect3DRMMaterial2 
     return d3drm_object_delete_destroy_callback(&material->obj, cb, ctx);
 }
 
-static HRESULT WINAPI d3drm_material_SetAppData(IDirect3DRMMaterial2 *iface, DWORD data)
+static HRESULT WINAPI d3drm_material_SetAppData(IDirect3DRMMaterial2 *iface, LPVOID data)
 {
     struct d3drm_material *material = impl_from_IDirect3DRMMaterial2(iface);
 
@@ -113,7 +113,7 @@ static HRESULT WINAPI d3drm_material_SetAppData(IDirect3DRMMaterial2 *iface, DWO
     return D3DRM_OK;
 }
 
-static DWORD WINAPI d3drm_material_GetAppData(IDirect3DRMMaterial2 *iface)
+static LPVOID WINAPI d3drm_material_GetAppData(IDirect3DRMMaterial2 *iface)
 {
     struct d3drm_material *material = impl_from_IDirect3DRMMaterial2(iface);
 
