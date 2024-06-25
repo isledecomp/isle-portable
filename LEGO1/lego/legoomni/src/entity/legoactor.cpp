@@ -15,7 +15,7 @@ const char* g_actorNames[] = {"none", "pepper", "mama", "papa", "nick", "laura",
 // FUNCTION: LEGO1 0x1002d110
 LegoActor::LegoActor()
 {
-	m_unk0x68 = 0.0f;
+	m_frequencyFactor = 0.0f;
 	m_sound = NULL;
 	m_unk0x70 = 0.0f;
 	m_unk0x10 = 0;
@@ -103,7 +103,7 @@ void LegoActor::ParseAction(char* p_extra)
 	}
 
 	if (KeyValueStringParse(value, g_strSOUND, p_extra)) {
-		m_sound = SoundManager()->GetCacheSoundManager()->FUN_1003dae0(value, GetROI()->GetName(), TRUE);
+		m_sound = SoundManager()->GetCacheSoundManager()->Play(value, GetROI()->GetName(), TRUE);
 	}
 
 	if (KeyValueStringParse(value, g_strMUTE, p_extra)) {
@@ -129,7 +129,7 @@ void LegoActor::SetROI(LegoROI* p_roi, MxBool p_bool1, MxBool p_bool2)
 
 		for (MxU32 i = 1; i <= sizeOfArray(g_actorNames) - 1; i++) {
 			if (!strcmpi(name, g_actorNames[i])) {
-				m_type = e_character;
+				m_type = e_actor;
 				m_actorId = i;
 				break;
 			}
