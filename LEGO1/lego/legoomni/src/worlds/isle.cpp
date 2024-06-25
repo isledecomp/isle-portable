@@ -38,7 +38,7 @@
 DECOMP_SIZE_ASSERT(Isle, 0x140)
 
 // GLOBAL: LEGO1 0x100f1198
-undefined4 g_unk0x100f1198 = 0x7f;
+MxU32 g_isleFlags = 0x7f;
 
 // FUNCTION: LEGO1 0x10030820
 Isle::Isle()
@@ -722,18 +722,18 @@ void Isle::Enable(MxBool p_enable)
 			m_act1state->m_unk0x018 = 8;
 
 			AnimationManager()->FUN_1005f6d0(FALSE);
-			AnimationManager()->FUN_1005f700(FALSE);
+			AnimationManager()->EnableCamAnims(FALSE);
 
-			g_unk0x100f1198 &= ~c_bit7;
+			g_isleFlags &= ~c_playMusic;
 			m_towtrack->FUN_1004dab0();
 			break;
 		case 9:
 			m_act1state->m_unk0x018 = 10;
 
 			AnimationManager()->FUN_1005f6d0(FALSE);
-			AnimationManager()->FUN_1005f700(FALSE);
+			AnimationManager()->EnableCamAnims(FALSE);
 
-			g_unk0x100f1198 &= ~c_bit7;
+			g_isleFlags &= ~c_playMusic;
 			m_ambulance->FUN_10036e60();
 			break;
 		case 11:
@@ -940,7 +940,7 @@ MxLong Isle::HandleTransitionEnd()
 		FUN_10032d30(IsleScript::c_SkatePizza_Bitmap, JukeboxScript::c_MusicTheme1, NULL, TRUE);
 
 		if (!m_act1state->m_unk0x01f) {
-			m_skateboard->FUN_10010510();
+			m_skateboard->ActivateSceneActions();
 		}
 		break;
 	case LegoGameState::e_ambulance:
