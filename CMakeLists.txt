@@ -42,7 +42,10 @@ else()
     # to add search paths.
     find_package(SDL3 CONFIG REQUIRED)
 
-    find_package(iniparser REQUIRED COMPONENTS static)
+    find_package(iniparser CONFIG COMPONENTS static)
+    if(NOT TARGET iniparser-static)
+        find_package(iniparser REQUIRED MODULE COMPONENTS static)
+    endif()
 endif()
 
 include(CheckCXXSourceCompiles)
