@@ -21,7 +21,7 @@ struct LegoPathCtrlEdge : public LegoUnknown100db7f4 {};
 struct LegoPathCtrlEdgeCompare {
 	MxU32 operator()(const LegoPathCtrlEdge* p_lhs, const LegoPathCtrlEdge* p_rhs) const
 	{
-		return (MxS32) p_lhs < (MxS32) p_rhs;
+		return (MxS32*) p_lhs < (MxS32*) p_rhs;
 	}
 };
 

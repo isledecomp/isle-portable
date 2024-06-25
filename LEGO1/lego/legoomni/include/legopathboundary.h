@@ -10,14 +10,14 @@
 struct LegoPathActorSetCompare {
 	MxU32 operator()(const LegoPathActor* p_lhs, const LegoPathActor* p_rhs) const
 	{
-		return (MxS32) p_lhs < (MxS32) p_rhs;
+		return (MxS32*) p_lhs < (MxS32*) p_rhs;
 	}
 };
 
 struct LegoAnimPresenterSetCompare {
 	MxBool operator()(const LegoAnimPresenter* p_lhs, const LegoAnimPresenter* p_rhs) const
 	{
-		return (MxS32) p_lhs < (MxS32) p_rhs;
+		return (MxS32*) p_lhs < (MxS32*) p_rhs;
 	}
 };
 
