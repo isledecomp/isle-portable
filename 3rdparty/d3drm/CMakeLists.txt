@@ -2,6 +2,26 @@ project(wine_d3drm LANGUAGES C)
 
 set(CMAKE_C_CLANG_TIDY)
 
+if(MSVC)
+    # FIXME: this is wrong.
+    if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+        set(def "${CMAKE_CURRENT_SOURCE_DIR}/d3dxof32.def")
+    else()
+        set(def "${CMAKE_CURRENT_SOURCE_DIR}/d3dxof64.def")
+    endif()
+    set(imp "${CMAKE_CURRENT_BINARY_DIR}/d3dxof.lib")
+    set(exp "${CMAKE_CURRENT_BINARY_DIR}/d3dxof.exp")
+    add_custom_command(OUTPUT "${imp}" "${exp}"
+        COMMAND "${CMAKE_AR}" "${CMAKE_STATIC_LINKER_FLAGS}" "/NOLOGO" "/DEF:${def}" "/OUT:${imp}"
+        DEPENDS "${def}"
+    )
+    add_custom_target(d3dxof-implib DEPENDS "${imp}")
+    target_sources(d3dxof-implib PRIVATE "${def}")
+    add_library(d3dxof INTERFACE)
+    target_link_libraries(d3dxof INTERFACE "${imp}")
+    add_dependencies(d3dxof "d3dxof-implib")
+endif()
+
 add_library(d3drm-wine SHARED EXCLUDE_FROM_ALL
     d3drm.c
     d3drm_main.c
