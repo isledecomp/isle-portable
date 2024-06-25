@@ -162,16 +162,10 @@ void IsleApp::Close()
 		TransitionManager()->SetWaitIndicator(NULL);
 		Lego()->StopTimer();
 
-		MxLong lVar8;
-		do {
-			lVar8 = Streamer()->Close(NULL);
-		} while (lVar8 == 0);
+		while (Streamer()->Close(NULL) == SUCCESS) {
+		}
 
-		while (Lego()) {
-			if (Lego()->DoesEntityExist(ds)) {
-				break;
-			}
-
+		while (Lego() && !Lego()->DoesEntityExist(ds)) {
 			Timer()->GetRealTime();
 			TickleManager()->Tickle();
 		}
@@ -469,8 +463,8 @@ MxResult IsleApp::SetupWindow()
 	}
 
 	GameState()->SetSavePath(m_savePath);
-	GameState()->SerializePlayersInfo(1);
-	GameState()->SerializeScoreHistory(1);
+	GameState()->SerializePlayersInfo(LegoStorage::c_read);
+	GameState()->SerializeScoreHistory(LegoStorage::c_read);
 
 	MxS32 iVar10;
 	switch (m_islandQuality) {

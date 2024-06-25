@@ -2,7 +2,6 @@
 
 #include "3dmanager/lego3dmanager.h"
 #include "anim/legoanim.h"
-#include "animstate.h"
 #include "define.h"
 #include "islepathactor.h"
 #include "legoanimmmpresenter.h"
@@ -37,6 +36,9 @@ DECOMP_SIZE_ASSERT(LegoAnimationManager::Character, 0x18)
 DECOMP_SIZE_ASSERT(LegoAnimationManager::Vehicle, 0x08)
 DECOMP_SIZE_ASSERT(LegoAnimationManager::Extra, 0x18)
 DECOMP_SIZE_ASSERT(LegoTranInfo, 0x78)
+DECOMP_SIZE_ASSERT(AnimState, 0x1c)
+DECOMP_SIZE_ASSERT(AnimInfo, 0x30)
+DECOMP_SIZE_ASSERT(ModelInfo, 0x30)
 
 // GLOBAL: LEGO1 0x100d8b28
 MxU8 g_unk0x100d8b28[] = {0, 1, 2, 4, 8, 16};
@@ -1494,7 +1496,7 @@ MxResult LegoAnimationManager::Tickle()
 		MxU8 unk0x0c = 0;
 		MxU8 actorId = GameState()->GetActorId();
 
-		if (actorId <= 5) {
+		if (actorId <= LegoActor::c_laura) {
 			unk0x0c = g_unk0x100d8b28[actorId];
 		}
 
@@ -1571,7 +1573,7 @@ MxU16 LegoAnimationManager::FUN_10062110(
 				Mx3DPointFloat position(p_roi->GetWorldPosition());
 
 				// TODO: Fix call
-				((Vector3&) position).Sub(&p_position);
+				((Vector3&) position).Sub(p_position);
 				float len = position.LenSquared();
 				float min, max;
 
@@ -1760,7 +1762,7 @@ MxBool LegoAnimationManager::FUN_10062710(AnimInfo& p_info)
 	MxU8 und = 0;
 	MxU8 actorId = GameState()->GetActorId();
 
-	if (actorId <= 5) {
+	if (actorId <= LegoActor::c_laura) {
 		und = g_unk0x100d8b28[actorId];
 	}
 
@@ -2456,17 +2458,17 @@ MxBool LegoAnimationManager::FUN_10064010(LegoPathBoundary* p_boundary, LegoUnkn
 	Vector3* v2 = p_edge->CCWVertex(*p_boundary);
 
 	p1 = *v2;
-	((Vector3&) p1).Sub(v1);
+	((Vector3&) p1).Sub(*v1);
 	((Vector3&) p1).Mul(p_destScale);
-	((Vector3&) p1).Add(v1);
+	((Vector3&) p1).Add(*v1);
 
 	BoundingBox boundingBox;
 	Mx3DPointFloat vec(1.0f, 1.0f, 1.0f);
 
 	boundingBox.Min() = p1;
-	boundingBox.Min().Sub(&vec);
+	boundingBox.Min().Sub(vec);
 	boundingBox.Max() = p1;
-	boundingBox.Max().Add(&vec);
+	boundingBox.Max().Add(vec);
 	return GetViewManager()->FUN_100a6150(boundingBox) == FALSE;
 }
 
@@ -2675,7 +2677,7 @@ MxResult LegoAnimationManager::FUN_10064670(Vector3* p_position)
 
 	if (p_position != NULL) {
 		Mx3DPointFloat vec(98.875f, 0.0f, -46.1564f);
-		((Vector3&) vec).Sub(p_position);
+		((Vector3&) vec).Sub(*p_position);
 
 		if (vec.LenSquared() < 800.0f) {
 			success = TRUE;
@@ -2699,7 +2701,7 @@ MxResult LegoAnimationManager::FUN_10064740(Vector3* p_position)
 
 	if (p_position != NULL) {
 		Mx3DPointFloat vec(-21.375f, 0.0f, -41.75f);
-		((Vector3&) vec).Sub(p_position);
+		((Vector3&) vec).Sub(*p_position);
 
 		if (vec.LenSquared() < 1000.0f) {
 			success = TRUE;
@@ -2710,11 +2712,11 @@ MxResult LegoAnimationManager::FUN_10064740(Vector3* p_position)
 	}
 
 	if (success) {
-		if (GameState()->GetActorId() != 2) {
+		if (GameState()->GetActorId() != LegoActor::c_mama) {
 			FUN_10064380("mama", "USR00_47", 1, 0.43f, 3, 0.84f, rand() % 3 + 13, -1, rand() % 3, -1, 0.7f);
 		}
 
-		if (GameState()->GetActorId() != 3) {
+		if (GameState()->GetActorId() != LegoActor::c_papa) {
 			FUN_10064380("papa", "USR00_193", 3, 0.55f, 1, 0.4f, rand() % 3 + 13, -1, rand() % 3, -1, 0.9f);
 		}
 
@@ -2819,4 +2821,45 @@ void LegoAnimationManager::FUN_10064b50(MxLong p_time)
 			viewROI->GetWorldVelocity()
 		);
 	}
+}
+
+// FUNCTION: LEGO1 0x10064ff0
+AnimState::AnimState()
+{
+	m_unk0x0c = 0;
+	m_unk0x10 = NULL;
+	m_unk0x14 = 0;
+	m_unk0x18 = NULL;
+}
+
+// STUB: LEGO1 0x10065150
+AnimState::~AnimState()
+{
+	// TODO
+}
+
+// STUB: LEGO1 0x100651d0
+void AnimState::FUN_100651d0(MxU32, AnimInfo*, MxU32&)
+{
+	// TODO
+}
+
+// STUB: LEGO1 0x10065240
+void AnimState::FUN_10065240(MxU32, AnimInfo*, MxU32)
+{
+	// TODO
+}
+
+// STUB: LEGO1 0x100652d0
+MxResult AnimState::Serialize(LegoFile* p_legoFile)
+{
+	// TODO
+	return LegoState::Serialize(p_legoFile);
+}
+
+// STUB: LEGO1 0x100654f0
+MxBool AnimState::SetFlag()
+{
+	// TODO
+	return FALSE;
 }
