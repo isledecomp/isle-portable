@@ -69,7 +69,7 @@ MxLong InfocenterDoor::Notify(MxParam& p_param)
 			}
 			break;
 		case c_notificationControl:
-			result = HandleControl((LegoControlManagerEvent&) p_param);
+			result = HandleControl((LegoControlManagerNotificationParam&) p_param);
 			break;
 		case c_notificationTransitioned:
 			GameState()->SwitchArea(m_destLocation);
@@ -90,12 +90,12 @@ void InfocenterDoor::ReadyWorld()
 }
 
 // FUNCTION: LEGO1 0x10037a90
-MxLong InfocenterDoor::HandleControl(LegoControlManagerEvent& p_param)
+MxLong InfocenterDoor::HandleControl(LegoControlManagerNotificationParam& p_param)
 {
 	MxLong result = 0;
 
 	if (p_param.GetUnknown0x28() == 1) {
-		DeleteObjects(&m_atom, 500, 510);
+		DeleteObjects(&m_atom, InfodoorScript::c_iic037in_PlayWav, 510);
 
 		switch (p_param.GetClickedObjectId()) {
 		case InfodoorScript::c_LeftArrow_Ctl:
@@ -167,7 +167,7 @@ void InfocenterDoor::Enable(MxBool p_enable)
 // FUNCTION: LEGO1 0x10037cd0
 MxBool InfocenterDoor::Escape()
 {
-	DeleteObjects(&m_atom, 500, 510);
+	DeleteObjects(&m_atom, InfodoorScript::c_iic037in_PlayWav, 510);
 	m_destLocation = LegoGameState::e_infomain;
 	return TRUE;
 }

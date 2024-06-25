@@ -18,7 +18,7 @@ DECOMP_SIZE_ASSERT(LegoBuildingInfo, 0x2c)
 DECOMP_SIZE_ASSERT(LegoBuildingManager::AnimEntry, 0x14)
 
 // GLOBAL: LEGO1 0x100f3410
-const char* g_buildingInfoHausName[5] = {
+const char* g_buildingInfoVariants[5] = {
 	"haus1",
 	"haus4",
 	"haus5",
@@ -196,14 +196,14 @@ LegoBuildingInfo g_buildingInfoInit[16] = {
 MxU32 LegoBuildingManager::g_maxSound = 6;
 
 // GLOBAL: LEGO1 0x100f373c
-MxU32 g_cycleLengthOffset1 = 0x3c;
+MxU32 g_unk0x100f373c = 0x3c;
 
 // GLOBAL: LEGO1 0x100f3740
-MxU32 g_cycleLengthOffset3 = 0x42;
+MxU32 g_unk0x100f3740 = 0x42;
 
 // clang-format off
 // GLOBAL: LEGO1 0x100f3788
-MxU32 g_buildingEntityId[16] = {
+MxU32 g_buildingAnimationId[16] = {
 	0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00,
 	0x00, 0x46, 0x49, 0x4c,
@@ -238,7 +238,7 @@ LegoBuildingManager::LegoBuildingManager()
 // FUNCTION: LEGO1 0x1002f960
 LegoBuildingManager::~LegoBuildingManager()
 {
-	delete g_customizeAnimFile;
+	delete[] g_customizeAnimFile;
 }
 
 // FUNCTION: LEGO1 0x1002f9d0
@@ -257,25 +257,25 @@ void LegoBuildingManager::Init()
 
 // FUNCTION: LEGO1 0x1002fa00
 // FUNCTION: BETA10 0x10063ad1
-void LegoBuildingManager::FUN_1002fa00()
+void LegoBuildingManager::LoadWorldInfo()
 {
 	MxS32 i;
 	LegoWorld* world = CurrentWorld();
 
 	for (i = 0; i < sizeOfArray(g_buildingInfo); i++) {
-		UpdatePosition(i, world);
+		CreateBuilding(i, world);
 	}
 
 	if (g_buildingManagerConfig <= 1) {
-		LegoEntity* entity = (LegoEntity*) world->Find("MxEntity", g_buildingInfoHausName[0]);
+		LegoEntity* entity = (LegoEntity*) world->Find("MxEntity", g_buildingInfoVariants[0]);
 		if (entity) {
 			entity->GetROI()->SetVisibility(TRUE);
 			m_unk0x09 = 0;
 		}
 	}
 	else {
-		for (i = 0; i < sizeOfArray(g_buildingInfoHausName); i++) {
-			LegoEntity* entity = (LegoEntity*) world->Find("MxEntity", g_buildingInfoHausName[i]);
+		for (i = 0; i < sizeOfArray(g_buildingInfoVariants); i++) {
+			LegoEntity* entity = (LegoEntity*) world->Find("MxEntity", g_buildingInfoVariants[i]);
 			if (entity) {
 				entity->GetROI()->SetVisibility(m_nextVariant == i);
 			}
@@ -287,9 +287,9 @@ void LegoBuildingManager::FUN_1002fa00()
 
 // FUNCTION: LEGO1 0x1002fa90
 // FUNCTION: BETA10 0x10063b88
-void LegoBuildingManager::UpdatePosition(MxS32 p_index, LegoWorld* p_world)
+void LegoBuildingManager::CreateBuilding(MxS32 p_index, LegoWorld* p_world)
 {
-	LegoEntity* entity = (LegoEntity*) p_world->Find("MxEntity", g_buildingInfo[p_index].m_hausName);
+	LegoEntity* entity = (LegoEntity*) p_world->Find("MxEntity", g_buildingInfo[p_index].m_variant);
 
 	if (entity) {
 		entity->SetType(LegoEntity::e_building);
@@ -304,7 +304,7 @@ void LegoBuildingManager::UpdatePosition(MxS32 p_index, LegoWorld* p_world)
 }
 
 // FUNCTION: LEGO1 0x1002fb30
-void LegoBuildingManager::FUN_1002fb30()
+void LegoBuildingManager::Reset()
 {
 	MxU32 i;
 
@@ -451,13 +451,13 @@ MxBool LegoBuildingManager::SwitchVariant(LegoEntity* p_entity)
 
 	if (info != NULL && info->m_flags & LegoBuildingInfo::c_hasVariants && info->m_unk0x11 == -1) {
 		LegoROI* roi = p_entity->GetROI();
-		if (++m_nextVariant >= sizeOfArray(g_buildingInfoHausName)) {
+		if (++m_nextVariant >= sizeOfArray(g_buildingInfoVariants)) {
 			m_nextVariant = 0;
 		}
 
 		roi->SetVisibility(FALSE);
-		info->m_hausName = g_buildingInfoHausName[m_nextVariant];
-		UpdatePosition(12, CurrentWorld());
+		info->m_variant = g_buildingInfoVariants[m_nextVariant];
+		CreateBuilding(12, CurrentWorld());
 
 		if (info->m_entity != NULL) {
 			info->m_entity->GetROI()->SetVisibility(TRUE);
@@ -531,12 +531,12 @@ MxBool LegoBuildingManager::SwitchMood(LegoEntity* p_entity)
 
 // FUNCTION: LEGO1 0x1002ff00
 // FUNCTION: BETA10 0x1006432d
-MxU32 LegoBuildingManager::GetBuildingEntityId(LegoEntity* p_entity)
+MxU32 LegoBuildingManager::GetAnimationId(LegoEntity* p_entity)
 {
 	LegoBuildingInfo* info = GetInfo(p_entity);
 
 	if (info != NULL && info->m_flags & LegoBuildingInfo::c_hasMoves) {
-		return g_buildingEntityId[info - g_buildingInfo] + info->m_move;
+		return g_buildingAnimationId[info - g_buildingInfo] + info->m_move;
 	}
 
 	return 0;
@@ -544,7 +544,7 @@ MxU32 LegoBuildingManager::GetBuildingEntityId(LegoEntity* p_entity)
 
 // FUNCTION: LEGO1 0x1002ff40
 // FUNCTION: BETA10 0x10064398
-MxU32 LegoBuildingManager::FUN_1002ff40(LegoEntity* p_entity, MxBool p_state)
+MxU32 LegoBuildingManager::GetSoundId(LegoEntity* p_entity, MxBool p_state)
 {
 	LegoBuildingInfo* info = GetInfo(p_entity);
 
@@ -553,11 +553,11 @@ MxU32 LegoBuildingManager::FUN_1002ff40(LegoEntity* p_entity, MxBool p_state)
 	}
 
 	if (p_state) {
-		return info->m_mood + g_cycleLengthOffset3;
+		return info->m_mood + g_unk0x100f3740;
 	}
 
 	if (info != NULL) {
-		return info->m_sound + g_cycleLengthOffset1;
+		return info->m_sound + g_unk0x100f373c;
 	}
 
 	return 0;
