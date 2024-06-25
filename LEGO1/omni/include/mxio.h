@@ -29,6 +29,7 @@ public:
 	// NOTE: In MXIOINFO, the `hmmio` member of MMIOINFO is used like
 	// an HFILE (int) instead of an HMMIO (WORD).
 	MMIOINFO m_info;
+	HFILE m_file;
 };
 
 #endif // MXIO_H
