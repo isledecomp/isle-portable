@@ -113,7 +113,7 @@ static HRESULT WINAPI d3drm_face1_DeleteDestroyCallback(IDirect3DRMFace *iface,
     return IDirect3DRMFace2_DeleteDestroyCallback(&face->IDirect3DRMFace2_iface, cb, ctx);
 }
 
-static HRESULT WINAPI d3drm_face2_SetAppData(IDirect3DRMFace2 *iface, DWORD data)
+static HRESULT WINAPI d3drm_face2_SetAppData(IDirect3DRMFace2 *iface, LPVOID data)
 {
     struct d3drm_face *face = impl_from_IDirect3DRMFace2(iface);
 
@@ -124,7 +124,7 @@ static HRESULT WINAPI d3drm_face2_SetAppData(IDirect3DRMFace2 *iface, DWORD data
     return D3DRM_OK;
 }
 
-static HRESULT WINAPI d3drm_face1_SetAppData(IDirect3DRMFace *iface, DWORD data)
+static HRESULT WINAPI d3drm_face1_SetAppData(IDirect3DRMFace *iface, LPVOID data)
 {
     struct d3drm_face *face = impl_from_IDirect3DRMFace(iface);
 
@@ -133,7 +133,7 @@ static HRESULT WINAPI d3drm_face1_SetAppData(IDirect3DRMFace *iface, DWORD data)
     return d3drm_face2_SetAppData(&face->IDirect3DRMFace2_iface, data);
 }
 
-static DWORD WINAPI d3drm_face2_GetAppData(IDirect3DRMFace2 *iface)
+static LPVOID WINAPI d3drm_face2_GetAppData(IDirect3DRMFace2 *iface)
 {
     struct d3drm_face *face = impl_from_IDirect3DRMFace2(iface);
 
@@ -142,7 +142,7 @@ static DWORD WINAPI d3drm_face2_GetAppData(IDirect3DRMFace2 *iface)
     return face->obj.appdata;
 }
 
-static DWORD WINAPI d3drm_face1_GetAppData(IDirect3DRMFace *iface)
+static LPVOID WINAPI d3drm_face1_GetAppData(IDirect3DRMFace *iface)
 {
     struct d3drm_face *face = impl_from_IDirect3DRMFace(iface);
 

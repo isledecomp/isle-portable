@@ -468,6 +468,7 @@ target_link_libraries(lego1 PRIVATE tglrl viewmanager realtime mxdirectx roi geo
 
 foreach(tgt IN LISTS lego1_targets)
   target_link_libraries(${tgt} PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5> SDL3::SDL3)
+  target_compile_definitions(${tgt} PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DIRECTX5_SDK>)
 endforeach()
 
 # Make sure filenames are ALL CAPS

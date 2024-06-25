@@ -427,7 +427,7 @@ static HRESULT WINAPI d3drm_mesh_builder2_DeleteDestroyCallback(IDirect3DRMMeshB
     return IDirect3DRMMeshBuilder3_DeleteDestroyCallback(&mesh_builder->IDirect3DRMMeshBuilder3_iface, cb, ctx);
 }
 
-static HRESULT WINAPI d3drm_mesh_builder3_SetAppData(IDirect3DRMMeshBuilder3 *iface, DWORD data)
+static HRESULT WINAPI d3drm_mesh_builder3_SetAppData(IDirect3DRMMeshBuilder3 *iface, LPVOID data)
 {
     struct d3drm_mesh_builder *mesh_builder = impl_from_IDirect3DRMMeshBuilder3(iface);
 
@@ -438,7 +438,7 @@ static HRESULT WINAPI d3drm_mesh_builder3_SetAppData(IDirect3DRMMeshBuilder3 *if
     return D3DRM_OK;
 }
 
-static HRESULT WINAPI d3drm_mesh_builder2_SetAppData(IDirect3DRMMeshBuilder2 *iface, DWORD data)
+static HRESULT WINAPI d3drm_mesh_builder2_SetAppData(IDirect3DRMMeshBuilder2 *iface, LPVOID data)
 {
     struct d3drm_mesh_builder *mesh_builder = impl_from_IDirect3DRMMeshBuilder2(iface);
 
@@ -447,7 +447,7 @@ static HRESULT WINAPI d3drm_mesh_builder2_SetAppData(IDirect3DRMMeshBuilder2 *if
     return d3drm_mesh_builder3_SetAppData(&mesh_builder->IDirect3DRMMeshBuilder3_iface, data);
 }
 
-static DWORD WINAPI d3drm_mesh_builder3_GetAppData(IDirect3DRMMeshBuilder3 *iface)
+static LPVOID WINAPI d3drm_mesh_builder3_GetAppData(IDirect3DRMMeshBuilder3 *iface)
 {
     struct d3drm_mesh_builder *mesh_builder = impl_from_IDirect3DRMMeshBuilder3(iface);
 
@@ -456,7 +456,7 @@ static DWORD WINAPI d3drm_mesh_builder3_GetAppData(IDirect3DRMMeshBuilder3 *ifac
     return mesh_builder->obj.appdata;
 }
 
-static DWORD WINAPI d3drm_mesh_builder2_GetAppData(IDirect3DRMMeshBuilder2 *iface)
+static LPVOID WINAPI d3drm_mesh_builder2_GetAppData(IDirect3DRMMeshBuilder2 *iface)
 {
     struct d3drm_mesh_builder *mesh_builder = impl_from_IDirect3DRMMeshBuilder2(iface);
 
@@ -2444,7 +2444,7 @@ static HRESULT WINAPI d3drm_mesh_DeleteDestroyCallback(IDirect3DRMMesh *iface,
     return d3drm_object_delete_destroy_callback(&mesh->obj, cb, ctx);
 }
 
-static HRESULT WINAPI d3drm_mesh_SetAppData(IDirect3DRMMesh *iface, DWORD data)
+static HRESULT WINAPI d3drm_mesh_SetAppData(IDirect3DRMMesh *iface, LPVOID data)
 {
     struct d3drm_mesh *mesh = impl_from_IDirect3DRMMesh(iface);
 
@@ -2455,7 +2455,7 @@ static HRESULT WINAPI d3drm_mesh_SetAppData(IDirect3DRMMesh *iface, DWORD data)
     return D3DRM_OK;
 }
 
-static DWORD WINAPI d3drm_mesh_GetAppData(IDirect3DRMMesh *iface)
+static LPVOID WINAPI d3drm_mesh_GetAppData(IDirect3DRMMesh *iface)
 {
     struct d3drm_mesh *mesh = impl_from_IDirect3DRMMesh(iface);
 
@@ -2928,7 +2928,7 @@ static HRESULT WINAPI d3drm_wrap_DeleteDestroyCallback(IDirect3DRMWrap *iface,
     return d3drm_object_delete_destroy_callback(&wrap->obj, cb, ctx);
 }
 
-static HRESULT WINAPI d3drm_wrap_SetAppData(IDirect3DRMWrap *iface, DWORD data)
+static HRESULT WINAPI d3drm_wrap_SetAppData(IDirect3DRMWrap *iface, LPVOID data)
 {
     struct d3drm_wrap *wrap = impl_from_IDirect3DRMWrap(iface);
 
@@ -2939,7 +2939,7 @@ static HRESULT WINAPI d3drm_wrap_SetAppData(IDirect3DRMWrap *iface, DWORD data)
     return D3DRM_OK;
 }
 
-static DWORD WINAPI d3drm_wrap_GetAppData(IDirect3DRMWrap *iface)
+static LPVOID WINAPI d3drm_wrap_GetAppData(IDirect3DRMWrap *iface)
 {
     struct d3drm_wrap *wrap = impl_from_IDirect3DRMWrap(iface);
 

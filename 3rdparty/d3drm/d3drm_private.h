@@ -46,7 +46,7 @@ static inline struct d3drm_matrix *d3drm_matrix(D3DRMMATRIX4D m)
 struct d3drm_object
 {
     LONG ref;
-    DWORD appdata;
+    LPVOID appdata;
     struct list destroy_callbacks;
     const char *classname;
     char *name;
