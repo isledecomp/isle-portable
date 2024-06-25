@@ -415,8 +415,8 @@ void LegoAnimationManager::Suspend()
 		m_animState = (AnimState*) GameState()->CreateState("AnimState");
 	}
 
-	if (m_scriptIndex == 0) {
-		m_animState->FUN_10065240(m_animCount, m_anims, m_lastExtraCharacterId);
+	if (m_worldId == 0) {
+		m_animState->InitFromAnims(m_animCount, m_anims, m_lastExtraCharacterId);
 	}
 
 	if (!m_suspended) {
@@ -494,7 +494,7 @@ void LegoAnimationManager::Resume()
 void LegoAnimationManager::Init()
 {
 	m_unk0x402 = FALSE;
-	m_scriptIndex = -1;
+	m_worldId = -1;
 	m_animCount = 0;
 	m_anims = NULL;
 	m_unk0x18 = 0;
@@ -579,12 +579,12 @@ void LegoAnimationManager::EnableCamAnims(MxBool p_enableCamAnims)
 }
 
 // FUNCTION: LEGO1 0x1005f720
-MxResult LegoAnimationManager::LoadScriptInfo(MxS32 p_scriptIndex)
+MxResult LegoAnimationManager::LoadWorldInfo(MxS32 p_worldId)
 {
 	MxResult result = FAILURE;
 	MxS32 i, j, k;
 
-	if (m_scriptIndex != p_scriptIndex) {
+	if (m_worldId != p_worldId) {
 		if (m_tranInfoList != NULL) {
 			delete m_tranInfoList;
 			m_tranInfoList = NULL;
@@ -614,22 +614,22 @@ MxResult LegoAnimationManager::LoadScriptInfo(MxS32 p_scriptIndex)
 			m_animState = (AnimState*) GameState()->CreateState("AnimState");
 		}
 
-		if (m_scriptIndex == 0) {
-			m_animState->FUN_10065240(m_animCount, m_anims, m_lastExtraCharacterId);
+		if (m_worldId == 0) {
+			m_animState->InitFromAnims(m_animCount, m_anims, m_lastExtraCharacterId);
 		}
 
 		DeleteAnimations();
 
 		LegoFile file;
 
-		if (p_scriptIndex == -1) {
+		if (p_worldId == -1) {
 			result = SUCCESS;
 			goto done;
 		}
 
 		char filename[128];
 		char path[1024];
-		sprintf(filename, "lego\\data\\%sinf.dta", Lego()->GetScriptName(p_scriptIndex));
+		sprintf(filename, "lego\\data\\%sinf.dta", Lego()->GetWorldName(p_worldId));
 		sprintf(path, "%s", MxOmni::GetHD());
 
 		if (path[strlen(path) - 1] != '\\') {
@@ -708,7 +708,7 @@ MxResult LegoAnimationManager::LoadScriptInfo(MxS32 p_scriptIndex)
 			}
 		}
 
-		m_scriptIndex = p_scriptIndex;
+		m_worldId = p_worldId;
 		m_tranInfoList = new LegoTranInfoList();
 		m_tranInfoList2 = new LegoTranInfoList();
 
@@ -726,8 +726,8 @@ MxResult LegoAnimationManager::LoadScriptInfo(MxS32 p_scriptIndex)
 			m_unk0x402 = FALSE;
 		}
 
-		if (p_scriptIndex == 0) {
-			m_animState->FUN_100651d0(m_animCount, m_anims, m_lastExtraCharacterId);
+		if (p_worldId == 0) {
+			m_animState->CopyToAnims(m_animCount, m_anims, m_lastExtraCharacterId);
 		}
 	}
 
@@ -934,7 +934,7 @@ MxResult LegoAnimationManager::FUN_100605e0(
 {
 	MxResult result = FAILURE;
 
-	if (m_scriptIndex != -1 && p_index < m_animCount && m_tranInfoList != NULL) {
+	if (m_worldId != -1 && p_index < m_animCount && m_tranInfoList != NULL) {
 		PurgeExtra(FALSE);
 		FUN_10062770();
 
@@ -983,7 +983,7 @@ MxResult LegoAnimationManager::FUN_100605e0(
 		char buf[256];
 		sprintf(buf, "%s:%d", g_strANIMMAN_ID, tranInfo->m_index);
 
-		action.SetAtomId(*Lego()->GetScriptAtom(m_scriptIndex));
+		action.SetAtomId(*Lego()->GetWorldAtom(m_worldId));
 		action.SetObjectId(animInfo.m_objectId);
 		action.SetUnknown24(-1);
 		action.AppendExtra(strlen(buf) + 1, buf);
@@ -1050,7 +1050,7 @@ MxResult LegoAnimationManager::FUN_100609f0(MxU32 p_objectId, MxMatrix* p_matrix
 	char buf[256];
 	sprintf(buf, "%s:%d", g_strANIMMAN_ID, info->m_index);
 
-	action.SetAtomId(*Lego()->GetScriptAtom(m_scriptIndex));
+	action.SetAtomId(*Lego()->GetWorldAtom(m_worldId));
 	action.SetObjectId(p_objectId);
 	action.SetUnknown24(-1);
 	action.AppendExtra(strlen(buf) + 1, buf);
@@ -2828,26 +2828,59 @@ AnimState::AnimState()
 {
 	m_unk0x0c = 0;
 	m_unk0x10 = NULL;
-	m_unk0x14 = 0;
-	m_unk0x18 = NULL;
+	m_locationsFlagsLength = 0;
+	m_locationsFlags = NULL;
 }
 
-// STUB: LEGO1 0x10065150
+// FUNCTION: LEGO1 0x10065150
 AnimState::~AnimState()
 {
-	// TODO
+	delete[] m_unk0x10;
+	delete[] m_locationsFlags;
 }
 
-// STUB: LEGO1 0x100651d0
-void AnimState::FUN_100651d0(MxU32, AnimInfo*, MxU32&)
+// FUNCTION: LEGO1 0x100651d0
+void AnimState::CopyToAnims(MxU32, AnimInfo* p_anims, MxU32& p_outExtraCharacterId)
 {
-	// TODO
+	if (m_unk0x10 != NULL) {
+		for (MxS32 i = 0; i < m_unk0x0c; i++) {
+			p_anims[i].m_unk0x22 = m_unk0x10[i];
+		}
+
+		p_outExtraCharacterId = m_extraCharacterId;
+
+		for (MxS32 j = 0; j < m_locationsFlagsLength; j++) {
+			LegoLocation* location = LegoNavController::GetLocation(j);
+			if (location != NULL) {
+				location->m_unk0x5c = m_locationsFlags[j];
+			}
+		}
+	}
 }
 
-// STUB: LEGO1 0x10065240
-void AnimState::FUN_10065240(MxU32, AnimInfo*, MxU32)
+// FUNCTION: LEGO1 0x10065240
+void AnimState::InitFromAnims(MxU32 p_animsLength, AnimInfo* p_anims, MxU32 p_extraCharacterId)
 {
-	// TODO
+	if (m_unk0x10 == NULL) {
+		m_unk0x0c = p_animsLength;
+		m_unk0x10 = new MxU16[p_animsLength];
+		MxS32 numLocations = LegoNavController::GetNumLocations();
+		m_locationsFlagsLength = numLocations;
+		m_locationsFlags = new MxBool[numLocations];
+	}
+
+	m_extraCharacterId = p_extraCharacterId;
+
+	for (MxS32 i = 0; i < m_unk0x0c; i++) {
+		m_unk0x10[i] = p_anims[i].m_unk0x22;
+	}
+
+	for (MxS32 j = 0; j < m_locationsFlagsLength; j++) {
+		LegoLocation* location = LegoNavController::GetLocation(j);
+		if (location != NULL) {
+			m_locationsFlags[j] = location->m_unk0x5c;
+		}
+	}
 }
 
 // FUNCTION: LEGO1 0x100652d0
@@ -2864,57 +2897,77 @@ MxResult AnimState::Serialize(LegoFile* p_file)
 	}
 
 	if (p_file->IsReadMode()) {
-		Read(p_file, &m_unk0x08);
+		Read(p_file, &m_extraCharacterId);
 
-		// m_unk0x10_len and m_unk0x10
 		if (m_unk0x10) {
 			delete[] m_unk0x10;
 		}
+
 		Read(p_file, &m_unk0x0c);
 		if (m_unk0x0c != 0) {
-			m_unk0x10 = new undefined2[m_unk0x0c];
+			m_unk0x10 = new MxU16[m_unk0x0c];
 		}
 		else {
 			m_unk0x10 = NULL;
 		}
+
 		for (MxS32 i = 0; i < m_unk0x0c; i++) {
 			Read(p_file, &m_unk0x10[i]);
 		}
 
-		// m_unk0x18_len and m_unk0x18
 		// Note that here we read first and then free memory in contrast to above
-		Read(p_file, &m_unk0x14);
-		if (m_unk0x18) {
-			delete[] m_unk0x18;
+		Read(p_file, &m_locationsFlagsLength);
+
+		if (m_locationsFlags) {
+			delete[] m_locationsFlags;
 		}
-		if (m_unk0x14 != 0) {
-			m_unk0x18 = new undefined[m_unk0x14];
+
+		if (m_locationsFlagsLength != 0) {
+			m_locationsFlags = new MxBool[m_locationsFlagsLength];
 		}
 		else {
-			m_unk0x18 = NULL;
+			m_locationsFlags = NULL;
 		}
-		for (MxS32 j = 0; j < m_unk0x14; j++) {
-			Read(p_file, &m_unk0x18[j]);
+
+		for (MxS32 j = 0; j < m_locationsFlagsLength; j++) {
+			Read(p_file, &m_locationsFlags[j]);
 		}
 	}
 	else if (p_file->IsWriteMode()) {
-		Write(p_file, m_unk0x08);
+		Write(p_file, m_extraCharacterId);
+
 		Write(p_file, m_unk0x0c);
 		for (MxS32 i = 0; i < m_unk0x0c; i++) {
 			Write(p_file, m_unk0x10[i]);
 		}
-		Write(p_file, m_unk0x14);
-		for (MxS32 j = 0; j < m_unk0x14; j++) {
-			Write(p_file, m_unk0x18[j]);
+
+		Write(p_file, m_locationsFlagsLength);
+		for (MxS32 j = 0; j < m_locationsFlagsLength; j++) {
+			Write(p_file, m_locationsFlags[j]);
 		}
 	}
 
 	return SUCCESS;
 }
 
-// STUB: LEGO1 0x100654f0
+// FUNCTION: LEGO1 0x100654f0
 MxBool AnimState::SetFlag()
 {
-	// TODO
+	if (m_unk0x10 != NULL) {
+		m_extraCharacterId = NULL;
+
+		for (MxS32 i = 0; i < m_unk0x0c; i++) {
+			m_unk0x10[i] = 0;
+		}
+
+		for (MxS32 j = 0; j < m_locationsFlagsLength; j++) {
+			if (LegoNavController::GetLocation(j) != NULL) {
+				m_locationsFlags[j] = 0;
+			}
+		}
+
+		return TRUE;
+	}
+
 	return FALSE;
 }
