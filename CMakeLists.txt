@@ -123,7 +123,7 @@ if(ISLE_USE_DX5)
     target_link_directories(DirectX5::DirectX5 INTERFACE "${CMAKE_SOURCE_DIR}/3rdparty/dx5/lib")
 endif()
 
-add_subdirectory(3rdparty/d3drm)
+add_subdirectory(3rdparty/d3drm EXCLUDE_FROM_ALL)
 
 add_library(Vec::Vec INTERFACE IMPORTED)
 target_include_directories(Vec::Vec INTERFACE "${CMAKE_SOURCE_DIR}/3rdparty/vec")

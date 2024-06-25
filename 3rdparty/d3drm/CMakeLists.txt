@@ -28,7 +28,7 @@ else()
     add_library(d3drm_guid INTERFACE)
 endif()
 
-add_library(d3drm-wine SHARED EXCLUDE_FROM_ALL
+add_library(d3drm-wine SHARED
     d3drm.c
     d3drm_main.c
     d3drm_private.h
