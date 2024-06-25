@@ -20,6 +20,12 @@ if(MSVC)
     add_library(d3dxof INTERFACE)
     target_link_libraries(d3dxof INTERFACE "${imp}")
     add_dependencies(d3dxof "d3dxof-implib")
+
+    add_library(d3drm_guid STATIC d3drm_guid.c)
+    target_include_directories(d3drm_guid PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/include")
+else()
+    set(d3drm_guid)
+    add_library(d3drm_guid INTERFACE)
 endif()
 
 add_library(d3drm-wine SHARED EXCLUDE_FROM_ALL
