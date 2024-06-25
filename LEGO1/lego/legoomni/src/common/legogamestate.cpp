@@ -172,7 +172,7 @@ void LegoGameState::SetActor(MxU8 p_actorId)
 		m_actorId = p_actorId;
 	}
 
-	IslePathActor* oldActor = CurrentActor();
+	LegoPathActor* oldActor = CurrentActor();
 	SetCurrentActor(NULL);
 
 	IslePathActor* newActor = new IslePathActor();
@@ -199,7 +199,7 @@ void LegoGameState::SetActor(MxU8 p_actorId)
 // FUNCTION: LEGO1 0x10039910
 void LegoGameState::RemoveActor()
 {
-	IslePathActor* actor = CurrentActor();
+	LegoPathActor* actor = CurrentActor();
 	SetCurrentActor(NULL);
 	delete actor;
 	m_actorId = 0;
@@ -209,7 +209,7 @@ void LegoGameState::RemoveActor()
 void LegoGameState::ResetROI()
 {
 	if (m_actorId) {
-		IslePathActor* actor = CurrentActor();
+		LegoPathActor* actor = CurrentActor();
 
 		if (actor) {
 			LegoROI* roi = actor->GetROI();
@@ -906,11 +906,12 @@ void LegoGameState::SwitchArea(Area p_area)
 			AnimationManager()->Resume();
 		}
 
-		CurrentActor()->SpawnPlayer(
-			p_area,
-			TRUE,
-			IslePathActor::c_spawnBit1 | IslePathActor::c_playMusic | IslePathActor::c_spawnBit3
-		);
+		((IslePathActor*) CurrentActor())
+			->SpawnPlayer(
+				p_area,
+				TRUE,
+				IslePathActor::c_spawnBit1 | IslePathActor::c_playMusic | IslePathActor::c_spawnBit3
+			);
 		break;
 	}
 	case e_hospital:
@@ -922,11 +923,12 @@ void LegoGameState::SwitchArea(Area p_area)
 		SetCameraControllerFromIsle();
 		CurrentActor()->ResetWorldTransform(TRUE);
 		AnimationManager()->Resume();
-		CurrentActor()->SpawnPlayer(
-			p_area,
-			TRUE,
-			IslePathActor::c_spawnBit1 | IslePathActor::c_playMusic | IslePathActor::c_spawnBit3
-		);
+		((IslePathActor*) CurrentActor())
+			->SpawnPlayer(
+				p_area,
+				TRUE,
+				IslePathActor::c_spawnBit1 | IslePathActor::c_playMusic | IslePathActor::c_spawnBit3
+			);
 		break;
 	case e_police:
 		VideoManager()->SetUnk0x554(TRUE);
@@ -1100,28 +1102,28 @@ void LegoGameState::Init()
 
 		Helicopter* copter = (Helicopter*) isle->Find(*g_copterScript, CopterScript::c_Helicopter_Actor);
 		if (copter) {
-			isle->RemovePathActor(copter);
+			isle->RemoveActor(copter);
 			isle->VTable0x6c(copter);
 			delete copter;
 		}
 
 		DuneBuggy* dunebuggy = (DuneBuggy*) isle->Find(*g_dunecarScript, DunecarScript::c_DuneBugy_Actor);
 		if (dunebuggy) {
-			isle->RemovePathActor(dunebuggy);
+			isle->RemoveActor(dunebuggy);
 			isle->VTable0x6c(dunebuggy);
 			delete dunebuggy;
 		}
 
 		Jetski* jetski = (Jetski*) isle->Find(*g_jetskiScript, JetskiScript::c_Jetski_Actor);
 		if (jetski) {
-			isle->RemovePathActor(jetski);
+			isle->RemoveActor(jetski);
 			isle->VTable0x6c(jetski);
 			delete jetski;
 		}
 
 		RaceCar* racecar = (RaceCar*) isle->Find(*g_racecarScript, RacecarScript::c_RaceCar_Actor);
 		if (racecar) {
-			isle->RemovePathActor(racecar);
+			isle->RemoveActor(racecar);
 			isle->VTable0x6c(racecar);
 			delete racecar;
 		}

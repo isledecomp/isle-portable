@@ -40,21 +40,22 @@ Helicopter::~Helicopter()
 MxResult Helicopter::Create(MxDSAction& p_dsAction)
 {
 	MxResult result = IslePathActor::Create(p_dsAction);
-	LegoWorld* world = CurrentWorld();
-	SetWorld(world);
-	if (world->IsA("Act3")) {
-		((Act3*) GetWorld())->SetUnknown420c(this);
+
+	m_world = CurrentWorld();
+	if (m_world->IsA("Act3")) {
+		((Act3*) m_world)->SetUnknown420c(this);
 	}
-	world = GetWorld();
-	if (world) {
-		world->Add(this);
+
+	if (m_world != NULL) {
+		m_world->Add(this);
 	}
-	GetState();
+
+	CreateState();
 	return result;
 }
 
 // FUNCTION: LEGO1 0x10003320
-void Helicopter::GetState()
+void Helicopter::CreateState()
 {
 	m_state = (HelicopterState*) GameState()->GetState("HelicopterState");
 	if (!m_state) {
@@ -78,11 +79,12 @@ void Helicopter::VTable0xe4()
 	if (GameState()->GetCurrentAct() == LegoGameState::e_act1) {
 		GameState()->SetCurrentArea(LegoGameState::e_copter);
 		if (CurrentActor() && CurrentActor()->IsA("IslePathActor")) {
-			CurrentActor()->SpawnPlayer(
-				LegoGameState::e_unk55,
-				TRUE,
-				IslePathActor::c_spawnBit1 | IslePathActor::c_playMusic | IslePathActor::c_spawnBit3
-			);
+			((IslePathActor*) CurrentActor())
+				->SpawnPlayer(
+					LegoGameState::e_unk55,
+					TRUE,
+					IslePathActor::c_spawnBit1 | IslePathActor::c_playMusic | IslePathActor::c_spawnBit3
+				);
 		}
 	}
 
@@ -102,7 +104,7 @@ void Helicopter::VTable0xe4()
 }
 
 // FUNCTION: LEGO1 0x10003480
-MxU32 Helicopter::VTable0xcc()
+MxU32 Helicopter::HandleClick()
 {
 	if (!FUN_1003ef60()) {
 		return 1;
@@ -116,7 +118,7 @@ MxU32 Helicopter::VTable0xcc()
 
 	if (CurrentActor()) {
 		if (CurrentActor()->GetActorId() != GameState()->GetActorId()) {
-			CurrentActor()->VTable0xe4();
+			((IslePathActor*) CurrentActor())->VTable0xe4();
 		}
 	}
 
@@ -151,7 +153,7 @@ MxU32 Helicopter::VTable0xcc()
 }
 
 // FUNCTION: LEGO1 0x100035e0
-MxU32 Helicopter::VTable0xd4(LegoControlManagerEvent& p_param)
+MxU32 Helicopter::HandleControl(LegoControlManagerEvent& p_param)
 {
 	MxU32 ret = 0;
 	MxAtomId script;
@@ -190,7 +192,7 @@ MxU32 Helicopter::VTable0xd4(LegoControlManagerEvent& p_param)
 			if (m_state->GetUnkown8() == 0) {
 				state->SetUnknown18(4);
 				m_state->SetUnknown8(1);
-				m_world->RemovePathActor(this);
+				m_world->RemoveActor(this);
 				InvokeAction(Extra::ActionType::e_start, script, IsleScript::c_HelicopterTakeOff_Anim, NULL);
 				SetState(0);
 			}
@@ -203,7 +205,7 @@ MxU32 Helicopter::VTable0xd4(LegoControlManagerEvent& p_param)
 			}
 			if (m_state->GetUnkown8() == 2) {
 				m_state->SetUnknown8(3);
-				m_world->RemovePathActor(this);
+				m_world->RemoveActor(this);
 				InvokeAction(Extra::ActionType::e_start, script, IsleScript::c_HelicopterLand_Anim, NULL);
 				SetState(4);
 			}
@@ -376,11 +378,7 @@ void Helicopter::VTable0x70(float p_float)
 			Vector3 v2(m_unk0x1a8[3]);
 			float* loc = m_unk0x1a8[3];
 			mat.SetIdentity();
-			float fa[4];
-			Vector4 v3(fa);
-			if (m_unk0x1f4.FUN_100040a0(v3, f2) == SUCCESS) {
-				mat.FromQuaternion(v3);
-			}
+			m_unk0x1f4.Unknown6(mat, f2);
 			v2.SetVector(loc);
 			v2.Sub(&v);
 			v2.Mul(f2);

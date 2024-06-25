@@ -27,7 +27,7 @@ IslePathActor::IslePathActor()
 	m_world = NULL;
 	m_unk0x13c = 6.0;
 	m_unk0x15c = 1.0;
-	m_unk0x158 = 0;
+	m_unk0x158 = NULL;
 }
 
 // FUNCTION: LEGO1 0x1001a280
@@ -53,11 +53,11 @@ MxLong IslePathActor::Notify(MxParam& p_param)
 	case c_notificationType0:
 		ret = VTable0xd0();
 		break;
-	case c_notificationType11:
-		ret = VTable0xcc();
-		break;
 	case c_notificationClick:
-		ret = VTable0xd4((LegoControlManagerEvent&) p_param);
+		ret = HandleClick();
+		break;
+	case c_notificationControl:
+		ret = HandleControl((LegoControlManagerEvent&) p_param);
 		break;
 	case c_notificationEndAnim:
 		ret = VTable0xd8((LegoEndAnimNotificationParam&) p_param);
@@ -471,7 +471,7 @@ void IslePathActor::SpawnPlayer(LegoGameState::Area p_area, MxBool p_und, MxU8 p
 		assert(world);
 
 		if (m_world != NULL) {
-			m_world->RemovePathActor(this);
+			m_world->RemoveActor(this);
 			m_world->Remove(this);
 			VideoManager()->Get3DManager()->Remove(*m_roi);
 		}
@@ -556,7 +556,7 @@ void IslePathActor::SpawnPlayer(LegoGameState::Area p_area, MxBool p_und, MxU8 p
 void IslePathActor::VTable0xec(MxMatrix p_transform, LegoPathBoundary* p_boundary, MxBool p_reset)
 {
 	if (m_world) {
-		m_world->RemovePathActor(this);
+		m_world->RemoveActor(this);
 		m_world->Remove(this);
 		VideoManager()->Get3DManager()->GetLego3DView()->Remove(*m_roi);
 	}
@@ -566,7 +566,7 @@ void IslePathActor::VTable0xec(MxMatrix p_transform, LegoPathBoundary* p_boundar
 		VTable0xe0();
 	}
 
-	m_world->AddPathActor(this);
+	m_world->PlaceActor(this);
 	p_boundary->AddActor(this);
 	if (m_actorId != GameState()->GetActorId()) {
 		m_world->Add(this);
@@ -579,8 +579,17 @@ void IslePathActor::VTable0xec(MxMatrix p_transform, LegoPathBoundary* p_boundar
 	}
 }
 
-// STUB: LEGO1 0x1001b660
+// FUNCTION: LEGO1 0x1001b660
+// FUNCTION: BETA10 0x10036ea2
 void IslePathActor::FUN_1001b660()
 {
-	// TODO
+	MxMatrix transform(m_roi->GetLocal2World());
+	Vector3 position(transform[0]);
+	Vector3 direction(transform[1]);
+	Vector3 up(transform[2]);
+
+	((Vector3&) up).Mul(-1.0f);
+	position.EqualsCross(&direction, &up);
+	m_roi->FUN_100a58f0(transform);
+	m_roi->VTable0x14();
 }
