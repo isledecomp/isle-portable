@@ -2331,12 +2331,17 @@ HRESULT WINAPI Direct3DRMCreate(IDirect3DRM **d3drm)
 #ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+#elif defined(_MSC_VER)
+#pragma warning( push )
+#pragma warning( disable : 4090 )  /*  different 'const' qualifiers */
 #endif
     object->IDirect3DRM_iface.lpVtbl = &d3drm1_vtbl;
     object->IDirect3DRM2_iface.lpVtbl = &d3drm2_vtbl;
     object->IDirect3DRM3_iface.lpVtbl = &d3drm3_vtbl;
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
+#elif defined(_MSC_VER)
+#pragma warning( pop )
 #endif
     object->ref1 = 1;
     object->iface_count = 1;

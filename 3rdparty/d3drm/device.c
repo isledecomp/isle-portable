@@ -1666,6 +1666,9 @@ HRESULT d3drm_device_create(struct d3drm_device **device, IDirect3DRM *d3drm)
 #ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+#elif defined(_MSC_VER)
+#pragma warning( push )
+#pragma warning( disable : 4090 )  /*  different 'const' qualifiers */
 #endif
     object->IDirect3DRMDevice_iface.lpVtbl = &d3drm_device1_vtbl;
     object->IDirect3DRMDevice2_iface.lpVtbl = &d3drm_device2_vtbl;
@@ -1673,6 +1676,8 @@ HRESULT d3drm_device_create(struct d3drm_device **device, IDirect3DRM *d3drm)
     object->IDirect3DRMWinDevice_iface.lpVtbl = &d3drm_device_win_vtbl;
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
+#elif defined(_MSC_VER)
+#pragma warning( pop )
 #endif
     object->d3drm = d3drm;
     d3drm_object_init(&object->obj, classname);

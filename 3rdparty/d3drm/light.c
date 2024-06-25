@@ -381,10 +381,15 @@ HRESULT d3drm_light_create(struct d3drm_light **light, IDirect3DRM *d3drm)
 #ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+#elif defined(_MSC_VER)
+#pragma warning( push )
+#pragma warning( disable : 4090 )  /*  different 'const' qualifiers */
 #endif
     object->IDirect3DRMLight_iface.lpVtbl = &d3drm_light_vtbl;
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
+#elif defined(_MSC_VER)
+#pragma warning( pop )
 #endif
     object->ref = 1;
     object->d3drm = d3drm;

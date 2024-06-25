@@ -29,6 +29,10 @@
 extern "C" {
 #endif
 
+#ifdef INTERFACE
+#undef INTERFACE
+#endif
+
 /* Direct3DRM object CLSIDs */
 
 DEFINE_GUID(CLSID_CDirect3DRMDevice,                    0x4fa3568e, 0x623f, 0x11cf, 0xac, 0x4a, 0x0, 0x0, 0xc0, 0x38, 0x25, 0xa1);

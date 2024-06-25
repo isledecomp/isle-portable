@@ -630,11 +630,16 @@ HRESULT d3drm_face_create(struct d3drm_face **face)
 #ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+#elif defined(_MSC_VER)
+#pragma warning( push )
+#pragma warning( disable : 4090 )  /*  different 'const' qualifiers */
 #endif
     object->IDirect3DRMFace_iface.lpVtbl = &d3drm_face1_vtbl;
     object->IDirect3DRMFace2_iface.lpVtbl = &d3drm_face2_vtbl;
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
+#elif defined(_MSC_VER)
+#pragma warning( pop )
 #endif
     object->ref = 1;
 
