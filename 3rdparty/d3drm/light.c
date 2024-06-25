@@ -378,7 +378,14 @@ HRESULT d3drm_light_create(struct d3drm_light **light, IDirect3DRM *d3drm)
     if (!(object = calloc(1, sizeof(*object))))
         return E_OUTOFMEMORY;
 
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+#endif
     object->IDirect3DRMLight_iface.lpVtbl = &d3drm_light_vtbl;
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
     object->ref = 1;
     object->d3drm = d3drm;
     IDirect3DRM_AddRef(object->d3drm);

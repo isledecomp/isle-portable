@@ -1467,9 +1467,16 @@ HRESULT d3drm_texture_create(struct d3drm_texture **texture, IDirect3DRM *d3drm)
     if (!(object = calloc(1, sizeof(*object))))
         return E_OUTOFMEMORY;
 
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+#endif
     object->IDirect3DRMTexture_iface.lpVtbl = &d3drm_texture1_vtbl;
     object->IDirect3DRMTexture2_iface.lpVtbl = &d3drm_texture2_vtbl;
     object->IDirect3DRMTexture3_iface.lpVtbl = &d3drm_texture3_vtbl;
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
     object->d3drm = d3drm;
     object->max_colors = 8;
     object->max_shades = 16;

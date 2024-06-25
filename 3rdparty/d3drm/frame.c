@@ -261,7 +261,14 @@ static struct d3drm_frame_array *d3drm_frame_array_create(unsigned int frame_cou
     if (!(array = calloc(1, sizeof(*array))))
         return NULL;
 
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+#endif
     array->IDirect3DRMFrameArray_iface.lpVtbl = &d3drm_frame_array_vtbl;
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
     array->ref = 1;
     array->size = frame_count;
 
@@ -379,7 +386,14 @@ static struct d3drm_visual_array *d3drm_visual_array_create(unsigned int visual_
     if (!(array = calloc(1, sizeof(*array))))
         return NULL;
 
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+#endif
     array->IDirect3DRMVisualArray_iface.lpVtbl = &d3drm_visual_array_vtbl;
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
     array->ref = 1;
     array->size = visual_count;
 
@@ -498,7 +512,14 @@ static struct d3drm_light_array *d3drm_light_array_create(unsigned int light_cou
     if (!(array = calloc(1, sizeof(*array))))
         return NULL;
 
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+#endif
     array->IDirect3DRMLightArray_iface.lpVtbl = &d3drm_light_array_vtbl;
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
     array->ref = 1;
     array->size = light_count;
 
@@ -3137,9 +3158,16 @@ HRESULT d3drm_frame_create(struct d3drm_frame **frame, IUnknown *parent_frame, I
     if (!(object = calloc(1, sizeof(*object))))
         return E_OUTOFMEMORY;
 
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+#endif
     object->IDirect3DRMFrame_iface.lpVtbl = &d3drm_frame1_vtbl;
     object->IDirect3DRMFrame2_iface.lpVtbl = &d3drm_frame2_vtbl;
     object->IDirect3DRMFrame3_iface.lpVtbl = &d3drm_frame3_vtbl;
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
     object->d3drm = d3drm;
     object->ref = 1;
     d3drm_set_color(&object->scenebackground, 0.0f, 0.0f, 0.0f, 1.0f);
@@ -3889,8 +3917,15 @@ HRESULT d3drm_animation_create(struct d3drm_animation **animation, IDirect3DRM *
     if (!(object = calloc(1, sizeof(*object))))
         return E_OUTOFMEMORY;
 
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+#endif
     object->IDirect3DRMAnimation_iface.lpVtbl = &d3drm_animation1_vtbl;
     object->IDirect3DRMAnimation2_iface.lpVtbl = &d3drm_animation2_vtbl;
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
     object->d3drm = d3drm;
     object->ref = 1;
     object->options = D3DRMANIMATION_CLOSED | D3DRMANIMATION_LINEARPOSITION;

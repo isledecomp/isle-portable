@@ -1663,10 +1663,17 @@ HRESULT d3drm_device_create(struct d3drm_device **device, IDirect3DRM *d3drm)
     if (!(object = calloc(1, sizeof(*object))))
         return E_OUTOFMEMORY;
 
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+#endif
     object->IDirect3DRMDevice_iface.lpVtbl = &d3drm_device1_vtbl;
     object->IDirect3DRMDevice2_iface.lpVtbl = &d3drm_device2_vtbl;
     object->IDirect3DRMDevice3_iface.lpVtbl = &d3drm_device3_vtbl;
     object->IDirect3DRMWinDevice_iface.lpVtbl = &d3drm_device_win_vtbl;
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
     object->d3drm = d3drm;
     d3drm_object_init(&object->obj, classname);
 
