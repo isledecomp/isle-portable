@@ -60,12 +60,6 @@ if (ENABLE_CLANG_TIDY)
     set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_BIN}")
 endif()
 
-math(EXPR bits "8 * ${CMAKE_SIZEOF_VOID_P}")
-message(STATUS "Building ${bits}-bit LEGO Island")
-if (NOT bits EQUAL 32)
-    message(WARNING "Only 32-bit executables are supported")
-endif()
-
 set(MSVC_FOR_DECOMP FALSE)
 if (MSVC)
     # Visual C++ 4.2 -> cl version 10.2.0
