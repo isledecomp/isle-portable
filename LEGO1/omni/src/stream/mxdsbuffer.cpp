@@ -353,7 +353,7 @@ MxU8* MxDSBuffer::SkipToData()
 			case FOURCC('M', 'x', 'O', 'b'):
 			case FOURCC('M', 'x', 'C', 'h'):
 				result = m_pIntoBuffer;
-				m_pIntoBuffer = (MxU8*) ((ptr[1] & 1) + ptr[1] + (MxU32) ptr);
+				m_pIntoBuffer = (MxU8*) ptr + ((ptr[1] & 1) + ptr[1]);
 				m_pIntoBuffer = (MxU8*) ((MxU32*) m_pIntoBuffer + 2);
 				if (m_pBuffer + (m_writeOffset - 8) < m_pIntoBuffer) {
 					m_pIntoBuffer2 = result;
@@ -366,7 +366,7 @@ MxU8* MxDSBuffer::SkipToData()
 				m_pIntoBuffer = (MxU8*) (ptr + 2);
 				break;
 			case FOURCC('M', 'x', 'H', 'd'):
-				m_pIntoBuffer = (MxU8*) ((MxU32) ptr + ptr[1] + 8);
+				m_pIntoBuffer = (MxU8*) ptr + (ptr[1] + 8);
 				break;
 			default:
 				m_pIntoBuffer = NULL;
@@ -460,7 +460,7 @@ MxU8* MxDSBuffer::FUN_100c6fa0(MxU8* p_data)
 			if (current != p_data) {
 				return current;
 			}
-			current = ((MxU32) current & 1) + current;
+			current += ((uintptr_t) current) & 1;
 			current += 8;
 			break;
 		case FOURCC('M', 'x', 'H', 'd'):
