@@ -470,6 +470,7 @@ foreach(tgt IN LISTS lego1_targets)
   target_include_directories(${tgt} PRIVATE $<$<BOOL:${ISLE_D3DRM_FROM_WINE}>:$<TARGET_PROPERTY:d3drm-wine,INTERFACE_INCLUDE_DIRECTORIES>>)
   target_link_libraries(${tgt} PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5> SDL3::SDL3)
   target_compile_definitions(${tgt} PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DIRECTX5_SDK>)
+  target_compile_definitions(${tgt} PRIVATE $<$<BOOL:${ISLE_D3DRM_FROM_WINE}>:D3DRM_WINE>)
 endforeach()
 
 # Make sure filenames are ALL CAPS
