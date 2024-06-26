@@ -30,11 +30,8 @@
 #include "viewmanager/viewmanager.h"
 
 #define SDL_MAIN_USE_CALLBACKS
-#include <SDL3/SDL_filesystem.h>
-#include <SDL3/SDL_init.h>
+#include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
-#include <SDL3/SDL_messagebox.h>
-#include <SDL3/SDL_timer.h>
 #include <iniparser.h>
 #include <time.h>
 
