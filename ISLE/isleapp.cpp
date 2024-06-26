@@ -458,12 +458,15 @@ MxResult IsleApp::SetupWindow()
 	m_cursorNo = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_NOT_ALLOWED);
 	SDL_SetCursor(m_cursorCurrent);
 
-	if (m_fullScreen) {
-		m_windowHandle = SDL_CreateWindow(WINDOW_TITLE, g_targetWidth, g_targetHeight, SDL_WINDOW_FULLSCREEN);
-	}
-	else {
-		m_windowHandle = SDL_CreateWindow(WINDOW_TITLE, g_targetWidth, g_targetHeight, 0);
-	}
+	SDL_PropertiesID props = SDL_CreateProperties();
+	SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, g_targetWidth);
+	SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, g_targetHeight);
+	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_FULLSCREEN_BOOLEAN, m_fullScreen);
+	SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, WINDOW_TITLE);
+
+	m_windowHandle = SDL_CreateWindowWithProperties(props);
+
+	SDL_DestroyProperties(props);
 
 	if (!m_windowHandle) {
 		return FAILURE;
