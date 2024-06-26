@@ -482,6 +482,10 @@ if (ISLE_BUILD_APP)
     ISLE/res/isle.rc
     ISLE/isleapp.cpp
   )
+  add_custom_command(TARGET isle POST_BUILD
+    COMMAND "${CMAKE_COMMAND}" -E copy $<TARGET_RUNTIME_DLLS:isle> "$<TARGET_FILE_DIR:isle>"
+    COMMAND_EXPAND_LISTS
+  )
 
   target_compile_definitions(isle PRIVATE ISLE_APP)
 
