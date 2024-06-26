@@ -30,6 +30,10 @@
 #include "wine/debug.h"
 #include "wine/list.h"
 
+#ifdef DYNAMIC_D3DXOF
+#include "dyn_d3dxof.h"
+#endif
+
 struct d3drm_matrix
 {
     float _11, _12, _13, _14;

@@ -2145,7 +2145,11 @@ static HRESULT WINAPI d3drm3_Load(IDirect3DRM3 *iface, void *source, void *objec
         return E_NOTIMPL;
     }
 
+#ifdef DYNAMIC_D3DXOF
+    hr = DynamicDirectXFileCreate(&file);
+#else
     hr = DirectXFileCreate(&file);
+#endif
     if (hr != DXFILE_OK)
         goto end;
 

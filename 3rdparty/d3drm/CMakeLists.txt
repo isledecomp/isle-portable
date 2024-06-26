@@ -28,6 +28,8 @@ else()
     add_library(d3drm_guid INTERFACE)
 endif()
 
+option(WINE_D3DRM_DYNAMIC_D3DXOF "Dynamic d3dxof" ON)
+
 add_library(d3drm-wine SHARED
     d3drm.c
     d3drm_main.c
@@ -49,8 +51,16 @@ if(CMAKE_SIZEOF_VOID_P EQUAL 4)
 else()
     target_sources(d3drm-wine PRIVATE d3drm64.def)
 endif()
+if(WINE_D3DRM_DYNAMIC_D3DXOF)
+    target_sources(d3drm-wine PRIVATE dyn_d3dxof.c dyn_d3dxof.h)
+    target_compile_definitions(d3drm-wine PRIVATE DYNAMIC_D3DXOF)
+endif()
+
 target_include_directories(d3drm-wine SYSTEM PUBLIC "${CMAKE_CURRENT_LIST_DIR}/include")
-target_link_libraries(d3drm-wine PRIVATE d3dxof ddraw)
+if(NOT WINE_D3DRM_DYNAMIC_D3DXOF)
+    target_link_libraries(d3drm-wine PRIVATE d3dxof)
+endif()
+target_link_libraries(d3drm-wine PRIVATE ddraw)
 set_property(TARGET d3drm-wine PROPERTY PREFIX "")
 set_property(TARGET d3drm-wine PROPERTY OUTPUT_NAME "d3drm")
 target_compile_definitions(d3drm-wine PRIVATE "__WINESRC__")

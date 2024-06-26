@@ -1483,7 +1483,11 @@ static HRESULT WINAPI d3drm_mesh_builder3_Load(IDirect3DRMMeshBuilder3 *iface, v
 
     clean_mesh_builder_data(mesh_builder);
 
+#ifdef DYNAMIC_D3DXOF
+    hr = DynamicDirectXFileCreate(&dxfile);
+#else
     hr = DirectXFileCreate(&dxfile);
+#endif
     if (hr != DXFILE_OK)
         goto end;
 
