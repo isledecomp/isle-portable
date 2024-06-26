@@ -470,6 +470,7 @@ foreach(tgt IN LISTS lego1_targets)
   target_include_directories(${tgt} PRIVATE $<$<BOOL:${ISLE_D3DRM_FROM_WINE}>:$<TARGET_PROPERTY:d3drm-wine,INTERFACE_INCLUDE_DIRECTORIES>>)
   target_link_libraries(${tgt} PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5> SDL3::SDL3)
   target_compile_definitions(${tgt} PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DIRECTX5_SDK>)
+  target_compile_definitions(${tgt} PRIVATE $<$<BOOL:${ISLE_D3DRM_FROM_WINE}>:D3DRM_WINE>)
 endforeach()
 
 # Make sure filenames are ALL CAPS
@@ -481,6 +482,10 @@ if (ISLE_BUILD_APP)
   add_executable(isle WIN32
     ISLE/res/isle.rc
     ISLE/isleapp.cpp
+  )
+  add_custom_command(TARGET isle POST_BUILD
+    COMMAND "${CMAKE_COMMAND}" -E copy $<TARGET_RUNTIME_DLLS:isle> "$<TARGET_FILE_DIR:isle>"
+    COMMAND_EXPAND_LISTS
   )
 
   target_compile_definitions(isle PRIVATE ISLE_APP)
@@ -518,6 +523,7 @@ if (ISLE_BUILD_CONFIG)
     target_link_libraries(config PRIVATE DirectX5::DirectX5)
   endif()
   target_compile_definitions(config PRIVATE DIRECT3D_VERSION=0x500)
+  target_link_libraries(config PRIVATE SDL3::SDL3)
   target_link_libraries(config PRIVATE ddraw dxguid)
   set_property(TARGET config PROPERTY OUTPUT_NAME "CONFIG")
   set_property(TARGET config PROPERTY SUFFIX ".EXE")

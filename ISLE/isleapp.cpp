@@ -30,11 +30,8 @@
 #include "viewmanager/viewmanager.h"
 
 #define SDL_MAIN_USE_CALLBACKS
-#include <SDL3/SDL_filesystem.h>
-#include <SDL3/SDL_init.h>
+#include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
-#include <SDL3/SDL_messagebox.h>
-#include <SDL3/SDL_timer.h>
 #include <iniparser.h>
 #include <time.h>
 
@@ -116,6 +113,8 @@ IsleApp::IsleApp()
 	m_cursorCurrent = NULL;
 
 	LegoOmni::CreateInstance();
+
+	m_iniPath = NULL;
 }
 
 // FUNCTION: ISLE 0x4011a0
@@ -253,6 +252,16 @@ int SDL_AppInit(void** appstate, int argc, char** argv)
 
 	// Create global app instance
 	g_isle = new IsleApp();
+
+	if (g_isle->ParseArguments(argc, argv) != SUCCESS) {
+		SDL_ShowSimpleMessageBox(
+			SDL_MESSAGEBOX_ERROR,
+			"LEGO® Island Error",
+			"\"LEGO® Island\" failed to start.  Invalid CLI arguments.",
+			NULL
+		);
+		return SDL_APP_FAILURE;
+	}
 
 	// Create window
 	if (g_isle->SetupWindow() != SUCCESS) {
@@ -449,12 +458,15 @@ MxResult IsleApp::SetupWindow()
 	m_cursorNo = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_NOT_ALLOWED);
 	SDL_SetCursor(m_cursorCurrent);
 
-	if (m_fullScreen) {
-		m_windowHandle = SDL_CreateWindow(WINDOW_TITLE, g_targetWidth, g_targetHeight, SDL_WINDOW_FULLSCREEN);
-	}
-	else {
-		m_windowHandle = SDL_CreateWindow(WINDOW_TITLE, g_targetWidth, g_targetHeight, 0);
-	}
+	SDL_PropertiesID props = SDL_CreateProperties();
+	SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, g_targetWidth);
+	SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, g_targetHeight);
+	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_FULLSCREEN_BOOLEAN, m_fullScreen);
+	SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, WINDOW_TITLE);
+
+	m_windowHandle = SDL_CreateWindowWithProperties(props);
+
+	SDL_DestroyProperties(props);
 
 	if (!m_windowHandle) {
 		return FAILURE;
@@ -502,9 +514,18 @@ void IsleApp::LoadConfig()
 {
 	char* basePath = SDL_GetBasePath();
 	char* prefPath = SDL_GetPrefPath("isledecomp", "isle");
-	char* iniConfig = new char[strlen(prefPath) + strlen("isle.ini") + 1]();
-	strcat(iniConfig, prefPath);
-	strcat(iniConfig, "isle.ini");
+	char* iniConfig;
+	if (m_iniPath) {
+		iniConfig = new char[strlen(m_iniPath) + 1];
+		strcpy(iniConfig, m_iniPath);
+	}
+	else {
+		iniConfig = new char[strlen(prefPath) + strlen("isle.ini") + 1]();
+		strcat(iniConfig, prefPath);
+		strcat(iniConfig, "isle.ini");
+	}
+	SDL_Log("Reading configuration from \"%s\"", iniConfig);
+
 	dictionary* dict = iniparser_load(iniConfig);
 
 	const char* hdPath = iniparser_getstring(dict, "isle:diskpath", basePath);
@@ -676,4 +697,22 @@ void IsleApp::SetupCursor(Cursor p_cursor)
 	else {
 		SDL_HideCursor();
 	}
+}
+
+MxResult IsleApp::ParseArguments(int argc, char** argv)
+{
+
+	for (int i = 1, consumed; i < argc; i += consumed) {
+		consumed = -1;
+
+		if (strcmp(argv[i], "--ini") == 0 && i + 1 < argc) {
+			m_iniPath = argv[i + 1];
+			consumed = 2;
+		}
+		if (consumed <= 0) {
+			SDL_Log("Invalid argument(s): %s", argv[i]);
+			return FAILURE;
+		}
+	}
+	return SUCCESS;
 }

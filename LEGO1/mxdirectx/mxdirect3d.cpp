@@ -1,6 +1,7 @@
 #include "mxdirect3d.h"
 
-#include <stdio.h> // for vsprintf
+#include <SDL3/SDL.h> // for SDL_Log
+#include <stdio.h>    // for vsprintf
 
 #if !defined(MXDIRECTX_FOR_CONFIG)
 DECOMP_SIZE_ASSERT(MxAssignedDevice, 0xe4);
@@ -176,7 +177,7 @@ BOOL MxDirect3D::D3DSetMode()
 		backBuffer->Unlock(desc.lpSurface);
 	}
 	else {
-		OutputDebugString("MxDirect3D::D3DSetMode() back lock failed\n");
+		SDL_Log("MxDirect3D::D3DSetMode() back lock failed\n");
 	}
 
 	if (m_bFullScreen) {
@@ -194,7 +195,7 @@ BOOL MxDirect3D::D3DSetMode()
 			frontBuffer->Unlock(desc.lpSurface);
 		}
 		else {
-			OutputDebugString("MxDirect3D::D3DSetMode() front lock failed\n");
+			SDL_Log("MxDirect3D::D3DSetMode() front lock failed\n");
 		}
 	}
 
@@ -550,7 +551,7 @@ void MxDeviceEnumerate::BuildErrorString(const char* p_format, ...)
 	vsprintf(buf, p_format, args);
 	va_end(args);
 
-	OutputDebugString(buf);
+	SDL_Log("%s", buf);
 }
 
 // FUNCTION: CONFIG 0x00401bf0
@@ -639,6 +640,8 @@ const char* MxDeviceEnumerate::EnumerateErrorToString(HRESULT p_error)
 	switch (p_error) {
 	case DD_OK:
 		return "No error.";
+	case E_NOINTERFACE:
+		return "No such interface supported";
 	case DDERR_GENERIC:
 		return "Generic failure.";
 	case DDERR_UNSUPPORTED:

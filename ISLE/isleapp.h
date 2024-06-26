@@ -47,6 +47,8 @@ public:
 
 	inline void SetWindowActive(MxS32 p_windowActive) { m_windowActive = p_windowActive; }
 
+	MxResult ParseArguments(int argc, char** argv);
+
 private:
 	char* m_hdPath;              // 0x00
 	char* m_cdPath;              // 0x04
@@ -75,6 +77,8 @@ private:
 	SDL_Cursor* m_cursorBusy;    // 0x80
 	SDL_Cursor* m_cursorNo;      // 0x84
 	SDL_Cursor* m_cursorCurrent; // 0x88
+
+	char* m_iniPath;
 };
 
 #endif // ISLEAPP_H
