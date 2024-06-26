@@ -20,3 +20,5 @@ EXPORTS
     D3DRMVectorScale
     D3DRMVectorSubtract
     Direct3DRMCreate
+    ; DllCanUnloadNow PRIVATE
+    DllGetClassObject PRIVATE
