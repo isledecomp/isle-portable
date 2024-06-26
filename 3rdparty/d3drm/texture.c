@@ -421,7 +421,7 @@ static HRESULT WINAPI d3drm_texture1_DeleteDestroyCallback(IDirect3DRMTexture *i
     return IDirect3DRMTexture3_DeleteDestroyCallback(&texture->IDirect3DRMTexture3_iface, cb, ctx);
 }
 
-static HRESULT WINAPI d3drm_texture1_SetAppData(IDirect3DRMTexture *iface, DWORD data)
+static HRESULT WINAPI d3drm_texture1_SetAppData(IDirect3DRMTexture *iface, LPVOID data)
 {
     struct d3drm_texture *texture = impl_from_IDirect3DRMTexture(iface);
 
@@ -430,7 +430,7 @@ static HRESULT WINAPI d3drm_texture1_SetAppData(IDirect3DRMTexture *iface, DWORD
     return IDirect3DRMTexture3_SetAppData(&texture->IDirect3DRMTexture3_iface, data);
 }
 
-static DWORD WINAPI d3drm_texture1_GetAppData(IDirect3DRMTexture *iface)
+static LPVOID WINAPI d3drm_texture1_GetAppData(IDirect3DRMTexture *iface)
 {
     struct d3drm_texture *texture = impl_from_IDirect3DRMTexture(iface);
 
@@ -730,7 +730,7 @@ static HRESULT WINAPI d3drm_texture2_DeleteDestroyCallback(IDirect3DRMTexture2 *
     return IDirect3DRMTexture3_DeleteDestroyCallback(&texture->IDirect3DRMTexture3_iface, cb, ctx);
 }
 
-static HRESULT WINAPI d3drm_texture2_SetAppData(IDirect3DRMTexture2 *iface, DWORD data)
+static HRESULT WINAPI d3drm_texture2_SetAppData(IDirect3DRMTexture2 *iface, LPVOID data)
 {
     struct d3drm_texture *texture = impl_from_IDirect3DRMTexture2(iface);
 
@@ -739,7 +739,7 @@ static HRESULT WINAPI d3drm_texture2_SetAppData(IDirect3DRMTexture2 *iface, DWOR
     return IDirect3DRMTexture3_SetAppData(&texture->IDirect3DRMTexture3_iface, data);
 }
 
-static DWORD WINAPI d3drm_texture2_GetAppData(IDirect3DRMTexture2 *iface)
+static LPVOID WINAPI d3drm_texture2_GetAppData(IDirect3DRMTexture2 *iface)
 {
     struct d3drm_texture *texture = impl_from_IDirect3DRMTexture2(iface);
 
@@ -1090,7 +1090,7 @@ static HRESULT WINAPI d3drm_texture3_DeleteDestroyCallback(IDirect3DRMTexture3 *
     return d3drm_object_delete_destroy_callback(&texture->obj, cb, ctx);
 }
 
-static HRESULT WINAPI d3drm_texture3_SetAppData(IDirect3DRMTexture3 *iface, DWORD data)
+static HRESULT WINAPI d3drm_texture3_SetAppData(IDirect3DRMTexture3 *iface, LPVOID data)
 {
     struct d3drm_texture *texture = impl_from_IDirect3DRMTexture3(iface);
 
@@ -1101,7 +1101,7 @@ static HRESULT WINAPI d3drm_texture3_SetAppData(IDirect3DRMTexture3 *iface, DWOR
     return D3DRM_OK;
 }
 
-static DWORD WINAPI d3drm_texture3_GetAppData(IDirect3DRMTexture3 *iface)
+static LPVOID WINAPI d3drm_texture3_GetAppData(IDirect3DRMTexture3 *iface)
 {
     struct d3drm_texture *texture = impl_from_IDirect3DRMTexture3(iface);
 
@@ -1467,9 +1467,21 @@ HRESULT d3drm_texture_create(struct d3drm_texture **texture, IDirect3DRM *d3drm)
     if (!(object = calloc(1, sizeof(*object))))
         return E_OUTOFMEMORY;
 
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+#elif defined(_MSC_VER)
+#pragma warning( push )
+#pragma warning( disable : 4090 )  /*  different 'const' qualifiers */
+#endif
     object->IDirect3DRMTexture_iface.lpVtbl = &d3drm_texture1_vtbl;
     object->IDirect3DRMTexture2_iface.lpVtbl = &d3drm_texture2_vtbl;
     object->IDirect3DRMTexture3_iface.lpVtbl = &d3drm_texture3_vtbl;
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#elif defined(_MSC_VER)
+#pragma warning( pop )
+#endif
     object->d3drm = d3drm;
     object->max_colors = 8;
     object->max_shades = 16;

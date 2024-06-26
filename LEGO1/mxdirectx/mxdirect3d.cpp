@@ -1014,6 +1014,7 @@ int MxDeviceEnumerate::SupportsMMX()
 	}
 	int supports_mmx;
 #ifdef _MSC_VER
+#if defined(_M_IX86)
 	__asm {
 			mov eax, 0x0            ; EAX=0: Highest Function Parameter and Manufacturer ID
 #if _MSC_VER > 1100
@@ -1034,6 +1035,11 @@ int MxDeviceEnumerate::SupportsMMX()
 			adc eax, eax            ; Add with carry: EAX = EAX + EAX + CF = CF
 			mov supports_mmx, eax   ; Save eax into C variable
 	}
+#elif defined(_M_IX64)
+	supports_mmx = 1;
+#else
+	supports_mmx = 0;
+#endif
 #else
 	__asm__("movl $0x0, %%eax\n\t"  // EAX=0: Highest Function Parameter and Manufacturer ID
 			"cpuid\n\t"             // Run CPUID\n"

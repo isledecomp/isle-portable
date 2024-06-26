@@ -209,7 +209,7 @@ static HRESULT WINAPI d3drm_viewport1_DeleteDestroyCallback(IDirect3DRMViewport 
     return d3drm_viewport2_DeleteDestroyCallback(&viewport->IDirect3DRMViewport2_iface, cb, ctx);
 }
 
-static HRESULT WINAPI d3drm_viewport2_SetAppData(IDirect3DRMViewport2 *iface, DWORD data)
+static HRESULT WINAPI d3drm_viewport2_SetAppData(IDirect3DRMViewport2 *iface, LPVOID data)
 {
     struct d3drm_viewport *viewport = impl_from_IDirect3DRMViewport2(iface);
 
@@ -219,7 +219,7 @@ static HRESULT WINAPI d3drm_viewport2_SetAppData(IDirect3DRMViewport2 *iface, DW
     return S_OK;
 }
 
-static HRESULT WINAPI d3drm_viewport1_SetAppData(IDirect3DRMViewport *iface, DWORD data)
+static HRESULT WINAPI d3drm_viewport1_SetAppData(IDirect3DRMViewport *iface, LPVOID data)
 {
     struct d3drm_viewport *viewport = impl_from_IDirect3DRMViewport(iface);
 
@@ -228,7 +228,7 @@ static HRESULT WINAPI d3drm_viewport1_SetAppData(IDirect3DRMViewport *iface, DWO
     return d3drm_viewport2_SetAppData(&viewport->IDirect3DRMViewport2_iface, data);
 }
 
-static DWORD WINAPI d3drm_viewport2_GetAppData(IDirect3DRMViewport2 *iface)
+static LPVOID WINAPI d3drm_viewport2_GetAppData(IDirect3DRMViewport2 *iface)
 {
     struct d3drm_viewport *viewport = impl_from_IDirect3DRMViewport2(iface);
 
@@ -237,7 +237,7 @@ static DWORD WINAPI d3drm_viewport2_GetAppData(IDirect3DRMViewport2 *iface)
     return viewport->obj.appdata;
 }
 
-static DWORD WINAPI d3drm_viewport1_GetAppData(IDirect3DRMViewport *iface)
+static LPVOID WINAPI d3drm_viewport1_GetAppData(IDirect3DRMViewport *iface)
 {
     struct d3drm_viewport *viewport = impl_from_IDirect3DRMViewport(iface);
 
@@ -1136,8 +1136,20 @@ HRESULT d3drm_viewport_create(struct d3drm_viewport **viewport, IDirect3DRM *d3d
     if (!(object = calloc(1, sizeof(*object))))
         return E_OUTOFMEMORY;
 
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+#elif defined(_MSC_VER)
+#pragma warning( push )
+#pragma warning( disable : 4090 )  /*  different 'const' qualifiers */
+#endif
     object->IDirect3DRMViewport_iface.lpVtbl = &d3drm_viewport1_vtbl;
     object->IDirect3DRMViewport2_iface.lpVtbl = &d3drm_viewport2_vtbl;
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#elif defined(_MSC_VER)
+#pragma warning( pop )
+#endif
     object->d3drm = d3drm;
     d3drm_object_init(&object->obj, classname);
 

@@ -385,10 +385,11 @@ int SDL_AppEvent(void* appstate, const SDL_Event* event)
 		break;
 	}
 
+	// FIXME: use g_userEvent instead of SDL_EVENT_USER
 	if (event->type >= SDL_EVENT_USER && event->type <= SDL_EVENT_LAST - 1) {
 		switch (event->user.code) {
 		case WM_ISLE_SETCURSOR:
-			g_isle->SetupCursor((Cursor) (MxS32) event->user.data1);
+			g_isle->SetupCursor((Cursor) (uintptr_t) event->user.data1);
 			break;
 		}
 	}

@@ -501,7 +501,8 @@ MxAtomId* LegoOmni::GetWorldAtom(MxU32 p_id)
 MxS32 LegoOmni::GetWorldId(const char* p_key)
 {
 	for (MxS32 i = 0; i < 19; i++) {
-		if ((MxS32) &m_worlds[i] != -4 && !strcmpi(m_worlds[i].GetKey(), p_key)) {
+		// FIXME: this looks very fishy. Is this guarding against out-of-bounds access?
+		if ((MxS32*) &m_worlds[i] != (MxS32*) -4 && !strcmpi(m_worlds[i].GetKey(), p_key)) {
 			return m_worlds[i].GetId();
 		}
 	}

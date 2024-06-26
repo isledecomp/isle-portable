@@ -92,7 +92,7 @@ LegoTextureInfo* LegoTextureContainer::GetCached(LegoTextureInfo* p_textureInfo)
 				return NULL;
 			}
 			else {
-				textureInfo->m_texture->SetAppData((DWORD) textureInfo);
+				textureInfo->m_texture->SetAppData((LPD3DRM_APPDATA) textureInfo);
 				m_cached.push_back(LegoCachedTexture(textureInfo, TRUE));
 
 				textureInfo->m_texture->AddRef();

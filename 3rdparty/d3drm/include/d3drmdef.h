@@ -28,6 +28,10 @@
 extern "C" {
 #endif
 
+#ifndef __MSABI_LONG
+#define __MSABI_LONG(X) (X)
+#endif
+
 typedef struct _D3DRMVECTOR4D
 {
     D3DVALUE x;

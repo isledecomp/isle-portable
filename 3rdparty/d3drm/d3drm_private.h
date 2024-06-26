@@ -30,6 +30,10 @@
 #include "wine/debug.h"
 #include "wine/list.h"
 
+#ifdef DYNAMIC_D3DXOF
+#include "dyn_d3dxof.h"
+#endif
+
 struct d3drm_matrix
 {
     float _11, _12, _13, _14;
@@ -46,7 +50,7 @@ static inline struct d3drm_matrix *d3drm_matrix(D3DRMMATRIX4D m)
 struct d3drm_object
 {
     LONG ref;
-    DWORD appdata;
+    LPVOID appdata;
     struct list destroy_callbacks;
     const char *classname;
     char *name;

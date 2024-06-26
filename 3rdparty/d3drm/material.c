@@ -102,7 +102,7 @@ static HRESULT WINAPI d3drm_material_DeleteDestroyCallback(IDirect3DRMMaterial2 
     return d3drm_object_delete_destroy_callback(&material->obj, cb, ctx);
 }
 
-static HRESULT WINAPI d3drm_material_SetAppData(IDirect3DRMMaterial2 *iface, DWORD data)
+static HRESULT WINAPI d3drm_material_SetAppData(IDirect3DRMMaterial2 *iface, LPVOID data)
 {
     struct d3drm_material *material = impl_from_IDirect3DRMMaterial2(iface);
 
@@ -113,7 +113,7 @@ static HRESULT WINAPI d3drm_material_SetAppData(IDirect3DRMMaterial2 *iface, DWO
     return D3DRM_OK;
 }
 
-static DWORD WINAPI d3drm_material_GetAppData(IDirect3DRMMaterial2 *iface)
+static LPVOID WINAPI d3drm_material_GetAppData(IDirect3DRMMaterial2 *iface)
 {
     struct d3drm_material *material = impl_from_IDirect3DRMMaterial2(iface);
 
@@ -286,7 +286,19 @@ HRESULT d3drm_material_create(struct d3drm_material **material, IDirect3DRM *d3d
     if (!(object = calloc(1, sizeof(*object))))
         return E_OUTOFMEMORY;
 
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+#elif defined(_MSC_VER)
+#pragma warning( push )
+#pragma warning( disable : 4090 )  /*  different 'const' qualifiers */
+#endif
     object->IDirect3DRMMaterial2_iface.lpVtbl = &d3drm_material_vtbl;
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#elif defined(_MSC_VER)
+#pragma warning( pop )
+#endif
     object->ref = 1;
     object->d3drm = d3drm;
     IDirect3DRM_AddRef(object->d3drm);

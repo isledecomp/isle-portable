@@ -427,7 +427,7 @@ static HRESULT WINAPI d3drm_mesh_builder2_DeleteDestroyCallback(IDirect3DRMMeshB
     return IDirect3DRMMeshBuilder3_DeleteDestroyCallback(&mesh_builder->IDirect3DRMMeshBuilder3_iface, cb, ctx);
 }
 
-static HRESULT WINAPI d3drm_mesh_builder3_SetAppData(IDirect3DRMMeshBuilder3 *iface, DWORD data)
+static HRESULT WINAPI d3drm_mesh_builder3_SetAppData(IDirect3DRMMeshBuilder3 *iface, LPVOID data)
 {
     struct d3drm_mesh_builder *mesh_builder = impl_from_IDirect3DRMMeshBuilder3(iface);
 
@@ -438,7 +438,7 @@ static HRESULT WINAPI d3drm_mesh_builder3_SetAppData(IDirect3DRMMeshBuilder3 *if
     return D3DRM_OK;
 }
 
-static HRESULT WINAPI d3drm_mesh_builder2_SetAppData(IDirect3DRMMeshBuilder2 *iface, DWORD data)
+static HRESULT WINAPI d3drm_mesh_builder2_SetAppData(IDirect3DRMMeshBuilder2 *iface, LPVOID data)
 {
     struct d3drm_mesh_builder *mesh_builder = impl_from_IDirect3DRMMeshBuilder2(iface);
 
@@ -447,7 +447,7 @@ static HRESULT WINAPI d3drm_mesh_builder2_SetAppData(IDirect3DRMMeshBuilder2 *if
     return d3drm_mesh_builder3_SetAppData(&mesh_builder->IDirect3DRMMeshBuilder3_iface, data);
 }
 
-static DWORD WINAPI d3drm_mesh_builder3_GetAppData(IDirect3DRMMeshBuilder3 *iface)
+static LPVOID WINAPI d3drm_mesh_builder3_GetAppData(IDirect3DRMMeshBuilder3 *iface)
 {
     struct d3drm_mesh_builder *mesh_builder = impl_from_IDirect3DRMMeshBuilder3(iface);
 
@@ -456,7 +456,7 @@ static DWORD WINAPI d3drm_mesh_builder3_GetAppData(IDirect3DRMMeshBuilder3 *ifac
     return mesh_builder->obj.appdata;
 }
 
-static DWORD WINAPI d3drm_mesh_builder2_GetAppData(IDirect3DRMMeshBuilder2 *iface)
+static LPVOID WINAPI d3drm_mesh_builder2_GetAppData(IDirect3DRMMeshBuilder2 *iface)
 {
     struct d3drm_mesh_builder *mesh_builder = impl_from_IDirect3DRMMeshBuilder2(iface);
 
@@ -1483,7 +1483,11 @@ static HRESULT WINAPI d3drm_mesh_builder3_Load(IDirect3DRMMeshBuilder3 *iface, v
 
     clean_mesh_builder_data(mesh_builder);
 
+#ifdef DYNAMIC_D3DXOF
+    hr = DynamicDirectXFileCreate(&dxfile);
+#else
     hr = DirectXFileCreate(&dxfile);
+#endif
     if (hr != DXFILE_OK)
         goto end;
 
@@ -2343,8 +2347,20 @@ HRESULT d3drm_mesh_builder_create(struct d3drm_mesh_builder **mesh_builder, IDir
     if (!(object = calloc(1, sizeof(*object))))
         return E_OUTOFMEMORY;
 
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+#elif defined(_MSC_VER)
+#pragma warning( push )
+#pragma warning( disable : 4090 )  /*  different 'const' qualifiers */
+#endif
     object->IDirect3DRMMeshBuilder2_iface.lpVtbl = &d3drm_mesh_builder2_vtbl;
     object->IDirect3DRMMeshBuilder3_iface.lpVtbl = &d3drm_mesh_builder3_vtbl;
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#elif defined(_MSC_VER)
+#pragma warning( pop )
+#endif
     object->ref = 1;
     object->d3drm = d3drm;
     object->quality = D3DRMRENDER_GOURAUD;
@@ -2444,7 +2460,7 @@ static HRESULT WINAPI d3drm_mesh_DeleteDestroyCallback(IDirect3DRMMesh *iface,
     return d3drm_object_delete_destroy_callback(&mesh->obj, cb, ctx);
 }
 
-static HRESULT WINAPI d3drm_mesh_SetAppData(IDirect3DRMMesh *iface, DWORD data)
+static HRESULT WINAPI d3drm_mesh_SetAppData(IDirect3DRMMesh *iface, LPVOID data)
 {
     struct d3drm_mesh *mesh = impl_from_IDirect3DRMMesh(iface);
 
@@ -2455,7 +2471,7 @@ static HRESULT WINAPI d3drm_mesh_SetAppData(IDirect3DRMMesh *iface, DWORD data)
     return D3DRM_OK;
 }
 
-static DWORD WINAPI d3drm_mesh_GetAppData(IDirect3DRMMesh *iface)
+static LPVOID WINAPI d3drm_mesh_GetAppData(IDirect3DRMMesh *iface)
 {
     struct d3drm_mesh *mesh = impl_from_IDirect3DRMMesh(iface);
 
@@ -2843,7 +2859,19 @@ HRESULT d3drm_mesh_create(struct d3drm_mesh **mesh, IDirect3DRM *d3drm)
     if (!(object = calloc(1, sizeof(*object))))
         return E_OUTOFMEMORY;
 
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+#elif defined(_MSC_VER)
+#pragma warning( push )
+#pragma warning( disable : 4090 )  /*  different 'const' qualifiers */
+#endif
     object->IDirect3DRMMesh_iface.lpVtbl = &d3drm_mesh_vtbl;
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#elif defined(_MSC_VER)
+#pragma warning( pop )
+#endif
     object->ref = 1;
     object->d3drm = d3drm;
     IDirect3DRM_AddRef(object->d3drm);
@@ -2928,7 +2956,7 @@ static HRESULT WINAPI d3drm_wrap_DeleteDestroyCallback(IDirect3DRMWrap *iface,
     return d3drm_object_delete_destroy_callback(&wrap->obj, cb, ctx);
 }
 
-static HRESULT WINAPI d3drm_wrap_SetAppData(IDirect3DRMWrap *iface, DWORD data)
+static HRESULT WINAPI d3drm_wrap_SetAppData(IDirect3DRMWrap *iface, LPVOID data)
 {
     struct d3drm_wrap *wrap = impl_from_IDirect3DRMWrap(iface);
 
@@ -2939,7 +2967,7 @@ static HRESULT WINAPI d3drm_wrap_SetAppData(IDirect3DRMWrap *iface, DWORD data)
     return D3DRM_OK;
 }
 
-static DWORD WINAPI d3drm_wrap_GetAppData(IDirect3DRMWrap *iface)
+static LPVOID WINAPI d3drm_wrap_GetAppData(IDirect3DRMWrap *iface)
 {
     struct d3drm_wrap *wrap = impl_from_IDirect3DRMWrap(iface);
 
@@ -3029,7 +3057,19 @@ HRESULT d3drm_wrap_create(struct d3drm_wrap **wrap, IDirect3DRM *d3drm)
     if (!(object = calloc(1, sizeof(*object))))
         return E_OUTOFMEMORY;
 
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+#elif defined(_MSC_VER)
+#pragma warning( push )
+#pragma warning( disable : 4090 )  /*  different 'const' qualifiers */
+#endif
     object->IDirect3DRMWrap_iface.lpVtbl = &d3drm_wrap_vtbl;
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#elif defined(_MSC_VER)
+#pragma warning( pop )
+#endif
     object->ref = 1;
 
     d3drm_object_init(&object->obj, classname);

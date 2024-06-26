@@ -42,7 +42,10 @@ else()
     # to add search paths.
     find_package(SDL3 CONFIG REQUIRED)
 
-    find_package(iniparser REQUIRED COMPONENTS static)
+    find_package(iniparser CONFIG COMPONENTS static)
+    if(NOT TARGET iniparser-static)
+        find_package(iniparser REQUIRED MODULE COMPONENTS static)
+    endif()
 endif()
 
 include(CheckCXXSourceCompiles)
@@ -55,12 +58,6 @@ if (ENABLE_CLANG_TIDY)
     find_program(CLANG_TIDY_BIN NAMES "clang-tidy")
     set(CMAKE_C_CLANG_TIDY "${CLANG_TIDY_BIN}")
     set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_BIN}")
-endif()
-
-math(EXPR bits "8 * ${CMAKE_SIZEOF_VOID_P}")
-message(STATUS "Building ${bits}-bit LEGO Island")
-if (NOT bits EQUAL 32)
-    message(WARNING "Only 32-bit executables are supported")
 endif()
 
 set(MSVC_FOR_DECOMP FALSE)
@@ -122,11 +119,9 @@ add_cxx_warning(parentheses)
 
 add_library(DirectX5::DirectX5 INTERFACE IMPORTED)
 target_include_directories(DirectX5::DirectX5 INTERFACE "${CMAKE_SOURCE_DIR}/3rdparty/dx5/inc")
-if(ISLE_USE_DX5)
-    target_link_directories(DirectX5::DirectX5 INTERFACE "${CMAKE_SOURCE_DIR}/3rdparty/dx5/lib")
-endif()
+target_link_directories(DirectX5::DirectX5 INTERFACE "${CMAKE_SOURCE_DIR}/3rdparty/dx5/lib")
 
-add_subdirectory(3rdparty/d3drm)
+add_subdirectory(3rdparty/d3drm EXCLUDE_FROM_ALL)
 
 add_library(Vec::Vec INTERFACE IMPORTED)
 target_include_directories(Vec::Vec INTERFACE "${CMAKE_SOURCE_DIR}/3rdparty/vec")
@@ -452,7 +447,11 @@ if (MINGW)
 endif()
 
 if (MSVC)
-  target_sources(lego1 PRIVATE LEGO1/LegoOmni.def)
+  if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+    target_sources(lego1 PRIVATE LEGO1/LegoOmni.def)
+  else()
+    target_sources(lego1 PRIVATE LEGO1/LegoOmni64.def)
+  endif()
 else()
   target_sources(lego1 PRIVATE LEGO1/LegoOmni.mingw.def)
 endif()
@@ -465,9 +464,10 @@ target_include_directories(lego1 PUBLIC "${CMAKE_SOURCE_DIR}/LEGO1/lego/legoomni
 target_include_directories(lego1 PUBLIC "${CMAKE_SOURCE_DIR}/LEGO1/lego/legoomni/include/actions")
 
 # Link libraries
-target_link_libraries(lego1 PRIVATE tglrl viewmanager realtime mxdirectx roi geom anim Vec::Vec dxguid misc 3dmanager miniaudio omni)
+target_link_libraries(lego1 PRIVATE tglrl viewmanager realtime mxdirectx roi geom anim Vec::Vec dxguid d3drm_guid misc 3dmanager miniaudio omni)
 
 foreach(tgt IN LISTS lego1_targets)
+  target_include_directories(${tgt} PRIVATE $<$<BOOL:${ISLE_D3DRM_FROM_WINE}>:$<TARGET_PROPERTY:d3drm-wine,INTERFACE_INCLUDE_DIRECTORIES>>)
   target_link_libraries(${tgt} PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5> SDL3::SDL3)
   target_compile_definitions(${tgt} PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DIRECTX5_SDK>)
 endforeach()
@@ -493,6 +493,8 @@ if (ISLE_BUILD_APP)
 
   # Link DSOUND, WINMM, and LEGO1
   target_link_libraries(isle PRIVATE winmm lego1)
+
+  target_include_directories(isle PRIVATE $<$<BOOL:${ISLE_D3DRM_FROM_WINE}>:$<TARGET_PROPERTY:d3drm-wine,INTERFACE_INCLUDE_DIRECTORIES>>)
 
   # Make sure filenames are ALL CAPS
   set_property(TARGET isle PROPERTY OUTPUT_NAME ISLE)

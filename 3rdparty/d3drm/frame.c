@@ -261,7 +261,19 @@ static struct d3drm_frame_array *d3drm_frame_array_create(unsigned int frame_cou
     if (!(array = calloc(1, sizeof(*array))))
         return NULL;
 
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+#elif defined(_MSC_VER)
+#pragma warning( push )
+#pragma warning( disable : 4090 )  /*  different 'const' qualifiers */
+#endif
     array->IDirect3DRMFrameArray_iface.lpVtbl = &d3drm_frame_array_vtbl;
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#elif defined(_MSC_VER)
+#pragma warning( pop )
+#endif
     array->ref = 1;
     array->size = frame_count;
 
@@ -379,7 +391,19 @@ static struct d3drm_visual_array *d3drm_visual_array_create(unsigned int visual_
     if (!(array = calloc(1, sizeof(*array))))
         return NULL;
 
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+#elif defined(_MSC_VER)
+#pragma warning( push )
+#pragma warning( disable : 4090 )  /*  different 'const' qualifiers */
+#endif
     array->IDirect3DRMVisualArray_iface.lpVtbl = &d3drm_visual_array_vtbl;
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#elif defined(_MSC_VER)
+#pragma warning( pop )
+#endif
     array->ref = 1;
     array->size = visual_count;
 
@@ -498,7 +522,19 @@ static struct d3drm_light_array *d3drm_light_array_create(unsigned int light_cou
     if (!(array = calloc(1, sizeof(*array))))
         return NULL;
 
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+#elif defined(_MSC_VER)
+#pragma warning( push )
+#pragma warning( disable : 4090 )  /*  different 'const' qualifiers */
+#endif
     array->IDirect3DRMLightArray_iface.lpVtbl = &d3drm_light_array_vtbl;
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#elif defined(_MSC_VER)
+#pragma warning( pop )
+#endif
     array->ref = 1;
     array->size = light_count;
 
@@ -733,7 +769,7 @@ static HRESULT WINAPI d3drm_frame1_DeleteDestroyCallback(IDirect3DRMFrame *iface
     return IDirect3DRMFrame3_DeleteDestroyCallback(&frame->IDirect3DRMFrame3_iface, cb, ctx);
 }
 
-static HRESULT WINAPI d3drm_frame3_SetAppData(IDirect3DRMFrame3 *iface, DWORD data)
+static HRESULT WINAPI d3drm_frame3_SetAppData(IDirect3DRMFrame3 *iface, LPVOID data)
 {
     struct d3drm_frame *frame = impl_from_IDirect3DRMFrame3(iface);
 
@@ -744,7 +780,7 @@ static HRESULT WINAPI d3drm_frame3_SetAppData(IDirect3DRMFrame3 *iface, DWORD da
     return D3DRM_OK;
 }
 
-static HRESULT WINAPI d3drm_frame2_SetAppData(IDirect3DRMFrame2 *iface, DWORD data)
+static HRESULT WINAPI d3drm_frame2_SetAppData(IDirect3DRMFrame2 *iface, LPVOID data)
 {
     struct d3drm_frame *frame = impl_from_IDirect3DRMFrame2(iface);
 
@@ -753,7 +789,7 @@ static HRESULT WINAPI d3drm_frame2_SetAppData(IDirect3DRMFrame2 *iface, DWORD da
     return d3drm_frame3_SetAppData(&frame->IDirect3DRMFrame3_iface, data);
 }
 
-static HRESULT WINAPI d3drm_frame1_SetAppData(IDirect3DRMFrame *iface, DWORD data)
+static HRESULT WINAPI d3drm_frame1_SetAppData(IDirect3DRMFrame *iface, LPVOID data)
 {
     struct d3drm_frame *frame = impl_from_IDirect3DRMFrame(iface);
 
@@ -762,7 +798,7 @@ static HRESULT WINAPI d3drm_frame1_SetAppData(IDirect3DRMFrame *iface, DWORD dat
     return d3drm_frame3_SetAppData(&frame->IDirect3DRMFrame3_iface, data);
 }
 
-static DWORD WINAPI d3drm_frame3_GetAppData(IDirect3DRMFrame3 *iface)
+static LPVOID WINAPI d3drm_frame3_GetAppData(IDirect3DRMFrame3 *iface)
 {
     struct d3drm_frame *frame = impl_from_IDirect3DRMFrame3(iface);
 
@@ -771,7 +807,7 @@ static DWORD WINAPI d3drm_frame3_GetAppData(IDirect3DRMFrame3 *iface)
     return frame->obj.appdata;
 }
 
-static DWORD WINAPI d3drm_frame2_GetAppData(IDirect3DRMFrame2 *iface)
+static LPVOID WINAPI d3drm_frame2_GetAppData(IDirect3DRMFrame2 *iface)
 {
     struct d3drm_frame *frame = impl_from_IDirect3DRMFrame2(iface);
 
@@ -780,7 +816,7 @@ static DWORD WINAPI d3drm_frame2_GetAppData(IDirect3DRMFrame2 *iface)
     return d3drm_frame3_GetAppData(&frame->IDirect3DRMFrame3_iface);
 }
 
-static DWORD WINAPI d3drm_frame1_GetAppData(IDirect3DRMFrame *iface)
+static LPVOID WINAPI d3drm_frame1_GetAppData(IDirect3DRMFrame *iface)
 {
     struct d3drm_frame *frame = impl_from_IDirect3DRMFrame(iface);
 
@@ -3137,9 +3173,21 @@ HRESULT d3drm_frame_create(struct d3drm_frame **frame, IUnknown *parent_frame, I
     if (!(object = calloc(1, sizeof(*object))))
         return E_OUTOFMEMORY;
 
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+#elif defined(_MSC_VER)
+#pragma warning( push )
+#pragma warning( disable : 4090 )  /*  different 'const' qualifiers */
+#endif
     object->IDirect3DRMFrame_iface.lpVtbl = &d3drm_frame1_vtbl;
     object->IDirect3DRMFrame2_iface.lpVtbl = &d3drm_frame2_vtbl;
     object->IDirect3DRMFrame3_iface.lpVtbl = &d3drm_frame3_vtbl;
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#elif defined(_MSC_VER)
+#pragma warning( pop )
+#endif
     object->d3drm = d3drm;
     object->ref = 1;
     d3drm_set_color(&object->scenebackground, 0.0f, 0.0f, 0.0f, 1.0f);
@@ -3302,7 +3350,7 @@ static HRESULT WINAPI d3drm_animation1_DeleteDestroyCallback(IDirect3DRMAnimatio
     return IDirect3DRMAnimation2_DeleteDestroyCallback(&animation->IDirect3DRMAnimation2_iface, cb, ctx);
 }
 
-static HRESULT WINAPI d3drm_animation2_SetAppData(IDirect3DRMAnimation2 *iface, DWORD data)
+static HRESULT WINAPI d3drm_animation2_SetAppData(IDirect3DRMAnimation2 *iface, LPVOID data)
 {
     struct d3drm_animation *animation = impl_from_IDirect3DRMAnimation2(iface);
 
@@ -3313,7 +3361,7 @@ static HRESULT WINAPI d3drm_animation2_SetAppData(IDirect3DRMAnimation2 *iface, 
     return D3DRM_OK;
 }
 
-static HRESULT WINAPI d3drm_animation1_SetAppData(IDirect3DRMAnimation *iface, DWORD data)
+static HRESULT WINAPI d3drm_animation1_SetAppData(IDirect3DRMAnimation *iface, LPVOID data)
 {
     struct d3drm_animation *animation = impl_from_IDirect3DRMAnimation(iface);
 
@@ -3322,7 +3370,7 @@ static HRESULT WINAPI d3drm_animation1_SetAppData(IDirect3DRMAnimation *iface, D
     return d3drm_animation2_SetAppData(&animation->IDirect3DRMAnimation2_iface, data);
 }
 
-static DWORD WINAPI d3drm_animation2_GetAppData(IDirect3DRMAnimation2 *iface)
+static LPVOID WINAPI d3drm_animation2_GetAppData(IDirect3DRMAnimation2 *iface)
 {
     struct d3drm_animation *animation = impl_from_IDirect3DRMAnimation2(iface);
 
@@ -3331,7 +3379,7 @@ static DWORD WINAPI d3drm_animation2_GetAppData(IDirect3DRMAnimation2 *iface)
     return animation->obj.appdata;
 }
 
-static DWORD WINAPI d3drm_animation1_GetAppData(IDirect3DRMAnimation *iface)
+static LPVOID WINAPI d3drm_animation1_GetAppData(IDirect3DRMAnimation *iface)
 {
     struct d3drm_animation *animation = impl_from_IDirect3DRMAnimation(iface);
 
@@ -3889,8 +3937,20 @@ HRESULT d3drm_animation_create(struct d3drm_animation **animation, IDirect3DRM *
     if (!(object = calloc(1, sizeof(*object))))
         return E_OUTOFMEMORY;
 
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+#elif defined(_MSC_VER)
+#pragma warning( push )
+#pragma warning( disable : 4090 )  /*  different 'const' qualifiers */
+#endif
     object->IDirect3DRMAnimation_iface.lpVtbl = &d3drm_animation1_vtbl;
     object->IDirect3DRMAnimation2_iface.lpVtbl = &d3drm_animation2_vtbl;
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#elif defined(_MSC_VER)
+#pragma warning( pop )
+#endif
     object->d3drm = d3drm;
     object->ref = 1;
     object->options = D3DRMANIMATION_CLOSED | D3DRMANIMATION_LINEARPOSITION;

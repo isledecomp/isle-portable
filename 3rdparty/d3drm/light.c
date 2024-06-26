@@ -101,7 +101,7 @@ static HRESULT WINAPI d3drm_light_DeleteDestroyCallback(IDirect3DRMLight *iface,
     return d3drm_object_delete_destroy_callback(&light->obj, cb, ctx);
 }
 
-static HRESULT WINAPI d3drm_light_SetAppData(IDirect3DRMLight *iface, DWORD data)
+static HRESULT WINAPI d3drm_light_SetAppData(IDirect3DRMLight *iface, LPVOID data)
 {
     struct d3drm_light *light = impl_from_IDirect3DRMLight(iface);
 
@@ -112,7 +112,7 @@ static HRESULT WINAPI d3drm_light_SetAppData(IDirect3DRMLight *iface, DWORD data
     return D3DRM_OK;
 }
 
-static DWORD WINAPI d3drm_light_GetAppData(IDirect3DRMLight *iface)
+static LPVOID WINAPI d3drm_light_GetAppData(IDirect3DRMLight *iface)
 {
     struct d3drm_light *light = impl_from_IDirect3DRMLight(iface);
 
@@ -378,7 +378,19 @@ HRESULT d3drm_light_create(struct d3drm_light **light, IDirect3DRM *d3drm)
     if (!(object = calloc(1, sizeof(*object))))
         return E_OUTOFMEMORY;
 
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+#elif defined(_MSC_VER)
+#pragma warning( push )
+#pragma warning( disable : 4090 )  /*  different 'const' qualifiers */
+#endif
     object->IDirect3DRMLight_iface.lpVtbl = &d3drm_light_vtbl;
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#elif defined(_MSC_VER)
+#pragma warning( pop )
+#endif
     object->ref = 1;
     object->d3drm = d3drm;
     IDirect3DRM_AddRef(object->d3drm);
