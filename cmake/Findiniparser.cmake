@@ -1,6 +1,6 @@
 if(WIN32)
-    set(__iniparser_shared_names "libiniparser.dll.a" "libiniparser.lib")
-    set(__iniparser_static_names "libiniparser.a" "iniparser.lib")
+    set(__iniparser_shared_names "libiniparser.dll.a" "iniparser.lib")
+    set(__iniparser_static_names "libiniparser.a" "libiniparser.lib")
 else()
     if(APPLE)
         set(__iniparser_shared_names "libiniparser.dylib")
