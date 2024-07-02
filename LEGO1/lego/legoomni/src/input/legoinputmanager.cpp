@@ -8,6 +8,7 @@
 #include "legoworld.h"
 #include "misc.h"
 #include "mxautolock.h"
+#include "mxdebug.h"
 #include "roi/legoroi.h"
 
 DECOMP_SIZE_ASSERT(LegoInputManager, 0x338)
