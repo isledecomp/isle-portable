@@ -85,7 +85,7 @@ public:
 	// Pixel data may be stored with padding.
 	// https://learn.microsoft.com/en-us/windows/win32/medfound/image-stride
 	// FUNCTION: BETA10 0x1002c510
-	inline MxLong AlignToFourByte(MxLong p_value) const { return (p_value + 3) & -4; }
+	MxLong AlignToFourByte(MxLong p_value) const { return (p_value + 3) & -4; }
 
 	// DECOMP: This could be a free function. It is static here because it has no
 	// reference to "this". In the beta it is called in two places:
@@ -94,27 +94,28 @@ public:
 	// FUNCTION: BETA10 0x1002c690
 	static MxLong HeightAbs(MxLong p_value) { return p_value > 0 ? p_value : -p_value; }
 
-	inline BITMAPINFOHEADER* GetBmiHeader() const { return m_bmiHeader; }
+	// FUNCTION: BETA10 0x10142030
+	BITMAPINFOHEADER* GetBmiHeader() const { return m_bmiHeader; }
 
 	// FUNCTION: BETA10 0x1002c440
-	inline MxLong GetBmiWidth() const { return m_bmiHeader->biWidth; }
-	inline MxLong GetBmiStride() const { return ((m_bmiHeader->biWidth + 3) & -4); }
-	inline MxLong GetBmiHeight() const { return m_bmiHeader->biHeight; }
+	MxLong GetBmiWidth() const { return m_bmiHeader->biWidth; }
+	MxLong GetBmiStride() const { return ((m_bmiHeader->biWidth + 3) & -4); }
+	MxLong GetBmiHeight() const { return m_bmiHeader->biHeight; }
 
 	// FUNCTION: BETA10 0x1002c470
-	inline MxLong GetBmiHeightAbs() const { return HeightAbs(m_bmiHeader->biHeight); }
+	MxLong GetBmiHeightAbs() const { return HeightAbs(m_bmiHeader->biHeight); }
 
 	// FUNCTION: BETA10 0x10083900
-	inline MxU8* GetImage() const { return m_data; }
+	MxU8* GetImage() const { return m_data; }
 
 	// FUNCTION: BETA10 0x100838d0
-	inline MxBITMAPINFO* GetBitmapInfo() const { return m_info; }
+	MxBITMAPINFO* GetBitmapInfo() const { return m_info; }
 
 	// FUNCTION: BETA10 0x100982b0
-	inline MxLong GetDataSize() const { return AlignToFourByte(m_bmiHeader->biWidth) * GetBmiHeightAbs(); }
+	MxLong GetDataSize() const { return AlignToFourByte(m_bmiHeader->biWidth) * GetBmiHeightAbs(); }
 
 	// FUNCTION: BETA10 0x1002c4b0
-	inline MxBool IsTopDown()
+	MxBool IsTopDown()
 	{
 		if (m_bmiHeader->biCompression == BI_RGB_TOPDOWN) {
 			return TRUE;
@@ -124,18 +125,12 @@ public:
 		}
 	}
 
-	inline MxLong GetAdjustedStride()
-	{
-		if (m_bmiHeader->biCompression == BI_RGB_TOPDOWN || m_bmiHeader->biHeight < 0) {
-			return GetBmiStride();
-		}
-		else {
-			return -GetBmiStride();
-		}
-	}
+#define GetAdjustedStride(p_bitmap)                                                                                    \
+	(p_bitmap->IsTopDown() ? p_bitmap->AlignToFourByte(p_bitmap->GetBmiWidth())                                        \
+						   : -p_bitmap->AlignToFourByte(p_bitmap->GetBmiWidth()))
 
 	// FUNCTION: BETA10 0x1002c320
-	inline MxU8* GetStart(MxS32 p_left, MxS32 p_top)
+	MxU8* GetStart(MxS32 p_left, MxS32 p_top)
 	{
 		if (m_bmiHeader->biCompression == BI_RGB) {
 			return m_data + p_left +
@@ -155,10 +150,10 @@ public:
 
 private:
 	// FUNCTION: BETA10 0x1013dd10
-	inline MxLong MxBitmapInfoSize() const { return sizeof(MxBITMAPINFO); }
+	MxLong MxBitmapInfoSize() const { return sizeof(MxBITMAPINFO); }
 
 	// FUNCTION: BETA10 0x1013dd30
-	inline MxBool IsBottomUp()
+	MxBool IsBottomUp()
 	{
 		if (m_bmiHeader->biCompression == BI_RGB_TOPDOWN) {
 			return FALSE;

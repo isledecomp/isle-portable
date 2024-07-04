@@ -21,7 +21,7 @@ public:
 	virtual void Pause();                                                // vtable+0x34
 	virtual void Resume();                                               // vtable+0x38
 
-	inline ma_engine* GetEngine() { return &m_engine; }
+	ma_engine* GetEngine() { return &m_engine; }
 
 	float GetAttenuation(MxU32 p_volume);
 

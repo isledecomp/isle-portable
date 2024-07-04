@@ -37,15 +37,15 @@ public:
 
 	static MxU8 MapMouseButtonFlagsToModifier(SDL_MouseButtonFlags p_flags);
 
-	inline SDL_Window* GetWindowHandle() { return m_windowHandle; }
-	inline MxLong GetFrameDelta() { return m_frameDelta; }
-	inline MxS32 GetFullScreen() { return m_fullScreen; }
-	inline SDL_Cursor* GetCursorCurrent() { return m_cursorCurrent; }
-	inline SDL_Cursor* GetCursorBusy() { return m_cursorBusy; }
-	inline SDL_Cursor* GetCursorNo() { return m_cursorNo; }
-	inline MxS32 GetDrawCursor() { return m_drawCursor; }
+	SDL_Window* GetWindowHandle() { return m_windowHandle; }
+	MxLong GetFrameDelta() { return m_frameDelta; }
+	MxS32 GetFullScreen() { return m_fullScreen; }
+	SDL_Cursor* GetCursorCurrent() { return m_cursorCurrent; }
+	SDL_Cursor* GetCursorBusy() { return m_cursorBusy; }
+	SDL_Cursor* GetCursorNo() { return m_cursorNo; }
+	MxS32 GetDrawCursor() { return m_drawCursor; }
 
-	inline void SetWindowActive(MxS32 p_windowActive) { m_windowActive = p_windowActive; }
+	void SetWindowActive(MxS32 p_windowActive) { m_windowActive = p_windowActive; }
 
 	MxResult ParseArguments(int argc, char** argv);
 
