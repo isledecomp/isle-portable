@@ -3,12 +3,15 @@
 
 #include "mxvariable.h"
 
+extern const char* g_varJETSPEED;
+extern const char* g_varJETFUEL;
 extern const char* g_varDUNESPEED;
 extern const char* g_varDUNEFUEL;
 extern const char* g_varMOTOSPEED;
 extern const char* g_varMOTOFUEL;
 extern const char* g_varAMBULSPEED;
 extern const char* g_varAMBULFUEL;
+extern const char* g_varTOWSPEED;
 extern const char* g_varTOWFUEL;
 extern const char* g_varVISIBILITY;
 extern const char* g_varCAMERALOCATION;

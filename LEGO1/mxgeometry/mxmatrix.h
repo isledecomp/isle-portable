@@ -4,6 +4,7 @@
 #include "realtime/matrix.h"
 
 // VTABLE: LEGO1 0x100d4300
+// VTABLE: BETA10 0x101b82e0
 // SIZE 0x48
 class MxMatrix : public Matrix4 {
 public:
@@ -15,7 +16,9 @@ public:
 
 	MxMatrix(const Matrix4& p_matrix) : Matrix4(m_elements) { Equals(p_matrix); }
 
+	// FUNCTION: BETA10 0x10010860
 	float* operator[](int idx) { return m_data[idx]; }
+
 	const float* operator[](int idx) const { return m_data[idx]; }
 
 	// FUNCTION: LEGO1 0x10002850

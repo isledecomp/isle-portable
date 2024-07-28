@@ -111,6 +111,7 @@ option(ISLE_BUILD_APP "Build ISLE.EXE application" ON)
 cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "NOT MINGW" OFF)
 option(ISLE_USE_DX5 "Build with internal DirectX 5 SDK" ${NOT_MINGW})
 cmake_dependent_option(ISLE_D3DRM_FROM_WINE "Use d3drm from wine" "${MINGW}" "NOT ISLE_USE_DX5" OFF)
+option(ISLE_DECOMP_ASSERT "Assert struct size" ${MSVC_FOR_DECOMP})
 
 message(STATUS "Using internal DirectX5 SDK: ${ISLE_USE_DX5}")
 message(STATUS "Using d3drm from wine:       ${ISLE_D3DRM_FROM_WINE}")
@@ -174,6 +175,7 @@ add_library(mxdirectx STATIC
   LEGO1/mxdirectx/mxdirect3d.cpp
   LEGO1/mxdirectx/mxdirectdraw.cpp
   LEGO1/mxdirectx/mxdirectxinfo.cpp
+  LEGO1/mxdirectx/legodxinfo.cpp
 )
 register_lego1_target(mxdirectx)
 set_property(TARGET mxdirectx PROPERTY ARCHIVE_OUTPUT_NAME "MxDirectX$<$<CONFIG:Debug>:d>")
@@ -327,7 +329,7 @@ add_library(lego1 SHARED
   LEGO1/define.cpp
   LEGO1/lego/legoomni/src/actors/act2actor.cpp
   LEGO1/lego/legoomni/src/actors/act2genactor.cpp
-  LEGO1/lego/legoomni/src/actors/act3actor.cpp
+  LEGO1/lego/legoomni/src/actors/act3actors.cpp
   LEGO1/lego/legoomni/src/actors/act3brickster.cpp
   LEGO1/lego/legoomni/src/actors/act3cop.cpp
   LEGO1/lego/legoomni/src/actors/act3shark.cpp
@@ -412,7 +414,7 @@ add_library(lego1 SHARED
   LEGO1/lego/legoomni/src/race/jetskirace.cpp
   LEGO1/lego/legoomni/src/race/legorace.cpp
   LEGO1/lego/legoomni/src/race/legoraceactor.cpp
-  LEGO1/lego/legoomni/src/race/legoracecar.cpp
+  LEGO1/lego/legoomni/src/race/legoracers.cpp
   LEGO1/lego/legoomni/src/race/legoracemap.cpp
   LEGO1/lego/legoomni/src/race/raceskel.cpp
   LEGO1/lego/legoomni/src/video/legoanimpresenter.cpp
@@ -511,6 +513,7 @@ endif()
 if (ISLE_BUILD_CONFIG)
   add_executable(config WIN32
     LEGO1/mxdirectx/mxdirectxinfo.cpp
+    LEGO1/mxdirectx/legodxinfo.cpp
     CONFIG/config.cpp
     CONFIG/ConfigCommandLineInfo.cpp
     CONFIG/AboutDlg.cpp
@@ -561,7 +564,8 @@ if(MSVC)
   target_link_options(lego1 PRIVATE "/SAFESEH:NO")
 endif()
 
-if (MSVC_FOR_DECOMP)
+if (ISLE_DECOMP_ASSERT)
+    message(STATUS "Decomp asserts enabled")
     foreach(tgt IN LISTS lego1_targets)
       target_compile_definitions(${tgt} PRIVATE "ENABLE_DECOMP_ASSERTS")
     endforeach()

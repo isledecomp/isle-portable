@@ -38,7 +38,7 @@ public:
 		override;                   // vtable+0x98
 	MxResult VTable0x9c() override; // vtable+0x9c
 
-	virtual void FUN_10080590();
+	virtual void FUN_10080590(float);
 
 	// FUNCTION: LEGO1 0x10012bb0
 	virtual void FUN_10012bb0(float p_unk0x14) { m_unk0x14 = p_unk0x14; }
@@ -59,6 +59,9 @@ public:
 	virtual float FUN_10012c00() { return m_unk0x18; }
 
 	virtual void VTable0x1c(); // vtable+0x1c
+
+	// SYNTHETIC: LEGO1 0x10012c30
+	// LegoCarRaceActor::`vbase destructor'
 
 	// SYNTHETIC: LEGO1 0x10081620
 	// LegoCarRaceActor::`scalar deleting destructor'

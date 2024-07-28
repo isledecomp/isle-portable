@@ -62,6 +62,7 @@ public:
 	virtual void ResetWorldTransform(MxBool p_cameraFlag); // vtable+0x2c
 
 	// FUNCTION: LEGO1 0x10001090
+	// FUNCTION: BETA10 0x10013260
 	virtual void SetWorldSpeed(MxFloat p_worldSpeed) { m_worldSpeed = p_worldSpeed; } // vtable+0x30
 
 	virtual void ClickSound(MxBool p_und);    // vtable+0x34
@@ -83,7 +84,10 @@ public:
 	MxBool GetFlagsIsSet(MxU8 p_flag) { return m_flags & p_flag; }
 	MxU8 GetFlags() { return m_flags; }
 	MxFloat GetWorldSpeed() { return m_worldSpeed; }
+
+	// FUNCTION: BETA10 0x1000f2f0
 	LegoROI* GetROI() { return m_roi; }
+
 	MxU8 GetType() { return m_type; }
 	MxBool GetCameraFlag() { return m_cameraFlag; }
 
