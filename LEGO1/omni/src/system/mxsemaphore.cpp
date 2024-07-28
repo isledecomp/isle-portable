@@ -35,5 +35,5 @@ void MxSemaphore::Wait()
 void MxSemaphore::Release()
 {
 	// [library:synchronization] Removed release count since only 1 is ever requested
-	SDL_PostSemaphore(m_semaphore);
+	SDL_SignalSemaphore(m_semaphore);
 }

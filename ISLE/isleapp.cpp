@@ -179,8 +179,8 @@ MxS32 IsleApp::SetupLegoOmni()
 	GetProfileStringA("LEGO Island", "MediaPath", "", mediaPath, sizeof(mediaPath));
 
 	// [library:window] For now, get the underlying Windows HWND to pass into Omni
-	HWND hwnd =
-		(HWND) SDL_GetProperty(SDL_GetWindowProperties(m_windowHandle), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
+	HWND hwnd = (HWND
+	) SDL_GetPointerProperty(SDL_GetWindowProperties(m_windowHandle), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
 
 #ifdef COMPAT_MODE
 	MxS32 failure;
@@ -512,7 +512,6 @@ MxResult IsleApp::SetupWindow()
 // FUNCTION: ISLE 0x4028d0
 void IsleApp::LoadConfig()
 {
-	char* basePath = SDL_GetBasePath();
 	char* prefPath = SDL_GetPrefPath("isledecomp", "isle");
 	char* iniConfig;
 	if (m_iniPath) {
@@ -528,7 +527,7 @@ void IsleApp::LoadConfig()
 
 	dictionary* dict = iniparser_load(iniConfig);
 
-	const char* hdPath = iniparser_getstring(dict, "isle:diskpath", basePath);
+	const char* hdPath = iniparser_getstring(dict, "isle:diskpath", SDL_GetBasePath());
 	m_hdPath = new char[strlen(hdPath) + 1];
 	strcpy(m_hdPath, hdPath);
 	MxOmni::SetHD(m_hdPath);
@@ -581,7 +580,6 @@ void IsleApp::LoadConfig()
 	iniparser_freedict(dict);
 	delete[] iniConfig;
 	SDL_free(prefPath);
-	SDL_free(basePath);
 }
 
 // FUNCTION: ISLE 0x402c20
