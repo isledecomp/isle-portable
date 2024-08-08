@@ -55,6 +55,8 @@ MxResult MxSmack::LoadFrame(
 		smk_next(p_mxSmack->m_smk);
 	}
 
+	memcpy(p_bitmapData, smk_get_video(p_mxSmack->m_smk), w * h);
+
 	unsigned char frameType;
 	smk_info_all(p_mxSmack->m_smk, NULL, NULL, &frameType, NULL);
 	p_paletteChanged = frameType & 1;
