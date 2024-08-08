@@ -8,6 +8,7 @@ DECOMP_SIZE_ASSERT(SmackTag, 0x390);
 DECOMP_SIZE_ASSERT(MxSmack, 0x6b8);
 
 // FUNCTION: LEGO1 0x100c5a90
+// FUNCTION: BETA10 0x10151e70
 MxResult MxSmack::LoadHeader(MxU8* p_data, MxU32 p_length, MxSmack* p_mxSmack)
 {
 	p_mxSmack->m_smk = smk_open_memory_stream(p_data, p_length);
@@ -21,6 +22,7 @@ MxResult MxSmack::LoadHeader(MxU8* p_data, MxU32 p_length, MxSmack* p_mxSmack)
 }
 
 // FUNCTION: LEGO1 0x100c5d40
+// FUNCTION: BETA10 0x10152298
 void MxSmack::Destroy(MxSmack* p_mxSmack)
 {
 	if (p_mxSmack->m_smk != NULL) {
@@ -28,13 +30,8 @@ void MxSmack::Destroy(MxSmack* p_mxSmack)
 	}
 }
 
-// This should be refactored to somewhere else
-inline MxLong AbsFlipped(MxLong p_value)
-{
-	return p_value > 0 ? p_value : -p_value;
-}
-
 // FUNCTION: LEGO1 0x100c5db0
+// FUNCTION: BETA10 0x10152391
 MxResult MxSmack::LoadFrame(
 	MxBITMAPINFO* p_bitmapInfo,
 	MxU8* p_bitmapData,
@@ -45,7 +42,7 @@ MxResult MxSmack::LoadFrame(
 	MxRectList* p_list
 )
 {
-	p_bitmapInfo->m_bmiHeader.biHeight = -AbsFlipped(p_bitmapInfo->m_bmiHeader.biHeight);
+	p_bitmapInfo->m_bmiHeader.biHeight = -MxBitmap::HeightAbs(p_bitmapInfo->m_bmiHeader.biHeight);
 
 	unsigned long w, h;
 	smk_info_video(p_mxSmack->m_smk, &w, &h, NULL);
@@ -57,8 +54,6 @@ MxResult MxSmack::LoadFrame(
 	else {
 		smk_next(p_mxSmack->m_smk);
 	}
-
-	memcpy(p_bitmapData, smk_get_video(p_mxSmack->m_smk), w * h);
 
 	unsigned char frameType;
 	smk_info_all(p_mxSmack->m_smk, NULL, NULL, &frameType, NULL);

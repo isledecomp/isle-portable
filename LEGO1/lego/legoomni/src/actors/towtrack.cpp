@@ -1,27 +1,37 @@
 #include "towtrack.h"
 
+#include "isle.h"
 #include "isle_actions.h"
+#include "jukebox_actions.h"
+#include "legoanimationmanager.h"
 #include "legocontrolmanager.h"
 #include "legogamestate.h"
 #include "legonavcontroller.h"
+#include "legoutils.h"
 #include "legovariables.h"
 #include "legoworld.h"
 #include "misc.h"
+#include "mxbackgroundaudiomanager.h"
 #include "mxmisc.h"
+#include "mxsoundpresenter.h"
 #include "mxtimer.h"
+#include "mxtransitionmanager.h"
 #include "mxvariabletable.h"
 
 DECOMP_SIZE_ASSERT(TowTrack, 0x180)
 DECOMP_SIZE_ASSERT(TowTrackMissionState, 0x28)
 
+// Flags used in isle.cpp
+extern MxU32 g_isleFlags;
+
 // FUNCTION: LEGO1 0x1004c720
 TowTrack::TowTrack()
 {
 	m_unk0x168 = 0;
-	m_unk0x16a = -1;
+	m_actorId = -1;
 	m_state = NULL;
 	m_unk0x16c = 0;
-	m_unk0x170 = -1;
+	m_lastAction = IsleScript::c_noneIsle;
 	m_unk0x16e = 0;
 	m_unk0x174 = -1;
 	m_maxLinearVel = 40.0;
@@ -85,7 +95,7 @@ void TowTrack::VTable0x70(float p_time)
 		VariableTable()->SetVariable(g_varTOWFUEL, buf);
 
 		if (p_time - m_state->m_unk0x0c > 100000.0f && m_state->m_unk0x08 == 1 && !m_state->m_unk0x10) {
-			FUN_1004dcf0(IsleScript::c_Avo909In_PlayWav);
+			PlayAction(IsleScript::c_Avo909In_PlayWav);
 			m_state->m_unk0x10 = TRUE;
 		}
 	}
@@ -100,15 +110,43 @@ void TowTrack::CreateState()
 	}
 }
 
-// STUB: LEGO1 0x1004cc80
+// FUNCTION: LEGO1 0x1004cc80
 MxLong TowTrack::Notify(MxParam& p_param)
 {
-	// TODO
-	return 0;
+	MxLong result = 0;
+
+	switch (((MxNotificationParam&) p_param).GetNotification()) {
+	case c_notificationType0:
+		result = HandleNotification0();
+		break;
+	case c_notificationEndAction:
+		result = HandleEndAction((MxEndActionNotificationParam&) p_param);
+		break;
+	case c_notificationClick:
+		result = HandleClick();
+		break;
+	case c_notificationControl:
+		result = HandleControl((LegoControlManagerNotificationParam&) p_param);
+		break;
+	case c_notificationEndAnim:
+		result = HandleEndAnim((LegoEndAnimNotificationParam&) p_param);
+		break;
+	case c_notificationPathStruct:
+		result = HandlePathStruct((LegoPathStructNotificationParam&) p_param);
+		break;
+	}
+
+	return result;
 }
 
-// STUB: LEGO1 0x1004cd30
+// FUNCTION: LEGO1 0x1004cd30
 MxLong TowTrack::HandleEndAnim(LegoEndAnimNotificationParam& p_param)
+{
+	return 1;
+}
+
+// STUB: LEGO1 0x1004cd40
+MxLong TowTrack::HandleEndAction(MxEndActionNotificationParam& p_param)
 {
 	// TODO
 	return 0;
@@ -121,54 +159,176 @@ MxLong TowTrack::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 	return 0;
 }
 
-// STUB: LEGO1 0x1004d690
+// FUNCTION: LEGO1 0x1004d690
 MxLong TowTrack::HandleClick()
 {
-	// TODO
-	return 0;
+	if (((Act1State*) GameState()->GetState("Act1State"))->m_unk0x018 != 8) {
+		return 1;
+	}
+
+	if (m_state->m_unk0x08 == 3) {
+		return 1;
+	}
+
+	FUN_10015820(TRUE, 0);
+	((Isle*) CurrentWorld())->SetDestLocation(LegoGameState::e_towtrack);
+	TransitionManager()->StartTransition(MxTransitionManager::e_mosaic, 50, FALSE, FALSE);
+
+	if (UserActor()->GetActorId() != GameState()->GetActorId()) {
+		((IslePathActor*) UserActor())->Exit();
+	}
+
+	m_time = Timer()->GetTime();
+	m_actorId = UserActor()->GetActorId();
+
+	Enter();
+	InvokeAction(Extra::e_start, *g_isleScript, IsleScript::c_TowTrackDashboard, NULL);
+	ControlManager()->Register(this);
+
+	if (m_state->m_unk0x08 == 0) {
+		return 1;
+	}
+
+	if (m_state->m_unk0x08 == 2) {
+		SpawnPlayer(LegoGameState::e_unk52, TRUE, 0);
+		FindROI("rcred")->SetVisibility(FALSE);
+	}
+	else {
+		SpawnPlayer(LegoGameState::e_unk28, TRUE, 0);
+		m_lastAction = IsleScript::c_noneIsle;
+		m_unk0x174 = -1;
+		m_state->m_unk0x0c = Timer()->GetTime();
+		m_state->m_unk0x10 = FALSE;
+		InvokeAction(Extra::e_start, *g_isleScript, IsleScript::c_wns057rd_RunAnim, NULL);
+		InvokeAction(Extra::e_start, *g_isleScript, IsleScript::c_wns048p1_RunAnim, NULL);
+		InvokeAction(Extra::e_start, *g_isleScript, IsleScript::c_wns049p1_RunAnim, NULL);
+		InvokeAction(Extra::e_start, *g_isleScript, IsleScript::c_wns051bd_RunAnim, NULL);
+		InvokeAction(Extra::e_start, *g_isleScript, IsleScript::c_wns053pr_RunAnim, NULL);
+		InvokeAction(Extra::e_start, *g_isleScript, IsleScript::c_wns045di_RunAnim, NULL);
+		InvokeAction(Extra::e_start, *g_isleScript, IsleScript::c_pns123pr_RunAnim, NULL);
+	}
+
+	return 1;
 }
 
-// STUB: LEGO1 0x1004d8f0
+// FUNCTION: LEGO1 0x1004d8f0
 void TowTrack::Exit()
 {
-	// TODO
+	GameState()->m_currentArea = LegoGameState::e_garageExterior;
+	StopActions();
+	FUN_1004dbe0();
+	Leave();
 }
 
-// STUB: LEGO1 0x1004d9e0
+// FUNCTION: LEGO1 0x1004d920
+void TowTrack::Leave()
+{
+	IslePathActor::Exit();
+	CurrentWorld()->RemoveActor(this);
+	m_roi->SetVisibility(FALSE);
+	RemoveFromCurrentWorld(*g_isleScript, IsleScript::c_TowTrackDashboard_Bitmap);
+	RemoveFromCurrentWorld(*g_isleScript, IsleScript::c_TowTrackArms_Ctl);
+	RemoveFromCurrentWorld(*g_isleScript, IsleScript::c_TowHorn_Ctl);
+	RemoveFromCurrentWorld(*g_isleScript, IsleScript::c_TowHorn_Sound);
+	RemoveFromCurrentWorld(*g_isleScript, IsleScript::c_TowInfo_Ctl);
+	RemoveFromCurrentWorld(*g_isleScript, IsleScript::c_TowSpeedMeter);
+	RemoveFromCurrentWorld(*g_isleScript, IsleScript::c_TowFuelMeter);
+	ControlManager()->Unregister(this);
+}
+
+// FUNCTION: LEGO1 0x1004d9e0
 MxLong TowTrack::HandleControl(LegoControlManagerNotificationParam& p_param)
 {
-	// TODO
-	return 0;
+	MxLong result = 0;
+
+	if (p_param.GetUnknown0x28() == 1) {
+		switch (p_param.GetClickedObjectId()) {
+		case IsleScript::c_TowTrackArms_Ctl:
+			Exit();
+			GameState()->m_currentArea = LegoGameState::e_unk66;
+			result = 1;
+			break;
+		case IsleScript::c_TowInfo_Ctl:
+			((Isle*) CurrentWorld())->SetDestLocation(LegoGameState::e_infomain);
+			TransitionManager()->StartTransition(MxTransitionManager::e_mosaic, 50, FALSE, FALSE);
+			Exit();
+			GameState()->m_currentArea = LegoGameState::e_unk66;
+			result = 1;
+			break;
+		case IsleScript::c_TowHorn_Ctl:
+			MxSoundPresenter* presenter = (MxSoundPresenter*) CurrentWorld()->Find("MxSoundPresenter", "TowHorn_Sound");
+			presenter->Enable(p_param.GetUnknown0x28());
+			break;
+		}
+	}
+
+	return result;
 }
 
-// STUB: LEGO1 0x1004dab0
+// FUNCTION: LEGO1 0x1004dab0
 void TowTrack::FUN_1004dab0()
 {
-	// TODO
+	m_state->m_unk0x08 = 1;
+	HandleClick();
 }
 
-// STUB: LEGO1 0x1004dad0
-void TowTrack::FUN_1004dad0()
+// FUNCTION: LEGO1 0x1004dad0
+void TowTrack::ActivateSceneActions()
 {
-	// TODO
+	PlayMusic(JukeboxScript::c_JBMusic2);
+
+	if (m_state->m_unk0x08 != 0) {
+		if (m_state->m_unk0x08 == 2) {
+			PlayAction(IsleScript::c_wrt082na_PlayWav);
+		}
+		else {
+			PlayAction(IsleScript::c_wgs032nu_PlayWav);
+		}
+	}
 }
 
-// STUB: LEGO1 0x1004db10
-void TowTrack::FUN_1004db10()
+// FUNCTION: LEGO1 0x1004db10
+void TowTrack::StopActions()
 {
-	// TODO
+	InvokeAction(Extra::e_stop, *g_isleScript, IsleScript::c_wns050p1_RunAnim, NULL);
+	InvokeAction(Extra::e_stop, *g_isleScript, IsleScript::c_wns046mg_RunAnim, NULL);
+	InvokeAction(Extra::e_stop, *g_isleScript, IsleScript::c_wns057rd_RunAnim, NULL);
+	InvokeAction(Extra::e_stop, *g_isleScript, IsleScript::c_wns048p1_RunAnim, NULL);
+	InvokeAction(Extra::e_stop, *g_isleScript, IsleScript::c_wns049p1_RunAnim, NULL);
+	InvokeAction(Extra::e_stop, *g_isleScript, IsleScript::c_wns051bd_RunAnim, NULL);
+	InvokeAction(Extra::e_stop, *g_isleScript, IsleScript::c_wns053pr_RunAnim, NULL);
+	InvokeAction(Extra::e_stop, *g_isleScript, IsleScript::c_wns045di_RunAnim, NULL);
+	InvokeAction(Extra::e_stop, *g_isleScript, IsleScript::c_pns123pr_RunAnim, NULL);
 }
 
-// STUB: LEGO1 0x1004dbe0
+// FUNCTION: LEGO1 0x1004dbe0
 void TowTrack::FUN_1004dbe0()
 {
-	// TODO
+	if (m_lastAction != -1) {
+		InvokeAction(Extra::e_stop, *g_isleScript, m_lastAction, NULL);
+	}
+
+	((Act1State*) GameState()->GetState("Act1State"))->m_unk0x018 = 0;
+	m_state->m_unk0x08 = 0;
+	g_isleFlags |= Isle::c_playMusic;
+	AnimationManager()->EnableCamAnims(TRUE);
+	AnimationManager()->FUN_1005f6d0(TRUE);
+	m_state->m_unk0x0c = INT_MIN;
+	m_state->m_unk0x10 = FALSE;
+	m_state = NULL;
+	m_unk0x16c = 0;
+	m_unk0x16e = 0;
 }
 
-// STUB: LEGO1 0x1004dcf0
-void TowTrack::FUN_1004dcf0(IsleScript::Script)
+// FUNCTION: LEGO1 0x1004dcf0
+void TowTrack::PlayAction(IsleScript::Script p_objectId)
 {
-	// TODO
+	if (p_objectId != -1) {
+		InvokeAction(Extra::e_start, *g_isleScript, p_objectId, NULL);
+	}
+
+	m_lastAction = p_objectId;
+	BackgroundAudioManager()->LowerVolume();
 }
 
 // FUNCTION: LEGO1 0x1004dd30

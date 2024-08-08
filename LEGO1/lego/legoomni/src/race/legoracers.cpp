@@ -266,13 +266,13 @@ void LegoRaceCar::FUN_10012ff0(float p_param)
 
 		if (a->GetDuration() <= deltaTime || deltaTime < 0.0) {
 			if (m_userState == LEGORACECAR_KICK1) {
-				LegoEdge** edges = m_kick1B->GetEdges();
-				m_destEdge = (LegoUnknown100db7f4*) (edges[2]);
+				LegoUnknown100db7f4** edges = m_kick1B->GetEdges();
+				m_destEdge = edges[2];
 				m_boundary = m_kick1B;
 			}
 			else {
-				LegoEdge** edges = m_kick1B->GetEdges();
-				m_destEdge = (LegoUnknown100db7f4*) (edges[1]);
+				LegoUnknown100db7f4** edges = m_kick1B->GetEdges();
+				m_destEdge = edges[1];
 				m_boundary = m_kick2B;
 			}
 
@@ -405,6 +405,7 @@ void LegoRaceCar::VTable0x70(float p_float)
 // FUNCTION: BETA10 0x100cbb84
 MxResult LegoRaceCar::VTable0x94(LegoPathActor* p_actor, MxBool p_bool)
 {
+	// Note: Code duplication with LegoRaceActor::VTable0x94
 	if (!p_actor->GetUserNavFlag()) {
 		if (p_actor->GetState()) {
 			return FAILURE;
