@@ -232,7 +232,7 @@ void IsleApp::SetupVideoFlags(
 	}
 }
 
-int SDL_AppInit(void** appstate, int argc, char** argv)
+SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 {
 	*appstate = NULL;
 
@@ -279,7 +279,7 @@ int SDL_AppInit(void** appstate, int argc, char** argv)
 	return SDL_APP_CONTINUE;
 }
 
-int SDL_AppIterate(void* appstate)
+SDL_AppResult SDL_AppIterate(void* appstate)
 {
 	if (g_closed) {
 		return SDL_APP_SUCCESS;
@@ -311,7 +311,7 @@ int SDL_AppIterate(void* appstate)
 	return SDL_APP_CONTINUE;
 }
 
-int SDL_AppEvent(void* appstate, const SDL_Event* event)
+SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 {
 	if (!g_isle) {
 		return SDL_APP_CONTINUE;
