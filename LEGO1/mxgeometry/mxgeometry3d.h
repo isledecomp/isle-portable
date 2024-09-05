@@ -21,6 +21,7 @@ public:
 	// FUNCTION: BETA10 0x10011600
 	Mx3DPointFloat(const Mx3DPointFloat& p_other) : Vector3(m_elements) { EqualsImpl(p_other.m_data); }
 
+	// FUNCTION: BETA10 0x100151e0
 	Mx3DPointFloat(const Vector3& p_other) : Vector3(m_elements) { EqualsImpl(p_other.m_data); }
 
 	// SYNTHETIC: LEGO1 0x1001d170
@@ -64,7 +65,9 @@ public:
 	// FUNCTION: LEGO1 0x10003200
 	virtual void operator=(const Vector4& p_impl) { EqualsImpl(p_impl.m_data); } // vtable+0x98
 
+	// FUNCTION: BETA10 0x1004af10
 	float& operator[](int idx) { return m_data[idx]; }
+
 	const float& operator[](int idx) const { return m_data[idx]; }
 
 	// SYNTHETIC: LEGO1 0x10064b20

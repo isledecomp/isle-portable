@@ -106,6 +106,7 @@ MxResult LegoWorld::Create(MxDSAction& p_dsAction)
 }
 
 // FUNCTION: LEGO1 0x1001e9d0
+// FUNCTION: BETA10 0x100d99ea
 void LegoWorld::Destroy(MxBool p_fromDestructor)
 {
 	m_destroyed = TRUE;
@@ -540,6 +541,7 @@ void LegoWorld::Remove(MxCore* p_object)
 }
 
 // FUNCTION: LEGO1 0x100213a0
+// FUNCTION: BETA10 0x100db027
 MxCore* LegoWorld::Find(const char* p_class, const char* p_name)
 {
 	if (!strcmp(p_class, "MxControlPresenter")) {
@@ -607,7 +609,7 @@ MxCore* LegoWorld::Find(const MxAtomId& p_atom, MxS32 p_entityId)
 	LegoEntity* entity;
 
 	while (entityCursor.Next(entity)) {
-		if (entity->GetAtom() == p_atom && entity->GetEntityId() == p_entityId) {
+		if (entity->GetAtomId() == p_atom && entity->GetEntityId() == p_entityId) {
 			return entity;
 		}
 	}

@@ -44,11 +44,15 @@ public:
 	void SetSkyColor(float p_red, float p_green, float p_blue);
 	void OverrideSkyColor(MxBool p_shouldOverride);
 	MxResult ResetPalette(MxBool p_ignoreSkyColor);
+	MxPresenter* GetPresenterByActionObjectName(const char* p_char);
 
 	void FUN_1007c520();
 
 	Tgl::Renderer* GetRenderer() { return m_renderer; }
+
+	// FUNCTION: BETA10 0x100117e0
 	Lego3DManager* Get3DManager() { return m_3dManager; }
+
 	LegoROI* GetViewROI() { return m_viewROI; }
 	MxDirect3D* GetDirect3D() { return m_direct3d; }
 	MxBool GetRender3D() { return m_render3d; }

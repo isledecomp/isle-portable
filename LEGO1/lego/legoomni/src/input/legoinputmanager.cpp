@@ -269,6 +269,7 @@ void LegoInputManager::ClearCamera()
 }
 
 // FUNCTION: LEGO1 0x1005c720
+// FUNCTION: BETA10 0x100896b8
 void LegoInputManager::SetWorld(LegoWorld* p_world)
 {
 	m_world = p_world;
