@@ -236,7 +236,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 {
 	*appstate = NULL;
 
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER) != 0) {
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER) != SDL_TRUE) {
 		SDL_ShowSimpleMessageBox(
 			SDL_MESSAGEBOX_ERROR,
 			"LEGO® Island Error",
