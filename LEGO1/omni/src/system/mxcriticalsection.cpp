@@ -23,6 +23,7 @@ MxCriticalSection::~MxCriticalSection()
 }
 
 // FUNCTION: LEGO1 0x100b6d80
+// FUNCTION: BETA10 0x1013c725
 void MxCriticalSection::Enter()
 {
 	SDL_LockMutex(m_mutex);
