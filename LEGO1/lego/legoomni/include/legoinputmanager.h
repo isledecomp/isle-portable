@@ -147,7 +147,7 @@ private:
 	MxBool m_unk0x81;                     // 0x81
 	LegoControlManager* m_controlManager; // 0x84
 	MxBool m_unk0x88;                     // 0x88
-	const Uint8* m_keyboardState;
+	const bool* m_keyboardState;
 	MxBool m_unk0x195;     // 0x195
 	MxS32 m_joyid;         // 0x198
 	MxS32 m_joystickIndex; // 0x19c
