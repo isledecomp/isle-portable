@@ -236,7 +236,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 {
 	*appstate = NULL;
 
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER) != SDL_TRUE) {
+	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
 		SDL_ShowSimpleMessageBox(
 			SDL_MESSAGEBOX_ERROR,
 			"LEGO® Island Error",
@@ -406,7 +406,7 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 	return SDL_APP_CONTINUE;
 }
 
-void SDL_AppQuit(void* appstate)
+void SDL_AppQuit(void* appstate, SDL_AppResult result)
 {
 	if (appstate != NULL) {
 		SDL_DestroyWindow((SDL_Window*) appstate);
