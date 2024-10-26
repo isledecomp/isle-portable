@@ -221,10 +221,11 @@ LegoResult LegoAnimScene::FUN_1009f490(LegoFloat p_time, Matrix4& p_matrix)
 }
 
 // FUNCTION: LEGO1 0x1009f900
+// FUNCTION: BETA10 0x1017df90
 LegoAnimKey::LegoAnimKey()
 {
-	m_flags = 0;
 	m_time = 0;
+	m_flags = 0;
 }
 
 // FUNCTION: LEGO1 0x1009f910
@@ -279,6 +280,7 @@ LegoResult LegoTranslationKey::Read(LegoStorage* p_storage)
 }
 
 // FUNCTION: LEGO1 0x1009faa0
+// FUNCTION: BETA10 0x1017e2b3
 LegoRotationKey::LegoRotationKey()
 {
 	m_angle = 1.0F;
@@ -356,6 +358,7 @@ LegoResult LegoScaleKey::Read(LegoStorage* p_storage)
 }
 
 // FUNCTION: LEGO1 0x1009fcf0
+// FUNCTION: BETA10 0x1017e71a
 LegoAnimNodeData::LegoAnimNodeData()
 {
 	m_numTranslationKeys = 0;
@@ -492,6 +495,13 @@ LegoResult LegoAnimNodeData::Write(LegoStorage* p_storage)
 {
 	// TODO
 	return SUCCESS;
+}
+
+// STUB: LEGO1 0x100a0360
+// STUB: BETA10 0x1017f1e5
+void LegoAnimNodeData::FUN_100a0360(LegoChar* p_param)
+{
+	// TODO
 }
 
 // FUNCTION: LEGO1 0x100a03c0
@@ -898,6 +908,7 @@ undefined4 LegoAnim::GetActorUnknown0x04(LegoU32 p_index)
 }
 
 // FUNCTION: LEGO1 0x100a0f60
+// FUNCTION: BETA10 0x1018027c
 LegoMorphKey::LegoMorphKey()
 {
 	m_unk0x08 = 0;

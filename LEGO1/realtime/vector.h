@@ -163,13 +163,10 @@ public:
 		return *this;
 	}
 
-	// SYNTHETIC: BETA10 0x10013460
-	// Vector3::operator[]
-
-	// FUNCTION: BETA10 0x10010890
+	// FUNCTION: BETA10 0x1001d140
 	float& operator[](int idx) { return m_data[idx]; }
 
-	// FUNCTION: BETA10 0x1001d140
+	// FUNCTION: BETA10 0x1001d170
 	const float& operator[](int idx) const { return m_data[idx]; }
 
 protected:
@@ -182,12 +179,15 @@ protected:
 class Vector3 : public Vector2 {
 public:
 	// FUNCTION: LEGO1 0x1001d150
+	// FUNCTION: BETA10 0x10011660
 	Vector3(float* p_data) : Vector2(p_data) {}
 
 	// Hack: Some code initializes a Vector3 from a (most likely) const float* source.
 	// Example: LegoCameraController::GetWorldUp
 	// Vector3 however is a class that can mutate its underlying source, making
 	// initialization with a const source fundamentally incompatible.
+
+	// FUNCTION: BETA10 0x100109a0
 	Vector3(const float* p_data) : Vector2((float*) p_data) {}
 
 	// Note: virtual function overloads appear in the virtual table
@@ -298,6 +298,7 @@ public:
 // SIZE 0x08
 class Vector4 : public Vector3 {
 public:
+	// FUNCTION: BETA10 0x10048780
 	Vector4(float* p_data) : Vector3(p_data) {}
 
 	// Hack: Some code initializes a Vector4 from a (most likely) const float* source.
@@ -406,6 +407,11 @@ public:
 		m_data[2] = p_value;
 		m_data[3] = p_value;
 	} // vtable+0x84
+
+	float& operator[](int idx) { return m_data[idx]; }
+
+	// FUNCTION: BETA10 0x10010890
+	const float& operator[](int idx) const { return m_data[idx]; }
 
 	friend class Mx4DPointFloat;
 };

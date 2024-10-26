@@ -25,10 +25,11 @@ public:
 
 	float GetAttenuation(MxU32 p_volume);
 
+	MxPresenter* FUN_100aebd0(const MxAtomId& p_atomId, MxU32 p_objectId);
+
 protected:
 	void Init();
 	void Destroy(MxBool p_fromDestructor);
-	MxPresenter* FUN_100aebd0(const MxAtomId& p_atomId, MxU32 p_objectId);
 
 	// [library:audio]
 	// Upscaling everything to 44.1KHz, since we have various sample rates throughout the game.

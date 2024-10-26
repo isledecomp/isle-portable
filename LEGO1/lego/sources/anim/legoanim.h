@@ -19,10 +19,25 @@ public:
 	LegoAnimKey();
 	LegoResult Read(LegoStorage* p_storage);
 	LegoFloat GetTime() { return m_time; }
-	void SetTime(LegoFloat p_time) { m_time = p_time; }
+
+	// The different types (LegoFloat vs. MxS32) are correct according to BETA10
+	// FUNCTION: BETA10 0x100738a0
+	void SetTime(MxS32 p_time) { m_time = p_time; }
+
 	LegoU32 TestBit1() { return m_flags & c_bit1; }
 	LegoU32 TestBit2() { return m_flags & c_bit2; }
 	LegoU32 TestBit3() { return m_flags & c_bit3; }
+
+	// FUNCTION: BETA10 0x100739a0
+	void FUN_100739a0(MxS32 p_param)
+	{
+		if (p_param) {
+			m_flags |= c_bit1;
+		}
+		else {
+			m_flags &= ~c_bit1;
+		}
+	}
 
 protected:
 	LegoU8 m_flags;   // 0x00
@@ -52,13 +67,29 @@ class LegoRotationKey : public LegoAnimKey {
 public:
 	LegoRotationKey();
 	LegoResult Read(LegoStorage* p_storage);
+
+	// FUNCTION: BETA10 0x10073a00
 	LegoFloat GetAngle() { return m_angle; }
+
+	// FUNCTION: BETA10 0x10073a30
 	void SetAngle(LegoFloat p_angle) { m_angle = p_angle; }
+
+	// FUNCTION: BETA10 0x10073a60
 	LegoFloat GetX() { return m_x; }
+
+	// FUNCTION: BETA10 0x10073a90
 	void SetX(LegoFloat p_x) { m_x = p_x; }
+
+	// FUNCTION: BETA10 0x10073ac0
 	LegoFloat GetY() { return m_y; }
+
+	// FUNCTION: BETA10 0x10073af0
 	void SetY(LegoFloat p_y) { m_y = p_y; }
+
+	// FUNCTION: BETA10 0x10073b20
 	LegoFloat GetZ() { return m_z; }
+
+	// FUNCTION: BETA10 0x10073b50
 	void SetZ(LegoFloat p_z) { m_z = p_z; }
 
 protected:
@@ -93,6 +124,9 @@ public:
 	LegoResult Read(LegoStorage* p_storage);
 	LegoBool GetUnknown0x08() { return m_unk0x08; }
 
+	// FUNCTION: BETA10 0x100738d0
+	void SetUnknown0x08(LegoBool p_unk0x08) { m_unk0x08 = p_unk0x08; }
+
 protected:
 	LegoBool m_unk0x08; // 0x08
 };
@@ -118,22 +152,64 @@ public:
 	LegoResult Read(LegoStorage* p_storage) override;  // vtable+0x04
 	LegoResult Write(LegoStorage* p_storage) override; // vtable+0x08
 
+	void FUN_100a0360(LegoChar* p_param);
 	LegoResult CreateLocalTransform(LegoFloat p_time, Matrix4& p_matrix);
 	LegoBool FUN_100a0990(LegoFloat p_time);
 
-	const LegoChar* GetName() { return m_name; }
+	// FUNCTION: BETA10 0x100595d0
+	LegoChar* GetName() { return m_name; }
+
+	// FUNCTION: BETA10 0x10073780
+	LegoU16 GetNumTranslationKeys() { return m_numTranslationKeys; }
+
+	// FUNCTION: BETA10 0x100737b0
+	LegoU16 GetNumRotationKeys() { return m_numRotationKeys; }
+
+	// FUNCTION: BETA10 0x100737e0
+	void SetNumRotationKeys(LegoU16 p_numRotationKeys) { m_numRotationKeys = p_numRotationKeys; }
+
+	// FUNCTION: BETA10 0x10073810
+	void SetRotationKeys(LegoRotationKey* p_keys)
+	{
+		m_rotationKeys = p_keys;
+		m_rotationIndex = 0;
+	}
+
 	LegoU32 GetTranslationIndex() { return m_translationIndex; }
 	LegoU32 GetRotationIndex() { return m_rotationIndex; }
 	LegoU32 GetScaleIndex() { return m_scaleIndex; }
 	LegoU32 GetMorphIndex() { return m_morphIndex; }
+
+	// FUNCTION: BETA10 0x1005abc0
 	LegoU16 GetUnknown0x20() { return m_unk0x20; }
+
 	LegoU16 GetUnknown0x22() { return m_unk0x22; }
+
+	// FUNCTION: BETA10 0x10073b80
+	LegoRotationKey* GetRotationKey(MxS32 index) { return &m_rotationKeys[index]; }
 
 	void SetTranslationIndex(LegoU32 p_translationIndex) { m_translationIndex = p_translationIndex; }
 	void SetRotationIndex(LegoU32 p_rotationIndex) { m_rotationIndex = p_rotationIndex; }
 	void SetScaleIndex(LegoU32 p_scaleIndex) { m_scaleIndex = p_scaleIndex; }
 	void SetMorphIndex(LegoU32 p_morphIndex) { m_morphIndex = p_morphIndex; }
+
+	// FUNCTION: BETA10 0x10073930
+	LegoMorphKey* GetMorphKeys() { return m_morphKeys; }
+
+	// FUNCTION: BETA10 0x10073960
+	void SetMorphKeys(LegoMorphKey* p_morphKeys)
+	{
+		m_morphKeys = p_morphKeys;
+		m_morphIndex = 0;
+	}
+
+	// FUNCTION: BETA10 0x10073900
+	void SetNumMorphKeys(LegoU16 p_numMorphKeys) { m_numMorphKeys = p_numMorphKeys; }
+
+	// FUNCTION: BETA10 0x10059600
 	void SetUnknown0x20(LegoU16 p_unk0x20) { m_unk0x20 = p_unk0x20; }
+
+	// FUNCTION: BETA10 0x1005f2e0
 	void SetUnknown0x22(LegoU16 p_unk0x22) { m_unk0x22 = p_unk0x22; }
 
 	LegoResult CreateLocalTransform(LegoTime p_time, Matrix4& p_matrix)

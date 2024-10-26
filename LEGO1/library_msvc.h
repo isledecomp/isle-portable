@@ -482,6 +482,7 @@
 // __setmode_lk
 
 // LIBRARY: LEGO1 0x100d1ed0
+// LIBRARY: BETA10 0x1018ec70
 // _strnicmp
 
 // LIBRARY: LEGO1 0x100d1fd0
@@ -682,6 +683,9 @@
 // LIBRARY: BETA10 0x100f9780
 // strlen
 
+// LIBRARY: BETA10 0x100fa200
+// strcpy
+
 // LIBRARY: BETA10 0x100f8a88
 // operator new
 
@@ -703,7 +707,31 @@
 // LIBRARY: BETA10 0x100fe5a0
 // abort
 
+// LIBRARY: BETA10 0x100fa0e0
+// atof
+
+// LIBRARY: BETA10 0x1005a9c0
+// fabs
+
+// LIBRARY: BETA10 0x1005a9f0
+// fabsf
+
+// LIBRARY: BETA10 0x100f9bb0
+// _fabs
+
+// LIBRARY: BETA10 0x100f9570
+// memset
+
 // LIBRARY: BETA10 0x100ff82b
 // __ctrandisp1
+
+// LIBRARY: BETA10 0x100f8a92
+// operator delete
+
+// LIBRARY: BETA10 0x1018ed70
+// _strupr
+
+// LIBRARY: BETA10 0x1001d1a0
+// `vector constructor iterator'
 
 #endif

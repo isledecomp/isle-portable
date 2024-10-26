@@ -110,6 +110,7 @@ void MxPresenter::ParseExtra()
 }
 
 // FUNCTION: LEGO1 0x100b5120
+// FUNCTION: BETA10 0x1012e5d8
 void MxPresenter::SendToCompositePresenter(MxOmni* p_omni)
 {
 	if (m_compositePresenter) {
@@ -260,6 +261,7 @@ MxEntity* MxPresenter::CreateEntity(const char* p_defaultName)
 }
 
 // FUNCTION: LEGO1 0x100b54c0
+// FUNCTION: BETA10 0x1012ebaf
 MxBool MxPresenter::IsEnabled()
 {
 	return this->m_action && this->m_action->GetFlags() & MxDSAction::c_enabled;

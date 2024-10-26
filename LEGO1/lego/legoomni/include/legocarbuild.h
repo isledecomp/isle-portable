@@ -16,6 +16,14 @@ class MxActionNotificationParam;
 // SIZE 0x50
 class LegoVehicleBuildState : public LegoState {
 public:
+	enum AnimationState {
+		e_unknown0 = 0,
+		e_entering = 1,
+		e_unknown2 = 2,
+		e_cutscene = 3,
+		e_exiting = 6
+	};
+
 	LegoVehicleBuildState(const char* p_classType);
 
 	// FUNCTION: LEGO1 0x10025ff0
@@ -46,15 +54,11 @@ public:
 	// * LegoJetskiBuildState
 	MxString m_className; // 0x38
 
-	// Known States:
-	// * 1 == enter(ing) build screen
-	// * 3 == cutscene/dialogue
-	// * 6 == exit(ing) build screen
-	MxU32 m_animationState; // 0x48
-	undefined m_unk0x4c;    // 0x4c
-	MxBool m_unk0x4d;       // 0x4d
-	MxBool m_unk0x4e;       // 0x4e
-	MxU8 m_placedPartCount; // 0x4f
+	AnimationState m_animationState; // 0x48
+	undefined m_unk0x4c;             // 0x4c
+	MxBool m_unk0x4d;                // 0x4d
+	MxBool m_unk0x4e;                // 0x4e
+	MxU8 m_placedPartCount;          // 0x4f
 };
 
 typedef LegoVehicleBuildState LegoRaceCarBuildState;
@@ -103,6 +107,7 @@ public:
 		MxFloat p_param4[2]
 	); // vtable+0x80
 
+	MxS16 GetPlacedPartCount();
 	void InitPresenters();
 	void FUN_10022f30();
 	void FUN_10023130(MxLong p_x, MxLong p_y);
@@ -113,7 +118,7 @@ public:
 	undefined4 FUN_100246e0(MxLong p_x, MxLong p_y);
 	MxS32 FUN_10024850(MxLong p_x, MxLong p_y);
 	undefined4 FUN_10024890(LegoEventNotificationParam* p_param);
-	void FUN_10024c20(LegoEventNotificationParam* p_param);
+	undefined4 FUN_10024c20(LegoEventNotificationParam* p_param);
 	void FUN_10024ef0();
 	void FUN_10024f50();
 	void FUN_10024f70(MxBool p_enabled);
@@ -126,6 +131,9 @@ public:
 	void FUN_10025db0(const char* p_param1, undefined4 p_param2);
 	void FUN_10025e40();
 	MxS32 FUN_10025ee0(undefined4 p_param1);
+
+	// FUNCTION: BETA10 0x100735b0
+	void SetUnknown0x258(LegoCarBuildAnimPresenter* p_unk0x258) { m_unk0x258 = p_unk0x258; }
 
 	// SYNTHETIC: LEGO1 0x10022a60
 	// LegoCarBuild::`scalar deleting destructor'
@@ -194,7 +202,7 @@ private:
 	// variable name verified by BETA10 0x1006cba7
 	LegoGameState::Area m_destLocation; // 0x334
 
-	undefined4 m_unk0x338;          // 0x338
+	MxPresenter* m_unk0x338;        // 0x338
 	MxControlPresenter* m_unk0x33c; // 0x33c
 	undefined4 m_unk0x340;          // 0x340
 	undefined4 m_unk0x344;          // 0x344
@@ -202,7 +210,7 @@ private:
 
 	static MxS16 g_unk0x100f11cc;
 	static MxFloat g_unk0x100d65a4;
-	static MxFloat g_unk0x100d65a8;
+	static MxFloat g_rotationAngleStepYAxis;
 };
 
 #endif // LEGOCARBUILD_H
