@@ -383,7 +383,7 @@ void LegoAnimationManager::Reset(MxBool p_und)
 	m_unk0x402 = FALSE;
 
 	if (p_und && m_animState != NULL) {
-		m_animState->SetFlag();
+		m_animState->Reset();
 	}
 
 	MxBool suspended = m_suspended;
@@ -1108,7 +1108,7 @@ MxResult LegoAnimationManager::StartEntityAction(MxDSAction& p_dsAction, LegoEnt
 // FUNCTION: LEGO1 0x10060dc0
 // FUNCTION: BETA10 0x10041f2c
 MxResult LegoAnimationManager::FUN_10060dc0(
-	IsleScript::Script p_objectId,
+	MxU32 p_objectId,
 	MxMatrix* p_matrix,
 	MxBool p_param3,
 	MxBool p_param4,
@@ -2951,7 +2951,7 @@ MxResult AnimState::Serialize(LegoFile* p_file)
 }
 
 // FUNCTION: LEGO1 0x100654f0
-MxBool AnimState::SetFlag()
+MxBool AnimState::Reset()
 {
 	if (m_unk0x10 != NULL) {
 		m_extraCharacterId = 0;

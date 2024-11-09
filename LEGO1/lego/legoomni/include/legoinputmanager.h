@@ -120,7 +120,9 @@ public:
 	// FUNCTION: BETA10 0x10031ba0
 	LegoControlManager* GetControlManager() { return m_controlManager; }
 
+	// FUNCTION: BETA10 0x10017870
 	LegoWorld* GetWorld() { return m_world; }
+
 	LegoCameraController* GetCamera() { return m_camera; }
 
 	void ProcessEvents();

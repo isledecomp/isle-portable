@@ -27,6 +27,7 @@ public:
 		};
 
 		// FUNCTION: LEGO1 0x10017c00
+		// FUNCTION: BETA10 0x10031dc0
 		Playlist()
 		{
 			m_objectIds = NULL;
@@ -35,28 +36,30 @@ public:
 			m_nextIndex = 0;
 		}
 
-		Playlist(MxU32* p_objectIds, MxS16 p_length)
+		// FUNCTION: BETA10 0x10031e10
+		Playlist(MxU32* p_objectIds, MxS16 p_length, MxS16 p_mode)
 		{
 			m_objectIds = p_objectIds;
 			m_length = p_length;
-			m_mode = e_loop;
+			m_mode = p_mode;
 			m_nextIndex = 0;
 		}
 
 		// FUNCTION: LEGO1 0x10071800
-		Playlist& operator=(const Playlist& p_shuffle)
+		// FUNCTION: BETA10 0x10031e70
+		Playlist& operator=(const Playlist& p_playlist)
 		{
-			m_objectIds = p_shuffle.m_objectIds;
-			m_length = p_shuffle.m_length;
-			m_nextIndex = p_shuffle.m_nextIndex;
-			m_mode = p_shuffle.m_mode;
+			m_objectIds = p_playlist.m_objectIds;
+			m_length = p_playlist.m_length;
+			m_nextIndex = p_playlist.m_nextIndex;
+			m_mode = p_playlist.m_mode;
 			return *this;
 		}
 
 		MxU32 Next();
 		MxBool Contains(MxU32 p_objectId);
 
-		void SetUnknown0x08(MxS16 p_unk0x08) { m_nextIndex = p_unk0x08; }
+		void SetNextIndex(MxS16 p_nextIndex) { m_nextIndex = p_nextIndex; }
 
 		MxResult ReadFromFile(LegoFile* p_file)
 		{
@@ -70,7 +73,6 @@ public:
 			return SUCCESS;
 		}
 
-	private:
 		MxU32* m_objectIds; // 0x00
 		MxS16 m_length;     // 0x04
 		MxS16 m_mode;       // 0x06
@@ -97,7 +99,7 @@ public:
 	virtual MxBool IsSerializable() { return TRUE; } // vtable+0x14
 
 	// FUNCTION: LEGO1 0x10005fa0
-	virtual MxBool SetFlag() { return FALSE; } // vtable+0x18
+	virtual MxBool Reset() { return FALSE; } // vtable+0x18
 
 	// FUNCTION: LEGO1 0x10005fb0
 	virtual MxResult Serialize(LegoFile* p_file)

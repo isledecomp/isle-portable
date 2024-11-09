@@ -1,6 +1,7 @@
 #ifndef PIZZERIA_H
 #define PIZZERIA_H
 
+#include "actionsfwd.h"
 #include "decomp.h"
 #include "isleactor.h"
 #include "legostate.h"
@@ -11,15 +12,6 @@ class PizzaMissionState;
 // SIZE 0x58
 class PizzeriaState : public LegoState {
 public:
-	// SIZE 0x14
-	struct StateStruct {
-		undefined4 m_unk0x00; // 0x00
-		undefined4 m_unk0x04; // 0x04
-		undefined4 m_unk0x08; // 0x08
-		undefined4 m_unk0x0c; // 0x0c
-		undefined4 m_unk0x10; // 0x10
-	};
-
 	PizzeriaState();
 
 	// FUNCTION: LEGO1 0x10017c20
@@ -40,12 +32,17 @@ public:
 	// SYNTHETIC: LEGO1 0x10017ce0
 	// PizzeriaState::`scalar deleting destructor'
 
-	MxU32 FUN_10017d70();
-
-	// TODO: Most likely getters/setters are not used according to BETA.
+	MxS16 FUN_10017d50();
+	MxU32 NextAction();
 
 	Playlist m_unk0x08[5]; // 0x08
-	StateStruct m_unk0x44; // 0x44
+	MxS32 m_unk0x44[5];    // 0x44
+
+	static IsleScript::Script g_pepperActions[];
+	static IsleScript::Script g_mamaActions[];
+	static IsleScript::Script g_papaActions[];
+	static IsleScript::Script g_nickActions[];
+	static IsleScript::Script g_lauraActions[];
 };
 
 // VTABLE: LEGO1 0x100d5520

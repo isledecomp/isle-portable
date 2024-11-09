@@ -4,6 +4,7 @@
 #include "geom/legounkown100db7f4.h"
 #include "legocachesoundmanager.h"
 #include "legocameracontroller.h"
+#include "legonamedplane.h"
 #include "legonavcontroller.h"
 #include "legopathboundary.h"
 #include "legopathedgecontainer.h"
@@ -717,4 +718,13 @@ void LegoPathActor::VTable0xa8()
 		m_roi->WrappedSetLocalTransform(m_unk0xec);
 		FUN_10010c30();
 	}
+}
+
+// FUNCTION: LEGO1 0x1002f770
+void LegoPathActor::UpdatePlane(LegoNamedPlane& p_namedPlane)
+{
+	p_namedPlane.SetName(m_boundary->GetName());
+	p_namedPlane.SetPosition(GetWorldPosition());
+	p_namedPlane.SetDirection(GetWorldDirection());
+	p_namedPlane.SetUp(GetWorldUp());
 }

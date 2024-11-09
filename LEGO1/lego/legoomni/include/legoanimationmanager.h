@@ -1,7 +1,6 @@
 #ifndef LEGOANIMATIONMANAGER_H
 #define LEGOANIMATIONMANAGER_H
 
-#include "actionsfwd.h"
 #include "decomp.h"
 #include "legolocations.h"
 #include "legostate.h"
@@ -68,7 +67,7 @@ public:
 		return !strcmp(p_name, AnimState::ClassName()) || LegoState::IsA(p_name);
 	}
 
-	MxBool SetFlag() override;                     // vtable+0x18
+	MxBool Reset() override;                       // vtable+0x18
 	MxResult Serialize(LegoFile* p_file) override; // vtable+0x1c
 
 	void CopyToAnims(MxU32, AnimInfo* p_anims, MxU32& p_outExtraCharacterId);
@@ -161,7 +160,7 @@ public:
 	void FUN_10060570(MxBool p_unk0x1a);
 	MxResult StartEntityAction(MxDSAction& p_dsAction, LegoEntity* p_entity);
 	MxResult FUN_10060dc0(
-		IsleScript::Script p_objectId,
+		MxU32 p_objectId,
 		MxMatrix* p_matrix,
 		MxBool p_param3,
 		MxBool p_param4,

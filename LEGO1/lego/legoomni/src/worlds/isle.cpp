@@ -33,23 +33,21 @@
 #include "mxvariabletable.h"
 #include "pizza.h"
 #include "pizzeria.h"
+#include "racecar.h"
 #include "scripts.h"
 #include "skateboard.h"
 #include "towtrack.h"
 
 DECOMP_SIZE_ASSERT(Act1State, 0x26c)
-DECOMP_SIZE_ASSERT(Act1State::NamedPlane, 0x4c)
+DECOMP_SIZE_ASSERT(LegoNamedPlane, 0x4c)
 DECOMP_SIZE_ASSERT(Isle, 0x140)
 
 // GLOBAL: LEGO1 0x100f1198
 MxU32 g_isleFlags = 0x7f;
 
 // GLOBAL: LEGO1 0x100f37f0
-MxS32 g_unk0x100f37f0[] = {
-	Act1State::e_unk953,
-	Act1State::e_unk954,
-	Act1State::e_unk955,
-};
+IsleScript::Script g_cptClickDialogue[] =
+	{IsleScript::c_Avo905Ps_PlayWav, IsleScript::c_Avo906Ps_PlayWav, IsleScript::c_Avo907Ps_PlayWav};
 
 // FUNCTION: LEGO1 0x10030820
 Isle::Isle()
@@ -111,8 +109,8 @@ MxResult Isle::Create(MxDSAction& p_dsAction)
 			m_destLocation = LegoGameState::e_infomain;
 		}
 
-		if (GameState()->GetCurrentArea() == LegoGameState::e_isle) {
-			GameState()->SetCurrentArea(LegoGameState::e_undefined);
+		if (GameState()->m_currentArea == LegoGameState::e_isle) {
+			GameState()->m_currentArea = LegoGameState::e_undefined;
 		}
 
 		LegoGameState* gameState = GameState();
@@ -364,14 +362,14 @@ MxLong Isle::HandleControl(LegoControlManagerNotificationParam& p_param)
 			TransitionManager()->StartTransition(MxTransitionManager::e_mosaic, 50, FALSE, FALSE);
 			break;
 		case IsleScript::c_Observe_LeftArrow_Ctl:
-			m_act1state->FUN_100346a0();
+			m_act1state->StopCptClickDialogue();
 			m_radio.Stop();
 		case IsleScript::c_SeaView_RightArrow_Ctl:
 			m_destLocation = LegoGameState::e_elevopen;
 			TransitionManager()->StartTransition(MxTransitionManager::e_mosaic, 50, FALSE, FALSE);
 			break;
 		case IsleScript::c_Observe_RightArrow_Ctl:
-			m_act1state->FUN_100346a0();
+			m_act1state->StopCptClickDialogue();
 			m_radio.Stop();
 		case IsleScript::c_SeaView_LeftArrow_Ctl:
 			m_destLocation = LegoGameState::e_elevdown;
@@ -422,7 +420,7 @@ MxLong Isle::HandleControl(LegoControlManagerNotificationParam& p_param)
 			break;
 		case IsleScript::c_Observe_Draw1_Ctl:
 		case IsleScript::c_Observe_Draw2_Ctl:
-			m_act1state->FUN_10034660();
+			m_act1state->PlayCptClickDialogue();
 			break;
 		case IsleScript::c_ElevDown_Elevator_Ctl:
 			m_destLocation = LegoGameState::e_elevride2;
@@ -853,7 +851,7 @@ void Isle::Enable(MxBool p_enable)
 			InputManager()->ClearWorld();
 		}
 
-		m_act1state->FUN_10034b60();
+		m_act1state->RemoveActors();
 	}
 }
 
@@ -1190,7 +1188,7 @@ MxBool Isle::Escape()
 	switch (m_act1state->m_unk0x018) {
 	case 3:
 		if (UserActor() != NULL) {
-			m_pizza->FUN_10038380();
+			m_pizza->StopActions();
 			m_pizza->FUN_100382b0();
 		}
 		break;
@@ -1257,7 +1255,7 @@ void Isle::FUN_10033350()
 
 	if (m_act1state->m_unk0x018 == 3) {
 		if (UserActor() != NULL) {
-			m_pizza->FUN_10038380();
+			m_pizza->StopActions();
 			m_pizza->FUN_100382b0();
 		}
 	}
@@ -1282,17 +1280,17 @@ void Isle::FUN_10033350()
 	m_destLocation = LegoGameState::e_infomain;
 }
 
-// STUB: LEGO1 0x100334b0
-Act1State::Act1State() : m_unk0x00c(0), m_unk0x00e(0), m_unk0x008(NULL), m_unk0x010(0)
+// FUNCTION: LEGO1 0x100334b0
+// FUNCTION: BETA10 0x10035197
+Act1State::Act1State()
 {
-	m_unk0x01e = FALSE;
+	m_elevFloor = Act1State::c_floor1;
 	m_unk0x018 = 1;
-	m_unk0x010 = 0;
-	m_planeActive = FALSE;
-	m_unk0x00e = 0;
+	m_unk0x01e = FALSE;
+	m_cptClickDialogue = Playlist((MxU32*) g_cptClickDialogue, sizeOfArray(g_cptClickDialogue), Playlist::e_loop);
 	m_unk0x01f = FALSE;
-	m_unk0x008 = g_unk0x100f37f0;
-	m_unk0x014 = -1;
+	m_planeActive = FALSE;
+	m_currentCptClickDialogue = IsleScript::c_noneIsle;
 	m_unk0x022 = FALSE;
 	m_unk0x154 = NULL;
 	m_unk0x158 = NULL;
@@ -1300,8 +1298,6 @@ Act1State::Act1State() : m_unk0x00c(0), m_unk0x00e(0), m_unk0x008(NULL), m_unk0x
 	m_helicopter = NULL;
 	m_unk0x1b0 = NULL;
 	m_unk0x021 = 1;
-	m_elevFloor = Act1State::c_floor1;
-	m_unk0x00c = sizeOfArray(g_unk0x100f37f0);
 	m_unk0x1b4 = NULL;
 	m_jetski = NULL;
 	m_unk0x208 = NULL;
@@ -1310,24 +1306,25 @@ Act1State::Act1State() : m_unk0x00c(0), m_unk0x00e(0), m_unk0x008(NULL), m_unk0x
 	m_unk0x260 = NULL;
 	m_unk0x264 = NULL;
 	m_racecar = NULL;
-	SetFlag();
+	Reset();
 }
 
 // FUNCTION: LEGO1 0x10033ac0
+// FUNCTION: BETA10 0x1003524f
 MxResult Act1State::Serialize(LegoFile* p_file)
 {
 	LegoState::Serialize(p_file);
 
-	m_unk0x024.Serialize(p_file);
-	m_unk0x070.Serialize(p_file);
-	m_unk0x0bc.Serialize(p_file);
-	m_unk0x108.Serialize(p_file);
-	m_unk0x164.Serialize(p_file);
-	m_unk0x1bc.Serialize(p_file);
-	m_unk0x210.Serialize(p_file);
+	m_motocyclePlane.Serialize(p_file);
+	m_bikePlane.Serialize(p_file);
+	m_skateboardPlane.Serialize(p_file);
+	m_helicopterPlane.Serialize(p_file);
+	m_jetskiPlane.Serialize(p_file);
+	m_dunebuggyPlane.Serialize(p_file);
+	m_racecarPlane.Serialize(p_file);
 
 	if (p_file->IsWriteMode()) {
-		if (m_unk0x108.GetName()->Compare("") != 0) {
+		if (m_helicopterPlane.GetName()->Compare("") != 0) {
 			if (m_unk0x154) {
 				WriteNamedTexture(p_file, m_unk0x154);
 			}
@@ -1347,7 +1344,7 @@ MxResult Act1State::Serialize(LegoFile* p_file)
 				FUN_1003f540(p_file, "chjetr.gif");
 			}
 		}
-		if (m_unk0x164.GetName()->Compare("") != 0) {
+		if (m_jetskiPlane.GetName()->Compare("") != 0) {
 			if (m_unk0x1b0) {
 				WriteNamedTexture(p_file, m_unk0x1b0);
 			}
@@ -1361,7 +1358,7 @@ MxResult Act1State::Serialize(LegoFile* p_file)
 				FUN_1003f540(p_file, "jswnsh.gif");
 			}
 		}
-		if (m_unk0x1bc.GetName()->Compare("") != 0) {
+		if (m_dunebuggyPlane.GetName()->Compare("") != 0) {
 			if (m_unk0x208) {
 				WriteNamedTexture(p_file, m_unk0x208);
 			}
@@ -1369,7 +1366,7 @@ MxResult Act1State::Serialize(LegoFile* p_file)
 				FUN_1003f540(p_file, "dbfrfn.gif");
 			}
 		}
-		if (m_unk0x210.GetName()->Compare("") != 0) {
+		if (m_racecarPlane.GetName()->Compare("") != 0) {
 			if (m_unk0x25c) {
 				WriteNamedTexture(p_file, m_unk0x25c);
 			}
@@ -1390,11 +1387,11 @@ MxResult Act1State::Serialize(LegoFile* p_file)
 			}
 		}
 
-		Write(p_file, m_unk0x010);
+		Write(p_file, m_cptClickDialogue.m_nextIndex);
 		Write(p_file, m_unk0x022);
 	}
 	else if (p_file->IsReadMode()) {
-		if (m_unk0x108.GetName()->Compare("") != 0) {
+		if (m_helicopterPlane.GetName()->Compare("") != 0) {
 			m_unk0x154 = ReadNamedTexture(p_file);
 			if (m_unk0x154 == NULL) {
 				return FAILURE;
@@ -1410,7 +1407,7 @@ MxResult Act1State::Serialize(LegoFile* p_file)
 				return FAILURE;
 			}
 		}
-		if (m_unk0x164.GetName()->Compare("") != 0) {
+		if (m_jetskiPlane.GetName()->Compare("") != 0) {
 			m_unk0x1b0 = ReadNamedTexture(p_file);
 			if (m_unk0x1b0 == NULL) {
 				return FAILURE;
@@ -1421,13 +1418,13 @@ MxResult Act1State::Serialize(LegoFile* p_file)
 				return FAILURE;
 			}
 		}
-		if (m_unk0x1bc.GetName()->Compare("") != 0) {
+		if (m_dunebuggyPlane.GetName()->Compare("") != 0) {
 			m_unk0x208 = ReadNamedTexture(p_file);
 			if (m_unk0x208 == NULL) {
 				return FAILURE;
 			}
 		}
-		if (m_unk0x210.GetName()->Compare("") != 0) {
+		if (m_racecarPlane.GetName()->Compare("") != 0) {
 			m_unk0x25c = ReadNamedTexture(p_file);
 			if (m_unk0x25c == NULL) {
 				return FAILURE;
@@ -1444,7 +1441,7 @@ MxResult Act1State::Serialize(LegoFile* p_file)
 			}
 		}
 
-		Read(p_file, &m_unk0x010);
+		Read(p_file, &m_cptClickDialogue.m_nextIndex);
 		Read(p_file, &m_unk0x022);
 	}
 
@@ -1452,29 +1449,35 @@ MxResult Act1State::Serialize(LegoFile* p_file)
 	return SUCCESS;
 }
 
-// STUB: LEGO1 0x10034660
-void Act1State::FUN_10034660()
+// FUNCTION: LEGO1 0x10034660
+void Act1State::PlayCptClickDialogue()
 {
-	// TODO
+	StopCptClickDialogue();
+	m_currentCptClickDialogue = (IsleScript::Script) m_cptClickDialogue.Next();
+	BackgroundAudioManager()->LowerVolume();
+
+	if (m_currentCptClickDialogue != IsleScript::c_noneIsle) {
+		InvokeAction(Extra::e_start, *g_isleScript, m_currentCptClickDialogue, NULL);
+	}
 }
 
 // FUNCTION: LEGO1 0x100346a0
-void Act1State::FUN_100346a0()
+void Act1State::StopCptClickDialogue()
 {
-	if (m_unk0x014 != -1) {
-		InvokeAction(Extra::e_stop, *g_isleScript, m_unk0x014, NULL);
-		m_unk0x014 = -1;
+	if (m_currentCptClickDialogue != IsleScript::c_noneIsle) {
+		InvokeAction(Extra::e_stop, *g_isleScript, m_currentCptClickDialogue, NULL);
+		m_currentCptClickDialogue = IsleScript::c_noneIsle;
 	}
 }
 
 // FUNCTION: LEGO1 0x100346d0
-MxBool Act1State::SetFlag()
+MxBool Act1State::Reset()
 {
-	m_unk0x024.SetName("");
-	m_unk0x070.SetName("");
-	m_unk0x0bc.SetName("");
+	m_motocyclePlane.SetName("");
+	m_bikePlane.SetName("");
+	m_skateboardPlane.SetName("");
 	m_unk0x022 = FALSE;
-	m_unk0x108.SetName("");
+	m_helicopterPlane.SetName("");
 
 	if (m_unk0x154) {
 		delete m_unk0x154;
@@ -1496,7 +1499,7 @@ MxBool Act1State::SetFlag()
 		m_helicopter = NULL;
 	}
 
-	m_unk0x164.SetName("");
+	m_jetskiPlane.SetName("");
 
 	if (m_unk0x1b0) {
 		delete m_unk0x1b0;
@@ -1513,7 +1516,7 @@ MxBool Act1State::SetFlag()
 		m_jetski = NULL;
 	}
 
-	m_unk0x1bc.SetName("");
+	m_dunebuggyPlane.SetName("");
 
 	if (m_unk0x208) {
 		delete m_unk0x208;
@@ -1525,7 +1528,7 @@ MxBool Act1State::SetFlag()
 		m_dunebuggy = NULL;
 	}
 
-	m_unk0x210.SetName("");
+	m_racecarPlane.SetName("");
 
 	if (m_unk0x25c) {
 		delete m_unk0x25c;
@@ -1550,10 +1553,50 @@ MxBool Act1State::SetFlag()
 	return TRUE;
 }
 
-// STUB: LEGO1 0x10034b60
-void Act1State::FUN_10034b60()
+// FUNCTION: LEGO1 0x10034b60
+void Act1State::RemoveActors()
 {
-	// TODO
+	Isle* isle = (Isle*) FindWorld(*g_isleScript, IsleScript::c__Isle);
+
+	isle->m_motocycle->UpdatePlane(m_motocyclePlane);
+	isle->m_bike->UpdatePlane(m_bikePlane);
+	isle->m_skateboard->UpdatePlane(m_skateboardPlane);
+
+	if (isle->m_helicopter != NULL) {
+		isle->m_helicopter->UpdatePlane(m_helicopterPlane);
+		m_helicopter = isle->m_helicopter;
+		isle->RemoveActor(m_helicopter);
+		isle->VTable0x6c(m_helicopter);
+		m_helicopter->SetBoundary(NULL);
+		m_helicopter->SetController(NULL);
+	}
+
+	if (isle->m_jetski != NULL) {
+		isle->m_jetski->UpdatePlane(m_jetskiPlane);
+		m_jetski = isle->m_jetski;
+		isle->RemoveActor(m_jetski);
+		isle->VTable0x6c(m_jetski);
+		m_jetski->SetBoundary(NULL);
+		m_jetski->SetController(NULL);
+	}
+
+	if (isle->m_dunebuggy != NULL) {
+		isle->m_dunebuggy->UpdatePlane(m_dunebuggyPlane);
+		m_dunebuggy = isle->m_dunebuggy;
+		isle->RemoveActor(m_dunebuggy);
+		isle->VTable0x6c(m_dunebuggy);
+		m_dunebuggy->SetBoundary(NULL);
+		m_dunebuggy->SetController(NULL);
+	}
+
+	if (isle->m_racecar != NULL) {
+		isle->m_racecar->UpdatePlane(m_racecarPlane);
+		m_racecar = isle->m_racecar;
+		isle->RemoveActor(m_racecar);
+		isle->VTable0x6c(m_racecar);
+		m_racecar->SetBoundary(NULL);
+		m_racecar->SetController(NULL);
+	}
 }
 
 // STUB: LEGO1 0x10034d00

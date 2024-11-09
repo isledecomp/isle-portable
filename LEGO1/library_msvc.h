@@ -19,6 +19,7 @@
 // _free
 
 // LIBRARY: LEGO1 0x1008b020
+// LIBRARY: BETA10 0x100f8d20
 // ___CxxFrameHandler
 
 // LIBRARY: LEGO1 0x1008b24c
@@ -730,6 +731,12 @@
 
 // LIBRARY: BETA10 0x1018ed70
 // _strupr
+
+// LIBRARY: BETA10 0x100f9690
+// sprintf
+
+// LIBRARY: BETA10 0x100fb150
+// _spawnl
 
 // LIBRARY: BETA10 0x1001d1a0
 // `vector constructor iterator'

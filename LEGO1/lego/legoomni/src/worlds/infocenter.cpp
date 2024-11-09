@@ -210,7 +210,7 @@ MxResult Infocenter::Create(MxDSAction& p_dsAction)
 		}
 	}
 
-	GameState()->SetCurrentArea(LegoGameState::e_infomain);
+	GameState()->m_currentArea = LegoGameState::e_infomain;
 	GameState()->StopArea(LegoGameState::e_previousArea);
 
 	if (m_infocenterState->GetUnknown0x74() == 4) {
@@ -523,9 +523,9 @@ void Infocenter::ReadyWorld()
 			bgRed->Enable(TRUE);
 
 			if (GameState()->GetCurrentAct() == GameState()->GetLoadedAct()) {
-				GameState()->SetCurrentArea(LegoGameState::e_act2main);
+				GameState()->m_currentArea = LegoGameState::e_act2main;
 				GameState()->StopArea(LegoGameState::e_act2main);
-				GameState()->SetCurrentArea(LegoGameState::e_infomain);
+				GameState()->m_currentArea = LegoGameState::e_infomain;
 			}
 
 			m_infocenterState->SetUnknown0x74(5);
@@ -579,9 +579,9 @@ void Infocenter::ReadyWorld()
 			bgRed->Enable(TRUE);
 
 			if (GameState()->GetCurrentAct() == GameState()->GetLoadedAct()) {
-				GameState()->SetCurrentArea(LegoGameState::e_act3script);
+				GameState()->m_currentArea = LegoGameState::e_act3script;
 				GameState()->StopArea(LegoGameState::e_act3script);
-				GameState()->SetCurrentArea(LegoGameState::e_infomain);
+				GameState()->m_currentArea = LegoGameState::e_infomain;
 			}
 
 			m_infocenterState->SetUnknown0x74(5);
@@ -1404,7 +1404,7 @@ void Infocenter::Reset()
 	HelicopterState* state = (HelicopterState*) GameState()->GetState("HelicopterState");
 
 	if (state) {
-		state->SetFlag();
+		state->Reset();
 	}
 }
 
@@ -1549,28 +1549,29 @@ void Infocenter::StopBookAnimation()
 // FUNCTION: LEGO1 0x10071600
 InfocenterState::InfocenterState()
 {
-	m_exitDialogueAct1 = LegoState::Playlist((MxU32*) g_exitDialogueAct1, sizeOfArray(g_exitDialogueAct1));
-	m_exitDialogueAct23 = LegoState::Playlist((MxU32*) g_exitDialogueAct23, sizeOfArray(g_exitDialogueAct23) - 1);
+	m_exitDialogueAct1 = Playlist((MxU32*) g_exitDialogueAct1, sizeOfArray(g_exitDialogueAct1), Playlist::e_loop);
+	m_exitDialogueAct23 =
+		Playlist((MxU32*) g_exitDialogueAct23, sizeOfArray(g_exitDialogueAct23) - 1, Playlist::e_loop);
 
 	m_returnDialogue[LegoGameState::e_act1] =
-		LegoState::Playlist((MxU32*) g_returnDialogueAct1, sizeOfArray(g_returnDialogueAct1) - 1);
+		Playlist((MxU32*) g_returnDialogueAct1, sizeOfArray(g_returnDialogueAct1) - 1, Playlist::e_loop);
 
 	m_returnDialogue[LegoGameState::e_act2] =
-		LegoState::Playlist((MxU32*) g_returnDialogueAct2, sizeOfArray(g_returnDialogueAct2) - 1);
+		Playlist((MxU32*) g_returnDialogueAct2, sizeOfArray(g_returnDialogueAct2) - 1, Playlist::e_loop);
 
 	m_returnDialogue[LegoGameState::e_act3] =
-		LegoState::Playlist((MxU32*) g_returnDialogueAct3, sizeOfArray(g_returnDialogueAct3));
+		Playlist((MxU32*) g_returnDialogueAct3, sizeOfArray(g_returnDialogueAct3), Playlist::e_loop);
 
 	m_leaveDialogue[LegoGameState::e_act1] =
-		LegoState::Playlist((MxU32*) g_leaveDialogueAct1, sizeOfArray(g_leaveDialogueAct1));
+		Playlist((MxU32*) g_leaveDialogueAct1, sizeOfArray(g_leaveDialogueAct1), Playlist::e_loop);
 
 	m_leaveDialogue[LegoGameState::e_act2] =
-		LegoState::Playlist((MxU32*) g_leaveDialogueAct2, sizeOfArray(g_leaveDialogueAct2));
+		Playlist((MxU32*) g_leaveDialogueAct2, sizeOfArray(g_leaveDialogueAct2), Playlist::e_loop);
 
 	m_leaveDialogue[LegoGameState::e_act3] =
-		LegoState::Playlist((MxU32*) g_leaveDialogueAct3, sizeOfArray(g_leaveDialogueAct3) - 1);
+		Playlist((MxU32*) g_leaveDialogueAct3, sizeOfArray(g_leaveDialogueAct3) - 1, Playlist::e_loop);
 
-	m_bricksterDialogue = LegoState::Playlist((MxU32*) g_bricksterDialogue, sizeOfArray(g_bricksterDialogue));
+	m_bricksterDialogue = Playlist((MxU32*) g_bricksterDialogue, sizeOfArray(g_bricksterDialogue), Playlist::e_loop);
 
 	memset(m_letters, 0, sizeof(m_letters));
 }
