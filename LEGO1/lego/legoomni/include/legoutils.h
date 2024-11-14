@@ -28,6 +28,7 @@ enum Cursor {
 	e_cursorNone
 };
 
+class BoundingSphere;
 class MxAtomId;
 class LegoEntity;
 class LegoFile;
@@ -43,6 +44,7 @@ LegoEntity* PickEntity(MxLong, MxLong);
 LegoROI* PickROI(MxLong, MxLong);
 LegoROI* PickParentROI(MxLong p_a, MxLong p_b);
 void FUN_1003dde0(LegoROI* p_param1, MxFloat p_param2);
+MxBool SpheresIntersect(const BoundingSphere& p_sphere1, const BoundingSphere& p_sphere2);
 MxBool FUN_1003ded0(MxFloat p_param1[2], MxFloat p_param2[3], MxFloat p_param3[3]);
 MxBool TransformWorldToScreen(const MxFloat p_world[3], MxFloat p_screen[4]);
 MxS16 CountTotalTreeNodes(LegoTreeNode* p_node);
@@ -63,7 +65,8 @@ MxS32 UpdateLightPosition(MxS32 p_increase);
 void SetLightPosition(MxS32 p_index);
 LegoNamedTexture* ReadNamedTexture(LegoFile* p_file);
 void FUN_1003f540(LegoFile* p_file, const char* p_filename);
-void WriteNamedTexture(LegoFile* p_file, LegoNamedTexture* p_texture);
+void WriteNamedTexture(LegoFile* p_file, LegoNamedTexture* p_namedTexture);
+void FUN_1003f930(LegoNamedTexture* p_namedTexture);
 
 // FUNCTION: BETA10 0x100260a0
 inline void StartIsleAction(IsleScript::Script p_objectId)

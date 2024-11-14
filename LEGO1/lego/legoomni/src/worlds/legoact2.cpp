@@ -1,8 +1,12 @@
 #include "legoact2.h"
 
+#include "act2main_actions.h"
+#include "islepathactor.h"
 #include "legoanimationmanager.h"
+#include "legogamestate.h"
 #include "legoinputmanager.h"
 #include "misc.h"
+#include "mxbackgroundaudiomanager.h"
 #include "mxmisc.h"
 #include "mxnotificationmanager.h"
 #include "mxticklemanager.h"
@@ -40,11 +44,50 @@ LegoAct2::~LegoAct2()
 	NotificationManager()->Unregister(this);
 }
 
-// STUB: LEGO1 0x1004ff20
+// FUNCTION: LEGO1 0x1004ff20
+// FUNCTION: BETA10 0x1003a7ff
 MxResult LegoAct2::Create(MxDSAction& p_dsAction)
 {
-	// TODO
-	return SUCCESS;
+	GameState()->FindLoadedAct();
+
+	MxResult result = LegoWorld::Create(p_dsAction);
+	if (result == SUCCESS) {
+		AnimationManager()->EnableCamAnims(FALSE);
+
+		LegoGameState* gameState = GameState();
+		LegoAct2State* state = (LegoAct2State*) gameState->GetState("LegoAct2State");
+
+		if (state == NULL) {
+			state = (LegoAct2State*) gameState->CreateState("LegoAct2State");
+		}
+
+		m_gameState = state;
+		m_gameState->m_unk0x08 = 0;
+
+		switch (GameState()->GetLoadedAct()) {
+		case LegoGameState::e_act2:
+			GameState()->StopArea(LegoGameState::e_infomain);
+			GameState()->StopArea(LegoGameState::e_act2main);
+			break;
+		case LegoGameState::e_act3:
+			GameState()->StopArea(LegoGameState::e_infomain);
+			GameState()->StopArea(LegoGameState::e_act3script);
+			break;
+		case LegoGameState::e_act1:
+		case LegoGameState::e_actNotFound:
+			GameState()->StopArea(LegoGameState::e_undefined);
+			if (GameState()->GetPreviousArea() == LegoGameState::e_infomain) {
+				GameState()->StopArea(LegoGameState::e_isle);
+			}
+		}
+
+		GameState()->m_currentArea = LegoGameState::e_act2main;
+		GameState()->SetCurrentAct(LegoGameState::e_act2);
+		InputManager()->Register(this);
+		GameState()->SetDirty(TRUE);
+	}
+
+	return result;
 }
 
 // STUB: LEGO1 0x10050040
@@ -87,15 +130,29 @@ void LegoAct2::FUN_10051900()
 	}
 }
 
-// STUB: LEGO1 0x100519c0
+// FUNCTION: LEGO1 0x100519c0
 void LegoAct2::VTable0x60()
 {
-	// TODO
+	// empty
 }
 
-// STUB: LEGO1 0x100519d0
+// FUNCTION: LEGO1 0x100519d0
 MxBool LegoAct2::Escape()
 {
-	// TODO
-	return FALSE;
+	BackgroundAudioManager()->Stop();
+	AnimationManager()->FUN_10061010(FALSE);
+	DeleteObjects(&m_atomId, Act2mainScript::c_snsx50bu_RunAnim, 999);
+
+	if (UserActor() != NULL) {
+		if (UserActor()->GetActorId() != GameState()->GetActorId()) {
+			((IslePathActor*) UserActor())->Exit();
+		}
+	}
+
+	if (m_gameState != NULL) {
+		m_gameState->m_unk0x0c = 0;
+	}
+
+	m_unk0x1150 = 2;
+	return TRUE;
 }

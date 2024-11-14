@@ -17,6 +17,8 @@
 #include "legoworld.h"
 #include "legoworldlist.h"
 #include "misc.h"
+#include "misc/legocontainer.h"
+#include "misc/legoimage.h"
 #include "misc/legotree.h"
 #include "mxdsaction.h"
 #include "mxmisc.h"
@@ -69,6 +71,14 @@ LegoEntity* PickEntity(MxLong, MxLong)
 void FUN_1003dde0(LegoROI* p_param1, MxFloat p_param2)
 {
 	// TODO
+}
+
+// FUNCTION: LEGO1 0x1003de80
+MxBool SpheresIntersect(const BoundingSphere& p_sphere1, const BoundingSphere& p_sphere2)
+{
+	// This doesn't look clean, but it matches.
+	// p_sphere1.Center().GetData() doesn't work out
+	return sqrt(DISTSQRD3(&p_sphere1.Center()[0], &p_sphere2.Center()[0])) < p_sphere1.Radius() + p_sphere2.Radius();
 }
 
 // FUNCTION: LEGO1 0x1003ded0
@@ -671,8 +681,18 @@ void FUN_1003f540(LegoFile* p_file, const char* p_filename)
 }
 
 // FUNCTION: LEGO1 0x1003f8a0
-void WriteNamedTexture(LegoFile* p_file, LegoNamedTexture* p_texture)
+void WriteNamedTexture(LegoFile* p_file, LegoNamedTexture* p_namedTexture)
 {
-	p_file->WriteString(*p_texture->GetName());
-	p_texture->GetTexture()->Write(p_file);
+	p_file->WriteString(*p_namedTexture->GetName());
+	p_namedTexture->GetTexture()->Write(p_file);
+}
+
+// FUNCTION: LEGO1 0x1003f930
+void FUN_1003f930(LegoNamedTexture* p_namedTexture)
+{
+	LegoTextureInfo* textureInfo = TextureContainer()->Get(p_namedTexture->GetName()->GetData());
+
+	if (textureInfo != NULL) {
+		textureInfo->FUN_10066010(p_namedTexture->GetTexture()->GetImage()->GetBits());
+	}
 }

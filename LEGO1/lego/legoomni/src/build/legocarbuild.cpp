@@ -196,7 +196,7 @@ MxResult LegoCarBuild::Create(MxDSAction& p_dsAction)
 		else if (m_atomId == *g_racecarScript) {
 			buildStateClassName = "LegoRaceCarBuildState";
 			GameState()->m_currentArea = LegoGameState::e_racecarbuild;
-			m_carId = Helicopter_Actor;
+			m_carId = RaceCar_Actor;
 		}
 
 		LegoGameState* gameState = GameState();
@@ -232,6 +232,14 @@ MxS16 LegoCarBuild::GetPlacedPartCount()
 	}
 	else {
 		return 0;
+	}
+}
+
+// FUNCTION: LEGO1 0x10022cf0
+void LegoCarBuild::SetPlacedPartCount(MxU8 p_placedPartCount)
+{
+	if (m_buildState) {
+		m_buildState->m_placedPartCount = p_placedPartCount;
 	}
 }
 
@@ -278,6 +286,16 @@ void LegoCarBuild::InitPresenters()
 		assert(m_Decals_Ctl6);
 		m_Decals_Ctl7 = (MxControlPresenter*) Find("MxControlPresenter", "Decals_Ctl7");
 		assert(m_Decals_Ctl7);
+	}
+}
+
+// FUNCTION: LEGO1 0x10022f00
+void LegoCarBuild::FUN_10022f00()
+{
+	if (m_unk0x110) {
+		VTable0x6c();
+		m_unk0x258->SetUnknown0xbc(0);
+		m_unk0x100 = 5;
 	}
 }
 
@@ -458,10 +476,59 @@ void LegoCarBuild::VTable0x80(MxFloat p_param1[2], MxFloat p_param2[2], MxFloat 
 	p_param4[1] = p_param3;
 }
 
+// FUNCTION: LEGO1 0x100236d0
+// FUNCTION: BETA10 0x1006c076
+void LegoCarBuild::FUN_100236d0()
+{
+	MxS32 pLVar2;
+
+	FUN_10024f70(FALSE);
+	FUN_100250e0(FALSE);
+	m_unk0x258->FUN_10079790(m_unk0x110->GetName());
+	m_unk0x258->SetUnknown0xbc(1);
+	m_unk0x110 = NULL;
+	m_unk0x100 = 0;
+
+	if (m_unk0x258->AllPartsPlaced()) {
+		// Note the code duplication with LEGO1 0x10025ee0
+		switch (m_carId) {
+		case 1:
+			pLVar2 = 0x2f;
+			break;
+		case 2:
+			pLVar2 = 0x31;
+			break;
+		case 3:
+			pLVar2 = 0x33;
+			break;
+		case 4:
+			pLVar2 = 0x35;
+		}
+
+		BackgroundAudioManager()->Init();
+		InvokeAction(Extra::e_stop, *g_jukeboxScript, pLVar2, NULL);
+
+		if (m_numAnimsRun > 0) {
+			DeleteObjects(&m_atomId, 500, 510);
+		}
+
+		if (GameState()->GetCurrentAct() == LegoGameState::e_act2) {
+			FUN_100243a0();
+		}
+		else {
+			m_buildState->m_unk0x4d = TRUE;
+			InvokeAction(Extra::e_start, m_atomId, m_carId, NULL);
+			NotificationManager()->Send(this, MxNotificationParam());
+			m_buildState->m_animationState = LegoVehicleBuildState::e_unknown4;
+			m_buildState->m_placedPartCount = 0;
+		}
+	}
+}
+
 #define LEGOCARBUILD_TICKLE_CASE(subtract, start, end, str)                                                            \
 	if (start < dTime && dTime < end) {                                                                                \
 		FUN_10025db0(str, dTime - subtract);                                                                           \
-		return SUCCESS;                                                                                                \
+		break;                                                                                                         \
 	}
 
 // FUNCTION: LEGO1 0x100238b0
@@ -493,91 +560,94 @@ MxResult LegoCarBuild::Tickle()
 		DWORD time = timeGetTime();
 		DWORD dTime = (time - m_unk0x10c) / 100;
 
-		if (m_carId == Helicopter_Actor) {
+		if (m_carId == RaceCar_Actor) {
 			switch (m_unk0x10a) {
-			// TODO: Work out constants
-			case 500:
+			case RacecarScript::c_irt001d1_RunAnim:
 				LEGOCARBUILD_TICKLE_CASE(160, 160, 180, "Exit_Ctl")
 				LEGOCARBUILD_TICKLE_CASE(260, 260, 280, "ShelfUp_Ctl")
 				LEGOCARBUILD_TICKLE_CASE(330, 330, 340, "Yellow_Ctl")
 				LEGOCARBUILD_TICKLE_CASE(340, 340, 360, "Platform_Ctl")
 				LEGOCARBUILD_TICKLE_CASE(390, 390, 410, "Exit_Ctl")
-			case 503:
+				break;
+			case RacecarScript::c_irt004d1_RunAnim:
 				LEGOCARBUILD_TICKLE_CASE(50, 50, 60, "ShelfUp_Ctl")
 				LEGOCARBUILD_TICKLE_CASE(63, 65, 70, "Yellow_Ctl")
 				LEGOCARBUILD_TICKLE_CASE(70, 70, 80, "Platform_Ctl")
 				LEGOCARBUILD_TICKLE_CASE(95, 95, 105, "Exit_Ctl")
-			case 504:
+				break;
+			case RacecarScript::c_irtxx4d1_RunAnim:
 				LEGOCARBUILD_TICKLE_CASE(22, 24, 29, "Exit_Ctl")
 				LEGOCARBUILD_TICKLE_CASE(33, 35, 40, "ShelfUp_Ctl")
 				LEGOCARBUILD_TICKLE_CASE(43, 45, 50, "Yellow_Ctl")
 				LEGOCARBUILD_TICKLE_CASE(56, 58, 63, "Platform_Ctl")
-			default:
-				return SUCCESS;
+				break;
 			}
 		}
 		else if (m_carId == Jetski_Actor) {
 			switch (m_unk0x10a) {
-			case 500:
+			case JetskiScript::c_ijs001d4_RunAnim:
 				LEGOCARBUILD_TICKLE_CASE(291, 291, 311, "Exit_Ctl")
 				LEGOCARBUILD_TICKLE_CASE(311, 311, 331, "ShelfUp_Ctl")
 				LEGOCARBUILD_TICKLE_CASE(412, 412, 432, "Yellow_Ctl")
 				LEGOCARBUILD_TICKLE_CASE(437, 437, 457, "Platform_Ctl")
 				LEGOCARBUILD_TICKLE_CASE(485, 485, 505, "Exit_Ctl")
-			case 501:
+				break;
+			case JetskiScript::c_ijsxx2d4_RunAnim:
 				LEGOCARBUILD_TICKLE_CASE(32, 34, 39, "Exit_Ctl")
 				LEGOCARBUILD_TICKLE_CASE(68, 70, 75, "ShelfUp_Ctl")
 				LEGOCARBUILD_TICKLE_CASE(105, 105, 115, "Yellow_Ctl")
 				LEGOCARBUILD_TICKLE_CASE(133, 135, 140, "Platform_Ctl")
-			case 504:
+				break;
+			case JetskiScript::c_ijs005d4_RunAnim:
 				LEGOCARBUILD_TICKLE_CASE(78, 78, 98, "Exit_Ctl")
-			case 505:
+				break;
+			case JetskiScript::c_ijs006d4_RunAnim:
 				LEGOCARBUILD_TICKLE_CASE(93, 93, 113, "Exit_Ctl")
-				// default: // not sure if present
-				// 	return SUCCESS;
+				break;
 			}
 		}
 		else if (m_carId == DuneBugy_Actor) {
 			switch (m_unk0x10a) {
-			case 500:
+			case DunecarScript::c_igs001d3_RunAnim:
 				LEGOCARBUILD_TICKLE_CASE(155, 155, 175, "Exit_Ctl")
 				LEGOCARBUILD_TICKLE_CASE(215, 215, 235, "ShelfUp_Ctl")
 				LEGOCARBUILD_TICKLE_CASE(285, 285, 305, "Yellow_Ctl")
 				LEGOCARBUILD_TICKLE_CASE(300, 300, 320, "Platform_Ctl")
 				LEGOCARBUILD_TICKLE_CASE(340, 340, 360, "Exit_Ctl")
-			case 501:
+				break;
+			case DunecarScript::c_igsxx1d3_RunAnim:
 				LEGOCARBUILD_TICKLE_CASE(23, 23, 33, "Exit_Ctl")
 				LEGOCARBUILD_TICKLE_CASE(37, 39, 44, "ShelfUp_Ctl")
 				LEGOCARBUILD_TICKLE_CASE(105, 105, 115, "Yellow_Ctl")
 				LEGOCARBUILD_TICKLE_CASE(122, 124, 129, "Platform_Ctl")
-			default:
-				return SUCCESS;
+				break;
 			}
 		}
 		else if (m_carId == Helicopter_Actor) {
 			switch (m_unk0x10a) {
-			case 500:
+			case CopterScript::c_ips001d2_RunAnim:
 				LEGOCARBUILD_TICKLE_CASE(185, 185, 205, "Exit_Ctl")
 				LEGOCARBUILD_TICKLE_CASE(235, 235, 255, "ShelfUp_Ctl")
 				LEGOCARBUILD_TICKLE_CASE(292, 292, 312, "Yellow_Ctl")
 				LEGOCARBUILD_TICKLE_CASE(315, 315, 335, "Platform_Ctl")
 				LEGOCARBUILD_TICKLE_CASE(353, 353, 373, "Exit_Ctl")
-			case 501:
+				break;
+			case CopterScript::c_ipsxx1d2_RunAnim:
 				LEGOCARBUILD_TICKLE_CASE(43, 45, 50, "Exit_Ctl")
 				LEGOCARBUILD_TICKLE_CASE(72, 74, 79, "ShelfUp_Ctl")
 				LEGOCARBUILD_TICKLE_CASE(114, 116, 121, "Yellow_Ctl")
 				LEGOCARBUILD_TICKLE_CASE(128, 130, 135, "Platform_Ctl")
-			case 505:
+				break;
+			case CopterScript::c_ips005d2_RunAnim:
 				LEGOCARBUILD_TICKLE_CASE(30, 30, 40, "ShelfUp_Ctl")
 				LEGOCARBUILD_TICKLE_CASE(60, 60, 70, "Yellow_Ctl")
 				LEGOCARBUILD_TICKLE_CASE(48, 48, 58, "Platform_Ctl")
-			default:
-				return SUCCESS;
+				break;
 			}
 		}
 	}
 
-	return 0;
+	return SUCCESS;
 }
 
 // FUNCTION: LEGO1 0x10024050
@@ -809,11 +879,49 @@ undefined4 LegoCarBuild::FUN_100244e0(MxLong p_x, MxLong p_y)
 	return 1;
 }
 
-// STUB: LEGO1 0x100246e0
+// FUNCTION: LEGO1 0x100246e0
 undefined4 LegoCarBuild::FUN_100246e0(MxLong p_x, MxLong p_y)
 {
-	// TODO
-	return 0;
+	switch (m_unk0x100) {
+	case 3:
+		FUN_10022f30();
+		return 1;
+	case 4:
+		FUN_10022f00();
+		return 1;
+	case 6:
+		if (m_unk0x258->PartIsPlaced(m_unk0x110->GetName())) {
+			if (SpheresIntersect(m_unk0x114, m_unk0x110->GetWorldBoundingSphere())) {
+				FUN_10024f70(FALSE);
+				FUN_100250e0(FALSE);
+				m_unk0x100 = 0;
+				m_unk0x110 = NULL;
+				m_PlaceBrick_Sound->Enable(FALSE);
+				m_PlaceBrick_Sound->Enable(TRUE);
+				m_unk0x258->SetUnknown0xbc(1);
+				return 1;
+			}
+		}
+
+		if (m_unk0x258->FUN_10079c30(m_unk0x110->GetName())) {
+			if (SpheresIntersect(m_unk0x114, m_unk0x110->GetWorldBoundingSphere())) {
+				m_PlaceBrick_Sound->Enable(FALSE);
+				m_PlaceBrick_Sound->Enable(TRUE);
+				FUN_100236d0();
+				return 1;
+			}
+
+			VTable0x6c();
+			m_unk0x100 = 5;
+			return 1;
+		}
+
+		VTable0x6c();
+		m_unk0x100 = 5;
+		return 1;
+	default:
+		return 0;
+	}
 }
 
 // FUNCTION: LEGO1 0x10024850
@@ -1048,7 +1156,6 @@ undefined4 LegoCarBuild::FUN_10024c20(LegoEventNotificationParam* p_param)
 		entity = (LegoEntity*) Find(m_atomId, m_carId);
 
 		if (entity && entity->GetROI()) {
-
 			// This function was changed between BETA10 and LEGO1.
 			// These lines looks like a relic from older code.
 			LegoWorld* destWorld = NULL;
@@ -1063,7 +1170,7 @@ undefined4 LegoCarBuild::FUN_10024c20(LegoEventNotificationParam* p_param)
 				}
 
 				gameState->m_helicopter = (Helicopter*) entity;
-				gameState->m_helicopterPlane.SetName("");
+				gameState->m_helicopterPlane.Reset();
 				break;
 			case LegoGameState::e_dunecarbuild:
 				if (gameState->m_dunebuggy) {
@@ -1071,7 +1178,7 @@ undefined4 LegoCarBuild::FUN_10024c20(LegoEventNotificationParam* p_param)
 				}
 
 				gameState->m_dunebuggy = (DuneBuggy*) entity;
-				gameState->m_dunebuggyPlane.SetName("");
+				gameState->m_dunebuggyPlane.Reset();
 				break;
 			case LegoGameState::e_jetskibuild:
 				if (gameState->m_jetski) {
@@ -1079,7 +1186,7 @@ undefined4 LegoCarBuild::FUN_10024c20(LegoEventNotificationParam* p_param)
 				}
 
 				gameState->m_jetski = (Jetski*) entity;
-				gameState->m_jetskiPlane.SetName("");
+				gameState->m_jetskiPlane.Reset();
 				break;
 			case LegoGameState::e_racecarbuild:
 				if (gameState->m_racecar) {
@@ -1087,7 +1194,7 @@ undefined4 LegoCarBuild::FUN_10024c20(LegoEventNotificationParam* p_param)
 				}
 
 				gameState->m_racecar = (RaceCar*) entity;
-				gameState->m_racecarPlane.SetName("");
+				gameState->m_racecarPlane.Reset();
 				break;
 			}
 
@@ -1205,7 +1312,7 @@ void LegoCarBuild::TogglePresentersEnabled()
 // FUNCTION: BETA10 0x1006e124
 void LegoCarBuild::FUN_100250e0(MxBool p_enabled)
 {
-	if (m_unk0x258->StringEndsOnZero(m_unk0x110->GetName()) && m_Decals_Ctl) {
+	if (m_unk0x258->StringDoesNotEndOnZero(m_unk0x110->GetName()) && m_Decals_Ctl) {
 		if (strnicmp(m_unk0x110->GetName(), "JSFRNT", strlen("JSFRNT")) == 0) {
 			m_Decal_Bitmap->Enable(p_enabled);
 			m_Decals_Ctl->Enable(p_enabled);
