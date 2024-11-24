@@ -37,20 +37,20 @@
 
 // FUNCTION: LEGO1 0x1003dd70
 // FUNCTION: BETA10 0x100d3410
-LegoROI* PickROI(MxLong p_a, MxLong p_b)
+LegoROI* PickROI(MxLong p_x, MxLong p_y)
 {
 	LegoVideoManager* videoManager = VideoManager();
 	Lego3DView* view = videoManager->Get3DManager()->GetLego3DView();
-	return (LegoROI*) view->Pick(p_a, p_b);
+	return (LegoROI*) view->Pick(p_x, p_y);
 }
 
 // FUNCTION: LEGO1 0x1003dd90
 // FUNCTION: BETA10 0x100d3449
-LegoROI* PickParentROI(MxLong p_a, MxLong p_b)
+LegoROI* PickRootROI(MxLong p_x, MxLong p_y)
 {
 	LegoVideoManager* videoManager = VideoManager();
 	Lego3DView* view = videoManager->Get3DManager()->GetLego3DView();
-	LegoROI* roi = (LegoROI*) view->Pick(p_a, p_b);
+	LegoROI* roi = (LegoROI*) view->Pick(p_x, p_y);
 
 	while (roi != NULL && roi->GetParentROI() != NULL) {
 		roi = (LegoROI*) roi->GetParentROI();
@@ -59,18 +59,35 @@ LegoROI* PickParentROI(MxLong p_a, MxLong p_b)
 	return roi;
 }
 
-// STUB: LEGO1 0x1003ddc0
-LegoEntity* PickEntity(MxLong, MxLong)
+// FUNCTION: LEGO1 0x1003ddc0
+LegoEntity* PickEntity(MxLong p_x, MxLong p_y)
 {
-	// TODO
-	return NULL;
+	LegoROI* roi = PickRootROI(p_x, p_y);
+
+	if (roi == NULL) {
+		return NULL;
+	}
+
+	return roi->GetEntity();
 }
 
-// STUB: LEGO1 0x1003dde0
-// STUB: BETA10 0x100d358e
-void FUN_1003dde0(LegoROI* p_param1, MxFloat p_param2)
+// FUNCTION: LEGO1 0x1003dde0
+// FUNCTION: BETA10 0x100d358e
+void RotateY(LegoROI* p_roi, MxFloat p_angle)
 {
-	// TODO
+	MxMatrix mat;
+	const Matrix4& local2world = p_roi->GetLocal2World();
+	mat = local2world;
+
+	float fsin = sin(p_angle);
+	float fcos = cos(p_angle);
+
+	for (MxS32 i = 0; i < 3; i++) {
+		mat[i][0] = (local2world[i][0] * fcos) + (local2world[i][2] * fsin);
+		mat[i][2] = (local2world[i][2] * fcos) - (local2world[i][0] * fsin);
+	}
+
+	p_roi->WrappedSetLocalTransform(mat);
 }
 
 // FUNCTION: LEGO1 0x1003de80
@@ -156,6 +173,7 @@ LegoTreeNode* GetTreeNode(LegoTreeNode* p_node, MxU32 p_index)
 }
 
 // FUNCTION: LEGO1 0x1003e050
+// FUNCTION: BETA10 0x100d3abc
 void FUN_1003e050(LegoAnimPresenter* p_presenter)
 {
 	MxMatrix viewMatrix;

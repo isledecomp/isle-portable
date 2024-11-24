@@ -43,6 +43,7 @@ public:
 	MxLong Notify(MxParam& p_param) override; // vtable+0x04
 
 	// FUNCTION: LEGO1 0x100142a0
+	// FUNCTION: BETA10 0x100cd500
 	const char* ClassName() const override // vtable+0x0c
 	{
 		// STRING: LEGO1 0x100f0548
@@ -76,6 +77,7 @@ public:
 	virtual MxU32 HandleSkeletonKicks(float p_param1);
 
 	static void FUN_10012de0();
+	static void FUN_10012e00();
 	static void FUN_10013670();
 
 	// SYNTHETIC: LEGO1 0x10014240
@@ -115,6 +117,8 @@ private:
 	static MxLong g_timeLastSoundPlayed;
 	static MxS32 g_unk0x100f0b88;
 	static MxBool g_unk0x100f0b8c;
+	static undefined4 g_unk0x100f0bac;
+	static undefined4 g_unk0x100f0bb0;
 };
 
 #endif // LEGORACERS_H

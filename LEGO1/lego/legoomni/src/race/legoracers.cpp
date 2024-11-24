@@ -21,12 +21,6 @@ DECOMP_SIZE_ASSERT(EdgeReference, 0x08)
 DECOMP_SIZE_ASSERT(SkeletonKickPhase, 0x10)
 DECOMP_SIZE_ASSERT(LegoRaceCar, 0x200)
 
-// GLOBAL: LEGO1 0x100f0bac
-static undefined4 g_unk0x100f0bac = 0;
-
-// GLOBAL: LEGO1 0x100f0bb0
-static undefined4 g_unk0x100f0bb0 = 0;
-
 // GLOBAL: LEGO1 0x100f0a20
 // GLOBAL: BETA10 0x101f5e34
 EdgeReference LegoRaceCar::g_skBMap[] = {
@@ -142,6 +136,12 @@ MxS32 LegoRaceCar::g_unk0x100f0b88 = 0;
 // GLOBAL: BETA10 0x101f5f98
 MxBool LegoRaceCar::g_unk0x100f0b8c = TRUE;
 
+// GLOBAL: LEGO1 0x100f0bac
+undefined4 LegoRaceCar::g_unk0x100f0bac = 0;
+
+// GLOBAL: LEGO1 0x100f0bb0
+undefined4 LegoRaceCar::g_unk0x100f0bb0 = 0;
+
 // Initialized at LEGO1 0x10012db0
 // GLOBAL: LEGO1 0x10102af0
 // GLOBAL: BETA10 0x102114c0
@@ -178,6 +178,18 @@ void LegoRaceCar::FUN_10012de0()
 	g_unk0x100f0b8c = TRUE;
 	g_timeLastSoundPlayed = 0;
 	g_unk0x100f0b88 = 0;
+}
+
+// FUNCTION: LEGO1 0x10012e00
+// FUNCTION: BETA10 0x100cb129
+void LegoRaceCar::FUN_10012e00()
+{
+	// Note the (likely unintentional) order of operations: `%` is executed before `/`,
+	// so the division is performed at runtime.
+	g_srtsl18to29Index = rand() % sizeof(g_srtsl18to29) / sizeof(g_srtsl18to29[0]);
+	g_srtsl6to10Index = rand() % sizeof(g_srtsl6to10) / sizeof(g_srtsl6to10[0]);
+	g_emptySoundKeyListIndex = rand() % sizeof(g_emptySoundKeyList) / sizeof(g_emptySoundKeyList[0]);
+	g_srtrhIndex = rand() % sizeof(g_srtrh) / sizeof(g_srtrh[0]);
 }
 
 // FUNCTION: LEGO1 0x10012e60

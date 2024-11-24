@@ -29,14 +29,13 @@ extern MxBool g_unk0x100f119c;
 extern const char* g_varJSFRNTY5;
 extern const char* g_varJSWNSHY5;
 
-// Defined in legoracespecial.cpp
-extern const char* g_raceState;
-extern const char* g_racing;
-
 // Defined in legopathactor.cpp
 extern const char* g_strHIT_WALL_SOUND;
 
 DECOMP_SIZE_ASSERT(JetskiRace, 0x144)
+
+// GLOBAL: LEGO1 0x100f0c78
+MxS32 JetskiRace::g_unk0x100f0c78 = 2;
 
 // FUNCTION: LEGO1 0x100162c0
 // FUNCTION: BETA10 0x100c7e6f
@@ -125,6 +124,7 @@ MxLong JetskiRace::HandleEndAction(MxEndActionNotificationParam& p_param)
 MxLong JetskiRace::HandleClick(LegoEventNotificationParam& p_param)
 {
 	MxLong result = 0;
+
 	if (((LegoControlManagerNotificationParam*) &p_param)->m_unk0x28 == 1) {
 		switch (((LegoControlManagerNotificationParam*) &p_param)->m_clickedObjectId) {
 		case JetraceScript::c_JetskiArms_Ctl:
@@ -148,13 +148,140 @@ MxLong JetskiRace::HandleClick(LegoEventNotificationParam& p_param)
 			break;
 		}
 	}
+
 	return result;
 }
 
-// STUB: LEGO1 0x100166a0
-MxLong JetskiRace::HandlePathStruct(LegoPathStructNotificationParam&)
+// FUNCTION: LEGO1 0x100166a0
+// FUNCTION: BETA10 0x100c8085
+MxLong JetskiRace::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 {
-	return 0;
+	MxLong result = 0;
+	MxEntity* sender = (MxEntity*) p_param.GetSender();
+
+	if (p_param.GetTrigger() == 68) {
+		MxS32 paramData = p_param.GetData();
+
+		switch (sender->GetEntityId()) {
+		case 10:
+			if (paramData <= m_unk0x104 || paramData >= m_unk0x104 + 5) {
+				break;
+			}
+
+			m_unk0x104 = paramData;
+			LegoChar buffer[20];
+			sprintf(buffer, "%g", 0.032 + 0.936 * (m_unk0xf8 * 20.0 + m_unk0x104) / (g_unk0x100f0c78 * 20.0));
+			VariableTable()->SetVariable("DISTANCE", buffer);
+
+			if (m_unk0x104 == 0x14) {
+				m_unk0x104 = 0;
+				m_unk0xf8++;
+
+				if (g_unk0x100f0c78 == m_unk0xf8) {
+					MxS32 position;
+
+					if (m_unk0xfc < m_unk0xf8 && m_unk0x100 < m_unk0xf8) {
+						position = 3;
+					}
+					else if (m_unk0xfc < m_unk0xf8 || m_unk0x100 < m_unk0xf8) {
+						position = 2;
+					}
+					else {
+						position = 1;
+					}
+
+					VariableTable()->SetVariable(g_raceState, "");
+					VariableTable()->SetVariable(g_strHIT_WALL_SOUND, "");
+					LegoRaceCar::FUN_10012de0();
+					m_raceState->m_unk0x28 = 2;
+
+					RaceState::Entry* raceStateEntry = m_raceState->GetState(GameState()->GetActorId());
+					raceStateEntry->m_unk0x02 = position;
+
+					if (raceStateEntry->m_score < (MxS16) position) {
+						raceStateEntry->m_score = position;
+					}
+
+					m_destLocation = LegoGameState::e_jetrace2;
+
+					TransitionManager()->StartTransition(MxTransitionManager::e_mosaic, 50, FALSE, FALSE);
+				}
+
+				result = 1;
+			}
+			else if (m_unk0x104 == 0xf) {
+				m_hideAnim->FUN_1006db40(m_unk0xf8 * 200 + 100);
+				result = 1;
+			}
+
+			break;
+		case 11:
+			if (paramData <= m_unk0x108 || paramData >= m_unk0x108 + 5) {
+				break;
+			}
+
+			FUN_10016930(11, paramData);
+			m_unk0x108 = paramData;
+
+			if (m_unk0x108 == 0x14) {
+				m_unk0x108 = 0;
+				m_unk0xfc++;
+
+				if (g_unk0x100f0c78 == m_unk0xfc) {
+					((LegoPathActor*) p_param.GetSender())->SetMaxLinearVel(0.1);
+				}
+			}
+
+			break;
+		case 12:
+			if (paramData <= m_unk0x10c || paramData >= m_unk0x10c + 5) {
+				break;
+			}
+
+			FUN_10016930(12, paramData);
+
+			m_unk0x10c = paramData;
+
+			if (m_unk0x10c == 0x14) {
+				m_unk0x10c = 0;
+				m_unk0x100++;
+
+				if (g_unk0x100f0c78 == m_unk0x100) {
+					((LegoPathActor*) p_param.GetSender())->SetMaxLinearVel(0.1);
+				}
+			}
+
+			break;
+		}
+	}
+
+	return result;
+}
+
+// FUNCTION: LEGO1 0x10016930
+void JetskiRace::FUN_10016930(MxS32 p_param1, MxS16 p_param2)
+{
+	MxS32 local4;
+	MxStillPresenter* presenter;
+	MxS32 x, y;
+
+	if (p_param1 == 11) {
+		presenter = m_unk0x128;
+		local4 = m_unk0xfc;
+	}
+	else if (p_param1 == 12) {
+		presenter = m_unk0x12c;
+		local4 = m_unk0x100;
+	}
+
+	if (presenter) {
+		x = m_unk0x130.GetLeft() + 0.5 +
+			(m_unk0x130.GetRight() - m_unk0x130.GetLeft() + 1) * (local4 * 20.0 + p_param2) / (g_unk0x100f0c78 * 20.0);
+		y = m_unk0x130.GetTop() + 0.5 +
+			(m_unk0x130.GetBottom() - m_unk0x130.GetTop() + 1) * (local4 * 20.0 + p_param2) / (g_unk0x100f0c78 * 20.0);
+
+		presenter->SetPosition(x, y);
+	}
 }
 
 // FUNCTION: LEGO1 0x10016a10

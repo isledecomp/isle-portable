@@ -9,9 +9,12 @@
 #include "legoworld.h"
 #include "misc.h"
 #include "misc/legostorage.h"
+#include "mxdebug.h"
 #include "mxmisc.h"
 #include "mxticklemanager.h"
 #include "mxtimer.h"
+
+#include <vec.h>
 
 DECOMP_SIZE_ASSERT(LegoBuildingManager, 0x30)
 DECOMP_SIZE_ASSERT(LegoBuildingInfo, 0x2c)
@@ -249,7 +252,7 @@ void LegoBuildingManager::Init()
 	}
 
 	m_nextVariant = 0;
-	m_unk0x09 = 0;
+	m_unk0x09 = FALSE;
 	m_numEntries = 0;
 	m_sound = NULL;
 	m_unk0x28 = FALSE;
@@ -270,7 +273,7 @@ void LegoBuildingManager::LoadWorldInfo()
 		LegoEntity* entity = (LegoEntity*) world->Find("MxEntity", g_buildingInfoVariants[0]);
 		if (entity) {
 			entity->GetROI()->SetVisibility(TRUE);
-			m_unk0x09 = 0;
+			m_unk0x09 = FALSE;
 		}
 	}
 	else {
@@ -282,7 +285,7 @@ void LegoBuildingManager::LoadWorldInfo()
 		}
 	}
 
-	m_unk0x09 = 0;
+	m_unk0x09 = FALSE;
 }
 
 // FUNCTION: LEGO1 0x1002fa90
@@ -297,7 +300,7 @@ void LegoBuildingManager::CreateBuilding(MxS32 p_index, LegoWorld* p_world)
 		LegoROI* roi = entity->GetROI();
 		AdjustHeight(p_index);
 		MxMatrix mat = roi->GetLocal2World();
-		mat[3][1] = g_buildingInfo[p_index].m_unk0x014;
+		mat[3][1] = g_buildingInfo[p_index].m_unk0x14;
 		roi->UpdateTransformationRelativeToParent(mat);
 		VideoManager()->Get3DManager()->Moved(*roi);
 	}
@@ -312,7 +315,7 @@ void LegoBuildingManager::Reset()
 		g_buildingInfo[i].m_entity = NULL;
 	}
 
-	m_unk0x09 = 0;
+	m_unk0x09 = FALSE;
 
 	for (i = 0; i < m_numEntries; i++) {
 		delete m_entries[i];
@@ -400,13 +403,13 @@ void LegoBuildingManager::AdjustHeight(MxS32 p_index)
 {
 	if (g_buildingInfo[p_index].m_unk0x11 > 0) {
 		float value = g_buildingInfoDownshift[p_index] - g_buildingInfo[p_index].m_unk0x11;
-		g_buildingInfo[p_index].m_unk0x014 =
-			g_buildingInfoInit[p_index].m_unk0x014 - value * g_buildingInfoDownshiftScale[p_index];
+		g_buildingInfo[p_index].m_unk0x14 =
+			g_buildingInfoInit[p_index].m_unk0x14 - value * g_buildingInfoDownshiftScale[p_index];
 	}
 	else if (g_buildingInfo[p_index].m_unk0x11 == 0) {
 		float value = g_buildingInfoDownshift[p_index] - g_buildingInfo[p_index].m_unk0x11;
-		g_buildingInfo[p_index].m_unk0x014 =
-			g_buildingInfoInit[p_index].m_unk0x014 - value * g_buildingInfoDownshiftScale[p_index];
+		g_buildingInfo[p_index].m_unk0x14 =
+			g_buildingInfoInit[p_index].m_unk0x14 - value * g_buildingInfoDownshiftScale[p_index];
 
 		if (g_buildingInfo[p_index].m_entity != NULL) {
 			LegoROI* roi = g_buildingInfo[p_index].m_entity->GetROI();
@@ -416,7 +419,7 @@ void LegoBuildingManager::AdjustHeight(MxS32 p_index)
 		}
 	}
 	else {
-		g_buildingInfo[p_index].m_unk0x014 = g_buildingInfoInit[p_index].m_unk0x014;
+		g_buildingInfo[p_index].m_unk0x14 = g_buildingInfoInit[p_index].m_unk0x14;
 	}
 }
 
@@ -594,10 +597,54 @@ MxBool LegoBuildingManager::FUN_10030000(LegoEntity* p_entity)
 	return FUN_10030030(info - g_buildingInfo);
 }
 
-// STUB: LEGO1 0x10030030
+inline LegoBuildingInfo* GetBuildingInfo(MxS32 p_index)
+{
+	if (p_index >= sizeOfArray(g_buildingInfo)) {
+		return NULL;
+	}
+
+	return &g_buildingInfo[p_index];
+}
+
+// FUNCTION: LEGO1 0x10030030
 MxBool LegoBuildingManager::FUN_10030030(MxS32 p_index)
 {
-	return TRUE;
+	if (p_index >= sizeOfArray(g_buildingInfo)) {
+		return FALSE;
+	}
+
+	LegoBuildingInfo* info = GetBuildingInfo(p_index);
+	if (!info) {
+		return FALSE;
+	}
+
+	MxBool result = TRUE;
+
+	if (info->m_unk0x11 < 0) {
+		info->m_unk0x11 = g_buildingInfoDownshift[p_index];
+	}
+
+	if (info->m_unk0x11 <= 0) {
+		result = FALSE;
+	}
+	else {
+		LegoROI* roi = info->m_entity->GetROI();
+
+		info->m_unk0x11 -= 2;
+		if (info->m_unk0x11 == 1) {
+			info->m_unk0x11 = 0;
+			roi->SetVisibility(FALSE);
+		}
+		else {
+			AdjustHeight(p_index);
+			MxMatrix mat = roi->GetLocal2World();
+			mat[3][1] = g_buildingInfo[p_index].m_unk0x14;
+			roi->UpdateTransformationRelativeToParent(mat);
+			VideoManager()->Get3DManager()->Moved(*roi);
+		}
+	}
+
+	return result;
 }
 
 // FUNCTION: LEGO1 0x10030110
@@ -638,18 +685,77 @@ void LegoBuildingManager::ScheduleAnimation(LegoEntity* p_entity, MxLong p_lengt
 	FUN_100307b0(p_entity, -2);
 }
 
-// STUB: LEGO1 0x10030220
+// FUNCTION: LEGO1 0x10030220
 MxResult LegoBuildingManager::Tickle()
 {
-	// WIP, included some of this to understand the AnimEntry array.
-	LegoTime time = Timer()->GetTime();
+	MxLong time = Timer()->GetTime();
 
 	if (m_numEntries != 0) {
-		if (m_numEntries > 0) {
-			for (MxS32 i = 0; i < m_numEntries; i++) {
-				AnimEntry* entry = m_entries[i];
-				if (entry->m_time <= time) {
-					// Code to animate and play sounds
+		for (MxS32 i = 0; i < m_numEntries; i++) {
+			AnimEntry** ppEntry = &m_entries[i];
+			AnimEntry* entry = *ppEntry;
+
+			if (m_world != CurrentWorld() || !entry->m_entity) {
+				delete entry;
+				m_numEntries--;
+
+				if (m_numEntries != i) {
+					m_entries[i] = m_entries[m_numEntries];
+					m_entries[m_numEntries] = NULL;
+				}
+
+				break;
+			}
+
+			if (entry->m_time - time > 1000) {
+				break;
+			}
+
+			if (!entry->m_muted) {
+				entry->m_muted = TRUE;
+				SoundManager()->GetCacheSoundManager()->Play(m_sound, entry->m_roi->GetName(), FALSE);
+			}
+
+			MxMatrix local48;
+			MxMatrix locald8;
+
+			MxMatrix local120(entry->m_roi->GetLocal2World());
+			Mx3DPointFloat local134(local120[3]);
+
+			ZEROVEC3(local120[3]);
+
+			locald8.SetIdentity();
+			local48 = local120;
+
+			local134[1] = sin(((entry->m_time - time) * 10) * 0.0062831999f) * 0.4 + (entry->m_unk0x0c -= 0.05);
+			SET3(local120[3], local134);
+
+			entry->m_roi->UpdateTransformationRelativeToParent(local120);
+			VideoManager()->Get3DManager()->Moved(*entry->m_roi);
+
+			if (entry->m_time < time) {
+				LegoBuildingInfo* info = GetInfo(entry->m_entity);
+
+				if (info->m_unk0x11 && !m_unk0x28) {
+					MxS32 index = info - g_buildingInfo;
+					AdjustHeight(index);
+					MxMatrix mat = entry->m_roi->GetLocal2World();
+					mat[3][1] = g_buildingInfo[index].m_unk0x14;
+					entry->m_roi->UpdateTransformationRelativeToParent(mat);
+					VideoManager()->Get3DManager()->Moved(*entry->m_roi);
+				}
+				else {
+					info->m_unk0x11 = 0;
+					entry->m_roi->SetVisibility(FALSE);
+				}
+
+				delete entry;
+				m_numEntries--;
+
+				if (m_numEntries != i) {
+					i--;
+					*ppEntry = m_entries[m_numEntries];
+					m_entries[m_numEntries] = NULL;
 				}
 			}
 		}
@@ -673,23 +779,87 @@ void LegoBuildingManager::FUN_10030590()
 		if (g_buildingInfo[i].m_entity != NULL) {
 			LegoROI* roi = g_buildingInfo[i].m_entity->GetROI();
 			MxMatrix mat = roi->GetLocal2World();
-			mat[3][1] = g_buildingInfo[i].m_unk0x014;
+			mat[3][1] = g_buildingInfo[i].m_unk0x14;
 			roi->UpdateTransformationRelativeToParent(mat);
 			VideoManager()->Get3DManager()->Moved(*roi);
 		}
 	}
 }
 
-// STUB: LEGO1 0x10030630
+// FUNCTION: LEGO1 0x10030630
+// FUNCTION: BETA10 0x100648ab
 MxResult LegoBuildingManager::FUN_10030630()
 {
+	LegoWorld* world = CurrentWorld();
+
+	if (world == NULL) {
+		return FAILURE;
+	}
+
+	for (MxS32 i = 0; i < sizeOfArray(g_buildingInfo); i++) {
+		if (g_buildingInfo[i].m_entity != NULL && g_buildingInfo[i].m_boundaryName != NULL) {
+			g_buildingInfo[i].m_boundary = world->FindPathBoundary(g_buildingInfo[i].m_boundaryName);
+
+			if (g_buildingInfo[i].m_boundary != NULL) {
+				Mx3DPointFloat position(g_buildingInfo[i].m_x, g_buildingInfo[i].m_y, g_buildingInfo[i].m_z);
+				LegoPathBoundary* boundary = g_buildingInfo[i].m_boundary;
+
+				for (MxS32 j = 0; j < boundary->GetNumEdges(); j++) {
+					Mx4DPointFloat* normal = boundary->GetEdgeNormal(j);
+
+					if (position.Dot(normal, &position) + (*normal)[3] < -0.001) {
+						MxTrace(
+							"Building %d shot location (%g, %g, %g) is not in boundary %s.\n",
+							i,
+							position[0],
+							position[1],
+							position[2],
+							boundary->GetName()
+						);
+						g_buildingInfo[i].m_boundary = NULL;
+						break;
+					}
+				}
+
+				if (g_buildingInfo[i].m_boundary != NULL) {
+					Mx4DPointFloat& unk0x14 = *g_buildingInfo[i].m_boundary->GetUnknown0x14();
+
+					if (position.Dot(&position, &unk0x14) + unk0x14[3] <= 0.001 &&
+						position.Dot(&position, &unk0x14) + unk0x14[3] >= -0.001) {
+						continue;
+					}
+
+					g_buildingInfo[i].m_y =
+						-((unk0x14[3] + unk0x14[0] * position[0] + unk0x14[2] * position[2]) / unk0x14[1]);
+
+					MxTrace(
+						"Building %d shot location (%g, %g, %g) is not on plane of boundary %s...adjusting to (%g, %g, "
+						"%g)\n",
+						i,
+						position[0],
+						position[1],
+						position[2],
+						g_buildingInfo[i].m_boundary->GetName(),
+						position[0],
+						g_buildingInfo[i].m_y,
+						position[2]
+					);
+				}
+			}
+			else {
+				MxTrace("Building %d is in boundary %s that does not exist.\n", i, g_buildingInfo[i].m_boundaryName);
+			}
+		}
+	}
+
+	m_unk0x09 = TRUE;
 	return SUCCESS;
 }
 
 // FUNCTION: LEGO1 0x10030790
 LegoBuildingInfo* LegoBuildingManager::GetInfoArray(MxS32& p_length)
 {
-	if (m_unk0x09 == 0) {
+	if (!m_unk0x09) {
 		FUN_10030630();
 	}
 
