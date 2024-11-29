@@ -405,6 +405,7 @@ void LegoOmni::DeleteObject(MxDSAction& p_dsAction)
 }
 
 // FUNCTION: LEGO1 0x1005b270
+// FUNCTION: BETA10 0x1008ea6d
 LegoROI* LegoOmni::FindROI(const char* p_name)
 {
 	ViewManager* viewManager = GetVideoManager()->Get3DManager()->GetLego3DView()->GetViewManager();
@@ -487,6 +488,7 @@ const char* LegoOmni::GetWorldName(MxU32 p_id)
 }
 
 // FUNCTION: LEGO1 0x1005b460
+// FUNCTION: BETA10 0x1008edd8
 MxAtomId* LegoOmni::GetWorldAtom(MxU32 p_id)
 {
 	for (MxS32 i = 0; i < 19; i++) {
@@ -495,6 +497,8 @@ MxAtomId* LegoOmni::GetWorldAtom(MxU32 p_id)
 		}
 	}
 
+	// A gem from BETA10
+	assert("Hey, check your code. We do not have this world." == NULL);
 	return NULL;
 }
 

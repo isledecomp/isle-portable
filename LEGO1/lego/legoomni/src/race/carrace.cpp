@@ -1,9 +1,9 @@
 #include "carrace.h"
 
-#include "actions/carrace_actions.h"
-#include "actions/jukebox_actions.h"
+#include "carrace_actions.h"
 #include "dunebuggy.h"
 #include "isle.h"
+#include "jukebox_actions.h"
 #include "legoanimationmanager.h"
 #include "legobackgroundcolor.h"
 #include "legocontrolmanager.h"
@@ -66,13 +66,13 @@ LegoChar* g_strCRCFRNTY6 = "C_RCFRNTY6";
 LegoChar* g_strCRCEDGEY0 = "C_RCEDGEY0";
 
 // GLOBAL: LEGO1 0x100f0c7c
-static MxS32 g_unk0x100f0c7c = 2;
+MxS32 g_unk0x100f0c7c = 2;
 
 // FUNCTION: LEGO1 0x10016a90
 CarRace::CarRace()
 {
-	this->m_skeleton = NULL;
-	this->m_unk0x130 = MxRect32(0x16c, 0x154, 0x1ec, 0x15e);
+	m_skeleton = NULL;
+	m_unk0x130 = MxRect32(0x16c, 0x154, 0x1ec, 0x15e);
 }
 
 // FUNCTION: LEGO1 0x10016ce0
