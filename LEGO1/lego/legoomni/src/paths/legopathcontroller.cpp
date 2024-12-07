@@ -95,8 +95,7 @@ MxResult LegoPathController::Create(MxU8* p_data, const Vector3& p_location, con
 		}
 
 		for (i = 0; i < m_numN; i++) {
-			// TODO: Fix call
-			((Vector3&) m_unk0x10[i]).Add(p_location);
+			m_unk0x10[i] += p_location;
 		}
 
 		for (i = 0; i < m_numL; i++) {
@@ -733,6 +732,256 @@ MxResult LegoPathController::ReadVector(LegoStorage* p_storage, Mx4DPointFloat& 
 	return SUCCESS;
 }
 
+// FUNCTION: LEGO1 0x10048310
+// FUNCTION: BETA10 0x100b8911
+MxResult LegoPathController::FUN_10048310(
+	LegoPathEdgeContainer* p_grec,
+	const Vector3& p_oldPosition,
+	const Vector3& p_oldDirection,
+	LegoPathBoundary* p_oldBoundary,
+	const Vector3& p_newPosition,
+	const Vector3& p_newDirection,
+	LegoPathBoundary* p_newBoundary,
+	LegoU8 p_mask,
+	MxFloat* p_param9
+)
+{
+	p_grec->m_position = p_newPosition;
+	p_grec->m_direction = p_newDirection;
+	p_grec->m_boundary = p_newBoundary;
+
+	if (p_newBoundary == p_oldBoundary) {
+		p_grec->SetBit1(TRUE);
+		return SUCCESS;
+	}
+
+	list<LegoBEWithFloat> boundaryList;
+	list<LegoBEWithFloat>::iterator boundaryListIt;
+
+	LegoBEWithFloatSet boundarySet;
+	LegoBEWithFloatSet::iterator boundarySetItA;
+	LegoBEWithFloatSet::iterator boundarySetItB;
+
+	LegoPathCtrlEdgeSet pathCtrlEdgeSet(m_pfsE);
+
+	MxFloat local14 = 999999.0f;
+
+	p_grec->SetBit1(FALSE);
+
+	for (MxS32 i = 0; i < p_oldBoundary->GetNumEdges(); i++) {
+		LegoPathCtrlEdge* edge = (LegoPathCtrlEdge*) p_oldBoundary->GetEdges()[i];
+
+		if (edge->GetMask0x03()) {
+			LegoPathBoundary* otherFace = (LegoPathBoundary*) edge->OtherFace(p_oldBoundary);
+
+			if (otherFace != NULL && edge->BETA_1004a830(*otherFace, p_mask)) {
+				if (p_newBoundary == otherFace) {
+					float dist;
+					if ((dist = edge->DistanceToMidpoint(p_oldPosition) + edge->DistanceToMidpoint(p_newPosition)) <
+						local14) {
+						local14 = dist;
+						p_grec->erase(p_grec->begin(), p_grec->end());
+						p_grec->SetBit1(TRUE);
+						p_grec->push_back(LegoBoundaryEdge(edge, p_oldBoundary));
+					}
+				}
+				else {
+					boundaryList.push_back(LegoBEWithFloat(edge, p_oldBoundary, edge->DistanceToMidpoint(p_oldPosition))
+					);
+					boundarySet.insert(&boundaryList.back());
+				}
+			}
+		}
+
+		pathCtrlEdgeSet.erase(edge);
+	}
+
+	if (!p_grec->GetBit1()) {
+		while (pathCtrlEdgeSet.size() > 0) {
+			LegoBEWithFloat edgeWithFloat;
+			MxFloat local70 = 999999.0f;
+
+			boundarySetItA = boundarySetItB = boundarySet.begin();
+
+			if (boundarySetItB != boundarySet.end()) {
+				boundarySetItB++;
+			}
+
+			while (boundarySetItA != boundarySet.end()) {
+				MxU32 shouldRemove = TRUE;
+
+				LegoUnknown100db7f4* e = (*boundarySetItA)->m_edge;
+				LegoPathBoundary* b = (*boundarySetItA)->m_boundary;
+				assert(e && b);
+
+				LegoPathBoundary* bOther = (LegoPathBoundary*) e->OtherFace(b);
+				assert(bOther);
+
+				if (!e->BETA_1004a830(*bOther, p_mask)) {
+					// This branch is empty, but present in the BETA - probably had comments only
+				}
+				else {
+					if (bOther == p_newBoundary) {
+						shouldRemove = FALSE;
+
+						LegoBEWithFloat* pfs = *boundarySetItA;
+						assert(pfs);
+
+						float dist;
+						if ((dist = pfs->m_edge->DistanceToMidpoint(p_newPosition) + pfs->m_unk0x0c) < local70) {
+							edgeWithFloat.m_edge = NULL;
+							local70 = dist;
+
+							// TODO: Match
+							if (dist < local14) {
+								local14 = dist;
+								p_grec->erase(p_grec->begin(), p_grec->end());
+								p_grec->SetBit1(TRUE);
+
+								do {
+									p_grec->push_front(LegoBoundaryEdge(pfs->m_edge, pfs->m_boundary));
+									pfs = pfs->m_next;
+								} while (pfs != NULL);
+							}
+						}
+					}
+					else {
+						for (MxS32 i = 0; i < bOther->GetNumEdges(); i++) {
+							LegoPathCtrlEdge* edge = (LegoPathCtrlEdge*) bOther->GetEdges()[i];
+
+							if (edge->GetMask0x03()) {
+								if (pathCtrlEdgeSet.find(edge) != pathCtrlEdgeSet.end()) {
+									shouldRemove = FALSE;
+
+									float dist;
+									if ((dist = edge->DistanceBetweenMidpoints(*e) + (*boundarySetItA)->m_unk0x0c) <
+										local70) {
+										local70 = dist;
+										edgeWithFloat = LegoBEWithFloat(edge, bOther, *boundarySetItA, dist);
+									}
+								}
+							}
+						}
+					}
+				}
+
+				if (shouldRemove) {
+					boundarySet.erase(boundarySetItA);
+				}
+
+				if (boundarySetItB != boundarySet.end()) {
+					boundarySetItA = boundarySetItB;
+					boundarySetItB++;
+				}
+				else {
+					break;
+				}
+			}
+
+			if (edgeWithFloat.m_edge != NULL) {
+				pathCtrlEdgeSet.erase(edgeWithFloat.m_edge);
+				boundaryList.push_back(edgeWithFloat);
+				boundarySet.insert(&boundaryList.back());
+			}
+			else {
+				break;
+			}
+		}
+	}
+
+	if (p_grec->GetBit1()) {
+		if (p_grec->size() > 0) {
+			LegoPathCtrlEdge* edge = p_grec->front().m_edge;
+
+			if (edge->FUN_10048c40(p_oldPosition)) {
+				p_grec->pop_front();
+			}
+		}
+
+		if (p_grec->size() > 0) {
+			LegoPathCtrlEdge* edge = p_grec->back().m_edge;
+
+			if (edge->FUN_10048c40(p_newPosition)) {
+				if (edge->OtherFace(p_grec->back().m_boundary) != NULL &&
+					edge->OtherFace(p_grec->back().m_boundary)->IsEqual(p_newBoundary)) {
+					p_grec->m_boundary = p_grec->back().m_boundary;
+					p_grec->pop_back();
+				}
+			}
+		}
+
+		if (p_param9 != NULL) {
+			*p_param9 = local14;
+		}
+
+		return SUCCESS;
+	}
+
+	return FAILURE;
+}
+
+// FUNCTION: LEGO1 0x10048c40
+// FUNCTION: BETA10 0x1001cc90
+inline MxU32 LegoPathCtrlEdge::FUN_10048c40(const Vector3& p_position)
+{
+	MxFloat localc, local10;
+	MxU32 result = FALSE;
+
+	if (m_unk0x28[0] > 0.001 || m_unk0x28[0] < -0.001) {
+		localc = (p_position[0] - (*m_pointA)[0]) / m_unk0x28[0];
+
+		if (localc < 0 || localc > 1) {
+			return FALSE;
+		}
+
+		result = TRUE;
+	}
+	else {
+		if (p_position[0] > (*m_pointA)[0] + 0.001 || p_position[0] < (*m_pointA)[0] - 0.001) {
+			return FALSE;
+		}
+	}
+
+	if (m_unk0x28[1] > 0.001 || m_unk0x28[1] < -0.001) {
+		local10 = (p_position[1] - (*m_pointA)[1]) / m_unk0x28[1];
+
+		if (result) {
+			if (localc > local10 + 0.001 || localc < local10 - 0.001) {
+				return FALSE;
+			}
+		}
+		else {
+			result = TRUE;
+			localc = local10;
+		}
+	}
+	else {
+		if (p_position[1] > (*m_pointA)[1] + 0.001 || p_position[1] < (*m_pointA)[1] - 0.001) {
+			return FALSE;
+		}
+	}
+
+	if (m_unk0x28[2] > 0.001 || m_unk0x28[2] < -0.001) {
+		local10 = (p_position[2] - (*m_pointA)[2]) / m_unk0x28[2];
+
+		if (result) {
+			if (localc > local10 + 0.001 || localc < local10 - 0.001) {
+				return FALSE;
+			}
+		}
+		else {
+			return TRUE;
+		}
+	}
+	else {
+		if (p_position[2] > (*m_pointA)[2] + 0.001 || p_position[2] < (*m_pointA)[2] - 0.001) {
+			return FALSE;
+		}
+	}
+
+	return TRUE;
+}
+
 // FUNCTION: LEGO1 0x1004a240
 // FUNCTION: BETA10 0x100b9160
 MxS32 LegoPathController::FUN_1004a240(
@@ -745,8 +994,8 @@ MxS32 LegoPathController::FUN_1004a240(
 )
 {
 	if (p_grec.size() == 0) {
-		p_v1 = p_grec.m_unk0x0c;
-		p_v2 = p_grec.m_unk0x20;
+		p_v1 = p_grec.m_position;
+		p_v2 = p_grec.m_direction;
 		p_boundary = p_grec.m_boundary;
 		p_grec.SetBit1(FALSE);
 		return 1;
@@ -758,9 +1007,9 @@ MxS32 LegoPathController::FUN_1004a240(
 
 	Mx3DPointFloat vec;
 	p_v1 = *p_edge->CCWVertex(*p_boundary);
-	p_v1.Sub(*p_edge->CWVertex(*p_boundary));
-	p_v1.Mul(p_f1);
-	p_v1.Add(*p_edge->CWVertex(*p_boundary));
+	p_v1 -= *p_edge->CWVertex(*p_boundary);
+	p_v1 *= p_f1;
+	p_v1 += *p_edge->CWVertex(*p_boundary);
 	p_edge->FUN_1002ddc0(*p_boundary, vec);
 	p_v2.EqualsCross(p_boundary->GetUnknown0x14(), &vec);
 	return 0;

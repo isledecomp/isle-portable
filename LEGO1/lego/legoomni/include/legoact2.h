@@ -68,15 +68,6 @@ public:
 	void SetUnknown0x1138(Act2Actor* p_unk0x1138) { m_unk0x1138 = p_unk0x1138; }
 	void SetDestLocation(LegoGameState::Area p_destLocation) { m_destLocation = p_destLocation; }
 
-	undefined4 FUN_10052560(
-		MxS32 p_param1,
-		MxBool p_param2,
-		MxBool p_param3,
-		Mx3DPointFloat* p_location,
-		Mx3DPointFloat* p_direction,
-		Mx3DPointFloat* p_param6
-	);
-
 	// SYNTHETIC: LEGO1 0x1004fe20
 	// LegoAct2::`scalar deleting destructor'
 
@@ -86,20 +77,33 @@ private:
 	MxLong HandlePathStruct(LegoPathStructNotificationParam& p_param);
 	void PlayMusic(JukeboxScript::Script p_objectId);
 	void FUN_10051900();
+	void FUN_10051960();
 	void InitBricks();
 	void UninitBricks();
+	void SpawnBricks();
+	void FUN_10051fa0(MxS32 p_param1);
+	void FUN_100521f0(MxS32 p_param1);
+	MxResult FUN_10052560(
+		Act2mainScript::Script p_objectId,
+		MxBool p_param2,
+		MxBool p_param3,
+		Mx3DPointFloat* p_location,
+		Mx3DPointFloat* p_direction,
+		Mx3DPointFloat* p_param6
+	);
+	MxResult FUN_10052800();
 
 	Act2Brick m_bricks[10];        // 0x00f8
-	undefined m_unk0x10c0;         // 0x10c0
+	MxU8 m_nextBrick;              // 0x10c0
 	undefined m_unk0x10c1;         // 0x10c1
-	undefined m_unk0x10c2;         // 0x10c2
+	MxBool m_ready;                // 0x10c2
 	undefined4 m_unk0x10c4;        // 0x10c4
 	JukeboxScript::Script m_music; // 0x10c8
 	LegoAct2State* m_gameState;    // 0x10cc
 	MxS32 m_unk0x10d0;             // 0x10d0
 
 	// variable name verified by BETA10 0x10014633
-	char* m_siFile; // 0x10d4
+	const char* m_siFile; // 0x10d4
 
 	LegoROI* m_pepper;                  // 0x10d8
 	MxMatrix m_unk0x10dc;               // 0x10dc
@@ -110,9 +114,13 @@ private:
 	undefined4 m_unk0x1134;             // 0x1134
 	Act2Actor* m_unk0x1138;             // 0x1138
 	undefined m_unk0x113c;              // 0x113c
-	undefined4 m_unk0x1140;             // 0x1140
+	Act2mainScript::Script m_unk0x1140; // 0x1140
 	Act2mainScript::Script m_unk0x1144; // 0x1144
-	undefined m_unk0x1148[0x08];        // 0x1148
+	undefined4 m_unk0x1148;             // 0x1148
+	undefined m_firstBrick;             // 0x114c
+	undefined m_secondBrick;            // 0x114d
+	undefined m_thirdBrick;             // 0x114e
+	undefined m_fourthBrick;            // 0x114e
 	LegoGameState::Area m_destLocation; // 0x1150
 };
 

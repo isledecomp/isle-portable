@@ -46,11 +46,13 @@ void IslePathActor::Destroy(MxBool p_fromDestructor)
 }
 
 // FUNCTION: LEGO1 0x1001a2c0
+// FUNCTION: BETA10 0x100364ca
 MxLong IslePathActor::Notify(MxParam& p_param)
 {
 	MxLong result = 0;
+	MxNotificationParam& param = (MxNotificationParam&) p_param;
 
-	switch (((MxNotificationParam&) p_param).GetNotification()) {
+	switch (param.GetNotification()) {
 	case c_notificationType0:
 		result = HandleNotification0();
 		break;
@@ -124,8 +126,8 @@ void IslePathActor::Exit()
 			Mx3DPointFloat local20;
 			e->FUN_1002ddc0(*m_boundary, local20);
 
-			((Vector3&) local20).Mul(m_roi->GetWorldBoundingSphere().Radius());
-			((Vector3&) local20).Add(GetWorldPosition());
+			local20 *= m_roi->GetWorldBoundingSphere().Radius();
+			local20 += GetWorldPosition();
 
 			MxS32 j;
 			for (j = 0; j < m_boundary->GetNumEdges(); j++) {
@@ -641,7 +643,7 @@ void IslePathActor::FUN_1001b660()
 	Vector3 direction(transform[1]);
 	Vector3 up(transform[2]);
 
-	((Vector3&) up).Mul(-1.0f);
+	up *= -1.0f;
 	position.EqualsCross(&direction, &up);
 	m_roi->FUN_100a58f0(transform);
 	m_roi->VTable0x14();

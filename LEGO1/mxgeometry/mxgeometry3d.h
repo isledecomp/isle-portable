@@ -26,6 +26,7 @@ public:
 	// FUNCTION: BETA10 0x10011600
 	Mx3DPointFloat(const Mx3DPointFloat& p_other) : Vector3(m_elements) { EqualsImpl(p_other.m_data); }
 
+	// FUNCTION: LEGO1 0x10048ed0
 	// FUNCTION: BETA10 0x100151e0
 	Mx3DPointFloat(const Vector3& p_other) : Vector3(m_elements) { EqualsImpl(p_other.m_data); }
 
@@ -162,13 +163,13 @@ inline void UnknownMx4DPointFloat::Unknown7()
 		Mx4DPointFloat v2;
 
 		v1 = m_unk0x00;
-		((Vector4&) v1).Add(m_unk0x18);
+		v1 += m_unk0x18;
 
 		v2 = m_unk0x00;
-		((Vector4&) v2).Sub(m_unk0x18);
+		v2 -= m_unk0x18;
 
 		if (v1.Dot(&v1, &v1) < v2.Dot(&v2, &v2)) {
-			((Vector4&) m_unk0x18).Mul(-1.0f);
+			m_unk0x18 *= -1.0f;
 		}
 	}
 }

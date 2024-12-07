@@ -24,15 +24,14 @@ public:
 	// FUNCTION: BETA10 0x100372a0
 	LegoResult FUN_1002ddc0(LegoWEEdge& p_f, Vector3& p_point)
 	{
-		if (p_f.IsEqual(*m_faceA)) {
+		if (p_f.IsEqual(m_faceA)) {
 			p_point[0] = -m_unk0x28.index_operator(0);
 			p_point[1] = -m_unk0x28.index_operator(1);
 			p_point[2] = -m_unk0x28.index_operator(2);
 		}
 		else {
 			// clang-format off
-			// FIXME: There is no * dereference in the original assertion
-			assert(p_f.IsEqual( *m_faceB ));
+			assert(p_f.IsEqual( m_faceB ));
 			// clang-format on
 			p_point = m_unk0x28;
 		}
@@ -41,16 +40,20 @@ public:
 	}
 
 	// FUNCTION: BETA10 0x1004a830
-	LegoU32 Unknown(LegoWEGEdge& p_face, LegoU8 p_mask)
+	LegoU32 BETA_1004a830(LegoWEGEdge& p_face, LegoU8 p_mask)
 	{
-		return (p_face.IsEqual(*m_faceB) && (m_flags & c_bit1) && (p_face.GetMask0x03() & p_mask) == p_mask) ||
-			   (p_face.IsEqual(*m_faceA) && (m_flags & c_bit2) && (p_face.GetMask0x03() & p_mask) == p_mask);
+		assert(p_face.IsEqual(m_faceA) || p_face.IsEqual(m_faceB));
+		return (p_face.IsEqual(m_faceB) && (m_flags & c_bit1) && (p_face.GetMask0x03() & p_mask) == p_mask) ||
+			   (p_face.IsEqual(m_faceA) && (m_flags & c_bit2) && (p_face.GetMask0x03() & p_mask) == p_mask);
 	}
 
 	// FUNCTION: BETA10 0x100b53b0
-	LegoU32 Unknown2(LegoWEGEdge& p_face)
+	LegoU32 BETA_100b53b0(LegoWEGEdge& p_face)
 	{
-		return (p_face.IsEqual(*m_faceA) && (m_flags & c_bit1)) || (p_face.IsEqual(*m_faceB) && (m_flags & c_bit2));
+		// clang-format off
+		assert(p_face.IsEqual( m_faceA ) || p_face.IsEqual( m_faceB ));
+		// clang-format on
+		return (p_face.IsEqual(m_faceA) && (m_flags & c_bit1)) || (p_face.IsEqual(m_faceB) && (m_flags & c_bit2));
 	}
 
 	// FUNCTION: BETA10 0x1001cbe0
@@ -64,6 +67,30 @@ public:
 		}
 	}
 
+	// FUNCTION: BETA10 0x100bd4a0
+	LegoFloat DistanceToMidpoint(const Vector3& p_vec)
+	{
+		Mx3DPointFloat point(*m_pointA);
+		point += *m_pointB;
+		point *= 0.5f;
+		point -= p_vec;
+		return sqrt((double) point.LenSquared());
+	}
+
+	// FUNCTION: BETA10 0x100bd540
+	LegoFloat DistanceBetweenMidpoints(const LegoUnknown100db7f4& p_other)
+	{
+		Mx3DPointFloat point1(*m_pointA);
+		Mx3DPointFloat point2(*p_other.m_pointA);
+		point1 += *m_pointB;
+		point1 *= 0.5f;
+		point2 += *p_other.m_pointB;
+		point2 *= 0.5f;
+		point1 -= point2;
+		return sqrt((double) point1.LenSquared());
+	}
+
+	// FUNCTION: BETA10 0x1001cc60
 	LegoU32 GetMask0x03() { return m_flags & (c_bit1 | c_bit2); }
 
 	// SYNTHETIC: LEGO1 0x1009a6c0

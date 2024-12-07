@@ -129,13 +129,15 @@ MxResult Isle::Create(MxDSAction& p_dsAction)
 }
 
 // FUNCTION: LEGO1 0x10030c10
+// FUNCTION: BETA10 0x10032b63
 MxLong Isle::Notify(MxParam& p_param)
 {
 	MxLong result = 0;
+	MxNotificationParam& param = (MxNotificationParam&) p_param;
 	LegoWorld::Notify(p_param);
 
 	if (m_worldStarted) {
-		switch (((MxNotificationParam&) p_param).GetNotification()) {
+		switch (param.GetNotification()) {
 		case c_notificationEndAction:
 			result = HandleEndAction((MxEndActionNotificationParam&) p_param);
 			break;
@@ -468,6 +470,7 @@ void Isle::UpdateGlobe()
 }
 
 // FUNCTION: LEGO1 0x100315f0
+// FUNCTION: BETA10 0x10033e46
 MxLong Isle::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 {
 	MxLong result = 0;
@@ -718,13 +721,13 @@ void Isle::Enable(MxBool p_enable)
 				Mx3DPointFloat position(UserActor()->GetROI()->GetWorldPosition());
 
 				Mx3DPointFloat sub(-21.375f, 0.0f, -41.75f);
-				((Vector3&) sub).Sub(position);
+				sub -= position;
 				if (sub.LenSquared() < 1024.0f) {
 					AnimationManager()->FUN_10064740(NULL);
 				}
 
 				Mx3DPointFloat sub2(98.874992f, 0.0f, -46.156292f);
-				((Vector3&) sub2).Sub(position);
+				sub2 -= position;
 				if (sub2.LenSquared() < 1024.0f) {
 					AnimationManager()->FUN_10064670(NULL);
 				}
