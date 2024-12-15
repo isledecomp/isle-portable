@@ -231,12 +231,11 @@ void LegoCacheSound::MuteSilence(MxBool p_muted)
 		m_muted = p_muted;
 
 		if (m_muted) {
-			m_dsBuffer->SetVolume(-3000);
+			ma_sound_set_volume(&m_cacheSound, ma_volume_db_to_linear(-3000.0f / 100.0f));
 		}
 		else {
 			MxS32 volume = m_volume * SoundManager()->GetVolume() / 100;
-			MxS32 attenuation = SoundManager()->GetAttenuation(volume);
-			m_dsBuffer->SetVolume(attenuation);
+			ma_sound_set_volume(&m_cacheSound, SoundManager()->GetAttenuation(volume));
 		}
 	}
 }
