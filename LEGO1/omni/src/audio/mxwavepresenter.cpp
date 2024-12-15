@@ -108,18 +108,6 @@ void MxWavePresenter::StartingTickle()
 		assert(m_waveFormat->m_formatTag == g_supportedFormatTag);
 		assert(m_waveFormat->m_bitsPerSample == 8 || m_waveFormat->m_bitsPerSample == 16);
 
-		// [library:audio]
-		// The original game supported a looping/repeating action mode which apparently
-		// went unused in the retail version of the game (at least for audio).
-		// It is only ever "used" on startup to load two dummy sounds which are
-		// initially disabled and never play: IsleScript::c_TransitionSound1 and IsleScript::c_TransitionSound2
-		// If MxDSAction::c_looping was set, MxWavePresenter kept the entire sound track
-		// in a buffer, presumably to allow random seeking and looping. This functionality
-		// has most likely been superseded by the looping mechanism implemented in the streaming layer.
-		// Since this has gone unused and to reduce complexity, we don't allow this anymore;
-		// except for the two dummy sounds, which must be !IsEnabled()
-		assert(!(m_action->GetFlags() & MxDSAction::c_looping) || !IsEnabled());
-
 		if (m_waveFormat->m_bitsPerSample == 8) {
 			m_silenceData = 0x7F;
 		}
@@ -128,11 +116,17 @@ void MxWavePresenter::StartingTickle()
 			m_silenceData = 0;
 		}
 
+		// [library:audio]
+		// If we have a repeating action (MxDSAction::c_looping set), we must make sure the ring buffer
+		// is large enough to contain the entire sound at once. The size must be a multiple of `g_millisecondsPerChunk`
 		if (ma_pcm_rb_init(
 				m_waveFormat->m_bitsPerSample == 16 ? ma_format_s16 : ma_format_u8,
 				m_waveFormat->m_channels,
 				ma_calculate_buffer_size_in_frames_from_milliseconds(
-					g_rbSizeInMilliseconds,
+					m_action->GetFlags() & MxDSAction::c_looping
+						? (m_action->GetDuration() / m_action->GetLoopCount() + g_millisecondsPerChunk - 1) /
+							  g_millisecondsPerChunk * g_millisecondsPerChunk
+						: g_rbSizeInMilliseconds,
 					m_waveFormat->m_samplesPerSec
 				),
 				NULL,
@@ -194,6 +188,15 @@ void MxWavePresenter::StreamingTickle()
 	}
 }
 
+void MxWavePresenter::RepeatingTickle()
+{
+	if (IsEnabled() && !m_currentChunk) {
+		if (m_action->GetElapsedTime() >= m_action->GetStartTime() + m_action->GetDuration()) {
+			ProgressTickleState(e_freezing);
+		}
+	}
+}
+
 // FUNCTION: LEGO1 0x100b20c0
 void MxWavePresenter::DoneTickle()
 {
@@ -206,9 +209,29 @@ void MxWavePresenter::DoneTickle()
 // FUNCTION: LEGO1 0x100b2130
 void MxWavePresenter::LoopChunk(MxStreamChunk* p_chunk)
 {
-	WriteToSoundBuffer(p_chunk->GetData(), p_chunk->GetLength());
+	// [library:audio]
+	// The original code writes all the chunks directly into the buffer. However, since we are using
+	// a ring buffer instead, we cannot do that. Instead, we use the original code's `m_loopingChunks`
+	// to store permanent copies of all the chunks. (`MxSoundPresenter::LoopChunk`)
+	// These will then be used to write them all at once to the ring buffer when necessary.
+	MxSoundPresenter::LoopChunk(p_chunk);
+
+	assert(m_action->GetFlags() & MxDSAction::c_looping);
+
+	// [library:audio]
+	// We don't currently support a loop count greater than 1 for repeating actions.
+	// However, there don't seem to be any such actions in the game.
+	assert(m_action->GetLoopCount() == 1);
+
+	// [library:audio]
+	// So far there are no known cases where the sound is initially enabled if it's set to repeat.
+	// While we can technically support this (see branch below), this should be tested.
+	assert(!IsEnabled());
+
 	if (IsEnabled()) {
+		WriteToSoundBuffer(p_chunk->GetData(), p_chunk->GetLength());
 		m_subscriber->FreeDataChunk(p_chunk);
+		m_currentChunk = NULL;
 	}
 }
 
@@ -235,6 +258,17 @@ MxResult MxWavePresenter::PutData()
 			if (m_started) {
 				break;
 			}
+
+			assert(!ma_sound_is_playing(&m_sound));
+
+			// [library:audio]
+			// We push all the repeating chunks at once into the buffer.
+			// This should never fail, since the buffer is ensured to be large enough to contain the entire sound.
+			while (m_loopingChunkCursor->Next(m_currentChunk)) {
+				assert(WriteToSoundBuffer(m_currentChunk->GetData(), m_currentChunk->GetLength()));
+			}
+
+			m_currentChunk = NULL;
 
 			if (ma_sound_start(&m_sound) == MA_SUCCESS) {
 				m_started = TRUE;
