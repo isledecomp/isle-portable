@@ -44,7 +44,7 @@ public:
 	float& index_operator(int idx) { return m_data[idx]; }
 
 	// SYNTHETIC: LEGO1 0x10010c00
-	// Mx3DPointFloat::operator=
+	// ??4Mx3DPointFloat@@QAEAAV0@ABV0@@Z
 
 private:
 	float m_elements[3]; // 0x08
@@ -76,11 +76,16 @@ public:
 	// FUNCTION: BETA10 0x1004af10
 	float& operator[](int idx) { return m_data[idx]; }
 
-	const float& operator[](int idx) const { return m_data[idx]; }
+	// According to the PDB, BETA10 will not link this one if it is never used
+	// const float& operator[](int idx) const { return m_data[idx]; }
+
+	// only used by a couple of BETA10 functions for some unknown reason
+	// FUNCTION: BETA10 0x1001c950
+	float& index_operator(int idx) { return m_data[idx]; }
 
 	// SYNTHETIC: LEGO1 0x10064b20
 	// SYNTHETIC: BETA10 0x10070420
-	// Mx4DPointFloat::operator=
+	// ??4Mx4DPointFloat@@QAEAAV0@ABV0@@Z
 
 private:
 	float m_elements[4]; // 0x08
@@ -130,6 +135,10 @@ public:
 		m_unk0x18 = p_v;
 		m_unk0x30 |= c_bit2;
 	}
+
+	const Vector4& GetUnknown0x00() const { return m_unk0x00; }
+	const Vector4& GetUnknown0x18() const { return m_unk0x18; }
+	undefined4 GetUnknown0x30() const { return m_unk0x30; }
 
 	inline int Unknown6(Matrix4& p_matrix, float p_f);
 	inline void Unknown7();

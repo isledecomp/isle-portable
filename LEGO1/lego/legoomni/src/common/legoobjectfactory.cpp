@@ -6,9 +6,6 @@
 #include "act2policestation.h"
 #include "act3.h"
 #include "act3actors.h"
-#include "act3brickster.h"
-#include "act3cop.h"
-#include "act3shark.h"
 #include "ambulance.h"
 #include "bike.h"
 #include "buildings.h"
@@ -44,7 +41,6 @@
 #include "legoentitypresenter.h"
 #include "legoflctexturepresenter.h"
 #include "legohideanimpresenter.h"
-#include "legojetski.h"
 #include "legojetskiraceactor.h"
 #include "legoloadcachesoundpresenter.h"
 #include "legolocomotionanimpresenter.h"
@@ -78,6 +74,7 @@
 DECOMP_SIZE_ASSERT(LegoObjectFactory, 0x1c8)
 
 // FUNCTION: LEGO1 0x10006e40
+// FUNCTION: BETA10 0x1009e930
 LegoObjectFactory::LegoObjectFactory()
 {
 	m_idLegoEntityPresenter = MxAtomId("LegoEntityPresenter", e_exact);

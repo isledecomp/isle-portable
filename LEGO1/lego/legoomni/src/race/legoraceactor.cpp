@@ -45,28 +45,26 @@ MxS32 LegoRaceActor::VTable0x68(Vector3& p_v1, Vector3& p_v2, Vector3& p_v3)
 
 // FUNCTION: LEGO1 0x100147f0
 // FUNCTION: BETA10 0x100c9c93
-MxU32 LegoRaceActor::VTable0x90(float p_float, Matrix4& p_transform)
+MxU32 LegoRaceActor::VTable0x90(float p_time, Matrix4& p_transform)
 {
 	// Note: Code duplication with LegoExtraActor::VTable0x90
-	switch (m_state) {
-	case 0:
-	case 1:
-		return 1;
-
-	case 2:
-		m_unk0x08 = p_float + 2000.0f;
-		m_state = 3;
-		m_actorTime += (p_float - m_lastTime) * m_worldSpeed;
-		m_lastTime = p_float;
-		return 0;
-
-	case 3:
+	switch (m_actorState) {
+	case c_initial:
+	case c_one:
+		return TRUE;
+	case c_two:
+		m_unk0x08 = p_time + 2000.0f;
+		m_actorState = c_three;
+		m_actorTime += (p_time - m_lastTime) * m_worldSpeed;
+		m_lastTime = p_time;
+		return FALSE;
+	case c_three:
 		assert(!m_userNavFlag);
 		Vector3 positionRef(p_transform[3]);
 
 		p_transform = m_roi->GetLocal2World();
 
-		if (m_unk0x08 > p_float) {
+		if (m_unk0x08 > p_time) {
 			Mx3DPointFloat position;
 
 			position = positionRef;
@@ -74,31 +72,31 @@ MxU32 LegoRaceActor::VTable0x90(float p_float, Matrix4& p_transform)
 			p_transform.RotateX(0.6);
 			positionRef = position;
 
-			m_actorTime += (p_float - m_lastTime) * m_worldSpeed;
-			m_lastTime = p_float;
+			m_actorTime += (p_time - m_lastTime) * m_worldSpeed;
+			m_lastTime = p_time;
 
 			VTable0x74(p_transform);
-			return 0;
+			return FALSE;
 		}
 		else {
-			m_state = 0;
+			m_actorState = c_initial;
 			m_unk0x08 = 0;
 
 			positionRef -= g_unk0x10102b08;
 			m_roi->FUN_100a58f0(p_transform);
-			return 1;
+			return TRUE;
 		}
 	}
 
-	return 0;
+	return FALSE;
 }
 
 // FUNCTION: LEGO1 0x10014a00
 // FUNCTION: BETA10 0x100c9f5c
-MxResult LegoRaceActor::VTable0x94(LegoPathActor* p_actor, MxBool p_bool)
+MxResult LegoRaceActor::HitActor(LegoPathActor* p_actor, MxBool p_bool)
 {
 	if (!p_actor->GetUserNavFlag()) {
-		if (p_actor->GetState()) {
+		if (p_actor->GetActorState() != c_initial) {
 			return FAILURE;
 		}
 
@@ -112,8 +110,9 @@ MxResult LegoRaceActor::VTable0x94(LegoPathActor* p_actor, MxBool p_bool)
 
 			roi->FUN_100a58f0(matr);
 
-			p_actor->SetState(2);
+			p_actor->SetActorState(c_two);
 		}
 	}
-	return 0;
+
+	return SUCCESS;
 }

@@ -330,9 +330,7 @@ add_library(lego1 SHARED
   LEGO1/lego/legoomni/src/actors/act2actor.cpp
   LEGO1/lego/legoomni/src/actors/act2genactor.cpp
   LEGO1/lego/legoomni/src/actors/act3actors.cpp
-  LEGO1/lego/legoomni/src/actors/act3brickster.cpp
-  LEGO1/lego/legoomni/src/actors/act3cop.cpp
-  LEGO1/lego/legoomni/src/actors/act3shark.cpp
+  LEGO1/lego/legoomni/src/actors/act3ammo.cpp
   LEGO1/lego/legoomni/src/actors/ambulance.cpp
   LEGO1/lego/legoomni/src/actors/bike.cpp
   LEGO1/lego/legoomni/src/actors/buildingentity.cpp
@@ -391,7 +389,6 @@ add_library(lego1 SHARED
   LEGO1/lego/legoomni/src/entity/legocameracontroller.cpp
   LEGO1/lego/legoomni/src/entity/legoentity.cpp
   LEGO1/lego/legoomni/src/entity/legoentitypresenter.cpp
-  LEGO1/lego/legoomni/src/entity/legojetski.cpp
   LEGO1/lego/legoomni/src/entity/legojetskiraceactor.cpp
   LEGO1/lego/legoomni/src/entity/legolocations.cpp
   LEGO1/lego/legoomni/src/entity/legonavcontroller.cpp

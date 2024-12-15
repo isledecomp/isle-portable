@@ -40,9 +40,12 @@ public:
 	// SYNTHETIC: LEGO1 0x1000e040
 	// LegoAct2State::`scalar deleting destructor'
 
+	// FUNCTION: BETA10 0x100151b0
+	void SetUnknown0x08(undefined4 p_unk0x08) { m_unk0x08 = p_unk0x08; }
+
 	undefined4 GetUnknown0x08() { return m_unk0x08; }
 
-	// TODO: Most likely getters/setters are not used according to BETA.
+	// TODO: Most likely getters/setters are not used according to BETA. (?)
 
 	undefined4 m_unk0x08; // 0x08
 	MxBool m_enabled;     // 0x0c
@@ -68,6 +71,18 @@ public:
 	void SetUnknown0x1138(Act2Actor* p_unk0x1138) { m_unk0x1138 = p_unk0x1138; }
 	void SetDestLocation(LegoGameState::Area p_destLocation) { m_destLocation = p_destLocation; }
 
+	MxResult FUN_100516b0();
+	void FUN_100517b0();
+	MxResult BadEnding();
+	MxResult FUN_10052560(
+		Act2mainScript::Script p_objectId,
+		MxBool p_param2,
+		MxBool p_param3,
+		Mx3DPointFloat* p_location,
+		Mx3DPointFloat* p_direction,
+		Mx3DPointFloat* p_param6
+	);
+
 	// SYNTHETIC: LEGO1 0x1004fe20
 	// LegoAct2::`scalar deleting destructor'
 
@@ -83,14 +98,6 @@ private:
 	void SpawnBricks();
 	void FUN_10051fa0(MxS32 p_param1);
 	void FUN_100521f0(MxS32 p_param1);
-	MxResult FUN_10052560(
-		Act2mainScript::Script p_objectId,
-		MxBool p_param2,
-		MxBool p_param3,
-		Mx3DPointFloat* p_location,
-		Mx3DPointFloat* p_direction,
-		Mx3DPointFloat* p_param6
-	);
 	MxResult FUN_10052800();
 
 	Act2Brick m_bricks[10];        // 0x00f8

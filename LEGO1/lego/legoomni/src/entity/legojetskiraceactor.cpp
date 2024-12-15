@@ -37,7 +37,7 @@ MxS32 LegoJetskiRaceActor::VTable0x1c(LegoPathBoundary* p_boundary, LegoEdge* p_
 	Vector3* v1 = NULL;
 	Vector3* v2 = NULL;
 
-	if (m_state == 1) {
+	if (m_actorState == c_one) {
 		if (m_destEdge == LegoPathController::GetControlEdgeA(13)) {
 			m_boundary = (LegoPathBoundary*) m_destEdge->OtherFace(LegoPathController::GetControlBoundaryA(13));
 		}
@@ -45,7 +45,7 @@ MxS32 LegoJetskiRaceActor::VTable0x1c(LegoPathBoundary* p_boundary, LegoEdge* p_
 			m_boundary = (LegoPathBoundary*) m_destEdge->OtherFace(LegoPathController::GetControlBoundaryA(15));
 		}
 
-		m_state = 0;
+		m_actorState = c_initial;
 		m_unk0x7c = 0;
 
 		if (m_userNavFlag) {
@@ -58,7 +58,7 @@ MxS32 LegoJetskiRaceActor::VTable0x1c(LegoPathBoundary* p_boundary, LegoEdge* p_
 	}
 	else {
 		if (p_edge == LegoPathController::GetControlEdgeA(12)) {
-			m_state = 1;
+			m_actorState = c_one;
 
 			if (m_worldSpeed < g_unk0x100da044) {
 				m_worldSpeed = g_unk0x100da044;
@@ -68,7 +68,7 @@ MxS32 LegoJetskiRaceActor::VTable0x1c(LegoPathBoundary* p_boundary, LegoEdge* p_
 			m_boundary = LegoPathController::GetControlBoundaryA(13);
 		}
 		else if (p_edge == LegoPathController::GetControlEdgeA(14)) {
-			m_state = 1;
+			m_actorState = c_one;
 
 			if (m_worldSpeed < g_unk0x100da044) {
 				m_worldSpeed = g_unk0x100da044;
@@ -78,7 +78,7 @@ MxS32 LegoJetskiRaceActor::VTable0x1c(LegoPathBoundary* p_boundary, LegoEdge* p_
 			m_boundary = LegoPathController::GetControlBoundaryA(15);
 		}
 
-		if (m_state == 1) {
+		if (m_actorState == c_one) {
 			if (m_userNavFlag) {
 				m_unk0xe4 = 0.5f;
 			}
@@ -119,22 +119,22 @@ MxS32 LegoJetskiRaceActor::VTable0x1c(LegoPathBoundary* p_boundary, LegoEdge* p_
 }
 
 // FUNCTION: LEGO1 0x10081550
-void LegoJetskiRaceActor::VTable0x70(float p_float)
+void LegoJetskiRaceActor::Animate(float p_time)
 {
 	if (m_unk0x0c == 0) {
 		const LegoChar* raceState = VariableTable()->GetVariable(g_raceState);
 		if (!stricmp(raceState, g_racing)) {
 			m_unk0x0c = 1;
-			m_lastTime = p_float - 1.0f;
-			m_unk0x1c = p_float;
+			m_lastTime = p_time - 1.0f;
+			m_unk0x1c = p_time;
 		}
 		else if (!m_userNavFlag) {
-			LegoAnimActor::VTable0x70(m_lastTime + 1.0f);
+			LegoAnimActor::Animate(m_lastTime + 1.0f);
 		}
 	}
 
 	if (m_unk0x0c == 1) {
-		LegoAnimActor::VTable0x70(p_float);
+		LegoAnimActor::Animate(p_time);
 	}
 }
 
@@ -168,9 +168,9 @@ MxU32 LegoJetskiRaceActor::VTable0x6c(
 
 				if (roi != NULL && (roi->GetVisibility() || actor->GetCameraFlag())) {
 					if (roi->FUN_100a9410(p_v1, p_v2, p_f1, p_f2, p_v3, m_collideBox && actor->GetCollideBox())) {
-						VTable0x94(actor, TRUE);
+						HitActor(actor, TRUE);
 
-						if (actor->VTable0x94(this, FALSE) < 0) {
+						if (actor->HitActor(this, FALSE) < 0) {
 							return 0;
 						}
 						else {

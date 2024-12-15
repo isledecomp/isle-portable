@@ -177,7 +177,7 @@ MxResult LegoAct2::Tickle()
 		m_unk0x10c4 = 1;
 		break;
 	case 1:
-		((LegoPathActor*) m_pepper->GetEntity())->SetState(LegoPathActor::c_bit3);
+		((LegoPathActor*) m_pepper->GetEntity())->SetActorState(LegoPathActor::c_disabled);
 
 		switch (rand() % 3) {
 		case 0:
@@ -336,7 +336,7 @@ MxLong LegoAct2::Notify(MxParam& p_param)
 
 				m_unk0x10c4 = 14;
 				m_unk0x10d0 = 0;
-				((LegoPathActor*) m_pepper->GetEntity())->SetState(LegoPathActor::c_bit3);
+				((LegoPathActor*) m_pepper->GetEntity())->SetActorState(LegoPathActor::c_disabled);
 			}
 			break;
 		case c_notificationTransitioned:
@@ -417,7 +417,7 @@ MxLong LegoAct2::HandleEndAction(MxEndActionNotificationParam& p_param)
 			m_unk0x10d0 = 0;
 
 			FUN_10052560(Act2mainScript::c_tra045la_RunAnim, TRUE, TRUE, NULL, NULL, NULL);
-			((LegoPathActor*) m_pepper->GetEntity())->SetState(LegoPathActor::c_bit3);
+			((LegoPathActor*) m_pepper->GetEntity())->SetActorState(LegoPathActor::c_disabled);
 			AnimationManager()->EnableCamAnims(TRUE);
 			AnimationManager()->FUN_1005f6d0(TRUE);
 			AnimationManager()->FUN_100604f0(g_unk0x100f4428, sizeOfArray(g_unk0x100f4428));
@@ -450,7 +450,7 @@ MxLong LegoAct2::HandleEndAction(MxEndActionNotificationParam& p_param)
 			m_unk0x10c4 = 13;
 			SpawnBricks();
 			PlayMusic(JukeboxScript::c_BrickHunt);
-			((LegoPathActor*) m_pepper->GetEntity())->SetState(0);
+			((LegoPathActor*) m_pepper->GetEntity())->SetActorState(LegoPathActor::c_initial);
 			break;
 		}
 		case 14:
@@ -602,7 +602,7 @@ MxLong LegoAct2::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 {
 	if (m_unk0x10c4 == 5 && p_param.GetData() == 0x32) {
 		LegoPathActor* actor = (LegoPathActor*) m_pepper->GetEntity();
-		actor->SetState(LegoPathActor::c_bit3);
+		actor->SetActorState(LegoPathActor::c_disabled);
 		actor->SetWorldSpeed(0.0f);
 		FUN_10051900();
 
@@ -630,7 +630,7 @@ MxLong LegoAct2::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 		FUN_10051fa0(p_param.GetData());
 	}
 	else if (m_unk0x10c4 == 10 && p_param.GetData() == 0x165) {
-		((LegoPathActor*) m_pepper->GetEntity())->SetState(LegoPathActor::c_bit3);
+		((LegoPathActor*) m_pepper->GetEntity())->SetActorState(LegoPathActor::c_disabled);
 
 		if (FUN_10052560(Act2mainScript::c_VOhide_PlayWav, FALSE, TRUE, NULL, NULL, NULL) == SUCCESS) {
 			m_unk0x1140 = Act2mainScript::c_VOhide_PlayWav;
@@ -657,6 +657,47 @@ MxLong LegoAct2::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 	}
 
 	return 0;
+}
+
+// FUNCTION: LEGO1 0x100516b0
+// FUNCTION: BETA10 0x1003bcbc
+MxResult LegoAct2::FUN_100516b0()
+{
+	if (m_nextBrick > 4) {
+		return FAILURE;
+	}
+
+	Act2Brick& brick = m_bricks[m_nextBrick];
+	brick.Create(m_nextBrick);
+
+	MxMatrix local2world = m_ambulance->GetLocal2World();
+	MxMatrix local2world2 = local2world;
+
+	LegoPathBoundary* boundary = m_unk0x1138->GetBoundary();
+	local2world[3][1] += 1.3;
+	local2world2[3][1] -= 0.1;
+
+	brick.FUN_1007a670(local2world, local2world2, boundary);
+	m_nextBrick++;
+	m_unk0x10c4 = 9;
+	m_unk0x10d0 = 0;
+	return SUCCESS;
+}
+
+// FUNCTION: LEGO1 0x100517b0
+void LegoAct2::FUN_100517b0()
+{
+	Act2Brick& brick = m_bricks[m_nextBrick];
+	brick.Create(m_nextBrick);
+
+	MxMatrix local2world = m_ambulance->GetLocal2World();
+	local2world[3][1] += 1.5;
+
+	LegoROI* roi = brick.GetROI();
+	roi->FUN_100a58f0(local2world);
+	roi->VTable0x14();
+	brick.PlayWhistleSound();
+	m_nextBrick++;
 }
 
 // FUNCTION: LEGO1 0x10051840
@@ -705,7 +746,7 @@ void LegoAct2::FUN_10051960()
 		roi->SetVisibility(FALSE);
 	}
 
-	((LegoPathActor*) m_pepper->GetEntity())->SetState(0);
+	((LegoPathActor*) m_pepper->GetEntity())->SetActorState(LegoPathActor::c_initial);
 }
 
 // FUNCTION: LEGO1 0x100519c0
@@ -885,6 +926,26 @@ void LegoAct2::SpawnBricks()
 	entity = roi->GetEntity();
 	brick->PlayWhistleSound();
 	m_nextBrick++;
+}
+
+// FUNCTION: LEGO1 0x10051f20
+// FUNCTION: BETA10 0x10013f48
+MxResult LegoAct2::BadEnding()
+{
+	for (MxS32 i = 0; i < (MxS32) sizeOfArray(m_bricks); i++) {
+		m_bricks[i].Remove();
+	}
+
+	LegoPathActor* actor = m_unk0x1138;
+	actor->SetActorState(LegoPathActor::c_disabled);
+
+	m_gameState->SetUnknown0x08(104);
+	m_destLocation = LegoGameState::e_infomain;
+	TransitionManager()->StartTransition(MxTransitionManager::e_mosaic, 50, FALSE, FALSE);
+
+	MxTrace("Bad End of Act2\n");
+	m_unk0x10c4 = 14;
+	return SUCCESS;
 }
 
 // FUNCTION: LEGO1 0x10051fa0

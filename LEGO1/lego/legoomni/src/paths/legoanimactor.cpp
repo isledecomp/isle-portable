@@ -30,7 +30,7 @@ LegoAnimActorStruct::~LegoAnimActorStruct()
 }
 
 // FUNCTION: LEGO1 0x1001c130
-// FUNCTION: BETA10 0x1003df5f
+// FUNCTION: BETA10 0x1003df3a
 float LegoAnimActorStruct::GetDuration()
 {
 	assert(m_AnimTreePtr);
@@ -70,13 +70,16 @@ void LegoAnimActor::VTable0x74(Matrix4& p_transform)
 }
 
 // FUNCTION: LEGO1 0x1001c290
-void LegoAnimActor::VTable0x70(float p_float)
+// FUNCTION: BETA10 0x1003e144
+void LegoAnimActor::Animate(float p_time)
 {
+	assert(m_roi);
+
 	if (m_lastTime == 0) {
-		m_lastTime = p_float - 1.0f;
+		m_lastTime = p_time - 1.0f;
 	}
 
-	if (m_state == 0 && !m_userNavFlag && m_worldSpeed <= 0) {
+	if (m_actorState == c_initial && !m_userNavFlag && m_worldSpeed <= 0) {
 		if (m_curAnim >= 0) {
 			MxMatrix matrix(m_unk0xec);
 			float f;
@@ -84,10 +87,10 @@ void LegoAnimActor::VTable0x70(float p_float)
 			FUN_1001c360(f, matrix);
 		}
 
-		m_lastTime = m_actorTime = p_float;
+		m_lastTime = m_actorTime = p_time;
 	}
 	else {
-		LegoPathActor::VTable0x70(p_float);
+		LegoPathActor::Animate(p_time);
 	}
 }
 

@@ -100,14 +100,14 @@ void Act2Brick::FUN_1007a670(MxMatrix& p_param1, MxMatrix& p_param2, LegoPathBou
 	CurrentWorld()->PlaceActor(this);
 	p_boundary->AddActor(this);
 
-	SetState(LegoPathActor::c_bit3);
+	SetActorState(c_disabled);
 	m_roi->FUN_100a58f0(p_param1);
 	m_roi->VTable0x14();
 	m_roi->SetVisibility(TRUE);
 }
 
 // FUNCTION: LEGO1 0x1007a750
-MxResult Act2Brick::VTable0x94(LegoPathActor* p_actor, MxBool)
+MxResult Act2Brick::HitActor(LegoPathActor* p_actor, MxBool)
 {
 	MxLong time = Timer()->GetTime();
 	MxLong diff = time - g_lastHitActorTime;

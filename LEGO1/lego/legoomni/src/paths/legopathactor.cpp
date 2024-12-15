@@ -46,9 +46,9 @@ LegoPathActor::LegoPathActor()
 	m_lastTime = 0;
 	m_unk0x7c = 0;
 	m_userNavFlag = FALSE;
-	m_state = 0;
+	m_actorState = c_initial;
 	m_grec = NULL;
-	m_controller = NULL;
+	m_pathController = NULL;
 	m_collideBox = FALSE;
 	m_unk0x148 = 0;
 	m_unk0x14c = 0;
@@ -235,7 +235,7 @@ MxResult LegoPathActor::VTable0x84(
 // FUNCTION: BETA10 0x100b0520
 MxS32 LegoPathActor::VTable0x8c(float p_time, Matrix4& p_transform)
 {
-	if (m_userNavFlag && m_state == 0) {
+	if (m_userNavFlag && m_actorState == c_initial) {
 		m_lastTime = p_time;
 
 		Mx3DPointFloat p1, p2, p3, p4, p5;
@@ -380,13 +380,14 @@ void LegoPathActor::VTable0x74(Matrix4& p_transform)
 }
 
 // FUNCTION: LEGO1 0x1002e790
-void LegoPathActor::VTable0x70(float p_time)
+// FUNCTION: BETA10 0x100af208
+void LegoPathActor::Animate(float p_time)
 {
 	MxMatrix transform;
 	MxU32 b = FALSE;
 
 	while (m_lastTime < p_time) {
-		if (m_state != 0 && !VTable0x90(p_time, transform)) {
+		if (m_actorState != c_initial && !VTable0x90(p_time, transform)) {
 			return;
 		}
 
@@ -457,13 +458,13 @@ MxU32 LegoPathActor::VTable0x6c(
 		if (plpas.find(*itpa) != plpas.end()) {
 			LegoPathActor* actor = *itpa;
 
-			if (this != actor && !(actor->GetState() & LegoPathActor::c_bit9)) {
+			if (this != actor && !(actor->GetActorState() & LegoPathActor::c_noCollide)) {
 				LegoROI* roi = actor->GetROI();
 
 				if (roi != NULL && (roi->GetVisibility() || actor->GetCameraFlag())) {
 					if (roi->FUN_100a9410(p_v1, p_v2, p_f1, p_f2, p_v3, m_collideBox && actor->m_collideBox)) {
-						VTable0x94(actor, TRUE);
-						actor->VTable0x94(this, FALSE);
+						HitActor(actor, TRUE);
+						actor->HitActor(this, FALSE);
 						return 2;
 					}
 				}
@@ -608,7 +609,7 @@ MxResult LegoPathActor::VTable0x9c()
 			local20 = 0;
 
 			Mx3DPointFloat vec;
-			switch (m_controller->FUN_1004a240(*m_grec, local34, local48, m_unk0xe4, m_destEdge, m_boundary)) {
+			switch (m_pathController->FUN_1004a240(*m_grec, local34, local48, m_unk0xe4, m_destEdge, m_boundary)) {
 			case 0:
 			case 1:
 				break;
