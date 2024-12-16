@@ -20,6 +20,8 @@
 #include "mxtransitionmanager.h"
 #include "mxvariabletable.h"
 
+#include <stdio.h>
+
 DECOMP_SIZE_ASSERT(TowTrack, 0x180)
 DECOMP_SIZE_ASSERT(TowTrackMissionState, 0x28)
 

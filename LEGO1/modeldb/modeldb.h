@@ -6,11 +6,11 @@
 #include "mxstring.h"
 #include "mxtypes.h"
 
-#include <stdio.h>
+#include <SDL3/SDL_iostream.h>
 
 // SIZE 0x18
 struct ModelDbPart {
-	MxResult Read(FILE* p_file);
+	MxResult Read(SDL_IOStream* p_file);
 
 	MxString m_roiName;          // 0x00
 	undefined4 m_partDataLength; // 0x10
@@ -92,7 +92,7 @@ public:
 // SIZE 0x38
 struct ModelDbModel {
 	void Free();
-	MxResult Read(FILE* p_file);
+	MxResult Read(SDL_IOStream* p_file);
 
 	char* m_modelName;     // 0x00
 	undefined4 m_unk0x04;  // 0x04
@@ -113,7 +113,7 @@ struct ModelDbWorld {
 	undefined m_unk0x10[0x08];   // 0x10
 };
 
-MxResult ReadModelDbWorlds(FILE* p_file, ModelDbWorld*& p_worlds, MxS32& p_numWorlds);
+MxResult ReadModelDbWorlds(SDL_IOStream* p_file, ModelDbWorld*& p_worlds, MxS32& p_numWorlds);
 void FreeModelDbWorlds(ModelDbWorld*& p_worlds, MxS32 p_numWorlds);
 
 #endif // MODELDB_H

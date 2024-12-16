@@ -5,7 +5,7 @@
 #include "mxgeometry/mxgeometry3d.h"
 #include "mxstring.h"
 
-#include <stdio.h>
+#include <SDL3/SDL_iostream.h>
 
 // VTABLE: LEGO1 0x100d7d80
 // SIZE 0x08
@@ -149,7 +149,7 @@ public:
 	// LegoFile::`scalar deleting destructor'
 
 protected:
-	FILE* m_file; // 0x08
+	SDL_IOStream* m_file; // 0x08
 };
 
 #endif // __LEGOSTORAGE_H

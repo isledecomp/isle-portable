@@ -18,6 +18,8 @@
 #include "mxtransitionmanager.h"
 #include "mxvariabletable.h"
 
+#include <stdio.h>
+
 DECOMP_SIZE_ASSERT(DuneBuggy, 0x16c)
 
 // GLOBAL: LEGO1 0x100f7660

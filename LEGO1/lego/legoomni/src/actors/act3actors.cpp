@@ -16,6 +16,7 @@
 #include "roi/legoroi.h"
 
 #include <assert.h>
+#include <stdio.h>
 
 DECOMP_SIZE_ASSERT(Act3Actor, 0x178)
 DECOMP_SIZE_ASSERT(Act3Cop, 0x188)

@@ -22,6 +22,8 @@
 #include "mxvariabletable.h"
 #include "scripts.h"
 
+#include <stdio.h>
+
 // Defined in legopathstruct.cpp
 extern MxBool g_unk0x100f119c;
 

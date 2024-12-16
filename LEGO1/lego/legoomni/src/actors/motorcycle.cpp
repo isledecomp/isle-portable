@@ -16,6 +16,8 @@
 #include "mxtransitionmanager.h"
 #include "mxvariabletable.h"
 
+#include <stdio.h>
+
 DECOMP_SIZE_ASSERT(Motocycle, 0x16c)
 
 // FUNCTION: LEGO1 0x100357b0

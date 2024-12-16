@@ -18,6 +18,8 @@
 #include "mxutilities.h"
 #include "realtime/realtime.h"
 
+#include <stdio.h>
+
 DECOMP_SIZE_ASSERT(LegoEntity, 0x68)
 
 // FUNCTION: LEGO1 0x100105f0

@@ -6,8 +6,6 @@
 #include "mxstring.h"
 #include "mxtypes.h"
 
-#include <windows.h>
-
 // VTABLE: LEGO1 0x100dc890
 // VTABLE: BETA10 0x101c2418
 // SIZE 0x7c
@@ -43,14 +41,14 @@ public:
 	MxResult Open(MxULong) override;                 // vtable+0x14
 	MxResult Close() override;                       // vtable+0x18
 	MxResult Read(unsigned char*, MxULong) override; // vtable+0x20
-	MxResult Seek(MxLong, MxS32) override;           // vtable+0x24
+	MxResult Seek(MxLong, SDL_IOWhence) override;    // vtable+0x24
 	MxULong GetBufferSize() override;                // vtable+0x28
 	MxULong GetStreamBuffersNum() override;          // vtable+0x2c
 
 	// FUNCTION: BETA10 0x1015e110
 	void SetFileName(const char* p_filename) { m_filename = p_filename; }
 
-	MxS32 CalcFileSize() { return GetFileSize(m_io.m_info.hmmio, NULL); }
+	MxS32 CalcFileSize() { return SDL_GetIOSize(m_io.m_file); }
 
 	// SYNTHETIC: LEGO1 0x100c01e0
 	// SYNTHETIC: BETA10 0x10148e40
@@ -63,7 +61,7 @@ public:
 
 		MxS16 m_majorVersion;     // 0x00
 		MxS16 m_minorVersion;     // 0x02
-		MxULong m_bufferSize;     // 0x04
+		MxU32 m_bufferSize;       // 0x04
 		MxS16 m_streamBuffersNum; // 0x08
 		MxS16 m_reserved;         // 0x0a
 	};

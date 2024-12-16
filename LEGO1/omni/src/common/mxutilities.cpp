@@ -164,9 +164,9 @@ void FUN_100b7220(MxDSAction* p_action, MxU32 p_newFlags, MxBool p_setFlags)
 MxDSObject* CreateStreamObject(MxDSFile* p_file, MxS16 p_ofs)
 {
 	MxU8* buf;
-	_MMCKINFO tmpChunk;
+	ISLE_MMCKINFO tmpChunk;
 
-	if (p_file->Seek(((MxLong*) p_file->GetBuffer())[p_ofs], SEEK_SET)) {
+	if (p_file->Seek(((MxLong*) p_file->GetBuffer())[p_ofs], SDL_IO_SEEK_SET)) {
 		return NULL;
 	}
 
