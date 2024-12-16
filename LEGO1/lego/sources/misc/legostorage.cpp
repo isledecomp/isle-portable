@@ -42,7 +42,7 @@ LegoFile::LegoFile()
 LegoFile::~LegoFile()
 {
 	if (m_file) {
-		fclose(m_file);
+		SDL_CloseIO(m_file);
 	}
 }
 
@@ -52,7 +52,7 @@ LegoResult LegoFile::Read(void* p_buffer, LegoU32 p_size)
 	if (!m_file) {
 		return FAILURE;
 	}
-	if (fread(p_buffer, 1, p_size, m_file) != p_size) {
+	if (SDL_ReadIO(m_file, p_buffer, p_size) != p_size) {
 		return FAILURE;
 	}
 	return SUCCESS;
@@ -64,7 +64,7 @@ LegoResult LegoFile::Write(const void* p_buffer, LegoU32 p_size)
 	if (!m_file) {
 		return FAILURE;
 	}
-	if (fwrite(p_buffer, 1, p_size, m_file) != p_size) {
+	if (SDL_WriteIO(m_file, p_buffer, p_size) != p_size) {
 		return FAILURE;
 	}
 	return SUCCESS;
@@ -76,7 +76,7 @@ LegoResult LegoFile::GetPosition(LegoU32& p_position)
 	if (!m_file) {
 		return FAILURE;
 	}
-	LegoU32 position = ftell(m_file);
+	Sint64 position = SDL_TellIO(m_file);
 	if (position == -1) {
 		return FAILURE;
 	}
@@ -90,7 +90,7 @@ LegoResult LegoFile::SetPosition(LegoU32 p_position)
 	if (!m_file) {
 		return FAILURE;
 	}
-	if (fseek(m_file, p_position, SEEK_SET) != 0) {
+	if (SDL_SeekIO(m_file, p_position, SDL_IO_SEEK_SET) != p_position) {
 		return FAILURE;
 	}
 	return SUCCESS;
@@ -100,7 +100,7 @@ LegoResult LegoFile::SetPosition(LegoU32 p_position)
 LegoResult LegoFile::Open(const char* p_name, LegoU32 p_mode)
 {
 	if (m_file) {
-		fclose(m_file);
+		SDL_CloseIO(m_file);
 	}
 	char mode[4];
 	mode[0] = '\0';
@@ -115,13 +115,15 @@ LegoResult LegoFile::Open(const char* p_name, LegoU32 p_mode)
 		strcat(mode, "w");
 	}
 	if ((p_mode & c_text) != 0) {
-		strcat(mode, "t");
 	}
 	else {
 		strcat(mode, "b");
 	}
 
-	if (!(m_file = fopen(p_name, mode))) {
+	MxString path(p_name);
+	path.NormalizePath();
+
+	if (!(m_file = SDL_IOFromFile(path.GetData(), mode))) {
 		return FAILURE;
 	}
 	return SUCCESS;

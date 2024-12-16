@@ -77,9 +77,6 @@ void MakeSourceName(char* p_output, const char* p_input)
 	if (extLoc) {
 		*extLoc = 0;
 	}
-
-	// [library:filesystem] Normalize this name since it will be part of a path.
-	MxString::NormalizePath(p_output);
 }
 
 // FUNCTION: LEGO1 0x100b7050

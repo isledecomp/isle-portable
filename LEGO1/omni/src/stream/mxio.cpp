@@ -1,6 +1,7 @@
 #include "mxio.h"
 
 #include "decomp.h"
+#include "mxstring.h"
 
 #include <assert.h>
 #include <limits.h>
@@ -40,9 +41,9 @@ MxU16 MXIOINFO::Open(const char* p_filename, MxULong p_flags)
 
 	m_info.lDiskOffset = m_info.lBufOffset = 0;
 
-	// DECOMP: Cast of p_flags to u16 forces the `movzx` instruction
-	// original: m_info.hmmio = OpenFile(p_filename, &unused, (MxU16) p_flags);
-	ASSIGN_M_FILE(SDL_IOFromFile(p_filename, "rb"));
+	MxString path(p_filename);
+	path.NormalizePath();
+	ASSIGN_M_FILE(SDL_IOFromFile(path.GetData(), "rb"));
 
 	if (M_FILE != NULL) {
 		m_info.dwFlags = p_flags;

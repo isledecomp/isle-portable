@@ -17,6 +17,7 @@ public:
 	void Reverse();
 	void ToUpperCase();
 	void ToLowerCase();
+	void NormalizePath() { NormalizePath(m_data); }
 
 	MxString& operator=(const MxString& p_str);
 	const MxString& operator=(const char* p_str);
