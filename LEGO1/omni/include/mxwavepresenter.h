@@ -38,6 +38,7 @@ public:
 	void ReadyTickle() override;      // vtable+0x18
 	void StartingTickle() override;   // vtable+0x1c
 	void StreamingTickle() override;  // vtable+0x20
+	void RepeatingTickle() override;  // added by isle-portable
 	void DoneTickle() override;       // vtable+0x2c
 	void ParseExtra() override;       // vtable+0x30
 	MxResult AddToManager() override; // vtable+0x34
