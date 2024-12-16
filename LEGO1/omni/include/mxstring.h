@@ -25,6 +25,7 @@ public:
 	MxString& operator+=(const char* p_str);
 
 	static void CharSwap(char* p_a, char* p_b);
+	static void NormalizePath(char* p_path);
 
 	// FUNCTION: BETA10 0x10017c50
 	char* GetData() const { return m_data; }

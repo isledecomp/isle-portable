@@ -2,6 +2,7 @@
 
 #include "decomp.h"
 
+#include <SDL3/SDL_platform_defines.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -184,4 +185,23 @@ void MxString::CharSwap(char* p_a, char* p_b)
 	char t = *p_a;
 	*p_a = *p_b;
 	*p_b = t;
+}
+
+void MxString::NormalizePath(char* p_path)
+{
+	// [library:filesystem]
+	// This function is used to build a consistent path that will eventually be used to read a file.
+	// The input may come with Windows path separators, i.e. \lego\scripts\infocntr\infomain
+	// We have to replace the backslashes with forward slashes to be able to access the files
+	// on non-Windows systems
+#if !defined(SDL_PLATFORM_WINDOWS)
+	char* path = p_path;
+	while (*path) {
+		if (*path == '\\') {
+			*path = '/';
+		}
+
+		path++;
+	}
+#endif
 }

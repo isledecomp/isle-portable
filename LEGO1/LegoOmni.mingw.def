@@ -146,7 +146,6 @@ _ZN8MxDSFile13GetBufferSizeEv
 _ZN8MxDSFile19GetStreamBuffersNumEv
 _ZN8MxDSFile4OpenEj
 _ZN8MxDSFile4ReadEPhj
-_ZN8MxDSFile4SeekEii
 _ZN8MxDSFile5CloseEv
 _ZN8MxDSFileC1EPKcj
 _ZN8MxDSFileC2EPKcj

@@ -98,7 +98,6 @@ EXPORTS
 ?RemoveAll@ViewManager@@QAEXPAVViewROI@@@Z
 ?RemoveWorld@LegoOmni@@QAEXABVMxAtomId@@J@Z
 ?Save@LegoGameState@@QAEJK@Z
-?Seek@MxDSFile@@UAEJJH@Z
 ?SerializePlayersInfo@LegoGameState@@QAEXF@Z
 ?SerializeScoreHistory@LegoGameState@@QAEXF@Z
 ?SetCD@MxOmni@@SAXPBD@Z

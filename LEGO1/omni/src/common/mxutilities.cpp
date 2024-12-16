@@ -77,6 +77,9 @@ void MakeSourceName(char* p_output, const char* p_input)
 	if (extLoc) {
 		*extLoc = 0;
 	}
+
+	// [library:filesystem] Normalize this name since it will be part of a path.
+	MxString::NormalizePath(p_output);
 }
 
 // FUNCTION: LEGO1 0x100b7050
@@ -164,9 +167,9 @@ void FUN_100b7220(MxDSAction* p_action, MxU32 p_newFlags, MxBool p_setFlags)
 MxDSObject* CreateStreamObject(MxDSFile* p_file, MxS16 p_ofs)
 {
 	MxU8* buf;
-	_MMCKINFO tmpChunk;
+	ISLE_MMCKINFO tmpChunk;
 
-	if (p_file->Seek(((MxLong*) p_file->GetBuffer())[p_ofs], 0)) {
+	if (p_file->Seek(((MxLong*) p_file->GetBuffer())[p_ofs], SDL_IO_SEEK_SET)) {
 		return NULL;
 	}
 
