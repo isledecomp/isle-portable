@@ -16,6 +16,8 @@
 #include "mxvariabletable.h"
 #include "scripts.h"
 
+#include <stdio.h>
+
 DECOMP_SIZE_ASSERT(Jetski, 0x164)
 
 // GLOBAL: LEGO1 0x100f7ab8

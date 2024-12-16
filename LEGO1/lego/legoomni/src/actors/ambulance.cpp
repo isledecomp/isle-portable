@@ -23,6 +23,8 @@
 #include "mxvariabletable.h"
 #include "scripts.h"
 
+#include <stdio.h>
+
 DECOMP_SIZE_ASSERT(Ambulance, 0x184)
 DECOMP_SIZE_ASSERT(AmbulanceMissionState, 0x24)
 

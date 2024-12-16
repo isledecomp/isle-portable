@@ -27,6 +27,8 @@
 #include "mxstl/stlcompat.h"
 #include "mxutilities.h"
 
+#include <stdio.h>
+
 DECOMP_SIZE_ASSERT(LegoWorldPresenter, 0x54)
 
 // GLOBAL: LEGO1 0x100f75d4

@@ -32,6 +32,7 @@
 
 #include <SDL3/SDL_events.h>
 #include <process.h>
+#include <stdio.h>
 #include <string.h>
 #include <vec.h>
 

@@ -16,6 +16,7 @@
 #include "roi/legolod.h"
 #include "viewmanager/viewmanager.h"
 
+#include <stdio.h>
 #include <vec.h>
 
 DECOMP_SIZE_ASSERT(LegoCharacter, 0x08)

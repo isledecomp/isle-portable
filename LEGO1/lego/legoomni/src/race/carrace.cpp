@@ -23,6 +23,8 @@
 #include "mxvariabletable.h"
 #include "scripts.h"
 
+#include <stdio.h>
+
 DECOMP_SIZE_ASSERT(CarRace, 0x154)
 
 // GLOBAL: LEGO1 0x100d5d10

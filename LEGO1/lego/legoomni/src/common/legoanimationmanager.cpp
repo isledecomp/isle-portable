@@ -29,6 +29,7 @@
 #include "viewmanager/viewmanager.h"
 
 #include <io.h>
+#include <stdio.h>
 #include <vec.h>
 
 DECOMP_SIZE_ASSERT(LegoAnimationManager, 0x500)

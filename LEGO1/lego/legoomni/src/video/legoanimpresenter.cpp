@@ -26,6 +26,8 @@
 #include "realtime/realtime.h"
 #include "viewmanager/viewmanager.h"
 
+#include <stdio.h>
+
 DECOMP_SIZE_ASSERT(LegoAnimPresenter, 0xbc)
 
 // FUNCTION: LEGO1 0x10068420

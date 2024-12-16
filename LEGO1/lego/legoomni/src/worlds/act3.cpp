@@ -23,6 +23,7 @@
 #include "mxtransitionmanager.h"
 #include "scripts.h"
 
+#include <stdio.h>
 #include <vec.h>
 
 DECOMP_SIZE_ASSERT(Act3, 0x4274)
