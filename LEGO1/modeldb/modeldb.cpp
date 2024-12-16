@@ -15,79 +15,81 @@ void ModelDbModel::Free()
 }
 
 // FUNCTION: LEGO1 0x100276b0
-MxResult ModelDbModel::Read(FILE* p_file)
+MxResult ModelDbModel::Read(SDL_IOStream* p_file)
 {
 	MxU32 len;
 
-	if (fread(&len, sizeof(len), 1, p_file) != 1) {
+	if (SDL_ReadIO(p_file, &len, sizeof(len)) != sizeof(len)) {
 		return FAILURE;
 	}
 
 	m_modelName = new char[len];
-	if (fread(m_modelName, len, 1, p_file) != 1) {
+	if (SDL_ReadIO(p_file, m_modelName, len) != len) {
 		return FAILURE;
 	}
 
-	if (fread(&m_unk0x04, sizeof(m_unk0x04), 1, p_file) != 1) {
+	if (SDL_ReadIO(p_file, &m_unk0x04, sizeof(m_unk0x04)) != sizeof(m_unk0x04)) {
 		return FAILURE;
 	}
-	if (fread(&m_unk0x08, sizeof(m_unk0x08), 1, p_file) != 1) {
+	if (SDL_ReadIO(p_file, &m_unk0x08, sizeof(m_unk0x08)) != sizeof(m_unk0x08)) {
 		return FAILURE;
 	}
-	if (fread(&len, sizeof(len), 1, p_file) != 1) {
+	if (SDL_ReadIO(p_file, &len, sizeof(len)) != sizeof(len)) {
 		return FAILURE;
 	}
 
 	m_presenterName = new char[len];
-	if (fread(m_presenterName, len, 1, p_file) != 1) {
+	if (SDL_ReadIO(p_file, m_presenterName, len) != len) {
 		return FAILURE;
 	}
 
-	if (fread(&m_location, sizeof(*m_location), 3, p_file) != 3) {
+	if (SDL_ReadIO(p_file, m_location, sizeof(m_location)) != sizeof(m_location)) {
 		return FAILURE;
 	}
-	if (fread(&m_direction, sizeof(*m_direction), 3, p_file) != 3) {
+	if (SDL_ReadIO(p_file, m_direction, sizeof(m_direction)) != sizeof(m_direction)) {
 		return FAILURE;
 	}
-	if (fread(&m_up, sizeof(*m_up), 3, p_file) != 3) {
+	if (SDL_ReadIO(p_file, m_up, sizeof(m_up)) != sizeof(m_up)) {
 		return FAILURE;
 	}
 
-	return fread(&m_unk0x34, sizeof(m_unk0x34), 1, p_file) == 1 ? SUCCESS : FAILURE;
+	return SDL_ReadIO(p_file, &m_unk0x34, sizeof(m_unk0x34)) == sizeof(m_unk0x34) ? SUCCESS : FAILURE;
 }
 
 // FUNCTION: LEGO1 0x10027850
-MxResult ModelDbPart::Read(FILE* p_file)
+MxResult ModelDbPart::Read(SDL_IOStream* p_file)
 {
 	MxU32 len;
-	char buff[128];
 
-	if (fread(&len, sizeof(len), 1, p_file) != 1) {
+	if (SDL_ReadIO(p_file, &len, sizeof(len)) != sizeof(len)) {
 		return FAILURE;
 	}
 
-	// (modernization) critical bug: buffer overrun
-	if (fread(buff, len, 1, p_file) != 1) {
+	char* buff = new char[len];
+
+	if (SDL_ReadIO(p_file, buff, len) != len) {
 		return FAILURE;
 	}
 
 	m_roiName = buff;
+	delete[] buff;
 
-	if (fread(&m_partDataLength, sizeof(m_partDataLength), 1, p_file) != 1) {
+	if (SDL_ReadIO(p_file, &m_partDataLength, sizeof(m_partDataLength)) != sizeof(m_partDataLength)) {
 		return FAILURE;
 	}
 
-	return fread(&m_partDataOffset, sizeof(m_partDataOffset), 1, p_file) == 1 ? SUCCESS : FAILURE;
+	return SDL_ReadIO(p_file, &m_partDataOffset, sizeof(m_partDataOffset)) == sizeof(m_partDataOffset) ? SUCCESS
+																									   : FAILURE;
 }
 
 // FUNCTION: LEGO1 0x10027910
-MxResult ReadModelDbWorlds(FILE* p_file, ModelDbWorld*& p_worlds, MxS32& p_numWorlds)
+MxResult ReadModelDbWorlds(SDL_IOStream* p_file, ModelDbWorld*& p_worlds, MxS32& p_numWorlds)
 {
 	p_worlds = NULL;
 	p_numWorlds = 0;
 
 	MxS32 numWorlds;
-	if (fread(&numWorlds, sizeof(numWorlds), 1, p_file) != 1) {
+	if (SDL_ReadIO(p_file, &numWorlds, sizeof(numWorlds)) != sizeof(numWorlds)) {
 		return FAILURE;
 	}
 
@@ -95,16 +97,16 @@ MxResult ReadModelDbWorlds(FILE* p_file, ModelDbWorld*& p_worlds, MxS32& p_numWo
 	MxS32 worldNameLen, numParts, i, j;
 
 	for (i = 0; i < numWorlds; i++) {
-		if (fread(&worldNameLen, sizeof(worldNameLen), 1, p_file) != 1) {
+		if (SDL_ReadIO(p_file, &worldNameLen, sizeof(worldNameLen)) != sizeof(worldNameLen)) {
 			return FAILURE;
 		}
 
 		worlds[i].m_worldName = new char[worldNameLen];
-		if (fread(worlds[i].m_worldName, worldNameLen, 1, p_file) != 1) {
+		if (SDL_ReadIO(p_file, worlds[i].m_worldName, worldNameLen) != worldNameLen) {
 			return FAILURE;
 		}
 
-		if (fread(&numParts, sizeof(numParts), 1, p_file) != 1) {
+		if (SDL_ReadIO(p_file, &numParts, sizeof(numParts)) != sizeof(numParts)) {
 			return FAILURE;
 		}
 
@@ -120,7 +122,8 @@ MxResult ReadModelDbWorlds(FILE* p_file, ModelDbWorld*& p_worlds, MxS32& p_numWo
 			worlds[i].m_partList->Append(part);
 		}
 
-		if (fread(&worlds[i].m_numModels, sizeof(worlds[i].m_numModels), 1, p_file) != 1) {
+		if (SDL_ReadIO(p_file, &worlds[i].m_numModels, sizeof(worlds[i].m_numModels)) !=
+			sizeof(worlds[i].m_numModels)) {
 			return FAILURE;
 		}
 

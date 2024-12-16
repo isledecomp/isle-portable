@@ -33,10 +33,6 @@ MXIOINFO::~MXIOINFO()
 // FUNCTION: BETA10 0x1015e189
 MxU16 MXIOINFO::Open(const char* p_filename, MxULong p_flags)
 {
-	OutputDebugString("OPENING -> ");
-	OutputDebugString(p_filename);
-	OutputDebugString("\n");
-
 	// [library:filesystem] p_flags is always 0 (OF_READ)
 	assert(p_flags == 0);
 

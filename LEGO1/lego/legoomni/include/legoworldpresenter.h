@@ -3,7 +3,7 @@
 
 #include "legoentitypresenter.h"
 
-#include <stdio.h>
+#include <SDL3/SDL_iostream.h>
 
 class LegoWorld;
 struct ModelDbPart;
@@ -50,8 +50,8 @@ public:
 	// LegoWorldPresenter::`scalar deleting destructor'
 
 private:
-	MxResult FUN_10067360(ModelDbPart& p_part, FILE* p_wdbFile);
-	MxResult FUN_100674b0(ModelDbModel& p_model, FILE* p_wdbFile, LegoWorld* p_world);
+	MxResult FUN_10067360(ModelDbPart& p_part, SDL_IOStream* p_wdbFile);
+	MxResult FUN_100674b0(ModelDbModel& p_model, SDL_IOStream* p_wdbFile, LegoWorld* p_world);
 
 	undefined4 m_unk0x50;
 };

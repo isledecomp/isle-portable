@@ -27,15 +27,13 @@
 #include "mxstl/stlcompat.h"
 #include "mxutilities.h"
 
-#include <io.h>
-
 DECOMP_SIZE_ASSERT(LegoWorldPresenter, 0x54)
 
 // GLOBAL: LEGO1 0x100f75d4
 MxS32 g_legoWorldPresenterQuality = 1;
 
 // GLOBAL: LEGO1 0x100f75d8
-MxLong g_wdbOffset = 0;
+Sint64 g_wdbOffset = 0;
 
 // FUNCTION: LEGO1 0x100665b0
 void LegoWorldPresenter::configureLegoWorldPresenter(MxS32 p_legoWorldPresenterQuality)
@@ -166,22 +164,26 @@ MxResult LegoWorldPresenter::LoadWorld(char* p_worldName, LegoWorld* p_world)
 	char wdbPath[512];
 	sprintf(wdbPath, "%s", MxOmni::GetHD());
 
-	if (wdbPath[strlen(wdbPath) - 1] != '\\') {
+	if (wdbPath[strlen(wdbPath) - 1] != '\\' && wdbPath[strlen(wdbPath) - 1] != '/') {
 		strcat(wdbPath, "\\");
 	}
 
 	strcat(wdbPath, "lego\\data\\world.wdb");
+	MxString::NormalizePath(wdbPath);
 
-	if (access(wdbPath, 4) != 0) {
+	SDL_IOStream* wdbFile;
+
+	if ((wdbFile = SDL_IOFromFile(wdbPath, "rb")) == NULL) {
 		sprintf(wdbPath, "%s", MxOmni::GetCD());
 
-		if (wdbPath[strlen(wdbPath) - 1] != '\\') {
+		if (wdbPath[strlen(wdbPath) - 1] != '\\' && wdbPath[strlen(wdbPath) - 1] != '/') {
 			strcat(wdbPath, "\\");
 		}
 
 		strcat(wdbPath, "lego\\data\\world.wdb");
+		MxString::NormalizePath(wdbPath);
 
-		if (access(wdbPath, 4) != 0) {
+		if ((wdbFile = SDL_IOFromFile(wdbPath, "rb")) == NULL) {
 			return FAILURE;
 		}
 	}
@@ -190,11 +192,6 @@ MxResult LegoWorldPresenter::LoadWorld(char* p_worldName, LegoWorld* p_world)
 	MxS32 numWorlds, i, j;
 	MxU32 size;
 	MxU8* buff;
-	FILE* wdbFile = fopen(wdbPath, "rb");
-
-	if (wdbFile == NULL) {
-		return FAILURE;
-	}
 
 	ReadModelDbWorlds(wdbFile, worlds, numWorlds);
 
@@ -209,12 +206,12 @@ MxResult LegoWorldPresenter::LoadWorld(char* p_worldName, LegoWorld* p_world)
 	}
 
 	if (g_wdbOffset == 0) {
-		if (fread(&size, sizeof(size), 1, wdbFile) != 1) {
+		if (SDL_ReadIO(wdbFile, &size, sizeof(size)) != sizeof(size)) {
 			return FAILURE;
 		}
 
 		buff = new MxU8[size];
-		if (fread(buff, size, 1, wdbFile) != 1) {
+		if (SDL_ReadIO(wdbFile, buff, size) != size) {
 			return FAILURE;
 		}
 
@@ -229,12 +226,12 @@ MxResult LegoWorldPresenter::LoadWorld(char* p_worldName, LegoWorld* p_world)
 
 		delete[] buff;
 
-		if (fread(&size, sizeof(size), 1, wdbFile) != 1) {
+		if (SDL_ReadIO(wdbFile, &size, sizeof(size)) != sizeof(size)) {
 			return FAILURE;
 		}
 
 		buff = new MxU8[size];
-		if (fread(buff, size, 1, wdbFile) != 1) {
+		if (SDL_ReadIO(wdbFile, buff, size) != size) {
 			return FAILURE;
 		}
 
@@ -248,10 +245,10 @@ MxResult LegoWorldPresenter::LoadWorld(char* p_worldName, LegoWorld* p_world)
 
 		delete[] buff;
 
-		g_wdbOffset = ftell(wdbFile);
+		g_wdbOffset = SDL_TellIO(wdbFile);
 	}
 	else {
-		if (fseek(wdbFile, g_wdbOffset, SEEK_SET) != 0) {
+		if (SDL_SeekIO(wdbFile, g_wdbOffset, SDL_IO_SEEK_SET) != g_wdbOffset) {
 			return FAILURE;
 		}
 	}
@@ -309,18 +306,18 @@ MxResult LegoWorldPresenter::LoadWorld(char* p_worldName, LegoWorld* p_world)
 	}
 
 	FreeModelDbWorlds(worlds, numWorlds);
-	fclose(wdbFile);
+	SDL_CloseIO(wdbFile);
 	return SUCCESS;
 }
 
 // FUNCTION: LEGO1 0x10067360
-MxResult LegoWorldPresenter::FUN_10067360(ModelDbPart& p_part, FILE* p_wdbFile)
+MxResult LegoWorldPresenter::FUN_10067360(ModelDbPart& p_part, SDL_IOStream* p_wdbFile)
 {
 	MxResult result;
 	MxU8* buff = new MxU8[p_part.m_partDataLength];
 
-	fseek(p_wdbFile, p_part.m_partDataOffset, 0);
-	if (fread(buff, p_part.m_partDataLength, 1, p_wdbFile) != 1) {
+	SDL_SeekIO(p_wdbFile, p_part.m_partDataOffset, SDL_IO_SEEK_SET);
+	if (SDL_ReadIO(p_wdbFile, buff, p_part.m_partDataLength) != p_part.m_partDataLength) {
 		return FAILURE;
 	}
 
@@ -340,12 +337,12 @@ MxResult LegoWorldPresenter::FUN_10067360(ModelDbPart& p_part, FILE* p_wdbFile)
 }
 
 // FUNCTION: LEGO1 0x100674b0
-MxResult LegoWorldPresenter::FUN_100674b0(ModelDbModel& p_model, FILE* p_wdbFile, LegoWorld* p_world)
+MxResult LegoWorldPresenter::FUN_100674b0(ModelDbModel& p_model, SDL_IOStream* p_wdbFile, LegoWorld* p_world)
 {
 	MxU8* buff = new MxU8[p_model.m_unk0x04];
 
-	fseek(p_wdbFile, p_model.m_unk0x08, 0);
-	if (fread(buff, p_model.m_unk0x04, 1, p_wdbFile) != 1) {
+	SDL_SeekIO(p_wdbFile, p_model.m_unk0x08, SDL_IO_SEEK_SET);
+	if (SDL_ReadIO(p_wdbFile, buff, p_model.m_unk0x04) != p_model.m_unk0x04) {
 		return FAILURE;
 	}
 
