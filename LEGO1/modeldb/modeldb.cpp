@@ -52,8 +52,11 @@ MxResult ModelDbModel::Read(SDL_IOStream* p_file)
 	if (SDL_ReadIO(p_file, m_up, sizeof(m_up)) != sizeof(m_up)) {
 		return FAILURE;
 	}
+	if (SDL_ReadIO(p_file, &m_unk0x34, sizeof(m_unk0x34)) != sizeof(m_unk0x34)) {
+		return FAILURE;
+	}
 
-	return SDL_ReadIO(p_file, &m_unk0x34, sizeof(m_unk0x34)) == sizeof(m_unk0x34) ? SUCCESS : FAILURE;
+	return SUCCESS;
 }
 
 // FUNCTION: LEGO1 0x10027850
@@ -77,9 +80,11 @@ MxResult ModelDbPart::Read(SDL_IOStream* p_file)
 	if (SDL_ReadIO(p_file, &m_partDataLength, sizeof(m_partDataLength)) != sizeof(m_partDataLength)) {
 		return FAILURE;
 	}
+	if (SDL_ReadIO(p_file, &m_partDataOffset, sizeof(m_partDataOffset)) != sizeof(m_partDataOffset)) {
+		return FAILURE;
+	}
 
-	return SDL_ReadIO(p_file, &m_partDataOffset, sizeof(m_partDataOffset)) == sizeof(m_partDataOffset) ? SUCCESS
-																									   : FAILURE;
+	return SUCCESS;
 }
 
 // FUNCTION: LEGO1 0x10027910

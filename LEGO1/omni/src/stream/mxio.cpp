@@ -29,7 +29,6 @@ MXIOINFO::~MXIOINFO()
 	Close(0);
 }
 
-#include <windows.h>
 // FUNCTION: LEGO1 0x100cc830
 // FUNCTION: BETA10 0x1015e189
 MxU16 MXIOINFO::Open(const char* p_filename, MxULong p_flags)
