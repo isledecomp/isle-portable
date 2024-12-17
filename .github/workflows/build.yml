@@ -66,3 +66,39 @@ jobs:
             -DISLE_WERROR=${{ !!matrix.toolchain.werror }} \
             -Werror=dev
           cmake --build build -- -k0
+
+      # Needs to be reworked when cross-platform building is achieved
+      - name: Upload Build Artifacts (MSVC (32-bit))
+        if: matrix.toolchain.name == 'MSVC (32-bit)'
+        uses: actions/upload-artifact@master
+        with:
+          name: msvc32-artifacts
+          path: |
+            build/ISLE.EXE
+            build/LEGO1.DLL
+            build/SDL3.dll
+
+  upload:
+    name: 'Upload artifacts'
+    needs: build-current-toolchain
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.repository == 'isledecomp/isle-portable' }}
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        repository: 'probonopd/uploadtool'
+
+    - uses: actions/download-artifact@master
+      with:
+        name: msvc32-artifacts
+        path: build
+
+    - name: Upload Continuous Release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        UPLOAD_KEY: ${{ secrets.UPLOAD_KEY }}
+      run: |
+        ./upload.sh \
+          build/ISLE.EXE \
+          build/LEGO1.DLL \
+          build/SDL3.dll
