@@ -76,6 +76,7 @@ jobs:
           path: |
             build/ISLE.EXE
             build/LEGO1.DLL
+            build/SDL3.dll
 
   upload:
     name: 'Upload artifacts'
@@ -99,4 +100,5 @@ jobs:
       run: |
         ./upload.sh \
           build/ISLE.EXE \
-          build/LEGO1.DLL
+          build/LEGO1.DLL \
+          build/SDL3.dll
