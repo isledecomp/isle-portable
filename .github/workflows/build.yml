@@ -74,7 +74,7 @@ jobs:
         shell: bash
         run: |
           cd build
-          zip "isle-portable ${{ matrix.toolchain.name }}.zip" \
+          7z a "isle-portable ${{ matrix.toolchain.name }}.zip" \
               ISLE.EXE LEGO1.DLL SDL3.dll
 
       - name: Upload Build Artifacts (MSVC (32-bit))
