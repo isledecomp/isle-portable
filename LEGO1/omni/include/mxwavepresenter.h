@@ -94,10 +94,10 @@ protected:
 	// In (most) other cases, data is streamed through the ring buffer `m_rb`.
 	ma_pcm_rb m_rb;
 	struct {
-		ma_audio_buffer buffer;
-		MxU8* data;
-		MxU32 length;
-		MxU32 offset;
+		ma_audio_buffer m_buffer;
+		MxU8* m_data;
+		MxU32 m_length;
+		MxU32 m_offset;
 	} m_ab;
 
 	ma_sound m_sound;

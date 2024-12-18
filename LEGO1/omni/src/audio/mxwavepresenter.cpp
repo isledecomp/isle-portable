@@ -41,8 +41,8 @@ void MxWavePresenter::Destroy(MxBool p_fromDestructor)
 {
 	ma_sound_uninit(&m_sound);
 	ma_pcm_rb_uninit(&m_rb);
-	ma_audio_buffer_uninit(&m_ab.buffer);
-	delete[] m_ab.data;
+	ma_audio_buffer_uninit(&m_ab.m_buffer);
+	delete[] m_ab.m_data;
 
 	if (m_waveFormat) {
 		delete[] ((MxU8*) m_waveFormat);
@@ -59,9 +59,9 @@ void MxWavePresenter::Destroy(MxBool p_fromDestructor)
 MxBool MxWavePresenter::WriteToSoundBuffer(void* p_audioPtr, MxU32 p_length)
 {
 	if (m_action->IsLooping()) {
-		assert(m_ab.offset + p_length <= m_ab.length);
-		memcpy(m_ab.data + m_ab.offset, p_audioPtr, p_length);
-		m_ab.offset += p_length;
+		assert(m_ab.m_offset + p_length <= m_ab.m_length);
+		memcpy(m_ab.m_data + m_ab.m_offset, p_audioPtr, p_length);
+		m_ab.m_offset += p_length;
 		return TRUE;
 	}
 	else {
@@ -137,14 +137,14 @@ void MxWavePresenter::StartingTickle()
 				sampleRate
 			);
 
-			m_ab.length = ma_get_bytes_per_frame(format, channels) * sizeInFrames;
-			m_ab.data = new MxU8[m_ab.length];
+			m_ab.m_length = ma_get_bytes_per_frame(format, channels) * sizeInFrames;
+			m_ab.m_data = new MxU8[m_ab.m_length];
 
 			ma_audio_buffer_config config =
-				ma_audio_buffer_config_init(format, channels, sizeInFrames, m_ab.data, NULL);
+				ma_audio_buffer_config_init(format, channels, sizeInFrames, m_ab.m_data, NULL);
 			config.sampleRate = sampleRate;
 
-			if (ma_audio_buffer_init(&config, &m_ab.buffer) != MA_SUCCESS) {
+			if (ma_audio_buffer_init(&config, &m_ab.m_buffer) != MA_SUCCESS) {
 				goto done;
 			}
 		}
@@ -165,7 +165,7 @@ void MxWavePresenter::StartingTickle()
 
 		if (ma_sound_init_from_data_source(
 				MSoundManager()->GetEngine(),
-				m_action->IsLooping() ? (ma_data_source*) &m_ab.buffer : (ma_data_source*) &m_rb,
+				m_action->IsLooping() ? (ma_data_source*) &m_ab.m_buffer : (ma_data_source*) &m_rb,
 				m_is3d ? 0 : MA_SOUND_FLAG_NO_SPATIALIZATION,
 				NULL,
 				&m_sound
