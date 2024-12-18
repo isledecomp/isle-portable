@@ -13,11 +13,12 @@ jobs:
       fail-fast: false
       matrix:
         toolchain:
-        - { name: 'MSVC (32-bit)',  shell: 'sh',  setup-cmake: true, setup-ninja: true, setup-msvc: true, vc-arch: 'amd64_x86', dx5-libs: true,   d3drm-from-wine: false }
-        - { name: 'MSVC (64-bit)',  shell: 'sh',  setup-cmake: true, setup-ninja: true, setup-msvc: true, vc-arch: 'amd64',     dx5-libs: false,  d3drm-from-wine: true }
-        - { name: 'msys2 mingw32',  shell: 'msys2 {0}', msystem: mingw32, msys-env: mingw-w64-i686,        clang-tidy: true, werror: true, dx5-libs: false, d3drm-from-wine: true }
-        - { name: 'msys2 mingw64',  shell: 'msys2 {0}', msystem: mingw64, msys-env: mingw-w64-x86_64,      clang-tidy: true, werror: true, dx5-libs: false, d3drm-from-wine: true }
-        # - { name: 'msys2 clang32',  shell: 'msys2 {0}', msystem: clang32, msys-env: mingw-w64-clang-i686,  clang-tidy: true, werror: true, dx5-libs: true, d3drm-from-wine: true }
+      - { name: 'MSVC (32-bit, Release)',  shell: 'sh',  setup-cmake: true, setup-ninja: true, setup-msvc: true, vc-arch: 'amd64_x86', dx5-libs: true,   d3drm-from-wine: false, build-type: 'Release' }
+      - { name: 'MSVC (32-bit, Debug)',  shell: 'sh',  setup-cmake: true, setup-ninja: true, setup-msvc: true, vc-arch: 'amd64_x86', dx5-libs: true,   d3drm-from-wine: false, build-type: 'Debug' }
+      - { name: 'MSVC (64-bit, Debug)',  shell: 'sh',  setup-cmake: true, setup-ninja: true, setup-msvc: true, vc-arch: 'amd64',     dx5-libs: false,  d3drm-from-wine: true, build-type: 'Debug' }
+      - { name: 'msys2 mingw32 (Debug)',  shell: 'msys2 {0}', msystem: mingw32, msys-env: mingw-w64-i686,        clang-tidy: true, werror: true, dx5-libs: false, d3drm-from-wine: true, build-type: 'Debug' }
+      - { name: 'msys2 mingw64 (Debug)',  shell: 'msys2 {0}', msystem: mingw64, msys-env: mingw-w64-x86_64,      clang-tidy: true, werror: true, dx5-libs: false, d3drm-from-wine: true, build-type: 'Debug' }
+      # - { name: 'msys2 clang32',  shell: 'msys2 {0}', msystem: clang32, msys-env: mingw-w64-clang-i686,  clang-tidy: true, werror: true, dx5-libs: true, d3drm-from-wine: true }
 
     steps:
       - name: Setup vcvars
@@ -59,7 +60,7 @@ jobs:
         # Add -DDOWNLOAD_DEPENDENCIES=OFF once setup-sdl works
         run: |
           cmake -S . -B build -GNinja \
-            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_BUILD_TYPE=${{ matrix.toolchain.build-type }} \
             -DISLE_USE_DX5=${{ matrix.toolchain.dx5-libs }} \
             -DISLE_D3DRM_FROM_WINE=${{ matrix.toolchain.d3drm-from-wine }} \
             -DENABLE_CLANG_TIDY=${{ !!matrix.toolchain.clang-tidy }} \
@@ -68,15 +69,21 @@ jobs:
           cmake --build build -- -k0
 
       # Needs to be reworked when cross-platform building is achieved
+
+      - name: Make Artifact Archive
+        shell: bash
+        run: |
+          cd build
+          zip isle-portable${{ matrix.toolchain.name }}${{ matrix.toolchain.build-type }}.zip \
+              ISLE.EXE LEGO1.DLL SDL3.dll
+
       - name: Upload Build Artifacts (MSVC (32-bit))
-        if: matrix.toolchain.name == 'MSVC (32-bit)'
+        if: ${{ matrix.toolchain.name == 'MSVC (32-bit, Release)' || matrix.toolchain.name == 'MSVC (32-bit, Debug)' }}
         uses: actions/upload-artifact@master
         with:
           name: msvc32-artifacts
           path: |
-            build/ISLE.EXE
-            build/LEGO1.DLL
-            build/SDL3.dll
+            build/isle-portable${{ matrix.toolchain.name }}${{ matrix.toolchain.build-type }}.zip
 
   upload:
     name: 'Upload artifacts'
@@ -99,6 +106,4 @@ jobs:
         UPLOAD_KEY: ${{ secrets.UPLOAD_KEY }}
       run: |
         ./upload.sh \
-          build/ISLE.EXE \
-          build/LEGO1.DLL \
-          build/SDL3.dll
+          build/*.zip
