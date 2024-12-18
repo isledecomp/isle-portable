@@ -96,6 +96,7 @@ protected:
 	struct {
 		ma_audio_buffer buffer;
 		MxU8* data;
+		MxU32 length;
 		MxU32 offset;
 	} m_ab;
 

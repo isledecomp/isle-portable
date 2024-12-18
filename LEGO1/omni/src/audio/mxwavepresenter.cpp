@@ -59,6 +59,7 @@ void MxWavePresenter::Destroy(MxBool p_fromDestructor)
 MxBool MxWavePresenter::WriteToSoundBuffer(void* p_audioPtr, MxU32 p_length)
 {
 	if (m_action->IsLooping()) {
+		assert(m_ab.offset + p_length <= m_ab.length);
 		memcpy(m_ab.data + m_ab.offset, p_audioPtr, p_length);
 		m_ab.offset += p_length;
 		return TRUE;
@@ -136,7 +137,8 @@ void MxWavePresenter::StartingTickle()
 				sampleRate
 			);
 
-			m_ab.data = new MxU8[ma_get_bytes_per_frame(format, channels) * sizeInFrames];
+			m_ab.length = ma_get_bytes_per_frame(format, channels) * sizeInFrames;
+			m_ab.data = new MxU8[m_ab.length];
 
 			ma_audio_buffer_config config =
 				ma_audio_buffer_config_init(format, channels, sizeInFrames, m_ab.data, NULL);
