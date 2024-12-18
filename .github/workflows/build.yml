@@ -74,7 +74,7 @@ jobs:
         shell: bash
         run: |
           cd build
-          zip isle-portable${{ matrix.toolchain.name }}${{ matrix.toolchain.build-type }}.zip \
+          zip isle-portable-${{ matrix.toolchain.name }}-${{ matrix.toolchain.build-type }}.zip \
               ISLE.EXE LEGO1.DLL SDL3.dll
 
       - name: Upload Build Artifacts (MSVC (32-bit))
@@ -83,7 +83,7 @@ jobs:
         with:
           name: msvc32-artifacts
           path: |
-            build/isle-portable${{ matrix.toolchain.name }}${{ matrix.toolchain.build-type }}.zip
+            build/isle-portable-${{ matrix.toolchain.name }}-${{ matrix.toolchain.build-type }}.zip
 
   upload:
     name: 'Upload artifacts'
