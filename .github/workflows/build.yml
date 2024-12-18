@@ -16,7 +16,7 @@ jobs:
         #- { name: 'MSVC (32-bit, Release)',  shell: 'sh',  setup-cmake: true, setup-ninja: true, setup-msvc: true, vc-arch: 'amd64_x86', dx5-libs: true,   d3drm-from-wine: false, build-type: 'Release' }
         #- { name: 'MSVC (32-bit, Debug)',  shell: 'sh',  setup-cmake: true, setup-ninja: true, setup-msvc: true, vc-arch: 'amd64_x86', dx5-libs: true,   d3drm-from-wine: false, build-type: 'Debug' }
         #- { name: 'MSVC (64-bit, Debug)',  shell: 'sh',  setup-cmake: true, setup-ninja: true, setup-msvc: true, vc-arch: 'amd64',     dx5-libs: false,  d3drm-from-wine: true, build-type: 'Debug' }
-        - { name: 'MSVC (ARM64, Release)',  shell: 'sh',  setup-cmake: true, setup-ninja: true, setup-msvc: true, vc-arch: 'amd64_arm64',     dx5-libs: false,  d3drm-from-wine: true, build-type: 'Release' }
+        - { name: 'MSVC (ARM64, Release)',  shell: 'sh',  setup-cmake: true, setup-ninja: true, setup-msvc: true, vc-arch: 'amd64_arm64',     dx5-libs: true,  d3drm-from-wine: false, build-type: 'Release' }
         #- { name: 'msys2 mingw32 (Debug)',  shell: 'msys2 {0}', msystem: mingw32, msys-env: mingw-w64-i686,        clang-tidy: true, werror: true, dx5-libs: false, d3drm-from-wine: true, build-type: 'Debug' }
         #- { name: 'msys2 mingw64 (Debug)',  shell: 'msys2 {0}', msystem: mingw64, msys-env: mingw-w64-x86_64,      clang-tidy: true, werror: true, dx5-libs: false, d3drm-from-wine: true, build-type: 'Debug' }
         # - { name: 'msys2 clang32',  shell: 'msys2 {0}', msystem: clang32, msys-env: mingw-w64-clang-i686,  clang-tidy: true, werror: true, dx5-libs: true, d3drm-from-wine: true }
