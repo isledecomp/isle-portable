@@ -82,7 +82,7 @@ jobs:
     name: 'Upload artifacts'
     needs: build-current-toolchain
     runs-on: ubuntu-latest
-    if: ${{ github.ref == 'refs/heads/master' && github.repository == 'isledecomp/isle-portable' }}
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.repository == 'isledecomp/isle-portable' }}
     steps:
     - uses: actions/checkout@v4
       with:
