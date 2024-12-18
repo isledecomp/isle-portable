@@ -20,7 +20,7 @@ void MxWavePresenter::Init()
 {
 	m_waveFormat = NULL;
 	SDL_zero(m_rb);
-	SDL_zero(m_pb);
+	SDL_zero(m_ab);
 	SDL_zero(m_sound);
 	m_chunkLength = 0;
 	m_started = FALSE;
@@ -40,9 +40,9 @@ MxResult MxWavePresenter::AddToManager()
 void MxWavePresenter::Destroy(MxBool p_fromDestructor)
 {
 	ma_sound_uninit(&m_sound);
-	ma_paged_audio_buffer_uninit(&m_pb.buffer);
-	ma_paged_audio_buffer_data_uninit(&m_pb.data, NULL);
 	ma_pcm_rb_uninit(&m_rb);
+	ma_audio_buffer_uninit(&m_ab.buffer);
+	delete[] m_ab.data;
 
 	if (m_waveFormat) {
 		delete[] ((MxU8*) m_waveFormat);
@@ -59,16 +59,8 @@ void MxWavePresenter::Destroy(MxBool p_fromDestructor)
 MxBool MxWavePresenter::WriteToSoundBuffer(void* p_audioPtr, MxU32 p_length)
 {
 	if (m_action->IsLooping()) {
-		// MA_API ma_result ma_paged_audio_buffer_data_allocate_and_append_page(ma_paged_audio_buffer_data* pData,
-		// ma_uint32 pageSizeInFrames, const void* pInitialData, const ma_allocation_callbacks* pAllocationCallbacks);
-
-		ma_uint32 bpF = ma_get_bytes_per_frame(m_pb.data.format, m_pb.data.channels);
-
-		char asd[123];
-		sprintf(asd, "bpF is: %d and length is: %d which makes for %d\n", bpF, p_length, p_length / bpF);
-		OutputDebugString(asd);
-
-		ma_paged_audio_buffer_data_allocate_and_append_page(&m_pb.data, p_length / bpF, p_audioPtr, NULL);
+		memcpy(m_ab.data + m_ab.offset, p_audioPtr, p_length);
+		m_ab.offset += p_length;
 		return TRUE;
 	}
 	else {
@@ -134,28 +126,31 @@ void MxWavePresenter::StartingTickle()
 			m_silenceData = 0;
 		}
 
-		if (m_action->IsLooping()) {
-			if (ma_paged_audio_buffer_data_init(
-					m_waveFormat->m_bitsPerSample == 16 ? ma_format_s16 : ma_format_u8,
-					m_waveFormat->m_channels,
-					&m_pb.data
-				) != MA_SUCCESS) {
-				goto done;
-			}
+		ma_format format = m_waveFormat->m_bitsPerSample == 16 ? ma_format_s16 : ma_format_u8;
+		ma_uint32 channels = m_waveFormat->m_channels;
+		ma_uint32 sampleRate = m_waveFormat->m_samplesPerSec;
 
-			ma_paged_audio_buffer_config config = ma_paged_audio_buffer_config_init(&m_pb.data);
-			if (ma_paged_audio_buffer_init(&config, &m_pb.buffer) != MA_SUCCESS) {
+		if (m_action->IsLooping()) {
+			ma_uint32 sizeInFrames = ma_calculate_buffer_size_in_frames_from_milliseconds(
+				m_action->GetDuration() / m_action->GetLoopCount(),
+				sampleRate
+			);
+
+			m_ab.data = new MxU8[ma_get_bytes_per_frame(format, channels) * sizeInFrames];
+
+			ma_audio_buffer_config config =
+				ma_audio_buffer_config_init(format, channels, sizeInFrames, m_ab.data, NULL);
+			config.sampleRate = sampleRate;
+
+			if (ma_audio_buffer_init(&config, &m_ab.buffer) != MA_SUCCESS) {
 				goto done;
 			}
 		}
 		else {
 			if (ma_pcm_rb_init(
-					m_waveFormat->m_bitsPerSample == 16 ? ma_format_s16 : ma_format_u8,
-					m_waveFormat->m_channels,
-					ma_calculate_buffer_size_in_frames_from_milliseconds(
-						g_rbSizeInMilliseconds,
-						m_waveFormat->m_samplesPerSec
-					),
+					format,
+					channels,
+					ma_calculate_buffer_size_in_frames_from_milliseconds(g_rbSizeInMilliseconds, sampleRate),
 					NULL,
 					NULL,
 					&m_rb
@@ -163,12 +158,12 @@ void MxWavePresenter::StartingTickle()
 				goto done;
 			}
 
-			ma_pcm_rb_set_sample_rate(&m_rb, m_waveFormat->m_samplesPerSec);
+			ma_pcm_rb_set_sample_rate(&m_rb, sampleRate);
 		}
 
 		if (ma_sound_init_from_data_source(
 				MSoundManager()->GetEngine(),
-				m_action->IsLooping() ? &m_pb.buffer.ds : &m_rb.ds,
+				m_action->IsLooping() ? (ma_data_source*) &m_ab.buffer : (ma_data_source*) &m_rb,
 				m_is3d ? 0 : MA_SOUND_FLAG_NO_SPATIALIZATION,
 				NULL,
 				&m_sound
@@ -352,7 +347,16 @@ void MxWavePresenter::Resume()
 {
 	if (m_paused) {
 		if (ma_sound_get_engine(&m_sound) && m_started) {
-			ma_sound_start(&m_sound);
+			switch (m_currentTickleState) {
+			case e_streaming:
+			case e_repeating:
+				ma_sound_start(&m_sound);
+				break;
+			case e_done:
+				if (!ma_sound_at_end(&m_sound)) {
+					ma_sound_start(&m_sound);
+				}
+			}
 		}
 
 		m_paused = FALSE;

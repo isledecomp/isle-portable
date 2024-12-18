@@ -90,13 +90,14 @@ protected:
 	WaveFormat* m_waveFormat; // 0x54
 
 	// [library:audio]
-	// If MxDSAction::looping is set, we keep the entire audio in memory and use the paged buffer `m_pb`.
+	// If MxDSAction::looping is set, we keep the entire audio in memory and use `m_ab`.
 	// In (most) other cases, data is streamed through the ring buffer `m_rb`.
 	ma_pcm_rb m_rb;
 	struct {
-		ma_paged_audio_buffer buffer;
-		ma_paged_audio_buffer_data data;
-	} m_pb;
+		ma_audio_buffer buffer;
+		MxU8* data;
+		MxU32 offset;
+	} m_ab;
 
 	ma_sound m_sound;
 	MxU32 m_chunkLength; // 0x5c
