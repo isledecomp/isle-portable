@@ -20,6 +20,7 @@ void MxWavePresenter::Init()
 {
 	m_waveFormat = NULL;
 	SDL_zero(m_rb);
+	SDL_zero(m_pb);
 	SDL_zero(m_sound);
 	m_chunkLength = 0;
 	m_started = FALSE;
@@ -39,6 +40,8 @@ MxResult MxWavePresenter::AddToManager()
 void MxWavePresenter::Destroy(MxBool p_fromDestructor)
 {
 	ma_sound_uninit(&m_sound);
+	ma_paged_audio_buffer_uninit(&m_pb.buffer);
+	ma_paged_audio_buffer_data_uninit(&m_pb.data, NULL);
 	ma_pcm_rb_uninit(&m_rb);
 
 	if (m_waveFormat) {
@@ -55,31 +58,46 @@ void MxWavePresenter::Destroy(MxBool p_fromDestructor)
 // FUNCTION: LEGO1 0x100b1bd0
 MxBool MxWavePresenter::WriteToSoundBuffer(void* p_audioPtr, MxU32 p_length)
 {
-	ma_uint32 requestedFrames =
-		ma_calculate_buffer_size_in_frames_from_milliseconds(g_millisecondsPerChunk, m_waveFormat->m_samplesPerSec);
-	ma_uint32 acquiredFrames = requestedFrames;
-	void* bufferOut;
+	if (m_action->IsLooping()) {
+		// MA_API ma_result ma_paged_audio_buffer_data_allocate_and_append_page(ma_paged_audio_buffer_data* pData,
+		// ma_uint32 pageSizeInFrames, const void* pInitialData, const ma_allocation_callbacks* pAllocationCallbacks);
 
-	ma_pcm_rb_acquire_write(&m_rb, &acquiredFrames, &bufferOut);
+		ma_uint32 bpF = ma_get_bytes_per_frame(m_pb.data.format, m_pb.data.channels);
 
-	// [library:audio] If there isn't enough space in the buffer for a full chunk, try again later.
-	if (acquiredFrames != requestedFrames) {
-		ma_pcm_rb_commit_write(&m_rb, 0);
-		return FALSE;
+		char asd[123];
+		sprintf(asd, "bpF is: %d and length is: %d which makes for %d\n", bpF, p_length, p_length / bpF);
+		OutputDebugString(asd);
+
+		ma_paged_audio_buffer_data_allocate_and_append_page(&m_pb.data, p_length / bpF, p_audioPtr, NULL);
+		return TRUE;
 	}
+	else {
+		ma_uint32 requestedFrames =
+			ma_calculate_buffer_size_in_frames_from_milliseconds(g_millisecondsPerChunk, m_waveFormat->m_samplesPerSec);
+		ma_uint32 acquiredFrames = requestedFrames;
+		void* bufferOut;
 
-	ma_uint32 acquiredBytes = acquiredFrames * ma_get_bytes_per_frame(m_rb.format, m_rb.channels);
-	assert(p_length <= acquiredBytes);
+		ma_pcm_rb_acquire_write(&m_rb, &acquiredFrames, &bufferOut);
 
-	memcpy(bufferOut, p_audioPtr, p_length);
+		// [library:audio] If there isn't enough space in the buffer for a full chunk, try again later.
+		if (acquiredFrames != requestedFrames) {
+			ma_pcm_rb_commit_write(&m_rb, 0);
+			return FALSE;
+		}
 
-	// [library:audio] Pad with silence data if we don't have a full chunk.
-	if (p_length < acquiredBytes) {
-		memset((ma_uint8*) bufferOut + p_length, m_silenceData, acquiredBytes - p_length);
+		ma_uint32 acquiredBytes = acquiredFrames * ma_get_bytes_per_frame(m_rb.format, m_rb.channels);
+		assert(p_length <= acquiredBytes);
+
+		memcpy(bufferOut, p_audioPtr, p_length);
+
+		// [library:audio] Pad with silence data if we don't have a full chunk.
+		if (p_length < acquiredBytes) {
+			memset((ma_uint8*) bufferOut + p_length, m_silenceData, acquiredBytes - p_length);
+		}
+
+		ma_pcm_rb_commit_write(&m_rb, acquiredFrames);
+		return TRUE;
 	}
-
-	ma_pcm_rb_commit_write(&m_rb, acquiredFrames);
-	return TRUE;
 }
 
 // FUNCTION: LEGO1 0x100b1cf0
@@ -116,31 +134,41 @@ void MxWavePresenter::StartingTickle()
 			m_silenceData = 0;
 		}
 
-		// [library:audio]
-		// If we have a repeating action (MxDSAction::c_looping set), we must make sure the ring buffer
-		// is large enough to contain the entire sound at once. The size must be a multiple of `g_millisecondsPerChunk`
-		if (ma_pcm_rb_init(
-				m_waveFormat->m_bitsPerSample == 16 ? ma_format_s16 : ma_format_u8,
-				m_waveFormat->m_channels,
-				ma_calculate_buffer_size_in_frames_from_milliseconds(
-					m_action->GetFlags() & MxDSAction::c_looping
-						? (m_action->GetDuration() / m_action->GetLoopCount() + g_millisecondsPerChunk - 1) /
-							  g_millisecondsPerChunk * g_millisecondsPerChunk
-						: g_rbSizeInMilliseconds,
-					m_waveFormat->m_samplesPerSec
-				),
-				NULL,
-				NULL,
-				&m_rb
-			) != MA_SUCCESS) {
-			goto done;
-		}
+		if (m_action->IsLooping()) {
+			if (ma_paged_audio_buffer_data_init(
+					m_waveFormat->m_bitsPerSample == 16 ? ma_format_s16 : ma_format_u8,
+					m_waveFormat->m_channels,
+					&m_pb.data
+				) != MA_SUCCESS) {
+				goto done;
+			}
 
-		ma_pcm_rb_set_sample_rate(&m_rb, m_waveFormat->m_samplesPerSec);
+			ma_paged_audio_buffer_config config = ma_paged_audio_buffer_config_init(&m_pb.data);
+			if (ma_paged_audio_buffer_init(&config, &m_pb.buffer) != MA_SUCCESS) {
+				goto done;
+			}
+		}
+		else {
+			if (ma_pcm_rb_init(
+					m_waveFormat->m_bitsPerSample == 16 ? ma_format_s16 : ma_format_u8,
+					m_waveFormat->m_channels,
+					ma_calculate_buffer_size_in_frames_from_milliseconds(
+						g_rbSizeInMilliseconds,
+						m_waveFormat->m_samplesPerSec
+					),
+					NULL,
+					NULL,
+					&m_rb
+				) != MA_SUCCESS) {
+				goto done;
+			}
+
+			ma_pcm_rb_set_sample_rate(&m_rb, m_waveFormat->m_samplesPerSec);
+		}
 
 		if (ma_sound_init_from_data_source(
 				MSoundManager()->GetEngine(),
-				&m_rb,
+				m_action->IsLooping() ? &m_pb.buffer.ds : &m_rb.ds,
 				m_is3d ? 0 : MA_SOUND_FLAG_NO_SPATIALIZATION,
 				NULL,
 				&m_sound
@@ -148,7 +176,7 @@ void MxWavePresenter::StartingTickle()
 			goto done;
 		}
 
-		ma_sound_set_looping(&m_sound, MA_TRUE);
+		ma_sound_set_looping(&m_sound, m_action->IsLooping() ? m_action->GetLoopCount() > 1 : MA_TRUE);
 
 		SetVolume(((MxDSSound*) m_action)->GetVolume());
 		ProgressTickleState(e_streaming);
@@ -188,20 +216,11 @@ void MxWavePresenter::StreamingTickle()
 	}
 }
 
-void MxWavePresenter::RepeatingTickle()
-{
-	if (IsEnabled() && !m_currentChunk) {
-		if (m_action->GetElapsedTime() >= m_action->GetStartTime() + m_action->GetDuration()) {
-			ProgressTickleState(e_freezing);
-		}
-	}
-}
-
 // FUNCTION: LEGO1 0x100b20c0
 void MxWavePresenter::DoneTickle()
 {
 	if (!ma_sound_get_engine(&m_sound) || m_action->GetFlags() & MxDSAction::c_bit7 ||
-		ma_pcm_rb_pointer_distance(&m_rb) == 0) {
+		m_action->GetFlags() & MxDSAction::c_looping || ma_pcm_rb_pointer_distance(&m_rb) == 0) {
 		MxMediaPresenter::DoneTickle();
 	}
 }
@@ -209,29 +228,9 @@ void MxWavePresenter::DoneTickle()
 // FUNCTION: LEGO1 0x100b2130
 void MxWavePresenter::LoopChunk(MxStreamChunk* p_chunk)
 {
-	// [library:audio]
-	// The original code writes all the chunks directly into the buffer. However, since we are using
-	// a ring buffer instead, we cannot do that. Instead, we use the original code's `m_loopingChunks`
-	// to store permanent copies of all the chunks. (`MxSoundPresenter::LoopChunk`)
-	// These will then be used to write them all at once to the ring buffer when necessary.
-	MxSoundPresenter::LoopChunk(p_chunk);
-
-	assert(m_action->GetFlags() & MxDSAction::c_looping);
-
-	// [library:audio]
-	// We don't currently support a loop count greater than 1 for repeating actions.
-	// However, there don't seem to be any such actions in the game.
-	assert(m_action->GetLoopCount() == 1);
-
-	// [library:audio]
-	// So far there are no known cases where the sound is initially enabled if it's set to repeat.
-	// While we can technically support this (see branch below), this should be tested.
-	assert(!IsEnabled());
-
+	WriteToSoundBuffer(p_chunk->GetData(), p_chunk->GetLength());
 	if (IsEnabled()) {
-		WriteToSoundBuffer(p_chunk->GetData(), p_chunk->GetLength());
 		m_subscriber->FreeDataChunk(p_chunk);
-		m_currentChunk = NULL;
 	}
 }
 
@@ -260,15 +259,7 @@ MxResult MxWavePresenter::PutData()
 			}
 
 			assert(!ma_sound_is_playing(&m_sound));
-
-			// [library:audio]
-			// We push all the repeating chunks at once into the buffer.
-			// This should never fail, since the buffer is ensured to be large enough to contain the entire sound.
-			while (m_loopingChunkCursor->Next(m_currentChunk)) {
-				assert(WriteToSoundBuffer(m_currentChunk->GetData(), m_currentChunk->GetLength()));
-			}
-
-			m_currentChunk = NULL;
+			ma_sound_seek_to_pcm_frame(&m_sound, 0);
 
 			if (ma_sound_start(&m_sound) == MA_SUCCESS) {
 				m_started = TRUE;

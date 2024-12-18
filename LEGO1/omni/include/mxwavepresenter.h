@@ -38,7 +38,6 @@ public:
 	void ReadyTickle() override;      // vtable+0x18
 	void StartingTickle() override;   // vtable+0x1c
 	void StreamingTickle() override;  // vtable+0x20
-	void RepeatingTickle() override;  // added by isle-portable
 	void DoneTickle() override;       // vtable+0x2c
 	void ParseExtra() override;       // vtable+0x30
 	MxResult AddToManager() override; // vtable+0x34
@@ -89,7 +88,16 @@ protected:
 	static const MxU32 g_supportedFormatTag = 1;
 
 	WaveFormat* m_waveFormat; // 0x54
+
+	// [library:audio]
+	// If MxDSAction::looping is set, we keep the entire audio in memory and use the paged buffer `m_pb`.
+	// In (most) other cases, data is streamed through the ring buffer `m_rb`.
 	ma_pcm_rb m_rb;
+	struct {
+		ma_paged_audio_buffer buffer;
+		ma_paged_audio_buffer_data data;
+	} m_pb;
+
 	ma_sound m_sound;
 	MxU32 m_chunkLength; // 0x5c
 	MxBool m_started;    // 0x65
