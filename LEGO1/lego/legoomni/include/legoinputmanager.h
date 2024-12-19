@@ -7,6 +7,7 @@
 #include "mxpresenter.h"
 #include "mxqueue.h"
 
+#include <SDL3/SDL_joystick.h>
 #include <SDL3/SDL_keyboard.h>
 #include <dinput.h>
 
@@ -95,8 +96,8 @@ public:
 
 	MxResult Create(HWND p_hwnd);
 	void Destroy() override;
-	MxResult GetJoystickId();
-	MxResult GetJoystickState(MxU32* p_joystickX, MxU32* p_joystickY, DWORD* p_buttonsState, MxU32* p_povPosition);
+	MxResult GetJoystick();
+	MxResult GetJoystickState(MxU32* p_joystickX, MxU32* p_joystickY, MxU32* p_povPosition);
 	void StartAutoDragTimer();
 	void StopAutoDragTimer();
 	void EnableInputProcessing();
@@ -150,10 +151,10 @@ private:
 	LegoControlManager* m_controlManager; // 0x84
 	MxBool m_unk0x88;                     // 0x88
 	const bool* m_keyboardState;
-	MxBool m_unk0x195;     // 0x195
-	MxS32 m_joyid;         // 0x198
+	MxBool m_unk0x195; // 0x195
+	SDL_JoystickID* m_joyids;
+	SDL_Joystick* m_joystick;
 	MxS32 m_joystickIndex; // 0x19c
-	JOYCAPS m_joyCaps;     // 0x200
 	MxBool m_useJoystick;  // 0x334
 	MxBool m_unk0x335;     // 0x335
 	MxBool m_unk0x336;     // 0x336
