@@ -709,7 +709,7 @@ int LegoVideoManager::EnableRMDevice()
 			viewport->SetField(m_fov);
 			viewport->SetCamera(m_camera);
 			viewport->SetProjection(m_projection);
-			viewport->SetAppData((DWORD) m_appdata);
+			viewport->SetAppData((LPD3DRM_APPDATA) m_appdata);
 			d3drmDev2->SetQuality(m_quality);
 			d3drmDev2->SetShades(m_shades);
 			d3drmDev2->SetTextureQuality(m_textureQuality);
