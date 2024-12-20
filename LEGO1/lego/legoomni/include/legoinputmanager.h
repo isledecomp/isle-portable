@@ -9,7 +9,7 @@
 
 #include <SDL3/SDL_joystick.h>
 #include <SDL3/SDL_keyboard.h>
-#include <dinput.h>
+#include <windows.h>
 
 class LegoCameraController;
 class LegoControlManager;
