@@ -40,8 +40,9 @@ LegoInputManager::LegoInputManager()
 	m_unk0x81 = FALSE;
 	m_unk0x88 = FALSE;
 	m_unk0x195 = 0;
-	m_joyid = -1;
+	m_joyids = NULL;
 	m_joystickIndex = -1;
+	m_joystick = NULL;
 	m_useJoystick = FALSE;
 	m_unk0x335 = FALSE;
 	m_unk0x336 = FALSE;
@@ -77,7 +78,7 @@ MxResult LegoInputManager::Create(HWND p_hwnd)
 		m_eventQueue = new LegoEventQueue;
 	}
 
-	GetJoystickId();
+	GetJoystick();
 
 	if (!m_keyboardNotifyList || !m_eventQueue) {
 		Destroy();
@@ -148,29 +149,27 @@ MxResult LegoInputManager::GetNavigationKeyStates(MxU32& p_keyFlags)
 }
 
 // FUNCTION: LEGO1 0x1005c240
-MxResult LegoInputManager::GetJoystickId()
+MxResult LegoInputManager::GetJoystick()
 {
-	JOYINFOEX joyinfoex;
+	if (m_joystick != NULL && SDL_JoystickConnected(m_joystick) == TRUE) {
+		return SUCCESS;
+	}
 
-	if (m_useJoystick != FALSE) {
+	MxS32 numJoysticks = 0;
+	m_joyids = SDL_GetJoysticks(&numJoysticks);
+
+	if (m_useJoystick != FALSE && numJoysticks != 0) {
 		MxS32 joyid = m_joystickIndex;
 		if (joyid >= 0) {
-			joyinfoex.dwSize = 0x34;
-			joyinfoex.dwFlags = 0xFF;
-
-			if (joyGetPosEx(joyid, &joyinfoex) == JOYERR_NOERROR &&
-				joyGetDevCaps(joyid, &m_joyCaps, 0x194) == JOYERR_NOERROR) {
-				m_joyid = joyid;
+			m_joystick = SDL_OpenJoystick(m_joyids[joyid]);
+			if (m_joystick != NULL) {
 				return SUCCESS;
 			}
 		}
 
-		for (joyid = JOYSTICKID1; joyid < 16; joyid++) {
-			joyinfoex.dwSize = 0x34;
-			joyinfoex.dwFlags = 0xFF;
-			if (joyGetPosEx(joyid, &joyinfoex) == JOYERR_NOERROR &&
-				joyGetDevCaps(joyid, &m_joyCaps, 0x194) == JOYERR_NOERROR) {
-				m_joyid = joyid;
+		for (joyid = 0; joyid < numJoysticks; joyid++) {
+			m_joystick = SDL_OpenJoystick(m_joyids[joyid]);
+			if (m_joystick != NULL) {
 				return SUCCESS;
 			}
 		}
@@ -180,55 +179,61 @@ MxResult LegoInputManager::GetJoystickId()
 }
 
 // FUNCTION: LEGO1 0x1005c320
-MxResult LegoInputManager::GetJoystickState(
-	MxU32* p_joystickX,
-	MxU32* p_joystickY,
-	DWORD* p_buttonsState,
-	MxU32* p_povPosition
-)
+MxResult LegoInputManager::GetJoystickState(MxU32* p_joystickX, MxU32* p_joystickY, MxU32* p_povPosition)
 {
 	if (m_useJoystick != FALSE) {
-		if (m_joyid < 0 && GetJoystickId() == -1) {
-			m_useJoystick = FALSE;
+		if (GetJoystick() == -1) {
+			if (m_joystick != NULL) {
+				// GetJoystick() failed but handle to joystick is still open, close it
+				SDL_CloseJoystick(m_joystick);
+				m_joystick = NULL;
+			}
+
 			return FAILURE;
 		}
 
-		JOYINFOEX joyinfoex;
-		joyinfoex.dwSize = 0x34;
-		joyinfoex.dwFlags = JOY_RETURNX | JOY_RETURNY | JOY_RETURNBUTTONS;
-		MxU32 capabilities = m_joyCaps.wCaps;
+		MxS16 xPos = SDL_GetJoystickAxis(m_joystick, 0);
+		MxS16 yPos = SDL_GetJoystickAxis(m_joystick, 1);
+		MxU8 hatPos = SDL_GetJoystickHat(m_joystick, 0);
 
-		if ((capabilities & JOYCAPS_HASPOV) != 0) {
-			joyinfoex.dwFlags = JOY_RETURNX | JOY_RETURNY | JOY_RETURNPOV | JOY_RETURNBUTTONS;
+		// normalize values acquired from joystick axes
+		*p_joystickX = ((xPos + 32768) * 100) / 65535;
+		*p_joystickY = ((yPos + 32768) * 100) / 65535;
 
-			if ((capabilities & JOYCAPS_POVCTS) != 0) {
-				joyinfoex.dwFlags = JOY_RETURNX | JOY_RETURNY | JOY_RETURNPOV | JOY_RETURNBUTTONS | JOY_RETURNPOVCTS;
-			}
+		switch (hatPos) {
+		case SDL_HAT_CENTERED:
+			*p_povPosition = (MxU32) -1;
+			break;
+		case SDL_HAT_UP:
+			*p_povPosition = (MxU32) 0;
+			break;
+		case SDL_HAT_RIGHT:
+			*p_povPosition = (MxU32) 9000 / 100;
+			break;
+		case SDL_HAT_DOWN:
+			*p_povPosition = (MxU32) 18000 / 100;
+			break;
+		case SDL_HAT_LEFT:
+			*p_povPosition = (MxU32) 27000 / 100;
+			break;
+		case SDL_HAT_RIGHTUP:
+			*p_povPosition = (MxU32) 4500 / 100;
+			break;
+		case SDL_HAT_RIGHTDOWN:
+			*p_povPosition = (MxU32) 13500 / 100;
+			break;
+		case SDL_HAT_LEFTUP:
+			*p_povPosition = (MxU32) 31500 / 100;
+			break;
+		case SDL_HAT_LEFTDOWN:
+			*p_povPosition = (MxU32) 22500 / 100;
+			break;
+		default:
+			*p_povPosition = (MxU32) -1;
+			break;
 		}
 
-		MMRESULT mmresult = joyGetPosEx(m_joyid, &joyinfoex);
-
-		if (mmresult == MMSYSERR_NOERROR) {
-			*p_buttonsState = joyinfoex.dwButtons;
-			MxU32 xmin = m_joyCaps.wXmin;
-			MxU32 ymax = m_joyCaps.wYmax;
-			MxU32 ymin = m_joyCaps.wYmin;
-			MxS32 ydiff = ymax - ymin;
-			*p_joystickX = ((joyinfoex.dwXpos - xmin) * 100) / (m_joyCaps.wXmax - xmin);
-			*p_joystickY = ((joyinfoex.dwYpos - m_joyCaps.wYmin) * 100) / ydiff;
-			if ((m_joyCaps.wCaps & (JOYCAPS_POV4DIR | JOYCAPS_POVCTS)) != 0) {
-				if (joyinfoex.dwPOV == JOY_POVCENTERED) {
-					*p_povPosition = (MxU32) -1;
-					return SUCCESS;
-				}
-				*p_povPosition = joyinfoex.dwPOV / 100;
-				return SUCCESS;
-			}
-			else {
-				*p_povPosition = (MxU32) -1;
-				return SUCCESS;
-			}
-		}
+		return SUCCESS;
 	}
 
 	return FAILURE;
