@@ -106,14 +106,89 @@ Result GroupImpl::Remove(const Group* pGroup)
 	return ResultVal(m_data->DeleteVisual(pGroupImpl->m_data));
 }
 
-// STUB: LEGO1 0x100a34b0
+// FUNCTION: LEGO1 0x100a34b0
 Result GroupImpl::RemoveAll()
 {
-	return Error;
+	IDirect3DRMVisualArray* visuals;
+	IDirect3DRMFrame2* frame = m_data;
+	Result result = (Result) SUCCEEDED(frame->GetVisuals(&visuals));
+
+	if (result == Success) {
+		for (int i = 0; i < (int) visuals->GetSize(); i++) {
+			IDirect3DRMVisual* visual;
+
+			result = (Result) SUCCEEDED(visuals->GetElement(i, &visual));
+			frame->DeleteVisual(visual);
+			visual->Release();
+		}
+
+		visuals->Release();
+	}
+
+	return result;
 }
 
-// STUB: LEGO1 0x100a3540
-Result GroupImpl::Unknown()
+// FUNCTION: LEGO1 0x100a3540
+Result GroupImpl::Bounds(D3DVECTOR* p_min, D3DVECTOR* p_max)
 {
-	return Error;
+	D3DRMBOX size;
+	IDirect3DRMFrame2* frame = m_data;
+
+	size.min.x = 88888.f;
+	size.min.y = 88888.f;
+	size.min.z = 88888.f;
+	size.max.x = -88888.f;
+	size.max.y = -88888.f;
+	size.max.z = -88888.f;
+
+	IDirect3DRMVisualArray* visuals;
+	Result result = (Result) SUCCEEDED(frame->GetVisuals(&visuals));
+
+	if (result == Success) {
+		int i;
+		for (i = 0; i < (int) visuals->GetSize(); i++) {
+			IDirect3DRMVisual* visual;
+			visuals->GetElement(i, &visual);
+			IDirect3DRMMesh* mesh;
+			/*
+			 * BUG: should be:
+			 *  visual->QueryInterface(IID_IDirect3DRMMesh, (void**)&mesh));
+			 */
+			result = (Result) SUCCEEDED(visual->QueryInterface(IID_IDirect3DRMMeshBuilder, (void**) &mesh));
+
+			if (result == Success) {
+				D3DRMBOX box;
+				result = (Result) SUCCEEDED(mesh->GetBox(&box));
+
+				if (size.max.y < box.max.y) {
+					size.max.y = box.max.y;
+				}
+				if (size.max.z < box.max.z) {
+					size.max.z = box.max.z;
+				}
+				if (box.min.x < size.min.x) {
+					size.min.x = box.min.x;
+				}
+				if (box.min.y < size.min.y) {
+					size.min.y = box.min.y;
+				}
+				if (box.min.z < size.min.z) {
+					size.min.z = box.min.z;
+				}
+				if (size.max.x < box.max.x) {
+					size.max.x = box.max.x;
+				}
+
+				mesh->Release();
+			}
+
+			visual->Release();
+		}
+
+		visuals->Release();
+	}
+
+	*p_min = size.min;
+	*p_max = size.max;
+	return result;
 }
