@@ -1,6 +1,7 @@
 #ifndef LEGOROI_H
 #define LEGOROI_H
 
+#include "lego1_export.h"
 #include "misc/legotypes.h"
 #include "viewmanager/viewroi.h"
 
@@ -53,7 +54,7 @@ public:
 
 	static LegoResult FUN_100a8cb0(LegoAnimNodeData* p_data, LegoTime p_time, Matrix4& p_matrix);
 	static void FUN_100a81b0(const LegoChar* p_error, const LegoChar* p_name);
-	static void configureLegoROI(int p_roi);
+	LEGO1_EXPORT static void configureLegoROI(int p_roi);
 	static void FUN_100a9d30(ROIHandler p_func);
 	static LegoBool FUN_100a9bf0(const LegoChar* p_param, float& p_red, float& p_green, float& p_blue, float& p_alpha);
 	static LegoBool ColorAliasLookup(

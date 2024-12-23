@@ -60,19 +60,6 @@ if (ENABLE_CLANG_TIDY)
     set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_BIN}")
 endif()
 
-set(MSVC_FOR_DECOMP FALSE)
-if (MSVC)
-    # Visual C++ 4.2 -> cl version 10.2.0
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS "11.0")
-        set(MSVC_FOR_DECOMP TRUE)
-    endif()
-endif()
-
-set(lego1_targets)
-macro(register_lego1_target __target)
-  list(APPEND lego1_targets ${__target})
-endmacro()
-
 function(add_cxx_warning WARNING)
     if(ISLE_WERROR)
         set(compiler_option "-Werror=${WARNING}")
@@ -104,14 +91,11 @@ endif()
 
 add_subdirectory(3rdparty EXCLUDE_FROM_ALL SYSTEM)
 
-message(STATUS "MSVC for decompilation: ${MSVC_FOR_DECOMP}")
-
 option(ISLE_WERROR "Treat warnings as errors" OFF)
 option(ISLE_BUILD_APP "Build ISLE.EXE application" ON)
 cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "NOT MINGW" OFF)
 option(ISLE_USE_DX5 "Build with internal DirectX 5 SDK" ${NOT_MINGW})
 cmake_dependent_option(ISLE_D3DRM_FROM_WINE "Use d3drm from wine" "${MINGW}" "NOT ISLE_USE_DX5" OFF)
-option(ISLE_DECOMP_ASSERT "Assert struct size" ${MSVC_FOR_DECOMP})
 
 message(STATUS "Using internal DirectX5 SDK: ${ISLE_USE_DX5}")
 message(STATUS "Using d3drm from wine:       ${ISLE_D3DRM_FROM_WINE}")
@@ -127,8 +111,20 @@ add_subdirectory(3rdparty/d3drm EXCLUDE_FROM_ALL)
 add_library(Vec::Vec INTERFACE IMPORTED)
 target_include_directories(Vec::Vec INTERFACE "${CMAKE_SOURCE_DIR}/3rdparty/vec")
 
+set(lego1_targets)
+macro(add_lego1_static_library NAME)
+  list(APPEND lego1_targets ${NAME})
+  add_library(${NAME}-interface INTERFACE)
+  add_library(${NAME}-objects STATIC ${ARGN})
+  target_link_libraries(${NAME}-objects PRIVATE ${NAME}-interface)
 
-add_library(tglrl STATIC
+  target_include_directories(${NAME}-objects PRIVATE $<$<BOOL:${ISLE_D3DRM_FROM_WINE}>:$<TARGET_PROPERTY:d3drm-wine,INTERFACE_INCLUDE_DIRECTORIES>>)
+  target_link_libraries(${NAME}-interface INTERFACE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5> SDL3::SDL3)
+  target_compile_definitions(${NAME}-objects PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DIRECTX5_SDK>)
+  target_compile_definitions(${NAME}-objects PRIVATE $<$<BOOL:${ISLE_D3DRM_FROM_WINE}>:D3DRM_WINE>)
+endmacro()
+
+add_lego1_static_library(tglrl
   LEGO1/tgl/d3drm/camera.cpp
   LEGO1/tgl/d3drm/device.cpp
   LEGO1/tgl/d3drm/group.cpp
@@ -139,90 +135,74 @@ add_library(tglrl STATIC
   LEGO1/tgl/d3drm/texture.cpp
   LEGO1/tgl/d3drm/view.cpp
 )
-register_lego1_target(tglrl)
-set_property(TARGET tglrl PROPERTY ARCHIVE_OUTPUT_NAME "tglrl40$<$<CONFIG:Debug>:d>")
-target_include_directories(tglrl PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/util")
+target_include_directories(tglrl-interface INTERFACE "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/util")
 if(ISLE_D3DRM_FROM_WINE)
-    target_link_libraries(tglrl PRIVATE d3drm-wine)
+    target_link_libraries(tglrl-interface INTERFACE d3drm-wine)
 else()
-    target_link_libraries(tglrl PRIVATE d3drm)
+    target_link_libraries(tglrl-interface INTERFACE d3drm)
 endif()
 
-add_library(realtime STATIC
+add_lego1_static_library(realtime
   LEGO1/realtime/matrix.cpp
   LEGO1/realtime/orientableroi.cpp
   LEGO1/realtime/realtime.cpp
   LEGO1/realtime/realtimeview.cpp
   LEGO1/realtime/vector.cpp
 )
-register_lego1_target(realtime)
-set_property(TARGET realtime PROPERTY ARCHIVE_OUTPUT_NAME "realtime$<$<CONFIG:Debug>:d>")
-target_include_directories(realtime PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/util")
-target_link_libraries(realtime PRIVATE Vec::Vec)
+target_include_directories(realtime-interface INTERFACE "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/util")
+target_link_libraries(realtime-interface INTERFACE Vec::Vec)
 
-add_library(viewmanager STATIC
+add_lego1_static_library(viewmanager
   LEGO1/viewmanager/viewlod.cpp
   LEGO1/viewmanager/viewlodlist.cpp
   LEGO1/viewmanager/viewmanager.cpp
   LEGO1/viewmanager/viewroi.cpp
 )
-register_lego1_target(viewmanager)
-set_property(TARGET viewmanager PROPERTY ARCHIVE_OUTPUT_NAME "viewmanager$<$<CONFIG:Debug>:d>")
-target_include_directories(viewmanager PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/util")
-target_link_libraries(viewmanager PRIVATE Vec::Vec)
+target_include_directories(viewmanager-interface INTERFACE "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/util")
+target_link_libraries(viewmanager-interface INTERFACE Vec::Vec)
 
-add_library(mxdirectx STATIC
+add_lego1_static_library(mxdirectx
   LEGO1/mxdirectx/mxdirect3d.cpp
   LEGO1/mxdirectx/mxdirectdraw.cpp
   LEGO1/mxdirectx/mxdirectxinfo.cpp
   LEGO1/mxdirectx/legodxinfo.cpp
 )
-register_lego1_target(mxdirectx)
-set_property(TARGET mxdirectx PROPERTY ARCHIVE_OUTPUT_NAME "MxDirectX$<$<CONFIG:Debug>:d>")
-target_include_directories(mxdirectx PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/util")
-target_link_libraries(mxdirectx PRIVATE ddraw)
+target_include_directories(mxdirectx-interface INTERFACE "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/util")
+target_link_libraries(mxdirectx-interface INTERFACE ddraw)
 
-add_library(roi STATIC
+add_lego1_static_library(roi
   LEGO1/lego/sources/roi/legolod.cpp
   LEGO1/lego/sources/roi/legoroi.cpp
 )
-register_lego1_target(roi)
-set_property(TARGET roi PROPERTY ARCHIVE_OUTPUT_NAME "roi$<$<CONFIG:Debug>:d>")
-target_include_directories(roi PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include" "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/LEGO1/lego/sources" "${CMAKE_SOURCE_DIR}/util")
-target_link_libraries(roi PRIVATE viewmanager Vec::Vec)
+target_include_directories(roi-interface INTERFACE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include" "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/LEGO1/lego/sources" "${CMAKE_SOURCE_DIR}/util")
+target_link_libraries(roi-interface INTERFACE viewmanager-interface Vec::Vec)
 
-add_library(geom STATIC
+add_lego1_static_library(geom
   LEGO1/lego/sources/geom/legoedge.cpp
   LEGO1/lego/sources/geom/legounkown100db7f4.cpp
   LEGO1/lego/sources/geom/legoweedge.cpp
   LEGO1/lego/sources/geom/legowegedge.cpp
 )
-register_lego1_target(geom)
-set_property(TARGET geom PROPERTY ARCHIVE_OUTPUT_NAME "geom$<$<CONFIG:Debug>:d>")
-target_include_directories(geom PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include" "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/LEGO1/lego/sources" "${CMAKE_SOURCE_DIR}/util")
-target_link_libraries(geom PRIVATE)
+target_include_directories(geom-interface INTERFACE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include" "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/LEGO1/lego/sources" "${CMAKE_SOURCE_DIR}/util")
+target_link_libraries(geom-interface INTERFACE)
 
-add_library(shape STATIC
+add_lego1_static_library(shape
   LEGO1/lego/sources/shape/legocolor.cpp
   LEGO1/lego/sources/shape/legobox.cpp
   LEGO1/lego/sources/shape/legomesh.cpp
   LEGO1/lego/sources/shape/legosphere.cpp
   LEGO1/lego/sources/shape/legovertex.cpp
 )
-register_lego1_target(shape)
-set_property(TARGET shape PROPERTY ARCHIVE_OUTPUT_NAME "shape$<$<CONFIG:Debug>:d>")
-target_include_directories(shape PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include" "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/LEGO1/lego/sources" "${CMAKE_SOURCE_DIR}/util")
-target_link_libraries(shape PRIVATE)
+target_include_directories(shape-interface INTERFACE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include" "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/LEGO1/lego/sources" "${CMAKE_SOURCE_DIR}/util")
+target_link_libraries(shape-interface INTERFACE)
 
-add_library(anim STATIC
+add_lego1_static_library(anim
   LEGO1/lego/sources/anim/legoanim.cpp
 )
-register_lego1_target(anim)
-set_property(TARGET anim PROPERTY ARCHIVE_OUTPUT_NAME "anim$<$<CONFIG:Debug>:d>")
-target_include_directories(anim PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include" "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/LEGO1/lego/sources" "${CMAKE_SOURCE_DIR}/util")
-target_link_libraries(anim PRIVATE)
+target_include_directories(anim-interface INTERFACE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include" "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/LEGO1/lego/sources" "${CMAKE_SOURCE_DIR}/util")
+target_link_libraries(anim-interface INTERFACE)
 
-add_library(misc STATIC
+add_lego1_static_library(misc
   LEGO1/lego/sources/misc/legocontainer.cpp
   LEGO1/lego/sources/misc/legoimage.cpp
   LEGO1/lego/sources/misc/legostorage.cpp
@@ -230,23 +210,19 @@ add_library(misc STATIC
   LEGO1/lego/sources/misc/legotree.cpp
   LEGO1/lego/sources/misc/legounknown.cpp
 )
-register_lego1_target(misc)
-set_property(TARGET misc PROPERTY ARCHIVE_OUTPUT_NAME "misc$<$<CONFIG:Debug>:d>")
-target_include_directories(misc PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include" "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/LEGO1/lego/sources" "${CMAKE_SOURCE_DIR}/util")
-target_link_libraries(misc PRIVATE)
+target_include_directories(misc-interface INTERFACE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include" "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/LEGO1/lego/sources" "${CMAKE_SOURCE_DIR}/util")
+target_link_libraries(misc-interface INTERFACE)
 
-add_library(3dmanager STATIC
+add_lego1_static_library(3dmanager
   LEGO1/lego/sources/3dmanager/lego3dmanager.cpp
   LEGO1/lego/sources/3dmanager/lego3dview.cpp
   LEGO1/lego/sources/3dmanager/legoview1.cpp
   LEGO1/lego/sources/3dmanager/tglsurface.cpp
 )
-register_lego1_target(3dmanager)
-set_property(TARGET 3dmanager PROPERTY ARCHIVE_OUTPUT_NAME "3dmanager$<$<CONFIG:Debug>:d>")
-target_include_directories(3dmanager PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/util")
-target_link_libraries(3dmanager PRIVATE Vec::Vec)
+target_include_directories(3dmanager-interface INTERFACE "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/util")
+target_link_libraries(3dmanager-interface INTERFACE Vec::Vec)
 
-add_library(omni STATIC
+add_lego1_static_library(omni
   LEGO1/omni/src/action/mxdsaction.cpp
   LEGO1/omni/src/action/mxdsanim.cpp
   LEGO1/omni/src/action/mxdsevent.cpp
@@ -324,12 +300,10 @@ add_library(omni STATIC
   LEGO1/omni/src/video/mxvideoparamflags.cpp
   LEGO1/omni/src/video/mxvideopresenter.cpp
 )
-register_lego1_target(omni)
-set_property(TARGET omni PROPERTY ARCHIVE_OUTPUT_NAME "omni$<$<CONFIG:Debug>:d>")
-target_include_directories(omni PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include" "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/util")
-target_link_libraries(omni PRIVATE winmm libsmacker miniaudio)
+target_include_directories(omni-interface INTERFACE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include" "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/util")
+target_link_libraries(omni-interface INTERFACE winmm libsmacker miniaudio)
 
-add_library(lego1 SHARED
+add_lego1_static_library(lego1_impl
   LEGO1/define.cpp
   LEGO1/lego/legoomni/src/actors/act2actor.cpp
   LEGO1/lego/legoomni/src/actors/act2genactor.cpp
@@ -442,41 +416,33 @@ add_library(lego1 SHARED
   LEGO1/lego/legoomni/src/worlds/police.cpp
   LEGO1/lego/legoomni/src/worlds/registrationbook.cpp
   LEGO1/lego/legoomni/src/worlds/score.cpp
-  LEGO1/main.cpp
   LEGO1/modeldb/modeldb.cpp
 )
-register_lego1_target(lego1)
+target_include_directories(lego1_impl-interface INTERFACE "${CMAKE_SOURCE_DIR}/util")
+target_include_directories(lego1_impl-interface INTERFACE "${CMAKE_SOURCE_DIR}/LEGO1")
+target_include_directories(lego1_impl-interface INTERFACE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include")
+target_include_directories(lego1_impl-interface INTERFACE "${CMAKE_SOURCE_DIR}/LEGO1/lego/sources")
+target_include_directories(lego1_impl-interface INTERFACE "${CMAKE_SOURCE_DIR}/LEGO1/lego/legoomni/include")
+target_include_directories(lego1_impl-interface INTERFACE "${CMAKE_SOURCE_DIR}/LEGO1/lego/legoomni/include/actions")
+target_link_libraries(lego1_impl-interface INTERFACE omni-interface Vec::Vec)
 
-if (MINGW)
-  target_compile_definitions(lego1 PRIVATE DIRECTINPUT_VERSION=0x0500)
+if(MINGW)
+  target_compile_definitions(lego1_impl-interface INTERFACE DIRECTINPUT_VERSION=0x0500)
 endif()
 
-if (MSVC)
-  if(CMAKE_SIZEOF_VOID_P EQUAL 4)
-    target_sources(lego1 PRIVATE LEGO1/LegoOmni.def)
-  else()
-    target_sources(lego1 PRIVATE LEGO1/LegoOmni64.def)
-  endif()
-else()
-  target_sources(lego1 PRIVATE LEGO1/LegoOmni.mingw.def)
-endif()
-
-target_include_directories(lego1 PUBLIC "${CMAKE_SOURCE_DIR}/util")
-target_include_directories(lego1 PUBLIC "${CMAKE_SOURCE_DIR}/LEGO1")
-target_include_directories(lego1 PUBLIC "${CMAKE_SOURCE_DIR}/LEGO1/omni/include")
-target_include_directories(lego1 PUBLIC "${CMAKE_SOURCE_DIR}/LEGO1/lego/sources")
-target_include_directories(lego1 PUBLIC "${CMAKE_SOURCE_DIR}/LEGO1/lego/legoomni/include")
-target_include_directories(lego1 PUBLIC "${CMAKE_SOURCE_DIR}/LEGO1/lego/legoomni/include/actions")
-
-# Link libraries
-target_link_libraries(lego1 PRIVATE tglrl viewmanager realtime mxdirectx roi geom anim Vec::Vec dxguid d3drm_guid misc 3dmanager miniaudio omni shape)
-
-foreach(tgt IN LISTS lego1_targets)
-  target_include_directories(${tgt} PRIVATE $<$<BOOL:${ISLE_D3DRM_FROM_WINE}>:$<TARGET_PROPERTY:d3drm-wine,INTERFACE_INCLUDE_DIRECTORIES>>)
-  target_link_libraries(${tgt} PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5> SDL3::SDL3)
-  target_compile_definitions(${tgt} PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DIRECTX5_SDK>)
-  target_compile_definitions(${tgt} PRIVATE $<$<BOOL:${ISLE_D3DRM_FROM_WINE}>:D3DRM_WINE>)
+set(lego1_objects)
+set(lego1_link_libraries dxguid)
+foreach(lego1_library IN LISTS lego1_targets)
+  message("lego1_library:${lego1_library}")
+  target_compile_definitions(${lego1_library}-objects PRIVATE LEGO1_DLL)
+  list(APPEND lego1_objects $<TARGET_OBJECTS:${lego1_library}-objects>)
+  list(APPEND lego1_link_libraries ${lego1_library}-interface)
 endforeach()
+add_library(lego1 SHARED
+  LEGO1/main.cpp
+  ${lego1_objects}
+)
+target_link_libraries(lego1 PUBLIC ${lego1_link_libraries})
 
 # Make sure filenames are ALL CAPS
 set_property(TARGET lego1 PROPERTY OUTPUT_NAME LEGO1)
@@ -563,73 +529,6 @@ endif()
 if(MSVC)
   target_link_options(isle PRIVATE "/SAFESEH:NO")
   target_link_options(lego1 PRIVATE "/SAFESEH:NO")
-endif()
-
-if (ISLE_DECOMP_ASSERT)
-    message(STATUS "Decomp asserts enabled")
-    foreach(tgt IN LISTS lego1_targets)
-      target_compile_definitions(${tgt} PRIVATE "ENABLE_DECOMP_ASSERTS")
-    endforeach()
-
-    if (TARGET isle)
-      target_compile_definitions(isle PRIVATE "ENABLE_DECOMP_ASSERTS")
-    endif()
-    if (TARGET config)
-      target_compile_definitions(config PRIVATE "ENABLE_DECOMP_ASSERTS")
-    endif()
-endif()
-
-if (MSVC_FOR_DECOMP)
-  # These flags have been taken from the defaults for a Visual C++ 4.20 project (the compiler the
-  # game was originally built with) and tweaked slightly to produce more debugging info for reccmp.
-  # They ensure a recompilation that can be byte/instruction accurate to the original binaries.
-  if (ISLE_BUILD_APP)
-    target_link_options(isle PRIVATE "/OPT:REF")
-    set_property(TARGET isle ${lego1_targets} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-  endif()
-
-  # Equivalent to target_compile_options(... PRIVATE "/MT$<$<CONFIG:Debug>:d>")
-  set_property(TARGET lego1 ${lego1_targets} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-
-  set(CMAKE_CXX_FLAGS "/W3 /GX /D \"WIN32\" /D \"_WINDOWS\"")
-  set(CMAKE_CXX_FLAGS_DEBUG "/Gm /Zi /Od /D \"_DEBUG\"")
-  set(CMAKE_CXX_FLAGS_RELEASE "/O2 /D \"NDEBUG\"")
-  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/Zi /O2 /D \"NDEBUG\"")
-  set(CMAKE_CXX_FLAGS_MINSIZEREL "/Os /D \"NDEBUG\"")
-
-  set(CMAKE_EXE_LINKER_FLAGS "/machine:I386")
-  set(CMAKE_EXE_LINKER_FLAGS_DEBUG "/incremental:yes /debug")
-  set(CMAKE_EXE_LINKER_FLAGS_RELEASE "/incremental:no")
-  set(CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO "/incremental:no /debug")
-  set(CMAKE_EXE_LINKER_FLAGS_MINSIZEREL "/incremental:no")
-
-  set(CMAKE_STATIC_LINKER_FLAGS "/machine:I386")
-
-  set(CMAKE_SHARED_LINKER_FLAGS "/machine:I386")
-  set(CMAKE_SHARED_LINKER_FLAGS_DEBUG "/incremental:yes /debug")
-  set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "/incremental:no")
-  set(CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO "/incremental:no /debug")
-  set(CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL "/incremental:no")
-
-  # Older MSVC versions don't support building in parallel.
-  # Force non-parallel builds of isle and lego1 by putting them in a pool with 1 available job.
-  if (CMAKE_CXX_COMPILER_ID VERSION_LESS 12)
-    foreach(tgt IN LISTS lego1_targets)
-      set_property(GLOBAL APPEND PROPERTY JOB_POOLS "msvc_${tgt}=1")
-      set_property(TARGET ${tgt} PROPERTY JOB_POOL_COMPILE "msvc_${tgt}")
-      set_property(TARGET ${tgt} PROPERTY JOB_POOL_LINK "msvc_${tgt}")
-    endforeach()
-    if (TARGET isle)
-      set_property(GLOBAL APPEND PROPERTY JOB_POOLS "msvc_isle=1")
-      set_property(TARGET isle PROPERTY JOB_POOL_COMPILE "msvc_isle")
-      set_property(TARGET isle PROPERTY JOB_POOL_LINK "msvc_isle")
-    endif()
-    if (TARGET config)
-      set_property(GLOBAL APPEND PROPERTY JOB_POOLS "msvc_config=1")
-      set_property(TARGET config PROPERTY JOB_POOL_COMPILE "msvc_config")
-      set_property(TARGET config PROPERTY JOB_POOL_LINK "msvc_config")
-    endif()
-  endif()
 endif()
 
 find_program(CLANGFORMAT_BIN NAMES clang-format)

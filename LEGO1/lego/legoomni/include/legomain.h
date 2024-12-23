@@ -2,6 +2,7 @@
 #define LEGOMAIN_H
 
 #include "compat.h"
+#include "lego1_export.h"
 #include "mxdsaction.h"
 #include "mxomni.h"
 
@@ -133,8 +134,8 @@ public:
 	void AddWorld(LegoWorld* p_world);
 	void DeleteWorld(LegoWorld* p_world);
 	void FUN_1005b4f0(MxBool p_disable, MxU16 p_flags);
-	void CreateBackgroundAudio();
-	void RemoveWorld(const MxAtomId& p_atom, MxLong p_objectId);
+	LEGO1_EXPORT void CreateBackgroundAudio();
+	LEGO1_EXPORT void RemoveWorld(const MxAtomId& p_atom, MxLong p_objectId);
 	MxResult RegisterWorlds();
 	const char* GetWorldName(LegoOmni::World p_id);
 	MxAtomId* GetWorldAtom(LegoOmni::World p_id);
@@ -142,8 +143,8 @@ public:
 	void DeleteAction();
 
 	static MxS32 GetCurrPathInfo(LegoPathBoundary**, MxS32&);
-	static void CreateInstance();
-	static LegoOmni* GetInstance();
+	LEGO1_EXPORT static void CreateInstance();
+	LEGO1_EXPORT static LegoOmni* GetInstance();
 
 	LegoVideoManager* GetVideoManager() { return (LegoVideoManager*) m_videoManager; }
 	LegoSoundManager* GetSoundManager() { return (LegoSoundManager*) m_soundManager; }

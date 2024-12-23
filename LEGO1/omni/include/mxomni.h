@@ -1,6 +1,7 @@
 #ifndef MXOMNI_H
 #define MXOMNI_H
 
+#include "lego1_export.h"
 #include "mxcore.h"
 #include "mxcriticalsection.h"
 #include "mxstring.h"
@@ -28,14 +29,14 @@ class MxVideoManager;
 // SIZE 0x68
 class MxOmni : public MxCore {
 public:
-	static void DestroyInstance();
-	static const char* GetCD();
+	LEGO1_EXPORT static void DestroyInstance();
+	LEGO1_EXPORT static const char* GetCD();
 	static const char* GetHD();
 	static MxOmni* GetInstance();
 	static MxBool IsSound3D();
-	static void SetCD(const char* p_cd);
-	static void SetHD(const char* p_hd);
-	static void SetSound3D(MxBool p_use3dSound);
+	LEGO1_EXPORT static void SetCD(const char* p_cd);
+	LEGO1_EXPORT static void SetHD(const char* p_hd);
+	LEGO1_EXPORT static void SetSound3D(MxBool p_use3dSound);
 	static void NormalizePath(char* p_path);
 
 	MxOmni();

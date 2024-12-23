@@ -1,6 +1,7 @@
 #ifndef MXTIMER_H
 #define MXTIMER_H
 
+#include "lego1_export.h"
 #include "mxcore.h"
 
 #include <SDL3/SDL_stdinc.h>
@@ -15,7 +16,7 @@ public:
 	void Start();
 	void Stop();
 
-	MxLong GetRealTime();
+	LEGO1_EXPORT MxLong GetRealTime();
 
 	// FUNCTION: BETA10 0x1012bf50
 	void InitLastTimeCalculated() { g_lastTimeCalculated = m_startTime; }

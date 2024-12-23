@@ -1,12 +1,13 @@
 #ifndef MXOMNICREATEFLAGS_H
 #define MXOMNICREATEFLAGS_H
 
+#include "lego1_export.h"
 #include "mxtypes.h"
 
 // SIZE 0x02
 class MxOmniCreateFlags {
 public:
-	MxOmniCreateFlags();
+	LEGO1_EXPORT MxOmniCreateFlags();
 
 	// FUNCTION: BETA10 0x10092b50
 	void CreateObjectFactory(MxBool p_enable) { m_flags1.m_bit0 = p_enable; }

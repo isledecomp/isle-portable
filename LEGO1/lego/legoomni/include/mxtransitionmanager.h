@@ -2,6 +2,7 @@
 #define MXTRANSITIONMANAGER_H
 
 #include "decomp.h"
+#include "lego1_export.h"
 #include "mxcore.h"
 
 #include <ddraw.h>
@@ -17,7 +18,7 @@ public:
 	MxTransitionManager();
 	~MxTransitionManager() override; // vtable+0x00
 
-	void SetWaitIndicator(MxVideoPresenter* p_waitIndicator);
+	LEGO1_EXPORT void SetWaitIndicator(MxVideoPresenter* p_waitIndicator);
 
 	MxResult Tickle() override; // vtable+0x08
 

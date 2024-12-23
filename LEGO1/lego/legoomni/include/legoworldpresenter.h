@@ -1,6 +1,7 @@
 #ifndef LEGOWORLDPRESENTER_H
 #define LEGOWORLDPRESENTER_H
 
+#include "lego1_export.h"
 #include "legoentitypresenter.h"
 
 #include <SDL3/SDL_iostream.h>
@@ -16,7 +17,7 @@ public:
 	LegoWorldPresenter();
 	~LegoWorldPresenter() override; // vtable+0x00
 
-	static void configureLegoWorldPresenter(MxS32 p_legoWorldPresenterQuality);
+	LEGO1_EXPORT static void configureLegoWorldPresenter(MxS32 p_legoWorldPresenterQuality);
 
 	// FUNCTION: BETA10 0x100e41c0
 	static const char* HandlerClassName()
