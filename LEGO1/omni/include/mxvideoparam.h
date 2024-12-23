@@ -14,7 +14,7 @@ class MxPalette;
 class MxVideoParam {
 public:
 	MxVideoParam();
-	__declspec(dllexport)
+	DLL_EXPORT_SYMBOL
 		MxVideoParam(MxRect32& p_rect, MxPalette* p_palette, MxULong p_backBuffers, MxVideoParamFlags& p_flags);
 	MxVideoParam(MxVideoParam& p_videoParam);
 	~MxVideoParam();

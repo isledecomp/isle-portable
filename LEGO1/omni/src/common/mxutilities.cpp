@@ -10,6 +10,7 @@
 #include "mxrect32.h"
 
 #include <assert.h>
+#include <SDL3/SDL_stdinc.h>
 
 // GLOBAL: LEGO1 0x101020e8
 void (*g_omniUserMessage)(const char*, MxS32) = NULL;
@@ -71,7 +72,7 @@ void MakeSourceName(char* p_output, const char* p_input)
 
 	strcpy(p_output, p_input);
 
-	strlwr(p_output);
+	SDL_strlwr(p_output);
 
 	char* extLoc = strstr(p_output, ".si");
 	if (extLoc) {
@@ -94,7 +95,7 @@ MxBool KeyValueStringParse(char* p_output, const char* p_command, const char* p_
 	for (char* token = strtok(string, ", \t\r\n:"); token; token = strtok(NULL, ", \t\r\n:")) {
 		len -= (strlen(token) + 1);
 
-		if (strcmpi(token, p_command) == 0) {
+		if (SDL_strcasecmp(token, p_command) == 0) {
 			if (p_output && len > 0) {
 				char* output = p_output;
 				char* cur = &token[strlen(p_command)];

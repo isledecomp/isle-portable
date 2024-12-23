@@ -11,6 +11,7 @@
 #include "mxutilities.h"
 
 #include <assert.h>
+#include <SDL3/SDL_stdinc.h>
 
 DECOMP_SIZE_ASSERT(MxWavePresenter, 0x6c);
 DECOMP_SIZE_ASSERT(MxWavePresenter::WaveFormat, 0x18);
@@ -326,7 +327,7 @@ void MxWavePresenter::ParseExtra()
 
 		char soundValue[512];
 		if (KeyValueStringParse(soundValue, g_strSOUND, extraCopy)) {
-			if (!strcmpi(soundValue, "FALSE")) {
+			if (!SDL_strcasecmp(soundValue, "FALSE")) {
 				Enable(FALSE);
 			}
 		}

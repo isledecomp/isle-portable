@@ -6,6 +6,8 @@
 #include "mxtypes.h"
 #include "roi/legoroi.h"
 
+#include <SDL3/SDL_stdinc.h>
+
 class CustomizeAnimFileVariable;
 class LegoActor;
 class LegoExtraActor;
@@ -15,7 +17,7 @@ class LegoROI;
 #pragma warning(disable : 4237)
 
 struct LegoCharacterComparator {
-	MxBool operator()(const char* const& p_a, const char* const& p_b) const { return strcmpi(p_a, p_b) < 0; }
+	MxBool operator()(const char* const& p_a, const char* const& p_b) const { return SDL_strcasecmp(p_a, p_b) < 0; }
 };
 
 // SIZE 0x08

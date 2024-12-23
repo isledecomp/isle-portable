@@ -24,6 +24,7 @@
 #include "scripts.h"
 
 #include <stdio.h>
+#include <SDL3/SDL_stdinc.h>
 
 DECOMP_SIZE_ASSERT(Ambulance, 0x184)
 DECOMP_SIZE_ASSERT(AmbulanceMissionState, 0x24)
@@ -251,14 +252,14 @@ MxLong Ambulance::HandleButtonDown(LegoControlManagerNotificationParam& p_param)
 	if (m_unk0x170 == 1) {
 		LegoROI* roi = PickROI(p_param.GetX(), p_param.GetY());
 
-		if (roi != NULL && !strcmpi(roi->GetName(), "ps-gate")) {
+		if (roi != NULL && !SDL_strcasecmp(roi->GetName(), "ps-gate")) {
 			m_unk0x170 = 3;
 			return 1;
 		}
 
 		roi = PickRootROI(p_param.GetX(), p_param.GetY());
 
-		if (roi != NULL && !strcmpi(roi->GetName(), "gd")) {
+		if (roi != NULL && !SDL_strcasecmp(roi->GetName(), "gd")) {
 			m_unk0x170 = 3;
 			return 1;
 		}

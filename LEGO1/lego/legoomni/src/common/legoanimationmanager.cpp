@@ -30,6 +30,7 @@
 
 #include <io.h>
 #include <stdio.h>
+#include <SDL3/SDL_stdinc.h>
 #include <vec.h>
 
 DECOMP_SIZE_ASSERT(LegoAnimationManager, 0x500)
@@ -745,7 +746,7 @@ done:
 MxBool LegoAnimationManager::FindVehicle(const char* p_name, MxU32& p_index)
 {
 	for (MxS32 i = 0; i < sizeOfArray(g_vehicles); i++) {
-		if (!strcmpi(p_name, g_vehicles[i].m_name)) {
+		if (!SDL_strcasecmp(p_name, g_vehicles[i].m_name)) {
 			p_index = i;
 			return TRUE;
 		}
@@ -1662,7 +1663,7 @@ MxS8 LegoAnimationManager::GetCharacterIndex(const char* p_name)
 	MxS8 i;
 
 	for (i = 0; i < sizeOfArray(g_characters); i++) {
-		if (!strnicmp(p_name, g_characters[i].m_name, 2)) {
+		if (!SDL_strncasecmp(p_name, g_characters[i].m_name, 2)) {
 			return i;
 		}
 	}
@@ -1713,7 +1714,7 @@ MxBool LegoAnimationManager::ModelExists(AnimInfo& p_info, const char* p_name)
 
 	if (models != NULL && modelCount) {
 		for (MxU8 i = 0; i < modelCount; i++) {
-			if (!strcmpi(models[i].m_name, p_name)) {
+			if (!SDL_strcasecmp(models[i].m_name, p_name)) {
 				return TRUE;
 			}
 		}
@@ -2076,7 +2077,7 @@ MxBool LegoAnimationManager::FUN_10062e20(LegoROI* p_roi, LegoAnimPresenter* p_p
 		MxS32 i;
 
 		for (i = 0; i < (MxS32) sizeOfArray(g_characters); i++) {
-			if (!strcmpi(name, g_characters[i].m_name)) {
+			if (!SDL_strcasecmp(name, g_characters[i].m_name)) {
 				characterId = i;
 				break;
 			}
@@ -2621,7 +2622,7 @@ MxResult LegoAnimationManager::FUN_10064380(
 			extraIndex = i;
 		}
 
-		if (roi != NULL && !strcmpi(roi->GetName(), p_name)) {
+		if (roi != NULL && !SDL_strcasecmp(roi->GetName(), p_name)) {
 			actor = CharacterManager()->GetExtraActor(p_name);
 
 			if (actor != NULL && actor->GetController() != NULL) {
@@ -2639,7 +2640,7 @@ MxResult LegoAnimationManager::FUN_10064380(
 
 		MxS32 characterId;
 		for (characterId = 0; characterId < (MxS32) sizeOfArray(g_characters); characterId++) {
-			if (!strcmpi(g_characters[characterId].m_name, p_name)) {
+			if (!SDL_strcasecmp(g_characters[characterId].m_name, p_name)) {
 				break;
 			}
 		}
@@ -2759,7 +2760,7 @@ MxResult LegoAnimationManager::FUN_10064880(const char* p_name, MxS32 p_unk0x0c,
 		LegoROI* roi = m_extras[i].m_roi;
 
 		if (roi != NULL) {
-			if (!strcmpi(roi->GetName(), p_name)) {
+			if (!SDL_strcasecmp(roi->GetName(), p_name)) {
 				g_characters[m_extras[i].m_characterId].m_unk0x0c = p_unk0x0c;
 				g_characters[m_extras[i].m_characterId].m_unk0x10 = p_unk0x10;
 				return SUCCESS;

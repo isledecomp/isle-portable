@@ -63,6 +63,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <SDL3/SDL_stdinc.h>
 
 DECOMP_SIZE_ASSERT(LegoGameState::Username, 0x0e)
 DECOMP_SIZE_ASSERT(LegoGameState::ScoreItem, 0x2c)
@@ -1022,8 +1023,8 @@ void LegoGameState::SetROIHandlerFunction()
 MxBool ROIHandlerFunction(const char* p_input, char* p_output, MxU32 p_copyLen)
 {
 	if (p_output != NULL && p_copyLen != 0 &&
-		(strnicmp(p_input, "INDIR-F-", strlen("INDIR-F-")) == 0 ||
-		 strnicmp(p_input, "INDIR-G-", strlen("INDIR-F-")) == 0)) {
+		(SDL_strncasecmp(p_input, "INDIR-F-", strlen("INDIR-F-")) == 0 ||
+		 SDL_strncasecmp(p_input, "INDIR-G-", strlen("INDIR-F-")) == 0)) {
 
 		char buf[256];
 		sprintf(buf, "c_%s", &p_input[strlen("INDIR-F-")]);

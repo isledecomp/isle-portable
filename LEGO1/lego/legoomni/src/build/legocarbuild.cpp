@@ -34,6 +34,8 @@
 #include <stdio.h>
 #include <vec.h>
 
+#include <SDL3/SDL_stdinc.h>
+
 // Names and values verified by BETA10 0x1006d742.
 // Note that these were probably hard-coded numbers in the original.
 #define Helicopter_Actor CopterScript::c_Helicopter_Actor
@@ -1316,30 +1318,30 @@ void LegoCarBuild::TogglePresentersEnabled()
 void LegoCarBuild::FUN_100250e0(MxBool p_enabled)
 {
 	if (m_unk0x258->StringDoesNotEndOnZero(m_unk0x110->GetName()) && m_Decals_Ctl) {
-		if (strnicmp(m_unk0x110->GetName(), "JSFRNT", strlen("JSFRNT")) == 0) {
+		if (SDL_strncasecmp(m_unk0x110->GetName(), "JSFRNT", strlen("JSFRNT")) == 0) {
 			m_Decal_Bitmap->Enable(p_enabled);
 			m_Decals_Ctl->Enable(p_enabled);
 			m_Decals_Ctl1->Enable(p_enabled);
 			m_Decals_Ctl2->Enable(p_enabled);
 			m_Decals_Ctl3->Enable(p_enabled);
 		}
-		else if (strnicmp(m_unk0x110->GetName(), "JSWNSH", strlen("JSWNSH")) == 0) {
+		else if (SDL_strncasecmp(m_unk0x110->GetName(), "JSWNSH", strlen("JSWNSH")) == 0) {
 			m_Decal_Bitmap->Enable(p_enabled);
 			m_Decals_Ctl4->Enable(p_enabled);
 			m_Decals_Ctl5->Enable(p_enabled);
 			m_Decals_Ctl6->Enable(p_enabled);
 			m_Decals_Ctl7->Enable(p_enabled);
 		}
-		else if (strnicmp(m_unk0x110->GetName(), "RCBACK", strlen("RCBACK")) == 0) {
+		else if (SDL_strncasecmp(m_unk0x110->GetName(), "RCBACK", strlen("RCBACK")) == 0) {
 			m_Decals_Ctl1->Enable(p_enabled);
 		}
-		else if (strnicmp(m_unk0x110->GetName(), "RCTAIL", strlen("RCTAIL")) == 0) {
+		else if (SDL_strncasecmp(m_unk0x110->GetName(), "RCTAIL", strlen("RCTAIL")) == 0) {
 			m_Decals_Ctl2->Enable(p_enabled);
 		}
-		else if (m_Decals_Ctl1 && strnicmp(m_unk0x110->GetName(), "chljety", strlen("chljety")) == 0) {
+		else if (m_Decals_Ctl1 && SDL_strncasecmp(m_unk0x110->GetName(), "chljety", strlen("chljety")) == 0) {
 			m_Decals_Ctl1->Enable(p_enabled);
 		}
-		else if (m_Decals_Ctl2 && strnicmp(m_unk0x110->GetName(), "chrjety", strlen("chrjety")) == 0) {
+		else if (m_Decals_Ctl2 && SDL_strncasecmp(m_unk0x110->GetName(), "chrjety", strlen("chrjety")) == 0) {
 			m_Decals_Ctl2->Enable(p_enabled);
 		}
 		else if (m_Decals_Ctl) {

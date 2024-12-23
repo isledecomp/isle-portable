@@ -19,6 +19,8 @@
 #include "realtime/realtime.h"
 #include "roi/legoroi.h"
 
+#include <SDL3/SDL_stdinc.h>
+
 DECOMP_SIZE_ASSERT(LegoModelPresenter, 0x6c)
 
 // GLOBAL: LEGO1 0x100f7ae0
@@ -98,7 +100,7 @@ MxResult LegoModelPresenter::CreateROI(MxDSChunk* p_chunk)
 		storage.Read(textureName, textureNameLength);
 		textureName[textureNameLength] = '\0';
 
-		strlwr(textureName);
+		SDL_strlwr(textureName);
 
 		if (textureName[0] == '^') {
 			strcpy(textureName, textureName + 1);
@@ -316,7 +318,7 @@ void LegoModelPresenter::ParseExtra()
 			list<LegoROI*>& roiList = currentWorld->GetROIList();
 
 			for (list<LegoROI*>::iterator it = roiList.begin(); it != roiList.end(); it++) {
-				if (!strcmpi((*it)->GetName(), output)) {
+				if (!SDL_strcasecmp((*it)->GetName(), output)) {
 					m_roi = *it;
 					roiList.erase(it);
 
