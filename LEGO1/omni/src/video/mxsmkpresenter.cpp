@@ -77,15 +77,15 @@ void MxSmkPresenter::LoadFrame(MxStreamChunk* p_chunk)
 	m_currentFrame++;
 	VTable0x88();
 
-	MxRectList list(TRUE);
-	MxSmack::LoadFrame(bitmapInfo, bitmapData, &m_mxSmack, chunkData, paletteChanged, m_currentFrame - 1, &list);
+	MxRectList rects(TRUE);
+	MxSmack::LoadFrame(bitmapInfo, bitmapData, &m_mxSmack, chunkData, paletteChanged, m_currentFrame - 1, &rects);
 
 	if (((MxDSMediaAction*) m_action)->GetPaletteManagement() && paletteChanged) {
 		RealizePalette();
 	}
 
 	MxRect32 invalidateRect;
-	MxRectListCursor cursor(&list);
+	MxRectListCursor cursor(&rects);
 	MxRect32* rect;
 
 	while (cursor.Next(rect)) {

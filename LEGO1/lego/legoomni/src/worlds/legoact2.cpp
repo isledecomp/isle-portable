@@ -1111,7 +1111,7 @@ MxResult LegoAct2::FUN_10052560(
 
 			action.SetObjectId(p_objectId);
 			// World index: see LegoOmni::RegisterWorlds
-			action.SetAtomId(*Lego()->GetWorldAtom(15));
+			action.SetAtomId(*Lego()->GetWorldAtom(LegoOmni::e_act2));
 
 			if (p_location) {
 				action.SetUp(Mx3DPointFloat(0.0f, 1.0f, 0.0f));
@@ -1167,12 +1167,30 @@ MxResult LegoAct2::FUN_10052560(
 			MxResult result;
 
 			if (p_objectId == Act2mainScript::c_tja009ni_RunAnim) {
-				result =
-					AnimationManager()->FUN_10060dc0(p_objectId, pmatrix, TRUE, FALSE, NULL, TRUE, TRUE, TRUE, TRUE);
+				result = AnimationManager()->FUN_10060dc0(
+					p_objectId,
+					pmatrix,
+					TRUE,
+					LegoAnimationManager::e_unk0,
+					NULL,
+					TRUE,
+					TRUE,
+					TRUE,
+					TRUE
+				);
 			}
 			else {
-				result =
-					AnimationManager()->FUN_10060dc0(p_objectId, pmatrix, TRUE, FALSE, NULL, TRUE, TRUE, TRUE, FALSE);
+				result = AnimationManager()->FUN_10060dc0(
+					p_objectId,
+					pmatrix,
+					TRUE,
+					LegoAnimationManager::e_unk0,
+					NULL,
+					TRUE,
+					TRUE,
+					TRUE,
+					FALSE
+				);
 			}
 
 			if (result == SUCCESS) {

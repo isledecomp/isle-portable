@@ -3,6 +3,7 @@
 
 #include "decomp.h"
 #include "legolocations.h"
+#include "legomain.h"
 #include "legostate.h"
 #include "legotraninfolist.h"
 #include "mxcore.h"
@@ -48,6 +49,7 @@ struct AnimInfo {
 };
 
 // VTABLE: LEGO1 0x100d8d80
+// VTABLE: BETA10 0x101bae58
 // SIZE 0x1c
 class AnimState : public LegoState {
 public:
@@ -55,6 +57,7 @@ public:
 	~AnimState() override; // vtable+0x00
 
 	// FUNCTION: LEGO1 0x10065070
+	// FUNCTION: BETA10 0x1004afe0
 	const char* ClassName() const override // vtable+0x0c
 	{
 		// STRING: LEGO1 0x100f0460
@@ -90,6 +93,7 @@ private:
 };
 
 // VTABLE: LEGO1 0x100d8c18
+// VTABLE: BETA10 0x101bab60
 // SIZE 0x500
 class LegoAnimationManager : public MxCore {
 public:
@@ -127,6 +131,12 @@ public:
 		MxBool m_unk0x14;    // 0x14
 	};
 
+	enum PlayMode {
+		e_unk0 = 0,
+		e_unk1,
+		e_unk2
+	};
+
 	LegoAnimationManager();
 	~LegoAnimationManager() override;
 
@@ -134,6 +144,7 @@ public:
 	MxResult Tickle() override;               // vtable+0x08
 
 	// FUNCTION: LEGO1 0x1005ec80
+	// FUNCTION: BETA10 0x100483d0
 	const char* ClassName() const override // vtable+0x0c
 	{
 		// STRING: LEGO1 0x100f7508
@@ -151,7 +162,7 @@ public:
 	void Resume();
 	void FUN_1005f6d0(MxBool p_unk0x400);
 	void EnableCamAnims(MxBool p_enableCamAnims);
-	MxResult LoadWorldInfo(MxS32 p_worldId);
+	MxResult LoadWorldInfo(LegoOmni::World p_worldId);
 	MxBool FindVehicle(const char* p_name, MxU32& p_index);
 	MxResult ReadAnimInfo(LegoFile* p_file, AnimInfo* p_info);
 	MxResult ReadModelInfo(LegoFile* p_file, ModelInfo* p_info);
@@ -165,7 +176,7 @@ public:
 		MxU32 p_objectId,
 		MxMatrix* p_matrix,
 		MxBool p_param3,
-		MxBool p_param4,
+		MxU8 p_param4,
 		LegoROI* p_roi,
 		MxBool p_param6,
 		MxBool p_param7,
@@ -247,7 +258,7 @@ private:
 	void FUN_100648f0(LegoTranInfo* p_tranInfo, MxLong p_unk0x404);
 	void FUN_10064b50(MxLong p_time);
 
-	MxS32 m_worldId;                   // 0x08
+	LegoOmni::World m_worldId;         // 0x08
 	MxU16 m_animCount;                 // 0x0c
 	MxU16 m_unk0x0e;                   // 0x0e
 	MxU16 m_unk0x10;                   // 0x10
