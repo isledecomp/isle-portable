@@ -52,6 +52,7 @@ MxS32 LegoPlantManager::g_maxMove[4] = {3, 3, 3, 3};
 MxU32 g_plantAnimationId[4] = {30, 33, 36, 39};
 
 // GLOBAL: LEGO1 0x100f3188
+// GLOBAL: BETA10 0x101f4e70
 char* LegoPlantManager::g_customizeAnimFile = NULL;
 
 // GLOBAL: LEGO1 0x10103180
@@ -65,6 +66,7 @@ LegoPlantManager::LegoPlantManager()
 }
 
 // FUNCTION: LEGO1 0x100262c0
+// FUNCTION: BETA10 0x100c5002
 LegoPlantManager::~LegoPlantManager()
 {
 	delete[] g_customizeAnimFile;
@@ -74,18 +76,20 @@ LegoPlantManager::~LegoPlantManager()
 // FUNCTION: BETA10 0x100c4f90
 void LegoPlantManager::Init()
 {
+	// In BETA10 this appears to be LegoPlantManager::LegoPlantManager()
+
 	for (MxS32 i = 0; i < sizeOfArray(g_plantInfo); i++) {
 		g_plantInfo[i] = g_plantInfoInit[i];
 	}
 
-	m_worldId = -1;
+	m_worldId = LegoOmni::e_undefined;
 	m_unk0x0c = 0;
 	m_numEntries = 0;
 }
 
 // FUNCTION: LEGO1 0x10026360
 // FUNCTION: BETA10 0x100c5032
-void LegoPlantManager::LoadWorldInfo(MxS32 p_worldId)
+void LegoPlantManager::LoadWorldInfo(LegoOmni::World p_worldId)
 {
 	m_worldId = p_worldId;
 	LegoWorld* world = CurrentWorld();
@@ -98,7 +102,8 @@ void LegoPlantManager::LoadWorldInfo(MxS32 p_worldId)
 }
 
 // FUNCTION: LEGO1 0x100263a0
-void LegoPlantManager::Reset(MxS32 p_worldId)
+// FUNCTION: BETA10 0x100c5093
+void LegoPlantManager::Reset(LegoOmni::World p_worldId)
 {
 	MxU32 i;
 	DeleteObjects(g_sndAnimScript, SndanimScript::c_AnimC1, SndanimScript::c_AnimBld18);
@@ -113,7 +118,7 @@ void LegoPlantManager::Reset(MxS32 p_worldId)
 		RemovePlant(i, p_worldId);
 	}
 
-	m_worldId = -1;
+	m_worldId = LegoOmni::e_undefined;
 	m_unk0x0c = 0;
 }
 
@@ -205,7 +210,7 @@ LegoPlantInfo* LegoPlantManager::GetInfoArray(MxS32& p_length)
 
 // FUNCTION: LEGO1 0x10026590
 // FUNCTION: BETA10 0x100c561e
-LegoEntity* LegoPlantManager::CreatePlant(MxS32 p_index, LegoWorld* p_world, MxS32 p_worldId)
+LegoEntity* LegoPlantManager::CreatePlant(MxS32 p_index, LegoWorld* p_world, LegoOmni::World p_worldId)
 {
 	LegoEntity* entity = NULL;
 
@@ -244,7 +249,7 @@ LegoEntity* LegoPlantManager::CreatePlant(MxS32 p_index, LegoWorld* p_world, MxS
 
 // FUNCTION: LEGO1 0x100266c0
 // FUNCTION: BETA10 0x100c5859
-void LegoPlantManager::RemovePlant(MxS32 p_index, MxS32 p_worldId)
+void LegoPlantManager::RemovePlant(MxS32 p_index, LegoOmni::World p_worldId)
 {
 	if (p_index < sizeOfArray(g_plantInfo)) {
 		MxU32 world = 1 << (MxU8) p_worldId;
@@ -342,6 +347,13 @@ void LegoPlantManager::FUN_10026860(MxS32 p_index)
 	else {
 		g_plantInfo[p_index].m_position[1] = g_plantInfoInit[p_index].m_position[1];
 	}
+}
+
+// FUNCTION: LEGO1 0x100268d0
+// FUNCTION: BETA10 0x100c5c7a
+MxS32 LegoPlantManager::GetNumPlants()
+{
+	return sizeOfArray(g_plantInfo);
 }
 
 // FUNCTION: LEGO1 0x100268e0

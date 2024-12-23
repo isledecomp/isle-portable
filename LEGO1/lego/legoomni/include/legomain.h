@@ -28,6 +28,7 @@ class MxTransitionManager;
 class ViewLODListManager;
 
 // VTABLE: LEGO1 0x100d8638
+// VTABLE: BETA10 0x101bc8b8
 // SIZE 0x140
 class LegoOmni : public MxOmni {
 public:
@@ -37,16 +38,39 @@ public:
 		c_clearScreen = 0x04
 	};
 
+	enum World {
+		e_undefined = -1,
+		e_act1 = 0,
+		e_imain,
+		e_icube,
+		e_ireg,
+		e_ielev,
+		e_iisle,
+		e_hosp,
+		e_police,
+		e_gmain,
+		e_bldh,
+		e_bldd,
+		e_bldj,
+		e_bldr,
+		e_racc,
+		e_racj,
+		e_act2,
+		e_act3,
+		e_test,
+		e_numWorlds = e_test + 2 // count e_undefined
+	};
+
 	// SIZE 0x1c
 	struct WorldContainer {
 		// FUNCTION: LEGO1 0x1005ac40
 		WorldContainer()
 		{
-			m_id = -1;
+			m_id = e_undefined;
 			m_atomId = NULL;
 		}
 
-		WorldContainer(MxS32 p_id, const char* p_key, MxAtomId* p_atomId)
+		WorldContainer(World p_id, const char* p_key, MxAtomId* p_atomId)
 		{
 			m_id = p_id;
 
@@ -66,10 +90,10 @@ public:
 			return *this;
 		}
 
-		MxS32 GetId() { return m_id; }
+		World GetId() { return m_id; }
 		const char* GetKey() { return m_key; }
 
-		MxS32 m_id;         // 0x00
+		World m_id;         // 0x00
 		char m_key[20];     // 0x04
 		MxAtomId* m_atomId; // 0x18
 	};
@@ -80,6 +104,7 @@ public:
 	MxLong Notify(MxParam& p_param) override; // vtable+0x04
 
 	// FUNCTION: LEGO1 0x10058aa0
+	// FUNCTION: BETA10 0x1008f830
 	const char* ClassName() const override // vtable+0x0c
 	{
 		// STRING: LEGO1 0x100f671c
@@ -111,9 +136,9 @@ public:
 	void CreateBackgroundAudio();
 	void RemoveWorld(const MxAtomId& p_atom, MxLong p_objectId);
 	MxResult RegisterWorlds();
-	const char* GetWorldName(MxU32 p_id);
-	MxAtomId* GetWorldAtom(MxU32 p_id);
-	MxS32 GetWorldId(const char* p_key);
+	const char* GetWorldName(LegoOmni::World p_id);
+	MxAtomId* GetWorldAtom(LegoOmni::World p_id);
+	World GetWorldId(const char* p_key);
 	void DeleteAction();
 
 	static MxS32 GetCurrPathInfo(LegoPathBoundary**, MxS32&);

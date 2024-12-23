@@ -11,6 +11,7 @@ class MxStreamChunk;
 class MxDSChunk;
 
 // VTABLE: LEGO1 0x100dcca0
+// VTABLE: BETA10 0x101c2898
 // SIZE 0x34
 class MxDSBuffer : public MxCore {
 public:
@@ -25,6 +26,7 @@ public:
 	~MxDSBuffer() override;
 
 	// FUNCTION: LEGO1 0x100c6500
+	// FUNCTION: BETA10 0x10158510
 	const char* ClassName() const override // vtable+0x0c
 	{
 		// STRING: LEGO1 0x101025b8
@@ -63,19 +65,31 @@ public:
 	static MxCore* ReadChunk(MxDSBuffer* p_buffer, MxU32* p_chunkData, MxU16 p_flags);
 	static MxResult Append(MxU8* p_buffer1, MxU8* p_buffer2);
 
+	// FUNCTION: BETA10 0x10148c60
 	MxU8* GetBuffer() { return m_pBuffer; }
+
 	MxU8** GetBufferRef() { return &m_pBuffer; }
 	undefined4 GetUnknown14() { return m_unk0x14; }
+
+	// FUNCTION: BETA10 0x10156420
+	MxBool HasRef() { return m_referenceCount != 0; }
+
 	MxU16 GetRefCount() { return m_referenceCount; }
 	Type GetMode() { return m_mode; }
+
+	// FUNCTION: BETA10 0x10148c40
 	MxU32 GetWriteOffset() { return m_writeOffset; }
+
+	// FUNCTION: BETA10 0x101590d0
 	MxU32 GetBytesRemaining() { return m_bytesRemaining; }
+
 	void SetUnknown14(undefined4 p_unk0x14) { m_unk0x14 = p_unk0x14; }
 	void SetUnknown1c(undefined4 p_unk0x1c) { m_unk0x1c = p_unk0x1c; }
 	void SetMode(Type p_mode) { m_mode = p_mode; }
 	void SetUnk30(MxDSStreamingAction* p_unk0x30) { m_unk0x30 = p_unk0x30; }
 
 	// SYNTHETIC: LEGO1 0x100c6510
+	// SYNTHETIC: BETA10 0x10158530
 	// MxDSBuffer::`scalar deleting destructor'
 
 private:

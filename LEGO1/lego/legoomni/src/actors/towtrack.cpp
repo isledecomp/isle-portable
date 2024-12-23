@@ -567,7 +567,8 @@ void TowTrack::FUN_1004dbe0()
 // FUNCTION: BETA10 0x100f86a0
 void TowTrack::PlayFinalAnimation(IsleScript::Script p_objectId)
 {
-	AnimationManager()->FUN_10060dc0(p_objectId, NULL, TRUE, FALSE, NULL, FALSE, FALSE, FALSE, TRUE);
+	AnimationManager()
+		->FUN_10060dc0(p_objectId, NULL, TRUE, LegoAnimationManager::e_unk0, NULL, FALSE, FALSE, FALSE, TRUE);
 	m_lastAnimation = p_objectId;
 }
 
@@ -575,7 +576,8 @@ void TowTrack::PlayFinalAnimation(IsleScript::Script p_objectId)
 void TowTrack::FUN_1004dcb0(IsleScript::Script p_objectId)
 {
 	AnimationManager()->FUN_1005f6d0(TRUE);
-	AnimationManager()->FUN_10060dc0(p_objectId, NULL, TRUE, TRUE, NULL, FALSE, TRUE, TRUE, TRUE);
+	AnimationManager()
+		->FUN_10060dc0(p_objectId, NULL, TRUE, LegoAnimationManager::e_unk1, NULL, FALSE, TRUE, TRUE, TRUE);
 	m_lastAnimation = p_objectId;
 }
 

@@ -4,7 +4,7 @@
 #include "mxdschunk.h"
 
 class MxDSBuffer;
-class MxStreamListMxDSSubscriber;
+class MxDSSubscriberList;
 
 // VTABLE: LEGO1 0x100dc2a8
 // VTABLE: BETA10 0x101c1d20
@@ -17,6 +17,7 @@ public:
 	~MxStreamChunk() override;
 
 	// FUNCTION: LEGO1 0x100b1fe0
+	// FUNCTION: BETA10 0x101344a0
 	const char* ClassName() const override // vtable+0x0c
 	{
 		// STRING: LEGO1 0x10101e5c
@@ -33,7 +34,7 @@ public:
 
 	MxResult ReadChunk(MxDSBuffer* p_buffer, MxU8* p_chunkData);
 	MxU32 ReadChunkHeader(MxU8* p_chunkData);
-	MxResult SendChunk(MxStreamListMxDSSubscriber& p_subscriberList, MxBool p_append, MxS16 p_obj24val);
+	MxResult SendChunk(MxDSSubscriberList& p_subscriberList, MxBool p_append, MxS16 p_obj24val);
 	void SetBuffer(MxDSBuffer* p_buffer);
 
 	static MxU16* IntoFlags(MxU8* p_buffer);

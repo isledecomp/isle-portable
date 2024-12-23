@@ -5,7 +5,6 @@
 #include "decomp.h"
 #include "mxcriticalsection.h"
 #include "mxdsaction.h"
-#include "mxstreamlist.h"
 #include "mxstreamprovider.h"
 #include "mxthread.h"
 
@@ -23,6 +22,7 @@ public:
 };
 
 // VTABLE: LEGO1 0x100dd138
+// VTABLE: BETA10 0x101c2c40
 // SIZE 0x60
 class MxDiskStreamProvider : public MxStreamProvider {
 public:
@@ -30,6 +30,7 @@ public:
 	~MxDiskStreamProvider() override;
 
 	// FUNCTION: LEGO1 0x100d1160
+	// FUNCTION: BETA10 0x10164090
 	const char* ClassName() const override // vtable+0x0c
 	{
 		// STRING: LEGO1 0x1010287c
@@ -61,7 +62,7 @@ private:
 	MxBool m_remainingWork;              // 0x34
 	MxBool m_unk0x35;                    // 0x35
 	MxCriticalSection m_criticalSection; // 0x38
-	MxStreamListMxDSAction m_list;       // 0x54
+	MxDSObjectList m_list;               // 0x54
 };
 
 // SYNTHETIC: LEGO1 0x100d10a0

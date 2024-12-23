@@ -12,6 +12,7 @@
 class MxDSStreamingAction;
 
 // VTABLE: LEGO1 0x100dccb8
+// VTABLE: BETA10 0x101c2818
 // SIZE 0xc8
 class MxDiskStreamController : public MxStreamController {
 public:
@@ -21,6 +22,7 @@ public:
 	MxResult Tickle() override; // vtable+0x08
 
 	// FUNCTION: LEGO1 0x100c7360
+	// FUNCTION: BETA10 0x10155c00
 	const char* ClassName() const override // vtable+0x0c
 	{
 		// STRING: LEGO1 0x10102144
@@ -51,15 +53,15 @@ public:
 	void FUN_100c8670(MxDSStreamingAction* p_streamingAction);
 
 private:
-	MxStreamListMxDSAction m_list0x64; // 0x64
-	MxBool m_unk0x70;                  // 0x70
-	list<MxDSBuffer*> m_list0x74;      // 0x74
-	MxStreamListMxDSAction m_list0x80; // 0x80
-	undefined2 m_unk0x8c;              // 0x8c
-	MxStreamListMxDSAction m_list0x90; // 0x90
-	MxCriticalSection m_critical9c;    // 0x9c
-	MxStreamListMxDSAction m_list0xb8; // 0xb8
-	MxBool m_unk0xc4;                  // 0xc4
+	MxDSObjectList m_list0x64;      // 0x64
+	MxBool m_unk0x70;               // 0x70
+	list<MxDSBuffer*> m_list0x74;   // 0x74
+	MxDSObjectList m_list0x80;      // 0x80
+	undefined2 m_unk0x8c;           // 0x8c
+	MxDSObjectList m_list0x90;      // 0x90
+	MxCriticalSection m_critical9c; // 0x9c
+	MxDSObjectList m_list0xb8;      // 0xb8
+	MxBool m_unk0xc4;               // 0xc4
 
 	void FUN_100c7970();
 	void FUN_100c7ce0(MxDSBuffer* p_buffer);
@@ -72,10 +74,10 @@ private:
 };
 
 // TEMPLATE: LEGO1 0x100c14d0
-// list<MxDSAction *,allocator<MxDSAction *> >::erase
+// list<MxDSObject *,allocator<MxDSObject *> >::erase
 
 // TEMPLATE: LEGO1 0x100c7330
-// list<MxDSAction *,allocator<MxDSAction *> >::_Buynode
+// list<MxDSObject *,allocator<MxDSObject *> >::_Buynode
 
 // TEMPLATE: LEGO1 0x100c7420
 // list<MxDSBuffer *,allocator<MxDSBuffer *> >::~list<MxDSBuffer *,allocator<MxDSBuffer *> >

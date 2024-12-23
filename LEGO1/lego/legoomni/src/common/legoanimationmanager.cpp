@@ -417,7 +417,7 @@ void LegoAnimationManager::Suspend()
 		m_animState = (AnimState*) GameState()->CreateState("AnimState");
 	}
 
-	if (m_worldId == 0) {
+	if (m_worldId == LegoOmni::e_act1) {
 		m_animState->InitFromAnims(m_animCount, m_anims, m_lastExtraCharacterId);
 	}
 
@@ -496,7 +496,7 @@ void LegoAnimationManager::Resume()
 void LegoAnimationManager::Init()
 {
 	m_unk0x402 = FALSE;
-	m_worldId = -1;
+	m_worldId = LegoOmni::e_undefined;
 	m_animCount = 0;
 	m_anims = NULL;
 	m_unk0x18 = 0;
@@ -581,7 +581,7 @@ void LegoAnimationManager::EnableCamAnims(MxBool p_enableCamAnims)
 }
 
 // FUNCTION: LEGO1 0x1005f720
-MxResult LegoAnimationManager::LoadWorldInfo(MxS32 p_worldId)
+MxResult LegoAnimationManager::LoadWorldInfo(LegoOmni::World p_worldId)
 {
 	MxResult result = FAILURE;
 	MxS32 i, j, k;
@@ -616,7 +616,7 @@ MxResult LegoAnimationManager::LoadWorldInfo(MxS32 p_worldId)
 			m_animState = (AnimState*) GameState()->CreateState("AnimState");
 		}
 
-		if (m_worldId == 0) {
+		if (m_worldId == LegoOmni::e_act1) {
 			m_animState->InitFromAnims(m_animCount, m_anims, m_lastExtraCharacterId);
 		}
 
@@ -624,7 +624,7 @@ MxResult LegoAnimationManager::LoadWorldInfo(MxS32 p_worldId)
 
 		LegoFile file;
 
-		if (p_worldId == -1) {
+		if (p_worldId == LegoOmni::e_undefined) {
 			result = SUCCESS;
 			goto done;
 		}
@@ -962,7 +962,7 @@ MxResult LegoAnimationManager::FUN_100605e0(
 {
 	MxResult result = FAILURE;
 
-	if (m_worldId != -1 && p_index < m_animCount && m_tranInfoList != NULL) {
+	if (m_worldId != LegoOmni::e_undefined && p_index < m_animCount && m_tranInfoList != NULL) {
 		PurgeExtra(FALSE);
 		FUN_10062770();
 
@@ -1139,7 +1139,7 @@ MxResult LegoAnimationManager::FUN_10060dc0(
 	MxU32 p_objectId,
 	MxMatrix* p_matrix,
 	MxBool p_param3,
-	MxBool p_param4,
+	MxU8 p_param4,
 	LegoROI* p_roi,
 	MxBool p_param6,
 	MxBool p_param7,
@@ -1160,10 +1160,10 @@ MxResult LegoAnimationManager::FUN_10060dc0(
 			MxBool unk0x0a;
 
 			switch (p_param4) {
-			case FALSE:
+			case e_unk0:
 				unk0x0a = m_anims[i].m_unk0x0a;
 				break;
-			case TRUE:
+			case e_unk1:
 				unk0x0a = TRUE;
 				break;
 			default:
