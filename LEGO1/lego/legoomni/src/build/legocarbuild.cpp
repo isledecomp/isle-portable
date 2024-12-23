@@ -35,6 +35,7 @@
 #include <vec.h>
 
 #include <SDL3/SDL_stdinc.h>
+#include <SDL3/SDL_timer.h>
 
 // Names and values verified by BETA10 0x1006d742.
 // Note that these were probably hard-coded numbers in the original.
@@ -561,7 +562,7 @@ MxResult LegoCarBuild::Tickle()
 	}
 
 	if (m_unk0x10a) {
-		DWORD time = timeGetTime();
+		Uint64 time = SDL_GetTicks();
 		DWORD dTime = (time - m_unk0x10c) / 100;
 
 		if (m_carId == RaceCar_Actor) {
@@ -1605,7 +1606,7 @@ void LegoCarBuild::FUN_10025720(undefined4 p_param)
 #endif
 
 	if (m_unk0x10a != 0) {
-		m_unk0x10c = timeGetTime();
+		m_unk0x10c = SDL_GetTicks();
 	}
 }
 

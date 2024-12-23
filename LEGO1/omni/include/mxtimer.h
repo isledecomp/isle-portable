@@ -3,6 +3,8 @@
 
 #include "mxcore.h"
 
+#include <SDL3/SDL_stdinc.h>
+
 // VTABLE: LEGO1 0x100dc0e0
 // VTABLE: BETA10 0x101c1bb0
 // SIZE 0x10
@@ -35,7 +37,7 @@ public:
 	// MxTimer::`scalar deleting destructor'
 
 private:
-	MxLong m_startTime; // 0x08
+	Uint64 m_startTime; // 0x08
 	MxBool m_isRunning; // 0x0c
 
 	static MxLong g_lastTimeCalculated;
