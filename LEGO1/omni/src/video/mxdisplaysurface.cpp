@@ -9,6 +9,7 @@
 #include "mxvideomanager.h"
 
 #include <assert.h>
+#include <SDL3/SDL_log.h>
 #include <windows.h>
 
 DECOMP_SIZE_ASSERT(MxDisplaySurface, 0xac);
@@ -834,7 +835,7 @@ void MxDisplaySurface::Display(MxS32 p_left, MxS32 p_top, MxS32 p_left2, MxS32 p
 					m_ddSurface2->Unlock(ddsd.lpSurface);
 				}
 				else {
-					OutputDebugString("MxDisplaySurface::Display error\n");
+					SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "MxDisplaySurface::Display error\n");
 				}
 			}
 			m_ddSurface1->Flip(NULL, DDFLIP_WAIT);

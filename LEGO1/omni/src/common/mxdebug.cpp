@@ -7,7 +7,7 @@
 // This is the most widely used version.
 
 #include <stdio.h>
-#include <windows.h>
+#include <SDL3/SDL_log.h>
 
 // FUNCTION: BETA10 0x10124cb9
 int DebugHeapState()
@@ -19,11 +19,9 @@ int DebugHeapState()
 void _MxTrace(const char* format, ...)
 {
 	va_list args;
-	char buffer[256];
 
 	va_start(args, format);
-	_vsnprintf(buffer, 256, format, args);
-	OutputDebugString(buffer);
+	SDL_LogMessageV(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_CATEGORY_DEBUG, SDL_LOG_PRIORITY_TRACE, format, args);
 	va_end(args);
 }
 
