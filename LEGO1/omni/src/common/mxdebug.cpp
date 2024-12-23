@@ -21,7 +21,7 @@ void _MxTrace(const char* format, ...)
 	va_list args;
 
 	va_start(args, format);
-	SDL_LogMessageV(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_CATEGORY_DEBUG, SDL_LOG_PRIORITY_TRACE, format, args);
+	SDL_LogMessageV(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_DEBUG, SDL_LOG_PRIORITY_TRACE, format, args);
 	va_end(args);
 }
 
