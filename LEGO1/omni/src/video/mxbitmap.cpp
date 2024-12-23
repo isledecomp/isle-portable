@@ -175,11 +175,11 @@ done:
 MxLong MxBitmap::Read(const char* p_filename)
 {
 	MxResult result = FAILURE;
-	HANDLE handle = 0;
+	SDL_IOStream *handle;
 
-	handle = CreateFileA(p_filename, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	handle = SDL_IOFromFile(p_filename, "rb");
 
-	if (handle == INVALID_HANDLE_VALUE) {
+	if (handle == NULL) {
 		goto done;
 	}
 
@@ -191,7 +191,7 @@ MxLong MxBitmap::Read(const char* p_filename)
 
 done:
 	if (handle) {
-		CloseHandle(handle);
+		SDL_CloseIO(handle);
 	}
 
 	return result;
@@ -199,15 +199,14 @@ done:
 
 // FUNCTION: LEGO1 0x100bcd60
 // FUNCTION: BETA10 0x1013d169
-MxResult MxBitmap::LoadFile(HANDLE p_handle)
+MxResult MxBitmap::LoadFile(SDL_IOStream* p_handle)
 {
 	MxResult result = FAILURE;
 	MxLong unused = 0;
 
 	MxLong size;
-	DWORD bytesRead;
 	BITMAPFILEHEADER hdr;
-	if (!ReadFile(p_handle, &hdr, sizeof(hdr), &bytesRead, NULL)) {
+	if (!SDL_ReadIO(p_handle, &hdr, sizeof(hdr))) {
 		goto done;
 	}
 
@@ -220,7 +219,7 @@ MxResult MxBitmap::LoadFile(HANDLE p_handle)
 		goto done;
 	}
 
-	if (!ReadFile(p_handle, m_info, MxBitmapInfoSize(), &bytesRead, NULL)) {
+	if (!SDL_ReadIO(p_handle, m_info, MxBitmapInfoSize())) {
 		goto done;
 	}
 
@@ -234,7 +233,7 @@ MxResult MxBitmap::LoadFile(HANDLE p_handle)
 		goto done;
 	}
 
-	if (!ReadFile(p_handle, m_data, size, &bytesRead, NULL)) {
+	if (!SDL_ReadIO(p_handle, m_data, size)) {
 		goto done;
 	}
 
