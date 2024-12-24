@@ -517,7 +517,7 @@ if (MSVC)
   # Visual Studio 2017 version 15.7 needs "/Zc:__cplusplus" for __cplusplus
   if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "19.14.26428")
     foreach(tgt IN LISTS lego1_interface_targets)
-      target_compile_options(${tgt} PRIVATE "-Zc:__cplusplus")
+      target_compile_options(${tgt} INTERFACE "-Zc:__cplusplus")
     endforeach()
     if (TARGET isle)
       target_compile_options(isle PRIVATE "-Zc:__cplusplus")
