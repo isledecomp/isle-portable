@@ -8,10 +8,9 @@
 #include "shape/legobox.h"
 #include "shape/legosphere.h"
 
+#include <SDL3/SDL_stdinc.h>
 #include <string.h>
 #include <vec.h>
-
-#include <SDL3/SDL_stdinc.h>
 
 DECOMP_SIZE_ASSERT(LegoROI, 0x108)
 DECOMP_SIZE_ASSERT(TimeROI, 0x10c)

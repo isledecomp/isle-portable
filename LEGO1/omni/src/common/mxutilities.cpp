@@ -9,8 +9,8 @@
 #include "mxpresenterlist.h"
 #include "mxrect32.h"
 
-#include <assert.h>
 #include <SDL3/SDL_stdinc.h>
+#include <assert.h>
 
 // GLOBAL: LEGO1 0x101020e8
 void (*g_omniUserMessage)(const char*, MxS32) = NULL;

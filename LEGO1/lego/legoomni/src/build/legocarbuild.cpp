@@ -30,12 +30,11 @@
 #include "racecar_actions.h"
 #include "scripts.h"
 
+#include <SDL3/SDL_stdinc.h>
+#include <SDL3/SDL_timer.h>
 #include <isle.h>
 #include <stdio.h>
 #include <vec.h>
-
-#include <SDL3/SDL_stdinc.h>
-#include <SDL3/SDL_timer.h>
 
 // Names and values verified by BETA10 0x1006d742.
 // Note that these were probably hard-coded numbers in the original.

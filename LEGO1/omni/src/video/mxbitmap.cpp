@@ -175,7 +175,7 @@ done:
 MxLong MxBitmap::Read(const char* p_filename)
 {
 	MxResult result = FAILURE;
-	SDL_IOStream *handle;
+	SDL_IOStream* handle;
 
 	handle = SDL_IOFromFile(p_filename, "rb");
 

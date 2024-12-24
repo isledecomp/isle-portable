@@ -8,8 +8,8 @@
 #include "mxutilities.h"
 #include "mxvideomanager.h"
 
-#include <assert.h>
 #include <SDL3/SDL_log.h>
+#include <assert.h>
 #include <windows.h>
 
 DECOMP_SIZE_ASSERT(MxDisplaySurface, 0xac);

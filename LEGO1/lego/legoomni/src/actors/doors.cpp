@@ -6,8 +6,8 @@
 #include "roi/legoroi.h"
 #include "tgl/tglvector.h"
 
-#include <assert.h>
 #include <SDL3/SDL_stdinc.h>
+#include <assert.h>
 
 DECOMP_SIZE_ASSERT(Doors, 0x1f8)
 

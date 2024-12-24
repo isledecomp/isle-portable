@@ -10,8 +10,8 @@
 #include "mxsoundmanager.h"
 #include "mxutilities.h"
 
-#include <assert.h>
 #include <SDL3/SDL_stdinc.h>
+#include <assert.h>
 
 DECOMP_SIZE_ASSERT(MxWavePresenter, 0x6c);
 DECOMP_SIZE_ASSERT(MxWavePresenter::WaveFormat, 0x18);

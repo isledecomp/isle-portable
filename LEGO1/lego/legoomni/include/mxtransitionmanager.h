@@ -5,8 +5,8 @@
 #include "lego1_export.h"
 #include "mxcore.h"
 
-#include <ddraw.h>
 #include <SDL3/SDL_stdinc.h>
+#include <ddraw.h>
 
 class MxVideoPresenter;
 

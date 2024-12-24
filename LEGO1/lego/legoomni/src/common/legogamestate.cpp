@@ -61,9 +61,9 @@
 #include "sndanim_actions.h"
 #include "towtrack.h"
 
+#include <SDL3/SDL_stdinc.h>
 #include <assert.h>
 #include <stdio.h>
-#include <SDL3/SDL_stdinc.h>
 
 DECOMP_SIZE_ASSERT(LegoGameState::Username, 0x0e)
 DECOMP_SIZE_ASSERT(LegoGameState::ScoreItem, 0x2c)

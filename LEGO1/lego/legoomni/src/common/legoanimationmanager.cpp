@@ -28,9 +28,9 @@
 #include "realtime/realtime.h"
 #include "viewmanager/viewmanager.h"
 
+#include <SDL3/SDL_stdinc.h>
 #include <io.h>
 #include <stdio.h>
-#include <SDL3/SDL_stdinc.h>
 #include <vec.h>
 
 DECOMP_SIZE_ASSERT(LegoAnimationManager, 0x500)

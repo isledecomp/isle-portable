@@ -4,8 +4,8 @@
 #include "mxcore.h"
 #include "mxtypes.h"
 
-#include <ddraw.h>
 #include <SDL3/SDL_iostream.h>
+#include <ddraw.h>
 #include <stdlib.h>
 
 class MxPalette;
@@ -44,7 +44,7 @@ public:
 	virtual MxResult ImportBitmap(MxBitmap* p_bitmap);                                     // vtable+14
 	virtual MxResult ImportBitmapInfo(MxBITMAPINFO* p_info);                               // vtable+18
 	virtual MxResult SetSize(MxS32 p_width, MxS32 p_height, MxPalette* p_palette, MxBool); // vtable+1c
-	virtual MxResult LoadFile(SDL_IOStream* p_handle);                                      // vtable+20
+	virtual MxResult LoadFile(SDL_IOStream* p_handle);                                     // vtable+20
 	virtual MxLong Read(const char* p_filename);                                           // vtable+24
 
 	// FUNCTION: LEGO1 0x1004e0d0

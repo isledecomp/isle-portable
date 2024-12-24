@@ -15,7 +15,12 @@ class MxPalette;
 class MxVideoParam {
 public:
 	LEGO1_EXPORT MxVideoParam();
-    LEGO1_EXPORT MxVideoParam(MxRect32& p_rect, MxPalette* p_palette, MxULong p_backBuffers, MxVideoParamFlags& p_flags);
+	LEGO1_EXPORT MxVideoParam(
+		MxRect32& p_rect,
+		MxPalette* p_palette,
+		MxULong p_backBuffers,
+		MxVideoParamFlags& p_flags
+	);
 	MxVideoParam(MxVideoParam& p_videoParam);
 	LEGO1_EXPORT ~MxVideoParam();
 	LEGO1_EXPORT void SetDeviceName(char* p_deviceId);

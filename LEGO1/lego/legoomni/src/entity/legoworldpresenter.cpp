@@ -27,8 +27,8 @@
 #include "mxstl/stlcompat.h"
 #include "mxutilities.h"
 
-#include <stdio.h>
 #include <SDL3/SDL_stdinc.h>
+#include <stdio.h>
 
 DECOMP_SIZE_ASSERT(LegoWorldPresenter, 0x54)
 
