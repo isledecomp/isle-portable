@@ -15,7 +15,7 @@ public:
 	MxDSFile(const char* p_filename, MxULong p_skipReadingChunks);
 
 	enum {
-		OPEN_READ = 0,
+		e_openRead = 0,
 	};
 
 #ifdef ISLE_APP

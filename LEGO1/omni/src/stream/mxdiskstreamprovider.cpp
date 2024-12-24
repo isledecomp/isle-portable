@@ -92,11 +92,11 @@ MxResult MxDiskStreamProvider::SetResourceToGet(MxStreamController* p_resource)
 
 	m_pFile = new MxDSFile(path.GetData(), 0);
 	if (m_pFile != NULL) {
-		if (m_pFile->Open(MxDSFile::OPEN_READ) != 0) {
+		if (m_pFile->Open(MxDSFile::e_openRead) != 0) {
 			path = MxString(MxOmni::GetCD()) + p_resource->GetAtom().GetInternal() + ".si";
 			m_pFile->SetFileName(path.GetData());
 
-			if (m_pFile->Open(MxDSFile::OPEN_READ) != 0) {
+			if (m_pFile->Open(MxDSFile::e_openRead) != 0) {
 				goto done;
 			}
 		}
