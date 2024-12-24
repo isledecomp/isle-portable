@@ -8,6 +8,7 @@
 #include "mxmisc.h"
 #include "mxvariabletable.h"
 
+#include <SDL3/SDL_stdinc.h>
 #include <vec.h>
 
 // File name verified by BETA10 0x100cedf7
@@ -220,7 +221,7 @@ void LegoCarRaceActor::Animate(float p_time)
 	if (m_unk0x0c == 0) {
 		const char* value = VariableTable()->GetVariable(g_raceState);
 
-		if (strcmpi(value, g_racing) == 0) {
+		if (SDL_strcasecmp(value, g_racing) == 0) {
 			m_unk0x0c = 1;
 			m_lastTime = p_time - 1.0f;
 			m_unk0x1c = p_time;

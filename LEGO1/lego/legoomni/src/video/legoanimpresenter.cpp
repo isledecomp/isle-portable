@@ -26,6 +26,7 @@
 #include "realtime/realtime.h"
 #include "viewmanager/viewmanager.h"
 
+#include <SDL3/SDL_stdinc.h>
 #include <stdio.h>
 
 DECOMP_SIZE_ASSERT(LegoAnimPresenter, 0xbc)
@@ -244,7 +245,7 @@ void LegoAnimPresenter::FUN_100692b0()
 			else if (unk0x04 == 4) {
 				LegoChar* baseName = new LegoChar[strlen(str)];
 				strcpy(baseName, str + 1);
-				strlwr(baseName);
+				SDL_strlwr(baseName);
 
 				LegoChar* und = FUN_10069150(str);
 				roi = CharacterManager()->FUN_10085a80(und, baseName, TRUE);
@@ -268,7 +269,7 @@ void LegoAnimPresenter::FUN_100692b0()
 					*i = '\0';
 				}
 
-				strlwr(lodName);
+				SDL_strlwr(lodName);
 
 				LegoChar* und = FUN_10069150(str);
 				roi = CharacterManager()->CreateAutoROI(und, lodName, TRUE);
@@ -315,7 +316,7 @@ void LegoAnimPresenter::FUN_100695c0()
 						*i = '\0';
 					}
 
-					strlwr(lodName);
+					SDL_strlwr(lodName);
 
 					CharacterManager()->CreateAutoROI(actorName, lodName, FALSE);
 					FUN_100698b0(rois, actorName);
@@ -370,7 +371,7 @@ LegoBool LegoAnimPresenter::FUN_100698b0(const CompoundObject& p_rois, const Leg
 			const char* name = roi->GetName();
 
 			if (name != NULL) {
-				if (!strcmpi(name, str)) {
+				if (!SDL_strcasecmp(name, str)) {
 					m_unk0x70->Append(roi);
 					result = TRUE;
 					break;
@@ -392,7 +393,7 @@ LegoROI* LegoAnimPresenter::FUN_100699e0(const LegoChar* p_und)
 	while (cursor.Next(roi)) {
 		LegoChar* und = FUN_100697c0(roi->GetName(), NULL);
 
-		if (und != NULL && !strcmpi(und, p_und)) {
+		if (und != NULL && !SDL_strcasecmp(und, p_und)) {
 			delete[] und;
 			return roi;
 		}
@@ -430,7 +431,7 @@ void LegoAnimPresenter::FUN_10069b10()
 		if (m_roiMap[index]->GetName() != NULL) {
 			for (MxS32 i = 0; i < m_unk0x94; i++) {
 				if (m_unk0x8c[i] == NULL && m_unk0x90[i] != NULL) {
-					if (!strcmpi(m_unk0x90[i], m_roiMap[index]->GetName())) {
+					if (!SDL_strcasecmp(m_unk0x90[i], m_roiMap[index]->GetName())) {
 						m_unk0x8c[i] = m_roiMap[index];
 						break;
 					}

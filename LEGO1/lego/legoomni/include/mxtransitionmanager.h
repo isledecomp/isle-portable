@@ -2,8 +2,10 @@
 #define MXTRANSITIONMANAGER_H
 
 #include "decomp.h"
+#include "lego1_export.h"
 #include "mxcore.h"
 
+#include <SDL3/SDL_stdinc.h>
 #include <ddraw.h>
 
 class MxVideoPresenter;
@@ -16,7 +18,7 @@ public:
 	MxTransitionManager();
 	~MxTransitionManager() override; // vtable+0x00
 
-	void SetWaitIndicator(MxVideoPresenter* p_waitIndicator);
+	LEGO1_EXPORT void SetWaitIndicator(MxVideoPresenter* p_waitIndicator);
 
 	MxResult Tickle() override; // vtable+0x08
 
@@ -78,7 +80,7 @@ private:
 	MxU16 m_animationTimer;          // 0x34
 	MxU16 m_columnOrder[640];        // 0x36
 	MxU16 m_randomShift[480];        // 0x536
-	MxULong m_systemTime;            // 0x8f8
+	Uint64 m_systemTime;             // 0x8f8
 	MxS32 m_animationSpeed;          // 0x8fc
 };
 

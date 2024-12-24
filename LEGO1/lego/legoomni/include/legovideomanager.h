@@ -2,6 +2,7 @@
 #define LEGOVIDEOMANAGER_H
 
 #include "decomp.h"
+#include "lego1_export.h"
 #include "legophonemelist.h"
 #include "mxvideomanager.h"
 
@@ -26,11 +27,11 @@ public:
 	LegoVideoManager();
 	~LegoVideoManager() override;
 
-	int EnableRMDevice();
+	LEGO1_EXPORT int EnableRMDevice();
 	int DisableRMDevice();
 	void EnableFullScreenMovie(MxBool p_enable);
-	void EnableFullScreenMovie(MxBool p_enable, MxBool p_scale);
-	void MoveCursor(MxS32 p_cursorX, MxS32 p_cursorY);
+	LEGO1_EXPORT void EnableFullScreenMovie(MxBool p_enable, MxBool p_scale);
+	LEGO1_EXPORT void MoveCursor(MxS32 p_cursorX, MxS32 p_cursorY);
 	void ToggleFPS(MxBool p_visible);
 
 	MxResult Tickle() override;                                                                       // vtable+0x08

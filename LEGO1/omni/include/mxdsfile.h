@@ -1,6 +1,7 @@
 #ifndef MXDSFILE_H
 #define MXDSFILE_H
 
+#include "lego1_export.h"
 #include "mxdssource.h"
 #include "mxio.h"
 #include "mxstring.h"
@@ -13,6 +14,10 @@ class MxDSFile : public MxDSSource {
 public:
 	MxDSFile(const char* p_filename, MxULong p_skipReadingChunks);
 
+	enum {
+		e_openRead = 0,
+	};
+
 #ifdef ISLE_APP
 	~MxDSFile() override { Close(); }
 #else
@@ -20,7 +25,7 @@ public:
 	// since it is inlined everywhere in LEGO1.DLL
 	// FUNCTION: LEGO1 0x100bfed0
 	// FUNCTION: BETA10 0x10148ac0
-	__declspec(dllexport) ~MxDSFile() override { Close(); }
+	LEGO1_EXPORT ~MxDSFile() override { Close(); }
 #endif
 
 	// FUNCTION: LEGO1 0x100c0120

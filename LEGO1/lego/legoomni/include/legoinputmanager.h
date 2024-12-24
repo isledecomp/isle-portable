@@ -2,6 +2,7 @@
 #define LEGOINPUTMANAGER_H
 
 #include "decomp.h"
+#include "lego1_export.h"
 #include "legoeventnotificationparam.h"
 #include "mxlist.h"
 #include "mxpresenter.h"
@@ -85,7 +86,7 @@ public:
 	LegoInputManager();
 	~LegoInputManager() override;
 
-	void QueueEvent(NotificationId p_id, MxU8 p_modifier, MxLong p_x, MxLong p_y, MxU8 p_key);
+	LEGO1_EXPORT void QueueEvent(NotificationId p_id, MxU8 p_modifier, MxLong p_x, MxLong p_y, MxU8 p_key);
 	void Register(MxCore*);
 	void UnRegister(MxCore*);
 

@@ -1,6 +1,7 @@
 #ifndef MXDIRECTDRAW_H
 #define MXDIRECTDRAW_H
 
+#include "lego1_export.h"
 #include "mxdirectxinfo.h"
 
 #include <ddraw.h>
@@ -12,7 +13,7 @@ class MxDirectDraw {
 public:
 	typedef void (*ErrorHandler)(const char*, HRESULT, void*);
 
-	static int GetPrimaryBitDepth();
+	LEGO1_EXPORT static int GetPrimaryBitDepth();
 
 	MxDirectDraw();
 	virtual ~MxDirectDraw();

@@ -8,6 +8,7 @@
 #include "mxutilities.h"
 #include "mxvariabletable.h"
 
+#include <SDL3/SDL_stdinc.h>
 #include <assert.h>
 
 DECOMP_SIZE_ASSERT(LegoMeterPresenter, 0x94)
@@ -47,16 +48,16 @@ void LegoMeterPresenter::ParseExtra()
 
 		char output[256];
 		if (KeyValueStringParse(output, g_strTYPE, extraCopy)) {
-			if (!strcmpi(output, g_strLEFT_TO_RIGHT)) {
+			if (!SDL_strcasecmp(output, g_strLEFT_TO_RIGHT)) {
 				m_layout = e_leftToRight;
 			}
-			else if (!strcmpi(output, g_strRIGHT_TO_LEFT)) {
+			else if (!SDL_strcasecmp(output, g_strRIGHT_TO_LEFT)) {
 				m_layout = e_rightToLeft;
 			}
-			else if (!strcmpi(output, g_strBOTTOM_TO_TOP)) {
+			else if (!SDL_strcasecmp(output, g_strBOTTOM_TO_TOP)) {
 				m_layout = e_bottomToTop;
 			}
-			else if (!strcmpi(output, g_strTOP_TO_BOTTOM)) {
+			else if (!SDL_strcasecmp(output, g_strTOP_TO_BOTTOM)) {
 				m_layout = e_topToBottom;
 			}
 		}

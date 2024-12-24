@@ -9,6 +9,8 @@
 #include "mxutilities.h"
 #include "mxvideopresenter.h"
 
+#include <SDL3/SDL_stdinc.h>
+
 DECOMP_SIZE_ASSERT(MxControlPresenter, 0x5c)
 
 // FUNCTION: LEGO1 0x10043f50
@@ -253,15 +255,15 @@ void MxControlPresenter::ParseExtra()
 		if (KeyValueStringParse(output, g_strSTYLE, extraCopy)) {
 			char* str = strtok(output, g_parseExtraTokens);
 
-			if (!strcmpi(str, g_strTOGGLE)) {
+			if (!SDL_strcasecmp(str, g_strTOGGLE)) {
 				m_unk0x4c = 1;
 			}
-			else if (!strcmpi(str, g_strGRID)) {
+			else if (!SDL_strcasecmp(str, g_strGRID)) {
 				m_unk0x4c = 2;
 				m_unk0x52 = atoi(strtok(NULL, g_parseExtraTokens));
 				m_unk0x54 = atoi(strtok(NULL, g_parseExtraTokens));
 			}
-			else if (!strcmpi(str, g_strMAP)) {
+			else if (!SDL_strcasecmp(str, g_strMAP)) {
 				m_unk0x4c = 3;
 				str = strtok(NULL, g_parseExtraTokens);
 
@@ -281,7 +283,7 @@ void MxControlPresenter::ParseExtra()
 		}
 
 		if (KeyValueStringParse(output, g_strVISIBILITY, extraCopy)) {
-			if (!strcmpi(output, "FALSE")) {
+			if (!SDL_strcasecmp(output, "FALSE")) {
 				Enable(FALSE);
 			}
 		}

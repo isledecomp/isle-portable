@@ -10,6 +10,8 @@
 #include "misc.h"
 #include "roi/legoroi.h"
 
+#include <SDL3/SDL_stdinc.h>
+
 DECOMP_SIZE_ASSERT(VisibilityVariable, 0x24)
 DECOMP_SIZE_ASSERT(CameraLocationVariable, 0x24)
 DECOMP_SIZE_ASSERT(CursorVariable, 0x24)
@@ -115,10 +117,10 @@ void VisibilityVariable::SetValue(const char* p_value)
 		char* name = strtok(NULL, g_delimiter2);
 		MxBool show;
 
-		if (!strcmpi(instruction, g_varHIDE)) {
+		if (!SDL_strcasecmp(instruction, g_varHIDE)) {
 			show = FALSE;
 		}
-		else if (!strcmpi(instruction, g_varSHOW)) {
+		else if (!SDL_strcasecmp(instruction, g_varSHOW)) {
 			show = TRUE;
 		}
 		else {
@@ -160,19 +162,19 @@ void WhoAmIVariable::SetValue(const char* p_value)
 {
 	MxVariable::SetValue(p_value);
 
-	if (!strcmpi(p_value, g_papa)) {
+	if (!SDL_strcasecmp(p_value, g_papa)) {
 		GameState()->SetActorId(3);
 	}
-	else if (!strcmpi(p_value, g_mama)) {
+	else if (!SDL_strcasecmp(p_value, g_mama)) {
 		GameState()->SetActorId(2);
 	}
-	else if (!strcmpi(p_value, g_pepper)) {
+	else if (!SDL_strcasecmp(p_value, g_pepper)) {
 		GameState()->SetActorId(1);
 	}
-	else if (!strcmpi(p_value, g_nick)) {
+	else if (!SDL_strcasecmp(p_value, g_nick)) {
 		GameState()->SetActorId(4);
 	}
-	else if (!strcmpi(p_value, g_laura)) {
+	else if (!SDL_strcasecmp(p_value, g_laura)) {
 		GameState()->SetActorId(5);
 	}
 }

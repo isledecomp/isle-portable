@@ -2,6 +2,7 @@
 #define VIEWMANAGER_H
 
 #include "decomp.h"
+#include "lego1_export.h"
 #include "realtime/realtimeview.h"
 #include "viewroi.h"
 
@@ -22,7 +23,7 @@ public:
 	virtual ~ViewManager();
 
 	void Remove(ViewROI* p_roi);
-	void RemoveAll(ViewROI* p_roi);
+	LEGO1_EXPORT void RemoveAll(ViewROI* p_roi);
 	unsigned int IsBoundingBoxInFrustum(const BoundingBox& p_bounding_box);
 	void UpdateROIDetailBasedOnLOD(ViewROI* p_roi, int p_und);
 	void RemoveROIDetailFromScene(ViewROI* p_roi);

@@ -2,6 +2,7 @@
 #define LEGOBUILDINGMANAGER_H
 
 #include "decomp.h"
+#include "lego1_export.h"
 #include "misc/legotypes.h"
 #include "mxcore.h"
 
@@ -63,7 +64,7 @@ public:
 		return "LegoBuildingManager";
 	}
 
-	static void configureLegoBuildingManager(MxS32);
+	LEGO1_EXPORT static void configureLegoBuildingManager(MxS32);
 	static void SetCustomizeAnimFile(const char* p_value);
 
 	void Init();

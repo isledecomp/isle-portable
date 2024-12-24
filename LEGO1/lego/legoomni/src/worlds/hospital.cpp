@@ -20,6 +20,8 @@
 #include "mxtransitionmanager.h"
 #include "scripts.h"
 
+#include <SDL3/SDL_stdinc.h>
+
 DECOMP_SIZE_ASSERT(Hospital, 0x12c)
 DECOMP_SIZE_ASSERT(HospitalState, 0x18)
 
@@ -409,7 +411,7 @@ MxLong Hospital::HandleButtonDown(LegoControlManagerNotificationParam& p_param)
 				roiName += 1;
 			}
 
-			if (!strcmpi("actor_ha", roiName)) {
+			if (!SDL_strcasecmp("actor_ha", roiName)) {
 				LegoInputManager* inputManager = InputManager();
 				inputManager->SetUnknown88(TRUE);
 				inputManager->SetUnknown336(FALSE);

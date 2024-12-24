@@ -33,6 +33,8 @@
 #include "scripts.h"
 #include "viewmanager/viewmanager.h"
 
+#include <SDL3/SDL_stdinc.h>
+
 DECOMP_SIZE_ASSERT(LegoOmni, 0x140)
 DECOMP_SIZE_ASSERT(LegoOmni::WorldContainer, 0x1c)
 DECOMP_SIZE_ASSERT(LegoWorldList, 0x18)
@@ -417,7 +419,7 @@ LegoROI* LegoOmni::FindROI(const char* p_name)
 			const char* name = roi->GetName();
 
 			if (name != NULL) {
-				if (!strcmpi(name, p_name)) {
+				if (!SDL_strcasecmp(name, p_name)) {
 					return roi;
 				}
 			}
@@ -432,7 +434,7 @@ MxEntity* LegoOmni::AddToWorld(const char* p_id, MxS32 p_entityId, MxPresenter* 
 {
 	LegoWorld* world = NULL;
 
-	if (strcmpi(p_id, g_current)) {
+	if (SDL_strcasecmp(p_id, g_current)) {
 		world = FindWorld(MxAtomId(p_id, e_lowerCase2), p_entityId);
 	}
 	else {
@@ -507,7 +509,7 @@ LegoOmni::World LegoOmni::GetWorldId(const char* p_key)
 {
 	for (MxS32 i = 0; i < e_numWorlds; i++) {
 		// FIXME: this looks very fishy. Is this guarding against out-of-bounds access?
-		if ((MxS32*) &m_worlds[i] != (MxS32*) -4 && !strcmpi(m_worlds[i].GetKey(), p_key)) {
+		if ((MxS32*) &m_worlds[i] != (MxS32*) -4 && !SDL_strcasecmp(m_worlds[i].GetKey(), p_key)) {
 			return m_worlds[i].GetId();
 		}
 	}

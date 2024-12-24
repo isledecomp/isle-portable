@@ -19,6 +19,7 @@
 #include "mxvariabletable.h"
 #include "raceskel.h"
 
+#include <SDL3/SDL_stdinc.h>
 #include <stdio.h>
 
 DECOMP_SIZE_ASSERT(EdgeReference, 0x08)
@@ -476,8 +477,8 @@ MxResult LegoRaceCar::HitActor(LegoPathActor* p_actor, MxBool p_bool)
 		}
 
 		if (m_userNavFlag) {
-			MxBool actorIsStuds = strcmpi(p_actor->GetROI()->GetName(), "studs") == 0;
-			MxBool actorIsRhoda = strcmpi(p_actor->GetROI()->GetName(), "rhoda") == 0;
+			MxBool actorIsStuds = SDL_strcasecmp(p_actor->GetROI()->GetName(), "studs") == 0;
+			MxBool actorIsRhoda = SDL_strcasecmp(p_actor->GetROI()->GetName(), "rhoda") == 0;
 			MxLong time = Timer()->GetTime();
 
 			const char* soundKey = NULL;
@@ -692,8 +693,8 @@ MxResult LegoJetski::HitActor(LegoPathActor* p_actor, MxBool p_bool)
 		}
 
 		if (m_userNavFlag) {
-			MxBool actorIsSnap = strcmpi(p_actor->GetROI()->GetName(), "snap") == 0;
-			MxBool actorIsValerie = strcmpi(p_actor->GetROI()->GetName(), "valerie") == 0;
+			MxBool actorIsSnap = SDL_strcasecmp(p_actor->GetROI()->GetName(), "snap") == 0;
+			MxBool actorIsValerie = SDL_strcasecmp(p_actor->GetROI()->GetName(), "valerie") == 0;
 			MxLong time = Timer()->GetTime();
 
 			const char* soundKey = NULL;

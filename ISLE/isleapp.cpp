@@ -185,13 +185,11 @@ MxS32 IsleApp::SetupLegoOmni()
 #ifdef COMPAT_MODE
 	MxS32 failure;
 	{
-		MxOmniCreateParam param(mediaPath, (struct HWND__*) hwnd, m_videoParam, MxOmniCreateFlags());
+		MxOmniCreateParam param(mediaPath, hwnd, m_videoParam, MxOmniCreateFlags());
 		failure = Lego()->Create(param) == FAILURE;
 	}
 #else
-	MxS32 failure =
-		Lego()->Create(MxOmniCreateParam(mediaPath, (struct HWND__*) hwnd, m_videoParam, MxOmniCreateFlags())) ==
-		FAILURE;
+	MxS32 failure = Lego()->Create(MxOmniCreateParam(mediaPath, hwnd, m_videoParam, MxOmniCreateFlags())) == FAILURE;
 #endif
 
 	if (!failure) {

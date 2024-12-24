@@ -16,6 +16,8 @@
 #include "mxtimer.h"
 #include "realtime/realtime.h"
 
+#include <SDL3/SDL_stdinc.h>
+
 DECOMP_SIZE_ASSERT(LegoCarBuildAnimPresenter::UnknownListEntry, 0x0c)
 DECOMP_SIZE_ASSERT(LegoCarBuildAnimPresenter, 0x150)
 
@@ -225,7 +227,7 @@ void LegoCarBuildAnimPresenter::StreamingTickle()
 			for (MxS32 j = 0; j <= m_roiMapSize; j++) {
 				LegoROI* roi = m_roiMap[j];
 
-				if (roi && roi->GetName() && (strcmpi(name, roi->GetName()) == 0)) {
+				if (roi && roi->GetName() && (SDL_strcasecmp(name, roi->GetName()) == 0)) {
 					roi->FUN_100a9dd0();
 					roi->FUN_100a9350("lego red");
 				}
@@ -247,7 +249,7 @@ void LegoCarBuildAnimPresenter::StreamingTickle()
 	for (i = 0; i < totalNodes; i++) {
 		LegoAnimNodeData* animNodeData = (LegoAnimNodeData*) GetTreeNode(m_anim->GetRoot(), i)->GetData();
 
-		if (strnicmp(animNodeData->GetName(), "CAM", strlen("CAM")) == 0) {
+		if (SDL_strncasecmp(animNodeData->GetName(), "CAM", strlen("CAM")) == 0) {
 			camera = local60->FindChildROI(animNodeData->GetName(), local60);
 			fov = atof(&animNodeData->GetName()[strlen(animNodeData->GetName()) - 2]);
 			break;
@@ -367,7 +369,7 @@ void LegoCarBuildAnimPresenter::FUN_10079160()
 	for (i = 0; i < totalNodes; i++) {
 		name = ((LegoAnimNodeData*) GetTreeNode(m_anim->GetRoot(), i)->GetData())->GetName();
 
-		strupr(name);
+		SDL_strupr(name);
 
 		if (StringEndsOnW(name)) {
 			m_parts[name[strlen(name) - 1] - 'A'].m_wiredName = new LegoChar[strlen(name) + 1];
@@ -386,7 +388,7 @@ void LegoCarBuildAnimPresenter::FUN_10079160()
 		name = ((LegoAnimNodeData*) GetTreeNode(m_anim->GetRoot(), i)->GetData())->GetName();
 		if (StringEndsOnYOrN(name)) {
 			for (MxS16 ii = 0; ii < m_numberOfParts; ii++) {
-				if (strnicmp(m_parts[ii].m_wiredName, name, strlen(name) - 2) == 0) {
+				if (SDL_strncasecmp(m_parts[ii].m_wiredName, name, strlen(name) - 2) == 0) {
 					m_parts[ii].m_name = new LegoChar[strlen(name) + 1];
 					assert(m_parts[ii].m_name);
 					strcpy(m_parts[ii].m_name, name);
@@ -515,7 +517,7 @@ void LegoCarBuildAnimPresenter::FUN_10079790(const LegoChar* p_name)
 	MxS16 i;
 	LegoChar buffer[40];
 
-	if (strcmpi(m_parts[m_placedPartCount].m_name, p_name) != 0) {
+	if (SDL_strcasecmp(m_parts[m_placedPartCount].m_name, p_name) != 0) {
 		for (i = m_placedPartCount + 1; i < m_numberOfParts; i++) {
 			if (stricmp(m_parts[i].m_name, p_name) == 0) {
 				break;
@@ -615,7 +617,7 @@ MxBool LegoCarBuildAnimPresenter::StringEndsOnYOrN(const LegoChar* p_string)
 // FUNCTION: BETA10 0x10072624
 MxBool LegoCarBuildAnimPresenter::StringEqualsShelf(const LegoChar* p_string)
 {
-	return strnicmp(p_string, "SHELF", strlen("SHELF")) == 0;
+	return SDL_strncasecmp(p_string, "SHELF", strlen("SHELF")) == 0;
 }
 
 // FUNCTION: LEGO1 0x10079c30
@@ -627,7 +629,7 @@ MxBool LegoCarBuildAnimPresenter::FUN_10079c30(const LegoChar* p_name)
 	}
 
 	return m_placedPartCount < m_numberOfParts &&
-		   strnicmp(p_name, m_parts[m_placedPartCount].m_name, strlen(p_name) - 3) == 0;
+		   SDL_strncasecmp(p_name, m_parts[m_placedPartCount].m_name, strlen(p_name) - 3) == 0;
 }
 
 // FUNCTION: LEGO1 0x10079ca0
@@ -635,7 +637,7 @@ MxBool LegoCarBuildAnimPresenter::FUN_10079c30(const LegoChar* p_name)
 MxBool LegoCarBuildAnimPresenter::PartIsPlaced(const LegoChar* p_name)
 {
 	for (MxS16 i = 0; i < m_placedPartCount; i++) {
-		if (strcmpi(p_name, m_parts[i].m_name) == 0) {
+		if (SDL_strcasecmp(p_name, m_parts[i].m_name) == 0) {
 			return TRUE;
 		}
 	}
@@ -662,7 +664,7 @@ MxBool LegoCarBuildAnimPresenter::StringDoesNotEndOnZero(const LegoChar* p_strin
 const LegoChar* LegoCarBuildAnimPresenter::GetWiredNameByPartName(const LegoChar* p_name)
 {
 	for (MxS16 i = 0; i < m_numberOfParts; i++) {
-		if (strcmpi(p_name, m_parts[i].m_name) == 0) {
+		if (SDL_strcasecmp(p_name, m_parts[i].m_name) == 0) {
 			return m_parts[i].m_wiredName;
 		}
 	}
@@ -675,7 +677,7 @@ const LegoChar* LegoCarBuildAnimPresenter::GetWiredNameByPartName(const LegoChar
 void LegoCarBuildAnimPresenter::SetPartObjectIdByName(const LegoChar* p_name, MxS16 p_objectId)
 {
 	for (MxS16 i = 0; i < m_numberOfParts; i++) {
-		if (strcmpi(p_name, m_parts[i].m_name) == 0) {
+		if (SDL_strcasecmp(p_name, m_parts[i].m_name) == 0) {
 			m_parts[i].m_objectId = p_objectId;
 			return;
 		}

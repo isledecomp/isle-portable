@@ -1,6 +1,7 @@
 #ifndef MXMISC_H
 #define MXMISC_H
 
+#include "lego1_export.h"
 #include "mxtypes.h"
 
 class MxAtomSet;
@@ -15,13 +16,13 @@ class MxTimer;
 class MxVariableTable;
 class MxVideoManager;
 
-MxTickleManager* TickleManager();
-MxTimer* Timer();
-MxStreamer* Streamer();
+LEGO1_EXPORT MxTickleManager* TickleManager();
+LEGO1_EXPORT MxTimer* Timer();
+LEGO1_EXPORT MxStreamer* Streamer();
 MxSoundManager* MSoundManager();
-MxVariableTable* VariableTable();
+LEGO1_EXPORT MxVariableTable* VariableTable();
 MxEventManager* EventManager();
-MxResult Start(MxDSAction*);
+LEGO1_EXPORT MxResult Start(MxDSAction*);
 MxNotificationManager* NotificationManager();
 MxVideoManager* MVideoManager();
 MxAtomSet* AtomSet();

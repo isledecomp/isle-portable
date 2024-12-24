@@ -1,6 +1,7 @@
 #ifndef MXATOM_H
 #define MXATOM_H
 
+#include "lego1_export.h"
 #include "mxstl/stlcompat.h"
 #include "mxstring.h"
 #include "mxtypes.h"
@@ -61,9 +62,9 @@ enum LookupMode {
 class MxAtomId {
 public:
 	MxAtomId(const char*, LookupMode);
-	~MxAtomId();
+	LEGO1_EXPORT ~MxAtomId();
 
-	MxAtomId& operator=(const MxAtomId& p_atomId);
+	LEGO1_EXPORT MxAtomId& operator=(const MxAtomId& p_atomId);
 
 	// FUNCTION: BETA10 0x100178d0
 	MxBool operator==(const MxAtomId& p_atomId) const { return this->m_internal == p_atomId.m_internal; }

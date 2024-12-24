@@ -1,6 +1,7 @@
 #ifndef LEGOMODELPRESENTER_H
 #define LEGOMODELPRESENTER_H
 
+#include "lego1_export.h"
 #include "mxvideopresenter.h"
 
 class LegoROI;
@@ -18,7 +19,7 @@ public:
 	// FUNCTION: LEGO1 0x10067a10
 	~LegoModelPresenter() override { Destroy(TRUE); }
 
-	static void configureLegoModelPresenter(MxS32 p_modelPresenterConfig);
+	LEGO1_EXPORT static void configureLegoModelPresenter(MxS32 p_modelPresenterConfig);
 
 	// FUNCTION: BETA10 0x100a7180
 	static const char* HandlerClassName()

@@ -2,6 +2,7 @@
 #define LEGOANIMATIONMANAGER_H
 
 #include "decomp.h"
+#include "lego1_export.h"
 #include "legolocations.h"
 #include "legomain.h"
 #include "legostate.h"
@@ -196,7 +197,7 @@ public:
 	MxResult FUN_10064880(const char* p_name, MxS32 p_unk0x0c, MxS32 p_unk0x10);
 	MxBool FUN_10064ee0(MxU32 p_objectId);
 
-	static void configureLegoAnimationManager(MxS32 p_legoAnimationManagerConfig);
+	LEGO1_EXPORT static void configureLegoAnimationManager(MxS32 p_legoAnimationManagerConfig);
 
 	// SYNTHETIC: LEGO1 0x1005ed10
 	// LegoAnimationManager::`scalar deleting destructor'

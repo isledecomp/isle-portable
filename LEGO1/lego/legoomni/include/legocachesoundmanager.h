@@ -6,6 +6,8 @@
 #include "mxstl/stlcompat.h"
 #include "mxtypes.h"
 
+#include <SDL3/SDL_stdinc.h>
+
 #pragma warning(disable : 4237)
 
 // SIZE 0x08
@@ -38,7 +40,7 @@ private:
 struct Set100d6b4cComparator {
 	bool operator()(const LegoCacheSoundEntry& p_a, const LegoCacheSoundEntry& p_b) const
 	{
-		return strcmpi(p_a.m_name, p_b.m_name) > 0;
+		return SDL_strcasecmp(p_a.m_name, p_b.m_name) > 0;
 	}
 };
 

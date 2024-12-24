@@ -26,6 +26,7 @@
 #include "realtime/realtimeview.h"
 #include "viewmanager/viewmanager.h"
 
+#include <SDL3/SDL_stdinc.h>
 #include <vec.h>
 
 DECOMP_SIZE_ASSERT(LegoNavController, 0x70)
@@ -427,7 +428,7 @@ MxResult LegoNavController::UpdateLocation(const char* p_location)
 	MxResult result = FAILURE;
 
 	for (MxS32 i = 0; i < (MxS32) sizeOfArray(g_locations); i++) {
-		if (!strcmpi(p_location, g_locations[i].m_name)) {
+		if (!SDL_strcasecmp(p_location, g_locations[i].m_name)) {
 			MxMatrix mat;
 			LegoROI* viewROI = VideoManager()->GetViewROI();
 

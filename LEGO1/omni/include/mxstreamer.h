@@ -2,6 +2,7 @@
 #define MXSTREAMER_H
 
 #include "decomp.h"
+#include "lego1_export.h"
 #include "mxcore.h"
 #include "mxmemorypool.h"
 #include "mxnotificationparam.h"
@@ -50,8 +51,8 @@ public:
 	MxStreamer();
 	~MxStreamer() override; // vtable+0x00
 
-	MxStreamController* Open(const char* p_name, MxU16 p_openMode);
-	MxLong Close(const char* p_name);
+	LEGO1_EXPORT MxStreamController* Open(const char* p_name, MxU16 p_openMode);
+	LEGO1_EXPORT MxLong Close(const char* p_name);
 
 	MxLong Notify(MxParam& p_param) override; // vtable+0x04
 

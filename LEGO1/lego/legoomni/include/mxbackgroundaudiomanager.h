@@ -1,6 +1,7 @@
 #ifndef MXBACKGROUNDAUDIOMANAGER_H
 #define MXBACKGROUNDAUDIOMANAGER_H
 
+#include "lego1_export.h"
 #include "mxcore.h"
 #include "mxdsaction.h"
 #include "mxpresenter.h"
@@ -43,7 +44,7 @@ public:
 	void FUN_1007ef40();
 	void FadeInOrFadeOut();
 
-	void Enable(MxBool p_enable);
+	LEGO1_EXPORT void Enable(MxBool p_enable);
 	virtual MxResult Create(MxAtomId& p_script, MxU32 p_frequencyMS);
 
 	void Init();

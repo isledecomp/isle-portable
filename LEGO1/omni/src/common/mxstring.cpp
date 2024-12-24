@@ -3,6 +3,7 @@
 #include "decomp.h"
 
 #include <SDL3/SDL_platform_defines.h>
+#include <SDL3/SDL_stdinc.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -90,14 +91,14 @@ void MxString::Reverse()
 // FUNCTION: BETA10 0x1012c537
 void MxString::ToUpperCase()
 {
-	strupr(this->m_data);
+	SDL_strupr(this->m_data);
 }
 
 // FUNCTION: LEGO1 0x100ae4a0
 // FUNCTION: BETA10 0x1012c55c
 void MxString::ToLowerCase()
 {
-	strlwr(this->m_data);
+	SDL_strlwr(this->m_data);
 }
 
 // FUNCTION: LEGO1 0x100ae4b0

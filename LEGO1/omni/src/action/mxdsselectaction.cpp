@@ -4,6 +4,8 @@
 #include "mxtimer.h"
 #include "mxvariabletable.h"
 
+#include <SDL3/SDL_stdinc.h>
+
 DECOMP_SIZE_ASSERT(MxDSSelectAction, 0xb0)
 DECOMP_SIZE_ASSERT(MxStringList, 0x18)
 DECOMP_SIZE_ASSERT(MxStringListCursor, 0x10)
@@ -94,13 +96,13 @@ void MxDSSelectAction::Deserialize(MxU8*& p_source, MxS16 p_unk0x24)
 
 	this->m_unk0x9c = (char*) p_source;
 
-	if (!strnicmp(this->m_unk0x9c.GetData(), "RANDOM_", strlen("RANDOM_"))) {
+	if (!SDL_strncasecmp(this->m_unk0x9c.GetData(), "RANDOM_", strlen("RANDOM_"))) {
 		char buffer[10];
 		MxS16 value = atoi(&this->m_unk0x9c.GetData()[strlen("RANDOM_")]);
 
 		srand(Timer()->GetTime());
 		MxS32 random = rand() % value;
-		string = itoa((MxS16) random, buffer, 10);
+		string = SDL_itoa((MxS16) random, buffer, 10);
 	}
 	else {
 		string = VariableTable()->GetVariable((char*) p_source);

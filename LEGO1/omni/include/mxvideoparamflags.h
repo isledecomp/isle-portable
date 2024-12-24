@@ -1,13 +1,14 @@
 #ifndef MXVIDEOPARAMFLAGS_H
 #define MXVIDEOPARAMFLAGS_H
 
+#include "lego1_export.h"
 #include "mxtypes.h"
 
 #include <windows.h>
 
 class MxVideoParamFlags {
 public:
-	MxVideoParamFlags();
+	LEGO1_EXPORT MxVideoParamFlags();
 
 	// inlined in ISLE
 	void SetFullScreen(MxBool p_e) { m_flags1.m_bit0 = p_e; }
