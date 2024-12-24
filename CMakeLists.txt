@@ -433,7 +433,7 @@ if(MINGW)
 endif()
 
 set(lego1_objects)
-set(lego1_link_libraries dxguid)
+set(lego1_link_libraries dxguid d3drm_guid)
 foreach(lego1_library IN LISTS lego1_targets)
   message("lego1_library:${lego1_library}")
   target_compile_definitions(${lego1_library}-objects PRIVATE LEGO1_DLL)
