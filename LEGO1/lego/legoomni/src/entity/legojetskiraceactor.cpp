@@ -6,6 +6,7 @@
 #include "mxmisc.h"
 #include "mxvariabletable.h"
 
+#include <SDL3/SDL_stdinc.h>
 #include <vec.h>
 
 DECOMP_SIZE_ASSERT(LegoJetskiRaceActor, 0x1a8)
@@ -123,7 +124,7 @@ void LegoJetskiRaceActor::Animate(float p_time)
 {
 	if (m_unk0x0c == 0) {
 		const LegoChar* raceState = VariableTable()->GetVariable(g_raceState);
-		if (!stricmp(raceState, g_racing)) {
+		if (!SDL_strcasecmp(raceState, g_racing)) {
 			m_unk0x0c = 1;
 			m_lastTime = p_time - 1.0f;
 			m_unk0x1c = p_time;

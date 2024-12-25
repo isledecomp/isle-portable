@@ -887,7 +887,7 @@ void LegoAnimationManager::FUN_10060480(const LegoChar* p_characterNames[], MxU3
 {
 	for (MxS32 i = 0; i < p_numCharacterNames; i++) {
 		for (MxS32 j = 0; j < sizeOfArray(g_characters); j++) {
-			if (!stricmp(g_characters[j].m_name, p_characterNames[i])) {
+			if (!SDL_strcasecmp(g_characters[j].m_name, p_characterNames[i])) {
 				g_characters[j].m_unk0x08 = TRUE;
 			}
 		}
