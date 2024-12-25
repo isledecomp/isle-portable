@@ -49,7 +49,7 @@ MxS32 g_unk0x100f43f0[] = {
 };
 
 // GLOBAL: LEGO1 0x100f4410
-LegoChar* g_unk0x100f4410[] = {"bd", "pg", "rd", "sy", "ro", "cl"};
+const LegoChar* g_unk0x100f4410[] = {"bd", "pg", "rd", "sy", "ro", "cl"};
 
 // GLOBAL: LEGO1 0x100f4428
 MxS32 g_unk0x100f4428[] = {
@@ -68,7 +68,7 @@ MxS32 g_unk0x100f4428[] = {
 };
 
 // GLOBAL: LEGO1 0x100f4458
-LegoChar* g_unk0x100f4458[] = {"papa", "nick", "laura", "cl", "pg", "rd", "sy"};
+const LegoChar* g_unk0x100f4458[] = {"papa", "nick", "laura", "cl", "pg", "rd", "sy"};
 
 // FUNCTION: LEGO1 0x1004fce0
 // FUNCTION: BETA10 0x1003a5a0
@@ -327,7 +327,7 @@ MxLong LegoAct2::Notify(MxParam& p_param)
 				local90 *= 1.25f;
 				locala4 += local90;
 				locala4[1] += 0.25;
-				local30.EqualsCross(&localac, &local28);
+				local30.EqualsCross(localac, local28);
 				local30.Unitize();
 
 				Mx3DPointFloat locald4(local2world[2]);
@@ -1155,7 +1155,7 @@ MxResult LegoAct2::FUN_10052560(
 			Vector3 secondColumn(matrix[1]);
 			Vector3 thirdColumn(matrix[2]);
 
-			firstColumn.EqualsCross(&secondColumn, &thirdColumn);
+			firstColumn.EqualsCross(secondColumn, thirdColumn);
 			firstColumn.Unitize();
 
 			MxMatrix* pmatrix = NULL;
