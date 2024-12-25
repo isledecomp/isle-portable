@@ -562,7 +562,7 @@ MxResult LegoCarBuild::Tickle()
 
 	if (m_unk0x10a) {
 		Uint64 time = SDL_GetTicks();
-		DWORD dTime = (time - m_unk0x10c) / 100;
+		Uint64 dTime = (time - m_unk0x10c) / 100;
 
 		if (m_carId == RaceCar_Actor) {
 			switch (m_unk0x10a) {
