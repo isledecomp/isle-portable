@@ -12,6 +12,8 @@
 #include "mxticklemanager.h"
 #include "mxvideopresenter.h"
 
+#include <SDL3/SDL_timer.h>
+
 DECOMP_SIZE_ASSERT(MxTransitionManager, 0x900)
 
 // GLOBAL: LEGO1 0x100f4378
@@ -54,11 +56,11 @@ MxResult MxTransitionManager::GetDDrawSurfaceFromVideoManager() // vtable+0x14
 // FUNCTION: LEGO1 0x1004bac0
 MxResult MxTransitionManager::Tickle()
 {
-	if (m_animationSpeed + m_systemTime > timeGetTime()) {
+	if (m_animationSpeed + m_systemTime > SDL_GetTicks()) {
 		return SUCCESS;
 	}
 
-	m_systemTime = timeGetTime();
+	m_systemTime = SDL_GetTicks();
 
 	switch (m_mode) {
 	case e_noAnimation:
@@ -112,7 +114,7 @@ MxResult MxTransitionManager::StartTransition(
 			action->SetFlags(action->GetFlags() | MxDSAction::c_bit10);
 		}
 
-		MxU32 time = timeGetTime();
+		Uint64 time = SDL_GetTicks();
 		m_systemTime = time;
 
 		m_animationSpeed = p_speed;

@@ -3,6 +3,7 @@
 
 #include "actionsfwd.h"
 #include "decomp.h"
+#include "lego1_export.h"
 #include "mxtypes.h"
 
 #include <string.h>
@@ -144,24 +145,24 @@ public:
 		undefined2 m_unk0x372;  // 0x372
 	};
 
-	LegoGameState();
+	LEGO1_EXPORT LegoGameState();
 	~LegoGameState();
 
 	void SetActor(MxU8 p_actorId);
 	void RemoveActor();
 	void ResetROI();
 
-	MxResult Save(MxULong);
+	LEGO1_EXPORT MxResult Save(MxULong);
 	MxResult DeleteState();
 	MxResult Load(MxULong);
 
-	void SerializePlayersInfo(MxS16 p_flags);
+	LEGO1_EXPORT void SerializePlayersInfo(MxS16 p_flags);
 	MxResult AddPlayer(Username& p_player);
 	void SwitchPlayer(MxS16 p_playerId);
 	MxS16 FindPlayer(Username& p_player);
 
-	void SerializeScoreHistory(MxS16 p_flags);
-	void SetSavePath(char*);
+	LEGO1_EXPORT void SerializeScoreHistory(MxS16 p_flags);
+	LEGO1_EXPORT void SetSavePath(char*);
 
 	LegoState* GetState(const char* p_stateName);
 	LegoState* CreateState(const char* p_stateName);

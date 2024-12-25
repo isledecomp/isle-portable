@@ -2,6 +2,7 @@
 #define MXVIDEOPARAM_H
 
 #include "compat.h"
+#include "lego1_export.h"
 #include "mxrect32.h"
 #include "mxtypes.h"
 #include "mxvideoparamflags.h"
@@ -13,13 +14,17 @@ class MxPalette;
 // SIZE 0x24
 class MxVideoParam {
 public:
-	MxVideoParam();
-	__declspec(dllexport)
-		MxVideoParam(MxRect32& p_rect, MxPalette* p_palette, MxULong p_backBuffers, MxVideoParamFlags& p_flags);
+	LEGO1_EXPORT MxVideoParam();
+	LEGO1_EXPORT MxVideoParam(
+		MxRect32& p_rect,
+		MxPalette* p_palette,
+		MxULong p_backBuffers,
+		MxVideoParamFlags& p_flags
+	);
 	MxVideoParam(MxVideoParam& p_videoParam);
-	~MxVideoParam();
-	void SetDeviceName(char* p_deviceId);
-	MxVideoParam& operator=(const MxVideoParam& p_videoParam);
+	LEGO1_EXPORT ~MxVideoParam();
+	LEGO1_EXPORT void SetDeviceName(char* p_deviceId);
+	LEGO1_EXPORT MxVideoParam& operator=(const MxVideoParam& p_videoParam);
 
 	// FUNCTION: BETA10 0x100886e0
 	MxVideoParamFlags& Flags() { return m_flags; }

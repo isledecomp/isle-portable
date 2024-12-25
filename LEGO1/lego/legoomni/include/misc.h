@@ -5,6 +5,7 @@
 #include "decomp.h"
 // Long include path due to dependency of misc library on LegoOmni
 #include "lego/legoomni/include/actions/actionsfwd.h"
+#include "lego1_export.h"
 #include "mxtypes.h"
 
 class LegoAnimationManager;
@@ -31,13 +32,13 @@ class ViewManager;
 
 extern MxBool g_isWorldActive;
 
-LegoOmni* Lego();
+LEGO1_EXPORT LegoOmni* Lego();
 LegoSoundManager* SoundManager();
-LegoVideoManager* VideoManager();
-MxBackgroundAudioManager* BackgroundAudioManager();
-LegoInputManager* InputManager();
+LEGO1_EXPORT LegoVideoManager* VideoManager();
+LEGO1_EXPORT MxBackgroundAudioManager* BackgroundAudioManager();
+LEGO1_EXPORT LegoInputManager* InputManager();
 LegoControlManager* ControlManager();
-LegoGameState* GameState();
+LEGO1_EXPORT LegoGameState* GameState();
 LegoAnimationManager* AnimationManager();
 LegoNavController* NavController();
 LegoPathActor* UserActor();
@@ -57,7 +58,7 @@ void DeleteAction();
 LegoWorld* FindWorld(const MxAtomId& p_atom, MxS32 p_entityid);
 MxDSAction& GetCurrentAction();
 void SetCurrentWorld(LegoWorld* p_world);
-MxTransitionManager* TransitionManager();
+LEGO1_EXPORT MxTransitionManager* TransitionManager();
 void PlayMusic(JukeboxScript::Script p_objectId);
 void SetIsWorldActive(MxBool p_isWorldActive);
 void DeleteObjects(MxAtomId* p_id, MxS32 p_first, MxS32 p_last);

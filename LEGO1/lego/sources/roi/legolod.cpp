@@ -7,6 +7,8 @@
 #include "shape/legomesh.h"
 #include "tgl/d3drm/impl.h"
 
+#include <SDL3/SDL_stdinc.h>
+
 DECOMP_SIZE_ASSERT(LODObject, 0x04)
 DECOMP_SIZE_ASSERT(ViewLOD, 0x0c)
 DECOMP_SIZE_ASSERT(LegoLOD, 0x20)
@@ -380,7 +382,7 @@ LegoResult LegoLOD::GetTexture(LegoTextureInfo*& p_textureInfo)
 LegoBool LegoLOD::FUN_100aae20(const LegoChar* p_name)
 {
 	if (p_name != NULL) {
-		if (!strnicmp(p_name, g_unk0x101013dc, strlen(g_unk0x101013dc))) {
+		if (!SDL_strncasecmp(p_name, g_unk0x101013dc, strlen(g_unk0x101013dc))) {
 			return TRUE;
 		}
 	}

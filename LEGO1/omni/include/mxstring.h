@@ -1,6 +1,7 @@
 #ifndef MXSTRING_H
 #define MXSTRING_H
 
+#include "lego1_export.h"
 #include "mxcore.h"
 
 // VTABLE: LEGO1 0x100dc110
@@ -12,7 +13,7 @@ public:
 	MxString(const MxString& p_str);
 	MxString(const char* p_str);
 	MxString(const char* p_str, MxU16 p_maxlen);
-	~MxString() override;
+	LEGO1_EXPORT ~MxString() override;
 
 	void Reverse();
 	void ToUpperCase();

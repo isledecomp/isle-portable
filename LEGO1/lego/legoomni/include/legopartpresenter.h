@@ -1,6 +1,7 @@
 #ifndef LEGOPARTPRESENTER_H
 #define LEGOPARTPRESENTER_H
 
+#include "lego1_export.h"
 #include "legonamedpartlist.h"
 #include "mxmediapresenter.h"
 
@@ -37,7 +38,7 @@ public:
 	MxResult AddToManager() override; // vtable+0x34
 	void Destroy() override;          // vtable+0x38
 
-	static void configureLegoPartPresenter(MxS32, MxS32);
+	LEGO1_EXPORT static void configureLegoPartPresenter(MxS32, MxS32);
 
 	// SYNTHETIC: LEGO1 0x1000d060
 	// LegoPartPresenter::`scalar deleting destructor'

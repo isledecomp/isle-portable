@@ -5,6 +5,8 @@
 #include "legostate.h"
 #include "legoworld.h"
 
+#include <SDL3/SDL_stdinc.h>
+
 class LegoCarBuildAnimPresenter;
 class LegoControlManagerNotificationParam;
 class LegoEventNotificationParam;
@@ -176,7 +178,7 @@ private:
 
 	MxU8 m_unk0x109;           // 0x109
 	MxU16 m_unk0x10a;          // 0x10a
-	DWORD m_unk0x10c;          // 0x10c
+	Uint64 m_unk0x10c;         // 0x10c
 	LegoROI* m_unk0x110;       // 0x110
 	BoundingSphere m_unk0x114; // 0x114
 	MxMatrix m_unk0x12c;       // 0x12c

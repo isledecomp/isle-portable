@@ -12,6 +12,8 @@
 #include "mxutilities.h"
 #include "mxvideomanager.h"
 
+#include <SDL3/SDL_stdinc.h>
+
 DECOMP_SIZE_ASSERT(MxStillPresenter, 0x6c);
 
 // FUNCTION: LEGO1 0x100b9c70
@@ -209,7 +211,7 @@ void MxStillPresenter::ParseExtra()
 
 		char output[512];
 		if (KeyValueStringParse(output, g_strVISIBILITY, extraCopy)) {
-			if (strcmpi(output, "FALSE") == 0) {
+			if (SDL_strcasecmp(output, "FALSE") == 0) {
 				Enable(FALSE);
 			}
 		}

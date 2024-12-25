@@ -1,6 +1,7 @@
 #ifndef MXDSACTION_H
 #define MXDSACTION_H
 
+#include "lego1_export.h"
 #include "mxdsobject.h"
 #include "mxgeometry/mxgeometry3d.h"
 #include "mxtypes.h"
@@ -25,8 +26,8 @@ public:
 		c_bit11 = 0x400,
 	};
 
-	MxDSAction();
-	~MxDSAction() override;
+	LEGO1_EXPORT MxDSAction();
+	LEGO1_EXPORT ~MxDSAction() override;
 
 	MxDSAction(MxDSAction& p_dsAction);
 	void CopyFrom(MxDSAction& p_dsAction);

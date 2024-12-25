@@ -7,6 +7,8 @@
 #include "mxticklemanager.h"
 #include "mxtimer.h"
 
+#include <SDL3/SDL_stdinc.h>
+
 DECOMP_SIZE_ASSERT(LegoPathController, 0x40)
 DECOMP_SIZE_ASSERT(LegoPathCtrlEdge, 0x40)
 DECOMP_SIZE_ASSERT(LegoPathController::CtrlBoundary, 0x08)
@@ -103,7 +105,7 @@ MxResult LegoPathController::Create(MxU8* p_data, const Vector3& p_location, con
 			MxS32 j;
 
 			for (j = 0; j < sizeOfArray(g_unk0x100f42f0); j++) {
-				if (!strcmpi(g_unk0x100f42f0[j], boundary.GetName())) {
+				if (!SDL_strcasecmp(g_unk0x100f42f0[j], boundary.GetName())) {
 					g_ctrlBoundariesA[j].m_controller = this;
 					g_ctrlBoundariesA[j].m_boundary = &boundary;
 
@@ -114,7 +116,7 @@ MxResult LegoPathController::Create(MxU8* p_data, const Vector3& p_location, con
 			}
 
 			for (j = 0; j < sizeOfArray(g_unk0x100f4330); j++) {
-				if (!strcmpi(g_unk0x100f4330[j], boundary.GetName())) {
+				if (!SDL_strcasecmp(g_unk0x100f4330[j], boundary.GetName())) {
 					g_ctrlBoundariesB[j].m_controller = this;
 					g_ctrlBoundariesB[j].m_boundary = &boundary;
 					g_ctrlEdgesB[j].m_controller = this;
@@ -386,7 +388,7 @@ MxResult LegoPathController::FUN_10046b30(LegoPathBoundary*& p_boundaries, MxS32
 LegoPathBoundary* LegoPathController::GetPathBoundary(const char* p_name)
 {
 	for (MxS32 i = 0; i < m_numL; i++) {
-		if (!strcmpi(m_boundaries[i].GetName(), p_name)) {
+		if (!SDL_strcasecmp(m_boundaries[i].GetName(), p_name)) {
 			return &m_boundaries[i];
 		}
 	}

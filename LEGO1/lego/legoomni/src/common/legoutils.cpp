@@ -31,6 +31,7 @@
 #include "scripts.h"
 
 #include <SDL3/SDL_events.h>
+#include <SDL3/SDL_stdinc.h>
 #include <process.h>
 #include <stdio.h>
 #include <string.h>
@@ -191,11 +192,11 @@ void FUN_1003e050(LegoAnimPresenter* p_presenter)
 
 		LegoAnimNodeData* data = (LegoAnimNodeData*) GetTreeNode(rootNode, i)->GetData();
 
-		if (!strnicmp(data->GetName(), "CAM", strlen("CAM"))) {
+		if (!SDL_strncasecmp(data->GetName(), "CAM", strlen("CAM"))) {
 			camData = data;
 			cam = atof(&data->GetName()[strlen(data->GetName()) - 2]);
 		}
-		else if (!strcmpi(data->GetName(), "TARGET")) {
+		else if (!SDL_strcasecmp(data->GetName(), "TARGET")) {
 			targetData = data;
 		}
 	}
@@ -231,34 +232,34 @@ Extra::ActionType MatchActionString(const char* p_str)
 {
 	Extra::ActionType result = Extra::ActionType::e_unknown;
 
-	if (!strcmpi("openram", p_str)) {
+	if (!SDL_strcasecmp("openram", p_str)) {
 		result = Extra::ActionType::e_openram;
 	}
-	else if (!strcmpi("opendisk", p_str)) {
+	else if (!SDL_strcasecmp("opendisk", p_str)) {
 		result = Extra::ActionType::e_opendisk;
 	}
-	else if (!strcmpi("close", p_str)) {
+	else if (!SDL_strcasecmp("close", p_str)) {
 		result = Extra::ActionType::e_close;
 	}
-	else if (!strcmpi("start", p_str)) {
+	else if (!SDL_strcasecmp("start", p_str)) {
 		result = Extra::ActionType::e_start;
 	}
-	else if (!strcmpi("stop", p_str)) {
+	else if (!SDL_strcasecmp("stop", p_str)) {
 		result = Extra::ActionType::e_stop;
 	}
-	else if (!strcmpi("run", p_str)) {
+	else if (!SDL_strcasecmp("run", p_str)) {
 		result = Extra::ActionType::e_run;
 	}
-	else if (!strcmpi("exit", p_str)) {
+	else if (!SDL_strcasecmp("exit", p_str)) {
 		result = Extra::ActionType::e_exit;
 	}
-	else if (!strcmpi("enable", p_str)) {
+	else if (!SDL_strcasecmp("enable", p_str)) {
 		result = Extra::ActionType::e_enable;
 	}
-	else if (!strcmpi("disable", p_str)) {
+	else if (!SDL_strcasecmp("disable", p_str)) {
 		result = Extra::ActionType::e_disable;
 	}
-	else if (!strcmpi("notify", p_str)) {
+	else if (!SDL_strcasecmp("notify", p_str)) {
 		result = Extra::ActionType::e_notify;
 	}
 

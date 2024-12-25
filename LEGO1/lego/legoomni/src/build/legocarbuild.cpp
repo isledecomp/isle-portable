@@ -30,6 +30,8 @@
 #include "racecar_actions.h"
 #include "scripts.h"
 
+#include <SDL3/SDL_stdinc.h>
+#include <SDL3/SDL_timer.h>
 #include <isle.h>
 #include <stdio.h>
 #include <vec.h>
@@ -559,8 +561,8 @@ MxResult LegoCarBuild::Tickle()
 	}
 
 	if (m_unk0x10a) {
-		DWORD time = timeGetTime();
-		DWORD dTime = (time - m_unk0x10c) / 100;
+		Uint64 time = SDL_GetTicks();
+		Uint64 dTime = (time - m_unk0x10c) / 100;
 
 		if (m_carId == RaceCar_Actor) {
 			switch (m_unk0x10a) {
@@ -1316,30 +1318,30 @@ void LegoCarBuild::TogglePresentersEnabled()
 void LegoCarBuild::FUN_100250e0(MxBool p_enabled)
 {
 	if (m_unk0x258->StringDoesNotEndOnZero(m_unk0x110->GetName()) && m_Decals_Ctl) {
-		if (strnicmp(m_unk0x110->GetName(), "JSFRNT", strlen("JSFRNT")) == 0) {
+		if (SDL_strncasecmp(m_unk0x110->GetName(), "JSFRNT", strlen("JSFRNT")) == 0) {
 			m_Decal_Bitmap->Enable(p_enabled);
 			m_Decals_Ctl->Enable(p_enabled);
 			m_Decals_Ctl1->Enable(p_enabled);
 			m_Decals_Ctl2->Enable(p_enabled);
 			m_Decals_Ctl3->Enable(p_enabled);
 		}
-		else if (strnicmp(m_unk0x110->GetName(), "JSWNSH", strlen("JSWNSH")) == 0) {
+		else if (SDL_strncasecmp(m_unk0x110->GetName(), "JSWNSH", strlen("JSWNSH")) == 0) {
 			m_Decal_Bitmap->Enable(p_enabled);
 			m_Decals_Ctl4->Enable(p_enabled);
 			m_Decals_Ctl5->Enable(p_enabled);
 			m_Decals_Ctl6->Enable(p_enabled);
 			m_Decals_Ctl7->Enable(p_enabled);
 		}
-		else if (strnicmp(m_unk0x110->GetName(), "RCBACK", strlen("RCBACK")) == 0) {
+		else if (SDL_strncasecmp(m_unk0x110->GetName(), "RCBACK", strlen("RCBACK")) == 0) {
 			m_Decals_Ctl1->Enable(p_enabled);
 		}
-		else if (strnicmp(m_unk0x110->GetName(), "RCTAIL", strlen("RCTAIL")) == 0) {
+		else if (SDL_strncasecmp(m_unk0x110->GetName(), "RCTAIL", strlen("RCTAIL")) == 0) {
 			m_Decals_Ctl2->Enable(p_enabled);
 		}
-		else if (m_Decals_Ctl1 && strnicmp(m_unk0x110->GetName(), "chljety", strlen("chljety")) == 0) {
+		else if (m_Decals_Ctl1 && SDL_strncasecmp(m_unk0x110->GetName(), "chljety", strlen("chljety")) == 0) {
 			m_Decals_Ctl1->Enable(p_enabled);
 		}
-		else if (m_Decals_Ctl2 && strnicmp(m_unk0x110->GetName(), "chrjety", strlen("chrjety")) == 0) {
+		else if (m_Decals_Ctl2 && SDL_strncasecmp(m_unk0x110->GetName(), "chrjety", strlen("chrjety")) == 0) {
 			m_Decals_Ctl2->Enable(p_enabled);
 		}
 		else if (m_Decals_Ctl) {
@@ -1603,7 +1605,7 @@ void LegoCarBuild::FUN_10025720(undefined4 p_param)
 #endif
 
 	if (m_unk0x10a != 0) {
-		m_unk0x10c = timeGetTime();
+		m_unk0x10c = SDL_GetTicks();
 	}
 }
 

@@ -1,6 +1,7 @@
 #ifndef MXOMNICREATEPARAM_H
 #define MXOMNICREATEPARAM_H
 
+#include "lego1_export.h"
 #include "mxomnicreateflags.h"
 #include "mxparam.h"
 #include "mxstring.h"
@@ -12,9 +13,9 @@
 // VTABLE: BETA10 0x101c1ca8
 class MxOmniCreateParam : public MxParam {
 public:
-	MxOmniCreateParam(
+	LEGO1_EXPORT MxOmniCreateParam(
 		const char* p_mediaPath,
-		struct HWND__* p_windowHandle,
+		HWND p_windowHandle,
 		MxVideoParam& p_vparam,
 		MxOmniCreateFlags p_flags
 	);

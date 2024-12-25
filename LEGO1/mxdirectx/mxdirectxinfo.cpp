@@ -1,5 +1,6 @@
 #include "mxdirectxinfo.h"
 
+#include <SDL3/SDL_log.h>
 #include <assert.h>
 #include <stdio.h> // for vsprintf
 
@@ -260,13 +261,10 @@ BOOL MxDeviceEnumerate::EnumDirectDrawCallback(LPGUID p_guid, LPSTR p_driverDesc
 void MxDeviceEnumerate::BuildErrorString(const char* p_format, ...)
 {
 	va_list args;
-	char buf[512];
 
 	va_start(args, p_format);
-	vsprintf(buf, p_format, args);
+	SDL_LogMessageV(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_ERROR, p_format, args);
 	va_end(args);
-
-	OutputDebugString(buf);
 }
 
 // FUNCTION: CONFIG 0x00401bf0

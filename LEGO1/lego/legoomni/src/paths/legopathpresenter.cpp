@@ -127,7 +127,7 @@ void LegoPathPresenter::ParseExtra()
 		memcpy(extraCopy, extraData, extraLength);
 		extraCopy[extraLength] = '\0';
 
-		strupr(extraCopy);
+		SDL_strupr(extraCopy);
 
 		if (KeyValueStringParse(output, g_strTRIGGERS_SOURCE, extraCopy) != FALSE) {
 			m_trigger = MxAtomId(output, e_lowerCase2);

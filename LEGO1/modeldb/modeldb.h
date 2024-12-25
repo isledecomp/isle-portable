@@ -7,6 +7,7 @@
 #include "mxtypes.h"
 
 #include <SDL3/SDL_iostream.h>
+#include <SDL3/SDL_stdinc.h>
 
 // SIZE 0x18
 struct ModelDbPart {
@@ -32,7 +33,7 @@ public:
 	// FUNCTION: LEGO1 0x10027c40
 	MxS8 Compare(ModelDbPart* p_a, ModelDbPart* p_b) override
 	{
-		MxS32 compare = strcmpi(p_a->m_roiName.GetData(), p_b->m_roiName.GetData());
+		MxS32 compare = SDL_strcasecmp(p_a->m_roiName.GetData(), p_b->m_roiName.GetData());
 
 		if (compare == 0) {
 			p_b->m_partDataLength = p_a->m_partDataLength;

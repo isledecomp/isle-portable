@@ -22,6 +22,8 @@
 #include "radio.h"
 #include "scripts.h"
 
+#include <SDL3/SDL_stdinc.h>
+
 DECOMP_SIZE_ASSERT(GasStation, 0x128)
 DECOMP_SIZE_ASSERT(GasStationState, 0x24)
 
@@ -374,7 +376,7 @@ MxLong GasStation::HandleButtonDown(LegoControlManagerNotificationParam& p_param
 		LegoROI* roi = PickROI(p_param.GetX(), p_param.GetY());
 
 		if (roi != NULL) {
-			if (!strnicmp(roi->GetName(), "capdb", 5) || !strnicmp(roi->GetName(), "*capdb", 6)) {
+			if (!SDL_strncasecmp(roi->GetName(), "capdb", 5) || !SDL_strncasecmp(roi->GetName(), "*capdb", 6)) {
 				m_unk0x104 = 3;
 				m_unk0x114 = FALSE;
 

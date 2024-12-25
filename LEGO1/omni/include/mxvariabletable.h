@@ -1,6 +1,7 @@
 #ifndef MXVARIABLETABLE_H
 #define MXVARIABLETABLE_H
 
+#include "lego1_export.h"
 #include "mxhashtable.h"
 #include "mxtypes.h"
 #include "mxvariable.h"
@@ -12,7 +13,7 @@ class MxVariableTable : public MxHashTable<MxVariable*> {
 public:
 	// FUNCTION: BETA10 0x10130e50
 	MxVariableTable() { SetDestroy(Destroy); }
-	void SetVariable(const char* p_key, const char* p_value);
+	LEGO1_EXPORT void SetVariable(const char* p_key, const char* p_value);
 	void SetVariable(MxVariable* p_var);
 	const char* GetVariable(const char* p_key);
 
