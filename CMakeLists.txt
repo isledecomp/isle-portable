@@ -145,11 +145,9 @@ else()
 endif()
 
 add_lego1_static_library(realtime
-  LEGO1/realtime/matrix.cpp
   LEGO1/realtime/orientableroi.cpp
   LEGO1/realtime/realtime.cpp
   LEGO1/realtime/realtimeview.cpp
-  LEGO1/realtime/vector.cpp
 )
 target_include_directories(realtime-interface INTERFACE "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/util")
 target_link_libraries(realtime-interface INTERFACE Vec::Vec)
