@@ -883,7 +883,7 @@ void LegoAnimationManager::DeleteAnimations()
 
 // FUNCTION: LEGO1 0x10060480
 // FUNCTION: BETA10 0x100412a9
-void LegoAnimationManager::FUN_10060480(LegoChar* p_characterNames[], MxU32 p_numCharacterNames)
+void LegoAnimationManager::FUN_10060480(const LegoChar* p_characterNames[], MxU32 p_numCharacterNames)
 {
 	for (MxS32 i = 0; i < p_numCharacterNames; i++) {
 		for (MxS32 j = 0; j < sizeOfArray(g_characters); j++) {
@@ -1598,7 +1598,7 @@ MxU16 LegoAnimationManager::FUN_10062110(
 		if (GetViewManager()->IsBoundingBoxInFrustum(p_roi->GetWorldBoundingBox())) {
 			Mx3DPointFloat direction(p_roi->GetWorldDirection());
 
-			if (direction.Dot(&direction, &p_direction) > 0.707) {
+			if (direction.Dot(direction, p_direction) > 0.707) {
 				Mx3DPointFloat position(p_roi->GetWorldPosition());
 
 				position -= p_position;
@@ -2527,7 +2527,7 @@ MxBool LegoAnimationManager::FUN_10064120(LegoLocation::Boundary* p_boundary, Mx
 	for (i = 0; i < numEdges; i++) {
 		e = (LegoUnknown100db7f4*) boundary->GetEdges()[i];
 		e->FUN_1002ddc0(*boundary, vec);
-		float dot = vec.Dot(&direction, &vec);
+		float dot = vec.Dot(direction, vec);
 
 		if (dot > local4c) {
 			local50 = e;
