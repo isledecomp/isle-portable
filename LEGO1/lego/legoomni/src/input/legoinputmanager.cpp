@@ -518,7 +518,8 @@ MxBool LegoInputManager::FUN_1005cdf0(LegoEventNotificationParam& p_param)
 // FUNCTION: BETA10 0x10089fc5
 void LegoInputManager::StartAutoDragTimer()
 {
-	m_autoDragTimerID = ::SetTimer(LegoOmni::GetInstance()->GetWindowHandle(), 1, m_autoDragTime, NULL);
+    HWND hWnd = (HWND) SDL_GetPointerProperty(SDL_GetWindowProperties(MxOmni::GetInstance()->GetWindowHandle()), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
+	m_autoDragTimerID = ::SetTimer(hWnd, 1, m_autoDragTime, NULL);
 }
 
 // FUNCTION: LEGO1 0x1005cfd0
@@ -526,7 +527,8 @@ void LegoInputManager::StartAutoDragTimer()
 void LegoInputManager::StopAutoDragTimer()
 {
 	if (m_autoDragTimerID) {
-		::KillTimer(LegoOmni::GetInstance()->GetWindowHandle(), m_autoDragTimerID);
+        HWND hWnd = (HWND) SDL_GetPointerProperty(SDL_GetWindowProperties(MxOmni::GetInstance()->GetWindowHandle()), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
+		::KillTimer(hWnd, m_autoDragTimerID);
 	}
 }
 

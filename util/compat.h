@@ -3,7 +3,7 @@
 
 // Various macros to enable compiling with other/newer compilers.
 
-#if defined(__MINGW32__) || (defined(_MSC_VER) && _MSC_VER >= 1100)
+#if defined(__MINGW32__) || (defined(_MSC_VER) && _MSC_VER >= 1100) || !defined(_WIN32)
 #define COMPAT_MODE
 #endif
 

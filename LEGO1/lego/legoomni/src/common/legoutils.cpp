@@ -37,6 +37,8 @@
 #include <string.h>
 #include <vec.h>
 
+LegoSdlEvents g_LegoSdlEvents;
+
 // FUNCTION: LEGO1 0x1003dd70
 // FUNCTION: BETA10 0x100d3410
 LegoROI* PickROI(MxLong p_x, MxLong p_y)
@@ -565,13 +567,20 @@ void EnableAnimations(MxBool p_enable)
 	AnimationManager()->FUN_100604d0(p_enable);
 }
 
+void InitSdlEvents() {
+    static bool initialized = false;
+    if (!initialized) {
+        initialized = true;
+        Uint32 event = SDL_RegisterEvents(1);
+        g_LegoSdlEvents.windows_message = event + 0;
+    }
+}
+
 // FUNCTION: LEGO1 0x1003ef40
 void SetAppCursor(Cursor p_cursor)
 {
-	static Uint32 g_userEvent = SDL_RegisterEvents(1);
-
 	SDL_Event event;
-	event.user.type = g_userEvent;
+	event.user.type = g_LegoSdlEvents.windows_message;
 	event.user.code = WM_ISLE_SETCURSOR;
 	event.user.data1 = (void*) p_cursor;
 	SDL_PushEvent(&event);

@@ -7,7 +7,7 @@
 #include "mxstring.h"
 #include "mxvideoparam.h"
 
-#include <windows.h>
+#include <SDL3/SDL_video.h>
 
 // VTABLE: LEGO1 0x100dc218
 // VTABLE: BETA10 0x101c1ca8
@@ -15,7 +15,7 @@ class MxOmniCreateParam : public MxParam {
 public:
 	LEGO1_EXPORT MxOmniCreateParam(
 		const char* p_mediaPath,
-		HWND p_windowHandle,
+		SDL_Window* p_windowHandle,
 		MxVideoParam& p_vparam,
 		MxOmniCreateFlags p_flags
 	);
@@ -24,7 +24,7 @@ public:
 	MxOmniCreateFlags& CreateFlags() { return this->m_createFlags; }
 
 	const MxString& GetMediaPath() const { return m_mediaPath; }
-	const HWND GetWindowHandle() const { return m_windowHandle; }
+	SDL_Window* GetWindowHandle() const { return m_windowHandle; }
 	MxVideoParam& GetVideoParam() { return m_videoParam; }
 	const MxVideoParam& GetVideoParam() const { return m_videoParam; }
 
@@ -34,7 +34,7 @@ public:
 
 private:
 	MxString m_mediaPath;            // 0x04
-	HWND m_windowHandle;             // 0x14
+	SDL_Window* m_windowHandle;      // 0x14
 	MxVideoParam m_videoParam;       // 0x18
 	MxOmniCreateFlags m_createFlags; // 0x3c
 };

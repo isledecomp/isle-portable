@@ -178,18 +178,14 @@ MxS32 IsleApp::SetupLegoOmni()
 	char mediaPath[256];
 	GetProfileStringA("LEGO Island", "MediaPath", "", mediaPath, sizeof(mediaPath));
 
-	// [library:window] For now, get the underlying Windows HWND to pass into Omni
-	HWND hwnd = (HWND
-	) SDL_GetPointerProperty(SDL_GetWindowProperties(m_windowHandle), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
-
 #ifdef COMPAT_MODE
 	MxS32 failure;
 	{
-		MxOmniCreateParam param(mediaPath, hwnd, m_videoParam, MxOmniCreateFlags());
+		MxOmniCreateParam param(mediaPath, m_windowHandle, m_videoParam, MxOmniCreateFlags());
 		failure = Lego()->Create(param) == FAILURE;
 	}
 #else
-	MxS32 failure = Lego()->Create(MxOmniCreateParam(mediaPath, hwnd, m_videoParam, MxOmniCreateFlags())) == FAILURE;
+	MxS32 failure = Lego()->Create(MxOmniCreateParam(mediaPath, m_windowHandle, m_videoParam, MxOmniCreateFlags())) == FAILURE;
 #endif
 
 	if (!failure) {
@@ -392,12 +388,17 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		break;
 	}
 
-	// FIXME: use g_userEvent instead of SDL_EVENT_USER
-	if (event->type >= SDL_EVENT_USER && event->type <= SDL_EVENT_LAST - 1) {
+    if (event->user.type == g_LegoSdlEvents.windows_message) {
 		switch (event->user.code) {
 		case WM_ISLE_SETCURSOR:
 			g_isle->SetupCursor((Cursor) (uintptr_t) event->user.data1);
 			break;
+		case WM_QUIT:
+            return SDL_APP_SUCCESS;
+			break;
+        default:
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unknown SDL Windows message: 0x%" SDL_PRIx32, event->user.code);
+            break;
 		}
 	}
 
