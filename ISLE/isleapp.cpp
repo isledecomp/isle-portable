@@ -253,7 +253,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 			SDL_MESSAGEBOX_ERROR,
 			"LEGO® Island Error",
 			"\"LEGO® Island\" failed to start.  Invalid CLI arguments.",
-			NULL
+			g_isle->GetWindowHandle()
 		);
 		return SDL_APP_FAILURE;
 	}
@@ -264,7 +264,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 			SDL_MESSAGEBOX_ERROR,
 			"LEGO® Island Error",
 			"\"LEGO® Island\" failed to start.  Please quit all other applications and try again.",
-			NULL
+			g_isle->GetWindowHandle()
 		);
 		return SDL_APP_FAILURE;
 	}
