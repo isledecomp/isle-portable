@@ -37,7 +37,7 @@
 #include <string.h>
 #include <vec.h>
 
-LegoSdlEvents g_LegoSdlEvents;
+LegoSdlEvents g_legoSdlEvents;
 
 // FUNCTION: LEGO1 0x1003dd70
 // FUNCTION: BETA10 0x100d3410
@@ -569,11 +569,12 @@ void EnableAnimations(MxBool p_enable)
 
 void InitSdlEvents()
 {
-	static bool initialized = false;
-	if (!initialized) {
-		initialized = true;
+	static bool g_initialized = false;
+
+	if (!g_initialized) {
+		g_initialized = true;
 		Uint32 event = SDL_RegisterEvents(1);
-		g_LegoSdlEvents.windows_message = event + 0;
+		g_legoSdlEvents.m_windowsMessage = event + 0;
 	}
 }
 
@@ -581,7 +582,7 @@ void InitSdlEvents()
 void SetAppCursor(Cursor p_cursor)
 {
 	SDL_Event event;
-	event.user.type = g_LegoSdlEvents.windows_message;
+	event.user.type = g_legoSdlEvents.m_windowsMessage;
 	event.user.code = WM_ISLE_SETCURSOR;
 	event.user.data1 = (void*) p_cursor;
 	SDL_PushEvent(&event);

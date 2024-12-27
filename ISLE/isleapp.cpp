@@ -389,7 +389,7 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		break;
 	}
 
-	if (event->user.type == g_LegoSdlEvents.windows_message) {
+	if (event->user.type == g_legoSdlEvents.m_windowsMessage) {
 		switch (event->user.code) {
 		case WM_ISLE_SETCURSOR:
 			g_isle->SetupCursor((Cursor) (uintptr_t) event->user.data1);

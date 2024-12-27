@@ -191,7 +191,7 @@ public:
 	void CloseMainWindow()
 	{
 		SDL_Event event;
-		event.user.type = g_LegoSdlEvents.windows_message;
+		event.user.type = g_legoSdlEvents.m_windowsMessage;
 		event.user.code = WM_CLOSE;
 		event.user.data1 = NULL;
 		event.user.data2 = NULL;

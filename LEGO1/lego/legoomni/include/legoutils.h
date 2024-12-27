@@ -16,10 +16,10 @@
 #define DS_NOT_A_STREAM -1
 
 struct LegoSdlEvents {
-	Uint32 windows_message;
+	Uint32 m_windowsMessage;
 };
 
-LEGO1_EXPORT extern LegoSdlEvents g_LegoSdlEvents;
+LEGO1_EXPORT extern LegoSdlEvents g_legoSdlEvents;
 
 enum Cursor {
 	e_cursorArrow = 0,

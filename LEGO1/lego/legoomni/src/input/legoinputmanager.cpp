@@ -516,9 +516,9 @@ MxBool LegoInputManager::FUN_1005cdf0(LegoEventNotificationParam& p_param)
 
 static Uint32 SDLCALL LegoInputManagerTimerCallback(void* userdata, SDL_TimerID timerID, Uint32 interval)
 {
-	LegoInputManager* input_manager = (LegoInputManager*) userdata;
+	LegoInputManager* inputManager = (LegoInputManager*) userdata;
 	SDL_Event event;
-	event.type = g_LegoSdlEvents.windows_message;
+	event.type = g_legoSdlEvents.m_windowsMessage;
 	event.user.code = WM_TIMER;
 	event.user.data1 = (void*) (uintptr_t) timerID;
 	event.user.data2 = NULL;
