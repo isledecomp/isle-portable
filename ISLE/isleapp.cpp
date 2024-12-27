@@ -397,6 +397,11 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		case WM_QUIT:
 			return SDL_APP_SUCCESS;
 			break;
+		case WM_TIMER:
+			if (InputManager()) {
+				InputManager()->QueueEvent(c_notificationTimer, (MxU8) (uintptr_t) event->user.data1, 0, 0, 0);
+			}
+			break;
 		default:
 			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unknown SDL Windows message: 0x%" SDL_PRIx32, event->user.code);
 			break;

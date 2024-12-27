@@ -514,16 +514,22 @@ MxBool LegoInputManager::FUN_1005cdf0(LegoEventNotificationParam& p_param)
 	return result;
 }
 
+static Uint32 SDLCALL LegoInputManagerTimerCallback(void* userdata, SDL_TimerID timerID, Uint32 interval)
+{
+	LegoInputManager* input_manager = (LegoInputManager*) userdata;
+	SDL_Event event;
+	event.type = g_LegoSdlEvents.windows_message;
+	event.user.code = WM_TIMER;
+	event.user.data1 = (void*) (uintptr_t) timerID;
+	event.user.data2 = NULL;
+	return interval;
+}
+
 // FUNCTION: LEGO1 0x1005cfb0
 // FUNCTION: BETA10 0x10089fc5
 void LegoInputManager::StartAutoDragTimer()
 {
-	HWND hWnd = (HWND) SDL_GetPointerProperty(
-		SDL_GetWindowProperties(MxOmni::GetInstance()->GetWindowHandle()),
-		SDL_PROP_WINDOW_WIN32_HWND_POINTER,
-		NULL
-	);
-	m_autoDragTimerID = ::SetTimer(hWnd, 1, m_autoDragTime, NULL);
+	m_autoDragTimerID = SDL_AddTimer(m_autoDragTime, LegoInputManagerTimerCallback, this);
 }
 
 // FUNCTION: LEGO1 0x1005cfd0
@@ -531,12 +537,8 @@ void LegoInputManager::StartAutoDragTimer()
 void LegoInputManager::StopAutoDragTimer()
 {
 	if (m_autoDragTimerID) {
-		HWND hWnd = (HWND) SDL_GetPointerProperty(
-			SDL_GetWindowProperties(MxOmni::GetInstance()->GetWindowHandle()),
-			SDL_PROP_WINDOW_WIN32_HWND_POINTER,
-			NULL
-		);
-		::KillTimer(hWnd, m_autoDragTimerID);
+		SDL_RemoveTimer(m_autoDragTimerID);
+		m_autoDragTimerID = 0;
 	}
 }
 
