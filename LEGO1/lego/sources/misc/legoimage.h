@@ -3,6 +3,8 @@
 
 #include "legotypes.h"
 
+#include <SDL3/SDL_surface.h>
+
 class LegoStorage;
 
 // SIZE 0x03
@@ -10,19 +12,19 @@ class LegoPaletteEntry {
 public:
 	LegoPaletteEntry();
 	// LegoPaletteEntry(LegoU8 p_red, LegoU8 p_green, LegoU8 p_blue);
-	LegoU8 GetRed() { return m_red; }
-	void SetRed(LegoU8 p_red) { m_red = p_red; }
-	LegoU8 GetGreen() { return m_green; }
-	void SetGreen(LegoU8 p_green) { m_green = p_green; }
-	LegoU8 GetBlue() { return m_blue; }
-	void SetBlue(LegoU8 p_blue) { m_blue = p_blue; }
+	LegoU8 GetRed() const { return m_color.r; }
+	void SetRed(LegoU8 p_red) { m_color.r = p_red; }
+	LegoU8 GetGreen() const { return m_color.g; }
+	void SetGreen(LegoU8 p_green) { m_color.g = p_green; }
+	LegoU8 GetBlue() const { return m_color.b; }
+	void SetBlue(LegoU8 p_blue) { m_color.b = p_blue; }
+	SDL_Color getColor() const { return m_color; }
+	void setColor(SDL_Color p_color) { m_color = p_color; }
 	LegoResult Read(LegoStorage* p_storage);
-	LegoResult Write(LegoStorage* p_storage);
+	LegoResult Write(LegoStorage* p_storage) const;
 
 protected:
-	LegoU8 m_red;   // 0x00
-	LegoU8 m_green; // 0x01
-	LegoU8 m_blue;  // 0x02
+	SDL_Color m_color;
 };
 
 // 0x310
@@ -31,26 +33,29 @@ public:
 	LegoImage();
 	LegoImage(LegoU32 p_width, LegoU32 p_height);
 	~LegoImage();
-	LegoU32 GetWidth() { return m_width; }
-	void SetWidth(LegoU32 p_width) { m_width = p_width; }
-	LegoU32 GetHeight() { return m_height; }
-	void SetHeight(LegoU32 p_height) { m_height = p_height; }
-	LegoU32 GetCount() { return m_count; }
-	void SetCount(LegoU32 p_count) { m_count = p_count; }
-	LegoPaletteEntry* GetPalette() { return m_palette; }
-	LegoPaletteEntry& GetPaletteEntry(LegoU32 p_i) { return m_palette[p_i]; }
-	void SetPaletteEntry(LegoU32 p_i, LegoPaletteEntry& p_paletteEntry) { m_palette[p_i] = p_paletteEntry; }
-	LegoU8* GetBits() { return m_bits; }
-	void SetBits(LegoU8* p_bits) { m_bits = p_bits; }
+	LegoU32 GetWidth() const { return m_surface->w; }
+	LegoU32 GetHeight() const { return m_surface->h; }
+	LegoU32 GetCount() const { return m_palette ? m_palette->ncolors : 0; }
+	SDL_Palette* GetPalette() const { return m_palette; }
+	void SetPalette(SDL_Palette* p_palette)
+	{
+		SDL_DestroyPalette(m_palette);
+		m_palette = p_palette;
+	}
+	void SetPaletteEntry(LegoU32 p_i, LegoPaletteEntry& p_paletteEntry)
+	{
+		m_palette->colors[p_i] = p_paletteEntry.getColor();
+	}
+	const LegoU8* GetBits() const { return (LegoU8*) m_surface->pixels; }
 	LegoResult Read(LegoStorage* p_storage, LegoU32 p_square);
 	LegoResult Write(LegoStorage* p_storage);
 
 protected:
-	LegoU32 m_width;                 // 0x00
-	LegoU32 m_height;                // 0x04
-	LegoU32 m_count;                 // 0x08
-	LegoPaletteEntry m_palette[256]; // 0x0c
-	LegoU8* m_bits;                  // 0x30c
+	SDL_Surface* m_surface;
+	SDL_Palette* m_palette;
+	//	LegoU32 m_count;                 // 0x08
+	//	LegoPaletteEntry m_palette[256]; // 0x0c
+	//	LegoU8* m_bits;                  // 0x30c
 };
 
 #endif // __LEGOIMAGE_H

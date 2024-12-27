@@ -107,9 +107,9 @@ LegoTextureInfo* LegoTextureInfo::Create(const char* p_name, LegoTexture* p_text
 	for (i = 0; i < sizeOfArray(entries); i++) {
 		if (i < image->GetCount()) {
 			entries[i].peFlags = 0;
-			entries[i].peRed = image->GetPaletteEntry(i).GetRed();
-			entries[i].peGreen = image->GetPaletteEntry(i).GetGreen();
-			entries[i].peBlue = image->GetPaletteEntry(i).GetBlue();
+			entries[i].peRed = image->GetPalette()->colors[i].r;
+			entries[i].peGreen = image->GetPalette()->colors[i].g;
+			entries[i].peBlue = image->GetPalette()->colors[i].b;
 		}
 		else {
 			entries[i].peFlags = 0x80;

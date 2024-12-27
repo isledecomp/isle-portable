@@ -753,12 +753,14 @@ void WriteDefaultTexture(LegoFile* p_file, const char* p_name)
 						paletteEntries[i].SetBlue(entries[i].peBlue);
 					}
 
-					image->SetCount(i);
+					SDL_Palette* newPalette = SDL_CreatePalette(i);
 
 					if (i > 0) {
-						// Note: this appears to be a bug. size should be i * sizeof(LegoPaletteEntry)
-						memcpy(image->GetPalette(), paletteEntries, i);
+						for (int j = 0; j < i; j++) {
+							image->SetPaletteEntry(j, paletteEntries[j]);
+						}
 					}
+					image->SetPalette(newPalette);
 
 					LegoTexture texture;
 					texture.SetImage(image);
