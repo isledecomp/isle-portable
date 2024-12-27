@@ -232,12 +232,14 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 	*appstate = NULL;
 
 	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK)) {
-		SDL_ShowSimpleMessageBox(
-			SDL_MESSAGEBOX_ERROR,
-			"LEGO® Island Error",
-			"\"LEGO® Island\" failed to start.  Please quit all other applications and try again.",
-			NULL
+		char buffer[256];
+		SDL_snprintf(
+			buffer,
+			sizeof(buffer),
+			"\"LEGO® Island\" failed to start.\nPlease quit all other applications and try again.\nSDL error: %s",
+			SDL_GetError()
 		);
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "LEGO® Island Error", buffer, NULL);
 		return SDL_APP_FAILURE;
 	}
 
@@ -263,7 +265,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 		SDL_ShowSimpleMessageBox(
 			SDL_MESSAGEBOX_ERROR,
 			"LEGO® Island Error",
-			"\"LEGO® Island\" failed to start.  Please quit all other applications and try again.",
+			"\"LEGO® Island\" failed to start.\nPlease quit all other applications and try again.",
 			g_isle->GetWindowHandle()
 		);
 		return SDL_APP_FAILURE;
