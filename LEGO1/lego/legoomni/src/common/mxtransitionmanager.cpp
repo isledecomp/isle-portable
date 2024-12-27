@@ -56,7 +56,8 @@ MxResult MxTransitionManager::GetDDrawSurfaceFromVideoManager() // vtable+0x14
 // FUNCTION: LEGO1 0x1004bac0
 MxResult MxTransitionManager::Tickle()
 {
-	if (m_animationSpeed + m_systemTime > SDL_GetTicks()) {
+	Uint64 time = m_animationSpeed + m_systemTime;
+	if (time > SDL_GetTicks()) {
 		return SUCCESS;
 	}
 
