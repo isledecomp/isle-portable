@@ -10,6 +10,7 @@
 
 #include <SDL3/SDL_joystick.h>
 #include <SDL3/SDL_keyboard.h>
+#include <SDL3/SDL_timer.h>
 #include <windows.h>
 
 class LegoCameraController;
@@ -145,7 +146,7 @@ private:
 	MxS32 m_x;                            // 0x6c
 	MxS32 m_y;                            // 0x70
 	MxS32 m_unk0x74;                      // 0x74
-	UINT m_autoDragTimerID;               // 0x78
+	SDL_TimerID m_autoDragTimerID;        // 0x78
 	UINT m_autoDragTime;                  // 0x7c
 	MxBool m_unk0x80;                     // 0x80
 	MxBool m_unk0x81;                     // 0x81

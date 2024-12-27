@@ -216,6 +216,7 @@ MxResult MxVideoManager::Create(MxVideoParam& p_videoParam, MxU32 p_frequencyMS,
 {
 	MxBool locked = FALSE;
 	MxResult status = FAILURE;
+	HWND hWnd = NULL;
 
 	m_unk0x60 = TRUE;
 
@@ -237,7 +238,13 @@ MxResult MxVideoManager::Create(MxVideoParam& p_videoParam, MxU32 p_frequencyMS,
 		goto done;
 	}
 
-	if (m_pDirectDraw->SetCooperativeLevel(MxOmni::GetInstance()->GetWindowHandle(), DDSCL_NORMAL) != DD_OK) {
+	// [library:ddraw]
+	hWnd = (HWND) SDL_GetPointerProperty(
+		SDL_GetWindowProperties(MxOmni::GetInstance()->GetWindowHandle()),
+		SDL_PROP_WINDOW_WIN32_HWND_POINTER,
+		NULL
+	);
+	if (m_pDirectDraw->SetCooperativeLevel(hWnd, DDSCL_NORMAL) != DD_OK) {
 		goto done;
 	}
 

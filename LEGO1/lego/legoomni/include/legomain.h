@@ -3,8 +3,11 @@
 
 #include "compat.h"
 #include "lego1_export.h"
+#include "legoutils.h"
 #include "mxdsaction.h"
 #include "mxomni.h"
+
+#include <SDL3/SDL_events.h>
 
 class Isle;
 class LegoAnimationManager;
@@ -185,7 +188,15 @@ public:
 	MxResult StartActionIfUnknown0x13c(MxDSAction& p_dsAction) { return m_unk0x13c ? Start(&p_dsAction) : SUCCESS; }
 	void SetUnknown13c(MxBool p_unk0x13c) { m_unk0x13c = p_unk0x13c; }
 
-	void CloseMainWindow() { PostMessageA(m_windowHandle, WM_CLOSE, 0, 0); }
+	void CloseMainWindow()
+	{
+		SDL_Event event;
+		event.user.type = g_legoSdlEvents.m_windowsMessage;
+		event.user.code = WM_CLOSE;
+		event.user.data1 = NULL;
+		event.user.data2 = NULL;
+		SDL_PushEvent(&event);
+	}
 
 	// SYNTHETIC: LEGO1 0x10058b30
 	// LegoOmni::`scalar deleting destructor'

@@ -3,6 +3,8 @@
 
 #include "assert.h"
 
+#include <SDL3/SDL_stdinc.h>
+#include <SDL3/SDL_timer.h>
 #include <limits.h> // ULONG_MAX
 #include <math.h>
 #include <windows.h>
@@ -29,73 +31,55 @@ public:
 	double ElapsedSeconds() const;
 
 protected:
-	unsigned long TicksPerSeconds() const;
+	Uint64 TicksPerSeconds() const;
 
 private:
-	LARGE_INTEGER m_startTick; // 0x00
+	Uint64 m_startTick; // 0x00
 	// ??? when we provide LARGE_INTEGER arithmetic, use a
 	//     LARGE_INTEGER m_elapsedTicks rather than m_elapsedSeconds
-	double m_elapsedSeconds;         // 0x0c
-	unsigned long m_ticksPerSeconds; // 0x14
+	double m_elapsedSeconds;  // 0x0c
+	Uint64 m_ticksPerSeconds; // 0x14
 };
 
 // FUNCTION: BETA10 0x100d8ba0
 inline MxStopWatch::MxStopWatch()
 {
 	Reset();
-	m_ticksPerSeconds = TicksPerSeconds();
+	m_ticksPerSeconds = SDL_GetPerformanceCounter();
 }
 
 // FUNCTION: BETA10 0x100d8be0
 inline void MxStopWatch::Start()
 {
-	QueryPerformanceCounter(&m_startTick);
+	m_startTick = SDL_GetPerformanceCounter();
 }
 
 // FUNCTION: BETA10 0x100d8f50
 inline void MxStopWatch::Stop()
 {
-	LARGE_INTEGER endTick;
-	BOOL result;
+	Uint64 endTick;
 
-	result = QueryPerformanceCounter(&endTick);
-	assert(result);
+	endTick = SDL_GetPerformanceCounter();
 
-	if (endTick.HighPart != m_startTick.HighPart) {
-		// LARGE_INTEGER arithmetic not yet provided
-		m_elapsedSeconds = HUGE_VAL_IMMEDIATE;
-	}
-	else {
-		m_elapsedSeconds += ((endTick.LowPart - m_startTick.LowPart) / (double) m_ticksPerSeconds);
-	}
+	m_elapsedSeconds = (double) (endTick - m_startTick) / (double) m_ticksPerSeconds;
 }
 
 // FUNCTION: BETA10 0x100d8c10
 inline void MxStopWatch::Reset()
 {
-	m_startTick.LowPart = 0;
-	m_startTick.HighPart = 0;
-	m_elapsedSeconds = 0;
+	m_startTick = 0;
+	m_elapsedSeconds = 0.;
 }
 
 // FUNCTION: BETA10 0x100d8c60
-inline unsigned long MxStopWatch::TicksPerSeconds() const
+inline Uint64 MxStopWatch::TicksPerSeconds() const
 {
-	LARGE_INTEGER ticksPerSeconds;
-	BOOL result;
+	Uint64 ticksPerSeconds;
 
-	result = QueryPerformanceFrequency(&ticksPerSeconds);
-	assert(result);
+	ticksPerSeconds = SDL_GetPerformanceFrequency();
+	assert(ticksPerSeconds);
 
-	if (ticksPerSeconds.HighPart) {
-		// LARGE_INTEGER arithmetic not yet provided
-
-		// timer is too fast (faster than 32bits/s, i.e. faster than 4GHz)
-		return ULONG_MAX;
-	}
-	else {
-		return ticksPerSeconds.LowPart;
-	}
+	return ticksPerSeconds;
 }
 
 // FUNCTION: BETA10 0x100d9020

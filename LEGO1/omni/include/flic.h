@@ -25,7 +25,7 @@ typedef struct {
 	WORD type;                                               // 0x04
 } FLIC_CHUNK;
 
-typedef struct : FLIC_CHUNK {
+typedef struct FLIC_HEADER : FLIC_CHUNK {
 	WORD frames; /* Number of frames in first segment */ // 0x06
 	WORD width; /* FLIC width in pixels */               // 0x08
 	WORD height; /* FLIC height in pixels */             // 0x0a
@@ -35,7 +35,7 @@ typedef struct : FLIC_CHUNK {
 } FLIC_HEADER;
 #pragma pack(pop)
 
-typedef struct : FLIC_CHUNK {
+typedef struct FLIC_FRAME : FLIC_CHUNK {
 	WORD chunks; /* Number of subchunks */                 // 0x06
 	WORD delay; /* Delay in milliseconds */                // 0x08
 	WORD reserved; /* Always zero */                       // 0x0a

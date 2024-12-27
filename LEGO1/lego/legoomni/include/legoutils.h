@@ -4,14 +4,22 @@
 #include "actionsfwd.h"
 #include "decomp.h"
 #include "extra.h"
+#include "lego1_export.h"
 #include "mxtypes.h"
 
+#include <SDL3/SDL_stdinc.h>
 #include <windows.h>
 
 #define WM_ISLE_SETCURSOR 0x5400
 
 // name verified by BETA10 0x100d4054
 #define DS_NOT_A_STREAM -1
+
+struct LegoSdlEvents {
+	Uint32 m_windowsMessage;
+};
+
+LEGO1_EXPORT extern LegoSdlEvents g_legoSdlEvents;
 
 enum Cursor {
 	e_cursorArrow = 0,
@@ -58,6 +66,7 @@ void PlayCamAnim(LegoPathActor* p_actor, MxBool p_unused, MxU32 p_location, MxBo
 void FUN_1003eda0();
 MxBool RemoveFromCurrentWorld(const MxAtomId& p_atomId, MxS32 p_id);
 void EnableAnimations(MxBool p_enable);
+void InitSdlEvents();
 void SetAppCursor(Cursor p_cursor);
 MxBool FUN_1003ef60();
 MxBool RemoveFromWorld(MxAtomId& p_entityAtom, MxS32 p_entityId, MxAtomId& p_worldAtom, MxS32 p_worldEntityId);

@@ -139,7 +139,14 @@ MxResult MxDisplaySurface::Create(MxVideoParam& p_videoParam)
 	DDSURFACEDESC ddsd;
 	MxResult result = FAILURE;
 	LPDIRECTDRAW lpDirectDraw = MVideoManager()->GetDirectDraw();
-	HWND hWnd = MxOmni::GetInstance()->GetWindowHandle();
+	SDL_Window* window = MxOmni::GetInstance()->GetWindowHandle();
+	// [library:ddraw]
+	HWND hWnd =
+		(HWND) SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
+
+	if (!hWnd) {
+		goto done;
+	}
 
 	m_initialized = TRUE;
 	m_videoParam = p_videoParam;
@@ -842,7 +849,13 @@ void MxDisplaySurface::Display(MxS32 p_left, MxS32 p_top, MxS32 p_left2, MxS32 p
 		}
 		else {
 			MxPoint32 point(0, 0);
-			ClientToScreen(MxOmni::GetInstance()->GetWindowHandle(), (LPPOINT) &point);
+			// [library:ddraw]
+			HWND hWnd = (HWND) SDL_GetPointerProperty(
+				SDL_GetWindowProperties(MxOmni::GetInstance()->GetWindowHandle()),
+				SDL_PROP_WINDOW_WIN32_HWND_POINTER,
+				NULL
+			);
+			ClientToScreen(hWnd, (LPPOINT) &point);
 
 			p_left2 += m_videoParam.GetRect().GetLeft() + point.GetX();
 			p_top2 += m_videoParam.GetRect().GetTop() + point.GetY();

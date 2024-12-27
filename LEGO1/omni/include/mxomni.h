@@ -6,6 +6,7 @@
 #include "mxcriticalsection.h"
 #include "mxstring.h"
 
+#include <SDL3/SDL_video.h>
 #include <windows.h>
 
 class MxAtomSet;
@@ -61,7 +62,7 @@ public:
 	static void SetInstance(MxOmni* p_instance);
 	static MxBool ActionSourceEquals(MxDSAction* p_action, const char* p_name);
 
-	HWND GetWindowHandle() const { return this->m_windowHandle; }
+	SDL_Window* GetWindowHandle() const { return m_windowHandle; }
 
 	// FUNCTION: BETA10 0x10125100
 	MxObjectFactory* GetObjectFactory() const { return this->m_objectFactory; }
@@ -102,7 +103,7 @@ protected:
 	static MxOmni* g_instance;
 
 	MxString m_mediaPath;                         // 0x08
-	HWND m_windowHandle;                          // 0x18
+	SDL_Window* m_windowHandle;                   // 0x18
 	MxObjectFactory* m_objectFactory;             // 0x1c
 	MxVariableTable* m_variableTable;             // 0x20
 	MxTickleManager* m_tickleManager;             // 0x24

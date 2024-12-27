@@ -103,7 +103,7 @@ inline void LegoCarBuildAnimPresenter::Beta10Inline0x100733d0()
 					if (roi) {
 						const LegoChar* name = roi->GetName();
 
-						if (name && stricmp(wiredName, name) == 0) {
+						if (name && SDL_strcasecmp(wiredName, name) == 0) {
 							if (bvar5) {
 								roi->SetVisibility(TRUE);
 							}
@@ -310,7 +310,7 @@ void LegoCarBuildAnimPresenter::SwapNodesByName(LegoChar* p_name1, LegoChar* p_n
 {
 	char buffer[40];
 
-	if (stricmp(p_name1, p_name2) != 0) {
+	if (SDL_strcasecmp(p_name1, p_name2) != 0) {
 		LegoAnimNodeData* node1 = FindNodeDataByName(m_anim->GetRoot(), p_name1);
 		LegoAnimNodeData* node2 = FindNodeDataByName(m_anim->GetRoot(), p_name2);
 
@@ -468,7 +468,7 @@ LegoAnimNodeData* LegoCarBuildAnimPresenter::FindNodeDataByName(LegoTreeNode* p_
 	if (p_treeNode) {
 		data = (LegoAnimNodeData*) p_treeNode->GetData();
 
-		if (stricmp(data->GetName(), p_name) == 0) {
+		if (SDL_strcasecmp(data->GetName(), p_name) == 0) {
 			return data;
 		}
 
@@ -494,7 +494,7 @@ LegoTreeNode* LegoCarBuildAnimPresenter::FindNodeByName(LegoTreeNode* p_treeNode
 	if (p_treeNode) {
 		data = (LegoAnimNodeData*) p_treeNode->GetData();
 
-		if (stricmp(data->GetName(), p_name) == 0) {
+		if (SDL_strcasecmp(data->GetName(), p_name) == 0) {
 			return p_treeNode;
 		}
 
@@ -519,7 +519,7 @@ void LegoCarBuildAnimPresenter::FUN_10079790(const LegoChar* p_name)
 
 	if (SDL_strcasecmp(m_parts[m_placedPartCount].m_name, p_name) != 0) {
 		for (i = m_placedPartCount + 1; i < m_numberOfParts; i++) {
-			if (stricmp(m_parts[i].m_name, p_name) == 0) {
+			if (SDL_strcasecmp(m_parts[i].m_name, p_name) == 0) {
 				break;
 			}
 		}
@@ -595,7 +595,7 @@ void LegoCarBuildAnimPresenter::FUN_10079a90()
 // FUNCTION: BETA10 0x100724fa
 MxBool LegoCarBuildAnimPresenter::StringEqualsPlatform(const LegoChar* p_string)
 {
-	return stricmp(p_string, "PLATFORM") == 0;
+	return SDL_strcasecmp(p_string, "PLATFORM") == 0;
 }
 
 // FUNCTION: LEGO1 0x10079b40
