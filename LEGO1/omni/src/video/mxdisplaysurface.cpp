@@ -145,6 +145,7 @@ MxResult MxDisplaySurface::Create(MxVideoParam& p_videoParam)
 		(HWND) SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
 
 	if (!hWnd) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "MxDisplaySurface::Create: HWND is NULL");
 		goto done;
 	}
 
@@ -176,6 +177,7 @@ MxResult MxDisplaySurface::Create(MxVideoParam& p_videoParam)
 		MxS32 height = m_videoParam.GetRect().GetHeight();
 
 		if (lpDirectDraw->SetCooperativeLevel(hWnd, DDSCL_EXCLUSIVE | DDSCL_FULLSCREEN)) {
+			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "DirectDraw::SetCooperativeLevel failed");
 			goto done;
 		}
 
@@ -183,6 +185,7 @@ MxResult MxDisplaySurface::Create(MxVideoParam& p_videoParam)
 		ddsd.dwSize = sizeof(ddsd);
 
 		if (lpDirectDraw->GetDisplayMode(&ddsd)) {
+			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "DirectDraw::GetDisplayMode failed");
 			goto done;
 		}
 
@@ -190,6 +193,7 @@ MxResult MxDisplaySurface::Create(MxVideoParam& p_videoParam)
 
 		if (ddsd.dwWidth != width || ddsd.dwHeight != height || ddsd.ddpfPixelFormat.dwRGBBitCount != bitdepth) {
 			if (lpDirectDraw->SetDisplayMode(width, height, bitdepth)) {
+				SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "DirectDraw::SetDisplayMode failed");
 				goto done;
 			}
 		}
@@ -203,12 +207,14 @@ MxResult MxDisplaySurface::Create(MxVideoParam& p_videoParam)
 		ddsd.ddsCaps.dwCaps = DDSCAPS_3DDEVICE | DDSCAPS_PRIMARYSURFACE | DDSCAPS_FLIP | DDSCAPS_COMPLEX;
 
 		if (lpDirectDraw->CreateSurface(&ddsd, &m_ddSurface1, NULL)) {
+			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "DirectDraw::CreateSurface failed");
 			goto done;
 		}
 
 		ddsd.ddsCaps.dwCaps = DDSCAPS_BACKBUFFER;
 
 		if (m_ddSurface1->GetAttachedSurface(&ddsd.ddsCaps, &m_ddSurface2)) {
+			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "DirectDrawSurface::GetAttachedSurface failed");
 			goto done;
 		}
 	}
@@ -219,6 +225,7 @@ MxResult MxDisplaySurface::Create(MxVideoParam& p_videoParam)
 		ddsd.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE;
 
 		if (lpDirectDraw->CreateSurface(&ddsd, &m_ddSurface1, NULL)) {
+			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "DirectDraw::CreateSurface failed");
 			goto done;
 		}
 
@@ -234,6 +241,7 @@ MxResult MxDisplaySurface::Create(MxVideoParam& p_videoParam)
 		}
 
 		if (lpDirectDraw->CreateSurface(&ddsd, &m_ddSurface2, NULL)) {
+			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "DirectDraw::CreateSurface failed");
 			goto done;
 		}
 	}
@@ -245,6 +253,12 @@ MxResult MxDisplaySurface::Create(MxVideoParam& p_videoParam)
 		if (!lpDirectDraw->CreateClipper(0, &m_ddClipper, NULL) && !m_ddClipper->SetHWnd(0, hWnd) &&
 			!m_ddSurface1->SetClipper(m_ddClipper)) {
 			result = SUCCESS;
+		}
+		else {
+			SDL_LogError(
+				SDL_LOG_CATEGORY_APPLICATION,
+				"DirectDraw::CreateClipper or DirectDrawSurface::SetClipper failed"
+			);
 		}
 	}
 

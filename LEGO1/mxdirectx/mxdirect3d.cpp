@@ -52,8 +52,15 @@ BOOL MxDirect3D::Create(
 		paletteEntryCount
 	);
 
+	if (!ret) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "MxDirectDraw::Create failed");
+	}
+
 	if (ret && D3DCreate() && D3DSetMode()) {
 		success = TRUE;
+	}
+	else {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "D3DCreate()/D3DSetMode failed");
 	}
 
 	if (!success) {
