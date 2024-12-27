@@ -62,9 +62,7 @@ public:
 	static void SetInstance(MxOmni* p_instance);
 	static MxBool ActionSourceEquals(MxDSAction* p_action, const char* p_name);
 
-	SDL_Window* GetWindowHandle() const {
-        return m_windowHandle;
-    }
+	SDL_Window* GetWindowHandle() const { return m_windowHandle; }
 
 	// FUNCTION: BETA10 0x10125100
 	MxObjectFactory* GetObjectFactory() const { return this->m_objectFactory; }

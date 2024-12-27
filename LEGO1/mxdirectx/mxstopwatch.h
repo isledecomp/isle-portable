@@ -3,10 +3,10 @@
 
 #include "assert.h"
 
-#include <limits.h> // ULONG_MAX
-#include <math.h>
 #include <SDL3/SDL_stdinc.h>
 #include <SDL3/SDL_timer.h>
+#include <limits.h> // ULONG_MAX
+#include <math.h>
 #include <windows.h>
 
 //////////////////////////////////////////////////////////////////////////////
@@ -37,7 +37,7 @@ private:
 	Uint64 m_startTick; // 0x00
 	// ??? when we provide LARGE_INTEGER arithmetic, use a
 	//     LARGE_INTEGER m_elapsedTicks rather than m_elapsedSeconds
-	double m_elapsedSeconds;         // 0x0c
+	double m_elapsedSeconds;  // 0x0c
 	Uint64 m_ticksPerSeconds; // 0x14
 };
 
@@ -59,9 +59,9 @@ inline void MxStopWatch::Stop()
 {
 	Uint64 endTick;
 
-    endTick = SDL_GetPerformanceCounter();
+	endTick = SDL_GetPerformanceCounter();
 
-    m_elapsedSeconds = (double)(endTick - m_startTick) / (double)m_ticksPerSeconds;
+	m_elapsedSeconds = (double) (endTick - m_startTick) / (double) m_ticksPerSeconds;
 }
 
 // FUNCTION: BETA10 0x100d8c10
@@ -79,7 +79,7 @@ inline Uint64 MxStopWatch::TicksPerSeconds() const
 	ticksPerSeconds = SDL_GetPerformanceFrequency();
 	assert(ticksPerSeconds);
 
-    return ticksPerSeconds;
+	return ticksPerSeconds;
 }
 
 // FUNCTION: BETA10 0x100d9020

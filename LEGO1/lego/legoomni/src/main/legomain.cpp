@@ -160,7 +160,7 @@ MxResult LegoOmni::Create(MxOmniCreateParam& p_param)
 {
 	MxResult result = FAILURE;
 	AUTOLOCK(m_criticalSection);
-    HWND hWnd = NULL;
+	HWND hWnd = NULL;
 
 	p_param.CreateFlags().CreateObjectFactory(FALSE);
 	p_param.CreateFlags().CreateVideoManager(FALSE);
@@ -192,7 +192,12 @@ MxResult LegoOmni::Create(MxOmniCreateParam& p_param)
 		goto done;
 	}
 
-    hWnd = (HWND) SDL_GetPointerProperty(SDL_GetWindowProperties(MxOmni::GetInstance()->GetWindowHandle()), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
+	// [library:dinput]
+	hWnd = (HWND) SDL_GetPointerProperty(
+		SDL_GetWindowProperties(MxOmni::GetInstance()->GetWindowHandle()),
+		SDL_PROP_WINDOW_WIN32_HWND_POINTER,
+		NULL
+	);
 	if (!(m_inputManager = new LegoInputManager()) || m_inputManager->Create(hWnd) != SUCCESS) {
 		delete m_inputManager;
 		m_inputManager = NULL;
@@ -262,7 +267,7 @@ MxResult LegoOmni::Create(MxOmniCreateParam& p_param)
 	SetAppCursor(e_cursorBusy);
 	m_gameState->SetCurrentAct(LegoGameState::e_act1);
 
-    InitSdlEvents();
+	InitSdlEvents();
 
 	result = SUCCESS;
 

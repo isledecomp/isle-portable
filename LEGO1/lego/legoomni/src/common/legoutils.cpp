@@ -567,13 +567,14 @@ void EnableAnimations(MxBool p_enable)
 	AnimationManager()->FUN_100604d0(p_enable);
 }
 
-void InitSdlEvents() {
-    static bool initialized = false;
-    if (!initialized) {
-        initialized = true;
-        Uint32 event = SDL_RegisterEvents(1);
-        g_LegoSdlEvents.windows_message = event + 0;
-    }
+void InitSdlEvents()
+{
+	static bool initialized = false;
+	if (!initialized) {
+		initialized = true;
+		Uint32 event = SDL_RegisterEvents(1);
+		g_LegoSdlEvents.windows_message = event + 0;
+	}
 }
 
 // FUNCTION: LEGO1 0x1003ef40
