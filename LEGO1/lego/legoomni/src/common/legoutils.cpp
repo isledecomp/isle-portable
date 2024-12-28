@@ -31,8 +31,8 @@
 #include "scripts.h"
 
 #include <SDL3/SDL_events.h>
+#include <SDL3/SDL_process.h>
 #include <SDL3/SDL_stdinc.h>
-#include <process.h>
 #include <stdio.h>
 #include <string.h>
 #include <vec.h>
@@ -320,9 +320,10 @@ void InvokeAction(Extra::ActionType p_actionId, const MxAtomId& p_pAtom, MxS32 p
 		}
 
 		break;
-	case Extra::ActionType::e_run:
-		_spawnl(0, "\\lego\\sources\\main\\main.exe", "\\lego\\sources\\main\\main.exe", "/script", &p_pAtom, 0);
-		break;
+	case Extra::ActionType::e_run: {
+		const char* args[] = {"/lego/sources/main/main.exe", "/script", p_pAtom.GetInternal(), NULL};
+		SDL_Process* process = SDL_CreateProcess(args, false);
+	} break;
 	case Extra::ActionType::e_enable:
 		assert(p_streamId != DS_NOT_A_STREAM);
 		CheckIfEntityExists(TRUE, p_pAtom.GetInternal(), p_streamId);
@@ -729,7 +730,7 @@ void WriteDefaultTexture(LegoFile* p_file, const char* p_name)
 				}
 				else {
 					MxU8* surface = (MxU8*) desc.lpSurface;
-					LegoU8* bits = image->GetBits();
+					const LegoU8* bits = image->GetBits();
 
 					for (MxS32 i = 0; i < desc.dwHeight; i++) {
 						memcpy(surface, bits, desc.dwWidth);
@@ -753,12 +754,14 @@ void WriteDefaultTexture(LegoFile* p_file, const char* p_name)
 						paletteEntries[i].SetBlue(entries[i].peBlue);
 					}
 
-					image->SetCount(i);
+					SDL_Palette* newPalette = SDL_CreatePalette(i);
 
 					if (i > 0) {
-						// Note: this appears to be a bug. size should be i * sizeof(LegoPaletteEntry)
-						memcpy(image->GetPalette(), paletteEntries, i);
+						for (MxS32 j = 0; j < i; j++) {
+							image->SetPaletteEntry(j, paletteEntries[j]);
+						}
 					}
+					image->SetPalette(newPalette);
 
 					LegoTexture texture;
 					texture.SetImage(image);

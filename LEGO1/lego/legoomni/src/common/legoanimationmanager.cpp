@@ -28,8 +28,8 @@
 #include "realtime/realtime.h"
 #include "viewmanager/viewmanager.h"
 
+#include <SDL3/SDL_filesystem.h>
 #include <SDL3/SDL_stdinc.h>
-#include <io.h>
 #include <stdio.h>
 #include <vec.h>
 
@@ -640,8 +640,9 @@ MxResult LegoAnimationManager::LoadWorldInfo(LegoOmni::World p_worldId)
 		}
 
 		strcat(path, filename);
+		SDL_PathInfo pathInfo;
 
-		if (_access(path, 4)) {
+		if (!SDL_GetPathInfo(path, &pathInfo) || pathInfo.type != SDL_PATHTYPE_FILE) {
 			sprintf(path, "%s", MxOmni::GetCD());
 
 			if (path[strlen(path) - 1] != '\\') {
@@ -650,7 +651,7 @@ MxResult LegoAnimationManager::LoadWorldInfo(LegoOmni::World p_worldId)
 
 			strcat(path, filename);
 
-			if (_access(path, 4)) {
+			if (!SDL_GetPathInfo(path, &pathInfo) || pathInfo.type != SDL_PATHTYPE_FILE) {
 				goto done;
 			}
 		}

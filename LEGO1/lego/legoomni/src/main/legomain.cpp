@@ -33,6 +33,7 @@
 #include "scripts.h"
 #include "viewmanager/viewmanager.h"
 
+#include <SDL3/SDL_log.h>
 #include <SDL3/SDL_stdinc.h>
 
 DECOMP_SIZE_ASSERT(LegoOmni, 0x140)
@@ -168,18 +169,22 @@ MxResult LegoOmni::Create(MxOmniCreateParam& p_param)
 	p_param.CreateFlags().CreateTickleManager(FALSE);
 
 	if (!(m_tickleManager = new MxTickleManager())) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create MxTickleManager");
 		goto done;
 	}
 
 	if (MxOmni::Create(p_param) != SUCCESS) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create MxOmni");
 		goto done;
 	}
 
 	if (!(m_objectFactory = new LegoObjectFactory())) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create LegoObjectFactory");
 		goto done;
 	}
 
 	if (!(m_soundManager = new LegoSoundManager()) || m_soundManager->Create(10, 0) != SUCCESS) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create LegoSoundManager");
 		delete m_soundManager;
 		m_soundManager = NULL;
 		goto done;
@@ -187,6 +192,7 @@ MxResult LegoOmni::Create(MxOmniCreateParam& p_param)
 
 	if (!(m_videoManager = new LegoVideoManager()) ||
 		m_videoManager->Create(p_param.GetVideoParam(), 100, 0) != SUCCESS) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create LegoVideoManager");
 		delete m_videoManager;
 		m_videoManager = NULL;
 		goto done;
@@ -199,6 +205,7 @@ MxResult LegoOmni::Create(MxOmniCreateParam& p_param)
 		NULL
 	);
 	if (!(m_inputManager = new LegoInputManager()) || m_inputManager->Create(hWnd) != SUCCESS) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create LegoInputManager");
 		delete m_inputManager;
 		m_inputManager = NULL;
 		goto done;
@@ -218,27 +225,37 @@ MxResult LegoOmni::Create(MxOmniCreateParam& p_param)
 
 	if (!m_viewLODListManager || !m_textureContainer || !m_worldList || !m_characterManager || !m_plantManager ||
 		!m_animationManager || !m_buildingManager) {
+		SDL_LogError(
+			SDL_LOG_CATEGORY_APPLICATION,
+			"Failed to create "
+			"ViewLODListManager/LegoTextureContainer/LegoCharacterManager/LegoPlantManager/LegoAnimationManager/"
+			"LegoBuildingManager"
+		);
 		goto done;
 	}
 
 	MxVariable* variable;
 
 	if (!(variable = new VisibilityVariable())) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create VisibilityVariable");
 		goto done;
 	}
 	m_variableTable->SetVariable(variable);
 
 	if (!(variable = new CameraLocationVariable())) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create CameraLocationVariable");
 		goto done;
 	}
 	m_variableTable->SetVariable(variable);
 
 	if (!(variable = new CursorVariable())) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create CursorVariable");
 		goto done;
 	}
 	m_variableTable->SetVariable(variable);
 
 	if (!(variable = new WhoAmIVariable())) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create WhoAmIVariable");
 		goto done;
 	}
 	m_variableTable->SetVariable(variable);
@@ -248,18 +265,22 @@ MxResult LegoOmni::Create(MxOmniCreateParam& p_param)
 	result = RegisterWorlds();
 
 	if (result != SUCCESS) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create RegisterWorlds");
 		goto done;
 	}
 
 	if (!(m_bkgAudioManager = new MxBackgroundAudioManager())) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create MxBackgroundAudioManager");
 		goto done;
 	}
 
 	if (!(m_transitionManager = new MxTransitionManager())) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create MxTransitionManager");
 		goto done;
 	}
 
 	if (m_transitionManager->GetDDrawSurfaceFromVideoManager() != SUCCESS) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "MxTransitionManager::GetDDrawSurfaceFromVideoManager failed");
 		goto done;
 	}
 

@@ -71,7 +71,7 @@ LegoTextureInfo* LegoTextureInfo::Create(const char* p_name, LegoTexture* p_text
 	desc.ddpfPixelFormat.dwRGBBitCount = 8;
 
 	MxS32 i;
-	LegoU8* bits;
+	const LegoU8* bits;
 	MxU8* surface;
 
 	if (pDirectDraw->CreateSurface(&desc, &textureInfo->m_surface, NULL) != DD_OK) {
@@ -107,9 +107,9 @@ LegoTextureInfo* LegoTextureInfo::Create(const char* p_name, LegoTexture* p_text
 	for (i = 0; i < sizeOfArray(entries); i++) {
 		if (i < image->GetCount()) {
 			entries[i].peFlags = 0;
-			entries[i].peRed = image->GetPaletteEntry(i).GetRed();
-			entries[i].peGreen = image->GetPaletteEntry(i).GetGreen();
-			entries[i].peBlue = image->GetPaletteEntry(i).GetBlue();
+			entries[i].peRed = image->GetPalette()->colors[i].r;
+			entries[i].peGreen = image->GetPalette()->colors[i].g;
+			entries[i].peBlue = image->GetPalette()->colors[i].b;
 		}
 		else {
 			entries[i].peFlags = 0x80;
@@ -186,7 +186,7 @@ BOOL LegoTextureInfo::GetGroupTexture(Tgl::Mesh* pMesh, LegoTextureInfo*& p_text
 }
 
 // FUNCTION: LEGO1 0x10066010
-LegoResult LegoTextureInfo::FUN_10066010(LegoU8* p_bits)
+LegoResult LegoTextureInfo::FUN_10066010(const LegoU8* p_bits)
 {
 	if (m_surface != NULL && m_texture != NULL) {
 		DDSURFACEDESC desc;
@@ -195,7 +195,7 @@ LegoResult LegoTextureInfo::FUN_10066010(LegoU8* p_bits)
 
 		if (m_surface->Lock(NULL, &desc, 0, NULL) == DD_OK) {
 			MxU8* surface = (MxU8*) desc.lpSurface;
-			LegoU8* bits = p_bits;
+			const LegoU8* bits = p_bits;
 
 			if (desc.dwWidth == desc.lPitch) {
 				memcpy(desc.lpSurface, p_bits, desc.dwWidth * desc.dwHeight);

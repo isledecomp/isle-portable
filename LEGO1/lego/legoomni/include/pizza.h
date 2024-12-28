@@ -6,6 +6,8 @@
 #include "isleactor.h"
 #include "legostate.h"
 
+#include <limits.h>
+
 class Act1State;
 class PizzeriaState;
 class SkateBoard;
