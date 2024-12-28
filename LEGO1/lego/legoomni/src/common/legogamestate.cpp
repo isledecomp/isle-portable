@@ -566,7 +566,7 @@ MxResult LegoGameState::AddPlayer(Username& p_player)
 		m_players[i] = m_players[i - 1];
 		GetFileSavePath(&from, i - 1);
 		GetFileSavePath(&to, i);
-		MoveFile(from.GetData(), to.GetData());
+		SDL_RenamePath(from.GetData(), to.GetData());
 	}
 
 	m_playerCount++;
@@ -590,18 +590,18 @@ void LegoGameState::SwitchPlayer(MxS16 p_playerId)
 
 		Username selectedName(m_players[p_playerId]);
 
-		MoveFile(from.GetData(), temp.GetData());
+		SDL_RenamePath(from.GetData(), temp.GetData());
 
 		for (MxS16 i = p_playerId; i > 0; i--) {
 			m_players[i] = m_players[i - 1];
 			GetFileSavePath(&from, i - 1);
 			GetFileSavePath(&to, i);
-			MoveFile(from.GetData(), to.GetData());
+			SDL_RenamePath(from.GetData(), to.GetData());
 		}
 
 		m_players[0] = selectedName;
 		GetFileSavePath(&from, 0);
-		MoveFile(temp.GetData(), from.GetData());
+		SDL_RenamePath(temp.GetData(), from.GetData());
 	}
 
 	if (Load(0) != SUCCESS) {
