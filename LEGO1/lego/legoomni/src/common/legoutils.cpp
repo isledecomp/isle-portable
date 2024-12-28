@@ -322,7 +322,7 @@ void InvokeAction(Extra::ActionType p_actionId, const MxAtomId& p_pAtom, MxS32 p
 		break;
 	case Extra::ActionType::e_run: {
 		const char* args[] =
-			{"/lego/sources/main/main.exe", "/lego/sources/main/main.exe", "/script", p_pAtom.GetInternal(), NULL};
+			{"/lego/sources/main/main.exe", "/script", p_pAtom.GetInternal(), NULL};
 		SDL_Process* process = SDL_CreateProcess(args, false);
 	} break;
 	case Extra::ActionType::e_enable:
