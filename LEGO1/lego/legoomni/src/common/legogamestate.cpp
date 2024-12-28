@@ -61,6 +61,7 @@
 #include "sndanim_actions.h"
 #include "towtrack.h"
 
+#include <SDL3/SDL_filesystem.h>
 #include <SDL3/SDL_stdinc.h>
 #include <assert.h>
 #include <stdio.h>
@@ -557,7 +558,7 @@ MxResult LegoGameState::AddPlayer(Username& p_player)
 
 	if (m_playerCount == 9) {
 		GetFileSavePath(&from, 8);
-		DeleteFile(from.GetData());
+		SDL_RemovePath(from.GetData());
 		m_playerCount--;
 	}
 
