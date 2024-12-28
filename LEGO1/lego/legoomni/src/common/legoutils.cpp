@@ -758,7 +758,7 @@ void WriteDefaultTexture(LegoFile* p_file, const char* p_name)
 					SDL_Palette* newPalette = SDL_CreatePalette(i);
 
 					if (i > 0) {
-						for (int j = 0; j < i; j++) {
+						for (MxS32 j = 0; j < i; j++) {
 							image->SetPaletteEntry(j, paletteEntries[j]);
 						}
 					}
