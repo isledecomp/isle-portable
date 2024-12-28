@@ -88,11 +88,11 @@ LegoResult LegoImage::Read(LegoStorage* p_storage, LegoU32 p_square)
 	}
 	m_palette = SDL_CreatePalette(count);
 	for (LegoU32 i = 0; i < count; i++) {
-		LegoPaletteEntry palette_entry;
-		if ((result = palette_entry.Read(p_storage)) != SUCCESS) {
+		LegoPaletteEntry paletteEntry;
+		if ((result = paletteEntry.Read(p_storage)) != SUCCESS) {
 			return result;
 		}
-		m_palette->colors[i] = palette_entry.getColor();
+		m_palette->colors[i] = paletteEntry.GetColor();
 	}
 	if (m_surface) {
 		SDL_DestroySurface(m_surface);
@@ -168,7 +168,7 @@ LegoResult LegoImage::Write(LegoStorage* p_storage)
 	if (m_palette) {
 		LegoPaletteEntry paletteEntry;
 		for (LegoU32 i = 0; i < m_palette->ncolors; i++) {
-			paletteEntry.setColor(m_palette->colors[i]);
+			paletteEntry.SetColor(m_palette->colors[i]);
 			if ((result = paletteEntry.Write(p_storage)) != SUCCESS) {
 				return result;
 			}

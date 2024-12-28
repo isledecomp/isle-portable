@@ -18,8 +18,8 @@ public:
 	void SetGreen(LegoU8 p_green) { m_color.g = p_green; }
 	LegoU8 GetBlue() const { return m_color.b; }
 	void SetBlue(LegoU8 p_blue) { m_color.b = p_blue; }
-	SDL_Color getColor() const { return m_color; }
-	void setColor(SDL_Color p_color) { m_color = p_color; }
+	SDL_Color GetColor() const { return m_color; }
+	void SetColor(SDL_Color p_color) { m_color = p_color; }
 	LegoResult Read(LegoStorage* p_storage);
 	LegoResult Write(LegoStorage* p_storage) const;
 
@@ -44,7 +44,7 @@ public:
 	}
 	void SetPaletteEntry(LegoU32 p_i, LegoPaletteEntry& p_paletteEntry)
 	{
-		m_palette->colors[p_i] = p_paletteEntry.getColor();
+		m_palette->colors[p_i] = p_paletteEntry.GetColor();
 	}
 	const LegoU8* GetBits() const { return (LegoU8*) m_surface->pixels; }
 	LegoResult Read(LegoStorage* p_storage, LegoU32 p_square);

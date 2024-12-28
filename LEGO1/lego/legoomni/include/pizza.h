@@ -6,7 +6,7 @@
 #include "isleactor.h"
 #include "legostate.h"
 
-#include <climits>
+#include <limits.h>
 
 class Act1State;
 class PizzeriaState;
