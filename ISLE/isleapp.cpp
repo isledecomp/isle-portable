@@ -550,7 +550,7 @@ void IsleApp::LoadConfig()
 	strcpy(m_cdPath, cdPath);
 	MxOmni::SetCD(m_cdPath);
 
-	const char* mediaPath = iniparser_getstring(dict, "isle:mediapath", cdPath);
+	const char* mediaPath = iniparser_getstring(dict, "isle:mediapath", hdPath);
 	m_mediaPath = new char[strlen(mediaPath) + 1];
 	strcpy(m_mediaPath, mediaPath);
 
