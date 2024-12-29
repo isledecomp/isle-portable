@@ -78,6 +78,7 @@ private:
 	SDL_Cursor* m_cursorBusy;    // 0x80
 	SDL_Cursor* m_cursorNo;      // 0x84
 	SDL_Cursor* m_cursorCurrent; // 0x88
+	char* m_mediaPath;
 
 	char* m_iniPath;
 };

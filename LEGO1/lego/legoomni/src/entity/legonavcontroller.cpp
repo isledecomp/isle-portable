@@ -109,10 +109,17 @@ MxU32 g_switchAct = FALSE;
 LegoAnimationManager::PlayMode g_unk0x100f66bc = LegoAnimationManager::e_unk2;
 
 // GLOBAL: LEGO1 0x100f66c0
-char g_debugPassword[] = "OGEL";
+SDL_Keycode g_debugPassword[] = {
+	// "OGEL"
+	SDLK_O,
+	SDLK_G,
+	SDLK_E,
+	SDLK_L,
+	0,
+};
 
 // GLOBAL: LEGO1 0x100f66c8
-char* g_currentInput = g_debugPassword;
+SDL_Keycode* g_currentInput = g_debugPassword;
 
 // GLOBAL: LEGO1 0x100f66cc
 MxS32 g_nextCharacter = -1;
@@ -639,10 +646,10 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 {
 	if (((MxNotificationParam&) p_param).GetNotification() == c_notificationKeyPress) {
 		m_unk0x5d = TRUE;
-		MxU8 key = ((LegoEventNotificationParam&) p_param).GetKey();
+		SDL_Keycode key = ((LegoEventNotificationParam&) p_param).GetKey();
 
 		switch (key) {
-		case VK_PAUSE: // Pause game
+		case SDLK_PAUSE: // Pause game
 			if (Lego()->IsPaused()) {
 				Lego()->Resume();
 			}
@@ -650,7 +657,7 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 				Lego()->Pause();
 			}
 			break;
-		case VK_ESCAPE: { // Return to infocenter
+		case SDLK_ESCAPE: { // Return to infocenter
 			LegoWorld* currentWorld = CurrentWorld();
 			if (currentWorld != NULL) {
 				InfocenterState* state = (InfocenterState*) GameState()->GetState("InfocenterState");
@@ -664,10 +671,10 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 			}
 			break;
 		}
-		case VK_SPACE: // Interrupt/end animations or free navigation
+		case SDLK_SPACE: // Interrupt/end animations or free navigation
 			AnimationManager()->FUN_10061010(TRUE);
 			break;
-		case 'Z': { // Make nearby plants "dance"
+		case SDLK_Z: { // Make nearby plants "dance"
 			LegoOmni* omni = Lego();
 
 			if (omni->GetCurrentWorld() != NULL && omni->GetCurrentWorld()->GetWorldId() == LegoOmni::e_act1) {
@@ -701,15 +708,15 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 			}
 			break;
 		}
-		case VK_ADD:
-		case VK_SUBTRACT: { // Cycles through characters and puts them in front of you
+		case SDLK_KP_PLUS:
+		case SDLK_KP_MINUS: { // Cycles through characters and puts them in front of you
 			if (g_nextCharacter == -1) {
 				g_nextCharacter = 0;
 			}
 			else {
 				CharacterManager()->ReleaseActor(CharacterManager()->GetActorName(g_nextCharacter));
 
-				if (key == VK_ADD) {
+				if (key == SDLK_KP_PLUS) {
 					g_nextCharacter++;
 					if (g_nextCharacter >= CharacterManager()->GetNumActors()) {
 						g_nextCharacter = 0;
@@ -736,7 +743,7 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 			}
 			break;
 		}
-		case VK_F12: { // Saves the game
+		case SDLK_F12: { // Saves the game
 			InfocenterState* state = (InfocenterState*) GameState()->GetState("InfocenterState");
 			if (state && state->HasRegistered()) {
 				GameState()->Save(0);
@@ -748,7 +755,7 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 			if (!*g_currentInput) {
 				// password "protected" debug shortcuts
 				switch (((LegoEventNotificationParam&) p_param).GetKey()) {
-				case VK_TAB:
+				case SDLK_TAB:
 					VideoManager()->ToggleFPS(g_fpsEnabled);
 					if (g_fpsEnabled) {
 						g_fpsEnabled = FALSE;
@@ -759,16 +766,16 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 				default:
 					m_unk0x5d = FALSE;
 					break;
-				case '0':
-				case '1':
-				case '2':
-				case '3':
-				case '4':
-				case '5':
-				case '6':
-				case '7':
-				case '8':
-				case '9':
+				case SDLK_0:
+				case SDLK_1:
+				case SDLK_2:
+				case SDLK_3:
+				case SDLK_4:
+				case SDLK_5:
+				case SDLK_6:
+				case SDLK_7:
+				case SDLK_8:
+				case SDLK_9:
 					if (g_changeLight && key <= '1') {
 						LegoROI* roi = VideoManager()->GetViewROI();
 						Tgl::FloatMatrix4 matrix;
@@ -821,7 +828,7 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 						}
 					}
 
-					if (g_switchAct && key >= '1' && key <= '5') {
+					if (g_switchAct && key >= SDLK_1 && key <= SDLK_5) {
 						switch (GameState()->GetCurrentAct()) {
 						case LegoGameState::e_act1:
 							GameState()->m_currentArea = LegoGameState::e_isle;
@@ -835,17 +842,17 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 						}
 
 						switch (key) {
-						case '1':
+						case SDLK_1:
 							GameState()->SetCurrentAct(LegoGameState::e_act1);
 							GameState()->SwitchArea(LegoGameState::e_isle);
 							break;
-						case '2':
+						case SDLK_2:
 							GameState()->SwitchArea(LegoGameState::e_act2main);
 							break;
-						case '3':
+						case SDLK_3:
 							GameState()->SwitchArea(LegoGameState::e_act3script);
 							break;
-						case '4': {
+						case SDLK_4: {
 							Act3State* act3State = (Act3State*) GameState()->GetState("Act3State");
 							if (act3State == NULL) {
 								act3State = new Act3State();
@@ -859,7 +866,7 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 							GameState()->SwitchArea(LegoGameState::e_infomain);
 							break;
 						}
-						case '5': {
+						case SDLK_5: {
 							Act3State* act3State = (Act3State*) GameState()->GetState("Act3State");
 							if (act3State == NULL) {
 								act3State = new Act3State();
@@ -884,7 +891,7 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 						LegoOmni::GetInstance()->Start(&action);
 					}
 					break;
-				case 'A':
+				case SDLK_A:
 					if (g_animationCalcStep == 1) {
 						Lego()->m_unk0x13c = TRUE;
 						AnimationManager()->FUN_10060570(TRUE);
@@ -900,22 +907,22 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 						}
 					}
 					break;
-				case 'C':
+				case SDLK_C:
 					g_locationCalcStep = 1;
 					break;
-				case 'D':
+				case SDLK_D:
 					m_unk0x60 = -1.0;
 					break;
-				case 'F':
+				case SDLK_F:
 					RealtimeView::SetUserMaxLOD(0.0);
 					break;
-				case 'G':
+				case SDLK_G:
 					g_switchAct = TRUE;
 					break;
-				case 'H':
+				case SDLK_H:
 					RealtimeView::SetUserMaxLOD(5.0);
 					break;
-				case 'I': {
+				case SDLK_I: {
 					LegoROI* roi = VideoManager()->GetViewROI();
 					MxMatrix mat;
 					mat.SetIdentity();
@@ -923,7 +930,7 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 					roi->WrappedVTable0x24(mat);
 					break;
 				}
-				case 'J': {
+				case SDLK_J: {
 					LegoROI* roi = VideoManager()->GetViewROI();
 					MxMatrix mat;
 					mat.SetIdentity();
@@ -931,7 +938,7 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 					roi->WrappedVTable0x24(mat);
 					break;
 				}
-				case 'K': {
+				case SDLK_K: {
 					MxMatrix mat;
 					LegoROI* roi = LegoOmni::GetInstance()->GetVideoManager()->GetViewROI();
 					mat.SetIdentity();
@@ -939,10 +946,10 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 					roi->WrappedVTable0x24(mat);
 					break;
 				}
-				case 'L':
+				case SDLK_L:
 					g_changeLight = TRUE;
 					break;
-				case 'M': {
+				case SDLK_M: {
 					LegoROI* roi = LegoOmni::GetInstance()->GetVideoManager()->GetViewROI();
 					MxMatrix mat;
 					mat.SetIdentity();
@@ -950,12 +957,12 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 					roi->WrappedVTable0x24(mat);
 					break;
 				}
-				case 'N':
+				case SDLK_N:
 					if (VideoManager()) {
 						VideoManager()->SetRender3D(!VideoManager()->GetRender3D());
 					}
 					break;
-				case 'P':
+				case SDLK_P:
 					if (!g_resetPlants) {
 						PlantManager()->LoadWorldInfo(LegoOmni::e_act1);
 						g_resetPlants = TRUE;
@@ -965,14 +972,14 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 						g_resetPlants = FALSE;
 					}
 					break;
-				case 'S':
+				case SDLK_S:
 					g_enableMusic = g_enableMusic == FALSE;
 					BackgroundAudioManager()->Enable(g_enableMusic);
 					break;
-				case 'U':
+				case SDLK_U:
 					m_unk0x60 = 1.0;
 					break;
-				case 'V':
+				case SDLK_V:
 					if (g_nextAnimation > 0 && g_animationCalcStep == 0) {
 						AnimationManager()->FUN_10061010(FALSE);
 					}
@@ -984,7 +991,7 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 					g_nextAnimation = 0;
 					g_animationCalcStep = 1;
 					break;
-				case 'W': {
+				case SDLK_W: {
 					MxMatrix mat;
 					LegoROI* roi = LegoOmni::GetInstance()->GetVideoManager()->GetViewROI();
 					const float* position = roi->GetWorldPosition();
@@ -999,10 +1006,10 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 					);
 					break;
 				}
-				case 'X':
+				case SDLK_X:
 					RealtimeView::SetUserMaxLOD(3.6);
 					break;
-				case VK_MULTIPLY: {
+				case SDLK_KP_MULTIPLY: {
 					MxU8 newActor = GameState()->GetActorId() + 1;
 
 					if (newActor > LegoActor::c_laura) {
@@ -1012,10 +1019,10 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 					GameState()->SetActorId(newActor);
 					break;
 				}
-				case VK_DIVIDE:
+				case SDLK_KP_DIVIDE:
 					GameState()->SetActorId(LegoActor::c_brickster);
 					break;
-				case VK_F11:
+				case SDLK_F11:
 					if (GameState()->m_isDirty) {
 						GameState()->m_isDirty = FALSE;
 					}
@@ -1023,7 +1030,7 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 						GameState()->m_isDirty = TRUE;
 					}
 					break;
-				case VK_OEM_MINUS:
+				case SDLK_MINUS:
 					g_unk0x100f66bc = LegoAnimationManager::e_unk1;
 					break;
 				}

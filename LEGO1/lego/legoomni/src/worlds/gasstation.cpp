@@ -358,9 +358,9 @@ MxLong GasStation::HandleEndAction(MxEndActionNotificationParam& p_param)
 }
 
 // FUNCTION: LEGO1 0x10005920
-MxLong GasStation::HandleKeyPress(MxS8 p_key)
+MxLong GasStation::HandleKeyPress(SDL_Keycode p_key)
 {
-	if (p_key == VK_SPACE && g_unk0x100f0160 == 0 && m_unk0x106 != 0) {
+	if (p_key == SDLK_SPACE && g_unk0x100f0160 == 0 && m_unk0x106 != 0) {
 		m_state->StopActions();
 		return 1;
 	}

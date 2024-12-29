@@ -288,12 +288,12 @@ void LegoInputManager::ClearWorld()
 }
 
 // FUNCTION: LEGO1 0x1005c740
-void LegoInputManager::QueueEvent(NotificationId p_id, MxU8 p_modifier, MxLong p_x, MxLong p_y, MxU8 p_key)
+void LegoInputManager::QueueEvent(NotificationId p_id, MxU8 p_modifier, MxLong p_x, MxLong p_y, SDL_Keycode p_key)
 {
 	LegoEventNotificationParam param = LegoEventNotificationParam(p_id, NULL, p_modifier, p_x, p_y, p_key);
 
 	if (((!m_unk0x88) || ((m_unk0x335 && (param.GetNotification() == c_notificationButtonDown)))) ||
-		((m_unk0x336 && (p_key == VK_SPACE)))) {
+		((m_unk0x336 && (p_key == SDLK_SPACE)))) {
 		ProcessOneEvent(param);
 	}
 }
@@ -317,8 +317,8 @@ MxBool LegoInputManager::ProcessOneEvent(LegoEventNotificationParam& p_param)
 	MxBool processRoi;
 
 	if (p_param.GetNotification() == c_notificationKeyPress) {
-		if (!Lego()->IsPaused() || p_param.GetKey() == VK_PAUSE) {
-			if (p_param.GetKey() == VK_SHIFT) {
+		if (!Lego()->IsPaused() || p_param.GetKey() == SDLK_PAUSE) {
+			if (p_param.GetKey() == SDLK_LSHIFT || p_param.GetKey() == SDLK_RSHIFT) {
 				if (m_unk0x195) {
 					m_unk0x80 = FALSE;
 					p_param.SetNotification(c_notificationDragEnd);
@@ -348,7 +348,7 @@ MxBool LegoInputManager::ProcessOneEvent(LegoEventNotificationParam& p_param)
 
 			if (m_unk0x335 != 0) {
 				if (p_param.GetNotification() == c_notificationButtonDown) {
-					LegoEventNotificationParam notification(c_notificationKeyPress, NULL, 0, 0, 0, VK_SPACE);
+					LegoEventNotificationParam notification(c_notificationKeyPress, NULL, 0, 0, 0, SDLK_SPACE);
 					LegoNotifyListCursor cursor(m_keyboardNotifyList);
 					MxCore* target;
 

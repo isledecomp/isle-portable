@@ -7,6 +7,8 @@
 #include "legoworld.h"
 #include "radio.h"
 
+#include <SDL3/SDL_keycode.h>
+
 class MxStillPresenter;
 
 // VTABLE: LEGO1 0x100d46e0
@@ -95,7 +97,7 @@ private:
 	inline void StopAction(GarageScript::Script p_objectId);
 
 	MxLong HandleEndAction(MxEndActionNotificationParam& p_param);
-	MxLong HandleKeyPress(MxS8 p_key);
+	MxLong HandleKeyPress(SDL_Keycode p_key);
 	MxLong HandleButtonDown(LegoControlManagerNotificationParam& p_param);
 
 	MxS16 m_currentActorId;             // 0xf8
