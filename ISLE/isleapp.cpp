@@ -531,10 +531,11 @@ void IsleApp::LoadConfig()
 		iniConfig = new char[strlen(prefPath) + strlen("isle.ini") + 1]();
 		strcat(iniConfig, prefPath);
 		strcat(iniConfig, "isle.ini");
-	} else {
-        iniConfig = new char[strlen("isle.ini") + 1];
-        strcpy(iniConfig, "isle.ini");
-    }
+	}
+	else {
+		iniConfig = new char[strlen("isle.ini") + 1];
+		strcpy(iniConfig, "isle.ini");
+	}
 	SDL_Log("Reading configuration from \"%s\"", iniConfig);
 
 	dictionary* dict = iniparser_load(iniConfig);
@@ -549,8 +550,8 @@ void IsleApp::LoadConfig()
 	strcpy(m_cdPath, cdPath);
 	MxOmni::SetCD(m_cdPath);
 
-	const char *mediaPath = iniparser_getstring(dict, "isle:mediapath", cdPath);
-    m_mediaPath = new char[strlen(mediaPath) + 1];
+	const char* mediaPath = iniparser_getstring(dict, "isle:mediapath", cdPath);
+	m_mediaPath = new char[strlen(mediaPath) + 1];
 	strcpy(m_mediaPath, mediaPath);
 
 	m_flipSurfaces = iniparser_getboolean(dict, "isle:Flip Surfaces", m_flipSurfaces);

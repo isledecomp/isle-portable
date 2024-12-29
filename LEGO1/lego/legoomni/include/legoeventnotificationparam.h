@@ -69,11 +69,11 @@ public:
 	void SetY(MxS32 p_y) { m_y = p_y; }
 
 protected:
-	MxU8 m_modifier; // 0x0c
-	MxS32 m_x;       // 0x10
-	MxS32 m_y;       // 0x14
-	SDL_Keycode m_key;// 0x18
-	LegoROI* m_roi;  // 0x1c
+	MxU8 m_modifier;   // 0x0c
+	MxS32 m_x;         // 0x10
+	MxS32 m_y;         // 0x14
+	SDL_Keycode m_key; // 0x18
+	LegoROI* m_roi;    // 0x1c
 };
 
 // SYNTHETIC: LEGO1 0x10028770
