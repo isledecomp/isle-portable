@@ -169,27 +169,22 @@ MxLong RegistrationBook::HandleEndAction(MxEndActionNotificationParam& p_param)
 }
 
 // FUNCTION: LEGO1 0x100772d0
-MxLong RegistrationBook::HandleKeyPress(MxU8 p_key)
+MxLong RegistrationBook::HandleKeyPress(SDL_Keycode p_key)
 {
-	MxS16 key;
-	if (p_key >= 'a' && p_key <= 'z') {
-		key = p_key - ' ';
-	}
-	else {
-		key = p_key;
-	}
+	// keycode is case-insensitive
+	SDL_Keycode key = p_key;
 
-	if ((key < 'A' || key > 'Z') && key != VK_BACK) {
-		if (key == VK_SPACE) {
+	if ((key < SDLK_A || key > SDLK_Z) && key != SDLK_BACKSPACE) {
+		if (key == SDLK_SPACE) {
 			DeleteObjects(&m_atomId, RegbookScript::c_iic006in_RunAnim, RegbookScript::c_iic008in_PlayWav);
 			BackgroundAudioManager()->RaiseVolume();
 		}
 	}
-	else if (key != VK_BACK && m_unk0x280.m_cursorPos < 7) {
+	else if (key != SDLK_BACKSPACE && m_unk0x280.m_cursorPos < 7) {
 		m_name[0][m_unk0x280.m_cursorPos] = m_alphabet[key - 'A']->Clone();
 
 		if (m_name[0][m_unk0x280.m_cursorPos] != NULL) {
-			m_alphabet[key - 'A']->GetAction()->SetUnknown24(m_alphabet[key - 'A']->GetAction()->GetUnknown24() + 1);
+			m_alphabet[key - SDLK_A]->GetAction()->SetUnknown24(m_alphabet[key - SDLK_A]->GetAction()->GetUnknown24() + 1);
 			m_name[0][m_unk0x280.m_cursorPos]->Enable(TRUE);
 			m_name[0][m_unk0x280.m_cursorPos]->SetTickleState(MxPresenter::e_repeating);
 			m_name[0][m_unk0x280.m_cursorPos]->SetPosition(m_unk0x280.m_cursorPos * 23 + 343, 121);
@@ -198,12 +193,12 @@ MxLong RegistrationBook::HandleKeyPress(MxU8 p_key)
 				m_checkmark[0]->Enable(TRUE);
 			}
 
-			m_unk0x280.m_letters[m_unk0x280.m_cursorPos] = key - 'A';
+			m_unk0x280.m_letters[m_unk0x280.m_cursorPos] = key - SDLK_A;
 			m_unk0x280.m_cursorPos++;
 		}
 	}
 	else {
-		if (key == VK_BACK && m_unk0x280.m_cursorPos > 0) {
+		if (key == SDLK_BACKSPACE && m_unk0x280.m_cursorPos > 0) {
 			m_unk0x280.m_cursorPos--;
 
 			m_name[0][m_unk0x280.m_cursorPos]->Enable(FALSE);

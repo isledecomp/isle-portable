@@ -66,7 +66,7 @@ private:
 	LPDIRECTDRAWSURFACE m_checkboxNormal;  // 0x2cc
 
 	MxLong HandleEndAction(MxEndActionNotificationParam& p_param);
-	MxLong HandleKeyPress(MxU8 p_key);
+	MxLong HandleKeyPress(SDL_Keycode p_key);
 	MxLong HandleControl(LegoControlManagerNotificationParam& p_param);
 	MxLong HandlePathStruct(LegoPathStructNotificationParam& p_param);
 	void FUN_100775c0(MxS16 p_playerIndex);

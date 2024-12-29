@@ -720,11 +720,11 @@ MxU8 Infocenter::HandleMouseMove(MxS32 p_x, MxS32 p_y)
 }
 
 // FUNCTION: LEGO1 0x1006fda0
-MxLong Infocenter::HandleKeyPress(MxS8 p_key)
+MxLong Infocenter::HandleKeyPress(SDL_Keycode p_key)
 {
 	MxLong result = 0;
 
-	if (p_key == VK_SPACE && m_worldStarted) {
+	if (p_key == SDLK_SPACE && m_worldStarted) {
 		switch (m_infocenterState->GetUnknown0x74()) {
 		case 0:
 			StopCutscene();

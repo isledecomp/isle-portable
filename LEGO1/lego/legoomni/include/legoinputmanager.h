@@ -10,6 +10,7 @@
 
 #include <SDL3/SDL_joystick.h>
 #include <SDL3/SDL_keyboard.h>
+#include <SDL3/SDL_keycode.h>
 #include <SDL3/SDL_timer.h>
 #include <windows.h>
 
@@ -87,7 +88,7 @@ public:
 	LegoInputManager();
 	~LegoInputManager() override;
 
-	LEGO1_EXPORT void QueueEvent(NotificationId p_id, MxU8 p_modifier, MxLong p_x, MxLong p_y, MxU8 p_key);
+	LEGO1_EXPORT void QueueEvent(NotificationId p_id, MxU8 p_modifier, MxLong p_x, MxLong p_y, SDL_Keycode p_key);
 	void Register(MxCore*);
 	void UnRegister(MxCore*);
 

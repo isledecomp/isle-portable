@@ -226,11 +226,11 @@ void Hospital::ReadyWorld()
 }
 
 // FUNCTION: LEGO1 0x10074dd0
-MxLong Hospital::HandleKeyPress(MxS8 p_key)
+MxLong Hospital::HandleKeyPress(SDL_Keycode p_key)
 {
 	MxLong result = 0;
 
-	if (p_key == VK_SPACE && g_unk0x100f7918 == 0) {
+	if (p_key == SDLK_SPACE && g_unk0x100f7918 == 0) {
 		DeleteObjects(&m_atomId, HospitalScript::c_hho002cl_RunAnim, HospitalScript::c_hho006cl_RunAnim);
 		result = 1;
 	}
