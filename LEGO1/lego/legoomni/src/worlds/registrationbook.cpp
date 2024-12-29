@@ -181,7 +181,7 @@ MxLong RegistrationBook::HandleKeyPress(SDL_Keycode p_key)
 		}
 	}
 	else if (key != SDLK_BACKSPACE && m_unk0x280.m_cursorPos < 7) {
-		m_name[0][m_unk0x280.m_cursorPos] = m_alphabet[key - 'A']->Clone();
+		m_name[0][m_unk0x280.m_cursorPos] = m_alphabet[key - SDLK_A]->Clone();
 
 		if (m_name[0][m_unk0x280.m_cursorPos] != NULL) {
 			m_alphabet[key - SDLK_A]->GetAction()->SetUnknown24(
