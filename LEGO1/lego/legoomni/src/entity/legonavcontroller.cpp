@@ -109,10 +109,17 @@ MxU32 g_switchAct = FALSE;
 LegoAnimationManager::PlayMode g_unk0x100f66bc = LegoAnimationManager::e_unk2;
 
 // GLOBAL: LEGO1 0x100f66c0
-char g_debugPassword[] = "OGEL";
+SDL_Keycode g_debugPassword[] = {
+	// "OGEL"
+	SDLK_O,
+	SDLK_G,
+	SDLK_E,
+	SDLK_L,
+	0,
+};
 
 // GLOBAL: LEGO1 0x100f66c8
-char* g_currentInput = g_debugPassword;
+SDL_Keycode* g_currentInput = g_debugPassword;
 
 // GLOBAL: LEGO1 0x100f66cc
 MxS32 g_nextCharacter = -1;
