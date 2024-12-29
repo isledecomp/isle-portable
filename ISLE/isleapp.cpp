@@ -140,6 +140,10 @@ IsleApp::~IsleApp()
 	if (m_savePath) {
 		delete[] m_savePath;
 	}
+
+	if (m_mediaPath) {
+		delete[] m_mediaPath;
+	}
 }
 
 // FUNCTION: ISLE 0x401260
@@ -175,18 +179,16 @@ void IsleApp::Close()
 MxS32 IsleApp::SetupLegoOmni()
 {
 	MxS32 result = FALSE;
-	char mediaPath[256];
-	GetProfileStringA("LEGO Island", "MediaPath", "", mediaPath, sizeof(mediaPath));
 
 #ifdef COMPAT_MODE
 	MxS32 failure;
 	{
-		MxOmniCreateParam param(mediaPath, m_windowHandle, m_videoParam, MxOmniCreateFlags());
+		MxOmniCreateParam param(m_mediaPath, m_windowHandle, m_videoParam, MxOmniCreateFlags());
 		failure = Lego()->Create(param) == FAILURE;
 	}
 #else
 	MxS32 failure =
-		Lego()->Create(MxOmniCreateParam(mediaPath, m_windowHandle, m_videoParam, MxOmniCreateFlags())) == FAILURE;
+		Lego()->Create(MxOmniCreateParam(m_mediaPath, m_windowHandle, m_videoParam, MxOmniCreateFlags())) == FAILURE;
 #endif
 
 	if (!failure) {
@@ -525,11 +527,14 @@ void IsleApp::LoadConfig()
 		iniConfig = new char[strlen(m_iniPath) + 1];
 		strcpy(iniConfig, m_iniPath);
 	}
-	else {
+	else if (prefPath) {
 		iniConfig = new char[strlen(prefPath) + strlen("isle.ini") + 1]();
 		strcat(iniConfig, prefPath);
 		strcat(iniConfig, "isle.ini");
-	}
+	} else {
+        iniConfig = new char[strlen("isle.ini") + 1];
+        strcpy(iniConfig, "isle.ini");
+    }
 	SDL_Log("Reading configuration from \"%s\"", iniConfig);
 
 	dictionary* dict = iniparser_load(iniConfig);
@@ -543,6 +548,10 @@ void IsleApp::LoadConfig()
 	m_cdPath = new char[strlen(cdPath) + 1];
 	strcpy(m_cdPath, cdPath);
 	MxOmni::SetCD(m_cdPath);
+
+	const char *mediaPath = iniparser_getstring(dict, "isle:mediapath", cdPath);
+    m_mediaPath = new char[strlen(mediaPath) + 1];
+	strcpy(m_mediaPath, mediaPath);
 
 	m_flipSurfaces = iniparser_getboolean(dict, "isle:Flip Surfaces", m_flipSurfaces);
 	m_fullScreen = iniparser_getboolean(dict, "isle:Full Screen", m_fullScreen);
