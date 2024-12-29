@@ -556,15 +556,15 @@ MxCore* LegoWorld::Find(const char* p_class, const char* p_name)
 		MxPresenter* presenter;
 
 		while (cursor.Next(presenter)) {
-			MxDSAction* action = presenter->GetAction();
-			if (!strcmp(action->GetObjectName(), p_name)) {
+			if (!strcmp(presenter->GetAction()->GetObjectName(), p_name)) {
 				return presenter;
 			}
 		}
 
 		return NULL;
 	}
-	else if (!strcmp(p_class, "MxEntity")) {
+
+	if (!strcmp(p_class, "MxEntity")) {
 		LegoEntityListCursor cursor(m_entityList);
 		LegoEntity* entity;
 
@@ -581,7 +581,8 @@ MxCore* LegoWorld::Find(const char* p_class, const char* p_name)
 
 		return NULL;
 	}
-	else if (!strcmp(p_class, "LegoAnimPresenter")) {
+
+	if (!strcmp(p_class, "LegoAnimPresenter")) {
 		MxPresenterListCursor cursor(&m_animPresenters);
 		MxPresenter* presenter;
 
@@ -593,20 +594,18 @@ MxCore* LegoWorld::Find(const char* p_class, const char* p_name)
 
 		return NULL;
 	}
-	else {
-		for (MxCoreSet::iterator it = m_set0xa8.begin(); it != m_set0xa8.end(); it++) {
-			if ((*it)->IsA(p_class) && (*it)->IsA("MxPresenter")) {
-				MxPresenter* presenter = (MxPresenter*) *it;
-				MxDSAction* action = presenter->GetAction();
 
-				if (!strcmp(action->GetObjectName(), p_name)) {
-					return *it;
-				}
+	for (MxCoreSet::iterator i = m_set0xa8.begin(); i != m_set0xa8.end(); i++) {
+		if ((*i)->IsA(p_class) && (*i)->IsA("MxPresenter")) {
+			assert(((MxPresenter*) (*i))->GetAction());
+
+			if (!strcmp(((MxPresenter*) (*i))->GetAction()->GetObjectName(), p_name)) {
+				return *i;
 			}
 		}
-
-		return NULL;
 	}
+
+	return NULL;
 }
 
 // FUNCTION: LEGO1 0x10021790
@@ -785,7 +784,7 @@ MxResult LegoWorld::Tickle()
 			ReadyWorld();
 			return TRUE;
 		case e_two:
-			if (PresentersPending()) {
+			if (PresentersPending() == TRUE) {
 				break;
 			}
 		default:

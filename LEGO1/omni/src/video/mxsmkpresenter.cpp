@@ -26,7 +26,7 @@ MxSmkPresenter::~MxSmkPresenter()
 void MxSmkPresenter::Init()
 {
 	m_currentFrame = 0;
-	memset(&m_mxSmack, 0, sizeof(m_mxSmack));
+	memset(&m_mxSmk, 0, sizeof(m_mxSmk));
 	SetBit1(FALSE);
 	SetBit2(FALSE);
 }
@@ -36,7 +36,7 @@ void MxSmkPresenter::Destroy(MxBool p_fromDestructor)
 {
 	m_criticalSection.Enter();
 
-	MxSmack::Destroy(&m_mxSmack);
+	MxSmk::Destroy(&m_mxSmk);
 	Init();
 
 	m_criticalSection.Leave();
@@ -49,7 +49,7 @@ void MxSmkPresenter::Destroy(MxBool p_fromDestructor)
 // FUNCTION: LEGO1 0x100b3940
 void MxSmkPresenter::LoadHeader(MxStreamChunk* p_chunk)
 {
-	MxSmack::LoadHeader(p_chunk->GetData(), p_chunk->GetLength(), &m_mxSmack);
+	MxSmk::LoadHeader(p_chunk->GetData(), p_chunk->GetLength(), &m_mxSmk);
 }
 
 // FUNCTION: LEGO1 0x100b3960
@@ -60,7 +60,7 @@ void MxSmkPresenter::CreateBitmap()
 	}
 
 	unsigned long w, h;
-	smk_info_video(m_mxSmack.m_smk, &w, &h, NULL);
+	smk_info_video(m_mxSmk.m_smk, &w, &h, NULL);
 
 	m_frameBitmap = new MxBitmap;
 	m_frameBitmap->SetSize(w, h, NULL, FALSE);
@@ -78,7 +78,7 @@ void MxSmkPresenter::LoadFrame(MxStreamChunk* p_chunk)
 	VTable0x88();
 
 	MxRectList rects(TRUE);
-	MxSmack::LoadFrame(bitmapInfo, bitmapData, &m_mxSmack, chunkData, paletteChanged, m_currentFrame - 1, &rects);
+	MxSmk::LoadFrame(bitmapInfo, bitmapData, &m_mxSmk, chunkData, paletteChanged, m_currentFrame - 1, &rects);
 
 	if (((MxDSMediaAction*) m_action)->GetPaletteManagement() && paletteChanged) {
 		RealizePalette();
