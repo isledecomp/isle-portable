@@ -312,7 +312,7 @@ void LegoAnimPresenter::FUN_100695c0()
 					LegoU32 len = strlen(actorName);
 					strcpy(lodName, actorName);
 
-					for (LegoChar* i = &lodName[len - 1]; isdigit(*i) || *i == '_'; i--) {
+					for (LegoChar* i = &lodName[len - 1]; SDL_isdigit(*i) || *i == '_'; i--) {
 						*i = '\0';
 					}
 
