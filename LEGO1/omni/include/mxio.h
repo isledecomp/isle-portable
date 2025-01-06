@@ -9,6 +9,9 @@
 // We define the bare minimum constants and structures to be compatible with the code in mxio.cpp
 // This is mostly copy-pasted from the MMSYSTEM.H Windows header.
 
+/* general error return values */
+#define MMSYSERR_NOERROR 0 /* no error */
+
 /* MMIO error return values */
 #define MMIOERR_BASE 256
 #define MMIOERR_OUTOFMEMORY (MMIOERR_BASE + 2)   /* out of memory */
@@ -39,8 +42,10 @@
 #define FOURCC_LIST mmioFOURCC('L', 'I', 'S', 'T')
 
 /* various MMIO flags */
-#define MMIO_FINDRIFF 0x0020 /* mmioDescend: find a LIST chunk */
-#define MMIO_FINDLIST 0x0040 /* mmioDescend: find a RIFF chunk */
+#define MMIO_FINDRIFF 0x0020   /* mmioDescend: find a LIST chunk */
+#define MMIO_FINDLIST 0x0040   /* mmioDescend: find a RIFF chunk */
+#define MMIO_CREATERIFF 0x0020 /* mmioCreateChunk: make a LIST chunk */
+#define MMIO_CREATELIST 0x0040 /* mmioCreateChunk: make a RIFF chunk */
 
 /* general MMIO information data structure */
 typedef struct _ISLE_MMIOINFO {
@@ -84,6 +89,7 @@ public:
 	MxU16 Advance(MxU16);
 	MxU16 Descend(ISLE_MMCKINFO*, const ISLE_MMCKINFO*, MxU16);
 	MxU16 Ascend(ISLE_MMCKINFO*, MxU16);
+	MxU16 CreateChunk(ISLE_MMCKINFO* p_chunkInfo, MxU16 p_create);
 
 	// NOTE: In MXIOINFO, the `hmmio` member of MMIOINFO is used like
 	// an HFILE (int) instead of an HMMIO (WORD).

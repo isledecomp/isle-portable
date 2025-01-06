@@ -149,7 +149,7 @@ void LegoCarBuildAnimPresenter::ReadyTickle()
 			return;
 		}
 
-#ifdef NDEBUG
+#ifndef BETA10
 		if (!m_anim) {
 			return;
 		}
