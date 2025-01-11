@@ -174,6 +174,11 @@ void MxWavePresenter::StartingTickle()
 			goto done;
 		}
 
+		// [library:audio]
+		// There is an issue with certain spatialized sounds causing an audio glitch.
+		// To temporarily resolve this, we can disable the Doppler effect.
+		// More info: https://github.com/mackron/miniaudio/issues/885
+		ma_sound_set_doppler_factor(&m_sound, 0.0f);
 		ma_sound_set_looping(&m_sound, m_action->IsLooping() ? m_action->GetLoopCount() > 1 : MA_TRUE);
 
 		SetVolume(((MxDSSound*) m_action)->GetVolume());
