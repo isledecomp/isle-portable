@@ -39,6 +39,12 @@ To achieve our goal of platform independence, we need to replace any Windows-onl
 
 This project uses the [CMake](https://cmake.org/) build system, which allows for a high degree of versatility regarding compilers and development environments. Please refer to the [GitHub action](/.github/workflows//build.yml) for guidance.
 
+## Usage
+
+As it stands, this project is currently not ready to be played by end users. The nature of the porting process can leave the game unstable or even completely unplayable at times while the migration of game and engine code to modern APIs continues. For this reason, there is currently no support for running any executables produced by this project outside of a development environment, and no guarantees of playability or stability are provided.
+
+If you are a developer who feels like you can assist with porting efforts; especially if you have experience working with standard 3D libraries, please check <a href="#contributing">Contributing</a> and get in contact with our team on Matrix for help with setup.
+
 ## Contributing
 
 If you're interested in helping or contributing to this project, check out the [CONTRIBUTING](/CONTRIBUTING.md) page.
