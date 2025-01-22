@@ -6,13 +6,16 @@
 #include "mxstring.h"
 
 // SIZE 0x4c
-class LegoNamedPlane {
-public:
+struct LegoNamedPlane {
 	// FUNCTION: LEGO1 0x10033800
 	LegoNamedPlane() {}
 
 	// FUNCTION: LEGO1 0x10033a70
 	// LegoNamedPlane::~LegoNamedPlane
+
+	// Unclear whether getters/setters were used.
+	// Act1State::Serialize seems to access `m_name` directly (only matches like that)
+	// Act1State::PlaceActors though seems to require extensive use of getters to improve
 
 	const char* GetName() const { return m_name.GetData(); }
 	const Mx3DPointFloat& GetPosition() { return m_position; }
@@ -29,25 +32,24 @@ public:
 	void Reset() { m_name = ""; }
 
 	// FUNCTION: LEGO1 0x100344d0
-	MxResult Serialize(LegoFile* p_file)
+	MxResult Serialize(LegoStorage* p_storage)
 	{
-		if (p_file->IsWriteMode()) {
-			p_file->Write(MxString(m_name));
-			p_file->Write(m_position);
-			p_file->Write(m_direction);
-			p_file->Write(m_up);
+		if (p_storage->IsWriteMode()) {
+			p_storage->WriteMxString(m_name);
+			p_storage->WriteVector(m_position);
+			p_storage->WriteVector(m_direction);
+			p_storage->WriteVector(m_up);
 		}
-		else if (p_file->IsReadMode()) {
-			p_file->Read(m_name);
-			p_file->Read(m_position);
-			p_file->Read(m_direction);
-			p_file->Read(m_up);
+		else if (p_storage->IsReadMode()) {
+			p_storage->ReadMxString(m_name);
+			p_storage->ReadVector(m_position);
+			p_storage->ReadVector(m_direction);
+			p_storage->ReadVector(m_up);
 		}
 
 		return SUCCESS;
 	}
 
-	// private:
 	MxString m_name;            // 0x00
 	Mx3DPointFloat m_position;  // 0x10
 	Mx3DPointFloat m_direction; // 0x24

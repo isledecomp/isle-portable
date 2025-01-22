@@ -31,10 +31,8 @@
 #include "jukebox_actions.h"
 #include "jukeboxw_actions.h"
 #include "legoanimationmanager.h"
-#include "legobackgroundcolor.h"
 #include "legobuildingmanager.h"
 #include "legocharactermanager.h"
-#include "legofullscreenmovie.h"
 #include "legomain.h"
 #include "legonavcontroller.h"
 #include "legoplantmanager.h"
@@ -71,6 +69,8 @@ DECOMP_SIZE_ASSERT(LegoGameState::ScoreItem, 0x2c)
 DECOMP_SIZE_ASSERT(LegoGameState::History, 0x374)
 DECOMP_SIZE_ASSERT(LegoGameState, 0x430)
 DECOMP_SIZE_ASSERT(ColorStringStruct, 0x08)
+DECOMP_SIZE_ASSERT(LegoBackgroundColor, 0x30)
+DECOMP_SIZE_ASSERT(LegoFullScreenMovie, 0x24)
 
 // GLOBAL: LEGO1 0x100f3e40
 // STRING: LEGO1 0x100f3e3c
@@ -89,6 +89,8 @@ const char* g_historyGSI = "History.gsi";
 // TODO: make g_endOfVariables reference the actual end of the variable array.
 // GLOBAL: LEGO1 0x100f3e50
 // STRING: LEGO1 0x100f3e00
+// GLOBAL: BETA10 0x101ed5dc
+// STRING: BETA10 0x101ed768
 const char* g_endOfVariables = "END_OF_VARIABLES";
 
 // GLOBAL: LEGO1 0x100f3e58
@@ -120,6 +122,26 @@ ColorStringStruct g_colorSaveData[43] = {
 // NOTE: This offset = the end of the variables table, the last entry
 // in that table is a special entry, the string "END_OF_VARIABLES"
 extern const char* g_endOfVariables;
+
+// GLOBAL: LEGO1 0x100f3fb0
+// STRING: LEGO1 0x100f3a18
+const char* g_delimiter = " \t";
+
+// GLOBAL: LEGO1 0x100f3fb4
+// STRING: LEGO1 0x100f3bf0
+const char* g_set = "set";
+
+// GLOBAL: LEGO1 0x100f3fb8
+// STRING: LEGO1 0x100f0cdc
+const char* g_reset = "reset";
+
+// GLOBAL: LEGO1 0x100f3fbc
+// STRING: LEGO1 0x100f3be8
+const char* g_strEnable = "enable";
+
+// GLOBAL: LEGO1 0x100f3fc0
+// STRING: LEGO1 0x100f3bf4
+const char* g_strDisable = "disable";
 
 // FUNCTION: LEGO1 0x10039550
 LegoGameState::LegoGameState()
@@ -232,6 +254,7 @@ void LegoGameState::ResetROI()
 }
 
 // FUNCTION: LEGO1 0x10039980
+// FUNCTION: BETA10 0x100840e4
 MxResult LegoGameState::Save(MxULong p_slot)
 {
 	InfocenterState* infocenterState = (InfocenterState*) GameState()->GetState("InfocenterState");
@@ -255,10 +278,10 @@ MxResult LegoGameState::Save(MxULong p_slot)
 		goto done;
 	}
 
-	storage.Write(0x1000c);
-	storage.Write(m_unk0x24);
-	storage.Write((MxU16) m_currentAct);
-	storage.Write(m_actorId);
+	storage.WriteS32(0x1000c);
+	storage.WriteS16(m_unk0x24);
+	storage.WriteU16(m_currentAct);
+	storage.WriteU8(m_actorId);
 
 	for (i = 0; i < sizeOfArray(g_colorSaveData); i++) {
 		if (WriteVariable(&storage, variableTable, g_colorSaveData[i].m_targetName) == FAILURE) {
@@ -284,7 +307,7 @@ MxResult LegoGameState::Save(MxULong p_slot)
 		}
 	}
 
-	storage.Write(count);
+	storage.WriteS16(count);
 
 	for (j = 0; j < m_stateCount; j++) {
 		if (m_stateArray[j]->IsSerializable()) {
@@ -293,7 +316,7 @@ MxResult LegoGameState::Save(MxULong p_slot)
 	}
 
 	area = m_unk0x42c;
-	storage.Write((MxU16) area);
+	storage.WriteU16(area);
 	SerializeScoreHistory(2);
 	m_isDirty = FALSE;
 
@@ -344,18 +367,18 @@ MxResult LegoGameState::Load(MxULong p_slot)
 	MxS16 count, actArea;
 	const char* lightPosition;
 
-	storage.Read(version);
+	storage.ReadS32(version);
 
 	if (version != 0x1000c) {
 		OmniError("Saved game version mismatch", 0);
 		goto done;
 	}
 
-	storage.Read(m_unk0x24);
-	storage.Read(actArea);
+	storage.ReadS16(m_unk0x24);
+	storage.ReadS16(actArea);
 
 	SetCurrentAct((Act) actArea);
-	storage.Read(m_actorId);
+	storage.ReadU8(m_actorId);
 	if (m_actorId) {
 		SetActor(m_actorId);
 	}
@@ -388,11 +411,11 @@ MxResult LegoGameState::Load(MxULong p_slot)
 	}
 
 	char stateName[80];
-	storage.Read(count);
+	storage.ReadS16(count);
 
 	if (count) {
 		for (MxS16 i = 0; i < count; i++) {
-			storage.Read(stateName);
+			storage.ReadString(stateName);
 
 			LegoState* state = GetState(stateName);
 			if (!state) {
@@ -407,7 +430,7 @@ MxResult LegoGameState::Load(MxULong p_slot)
 		}
 	}
 
-	storage.Read(actArea);
+	storage.ReadS16(actArea);
 
 	if (m_currentAct == e_act1) {
 		m_unk0x42c = e_undefined;
@@ -444,6 +467,7 @@ void LegoGameState::SetSavePath(char* p_savePath)
 }
 
 // FUNCTION: LEGO1 0x10039f70
+// FUNCTION: BETA10 0x1008483b
 MxResult LegoGameState::WriteVariable(LegoStorage* p_storage, MxVariableTable* p_from, const char* p_variableName)
 {
 	MxResult result = FAILURE;
@@ -451,20 +475,28 @@ MxResult LegoGameState::WriteVariable(LegoStorage* p_storage, MxVariableTable* p
 
 	if (variableValue) {
 		MxU8 length = strlen(p_variableName);
-		if (p_storage->Write(&length, sizeof(length)) == SUCCESS) {
-			if (p_storage->Write(p_variableName, length) == SUCCESS) {
-				length = strlen(variableValue);
-				if (p_storage->Write(&length, sizeof(length)) == SUCCESS) {
-					result = p_storage->Write(variableValue, length);
-				}
-			}
+		if (p_storage->Write(&length, sizeof(length)) != SUCCESS) {
+			goto done;
 		}
+
+		if (p_storage->Write(p_variableName, length) != SUCCESS) {
+			goto done;
+		}
+
+		length = strlen(variableValue);
+		if (p_storage->Write(&length, sizeof(length)) != SUCCESS) {
+			goto done;
+		}
+
+		result = p_storage->Write(variableValue, length);
 	}
 
+done:
 	return result;
 }
 
 // FUNCTION: LEGO1 0x1003a020
+// FUNCTION: BETA10 0x10084928
 MxResult LegoGameState::WriteEndOfVariables(LegoStorage* p_storage)
 {
 	MxU8 len = strlen(g_endOfVariables);
@@ -477,37 +509,52 @@ MxResult LegoGameState::WriteEndOfVariables(LegoStorage* p_storage)
 }
 
 // FUNCTION: LEGO1 0x1003a080
+// FUNCTION: BETA10 0x1008498b
 MxS32 LegoGameState::ReadVariable(LegoStorage* p_storage, MxVariableTable* p_to)
 {
 	MxS32 result = 1;
-	MxU8 length;
+	MxU8 len;
 
-	if (p_storage->Read(&length, sizeof(length)) == SUCCESS) {
-		char nameBuffer[256];
-		if (p_storage->Read(nameBuffer, length) == SUCCESS) {
-			nameBuffer[length] = '\0';
-			if (strcmp(nameBuffer, g_endOfVariables) == 0) {
-				// 2 -> "This was the last entry, done reading."
-				result = 2;
-			}
-			else {
-				if (p_storage->Read(&length, sizeof(length)) == SUCCESS) {
-					char valueBuffer[256];
-					if (p_storage->Read(valueBuffer, length) == SUCCESS) {
-						valueBuffer[length] = '\0';
-						p_to->SetVariable(nameBuffer, valueBuffer);
-						result = SUCCESS;
-					}
-				}
-			}
-		}
+	if (p_storage->Read(&len, sizeof(len)) != SUCCESS) {
+		goto done;
 	}
 
+	char varName[256];
+	assert(len < sizeof(varName));
+
+	if (p_storage->Read(varName, len) != SUCCESS) {
+		goto done;
+	}
+
+	varName[len] = '\0';
+	if (strcmp(varName, g_endOfVariables) == 0) {
+		// 2 -> "This was the last entry, done reading."
+		result = 2;
+		goto done;
+	}
+
+	if (p_storage->Read(&len, sizeof(len)) != SUCCESS) {
+		goto done;
+	}
+
+	char value[256];
+	assert(len < sizeof(value));
+
+	if (p_storage->Read(value, len) != SUCCESS) {
+		goto done;
+	}
+
+	value[len] = '\0';
+	p_to->SetVariable(varName, value);
+	result = SUCCESS;
+
+done:
 	return result;
 }
 
 // FUNCTION: LEGO1 0x1003a170
-void LegoGameState::GetFileSavePath(MxString* p_outPath, MxU8 p_slotn)
+// FUNCTION: BETA10 0x10084b45
+void LegoGameState::GetFileSavePath(MxString* p_outPath, MxS16 p_slotn)
 {
 	char baseForSlot[2] = "0";
 	char path[1024] = "";
@@ -530,22 +577,22 @@ void LegoGameState::GetFileSavePath(MxString* p_outPath, MxU8 p_slotn)
 // FUNCTION: LEGO1 0x1003a2e0
 void LegoGameState::SerializePlayersInfo(MxS16 p_flags)
 {
-	LegoFile fileStorage;
+	LegoFile storage;
 	MxString playersGSI = MxString(m_savePath);
 
 	playersGSI += "\\";
 	playersGSI += g_playersGSI;
 
-	if (fileStorage.Open(playersGSI.GetData(), p_flags) == SUCCESS) {
-		if (fileStorage.IsReadMode()) {
-			fileStorage.Read(m_playerCount);
+	if (storage.Open(playersGSI.GetData(), p_flags) == SUCCESS) {
+		if (storage.IsReadMode()) {
+			storage.ReadS16(m_playerCount);
 		}
-		else if (fileStorage.IsWriteMode()) {
-			fileStorage.Write(m_playerCount);
+		else if (storage.IsWriteMode()) {
+			storage.WriteS16(m_playerCount);
 		}
 
 		for (MxS16 i = 0; i < m_playerCount; i++) {
-			m_players[i].Serialize(&fileStorage);
+			m_players[i].Serialize(&storage);
 		}
 	}
 }
@@ -579,6 +626,7 @@ MxResult LegoGameState::AddPlayer(Username& p_player)
 }
 
 // FUNCTION: LEGO1 0x1003a540
+// FUNCTION: BETA10 0x10084fc4
 void LegoGameState::SwitchPlayer(MxS16 p_playerId)
 {
 	if (p_playerId > 0) {
@@ -1066,6 +1114,7 @@ LegoState* LegoGameState::CreateState(const char* p_stateName)
 }
 
 // FUNCTION: LEGO1 0x1003bc30
+// FUNCTION: BETA10 0x1008636e
 void LegoGameState::RegisterState(LegoState* p_state)
 {
 	MxS32 targetIndex;
@@ -1146,6 +1195,174 @@ void LegoGameState::Init()
 	m_unk0x42c = e_undefined;
 }
 
+// FUNCTION: BETA10 0x10086510
+LegoBackgroundColor::LegoBackgroundColor()
+{
+	m_h = 0.0f;
+	m_s = 0.0f;
+	m_v = 0.0f;
+}
+
+// FUNCTION: LEGO1 0x1003bfb0
+// FUNCTION: BETA10 0x1008659d
+LegoBackgroundColor::LegoBackgroundColor(const char* p_key, const char* p_value)
+{
+	m_key = p_key;
+	m_key.ToUpperCase();
+	SetValue(p_value);
+}
+
+// FUNCTION: LEGO1 0x1003c070
+// FUNCTION: BETA10 0x10086634
+void LegoBackgroundColor::SetValue(const char* p_colorString)
+{
+	m_value = p_colorString;
+	m_value.ToLowerCase();
+
+	LegoVideoManager* videomanager = VideoManager();
+	if (!videomanager || !p_colorString) {
+		return;
+	}
+
+	float convertedR, convertedG, convertedB;
+	char* colorStringCopy = strcpy(new char[strlen(p_colorString) + 1], p_colorString);
+	char* colorStringSplit = strtok(colorStringCopy, g_delimiter);
+
+	if (!strcmp(colorStringSplit, g_set)) {
+		colorStringSplit = strtok(0, g_delimiter);
+		if (colorStringSplit) {
+			m_h = (float) (atoi(colorStringSplit) * 0.01);
+		}
+		colorStringSplit = strtok(0, g_delimiter);
+		if (colorStringSplit) {
+			m_s = (float) (atoi(colorStringSplit) * 0.01);
+		}
+		colorStringSplit = strtok(0, g_delimiter);
+		if (colorStringSplit) {
+			m_v = (float) (atoi(colorStringSplit) * 0.01);
+		}
+
+		ConvertHSVToRGB(m_h, m_s, m_v, &convertedR, &convertedG, &convertedB);
+		videomanager->SetSkyColor(convertedR, convertedG, convertedB);
+	}
+	else if (!strcmp(colorStringSplit, g_reset)) {
+		ConvertHSVToRGB(m_h, m_s, m_v, &convertedR, &convertedG, &convertedB);
+		videomanager->SetSkyColor(convertedR, convertedG, convertedB);
+	}
+
+	delete[] colorStringCopy;
+}
+
+// FUNCTION: LEGO1 0x1003c230
+// FUNCTION: BETA10 0x100867f9
+void LegoBackgroundColor::ToggleDayNight(MxBool p_sun)
+{
+	char buffer[30];
+
+	if (p_sun) {
+		m_s += 0.1;
+		if (m_s > 0.9) {
+			m_s = 1.0;
+		}
+	}
+	else {
+		m_s -= 0.1;
+		if (m_s < 0.1) {
+			m_s = 0.1;
+		}
+	}
+
+	sprintf(buffer, "set %d %d %d", (MxU32) (m_h * 100.0f), (MxU32) (m_s * 100.0f), (MxU32) (m_v * 100.0f));
+	m_value = buffer;
+
+	float convertedR, convertedG, convertedB;
+	ConvertHSVToRGB(m_h, m_s, m_v, &convertedR, &convertedG, &convertedB);
+	VideoManager()->SetSkyColor(convertedR, convertedG, convertedB);
+	SetLightColor(convertedR, convertedG, convertedB);
+}
+
+// FUNCTION: LEGO1 0x1003c330
+// FUNCTION: BETA10 0x100868de
+void LegoBackgroundColor::ToggleSkyColor()
+{
+	char buffer[30];
+
+	m_h += 0.05;
+	if (m_h > 1.0) {
+		m_h -= 1.0;
+	}
+
+	sprintf(buffer, "set %d %d %d", (MxU32) (m_h * 100.0f), (MxU32) (m_s * 100.0f), (MxU32) (m_v * 100.0f));
+	m_value = buffer;
+
+	float convertedR, convertedG, convertedB;
+	ConvertHSVToRGB(m_h, m_s, m_v, &convertedR, &convertedG, &convertedB);
+	VideoManager()->SetSkyColor(convertedR, convertedG, convertedB);
+	SetLightColor(convertedR, convertedG, convertedB);
+}
+
+// FUNCTION: LEGO1 0x1003c400
+// FUNCTION: BETA10 0x10086984
+void LegoBackgroundColor::SetLightColor(float p_r, float p_g, float p_b)
+{
+	if (!VideoManager()->GetVideoParam().Flags().GetF2bit0()) {
+		// TODO: Computed constants based on what?
+		p_r *= 1. / 0.23;
+		p_g *= 1. / 0.63;
+		p_b *= 1. / 0.85;
+
+		if (p_r > 1.0) {
+			p_r = 1.0;
+		}
+
+		if (p_g > 1.0) {
+			p_g = 1.0;
+		}
+
+		if (p_b > 1.0) {
+			p_b = 1.0;
+		}
+
+		VideoManager()->Get3DManager()->GetLego3DView()->SetLightColor(FALSE, p_r, p_g, p_b);
+		VideoManager()->Get3DManager()->GetLego3DView()->SetLightColor(TRUE, p_r, p_g, p_b);
+	}
+}
+
+// FUNCTION: LEGO1 0x1003c4b0
+void LegoBackgroundColor::SetLightColor()
+{
+	float convertedR, convertedG, convertedB;
+	ConvertHSVToRGB(m_h, m_s, m_v, &convertedR, &convertedG, &convertedB);
+	SetLightColor(convertedR, convertedG, convertedB);
+}
+
+// FUNCTION: LEGO1 0x1003c500
+// FUNCTION: BETA10 0x10086af6
+LegoFullScreenMovie::LegoFullScreenMovie(const char* p_key, const char* p_value)
+{
+	m_key = p_key;
+	m_key.ToUpperCase();
+	SetValue(p_value);
+}
+
+// FUNCTION: LEGO1 0x1003c5c0
+// FUNCTION: BETA10 0x10086b8d
+void LegoFullScreenMovie::SetValue(const char* p_option)
+{
+	m_value = p_option;
+	m_value.ToLowerCase();
+
+	LegoVideoManager* videomanager = VideoManager();
+	if (videomanager) {
+		if (!strcmp(m_value.GetData(), g_strEnable)) {
+			videomanager->EnableFullScreenMovie(TRUE);
+		}
+		else if (!strcmp(m_value.GetData(), g_strDisable)) {
+			videomanager->EnableFullScreenMovie(FALSE);
+		}
+	}
+}
+
 // FUNCTION: LEGO1 0x1003c670
 LegoGameState::Username::Username()
 {
@@ -1154,16 +1371,16 @@ LegoGameState::Username::Username()
 
 // FUNCTION: LEGO1 0x1003c690
 // FUNCTION: BETA10 0x10086c57
-MxResult LegoGameState::Username::Serialize(LegoFile* p_file)
+MxResult LegoGameState::Username::Serialize(LegoStorage* p_storage)
 {
-	if (p_file->IsReadMode()) {
+	if (p_storage->IsReadMode()) {
 		for (MxS16 i = 0; i < (MxS16) sizeOfArray(m_letters); i++) {
-			p_file->Read(m_letters[i]);
+			p_storage->ReadS16(m_letters[i]);
 		}
 	}
-	else if (p_file->IsWriteMode()) {
+	else if (p_storage->IsWriteMode()) {
 		for (MxS16 i = 0; i < (MxS16) sizeOfArray(m_letters); i++) {
-			p_file->Write(m_letters[i]);
+			p_storage->WriteS16(m_letters[i]);
 		}
 	}
 
@@ -1180,31 +1397,31 @@ LegoGameState::Username& LegoGameState::Username::operator=(const Username& p_ot
 
 // FUNCTION: LEGO1 0x1003c740
 // FUNCTION: BETA10 0x10086d39
-MxResult LegoGameState::ScoreItem::Serialize(LegoFile* p_file)
+MxResult LegoGameState::ScoreItem::Serialize(LegoStorage* p_storage)
 {
-	if (p_file->IsReadMode()) {
-		p_file->Read(m_totalScore);
+	if (p_storage->IsReadMode()) {
+		p_storage->ReadS16(m_totalScore);
 
 		for (MxS32 i = 0; i < 5; i++) {
 			for (MxS32 j = 0; j < 5; j++) {
-				p_file->Read(m_scores[i][j]);
+				p_storage->ReadU8(m_scores[i][j]);
 			}
 		}
 
-		m_name.Serialize(p_file);
-		p_file->Read(m_unk0x2a);
+		m_name.Serialize(p_storage);
+		p_storage->ReadS16(m_unk0x2a);
 	}
-	else if (p_file->IsWriteMode()) {
-		p_file->Write(m_totalScore);
+	else if (p_storage->IsWriteMode()) {
+		p_storage->WriteS16(m_totalScore);
 
 		for (MxS32 i = 0; i < 5; i++) {
 			for (MxS32 j = 0; j < 5; j++) {
-				p_file->Write(m_scores[i][j]);
+				p_storage->WriteU8(m_scores[i][j]);
 			}
 		}
 
-		m_name.Serialize(p_file);
-		p_file->Write(m_unk0x2a);
+		m_name.Serialize(p_storage);
+		p_storage->WriteS16(m_unk0x2a);
 	}
 
 	return SUCCESS;
@@ -1277,7 +1494,7 @@ void LegoGameState::History::WriteScoreHistory()
 
 		MxU8 tmpScores[5][5];
 		Username tmpPlayer;
-		undefined2 tmpUnk0x2a;
+		MxS16 tmpUnk0x2a;
 
 		// TODO: Match bubble sort loops
 		for (MxS32 i = m_count - 1; i > 0; i--) {
@@ -1304,7 +1521,7 @@ void LegoGameState::History::WriteScoreHistory()
 // FUNCTION: BETA10 0x1008732a
 LegoGameState::ScoreItem* LegoGameState::History::FUN_1003cc90(
 	LegoGameState::Username* p_player,
-	MxU16 p_unk0x24,
+	MxS16 p_unk0x24,
 	MxS32& p_unk0x2c
 )
 {
@@ -1326,25 +1543,25 @@ LegoGameState::ScoreItem* LegoGameState::History::FUN_1003cc90(
 
 // FUNCTION: LEGO1 0x1003ccf0
 // FUNCTION: BETA10 0x100873e7
-MxResult LegoGameState::History::Serialize(LegoFile* p_file)
+MxResult LegoGameState::History::Serialize(LegoStorage* p_storage)
 {
-	if (p_file->IsReadMode()) {
-		p_file->Read(m_unk0x372);
-		p_file->Read(m_count);
+	if (p_storage->IsReadMode()) {
+		p_storage->ReadS16(m_unk0x372);
+		p_storage->ReadS16(m_count);
 
 		for (MxS16 i = 0; i < m_count; i++) {
 			MxS16 j;
-			p_file->Read(j);
-			m_scores[i].Serialize(p_file);
+			p_storage->ReadS16(j);
+			m_scores[i].Serialize(p_storage);
 		}
 	}
-	else if (p_file->IsWriteMode()) {
-		p_file->Write(m_unk0x372);
-		p_file->Write(m_count);
+	else if (p_storage->IsWriteMode()) {
+		p_storage->WriteS16(m_unk0x372);
+		p_storage->WriteS16(m_count);
 
 		for (MxS16 i = 0; i < m_count; i++) {
-			p_file->Write(i);
-			m_scores[i].Serialize(p_file);
+			p_storage->WriteS16(i);
+			m_scores[i].Serialize(p_storage);
 		}
 	}
 
@@ -1354,7 +1571,7 @@ MxResult LegoGameState::History::Serialize(LegoFile* p_file)
 // FUNCTION: LEGO1 0x1003cdd0
 void LegoGameState::SerializeScoreHistory(MxS16 p_flags)
 {
-	LegoFile stream;
+	LegoFile storage;
 	MxString savePath(m_savePath);
 	savePath += "\\";
 	savePath += g_historyGSI;
@@ -1363,8 +1580,8 @@ void LegoGameState::SerializeScoreHistory(MxS16 p_flags)
 		m_history.WriteScoreHistory();
 	}
 
-	if (stream.Open(savePath.GetData(), p_flags) == SUCCESS) {
-		m_history.Serialize(&stream);
+	if (storage.Open(savePath.GetData(), p_flags) == SUCCESS) {
+		m_history.Serialize(&storage);
 	}
 }
 

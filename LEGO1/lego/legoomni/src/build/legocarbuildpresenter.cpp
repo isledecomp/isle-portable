@@ -41,12 +41,6 @@ LegoCarBuildAnimPresenter::LegoCarBuildAnimPresenter()
 	m_mainSourceId = NULL;
 }
 
-// FUNCTION: LEGO1 0x10078500
-void LegoCarBuildAnimPresenter::RepeatingTickle()
-{
-	// empty
-}
-
 // FUNCTION: LEGO1 0x10078680
 // FUNCTION: BETA10 0x1007091e
 LegoCarBuildAnimPresenter::~LegoCarBuildAnimPresenter()
@@ -262,9 +256,9 @@ void LegoCarBuildAnimPresenter::StreamingTickle()
 
 	Mx3DPointFloat dirVec;
 
-	Vector3 cameraPosition(camera->GetWorldPosition());
-	Vector3 upVec(camera->GetWorldUp());
-	Vector3 targetPosition(targetROI->GetWorldPosition());
+	const Vector3 cameraPosition(camera->GetWorldPosition());
+	const Vector3 upVec(camera->GetWorldUp());
+	const Vector3 targetPosition(targetROI->GetWorldPosition());
 
 	MxMatrix localTransform;
 
@@ -294,6 +288,32 @@ void LegoCarBuildAnimPresenter::EndAction()
 		MxVideoPresenter::EndAction();
 		m_unk0xbc = 0;
 	}
+}
+
+// FUNCTION: LEGO1 0x10078e30
+// FUNCTION: BETA10 0x10071387
+MxResult LegoCarBuildAnimPresenter::Serialize(LegoStorage* p_storage)
+{
+	if (p_storage->IsReadMode()) {
+		p_storage->ReadS16(m_placedPartCount);
+		p_storage->ReadFloat(m_unk0x130);
+		for (MxS16 i = 0; i < m_numberOfParts; i++) {
+			p_storage->ReadString(m_parts[i].m_name);
+			p_storage->ReadString(m_parts[i].m_wiredName);
+			p_storage->ReadS16(m_parts[i].m_objectId);
+		}
+	}
+	else if (p_storage->IsWriteMode()) {
+		p_storage->WriteS16(m_placedPartCount);
+		p_storage->WriteFloat(m_unk0x130);
+		for (MxS16 i = 0; i < m_numberOfParts; i++) {
+			p_storage->WriteString(m_parts[i].m_name);
+			p_storage->WriteString(m_parts[i].m_wiredName);
+			p_storage->WriteS16(m_parts[i].m_objectId);
+		}
+	}
+
+	return SUCCESS;
 }
 
 // FUNCTION: LEGO1 0x10079050

@@ -5,15 +5,13 @@
 #include "decomp.h"
 #include "lego1_export.h"
 #include "mxtypes.h"
+#include "mxvariable.h"
 
 #include <string.h>
 
-class LegoBackgroundColor;
 class LegoFile;
-class LegoFullScreenMovie;
 class LegoState;
 class LegoStorage;
-class MxVariable;
 class MxVariableTable;
 class MxString;
 
@@ -23,6 +21,35 @@ extern const char* g_actorNames[7];
 struct ColorStringStruct {
 	const char* m_targetName; // 0x00
 	const char* m_colorName;  // 0x04
+};
+
+// VTABLE: LEGO1 0x100d74a8
+// SIZE 0x30
+class LegoBackgroundColor : public MxVariable {
+public:
+	LegoBackgroundColor();
+	LegoBackgroundColor(const char* p_key, const char* p_value);
+
+	void SetValue(const char* p_colorString) override; // vtable+0x04
+
+	void SetLightColor(float p_r, float p_g, float p_b);
+	void SetLightColor();
+	void ToggleDayNight(MxBool p_sun);
+	void ToggleSkyColor();
+
+private:
+	float m_h; // 0x24
+	float m_s; // 0x28
+	float m_v; // 0x2c
+};
+
+// VTABLE: LEGO1 0x100d74b8
+// SIZE 0x24
+class LegoFullScreenMovie : public MxVariable {
+public:
+	LegoFullScreenMovie(const char* p_key, const char* p_value);
+
+	void SetValue(const char* p_option) override; // vtable+0x04
 };
 
 // SIZE 0x430
@@ -109,10 +136,9 @@ public:
 	// SIZE 0x0e
 	struct Username {
 		Username();
-		Username(Username& p_other) { Set(p_other); }
 		void Set(Username& p_other) { memcpy(m_letters, p_other.m_letters, sizeof(m_letters)); }
 
-		MxResult Serialize(LegoFile* p_file);
+		MxResult Serialize(LegoStorage* p_storage);
 		Username& operator=(const Username& p_other);
 
 		MxS16 m_letters[7]; // 0x00
@@ -120,7 +146,7 @@ public:
 
 	// SIZE 0x2c
 	struct ScoreItem {
-		MxResult Serialize(LegoFile* p_file);
+		MxResult Serialize(LegoStorage* p_storage);
 
 		MxS16 m_totalScore;  // 0x00
 		MxU8 m_scores[5][5]; // 0x02
@@ -132,8 +158,8 @@ public:
 	struct History {
 		History();
 		void WriteScoreHistory();
-		MxResult Serialize(LegoFile* p_file);
-		ScoreItem* FUN_1003cc90(Username* p_player, MxU16 p_unk0x24, MxS32& p_unk0x2c);
+		MxResult Serialize(LegoStorage* p_storage);
+		ScoreItem* FUN_1003cc90(Username* p_player, MxS16 p_unk0x24, MxS32& p_unk0x2c);
 
 		// FUNCTION: BETA10 0x1002c2b0
 		MxS16 GetCount() { return m_count; }
@@ -167,7 +193,7 @@ public:
 	LegoState* GetState(const char* p_stateName);
 	LegoState* CreateState(const char* p_stateName);
 
-	void GetFileSavePath(MxString* p_outPath, MxU8 p_slotn);
+	void GetFileSavePath(MxString* p_outPath, MxS16 p_slotn);
 	void StopArea(Area p_area);
 	void SwitchArea(Area p_area);
 	void Init();
