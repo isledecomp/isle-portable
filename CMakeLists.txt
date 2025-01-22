@@ -341,10 +341,8 @@ add_lego1_static_library(lego1_impl
   LEGO1/lego/legoomni/src/common/legoactors.cpp
   LEGO1/lego/legoomni/src/common/legoanimationmanager.cpp
   LEGO1/lego/legoomni/src/common/legoanimmmpresenter.cpp
-  LEGO1/lego/legoomni/src/common/legobackgroundcolor.cpp
   LEGO1/lego/legoomni/src/common/legobuildingmanager.cpp
   LEGO1/lego/legoomni/src/common/legocharactermanager.cpp
-  LEGO1/lego/legoomni/src/common/legofullscreenmovie.cpp
   LEGO1/lego/legoomni/src/common/legogamestate.cpp
   LEGO1/lego/legoomni/src/common/legoobjectfactory.cpp
   LEGO1/lego/legoomni/src/common/legophoneme.cpp
@@ -367,7 +365,6 @@ add_lego1_static_library(lego1_impl
   LEGO1/lego/legoomni/src/entity/legocameracontroller.cpp
   LEGO1/lego/legoomni/src/entity/legoentity.cpp
   LEGO1/lego/legoomni/src/entity/legoentitypresenter.cpp
-  LEGO1/lego/legoomni/src/entity/legojetskiraceactor.cpp
   LEGO1/lego/legoomni/src/entity/legolocations.cpp
   LEGO1/lego/legoomni/src/entity/legonavcontroller.cpp
   LEGO1/lego/legoomni/src/entity/legopovcontroller.cpp

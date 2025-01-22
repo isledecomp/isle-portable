@@ -49,11 +49,6 @@ Ambulance::Ambulance()
 	m_fuel = 1.0;
 }
 
-// FUNCTION: LEGO1 0x10035f90
-void Ambulance::Destroy(MxBool p_fromDestructor)
-{
-}
-
 // FUNCTION: LEGO1 0x10036150
 // FUNCTION: BETA10 0x100228fe
 Ambulance::~Ambulance()
@@ -646,38 +641,4 @@ AmbulanceMissionState::AmbulanceMissionState()
 	m_paHighScore = 0;
 	m_niHighScore = 0;
 	m_laHighScore = 0;
-}
-
-// FUNCTION: LEGO1 0x10037440
-// FUNCTION: BETA10 0x10024480
-MxResult AmbulanceMissionState::Serialize(LegoFile* p_file)
-{
-	LegoState::Serialize(p_file);
-
-	if (p_file->IsReadMode()) {
-		p_file->Read(m_peScore);
-		p_file->Read(m_maScore);
-		p_file->Read(m_paScore);
-		p_file->Read(m_niScore);
-		p_file->Read(m_laScore);
-		p_file->Read(m_peHighScore);
-		p_file->Read(m_maHighScore);
-		p_file->Read(m_paHighScore);
-		p_file->Read(m_niHighScore);
-		p_file->Read(m_laHighScore);
-	}
-	else if (p_file->IsWriteMode()) {
-		p_file->Write(m_peScore);
-		p_file->Write(m_maScore);
-		p_file->Write(m_paScore);
-		p_file->Write(m_niScore);
-		p_file->Write(m_laScore);
-		p_file->Write(m_peHighScore);
-		p_file->Write(m_maHighScore);
-		p_file->Write(m_paHighScore);
-		p_file->Write(m_niHighScore);
-		p_file->Write(m_laHighScore);
-	}
-
-	return SUCCESS;
 }
