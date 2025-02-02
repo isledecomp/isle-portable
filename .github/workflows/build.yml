@@ -80,7 +80,7 @@ jobs:
 
       - name: Upload Build Artifacts (MSVC (32-bit))
         if: ${{ matrix.toolchain.name == 'MSVC (32-bit, Release)' || matrix.toolchain.name == 'MSVC (32-bit, Debug)' }}
-        uses: actions/upload-artifact@main
+        uses: actions/upload-artifact@v4
         with:
           name: msvc32-artifacts-${{ matrix.toolchain.name }}
           path: |
@@ -107,7 +107,7 @@ jobs:
       with:
         repository: 'probonopd/uploadtool'
 
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
         name: msvc32-artifacts
         path: build
