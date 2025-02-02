@@ -160,27 +160,30 @@ MxLong DuneBuggy::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 }
 
 // FUNCTION: LEGO1 0x10068290
+// FUNCTION: BETA10 0x1002765d
 MxS32 DuneBuggy::GetColorOffset(const char* p_variable)
 {
 	MxS32 offset = 1;
-	const char* colorName = VariableTable()->GetVariable(p_variable);
+	const char* color = VariableTable()->GetVariable(p_variable);
+	assert(color);
 
-	if (SDL_strcasecmp(colorName, "lego green")) {
-		if (!SDL_strcasecmp(colorName, "lego red")) {
-			offset = 2;
-		}
-		else if (!SDL_strcasecmp(colorName, "lego yellow")) {
-			offset = 3;
-		}
-		else if (!SDL_strcasecmp(colorName, "lego black")) {
-			offset = 4;
-		}
-		else if (!SDL_strcasecmp(colorName, "lego blue")) {
-			offset = 5;
-		}
-		else if (!SDL_strcasecmp(colorName, "lego white")) {
-			offset = 6;
-		}
+	if (!SDL_strcasecmp(color, "lego green")) {
+		offset = 1;
+	}
+	else if (!SDL_strcasecmp(color, "lego red")) {
+		offset = 2;
+	}
+	else if (!SDL_strcasecmp(color, "lego yellow")) {
+		offset = 3;
+	}
+	else if (!SDL_strcasecmp(color, "lego black")) {
+		offset = 4;
+	}
+	else if (!SDL_strcasecmp(color, "lego blue")) {
+		offset = 5;
+	}
+	else if (!SDL_strcasecmp(color, "lego white")) {
+		offset = 6;
 	}
 
 	return offset;
