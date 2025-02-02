@@ -80,15 +80,26 @@ jobs:
 
       - name: Upload Build Artifacts (MSVC (32-bit))
         if: ${{ matrix.toolchain.name == 'MSVC (32-bit, Release)' || matrix.toolchain.name == 'MSVC (32-bit, Debug)' }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@main
         with:
-          name: msvc32-artifacts
+          name: msvc32-artifacts-${{ matrix.toolchain.name }}
           path: |
             build/isle-portable (${{ matrix.toolchain.name }}).zip
 
+  merge-artifacts:
+    name: 'Merge artifacts'
+    runs-on: ubuntu-latest
+    needs: build-current-toolchain
+    steps:
+      - name: Merge Artifacts
+        uses: actions/upload-artifact/merge@v4
+        with:
+          name: msvc32-artifacts
+          pattern: msvc32-artifacts-*
+
   upload:
     name: 'Upload artifacts'
-    needs: build-current-toolchain
+    needs: merge-artifacts
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.repository == 'isledecomp/isle-portable' }}
     steps:
