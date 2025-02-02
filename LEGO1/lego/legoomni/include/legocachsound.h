@@ -8,6 +8,7 @@
 #include "mxwavepresenter.h"
 
 // VTABLE: LEGO1 0x100d4718
+// VTABLE: BETA10 0x101bb6f0
 // SIZE 0x88
 class LegoCacheSound : public MxCore {
 public:
@@ -50,12 +51,13 @@ public:
 	void MuteStop(MxBool p_mute);
 
 	// SYNTHETIC: LEGO1 0x10006610
+	// SYNTHETIC: BETA10 0x100675b0
 	// LegoCacheSound::`scalar deleting destructor'
 
 private:
 	void Init();
 	void CopyData(MxU8* p_data, MxU32 p_dataSize);
-	MxString FUN_10006d80(const MxString& p_str);
+	MxString GetBaseFilename(MxString& p_path);
 
 	// [library:audio] WAVE_FORMAT_PCM (audio in .SI files only used this format)
 	static const MxU32 g_supportedFormatTag = 1;

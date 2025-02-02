@@ -373,7 +373,6 @@ add_lego1_static_library(lego1_impl
   LEGO1/lego/legoomni/src/input/legoinputmanager.cpp
   LEGO1/lego/legoomni/src/main/legomain.cpp
   LEGO1/lego/legoomni/src/main/scripts.cpp
-  LEGO1/lego/legoomni/src/notify/legoeventnotificationparam.cpp
   LEGO1/lego/legoomni/src/paths/legoanimactor.cpp
   LEGO1/lego/legoomni/src/paths/legoextraactor.cpp
   LEGO1/lego/legoomni/src/paths/legopathactor.cpp
