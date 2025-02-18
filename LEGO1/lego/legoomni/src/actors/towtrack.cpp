@@ -484,8 +484,8 @@ MxLong TowTrack::HandleControl(LegoControlManagerNotificationParam& p_param)
 {
 	MxLong result = 0;
 
-	if (p_param.GetUnknown0x28() == 1) {
-		switch (p_param.GetClickedObjectId()) {
+	if (p_param.m_unk0x28 == 1) {
+		switch (p_param.m_clickedObjectId) {
 		case IsleScript::c_TowTrackArms_Ctl:
 			Exit();
 			GameState()->m_currentArea = LegoGameState::e_unk66;
@@ -500,7 +500,7 @@ MxLong TowTrack::HandleControl(LegoControlManagerNotificationParam& p_param)
 			break;
 		case IsleScript::c_TowHorn_Ctl:
 			MxSoundPresenter* presenter = (MxSoundPresenter*) CurrentWorld()->Find("MxSoundPresenter", "TowHorn_Sound");
-			presenter->Enable(p_param.GetUnknown0x28());
+			presenter->Enable(p_param.m_unk0x28);
 			break;
 		}
 	}
