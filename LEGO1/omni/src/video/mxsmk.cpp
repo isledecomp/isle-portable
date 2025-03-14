@@ -39,7 +39,7 @@ MxResult MxSmk::LoadFrame(
 	MxU8* p_chunkData,
 	MxBool& p_paletteChanged,
 	MxU32 p_currentFrame,
-	MxRectList* p_list
+	MxRect32List* p_list
 )
 {
 	p_bitmapInfo->m_bmiHeader.biHeight = -MxBitmap::HeightAbs(p_bitmapInfo->m_bmiHeader.biHeight);

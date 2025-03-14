@@ -9,6 +9,7 @@
 #include <miniaudio.h>
 
 // VTABLE: LEGO1 0x100dc128
+// VTABLE: BETA10 0x101c1ce8
 // SIZE 0x3c
 class MxSoundManager : public MxAudioManager {
 public:

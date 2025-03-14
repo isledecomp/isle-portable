@@ -6,8 +6,8 @@
 #include "mxdsfile.h"
 #include "mxdsmultiaction.h"
 #include "mxdsobject.h"
+#include "mxgeometry.h"
 #include "mxpresenterlist.h"
-#include "mxrect32.h"
 
 #include <SDL3/SDL_stdinc.h>
 #include <assert.h>
@@ -16,6 +16,7 @@
 void (*g_omniUserMessage)(const char*, MxS32) = NULL;
 
 // FUNCTION: LEGO1 0x100b6e10
+// FUNCTION: BETA10 0x10136970
 MxBool GetRectIntersection(
 	MxS32 p_rect1Width,
 	MxS32 p_rect1Height,
@@ -36,22 +37,22 @@ MxBool GetRectIntersection(
 	MxRect32 rect2(MxPoint32(0, 0), MxSize32(p_rect2Width, p_rect2Height));
 
 	MxRect32 rect(0, 0, *p_width, *p_height);
-	rect.AddPoint(rect1Origin);
+	rect += rect1Origin;
 
-	if (!rect.IntersectsWith(rect1)) {
+	if (!rect.Intersects(rect1)) {
 		return FALSE;
 	}
 
-	rect.Intersect(rect1);
-	rect.SubtractPoint(rect1Origin);
-	rect.AddPoint(rect2Origin);
+	rect &= rect1;
+	rect -= rect1Origin;
+	rect += rect2Origin;
 
-	if (!rect.IntersectsWith(rect2)) {
+	if (!rect.Intersects(rect2)) {
 		return FALSE;
 	}
 
-	rect.Intersect(rect2);
-	rect.SubtractPoint(rect2Origin);
+	rect &= rect2;
+	rect -= rect2Origin;
 
 	*p_rect1Left += rect.GetLeft();
 	*p_rect1Top += rect.GetTop();

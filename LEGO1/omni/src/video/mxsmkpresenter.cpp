@@ -77,7 +77,7 @@ void MxSmkPresenter::LoadFrame(MxStreamChunk* p_chunk)
 	m_currentFrame++;
 	VTable0x88();
 
-	MxRectList rects(TRUE);
+	MxRect32List rects(TRUE);
 	MxSmk::LoadFrame(bitmapInfo, bitmapData, &m_mxSmk, chunkData, paletteChanged, m_currentFrame - 1, &rects);
 
 	if (((MxDSMediaAction*) m_action)->GetPaletteManagement() && paletteChanged) {
@@ -85,12 +85,12 @@ void MxSmkPresenter::LoadFrame(MxStreamChunk* p_chunk)
 	}
 
 	MxRect32 invalidateRect;
-	MxRectListCursor cursor(&rects);
+	MxRect32ListCursor cursor(&rects);
 	MxRect32* rect;
 
 	while (cursor.Next(rect)) {
 		invalidateRect = *rect;
-		invalidateRect.AddPoint(GetLocation());
+		invalidateRect += GetLocation();
 		MVideoManager()->InvalidateRect(invalidateRect);
 	}
 }

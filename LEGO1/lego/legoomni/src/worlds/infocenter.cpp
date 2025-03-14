@@ -456,7 +456,7 @@ void Infocenter::ReadyWorld()
 		case 3:
 			PlayCutscene(e_legoMovie, TRUE);
 			m_infocenterState->m_unk0x74 = 0;
-			break;
+			return;
 		case 4:
 			m_infocenterState->m_unk0x74 = 2;
 			if (!m_infocenterState->HasRegistered()) {
@@ -466,13 +466,12 @@ void Infocenter::ReadyWorld()
 			PlayAction(InfomainScript::c_iicx18in_RunAnim);
 			PlayMusic(JukeboxScript::c_InformationCenter_Music);
 			FUN_10015820(FALSE, LegoOmni::c_disableInput | LegoOmni::c_disable3d | LegoOmni::c_clearScreen);
-			break;
+			return;
 		case 5:
 		default: {
 			PlayMusic(JukeboxScript::c_InformationCenter_Music);
 
-			InfomainScript::Script script =
-				(InfomainScript::Script) m_infocenterState->GetReturnDialogue(GameState()->GetCurrentAct()).Next();
+			InfomainScript::Script script = m_infocenterState->GetNextReturnDialogue();
 			PlayAction(script);
 
 			if (script == InfomainScript::c_iicx26in_RunAnim) {
@@ -485,15 +484,13 @@ void Infocenter::ReadyWorld()
 				m_bookAnimationTimer = 1;
 			}
 
-			m_infocenterState->m_unk0x74 = 11;
-			FUN_10015820(FALSE, LegoOmni::c_disableInput | LegoOmni::c_disable3d | LegoOmni::c_clearScreen);
 			break;
 		}
 		case 8:
 			PlayMusic(JukeboxScript::c_InformationCenter_Music);
 			PlayAction(InfomainScript::c_iic043in_RunAnim);
 			FUN_10015820(FALSE, LegoOmni::c_disableInput | LegoOmni::c_disable3d | LegoOmni::c_clearScreen);
-			break;
+			return;
 		case 0xf:
 			m_infocenterState->m_unk0x74 = 2;
 			if (!m_infocenterState->HasRegistered()) {
@@ -503,9 +500,9 @@ void Infocenter::ReadyWorld()
 			PlayAction(InfomainScript::c_iicx17in_RunAnim);
 			PlayMusic(JukeboxScript::c_InformationCenter_Music);
 			FUN_10015820(FALSE, LegoOmni::c_disableInput | LegoOmni::c_disable3d | LegoOmni::c_clearScreen);
-			break;
+			return;
 		}
-		return;
+		break;
 	case LegoGameState::e_act2: {
 		if (m_infocenterState->m_unk0x74 == 8) {
 			PlayMusic(JukeboxScript::c_InformationCenter_Music);
@@ -537,8 +534,7 @@ void Infocenter::ReadyWorld()
 			m_infocenterState->m_unk0x74 = 5;
 			m_destLocation = LegoGameState::e_act2main;
 
-			InfomainScript::Script script =
-				(InfomainScript::Script) m_infocenterState->GetReturnDialogue(GameState()->GetCurrentAct()).Next();
+			InfomainScript::Script script = m_infocenterState->GetNextReturnDialogue();
 			PlayAction(script);
 
 			InputManager()->DisableInputProcessing();
@@ -547,8 +543,7 @@ void Infocenter::ReadyWorld()
 		}
 
 		PlayMusic(JukeboxScript::c_InformationCenter_Music);
-		InfomainScript::Script script =
-			(InfomainScript::Script) m_infocenterState->GetReturnDialogue(GameState()->GetCurrentAct()).Next();
+		InfomainScript::Script script = m_infocenterState->GetNextReturnDialogue();
 		PlayAction(script);
 		bgRed->Enable(TRUE);
 		break;
@@ -565,20 +560,18 @@ void Infocenter::ReadyWorld()
 		Act3State* state = (Act3State*) GameState()->GetState("Act3State");
 		GameState()->FindLoadedAct();
 
-		if (state) {
-			if (state->GetUnknown0x08() == 3) {
-				bg->Enable(TRUE);
-				PlayCutscene(e_badEndMovie, TRUE);
-				m_infocenterState->m_unk0x74 = 0;
-				return;
-			}
+		if (state && state->GetUnknown0x08() == 3) {
+			bg->Enable(TRUE);
+			PlayCutscene(e_badEndMovie, TRUE);
+			m_infocenterState->m_unk0x74 = 0;
+			return;
+		}
 
-			if (state && state->GetUnknown0x08() == 2) {
-				bg->Enable(TRUE);
-				PlayCutscene(e_goodEndMovie, TRUE);
-				m_infocenterState->m_unk0x74 = 0;
-				return;
-			}
+		if (state && state->GetUnknown0x08() == 2) {
+			bg->Enable(TRUE);
+			PlayCutscene(e_goodEndMovie, TRUE);
+			m_infocenterState->m_unk0x74 = 0;
+			return;
 		}
 
 		if (m_infocenterState->m_unk0x74 == 4) {
@@ -593,8 +586,7 @@ void Infocenter::ReadyWorld()
 			m_infocenterState->m_unk0x74 = 5;
 			m_destLocation = LegoGameState::e_act3script;
 
-			InfomainScript::Script script =
-				(InfomainScript::Script) m_infocenterState->GetReturnDialogue(GameState()->GetCurrentAct()).Next();
+			InfomainScript::Script script = m_infocenterState->GetNextReturnDialogue();
 			PlayAction(script);
 
 			InputManager()->DisableInputProcessing();
@@ -603,8 +595,7 @@ void Infocenter::ReadyWorld()
 		}
 
 		PlayMusic(JukeboxScript::c_InformationCenter_Music);
-		InfomainScript::Script script =
-			(InfomainScript::Script) m_infocenterState->GetReturnDialogue(GameState()->GetCurrentAct()).Next();
+		InfomainScript::Script script = m_infocenterState->GetNextReturnDialogue();
 		PlayAction(script);
 		bgRed->Enable(TRUE);
 		break;
@@ -639,58 +630,37 @@ void Infocenter::InitializeBitmaps()
 
 	m_glowInfo[0].m_destCtl = (MxStillPresenter*) Find("MxStillPresenter", "Info_A_Bitmap");
 	assert(m_glowInfo[0].m_destCtl);
-	m_glowInfo[0].m_area.SetLeft(391);
-	m_glowInfo[0].m_area.SetTop(182);
-	m_glowInfo[0].m_area.SetRight(427);
-	m_glowInfo[0].m_area.SetBottom(230);
+	m_glowInfo[0].m_area = MxRect<MxS32>(391, 182, 427, 230);
 	m_glowInfo[0].m_unk0x04 = 3;
 
 	m_glowInfo[1].m_destCtl = (MxStillPresenter*) Find("MxStillPresenter", "Boat_A_Bitmap");
 	assert(m_glowInfo[1].m_destCtl);
-	m_glowInfo[1].m_area.SetLeft(304);
-	m_glowInfo[1].m_area.SetTop(225);
-	m_glowInfo[1].m_area.SetRight(350);
-	m_glowInfo[1].m_area.SetBottom(268);
+	m_glowInfo[1].m_area = MxRect<MxS32>(304, 225, 350, 268);
 	m_glowInfo[1].m_unk0x04 = 10;
 
 	m_glowInfo[2].m_destCtl = (MxStillPresenter*) Find("MxStillPresenter", "Race_A_Bitmap");
 	assert(m_glowInfo[1].m_destCtl); // DECOMP: intentional typo
-	m_glowInfo[2].m_area.SetLeft(301);
-	m_glowInfo[2].m_area.SetTop(133);
-	m_glowInfo[2].m_area.SetRight(347);
-	m_glowInfo[2].m_area.SetBottom(181);
+	m_glowInfo[2].m_area = MxRect<MxS32>(301, 133, 347, 181);
 	m_glowInfo[2].m_unk0x04 = 11;
 
 	m_glowInfo[3].m_destCtl = (MxStillPresenter*) Find("MxStillPresenter", "Pizza_A_Bitmap");
 	assert(m_glowInfo[3].m_destCtl);
-	m_glowInfo[3].m_area.SetLeft(289);
-	m_glowInfo[3].m_area.SetTop(182);
-	m_glowInfo[3].m_area.SetRight(335);
-	m_glowInfo[3].m_area.SetBottom(225);
+	m_glowInfo[3].m_area = MxRect<MxS32>(289, 182, 335, 225);
 	m_glowInfo[3].m_unk0x04 = 12;
 
 	m_glowInfo[4].m_destCtl = (MxStillPresenter*) Find("MxStillPresenter", "Gas_A_Bitmap");
 	assert(m_glowInfo[4].m_destCtl);
-	m_glowInfo[4].m_area.SetLeft(350);
-	m_glowInfo[4].m_area.SetTop(161);
-	m_glowInfo[4].m_area.SetRight(391);
-	m_glowInfo[4].m_area.SetBottom(209);
+	m_glowInfo[4].m_area = MxRect<MxS32>(350, 161, 391, 209);
 	m_glowInfo[4].m_unk0x04 = 13;
 
 	m_glowInfo[5].m_destCtl = (MxStillPresenter*) Find("MxStillPresenter", "Med_A_Bitmap");
 	assert(m_glowInfo[5].m_destCtl);
-	m_glowInfo[5].m_area.SetLeft(392);
-	m_glowInfo[5].m_area.SetTop(130);
-	m_glowInfo[5].m_area.SetRight(438);
-	m_glowInfo[5].m_area.SetBottom(176);
+	m_glowInfo[5].m_area = MxRect<MxS32>(392, 130, 438, 176);
 	m_glowInfo[5].m_unk0x04 = 14;
 
 	m_glowInfo[6].m_destCtl = (MxStillPresenter*) Find("MxStillPresenter", "Cop_A_Bitmap");
 	assert(m_glowInfo[6].m_destCtl);
-	m_glowInfo[6].m_area.SetLeft(396);
-	m_glowInfo[6].m_area.SetTop(229);
-	m_glowInfo[6].m_area.SetRight(442);
-	m_glowInfo[6].m_area.SetBottom(272);
+	m_glowInfo[6].m_area = MxRect<MxS32>(396, 229, 442, 272);
 	m_glowInfo[6].m_unk0x04 = 15;
 
 	m_frame = (MxStillPresenter*) Find("MxStillPresenter", "FrameHot_Bitmap");
@@ -1228,6 +1198,7 @@ MxLong Infocenter::HandleNotification0(MxNotificationParam& p_param)
 }
 
 // FUNCTION: LEGO1 0x10070aa0
+// FUNCTION: BETA10 0x10030508
 void Infocenter::Enable(MxBool p_enable)
 {
 	LegoWorld::Enable(p_enable);

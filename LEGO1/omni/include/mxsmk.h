@@ -2,7 +2,7 @@
 #define MXSMK_H
 
 #include "decomp.h"
-#include "mxrectlist.h"
+#include "mxgeometry.h"
 #include "mxtypes.h"
 
 #include <smacker.h>
@@ -22,7 +22,7 @@ struct MxSmk {
 		MxU8* p_chunkData,
 		MxBool& p_paletteChanged,
 		MxU32 p_currentFrame,
-		MxRectList* p_list
+		MxRect32List* p_list
 	);
 };
 

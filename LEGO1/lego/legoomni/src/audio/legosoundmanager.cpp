@@ -4,6 +4,8 @@
 #include "mxautolock.h"
 #include "mxomni.h"
 
+#include <assert.h>
+
 DECOMP_SIZE_ASSERT(LegoSoundManager, 0x44)
 
 // FUNCTION: LEGO1 0x100298a0
@@ -36,6 +38,7 @@ void LegoSoundManager::Destroy(MxBool p_fromDestructor)
 }
 
 // FUNCTION: LEGO1 0x100299f0
+// FUNCTION: BETA10 0x100d0129
 MxResult LegoSoundManager::Create(MxU32 p_frequencyMS, MxBool p_createThread)
 {
 	MxBool locked = FALSE;
@@ -45,6 +48,7 @@ MxResult LegoSoundManager::Create(MxU32 p_frequencyMS, MxBool p_createThread)
 		m_criticalSection.Enter();
 		locked = TRUE;
 		m_cacheSoundManager = new LegoCacheSoundManager;
+		assert(m_cacheSoundManager);
 		result = SUCCESS;
 	}
 
@@ -61,12 +65,14 @@ done:
 }
 
 // FUNCTION: LEGO1 0x1002a390
+// FUNCTION: BETA10 0x100d02ed
 void LegoSoundManager::Destroy()
 {
 	Destroy(FALSE);
 }
 
 // FUNCTION: LEGO1 0x1002a3a0
+// FUNCTION: BETA10 0x100d030d
 MxResult LegoSoundManager::Tickle()
 {
 	MxSoundManager::Tickle();
