@@ -291,7 +291,6 @@ add_lego1_static_library(omni
   LEGO1/omni/src/video/mxloopingsmkpresenter.cpp
   LEGO1/omni/src/video/mxpalette.cpp
   LEGO1/omni/src/video/mxregion.cpp
-  LEGO1/omni/src/video/mxregioncursor.cpp
   LEGO1/omni/src/video/mxsmk.cpp
   LEGO1/omni/src/video/mxsmkpresenter.cpp
   LEGO1/omni/src/video/mxstillpresenter.cpp

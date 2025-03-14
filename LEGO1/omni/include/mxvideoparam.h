@@ -3,7 +3,7 @@
 
 #include "compat.h"
 #include "lego1_export.h"
-#include "mxrect32.h"
+#include "mxgeometry.h"
 #include "mxtypes.h"
 #include "mxvideoparamflags.h"
 
