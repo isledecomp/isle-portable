@@ -1,5 +1,7 @@
 #include "impl.h"
 
+#include <assert.h>
+
 using namespace TglImpl;
 
 DECOMP_SIZE_ASSERT(D3DRMVERTEX, 0x24);
@@ -8,6 +10,7 @@ DECOMP_SIZE_ASSERT(Mesh, 0x04);
 DECOMP_SIZE_ASSERT(MeshImpl, 0x08);
 
 // FUNCTION: LEGO1 0x100a3ed0
+// FUNCTION: BETA10 0x101704d0
 void* MeshImpl::ImplementationDataPtr()
 {
 	return reinterpret_cast<void*>(&m_data);
@@ -48,73 +51,112 @@ Result MeshImpl::SetTextureMappingMode(TextureMappingMode mode)
 	}
 }
 
-// FUNCTION: LEGO1 0x100a3fc0
-Result MeshImpl::SetShadingModel(ShadingModel model)
+// FUNCTION: BETA10 0x10170750
+inline Result MeshSetShadingModel(MeshImpl::MeshData* pMesh, ShadingModel model)
 {
-	D3DRMRENDERQUALITY mode;
-	switch (model) {
-	case Wireframe:
-		mode = D3DRMRENDER_WIREFRAME;
-		break;
-	case UnlitFlat:
-		mode = D3DRMRENDER_UNLITFLAT;
-		break;
-	case Flat:
-		mode = D3DRMRENDER_FLAT;
-		break;
-	case Gouraud:
-		mode = D3DRMRENDER_GOURAUD;
-		break;
-	case Phong:
-		mode = D3DRMRENDER_PHONG;
-		break;
-	}
-	return ResultVal(m_data->groupMesh->SetGroupQuality(m_data->groupIndex, mode));
+	D3DRMRENDERQUALITY mode = Translate(model);
+	return ResultVal(pMesh->groupMesh->SetGroupQuality(pMesh->groupIndex, mode));
 }
 
-// FUNCTION: LEGO1 0x100a4030
-Mesh* MeshImpl::DeepClone(MeshBuilder* pMeshBuilder)
+// FUNCTION: LEGO1 0x100a3fc0
+// FUNCTION: BETA10 0x101706f0
+Result MeshImpl::SetShadingModel(ShadingModel model)
 {
-	// Create group
-	MeshImpl* newMesh = new MeshImpl();
-	MeshData* data = new MeshData();
-	newMesh->m_data = data;
+	assert(m_data);
+	return MeshSetShadingModel(m_data, model);
+}
+
+// FUNCTION: BETA10 0x101714e0
+inline Result MeshDeepClone(MeshImpl::MeshData* pSource, MeshImpl::MeshData*& rpTarget, IDirect3DRMMesh* pMesh)
+{
+	rpTarget = new MeshImpl::MeshData();
+	rpTarget->groupMesh = pMesh;
 
 	// Query information from old group
 	DWORD dataSize;
 	unsigned int vcount, fcount, vperface;
-	m_data->groupMesh->GetGroup(m_data->groupIndex, &vcount, &fcount, &vperface, &dataSize, NULL);
+
+	Result result =
+		ResultVal(pSource->groupMesh->GetGroup(pSource->groupIndex, &vcount, &fcount, &vperface, &dataSize, NULL));
+	assert(Succeeded(result));
+
 	unsigned int* faceBuffer = new unsigned int[dataSize];
-	m_data->groupMesh->GetGroup(m_data->groupIndex, &vcount, &fcount, &vperface, &dataSize, faceBuffer);
+	result =
+		ResultVal(pSource->groupMesh->GetGroup(pSource->groupIndex, &vcount, &fcount, &vperface, &dataSize, faceBuffer)
+		);
+	assert(Succeeded(result));
+
 	// We expect vertex to be sized 0x24, checked at start of file.
 	D3DRMVERTEX* vertexBuffer = new D3DRMVERTEX[vcount];
-	m_data->groupMesh->GetVertices(m_data->groupIndex, 0, vcount, vertexBuffer);
+	result = ResultVal(pSource->groupMesh->GetVertices(pSource->groupIndex, 0, vcount, vertexBuffer));
+	assert(Succeeded(result));
+
 	LPDIRECT3DRMTEXTURE textureRef;
-	m_data->groupMesh->GetGroupTexture(m_data->groupIndex, &textureRef);
-	D3DRMMAPPING mapping = m_data->groupMesh->GetGroupMapping(m_data->groupIndex);
-	D3DRMRENDERQUALITY quality = m_data->groupMesh->GetGroupQuality(m_data->groupIndex);
-	D3DCOLOR color = m_data->groupMesh->GetGroupColor(m_data->groupIndex);
+	result = ResultVal(pSource->groupMesh->GetGroupTexture(pSource->groupIndex, &textureRef));
+	assert(Succeeded(result));
+
+	D3DRMMAPPING mapping = pSource->groupMesh->GetGroupMapping(pSource->groupIndex);
+	D3DRMRENDERQUALITY quality = pSource->groupMesh->GetGroupQuality(pSource->groupIndex);
+	D3DCOLOR color = pSource->groupMesh->GetGroupColor(pSource->groupIndex);
 
 	// Push information to new group
-	MeshBuilderImpl* target = static_cast<MeshBuilderImpl*>(pMeshBuilder);
 	D3DRMGROUPINDEX index;
-	target->ImplementationData()->AddGroup(vcount, fcount, vperface, faceBuffer, &index);
-	newMesh->m_data->groupIndex = index;
-	target->ImplementationData()->SetVertices(index, 0, vcount, vertexBuffer);
-	target->ImplementationData()->SetGroupTexture(index, textureRef);
-	target->ImplementationData()->SetGroupMapping(index, mapping);
-	target->ImplementationData()->SetGroupQuality(index, quality);
-	Result result = ResultVal(target->ImplementationData()->SetGroupColor(index, color));
+	result = ResultVal(pMesh->AddGroup(vcount, fcount, 3, faceBuffer, &index));
+	assert(Succeeded(result));
+
+	rpTarget->groupIndex = index;
+	result = ResultVal(pMesh->SetVertices(index, 0, vcount, vertexBuffer));
+	assert(Succeeded(result));
+
+	result = ResultVal(pMesh->SetGroupTexture(index, textureRef));
+	assert(Succeeded(result));
+
+	result = ResultVal(pMesh->SetGroupMapping(index, mapping));
+	assert(Succeeded(result));
+
+	result = ResultVal(pMesh->SetGroupQuality(index, quality));
+	assert(Succeeded(result));
+
+	result = ResultVal(pMesh->SetGroupColor(index, color));
+	assert(Succeeded(result));
 
 	// Cleanup
-	delete[] faceBuffer;
-	delete[] vertexBuffer;
-	if (result == Error) {
-		delete newMesh;
-		newMesh = NULL;
+	if (faceBuffer) {
+		delete[] faceBuffer;
 	}
 
-	return newMesh;
+	if (vertexBuffer) {
+		delete[] vertexBuffer;
+	}
+
+	return result;
+}
+
+// FUNCTION: BETA10 0x10171360
+inline Mesh* MeshImpl::DeepClone(const MeshBuilderImpl& rMesh)
+{
+	assert(m_data);
+	assert(rMesh.ImplementationData());
+
+	MeshImpl* clone = new MeshImpl();
+	assert(!clone->ImplementationData());
+
+	if (!MeshDeepClone(m_data, clone->ImplementationData(), rMesh.ImplementationData())) {
+		delete clone;
+		clone = NULL;
+	}
+
+	return clone;
+}
+
+// FUNCTION: LEGO1 0x100a4030
+// FUNCTION: BETA10 0x101707a0
+Mesh* MeshImpl::DeepClone(MeshBuilder* pMesh)
+{
+	assert(m_data);
+	assert(pMesh);
+
+	return DeepClone(*static_cast<MeshBuilderImpl*>(pMesh));
 }
 
 // FUNCTION: LEGO1 0x100a4240

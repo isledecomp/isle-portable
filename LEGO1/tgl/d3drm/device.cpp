@@ -1,10 +1,12 @@
 #include "impl.h"
 
+#include <assert.h>
 #include <d3drmwin.h>
 
 using namespace TglImpl;
 
 // FUNCTION: LEGO1 0x100a2bf0
+// FUNCTION: BETA10 0x1016ddf0
 void* DeviceImpl::ImplementationDataPtr()
 {
 	return reinterpret_cast<void*>(&m_data);
@@ -28,13 +30,20 @@ Result DeviceImpl::SetColorModel(ColorModel)
 	return Success;
 }
 
+// FUNCTION: BETA10 0x1016e020
+inline Result DeviceSetShadingModel(IDirect3DRMDevice2* pDevice, ShadingModel model)
+{
+	D3DRMRENDERQUALITY renderQuality = Translate(model);
+	return ResultVal(pDevice->SetQuality(renderQuality));
+}
+
 // FUNCTION: LEGO1 0x100a2c30
+// FUNCTION: BETA10 0x1016dfc0
 Result DeviceImpl::SetShadingModel(ShadingModel model)
 {
-	// Doesn't match well even though we know this is exactly
-	// the original code thanks to the jump table.
-	D3DRMRENDERQUALITY renderQuality = Translate(model);
-	return ResultVal(m_data->SetQuality(renderQuality));
+	assert(m_data);
+
+	return DeviceSetShadingModel(m_data, model);
 }
 
 // FUNCTION: LEGO1 0x100a2ca0
