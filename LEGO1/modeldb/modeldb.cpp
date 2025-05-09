@@ -28,10 +28,10 @@ MxResult ModelDbModel::Read(SDL_IOStream* p_file)
 		return FAILURE;
 	}
 
-	if (SDL_ReadIO(p_file, &m_unk0x04, sizeof(m_unk0x04)) != sizeof(m_unk0x04)) {
+	if (SDL_ReadIO(p_file, &m_modelDataLength, sizeof(m_modelDataLength)) != sizeof(m_modelDataLength)) {
 		return FAILURE;
 	}
-	if (SDL_ReadIO(p_file, &m_unk0x08, sizeof(m_unk0x08)) != sizeof(m_unk0x08)) {
+	if (SDL_ReadIO(p_file, &m_modelDataOffset, sizeof(m_modelDataOffset)) != sizeof(m_modelDataOffset)) {
 		return FAILURE;
 	}
 	if (SDL_ReadIO(p_file, &len, sizeof(len)) != sizeof(len)) {

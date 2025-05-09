@@ -342,15 +342,15 @@ MxResult LegoWorldPresenter::FUN_10067360(ModelDbPart& p_part, SDL_IOStream* p_w
 // FUNCTION: LEGO1 0x100674b0
 MxResult LegoWorldPresenter::FUN_100674b0(ModelDbModel& p_model, SDL_IOStream* p_wdbFile, LegoWorld* p_world)
 {
-	MxU8* buff = new MxU8[p_model.m_unk0x04];
+	MxU8* buff = new MxU8[p_model.m_modelDataLength];
 
-	SDL_SeekIO(p_wdbFile, p_model.m_unk0x08, SDL_IO_SEEK_SET);
-	if (SDL_ReadIO(p_wdbFile, buff, p_model.m_unk0x04) != p_model.m_unk0x04) {
+	SDL_SeekIO(p_wdbFile, p_model.m_modelDataOffset, SDL_IO_SEEK_SET);
+	if (SDL_ReadIO(p_wdbFile, buff, p_model.m_modelDataLength) != p_model.m_modelDataLength) {
 		return FAILURE;
 	}
 
 	MxDSChunk chunk;
-	chunk.SetLength(p_model.m_unk0x04);
+	chunk.SetLength(p_model.m_modelDataLength);
 	chunk.SetData(buff);
 
 	MxDSAction action;
