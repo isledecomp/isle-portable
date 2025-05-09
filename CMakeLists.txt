@@ -29,7 +29,7 @@ if(DOWNLOAD_DEPENDENCIES)
 
     FetchContent_Declare(
         iniparser
-        GIT_REPOSITORY "https://github.com/ndevilla/iniparser.git"
+        GIT_REPOSITORY "https://gitlab.com/iniparser/iniparser.git"
         GIT_TAG "main"
         EXCLUDE_FROM_ALL
     )
