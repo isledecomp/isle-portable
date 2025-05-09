@@ -22,7 +22,7 @@ MxThread::~MxThread()
 }
 
 // FUNCTION: LEGO1 0x100bf610
-MxResult MxThread::Start(MxS32 p_stack, MxS32 p_flag)
+MxResult MxThread::Start(MxS32 p_stackSize, MxS32 p_flag)
 {
 	MxResult result = FAILURE;
 
@@ -30,7 +30,7 @@ MxResult MxThread::Start(MxS32 p_stack, MxS32 p_flag)
 		const SDL_PropertiesID props = SDL_CreateProperties();
 		SDL_SetPointerProperty(props, SDL_PROP_THREAD_CREATE_ENTRY_FUNCTION_POINTER, (void*) MxThread::ThreadProc);
 		SDL_SetPointerProperty(props, SDL_PROP_THREAD_CREATE_USERDATA_POINTER, this);
-		SDL_SetNumberProperty(props, SDL_PROP_THREAD_CREATE_STACKSIZE_NUMBER, p_stack << 2);
+		SDL_SetNumberProperty(props, SDL_PROP_THREAD_CREATE_STACKSIZE_NUMBER, p_stackSize * 4);
 
 		if ((m_thread = SDL_CreateThreadWithProperties(props))) {
 			result = SUCCESS;
