@@ -47,7 +47,7 @@ void LegoWorldPresenter::configureLegoWorldPresenter(MxS32 p_legoWorldPresenterQ
 // FUNCTION: LEGO1 0x100665c0
 LegoWorldPresenter::LegoWorldPresenter()
 {
-	m_unk0x50 = 50000;
+	m_nextObjectId = 50000;
 }
 
 // FUNCTION: LEGO1 0x10066770
@@ -261,7 +261,7 @@ MxResult LegoWorldPresenter::LoadWorld(char* p_worldName, LegoWorld* p_world)
 
 	while (cursor.Next(part)) {
 		if (GetViewLODListManager()->Lookup(part->m_roiName.GetData()) == NULL &&
-			FUN_10067360(*part, wdbFile) != SUCCESS) {
+			LoadWorldPart(*part, wdbFile) != SUCCESS) {
 			return FAILURE;
 		}
 	}
@@ -287,15 +287,15 @@ MxResult LegoWorldPresenter::LoadWorld(char* p_worldName, LegoWorld* p_world)
 		}
 		else if (g_legoWorldPresenterQuality <= 1 && !SDL_strncasecmp(worlds[i].m_models[j].m_modelName, "haus", 4)) {
 			if (worlds[i].m_models[j].m_modelName[4] == '3') {
-				if (FUN_100674b0(worlds[i].m_models[j], wdbFile, p_world) != SUCCESS) {
+				if (LoadWorldModel(worlds[i].m_models[j], wdbFile, p_world) != SUCCESS) {
 					return FAILURE;
 				}
 
-				if (FUN_100674b0(worlds[i].m_models[j - 2], wdbFile, p_world) != SUCCESS) {
+				if (LoadWorldModel(worlds[i].m_models[j - 2], wdbFile, p_world) != SUCCESS) {
 					return FAILURE;
 				}
 
-				if (FUN_100674b0(worlds[i].m_models[j - 1], wdbFile, p_world) != SUCCESS) {
+				if (LoadWorldModel(worlds[i].m_models[j - 1], wdbFile, p_world) != SUCCESS) {
 					return FAILURE;
 				}
 			}
@@ -303,7 +303,7 @@ MxResult LegoWorldPresenter::LoadWorld(char* p_worldName, LegoWorld* p_world)
 			continue;
 		}
 
-		if (FUN_100674b0(worlds[i].m_models[j], wdbFile, p_world) != SUCCESS) {
+		if (LoadWorldModel(worlds[i].m_models[j], wdbFile, p_world) != SUCCESS) {
 			return FAILURE;
 		}
 	}
@@ -314,7 +314,7 @@ MxResult LegoWorldPresenter::LoadWorld(char* p_worldName, LegoWorld* p_world)
 }
 
 // FUNCTION: LEGO1 0x10067360
-MxResult LegoWorldPresenter::FUN_10067360(ModelDbPart& p_part, SDL_IOStream* p_wdbFile)
+MxResult LegoWorldPresenter::LoadWorldPart(ModelDbPart& p_part, SDL_IOStream* p_wdbFile)
 {
 	MxResult result;
 	MxU8* buff = new MxU8[p_part.m_partDataLength];
@@ -340,7 +340,11 @@ MxResult LegoWorldPresenter::FUN_10067360(ModelDbPart& p_part, SDL_IOStream* p_w
 }
 
 // FUNCTION: LEGO1 0x100674b0
+<<<<<<< HEAD
 MxResult LegoWorldPresenter::FUN_100674b0(ModelDbModel& p_model, SDL_IOStream* p_wdbFile, LegoWorld* p_world)
+=======
+MxResult LegoWorldPresenter::LoadWorldModel(ModelDbModel& p_model, FILE* p_wdbFile, LegoWorld* p_world)
+>>>>>>> isle/master
 {
 	MxU8* buff = new MxU8[p_model.m_modelDataLength];
 
@@ -359,8 +363,8 @@ MxResult LegoWorldPresenter::FUN_100674b0(ModelDbModel& p_model, SDL_IOStream* p
 	action.SetDirection(p_model.m_direction);
 	action.SetUp(p_model.m_up);
 
-	MxU32 objectId = m_unk0x50;
-	m_unk0x50++;
+	MxU32 objectId = m_nextObjectId;
+	m_nextObjectId++;
 	action.SetObjectId(objectId);
 
 	action.SetAtomId(atom);
