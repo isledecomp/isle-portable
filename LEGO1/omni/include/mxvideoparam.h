@@ -7,7 +7,11 @@
 #include "mxtypes.h"
 #include "mxvideoparamflags.h"
 
+#ifdef _WIN32
 #include <ddraw.h>
+#else
+#include "miniwin_ddraw.h"
+#endif
 
 class MxPalette;
 

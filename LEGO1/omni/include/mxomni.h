@@ -7,7 +7,11 @@
 #include "mxstring.h"
 
 #include <SDL3/SDL_video.h>
+#ifdef _WIN32
 #include <windows.h>
+#else
+#include "miniwin.h"
+#endif
 
 class MxAtomSet;
 class MxDSAction;

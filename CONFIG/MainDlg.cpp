@@ -1,5 +1,11 @@
 #include "MainDlg.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include "miniwin.h"
+#endif
+
 #include "AboutDlg.h"
 #include "config.h"
 #include "res/resource.h"

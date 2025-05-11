@@ -6,7 +6,11 @@
 #include "mxgeometry.h"
 #include "mxmediapresenter.h"
 
+#ifdef _WIN32
 #include <ddraw.h>
+#else
+#include "miniwin_ddraw.h"
+#endif
 
 // VTABLE: LEGO1 0x100d4be8
 // SIZE 0x64
