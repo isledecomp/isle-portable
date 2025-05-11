@@ -340,11 +340,7 @@ MxResult LegoWorldPresenter::LoadWorldPart(ModelDbPart& p_part, SDL_IOStream* p_
 }
 
 // FUNCTION: LEGO1 0x100674b0
-<<<<<<< HEAD
-MxResult LegoWorldPresenter::FUN_100674b0(ModelDbModel& p_model, SDL_IOStream* p_wdbFile, LegoWorld* p_world)
-=======
-MxResult LegoWorldPresenter::LoadWorldModel(ModelDbModel& p_model, FILE* p_wdbFile, LegoWorld* p_world)
->>>>>>> isle/master
+MxResult LegoWorldPresenter::LoadWorldModel(ModelDbModel& p_model, SDL_IOStream* p_wdbFile, LegoWorld* p_world)
 {
 	MxU8* buff = new MxU8[p_model.m_modelDataLength];
 
