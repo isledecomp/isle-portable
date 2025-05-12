@@ -447,7 +447,10 @@ MxU8 IsleApp::MapMouseButtonFlagsToModifier(SDL_MouseButtonFlags p_flags)
 // FUNCTION: ISLE 0x4023e0
 MxResult IsleApp::SetupWindow()
 {
-	LoadConfig();
+	if (!LoadConfig()) {
+		return FAILURE;
+	}
+
 	SetupVideoFlags(
 		m_fullScreen,
 		m_flipSurfaces,
@@ -522,7 +525,7 @@ MxResult IsleApp::SetupWindow()
 }
 
 // FUNCTION: ISLE 0x4028d0
-void IsleApp::LoadConfig()
+bool IsleApp::LoadConfig()
 {
 	char* prefPath = SDL_GetPrefPath("isledecomp", "isle");
 	char* iniConfig;
@@ -549,9 +552,11 @@ void IsleApp::LoadConfig()
 		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Loading sane defaults");
 		FILE* iniFP = fopen(iniConfig, "wb");
 
-		if (!iniFP) {
-			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to write config at '%s': %s", iniConfig, strerror(errno));
+		if (iniFP) {
 			fclose(iniFP);
+		} else {
+			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to write config at '%s': %s", iniConfig, strerror(errno));
+			return false;
 		}
 
 		dict = iniparser_load(iniConfig);
@@ -639,6 +644,8 @@ void IsleApp::LoadConfig()
 	iniparser_freedict(dict);
 	delete[] iniConfig;
 	SDL_free(prefPath);
+
+	return true;
 }
 
 // FUNCTION: ISLE 0x402c20
