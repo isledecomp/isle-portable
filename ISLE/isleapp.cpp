@@ -35,10 +35,8 @@
 #include <iniparser.h>
 #include <time.h>
 
-extern "C" {
 #include <errno.h>
 #include <stdlib.h>
-}
 
 DECOMP_SIZE_ASSERT(IsleApp, 0x8c)
 
