@@ -5,7 +5,11 @@
 #include "mxcore.h"
 #include "mxgeometry.h"
 
+#ifdef _WIN32
 #include <windows.h>
+#else
+#include "miniwin.h"
+#endif
 
 class Lego3DView;
 class LegoEntity;

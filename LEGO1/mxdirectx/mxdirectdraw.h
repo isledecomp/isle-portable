@@ -4,8 +4,13 @@
 #include "lego1_export.h"
 #include "mxdirectxinfo.h"
 
+#ifdef _WIN32
 #include <ddraw.h>
 #include <windows.h>
+#else
+#include "miniwin.h"
+#include "miniwin_ddraw.h"
+#endif
 
 // VTABLE: LEGO1 0x100db818
 // VTABLE: BETA10 0x101c1b10

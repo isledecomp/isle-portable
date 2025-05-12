@@ -4,9 +4,15 @@
 
 #include "tglvector.h"
 
+#ifdef _WIN32
 #include <d3d.h>
 #include <ddraw.h>
 #include <windows.h>
+#else
+#include "miniwin.h"
+#include "miniwin_d3d.h"
+#include "miniwin_ddraw.h"
+#endif
 
 namespace Tgl
 {

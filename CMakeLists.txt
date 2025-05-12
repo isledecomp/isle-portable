@@ -6,6 +6,9 @@ cmake_policy(SET CMP0091 NEW)
 # To set BUILD_* variables for iniparser below. Is there another way?
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
+# Building on Linux
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 project(isle CXX C)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
@@ -14,7 +17,9 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}" CACHE PATH "Directory w
 
 # By configuring CMake with -DDOWNLOAD_DEPENDENCIES=ON/OFF,
 # users can choose between downloading dependencies or using system libraries
-option(DOWNLOAD_DEPENDENCIES "Download dependencies" TRUE)
+option(DOWNLOAD_DEPENDENCIES "Download dependencies" ON)
+
+option(ISLE_ASAN "Enable AddressSanitizer" OFF)
 
 if(DOWNLOAD_DEPENDENCIES)
     # FetchContent downloads and configures dependencies
@@ -52,12 +57,17 @@ include(CheckCXXSourceCompiles)
 include(CMakeDependentOption)
 include(CMakePushCheckState)
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(ENABLE_CLANG_TIDY "Enable clang-tidy")
 if (ENABLE_CLANG_TIDY)
     find_program(CLANG_TIDY_BIN NAMES "clang-tidy")
     set(CMAKE_C_CLANG_TIDY "${CLANG_TIDY_BIN}")
     set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_BIN}")
+endif()
+
+if (ISLE_ASAN)
+  add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
+  add_link_options(-fsanitize=address)
 endif()
 
 function(add_cxx_warning WARNING)
@@ -84,9 +94,9 @@ function(add_cxx_warning WARNING)
 endfunction()
 
 if(NOT MINGW)
-    set(NOT_MINGW TRUE)
+    set(NOT_MINGW ON)
 else()
-    set(NOT_MINGW FALSE)
+    set(NOT_MINGW OFF)
 endif()
 
 add_subdirectory(3rdparty EXCLUDE_FROM_ALL SYSTEM)
@@ -138,10 +148,13 @@ add_lego1_static_library(tglrl
   LEGO1/tgl/d3drm/view.cpp
 )
 target_include_directories(tglrl-interface INTERFACE "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/util")
-if(ISLE_D3DRM_FROM_WINE)
-    target_link_libraries(tglrl-interface INTERFACE d3drm-wine)
-else()
-    target_link_libraries(tglrl-interface INTERFACE d3drm)
+
+if(WIN32)
+  if(ISLE_D3DRM_FROM_WINE)
+      target_link_libraries(tglrl-interface INTERFACE d3drm-wine)
+  else()
+      target_link_libraries(tglrl-interface INTERFACE d3drm)
+  endif()
 endif()
 
 add_lego1_static_library(realtime
@@ -168,7 +181,9 @@ add_lego1_static_library(mxdirectx
   LEGO1/mxdirectx/legodxinfo.cpp
 )
 target_include_directories(mxdirectx-interface INTERFACE "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/util")
-target_link_libraries(mxdirectx-interface INTERFACE ddraw)
+if(WIN32)
+  target_link_libraries(mxdirectx-interface INTERFACE ddraw)
+endif()
 
 add_lego1_static_library(roi
   LEGO1/lego/sources/roi/legolod.cpp
@@ -300,7 +315,10 @@ add_lego1_static_library(omni
   LEGO1/omni/src/video/mxvideopresenter.cpp
 )
 target_include_directories(omni-interface INTERFACE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include" "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/util")
-target_link_libraries(omni-interface INTERFACE winmm libsmacker miniaudio)
+if(WIN32)
+  target_link_libraries(omni-interface INTERFACE winmm)
+endif()
+target_link_libraries(omni-interface INTERFACE libsmacker miniaudio)
 
 add_lego1_static_library(lego1_impl
   LEGO1/define.cpp
@@ -426,7 +444,10 @@ if(MINGW)
 endif()
 
 set(lego1_objects)
-set(lego1_link_libraries dxguid d3drm_guid)
+set(lego1_link_libraries)
+if(WIN32)
+  list(APPEND lego1_link_libraries dxguid d3drm_guid)
+endif()
 foreach(lego1_library IN LISTS lego1_targets)
   target_compile_definitions(${lego1_library}-objects PRIVATE LEGO1_DLL)
   list(APPEND lego1_objects $<TARGET_OBJECTS:${lego1_library}-objects>)
@@ -441,17 +462,21 @@ target_link_libraries(lego1 PUBLIC ${lego1_link_libraries})
 # Make sure filenames are ALL CAPS
 set_property(TARGET lego1 PROPERTY OUTPUT_NAME LEGO1)
 set_property(TARGET lego1 PROPERTY PREFIX "")
-set_property(TARGET lego1 PROPERTY SUFFIX ".DLL")
+if(WIN32)
+  set_property(TARGET lego1 PROPERTY SUFFIX ".DLL")
+endif()
 
 if (ISLE_BUILD_APP)
   add_executable(isle WIN32
     ISLE/res/isle.rc
     ISLE/isleapp.cpp
   )
-  add_custom_command(TARGET isle POST_BUILD
-    COMMAND "${CMAKE_COMMAND}" -E copy $<TARGET_RUNTIME_DLLS:isle> "$<TARGET_FILE_DIR:isle>"
-    COMMAND_EXPAND_LISTS
-  )
+  if(WIN32)
+    add_custom_command(TARGET isle POST_BUILD
+      COMMAND "${CMAKE_COMMAND}" -E copy $<TARGET_RUNTIME_DLLS:isle> "$<TARGET_FILE_DIR:isle>"
+      COMMAND_EXPAND_LISTS
+    )
+  endif()
 
   target_compile_definitions(isle PRIVATE ISLE_APP)
 
@@ -461,18 +486,24 @@ if (ISLE_BUILD_APP)
   # Link SDL and iniparser
   target_link_libraries(isle PRIVATE SDL3::SDL3 iniparser-static)
 
-  # Link DSOUND, WINMM, and LEGO1
-  target_link_libraries(isle PRIVATE winmm lego1)
+  # Link DSOUND and WINMM
+  if(WIN32)
+    target_link_libraries(isle PRIVATE winmm)
+  endif()
+  # Link LEGO1
+  target_link_libraries(isle PRIVATE lego1)
 
   target_include_directories(isle PRIVATE $<$<BOOL:${ISLE_D3DRM_FROM_WINE}>:$<TARGET_PROPERTY:d3drm-wine,INTERFACE_INCLUDE_DIRECTORIES>>)
 
   # Make sure filenames are ALL CAPS
   set_property(TARGET isle PROPERTY OUTPUT_NAME ISLE)
-  set_property(TARGET isle PROPERTY SUFFIX ".EXE")
+  if(WIN32)
+    set_property(TARGET isle PROPERTY SUFFIX ".EXE")
+  endif()
 endif()
 
 if (ISLE_BUILD_CONFIG)
-  add_executable(config WIN32
+  set(config_SRC WIN32
     LEGO1/mxdirectx/mxdirectxinfo.cpp
     LEGO1/mxdirectx/legodxinfo.cpp
     CONFIG/config.cpp
@@ -483,6 +514,10 @@ if (ISLE_BUILD_CONFIG)
     CONFIG/StdAfx.cpp
     CONFIG/res/config.rc
   )
+  if(NOT WIN32)
+    list(APPEND config_SRC util/stdafx.cpp)
+  endif()
+  add_executable(config ${config_SRC})
   target_compile_definitions(config PRIVATE _AFXDLL MXDIRECTX_FOR_CONFIG)
   target_include_directories(config PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/util" "${CMAKE_CURRENT_SOURCE_DIR}/LEGO1")
   if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 14)
@@ -490,9 +525,13 @@ if (ISLE_BUILD_CONFIG)
   endif()
   target_compile_definitions(config PRIVATE DIRECT3D_VERSION=0x500)
   target_link_libraries(config PRIVATE SDL3::SDL3)
-  target_link_libraries(config PRIVATE ddraw dxguid)
+  if(WIN32)
+    target_link_libraries(config PRIVATE ddraw dxguid)
+  endif()
   set_property(TARGET config PROPERTY OUTPUT_NAME "CONFIG")
-  set_property(TARGET config PROPERTY SUFFIX ".EXE")
+  if(WIN32)
+    set_property(TARGET config PROPERTY SUFFIX ".EXE")
+  endif()
   set_property(TARGET config PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded$<$<CONFIG:Debug>:Debug>DLL)
 endif()
 

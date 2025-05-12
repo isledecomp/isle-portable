@@ -5,7 +5,11 @@
 #include "mxcore.h"
 #include "mxvideoparam.h"
 
+#ifdef _WIN32
 #include <ddraw.h>
+#else
+#include "miniwin_ddraw.h"
+#endif
 
 class MxBitmap;
 class MxPalette;

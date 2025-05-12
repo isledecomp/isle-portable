@@ -8,7 +8,11 @@
 
 #include <SDL3/SDL_mouse.h>
 #include <SDL3/SDL_video.h>
+#ifdef _WIN32
 #include <windows.h>
+#else
+#include "miniwin.h"
+#endif
 
 // SIZE 0x8c
 class IsleApp {

@@ -4,7 +4,11 @@
 #include "mxcore.h"
 #include "mxtypes.h"
 
+#ifdef _WIN32
 #include <ddraw.h>
+#else
+#include "miniwin_ddraw.h"
+#endif
 
 // VTABLE: LEGO1 0x100dc848
 // VTABLE: BETA10 0x101c2300

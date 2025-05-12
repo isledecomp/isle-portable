@@ -1,0 +1,46 @@
+name: Linux
+
+on: [push, pull_request]
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        build-type: [Release, Debug]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libx11-dev libxext-dev libxrandr-dev libxrender-dev libxfixes-dev libxi-dev libxinerama-dev libxcursor-dev libwayland-dev libxkbcommon-dev wayland-protocols
+
+      - name: Configure
+        run: |
+          cmake -S . -B build -GNinja \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
+            -DISLE_USE_DX5=OFF \
+            -DISLE_D3DRM_FROM_WINE=OFF \
+            -DENABLE_CLANG_TIDY=ON \
+            -DISLE_WERROR=ON \
+            -Werror=dev
+
+      - name: Build
+        run: cmake --build build -- -k0
+
+      - name: Make Artifact Archive
+        run: |
+          cd build
+          zip "isle-portable-linux-${{ matrix.build-type }}.zip" \
+              CONFIG ISLE LEGO1.so
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-artifacts-${{ matrix.build-type }}
+          path: build/isle-portable-linux-${{ matrix.build-type }}.zip

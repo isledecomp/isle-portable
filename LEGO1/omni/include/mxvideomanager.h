@@ -4,7 +4,11 @@
 #include "mxmediamanager.h"
 #include "mxvideoparam.h"
 
+#ifdef _WIN32
 #include <d3d.h>
+#else
+#include "miniwin_d3d.h"
+#endif
 
 class MxDisplaySurface;
 class MxRect32;

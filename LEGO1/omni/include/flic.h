@@ -3,7 +3,11 @@
 
 #include "decomp.h"
 
+#ifdef _WIN32
 #include <windows.h>
+#else
+#include "miniwin.h"
+#endif
 
 enum FLI_CHUNK_TYPE {
 	FLI_CHUNK_COLOR256 = 4,  // 256-level color palette info

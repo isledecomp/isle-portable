@@ -4,10 +4,18 @@
 #include "MainDlg.h"
 #include "detectdx5.h"
 
+#ifdef _WIN32
 #include <direct.h> // _chdir
+#else
+#include "miniwin_direct.h"
+#endif
 #include <mxdirectx/legodxinfo.h>
 #include <mxdirectx/mxdirect3d.h>
+#ifdef _WIN32
 #include <process.h> // _spawnl
+#else
+#include "miniwin_process.h"
+#endif
 
 DECOMP_SIZE_ASSERT(CWinApp, 0xc4)
 DECOMP_SIZE_ASSERT(CConfigApp, 0x108)

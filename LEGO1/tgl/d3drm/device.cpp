@@ -1,7 +1,11 @@
 #include "impl.h"
 
 #include <assert.h>
+#ifdef _WIN32
 #include <d3drmwin.h>
+#else
+#include "miniwin_d3drm.h"
+#endif
 
 using namespace TglImpl;
 
