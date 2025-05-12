@@ -36,7 +36,7 @@ public:
 	);
 	MxResult SetupWindow();
 
-	void LoadConfig();
+	bool LoadConfig();
 	void Tick();
 	void SetupCursor(Cursor p_cursor);
 
