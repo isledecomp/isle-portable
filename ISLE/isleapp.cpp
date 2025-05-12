@@ -581,8 +581,9 @@ bool IsleApp::LoadConfig()
 		iniparser_set(dict, "isle:Island Quality", "1");
 		iniparser_set(dict, "isle:Island Texture", "1");
 
-		iniparser_dump_ini(dict, );
+		iniparser_dump_ini(dict, iniFP);
 		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "New config written at '%s'", iniConfig);
+		fclose(iniFP);
 	}
 
 	const char* hdPath = iniparser_getstring(dict, "isle:diskpath", SDL_GetBasePath());
@@ -639,7 +640,6 @@ bool IsleApp::LoadConfig()
 	m_savePath = new char[strlen(savePath) + 1];
 	strcpy(m_savePath, savePath);
 
-	fclose(iniFP);
 	iniparser_freedict(dict);
 	delete[] iniConfig;
 	SDL_free(prefPath);
