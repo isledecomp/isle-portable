@@ -4,10 +4,18 @@
 #include "MainDlg.h"
 #include "detectdx5.h"
 
+#ifdef _WIN32
 #include <direct.h> // _chdir
+#else
+#include "miniwin_direct.h"
+#endif
 #include <mxdirectx/legodxinfo.h>
 #include <mxdirectx/mxdirect3d.h>
+#ifdef _WIN32
 #include <process.h> // _spawnl
+#else
+#include "miniwin_process.h"
+#endif
 
 DECOMP_SIZE_ASSERT(CWinApp, 0xc4)
 DECOMP_SIZE_ASSERT(CConfigApp, 0x108)
@@ -236,7 +244,7 @@ BOOL CConfigApp::ReadRegisterSettings()
 	if (tmp != 0) {
 		is_modified = TRUE;
 		m_device_enumerator->FUN_1009d210();
-		tmp = m_device_enumerator->FUN_1009d0d0();
+		tmp = m_device_enumerator->GetBestDevice();
 		m_device_enumerator->GetDevice(tmp, m_driver, m_device);
 	}
 	if (!ReadRegInt("Display Bit Depth", &m_display_bit_depth)) {

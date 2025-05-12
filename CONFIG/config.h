@@ -5,7 +5,11 @@
 #include "compat.h"
 #include "decomp.h"
 
+#ifdef _WIN32
 #include <d3d.h>
+#else
+#include "miniwin_d3d.h"
+#endif
 
 class LegoDeviceEnumerate;
 struct Direct3DDeviceInfo;

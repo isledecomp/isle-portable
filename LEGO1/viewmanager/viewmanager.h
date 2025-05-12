@@ -6,7 +6,11 @@
 #include "realtime/realtimeview.h"
 #include "viewroi.h"
 
+#ifdef _WIN32
 #include <d3drm.h>
+#else
+#include "miniwin_d3drm.h"
+#endif
 
 // VTABLE: LEGO1 0x100dbd88
 // SIZE 0x1bc

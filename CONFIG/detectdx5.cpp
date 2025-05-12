@@ -1,7 +1,12 @@
 #include "detectdx5.h"
 
+#ifdef _WIN32
 #include <ddraw.h>
 #include <dinput.h>
+#else
+#include "miniwin_ddraw.h"
+#include "miniwin_dinput.h"
+#endif
 
 typedef HRESULT WINAPI DirectDrawCreate_fn(GUID FAR* lpGUID, LPDIRECTDRAW FAR* lplpDD, IUnknown FAR* pUnkOuter);
 typedef HRESULT WINAPI

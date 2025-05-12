@@ -3,12 +3,17 @@
 #include "decomp.h"
 #include "tgl/tgl.h"
 
+#ifdef _WIN32
 #include <d3drm.h>
 
 #ifndef D3DRM_WINE
 typedef DWORD LPD3DRM_APPDATA;
 #else
 typedef LPVOID LPD3DRM_APPDATA;
+#endif
+#else
+#include "miniwin_d3drm.h"
+typedef void* LPD3DRM_APPDATA;
 #endif
 
 // Forward declare D3D types

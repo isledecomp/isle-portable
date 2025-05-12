@@ -158,7 +158,7 @@ int LegoDeviceEnumerate::BETA_1011cc65(int p_idx, char* p_buffer)
 // FUNCTION: CONFIG 0x00402860
 // FUNCTION: LEGO1 0x1009d0d0
 // FUNCTION: BETA10 0x1011cdb4
-int LegoDeviceEnumerate::FUN_1009d0d0()
+int LegoDeviceEnumerate::GetBestDevice()
 {
 	if (!IsInitialized()) {
 		return -1;
@@ -171,7 +171,7 @@ int LegoDeviceEnumerate::FUN_1009d0d0()
 	int i = 0;
 	int j = 0;
 	int k = -1;
-	int cpu_mmx = SupportsMMX();
+	bool cpu_mmx = SupportsSIMD();
 
 	for (list<MxDriver>::iterator it = m_list.begin(); it != m_list.end(); it++, i++) {
 
@@ -199,64 +199,49 @@ int LegoDeviceEnumerate::FUN_1009d0d0()
 // FUNCTION: CONFIG 0x00402930
 // FUNCTION: LEGO1 0x1009d1a0
 // FUNCTION: BETA10 0x1011cf54
-int LegoDeviceEnumerate::SupportsMMX()
+bool LegoDeviceEnumerate::SupportsSIMD()
 {
-	int supports_mmx = SupportsCPUID();
-
-	if (supports_mmx) {
-#ifdef _MSC_VER
-#if defined(_M_IX86)
-		__asm {
-			push ebx
-			mov eax, 0x0            ; EAX=0: Highest Function Parameter and Manufacturer ID
-#if _MSC_VER > 1100
-			cpuid                   ; Run CPUID
-#else
-			__emit 0x0f
-			__emit 0xa2
-#endif
-			mov eax, 0x1            ; EAX=1: Processor Info and Feature Bits (unused)
-#if _MSC_VER > 1100
-			cpuid                   ; Run CPUID
-#else
-			__emit 0x0f
-			__emit 0xa2
-#endif
-			xor eax, eax            ; Zero EAX register
-			bt edx, 0x17            ; Test bit 0x17 (23): MMX instructions (64-bit SIMD) (Store in CF)
-			adc eax, eax            ; Add with carry: EAX = EAX + EAX + CF = CF
-			pop ebx
-			mov supports_mmx, eax   ; Save eax into C variable
-		}
-#elif defined(_M_IX64)
-		supports_mmx = 1;
-#else
-		supports_mmx = 0;
-#endif
-#else
-		__asm__("movl $0x0, %%eax\n\t"  // EAX=0: Highest Function Parameter and Manufacturer ID
-				"cpuid\n\t"             // Run CPUID\n"
-				"mov $0x1, %%eax\n\t"   // EAX=1: Processor Info and Feature Bits (unused)
-				"cpuid\n\t"             // Run CPUID
-				"xorl %%eax, %%eax\n\t" // Zero EAX register
-				"btl $0x15, %%edx\n\t"  // Test bit 0x17 (23): MMX instructions (64-bit SIMD) (Store in CF)
-				"adc %%eax, %%eax"      // Add with carry: EAX = EAX + EAX + CF = CF
-				: "=a"(supports_mmx)    // supports_mmx == EAX
-		);
-#endif
+#if defined(__x86_64__) || defined(_M_X64) || defined(__aarch64__) || defined(_M_ARM64)
+	// All x86_64 and 64-bit ARM CPUs support at least SSE2 or NEON
+	return true;
+#elif defined(__i386__) || defined(_M_IX86)
+	// 32-bit x86 - need to use CPUID to check for MMX or SSE
+	if (!SupportsCPUID()) {
+		return false;
 	}
 
-	return supports_mmx;
+	int edx;
+#if defined(_MSC_VER) && _MSC_VER >= 1310
+	int cpuInfo[4];
+	__cpuid(cpuInfo, 1);
+	edx = cpuInfo[3];
+#else
+	__asm__ __volatile__("movl $1, %%eax\n\t"
+						 "cpuid\n\t"
+						 : "=d"(edx)
+						 :
+						 : "%eax", "%ebx", "%ecx");
+#endif
+	return (edx & (1 << 23)) != 0; // Bit 23: MMX
+#elif defined(__arm__) && defined(__ANDROID__)
+	// Runtime check for NEON on 32-bit ARM (using Android NDK)
+	return android_getCpuFeatures() & ANDROID_CPU_ARM_FEATURE_NEON;
+#else
+// Prevent unsupported builds
+#error "Unsupported platform: SIMD feature detection not implemented"
+#endif
 }
 
 // FUNCTION: CONFIG 0x00402970
 // FUNCTION: LEGO1 0x1009d1e0
 // FUNCTION: BETA10 0x1011cf97
-int LegoDeviceEnumerate::SupportsCPUID()
+bool LegoDeviceEnumerate::SupportsCPUID()
 {
+#if defined(_M_X64) || defined(__x86_64__) || defined(__amd64__)
+	return true;
+#elif defined(_M_IX86) || defined(__i386__)
 	int has_cpuid;
 #ifdef _MSC_VER
-#if defined(_M_IX86)
 	__asm {
 		xor eax, eax                    ; Zero EAX register
 		pushfd                          ; Push EFLAGS register value on the stack
@@ -268,13 +253,7 @@ int LegoDeviceEnumerate::SupportsCPUID()
 		popfd                           ; Push EFLAGS register value on the stack (again, and makes sure the stack remains the same)
 		mov has_cpuid, eax              ; Save eax into C variable
 	}
-#elif defined(_M_X64)
-	has_cpuid = 1;
 #else
-	has_cpuid = 0;
-#endif
-#else
-#if defined(__i386__)
 	__asm__("xorl %%eax, %%eax\n\t"      // Zero EAX register
 			"pushfl\n\t"                 // Push EFLAGS register value on the stack
 			"orl $0x200000, (%%esp)\n\t" // Set bit 0x200000: Able to use CPUID instruction (Pentium+)
@@ -285,13 +264,11 @@ int LegoDeviceEnumerate::SupportsCPUID()
 			"popfl" // Push EFLAGS register value on the stack (again, and makes sure the stack remains the same)
 			: "=a"(has_cpuid) // has_cpuid == EAX
 	);
-#elif defined(__x86_64__) || defined(__amd64__)
-	has_cpuid = 1;
-#else
-	has_cpuid = 0;
-#endif
 #endif
 	return has_cpuid;
+#else
+	return false;
+#endif
 }
 
 // FUNCTION: CONFIG 0x004029a0

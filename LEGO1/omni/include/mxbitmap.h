@@ -5,7 +5,11 @@
 #include "mxtypes.h"
 
 #include <SDL3/SDL_iostream.h>
+#ifdef _WIN32
 #include <ddraw.h>
+#else
+#include "miniwin_ddraw.h"
+#endif
 #include <stdlib.h>
 
 class MxPalette;
