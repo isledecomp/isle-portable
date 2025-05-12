@@ -35,6 +35,11 @@
 #include <iniparser.h>
 #include <time.h>
 
+extern "C" {
+#include <errno.h>
+#include <stdlib.h>
+}
+
 DECOMP_SIZE_ASSERT(IsleApp, 0x8c)
 
 // GLOBAL: ISLE 0x410030
@@ -539,6 +544,45 @@ void IsleApp::LoadConfig()
 	SDL_Log("Reading configuration from \"%s\"", iniConfig);
 
 	dictionary* dict = iniparser_load(iniConfig);
+
+	// [library:config]
+	// Load sane defaults if dictionary failed to load
+	if (!dict) {
+		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Loading sane defaults");
+		FILE* iniFP = fopen(iniConfig, "w");
+
+		if (!iniFP) {
+			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to write config at '%s': %s", iniConfig, strerror(errno));
+			fclose(iniFP);
+		}
+
+		dict = iniparser_load(iniConfig);
+		iniparser_set(dict, "isle", NULL);
+
+		iniparser_set(dict, "isle:diskpath", SDL_GetBasePath());
+		iniparser_set(dict, "isle:cdpath", MxOmni::GetCD());
+		iniparser_set(dict, "isle:mediapath", SDL_GetBasePath());
+		iniparser_set(dict, "isle:savepath", prefPath);
+
+		iniparser_set(dict, "isle:Flip Surfaces",   m_flipSurfaces ? "true" : "false");
+		iniparser_set(dict, "isle:Full Screen",     m_fullScreen ? "true" : "false");
+		iniparser_set(dict, "isle:Wide View Angle", m_wideViewAngle ? "true" : "false");
+
+		iniparser_set(dict, "isle:3DSound", m_use3dSound ? "true" : "false");
+		iniparser_set(dict, "isle:Music",   m_useMusic ? "true" : "false");
+
+		iniparser_set(dict, "isle:UseJoystick",   m_useJoystick ? "true" : "false");
+		iniparser_set(dict, "isle:JoystickIndex", m_joystickIndex  ? "true" : "false");
+		iniparser_set(dict, "isle:Draw Cursor",   m_drawCursor  ? "true" : "false");
+
+		iniparser_set(dict, "isle:Back Buffers in Video RAM", "-1");
+
+		iniparser_set(dict, "isle:Island Quality", "1");
+		iniparser_set(dict, "isle:Island Texture", "1");
+
+		iniparser_dump_ini(dict, iniFP);
+		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "New config written at '%s'", iniConfig);
+	}
 
 	const char* hdPath = iniparser_getstring(dict, "isle:diskpath", SDL_GetBasePath());
 	m_hdPath = new char[strlen(hdPath) + 1];
