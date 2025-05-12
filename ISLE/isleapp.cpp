@@ -548,6 +548,11 @@ bool IsleApp::LoadConfig()
 	// [library:config]
 	// Load sane defaults if dictionary failed to load
 	if (!dict) {
+		if (m_iniPath) {
+			SDL_Log("Invalid config path '%s'", m_iniPath);
+			return false;
+		}
+
 		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Loading sane defaults");
 		FILE* iniFP = fopen(iniConfig, "wb");
 
