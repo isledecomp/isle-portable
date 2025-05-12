@@ -8,10 +8,10 @@
 
 #include <SDL3/SDL_mouse.h>
 #include <SDL3/SDL_video.h>
-#ifdef _WIN32
-#include <windows.h>
-#else
+#ifdef MINIWIN
 #include "miniwin.h"
+#else
+#include <windows.h>
 #endif
 
 // SIZE 0x8c

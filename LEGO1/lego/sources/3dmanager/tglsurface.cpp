@@ -8,25 +8,6 @@ DECOMP_SIZE_ASSERT(TglSurface, 0x70);
 
 using namespace Tgl;
 
-#ifdef D3DRM_WINE
-
-#include <SDL3/SDL.h>
-
-#define d3drm_wine_assert(COND)                                                                                        \
-	do {                                                                                                               \
-		if (!(COND)) {                                                                                                 \
-			SDL_Log(                                                                                                   \
-				"%s:%d Assertion failed: \"%s\" (ignored because wine-d3d does not implement it)",                     \
-				__FILE__,                                                                                              \
-				__LINE__,                                                                                              \
-				#COND                                                                                                  \
-			);                                                                                                         \
-		}                                                                                                              \
-	} while (0)
-#else
-#define d3drm_wine_assert(X) assert(X)
-#endif
-
 /////////////////////////////////////////////////////////////////////////////
 // TglSurface
 
@@ -145,11 +126,11 @@ BOOL TglSurface::Create(const CreateStruct& rCreateStruct, Renderer* pRenderer, 
 
 	if (textureShadeCount != -1) {
 		result = pRenderer->SetTextureDefaultShadeCount(textureShadeCount);
-		d3drm_wine_assert(Succeeded(result));
+		assert(Succeeded(result));
 	}
 	if (textureColorCount != -1) {
 		result = pRenderer->SetTextureDefaultColorCount(textureColorCount);
-		d3drm_wine_assert(Succeeded(result));
+		assert(Succeeded(result));
 	}
 
 	result = m_pDevice->SetColorModel(colorModel);
@@ -157,7 +138,7 @@ BOOL TglSurface::Create(const CreateStruct& rCreateStruct, Renderer* pRenderer, 
 	result = m_pDevice->SetShadingModel(shadingModel);
 	assert(Succeeded(result));
 	result = m_pDevice->SetShadeCount(shadeCount);
-	d3drm_wine_assert(Succeeded(result));
+	assert(Succeeded(result));
 	result = m_pDevice->SetDither(dither);
 	assert(Succeeded(result));
 

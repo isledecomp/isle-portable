@@ -37,7 +37,7 @@ jobs:
         run: |
           cd build
           zip "isle-portable-linux-${{ matrix.build-type }}.zip" \
-              CONFIG ISLE LEGO1.so
+              config isle liblego1.so
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4

@@ -1,9 +1,9 @@
 #include "MainDlg.h"
 
-#ifdef _WIN32
-#include <windows.h>
-#else
+#ifdef MINIWIN
 #include "miniwin.h"
+#else
+#include <windows.h>
 #endif
 
 #include "AboutDlg.h"

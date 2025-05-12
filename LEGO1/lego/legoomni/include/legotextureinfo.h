@@ -4,12 +4,12 @@
 #include "misc/legotypes.h"
 #include "tgl/tgl.h"
 
-#ifdef _WIN32
-#include <d3drmobj.h>
-#include <ddraw.h>
-#else
+#ifdef MINIWIN
 #include "miniwin_d3drm.h"
 #include "miniwin_ddraw.h"
+#else
+#include <d3drmobj.h>
+#include <ddraw.h>
 #endif
 
 class LegoTexture;

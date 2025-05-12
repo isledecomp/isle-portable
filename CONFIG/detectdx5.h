@@ -1,10 +1,10 @@
 #if !defined(AFX_DETECTDX5_H)
 #define AFX_DETECTDX5_H
 
-#ifdef _WIN32
-#include <windows.h>
-#else
+#ifdef MINIWIN
 #include "miniwin.h"
+#else
+#include <windows.h>
 #endif
 
 extern BOOL DetectDirectX5();

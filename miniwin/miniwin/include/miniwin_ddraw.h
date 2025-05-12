@@ -7,10 +7,7 @@
 #define DDENUMRET_OK 1
 #define DDFLIP_WAIT 0x00000004
 #define DISCL_BACKGROUND 0x00000002
-#define RASTERCAPS 0x00000000
 #define PC_NOCOLLAPSE 0x04
-#define RC_PALETTE 0x00000000
-#define SIZEPALETTE 256
 
 // DirectDraw Surface Description flags
 #define DDSD_CAPS 0x00000001
@@ -62,8 +59,6 @@
 #define DDSCL_EXCLUSIVE 0x00000002
 #define DDSCL_ALLOWREBOOT 0x00000080
 
-#define MAKE_HRESULT(sev, fac, code)                                                                                   \
-	((HRESULT) (((uint32_t) (sev) << 31) | ((uint32_t) (fac) << 16) | ((uint32_t) (code))))
 #define MAKE_DDHRESULT(code) MAKE_HRESULT(1, _FACDD, code)
 
 #define DD_OK S_OK
@@ -218,67 +213,48 @@ typedef struct DDSURFACEDESC* LPDDSURFACEDESC;
 
 typedef struct IDirectDraw* LPDIRECTDRAW;
 struct IDirectDrawPalette : public IUnknown {
-	virtual HRESULT GetCaps(LPDWORD lpdwCaps) { return DD_OK; }
-	virtual HRESULT GetEntries(DWORD dwFlags, DWORD dwBase, DWORD dwNumEntries, LPPALETTEENTRY lpEntries)
-	{
-		return DD_OK;
-	}
-	virtual HRESULT Initialize(LPDIRECTDRAW lpDD, DWORD dwFlags, LPPALETTEENTRY lpDDColorTable) { return DD_OK; }
-	virtual HRESULT SetEntries(DWORD dwFlags, DWORD dwStartingEntry, DWORD dwCount, LPPALETTEENTRY lpEntries)
-	{
-		return DD_OK;
-	}
+	virtual HRESULT GetCaps(LPDWORD lpdwCaps) = 0;
+	virtual HRESULT GetEntries(DWORD dwFlags, DWORD dwBase, DWORD dwNumEntries, LPPALETTEENTRY lpEntries) = 0;
+	virtual HRESULT Initialize(LPDIRECTDRAW lpDD, DWORD dwFlags, LPPALETTEENTRY lpDDColorTable) = 0;
+	virtual HRESULT SetEntries(DWORD dwFlags, DWORD dwStartingEntry, DWORD dwCount, LPPALETTEENTRY lpEntries) = 0;
 };
 typedef struct IDirectDrawPalette* LPDIRECTDRAWPALETTE;
 
-struct IDirectDrawClipper {
-	void Release() {}
-	HRESULT SetHWnd(DWORD unnamedParam1, HWND hWnd) { return DD_OK; }
+struct IDirectDrawClipper : public IUnknown {
+	virtual HRESULT SetHWnd(DWORD unnamedParam1, HWND hWnd) = 0;
 };
 typedef IDirectDrawClipper* LPDIRECTDRAWCLIPPER;
 
 typedef void *LPDDBLTFX, *LPDDENUMSURFACESCALLBACK;
 typedef struct IDirectDrawSurface* LPDIRECTDRAWSURFACE;
 struct IDirectDrawSurface : public IUnknown {
-	virtual HRESULT AddAttachedSurface(LPDIRECTDRAWSURFACE lpDDSAttachedSurface) { return DD_OK; }
+	virtual HRESULT AddAttachedSurface(LPDIRECTDRAWSURFACE lpDDSAttachedSurface) = 0;
 	virtual HRESULT Blt(
 		LPRECT lpDestRect,
 		LPDIRECTDRAWSURFACE lpDDSrcSurface,
 		LPRECT lpSrcRect,
 		DWORD dwFlags,
 		LPDDBLTFX lpDDBltFx
-	)
-	{
-		return DD_OK;
-	}
-	virtual HRESULT BltFast(DWORD dwX, DWORD dwY, LPDIRECTDRAWSURFACE lpDDSrcSurface, LPRECT lpSrcRect, DWORD dwTrans)
-	{
-		return DD_OK;
-	}
-	virtual HRESULT DeleteAttachedSurface(DWORD dwFlags, LPDIRECTDRAWSURFACE lpDDSAttachedSurface) { return DD_OK; }
-	virtual HRESULT Flip(LPDIRECTDRAWSURFACE lpDDSurfaceTargetOverride, DWORD dwFlags) { return DD_OK; }
-	virtual HRESULT GetAttachedSurface(LPDDSCAPS lpDDSCaps, LPDIRECTDRAWSURFACE* lplpDDAttachedSurface)
-	{
-		return DD_OK;
-	}
-	virtual HRESULT GetCaps(LPDDSCAPS lpDDSCaps) { return DD_OK; }
-	virtual HRESULT GetDC(HDC* lphDC) { return DD_OK; }
-	virtual HRESULT GetOverlayPosition(LPLONG lplX, LPLONG lplY) { return DD_OK; }
-	virtual HRESULT GetPalette(LPDIRECTDRAWPALETTE* lplpDDPalette) { return DDERR_GENERIC; }
-	virtual HRESULT GetPixelFormat(LPDDPIXELFORMAT lpDDPixelFormat) { return DD_OK; }
-	virtual HRESULT GetSurfaceDesc(LPDDSURFACEDESC lpDDSurfaceDesc) { return DD_OK; }
-	virtual HRESULT Initialize(LPDIRECTDRAW lpDD, LPDDSURFACEDESC lpDDSurfaceDesc) { return DD_OK; }
-	virtual HRESULT IsLost() { return DD_OK; }
-	virtual HRESULT Lock(LPRECT lpDestRect, LPDDSURFACEDESC lpDDSurfaceDesc, DWORD dwFlags, HANDLE hEvent)
-	{
-		return DD_OK;
-	}
-	virtual HRESULT ReleaseDC(HDC hDC) { return DD_OK; }
-	virtual HRESULT Restore() { return DD_OK; }
-	virtual HRESULT SetClipper(LPDIRECTDRAWCLIPPER lpDDClipper) { return DD_OK; }
-	virtual HRESULT SetColorKey(DWORD dwFlags, LPDDCOLORKEY lpDDColorKey) { return DD_OK; }
-	virtual HRESULT SetPalette(LPDIRECTDRAWPALETTE lpDDPalette) { return DD_OK; }
-	virtual HRESULT Unlock(LPVOID lpSurfaceData) { return DD_OK; }
+	) = 0;
+	virtual HRESULT BltFast(DWORD dwX, DWORD dwY, LPDIRECTDRAWSURFACE lpDDSrcSurface, LPRECT lpSrcRect, DWORD dwTrans) = 0;
+	virtual HRESULT DeleteAttachedSurface(DWORD dwFlags, LPDIRECTDRAWSURFACE lpDDSAttachedSurface) = 0;
+	virtual HRESULT Flip(LPDIRECTDRAWSURFACE lpDDSurfaceTargetOverride, DWORD dwFlags) = 0;
+	virtual HRESULT GetAttachedSurface(LPDDSCAPS lpDDSCaps, LPDIRECTDRAWSURFACE* lplpDDAttachedSurface) = 0;
+	virtual HRESULT GetCaps(LPDDSCAPS lpDDSCaps) = 0;
+	virtual HRESULT GetDC(HDC* lphDC) = 0;
+	virtual HRESULT GetOverlayPosition(LPLONG lplX, LPLONG lplY) = 0;
+	virtual HRESULT GetPalette(LPDIRECTDRAWPALETTE* lplpDDPalette) = 0;
+	virtual HRESULT GetPixelFormat(LPDDPIXELFORMAT lpDDPixelFormat) = 0;
+	virtual HRESULT GetSurfaceDesc(LPDDSURFACEDESC lpDDSurfaceDesc) = 0;
+	virtual HRESULT Initialize(LPDIRECTDRAW lpDD, LPDDSURFACEDESC lpDDSurfaceDesc) = 0;
+	virtual HRESULT IsLost() = 0;
+	virtual HRESULT Lock(LPRECT lpDestRect, LPDDSURFACEDESC lpDDSurfaceDesc, DWORD dwFlags, HANDLE hEvent) = 0;
+	virtual HRESULT ReleaseDC(HDC hDC) = 0;
+	virtual HRESULT Restore() = 0;
+	virtual HRESULT SetClipper(LPDIRECTDRAWCLIPPER lpDDClipper) = 0;
+	virtual HRESULT SetColorKey(DWORD dwFlags, LPDDCOLORKEY lpDDColorKey) = 0;
+	virtual HRESULT SetPalette(LPDIRECTDRAWPALETTE lpDDPalette) = 0;
+	virtual HRESULT Unlock(LPVOID lpSurfaceData) = 0;
 };
 
 struct IDirectDrawSurface3 : public IDirectDrawSurface {};
@@ -286,74 +262,43 @@ typedef IDirectDrawSurface3* LPDIRECTDRAWSURFACE3;
 
 typedef HRESULT (*LPDDENUMMODESCALLBACK)(LPDDSURFACEDESC, LPVOID);
 struct IDirectDraw : public IUnknown {
-	virtual HRESULT CreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER* lplpDDClipper, IUnknown* pUnkOuter)
-	{
-		return DDERR_GENERIC;
-	}
+	virtual HRESULT CreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER* lplpDDClipper, IUnknown* pUnkOuter) = 0;
 	virtual HRESULT CreatePalette(
 		DWORD dwFlags,
 		LPPALETTEENTRY lpColorTable,
 		LPDIRECTDRAWPALETTE* lplpDDPalette,
 		IUnknown* pUnkOuter
-	)
-	{
-		return DDERR_GENERIC;
-	}
+	) = 0;
 	virtual HRESULT CreateSurface(
 		LPDDSURFACEDESC lpDDSurfaceDesc,
 		LPDIRECTDRAWSURFACE* lplpDDSurface,
 		IUnknown* pUnkOuter
-	)
-	{
-		return DDERR_GENERIC;
-	}
+	) = 0;
 	virtual HRESULT EnumDisplayModes(
 		DWORD dwFlags,
 		LPDDSURFACEDESC lpDDSurfaceDesc,
 		LPVOID lpContext,
 		LPDDENUMMODESCALLBACK lpEnumModesCallback
-	);
+	) = 0;
 	virtual HRESULT EnumSurfaces(
 		DWORD dwFlags,
 		LPDDSURFACEDESC lpDDSD,
 		LPVOID lpContext,
 		LPDDENUMSURFACESCALLBACK lpEnumSurfacesCallback
-	)
-	{
-		return DD_OK;
-	}
-	virtual HRESULT FlipToGDISurface() { return DD_OK; }
-	virtual HRESULT GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELCaps);
-	virtual HRESULT GetDisplayMode(LPDDSURFACEDESC lpDDSurfaceDesc) { return DD_OK; }
-	virtual HRESULT Initialize(GUID* lpGUID) { return DD_OK; }
-	virtual HRESULT RestoreDisplayMode() { return DD_OK; }
-	virtual HRESULT SetCooperativeLevel(HWND hWnd, DWORD dwFlags) { return DD_OK; }
-	virtual HRESULT SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWORD dwBPP) { return DD_OK; }
+	) = 0;
+	virtual HRESULT FlipToGDISurface() = 0;
+	virtual HRESULT GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELCaps) = 0;
+	virtual HRESULT GetDisplayMode(LPDDSURFACEDESC lpDDSurfaceDesc) = 0;
+	virtual HRESULT Initialize(GUID* lpGUID) = 0;
+	virtual HRESULT RestoreDisplayMode() = 0;
+	virtual HRESULT SetCooperativeLevel(HWND hWnd, DWORD dwFlags) = 0;
+	virtual HRESULT SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWORD dwBPP) = 0;
 };
 
 struct IDirectDraw2 : public IDirectDraw {};
 typedef IDirectDraw2* LPDIRECTDRAW2;
 
 // --- Functions ---
-inline HPALETTE CreatePalette(LPLOGPALETTE lpLogPalette)
-{
-	return nullptr;
-}
-
-inline int SelectPalette(HDC hdc, HPALETTE hpal, BOOL bForceBackground)
-{
-	return 0;
-}
-
-inline int RealizePalette(HDC hdc)
-{
-	return 0;
-}
-
-inline BOOL ClientToScreen(HWND hWnd, LPPOINT lpPoint)
-{
-	return TRUE;
-}
 
 HRESULT DirectDrawCreate(LPGUID lpGuid, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOuter);
 

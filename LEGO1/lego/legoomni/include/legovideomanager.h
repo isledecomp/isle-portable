@@ -6,12 +6,12 @@
 #include "legophonemelist.h"
 #include "mxvideomanager.h"
 
-#ifdef _WIN32
-#include <d3drm.h>
-#include <ddraw.h>
-#else
+#ifdef MINIWIN
 #include "miniwin_d3drm.h"
 #include "miniwin_ddraw.h"
+#else
+#include <d3drm.h>
+#include <ddraw.h>
 #endif
 
 class Lego3DManager;

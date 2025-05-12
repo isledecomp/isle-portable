@@ -5,10 +5,10 @@
 #include "mxgeometry/mxmatrix.h"
 #include "roi.h"
 
-#ifdef _WIN32
-#include <windows.h>
-#else
+#ifdef MINIWIN
 #include "miniwin.h"
+#else
+#include <windows.h>
 #endif
 
 // VTABLE: LEGO1 0x100dbc08

@@ -5,10 +5,10 @@
 #include "compat.h"
 #include "decomp.h"
 
-#ifdef _WIN32
-#include <d3d.h>
-#else
+#ifdef MINIWIN
 #include "miniwin_d3d.h"
+#else
+#include <d3d.h>
 #endif
 
 class LegoDeviceEnumerate;
