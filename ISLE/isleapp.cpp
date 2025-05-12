@@ -32,11 +32,10 @@
 #define SDL_MAIN_USE_CALLBACKS
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
-#include <iniparser.h>
-#include <time.h>
-
 #include <errno.h>
+#include <iniparser.h>
 #include <stdlib.h>
+#include <time.h>
 
 DECOMP_SIZE_ASSERT(IsleApp, 0x8c)
 
@@ -553,7 +552,12 @@ bool IsleApp::LoadConfig()
 		FILE* iniFP = fopen(iniConfig, "wb");
 
 		if (!iniFP) {
-			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to write config at '%s': %s", iniConfig, strerror(errno));
+			SDL_LogError(
+				SDL_LOG_CATEGORY_APPLICATION,
+				"Failed to write config at '%s': %s",
+				iniConfig,
+				strerror(errno)
+			);
 			return false;
 		}
 
@@ -565,16 +569,16 @@ bool IsleApp::LoadConfig()
 		iniparser_set(dict, "isle:mediapath", SDL_GetBasePath());
 		iniparser_set(dict, "isle:savepath", prefPath);
 
-		iniparser_set(dict, "isle:Flip Surfaces",   m_flipSurfaces ? "true" : "false");
-		iniparser_set(dict, "isle:Full Screen",     m_fullScreen ? "true" : "false");
+		iniparser_set(dict, "isle:Flip Surfaces", m_flipSurfaces ? "true" : "false");
+		iniparser_set(dict, "isle:Full Screen", m_fullScreen ? "true" : "false");
 		iniparser_set(dict, "isle:Wide View Angle", m_wideViewAngle ? "true" : "false");
 
 		iniparser_set(dict, "isle:3DSound", m_use3dSound ? "true" : "false");
-		iniparser_set(dict, "isle:Music",   m_useMusic ? "true" : "false");
+		iniparser_set(dict, "isle:Music", m_useMusic ? "true" : "false");
 
-		iniparser_set(dict, "isle:UseJoystick",   m_useJoystick ? "true" : "false");
-		iniparser_set(dict, "isle:JoystickIndex", m_joystickIndex  ? "true" : "false");
-		iniparser_set(dict, "isle:Draw Cursor",   m_drawCursor  ? "true" : "false");
+		iniparser_set(dict, "isle:UseJoystick", m_useJoystick ? "true" : "false");
+		iniparser_set(dict, "isle:JoystickIndex", m_joystickIndex ? "true" : "false");
+		iniparser_set(dict, "isle:Draw Cursor", m_drawCursor ? "true" : "false");
 
 		iniparser_set(dict, "isle:Back Buffers in Video RAM", "-1");
 
