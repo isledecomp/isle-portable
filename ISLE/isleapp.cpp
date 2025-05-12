@@ -552,9 +552,7 @@ bool IsleApp::LoadConfig()
 		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Loading sane defaults");
 		FILE* iniFP = fopen(iniConfig, "wb");
 
-		if (iniFP) {
-			fclose(iniFP);
-		} else {
+		if (!iniFP) {
 			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to write config at '%s': %s", iniConfig, strerror(errno));
 			return false;
 		}
@@ -583,7 +581,7 @@ bool IsleApp::LoadConfig()
 		iniparser_set(dict, "isle:Island Quality", "1");
 		iniparser_set(dict, "isle:Island Texture", "1");
 
-		iniparser_dump_ini(dict, iniFP);
+		iniparser_dump_ini(dict, );
 		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "New config written at '%s'", iniConfig);
 	}
 
@@ -641,6 +639,7 @@ bool IsleApp::LoadConfig()
 	m_savePath = new char[strlen(savePath) + 1];
 	strcpy(m_savePath, savePath);
 
+	fclose(iniFP);
 	iniparser_freedict(dict);
 	delete[] iniConfig;
 	SDL_free(prefPath);
