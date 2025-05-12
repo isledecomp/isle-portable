@@ -549,7 +549,7 @@ void IsleApp::LoadConfig()
 	// Load sane defaults if dictionary failed to load
 	if (!dict) {
 		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Loading sane defaults");
-		FILE* iniFP = fopen(iniConfig, "w");
+		FILE* iniFP = fopen(iniConfig, "wb");
 
 		if (!iniFP) {
 			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to write config at '%s': %s", iniConfig, strerror(errno));
