@@ -6,7 +6,6 @@
 #define D3DPAL_RESERVED 0x00000000
 #define D3DPAL_READONLY 0x00000001
 #define D3DPTEXTURECAPS_PERSPECTIVE 0x00000001
-#define D3DDD_DEVICEZBUFFERBITDEPTH 32
 
 // --- Enums ---
 enum D3DCOLORMODEL {
@@ -46,6 +45,6 @@ struct IDirect3D2 {
 	{
 		return DDERR_GENERIC;
 	}
-	virtual HRESULT EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx) { return S_OK; };
+	virtual HRESULT EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx);
 };
 typedef IDirect3D2* LPDIRECT3D2;
