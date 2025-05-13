@@ -22,12 +22,12 @@ struct DirectDrawImpl : public IDirectDraw2, public IDirect3D2 {
 	HRESULT QueryInterface(const GUID& riid, void** ppvObject) override {
         if (SDL_memcmp(&riid, &IID_IDirectDraw2, sizeof(GUID)) == 0) {
             AddRef();
-            *ppvObject = dynamic_cast<IDirectDraw2*>(this);
+            *ppvObject = static_cast<IDirectDraw2*>(this);
             return S_OK;
         }
         if (SDL_memcmp(&riid, &IID_IDirect3D2, sizeof(GUID)) == 0) {
             AddRef();
-            *ppvObject = dynamic_cast<IDirect3D2*>(this);
+            *ppvObject = static_cast<IDirect3D2*>(this);
             return S_OK;
         }
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "DirectDrawImpl does not implement guid");
