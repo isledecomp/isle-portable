@@ -127,10 +127,10 @@ struct D3DRMVERTEX {
 	float tu, tv;
 };
 
-struct IDirect3DRMVisual : public IUnknown {};
+struct IDirect3DRMVisual : virtual public IUnknown {};
 typedef IDirect3DRMVisual* LPDIRECT3DRMVISUAL;
 
-struct IDirect3DRMObject : public IUnknown {
+struct IDirect3DRMObject : virtual public IUnknown {
 	virtual HRESULT Clone(void** ppObject) = 0;
 	virtual HRESULT AddDestroyCallback(void (*cb)(IDirect3DRMObject*, void*), void* arg) = 0;
 	virtual HRESULT DeleteDestroyCallback(void (*cb)(IDirect3DRMObject*, void*), void* arg) = 0;
@@ -140,7 +140,7 @@ struct IDirect3DRMObject : public IUnknown {
 	virtual HRESULT GetName(DWORD* size, char* name) = 0;
 	virtual HRESULT GetClassName(DWORD* size, char* name) = 0;
 };
-struct IDirect3DRMTexture : public IUnknown {
+struct IDirect3DRMTexture : virtual public IUnknown {
 	virtual HRESULT AddDestroyCallback(void (*cb)(IDirect3DRMObject*, void*), void* arg) = 0;
 	virtual LPVOID GetAppData() = 0;
 	virtual HRESULT SetAppData(LPD3DRM_APPDATA appData) = 0;
@@ -154,7 +154,7 @@ typedef IDirect3DRMTexture2* LPDIRECT3DRMTEXTURE2;
 
 typedef struct IDirect3DRMMaterial *LPDIRECT3DRMMATERIAL, **LPLPDIRECT3DRMMATERIAL;
 
-struct IDirect3DRMMesh : public IUnknown {
+struct IDirect3DRMMesh : virtual public IUnknown {
 	virtual HRESULT Clone(int flags, GUID iid, void** object) = 0;
 	virtual HRESULT GetBox(D3DRMBOX* box) = 0;
 	virtual HRESULT AddGroup(
@@ -186,22 +186,22 @@ struct IDirect3DRMMesh : public IUnknown {
 	virtual HRESULT GetVertices(int groupIndex, int startIndex, int count, D3DRMVERTEX* vertices) = 0;
 };
 
-struct IDirect3DRMLight : public IUnknown {
+struct IDirect3DRMLight : virtual public IUnknown {
 	virtual HRESULT SetColorRGB(float r, float g, float b) = 0;
 };
 
-struct IDirect3DRMLightArray : public IUnknown {
+struct IDirect3DRMLightArray : virtual public IUnknown {
 	virtual DWORD GetSize() = 0;
 	virtual HRESULT GetElement(int index, IDirect3DRMLight** light) const = 0;
 };
 
-struct IDirect3DRMVisualArray : public IUnknown {
+struct IDirect3DRMVisualArray : virtual public IUnknown {
 	virtual DWORD GetSize() = 0;
 	virtual HRESULT GetElement(int index, IDirect3DRMVisual** visual) const = 0;
 };
 
 typedef struct IDirect3DRMFrameArray* LPDIRECT3DRMFRAMEARRAY;
-struct IDirect3DRMFrame : public IUnknown {
+struct IDirect3DRMFrame : virtual public IUnknown {
 	virtual HRESULT SetAppData(LPD3DRM_APPDATA appData) = 0;
 	virtual LPVOID GetAppData() = 0;
 	virtual HRESULT AddChild(IDirect3DRMFrame* child) = 0;
@@ -231,7 +231,7 @@ typedef IDirect3DRMFrame* LPDIRECT3DRMFRAME;
 struct IDirect3DRMFrame2 : public IDirect3DRMFrame {};
 typedef IDirect3DRMFrame2* LPDIRECT3DRMFRAME2;
 
-struct IDirect3DRMFrameArray : public IUnknown {
+struct IDirect3DRMFrameArray : virtual public IUnknown {
 	virtual DWORD GetSize() = 0;
 	virtual HRESULT GetElement(DWORD index, IDirect3DRMFrame** frame) = 0;
 };
@@ -242,7 +242,7 @@ struct D3DRMPICKDESC {
 	float dist;
 };
 
-struct IDirect3DRMPickedArray : public IUnknown {
+struct IDirect3DRMPickedArray : virtual public IUnknown {
 	virtual DWORD GetSize() = 0;
 	virtual HRESULT GetPick(
 		DWORD index,
@@ -274,19 +274,19 @@ struct IDirect3DRMViewport : public IDirect3DRMObject {
 	virtual HRESULT Pick(float x, float y, LPDIRECT3DRMPICKEDARRAY* pickedArray) = 0;
 };
 
-struct IDirect3DRMWinDevice : public IUnknown {
+struct IDirect3DRMWinDevice : virtual public IUnknown {
 	virtual HRESULT Activate() = 0;
 	virtual HRESULT Paint() = 0;
 	virtual void HandleActivate(WORD wParam) = 0;
 	virtual void HandlePaint(void* p_dc) = 0;
 };
 
-struct IDirect3DRMViewportArray : public IUnknown {
+struct IDirect3DRMViewportArray : virtual public IUnknown {
 	virtual DWORD GetSize() = 0;
 	virtual HRESULT GetElement(int index, IDirect3DRMViewport** viewport) = 0;
 };
 
-struct IDirect3DRMDevice2 : public IUnknown {
+struct IDirect3DRMDevice2 : virtual public IUnknown {
 	virtual unsigned long GetWidth() = 0;
 	virtual unsigned long GetHeight() = 0;
 	virtual HRESULT SetBufferCount(int count) = 0;
@@ -305,7 +305,7 @@ struct IDirect3DRMDevice2 : public IUnknown {
 	virtual HRESULT GetViewports(IDirect3DRMViewportArray** ppViewportArray) = 0;
 };
 
-struct IDirect3DRM : public IUnknown {
+struct IDirect3DRM : virtual public IUnknown {
 	virtual HRESULT CreateDeviceFromD3D(
 		const IDirect3D2* d3d,
 		IDirect3DDevice2* d3dDevice,

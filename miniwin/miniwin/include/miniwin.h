@@ -205,9 +205,14 @@ typedef GUID REFIID;
 typedef GUID* LPGUID;
 
 struct IUnknown {
-	virtual ULONG AddRef() = 0;
-	virtual ULONG Release() = 0;
-	virtual HRESULT QueryInterface(const GUID& riid, void** ppvObject) = 0;
+	IUnknown() : m_refCount(1) {}
+	virtual ULONG AddRef();
+	virtual ULONG Release();
+	virtual HRESULT QueryInterface(const GUID& riid, void** ppvObject);
+	virtual ~IUnknown() = default;
+
+private:
+	int m_refCount;
 };
 typedef struct IUnknown* LPUNKNOWN;
 
