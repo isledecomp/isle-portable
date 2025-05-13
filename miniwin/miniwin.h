@@ -198,7 +198,7 @@ typedef GUID* LPGUID;
 struct IUnknown {
 	virtual ULONG AddRef() { return 0; }
 	virtual ULONG Release() { return 0; }
-	virtual HRESULT QueryInterface(const GUID& riid, void** ppvObject) { return S_OK; }
+	virtual HRESULT QueryInterface(const GUID& riid, void** ppvObject);
 };
 typedef struct IUnknown* LPUNKNOWN;
 
@@ -517,10 +517,7 @@ inline BOOL CheckDlgButton(int nIDButton, BOOL uCheck)
 	return TRUE;
 }
 
-inline void OutputDebugString(const char* lpOutputString)
-{
-	fprintf(stderr, "%s", lpOutputString);
-}
+void OutputDebugString(const char* lpOutputString);
 
 inline void Enable3dControls()
 {

@@ -42,6 +42,7 @@
 #define DDBLT_KEYSRC 0x00000002
 #define DDBLT_ROP 0x00000010
 
+#define D3DDD_DEVICEZBUFFERBITDEPTH 0x00000010
 #define DDPF_PALETTEINDEXED8 0x00000020
 #define DDPF_RGB 0x00000040
 
@@ -311,10 +312,7 @@ struct IDirectDraw : public IUnknown {
 		LPDDSURFACEDESC lpDDSurfaceDesc,
 		LPVOID lpContext,
 		LPDDENUMMODESCALLBACK lpEnumModesCallback
-	)
-	{
-		return DD_OK;
-	}
+	);
 	virtual HRESULT EnumSurfaces(
 		DWORD dwFlags,
 		LPDDSURFACEDESC lpDDSD,
@@ -325,7 +323,7 @@ struct IDirectDraw : public IUnknown {
 		return DD_OK;
 	}
 	virtual HRESULT FlipToGDISurface() { return DD_OK; }
-	virtual HRESULT GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELCaps) { return DDERR_GENERIC; }
+	virtual HRESULT GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELCaps);
 	virtual HRESULT GetDisplayMode(LPDDSURFACEDESC lpDDSurfaceDesc) { return DD_OK; }
 	virtual HRESULT Initialize(GUID* lpGUID) { return DD_OK; }
 	virtual HRESULT RestoreDisplayMode() { return DD_OK; }
@@ -357,13 +355,7 @@ inline BOOL ClientToScreen(HWND hWnd, LPPOINT lpPoint)
 	return TRUE;
 }
 
-inline HRESULT DirectDrawCreate(LPGUID lpGuid, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOuter)
-{
-	return DDERR_GENERIC;
-}
+HRESULT DirectDrawCreate(LPGUID lpGuid, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOuter);
 
 typedef BOOL (*LPDDENUMCALLBACKA)(GUID*, LPSTR, LPSTR, LPVOID);
-inline HRESULT DirectDrawEnumerate(LPDDENUMCALLBACKA cb, void* context)
-{
-	return DDERR_GENERIC;
-}
+HRESULT DirectDrawEnumerate(LPDDENUMCALLBACKA cb, void* context);
