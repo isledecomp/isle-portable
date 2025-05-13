@@ -212,7 +212,7 @@ struct DDSURFACEDESC {
 typedef struct DDSURFACEDESC* LPDDSURFACEDESC;
 
 typedef struct IDirectDraw* LPDIRECTDRAW;
-struct IDirectDrawPalette : public IUnknown {
+struct IDirectDrawPalette : virtual public IUnknown {
 	virtual HRESULT GetCaps(LPDWORD lpdwCaps) = 0;
 	virtual HRESULT GetEntries(DWORD dwFlags, DWORD dwBase, DWORD dwNumEntries, LPPALETTEENTRY lpEntries) = 0;
 	virtual HRESULT Initialize(LPDIRECTDRAW lpDD, DWORD dwFlags, LPPALETTEENTRY lpDDColorTable) = 0;
@@ -220,14 +220,14 @@ struct IDirectDrawPalette : public IUnknown {
 };
 typedef struct IDirectDrawPalette* LPDIRECTDRAWPALETTE;
 
-struct IDirectDrawClipper : public IUnknown {
+struct IDirectDrawClipper : virtual public IUnknown {
 	virtual HRESULT SetHWnd(DWORD unnamedParam1, HWND hWnd) = 0;
 };
 typedef IDirectDrawClipper* LPDIRECTDRAWCLIPPER;
 
 typedef void *LPDDBLTFX, *LPDDENUMSURFACESCALLBACK;
 typedef struct IDirectDrawSurface* LPDIRECTDRAWSURFACE;
-struct IDirectDrawSurface : public IUnknown {
+struct IDirectDrawSurface : virtual public IUnknown {
 	virtual HRESULT AddAttachedSurface(LPDIRECTDRAWSURFACE lpDDSAttachedSurface) = 0;
 	virtual HRESULT Blt(
 		LPRECT lpDestRect,
@@ -267,7 +267,7 @@ struct IDirectDrawSurface3 : public IDirectDrawSurface {};
 typedef IDirectDrawSurface3* LPDIRECTDRAWSURFACE3;
 
 typedef HRESULT (*LPDDENUMMODESCALLBACK)(LPDDSURFACEDESC, LPVOID);
-struct IDirectDraw : public IUnknown {
+struct IDirectDraw : virtual public IUnknown {
 	virtual HRESULT CreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER* lplpDDClipper, IUnknown* pUnkOuter) = 0;
 	virtual HRESULT CreatePalette(
 		DWORD dwFlags,
