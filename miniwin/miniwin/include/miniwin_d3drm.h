@@ -244,7 +244,12 @@ struct D3DRMPICKDESC {
 
 struct IDirect3DRMPickedArray : public IUnknown {
 	virtual DWORD GetSize() = 0;
-	virtual HRESULT GetPick(DWORD index, IDirect3DRMVisual** visual, IDirect3DRMFrameArray** frameArray, D3DRMPICKDESC* desc) = 0;
+	virtual HRESULT GetPick(
+		DWORD index,
+		IDirect3DRMVisual** visual,
+		IDirect3DRMFrameArray** frameArray,
+		D3DRMPICKDESC* desc
+	) = 0;
 };
 typedef IDirect3DRMPickedArray* LPDIRECT3DRMPICKEDARRAY;
 

@@ -236,7 +236,13 @@ struct IDirectDrawSurface : public IUnknown {
 		DWORD dwFlags,
 		LPDDBLTFX lpDDBltFx
 	) = 0;
-	virtual HRESULT BltFast(DWORD dwX, DWORD dwY, LPDIRECTDRAWSURFACE lpDDSrcSurface, LPRECT lpSrcRect, DWORD dwTrans) = 0;
+	virtual HRESULT BltFast(
+		DWORD dwX,
+		DWORD dwY,
+		LPDIRECTDRAWSURFACE lpDDSrcSurface,
+		LPRECT lpSrcRect,
+		DWORD dwTrans
+	) = 0;
 	virtual HRESULT DeleteAttachedSurface(DWORD dwFlags, LPDIRECTDRAWSURFACE lpDDSAttachedSurface) = 0;
 	virtual HRESULT Flip(LPDIRECTDRAWSURFACE lpDDSurfaceTargetOverride, DWORD dwFlags) = 0;
 	virtual HRESULT GetAttachedSurface(LPDDSCAPS lpDDSCaps, LPDIRECTDRAWSURFACE* lplpDDAttachedSurface) = 0;

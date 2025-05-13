@@ -37,8 +37,8 @@
 
 #define FAILED(hr) (((HRESULT) (hr)) < 0)
 #define InterlockedIncrement(x) __sync_add_and_fetch(x, 1)
-#define INVALID_HANDLE ((HANDLE) - 1)
-#define INVALID_HANDLE_VALUE ((HANDLE) - 1)
+#define INVALID_HANDLE ((HANDLE) -1)
+#define INVALID_HANDLE_VALUE ((HANDLE) -1)
 #define HKEY_LOCAL_MACHINE ((HKEY) 0x80000002)
 #define GWL_STYLE (-16)
 #define HWND_NOTOPMOST (HWND) - 2
@@ -129,7 +129,7 @@ typedef UINT_PTR WPARAM;
 typedef LONG_PTR LPARAM, LRESULT;
 typedef void* HANDLE;
 typedef HANDLE HMENU, HICON, HFONT;
-typedef struct HINSTANCE__ * HINSTANCE;
+typedef struct HINSTANCE__* HINSTANCE;
 typedef HANDLE HWND, HMODULE, HDC, HPALETTE, HFILE, HCURSOR;
 typedef LONG HRESULT, LSTATUS, HKEY, REGSAM;
 typedef HKEY* PHKEY;
@@ -262,7 +262,7 @@ inline BOOL SetWindowPos(HWND hWndInsertAfter, int X, int Y, int cx, int cy, UIN
 	return TRUE;
 }
 
-BOOL GetWindowRect(HWND hDlg, struct tagRECT *Rect);
+BOOL GetWindowRect(HWND hDlg, struct tagRECT* Rect);
 
 inline BOOL GetClientRect(LPRECT lpRect)
 {

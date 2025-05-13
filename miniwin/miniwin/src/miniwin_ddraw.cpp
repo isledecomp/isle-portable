@@ -1,57 +1,59 @@
 #include "miniwin_ddraw.h"
+
 #include "miniwin_d3d.h"
 
 #include <SDL3/SDL.h>
 
 struct DirectDrawImpl : public IDirectDraw2, public IDirect3D2 {
-    DirectDrawImpl()
-    : m_refCount(1) {
-    }
-    // IUnknown interface
-	ULONG AddRef() override {
-        m_refCount += 1;
-        return m_refCount;
-    };
-	ULONG Release() override {
-        m_refCount -= 1;
-        if (m_refCount == 0) {
-            delete this;
-        }
-        return m_refCount;
-    }
-	HRESULT QueryInterface(const GUID& riid, void** ppvObject) override {
-        if (SDL_memcmp(&riid, &IID_IDirectDraw2, sizeof(GUID)) == 0) {
-            AddRef();
-            *ppvObject = static_cast<IDirectDraw2*>(this);
-            return S_OK;
-        }
-        if (SDL_memcmp(&riid, &IID_IDirect3D2, sizeof(GUID)) == 0) {
-            AddRef();
-            *ppvObject = static_cast<IDirect3D2*>(this);
-            return S_OK;
-        }
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "DirectDrawImpl does not implement guid");
-        return E_NOINTERFACE;
-    }
-    // IDirecdtDraw interface
-	HRESULT CreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER* lplpDDClipper, IUnknown* pUnkOuter) override {
-        return DDERR_GENERIC;
-    }
+	DirectDrawImpl() : m_refCount(1) {}
+	// IUnknown interface
+	ULONG AddRef() override
+	{
+		m_refCount += 1;
+		return m_refCount;
+	}
+	ULONG Release() override
+	{
+		m_refCount -= 1;
+		if (m_refCount == 0) {
+			delete this;
+		}
+		return m_refCount;
+	}
+	HRESULT QueryInterface(const GUID& riid, void** ppvObject) override
+	{
+		if (SDL_memcmp(&riid, &IID_IDirectDraw2, sizeof(GUID)) == 0) {
+			AddRef();
+			*ppvObject = static_cast<IDirectDraw2*>(this);
+			return S_OK;
+		}
+		if (SDL_memcmp(&riid, &IID_IDirect3D2, sizeof(GUID)) == 0) {
+			AddRef();
+			*ppvObject = static_cast<IDirect3D2*>(this);
+			return S_OK;
+		}
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "DirectDrawImpl does not implement guid");
+		return E_NOINTERFACE;
+	}
+	// IDirecdtDraw interface
+	HRESULT CreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER* lplpDDClipper, IUnknown* pUnkOuter) override
+	{
+		return DDERR_GENERIC;
+	}
 	HRESULT CreatePalette(
 		DWORD dwFlags,
 		LPPALETTEENTRY lpColorTable,
 		LPDIRECTDRAWPALETTE* lplpDDPalette,
 		IUnknown* pUnkOuter
-	) override {
-        return DDERR_GENERIC;
-    }
-	HRESULT CreateSurface(
-		LPDDSURFACEDESC lpDDSurfaceDesc,
-		LPDIRECTDRAWSURFACE* lplpDDSurface,
-		IUnknown* pUnkOuter
-	) override {
-        return DDERR_GENERIC;
-    }
+	) override
+	{
+		return DDERR_GENERIC;
+	}
+	HRESULT CreateSurface(LPDDSURFACEDESC lpDDSurfaceDesc, LPDIRECTDRAWSURFACE* lplpDDSurface, IUnknown* pUnkOuter)
+		override
+	{
+		return DDERR_GENERIC;
+	}
 	HRESULT EnumDisplayModes(
 		DWORD dwFlags,
 		LPDDSURFACEDESC lpDDSurfaceDesc,
@@ -63,35 +65,26 @@ struct DirectDrawImpl : public IDirectDraw2, public IDirect3D2 {
 		LPDDSURFACEDESC lpDDSD,
 		LPVOID lpContext,
 		LPDDENUMSURFACESCALLBACK lpEnumSurfacesCallback
-	) override {
-        return DD_OK;
-    }
-	HRESULT FlipToGDISurface() override {
-        return DD_OK;
-    }
+	) override
+	{
+		return DD_OK;
+	}
+	HRESULT FlipToGDISurface() override { return DD_OK; }
 	HRESULT GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELCaps) override;
-	HRESULT GetDisplayMode(LPDDSURFACEDESC lpDDSurfaceDesc) override {
-        return DD_OK;
-    }
-	HRESULT Initialize(GUID* lpGUID) override {
-        return DD_OK;
-    }
-	HRESULT RestoreDisplayMode() override {
-        return DD_OK;
-    }
-	HRESULT SetCooperativeLevel(HWND hWnd, DWORD dwFlags) override {
-        return DD_OK;
-    }
-	HRESULT SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWORD dwBPP) override {
-        return DD_OK;
-    }
-    // IDirect3D2 interface
-	HRESULT CreateDevice(const GUID& guid, void* pBackBuffer, IDirect3DDevice2** ppDirect3DDevice) override {
-        return DDERR_GENERIC;
-    }
+	HRESULT GetDisplayMode(LPDDSURFACEDESC lpDDSurfaceDesc) override { return DD_OK; }
+	HRESULT Initialize(GUID* lpGUID) override { return DD_OK; }
+	HRESULT RestoreDisplayMode() override { return DD_OK; }
+	HRESULT SetCooperativeLevel(HWND hWnd, DWORD dwFlags) override { return DD_OK; }
+	HRESULT SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWORD dwBPP) override { return DD_OK; }
+	// IDirect3D2 interface
+	HRESULT CreateDevice(const GUID& guid, void* pBackBuffer, IDirect3DDevice2** ppDirect3DDevice) override
+	{
+		return DDERR_GENERIC;
+	}
 	HRESULT EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx) override;
+
 private:
-    int m_refCount;
+	int m_refCount;
 };
 
 HRESULT DirectDrawImpl::EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx)

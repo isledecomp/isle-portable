@@ -60,7 +60,6 @@ struct CCommandLineInfo {
 	virtual void ParseParam(LPCSTR pszParam, BOOL bFlag, BOOL bLast) {}
 };
 
-
 inline BOOL IsDlgButtonChecked(int nIDButton)
 {
 	return 0;
