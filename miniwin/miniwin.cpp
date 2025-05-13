@@ -4,6 +4,7 @@
 #include "miniwin_d3drm.h"
 #include "miniwin_ddraw.h"
 
+#include <SDL3/SDL.h>
 #include <SDL3/SDL_log.h>
 
 bool IsEqualGUID(const GUID& a, const GUID& b)
@@ -59,4 +60,9 @@ HRESULT IUnknown::QueryInterface(const GUID& riid, void** ppvObject)
 void OutputDebugString(const char* lpOutputString)
 {
 	SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s", lpOutputString);
+}
+
+VOID WINAPI Sleep(DWORD dwMilliseconds)
+{
+	SDL_Delay(dwMilliseconds);
 }

@@ -525,7 +525,7 @@ if (ISLE_BUILD_CONFIG)
     CONFIG/res/config.rc
   )
   if(NOT WIN32)
-    list(APPEND config_SRC util/stdafx.cpp)
+    list(APPEND config_SRC miniwin/stdafx.cpp)
   endif()
   add_executable(config ${config_SRC})
   if(NOT WIN32)

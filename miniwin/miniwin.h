@@ -310,10 +310,7 @@ inline BOOL SetWindowPos(HWND hWndInsertAfter, int X, int Y, int cx, int cy, UIN
 	return TRUE;
 }
 
-inline BOOL GetWindowRect(HWND hDlg, struct tagRECT* Rect)
-{
-	return TRUE;
-}
+BOOL GetWindowRect(HWND hDlg, struct tagRECT *Rect);
 
 inline BOOL GetClientRect(LPRECT lpRect)
 {
@@ -540,9 +537,7 @@ inline AFX_MODULE_STATE* AfxGetModuleState()
 	return &g_CustomModuleState;
 }
 
-inline void AfxMessageBox(const char* message)
-{
-}
+void AfxMessageBox(const char* message);
 
 inline void* GetProcAddress(HMODULE module, const char* name)
 {
@@ -633,9 +628,7 @@ inline HMENU GetSystemMenu(HWND hWnd, bool bRevert)
 	return reinterpret_cast<HMENU>(0x1234);
 }
 
-inline VOID WINAPI Sleep(DWORD dwMilliseconds)
-{
-}
+VOID WINAPI Sleep(DWORD dwMilliseconds);
 
 inline HWND WINAPI FindWindow(LPCSTR lpClassName, LPCSTR lpWindowName)
 {
