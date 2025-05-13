@@ -10,10 +10,10 @@
 
 #include <SDL3/SDL_log.h>
 #include <assert.h>
-#ifdef _WIN32
-#include <windows.h>
-#else
+#ifdef MINIWIN
 #include "miniwin.h"
+#else
+#include <windows.h>
 #endif
 
 DECOMP_SIZE_ASSERT(MxDisplaySurface, 0xac);

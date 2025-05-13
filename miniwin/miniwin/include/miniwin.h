@@ -8,6 +8,11 @@
 #include <string.h>
 
 // --- Defines and Macros ---
+#define RASTERCAPS 0x00000000
+#define RC_PALETTE 0x00000000
+#define SIZEPALETTE 256
+#define MAKE_HRESULT(sev, fac, code)                                                                                   \
+	((HRESULT) (((uint32_t) (sev) << 31) | ((uint32_t) (fac) << 16) | ((uint32_t) (code))))
 
 // This is not the right way to make a GUID
 #define DEFINE_GUID(GuidName, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8)                                               \
@@ -17,7 +22,9 @@
 #define BEGIN_MESSAGE_MAP(class_name, base_class_name)
 #define DECLARE_MESSAGE_MAP()
 #define CALLBACK
+#ifndef __cdecl
 #define __cdecl
+#endif
 #define FAR
 #define END_MESSAGE_MAP()
 #define ON_COMMAND(id, func)
@@ -30,8 +37,8 @@
 
 #define FAILED(hr) (((HRESULT) (hr)) < 0)
 #define InterlockedIncrement(x) __sync_add_and_fetch(x, 1)
-#define INVALID_HANDLE ((HANDLE) - 1)
-#define INVALID_HANDLE_VALUE ((HANDLE) - 1)
+#define INVALID_HANDLE ((HANDLE) -1)
+#define INVALID_HANDLE_VALUE ((HANDLE) -1)
 #define HKEY_LOCAL_MACHINE ((HKEY) 0x80000002)
 #define GWL_STYLE (-16)
 #define HWND_NOTOPMOST (HWND) - 2
@@ -39,6 +46,7 @@
 #define MAKEINTRESOURCE(i) (reinterpret_cast<LPCTSTR>((ULONG_PTR) ((WORD) (i))))
 #define RGB(r, g, b) ((r) | ((g) << 8) | ((b) << 16))
 #define S_OK ((HRESULT) 0)
+#define E_NOINTERFACE (0x80004002)
 #define VOID void
 #define TRUE 1
 #define FALSE 0
@@ -121,7 +129,8 @@ typedef UINT_PTR WPARAM;
 typedef LONG_PTR LPARAM, LRESULT;
 typedef void* HANDLE;
 typedef HANDLE HMENU, HICON, HFONT;
-typedef HANDLE HWND, HMODULE, HDC, HINSTANCE, HPALETTE, HFILE, HCURSOR;
+typedef struct HINSTANCE__* HINSTANCE;
+typedef HANDLE HWND, HMODULE, HDC, HPALETTE, HFILE, HCURSOR;
 typedef LONG HRESULT, LSTATUS, HKEY, REGSAM;
 typedef HKEY* PHKEY;
 
@@ -196,68 +205,11 @@ typedef GUID REFIID;
 typedef GUID* LPGUID;
 
 struct IUnknown {
-	virtual ULONG AddRef() { return 0; }
-	virtual ULONG Release() { return 0; }
-	virtual HRESULT QueryInterface(const GUID& riid, void** ppvObject);
+	virtual ULONG AddRef() = 0;
+	virtual ULONG Release() = 0;
+	virtual HRESULT QueryInterface(const GUID& riid, void** ppvObject) = 0;
 };
 typedef struct IUnknown* LPUNKNOWN;
-
-struct CWnd {
-	void* m_hWnd;
-	void EnableWindow(bool bEnable) {}
-	void SetWindowText(const char* text) {}
-};
-
-struct CPaintDC {
-	void* m_hDC;
-	CPaintDC(HWND hWnd) {}
-	void Draw() {}
-};
-
-struct CDataExchange {
-	bool m_bSaveAndValidate;
-};
-
-struct CDialog {
-	void* m_hWnd;
-	int m_nIDTemplate;
-	CWnd* m_pParentWnd;
-	CDialog() : m_nIDTemplate(0), m_pParentWnd(nullptr) {}
-	CDialog(int nIDTemplate) : m_nIDTemplate(nIDTemplate), m_pParentWnd(nullptr) {}
-	CDialog(int nIDTemplate, CWnd* pParent) : m_nIDTemplate(nIDTemplate), m_pParentWnd(pParent) {}
-	virtual BOOL OnInitDialog() { return TRUE; }
-	void OnCancel() {}
-	virtual void OnOK() {}
-	virtual void DoModal() {}
-	virtual void Default() {}
-	virtual void EndDialog(int nResult) {}
-	virtual void DoDataExchange(CDataExchange* pDX) {}
-};
-
-struct CMenu {
-	void* m_hMenu;
-	CMenu() : m_hMenu(nullptr) {}
-	static CMenu* FromHandle(void* hMenu)
-	{
-		CMenu* pMenu = new CMenu();
-		pMenu->m_hMenu = hMenu;
-		return pMenu;
-	}
-	bool InsertMenu(UINT uPosition, UINT uFlags, UINT_PTR uIDNewItem, LPCTSTR lpszNewItem) { return true; }
-	bool RemoveMenu(UINT uPosition, UINT uFlags) { return true; }
-	bool SetMenuItemInfo(UINT uIDItem, const void* pMenuItemInfo, bool fByPosition = false) { return true; }
-	int GetMenuItemCount() const { return 0; }
-};
-
-struct CWinApp {
-	virtual ~CWinApp();
-	virtual BOOL InitInstance();
-	virtual int ExitInstance();
-};
-
-struct CCommandLineInfo {
-	virtual void ParseParam(LPCSTR pszParam, BOOL bFlag, BOOL bLast) {}
-};
 
 struct LOGPALETTE {
 	WORD palVersion;
@@ -310,7 +262,7 @@ inline BOOL SetWindowPos(HWND hWndInsertAfter, int X, int Y, int cx, int cy, UIN
 	return TRUE;
 }
 
-BOOL GetWindowRect(HWND hDlg, struct tagRECT *Rect);
+BOOL GetWindowRect(HWND hDlg, struct tagRECT* Rect);
 
 inline BOOL GetClientRect(LPRECT lpRect)
 {
@@ -337,9 +289,7 @@ inline BOOL GetVersionEx(OSVERSIONINFOA* version)
 	return TRUE;
 }
 
-inline void GlobalMemoryStatus(MEMORYSTATUS* memory_status)
-{
-}
+void GlobalMemoryStatus(MEMORYSTATUS* memory_status);
 
 inline HDC WINAPI GetDC(HWND hWnd)
 {
@@ -489,55 +439,7 @@ inline LSTATUS RegCreateKeyEx(
 	return ERROR_SUCCESS;
 }
 
-inline BOOL IsDlgButtonChecked(int nIDButton)
-{
-	return 0;
-}
-
-inline CWnd* GetDlgItem(int id)
-{
-	return new CWnd();
-}
-
-inline BOOL OnInitDialog(HWND hDlg, HWND hwndFocus, LPARAM lParam)
-{
-	return TRUE;
-}
-
-inline BOOL CheckRadioButton(int nIDFirstButton, int nIDLastButton, int nIDCheckButton)
-{
-	return TRUE;
-}
-
-inline BOOL CheckDlgButton(int nIDButton, BOOL uCheck)
-{
-	return TRUE;
-}
-
 void OutputDebugString(const char* lpOutputString);
-
-inline void Enable3dControls()
-{
-}
-
-inline void ParseCommandLine(CCommandLineInfo& cmdInfo)
-{
-}
-
-struct AFX_MODULE_STATE {
-	CWinApp* m_pCurrentWinApp;
-};
-extern const char* afxCurrentAppName;
-extern CWinApp* wndTop;
-extern AFX_MODULE_STATE g_CustomModuleState;
-#define afxCurrentWinApp AfxGetModuleState()->m_pCurrentWinApp
-inline AFX_MODULE_STATE* AfxGetModuleState()
-{
-	g_CustomModuleState.m_pCurrentWinApp = wndTop;
-	return &g_CustomModuleState;
-}
-
-void AfxMessageBox(const char* message);
 
 inline void* GetProcAddress(HMODULE module, const char* name)
 {
@@ -578,10 +480,8 @@ inline int DeleteObject(void*)
 	return 1;
 }
 
-inline int _stricmp(const char* str1, const char* str2)
-{
-	return strcasecmp(str1, str2);
-}
+int miniwin_stricmp(const char* str1, const char* str2);
+#define _stricmp miniwin_stricmp
 
 inline BOOL AdjustWindowRectEx(LPRECT lpRect, DWORD dwStyle, BOOL bMenu, DWORD dwExStyle)
 {
@@ -643,4 +543,24 @@ inline LRESULT SendMessage(UINT Msg, WPARAM wParam, LPARAM lParam)
 inline LRESULT SendMessage(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	return 0;
+}
+
+inline HPALETTE CreatePalette(LPLOGPALETTE lpLogPalette)
+{
+	return nullptr;
+}
+
+inline int SelectPalette(HDC hdc, HPALETTE hpal, BOOL bForceBackground)
+{
+	return 0;
+}
+
+inline int RealizePalette(HDC hdc)
+{
+	return 0;
+}
+
+inline BOOL ClientToScreen(HWND hWnd, LPPOINT lpPoint)
+{
+	return TRUE;
 }

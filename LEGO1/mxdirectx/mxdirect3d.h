@@ -6,10 +6,10 @@
 #include "mxdirectxinfo.h"
 #include "mxstl/stlcompat.h"
 
-#ifdef _WIN32
-#include <d3d.h>
-#else
+#ifdef MINIWIN
 #include "miniwin_d3d.h"
+#else
+#include <d3d.h>
 #endif
 
 // VTABLE: LEGO1 0x100db800

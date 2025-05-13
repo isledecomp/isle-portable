@@ -7,10 +7,10 @@
 #include <SDL3/SDL_timer.h>
 #include <limits.h> // ULONG_MAX
 #include <math.h>
-#ifdef _WIN32
-#include <windows.h>
-#else
+#ifdef MINIWIN
 #include "miniwin.h"
+#else
+#include <windows.h>
 #endif
 
 //////////////////////////////////////////////////////////////////////////////

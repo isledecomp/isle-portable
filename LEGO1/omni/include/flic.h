@@ -3,10 +3,10 @@
 
 #include "decomp.h"
 
-#ifdef _WIN32
-#include <windows.h>
-#else
+#ifdef MINIWIN
 #include "miniwin.h"
+#else
+#include <windows.h>
 #endif
 
 enum FLI_CHUNK_TYPE {

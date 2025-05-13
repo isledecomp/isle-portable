@@ -38,13 +38,8 @@ typedef D3DDEVICEDESC* LPD3DDEVICEDESC;
 struct IDirect3DDevice2 : public IUnknown {};
 
 typedef HRESULT (*LPD3DENUMDEVICESCALLBACK)(LPGUID, LPSTR, LPSTR, LPD3DDEVICEDESC, LPD3DDEVICEDESC, LPVOID);
-struct IDirect3D2 {
-	virtual ULONG AddRef() { return 0; }
-	virtual ULONG Release() { return 0; }
-	virtual HRESULT CreateDevice(const GUID& guid, void* pBackBuffer, IDirect3DDevice2** ppDirect3DDevice)
-	{
-		return DDERR_GENERIC;
-	}
-	virtual HRESULT EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx);
+struct IDirect3D2 : public IUnknown {
+	virtual HRESULT CreateDevice(const GUID& guid, void* pBackBuffer, IDirect3DDevice2** ppDirect3DDevice) = 0;
+	virtual HRESULT EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx) = 0;
 };
 typedef IDirect3D2* LPDIRECT3D2;

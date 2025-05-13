@@ -2,6 +2,6 @@
 //	simple.pch will be the pre-compiled header
 //	stdafx.obj will contain the pre-compiled type information
 
-#ifdef _WIN32
-#include "stdafx.h"
+#ifndef MINIMFC
+#include "StdAfx.h"
 #endif

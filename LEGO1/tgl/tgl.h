@@ -1,17 +1,22 @@
 
 #ifndef _tgl_h
 #define _tgl_h
+#define RASTERCAPS 0x00000000
 
 #include "tglvector.h"
 
-#ifdef _WIN32
-#include <d3d.h>
-#include <ddraw.h>
-#include <windows.h>
-#else
-#include "miniwin.h"
+#ifdef MINIWIN
 #include "miniwin_d3d.h"
 #include "miniwin_ddraw.h"
+#else
+#include <d3d.h>
+#include <ddraw.h>
+#endif
+
+#ifdef MINIWIN
+#include "miniwin.h"
+#else
+#include <windows.h>
 #endif
 
 namespace Tgl

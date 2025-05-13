@@ -4,10 +4,10 @@
 #include "lego1_export.h"
 #include "mxtypes.h"
 
-#ifdef _WIN32
-#include <windows.h>
-#else
+#ifdef MINIWIN
 #include "miniwin.h"
+#else
+#include <windows.h>
 #endif
 
 class MxVideoParamFlags {

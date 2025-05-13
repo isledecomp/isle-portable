@@ -6,10 +6,10 @@
 #include "realtime/realtimeview.h"
 #include "viewroi.h"
 
-#ifdef _WIN32
-#include <d3drm.h>
-#else
+#ifdef MINIWIN
 #include "miniwin_d3drm.h"
+#else
+#include <d3drm.h>
 #endif
 
 // VTABLE: LEGO1 0x100dbd88

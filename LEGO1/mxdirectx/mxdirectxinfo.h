@@ -4,10 +4,10 @@
 #include "decomp.h"
 #include "mxstl/stlcompat.h"
 
-#ifdef _WIN32
-#include <d3d.h>
-#else
+#ifdef MINIWIN
 #include "miniwin_d3d.h"
+#else
+#include <d3d.h>
 #endif
 
 // SIZE 0x17c

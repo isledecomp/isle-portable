@@ -1,7 +1,7 @@
-#ifdef _WIN32
-#include <windows.h>
-#else
+#ifdef MINIWIN
 #include "miniwin.h"
+#else
+#include <windows.h>
 #endif
 
 // FUNCTION: LEGO1 0x10091ee0

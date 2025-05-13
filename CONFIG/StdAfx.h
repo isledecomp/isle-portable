@@ -3,14 +3,14 @@
 
 #define VC_EXTRALEAN // Exclude rarely-used stuff from Windows headers
 
-#ifdef _WIN32
+#ifdef MINIMFC
+#include "minimfc.h"
+#else
 #include <afxext.h> // MFC extensions
 #include <afxwin.h> // MFC core and standard components
 #ifndef _AFX_NO_AFXCMN_SUPPORT
 #include <afxcmn.h> // MFC support for Windows Common Controls
 #endif              // _AFX_NO_AFXCMN_SUPPORT
-#else
-#include "miniwin.h"
 #endif
 
 #if 0

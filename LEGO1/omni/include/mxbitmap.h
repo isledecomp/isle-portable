@@ -5,10 +5,10 @@
 #include "mxtypes.h"
 
 #include <SDL3/SDL_iostream.h>
-#ifdef _WIN32
-#include <ddraw.h>
-#else
+#ifdef MINIWIN
 #include "miniwin_ddraw.h"
+#else
+#include <ddraw.h>
 #endif
 #include <stdlib.h>
 

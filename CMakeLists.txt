@@ -1,27 +1,36 @@
-cmake_minimum_required(VERSION 3.25 FATAL_ERROR)
-
-# MSVC runtime library flags are selected by an abstraction
-cmake_policy(SET CMP0091 NEW)
-
-# To set BUILD_* variables for iniparser below. Is there another way?
-set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
-
-# Building on Linux
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+cmake_minimum_required(VERSION 3.25...4.0 FATAL_ERROR)
 
 project(isle CXX C)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
+include(CheckCXXSourceCompiles)
+include(CMakeDependentOption)
+include(CMakePushCheckState)
+
+if (NOT MINGW)
+  set(NOT_MINGW ON)
+else()
+  set(NOT_MINGW OFF)
+endif()
+
+option(ISLE_BUILD_APP "Build isle application" ON)
+option(ISLE_ASAN "Enable Address Sanitizer" OFF)
+option(ISLE_WERROR "Treat warnings as errors" OFF)
+cmake_dependent_option(ISLE_USE_DX5 "Build with internal DirectX 5 SDK" "${NOT_MINGW}" "WIN32;CMAKE_SIZEOF_VOID_P EQUAL 4" OFF)
+cmake_dependent_option(ISLE_MINIWIN "Use miniwin and minimfc" ON "NOT ISLE_USE_DX5" OFF)
+cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "MSVC OR ISLE_MINIWIN" OFF)
+option(CMAKE_POSITION_INDEPENDENT_CODE "Build with -fPIC" ON)
+option(ENABLE_CLANG_TIDY "Enable clang-tidy")
+option(DOWNLOAD_DEPENDENCIES "Download dependencies" ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}" CACHE PATH "Directory where to put executables and dll")
 
-# By configuring CMake with -DDOWNLOAD_DEPENDENCIES=ON/OFF,
-# users can choose between downloading dependencies or using system libraries
-option(DOWNLOAD_DEPENDENCIES "Download dependencies" ON)
+message(STATUS "Isle app:               ${ISLE_BUILD_APP}")
+message(STATUS "Config app:             ${ISLE_BUILD_CONFIG}")
+message(STATUS "Internal DirectX5 SDK:  ${ISLE_USE_DX5}")
+message(STATUS "Internal miniwin:       ${ISLE_MINIWIN}")
 
-option(ISLE_ASAN "Enable AddressSanitizer" OFF)
-
-if(DOWNLOAD_DEPENDENCIES)
+if (DOWNLOAD_DEPENDENCIES)
     # FetchContent downloads and configures dependencies
     include(FetchContent)
     FetchContent_Declare(
@@ -48,17 +57,12 @@ else()
     find_package(SDL3 CONFIG REQUIRED)
 
     find_package(iniparser CONFIG COMPONENTS static)
-    if(NOT TARGET iniparser-static)
+    if (NOT TARGET iniparser-static)
         find_package(iniparser REQUIRED MODULE COMPONENTS static)
     endif()
 endif()
 
-include(CheckCXXSourceCompiles)
-include(CMakeDependentOption)
-include(CMakePushCheckState)
-
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-option(ENABLE_CLANG_TIDY "Enable clang-tidy")
 if (ENABLE_CLANG_TIDY)
     find_program(CLANG_TIDY_BIN NAMES "clang-tidy")
     set(CMAKE_C_CLANG_TIDY "${CLANG_TIDY_BIN}")
@@ -70,8 +74,28 @@ if (ISLE_ASAN)
   add_link_options(-fsanitize=address)
 endif()
 
+#if (NOT WIN32)
+add_library(miniwin STATIC EXCLUDE_FROM_ALL
+  miniwin/miniwin/src/miniwin.cpp
+  miniwin/miniwin/src/miniwin_ddraw.cpp
+  miniwin/miniwin/src/miniwin_d3d.cpp
+  miniwin/miniwin/src/miniwin_d3drm.cpp
+)
+target_include_directories(miniwin PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/miniwin/miniwin/include>")
+target_compile_definitions(miniwin PUBLIC "MINIWIN")
+target_link_libraries(miniwin PRIVATE SDL3::SDL3)
+
+add_library(minimfc STATIC EXCLUDE_FROM_ALL
+  miniwin/minimfc/src/minimfc.cpp
+)
+target_include_directories(minimfc PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/miniwin/minimfc/include>")
+target_compile_definitions(minimfc PUBLIC "MINIMFC")
+target_link_libraries(minimfc PRIVATE SDL3::SDL3 miniwin)
+
+set(isle_targets)
+
 function(add_cxx_warning WARNING)
-    if(ISLE_WERROR)
+    if (ISLE_WERROR)
         set(compiler_option "-Werror=${WARNING}")
     else()
         set(compiler_option "-W${WARNING}")
@@ -80,7 +104,7 @@ function(add_cxx_warning WARNING)
 
     cmake_push_check_state(RESET)
     set(CMAKE_REQUIRED_FLAGS "${compiler_option} ")
-    if(MSVC)
+    if (MSVC)
         string(APPEND CMAKE_REQUIRED_FLAGS "/WX")
     else()
         string(APPEND CMAKE_REQUIRED_FLAGS "-Werror")
@@ -88,27 +112,12 @@ function(add_cxx_warning WARNING)
     check_cxx_source_compiles("int main() { return 0; }" ${varname})
     cmake_pop_check_state()
 
-    if(${varname})
+    if (${varname})
         add_compile_options(${compiler_option})
     endif()
 endfunction()
 
-if(NOT MINGW)
-    set(NOT_MINGW ON)
-else()
-    set(NOT_MINGW OFF)
-endif()
-
 add_subdirectory(3rdparty EXCLUDE_FROM_ALL SYSTEM)
-
-option(ISLE_WERROR "Treat warnings as errors" OFF)
-option(ISLE_BUILD_APP "Build ISLE.EXE application" ON)
-cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "NOT MINGW" OFF)
-option(ISLE_USE_DX5 "Build with internal DirectX 5 SDK" ${NOT_MINGW})
-cmake_dependent_option(ISLE_D3DRM_FROM_WINE "Use d3drm from wine" "${MINGW}" "NOT ISLE_USE_DX5" OFF)
-
-message(STATUS "Using internal DirectX5 SDK: ${ISLE_USE_DX5}")
-message(STATUS "Using d3drm from wine:       ${ISLE_D3DRM_FROM_WINE}")
 
 add_cxx_warning(parentheses)
 
@@ -116,27 +125,30 @@ add_library(DirectX5::DirectX5 INTERFACE IMPORTED)
 target_include_directories(DirectX5::DirectX5 INTERFACE "${CMAKE_SOURCE_DIR}/3rdparty/dx5/inc")
 target_link_directories(DirectX5::DirectX5 INTERFACE "${CMAKE_SOURCE_DIR}/3rdparty/dx5/lib")
 
-add_subdirectory(3rdparty/d3drm EXCLUDE_FROM_ALL)
-
 add_library(Vec::Vec INTERFACE IMPORTED)
 target_include_directories(Vec::Vec INTERFACE "${CMAKE_SOURCE_DIR}/3rdparty/vec")
 
-set(lego1_targets)
-set(lego1_interface_targets)
-macro(add_lego1_static_library NAME)
-  list(APPEND lego1_targets ${NAME})
-  list(APPEND lego1_interface_targets ${NAME}-interface)
-  add_library(${NAME}-interface INTERFACE)
-  add_library(${NAME}-objects STATIC ${ARGN})
-  target_link_libraries(${NAME}-objects PRIVATE ${NAME}-interface)
+add_library(lego1 SHARED
+  LEGO1/main.cpp
+)
+set_property(TARGET lego1 PROPERTY DEFINE_SYMBOL "LEGO1_DLL")
+target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/util>")
+target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/LEGO1>")
+target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/LEGO1/omni/include>")
+target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/LEGO1/lego/sources>")
+target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/LEGO1/lego/legoomni/include>")
+target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/LEGO1/lego/legoomni/include/actions>")
+target_link_libraries(lego1 PRIVATE SDL3::SDL3)
+target_link_libraries(lego1 PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5>)
+if(WIN32)
+  set_property(TARGET lego1 PROPERTY PREFIX "")
+endif()
 
-  target_include_directories(${NAME}-objects PRIVATE $<$<BOOL:${ISLE_D3DRM_FROM_WINE}>:$<TARGET_PROPERTY:d3drm-wine,INTERFACE_INCLUDE_DIRECTORIES>>)
-  target_link_libraries(${NAME}-interface INTERFACE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5> SDL3::SDL3)
-  target_compile_definitions(${NAME}-objects PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DIRECTX5_SDK>)
-  target_compile_definitions(${NAME}-objects PRIVATE $<$<BOOL:${ISLE_D3DRM_FROM_WINE}>:D3DRM_WINE>)
-endmacro()
+target_compile_definitions(lego1 PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DIRECTX5_SDK>)
+list(APPEND isle_targets lego1)
 
-add_lego1_static_library(tglrl
+# tglrl sources
+target_sources(lego1 PRIVATE
   LEGO1/tgl/d3drm/camera.cpp
   LEGO1/tgl/d3drm/device.cpp
   LEGO1/tgl/d3drm/group.cpp
@@ -147,85 +159,74 @@ add_lego1_static_library(tglrl
   LEGO1/tgl/d3drm/texture.cpp
   LEGO1/tgl/d3drm/view.cpp
 )
-target_include_directories(tglrl-interface INTERFACE "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/util")
+target_include_directories(lego1 PUBLIC "${CMAKE_SOURCE_DIR}/LEGO1")
 
-if(WIN32)
-  if(ISLE_D3DRM_FROM_WINE)
-      target_link_libraries(tglrl-interface INTERFACE d3drm-wine)
-  else()
-      target_link_libraries(tglrl-interface INTERFACE d3drm)
-  endif()
-else()
-  include_directories("${CMAKE_SOURCE_DIR}/miniwin")
-  add_library(miniwin STATIC
-    miniwin/miniwin.cpp
-    miniwin/miniwin_ddraw.cpp
-    miniwin/miniwin_d3d.cpp)
-  target_link_libraries(miniwin PRIVATE SDL3::SDL3)
-  target_link_libraries(tglrl-interface INTERFACE miniwin)
-endif()
-
-add_lego1_static_library(realtime
+# realtime sources
+target_sources(lego1 PRIVATE
   LEGO1/realtime/orientableroi.cpp
   LEGO1/realtime/realtime.cpp
   LEGO1/realtime/realtimeview.cpp
 )
-target_include_directories(realtime-interface INTERFACE "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/util")
-target_link_libraries(realtime-interface INTERFACE Vec::Vec)
+target_include_directories(lego1 PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1")
+target_link_libraries(lego1 PRIVATE Vec::Vec)
 
-add_lego1_static_library(viewmanager
+# viewmanager sources
+target_sources(lego1 PRIVATE
   LEGO1/viewmanager/viewlod.cpp
   LEGO1/viewmanager/viewlodlist.cpp
   LEGO1/viewmanager/viewmanager.cpp
   LEGO1/viewmanager/viewroi.cpp
 )
-target_include_directories(viewmanager-interface INTERFACE "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/util")
-target_link_libraries(viewmanager-interface INTERFACE Vec::Vec)
+target_include_directories(lego1 PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1")
+target_link_libraries(lego1 PRIVATE Vec::Vec)
 
-add_lego1_static_library(mxdirectx
+# mxdirectx sources
+target_sources(lego1 PRIVATE
   LEGO1/mxdirectx/mxdirect3d.cpp
   LEGO1/mxdirectx/mxdirectdraw.cpp
   LEGO1/mxdirectx/mxdirectxinfo.cpp
   LEGO1/mxdirectx/legodxinfo.cpp
 )
-target_include_directories(mxdirectx-interface INTERFACE "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/util")
-if(WIN32)
-  target_link_libraries(mxdirectx-interface INTERFACE ddraw)
+target_include_directories(lego1 PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1")
+if (WIN32)
+  target_link_libraries(lego1 PRIVATE ddraw)
 endif()
 
-add_lego1_static_library(roi
+# roi sources
+target_sources(lego1 PRIVATE
   LEGO1/lego/sources/roi/legolod.cpp
   LEGO1/lego/sources/roi/legoroi.cpp
 )
-target_include_directories(roi-interface INTERFACE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include" "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/LEGO1/lego/sources" "${CMAKE_SOURCE_DIR}/util")
-target_link_libraries(roi-interface INTERFACE viewmanager-interface Vec::Vec)
+target_include_directories(lego1 PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include" "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/LEGO1/lego/sources")
+target_link_libraries(lego1 PRIVATE Vec::Vec)
 
-add_lego1_static_library(geom
+# geom sources
+target_sources(lego1 PRIVATE
   LEGO1/lego/sources/geom/legoedge.cpp
   LEGO1/lego/sources/geom/legounkown100db7f4.cpp
   LEGO1/lego/sources/geom/legoweedge.cpp
   LEGO1/lego/sources/geom/legowegedge.cpp
 )
-target_include_directories(geom-interface INTERFACE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include" "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/LEGO1/lego/sources" "${CMAKE_SOURCE_DIR}/util")
-target_link_libraries(geom-interface INTERFACE)
+target_include_directories(lego1 PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include" "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/LEGO1/lego/sources")
 
-add_lego1_static_library(shape
+# shape sources
+target_sources(lego1 PRIVATE
   LEGO1/lego/sources/shape/legocolor.cpp
   LEGO1/lego/sources/shape/legobox.cpp
   LEGO1/lego/sources/shape/legomesh.cpp
   LEGO1/lego/sources/shape/legosphere.cpp
   LEGO1/lego/sources/shape/legovertex.cpp
 )
-target_include_directories(shape-interface INTERFACE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include" "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/LEGO1/lego/sources" "${CMAKE_SOURCE_DIR}/util")
-target_link_libraries(shape-interface INTERFACE)
+target_include_directories(lego1 PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include" "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/LEGO1/lego/sources")
 
-add_lego1_static_library(anim
+# anim sources
+target_sources(lego1 PRIVATE
   LEGO1/lego/sources/anim/legoanim.cpp
 )
-target_include_directories(anim-interface INTERFACE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include" "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/LEGO1/lego/sources" "${CMAKE_SOURCE_DIR}/util")
-target_link_libraries(anim-interface INTERFACE)
+target_include_directories(lego1 PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include" "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/LEGO1/lego/sources")
 
-add_lego1_static_library(misc
+# misc sources
+target_sources(lego1 PRIVATE
   LEGO1/lego/sources/misc/legocontainer.cpp
   LEGO1/lego/sources/misc/legoimage.cpp
   LEGO1/lego/sources/misc/legostorage.cpp
@@ -233,19 +234,20 @@ add_lego1_static_library(misc
   LEGO1/lego/sources/misc/legotree.cpp
   LEGO1/lego/sources/misc/legounknown.cpp
 )
-target_include_directories(misc-interface INTERFACE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include" "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/LEGO1/lego/sources" "${CMAKE_SOURCE_DIR}/util")
-target_link_libraries(misc-interface INTERFACE)
+target_include_directories(lego1 PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include" "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/LEGO1/lego/sources")
 
-add_lego1_static_library(3dmanager
+# 3dmanager sources
+target_sources(lego1 PRIVATE
   LEGO1/lego/sources/3dmanager/lego3dmanager.cpp
   LEGO1/lego/sources/3dmanager/lego3dview.cpp
   LEGO1/lego/sources/3dmanager/legoview1.cpp
   LEGO1/lego/sources/3dmanager/tglsurface.cpp
 )
-target_include_directories(3dmanager-interface INTERFACE "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/util")
-target_link_libraries(3dmanager-interface INTERFACE Vec::Vec)
+target_include_directories(lego1 PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1")
+target_link_libraries(lego1 PRIVATE Vec::Vec)
 
-add_lego1_static_library(omni
+# omni sources
+target_sources(lego1 PRIVATE
   LEGO1/omni/src/action/mxdsaction.cpp
   LEGO1/omni/src/action/mxdsanim.cpp
   LEGO1/omni/src/action/mxdsevent.cpp
@@ -322,13 +324,14 @@ add_lego1_static_library(omni
   LEGO1/omni/src/video/mxvideoparamflags.cpp
   LEGO1/omni/src/video/mxvideopresenter.cpp
 )
-target_include_directories(omni-interface INTERFACE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include" "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/util")
-if(WIN32)
-  target_link_libraries(omni-interface INTERFACE winmm)
+target_include_directories(lego1 PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include" "${CMAKE_SOURCE_DIR}/LEGO1")
+if (WIN32)
+  target_link_libraries(lego1 INTERFACE winmm)
 endif()
-target_link_libraries(omni-interface INTERFACE libsmacker miniaudio)
+target_link_libraries(lego1 PRIVATE libsmacker miniaudio)
 
-add_lego1_static_library(lego1_impl
+# lego1_impl sources
+target_sources(lego1 PRIVATE
   LEGO1/define.cpp
   LEGO1/lego/legoomni/src/actors/act2actor.cpp
   LEGO1/lego/legoomni/src/actors/act2genactor.cpp
@@ -439,41 +442,10 @@ add_lego1_static_library(lego1_impl
   LEGO1/lego/legoomni/src/worlds/score.cpp
   LEGO1/modeldb/modeldb.cpp
 )
-target_include_directories(lego1_impl-interface INTERFACE "${CMAKE_SOURCE_DIR}/util")
-target_include_directories(lego1_impl-interface INTERFACE "${CMAKE_SOURCE_DIR}/LEGO1")
-target_include_directories(lego1_impl-interface INTERFACE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include")
-target_include_directories(lego1_impl-interface INTERFACE "${CMAKE_SOURCE_DIR}/LEGO1/lego/sources")
-target_include_directories(lego1_impl-interface INTERFACE "${CMAKE_SOURCE_DIR}/LEGO1/lego/legoomni/include")
-target_include_directories(lego1_impl-interface INTERFACE "${CMAKE_SOURCE_DIR}/LEGO1/lego/legoomni/include/actions")
-target_link_libraries(lego1_impl-interface INTERFACE omni-interface Vec::Vec)
-
-if(MINGW)
-  target_compile_definitions(lego1_impl-interface INTERFACE DIRECTINPUT_VERSION=0x0500)
-endif()
-
-set(lego1_objects)
-set(lego1_link_libraries)
-if(WIN32)
-  list(APPEND lego1_link_libraries dxguid d3drm_guid)
-else()
-  list(APPEND lego1_link_libraries miniwin)
-endif()
-foreach(lego1_library IN LISTS lego1_targets)
-  target_compile_definitions(${lego1_library}-objects PRIVATE LEGO1_DLL)
-  list(APPEND lego1_objects $<TARGET_OBJECTS:${lego1_library}-objects>)
-  list(APPEND lego1_link_libraries ${lego1_library}-interface)
-endforeach()
-add_library(lego1 SHARED
-  LEGO1/main.cpp
-  ${lego1_objects}
-)
-target_link_libraries(lego1 PUBLIC ${lego1_link_libraries})
-
-# Make sure filenames are ALL CAPS
-set_property(TARGET lego1 PROPERTY OUTPUT_NAME LEGO1)
-set_property(TARGET lego1 PROPERTY PREFIX "")
-if(WIN32)
-  set_property(TARGET lego1 PROPERTY SUFFIX ".DLL")
+target_link_libraries(lego1 PRIVATE Vec::Vec)
+if (NOT ISLE_MINIWIN)
+  target_link_libraries(lego1 PRIVATE d3drm dxguid)
+  target_compile_definitions(lego1 PRIVATE DIRECTINPUT_VERSION=0x0500)
 endif()
 
 if (ISLE_BUILD_APP)
@@ -481,7 +453,8 @@ if (ISLE_BUILD_APP)
     ISLE/res/isle.rc
     ISLE/isleapp.cpp
   )
-  if(WIN32)
+  list(APPEND isle_targets isle)
+  if (WIN32)
     add_custom_command(TARGET isle POST_BUILD
       COMMAND "${CMAKE_COMMAND}" -E copy $<TARGET_RUNTIME_DLLS:isle> "$<TARGET_FILE_DIR:isle>"
       COMMAND_EXPAND_LISTS
@@ -497,23 +470,15 @@ if (ISLE_BUILD_APP)
   target_link_libraries(isle PRIVATE SDL3::SDL3 iniparser-static)
 
   # Link DSOUND and WINMM
-  if(WIN32)
+  if (WIN32)
     target_link_libraries(isle PRIVATE winmm)
   endif()
   # Link LEGO1
   target_link_libraries(isle PRIVATE lego1)
-
-  target_include_directories(isle PRIVATE $<$<BOOL:${ISLE_D3DRM_FROM_WINE}>:$<TARGET_PROPERTY:d3drm-wine,INTERFACE_INCLUDE_DIRECTORIES>>)
-
-  # Make sure filenames are ALL CAPS
-  set_property(TARGET isle PROPERTY OUTPUT_NAME ISLE)
-  if(WIN32)
-    set_property(TARGET isle PROPERTY SUFFIX ".EXE")
-  endif()
 endif()
 
 if (ISLE_BUILD_CONFIG)
-  set(config_SRC WIN32
+  add_executable(config WIN32
     LEGO1/mxdirectx/mxdirectxinfo.cpp
     LEGO1/mxdirectx/legodxinfo.cpp
     CONFIG/config.cpp
@@ -524,33 +489,30 @@ if (ISLE_BUILD_CONFIG)
     CONFIG/StdAfx.cpp
     CONFIG/res/config.rc
   )
-  if(NOT WIN32)
-    list(APPEND config_SRC miniwin/stdafx.cpp)
+  if (ISLE_MINIWIN)
+    target_link_libraries(config PRIVATE minimfc)
   endif()
-  add_executable(config ${config_SRC})
-  if(NOT WIN32)
-    target_link_libraries(config PUBLIC miniwin)
-  endif()
+  list(APPEND isle_targets config)
   target_compile_definitions(config PRIVATE _AFXDLL MXDIRECTX_FOR_CONFIG)
-  target_include_directories(config PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/util" "${CMAKE_CURRENT_SOURCE_DIR}/LEGO1")
-  if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 14)
+  target_include_directories(config PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/LEGO1")
+  target_include_directories(config PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/util>")
+  if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 14)
     target_link_libraries(config PRIVATE DirectX5::DirectX5)
   endif()
   target_compile_definitions(config PRIVATE DIRECT3D_VERSION=0x500)
   target_link_libraries(config PRIVATE SDL3::SDL3)
-  if(WIN32)
+  if (NOT ISLE_MINIWIN)
     target_link_libraries(config PRIVATE ddraw dxguid)
   endif()
-  set_property(TARGET config PROPERTY OUTPUT_NAME "CONFIG")
-  if(WIN32)
-    set_property(TARGET config PROPERTY SUFFIX ".EXE")
-  endif()
-  set_property(TARGET config PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded$<$<CONFIG:Debug>:Debug>DLL)
+endif()
+
+if (ISLE_MINIWIN)
+  set_property(TARGET ${isle_targets} APPEND PROPERTY LINK_LIBRARIES "miniwin")
 endif()
 
 if (MSVC)
   if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "15")
-    set_property(TARGET ${lego1_interface_targets} APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS "_CRT_SECURE_NO_WARNINGS")
+    set_property(TARGET ${isle_targets} APPEND PROPERTY COMPILE_DEFINITIONS "_CRT_SECURE_NO_WARNINGS")
     if (TARGET isle)
       target_compile_definitions(isle PRIVATE "_CRT_SECURE_NO_WARNINGS")
     endif()
@@ -560,9 +522,7 @@ if (MSVC)
   endif()
   # Visual Studio 2017 version 15.7 needs "/Zc:__cplusplus" for __cplusplus
   if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "19.14.26428")
-    foreach(tgt IN LISTS lego1_interface_targets)
-      target_compile_options(${tgt} INTERFACE "-Zc:__cplusplus")
-    endforeach()
+    set_property(TARGET ${isle_targets} APPEND PROPERTY COMPILE_OPTIONS "-Zc:__cplusplus")
     if (TARGET isle)
       target_compile_options(isle PRIVATE "-Zc:__cplusplus")
     endif()
@@ -572,22 +532,22 @@ if (MSVC)
   endif()
 endif()
 
-if(MSVC)
+if (MSVC)
   target_link_options(isle PRIVATE "/SAFESEH:NO")
   target_link_options(lego1 PRIVATE "/SAFESEH:NO")
 endif()
 
 find_program(CLANGFORMAT_BIN NAMES clang-format)
-if(EXISTS "${CLANGFORMAT_BIN}")
+if (EXISTS "${CLANGFORMAT_BIN}")
   execute_process(COMMAND "${CLANGFORMAT_BIN}" --version
     OUTPUT_VARIABLE "CLANGFORMAT_VERSION_OUTPUT"
     RESULT_VARIABLE "CLANGFORMAT_RESULT"
   )
-  if(CLANGFORMAT_RESULT EQUAL 0 AND CLANGFORMAT_VERSION_OUTPUT MATCHES "version ([0-9\\.]+)")
+  if (CLANGFORMAT_RESULT EQUAL 0 AND CLANGFORMAT_VERSION_OUTPUT MATCHES "version ([0-9\\.]+)")
     set(CLANGFORMAT_VERSION "${CMAKE_MATCH_1}")
     set(CLANGFORMAT_VERSION_REQUIRED "17.0")
     message(DEBUG "Found clang-format version ${CLANGFORMAT_VERSION} (needs ${CLANGFORMAT_VERSION_REQUIRED}")
-    if(CLANGFORMAT_VERSION VERSION_GREATER_EQUAL "${CLANGFORMAT_VERSION_REQUIRED}")
+    if (CLANGFORMAT_VERSION VERSION_GREATER_EQUAL "${CLANGFORMAT_VERSION_REQUIRED}")
       file(GLOB_RECURSE isle_sources
         "${PROJECT_SOURCE_DIR}/ISLE/*.cpp"
         "${PROJECT_SOURCE_DIR}/ISLE/*.h"

@@ -8,10 +8,10 @@
 #include "mxtypes.h"
 
 #include <SDL3/SDL_stdinc.h>
-#ifdef _WIN32
-#include <windows.h>
-#else
+#ifdef MINIWIN
 #include "miniwin.h"
+#else
+#include <windows.h>
 #endif
 
 #define WM_ISLE_SETCURSOR 0x5400

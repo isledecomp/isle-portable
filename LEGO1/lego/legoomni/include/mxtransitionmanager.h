@@ -6,10 +6,10 @@
 #include "mxcore.h"
 
 #include <SDL3/SDL_stdinc.h>
-#ifdef _WIN32
-#include <ddraw.h>
-#else
+#ifdef MINIWIN
 #include "miniwin_ddraw.h"
+#else
+#include <ddraw.h>
 #endif
 
 class MxVideoPresenter;

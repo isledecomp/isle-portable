@@ -5,10 +5,10 @@
 #include "mxcore.h"
 #include "mxvideoparam.h"
 
-#ifdef _WIN32
-#include <ddraw.h>
-#else
+#ifdef MINIWIN
 #include "miniwin_ddraw.h"
+#else
+#include <ddraw.h>
 #endif
 
 class MxBitmap;
