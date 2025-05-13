@@ -17,6 +17,7 @@ struct DirectDrawImpl : public IDirectDraw2, public IDirect3D2 {
 		m_refCount -= 1;
 		if (m_refCount == 0) {
 			delete this;
+			return 0;
 		}
 		return m_refCount;
 	}
