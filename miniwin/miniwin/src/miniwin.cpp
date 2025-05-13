@@ -52,7 +52,7 @@ BOOL GetWindowRect(HWND hWnd, tagRECT* Rect)
 	return TRUE;
 }
 
-int _stricmp(const char* str1, const char* str2)
+int miniwin_stricmp(const char* str1, const char* str2)
 {
 	return SDL_strcasecmp(str1, str2);
 }
