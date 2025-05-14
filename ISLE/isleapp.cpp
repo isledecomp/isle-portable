@@ -486,7 +486,6 @@ MxResult IsleApp::SetupWindow()
 		return FAILURE;
 	}
 
-#ifndef _WIN32
 	SDL_Surface* icon = SDL_CreateSurfaceFrom(
 		ISLE_ICON.width,
 		ISLE_ICON.height,
@@ -499,7 +498,6 @@ MxResult IsleApp::SetupWindow()
 		SDL_SetWindowIcon(m_windowHandle, icon);
 		SDL_DestroySurface(icon);
 	}
-#endif
 
 	if (!SetupLegoOmni()) {
 		return FAILURE;
