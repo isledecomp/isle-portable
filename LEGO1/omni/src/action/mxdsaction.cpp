@@ -261,21 +261,21 @@ void MxDSAction::Deserialize(MxU8*& p_source, MxS16 p_flags)
 	MxDSObject::Deserialize(p_source, p_flags);
 
 	// clang-format off
-	m_flags           = *( MxU32*) p_source;  p_source += sizeof(m_flags);
-	m_startTime       = *(MxLong*) p_source;  p_source += sizeof(m_startTime);
-	m_duration        = *(MxLong*) p_source;  p_source += sizeof(m_duration);
-	m_loopCount       = *( MxS32*) p_source;  p_source += sizeof(m_loopCount);
-	m_location[0]     = *(double*) p_source;  p_source += sizeof(double);
-	m_location[1]     = *(double*) p_source;  p_source += sizeof(double);
-	m_location[2]     = *(double*) p_source;  p_source += sizeof(double);
-	m_direction[0]    = *(double*) p_source;  p_source += sizeof(double);
-	m_direction[1]    = *(double*) p_source;  p_source += sizeof(double);
-	m_direction[2]    = *(double*) p_source;  p_source += sizeof(double);
-	m_up[0]           = *(double*) p_source;  p_source += sizeof(double);
-	m_up[1]           = *(double*) p_source;  p_source += sizeof(double);
-	m_up[2]           = *(double*) p_source;  p_source += sizeof(double);
+	m_flags           = UnalignedRead<MxU32>(p_source);   p_source += sizeof(MxU32);
+	m_startTime       = UnalignedRead<MxLong>(p_source);  p_source += sizeof(MxLong);
+	m_duration        = UnalignedRead<MxLong>(p_source);  p_source += sizeof(MxLong);
+	m_loopCount       = UnalignedRead<MxS32>(p_source);   p_source += sizeof(MxS32);
+	m_location[0]     = UnalignedRead<double>(p_source);  p_source += sizeof(double);
+	m_location[1]     = UnalignedRead<double>(p_source);  p_source += sizeof(double);
+	m_location[2]     = UnalignedRead<double>(p_source);  p_source += sizeof(double);
+	m_direction[0]    = UnalignedRead<double>(p_source);  p_source += sizeof(double);
+	m_direction[1]    = UnalignedRead<double>(p_source);  p_source += sizeof(double);
+	m_direction[2]    = UnalignedRead<double>(p_source);  p_source += sizeof(double);
+	m_up[0]           = UnalignedRead<double>(p_source);  p_source += sizeof(double);
+	m_up[1]           = UnalignedRead<double>(p_source);  p_source += sizeof(double);
+	m_up[2]           = UnalignedRead<double>(p_source);  p_source += sizeof(double);
 
-	MxU16 extraLength = *( MxU16*) p_source;  p_source += sizeof(extraLength);
+	MxU16 extraLength = UnalignedRead<MxU16>(p_source);  p_source += sizeof(extraLength);
 	// clang-format on
 
 	if (extraLength) {

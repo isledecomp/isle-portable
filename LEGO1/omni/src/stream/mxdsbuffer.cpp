@@ -9,6 +9,7 @@
 #include "mxstreamcontroller.h"
 #include "mxstreamer.h"
 #include "mxstreamprovider.h"
+#include "mxutilities.h"
 
 DECOMP_SIZE_ASSERT(MxDSBuffer, 0x34);
 
@@ -177,11 +178,11 @@ MxResult MxDSBuffer::CreateObject(
 		return FAILURE;
 	}
 
-	if (*p_data == FOURCC('M', 'x', 'O', 'b')) {
+	if (UnalignedRead<MxU32>((MxU8*) p_data) == FOURCC('M', 'x', 'O', 'b')) {
 		MxDSAction* action = (MxDSAction*) header;
 		return StartPresenterFromAction(p_controller, p_action, action);
 	}
-	else if (*p_data == FOURCC('M', 'x', 'C', 'h')) {
+	else if (UnalignedRead<MxU32>((MxU8*) p_data) == FOURCC('M', 'x', 'C', 'h')) {
 		MxStreamChunk* chunk = (MxStreamChunk*) header;
 		if (!m_unk0x30->HasId((chunk)->GetObjectId())) {
 			delete header;
@@ -326,7 +327,7 @@ MxCore* MxDSBuffer::ReadChunk(MxDSBuffer* p_buffer, MxU32* p_chunkData, MxU16 p_
 	MxCore* result = NULL;
 	MxU8* dataStart = (MxU8*) p_chunkData + 8;
 
-	switch (*p_chunkData) {
+	switch (UnalignedRead<MxU32>((MxU8*) p_chunkData)) {
 	case FOURCC('M', 'x', 'O', 'b'): {
 		MxDSObject* obj = DeserializeDSObjectDispatch(dataStart, p_flags);
 		result = obj;
@@ -355,11 +356,12 @@ MxU8* MxDSBuffer::SkipToData()
 
 	if (m_pIntoBuffer != NULL) {
 		while (TRUE) {
-			switch (*(MxU32*) m_pIntoBuffer) {
+			switch (UnalignedRead<MxU32>(m_pIntoBuffer)) {
 			case FOURCC('M', 'x', 'O', 'b'):
 			case FOURCC('M', 'x', 'C', 'h'):
 				result = m_pIntoBuffer;
-				m_pIntoBuffer += (*(MxU32*) (m_pIntoBuffer + 4) & 1) + *(MxU32*) (m_pIntoBuffer + 4);
+				m_pIntoBuffer +=
+					(UnalignedRead<MxU32>(m_pIntoBuffer + 4) & 1) + UnalignedRead<MxU32>(m_pIntoBuffer + 4);
 				m_pIntoBuffer += 8;
 
 				if (m_pBuffer + m_writeOffset - 8 < m_pIntoBuffer) {
@@ -372,7 +374,7 @@ MxU8* MxDSBuffer::SkipToData()
 				m_pIntoBuffer += 8;
 				break;
 			case FOURCC('M', 'x', 'H', 'd'):
-				m_pIntoBuffer += *(MxU32*) (m_pIntoBuffer + 4) + 8;
+				m_pIntoBuffer += UnalignedRead<MxU32>(m_pIntoBuffer + 4) + 8;
 				break;
 			case FOURCC('L', 'I', 'S', 'T'):
 			case FOURCC('R', 'I', 'F', 'F'):
@@ -424,7 +426,7 @@ MxResult MxDSBuffer::CalcBytesRemaining(MxU8* p_data)
 
 		if (m_writeOffset == m_bytesRemaining) {
 			ptr = p_data;
-			bytesRead = *(MxU32*) (p_data + 4) + 8;
+			bytesRead = UnalignedRead<MxU32>(p_data + 4) + 8;
 		}
 		else {
 			ptr = p_data + MxStreamChunk::GetHeaderSize() + 8;
@@ -435,7 +437,9 @@ MxResult MxDSBuffer::CalcBytesRemaining(MxU8* p_data)
 			memcpy(m_pBuffer + m_writeOffset - m_bytesRemaining, ptr, bytesRead);
 
 			if (m_writeOffset == m_bytesRemaining) {
-				*(MxU32*) (m_pBuffer + 4) = *MxStreamChunk::IntoLength(m_pBuffer) + MxStreamChunk::GetHeaderSize();
+				MxU32 length =
+					UnalignedRead<MxU32>((MxU8*) MxStreamChunk::IntoLength(m_pBuffer)) + MxStreamChunk::GetHeaderSize();
+				memcpy(m_pBuffer + 4, &length, sizeof(length));
 			}
 
 			m_bytesRemaining -= bytesRead;
@@ -462,7 +466,7 @@ MxU8* MxDSBuffer::FUN_100c6fa0(MxU8* p_data)
 	MxU8* end = m_writeOffset + m_pBuffer - 8;
 
 	while (current <= end) {
-		switch (*((MxU32*) current)) {
+		switch (UnalignedRead<MxU32>(current)) {
 		case FOURCC('L', 'I', 'S', 'T'):
 		case FOURCC('R', 'I', 'F', 'F'):
 			current += 12;

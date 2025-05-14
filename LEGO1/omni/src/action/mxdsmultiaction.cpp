@@ -1,5 +1,7 @@
 #include "mxdsmultiaction.h"
 
+#include "mxutilities.h"
+
 #include <assert.h>
 
 DECOMP_SIZE_ASSERT(MxDSMultiAction, 0x9c)
@@ -153,15 +155,15 @@ void MxDSMultiAction::Deserialize(MxU8*& p_source, MxS16 p_flags)
 {
 	MxDSAction::Deserialize(p_source, p_flags);
 
-	MxU32 extraFlag = *(MxU32*) (p_source + 4) & 1;
+	MxU32 extraFlag = UnalignedRead<MxU32>(p_source + 4) & 1;
 	p_source += 12;
 
-	MxU32 count = *(MxU32*) p_source;
+	MxU32 count = UnalignedRead<MxU32>(p_source);
 	p_source += sizeof(count);
 
 	if (count) {
 		while (count--) {
-			MxU32 extraFlag = *(MxU32*) (p_source + 4) & 1;
+			MxU32 extraFlag = UnalignedRead<MxU32>(p_source + 4) & 1;
 			p_source += 8;
 
 			MxDSAction* action = (MxDSAction*) DeserializeDSObjectDispatch(p_source, p_flags);

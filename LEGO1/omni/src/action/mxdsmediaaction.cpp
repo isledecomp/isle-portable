@@ -137,12 +137,12 @@ void MxDSMediaAction::Deserialize(MxU8*& p_source, MxS16 p_flags)
 	p_source += strlen(m_mediaSrcPath) + 1;
 
 	// clang-format off
-	m_unk0x9c.SetUnk0x00(*(MxU32*) p_source);  p_source += sizeof(m_unk0x9c.m_unk0x00);
-	m_unk0x9c.SetUnk0x04(*(MxU32*) p_source);  p_source += sizeof(m_unk0x9c.m_unk0x04);
+	m_unk0x9c.SetUnk0x00(UnalignedRead<MxU32>(p_source));  p_source += sizeof(MxU32);
+	m_unk0x9c.SetUnk0x04(UnalignedRead<MxU32>(p_source));  p_source += sizeof(MxU32);
 
-	m_framesPerSecond   = *(MxS32*) p_source;  p_source += sizeof(m_framesPerSecond);
-	m_mediaFormat       = *(MxS32*) p_source;  p_source += sizeof(m_mediaFormat);
-	m_paletteManagement = *(MxS32*) p_source;  p_source += sizeof(m_paletteManagement);
-	m_sustainTime       = *(MxS32*) p_source;  p_source += sizeof(m_sustainTime);
+	m_framesPerSecond   = UnalignedRead<MxS32>(p_source);  p_source += sizeof(MxS32);
+	m_mediaFormat       = UnalignedRead<MxS32>(p_source);  p_source += sizeof(MxS32);
+	m_paletteManagement = UnalignedRead<MxS32>(p_source);  p_source += sizeof(MxS32);
+	m_sustainTime       = UnalignedRead<MxS32>(p_source);  p_source += sizeof(MxS32);
 	// clang-format on
 }

@@ -29,6 +29,14 @@ inline T Max(T p_t1, T p_t2)
 	return p_t1 > p_t2 ? p_t1 : p_t2;
 }
 
+template <typename T>
+T UnalignedRead(MxU8* p_source)
+{
+	T value;
+	memcpy(&value, p_source, sizeof(T));
+	return value;
+}
+
 template <class T>
 inline void GetScalar(MxU8*& p_source, T& p_dest)
 {
