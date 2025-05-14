@@ -400,7 +400,7 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		case WM_ISLE_SETCURSOR:
 			g_isle->SetupCursor((Cursor) (uintptr_t) event->user.data1);
 			break;
-		case WM_CLOSE:
+		case WM_QUIT:
 			return SDL_APP_SUCCESS;
 			break;
 		case WM_TIMER:
