@@ -17,13 +17,17 @@ MxResult MxStreamChunk::ReadChunk(MxDSBuffer* p_buffer, MxU8* p_chunkData)
 {
 	MxResult result = FAILURE;
 
-	if (p_chunkData != NULL && *(MxU32*) p_chunkData == FOURCC('M', 'x', 'C', 'h')) {
-		if (ReadChunkHeader(p_chunkData + 8)) {
-			if (p_buffer) {
-				SetBuffer(p_buffer);
-				p_buffer->AddRef(this);
+	if (p_chunkData != NULL) {
+		MxU32 fourcc;
+		memcpy(&fourcc, p_chunkData, sizeof(MxU32));
+		if (fourcc == FOURCC('M', 'x', 'C', 'h')) {
+			if (ReadChunkHeader(p_chunkData + 8)) {
+				if (p_buffer) {
+					SetBuffer(p_buffer);
+					p_buffer->AddRef(this);
+				}
+				result = SUCCESS;
 			}
-			result = SUCCESS;
 		}
 	}
 

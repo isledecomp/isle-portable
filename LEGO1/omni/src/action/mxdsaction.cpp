@@ -258,24 +258,27 @@ void MxDSAction::AppendExtra(MxU16 p_extraLength, const char* p_extraData)
 // FUNCTION: BETA10 0x1012ba6a
 void MxDSAction::Deserialize(MxU8*& p_source, MxS16 p_flags)
 {
+	double tempDouble;
+
 	MxDSObject::Deserialize(p_source, p_flags);
 
 	// clang-format off
-	m_flags           = *( MxU32*) p_source;  p_source += sizeof(m_flags);
-	m_startTime       = *(MxLong*) p_source;  p_source += sizeof(m_startTime);
-	m_duration        = *(MxLong*) p_source;  p_source += sizeof(m_duration);
-	m_loopCount       = *( MxS32*) p_source;  p_source += sizeof(m_loopCount);
-	m_location[0]     = *(double*) p_source;  p_source += sizeof(double);
-	m_location[1]     = *(double*) p_source;  p_source += sizeof(double);
-	m_location[2]     = *(double*) p_source;  p_source += sizeof(double);
-	m_direction[0]    = *(double*) p_source;  p_source += sizeof(double);
-	m_direction[1]    = *(double*) p_source;  p_source += sizeof(double);
-	m_direction[2]    = *(double*) p_source;  p_source += sizeof(double);
-	m_up[0]           = *(double*) p_source;  p_source += sizeof(double);
-	m_up[1]           = *(double*) p_source;  p_source += sizeof(double);
-	m_up[2]           = *(double*) p_source;  p_source += sizeof(double);
+	memcpy(&m_flags,     p_source, sizeof(MxU32));  p_source += sizeof(MxU32);
+	memcpy(&m_startTime, p_source, sizeof(MxLong)); p_source += sizeof(MxLong);
+	memcpy(&m_duration,  p_source, sizeof(MxLong)); p_source += sizeof(MxLong);
+	memcpy(&m_loopCount, p_source, sizeof(MxS32));  p_source += sizeof(MxS32);
+	memcpy(&tempDouble,  p_source, sizeof(double)); p_source += sizeof(double); m_location[0] = tempDouble;
+	memcpy(&tempDouble,  p_source, sizeof(double)); p_source += sizeof(double); m_location[1] = tempDouble;
+	memcpy(&tempDouble,  p_source, sizeof(double)); p_source += sizeof(double); m_location[2] = tempDouble;
+	memcpy(&tempDouble,  p_source, sizeof(double)); p_source += sizeof(double); m_direction[0] = tempDouble;
+	memcpy(&tempDouble,  p_source, sizeof(double)); p_source += sizeof(double); m_direction[1] = tempDouble;
+	memcpy(&tempDouble,  p_source, sizeof(double)); p_source += sizeof(double); m_direction[2] = tempDouble;
+	memcpy(&tempDouble,  p_source, sizeof(double)); p_source += sizeof(double); m_up[0] = tempDouble;
+	memcpy(&tempDouble,  p_source, sizeof(double)); p_source += sizeof(double); m_up[1] = tempDouble;
+	memcpy(&tempDouble,  p_source, sizeof(double)); p_source += sizeof(double); m_up[2] = tempDouble;
 
-	MxU16 extraLength = *( MxU16*) p_source;  p_source += sizeof(extraLength);
+	MxU16 extraLength;
+	memcpy(&extraLength, p_source, sizeof(extraLength)); p_source += sizeof(extraLength);
 	// clang-format on
 
 	if (extraLength) {

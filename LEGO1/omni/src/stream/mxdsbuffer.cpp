@@ -177,11 +177,13 @@ MxResult MxDSBuffer::CreateObject(
 		return FAILURE;
 	}
 
-	if (*p_data == FOURCC('M', 'x', 'O', 'b')) {
+	MxU32 fourcc;
+	memcpy(&fourcc, p_data, sizeof(MxU32));
+	if (fourcc == FOURCC('M', 'x', 'O', 'b')) {
 		MxDSAction* action = (MxDSAction*) header;
 		return StartPresenterFromAction(p_controller, p_action, action);
 	}
-	else if (*p_data == FOURCC('M', 'x', 'C', 'h')) {
+	else if (fourcc == FOURCC('M', 'x', 'C', 'h')) {
 		MxStreamChunk* chunk = (MxStreamChunk*) header;
 		if (!m_unk0x30->HasId((chunk)->GetObjectId())) {
 			delete header;
@@ -326,7 +328,9 @@ MxCore* MxDSBuffer::ReadChunk(MxDSBuffer* p_buffer, MxU32* p_chunkData, MxU16 p_
 	MxCore* result = NULL;
 	MxU8* dataStart = (MxU8*) p_chunkData + 8;
 
-	switch (*p_chunkData) {
+	MxU32 fourcc;
+	memcpy(&fourcc, p_chunkData, sizeof(MxU32));
+	switch (fourcc) {
 	case FOURCC('M', 'x', 'O', 'b'): {
 		MxDSObject* obj = DeserializeDSObjectDispatch(dataStart, p_flags);
 		result = obj;
@@ -351,16 +355,19 @@ MxCore* MxDSBuffer::ReadChunk(MxDSBuffer* p_buffer, MxU32* p_chunkData, MxU16 p_
 // FUNCTION: BETA10 0x10157e0a
 MxU8* MxDSBuffer::SkipToData()
 {
+	MxU32 fourcc;
+	MxU32 size;
 	MxU8* result = NULL;
 
 	if (m_pIntoBuffer != NULL) {
 		while (TRUE) {
-			switch (*(MxU32*) m_pIntoBuffer) {
+			memcpy(&fourcc, m_pIntoBuffer, sizeof(MxU32));
+			switch (fourcc) {
 			case FOURCC('M', 'x', 'O', 'b'):
 			case FOURCC('M', 'x', 'C', 'h'):
 				result = m_pIntoBuffer;
-				m_pIntoBuffer += (*(MxU32*) (m_pIntoBuffer + 4) & 1) + *(MxU32*) (m_pIntoBuffer + 4);
-				m_pIntoBuffer += 8;
+				memcpy(&size, m_pIntoBuffer + 4, sizeof(MxU32));
+				m_pIntoBuffer += 8 + size + (size & 1);
 
 				if (m_pBuffer + m_writeOffset - 8 < m_pIntoBuffer) {
 					m_pIntoBuffer = NULL;
@@ -372,7 +379,8 @@ MxU8* MxDSBuffer::SkipToData()
 				m_pIntoBuffer += 8;
 				break;
 			case FOURCC('M', 'x', 'H', 'd'):
-				m_pIntoBuffer += *(MxU32*) (m_pIntoBuffer + 4) + 8;
+				memcpy(&size, m_pIntoBuffer + 4, sizeof(MxU32));
+				m_pIntoBuffer += 8 + size;
 				break;
 			case FOURCC('L', 'I', 'S', 'T'):
 			case FOURCC('R', 'I', 'F', 'F'):
@@ -424,7 +432,8 @@ MxResult MxDSBuffer::CalcBytesRemaining(MxU8* p_data)
 
 		if (m_writeOffset == m_bytesRemaining) {
 			ptr = p_data;
-			bytesRead = *(MxU32*) (p_data + 4) + 8;
+			memcpy(&bytesRead, p_data + 4, sizeof(MxU32));
+			bytesRead += 8;
 		}
 		else {
 			ptr = p_data + MxStreamChunk::GetHeaderSize() + 8;
@@ -435,7 +444,10 @@ MxResult MxDSBuffer::CalcBytesRemaining(MxU8* p_data)
 			memcpy(m_pBuffer + m_writeOffset - m_bytesRemaining, ptr, bytesRead);
 
 			if (m_writeOffset == m_bytesRemaining) {
-				*(MxU32*) (m_pBuffer + 4) = *MxStreamChunk::IntoLength(m_pBuffer) + MxStreamChunk::GetHeaderSize();
+				MxU32 length;
+				memcpy(&length, MxStreamChunk::IntoLength(m_pBuffer), sizeof(MxU32));
+				length += MxStreamChunk::GetHeaderSize();
+				memcpy(m_pBuffer + 4, &length, sizeof(length));
 			}
 
 			m_bytesRemaining -= bytesRead;
@@ -458,11 +470,13 @@ void MxDSBuffer::FUN_100c6f80(MxU32 p_writeOffset)
 // FUNCTION: LEGO1 0x100c6fa0
 MxU8* MxDSBuffer::FUN_100c6fa0(MxU8* p_data)
 {
+	MxU32 fourcc;
 	MxU8* current = p_data ? p_data : m_pBuffer;
 	MxU8* end = m_writeOffset + m_pBuffer - 8;
 
 	while (current <= end) {
-		switch (*((MxU32*) current)) {
+		memcpy(&fourcc, current, sizeof(MxU32));
+		switch (fourcc) {
 		case FOURCC('L', 'I', 'S', 'T'):
 		case FOURCC('R', 'I', 'F', 'F'):
 			current += 12;
