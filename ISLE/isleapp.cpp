@@ -486,6 +486,21 @@ MxResult IsleApp::SetupWindow()
 		return FAILURE;
 	}
 
+#ifndef _WIN32
+	SDL_Surface *icon = SDL_CreateSurfaceFrom(
+		ISLE_ICON.width,
+		ISLE_ICON.height,
+		SDL_PIXELFORMAT_RGBA32,
+		(void*)ISLE_ICON.pixel_data,
+		ISLE_ICON.width * ISLE_ICON.bytes_per_pixel
+	);
+
+	if (icon) {
+		SDL_SetWindowIcon(m_windowHandle, icon);
+		SDL_DestroySurface(icon);
+	}
+#endif
+
 	if (!SetupLegoOmni()) {
 		return FAILURE;
 	}

@@ -3,3 +3,7 @@
 #define ISLE_BUSY 104
 
 #define APP_ICON 105
+
+#ifndef _WIN32
+#include "isle.h"
+#endif
