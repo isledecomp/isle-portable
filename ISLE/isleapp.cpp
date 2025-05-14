@@ -1,6 +1,8 @@
 #include "isleapp.h"
 
 #include "3dmanager/lego3dmanager.h"
+#include "SDL3/SDL_log.h"
+#include "SDL3/SDL_surface.h"
 #include "decomp.h"
 #include "legoanimationmanager.h"
 #include "legobuildingmanager.h"
@@ -486,17 +488,19 @@ MxResult IsleApp::SetupWindow()
 		return FAILURE;
 	}
 
-	SDL_Surface* icon = SDL_CreateSurfaceFrom(
-		ISLE_ICON.width,
-		ISLE_ICON.height,
-		SDL_PIXELFORMAT_RGBA32,
-		(void*) ISLE_ICON.pixel_data,
-		ISLE_ICON.width * ISLE_ICON.bytes_per_pixel
-	);
+
+	SDL_IOStream *icon_stream = SDL_IOFromMem(isle_bmp, isle_bmp_len);
+	if (!icon_stream) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to open SDL_IOStream for icon: %s", SDL_GetError());
+	}
+
+	SDL_Surface *icon = SDL_LoadBMP_IO(icon_stream, true);
 
 	if (icon) {
 		SDL_SetWindowIcon(m_windowHandle, icon);
 		SDL_DestroySurface(icon);
+	} else {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load icon: %s", SDL_GetError());
 	}
 
 	if (!SetupLegoOmni()) {
