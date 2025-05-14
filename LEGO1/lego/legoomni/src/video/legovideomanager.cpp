@@ -136,9 +136,9 @@ MxResult LegoVideoManager::Create(MxVideoParam& p_videoParam, MxU32 p_frequencyM
 	m_direct3d->SetDevice(deviceEnumerate, driver, device);
 	/*
 	 * BUG: should be:
-	 *  if ((driver->m_ddCaps.dwCaps2 & DDCAPS2_CERTIFIED) == 0 && driver->m_ddCaps.dwSVBRops[7] != 2) { 
-	 */
-	if (driver->m_ddCaps.dwCaps2 != DDCAPS2_CERTIFIED && driver->m_ddCaps.dwSVBRops[7] != 2) { 
+	 *  if ((driver->m_ddCaps.dwCaps2 & DDCAPS2_CERTIFIED) == 0 && driver->m_ddCaps.dwSVBRops[7] != 2) {
+ 	 */
+	if (driver->m_ddCaps.dwCaps2 != DDCAPS2_CERTIFIED && driver->m_ddCaps.dwSVBRops[7] != 2) {
 		p_videoParam.Flags().SetF2bit0(TRUE);
 	}
 	else {
