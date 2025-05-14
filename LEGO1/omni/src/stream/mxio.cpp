@@ -489,7 +489,11 @@ MxU16 MXIOINFO::Descend(ISLE_MMCKINFO* p_chunkInfo, const ISLE_MMCKINFO* p_paren
 		}
 	}
 	else {
+#if defined(_MSC_VER)
 		ofs = LONG_MAX;
+#else
+		ofs = INT_MAX;
+#endif
 
 		if (p_parentInfo) {
 			ofs = p_parentInfo->cksize + p_parentInfo->dwDataOffset;
