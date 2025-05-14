@@ -2,6 +2,9 @@
 
 #include <assert.h>
 #include <stdio.h> // for vsprintf
+#if defined(_MSC_VER) && _MSC_VER >= 1310
+#include <intrin.h>
+#endif
 
 // File name validated by BETA10 0x1011cba3; directory unknown
 
