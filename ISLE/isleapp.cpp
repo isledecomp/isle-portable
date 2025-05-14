@@ -25,11 +25,10 @@
 #include "mxtransitionmanager.h"
 #include "mxutilities.h"
 #include "mxvariabletable.h"
+#include "res/isle_bmp.h"
 #include "res/resource.h"
 #include "roi/legoroi.h"
 #include "viewmanager/viewmanager.h"
-
-#include "res/isle_bmp.h"
 
 #define SDL_MAIN_USE_CALLBACKS
 #include <SDL3/SDL.h>
