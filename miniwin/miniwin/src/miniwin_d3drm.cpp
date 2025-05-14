@@ -10,14 +10,14 @@ struct Direct3DRMDevice2Impl : public IDirect3DRMDevice2 {
 	HRESULT GetBufferCount() override { return DD_OK; }
 	HRESULT SetShades(unsigned long shadeCount) override { return DD_OK; }
 	HRESULT GetShades() override { return DD_OK; }
-	HRESULT SetQuality(int quality) override { return DD_OK; }
-	HRESULT GetQuality() override { return DD_OK; }
+	HRESULT SetQuality(D3DRMRENDERQUALITY quality) override { return DD_OK; }
+	D3DRMRENDERQUALITY GetQuality() override { return D3DRMRENDERQUALITY::GOURAUD; }
 	HRESULT SetDither(int dither) override { return DD_OK; }
 	HRESULT GetDither() override { return DD_OK; }
 	HRESULT SetTextureQuality(D3DRMTEXTUREQUALITY quality) override { return DD_OK; }
-	D3DRMTEXTUREQUALITY GetTextureQuality() override { return D3DRMTEXTURE_NEAREST; }
-	HRESULT SetRenderMode(int mode) override { return DD_OK; }
-	HRESULT GetRenderMode() override { return DD_OK; }
+	D3DRMTEXTUREQUALITY GetTextureQuality() override { return D3DRMTEXTUREQUALITY::LINEAR; }
+	HRESULT SetRenderMode(D3DRMRENDERMODE mode) override { return DD_OK; }
+	D3DRMRENDERMODE GetRenderMode() override { return D3DRMRENDERMODE::BLENDEDTRANSPARENCY; }
 	HRESULT Update() override { return DD_OK; }
 	HRESULT GetViewports(IDirect3DRMViewportArray** ppViewportArray) override { return DD_OK; }
 };
@@ -42,7 +42,7 @@ struct Direct3DRMFrameImpl : public IDirect3DRMFrame2 {
 		return DD_OK;
 	}
 	HRESULT GetLights(IDirect3DRMLightArray** lightArray) override { return DD_OK; }
-	HRESULT AddTransform(int combine, D3DRMMATRIX4D matrix) override { return DD_OK; }
+	HRESULT AddTransform(D3DRMCOMBINETYPE combine, D3DRMMATRIX4D matrix) override { return DD_OK; }
 	HRESULT GetPosition(int index, D3DVECTOR* position) override { return DD_OK; }
 	HRESULT AddVisual(IDirect3DRMVisual* visual) override
 	{
@@ -104,7 +104,7 @@ struct Direct3DRMViewportImpl : public IDirect3DRMViewport {
 	HRESULT SetCamera(IDirect3DRMFrame* camera) override { return DD_OK; }
 	HRESULT GetCamera(IDirect3DRMFrame** camera) override { return DD_OK; }
 	HRESULT SetProjection(D3DRMPROJECTIONTYPE type) override { return DD_OK; }
-	D3DRMPROJECTIONTYPE GetProjection() override { return D3DRMPROJECT_PERSPECTIVE; }
+	D3DRMPROJECTIONTYPE GetProjection() override { return D3DRMPROJECTIONTYPE::PERSPECTIVE; }
 	HRESULT SetFront(D3DVALUE z) override { return DD_OK; }
 	D3DVALUE GetFront() override { return 0; }
 	HRESULT SetBack(D3DVALUE z) override { return DD_OK; }

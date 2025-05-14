@@ -210,7 +210,7 @@ BOOL CConfigApp::IsDeviceInBasicRGBMode() const
 	 * BUG: should be:
 	 *  return !GetHardwareDeviceColorModel() && (m_device->m_HELDesc.dcmColorModel & D3DCOLOR_RGB);
 	 */
-	return !GetHardwareDeviceColorModel() && m_device->m_HELDesc.dcmColorModel == D3DCOLOR_RGB;
+	return GetHardwareDeviceColorModel() == D3DCOLOR_NONE && m_device->m_HELDesc.dcmColorModel == D3DCOLOR_RGB;
 }
 
 // FUNCTION: CONFIG 0x00403400
@@ -306,7 +306,7 @@ BOOL CConfigApp::ValidateSettings()
 			is_modified = TRUE;
 		}
 	}
-	if (!GetHardwareDeviceColorModel()) {
+	if (GetHardwareDeviceColorModel() == D3DCOLOR_NONE) {
 		m_draw_cursor = FALSE;
 		is_modified = TRUE;
 	}
@@ -351,7 +351,7 @@ DWORD CConfigApp::GetConditionalDeviceRenderBitDepth() const
 	if (IsDeviceInBasicRGBMode()) {
 		return 0;
 	}
-	if (GetHardwareDeviceColorModel()) {
+	if (GetHardwareDeviceColorModel() != D3DCOLOR_NONE) {
 		return 0;
 	}
 	return m_device->m_HELDesc.dwDeviceRenderBitDepth & DDBD_8;
@@ -360,7 +360,7 @@ DWORD CConfigApp::GetConditionalDeviceRenderBitDepth() const
 // FUNCTION: CONFIG 0x004037e0
 DWORD CConfigApp::GetDeviceRenderBitStatus() const
 {
-	if (GetHardwareDeviceColorModel()) {
+	if (GetHardwareDeviceColorModel() != D3DCOLOR_NONE) {
 		return m_device->m_HWDesc.dwDeviceRenderBitDepth & DDBD_16;
 	}
 	else {

@@ -180,7 +180,7 @@ int LegoDeviceEnumerate::GetBestDevice()
 
 		MxDriver& driver = *it;
 		for (list<Direct3DDeviceInfo>::iterator it2 = driver.m_devices.begin(); it2 != driver.m_devices.end(); it2++) {
-			if ((*it2).m_HWDesc.dcmColorModel) {
+			if ((*it2).m_HWDesc.dcmColorModel != D3DCOLOR_NONE) {
 				return j;
 			}
 			else {
@@ -341,7 +341,7 @@ unsigned char LegoDeviceEnumerate::FUN_1009d3d0(Direct3DDeviceInfo& p_device)
 		return FALSE;
 	}
 
-	if (p_device.m_HWDesc.dcmColorModel) {
+	if (p_device.m_HWDesc.dcmColorModel != D3DCOLOR_NONE) {
 		if (p_device.m_HWDesc.dwDeviceZBufferBitDepth & DDBD_16 &&
 			p_device.m_HWDesc.dpcTriCaps.dwTextureCaps & D3DPTEXTURECAPS_PERSPECTIVE) {
 			return TRUE;

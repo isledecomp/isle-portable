@@ -8,9 +8,8 @@
 #define MAKE_HRESULT(sev, fac, code)                                                                                   \
 	((HRESULT) (((uint32_t) (sev) << 31) | ((uint32_t) (fac) << 16) | ((uint32_t) (code))))
 
-// This is not the right way to make a GUID
-#define DEFINE_GUID(GuidName, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8)                                               \
-	const GUID GuidName = {l, w1, w2, b1 + b2 + b3 + b4 + b5 + b6 + b7 + b8}
+#define DEFINE_GUID(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8)                                                   \
+	const GUID name = {l, w1, w2, {b1, b2, b3, b4, b5, b6, b7, b8}}
 
 // Remove WinAPI stuff
 #define CALLBACK
@@ -61,7 +60,7 @@
 // --- Typedefs ---
 typedef uint8_t BYTE, byte;
 typedef int32_t LONG;
-typedef uint32_t ULONG, DWORD;
+typedef uint32_t ULONG, DWORD, HRESULT;
 typedef DWORD* LPDWORD;
 typedef int BOOL, WINBOOL, INT;
 typedef unsigned int UINT;
@@ -74,7 +73,7 @@ typedef void* HANDLE;
 typedef HANDLE HMENU, HICON, HFONT;
 typedef struct HINSTANCE__* HINSTANCE;
 typedef HANDLE HWND, HMODULE, HDC, HPALETTE, HFILE, HCURSOR;
-typedef LONG HRESULT, LSTATUS, HKEY, REGSAM;
+typedef LONG LSTATUS, HKEY, REGSAM;
 
 // --- Structs ---
 struct tagPOINT {
@@ -136,10 +135,10 @@ struct PALETTEENTRY {
 typedef PALETTEENTRY* LPPALETTEENTRY;
 
 struct GUID {
-	int m_data1;
-	int m_data2;
-	int m_data3;
-	int m_data4;
+	uint32_t m_data1;
+	uint16_t m_data2;
+	uint16_t m_data3;
+	uint8_t m_data4[8];
 };
 typedef GUID* LPGUID;
 

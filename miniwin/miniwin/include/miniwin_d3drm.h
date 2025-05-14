@@ -8,86 +8,98 @@
 #define D3DRM_OK DD_OK
 #define MAXSHORT ((short) 0x7fff)
 #define SUCCEEDED(hr) ((hr) >= D3DRM_OK)
-#define D3DPTFILTERCAPS_LINEAR 0x00000001
-#define D3DPSHADECAPS_ALPHAFLATBLEND 0x00000100
 
 // --- Typedefs ---
-typedef DWORD D3DRMMAPPING, *LPD3DRMMAPPING;
 typedef float D3DVAL;
 typedef void* LPD3DRM_APPDATA;
 typedef unsigned long D3DRMGROUPINDEX;
-typedef DWORD D3DRMRENDERQUALITY, *LPD3DRMRENDERQUALITY;
 typedef DWORD D3DCOLOR, *LPD3DCOLOR;
 typedef float D3DVALUE, *LPD3DVALUE;
 
 // --- Enums ---
-enum D3DRMCOMBINETYPE {
-	D3DRMCOMBINE_REPLACE,
-	D3DRMCOMBINE_BEFORE,
-	D3DRMCOMBINE_AFTER
+#define D3DRMCOMBINE_REPLACE D3DRMCOMBINETYPE::REPLACE
+enum class D3DRMCOMBINETYPE {
+	REPLACE
 };
 typedef D3DRMCOMBINETYPE* LPD3DRMCOMBINETYPE;
 
-enum D3DRMPALETTEFLAGS {
-	D3DRMPALETTE_READONLY
+#define D3DRMPALETTE_READONLY D3DRMPALETTEFLAGS::READONLY
+enum class D3DRMPALETTEFLAGS {
+	READONLY = 1
 };
 typedef D3DRMPALETTEFLAGS* LPD3DRMPALETTEFLAGS;
 
-enum D3DRMTEXTUREQUALITY {
-	D3DRMTEXTURE_NEAREST,
-	D3DRMTEXTURE_LINEAR,
-	D3DRMTEXTURE_MIPNEAREST,
-	D3DRMTEXTURE_MIPLINEAR,
-	D3DRMTEXTURE_LINEARMIPNEAREST,
-	D3DRMTEXTURE_LINEARMIPLINEAR
+#define D3DRMTEXTURE_LINEAR D3DRMTEXTUREQUALITY::LINEAR
+enum class D3DRMTEXTUREQUALITY {
+	LINEAR = 1
 };
 typedef D3DRMTEXTUREQUALITY* LPD3DRMTEXTUREQUALITY;
 
-enum D3DRMRENDERMODE {
-	D3DRMRENDERMODE_BLENDEDTRANSPARENCY
+#define D3DRMRENDERMODE_BLENDEDTRANSPARENCY D3DRMRENDERMODE::BLENDEDTRANSPARENCY
+enum class D3DRMRENDERMODE {
+	BLENDEDTRANSPARENCY = 1
 };
 
-enum D3DRMMappingFlag {
-	D3DRMMAP_WRAPU = 1,
-	D3DRMMAP_WRAPV = 2,
-	D3DRMMAP_PERSPCORRECT = 4
+#define D3DRMMAP_NONE D3DRMMAPPING::NONE
+#define D3DRMMAP_PERSPCORRECT D3DRMMAPPING::PERSPCORRECT
+enum class D3DRMMAPPING {
+	NONE = 0,
+	PERSPCORRECT = 4
 };
+typedef D3DRMMAPPING* LPD3DRMMAPPING;
 
-enum D3DRMLIGHTTYPE {
-	D3DRMLIGHT_AMBIENT,
-	D3DRMLIGHT_POINT,
-	D3DRMLIGHT_SPOT,
-	D3DRMLIGHT_DIRECTIONAL,
-	D3DRMLIGHT_PARALLELPOINT
+#define D3DRMLIGHT_AMBIENT D3DRMLIGHTTYPE::AMBIENT
+#define D3DRMLIGHT_POINT D3DRMLIGHTTYPE::POINT
+#define D3DRMLIGHT_SPOT D3DRMLIGHTTYPE::SPOT
+#define D3DRMLIGHT_DIRECTIONAL D3DRMLIGHTTYPE::DIRECTIONAL
+#define D3DRMLIGHT_PARALLELPOINT D3DRMLIGHTTYPE::PARALLELPOINT
+enum class D3DRMLIGHTTYPE {
+	AMBIENT,
+	POINT,
+	SPOT,
+	DIRECTIONAL,
+	PARALLELPOINT
 };
 typedef D3DRMLIGHTTYPE* LPD3DRMLIGHTTYPE;
 
-enum D3DRMMATERIALMODE {
-	D3DRMMATERIAL_FROMPARENT,
-	D3DRMMATERIAL_FROMFRAME,
-	D3DRMMATERIAL_FROMMESH
+#define D3DRMMATERIAL_FROMMESH D3DRMMATERIALMODE::FROMMESH
+#define D3DRMMATERIAL_FROMPARENT D3DRMMATERIALMODE::FROMPARENT
+#define D3DRMMATERIAL_FROMFRAME D3DRMMATERIALMODE::FROMFRAME
+enum class D3DRMMATERIALMODE {
+	FROMMESH,
+	FROMPARENT,
+	FROMFRAME
 };
 
-enum D3DRMRenderMode {
-	D3DRMRENDER_WIREFRAME = 0,
-	D3DRMRENDER_UNLITFLAT = 1,
-	D3DRMRENDER_FLAT = 2,
-	D3DRMRENDER_GOURAUD = 4,
-	D3DRMRENDER_PHONG = 8
-};
+#define D3DRMRENDER_WIREFRAME D3DRMRENDERQUALITY::WIREFRAME
+#define D3DRMRENDER_UNLITFLAT D3DRMRENDERQUALITY::UNLITFLAT
+#define D3DRMRENDER_FLAT D3DRMRENDERQUALITY::FLAT
+#define D3DRMRENDER_GOURAUD D3DRMRENDERQUALITY::GOURAUD
+#define D3DRMRENDER_PHONG D3DRMRENDERQUALITY::PHONG
 
-enum D3DRMPROJECTIONTYPE {
-	D3DRMPROJECT_PERSPECTIVE,
-	D3DRMPROJECT_ORTHOGRAPHIC
+enum class D3DRMRENDERQUALITY {
+	WIREFRAME = 64,
+	UNLITFLAT = 128,
+	FLAT = 136,
+	GOURAUD = 137,
+	PHONG = 138
+};
+typedef D3DRMRENDERQUALITY* LPD3DRMRENDERQUALITY;
+
+#define D3DRMPROJECT_PERSPECTIVE D3DRMPROJECTIONTYPE::PERSPECTIVE
+#define D3DRMPROJECT_ORTHOGRAPHIC D3DRMPROJECTIONTYPE::ORTHOGRAPHIC
+enum class D3DRMPROJECTIONTYPE {
+	PERSPECTIVE,
+	ORTHOGRAPHIC
 };
 typedef D3DRMPROJECTIONTYPE* LPD3DRMPROJECTIONTYPE;
 
 // --- GUIDs ---
-DEFINE_GUID(IID_IDirect3DRM2, 0x4516ec41, 0x8f20, 0x11d0, 0x9b, 0x6d, 0x00, 0x00, 0xc0, 0x78, 0x1b, 0xc3);
-DEFINE_GUID(IID_IDirect3DRMWinDevice, 0x0eb16e60, 0xcbf4, 0x11cf, 0xa5, 0x3c, 0x00, 0x20, 0xaf, 0x70, 0x7e, 0xfd);
-DEFINE_GUID(IID_IDirect3DRMMesh, 0x4516ec78, 0x8f20, 0x11d0, 0x9b, 0x6d, 0x00, 0x00, 0xc0, 0x78, 0x1b, 0xc3);
-DEFINE_GUID(IID_IDirect3DRMMeshBuilder, 0x4516ec7b, 0x8f20, 0x11d0, 0x9b, 0x6d, 0x00, 0x00, 0xc0, 0x78, 0x1b, 0xc3);
-DEFINE_GUID(IID_IDirect3DRMTexture2, 0x120f30c0, 0x1629, 0x11d1, 0x94, 0x26, 0x00, 0x60, 0x97, 0x0c, 0xf4, 0x0d);
+DEFINE_GUID(IID_IDirect3DRM2, 0x4516ecc8, 0x8f20, 0x11d0, 0x9b, 0x6d, 0x00, 0x00, 0xc0, 0x78, 0x1b, 0xc3);
+DEFINE_GUID(IID_IDirect3DRMWinDevice, 0xc5016cc0, 0xd273, 0x11ce, 0xac, 0x48, 0x00, 0x00, 0xc0, 0x38, 0x25, 0xa1);
+DEFINE_GUID(IID_IDirect3DRMMesh, 0xa3a80d01, 0x6e12, 0x11cf, 0xac, 0x4a, 0x00, 0x00, 0xc0, 0x38, 0x25, 0xa1);
+DEFINE_GUID(IID_IDirect3DRMMeshBuilder, 0xa3a80d02, 0x6e12, 0x11cf, 0xac, 0x4a, 0x00, 0x00, 0xc0, 0x38, 0x25, 0xa1);
+DEFINE_GUID(IID_IDirect3DRMTexture2, 0x120f30c0, 0x1629, 0x11d0, 0x94, 0x1c, 0x00, 0x80, 0xc8, 0x0c, 0xfa, 0x7b);
 
 // --- Structs ---
 typedef struct D3DRMVECTOR4D {
@@ -95,7 +107,8 @@ typedef struct D3DRMVECTOR4D {
 } D3DRMVECTOR4D;
 
 typedef struct D3DRMPALETTEENTRY {
-	unsigned char red, green, blue, flags;
+	unsigned char red, green, blue;
+	D3DRMPALETTEFLAGS flags;
 } D3DRMPALETTEENTRY;
 
 typedef struct D3DRMIMAGE {
@@ -152,7 +165,8 @@ typedef IDirect3DRMTexture* LPDIRECT3DRMTEXTURE;
 struct IDirect3DRMTexture2 : public IDirect3DRMTexture {};
 typedef IDirect3DRMTexture2* LPDIRECT3DRMTEXTURE2;
 
-typedef struct IDirect3DRMMaterial *LPDIRECT3DRMMATERIAL, **LPLPDIRECT3DRMMATERIAL;
+struct IDirect3DRMMaterial : virtual public IUnknown {};
+typedef IDirect3DRMMaterial *LPDIRECT3DRMMATERIAL, **LPLPDIRECT3DRMMATERIAL;
 
 struct IDirect3DRMMesh : virtual public IUnknown {
 	virtual HRESULT Clone(int flags, GUID iid, void** object) = 0;
@@ -176,12 +190,12 @@ struct IDirect3DRMMesh : virtual public IUnknown {
 	virtual HRESULT SetGroupColorRGB(int groupIndex, float r, float g, float b) = 0;
 	virtual HRESULT SetGroupTexture(int groupIndex, const IDirect3DRMTexture* texture) = 0;
 	virtual HRESULT SetGroupMaterial(int groupIndex, IDirect3DRMMaterial* material) = 0;
-	virtual HRESULT SetGroupMapping(int groupIndex, int mapping) = 0;
+	virtual HRESULT SetGroupMapping(D3DRMGROUPINDEX groupIndex, D3DRMMAPPING mapping) = 0;
 	virtual HRESULT SetGroupQuality(int groupIndex, D3DRMRENDERQUALITY quality) = 0;
 	virtual HRESULT SetVertices(int groupIndex, int offset, int count, D3DRMVERTEX* vertices) = 0;
 	virtual HRESULT GetGroupTexture(int groupIndex, LPDIRECT3DRMTEXTURE* texture) = 0;
-	virtual HRESULT GetGroupMapping(int groupIndex) = 0;
-	virtual HRESULT GetGroupQuality(int groupIndex) = 0;
+	virtual D3DRMMAPPING GetGroupMapping(int groupIndex) = 0;
+	virtual D3DRMRENDERQUALITY GetGroupQuality(int groupIndex) = 0;
 	virtual HRESULT GetGroupColor(D3DRMGROUPINDEX index) = 0;
 	virtual HRESULT GetVertices(int groupIndex, int startIndex, int count, D3DRMVERTEX* vertices) = 0;
 };
@@ -209,7 +223,7 @@ struct IDirect3DRMFrame : virtual public IUnknown {
 	virtual HRESULT SetSceneBackgroundRGB(float r, float g, float b) = 0;
 	virtual HRESULT AddLight(IDirect3DRMLight* light) = 0;
 	virtual HRESULT GetLights(IDirect3DRMLightArray** lightArray) = 0;
-	virtual HRESULT AddTransform(int combine, D3DRMMATRIX4D matrix) = 0;
+	virtual HRESULT AddTransform(D3DRMCOMBINETYPE combine, D3DRMMATRIX4D matrix) = 0;
 	virtual HRESULT GetPosition(int index, D3DVECTOR* position) = 0;
 	virtual HRESULT AddVisual(IDirect3DRMVisual* visual) = 0;
 	virtual HRESULT DeleteVisual(IDirect3DRMVisual* visual) = 0;
@@ -293,14 +307,14 @@ struct IDirect3DRMDevice2 : virtual public IUnknown {
 	virtual HRESULT GetBufferCount() = 0;
 	virtual HRESULT SetShades(unsigned long shadeCount) = 0;
 	virtual HRESULT GetShades() = 0;
-	virtual HRESULT SetQuality(int quality) = 0;
-	virtual HRESULT GetQuality() = 0;
+	virtual HRESULT SetQuality(D3DRMRENDERQUALITY quality) = 0;
+	virtual D3DRMRENDERQUALITY GetQuality() = 0;
 	virtual HRESULT SetDither(int dither) = 0;
 	virtual HRESULT GetDither() = 0;
 	virtual HRESULT SetTextureQuality(D3DRMTEXTUREQUALITY quality) = 0;
 	virtual D3DRMTEXTUREQUALITY GetTextureQuality() = 0;
-	virtual HRESULT SetRenderMode(int mode) = 0;
-	virtual HRESULT GetRenderMode() = 0;
+	virtual HRESULT SetRenderMode(D3DRMRENDERMODE mode) = 0;
+	virtual D3DRMRENDERMODE GetRenderMode() = 0;
 	virtual HRESULT Update() = 0;
 	virtual HRESULT GetViewports(IDirect3DRMViewportArray** ppViewportArray) = 0;
 };
