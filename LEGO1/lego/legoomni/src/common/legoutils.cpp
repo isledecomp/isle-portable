@@ -745,7 +745,7 @@ void WriteDefaultTexture(LegoStorage* p_storage, const char* p_name)
 				if (textureInfo->m_palette->GetEntries(0, 0, sizeOfArray(entries), entries) == DD_OK) {
 					MxS32 i;
 					for (i = 0; i < sizeOfArray(entries); i++) {
-						if (entries[i].peFlags != 0) {
+						if (entries[i].peFlags != PC_NONE) {
 							break;
 						}
 

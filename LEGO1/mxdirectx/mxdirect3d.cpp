@@ -132,7 +132,8 @@ BOOL MxDirect3D::D3DSetMode()
 			return FALSE;
 		}
 
-		if (m_currentDeviceInfo->m_desc.dpcTriCaps.dwTextureCaps & D3DPTEXTURECAPS_PERSPECTIVE) {
+		if ((m_currentDeviceInfo->m_desc.dpcTriCaps.dwTextureCaps & D3DPTEXTURECAPS_PERSPECTIVE) ==
+			D3DPTEXTURECAPS_PERSPECTIVE) {
 			m_bTexturesDisabled = FALSE;
 		}
 		else {
@@ -144,7 +145,8 @@ BOOL MxDirect3D::D3DSetMode()
 		}
 	}
 	else {
-		if (m_currentDeviceInfo->m_desc.dpcTriCaps.dwTextureCaps & D3DPTEXTURECAPS_PERSPECTIVE) {
+		if ((m_currentDeviceInfo->m_desc.dpcTriCaps.dwTextureCaps & D3DPTEXTURECAPS_PERSPECTIVE) ==
+			D3DPTEXTURECAPS_PERSPECTIVE) {
 			m_bTexturesDisabled = FALSE;
 		}
 		else {
@@ -221,25 +223,25 @@ BOOL MxDirect3D::D3DSetMode()
 int MxDirect3D::ZBufferDepth(MxAssignedDevice* p_assignedDevice)
 {
 	int depth;
-	DWORD deviceDepth;
+	DDBitDepths deviceDepth;
 
-	if (p_assignedDevice->m_desc.dwFlags & D3DDD_DEVICEZBUFFERBITDEPTH) {
+	if ((p_assignedDevice->m_desc.dwFlags & D3DDD_DEVICEZBUFFERBITDEPTH) == D3DDD_DEVICEZBUFFERBITDEPTH) {
 		deviceDepth = p_assignedDevice->m_desc.dwDeviceZBufferBitDepth;
 	}
 	else {
-		deviceDepth = 0;
+		return -1;
 	}
 
-	if (deviceDepth & DDBD_32) {
+	if ((deviceDepth & DDBD_32) == DDBD_32) {
 		depth = 32;
 	}
-	else if (deviceDepth & DDBD_24) {
+	else if ((deviceDepth & DDBD_24) == DDBD_24) {
 		depth = 24;
 	}
-	else if (deviceDepth & DDBD_16) {
+	else if ((deviceDepth & DDBD_16) == DDBD_16) {
 		depth = 16;
 	}
-	else if (deviceDepth & DDBD_8) {
+	else if ((deviceDepth & DDBD_8) == DDBD_8) {
 		depth = 8;
 	}
 	else {

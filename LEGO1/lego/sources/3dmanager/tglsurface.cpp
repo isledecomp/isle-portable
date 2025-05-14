@@ -66,7 +66,7 @@ int GetBitsPerPixel(IDirectDrawSurface* pSurface)
 
 	result = pSurface->GetPixelFormat(&pixelFormat);
 	assert(result == DD_OK);
-	assert(pixelFormat.dwFlags & DDPF_RGB);
+	assert((pixelFormat.dwFlags & DDPF_RGB) == DDPF_RGB);
 
 	return pixelFormat.dwRGBBitCount;
 }

@@ -135,7 +135,7 @@ MxResult LegoVideoManager::Create(MxVideoParam& p_videoParam, MxU32 p_frequencyM
 
 	m_direct3d->SetDevice(deviceEnumerate, driver, device);
 
-	if (!driver->m_ddCaps.dwCaps2 && driver->m_ddCaps.dwSVBRops[7] != 2) {
+	if (driver->m_ddCaps.dwCaps2 != DDCAPS2_CERTIFIED && driver->m_ddCaps.dwSVBRops[7] != 2) {
 		p_videoParam.Flags().SetLacksLightSupport(TRUE);
 	}
 	else {
@@ -819,13 +819,15 @@ MxResult LegoVideoManager::ConfigureD3DRM()
 	MxAssignedDevice* assignedDevice = m_direct3d->AssignedDevice();
 
 	if (assignedDevice && assignedDevice->GetFlags() & MxAssignedDevice::c_hardwareMode) {
-		if (assignedDevice->GetDesc().dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_LINEAR) {
+		if ((assignedDevice->GetDesc().dpcTriCaps.dwTextureFilterCaps & D3DPTFILTERCAPS_LINEAR) ==
+			D3DPTFILTERCAPS_LINEAR) {
 			d3drm->SetTextureQuality(D3DRMTEXTURE_LINEAR);
 		}
 
 		d3drm->SetDither(TRUE);
 
-		if (assignedDevice->GetDesc().dpcTriCaps.dwShadeCaps & D3DPSHADECAPS_ALPHAFLATBLEND) {
+		if ((assignedDevice->GetDesc().dpcTriCaps.dwShadeCaps & D3DPSHADECAPS_ALPHAFLATBLEND) ==
+			D3DPSHADECAPS_ALPHAFLATBLEND) {
 			d3drm->SetRenderMode(D3DRMRENDERMODE_BLENDEDTRANSPARENCY);
 		}
 	}

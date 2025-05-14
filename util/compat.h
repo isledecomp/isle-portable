@@ -10,8 +10,11 @@
 #ifndef MINIWIN
 #define D3DCOLOR_NONE 0
 #define D3DRMMAP_NONE 0
+#define PC_NONE 0
+#define DDBLT_NONE 0
 #define D3DRMRENDERMODE DWORD
 #define DDSCapsFlags DWORD
+#define DDBitDepths DWORD
 #endif
 
 // Disable "identifier was truncated to '255' characters" warning.

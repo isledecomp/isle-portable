@@ -126,14 +126,6 @@ struct BITMAPINFO {
 	RGBQUAD bmiColors[1];
 };
 
-struct PALETTEENTRY {
-	BYTE peRed;
-	BYTE peGreen;
-	BYTE peBlue;
-	BYTE peFlags;
-};
-typedef PALETTEENTRY* LPPALETTEENTRY;
-
 struct GUID {
 	uint32_t m_data1;
 	uint16_t m_data2;
@@ -152,21 +144,10 @@ struct IUnknown {
 private:
 	int m_refCount;
 };
-struct LOGPALETTE {
-	WORD palVersion;
-	WORD palNumEntries;
-	PALETTEENTRY palPalEntry[1];
-};
-typedef LOGPALETTE* LPLOGPALETTE;
 
 inline BOOL SetWindowPos(HWND hWnd, HWND hWndInsertAfter, int X, int Y, int cx, int cy, UINT uFlags)
 {
 	return TRUE;
-}
-
-inline UINT WINAPI GetSystemPaletteEntries(HDC hdc, UINT iStart, UINT cEntries, LPPALETTEENTRY pPalEntries)
-{
-	return 0;
 }
 
 inline HDC WINAPI GetDC(HWND hWnd)
@@ -307,21 +288,6 @@ inline int SetRect(RECT* rc, int left, int top, int right, int bottom)
 }
 
 VOID WINAPI Sleep(DWORD dwMilliseconds);
-
-inline HPALETTE CreatePalette(LPLOGPALETTE lpLogPalette)
-{
-	return nullptr;
-}
-
-inline int SelectPalette(HDC hdc, HPALETTE hpal, BOOL bForceBackground)
-{
-	return 0;
-}
-
-inline int RealizePalette(HDC hdc)
-{
-	return 0;
-}
 
 inline BOOL ClientToScreen(HWND hWnd, LPPOINT lpPoint)
 {
