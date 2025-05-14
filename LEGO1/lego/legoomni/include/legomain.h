@@ -194,7 +194,7 @@ public:
 	{
 		SDL_Event event;
 		event.user.type = g_legoSdlEvents.m_windowsMessage;
-		event.user.code = WM_CLOSE;
+		event.user.code = WM_QUIT;
 		event.user.data1 = NULL;
 		event.user.data2 = NULL;
 		SDL_PushEvent(&event);
