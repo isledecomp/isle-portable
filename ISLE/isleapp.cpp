@@ -488,19 +488,21 @@ MxResult IsleApp::SetupWindow()
 		return FAILURE;
 	}
 
+	SDL_IOStream* icon_stream = SDL_IOFromMem(isle_bmp, isle_bmp_len);
 
-	SDL_IOStream *icon_stream = SDL_IOFromMem(isle_bmp, isle_bmp_len);
-	if (!icon_stream) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to open SDL_IOStream for icon: %s", SDL_GetError());
+	if (icon_stream) {
+		SDL_Surface* icon = SDL_LoadBMP_IO(icon_stream, true);
+
+		if (icon) {
+			SDL_SetWindowIcon(m_windowHandle, icon);
+			SDL_DestroySurface(icon);
+		}
+		else {
+			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load icon: %s", SDL_GetError());
+		}
 	}
-
-	SDL_Surface *icon = SDL_LoadBMP_IO(icon_stream, true);
-
-	if (icon) {
-		SDL_SetWindowIcon(m_windowHandle, icon);
-		SDL_DestroySurface(icon);
-	} else {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load icon: %s", SDL_GetError());
+	else {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to open SDL_IOStream for icon: %s", SDL_GetError());
 	}
 
 	if (!SetupLegoOmni()) {
