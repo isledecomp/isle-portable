@@ -487,11 +487,11 @@ MxResult IsleApp::SetupWindow()
 	}
 
 #ifndef _WIN32
-	SDL_Surface *icon = SDL_CreateSurfaceFrom(
+	SDL_Surface* icon = SDL_CreateSurfaceFrom(
 		ISLE_ICON.width,
 		ISLE_ICON.height,
 		SDL_PIXELFORMAT_RGBA32,
-		(void*)ISLE_ICON.pixel_data,
+		(void*) ISLE_ICON.pixel_data,
 		ISLE_ICON.width * ISLE_ICON.bytes_per_pixel
 	);
 
