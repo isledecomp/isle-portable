@@ -142,7 +142,7 @@ void HistoryBook::ReadyWorld()
 						memset(m_scores[i]->GetBitmapStart(scoreboxX, scoreboxY + lax), scoreColors[color - 1], 4);
 #else
 						if (m_scores[i]->GetAlphaMask() != NULL) {
-							memset(NULL, scoreColors[color - 1], 4);
+							// memset(NULL, scoreColors[color - 1], 4);
 						}
 						else {
 							memset(
