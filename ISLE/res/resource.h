@@ -4,7 +4,3 @@
 
 #define APP_ICON 105
 
-#ifndef _RES_ISLE_H
-#define _RES_ISLE_H
-#include "isle.h"
-#endif

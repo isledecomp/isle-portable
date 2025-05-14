@@ -1,8 +1,6 @@
 #include "isleapp.h"
 
 #include "3dmanager/lego3dmanager.h"
-#include "SDL3/SDL_log.h"
-#include "SDL3/SDL_surface.h"
 #include "decomp.h"
 #include "legoanimationmanager.h"
 #include "legobuildingmanager.h"
@@ -30,6 +28,8 @@
 #include "res/resource.h"
 #include "roi/legoroi.h"
 #include "viewmanager/viewmanager.h"
+
+#include "res/isle_bmp.h"
 
 #define SDL_MAIN_USE_CALLBACKS
 #include <SDL3/SDL.h>
