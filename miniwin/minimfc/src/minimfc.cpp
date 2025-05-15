@@ -21,20 +21,13 @@ CWinApp::CWinApp()
 		abort();
 	}
 	wndTop = this;
-}
 
-CWinApp::~CWinApp() = default;
-
-BOOL CWinApp::InitInstance()
-{
 	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK)) {
 		SDL_Log("SDL_Init: %s\n", SDL_GetError());
-		return FALSE;
+		return;
 	}
 
 	window = SDL_CreateWindow(title, 640, 480, 0);
-
-	return TRUE;
 }
 
 int CWinApp::ExitInstance()
@@ -73,9 +66,7 @@ int main(int argc, char* argv[])
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "No CWinApp created");
 		abort();
 	}
-	if (!wndTop->InitInstance()) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "CWinApp::InitInstance failed");
-	}
+	wndTop->InitInstance();
 
 	SDL_Event event;
 	bool running = true;
@@ -134,6 +125,15 @@ BOOL GetWindowRect(HWND hWnd, RECT* Rect)
 	Rect->left = w + x;
 	Rect->bottom = h + y;
 
+	return TRUE;
+}
+
+BOOL GetVersionEx(OSVERSIONINFOA* version)
+{
+	version->dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
+	version->dwMajorVersion = 5; // Win2k/XP
+	version->dwPlatformId = 2;   // NT
+	version->dwBuildNumber = 0x500;
 	return TRUE;
 }
 

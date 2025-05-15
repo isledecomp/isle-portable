@@ -130,8 +130,8 @@ struct CMenu {
 
 struct CWinApp {
 	CWinApp();
-	virtual ~CWinApp();
-	virtual BOOL InitInstance();
+	virtual ~CWinApp() = default;
+	virtual BOOL InitInstance() = 0;
 	virtual int ExitInstance();
 };
 
@@ -188,10 +188,7 @@ inline int GetSystemMetrics(int nIndex)
 	return 0;
 }
 
-inline BOOL GetVersionEx(OSVERSIONINFOA* version)
-{
-	return TRUE;
-}
+BOOL GetVersionEx(OSVERSIONINFOA* version);
 
 void GlobalMemoryStatus(MEMORYSTATUS* memory_status);
 
