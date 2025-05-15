@@ -171,22 +171,48 @@ HRESULT DirectDrawImpl::EnumDisplayModes(
 	LPDDENUMMODESCALLBACK lpEnumModesCallback
 )
 {
-	DDSURFACEDESC ddsd = {};
-	ddsd.dwSize = sizeof(DDSURFACEDESC);
-	ddsd.dwFlags = DDSD_HEIGHT | DDSD_WIDTH | DDSD_PIXELFORMAT;
-	ddsd.dwWidth = 640;
-	ddsd.dwHeight = 480;
-	ddsd.lPitch = 0;
+	if (!lpEnumModesCallback) {
+		return DDERR_INVALIDPARAMS;
+	}
 
-	ddsd.ddpfPixelFormat.dwSize = sizeof(DDPIXELFORMAT);
-	ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB | D3DDD_DEVICEZBUFFERBITDEPTH;
-	ddsd.ddpfPixelFormat.dwRGBBitCount = 16; // Game only accpets 8 or 16
-
-	if (!lpEnumModesCallback(&ddsd, lpContext)) {
+	SDL_DisplayID displayID = SDL_GetPrimaryDisplay();
+	if (!displayID) {
 		return DDERR_GENERIC;
 	}
 
-	return S_OK;
+	int count_modes;
+	SDL_DisplayMode** modes = SDL_GetFullscreenDisplayModes(displayID, &count_modes);
+	if (!modes) {
+		return DDERR_GENERIC;
+	}
+
+	HRESULT status = S_OK;
+
+	for (int i = 0; i < count_modes; i++) {
+		const SDL_PixelFormatDetails* format = SDL_GetPixelFormatDetails(modes[i]->format);
+		if (!format) {
+			continue;
+		}
+		DDSURFACEDESC ddsd = {};
+		ddsd.dwSize = sizeof(DDSURFACEDESC);
+		ddsd.dwFlags = DDSD_WIDTH | DDSD_HEIGHT;
+		ddsd.dwWidth = modes[i]->w;
+		ddsd.dwHeight = modes[i]->h;
+		ddsd.ddpfPixelFormat.dwSize = sizeof(DDPIXELFORMAT);
+		ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB;
+		ddsd.ddpfPixelFormat.dwRGBBitCount =
+			(format->bits_per_pixel == 8) ? 8 : 16; // Game only accepts 8 or 16 bit mode
+		ddsd.ddpfPixelFormat.dwRBitMask = format->Rmask;
+		ddsd.ddpfPixelFormat.dwGBitMask = format->Gmask;
+		ddsd.ddpfPixelFormat.dwBBitMask = format->Bmask;
+
+		if (!lpEnumModesCallback(&ddsd, lpContext)) {
+			status = DDERR_GENERIC;
+		}
+	}
+	SDL_free(modes);
+
+	return status;
 }
 
 HRESULT DirectDrawImpl::GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELCaps)
@@ -194,13 +220,13 @@ HRESULT DirectDrawImpl::GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELCaps)
 	if (lpDDDriverCaps) {
 		memset(lpDDDriverCaps, 0, sizeof(DDCAPS));
 		lpDDDriverCaps->dwSize = sizeof(DDCAPS);
-		lpDDDriverCaps->dwCaps = 0;
+		lpDDDriverCaps->dwCaps2 = DDCAPS2_CERTIFIED; // Required to enable lighting
 	}
 
 	if (lpDDHELCaps) {
 		memset(lpDDHELCaps, 0, sizeof(DDCAPS));
 		lpDDHELCaps->dwSize = sizeof(DDCAPS);
-		lpDDHELCaps->dwCaps = 0;
+		lpDDHELCaps->dwCaps2 = DDCAPS2_CERTIFIED; // Required to enable lighting
 	}
 
 	return S_OK;

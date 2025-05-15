@@ -9,6 +9,8 @@
 #define DISCL_BACKGROUND 0x00000002
 #define PC_NOCOLLAPSE 0x04
 
+#define DDCAPS2_CERTIFIED 0x00000001
+
 // DirectDraw Surface Description flags
 #define DDSD_CAPS 0x00000001
 #define DDSD_HEIGHT 0x00000002
