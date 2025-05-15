@@ -302,7 +302,7 @@ BOOL MxDirect3D::SetDevice(MxDeviceEnumerate& p_deviceEnumerate, MxDriver* p_dri
 				if (&device == p_device) {
 					memcpy(&d->m_guid, device.m_guid, sizeof(d->m_guid));
 
-					if (device.m_HWDesc.dcmColorModel) {
+					if (device.m_HWDesc.dcmColorModel != D3DCOLOR_NONE) {
 						d->m_flags |= MxAssignedDevice::c_hardwareMode;
 						d->m_desc = device.m_HWDesc;
 					}

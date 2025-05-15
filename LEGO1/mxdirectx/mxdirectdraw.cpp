@@ -776,7 +776,7 @@ BOOL MxDirectDraw::RestoreSurfaces()
 
 // FUNCTION: LEGO1 0x1009e5e0
 // FUNCTION: BETA10 0x10122087
-BOOL MxDirectDraw::CreateZBuffer(DWORD memorytype, DWORD depth)
+BOOL MxDirectDraw::CreateZBuffer(DDSCapsFlags memorytype, DWORD depth)
 {
 	HRESULT result;                // eax
 	LPDIRECTDRAWSURFACE lpZBuffer; // [esp+8h] [ebp-70h] BYREF

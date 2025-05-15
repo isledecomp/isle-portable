@@ -93,7 +93,7 @@ struct DirectDrawImpl : public IDirectDraw2, public IDirect3D2 {
 		return DD_OK;
 	}
 	HRESULT CreatePalette(
-		DWORD dwFlags,
+		DDPixelCaps dwFlags,
 		LPPALETTEENTRY lpColorTable,
 		LPDIRECTDRAWPALETTE* lplpDDPalette,
 		IUnknown* pUnkOuter
@@ -145,17 +145,17 @@ HRESULT DirectDrawImpl::EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 		return DDERR_INVALIDPARAMS;
 	}
 
-	GUID deviceGuid = {0xa4665c, 0x2673, 0x11ce, 0x8034a0};
+	GUID deviceGuid = {0xA1B2C3D4, 0x1122, 0x3344, {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x00, 0x11}};
 
 	char* deviceName = (char*) "MiniWin 3D Device";
 	char* deviceDesc = (char*) "Stubbed 3D device";
 
 	D3DDEVICEDESC halDesc = {};
-	halDesc.dcmColorModel = D3DCOLOR_RGB;
+	halDesc.dcmColorModel = D3DCOLORMODEL::RGB;
 	halDesc.dwDeviceZBufferBitDepth = DDBD_16;
 	halDesc.dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
 	D3DDEVICEDESC helDesc = {};
-	halDesc.dcmColorModel = D3DCOLOR_RGB;
+	halDesc.dcmColorModel = D3DCOLORMODEL::RGB;
 	halDesc.dwDeviceZBufferBitDepth = DDBD_16;
 	halDesc.dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
 

@@ -77,7 +77,7 @@ protected:
 	BOOL DDCreateSurfaces();
 	HRESULT CreateDDSurface(LPDDSURFACEDESC a2, LPDIRECTDRAWSURFACE* a3, IUnknown* a4);
 	BOOL GetDDSurfaceDesc(LPDDSURFACEDESC lpDDSurfDesc, LPDIRECTDRAWSURFACE lpDDSurf);
-	BOOL CreateZBuffer(DWORD memorytype, DWORD depth);
+	BOOL CreateZBuffer(DDSCapsFlags memorytype, DWORD depth);
 
 	BOOL CreateTextSurfaces();
 	BOOL TextToTextSurface(const char* text, IDirectDrawSurface* pSurface, SIZE& textSizeOnSurface);

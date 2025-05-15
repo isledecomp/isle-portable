@@ -140,7 +140,7 @@ void CMainDialog::OnList3DevicesSelectionChanged()
 	LegoDeviceEnumerate* device_enumerator = currentConfigApp->m_device_enumerator;
 	int selected = ::SendMessage(GetDlgItem(IDC_LIST_3DDEVICES)->m_hWnd, LB_GETCURSEL, 0, 0);
 	device_enumerator->GetDevice(selected, currentConfigApp->m_driver, currentConfigApp->m_device);
-	if (currentConfigApp->GetHardwareDeviceColorModel()) {
+	if (currentConfigApp->GetHardwareDeviceColorModel() != D3DCOLOR_NONE) {
 		GetDlgItem(IDC_CHK_DRAW_CURSOR)->EnableWindow(TRUE);
 	}
 	else {
@@ -179,12 +179,14 @@ void CMainDialog::UpdateInterface()
 {
 	currentConfigApp->ValidateSettings();
 	GetDlgItem(IDC_CHK_3D_VIDEO_MEMORY)
-		->EnableWindow(!currentConfigApp->m_flip_surfaces && !currentConfigApp->GetHardwareDeviceColorModel());
+		->EnableWindow(
+			!currentConfigApp->m_flip_surfaces && currentConfigApp->GetHardwareDeviceColorModel() == D3DCOLOR_NONE
+		);
 	CheckDlgButton(IDC_CHK_FLIP_VIDEO_MEM_PAGES, currentConfigApp->m_flip_surfaces);
 	CheckDlgButton(IDC_CHK_3D_VIDEO_MEMORY, currentConfigApp->m_3d_video_ram);
 	BOOL full_screen = currentConfigApp->m_full_screen;
 	currentConfigApp->AdjustDisplayBitDepthBasedOnRenderStatus();
-	if (currentConfigApp->GetHardwareDeviceColorModel()) {
+	if (currentConfigApp->GetHardwareDeviceColorModel() != D3DCOLOR_NONE) {
 		CheckDlgButton(IDC_CHK_DRAW_CURSOR, TRUE);
 	}
 	else {

@@ -47,7 +47,7 @@ Result MeshImpl::SetTextureMappingMode(TextureMappingMode mode)
 		return ResultVal(m_data->groupMesh->SetGroupMapping(m_data->groupIndex, D3DRMMAP_PERSPCORRECT));
 	}
 	else {
-		return ResultVal(m_data->groupMesh->SetGroupMapping(m_data->groupIndex, 0));
+		return ResultVal(m_data->groupMesh->SetGroupMapping(m_data->groupIndex, D3DRMMAP_NONE));
 	}
 }
 
