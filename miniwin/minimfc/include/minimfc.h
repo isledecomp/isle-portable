@@ -82,15 +82,9 @@ struct OSVERSIONINFOA {
 typedef struct IUnknown* LPUNKNOWN;
 
 struct CWnd {
-	void* m_hWnd;
+	HWND m_hWnd;
 	void EnableWindow(bool bEnable) {}
 	void SetWindowText(const char* text) {}
-};
-
-struct CPaintDC {
-	void* m_hDC;
-	CPaintDC(HWND hWnd) {}
-	void Draw() {}
 };
 
 struct CDataExchange {
@@ -98,7 +92,7 @@ struct CDataExchange {
 };
 
 struct CDialog {
-	void* m_hWnd;
+	HWND m_hWnd;
 	int m_nIDTemplate;
 	CWnd* m_pParentWnd;
 	CDialog() : m_nIDTemplate(0), m_pParentWnd(nullptr) {}
@@ -111,6 +105,12 @@ struct CDialog {
 	virtual void Default() {}
 	virtual void EndDialog(int nResult) {}
 	virtual void DoDataExchange(CDataExchange* pDX) {}
+};
+
+struct CPaintDC {
+	void* m_hDC;
+	CPaintDC(CDialog* hWnd) {}
+	void Draw() {}
 };
 
 struct CMenu {
@@ -166,7 +166,7 @@ inline BOOL ShowWindow(HWND hWnd, int nCmdShow)
 	return TRUE;
 }
 
-inline BOOL SetWindowPos(HWND hWndInsertAfter, int X, int Y, int cx, int cy, UINT uFlags)
+inline BOOL SetWindowPos(CWinApp** hWnd, int X, int Y, int cx, int cy, UINT uFlags)
 {
 	return TRUE;
 }

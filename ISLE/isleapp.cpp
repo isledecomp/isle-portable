@@ -73,6 +73,8 @@ MxS32 g_reqEnableRMDevice = FALSE;
 // STRING: ISLE 0x4101dc
 #define WINDOW_TITLE "LEGO®"
 
+SDL_Window* window;
+
 // FUNCTION: ISLE 0x401000
 IsleApp::IsleApp()
 {
@@ -260,7 +262,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 			SDL_MESSAGEBOX_ERROR,
 			"LEGO® Island Error",
 			"\"LEGO® Island\" failed to start.  Invalid CLI arguments.",
-			g_isle->GetWindowHandle()
+			window
 		);
 		return SDL_APP_FAILURE;
 	}
@@ -271,7 +273,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 			SDL_MESSAGEBOX_ERROR,
 			"LEGO® Island Error",
 			"\"LEGO® Island\" failed to start.\nPlease quit all other applications and try again.",
-			g_isle->GetWindowHandle()
+			window
 		);
 		return SDL_APP_FAILURE;
 	}
@@ -479,7 +481,13 @@ MxResult IsleApp::SetupWindow()
 	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_FULLSCREEN_BOOLEAN, m_fullScreen);
 	SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, WINDOW_TITLE);
 
-	m_windowHandle = SDL_CreateWindowWithProperties(props);
+	window = SDL_CreateWindowWithProperties(props);
+#ifndef MINIWIN
+	m_windowHandle =
+		(HWND) SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
+#else
+	m_windowHandle = window;
+#endif
 
 	SDL_DestroyProperties(props);
 
@@ -493,7 +501,7 @@ MxResult IsleApp::SetupWindow()
 		SDL_Surface* icon = SDL_LoadBMP_IO(icon_stream, true);
 
 		if (icon) {
-			SDL_SetWindowIcon(m_windowHandle, icon);
+			SDL_SetWindowIcon(window, icon);
 			SDL_DestroySurface(icon);
 		}
 		else {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <SDL3/SDL_video.h>
 #include <limits.h>
 #include <stdint.h>
 #include <string.h>
@@ -70,9 +71,10 @@ typedef void* LPVOID;
 typedef char* LPSTR;
 typedef const char* LPCSTR;
 typedef void* HANDLE;
-typedef HANDLE HMENU, HICON, HFONT;
+typedef HANDLE HICON, HFONT;
 typedef struct HINSTANCE__* HINSTANCE;
-typedef HANDLE HWND, HMODULE, HDC, HPALETTE, HFILE, HCURSOR;
+typedef SDL_Window *HMENU, *HWND;
+typedef HANDLE HMODULE, HDC, HPALETTE, HFILE, HCURSOR;
 typedef LONG LSTATUS, HKEY, REGSAM;
 
 // --- Structs ---

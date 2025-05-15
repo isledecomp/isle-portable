@@ -90,26 +90,13 @@ void AfxMessageBox(const char* message)
 	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, title, message, NULL);
 }
 
-static std::vector<std::pair<SDL_Window*, HWND>> sdl_hwnd_mapping;
-
-SDL_Window* miniwin_GetSdlWindow(HWND hWnd)
-{
-	for (size_t i = 0; i < sdl_hwnd_mapping.size(); i++) {
-		if (sdl_hwnd_mapping[i].second == hWnd) {
-			return sdl_hwnd_mapping[i].first;
-		}
-	}
-	return NULL;
-}
-
 BOOL GetWindowRect(HWND hWnd, RECT* Rect)
 {
 	int x, y, w, h;
 	if (!Rect) {
 		return FALSE;
 	}
-	SDL_Window* window = miniwin_GetSdlWindow(hWnd);
-	if (window == NULL) {
+	if (hWnd == NULL) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unregistered HWND %p", hWnd);
 		Rect->left = 0;
 		Rect->top = 0;
@@ -117,8 +104,8 @@ BOOL GetWindowRect(HWND hWnd, RECT* Rect)
 		Rect->bottom = 480;
 		return FALSE;
 	}
-	SDL_GetWindowPosition(window, &x, &y);
-	SDL_GetWindowSize(window, &w, &h);
+	SDL_GetWindowPosition(hWnd, &x, &y);
+	SDL_GetWindowSize(hWnd, &w, &h);
 
 	Rect->right = x;
 	Rect->top = y;

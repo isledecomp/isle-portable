@@ -197,13 +197,7 @@ MxResult LegoOmni::Create(MxOmniCreateParam& p_param)
 		goto done;
 	}
 
-	// [library:dinput]
-	hWnd = (HWND) SDL_GetPointerProperty(
-		SDL_GetWindowProperties(MxOmni::GetInstance()->GetWindowHandle()),
-		SDL_PROP_WINDOW_WIN32_HWND_POINTER,
-		NULL
-	);
-	if (!(m_inputManager = new LegoInputManager()) || m_inputManager->Create(hWnd) != SUCCESS) {
+	if (!(m_inputManager = new LegoInputManager()) || m_inputManager->Create(p_param.GetWindowHandle()) != SUCCESS) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create LegoInputManager");
 		delete m_inputManager;
 		m_inputManager = NULL;

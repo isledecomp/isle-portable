@@ -8,7 +8,7 @@ DECOMP_SIZE_ASSERT(MxOmniCreateParam, 0x40)
 // FUNCTION: BETA10 0x10130b6b
 MxOmniCreateParam::MxOmniCreateParam(
 	const char* p_mediaPath,
-	SDL_Window* p_windowHandle,
+	HWND p_windowHandle,
 	MxVideoParam& p_vparam,
 	MxOmniCreateFlags p_flags
 )
