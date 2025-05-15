@@ -22,18 +22,19 @@ struct DirectDrawSurfaceImpl : public IDirectDrawSurface3 {
 		LPRECT lpDestRect,
 		LPDIRECTDRAWSURFACE lpDDSrcSurface,
 		LPRECT lpSrcRect,
-		DWORD dwFlags,
+		DDBltFlags dwFlags,
 		LPDDBLTFX lpDDBltFx
 	) override
 	{
 		return DD_OK;
 	}
-	HRESULT BltFast(DWORD dwX, DWORD dwY, LPDIRECTDRAWSURFACE lpDDSrcSurface, LPRECT lpSrcRect, DWORD dwTrans) override
+	HRESULT BltFast(DWORD dwX, DWORD dwY, LPDIRECTDRAWSURFACE lpDDSrcSurface, LPRECT lpSrcRect, DDBltFastFlags dwTrans)
+		override
 	{
 		return DD_OK;
 	}
 	HRESULT DeleteAttachedSurface(DWORD dwFlags, LPDIRECTDRAWSURFACE lpDDSAttachedSurface) override { return DD_OK; }
-	HRESULT Flip(LPDIRECTDRAWSURFACE lpDDSurfaceTargetOverride, DWORD dwFlags) override { return DDERR_GENERIC; }
+	HRESULT Flip(LPDIRECTDRAWSURFACE lpDDSurfaceTargetOverride, DDFlipFlags dwFlags) override { return DDERR_GENERIC; }
 	HRESULT GetAttachedSurface(LPDDSCAPS lpDDSCaps, LPDIRECTDRAWSURFACE* lplpDDAttachedSurface) override
 	{
 		return DDERR_GENERIC;
@@ -51,14 +52,14 @@ struct DirectDrawSurfaceImpl : public IDirectDrawSurface3 {
 	HRESULT GetSurfaceDesc(LPDDSURFACEDESC lpDDSurfaceDesc) override { return DD_OK; }
 	HRESULT Initialize(LPDIRECTDRAW lpDD, LPDDSURFACEDESC lpDDSurfaceDesc) override { return DD_OK; }
 	HRESULT IsLost() override { return DD_OK; }
-	HRESULT Lock(LPRECT lpDestRect, LPDDSURFACEDESC lpDDSurfaceDesc, DWORD dwFlags, HANDLE hEvent) override
+	HRESULT Lock(LPRECT lpDestRect, LPDDSURFACEDESC lpDDSurfaceDesc, DDLockFlags dwFlags, HANDLE hEvent) override
 	{
 		return DD_OK;
 	}
 	HRESULT ReleaseDC(HDC hDC) override { return DD_OK; }
 	HRESULT Restore() override { return DD_OK; }
 	HRESULT SetClipper(LPDIRECTDRAWCLIPPER lpDDClipper) override { return DD_OK; }
-	HRESULT SetColorKey(DWORD dwFlags, LPDDCOLORKEY lpDDColorKey) override { return DD_OK; }
+	HRESULT SetColorKey(DDColorKeyFlags dwFlags, LPDDCOLORKEY lpDDColorKey) override { return DD_OK; }
 	HRESULT SetPalette(LPDIRECTDRAWPALETTE lpDDPalette) override { return DD_OK; }
 	HRESULT Unlock(LPVOID lpSurfaceData) override { return DD_OK; }
 };
@@ -128,7 +129,7 @@ struct DirectDrawImpl : public IDirectDraw2, public IDirect3D2 {
 	HRESULT GetDisplayMode(LPDDSURFACEDESC lpDDSurfaceDesc) override { return DD_OK; }
 	HRESULT Initialize(GUID* lpGUID) override { return DD_OK; }
 	HRESULT RestoreDisplayMode() override { return DD_OK; }
-	HRESULT SetCooperativeLevel(HWND hWnd, DWORD dwFlags) override { return DD_OK; }
+	HRESULT SetCooperativeLevel(HWND hWnd, DDSCLFlags dwFlags) override { return DD_OK; }
 	HRESULT SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWORD dwBPP) override { return DD_OK; }
 	// IDirect3D2 interface
 	HRESULT CreateDevice(const GUID& guid, void* pBackBuffer, IDirect3DDevice2** ppDirect3DDevice) override

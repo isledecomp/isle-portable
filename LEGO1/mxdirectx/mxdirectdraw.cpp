@@ -75,7 +75,7 @@ int MxDirectDraw::GetPrimaryBitDepth()
 
 		pDDraw->GetDisplayMode(&ddsd);
 		dwRGBBitCount = ddsd.ddpfPixelFormat.dwRGBBitCount;
-		g_isPaletteIndexed8 = (ddsd.ddpfPixelFormat.dwFlags & DDPF_PALETTEINDEXED8) != 0;
+		g_isPaletteIndexed8 = (ddsd.ddpfPixelFormat.dwFlags & DDPF_PALETTEINDEXED8) == DDPF_PALETTEINDEXED8;
 		pDDraw->Release();
 	}
 
@@ -406,7 +406,7 @@ BOOL MxDirectDraw::DDSetMode(int width, int height, int bpp)
 		return FALSE;
 	}
 
-	if (ddsd.ddpfPixelFormat.dwFlags & DDPF_PALETTEINDEXED8) {
+	if ((ddsd.ddpfPixelFormat.dwFlags & DDPF_PALETTEINDEXED8) == DDPF_PALETTEINDEXED8) {
 		m_bPrimaryPalettized = TRUE;
 	}
 	else {

@@ -3,56 +3,9 @@
 #include "bitflags.h"
 #include "miniwin.h"
 
-#define _FACDD 0x876
-#define DDCKEY_SRCBLT 0x00000008
-#define DDENUMRET_OK 1
-#define DDFLIP_WAIT 0x00000001
-#define DISCL_BACKGROUND 0x00000008
-#define PC_NOCOLLAPSE 0x04
+#define DDENUMRET_OK TRUE
 
-#define DDCAPS2_CERTIFIED 0x00000001
-
-// DirectDraw Surface Description flags
-#define DDSD_CAPS DDSurfaceDescFlags::CAPS
-#define DDSD_HEIGHT DDSurfaceDescFlags::HEIGHT
-#define DDSD_WIDTH DDSurfaceDescFlags::WIDTH
-#define DDSD_BACKBUFFERCOUNT DDSurfaceDescFlags::BACKBUFFERCOUNT
-#define DDSD_ZBUFFERBITDEPTH DDSurfaceDescFlags::ZBUFFERBITDEPTH
-#define DDSD_PIXELFORMAT DDSurfaceDescFlags::PIXELFORMAT
-
-#define DDSCAPS_BACKBUFFER DDSCapsFlags::BACKBUFFER
-#define DDSCAPS_COMPLEX DDSCapsFlags::COMPLEX
-#define DDSCAPS_FLIP DDSCapsFlags::FLIP
-#define DDSCAPS_OFFSCREENPLAIN DDSCapsFlags::OFFSCREENPLAIN
-#define DDSCAPS_PRIMARYSURFACE DDSCapsFlags::PRIMARYSURFACE
-#define DDSCAPS_SYSTEMMEMORY DDSCapsFlags::SYSTEMMEMORY
-#define DDSCAPS_TEXTURE DDSCapsFlags::TEXTURE
-#define DDSCAPS_3DDEVICE DDSCapsFlags::D3DDEVICE
-#define DDSCAPS_VIDEOMEMORY DDSCapsFlags::VIDEOMEMORY
-#define DDSCAPS_ZBUFFER DDSCapsFlags::ZBUFFER
-
-#define DDPCAPS_8BIT DDPixelCaps::_8BIT
-#define DDPCAPS_INITIALIZE DDPixelCaps::INITIALIZE
-#define DDPCAPS_ALLOW256 DDPixelCaps::ALLOW256
-
-#define DDBLT_KEYSRC 0x00008000
-#define DDBLT_ROP 0x00020000
-
-#define DDPF_PALETTEINDEXED8 0x00000020 // The texture uses an 8 bit palette
-#define DDPF_RGB 0x00000040             // dwRGBBitCount, dwRBitMask, dwGBitMask, and dwBBitMask is valid
-
-#define DDBLTFAST_SRCCOLORKEY 0x00000001
-#define DDBLTFAST_WAIT 0x00000010
-
-#define DDLOCK_WAIT 0x00000001
-#define DDLOCK_SURFACEMEMORYPTR 0x00000000
-
-#define DDSCL_NORMAL 0x00000008
-#define DDSCL_FULLSCREEN 0x00000001
-#define DDSCL_ALLOWREBOOT 0x00000002
-#define DDSCL_EXCLUSIVE 0x00000010
-
-#define MAKE_DDHRESULT(code) MAKE_HRESULT(1, _FACDD, code)
+#define MAKE_DDHRESULT(code) MAKE_HRESULT(1, 0x876, code)
 
 #define DD_OK S_OK
 #define DDERR_ALREADYINITIALIZED MAKE_DDHRESULT(5)
@@ -150,47 +103,139 @@
 DEFINE_GUID(IID_IDirectDraw2, 0xB3A6F3E0, 0x2B43, 0x11CF, 0xA2, 0xDE, 0x00, 0xAA, 0x00, 0xB9, 0x33, 0x56);
 DEFINE_GUID(IID_IDirectDrawSurface3, 0xDA044E00, 0x69B2, 0x11D0, 0xA1, 0xD5, 0x00, 0xAA, 0x00, 0xB8, 0xDF, 0xBB);
 
+// --- Enums ---
+#define DDCKEY_SRCBLT DDColorKeyFlags::SRCBLT
+enum class DDColorKeyFlags : uint32_t {
+	SRCBLT = 1 << 3,
+};
+
+#define DDFLIP_WAIT DDFlipFlags::WAIT
+enum class DDFlipFlags : uint32_t {
+	WAIT = 1,
+};
+
+#define DDCAPS2_CERTIFIED DDCaps2Flags::CERTIFIED
+enum class DDCaps2Flags : uint32_t {
+	CERTIFIED = 1,
+};
+
+#define DDPCAPS_8BIT DDPixelCaps::_8BIT
+#define DDPCAPS_INITIALIZE DDPixelCaps::INITIALIZE
+#define DDPCAPS_ALLOW256 DDPixelCaps::ALLOW256
+enum class DDPixelCaps : uint32_t {
+	_8BIT = 1 << 2,
+	INITIALIZE = 1 << 3,
+	ALLOW256 = 1 << 6,
+};
+ENABLE_BITMASK_OPERATORS(DDPixelCaps)
+
+#define DDBLT_NONE DDBltFlags::NONE
+#define DDBLT_KEYSRC DDBltFlags::KEYSRC
+#define DDBLT_ROP DDBltFlags::ROP
+enum class DDBltFlags : uint32_t {
+	NONE = 0,
+	KEYSRC = 1 << 15,
+	ROP = 1 << 17,
+};
+ENABLE_BITMASK_OPERATORS(DDBltFlags)
+
+#define DDPF_PALETTEINDEXED8 DDPixelFormatFlags::PALETTEINDEXED8
+#define DDPF_RGB DDPixelFormatFlags::RGB
+enum class DDPixelFormatFlags : uint32_t {
+	PALETTEINDEXED8 = 1 << 5, // The texture uses an 8 bit palette
+	RGB = 1 << 6,             // dwRGBBitCount, dwRBitMask, dwGBitMask, and dwBBitMask is valid
+};
+ENABLE_BITMASK_OPERATORS(DDPixelFormatFlags)
+
+#define DDBLTFAST_SRCCOLORKEY DDBltFastFlags::SRCCOLORKEY
+#define DDBLTFAST_WAIT DDBltFastFlags::WAIT
+enum class DDBltFastFlags : uint32_t {
+	SRCCOLORKEY = 1 << 0,
+	WAIT = 1 << 4,
+};
+ENABLE_BITMASK_OPERATORS(DDBltFastFlags)
+
+#define DDLOCK_WAIT DDLockFlags::WAIT
+#define DDLOCK_SURFACEMEMORYPTR DDLockFlags::SURFACEMEMORYPTR
+enum class DDLockFlags : uint32_t {
+	SURFACEMEMORYPTR,
+	WAIT,
+};
+
+#define DDSCL_FULLSCREEN DDSCLFlags::FULLSCREEN
+#define DDSCL_ALLOWREBOOT DDSCLFlags::ALLOWREBOOT
+#define DDSCL_NORMAL DDSCLFlags::NORMAL
+#define DDSCL_EXCLUSIVE DDSCLFlags::EXCLUSIVE
+enum class DDSCLFlags : uint32_t {
+	FULLSCREEN = 1 << 0,
+	ALLOWREBOOT = 1 << 1,
+	NORMAL = 1 << 3,
+	EXCLUSIVE = 1 << 4,
+};
+ENABLE_BITMASK_OPERATORS(DDSCLFlags)
+
+#define DDSD_CAPS DDSurfaceDescFlags::CAPS
+#define DDSD_HEIGHT DDSurfaceDescFlags::HEIGHT
+#define DDSD_WIDTH DDSurfaceDescFlags::WIDTH
+#define DDSD_BACKBUFFERCOUNT DDSurfaceDescFlags::BACKBUFFERCOUNT
+#define DDSD_ZBUFFERBITDEPTH DDSurfaceDescFlags::ZBUFFERBITDEPTH
+#define DDSD_PIXELFORMAT DDSurfaceDescFlags::PIXELFORMAT
 enum class DDSurfaceDescFlags : uint32_t {
-	CAPS = 0x00000001,            // ddsCaps is valid
-	HEIGHT = 0x00000002,          // dwHeight is valid
-	WIDTH = 0x00000004,           // dwWidth is valid
-	BACKBUFFERCOUNT = 0x00000020, // dwBackBufferCount is valid
-	ZBUFFERBITDEPTH = 0x00000040, // dwZBufferBitDepth is valid
-	PIXELFORMAT = 0x00001000,     // ddpfPixelFormat is valid
+	CAPS = 1 << 0,            // ddsCaps is valid
+	HEIGHT = 1 << 1,          // dwHeight is valid
+	WIDTH = 1 << 2,           // dwWidth is valid
+	BACKBUFFERCOUNT = 1 << 5, // dwBackBufferCount is valid
+	ZBUFFERBITDEPTH = 1 << 6, // dwZBufferBitDepth is valid
+	PIXELFORMAT = 1 << 12,    // ddpfPixelFormat is valid
 };
 ENABLE_BITMASK_OPERATORS(DDSurfaceDescFlags)
 
+#define DDSCAPS_BACKBUFFER DDSCapsFlags::BACKBUFFER
+#define DDSCAPS_COMPLEX DDSCapsFlags::COMPLEX
+#define DDSCAPS_FLIP DDSCapsFlags::FLIP
+#define DDSCAPS_OFFSCREENPLAIN DDSCapsFlags::OFFSCREENPLAIN
+#define DDSCAPS_PRIMARYSURFACE DDSCapsFlags::PRIMARYSURFACE
+#define DDSCAPS_SYSTEMMEMORY DDSCapsFlags::SYSTEMMEMORY
+#define DDSCAPS_TEXTURE DDSCapsFlags::TEXTURE
+#define DDSCAPS_3DDEVICE DDSCapsFlags::D3DDEVICE
+#define DDSCAPS_VIDEOMEMORY DDSCapsFlags::VIDEOMEMORY
+#define DDSCAPS_ZBUFFER DDSCapsFlags::ZBUFFER
 enum class DDSCapsFlags : uint32_t {
-	BACKBUFFER = 0x00000004,
-	COMPLEX = 0x00000008,
-	FLIP = 0x00000010,
-	OFFSCREENPLAIN = 0x00000040,
-	PRIMARYSURFACE = 0x00000200,
-	SYSTEMMEMORY = 0x00000800,
-	TEXTURE = 0x00001000,
-	D3DDEVICE = 0x00002000,
-	VIDEOMEMORY = 0x00004000,
-	ZBUFFER = 0x00020000,
+	BACKBUFFER = 1 << 2,
+	COMPLEX = 1 << 3,
+	FLIP = 1 << 4,
+	OFFSCREENPLAIN = 1 << 6,
+	PRIMARYSURFACE = 1 << 9,
+	SYSTEMMEMORY = 1 << 11,
+	TEXTURE = 1 << 12,
+	D3DDEVICE = 1 << 13,
+	VIDEOMEMORY = 1 << 14,
+	ZBUFFER = 1 << 17,
 };
 ENABLE_BITMASK_OPERATORS(DDSCapsFlags)
 
-enum class DDPixelCaps : uint32_t {
-	_8BIT = 0x00000004,
-	INITIALIZE = 0x00000008,
-	ALLOW256 = 0x00000040,
+#define PC_NONE PCFlags::NONE
+#define PC_NOCOLLAPSE PCFlags::NOCOLLAPSE
+#define D3DPAL_READONLY PCFlags::D3DREADONLY
+#define D3DPAL_RESERVED PCFlags::D3DRESERVED
+enum class PCFlags : uint8_t {
+	NONE = 0,
+	NOCOLLAPSE = 1 << 2,
+	D3DREADONLY = 1 << 6,
+	D3DRESERVED = 1 << 7,
 };
-ENABLE_BITMASK_OPERATORS(DDPixelCaps)
+ENABLE_BITMASK_OPERATORS(PCFlags)
 
 // --- Structs ---
 struct DDCAPS {
 	DWORD dwSize;
-	DWORD dwCaps2; // DDCAPS2_*
+	DDCaps2Flags dwCaps2;
 	DWORD dwSVBRops[8];
 };
 typedef DDCAPS* LPDDCAPS;
 
 struct DDSCAPS {
-	DDSCapsFlags dwCaps; // DDSCAPS_*
+	DDSCapsFlags dwCaps;
 };
 typedef struct DDSCAPS* LPDDSCAPS;
 
@@ -201,8 +246,8 @@ struct DDBLTFX {
 };
 
 struct DDPIXELFORMAT {
-	DWORD dwSize;        // sizeof(DDPIXELFORMAT)
-	DWORD dwFlags;       // DDPF_RGB
+	DWORD dwSize;
+	DDPixelFormatFlags dwFlags;
 	DWORD dwRGBBitCount; // Bit count, Lego Island only handles 8 or 16
 	DWORD dwRBitMask;    // Red bit mask (0xF800)
 	DWORD dwGBitMask;    // Green bit mask (0x07E0)
@@ -217,8 +262,8 @@ struct DDCOLORKEY {
 typedef DDCOLORKEY* LPDDCOLORKEY;
 
 struct DDSURFACEDESC {
-	DWORD dwSize;               // sizeof(DDSURFACEDESC)
-	DDSurfaceDescFlags dwFlags; // DDSD_*
+	DWORD dwSize;
+	DDSurfaceDescFlags dwFlags;
 	DWORD dwHeight;
 	DWORD dwWidth;
 	LONG lPitch;
@@ -229,6 +274,21 @@ struct DDSURFACEDESC {
 	DDSCAPS ddsCaps;
 };
 typedef struct DDSURFACEDESC* LPDDSURFACEDESC;
+
+struct PALETTEENTRY {
+	BYTE peRed;
+	BYTE peGreen;
+	BYTE peBlue;
+	PCFlags peFlags;
+};
+typedef PALETTEENTRY* LPPALETTEENTRY;
+
+struct LOGPALETTE {
+	WORD palVersion;
+	WORD palNumEntries;
+	PALETTEENTRY palPalEntry[1];
+};
+typedef LOGPALETTE* LPLOGPALETTE;
 
 typedef struct IDirectDraw* LPDIRECTDRAW;
 struct IDirectDrawPalette : virtual public IUnknown {
@@ -252,7 +312,7 @@ struct IDirectDrawSurface : virtual public IUnknown {
 		LPRECT lpDestRect,
 		LPDIRECTDRAWSURFACE lpDDSrcSurface,
 		LPRECT lpSrcRect,
-		DWORD dwFlags,
+		DDBltFlags dwFlags,
 		LPDDBLTFX lpDDBltFx
 	) = 0;
 	virtual HRESULT BltFast(
@@ -260,10 +320,10 @@ struct IDirectDrawSurface : virtual public IUnknown {
 		DWORD dwY,
 		LPDIRECTDRAWSURFACE lpDDSrcSurface,
 		LPRECT lpSrcRect,
-		DWORD dwTrans
+		DDBltFastFlags dwTrans
 	) = 0;
 	virtual HRESULT DeleteAttachedSurface(DWORD dwFlags, LPDIRECTDRAWSURFACE lpDDSAttachedSurface) = 0;
-	virtual HRESULT Flip(LPDIRECTDRAWSURFACE lpDDSurfaceTargetOverride, DWORD dwFlags) = 0;
+	virtual HRESULT Flip(LPDIRECTDRAWSURFACE lpDDSurfaceTargetOverride, DDFlipFlags dwFlags) = 0;
 	virtual HRESULT GetAttachedSurface(LPDDSCAPS lpDDSCaps, LPDIRECTDRAWSURFACE* lplpDDAttachedSurface) = 0;
 	virtual HRESULT GetCaps(LPDDSCAPS lpDDSCaps) = 0;
 	virtual HRESULT GetDC(HDC* lphDC) = 0;
@@ -273,11 +333,11 @@ struct IDirectDrawSurface : virtual public IUnknown {
 	virtual HRESULT GetSurfaceDesc(LPDDSURFACEDESC lpDDSurfaceDesc) = 0;
 	virtual HRESULT Initialize(LPDIRECTDRAW lpDD, LPDDSURFACEDESC lpDDSurfaceDesc) = 0;
 	virtual HRESULT IsLost() = 0;
-	virtual HRESULT Lock(LPRECT lpDestRect, LPDDSURFACEDESC lpDDSurfaceDesc, DWORD dwFlags, HANDLE hEvent) = 0;
+	virtual HRESULT Lock(LPRECT lpDestRect, LPDDSURFACEDESC lpDDSurfaceDesc, DDLockFlags dwFlags, HANDLE hEvent) = 0;
 	virtual HRESULT ReleaseDC(HDC hDC) = 0;
 	virtual HRESULT Restore() = 0;
 	virtual HRESULT SetClipper(LPDIRECTDRAWCLIPPER lpDDClipper) = 0;
-	virtual HRESULT SetColorKey(DWORD dwFlags, LPDDCOLORKEY lpDDColorKey) = 0;
+	virtual HRESULT SetColorKey(DDColorKeyFlags dwFlags, LPDDCOLORKEY lpDDColorKey) = 0;
 	virtual HRESULT SetPalette(LPDIRECTDRAWPALETTE lpDDPalette) = 0;
 	virtual HRESULT Unlock(LPVOID lpSurfaceData) = 0;
 };
@@ -316,7 +376,7 @@ struct IDirectDraw : virtual public IUnknown {
 	virtual HRESULT GetDisplayMode(LPDDSURFACEDESC lpDDSurfaceDesc) = 0;
 	virtual HRESULT Initialize(GUID* lpGUID) = 0;
 	virtual HRESULT RestoreDisplayMode() = 0;
-	virtual HRESULT SetCooperativeLevel(HWND hWnd, DWORD dwFlags) = 0;
+	virtual HRESULT SetCooperativeLevel(HWND hWnd, DDSCLFlags dwFlags) = 0;
 	virtual HRESULT SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWORD dwBPP) = 0;
 };
 
@@ -329,3 +389,23 @@ HRESULT DirectDrawCreate(LPGUID lpGuid, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOute
 
 typedef BOOL (*LPDDENUMCALLBACKA)(GUID*, LPSTR, LPSTR, LPVOID);
 HRESULT DirectDrawEnumerate(LPDDENUMCALLBACKA cb, void* context);
+
+inline UINT WINAPI GetSystemPaletteEntries(HDC hdc, UINT iStart, UINT cEntries, LPPALETTEENTRY pPalEntries)
+{
+	return 0;
+}
+
+inline HPALETTE CreatePalette(LPLOGPALETTE lpLogPalette)
+{
+	return nullptr;
+}
+
+inline int SelectPalette(HDC hdc, HPALETTE hpal, BOOL bForceBackground)
+{
+	return 0;
+}
+
+inline int RealizePalette(HDC hdc)
+{
+	return 0;
+}

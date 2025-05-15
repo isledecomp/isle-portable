@@ -2,36 +2,54 @@
 
 #include "miniwin_ddraw.h"
 
-// --- Defines and Macros ---
-#define D3DPAL_RESERVED 0x80
-#define D3DPAL_READONLY 0x40
+// --- GUIDs ---
+DEFINE_GUID(IID_IDirect3D2, 0x6aae1ec1, 0x662a, 0x11d0, 0x88, 0x9d, 0x00, 0xaa, 0x00, 0xbb, 0xb7, 0x6a);
 
-#define DDBD_8 0x00000800
-#define DDBD_16 0x00000400
-#define DDBD_24 0x00000200
-#define DDBD_32 0x00000100
+// --- Enums ---
+#define DDBD_8 DDBitDepths::BPP_8
+#define DDBD_16 DDBitDepths::BPP_16
+#define DDBD_24 DDBitDepths::BPP_24
+#define DDBD_32 DDBitDepths::BPP_32
+enum class DDBitDepths : uint32_t {
+	BPP_8 = 1 << 11,
+	BPP_16 = 1 << 10,
+	BPP_24 = 1 << 9,
+	BPP_32 = 1 << 8,
+};
+ENABLE_BITMASK_OPERATORS(DDBitDepths)
 
-#define D3DDD_DEVICEZBUFFERBITDEPTH 0x00000100 // dwDeviceZBufferBitDepth is valid
+#define D3DDD_DEVICEZBUFFERBITDEPTH D3DDeviceDescFlags::DEVICEZBUFFERBITDEPTH
+enum class D3DDeviceDescFlags : uint32_t {
+	DEVICEZBUFFERBITDEPTH = 1 << 8,
+};
+ENABLE_BITMASK_OPERATORS(D3DDeviceDescFlags)
 
-#define D3DPSHADECAPS_ALPHAFLATBLEND 0x00001000 // Supports D3DRMRENDERMODE_BLENDEDTRANSPARENCY
+#define D3DPSHADECAPS_ALPHAFLATBLEND D3DPShadeCaps::ALPHAFLATBLEND
+enum class D3DPShadeCaps : uint32_t {
+	ALPHAFLATBLEND = 1 << 12,
+};
+ENABLE_BITMASK_OPERATORS(D3DPShadeCaps)
 
-#define D3DPTEXTURECAPS_PERSPECTIVE 0x00000001 // Supports perspective correction texturing
+#define D3DPTEXTURECAPS_PERSPECTIVE D3DPTextureCaps::PERSPECTIVE
+enum class D3DPTextureCaps : uint32_t {
+	PERSPECTIVE = 1 << 0,
+};
+ENABLE_BITMASK_OPERATORS(D3DPTextureCaps)
 
-#define D3DPTFILTERCAPS_LINEAR 0x00000002 // Supports bilinear filtering
+#define D3DPTFILTERCAPS_LINEAR D3DPTextureFilterCaps::LINEAR
+enum class D3DPTextureFilterCaps : uint32_t {
+	LINEAR = 1 << 1,
+};
+ENABLE_BITMASK_OPERATORS(D3DPTextureFilterCaps)
 
 #define D3DCOLOR_NONE D3DCOLORMODEL::NONE
 #define D3DCOLOR_RGB D3DCOLORMODEL::RGB
 #define D3DCOLOR_MONO D3DCOLORMODEL::MONO
-
-// --- Enums ---
 enum class D3DCOLORMODEL {
-	NONE = 0,
-	RGB = 1,
-	MONO = 2
+	NONE,
+	RGB,
+	MONO,
 };
-
-// --- GUIDs ---
-DEFINE_GUID(IID_IDirect3D2, 0x6aae1ec1, 0x662a, 0x11d0, 0x88, 0x9d, 0x00, 0xaa, 0x00, 0xbb, 0xb7, 0x6a);
 
 // --- Structs ---
 struct D3DVECTOR {
@@ -39,14 +57,14 @@ struct D3DVECTOR {
 };
 
 struct D3DDEVICEDESC {
-	DWORD dwFlags;                 // D3DDD_*
-	DWORD dwDeviceZBufferBitDepth; // DDBD_*
-	D3DCOLORMODEL dcmColorModel;   // D3DCOLOR_* Bit flag, but Isle think it's an enum
-	DWORD dwDeviceRenderBitDepth;  // DDBD_*
+	D3DDeviceDescFlags dwFlags;
+	DDBitDepths dwDeviceZBufferBitDepth;
+	D3DCOLORMODEL dcmColorModel; // D3DCOLOR_* Bit flag, but Isle think it's an enum
+	DDBitDepths dwDeviceRenderBitDepth;
 	struct {
-		DWORD dwShadeCaps;         // D3DPSHADECAPS_*
-		DWORD dwTextureCaps;       // D3DPTEXTURECAPS_*
-		DWORD dwTextureFilterCaps; // D3DPTFILTERCAPS_*
+		D3DPShadeCaps dwShadeCaps;
+		D3DPTextureCaps dwTextureCaps;
+		D3DPTextureFilterCaps dwTextureFilterCaps;
 	} dpcTriCaps;
 };
 typedef D3DDEVICEDESC* LPD3DDEVICEDESC;
