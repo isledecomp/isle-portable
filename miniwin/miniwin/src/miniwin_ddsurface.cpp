@@ -118,6 +118,7 @@ HRESULT DirectDrawSurfaceImpl::GetOverlayPosition(LPLONG lplX, LPLONG lplY)
 
 HRESULT DirectDrawSurfaceImpl::GetPalette(LPDIRECTDRAWPALETTE* lplpDDPalette)
 {
+	assert(false && "unimplemented");
 	return DDERR_GENERIC;
 }
 
