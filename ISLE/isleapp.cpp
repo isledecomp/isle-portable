@@ -784,6 +784,13 @@ inline bool IsleApp::Tick()
 				NULL
 			);
 			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to open ISLE.si: Failed to start initial action");
+			SDL_ShowSimpleMessageBox(
+				SDL_MESSAGEBOX_ERROR,
+				"LEGO® Island Error",
+				"\"LEGO® Island\" failed to start.\nPlease quit all other applications and try again."
+				"\nFailed to load ISLE.si",
+				NULL
+			);
 			return false;
 		}
 		m_gameStarted = TRUE;
