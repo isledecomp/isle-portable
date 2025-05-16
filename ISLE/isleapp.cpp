@@ -73,6 +73,7 @@ MxS32 g_reqEnableRMDevice = FALSE;
 // STRING: ISLE 0x4101dc
 #define WINDOW_TITLE "LEGO®"
 
+SDL_AppResult g_closeResult = SDL_APP_SUCCESS;
 SDL_Window* window;
 
 // FUNCTION: ISLE 0x401000
@@ -286,7 +287,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 SDL_AppResult SDL_AppIterate(void* appstate)
 {
 	if (g_closed) {
-		return SDL_APP_SUCCESS;
+		return g_closeResult;
 	}
 
 	g_isle->Tick();
@@ -739,6 +740,15 @@ inline void IsleApp::Tick()
 	if (!stream) {
 		stream = Streamer()->Open("\\lego\\scripts\\nocd", MxStreamer::e_diskStream);
 		if (!stream) {
+			SDL_ShowSimpleMessageBox(
+				SDL_MESSAGEBOX_ERROR,
+				"LEGO® Island Error",
+				"\"LEGO® Island\" failed to start.\nPlease quit all other applications and try again."
+				"\nFailed to load NOCD.si",
+				NULL
+			);
+			g_closed = TRUE;
+			g_closeResult = SDL_APP_FAILURE;
 			return;
 		}
 
