@@ -143,7 +143,7 @@ struct IUnknown {
 	virtual HRESULT QueryInterface(const GUID& riid, void** ppvObject);
 	virtual ~IUnknown() = default;
 
-private:
+protected:
 	int m_refCount;
 };
 

@@ -130,7 +130,7 @@ struct CMenu {
 
 struct CWinApp {
 	CWinApp();
-	virtual ~CWinApp() = default;
+	~CWinApp() override = default;
 	virtual BOOL InitInstance() = 0;
 	virtual int ExitInstance();
 };

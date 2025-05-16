@@ -4,6 +4,7 @@
 
 #include <SDL3/SDL.h>
 #include <assert.h>
+#include <vector>
 
 struct Direct3DRMTextureImpl : public IDirect3DRMTexture2 {
 	HRESULT AddDestroyCallback(void (*cb)(IDirect3DRMObject*, void*), void* arg) override { return DD_OK; }
@@ -20,7 +21,75 @@ private:
 	LPD3DRM_APPDATA m_data;
 };
 
-struct Direct3DRMDevice2Impl : public IDirect3DRMDevice2 {
+template <typename T>
+struct Direct3DRMObjectImpl : public T {
+	ULONG Release() override
+	{
+		if (IUnknown::m_refCount == 1) {
+			for (auto it = m_callbacks.cbegin(); it != m_callbacks.cend(); it++) {
+				it->first(this, it->second);
+			}
+		}
+		return this->T::Release();
+	}
+	HRESULT AddDestroyCallback(D3DRMOBJECTCALLBACK callback, void* arg) override
+	{
+		m_callbacks.push_back(std::make_pair(callback, arg));
+		return D3DRM_OK;
+	}
+	HRESULT DeleteDestroyCallback(D3DRMOBJECTCALLBACK callback, void* arg) override
+	{
+		for (auto it = m_callbacks.cbegin(); it != m_callbacks.cend(); it++) {
+			if (it->first == callback && it->second == arg) {
+				m_callbacks.erase(it);
+				return D3DRM_OK;
+			}
+		}
+		return D3DRMERR_NOTFOUND;
+	}
+	HRESULT SetAppData(LPD3DRM_APPDATA appData) override
+	{
+		m_appData = appData;
+		return D3DRM_OK;
+	}
+	LPVOID GetAppData() override { return m_appData; }
+	HRESULT SetName(const char* name) override
+	{
+		SDL_free(m_name);
+		m_name = NULL;
+		if (name) {
+			m_name = SDL_strdup(name);
+		}
+		return D3DRM_OK;
+	}
+	HRESULT GetName(DWORD* size, char* name) override
+	{
+		if (!size) {
+			return DDERR_GENERIC;
+		}
+		const char* s = m_name ? m_name : "";
+		size_t l = SDL_strlen(s);
+		if (name) {
+			SDL_strlcpy(name, s, *size);
+		}
+		else {
+			*size = l + 1;
+		}
+		return D3DRM_OK;
+	}
+
+private:
+	std::vector<std::pair<D3DRMOBJECTCALLBACK, void*>> m_callbacks;
+	LPD3DRM_APPDATA m_appData = NULL;
+	char* m_name = nullptr;
+};
+
+struct Direct3DRMDevice2Impl : public Direct3DRMObjectImpl<IDirect3DRMDevice2> {
+	HRESULT Clone(void** ppObject) override
+	{
+		assert(false && "unimplemented");
+		return DDERR_GENERIC;
+	}
 	unsigned long GetWidth() override { return 640; }
 	unsigned long GetHeight() override { return 480; }
 	HRESULT SetBufferCount(int count) override { return DD_OK; }
@@ -43,7 +112,12 @@ struct Direct3DRMDevice2Impl : public IDirect3DRMDevice2 {
 	}
 };
 
-struct Direct3DRMFrameImpl : public IDirect3DRMFrame2 {
+struct Direct3DRMFrameImpl : public Direct3DRMObjectImpl<IDirect3DRMFrame2> {
+	HRESULT Clone(void** ppObject) override
+	{
+		assert(false && "unimplemented");
+		return DDERR_GENERIC;
+	}
 	HRESULT SetAppData(LPD3DRM_APPDATA appData) override
 	{
 		m_data = appData;
@@ -128,24 +202,13 @@ private:
 	LPD3DRM_APPDATA m_data;
 };
 
-struct Direct3DRMViewportImpl : public IDirect3DRMViewport {
-	Direct3DRMViewportImpl() : m_data(nullptr) {}
+struct Direct3DRMViewportImpl : public Direct3DRMObjectImpl<IDirect3DRMViewport> {
+	Direct3DRMViewportImpl() {}
 	HRESULT Clone(void** ppObject) override
 	{
 		assert(false && "unimplemented");
 		return DDERR_GENERIC;
 	}
-	HRESULT AddDestroyCallback(void (*cb)(IDirect3DRMObject*, void*), void* arg) override { return DD_OK; }
-	HRESULT DeleteDestroyCallback(void (*cb)(IDirect3DRMObject*, void*), void* arg) override { return DD_OK; }
-	HRESULT SetAppData(LPD3DRM_APPDATA appData) override
-	{
-		m_data = appData;
-		return DD_OK;
-	}
-	LPVOID GetAppData() override { return m_data; }
-	HRESULT SetName(const char* name) override { return DD_OK; }
-	HRESULT GetName(DWORD* size, char* name) override { return DD_OK; }
-	HRESULT GetClassName(DWORD* size, char* name) override { return DD_OK; }
 	HRESULT Render(IDirect3DRMFrame* group) override { return DD_OK; }
 	HRESULT ForceUpdate(int x, int y, int w, int h) override { return DD_OK; }
 	HRESULT Clear() override { return DD_OK; }
@@ -168,16 +231,22 @@ struct Direct3DRMViewportImpl : public IDirect3DRMViewport {
 	HRESULT Transform(D3DRMVECTOR4D* screen, D3DVECTOR* world) override { return DD_OK; }
 	HRESULT InverseTransform(D3DVECTOR* world, D3DRMVECTOR4D* screen) override { return DD_OK; }
 	HRESULT Pick(float x, float y, LPDIRECT3DRMPICKEDARRAY* pickedArray) override { return DD_OK; }
-
-private:
-	LPD3DRM_APPDATA m_data;
 };
 
-struct Direct3DRMLightImpl : public IDirect3DRMLight {
+struct Direct3DRMLightImpl : public Direct3DRMObjectImpl<IDirect3DRMLight> {
+	HRESULT Clone(void** ppObject) override
+	{
+		assert(false && "unimplemented");
+		return DDERR_GENERIC;
+	}
 	HRESULT SetColorRGB(float r, float g, float b) override { return DD_OK; }
 };
 
-struct Direct3DRMImpl : public IDirect3DRM2 {
+struct Direct3DRMMaterialImpl : public Direct3DRMObjectImpl<IDirect3DRMMaterial> {
+	HRESULT Clone(void** ppObject) override { return DDERR_GENERIC; }
+};
+
+struct Direct3DRMImpl : virtual public IDirect3DRM2 {
 	// IUnknown interface
 	HRESULT QueryInterface(const GUID& riid, void** ppvObject) override
 	{
@@ -223,7 +292,7 @@ struct Direct3DRMImpl : public IDirect3DRM2 {
 	}
 	HRESULT CreateMaterial(D3DVAL power, IDirect3DRMMaterial** outMaterial) override
 	{
-		*outMaterial = new IDirect3DRMMaterial;
+		*outMaterial = static_cast<IDirect3DRMMaterial*>(new Direct3DRMMaterialImpl);
 		return DD_OK;
 	}
 	HRESULT CreateLightRGB(D3DRMLIGHTTYPE type, D3DVAL r, D3DVAL g, D3DVAL b, IDirect3DRMLight** outLight) override
