@@ -776,6 +776,13 @@ inline bool IsleApp::Tick()
 		ds.SetUnknown24(-1);
 		ds.SetObjectId(0);
 		if (Start(&ds) != SUCCESS) {
+			SDL_ShowSimpleMessageBox(
+				SDL_MESSAGEBOX_ERROR,
+				"LEGO® Island Error",
+				"\"LEGO® Island\" failed to start.\nPlease quit all other applications and try again."
+				"\nFailed to load ISLE.si",
+				NULL
+			);
 			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to open ISLE.si: Failed to start initial action");
 			return false;
 		}
