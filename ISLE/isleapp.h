@@ -37,7 +37,7 @@ public:
 	MxResult SetupWindow();
 
 	bool LoadConfig();
-	void Tick();
+	bool Tick();
 	void SetupCursor(Cursor p_cursor);
 
 	static MxU8 MapMouseButtonFlagsToModifier(SDL_MouseButtonFlags p_flags);

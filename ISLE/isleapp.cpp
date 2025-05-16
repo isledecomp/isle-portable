@@ -30,6 +30,8 @@
 #include "roi/legoroi.h"
 #include "viewmanager/viewmanager.h"
 
+#include <SDL3/SDL_init.h>
+
 #define SDL_MAIN_USE_CALLBACKS
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
@@ -73,7 +75,6 @@ MxS32 g_reqEnableRMDevice = FALSE;
 // STRING: ISLE 0x4101dc
 #define WINDOW_TITLE "LEGO®"
 
-SDL_AppResult g_closeResult = SDL_APP_SUCCESS;
 SDL_Window* window;
 
 // FUNCTION: ISLE 0x401000
@@ -287,10 +288,12 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 SDL_AppResult SDL_AppIterate(void* appstate)
 {
 	if (g_closed) {
-		return g_closeResult;
+		return SDL_APP_SUCCESS;
 	}
 
-	g_isle->Tick();
+	if (!g_isle->Tick()) {
+		return SDL_APP_FAILURE;
+	}
 
 	if (!g_closed) {
 		if (g_reqEnableRMDevice) {
@@ -684,7 +687,7 @@ bool IsleApp::LoadConfig()
 }
 
 // FUNCTION: ISLE 0x402c20
-inline void IsleApp::Tick()
+inline bool IsleApp::Tick()
 {
 	// GLOBAL: ISLE 0x4101c0
 	static MxLong g_lastFrameTime = 0;
@@ -694,17 +697,17 @@ inline void IsleApp::Tick()
 
 	if (!m_windowActive) {
 		SDL_Delay(1);
-		return;
+		return true;
 	}
 
 	if (!Lego()) {
-		return;
+		return true;
 	}
 	if (!TickleManager()) {
-		return;
+		return true;
 	}
 	if (!Timer()) {
-		return;
+		return true;
 	}
 
 	MxLong currentTime = Timer()->GetRealTime();
@@ -714,7 +717,7 @@ inline void IsleApp::Tick()
 
 	if (m_frameDelta + g_lastFrameTime >= currentTime) {
 		SDL_Delay(1);
-		return;
+		return true;
 	}
 
 	if (!Lego()->IsPaused()) {
@@ -723,12 +726,12 @@ inline void IsleApp::Tick()
 	g_lastFrameTime = currentTime;
 
 	if (g_startupDelay == 0) {
-		return;
+		return true;
 	}
 
 	g_startupDelay--;
 	if (g_startupDelay != 0) {
-		return;
+		return true;
 	}
 
 	LegoOmni::GetInstance()->CreateBackgroundAudio();
@@ -747,9 +750,7 @@ inline void IsleApp::Tick()
 				"\nFailed to load NOCD.si",
 				NULL
 			);
-			g_closed = TRUE;
-			g_closeResult = SDL_APP_FAILURE;
-			return;
+			return false;
 		}
 
 		ds.SetAtomId(stream->GetAtom());
@@ -758,7 +759,7 @@ inline void IsleApp::Tick()
 		VideoManager()->EnableFullScreenMovie(TRUE, TRUE);
 
 		if (Start(&ds) != SUCCESS) {
-			return;
+			return true;
 		}
 	}
 	else {
@@ -766,10 +767,12 @@ inline void IsleApp::Tick()
 		ds.SetUnknown24(-1);
 		ds.SetObjectId(0);
 		if (Start(&ds) != SUCCESS) {
-			return;
+			return true;
 		}
 		m_gameStarted = TRUE;
 	}
+
+	return true;
 }
 
 // FUNCTION: ISLE 0x402e80
