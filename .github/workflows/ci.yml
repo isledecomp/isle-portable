@@ -31,7 +31,7 @@ jobs:
         include:
           - { name: 'Linux',          os: 'ubuntu-latest',  dx5: false, build-type: 'Debug', linux: true, werror: true,   clang-tify: true }
           - { name: 'MSVC (x86)',     os: 'windows-latest', dx5: true,  build-type: 'Debug', msvc: true,  werror: false,  clang-tify: false,  vc-arch: 'amd64' }
-          - { name: 'MSVC (x64)',     os: 'windows-latest', dx5: true,  build-type: 'Debug', msvc: true,  werror: false,  clang-tify: false,  vc-arch: 'amd64_x86' }
+          - { name: 'MSVC (x64)',     os: 'windows-latest', dx5: false,  build-type: 'Debug', msvc: true,  werror: false,  clang-tify: false,  vc-arch: 'amd64_x86' }
           - { name: 'MSVC (arm64)',   os: 'windows-latest', dx5: false, build-type: 'Debug', msvc: true,  werror: false,  clang-tify: false,  vc-arch: 'amd64_arm64' }
           - { name: 'msys2 mingw32',  os: 'windows-latest', dx5: false, build-type: 'Debug', mingw: true, werror: true,   clang-tify: true,   msystem: 'mingw32', msys-env: 'mingw-w64-i686',   shell: 'msys2 {0}' }
           - { name: 'msys2 mingw64',  os: 'windows-latest', dx5: false, build-type: 'Debug', mingw: true, werror: true,   clang-tify: true,   msystem: 'mingw64', msys-env: 'mingw-w64-x86_64', shell: 'msys2 {0}' }
