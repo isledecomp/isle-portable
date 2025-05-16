@@ -1,10 +1,10 @@
-name: Linux
+name: macOS
 
 on: [push, pull_request]
 
 jobs:
-  build-linux:
-    runs-on: ubuntu-latest
+  build-macos:
+    runs-on: macos-latest
 
     strategy:
       fail-fast: false
@@ -16,9 +16,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libx11-dev libxext-dev libxrandr-dev libxrender-dev libxfixes-dev libxi-dev libxinerama-dev libxcursor-dev libwayland-dev libxkbcommon-dev wayland-protocols
+          brew update
+          brew install cmake ninja llvm
+          echo "CLANG_TIDY=$(brew --prefix llvm)/bin/clang-tidy" >> $GITHUB_ENV
 
       - name: Configure
         run: |
@@ -26,6 +26,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
             -DISLE_USE_DX5=OFF \
             -DENABLE_CLANG_TIDY=ON \
+            -DCLANG_TIDY_BIN=$CLANG_TIDY \
             -DISLE_WERROR=ON \
             -Werror=dev
 
@@ -35,11 +36,11 @@ jobs:
       - name: Make Artifact Archive
         run: |
           cd build
-          zip "isle-portable-linux-${{ matrix.build-type }}.zip" \
-              config isle liblego1.so
+          zip "isle-portable-macos-${{ matrix.build-type }}.zip" \
+              config isle liblego1.dylib
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: linux-artifacts-${{ matrix.build-type }}
-          path: build/isle-portable-linux-${{ matrix.build-type }}.zip
+          name: macos-artifacts-${{ matrix.build-type }}
+          path: build/isle-portable-macos-${{ matrix.build-type }}.zip
