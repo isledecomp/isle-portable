@@ -205,9 +205,9 @@ HRESULT DirectDrawSurfaceImpl::SetPalette(LPDIRECTDRAWPALETTE lpDDPalette)
 
 HRESULT DirectDrawSurfaceImpl::Unlock(LPVOID lpSurfaceData)
 {
-	if (texture) {
-		SDL_UnlockTexture(texture);
-		return DD_OK;
+	if (!texture) {
+		return DDERR_GENERIC;
 	}
-	return DDERR_GENERIC;
+	SDL_UnlockTexture(texture);
+	return DD_OK;
 }
