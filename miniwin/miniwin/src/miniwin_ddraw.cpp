@@ -256,10 +256,12 @@ HRESULT DirectDrawImpl::SetCooperativeLevel(HWND hWnd, DDSCLFlags dwFlags)
 		bool fullscreen;
 		if ((dwFlags & DDSCL_NORMAL) == DDSCL_NORMAL) {
 			fullscreen = false;
-		} else if ((dwFlags & DDSCL_FULLSCREEN) == DDSCL_FULLSCREEN) {
+		}
+		else if ((dwFlags & DDSCL_FULLSCREEN) == DDSCL_FULLSCREEN) {
 			fullscreen = true;
-		} else {
-			return DDERR_INVALIDPARAMS; 
+		}
+		else {
+			return DDERR_INVALIDPARAMS;
 		}
 
 		if (!SDL_SetWindowFullscreen(hWnd, fullscreen)) {
