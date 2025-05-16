@@ -87,11 +87,14 @@ endif()
 #if (NOT WIN32)
 add_library(miniwin STATIC EXCLUDE_FROM_ALL
   miniwin/miniwin/src/miniwin.cpp
+  miniwin/miniwin/src/miniwin_ddclipper.cpp
+  miniwin/miniwin/src/miniwin_ddpalette.cpp
+  miniwin/miniwin/src/miniwin_ddsurface.cpp
   miniwin/miniwin/src/miniwin_ddraw.cpp
-  miniwin/miniwin/src/miniwin_d3d.cpp
   miniwin/miniwin/src/miniwin_d3drm.cpp
 )
 target_include_directories(miniwin PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/miniwin/miniwin/include>")
+target_include_directories(miniwin PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/miniwin/miniwin/src/include")
 target_compile_definitions(miniwin PUBLIC "MINIWIN")
 target_link_libraries(miniwin PRIVATE SDL3::SDL3)
 

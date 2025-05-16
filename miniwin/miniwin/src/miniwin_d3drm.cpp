@@ -1,5 +1,7 @@
 #include "miniwin_d3drm.h"
 
+#include "miniwin_ddsurface_p.h"
+
 #include <SDL3/SDL.h>
 #include <assert.h>
 
