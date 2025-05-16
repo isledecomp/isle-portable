@@ -292,6 +292,13 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 	}
 
 	if (!g_isle->Tick()) {
+		SDL_ShowSimpleMessageBox(
+			SDL_MESSAGEBOX_ERROR,
+			"LEGO® Island Error",
+			"\"LEGO® Island\" failed to start.\nPlease quit all other applications and try again."
+			"\nFailed to initialize; see logs for details",
+			NULL
+		);
 		return SDL_APP_FAILURE;
 	}
 
@@ -308,7 +315,16 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 		}
 
 		if (g_mousedown && g_mousemoved && g_isle) {
-			g_isle->Tick();
+			if (!g_isle->Tick()) {
+				SDL_ShowSimpleMessageBox(
+					SDL_MESSAGEBOX_ERROR,
+					"LEGO® Island Error",
+					"\"LEGO® Island\" failed to start.\nPlease quit all other applications and try again."
+					"\nFailed to initialize; see logs for details",
+					NULL
+				);
+				return SDL_APP_FAILURE;
+			}
 		}
 
 		if (g_mousemoved) {
@@ -744,13 +760,6 @@ inline bool IsleApp::Tick()
 		stream = Streamer()->Open("\\lego\\scripts\\nocd", MxStreamer::e_diskStream);
 		if (!stream) {
 			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to open NOCD.si: Streamer failed to load");
-			SDL_ShowSimpleMessageBox(
-				SDL_MESSAGEBOX_ERROR,
-				"LEGO® Island Error",
-				"\"LEGO® Island\" failed to start.\nPlease quit all other applications and try again."
-				"\nFailed to load NOCD.si",
-				NULL
-			);
 			return false;
 		}
 
@@ -761,13 +770,6 @@ inline bool IsleApp::Tick()
 
 		if (Start(&ds) != SUCCESS) {
 			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to open NOCD.si: Failed to start initial action");
-			SDL_ShowSimpleMessageBox(
-				SDL_MESSAGEBOX_ERROR,
-				"LEGO® Island Error",
-				"\"LEGO® Island\" failed to start.\nPlease quit all other applications and try again."
-				"\nFailed to load NOCD.si",
-				NULL
-			);
 			return false;
 		}
 	}
@@ -777,13 +779,6 @@ inline bool IsleApp::Tick()
 		ds.SetObjectId(0);
 		if (Start(&ds) != SUCCESS) {
 			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to open ISLE.si: Failed to start initial action");
-			SDL_ShowSimpleMessageBox(
-				SDL_MESSAGEBOX_ERROR,
-				"LEGO® Island Error",
-				"\"LEGO® Island\" failed to start.\nPlease quit all other applications and try again."
-				"\nFailed to load ISLE.si",
-				NULL
-			);
 			return false;
 		}
 		m_gameStarted = TRUE;
