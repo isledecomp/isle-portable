@@ -294,7 +294,6 @@ typedef struct IDirectDraw* LPDIRECTDRAW;
 struct IDirectDrawPalette : virtual public IUnknown {
 	virtual HRESULT GetCaps(LPDWORD lpdwCaps) = 0;
 	virtual HRESULT GetEntries(DWORD dwFlags, DWORD dwBase, DWORD dwNumEntries, LPPALETTEENTRY lpEntries) = 0;
-	virtual HRESULT Initialize(LPDIRECTDRAW lpDD, DWORD dwFlags, LPPALETTEENTRY lpDDColorTable) = 0;
 	virtual HRESULT SetEntries(DWORD dwFlags, DWORD dwStartingEntry, DWORD dwCount, LPPALETTEENTRY lpEntries) = 0;
 };
 typedef struct IDirectDrawPalette* LPDIRECTDRAWPALETTE;
@@ -322,7 +321,6 @@ struct IDirectDrawSurface : virtual public IUnknown {
 		LPRECT lpSrcRect,
 		DDBltFastFlags dwTrans
 	) = 0;
-	virtual HRESULT DeleteAttachedSurface(DWORD dwFlags, LPDIRECTDRAWSURFACE lpDDSAttachedSurface) = 0;
 	virtual HRESULT Flip(LPDIRECTDRAWSURFACE lpDDSurfaceTargetOverride, DDFlipFlags dwFlags) = 0;
 	virtual HRESULT GetAttachedSurface(LPDDSCAPS lpDDSCaps, LPDIRECTDRAWSURFACE* lplpDDAttachedSurface) = 0;
 	virtual HRESULT GetCaps(LPDDSCAPS lpDDSCaps) = 0;
@@ -331,7 +329,6 @@ struct IDirectDrawSurface : virtual public IUnknown {
 	virtual HRESULT GetPalette(LPDIRECTDRAWPALETTE* lplpDDPalette) = 0;
 	virtual HRESULT GetPixelFormat(LPDDPIXELFORMAT lpDDPixelFormat) = 0;
 	virtual HRESULT GetSurfaceDesc(LPDDSURFACEDESC lpDDSurfaceDesc) = 0;
-	virtual HRESULT Initialize(LPDIRECTDRAW lpDD, LPDDSURFACEDESC lpDDSurfaceDesc) = 0;
 	virtual HRESULT IsLost() = 0;
 	virtual HRESULT Lock(LPRECT lpDestRect, LPDDSURFACEDESC lpDDSurfaceDesc, DDLockFlags dwFlags, HANDLE hEvent) = 0;
 	virtual HRESULT ReleaseDC(HDC hDC) = 0;
@@ -365,16 +362,9 @@ struct IDirectDraw : virtual public IUnknown {
 		LPVOID lpContext,
 		LPDDENUMMODESCALLBACK lpEnumModesCallback
 	) = 0;
-	virtual HRESULT EnumSurfaces(
-		DWORD dwFlags,
-		LPDDSURFACEDESC lpDDSD,
-		LPVOID lpContext,
-		LPDDENUMSURFACESCALLBACK lpEnumSurfacesCallback
-	) = 0;
 	virtual HRESULT FlipToGDISurface() = 0;
 	virtual HRESULT GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELCaps) = 0;
 	virtual HRESULT GetDisplayMode(LPDDSURFACEDESC lpDDSurfaceDesc) = 0;
-	virtual HRESULT Initialize(GUID* lpGUID) = 0;
 	virtual HRESULT RestoreDisplayMode() = 0;
 	virtual HRESULT SetCooperativeLevel(HWND hWnd, DDSCLFlags dwFlags) = 0;
 	virtual HRESULT SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWORD dwBPP) = 0;

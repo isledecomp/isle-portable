@@ -245,13 +245,7 @@ MxResult MxVideoManager::Create(MxVideoParam& p_videoParam, MxU32 p_frequencyMS,
 		goto done;
 	}
 
-	// [library:ddraw]
-	hWnd = (HWND) SDL_GetPointerProperty(
-		SDL_GetWindowProperties(MxOmni::GetInstance()->GetWindowHandle()),
-		SDL_PROP_WINDOW_WIN32_HWND_POINTER,
-		NULL
-	);
-	if (m_pDirectDraw->SetCooperativeLevel(hWnd, DDSCL_NORMAL) != DD_OK) {
+	if (m_pDirectDraw->SetCooperativeLevel(MxOmni::GetInstance()->GetWindowHandle(), DDSCL_NORMAL) != DD_OK) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "IDirectDraw::SetCooperativeLevel failed");
 		goto done;
 	}

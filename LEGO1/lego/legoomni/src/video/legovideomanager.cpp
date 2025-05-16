@@ -86,12 +86,7 @@ MxResult LegoVideoManager::Create(MxVideoParam& p_videoParam, MxU32 p_frequencyM
 	Mx3DPointFloat dirVec(0.0, 0.0, 1.0);
 	Mx3DPointFloat upVec(0.0, 1.0, 0.0);
 	MxMatrix outMatrix;
-	// [library:ddraw] [library:d3d]
-	HWND hwnd = (HWND) SDL_GetPointerProperty(
-		SDL_GetWindowProperties(MxOmni::GetInstance()->GetWindowHandle()),
-		SDL_PROP_WINDOW_WIN32_HWND_POINTER,
-		NULL
-	);
+	HWND hwnd = MxOmni::GetInstance()->GetWindowHandle();
 	MxS32 bits = p_videoParam.Flags().Get16Bit() ? 16 : 8;
 
 	if (!p_videoParam.GetPalette()) {
@@ -189,11 +184,7 @@ MxResult LegoVideoManager::Create(MxVideoParam& p_videoParam, MxU32 p_frequencyM
 
 	Lego3DManager::CreateStruct createStruct;
 	memset(&createStruct, 0, sizeof(createStruct));
-	createStruct.m_hWnd = (HWND) SDL_GetPointerProperty(
-		SDL_GetWindowProperties(MxOmni::GetInstance()->GetWindowHandle()),
-		SDL_PROP_WINDOW_WIN32_HWND_POINTER,
-		NULL
-	);
+	createStruct.m_hWnd = LegoOmni::GetInstance()->GetWindowHandle();
 	createStruct.m_pDirectDraw = m_pDirectDraw;
 	createStruct.m_pFrontBuffer = m_displaySurface->GetDirectDrawSurface1();
 	createStruct.m_pBackBuffer = m_displaySurface->GetDirectDrawSurface2();

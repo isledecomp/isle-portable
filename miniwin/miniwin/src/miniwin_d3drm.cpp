@@ -19,12 +19,20 @@ struct Direct3DRMDevice2Impl : public IDirect3DRMDevice2 {
 	HRESULT SetRenderMode(D3DRMRENDERMODE mode) override { return DD_OK; }
 	D3DRMRENDERMODE GetRenderMode() override { return D3DRMRENDERMODE::BLENDEDTRANSPARENCY; }
 	HRESULT Update() override { return DD_OK; }
-	HRESULT GetViewports(IDirect3DRMViewportArray** ppViewportArray) override { return DD_OK; }
+	HRESULT GetViewports(IDirect3DRMViewportArray** ppViewportArray) override
+	{
+		assert(false && "unimplemented");
+		return DDERR_GENERIC;
+	}
 };
 
 struct Direct3DRMFrameImpl : public IDirect3DRMFrame2 {
-	HRESULT SetAppData(LPD3DRM_APPDATA appData) override { return DD_OK; }
-	LPVOID GetAppData() override { return 0; }
+	HRESULT SetAppData(LPD3DRM_APPDATA appData) override
+	{
+		m_data = appData;
+		return DD_OK;
+	}
+	LPVOID GetAppData() override { return m_data; }
 	HRESULT AddChild(IDirect3DRMFrame* child) override
 	{
 		child->AddRef();
@@ -41,7 +49,11 @@ struct Direct3DRMFrameImpl : public IDirect3DRMFrame2 {
 		light->AddRef();
 		return DD_OK;
 	}
-	HRESULT GetLights(IDirect3DRMLightArray** lightArray) override { return DD_OK; }
+	HRESULT GetLights(IDirect3DRMLightArray** lightArray) override
+	{
+		assert(false && "unimplemented");
+		return DDERR_GENERIC;
+	}
 	HRESULT AddTransform(D3DRMCOMBINETYPE combine, D3DRMMATRIX4D matrix) override { return DD_OK; }
 	HRESULT GetPosition(int index, D3DVECTOR* position) override { return DD_OK; }
 	HRESULT AddVisual(IDirect3DRMVisual* visual) override
@@ -74,19 +86,38 @@ struct Direct3DRMFrameImpl : public IDirect3DRMFrame2 {
 		visual->Release();
 		return DD_OK;
 	}
-	HRESULT GetVisuals(IDirect3DRMVisualArray** visuals) override { return DD_OK; }
+	HRESULT GetVisuals(IDirect3DRMVisualArray** visuals) override
+	{
+		assert(false && "unimplemented");
+		return DDERR_GENERIC;
+	}
 	HRESULT SetTexture(const IDirect3DRMTexture* texture) override { return DD_OK; }
-	HRESULT GetTexture(IDirect3DRMTexture** texture) override { return DD_OK; }
+	HRESULT GetTexture(IDirect3DRMTexture** texture) override
+	{
+		assert(false && "unimplemented");
+		return DDERR_GENERIC;
+	}
 	HRESULT SetColor(float r, float g, float b, float a) override { return DD_OK; }
 	HRESULT SetColor(D3DCOLOR) override { return DD_OK; }
 	HRESULT SetColorRGB(float r, float g, float b) override { return DD_OK; }
 	HRESULT SetMaterialMode(D3DRMMATERIALMODE mode) override { return DD_OK; }
-	HRESULT GetChildren(IDirect3DRMFrameArray** children) override { return DD_OK; }
+	HRESULT GetChildren(IDirect3DRMFrameArray** children) override
+	{
+		assert(false && "unimplemented");
+		return DDERR_GENERIC;
+	}
+
+private:
+	LPD3DRM_APPDATA m_data;
 };
 
 struct Direct3DRMViewportImpl : public IDirect3DRMViewport {
 	Direct3DRMViewportImpl() : m_data(nullptr) {}
-	HRESULT Clone(void** ppObject) override { return DD_OK; }
+	HRESULT Clone(void** ppObject) override
+	{
+		assert(false && "unimplemented");
+		return DDERR_GENERIC;
+	}
 	HRESULT AddDestroyCallback(void (*cb)(IDirect3DRMObject*, void*), void* arg) override { return DD_OK; }
 	HRESULT DeleteDestroyCallback(void (*cb)(IDirect3DRMObject*, void*), void* arg) override { return DD_OK; }
 	HRESULT SetAppData(LPD3DRM_APPDATA appData) override
@@ -102,7 +133,11 @@ struct Direct3DRMViewportImpl : public IDirect3DRMViewport {
 	HRESULT ForceUpdate(int x, int y, int w, int h) override { return DD_OK; }
 	HRESULT Clear() override { return DD_OK; }
 	HRESULT SetCamera(IDirect3DRMFrame* camera) override { return DD_OK; }
-	HRESULT GetCamera(IDirect3DRMFrame** camera) override { return DD_OK; }
+	HRESULT GetCamera(IDirect3DRMFrame** camera) override
+	{
+		assert(false && "unimplemented");
+		return DDERR_GENERIC;
+	}
 	HRESULT SetProjection(D3DRMPROJECTIONTYPE type) override { return DD_OK; }
 	D3DRMPROJECTIONTYPE GetProjection() override { return D3DRMPROJECTIONTYPE::PERSPECTIVE; }
 	HRESULT SetFront(D3DVALUE z) override { return DD_OK; }
@@ -171,8 +206,8 @@ struct Direct3DRMImpl : public IDirect3DRM2 {
 	}
 	HRESULT CreateMaterial(D3DVAL power, IDirect3DRMMaterial** outMaterial) override
 	{
-		assert(false && "unimplemented");
-		return DDERR_GENERIC;
+		*outMaterial = new IDirect3DRMMaterial;
+		return DD_OK;
 	}
 	HRESULT CreateLightRGB(D3DRMLIGHTTYPE type, D3DVAL r, D3DVAL g, D3DVAL b, IDirect3DRMLight** outLight) override
 	{
