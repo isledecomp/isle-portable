@@ -253,6 +253,18 @@ HRESULT DirectDrawImpl::RestoreDisplayMode()
 HRESULT DirectDrawImpl::SetCooperativeLevel(HWND hWnd, DDSCLFlags dwFlags)
 {
 	if (hWnd) {
+		bool fullscreen;
+		if ((dwFlags & DDSCL_NORMAL) == DDSCL_NORMAL) {
+			fullscreen = false;
+		} else if ((dwFlags & DDSCL_FULLSCREEN) == DDSCL_FULLSCREEN) {
+			fullscreen = true;
+		} else {
+			return DDERR_INVALIDPARAMS; 
+		}
+
+		if (!SDL_SetWindowFullscreen(hWnd, fullscreen)) {
+			return DDERR_GENERIC;
+		}
 		renderer = SDL_CreateRenderer(hWnd, NULL);
 	}
 	return DD_OK;
