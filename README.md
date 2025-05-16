@@ -14,7 +14,7 @@ Please note: this project is dedicated to achieving platform independence withou
 | - | - | 
 | Windows | ✅ | 
 | Linux | 🚧 |
-| macOS | ❌ |
+| macOS | 🚧 |
 
 ### Library substitutions
 
