@@ -271,11 +271,11 @@ HRESULT DirectDrawImpl::CreateDevice(const GUID& guid, void* pBackBuffer, IDirec
 
 HRESULT DirectDrawCreate(LPGUID lpGuid, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOuter)
 {
-	if (!lplpDD) {
-		return DDERR_INVALIDPARAMS;
-	}
 	if (lpGuid) {
 		MINIWIN_ERROR("Specifying a DirectDraw driver is not implemented");
+	}
+	if (!lplpDD) {
+		return DDERR_INVALIDPARAMS;
 	}
 
 	*lplpDD = new DirectDrawImpl;
