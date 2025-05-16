@@ -2,6 +2,8 @@
 #include "miniwin_ddsurface_p.h"
 #include "miniwin_p.h"
 
+#include <assert.h>
+
 DirectDrawSurfaceImpl::DirectDrawSurfaceImpl()
 {
 }
