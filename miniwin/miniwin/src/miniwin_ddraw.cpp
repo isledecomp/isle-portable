@@ -146,21 +146,36 @@ HRESULT DirectDrawImpl::EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 		return DDERR_INVALIDPARAMS;
 	}
 
-	GUID deviceGuid = {0xA1B2C3D4, 0x1122, 0x3344, {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x00, 0x11}};
+	int numDrivers = SDL_GetNumRenderDrivers();
+	if (numDrivers <= 0) {
+		return DDERR_GENERIC;
+	}
 
-	char* deviceName = (char*) "MiniWin 3D Device";
-	char* deviceDesc = (char*) "Stubbed 3D device";
+	const char* deviceDesc = "SDL3-backed renderer";
+	char* deviceDescDup = SDL_strdup(deviceDesc);
 
-	D3DDEVICEDESC halDesc = {};
-	halDesc.dcmColorModel = D3DCOLORMODEL::RGB;
-	halDesc.dwDeviceZBufferBitDepth = DDBD_16;
-	halDesc.dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
-	D3DDEVICEDESC helDesc = {};
-	halDesc.dcmColorModel = D3DCOLORMODEL::RGB;
-	halDesc.dwDeviceZBufferBitDepth = DDBD_16;
-	halDesc.dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
+	for (int i = 0; i < numDrivers; ++i) {
+		const char* deviceName = SDL_GetRenderDriver(i);
+		if (!deviceName) {
+			return DDERR_GENERIC;
+		}
 
-	cb(&deviceGuid, deviceName, deviceDesc, &halDesc, &helDesc, ctx);
+		GUID deviceGuid = {0x682656F3, 0x0000, 0x0000, {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, (uint8_t) i}};
+
+		D3DDEVICEDESC halDesc = {};
+		halDesc.dcmColorModel = D3DCOLORMODEL::RGB;
+		halDesc.dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
+		halDesc.dwDeviceZBufferBitDepth = DDBD_8 | DDBD_16 | DDBD_24 | DDBD_32;
+		halDesc.dwDeviceRenderBitDepth = DDBD_8 | DDBD_16;
+		halDesc.dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
+		halDesc.dpcTriCaps.dwShadeCaps = D3DPSHADECAPS_ALPHAFLATBLEND;
+		halDesc.dpcTriCaps.dwTextureFilterCaps = D3DPTFILTERCAPS_LINEAR;
+
+		char* deviceNameDup = SDL_strdup(deviceName);
+		cb(&deviceGuid, deviceNameDup, deviceDescDup, &halDesc, &halDesc, ctx);
+		SDL_free(deviceNameDup);
+	}
+	SDL_free(deviceDescDup);
 
 	return S_OK;
 }
