@@ -3,6 +3,21 @@
 #include <SDL3/SDL.h>
 #include <assert.h>
 
+struct Direct3DRMTextureImpl : public IDirect3DRMTexture2 {
+	HRESULT AddDestroyCallback(void (*cb)(IDirect3DRMObject*, void*), void* arg) override { return DD_OK; }
+	LPVOID GetAppData() override { return m_data; }
+	HRESULT SetAppData(LPD3DRM_APPDATA appData) override
+	{
+		m_data = appData;
+		return DD_OK;
+	}
+	HRESULT SetTexture(const IDirect3DRMTexture* texture) override { return DD_OK; }
+	HRESULT Changed(BOOL arg1, BOOL arg2) override { return DD_OK; }
+
+private:
+	LPD3DRM_APPDATA m_data;
+};
+
 struct Direct3DRMDevice2Impl : public IDirect3DRMDevice2 {
 	unsigned long GetWidth() override { return 640; }
 	unsigned long GetHeight() override { return 480; }
@@ -191,17 +206,17 @@ struct Direct3DRMImpl : public IDirect3DRM2 {
 	}
 	HRESULT CreateTexture(D3DRMIMAGE* image, IDirect3DRMTexture2** outTexture) override
 	{
-		assert(false && "unimplemented");
+		*outTexture = static_cast<IDirect3DRMTexture2*>(new Direct3DRMTextureImpl);
 		return DDERR_GENERIC;
 	}
 	HRESULT CreateTextureFromSurface(LPDIRECTDRAWSURFACE surface, IDirect3DRMTexture2** outTexture) override
 	{
-		assert(false && "unimplemented");
+		*outTexture = static_cast<IDirect3DRMTexture2*>(new Direct3DRMTextureImpl);
 		return DDERR_GENERIC;
 	}
 	HRESULT CreateMesh(IDirect3DRMMesh** outMesh) override
 	{
-		assert(false && "unimplemented");
+		// TODO
 		return DDERR_GENERIC;
 	}
 	HRESULT CreateMaterial(D3DVAL power, IDirect3DRMMaterial** outMaterial) override
