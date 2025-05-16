@@ -1,0 +1,137 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  clang-format:
+    name: 'clang-format'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run clang-format
+        run: |
+          find CONFIG LEGO1 ISLE miniwin -iname '*.h' -o -iname '*.cpp' | xargs \
+          pipx run "clang-format>=17,<18" \
+            --style=file \
+            -i
+      - name: Check diff
+        run: |
+          git diff --exit-code
+
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: ${{ matrix.shell || 'sh' }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: 'Linux',          os: 'ubuntu-latest',  dx5: false, build-type: 'Debug', linux: true, werror: true,   clang-tify: true }
+          - { name: 'MSVC (x86)',     os: 'windows-latest', dx5: true,  build-type: 'Debug', msvc: true,  werror: false,  clang-tify: false,  vc-arch: 'amd64' }
+          - { name: 'MSVC (x64)',     os: 'windows-latest', dx5: true,  build-type: 'Debug', msvc: true,  werror: false,  clang-tify: false,  vc-arch: 'amd64_x86' }
+          - { name: 'MSVC (arm64)',   os: 'windows-latest', dx5: false, build-type: 'Debug', msvc: true,  werror: false,  clang-tify: false,  vc-arch: 'amd64_arm64' }
+          - { name: 'msys2 mingw32',  os: 'windows-latest', dx5: false, build-type: 'Debug', mingw: true, werror: true,   clang-tify: true,   msystem: 'mingw32', msys-env: 'mingw-w64-i686',   shell: 'msys2 {0}' }
+          - { name: 'msys2 mingw64',  os: 'windows-latest', dx5: false, build-type: 'Debug', mingw: true, werror: true,   clang-tify: true,   msystem: 'mingw64', msys-env: 'mingw-w64-x86_64', shell: 'msys2 {0}' }
+          - { name: 'macOS',          os: 'macos-latest',   dx5: false, build-type: 'Debug', brew: true,  werror: true,   clang-tify: true }
+    steps:
+      - name: Setup vcvars
+        if: ${{ !!matrix.msvc }}
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.vc-arch }}
+
+      - name: Set up MSYS2
+        if: ${{ !!matrix.msystem }}
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{ matrix.msystem }}
+          install: >-
+            ${{ matrix.msys-env }}-cc
+            ${{ matrix.msys-env }}-cmake
+            ${{ matrix.msys-env }}-ninja
+            ${{ matrix.msys-env }}-clang-tools-extra
+
+      - name: Install Linux dependencies (apt-get)
+        if: ${{ matrix.linux }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libx11-dev libxext-dev libxrandr-dev libxrender-dev libxfixes-dev libxi-dev libxinerama-dev libxcursor-dev libwayland-dev libxkbcommon-dev wayland-protocols
+
+      - name: Install macOS dependencies (brew)
+        if: ${{ matrix.brew }}
+        run: |
+          brew update
+          brew install cmake ninja llvm
+          echo "LLVM_ROOT=$(brew --prefix llvm)/bin" >> $GITHUB_ENV
+
+      - name: Setup ninja
+        if: ${{ matrix.msvc }}
+        uses: ashutoshvarma/setup-ninja@master
+
+      - uses: actions/checkout@v4
+
+      - name: Configure (CMake)
+        run: |
+          cmake -S . -B build -GNinja \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
+            -DISLE_USE_DX5=${{ !!matrix.dx5 }} \
+            -DENABLE_CLANG_TIDY=${{ !!matrix.clang-tidy  }} \
+            -DISLE_WERROR=${{ !!matrix.werror }} \
+            -Werror=dev
+
+      - name: Build (CMake)
+        run: cmake --build build --verbose -- -k0
+
+      - name: Package (CPack)
+        run: |
+          cd build
+          cpack .
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: '${{ matrix.name }} ${{ matrix.build-type }}'
+          path: build/dist/isle-*
+
+  ncc:
+    name: 'C++'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install LLVM and Clang
+        uses: KyleMayes/install-llvm-action@v1
+        with:
+          version: "16"
+
+      - name: Install python libraries
+        run: |
+          pip install -r tools/requirements.txt
+
+      - name: Run ncc
+        run: |
+          action_headers=$(find LEGO1/lego/legoomni/include/actions \
+            -name '*.h' -print0 | xargs -0 echo)
+          
+          python3 tools/ncc/ncc.py \
+            --clang-lib ${{ env.LLVM_PATH }}/lib/libclang.so \
+            --recurse \
+            --style tools/ncc/ncc.style \
+            --skip tools/ncc/skip.yml \
+            --definition WINAPI FAR BOOL CALLBACK HWND__=HWND SDLCALL \
+            --include \
+              util \
+              LEGO1 \
+              LEGO1/omni/include \
+              LEGO1/lego/legoomni/include \
+              LEGO1/lego/sources \
+            --exclude \
+              LEGO1/omni/include/flic.h \
+              LEGO1/omni/src/video/flic.cpp \
+              $action_headers \
+            --path LEGO1/omni LEGO1/lego/legoomni
