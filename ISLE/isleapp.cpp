@@ -743,6 +743,7 @@ inline bool IsleApp::Tick()
 	if (!stream) {
 		stream = Streamer()->Open("\\lego\\scripts\\nocd", MxStreamer::e_diskStream);
 		if (!stream) {
+			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to open NOCD.si: Streamer failed to load");
 			SDL_ShowSimpleMessageBox(
 				SDL_MESSAGEBOX_ERROR,
 				"LEGO® Island Error",
@@ -759,7 +760,15 @@ inline bool IsleApp::Tick()
 		VideoManager()->EnableFullScreenMovie(TRUE, TRUE);
 
 		if (Start(&ds) != SUCCESS) {
-			return true;
+			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to open NOCD.si: Failed to start initial action");
+			SDL_ShowSimpleMessageBox(
+				SDL_MESSAGEBOX_ERROR,
+				"LEGO® Island Error",
+				"\"LEGO® Island\" failed to start.\nPlease quit all other applications and try again."
+				"\nFailed to load NOCD.si",
+				NULL
+			);
+			return false;
 		}
 	}
 	else {
@@ -767,7 +776,8 @@ inline bool IsleApp::Tick()
 		ds.SetUnknown24(-1);
 		ds.SetObjectId(0);
 		if (Start(&ds) != SUCCESS) {
-			return true;
+			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to open ISLE.si: Failed to start initial action");
+			return false;
 		}
 		m_gameStarted = TRUE;
 	}
