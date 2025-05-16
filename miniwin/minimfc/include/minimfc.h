@@ -24,8 +24,6 @@
 
 #define FAILED(hr) (((HRESULT) (hr)) < 0)
 #define InterlockedIncrement(x) __sync_add_and_fetch(x, 1)
-#define INVALID_HANDLE ((HANDLE) -1)
-#define INVALID_HANDLE_VALUE ((HANDLE) -1)
 #define HKEY_LOCAL_MACHINE ((HKEY) 0x80000002)
 #define LOWORD(l) ((WORD) (((DWORD_PTR) (l)) & 0xffff))
 #define MAKEINTRESOURCE(i) (reinterpret_cast<LPCTSTR>((ULONG_PTR) ((WORD) (i))))
@@ -130,7 +128,7 @@ struct CMenu {
 
 struct CWinApp {
 	CWinApp();
-	~CWinApp() override = default;
+	~CWinApp() = default;
 	virtual BOOL InitInstance() = 0;
 	virtual int ExitInstance();
 };

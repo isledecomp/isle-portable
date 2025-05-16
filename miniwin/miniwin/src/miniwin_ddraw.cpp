@@ -113,10 +113,6 @@ HRESULT DirectDrawImpl::EnumDisplayModes(
 	LPDDENUMMODESCALLBACK lpEnumModesCallback
 )
 {
-	if (!lpEnumModesCallback) {
-		return DDERR_INVALIDPARAMS;
-	}
-
 	SDL_DisplayID displayID = SDL_GetPrimaryDisplay();
 	if (!displayID) {
 		return DDERR_GENERIC;
@@ -181,10 +177,6 @@ HRESULT DirectDrawImpl::GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELCaps)
 
 HRESULT DirectDrawImpl::EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
-	if (!cb) {
-		return DDERR_INVALIDPARAMS;
-	}
-
 	int numDrivers = SDL_GetNumRenderDrivers();
 	if (numDrivers <= 0) {
 		return DDERR_GENERIC;
@@ -287,9 +279,6 @@ HRESULT DirectDrawCreate(LPGUID lpGuid, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOute
 {
 	if (lpGuid) {
 		MINIWIN_ERROR("Specifying a DirectDraw driver is not implemented");
-	}
-	if (!lplpDD) {
-		return DDERR_INVALIDPARAMS;
 	}
 
 	*lplpDD = new DirectDrawImpl;
