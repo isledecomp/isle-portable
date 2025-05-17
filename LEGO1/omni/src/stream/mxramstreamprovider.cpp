@@ -140,7 +140,7 @@ MxU32 ReadData(MxU8* p_buffer, MxU32 p_size)
 					}
 
 					data2 = MxDSChunk::End(data2);
-					memcpy(data2, data3, MxDSChunk::Size(data3));
+					memmove(data2, data3, MxDSChunk::Size(data3));
 
 					if (*MxStreamChunk::IntoObjectId(data2) == id &&
 						(*MxStreamChunk::IntoFlags(data2) & DS_CHUNK_END_OF_STREAM)) {
