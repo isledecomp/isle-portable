@@ -217,7 +217,7 @@ void MxString::MapPathToFilesystem(char* p_path)
 				}
 				else if (j == 1) {
 					SDL_strlcpy(&p_path[i - 1], file.GetData(), file.GetLength() + 1);
-					SDL_LogTrace("Resolved file path to %s", p_path);
+					SDL_LogTrace(SDL_LOG_PRIORITY_INFO, "Resolved file path to %s", p_path);
 					return true;
 				}
 			}
