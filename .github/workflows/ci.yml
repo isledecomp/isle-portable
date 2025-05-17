@@ -35,7 +35,7 @@ jobs:
           - { name: 'MSVC (arm64)',   os: 'windows-latest', dx5: false, build-type: 'Debug', msvc: true,  werror: false,  clang-tidy: false,  vc-arch: 'amd64_arm64' }
           - { name: 'msys2 mingw32',  os: 'windows-latest', dx5: false, build-type: 'Debug', mingw: true, werror: true,   clang-tidy: true,   msystem: 'mingw32', msys-env: 'mingw-w64-i686',   shell: 'msys2 {0}' }
           - { name: 'msys2 mingw64',  os: 'windows-latest', dx5: false, build-type: 'Debug', mingw: true, werror: true,   clang-tidy: true,   msystem: 'mingw64', msys-env: 'mingw-w64-x86_64', shell: 'msys2 {0}' }
-          - { name: 'macOS',          os: 'macos-latest',   dx5: false, build-type: 'Debug', brew: true,  werror: true,   clang-tidy: true }
+          - { name: 'macOS',          os: 'macos-latest',   dx5: false, build-type: 'Debug', brew: true,  werror: true,   clang-tidy: false }
     steps:
       - name: Setup vcvars
         if: ${{ !!matrix.msvc }}
