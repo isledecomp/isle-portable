@@ -22,7 +22,7 @@ void MxStillPresenter::Destroy(MxBool p_fromDestructor)
 	m_criticalSection.Enter();
 
 	if (m_bitmapInfo) {
-		delete m_bitmapInfo;
+		delete[] ((MxU8*) m_bitmapInfo);
 	}
 	m_bitmapInfo = NULL;
 
@@ -37,7 +37,7 @@ void MxStillPresenter::Destroy(MxBool p_fromDestructor)
 void MxStillPresenter::LoadHeader(MxStreamChunk* p_chunk)
 {
 	if (m_bitmapInfo) {
-		delete m_bitmapInfo;
+		delete[] ((MxU8*) m_bitmapInfo);
 	}
 
 	MxU8* data = new MxU8[p_chunk->GetLength()];
@@ -55,7 +55,7 @@ void MxStillPresenter::CreateBitmap()
 	m_frameBitmap = new MxBitmap;
 	m_frameBitmap->ImportBitmapInfo(m_bitmapInfo);
 
-	delete m_bitmapInfo;
+	delete[] ((MxU8*) m_bitmapInfo);
 	m_bitmapInfo = NULL;
 }
 
