@@ -51,9 +51,21 @@ HRESULT DirectDrawSurfaceImpl::Blt(
 	if (!renderer) {
 		return DDERR_GENERIC;
 	}
-	SDL_FRect srcRect = ConvertRect(lpSrcRect);
-	SDL_FRect dstRect = ConvertRect(lpDestRect);
-	SDL_RenderTexture(renderer, static_cast<DirectDrawSurfaceImpl*>(lpDDSrcSurface)->m_texture, &srcRect, &dstRect);
+	auto srcSurface = static_cast<DirectDrawSurfaceImpl*>(lpDDSrcSurface);
+	SDL_FRect srcRect, dstRect;
+	if (lpSrcRect) {
+		srcRect = ConvertRect(lpSrcRect);
+	}
+	else {
+		srcRect = {0, 0, (float) srcSurface->m_texture->w, (float) srcSurface->m_texture->h};
+	}
+	if (lpDestRect) {
+		dstRect = ConvertRect(lpDestRect);
+	}
+	else {
+		dstRect = {0, 0, (float) m_texture->w, (float) m_texture->h};
+	}
+	SDL_RenderTexture(renderer, srcSurface->m_texture, &srcRect, &dstRect);
 	SDL_RenderPresent(renderer);
 	return DD_OK;
 }
@@ -69,14 +81,16 @@ HRESULT DirectDrawSurfaceImpl::BltFast(
 	if (!renderer) {
 		return DDERR_GENERIC;
 	}
-	SDL_FRect dstRect = {
-		(float) dwX,
-		(float) dwY,
-		(float) (lpSrcRect->right - lpSrcRect->left),
-		(float) (lpSrcRect->bottom - lpSrcRect->top)
-	};
-	SDL_FRect srcRect = ConvertRect(lpSrcRect);
-	SDL_RenderTexture(renderer, static_cast<DirectDrawSurfaceImpl*>(lpDDSrcSurface)->m_texture, &srcRect, &dstRect);
+	auto srcSurface = static_cast<DirectDrawSurfaceImpl*>(lpDDSrcSurface);
+	SDL_FRect srcRect;
+	if (lpSrcRect) {
+		srcRect = ConvertRect(lpSrcRect);
+	}
+	else {
+		srcRect = {0, 0, (float) srcSurface->m_texture->w, (float) srcSurface->m_texture->h};
+	}
+	SDL_FRect dstRect = {(float) dwX, (float) dwY, srcRect.w, srcRect.h};
+	SDL_RenderTexture(renderer, srcSurface->m_texture, &srcRect, &dstRect);
 	SDL_RenderPresent(renderer);
 	return DD_OK;
 }
@@ -87,8 +101,7 @@ HRESULT DirectDrawSurfaceImpl::Flip(LPDIRECTDRAWSURFACE lpDDSurfaceTargetOverrid
 		return DDERR_GENERIC;
 	}
 	float width, height;
-	SDL_GetTextureSize(m_texture, &width, &height);
-	SDL_FRect rect{0, 0, width, height};
+	SDL_FRect rect{0, 0, (float) m_texture->w, (float) m_texture->h};
 	SDL_RenderTexture(renderer, m_texture, &rect, &rect);
 	SDL_RenderPresent(renderer);
 	return DD_OK;
