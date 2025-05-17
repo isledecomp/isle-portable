@@ -46,7 +46,7 @@ HRESULT DirectDrawImpl::CreatePalette(
 )
 {
 	if ((dwFlags & DDPCAPS_8BIT) != DDPCAPS_8BIT) {
-		return DDERR_GENERIC;
+		return DDERR_INVALIDPARAMS;
 	}
 
 	*lplpDDPalette = static_cast<LPDIRECTDRAWPALETTE>(new DirectDrawPaletteImpl(lpColorTable));
