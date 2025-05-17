@@ -1,7 +1,6 @@
 #include "miniwin.h"
 
 #include <SDL3/SDL.h>
-#include <utility>
 #include <vector>
 
 ULONG IUnknown::AddRef()
@@ -23,6 +22,27 @@ ULONG IUnknown::Release()
 HRESULT IUnknown::QueryInterface(const GUID& riid, void** ppvObject)
 {
 	return E_NOINTERFACE;
+}
+
+BOOL SetWindowPos(HWND hWnd, int hWndInsertAfter, int X, int Y, int cx, int cy, UINT uFlags)
+{
+	if (!hWnd) {
+		return FALSE;
+	}
+
+	if (!(uFlags & SWP_NOACTIVATE)) {
+		SDL_RaiseWindow(hWnd);
+	}
+
+	if (!(uFlags & SWP_NOSIZE)) {
+		SDL_SetWindowSize(hWnd, cx, cy);
+	}
+
+	if (!(uFlags & SWP_NOMOVE)) {
+		SDL_SetWindowPosition(hWnd, X, Y);
+	}
+
+	return TRUE;
 }
 
 VOID WINAPI Sleep(DWORD dwMilliseconds)

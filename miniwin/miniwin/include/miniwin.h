@@ -16,7 +16,7 @@
 #define CALLBACK
 #define FAR
 #define WINAPI
-#define HWND_NOTOPMOST (HWND) - 2
+#define HWND_NOTOPMOST -2
 #define RGB(r, g, b) ((r) | ((g) << 8) | ((b) << 16))
 #define S_OK ((HRESULT) 0)
 #define E_NOINTERFACE (0x80004002)
@@ -143,14 +143,11 @@ struct IUnknown {
 	virtual HRESULT QueryInterface(const GUID& riid, void** ppvObject);
 	virtual ~IUnknown() = default;
 
-private:
+protected:
 	int m_refCount;
 };
 
-inline BOOL SetWindowPos(HWND hWnd, HWND hWndInsertAfter, int X, int Y, int cx, int cy, UINT uFlags)
-{
-	return TRUE;
-}
+BOOL SetWindowPos(HWND hWnd, int hWndInsertAfter, int X, int Y, int cx, int cy, UINT uFlags);
 
 inline HDC WINAPI GetDC(HWND hWnd)
 {

@@ -30,6 +30,8 @@
 #include "roi/legoroi.h"
 #include "viewmanager/viewmanager.h"
 
+#include <SDL3/SDL_init.h>
+
 #define SDL_MAIN_USE_CALLBACKS
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
@@ -289,7 +291,16 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 		return SDL_APP_SUCCESS;
 	}
 
-	g_isle->Tick();
+	if (!g_isle->Tick()) {
+		SDL_ShowSimpleMessageBox(
+			SDL_MESSAGEBOX_ERROR,
+			"LEGO® Island Error",
+			"\"LEGO® Island\" failed to start.\nPlease quit all other applications and try again."
+			"\nFailed to initialize; see logs for details",
+			NULL
+		);
+		return SDL_APP_FAILURE;
+	}
 
 	if (!g_closed) {
 		if (g_reqEnableRMDevice) {
@@ -304,7 +315,16 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 		}
 
 		if (g_mousedown && g_mousemoved && g_isle) {
-			g_isle->Tick();
+			if (!g_isle->Tick()) {
+				SDL_ShowSimpleMessageBox(
+					SDL_MESSAGEBOX_ERROR,
+					"LEGO® Island Error",
+					"\"LEGO® Island\" failed to start.\nPlease quit all other applications and try again."
+					"\nFailed to initialize; see logs for details",
+					NULL
+				);
+				return SDL_APP_FAILURE;
+			}
 		}
 
 		if (g_mousemoved) {
@@ -683,7 +703,7 @@ bool IsleApp::LoadConfig()
 }
 
 // FUNCTION: ISLE 0x402c20
-inline void IsleApp::Tick()
+inline bool IsleApp::Tick()
 {
 	// GLOBAL: ISLE 0x4101c0
 	static MxLong g_lastFrameTime = 0;
@@ -693,17 +713,17 @@ inline void IsleApp::Tick()
 
 	if (!m_windowActive) {
 		SDL_Delay(1);
-		return;
+		return true;
 	}
 
 	if (!Lego()) {
-		return;
+		return true;
 	}
 	if (!TickleManager()) {
-		return;
+		return true;
 	}
 	if (!Timer()) {
-		return;
+		return true;
 	}
 
 	MxLong currentTime = Timer()->GetRealTime();
@@ -713,7 +733,7 @@ inline void IsleApp::Tick()
 
 	if (m_frameDelta + g_lastFrameTime >= currentTime) {
 		SDL_Delay(1);
-		return;
+		return true;
 	}
 
 	if (!Lego()->IsPaused()) {
@@ -722,12 +742,12 @@ inline void IsleApp::Tick()
 	g_lastFrameTime = currentTime;
 
 	if (g_startupDelay == 0) {
-		return;
+		return true;
 	}
 
 	g_startupDelay--;
 	if (g_startupDelay != 0) {
-		return;
+		return true;
 	}
 
 	LegoOmni::GetInstance()->CreateBackgroundAudio();
@@ -739,7 +759,8 @@ inline void IsleApp::Tick()
 	if (!stream) {
 		stream = Streamer()->Open("\\lego\\scripts\\nocd", MxStreamer::e_diskStream);
 		if (!stream) {
-			return;
+			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to open NOCD.si: Streamer failed to load");
+			return false;
 		}
 
 		ds.SetAtomId(stream->GetAtom());
@@ -748,7 +769,8 @@ inline void IsleApp::Tick()
 		VideoManager()->EnableFullScreenMovie(TRUE, TRUE);
 
 		if (Start(&ds) != SUCCESS) {
-			return;
+			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to open NOCD.si: Failed to start initial action");
+			return false;
 		}
 	}
 	else {
@@ -756,10 +778,13 @@ inline void IsleApp::Tick()
 		ds.SetUnknown24(-1);
 		ds.SetObjectId(0);
 		if (Start(&ds) != SUCCESS) {
-			return;
+			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to open ISLE.si: Failed to start initial action");
+			return false;
 		}
 		m_gameStarted = TRUE;
 	}
+
+	return true;
 }
 
 // FUNCTION: ISLE 0x402e80

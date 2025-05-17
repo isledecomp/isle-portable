@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.25...4.0 FATAL_ERROR)
 
-project(isle CXX C)
+project(isle LANGUAGES CXX C VERSION 0.1)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
@@ -69,7 +69,7 @@ endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 if (ENABLE_CLANG_TIDY)
-    find_program(CLANG_TIDY_BIN NAMES "clang-tidy")
+    find_program(CLANG_TIDY_BIN NAMES "clang-tidy" ENV "LLVM_ROOT" REQUIRED)
     set(CMAKE_C_CLANG_TIDY "${CLANG_TIDY_BIN}")
     set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_BIN}")
 endif()
@@ -87,11 +87,14 @@ endif()
 #if (NOT WIN32)
 add_library(miniwin STATIC EXCLUDE_FROM_ALL
   miniwin/miniwin/src/miniwin.cpp
+  miniwin/miniwin/src/miniwin_ddclipper.cpp
+  miniwin/miniwin/src/miniwin_ddpalette.cpp
+  miniwin/miniwin/src/miniwin_ddsurface.cpp
   miniwin/miniwin/src/miniwin_ddraw.cpp
-  miniwin/miniwin/src/miniwin_d3d.cpp
   miniwin/miniwin/src/miniwin_d3drm.cpp
 )
 target_include_directories(miniwin PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/miniwin/miniwin/include>")
+target_include_directories(miniwin PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/miniwin/miniwin/src/include")
 target_compile_definitions(miniwin PUBLIC "MINIWIN")
 target_link_libraries(miniwin PRIVATE SDL3::SDL3)
 
@@ -570,3 +573,33 @@ if (EXISTS "${CLANGFORMAT_BIN}")
     endif()
   endif()
 endif()
+
+set(install_extra_targets)
+if(DOWNLOAD_DEPENDENCIES)
+  get_property(sdl3_type TARGET SDL3::SDL3 PROPERTY TYPE)
+  if(sdl3_type STREQUAL "SHARED_LIBRARY")
+    list(APPEND install_extra_targets "SDL3-shared")
+  endif()
+endif()
+
+if(MSVC)
+  set(CMAKE_INSTALL_BINDIR "." CACHE PATH "Binary install directory")
+  set(CMAKE_INSTALL_LIBDIR "." CACHE PATH "Binary install directory")
+else()
+  include(GNUInstallDirs)
+endif()
+
+set(ISLE_PACKAGE_NAME "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}" CACHE STRING "Platform name of the package")
+install(TARGETS isle lego1 ${install_extra_targets}
+  RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+)
+
+set(CPACK_PACKAGE_DIRECTORY "dist")
+set(CPACK_PACKAGE_FILE_NAME "isle-${PROJECT_VERSION}-${ISLE_PACKAGE_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+if(MSVC)
+  set(CPACK_GENERATOR ZIP)
+else()
+  set(CPACK_GENERATOR TGZ)
+endif()
+include(CPack)
