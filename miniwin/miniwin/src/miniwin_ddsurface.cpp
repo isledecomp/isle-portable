@@ -23,7 +23,6 @@ DirectDrawSurfaceImpl::~DirectDrawSurfaceImpl()
 	}
 	if (m_palette) {
 		m_palette->Release();
-		SDL_DestroyTexture(m_texture);
 	}
 }
 
