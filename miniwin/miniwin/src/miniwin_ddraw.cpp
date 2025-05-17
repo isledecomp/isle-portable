@@ -45,6 +45,10 @@ HRESULT DirectDrawImpl::CreatePalette(
 	IUnknown* pUnkOuter
 )
 {
+	if ((dwFlags & DDPCAPS_8BIT) != DDPCAPS_8BIT) {
+		return DDERR_GENERIC;
+	}
+
 	*lplpDDPalette = static_cast<LPDIRECTDRAWPALETTE>(new DirectDrawPaletteImpl(lpColorTable));
 	return DD_OK;
 }
