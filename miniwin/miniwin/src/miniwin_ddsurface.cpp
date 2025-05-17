@@ -21,6 +21,10 @@ DirectDrawSurfaceImpl::~DirectDrawSurfaceImpl()
 	if (m_texture) {
 		SDL_DestroyTexture(m_texture);
 	}
+	if (m_palette) {
+		m_palette->Release();
+		SDL_DestroyTexture(m_texture);
+	}
 }
 
 // IUnknown interface
@@ -204,6 +208,8 @@ HRESULT DirectDrawSurfaceImpl::SetColorKey(DDColorKeyFlags dwFlags, LPDDCOLORKEY
 
 HRESULT DirectDrawSurfaceImpl::SetPalette(LPDIRECTDRAWPALETTE lpDDPalette)
 {
+	m_palette = lpDDPalette;
+	m_palette->AddRef();
 	return DD_OK;
 }
 
