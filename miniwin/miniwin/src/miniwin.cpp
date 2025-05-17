@@ -1,5 +1,7 @@
 #include "miniwin.h"
 
+#include "miniwin_p.h"
+
 #include <SDL3/SDL.h>
 #include <vector>
 
@@ -21,6 +23,7 @@ ULONG IUnknown::Release()
 
 HRESULT IUnknown::QueryInterface(const GUID& riid, void** ppvObject)
 {
+	SDL_LogError(LOG_CATEGORY_MINIWIN, "IUnknown does not implement guid");
 	return E_NOINTERFACE;
 }
 

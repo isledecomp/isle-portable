@@ -183,7 +183,7 @@ struct Direct3DRMObjectBase : public T {
 
 private:
 	std::vector<std::pair<D3DRMOBJECTCALLBACK, void*>> m_callbacks;
-	LPD3DRM_APPDATA m_appData = NULL;
+	LPD3DRM_APPDATA m_appData = nullptr;
 	char* m_name = nullptr;
 };
 
@@ -206,7 +206,8 @@ struct Direct3DRMMeshImpl : public Direct3DRMObjectBase<IDirect3DRMMesh> {
 	HRESULT AddGroup(int vertexCount, int faceCount, int vertexPerFace, void* faceBuffer, D3DRMGROUPINDEX* groupIndex)
 		override
 	{
-		return DD_OK;
+		assert(false && "Unimplemented");
+		return DDERR_GENERIC;
 	}
 	HRESULT GetGroup(
 		int groupIndex,
@@ -244,7 +245,7 @@ struct Direct3DRMMeshImpl : public Direct3DRMObjectBase<IDirect3DRMMesh> {
 	HRESULT GetVertices(int groupIndex, int startIndex, int count, D3DRMVERTEX* vertices) override { return DD_OK; }
 
 private:
-	IDirect3DRMTexture* m_groupTexture;
+	IDirect3DRMTexture* m_groupTexture = nullptr;
 };
 
 struct Direct3DRMTextureImpl : public Direct3DRMObjectBase<IDirect3DRMTexture2> {
@@ -375,7 +376,7 @@ private:
 	IDirect3DRMFrameArray* m_children;
 	IDirect3DRMLightArray* m_lights;
 	IDirect3DRMVisualArray* m_visuals;
-	IDirect3DRMTexture* m_texture;
+	IDirect3DRMTexture* m_texture = nullptr;
 };
 
 struct Direct3DRMViewportImpl : public Direct3DRMObjectBase<IDirect3DRMViewport> {
@@ -412,7 +413,7 @@ struct Direct3DRMViewportImpl : public Direct3DRMObjectBase<IDirect3DRMViewport>
 	HRESULT Pick(float x, float y, LPDIRECT3DRMPICKEDARRAY* pickedArray) override { return DD_OK; }
 
 private:
-	IDirect3DRMFrame* m_camera;
+	IDirect3DRMFrame* m_camera = nullptr;
 };
 
 struct Direct3DRMLightImpl : public Direct3DRMObjectBase<IDirect3DRMLight> {
