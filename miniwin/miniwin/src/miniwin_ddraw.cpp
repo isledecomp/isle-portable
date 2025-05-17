@@ -12,6 +12,7 @@
 #include <cstdlib>
 #include <cstring>
 
+SDL_Window* DDWindow;
 SDL_Renderer* renderer;
 
 HRESULT DirectDrawImpl::QueryInterface(const GUID& riid, void** ppvObject)
@@ -259,6 +260,7 @@ HRESULT DirectDrawImpl::SetCooperativeLevel(HWND hWnd, DDSCLFlags dwFlags)
 		if (!SDL_SetWindowFullscreen(hWnd, fullscreen)) {
 			return DDERR_GENERIC;
 		}
+		DDWindow = hWnd;
 		renderer = SDL_CreateRenderer(hWnd, NULL);
 	}
 	return DD_OK;
