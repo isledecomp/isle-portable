@@ -136,15 +136,16 @@ void MxSoundManager::AudioStreamCallback(
 	int p_totalAmount
 )
 {
-	static MxU8 g_buffer[4096];
+	static vector<MxU8> g_buffer;
+	g_buffer.reserve(p_additionalAmount);
 
 	MxSoundManager* manager = (MxSoundManager*) p_userdata;
 	ma_uint32 bytesPerFrame = ma_get_bytes_per_frame(ma_format_f32, ma_engine_get_channels(&manager->m_engine));
-	ma_uint32 bufferSizeInFrames = (ma_uint32) SDL_min(sizeof(g_buffer), p_additionalAmount) / bytesPerFrame;
+	ma_uint32 bufferSizeInFrames = (ma_uint32) p_additionalAmount / bytesPerFrame;
 	ma_uint64 framesRead;
 
-	if (ma_engine_read_pcm_frames(&manager->m_engine, g_buffer, bufferSizeInFrames, &framesRead) == MA_SUCCESS) {
-		SDL_PutAudioStreamData(manager->m_stream, g_buffer, framesRead * bytesPerFrame);
+	if (ma_engine_read_pcm_frames(&manager->m_engine, g_buffer.data(), bufferSizeInFrames, &framesRead) == MA_SUCCESS) {
+		SDL_PutAudioStreamData(manager->m_stream, g_buffer.data(), framesRead * bytesPerFrame);
 	}
 }
 
