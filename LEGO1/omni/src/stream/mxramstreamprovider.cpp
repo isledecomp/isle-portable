@@ -105,6 +105,7 @@ done:
 // FUNCTION: BETA10 0x1016492f
 MxU32 ReadData(MxU8* p_buffer, MxU32 p_size)
 {
+	MxU32 fourcc;
 	MxU32 id;
 	MxU8* data = p_buffer;
 	MxU8* data2;
@@ -112,7 +113,8 @@ MxU32 ReadData(MxU8* p_buffer, MxU32 p_size)
 #define IntoType(p) ((MxU32*) (p))
 
 	while (data < p_buffer + p_size) {
-		if (*IntoType(data) == FOURCC('M', 'x', 'O', 'b')) {
+		memcpy(&fourcc, IntoType(data), sizeof(MxU32));
+		if (fourcc == FOURCC('M', 'x', 'O', 'b')) {
 			data2 = data;
 			data = data2 + 8;
 
@@ -122,12 +124,13 @@ MxU32 ReadData(MxU8* p_buffer, MxU32 p_size)
 
 			data = MxDSChunk::End(data2);
 			while (data < p_buffer + p_size) {
-				if (*IntoType(data) == FOURCC('M', 'x', 'C', 'h')) {
+				memcpy(&fourcc, IntoType(data), sizeof(MxU32));
+				if (fourcc == FOURCC('M', 'x', 'C', 'h')) {
 					MxU8* data3 = data;
 					data = MxDSChunk::End(data3);
 
-					if ((*IntoType(data2) == FOURCC('M', 'x', 'C', 'h')) &&
-						(*MxStreamChunk::IntoFlags(data2) & DS_CHUNK_SPLIT)) {
+					memcpy(&fourcc, IntoType(data2), sizeof(MxU32));
+					if ((fourcc == FOURCC('M', 'x', 'C', 'h')) && (*MxStreamChunk::IntoFlags(data2) & DS_CHUNK_SPLIT)) {
 						if (*MxStreamChunk::IntoObjectId(data2) == *MxStreamChunk::IntoObjectId(data3) &&
 							(*MxStreamChunk::IntoFlags(data3) & DS_CHUNK_SPLIT) &&
 							*MxStreamChunk::IntoTime(data2) == *MxStreamChunk::IntoTime(data3)) {
@@ -142,9 +145,14 @@ MxU32 ReadData(MxU8* p_buffer, MxU32 p_size)
 					data2 = MxDSChunk::End(data2);
 					memmove(data2, data3, MxDSChunk::Size(data3));
 
-					if (*MxStreamChunk::IntoObjectId(data2) == id &&
-						(*MxStreamChunk::IntoFlags(data2) & DS_CHUNK_END_OF_STREAM)) {
-						break;
+					MxU32 objectId;
+					memcpy(&objectId, MxStreamChunk::IntoObjectId(data2), sizeof(objectId));
+					if (objectId == id) {
+						MxU32 flags;
+						memcpy(&flags, MxStreamChunk::IntoFlags(data2), sizeof(flags));
+						if (flags & DS_CHUNK_END_OF_STREAM) {
+							break;
+						}
 					}
 				}
 				else {

@@ -61,8 +61,8 @@ MxDSAction* MxDSSound::Clone()
 void MxDSSound::Deserialize(MxU8*& p_source, MxS16 p_flags)
 {
 	MxDSMediaAction::Deserialize(p_source, p_flags);
-	m_volume = *(MxS32*) p_source;
-	p_source += sizeof(m_volume);
+	memcpy(&m_volume, p_source, sizeof(MxS32));
+	p_source += sizeof(MxS32);
 }
 
 // FUNCTION: LEGO1 0x100c95d0
