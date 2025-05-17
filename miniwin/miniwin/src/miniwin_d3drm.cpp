@@ -197,7 +197,7 @@ struct Direct3DRMMeshImpl : public Direct3DRMObjectBase<IDirect3DRMMesh> {
 	{
 		if (SDL_memcmp(&iid, &IID_IDirect3DRMMesh, sizeof(GUID)) == 0) {
 			*object = static_cast<IDirect3DRMMesh*>(new Direct3DRMMeshImpl);
-			return S_OK;
+			return DD_OK;
 		}
 
 		return DDERR_GENERIC;
@@ -206,8 +206,7 @@ struct Direct3DRMMeshImpl : public Direct3DRMObjectBase<IDirect3DRMMesh> {
 	HRESULT AddGroup(int vertexCount, int faceCount, int vertexPerFace, void* faceBuffer, D3DRMGROUPINDEX* groupIndex)
 		override
 	{
-		assert(false && "Unimplemented");
-		return DDERR_GENERIC;
+		return DD_OK;
 	}
 	HRESULT GetGroup(
 		int groupIndex,
@@ -236,6 +235,7 @@ struct Direct3DRMMeshImpl : public Direct3DRMObjectBase<IDirect3DRMMesh> {
 		if (!m_groupTexture) {
 			return DDERR_GENERIC;
 		}
+		m_groupTexture->AddRef();
 		*texture = m_groupTexture;
 		return DD_OK;
 	}
@@ -249,6 +249,16 @@ private:
 };
 
 struct Direct3DRMTextureImpl : public Direct3DRMObjectBase<IDirect3DRMTexture2> {
+	HRESULT QueryInterface(const GUID& riid, void** ppvObject) override
+	{
+		if (SDL_memcmp(&riid, &IID_IDirect3DRMTexture2, sizeof(GUID)) == 0) {
+			this->IUnknown::AddRef();
+			*ppvObject = static_cast<IDirect3DRMTexture2*>(this);
+			return DD_OK;
+		}
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Direct3DRMTextureImpl does not implement guid");
+		return E_NOINTERFACE;
+	}
 	HRESULT Clone(void** ppObject) override
 	{
 		*ppObject = static_cast<void*>(new Direct3DRMTextureImpl);
@@ -440,7 +450,7 @@ struct Direct3DRMImpl : virtual public IDirect3DRM2 {
 		if (SDL_memcmp(&riid, &IID_IDirect3DRM2, sizeof(GUID)) == 0) {
 			this->IUnknown::AddRef();
 			*ppvObject = static_cast<IDirect3DRM2*>(this);
-			return S_OK;
+			return DD_OK;
 		}
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "DirectDrawImpl does not implement guid");
 		return E_NOINTERFACE;
@@ -450,7 +460,7 @@ struct Direct3DRMImpl : virtual public IDirect3DRM2 {
 		override
 	{
 		*outDevice = static_cast<IDirect3DRMDevice2*>(new Direct3DRMDevice2Impl);
-		return S_OK;
+		return DD_OK;
 	}
 	HRESULT CreateDeviceFromSurface(
 		const GUID* guid,
@@ -460,17 +470,17 @@ struct Direct3DRMImpl : virtual public IDirect3DRM2 {
 	) override
 	{
 		*outDevice = static_cast<IDirect3DRMDevice2*>(new Direct3DRMDevice2Impl);
-		return S_OK;
+		return DD_OK;
 	}
 	HRESULT CreateTexture(D3DRMIMAGE* image, IDirect3DRMTexture2** outTexture) override
 	{
 		*outTexture = static_cast<IDirect3DRMTexture2*>(new Direct3DRMTextureImpl);
-		return S_OK;
+		return DD_OK;
 	}
 	HRESULT CreateTextureFromSurface(LPDIRECTDRAWSURFACE surface, IDirect3DRMTexture2** outTexture) override
 	{
 		*outTexture = static_cast<IDirect3DRMTexture2*>(new Direct3DRMTextureImpl);
-		return S_OK;
+		return DD_OK;
 	}
 	HRESULT CreateMesh(IDirect3DRMMesh** outMesh) override
 	{
