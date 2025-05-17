@@ -25,6 +25,7 @@ HRESULT DirectDrawPaletteImpl::GetEntries(DWORD dwFlags, DWORD dwBase, DWORD dwN
 		lpEntries[i].peRed = m_palette->colors[i].r;
 		lpEntries[i].peGreen = m_palette->colors[i].g;
 		lpEntries[i].peBlue = m_palette->colors[i].b;
+		lpEntries[i].peFlags = PC_NONE;
 	}
 	return DD_OK;
 }
