@@ -172,7 +172,7 @@ MxResult LegoWorldPresenter::LoadWorld(char* p_worldName, LegoWorld* p_world)
 	}
 
 	strcat(wdbPath, "lego\\data\\world.wdb");
-	MxString::NormalizePath(wdbPath);
+	MxString::MapPathToFilesystem(wdbPath);
 
 	SDL_IOStream* wdbFile;
 
@@ -184,7 +184,7 @@ MxResult LegoWorldPresenter::LoadWorld(char* p_worldName, LegoWorld* p_world)
 		}
 
 		strcat(wdbPath, "lego\\data\\world.wdb");
-		MxString::NormalizePath(wdbPath);
+		MxString::MapPathToFilesystem(wdbPath);
 
 		if ((wdbFile = SDL_IOFromFile(wdbPath, "rb")) == NULL) {
 			return FAILURE;

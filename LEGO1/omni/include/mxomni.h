@@ -4,6 +4,7 @@
 #include "lego1_export.h"
 #include "mxcore.h"
 #include "mxcriticalsection.h"
+#include "mxstl/stlcompat.h"
 #include "mxstring.h"
 
 #include <SDL3/SDL_video.h>
@@ -42,7 +43,8 @@ public:
 	LEGO1_EXPORT static void SetCD(const char* p_cd);
 	LEGO1_EXPORT static void SetHD(const char* p_hd);
 	LEGO1_EXPORT static void SetSound3D(MxBool p_use3dSound);
-	static void NormalizePath(char* p_path);
+	static const vector<MxString>& GetHDFiles() { return g_hdFiles; }
+	static const vector<MxString>& GetCDFiles() { return g_cdFiles; }
 
 	MxOmni();
 	~MxOmni() override;
@@ -105,6 +107,10 @@ public:
 
 protected:
 	static MxOmni* g_instance;
+	static vector<MxString> g_hdFiles;
+	static vector<MxString> g_cdFiles;
+
+	static vector<MxString> GlobIsleFiles(const MxString& p_path);
 
 	MxString m_mediaPath;                         // 0x08
 	HWND m_windowHandle;                          // 0x18
