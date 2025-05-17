@@ -204,7 +204,6 @@ void MxString::MapPathToFilesystem(char* p_path)
 
 		path++;
 	}
-#endif
 
 	size_t pathLen = SDL_strlen(p_path);
 
@@ -230,4 +229,5 @@ void MxString::MapPathToFilesystem(char* p_path)
 	if (!mapPath(MxOmni::GetHDFiles())) {
 		mapPath(MxOmni::GetCDFiles());
 	}
+#endif
 }
