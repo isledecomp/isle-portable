@@ -97,7 +97,7 @@ MxResult LegoModelPresenter::CreateROI(MxDSChunk* p_chunk)
 		SDL_strlwr(textureName);
 
 		if (textureName[0] == '^') {
-			strcpy(textureName, textureName + 1);
+			memmove(textureName, textureName + 1, strlen(textureName));
 
 			if (g_modelPresenterConfig) {
 				texture = new LegoTexture();
