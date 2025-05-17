@@ -3,8 +3,6 @@
 #include "miniwin_d3d.h"
 #include "miniwin_ddraw.h"
 
-extern struct SDL_Renderer* renderer;
-
 struct DirectDrawImpl : public IDirectDraw2, public IDirect3D2 {
 	// IUnknown interface
 	HRESULT QueryInterface(const GUID& riid, void** ppvObject) override;

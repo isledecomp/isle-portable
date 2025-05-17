@@ -5,7 +5,7 @@
 
 struct DirectDrawSurfaceImpl : public IDirectDrawSurface3 {
 	DirectDrawSurfaceImpl();
-	DirectDrawSurfaceImpl(int width, int height);
+	DirectDrawSurfaceImpl(int width, int height, SDL_PixelFormat format);
 	~DirectDrawSurfaceImpl() override;
 
 	// IUnknown interface
@@ -36,9 +36,11 @@ struct DirectDrawSurfaceImpl : public IDirectDrawSurface3 {
 	HRESULT SetClipper(LPDIRECTDRAWCLIPPER lpDDClipper) override;
 	HRESULT SetColorKey(DDColorKeyFlags dwFlags, LPDDCOLORKEY lpDDColorKey) override;
 	HRESULT SetPalette(LPDIRECTDRAWPALETTE lpDDPalette) override;
+	void SetAutoFlip(bool enabled);
 	HRESULT Unlock(LPVOID lpSurfaceData) override;
 
 private:
-	SDL_Texture* m_texture = nullptr;
+	bool m_autoFlip = false;
+	SDL_Surface* m_surface = nullptr;
 	IDirectDrawPalette* m_palette = nullptr;
 };
