@@ -41,7 +41,7 @@ MxU16 MXIOINFO::Open(const char* p_filename, MxULong p_flags)
 	m_info.lDiskOffset = m_info.lBufOffset = 0;
 
 	MxString path(p_filename);
-	path.NormalizePath();
+	path.MapPathToFilesystem();
 	ASSIGN_M_FILE(SDL_IOFromFile(path.GetData(), "rb"));
 
 	if (M_FILE != NULL) {

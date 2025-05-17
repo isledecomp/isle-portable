@@ -121,7 +121,7 @@ LegoResult LegoFile::Open(const char* p_name, LegoU32 p_mode)
 	}
 
 	MxString path(p_name);
-	path.NormalizePath();
+	path.MapPathToFilesystem();
 
 	if (!(m_file = SDL_IOFromFile(path.GetData(), mode))) {
 		return FAILURE;

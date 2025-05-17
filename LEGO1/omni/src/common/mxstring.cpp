@@ -1,7 +1,9 @@
 #include "mxstring.h"
 
 #include "decomp.h"
+#include "mxomni.h"
 
+#include <SDL3/SDL_log.h>
 #include <SDL3/SDL_platform_defines.h>
 #include <SDL3/SDL_stdinc.h>
 #include <stdlib.h>
@@ -188,13 +190,11 @@ void MxString::CharSwap(char* p_a, char* p_b)
 	*p_b = t;
 }
 
-void MxString::NormalizePath(char* p_path)
+void MxString::MapPathToFilesystem(char* p_path)
 {
 	// [library:filesystem]
-	// This function is used to build a consistent path that will eventually be used to read a file.
-	// The input may come with Windows path separators, i.e. \lego\scripts\infocntr\infomain
-	// We have to replace the backslashes with forward slashes to be able to access the files
-	// on non-Windows systems
+	// This function is used to map an internal Windows-style path (found in SI files or in the code)
+	// to an actual file on disk or CD. We have to account for both Windows path separators and case.
 #if !defined(SDL_PLATFORM_WINDOWS)
 	char* path = p_path;
 	while (*path) {
@@ -205,4 +205,29 @@ void MxString::NormalizePath(char* p_path)
 		path++;
 	}
 #endif
+
+	size_t pathLen = SDL_strlen(p_path);
+
+	auto mapPath = [p_path, pathLen](const vector<MxString>& p_files) -> bool {
+		for (const MxString& file : p_files) {
+			// Test whether file is a suffix of the provided path (case insensitive)
+			// If yes, copy the original file system path into p_path.
+			for (size_t i = pathLen, j = file.GetLength(); i != 0 && j != 0; i--, j--) {
+				if (SDL_tolower(p_path[i - 1]) != SDL_tolower(file.GetData()[j - 1])) {
+					break;
+				}
+				else if (j == 1) {
+					SDL_strlcpy(&p_path[i - 1], file.GetData(), file.GetLength() + 1);
+					SDL_Log("Resolved file path to %s", p_path);
+					return true;
+				}
+			}
+		}
+
+		return false;
+	};
+
+	if (!mapPath(MxOmni::GetHDFiles())) {
+		mapPath(MxOmni::GetCDFiles());
+	}
 }

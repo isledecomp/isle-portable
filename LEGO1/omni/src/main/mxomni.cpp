@@ -17,6 +17,9 @@
 #include "mxvariabletable.h"
 #include "mxvideomanager.h"
 
+#include <SDL3/SDL_filesystem.h>
+#include <SDL3/SDL_log.h>
+
 // GLOBAL: LEGO1 0x101015b8
 MxString g_hdPath = "";
 
@@ -28,6 +31,9 @@ MxBool g_use3dSound = FALSE;
 
 // GLOBAL: LEGO1 0x101015b0
 MxOmni* MxOmni::g_instance = NULL;
+
+vector<MxString> MxOmni::g_hdFiles;
+vector<MxString> MxOmni::g_cdFiles;
 
 // FUNCTION: LEGO1 0x100aef10
 MxOmni::MxOmni()
@@ -357,6 +363,7 @@ const char* MxOmni::GetHD()
 void MxOmni::SetHD(const char* p_hd)
 {
 	g_hdPath = p_hd;
+	g_hdFiles = GlobIsleFiles(g_hdPath);
 }
 
 // FUNCTION: LEGO1 0x100b0940
@@ -369,6 +376,7 @@ const char* MxOmni::GetCD()
 void MxOmni::SetCD(const char* p_cd)
 {
 	g_cdPath = p_cd;
+	g_cdFiles = GlobIsleFiles(g_cdPath);
 }
 
 // FUNCTION: LEGO1 0x100b0980
@@ -414,4 +422,27 @@ void MxOmni::Resume()
 		m_soundManager->Resume();
 		m_paused = FALSE;
 	}
+}
+
+vector<MxString> MxOmni::GlobIsleFiles(const MxString& p_path)
+{
+	int count;
+	char** files = SDL_GlobDirectory(p_path.GetData(), NULL, 0, &count);
+	vector<MxString> result;
+
+	if (files == NULL) {
+		SDL_Log("Error enumerating files for path %s (%s)", p_path.GetData(), SDL_GetError());
+		return result;
+	}
+
+	for (int i = 0; i < count; i++) {
+		if (!SDL_strncasecmp(files[i], "lego", 4)) {
+			result.emplace_back(files[i]);
+		}
+	}
+
+	SDL_Log("Found %d game files in %s", count, p_path.GetData());
+
+	SDL_free(files);
+	return result;
 }
