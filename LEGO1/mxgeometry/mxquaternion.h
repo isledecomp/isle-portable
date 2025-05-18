@@ -13,7 +13,7 @@ public:
 
 	MxQuaternionTransformer() : m_flags(0) {}
 
-	inline long NormalizeDirection();
+	inline int NormalizeDirection();
 	inline void SetStartEnd(Matrix4& p_m1, Matrix4& p_m2);
 	inline void SetStart(Matrix4& p_m);
 	inline void SetEnd(Matrix4& p_m);
@@ -38,7 +38,7 @@ private:
 };
 
 // FUNCTION: LEGO1 0x10004520
-long MxQuaternionTransformer::NormalizeDirection()
+int MxQuaternionTransformer::NormalizeDirection()
 {
 	if (!m_flags) {
 		return -1;

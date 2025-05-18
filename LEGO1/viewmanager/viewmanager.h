@@ -33,7 +33,7 @@ public:
 	void RemoveROIDetailFromScene(ViewROI* p_roi);
 	void SetPOVSource(const OrientableROI* point_of_view);
 	float ProjectedSize(const BoundingSphere& p_bounding_sphere);
-	ViewROI* Pick(Tgl::View* p_view, unsigned long x, unsigned long y);
+	ViewROI* Pick(Tgl::View* p_view, unsigned int x, unsigned int y);
 	void SetResolution(int width, int height);
 	void SetFrustrum(float fov, float front, float back);
 	inline void ManageVisibilityAndDetailRecursively(ViewROI* p_roi, int p_und);

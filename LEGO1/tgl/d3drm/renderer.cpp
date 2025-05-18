@@ -130,10 +130,10 @@ inline Result RendererCreateView(
 	IDirect3DRM2* pRenderer,
 	const IDirect3DRMDevice2* pDevice,
 	const IDirect3DRMFrame2* pCamera,
-	unsigned long x,
-	unsigned long y,
-	unsigned long width,
-	unsigned long height,
+	unsigned int x,
+	unsigned int y,
+	unsigned int width,
+	unsigned int height,
 	IDirect3DRMViewport*& rpView
 )
 {
@@ -162,10 +162,10 @@ inline Result RendererCreateView(
 inline Result RendererImpl::CreateView(
 	const DeviceImpl& rDevice,
 	const CameraImpl& rCamera,
-	unsigned long x,
-	unsigned long y,
-	unsigned long width,
-	unsigned long height,
+	unsigned int x,
+	unsigned int y,
+	unsigned int width,
+	unsigned int height,
 	ViewImpl& rView
 )
 {
@@ -191,10 +191,10 @@ inline Result RendererImpl::CreateView(
 View* RendererImpl::CreateView(
 	const Device* pDevice,
 	const Camera* pCamera,
-	unsigned long x,
-	unsigned long y,
-	unsigned long width,
-	unsigned long height
+	unsigned int x,
+	unsigned int y,
+	unsigned int width,
+	unsigned int height
 )
 {
 	assert(m_data);
@@ -512,13 +512,13 @@ Texture* RendererImpl::CreateTexture()
 }
 
 // FUNCTION: LEGO1 0x100a2270
-Result RendererImpl::SetTextureDefaultShadeCount(unsigned long shadeCount)
+Result RendererImpl::SetTextureDefaultShadeCount(unsigned int shadeCount)
 {
 	return ResultVal(m_data->SetDefaultTextureShades(shadeCount));
 }
 
 // FUNCTION: LEGO1 0x100a2290
-Result RendererImpl::SetTextureDefaultColorCount(unsigned long colorCount)
+Result RendererImpl::SetTextureDefaultColorCount(unsigned int colorCount)
 {
 	return ResultVal(m_data->SetDefaultTextureColors(colorCount));
 }

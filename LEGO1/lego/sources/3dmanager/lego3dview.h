@@ -27,7 +27,7 @@ public:
 
 	double Render(double p_und);
 
-	ViewROI* Pick(unsigned long x, unsigned long y);
+	ViewROI* Pick(unsigned int x, unsigned int y);
 
 	ViewROI* GetPointOfView();
 	ViewManager* GetViewManager();

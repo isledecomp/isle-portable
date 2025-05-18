@@ -66,7 +66,7 @@ typedef DWORD* LPDWORD;
 typedef int BOOL, WINBOOL, INT;
 typedef unsigned int UINT;
 typedef unsigned short WORD;
-typedef long* LPLONG;
+typedef int* LPLONG;
 typedef void* LPVOID;
 typedef char* LPSTR;
 typedef const char* LPCSTR;
@@ -75,7 +75,7 @@ typedef HANDLE HICON, HFONT;
 typedef struct HINSTANCE__* HINSTANCE;
 typedef SDL_Window *HMENU, *HWND;
 typedef HANDLE HMODULE, HDC, HPALETTE, HFILE, HCURSOR;
-typedef LONG LSTATUS, HKEY, REGSAM;
+typedef int LSTATUS, HKEY, REGSAM;
 
 // --- Structs ---
 struct tagPOINT {
@@ -218,14 +218,14 @@ inline HFONT CreateFont(
 	int,
 	int,
 	int,
-	unsigned long,
-	unsigned long,
-	unsigned long,
-	unsigned long,
-	unsigned long,
-	unsigned long,
-	unsigned long,
-	unsigned long,
+	unsigned int,
+	unsigned int,
+	unsigned int,
+	unsigned int,
+	unsigned int,
+	unsigned int,
+	unsigned int,
+	unsigned int,
 	LPCSTR
 )
 {

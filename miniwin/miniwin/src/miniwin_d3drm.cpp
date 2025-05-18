@@ -279,11 +279,11 @@ struct Direct3DRMDevice2Impl : public Direct3DRMObjectBase<IDirect3DRMDevice2> {
 		*ppObject = static_cast<void*>(new Direct3DRMDevice2Impl);
 		return DD_OK;
 	}
-	unsigned long GetWidth() override { return 640; }
-	unsigned long GetHeight() override { return 480; }
+	unsigned int GetWidth() override { return 640; }
+	unsigned int GetHeight() override { return 480; }
 	HRESULT SetBufferCount(int count) override { return DD_OK; }
 	HRESULT GetBufferCount() override { return DD_OK; }
-	HRESULT SetShades(unsigned long shadeCount) override { return DD_OK; }
+	HRESULT SetShades(unsigned int shadeCount) override { return DD_OK; }
 	HRESULT GetShades() override { return DD_OK; }
 	HRESULT SetQuality(D3DRMRENDERQUALITY quality) override { return DD_OK; }
 	D3DRMRENDERQUALITY GetQuality() override { return D3DRMRENDERQUALITY::GOURAUD; }

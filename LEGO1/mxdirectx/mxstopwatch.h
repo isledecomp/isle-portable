@@ -111,14 +111,14 @@ public:
 	double Frequency() const;
 	void Reset();
 
-	unsigned long OperationCount() const;
+	unsigned int OperationCount() const;
 	double ElapsedSeconds() const;
 
-	void IncreaseOperationCount(unsigned long);
+	void IncreaseOperationCount(unsigned int);
 
 private:
-	unsigned long m_operationCount; // 0x00
-	MxStopWatch m_stopWatch;        // 0x08
+	unsigned int m_operationCount; // 0x00
+	MxStopWatch m_stopWatch;       // 0x08
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -170,13 +170,13 @@ inline void MxFrequencyMeter::Reset()
 	m_operationCount = 0;
 }
 
-inline unsigned long MxFrequencyMeter::OperationCount() const
+inline unsigned int MxFrequencyMeter::OperationCount() const
 {
 	return m_operationCount;
 }
 
 // FUNCTION: BETA10 0x1017df40
-inline void MxFrequencyMeter::IncreaseOperationCount(unsigned long delta)
+inline void MxFrequencyMeter::IncreaseOperationCount(unsigned int delta)
 {
 	m_operationCount += delta;
 }
