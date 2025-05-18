@@ -11,7 +11,7 @@
 #include <cstdlib>
 #include <cstring>
 
-SDL_Renderer* renderer;
+SDL_Window* DDWindow;
 
 HRESULT DirectDrawImpl::QueryInterface(const GUID& riid, void** ppvObject)
 {
@@ -58,6 +58,24 @@ HRESULT DirectDrawImpl::CreateSurface(
 	IUnknown* pUnkOuter
 )
 {
+	SDL_PixelFormat format;
+#ifdef MINIWIN_PIXELFORMAT
+	format = MINIWIN_PIXELFORMAT;
+#else
+	format = SDL_PIXELFORMAT_RGBA8888;
+#endif
+	if ((lpDDSurfaceDesc->dwFlags & DDSD_PIXELFORMAT) == DDSD_PIXELFORMAT) {
+		if ((lpDDSurfaceDesc->ddpfPixelFormat.dwFlags & DDPF_RGB) == DDPF_RGB) {
+			switch (lpDDSurfaceDesc->ddpfPixelFormat.dwRGBBitCount) {
+			case 8:
+				format = SDL_PIXELFORMAT_INDEX8;
+				break;
+			case 16:
+				format = SDL_PIXELFORMAT_RGB565;
+				break;
+			}
+		}
+	}
 	if ((lpDDSurfaceDesc->dwFlags & DDSD_CAPS) == DDSD_CAPS) {
 		if ((lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_ZBUFFER) == DDSCAPS_ZBUFFER) {
 			if ((lpDDSurfaceDesc->dwFlags & DDSD_ZBUFFERBITDEPTH) != DDSD_ZBUFFERBITDEPTH) {
@@ -72,8 +90,11 @@ HRESULT DirectDrawImpl::CreateSurface(
 				SDL_Log("Todo: Switch to %d buffering", lpDDSurfaceDesc->dwBackBufferCount);
 			}
 			int width, height;
-			SDL_GetRenderOutputSize(renderer, &width, &height);
-			*lplpDDSurface = static_cast<IDirectDrawSurface*>(new DirectDrawSurfaceImpl(width, height));
+			SDL_GetWindowSize(DDWindow, &width, &height);
+			bool implicitFlip = (lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_FLIP) != DDSCAPS_FLIP;
+			auto frontBuffer = new DirectDrawSurfaceImpl(width, height, format);
+			frontBuffer->SetAutoFlip(implicitFlip);
+			*lplpDDSurface = static_cast<IDirectDrawSurface*>(frontBuffer);
 			return DD_OK;
 		}
 		if ((lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_OFFSCREENPLAIN) == DDSCAPS_OFFSCREENPLAIN) {
@@ -93,19 +114,16 @@ HRESULT DirectDrawImpl::CreateSurface(
 		}
 	}
 
-	if ((lpDDSurfaceDesc->dwFlags & DDSD_PIXELFORMAT) == DDSD_PIXELFORMAT) {
-		if ((lpDDSurfaceDesc->ddpfPixelFormat.dwFlags & DDPF_RGB) == DDPF_RGB) {
-			SDL_Log("DDPF_RGB"); // Use dwRGBBitCount to choose the texture format
-		}
-	}
-
 	if ((lpDDSurfaceDesc->dwFlags & (DDSD_WIDTH | DDSD_HEIGHT)) != (DDSD_WIDTH | DDSD_HEIGHT)) {
 		return DDERR_INVALIDPARAMS;
 	}
 
 	int width = lpDDSurfaceDesc->dwWidth;
 	int height = lpDDSurfaceDesc->dwHeight;
-	*lplpDDSurface = static_cast<IDirectDrawSurface*>(new DirectDrawSurfaceImpl(width, height));
+	if (width == 0 || height == 0) {
+		return DDERR_INVALIDPARAMS;
+	}
+	*lplpDDSurface = static_cast<IDirectDrawSurface*>(new DirectDrawSurfaceImpl(width, height, format));
 	return DD_OK;
 }
 
@@ -127,11 +145,18 @@ HRESULT DirectDrawImpl::EnumDisplayModes(
 		return DDERR_GENERIC;
 	}
 
+	SDL_PixelFormat format;
 	HRESULT status = S_OK;
 
 	for (int i = 0; i < count_modes; i++) {
-		const SDL_PixelFormatDetails* format = SDL_GetPixelFormatDetails(modes[i]->format);
-		if (!format) {
+#ifdef MINIWIN_PIXELFORMAT
+		format = MINIWIN_PIXELFORMAT;
+#else
+		format = modes[i]->format;
+#endif
+
+		const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(format);
+		if (!details) {
 			continue;
 		}
 		DDSURFACEDESC ddsd = {};
@@ -141,11 +166,13 @@ HRESULT DirectDrawImpl::EnumDisplayModes(
 		ddsd.dwHeight = modes[i]->h;
 		ddsd.ddpfPixelFormat.dwSize = sizeof(DDPIXELFORMAT);
 		ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB;
-		ddsd.ddpfPixelFormat.dwRGBBitCount =
-			(format->bits_per_pixel == 8) ? 8 : 16; // Game only accepts 8 or 16 bit mode
-		ddsd.ddpfPixelFormat.dwRBitMask = format->Rmask;
-		ddsd.ddpfPixelFormat.dwGBitMask = format->Gmask;
-		ddsd.ddpfPixelFormat.dwBBitMask = format->Bmask;
+		ddsd.ddpfPixelFormat.dwRGBBitCount = details->bits_per_pixel;
+		if (details->bits_per_pixel == 8) {
+			ddsd.ddpfPixelFormat.dwFlags |= DDPF_PALETTEINDEXED8;
+		}
+		ddsd.ddpfPixelFormat.dwRBitMask = details->Rmask;
+		ddsd.ddpfPixelFormat.dwGBitMask = details->Gmask;
+		ddsd.ddpfPixelFormat.dwBBitMask = details->Bmask;
 
 		if (!lpEnumModesCallback(&ddsd, lpContext)) {
 			status = DDERR_GENERIC;
@@ -185,6 +212,26 @@ HRESULT DirectDrawImpl::EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 		return DDERR_GENERIC;
 	}
 
+	DDBitDepths renderBitDepth = DDBD_32;
+
+#ifdef MINIWIN_PIXELFORMAT
+	SDL_PixelFormat format = MINIWIN_PIXELFORMAT;
+	const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(format);
+	switch (details->bits_per_pixel) {
+	case 8:
+		renderBitDepth = DDBD_8;
+		break;
+	case 16:
+		renderBitDepth = DDBD_16;
+		break;
+	case 24:
+		renderBitDepth = DDBD_24;
+		break;
+	default:
+		break;
+	}
+#endif
+
 	const char* deviceDesc = "SDL3 SDL_Renderer";
 
 	for (int i = 0; i < numDrivers; ++i) {
@@ -199,7 +246,7 @@ HRESULT DirectDrawImpl::EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 		halDesc.dcmColorModel = D3DCOLORMODEL::RGB;
 		halDesc.dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
 		halDesc.dwDeviceZBufferBitDepth = DDBD_8 | DDBD_16 | DDBD_24 | DDBD_32;
-		halDesc.dwDeviceRenderBitDepth = DDBD_8 | DDBD_16;
+		halDesc.dwDeviceRenderBitDepth = renderBitDepth;
 		halDesc.dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
 		halDesc.dpcTriCaps.dwShadeCaps = D3DPSHADECAPS_ALPHAFLATBLEND;
 		halDesc.dpcTriCaps.dwTextureFilterCaps = D3DPTFILTERCAPS_LINEAR;
@@ -226,16 +273,26 @@ HRESULT DirectDrawImpl::GetDisplayMode(LPDDSURFACEDESC lpDDSurfaceDesc)
 		return DDERR_GENERIC;
 	}
 
-	const SDL_PixelFormatDetails* format = SDL_GetPixelFormatDetails(mode->format);
+	SDL_PixelFormat format;
+#ifdef MINIWIN_PIXELFORMAT
+	format = MINIWIN_PIXELFORMAT;
+#else
+	format = mode->format;
+#endif
+
+	const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(format);
 
 	lpDDSurfaceDesc->dwFlags = DDSD_WIDTH | DDSD_HEIGHT;
 	lpDDSurfaceDesc->dwWidth = mode->w;
 	lpDDSurfaceDesc->dwHeight = mode->h;
+	lpDDSurfaceDesc->ddpfPixelFormat.dwRGBBitCount = details->bits_per_pixel;
 	lpDDSurfaceDesc->ddpfPixelFormat.dwFlags = DDPF_RGB;
-	lpDDSurfaceDesc->ddpfPixelFormat.dwRGBBitCount = (format->bits_per_pixel == 8) ? 8 : 16;
-	lpDDSurfaceDesc->ddpfPixelFormat.dwRBitMask = format->Rmask;
-	lpDDSurfaceDesc->ddpfPixelFormat.dwGBitMask = format->Gmask;
-	lpDDSurfaceDesc->ddpfPixelFormat.dwBBitMask = format->Bmask;
+	if (details->bits_per_pixel == 8) {
+		lpDDSurfaceDesc->ddpfPixelFormat.dwFlags |= DDPF_PALETTEINDEXED8;
+	}
+	lpDDSurfaceDesc->ddpfPixelFormat.dwRBitMask = details->Rmask;
+	lpDDSurfaceDesc->ddpfPixelFormat.dwGBitMask = details->Gmask;
+	lpDDSurfaceDesc->ddpfPixelFormat.dwBBitMask = details->Bmask;
 
 	return DD_OK;
 }
@@ -262,7 +319,7 @@ HRESULT DirectDrawImpl::SetCooperativeLevel(HWND hWnd, DDSCLFlags dwFlags)
 		if (!SDL_SetWindowFullscreen(hWnd, fullscreen)) {
 			return DDERR_GENERIC;
 		}
-		renderer = SDL_CreateRenderer(hWnd, NULL);
+		DDWindow = hWnd;
 	}
 	return DD_OK;
 }
