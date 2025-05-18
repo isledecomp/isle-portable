@@ -113,14 +113,14 @@ undefined4 MxDSAction::VTable0x14()
 MxU32 MxDSAction::GetSizeOnDisk()
 {
 	MxU32 size = MxDSObject::GetSizeOnDisk();
-	size += sizeof(m_flags);
-	size += sizeof(m_startTime);
-	size += sizeof(m_duration);
-	size += sizeof(m_loopCount);
+	size += sizeof(MxU32);
+	size += sizeof(MxS32);
+	size += sizeof(MxS32);
+	size += sizeof(MxS32);
 	size += sizeof(double) * 3; // m_location
 	size += sizeof(double) * 3; // m_direction
 	size += sizeof(double) * 3; // m_up
-	size += sizeof(m_extraLength);
+	size += sizeof(MxU16);
 	size += m_extraLength;
 
 	m_sizeOnDisk = size - MxDSObject::GetSizeOnDisk();
@@ -275,7 +275,7 @@ void MxDSAction::Deserialize(MxU8*& p_source, MxS16 p_flags)
 	m_up[1]           = UnalignedRead<double>(p_source);  p_source += sizeof(double);
 	m_up[2]           = UnalignedRead<double>(p_source);  p_source += sizeof(double);
 
-	MxU16 extraLength = UnalignedRead<MxU16>(p_source);  p_source += sizeof(extraLength);
+	MxU16 extraLength = UnalignedRead<MxU16>(p_source);  p_source += sizeof(MxU16);
 	// clang-format on
 
 	if (extraLength) {

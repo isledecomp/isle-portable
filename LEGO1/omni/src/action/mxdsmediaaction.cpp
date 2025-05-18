@@ -116,12 +116,12 @@ MxU32 MxDSMediaAction::GetSizeOnDisk()
 		totalSizeOnDisk++;
 	}
 
-	totalSizeOnDisk += sizeof(m_unk0x9c.m_unk0x00);
-	totalSizeOnDisk += sizeof(m_unk0x9c.m_unk0x04);
-	totalSizeOnDisk += sizeof(m_framesPerSecond);
-	totalSizeOnDisk += sizeof(m_mediaFormat);
-	totalSizeOnDisk += sizeof(m_paletteManagement);
-	totalSizeOnDisk += sizeof(m_sustainTime);
+	totalSizeOnDisk += sizeof(undefined4);
+	totalSizeOnDisk += sizeof(undefined4);
+	totalSizeOnDisk += sizeof(MxS32);
+	totalSizeOnDisk += sizeof(MxS32);
+	totalSizeOnDisk += sizeof(MxS32);
+	totalSizeOnDisk += sizeof(MxS32);
 
 	m_sizeOnDisk = totalSizeOnDisk - MxDSAction::GetSizeOnDisk();
 	return totalSizeOnDisk;
