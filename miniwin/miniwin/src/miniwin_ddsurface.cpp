@@ -236,6 +236,17 @@ HRESULT DirectDrawSurfaceImpl::SetClipper(LPDIRECTDRAWCLIPPER lpDDClipper)
 
 HRESULT DirectDrawSurfaceImpl::SetColorKey(DDColorKeyFlags dwFlags, LPDDCOLORKEY lpDDColorKey)
 {
+	if (!lpDDColorKey) {
+		return DDERR_INVALIDPARAMS;
+	}
+	if (m_surface->format != SDL_PIXELFORMAT_INDEX8) {
+		return DDERR_GENERIC; // Not currently supported
+	}
+
+	if (SDL_SetSurfaceColorKey(m_surface, true, lpDDColorKey->dwColorSpaceLowValue) != 0) {
+		return DDERR_GENERIC;
+	}
+
 	return DD_OK;
 }
 
