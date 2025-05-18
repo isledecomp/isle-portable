@@ -6,6 +6,8 @@
 #include "legopathactor.h"
 #include "legopathstruct.h"
 
+#include <SDL3/SDL_log.h>
+
 DECOMP_SIZE_ASSERT(LegoPathBoundary, 0x74)
 
 // FUNCTION: LEGO1 0x10056a70
@@ -357,8 +359,12 @@ MxU32 LegoPathBoundary::FUN_10057fe0(LegoAnimPresenter* p_presenter)
 	// TODO: This only seems to match if the type is not the same as the type of the
 	// key value of the set. Figure out which type the set (or parameter) actually uses.
 	// Also see call to .find in LegoPathController::FUN_10046050
-	m_presenters.insert(static_cast<LegoLocomotionAnimPresenter*>(p_presenter));
-	return 1;
+	if (auto* locomotionPresenter = dynamic_cast<LegoLocomotionAnimPresenter*>(p_presenter)) {
+		m_presenters.insert(locomotionPresenter);
+		return 1;
+	}
+	SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Invalid locomotion");
+	return 0;
 }
 
 // FUNCTION: LEGO1 0x100586e0
@@ -369,8 +375,14 @@ MxU32 LegoPathBoundary::FUN_100586e0(LegoAnimPresenter* p_presenter)
 		// TODO: This only seems to match if the type is not the same as the type of the
 		// key value of the set. Figure out which type the set (or parameter) actually uses.
 		// Also see call to .find in LegoPathController::FUN_10046050
-		if (m_presenters.find(static_cast<LegoLocomotionAnimPresenter*>(p_presenter)) != m_presenters.end()) {
-			m_presenters.erase(static_cast<LegoLocomotionAnimPresenter*>(p_presenter));
+		auto* locomotionPresenter = dynamic_cast<LegoLocomotionAnimPresenter*>(p_presenter);
+		if (!locomotionPresenter) {
+			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Invalid locomotion");
+			return 0;
+		}
+		auto it = m_presenters.find(locomotionPresenter);
+		if (it != m_presenters.end()) {
+			m_presenters.erase(it);
 			return 1;
 		}
 	}
