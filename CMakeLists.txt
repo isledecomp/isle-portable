@@ -84,15 +84,15 @@ if (ISLE_UBSAN)
   add_link_options(-fsanitize=undefined)
 endif()
 
-#if (NOT WIN32)
 add_library(miniwin STATIC EXCLUDE_FROM_ALL
   miniwin/miniwin/src/miniwin.cpp
-  miniwin/miniwin/src/miniwin_ddclipper.cpp
   miniwin/miniwin/src/miniwin_ddpalette.cpp
   miniwin/miniwin/src/miniwin_ddsurface.cpp
   miniwin/miniwin/src/miniwin_ddraw.cpp
   miniwin/miniwin/src/miniwin_d3drm.cpp
 )
+# Force reported render mods from MiniWin
+target_compile_definitions(miniwin PRIVATE MINIWIN_PIXELFORMAT=SDL_PIXELFORMAT_INDEX8)
 target_include_directories(miniwin PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/miniwin/miniwin/include>")
 target_include_directories(miniwin PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/miniwin/miniwin/src/include")
 target_compile_definitions(miniwin PUBLIC "MINIWIN")

@@ -14,12 +14,7 @@
 		SDL_LogError(LOG_CATEGORY_MINIWIN, "%s:%s", __func__, MSG);                                                    \
 	} while (0)
 
-static SDL_FRect ConvertRect(const RECT* r)
+static SDL_Rect ConvertRect(const RECT* r)
 {
-	SDL_FRect sdlRect;
-	sdlRect.x = r->left;
-	sdlRect.y = r->top;
-	sdlRect.w = r->right - r->left;
-	sdlRect.h = r->bottom - r->top;
-	return sdlRect;
+	return {r->left, r->top, r->right - r->left, r->bottom - r->top};
 }

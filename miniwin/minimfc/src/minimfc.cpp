@@ -81,7 +81,7 @@ int main(int argc, char* argv[])
 	}
 
 	int result = wndTop->ExitInstance();
-	free(afxCurrentAppName);
+	delete[] afxCurrentAppName;
 	return result;
 }
 

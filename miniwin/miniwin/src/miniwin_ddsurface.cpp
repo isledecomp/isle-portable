@@ -1,3 +1,4 @@
+#include "miniwin_ddpalette_p.h"
 #include "miniwin_ddraw_p.h"
 #include "miniwin_ddsurface_p.h"
 #include "miniwin_p.h"
@@ -8,18 +9,21 @@ DirectDrawSurfaceImpl::DirectDrawSurfaceImpl()
 {
 }
 
-DirectDrawSurfaceImpl::DirectDrawSurfaceImpl(int width, int height)
+DirectDrawSurfaceImpl::DirectDrawSurfaceImpl(int width, int height, SDL_PixelFormat format)
 {
-	m_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB565, SDL_TEXTUREACCESS_STREAMING, width, height);
-	if (!m_texture) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create texture: %s", SDL_GetError());
+	m_surface = SDL_CreateSurface(width, height, format);
+	if (!m_surface) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create surface: %s", SDL_GetError());
 	}
 }
 
 DirectDrawSurfaceImpl::~DirectDrawSurfaceImpl()
 {
-	if (m_texture) {
-		SDL_DestroyTexture(m_texture);
+	if (m_surface) {
+		SDL_DestroySurface(m_surface);
+	}
+	if (m_palette) {
+		m_palette->Release();
 	}
 }
 
@@ -40,6 +44,12 @@ HRESULT DirectDrawSurfaceImpl::AddAttachedSurface(LPDIRECTDRAWSURFACE lpDDSAttac
 {
 	return DD_OK;
 }
+
+void DirectDrawSurfaceImpl::SetAutoFlip(bool enabled)
+{
+	m_autoFlip = enabled;
+}
+
 HRESULT DirectDrawSurfaceImpl::Blt(
 	LPRECT lpDestRect,
 	LPDIRECTDRAWSURFACE lpDDSrcSurface,
@@ -48,13 +58,46 @@ HRESULT DirectDrawSurfaceImpl::Blt(
 	LPDDBLTFX lpDDBltFx
 )
 {
-	if (!renderer) {
+	auto srcSurface = static_cast<DirectDrawSurfaceImpl*>(lpDDSrcSurface);
+	if (!srcSurface || !srcSurface->m_surface) {
 		return DDERR_GENERIC;
 	}
-	SDL_FRect srcRect = ConvertRect(lpSrcRect);
-	SDL_FRect dstRect = ConvertRect(lpDestRect);
-	SDL_RenderTexture(renderer, static_cast<DirectDrawSurfaceImpl*>(lpDDSrcSurface)->m_texture, &srcRect, &dstRect);
-	SDL_RenderPresent(renderer);
+
+	SDL_Rect srcRect;
+	if (lpSrcRect) {
+		srcRect = ConvertRect(lpSrcRect);
+	}
+	else {
+		srcRect = {0, 0, srcSurface->m_surface->w, srcSurface->m_surface->h};
+	}
+
+	SDL_Rect dstRect;
+	if (lpDestRect) {
+		dstRect = ConvertRect(lpDestRect);
+	}
+	else {
+		dstRect = {0, 0, m_surface->w, m_surface->h};
+	}
+
+	SDL_Surface* blitSource = srcSurface->m_surface;
+
+	if (srcSurface->m_surface->format != m_surface->format) {
+		blitSource = SDL_ConvertSurface(srcSurface->m_surface, m_surface->format);
+		if (!blitSource) {
+			return DDERR_GENERIC;
+		}
+	}
+
+	if (!SDL_BlitSurfaceScaled(blitSource, &srcRect, m_surface, &dstRect, SDL_SCALEMODE_NEAREST)) {
+		return DDERR_GENERIC;
+	}
+
+	if (blitSource != srcSurface->m_surface) {
+		SDL_DestroySurface(blitSource);
+	}
+	if (m_autoFlip) {
+		return Flip(nullptr, DDFLIP_WAIT);
+	}
 	return DD_OK;
 }
 
@@ -66,31 +109,29 @@ HRESULT DirectDrawSurfaceImpl::BltFast(
 	DDBltFastFlags dwTrans
 )
 {
-	if (!renderer) {
-		return DDERR_GENERIC;
-	}
-	SDL_FRect dstRect = {
-		(float) dwX,
-		(float) dwY,
-		(float) (lpSrcRect->right - lpSrcRect->left),
-		(float) (lpSrcRect->bottom - lpSrcRect->top)
+	RECT destRect = {
+		(int) dwX,
+		(int) dwY,
+		(int) (lpSrcRect->right - lpSrcRect->left + dwX),
+		(int) (lpSrcRect->bottom - lpSrcRect->top + dwY)
 	};
-	SDL_FRect srcRect = ConvertRect(lpSrcRect);
-	SDL_RenderTexture(renderer, static_cast<DirectDrawSurfaceImpl*>(lpDDSrcSurface)->m_texture, &srcRect, &dstRect);
-	SDL_RenderPresent(renderer);
-	return DD_OK;
+	return Blt(&destRect, lpDDSrcSurface, lpSrcRect, DDBLT_NONE, nullptr);
 }
 
 HRESULT DirectDrawSurfaceImpl::Flip(LPDIRECTDRAWSURFACE lpDDSurfaceTargetOverride, DDFlipFlags dwFlags)
 {
-	if (!renderer || !m_texture) {
+	if (!m_surface) {
 		return DDERR_GENERIC;
 	}
-	float width, height;
-	SDL_GetTextureSize(m_texture, &width, &height);
-	SDL_FRect rect{0, 0, width, height};
-	SDL_RenderTexture(renderer, m_texture, &rect, &rect);
-	SDL_RenderPresent(renderer);
+	SDL_Surface* windowSurface = SDL_GetWindowSurface(DDWindow);
+	if (!windowSurface) {
+		return DDERR_GENERIC;
+	}
+	SDL_Rect srcRect{0, 0, m_surface->w, m_surface->h};
+	SDL_Surface* copy = SDL_ConvertSurface(m_surface, windowSurface->format);
+	SDL_BlitSurface(copy, &srcRect, windowSurface, &srcRect);
+	SDL_DestroySurface(copy);
+	SDL_UpdateWindowSurface(DDWindow);
 	return DD_OK;
 }
 
@@ -103,17 +144,7 @@ HRESULT DirectDrawSurfaceImpl::GetAttachedSurface(LPDDSCAPS lpDDSCaps, LPDIRECTD
 	return DD_OK;
 }
 
-HRESULT DirectDrawSurfaceImpl::GetCaps(LPDDSCAPS lpDDSCaps)
-{
-	return DD_OK;
-}
-
 HRESULT DirectDrawSurfaceImpl::GetDC(HDC* lphDC)
-{
-	return DD_OK;
-}
-
-HRESULT DirectDrawSurfaceImpl::GetOverlayPosition(LPLONG lplX, LPLONG lplY)
 {
 	return DD_OK;
 }
@@ -130,22 +161,34 @@ HRESULT DirectDrawSurfaceImpl::GetPalette(LPDIRECTDRAWPALETTE* lplpDDPalette)
 
 HRESULT DirectDrawSurfaceImpl::GetPixelFormat(LPDDPIXELFORMAT lpDDPixelFormat)
 {
+	if (!m_surface) {
+		return DDERR_GENERIC;
+	}
 	memset(lpDDPixelFormat, 0, sizeof(*lpDDPixelFormat));
 	lpDDPixelFormat->dwFlags = DDPF_RGB;
+	const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(m_surface->format);
+	if (details->bits_per_pixel == 8) {
+		lpDDPixelFormat->dwFlags |= DDPF_PALETTEINDEXED8;
+	}
+	lpDDPixelFormat->dwRGBBitCount = details->bits_per_pixel;
+	lpDDPixelFormat->dwRBitMask = details->Rmask;
+	lpDDPixelFormat->dwGBitMask = details->Gmask;
+	lpDDPixelFormat->dwBBitMask = details->Bmask;
 	return DD_OK;
 }
 
 HRESULT DirectDrawSurfaceImpl::GetSurfaceDesc(LPDDSURFACEDESC lpDDSurfaceDesc)
 {
-	if (!m_texture) {
+	if (!m_surface) {
 		return DDERR_GENERIC;
 	}
-	const SDL_PixelFormatDetails* format = SDL_GetPixelFormatDetails(m_texture->format);
-	lpDDSurfaceDesc->ddpfPixelFormat.dwFlags = DDPF_RGB;
-	lpDDSurfaceDesc->ddpfPixelFormat.dwRGBBitCount = (format->bits_per_pixel == 8) ? 8 : 16;
-	lpDDSurfaceDesc->ddpfPixelFormat.dwRBitMask = format->Rmask;
-	lpDDSurfaceDesc->ddpfPixelFormat.dwGBitMask = format->Gmask;
-	lpDDSurfaceDesc->ddpfPixelFormat.dwBBitMask = format->Bmask;
+	lpDDSurfaceDesc->dwFlags = DDSD_PIXELFORMAT;
+	GetPixelFormat(&lpDDSurfaceDesc->ddpfPixelFormat);
+	if (m_surface) {
+		lpDDSurfaceDesc->dwFlags |= DDSD_WIDTH | DDSD_HEIGHT;
+		lpDDSurfaceDesc->dwWidth = m_surface->w;
+		lpDDSurfaceDesc->dwHeight = m_surface->h;
+	}
 	return DD_OK;
 }
 
@@ -153,6 +196,7 @@ HRESULT DirectDrawSurfaceImpl::IsLost()
 {
 	return DD_OK;
 }
+
 HRESULT DirectDrawSurfaceImpl::Lock(
 	LPRECT lpDestRect,
 	LPDDSURFACEDESC lpDDSurfaceDesc,
@@ -160,24 +204,17 @@ HRESULT DirectDrawSurfaceImpl::Lock(
 	HANDLE hEvent
 )
 {
-	if (!m_texture) {
+	if (!m_surface) {
 		return DDERR_GENERIC;
 	}
 
-	int pitch = 0;
-	void* pixels = nullptr;
-	if (SDL_LockTexture(m_texture, (SDL_Rect*) lpDestRect, &pixels, &pitch) < 0) {
+	if (SDL_LockSurface(m_surface) < 0) {
 		return DDERR_GENERIC;
 	}
 
-	lpDDSurfaceDesc->lpSurface = pixels;
-	lpDDSurfaceDesc->lPitch = pitch;
-	const SDL_PixelFormatDetails* format = SDL_GetPixelFormatDetails(m_texture->format);
-	lpDDSurfaceDesc->ddpfPixelFormat.dwFlags = DDPF_RGB;
-	lpDDSurfaceDesc->ddpfPixelFormat.dwRGBBitCount = (format->bits_per_pixel == 8) ? 8 : 16;
-	lpDDSurfaceDesc->ddpfPixelFormat.dwRBitMask = format->Rmask;
-	lpDDSurfaceDesc->ddpfPixelFormat.dwGBitMask = format->Gmask;
-	lpDDSurfaceDesc->ddpfPixelFormat.dwBBitMask = format->Bmask;
+	GetSurfaceDesc(lpDDSurfaceDesc);
+	lpDDSurfaceDesc->lpSurface = m_surface->pixels;
+	lpDDSurfaceDesc->lPitch = m_surface->pitch;
 
 	return DD_OK;
 }
@@ -199,19 +236,41 @@ HRESULT DirectDrawSurfaceImpl::SetClipper(LPDIRECTDRAWCLIPPER lpDDClipper)
 
 HRESULT DirectDrawSurfaceImpl::SetColorKey(DDColorKeyFlags dwFlags, LPDDCOLORKEY lpDDColorKey)
 {
+	if (!lpDDColorKey) {
+		return DDERR_INVALIDPARAMS;
+	}
+	if (m_surface->format != SDL_PIXELFORMAT_INDEX8) {
+		return DDERR_GENERIC; // Not currently supported
+	}
+
+	if (SDL_SetSurfaceColorKey(m_surface, true, lpDDColorKey->dwColorSpaceLowValue) != 0) {
+		return DDERR_GENERIC;
+	}
+
 	return DD_OK;
 }
 
 HRESULT DirectDrawSurfaceImpl::SetPalette(LPDIRECTDRAWPALETTE lpDDPalette)
 {
+	if (m_surface->format != SDL_PIXELFORMAT_INDEX8) {
+		return DDERR_GENERIC;
+	}
+
+	if (m_palette) {
+		m_palette->Release();
+	}
+
+	m_palette = lpDDPalette;
+	SDL_SetSurfacePalette(m_surface, ((DirectDrawPaletteImpl*) m_palette)->m_palette);
+	m_palette->AddRef();
 	return DD_OK;
 }
 
 HRESULT DirectDrawSurfaceImpl::Unlock(LPVOID lpSurfaceData)
 {
-	if (!m_texture) {
+	if (!m_surface) {
 		return DDERR_GENERIC;
 	}
-	SDL_UnlockTexture(m_texture);
+	SDL_UnlockSurface(m_surface);
 	return DD_OK;
 }
