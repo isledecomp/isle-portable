@@ -5,8 +5,6 @@
 #include "mxcore.h"
 #include "mxtypes.h"
 
-#include <type_traits>
-
 template <class T>
 class MxList;
 template <class T>
@@ -73,15 +71,7 @@ class MxPtrList : public MxList<T*> {
 public:
 	MxPtrList(MxBool p_ownership) { SetOwnership(p_ownership); }
 
-	static void Destroy(T* p_obj)
-	{
-		if constexpr (std::is_pointer<T>::value) {
-			delete[] p_obj;
-		}
-		else {
-			delete p_obj;
-		}
-	}
+	static void Destroy(T* p_obj) { delete p_obj; }
 
 	void SetOwnership(MxBool p_ownership)
 	{
