@@ -119,17 +119,7 @@ HRESULT DirectDrawSurfaceImpl::GetAttachedSurface(LPDDSCAPS lpDDSCaps, LPDIRECTD
 	return DD_OK;
 }
 
-HRESULT DirectDrawSurfaceImpl::GetCaps(LPDDSCAPS lpDDSCaps)
-{
-	return DD_OK;
-}
-
 HRESULT DirectDrawSurfaceImpl::GetDC(HDC* lphDC)
-{
-	return DD_OK;
-}
-
-HRESULT DirectDrawSurfaceImpl::GetOverlayPosition(LPLONG lplX, LPLONG lplY)
 {
 	return DD_OK;
 }
@@ -169,6 +159,7 @@ HRESULT DirectDrawSurfaceImpl::IsLost()
 {
 	return DD_OK;
 }
+
 HRESULT DirectDrawSurfaceImpl::Lock(
 	LPRECT lpDestRect,
 	LPDDSURFACEDESC lpDDSurfaceDesc,

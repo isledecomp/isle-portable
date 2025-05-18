@@ -1,6 +1,5 @@
 
 #include "miniwin_d3d.h"
-#include "miniwin_ddclipper_p.h"
 #include "miniwin_ddpalette_p.h"
 #include "miniwin_ddraw_p.h"
 #include "miniwin_ddsurface_p.h"
@@ -33,7 +32,7 @@ HRESULT DirectDrawImpl::QueryInterface(const GUID& riid, void** ppvObject)
 // IDirectDraw interface
 HRESULT DirectDrawImpl::CreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER* lplpDDClipper, IUnknown* pUnkOuter)
 {
-	*lplpDDClipper = static_cast<IDirectDrawClipper*>(new DirectDrawClipperImpl(this));
+	*lplpDDClipper = new IDirectDrawClipper;
 
 	return DD_OK;
 }
@@ -272,6 +271,7 @@ HRESULT DirectDrawImpl::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWORD dwBP
 {
 	return DD_OK;
 }
+
 // IDirect3D2 interface
 HRESULT DirectDrawImpl::CreateDevice(const GUID& guid, void* pBackBuffer, IDirect3DDevice2** ppDirect3DDevice)
 {

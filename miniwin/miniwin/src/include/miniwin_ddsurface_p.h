@@ -23,9 +23,7 @@ struct DirectDrawSurfaceImpl : public IDirectDrawSurface3 {
 		override;
 	HRESULT Flip(LPDIRECTDRAWSURFACE lpDDSurfaceTargetOverride, DDFlipFlags dwFlags) override;
 	HRESULT GetAttachedSurface(LPDDSCAPS lpDDSCaps, LPDIRECTDRAWSURFACE* lplpDDAttachedSurface) override;
-	HRESULT GetCaps(LPDDSCAPS lpDDSCaps) override;
 	HRESULT GetDC(HDC* lphDC) override;
-	HRESULT GetOverlayPosition(LPLONG lplX, LPLONG lplY) override;
 	HRESULT GetPalette(LPDIRECTDRAWPALETTE* lplpDDPalette) override;
 	HRESULT GetPixelFormat(LPDDPIXELFORMAT lpDDPixelFormat) override;
 	HRESULT GetSurfaceDesc(LPDDSURFACEDESC lpDDSurfaceDesc) override;
