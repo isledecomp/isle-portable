@@ -14,11 +14,6 @@ DirectDrawPaletteImpl::~DirectDrawPaletteImpl()
 	SDL_DestroyPalette(m_palette);
 }
 
-HRESULT DirectDrawPaletteImpl::GetCaps(LPDWORD lpdwCaps)
-{
-	return DD_OK;
-}
-
 HRESULT DirectDrawPaletteImpl::GetEntries(DWORD dwFlags, DWORD dwBase, DWORD dwNumEntries, LPPALETTEENTRY lpEntries)
 {
 	for (int i = dwBase; i < dwNumEntries; i++) {

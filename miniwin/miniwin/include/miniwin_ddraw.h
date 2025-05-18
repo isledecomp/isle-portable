@@ -292,14 +292,13 @@ typedef LOGPALETTE* LPLOGPALETTE;
 
 typedef struct IDirectDraw* LPDIRECTDRAW;
 struct IDirectDrawPalette : virtual public IUnknown {
-	virtual HRESULT GetCaps(LPDWORD lpdwCaps) = 0;
 	virtual HRESULT GetEntries(DWORD dwFlags, DWORD dwBase, DWORD dwNumEntries, LPPALETTEENTRY lpEntries) = 0;
 	virtual HRESULT SetEntries(DWORD dwFlags, DWORD dwStartingEntry, DWORD dwCount, LPPALETTEENTRY lpEntries) = 0;
 };
 typedef struct IDirectDrawPalette* LPDIRECTDRAWPALETTE;
 
 struct IDirectDrawClipper : virtual public IUnknown {
-	virtual HRESULT SetHWnd(DWORD unnamedParam1, HWND hWnd) = 0;
+	virtual HRESULT SetHWnd(DWORD unnamedParam1, HWND hWnd) { return DD_OK; }
 };
 typedef IDirectDrawClipper* LPDIRECTDRAWCLIPPER;
 
@@ -323,9 +322,7 @@ struct IDirectDrawSurface : virtual public IUnknown {
 	) = 0;
 	virtual HRESULT Flip(LPDIRECTDRAWSURFACE lpDDSurfaceTargetOverride, DDFlipFlags dwFlags) = 0;
 	virtual HRESULT GetAttachedSurface(LPDDSCAPS lpDDSCaps, LPDIRECTDRAWSURFACE* lplpDDAttachedSurface) = 0;
-	virtual HRESULT GetCaps(LPDDSCAPS lpDDSCaps) = 0;
 	virtual HRESULT GetDC(HDC* lphDC) = 0;
-	virtual HRESULT GetOverlayPosition(LPLONG lplX, LPLONG lplY) = 0;
 	virtual HRESULT GetPalette(LPDIRECTDRAWPALETTE* lplpDDPalette) = 0;
 	virtual HRESULT GetPixelFormat(LPDDPIXELFORMAT lpDDPixelFormat) = 0;
 	virtual HRESULT GetSurfaceDesc(LPDDSURFACEDESC lpDDSurfaceDesc) = 0;

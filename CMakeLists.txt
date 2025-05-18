@@ -87,7 +87,6 @@ endif()
 #if (NOT WIN32)
 add_library(miniwin STATIC EXCLUDE_FROM_ALL
   miniwin/miniwin/src/miniwin.cpp
-  miniwin/miniwin/src/miniwin_ddclipper.cpp
   miniwin/miniwin/src/miniwin_ddpalette.cpp
   miniwin/miniwin/src/miniwin_ddsurface.cpp
   miniwin/miniwin/src/miniwin_ddraw.cpp
