@@ -115,6 +115,7 @@ struct RGBQUAD {
 	BYTE rgbReserved;
 };
 
+#pragma pack(push, 1)
 struct BITMAPFILEHEADER {
 	WORD bfType;
 	DWORD bfSize;
@@ -122,6 +123,7 @@ struct BITMAPFILEHEADER {
 	WORD bfReserved2;
 	DWORD bfOffBits;
 };
+#pragma pack(pop)
 
 struct BITMAPINFO {
 	BITMAPINFOHEADER bmiHeader;
