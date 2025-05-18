@@ -7,6 +7,8 @@
 DECOMP_SIZE_ASSERT(MxBitmap, 0x20);
 DECOMP_SIZE_ASSERT(MxBITMAPINFO, 0x428);
 
+DECOMP_SIZE_ASSERT(BITMAPFILEHEADER, 0xe);
+
 // GLOBAL: LEGO1 0x10102184
 // GLOBAL: BETA10 0x10203030
 MxU16 g_bitmapSignature = TWOCC('B', 'M');
@@ -206,7 +208,9 @@ MxResult MxBitmap::LoadFile(SDL_IOStream* p_handle)
 
 	MxLong size;
 	BITMAPFILEHEADER hdr;
-	if (!SDL_ReadIO(p_handle, &hdr, sizeof(hdr))) {
+
+	static_assert(sizeof(BITMAPFILEHEADER) == 14, "Incorrect size");
+	if (!SDL_ReadIO(p_handle, &hdr, 14)) {
 		goto done;
 	}
 

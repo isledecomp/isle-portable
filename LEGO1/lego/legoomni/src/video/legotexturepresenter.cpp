@@ -40,7 +40,7 @@ MxResult LegoTexturePresenter::Read(MxDSChunk& p_chunk)
 	m_textures = new LegoNamedTextureList();
 
 	LegoU32 numTextures, i;
-	if (storage.Read(&numTextures, sizeof(numTextures)) != SUCCESS) {
+	if (storage.Read(&numTextures, sizeof(LegoU32)) != SUCCESS) {
 		goto done;
 	}
 
@@ -49,7 +49,7 @@ MxResult LegoTexturePresenter::Read(MxDSChunk& p_chunk)
 		LegoTexture* texture;
 		LegoNamedTexture* namedTexture;
 
-		if (storage.Read(&textureNameLength, sizeof(textureNameLength)) != SUCCESS) {
+		if (storage.Read(&textureNameLength, sizeof(LegoU32)) != SUCCESS) {
 			goto done;
 		}
 

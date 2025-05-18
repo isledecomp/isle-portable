@@ -129,7 +129,7 @@ LegoResult LegoROI::Read(
 
 	m_parentROI = p_unk0xd4;
 
-	if (p_storage->Read(&length, sizeof(length)) != SUCCESS) {
+	if (p_storage->Read(&length, sizeof(LegoU32)) != SUCCESS) {
 		goto done;
 	}
 	m_name = new LegoChar[length + 1];
@@ -154,7 +154,7 @@ LegoResult LegoROI::Read(
 	SET3(m_unk0x80.Min(), box.GetMin());
 	SET3(m_unk0x80.Max(), box.GetMax());
 
-	if (p_storage->Read(&length, sizeof(length)) != SUCCESS) {
+	if (p_storage->Read(&length, sizeof(LegoU32)) != SUCCESS) {
 		goto done;
 	}
 
@@ -170,7 +170,7 @@ LegoResult LegoROI::Read(
 		textureName = NULL;
 	}
 
-	if (p_storage->Read(&m_unk0x100, sizeof(m_unk0x100)) != SUCCESS) {
+	if (p_storage->Read(&m_unk0x100, sizeof(undefined)) != SUCCESS) {
 		goto done;
 	}
 
@@ -193,7 +193,7 @@ LegoResult LegoROI::Read(
 		}
 	}
 	else {
-		if (p_storage->Read(&numLODs, sizeof(numLODs)) != SUCCESS) {
+		if (p_storage->Read(&numLODs, sizeof(LegoU32)) != SUCCESS) {
 			goto done;
 		}
 
@@ -204,7 +204,7 @@ LegoResult LegoROI::Read(
 			const LegoChar* roiName = m_name;
 			LegoU32 offset;
 
-			if (p_storage->Read(&offset, sizeof(offset)) != SUCCESS) {
+			if (p_storage->Read(&offset, sizeof(LegoU32)) != SUCCESS) {
 				goto done;
 			}
 
@@ -313,7 +313,7 @@ LegoResult LegoROI::Read(
 		}
 	}
 
-	if (p_storage->Read(&numROIs, sizeof(numROIs)) != SUCCESS) {
+	if (p_storage->Read(&numROIs, sizeof(LegoU32)) != SUCCESS) {
 		goto done;
 	}
 
