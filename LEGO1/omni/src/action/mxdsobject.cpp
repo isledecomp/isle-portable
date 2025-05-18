@@ -161,13 +161,13 @@ void MxDSObject::Deserialize(MxU8*& p_source, MxS16 p_flags)
 	SetSourceName((char*) p_source);
 	p_source += strlen(m_sourceName) + 1;
 
-	m_unk0x14 = *(undefined4*) p_source;
+	m_unk0x14 = UnalignedRead<undefined4>(p_source);
 	p_source += sizeof(m_unk0x14);
 
 	SetObjectName((char*) p_source);
 	p_source += strlen(m_objectName) + 1;
 
-	m_objectId = *(MxU32*) p_source;
+	m_objectId = UnalignedRead<MxU32>(p_source);
 	p_source += sizeof(m_objectId);
 
 	m_unk0x24 = p_flags;
@@ -211,7 +211,7 @@ MxDSObject* DeserializeDSObjectDispatch(MxU8*& p_source, MxS16 p_flags)
 {
 	MxDSObject* obj = NULL;
 
-	MxU16 type = *(MxU16*) p_source;
+	MxU16 type = UnalignedRead<MxU16>(p_source);
 	p_source += 2;
 
 	switch (type) {

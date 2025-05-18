@@ -5,6 +5,7 @@
 #include "mxdsfile.h"
 #include "mxomni.h"
 #include "mxstreamcontroller.h"
+#include "mxutilities.h"
 
 DECOMP_SIZE_ASSERT(MxStreamProvider, 0x10)
 DECOMP_SIZE_ASSERT(MxRAMStreamProvider, 0x24)
@@ -109,10 +110,8 @@ MxU32 ReadData(MxU8* p_buffer, MxU32 p_size)
 	MxU8* data = p_buffer;
 	MxU8* data2;
 
-#define IntoType(p) ((MxU32*) (p))
-
 	while (data < p_buffer + p_size) {
-		if (*IntoType(data) == FOURCC('M', 'x', 'O', 'b')) {
+		if (data + sizeof(MxU32) <= p_buffer + p_size && UnalignedRead<MxU32>(data) == FOURCC('M', 'x', 'O', 'b')) {
 			data2 = data;
 			data = data2 + 8;
 
@@ -122,11 +121,11 @@ MxU32 ReadData(MxU8* p_buffer, MxU32 p_size)
 
 			data = MxDSChunk::End(data2);
 			while (data < p_buffer + p_size) {
-				if (*IntoType(data) == FOURCC('M', 'x', 'C', 'h')) {
+				if (UnalignedRead<MxU32>(data) == FOURCC('M', 'x', 'C', 'h')) {
 					MxU8* data3 = data;
 					data = MxDSChunk::End(data3);
 
-					if ((*IntoType(data2) == FOURCC('M', 'x', 'C', 'h')) &&
+					if ((UnalignedRead<MxU32>(data2) == FOURCC('M', 'x', 'C', 'h')) &&
 						(*MxStreamChunk::IntoFlags(data2) & DS_CHUNK_SPLIT)) {
 						if (*MxStreamChunk::IntoObjectId(data2) == *MxStreamChunk::IntoObjectId(data3) &&
 							(*MxStreamChunk::IntoFlags(data3) & DS_CHUNK_SPLIT) &&
@@ -142,7 +141,7 @@ MxU32 ReadData(MxU8* p_buffer, MxU32 p_size)
 					data2 = MxDSChunk::End(data2);
 					memmove(data2, data3, MxDSChunk::Size(data3));
 
-					if (*MxStreamChunk::IntoObjectId(data2) == id &&
+					if (UnalignedRead<MxU32>((MxU8*) MxStreamChunk::IntoObjectId(data2)) == id &&
 						(*MxStreamChunk::IntoFlags(data2) & DS_CHUNK_END_OF_STREAM)) {
 						break;
 					}
@@ -159,6 +158,4 @@ MxU32 ReadData(MxU8* p_buffer, MxU32 p_size)
 
 	*MxStreamChunk::IntoFlags(data2) &= ~DS_CHUNK_SPLIT;
 	return MxDSChunk::Size(data2) + (MxU32) (data2 - p_buffer);
-
-#undef IntoType
 }
