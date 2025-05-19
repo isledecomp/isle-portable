@@ -52,7 +52,7 @@ MxResult LegoModelPresenter::CreateROI(MxDSChunk* p_chunk)
 	MxResult result = FAILURE;
 	LegoU32 numROIs;
 	Mx3DPointFloat vect;
-	LegoMemory storage(p_chunk->GetData());
+	LegoMemory storage(p_chunk->GetData(), p_chunk->GetLength());
 	LegoAnim anim;
 	LegoU32 version, textureInfoOffset, i, numTextures, skipTextures;
 	MxMatrix mat;
@@ -70,6 +70,7 @@ MxResult LegoModelPresenter::CreateROI(MxDSChunk* p_chunk)
 	if (storage.Read(&version, sizeof(LegoU32)) != SUCCESS) {
 		goto done;
 	}
+	assert(version == MODEL_VERSION);
 	if (version != MODEL_VERSION) {
 		goto done;
 	}

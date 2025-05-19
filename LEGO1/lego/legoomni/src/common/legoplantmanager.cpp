@@ -226,6 +226,7 @@ LegoEntity* LegoPlantManager::CreatePlant(MxS32 p_index, LegoWorld* p_world, Leg
 				sprintf(lodName, "%s", g_plantLodNames[g_plantInfo[p_index].m_variant][g_plantInfo[p_index].m_color]);
 
 				LegoROI* roi = CharacterManager()->CreateAutoROI(name, lodName, TRUE);
+				assert(roi != NULL);
 				roi->SetVisibility(TRUE);
 
 				entity = roi->GetEntity();

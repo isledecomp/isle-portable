@@ -55,7 +55,7 @@ MxResult LegoPalettePresenter::ParsePalette(MxStreamChunk* p_chunk)
 	RGBQUAD palette[256];
 	MxResult result = FAILURE;
 
-	LegoMemory stream((char*) p_chunk->GetData());
+	LegoMemory stream((char*) p_chunk->GetData(), p_chunk->GetLength());
 	if (stream.Read(buffer, 40 * sizeof(MxU8)) == SUCCESS) {
 		if (stream.Read(palette, 256 * 4 * sizeof(MxU8)) == SUCCESS) {
 			m_palette = new MxPalette(palette);

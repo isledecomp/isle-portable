@@ -85,8 +85,13 @@ public:
 	// SYNTHETIC: LEGO1 0x10045740
 	// LegoPathController::`scalar deleting destructor'
 
-	virtual MxResult Create(MxU8* p_data, const Vector3& p_location, const MxAtomId& p_trigger); // vtable+0x14
-	virtual void Destroy();                                                                      // vtable+0x18
+	virtual MxResult Create(
+		MxU8* p_data,
+		LegoU32 p_dataSize,
+		const Vector3& p_location,
+		const MxAtomId& p_trigger
+	);                      // vtable+0x14
+	virtual void Destroy(); // vtable+0x18
 
 	MxResult PlaceActor(
 		LegoPathActor* p_actor,

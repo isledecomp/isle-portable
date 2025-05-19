@@ -33,7 +33,7 @@ MxResult LegoTexturePresenter::AddToManager()
 MxResult LegoTexturePresenter::Read(MxDSChunk& p_chunk)
 {
 	MxResult result = FAILURE;
-	LegoMemory storage(p_chunk.GetData());
+	LegoMemory storage(p_chunk.GetData(), p_chunk.GetLength());
 	LegoChar* textureName = NULL;
 	LegoS32 hardwareMode = VideoManager()->GetDirect3D()->AssignedDevice()->GetHardwareMode();
 

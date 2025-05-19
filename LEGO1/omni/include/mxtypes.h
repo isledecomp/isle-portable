@@ -30,7 +30,6 @@ typedef MxLong MxResult;
 #endif
 
 typedef MxU8 MxBool;
-static_assert(sizeof(MxBool) == 1, "Incorrect size");
 
 #ifndef TRUE
 #define TRUE 1
@@ -62,6 +61,7 @@ typedef union {
 	// BYTE all; // ?
 } FlagBitfield;
 
+static_assert(sizeof(MxBool) == 1, "sizeof(MxBool) == 1");
 static_assert(sizeof(MxU8) == 1, "sizeof(MxU8) == 1");
 static_assert(sizeof(MxS8) == 1, "sizeof(MxS8) == 1");
 static_assert(sizeof(MxU16) == 2, "sizeof(MxU16) == 2");

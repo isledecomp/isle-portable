@@ -430,7 +430,7 @@ MxResult MxDSBuffer::CalcBytesRemaining(MxU8* p_data)
 		}
 		else {
 			ptr = p_data + MxStreamChunk::GetHeaderSize() + 8;
-			bytesRead = (*(MxU32*) (p_data + 4)) - MxStreamChunk::GetHeaderSize();
+			bytesRead = UnalignedRead<MxU32>(p_data + 4) - MxStreamChunk::GetHeaderSize();
 		}
 
 		if (bytesRead <= m_bytesRemaining) {

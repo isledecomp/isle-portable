@@ -27,4 +27,8 @@ typedef unsigned char undefined;
 typedef unsigned short undefined2;
 typedef unsigned int undefined4;
 
+static_assert(sizeof(undefined) == 1, "sizeof(undefined) == 1");
+static_assert(sizeof(undefined2) == 2, "sizeof(undefined2) == 2");
+static_assert(sizeof(undefined4) == 4, "sizeof(undefined4) == 4");
+
 #endif // DECOMP_H

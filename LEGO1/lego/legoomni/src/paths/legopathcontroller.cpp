@@ -83,10 +83,15 @@ LegoPathController::LegoPathController()
 
 // FUNCTION: LEGO1 0x10045880
 // FUNCTION: BETA10 0x100b6959
-MxResult LegoPathController::Create(MxU8* p_data, const Vector3& p_location, const MxAtomId& p_trigger)
+MxResult LegoPathController::Create(
+	MxU8* p_data,
+	LegoU32 p_dataSize,
+	const Vector3& p_location,
+	const MxAtomId& p_trigger
+)
 {
 	MxResult result = FAILURE;
-	LegoMemory storage(p_data);
+	LegoMemory storage(p_data, p_dataSize);
 
 	if ((result = Read(&storage)) == SUCCESS) {
 		MxS32 i;
