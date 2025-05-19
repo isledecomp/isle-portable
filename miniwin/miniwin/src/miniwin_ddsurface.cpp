@@ -239,8 +239,8 @@ HRESULT DirectDrawSurfaceImpl::SetColorKey(DDColorKeyFlags dwFlags, LPDDCOLORKEY
 	if (!lpDDColorKey) {
 		return DDERR_INVALIDPARAMS;
 	}
-	if (m_surface->format != SDL_PIXELFORMAT_INDEX8) {
-		return DDERR_GENERIC; // Not currently supported
+	if (lpDDColorKey->dwColorSpaceLowValue != lpDDColorKey->dwColorSpaceHighValue) {
+		return DDERR_GENERIC; // Not supported
 	}
 
 	if (SDL_SetSurfaceColorKey(m_surface, true, lpDDColorKey->dwColorSpaceLowValue) != 0) {
