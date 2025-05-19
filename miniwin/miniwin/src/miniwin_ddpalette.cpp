@@ -16,10 +16,10 @@ DirectDrawPaletteImpl::~DirectDrawPaletteImpl()
 
 HRESULT DirectDrawPaletteImpl::GetEntries(DWORD dwFlags, DWORD dwBase, DWORD dwNumEntries, LPPALETTEENTRY lpEntries)
 {
-	for (int i = dwBase; i < dwNumEntries; i++) {
-		lpEntries[i].peRed = m_palette->colors[i].r;
-		lpEntries[i].peGreen = m_palette->colors[i].g;
-		lpEntries[i].peBlue = m_palette->colors[i].b;
+	for (DWORD i = 0; i < dwNumEntries; i++) {
+		lpEntries[i].peRed = m_palette->colors[dwBase + i].r;
+		lpEntries[i].peGreen = m_palette->colors[dwBase + i].g;
+		lpEntries[i].peBlue = m_palette->colors[dwBase + i].b;
 		lpEntries[i].peFlags = PC_NONE;
 	}
 	return DD_OK;
@@ -28,10 +28,10 @@ HRESULT DirectDrawPaletteImpl::GetEntries(DWORD dwFlags, DWORD dwBase, DWORD dwN
 HRESULT DirectDrawPaletteImpl::SetEntries(DWORD dwFlags, DWORD dwStartingEntry, DWORD dwCount, LPPALETTEENTRY lpEntries)
 {
 	SDL_Color colors[256];
-	for (int i = 0; i < dwCount; i++) {
-		colors[i].r = lpEntries[i].peRed;
-		colors[i].g = lpEntries[i].peGreen;
-		colors[i].b = lpEntries[i].peBlue;
+	for (DWORD i = 0; i < dwCount; i++) {
+		colors[i].r = lpEntries[dwStartingEntry + i].peRed;
+		colors[i].g = lpEntries[dwStartingEntry + i].peGreen;
+		colors[i].b = lpEntries[dwStartingEntry + i].peBlue;
 		colors[i].a = SDL_ALPHA_OPAQUE;
 	}
 
