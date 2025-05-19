@@ -58,7 +58,7 @@ void MxSoundManager::Destroy(MxBool p_fromDestructor)
 		SDL_DestroyAudioStream(m_stream);
 	}
 
-	ma_engine_uninit(&m_engine);
+	m_engine.Destroy(ma_engine_uninit);
 
 	Init();
 	m_criticalSection.Leave();
@@ -88,7 +88,7 @@ MxResult MxSoundManager::Create(MxU32 p_frequencyMS, MxBool p_createThread)
 	engineConfig.channels = MxOmni::IsSound3D() ? 2 : 1;
 	engineConfig.sampleRate = g_sampleRate;
 
-	if (ma_engine_init(&engineConfig, &m_engine) != MA_SUCCESS) {
+	if (m_engine.Init(ma_engine_init, &engineConfig) != MA_SUCCESS) {
 		goto done;
 	}
 

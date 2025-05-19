@@ -40,9 +40,9 @@ MxResult MxWavePresenter::AddToManager()
 // FUNCTION: LEGO1 0x100b1b10
 void MxWavePresenter::Destroy(MxBool p_fromDestructor)
 {
-	ma_sound_uninit(&m_sound);
-	ma_pcm_rb_uninit(&m_rb);
-	ma_audio_buffer_uninit(&m_ab.m_buffer);
+	m_sound.Destroy(ma_sound_uninit);
+	m_rb.Destroy(ma_pcm_rb_uninit);
+	m_ab.m_buffer.Destroy(ma_audio_buffer_uninit);
 	delete[] m_ab.m_data;
 
 	if (m_waveFormat) {
@@ -145,18 +145,18 @@ void MxWavePresenter::StartingTickle()
 				ma_audio_buffer_config_init(format, channels, sizeInFrames, m_ab.m_data, NULL);
 			config.sampleRate = sampleRate;
 
-			if (ma_audio_buffer_init(&config, &m_ab.m_buffer) != MA_SUCCESS) {
+			if (m_ab.m_buffer.Init(ma_audio_buffer_init, &config) != MA_SUCCESS) {
 				goto done;
 			}
 		}
 		else {
-			if (ma_pcm_rb_init(
+			if (m_rb.Init(
+					ma_pcm_rb_init,
 					format,
 					channels,
 					ma_calculate_buffer_size_in_frames_from_milliseconds(g_rbSizeInMilliseconds, sampleRate),
-					NULL,
-					NULL,
-					&m_rb
+					nullptr,
+					nullptr
 				) != MA_SUCCESS) {
 				goto done;
 			}
@@ -164,12 +164,12 @@ void MxWavePresenter::StartingTickle()
 			ma_pcm_rb_set_sample_rate(&m_rb, sampleRate);
 		}
 
-		if (ma_sound_init_from_data_source(
+		if (m_sound.Init(
+				ma_sound_init_from_data_source,
 				MSoundManager()->GetEngine(),
 				m_action->IsLooping() ? (ma_data_source*) &m_ab.m_buffer : (ma_data_source*) &m_rb,
 				m_is3d ? 0 : MA_SOUND_FLAG_NO_SPATIALIZATION,
-				NULL,
-				&m_sound
+				nullptr
 			) != MA_SUCCESS) {
 			goto done;
 		}

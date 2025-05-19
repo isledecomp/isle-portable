@@ -63,16 +63,16 @@ MxResult LegoCacheSound::Create(
 		ma_audio_buffer_config_init(format, p_pwfx.m_channels, bufferSizeInFrames, m_data, NULL);
 	config.sampleRate = p_pwfx.m_samplesPerSec;
 
-	if (ma_audio_buffer_init(&config, &m_buffer) != MA_SUCCESS) {
+	if (m_buffer.Init(ma_audio_buffer_init, &config) != MA_SUCCESS) {
 		return FAILURE;
 	}
 
-	if (ma_sound_init_from_data_source(
+	if (m_cacheSound.Init(
+			ma_sound_init_from_data_source,
 			SoundManager()->GetEngine(),
 			&m_buffer,
 			MxOmni::IsSound3D() ? 0 : MA_SOUND_FLAG_NO_SPATIALIZATION,
-			NULL,
-			&m_cacheSound
+			nullptr
 		) != MA_SUCCESS) {
 		return FAILURE;
 	}
@@ -108,8 +108,8 @@ void LegoCacheSound::CopyData(MxU8* p_data, MxU32 p_dataSize)
 // FUNCTION: BETA10 0x1006685b
 void LegoCacheSound::Destroy()
 {
-	ma_sound_uninit(&m_cacheSound);
-	ma_audio_buffer_uninit(&m_buffer);
+	m_cacheSound.Destroy(ma_sound_uninit);
+	m_buffer.Destroy(ma_audio_buffer_uninit);
 
 	delete[] m_data;
 	Init();
