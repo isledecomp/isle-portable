@@ -17,7 +17,7 @@
 #define FAR
 #define WINAPI
 #define HWND_NOTOPMOST -2
-#define RGB(r, g, b) ((r) | ((g) << 8) | ((b) << 16))
+#define RGB(r, g, b) (((BYTE) (r) | ((BYTE) (g) << 8) | ((BYTE) (b) << 16)))
 #define S_OK ((HRESULT) 0)
 #define E_NOINTERFACE (0x80004002)
 #define VOID void
@@ -49,8 +49,8 @@
 #define ETO_OPAQUE 0x0002
 #define FF_DONTCARE 0x00000000
 #define RASTERCAPS 0x00000000
-#define RC_PALETTE 0x00000000
-#define SIZEPALETTE 256
+#define RC_PALETTE 0x0100
+#define SIZEPALETTE 104
 #define FW_NORMAL 400
 #define OPAQUE 2
 #define OUT_DEFAULT_PRECIS 0
@@ -163,6 +163,13 @@ inline int WINAPI ReleaseDC(HWND hWnd, HDC hDC)
 
 inline int WINAPI GetDeviceCaps(HDC hdc, int index)
 {
+
+	if (index == RASTERCAPS) {
+		return 0;
+	}
+	if (index == SIZEPALETTE) {
+		return 256;
+	}
 	return 0;
 }
 

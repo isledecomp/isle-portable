@@ -381,7 +381,14 @@ HRESULT DirectDrawEnumerate(LPDDENUMCALLBACKA cb, void* context);
 
 inline UINT WINAPI GetSystemPaletteEntries(HDC hdc, UINT iStart, UINT cEntries, LPPALETTEENTRY pPalEntries)
 {
-	return 0;
+	for (UINT i = 0; i < cEntries; i++) {
+		UINT val = iStart + i;
+		pPalEntries[i].peRed = val;
+		pPalEntries[i].peGreen = val;
+		pPalEntries[i].peBlue = val;
+		pPalEntries[i].peFlags = PC_NONE;
+	}
+	return cEntries;
 }
 
 inline HPALETTE CreatePalette(LPLOGPALETTE lpLogPalette)
