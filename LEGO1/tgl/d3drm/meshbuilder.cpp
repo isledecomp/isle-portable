@@ -16,13 +16,13 @@ void* MeshBuilderImpl::ImplementationDataPtr()
 
 // FUNCTION: LEGO1 0x100a3840
 Mesh* MeshBuilderImpl::CreateMesh(
-	unsigned long faceCount,
-	unsigned long vertexCount,
+	unsigned int faceCount,
+	unsigned int vertexCount,
 	float (*pPositions)[3],
 	float (*pNormals)[3],
 	float (*pTextureCoordinates)[2],
-	unsigned long (*pFaceIndices)[3],
-	unsigned long (*pTextureIndices)[3],
+	unsigned int (*pFaceIndices)[3],
+	unsigned int (*pTextureIndices)[3],
 	ShadingModel shadingModel
 )
 {
@@ -57,18 +57,18 @@ inline Result MeshSetTextureMappingMode(MeshImpl::MeshData* pMesh, TextureMappin
 
 inline Result CreateMesh(
 	IDirect3DRMMesh* pD3DRM,
-	unsigned long faceCount,
-	unsigned long vertexCount,
+	unsigned int faceCount,
+	unsigned int vertexCount,
 	float (*pPositions)[3],
 	float (*pNormals)[3],
 	float (*pTextureCoordinates)[2],
-	unsigned long (*pFaceIndices)[3],
-	unsigned long (*pTextureIndices)[3],
+	unsigned int (*pFaceIndices)[3],
+	unsigned int (*pTextureIndices)[3],
 	ShadingModel shadingModel,
 	MeshImpl::MeshDataType& rpMesh
 )
 {
-	unsigned long* faceIndices = (unsigned long*) pFaceIndices;
+	unsigned int* faceIndices = (unsigned int*) pFaceIndices;
 	D3DRMGROUPINDEX groupIndex = 0;
 	int count = faceCount * 3;
 	int index = 0;
@@ -83,7 +83,7 @@ inline Result CreateMesh(
 
 	for (int i = 0; i < count; i++) {
 		if ((*((unsigned short*) &faceIndices[i] + 1) >> 0x0f) & 0x01) {
-			unsigned long j = *(unsigned short*) &faceIndices[i];
+			unsigned int j = *(unsigned short*) &faceIndices[i];
 			vertices[index].position.x = pPositions[j][0];
 			vertices[index].position.y = pPositions[j][1];
 			vertices[index].position.z = pPositions[j][2];
@@ -93,7 +93,7 @@ inline Result CreateMesh(
 			vertices[index].normal.z = pNormals[j][2];
 
 			if (pTextureIndices != NULL && pTextureCoordinates != NULL) {
-				j = ((unsigned long*) pTextureIndices)[i];
+				j = ((unsigned int*) pTextureIndices)[i];
 				vertices[index].tu = pTextureCoordinates[j][0];
 				vertices[index].tv = pTextureCoordinates[j][1];
 			}
@@ -137,13 +137,13 @@ inline Result CreateMesh(
 
 inline Result MeshBuilderImpl::CreateMeshImpl(
 	MeshImpl* pMeshImpl,
-	unsigned long faceCount,
-	unsigned long vertexCount,
+	unsigned int faceCount,
+	unsigned int vertexCount,
 	float (*pPositions)[3],
 	float (*pNormals)[3],
 	float (*pTextureCoordinates)[2],
-	unsigned long (*pFaceIndices)[3],
-	unsigned long (*pTextureIndices)[3],
+	unsigned int (*pFaceIndices)[3],
+	unsigned int (*pTextureIndices)[3],
 	ShadingModel shadingModel
 )
 {

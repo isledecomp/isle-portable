@@ -1,34 +1,21 @@
 #ifndef MXTYPES_H
 #define MXTYPES_H
 
+#include <stdint.h>
+
 typedef unsigned char MxU8;
 typedef signed char MxS8;
 typedef unsigned short MxU16;
 typedef signed short MxS16;
 typedef unsigned int MxU32;
 typedef signed int MxS32;
-#ifdef _MSC_VER
-typedef unsigned __int64 MxU64;
-typedef signed __int64 MxS64;
-#else
-typedef unsigned long long int MxU64;
-typedef signed long long int MxS64;
-#endif
+typedef uint64_t MxU64;
+typedef int64_t MxS64;
 typedef float MxFloat;
 typedef double MxDouble;
 
-// On MSVC, a long is 32-bit, but on GCC/Clang, it's 64-bit. LEGO Island obviously
-// assumes the former in all cases, which could become an issue in the future.
-// The "longs" can't all be changed to "ints" (which are 32-bit on both) because
-// this will break DLL export compatibility. Therefore, we define MxLong/MxULong,
-// which is guaranteed to be 32-bit, and guaranteed to be a "long" on MSVC.
-#if defined(_MSC_VER)
-typedef long MxLong;
-typedef unsigned long MxULong;
-#else
 typedef int MxLong;
 typedef unsigned int MxULong;
-#endif
 
 typedef MxS32 MxTime;
 
@@ -43,6 +30,7 @@ typedef MxLong MxResult;
 #endif
 
 typedef MxU8 MxBool;
+static_assert(sizeof(MxBool) == 1, "Incorrect size");
 
 #ifndef TRUE
 #define TRUE 1
@@ -73,5 +61,20 @@ typedef union {
 	};
 	// BYTE all; // ?
 } FlagBitfield;
+
+static_assert(sizeof(MxU8) == 1, "sizeof(MxU8) == 1");
+static_assert(sizeof(MxS8) == 1, "sizeof(MxS8) == 1");
+static_assert(sizeof(MxU16) == 2, "sizeof(MxU16) == 2");
+static_assert(sizeof(MxS16) == 2, "sizeof(MxS16) == 2");
+static_assert(sizeof(MxU32) == 4, "sizeof(MxU32) == 4");
+static_assert(sizeof(MxS32) == 4, "sizeof(MxS32) == 4");
+static_assert(sizeof(MxU64) == 8, "sizeof(MxU64) == 8");
+static_assert(sizeof(MxS64) == 8, "sizeof(MxS64) == 8");
+static_assert(sizeof(MxFloat) == 4, "sizeof(MxFloat) == 4");
+static_assert(sizeof(MxDouble) == 8, "sizeof(MxDouble) == 8");
+static_assert(sizeof(MxLong) == 4, "sizeof(MxLong) == 4");
+static_assert(sizeof(MxULong) == 4, "sizeof(MxULong) == 4");
+static_assert(sizeof(MxTime) == 4, "sizeof(MxTime) == 4");
+static_assert(sizeof(MxResult) == 4, "sizeof(MxResult) == 4");
 
 #endif // MXTYPES_H

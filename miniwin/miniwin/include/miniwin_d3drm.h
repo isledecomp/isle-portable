@@ -13,7 +13,7 @@
 // --- Typedefs ---
 typedef float D3DVAL;
 typedef void* LPD3DRM_APPDATA;
-typedef unsigned long D3DRMGROUPINDEX;
+typedef unsigned int D3DRMGROUPINDEX;
 typedef DWORD D3DCOLOR, *LPD3DCOLOR;
 typedef float D3DVALUE, *LPD3DVALUE;
 
@@ -306,11 +306,11 @@ struct IDirect3DRMWinDevice : virtual public IDirect3DRMObject {
 };
 
 struct IDirect3DRMDevice : virtual public IDirect3DRMObject {
-	virtual unsigned long GetWidth() = 0;
-	virtual unsigned long GetHeight() = 0;
+	virtual unsigned int GetWidth() = 0;
+	virtual unsigned int GetHeight() = 0;
 	virtual HRESULT SetBufferCount(int count) = 0;
 	virtual HRESULT GetBufferCount() = 0;
-	virtual HRESULT SetShades(unsigned long shadeCount) = 0;
+	virtual HRESULT SetShades(unsigned int shadeCount) = 0;
 	virtual HRESULT GetShades() = 0;
 	virtual HRESULT SetQuality(D3DRMRENDERQUALITY quality) = 0;
 	virtual D3DRMRENDERQUALITY GetQuality() = 0;

@@ -17,13 +17,13 @@ void* DeviceImpl::ImplementationDataPtr()
 }
 
 // FUNCTION: LEGO1 0x100a2c00
-unsigned long DeviceImpl::GetWidth()
+unsigned int DeviceImpl::GetWidth()
 {
 	return m_data->GetWidth();
 }
 
 // FUNCTION: LEGO1 0x100a2c10
-unsigned long DeviceImpl::GetHeight()
+unsigned int DeviceImpl::GetHeight()
 {
 	return m_data->GetHeight();
 }
@@ -51,7 +51,7 @@ Result DeviceImpl::SetShadingModel(ShadingModel model)
 }
 
 // FUNCTION: LEGO1 0x100a2ca0
-Result DeviceImpl::SetShadeCount(unsigned long shadeCount)
+Result DeviceImpl::SetShadeCount(unsigned int shadeCount)
 {
 	return ResultVal(m_data->SetShades(shadeCount));
 }

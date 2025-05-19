@@ -204,9 +204,9 @@ double TglSurface::Render()
 		{
 #if 0
 			// FIXME: Tgl::Device::GetDrawnTriangleCount does not exist
-			unsigned long triangleCount = m_pDevice->GetDrawnTriangleCount();
+			unsigned int triangleCount = m_pDevice->GetDrawnTriangleCount();
 #else
-			unsigned long triangleCount = 0;
+			unsigned int triangleCount = 0;
 #endif
 
 			m_triangleRateMeter.IncreaseOperationCount(triangleCount - m_triangleCount - 1);

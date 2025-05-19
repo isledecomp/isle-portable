@@ -64,10 +64,10 @@ public:
 	View* CreateView(
 		const Device*,
 		const Camera*,
-		unsigned long x,
-		unsigned long y,
-		unsigned long width,
-		unsigned long height
+		unsigned int x,
+		unsigned int y,
+		unsigned int width,
+		unsigned int height
 	) override;
 	Camera* CreateCamera() override;
 	Light* CreateLight(LightType, float r, float g, float b) override;
@@ -86,10 +86,10 @@ public:
 	) override;
 	Texture* CreateTexture() override;
 
-	Result SetTextureDefaultShadeCount(unsigned long) override;
+	Result SetTextureDefaultShadeCount(unsigned int) override;
 
 	// vtable+0x30
-	Result SetTextureDefaultColorCount(unsigned long) override;
+	Result SetTextureDefaultColorCount(unsigned int) override;
 
 	HRESULT CreateTextureFromSurface(LPDIRECTDRAWSURFACE pSurface, LPDIRECT3DRMTEXTURE2* pTexture2)
 	{
@@ -110,10 +110,10 @@ public:
 	inline Result CreateView(
 		const DeviceImpl& rDevice,
 		const CameraImpl& rCamera,
-		unsigned long x,
-		unsigned long y,
-		unsigned long width,
-		unsigned long height,
+		unsigned int x,
+		unsigned int y,
+		unsigned int width,
+		unsigned int height,
 		ViewImpl& rView
 	);
 	inline Result CreateMeshBuilder(MeshBuilderImpl& rMesh);
@@ -170,13 +170,13 @@ public:
 	void* ImplementationDataPtr() override;
 
 	// vtable+0x08
-	unsigned long GetWidth() override;
-	unsigned long GetHeight() override;
+	unsigned int GetWidth() override;
+	unsigned int GetHeight() override;
 
 	// vtable+0x10
 	Result SetColorModel(ColorModel) override;
 	Result SetShadingModel(ShadingModel) override;
-	Result SetShadeCount(unsigned long) override;
+	Result SetShadeCount(unsigned int) override;
 	Result SetDither(int) override;
 
 	// vtable+0x20
@@ -243,14 +243,14 @@ public:
 	Result GetBackgroundColor(float* r, float* g, float* b) override;
 	Result Clear() override;
 	Result Render(const Group*) override;
-	Result ForceUpdate(unsigned long x, unsigned long y, unsigned long width, unsigned long height) override;
+	Result ForceUpdate(unsigned int x, unsigned int y, unsigned int width, unsigned int height) override;
 
 	// vtable+0x30
 	Result TransformWorldToScreen(const float world[3], float screen[4]) override;
 	Result TransformScreenToWorld(const float screen[4], float world[3]) override;
 	Result Pick(
-		unsigned long x,
-		unsigned long y,
+		unsigned int x,
+		unsigned int y,
 		const Group** ppGroupsToPickFrom,
 		int groupsToPickFromCount,
 		const Group**& rppPickedGroups,
@@ -274,8 +274,8 @@ public:
 	Result SetCamera(const CameraImpl& rCamera);
 	Result Render(const GroupImpl& rScene);
 	Result Pick(
-		unsigned long x,
-		unsigned long y,
+		unsigned int x,
+		unsigned int y,
 		const GroupImpl** ppGroupsToPickFrom,
 		int groupsToPickFromCount,
 		const Group**& rppPickedGroups,
@@ -533,13 +533,13 @@ public:
 
 	// vtable+0x08
 	Mesh* CreateMesh(
-		unsigned long faceCount,
-		unsigned long vertexCount,
+		unsigned int faceCount,
+		unsigned int vertexCount,
 		float (*pPositions)[3],
 		float (*pNormals)[3],
 		float (*pTextureCoordinates)[2],
-		unsigned long (*pFaceIndices)[3],
-		unsigned long (*pTextureIndices)[3],
+		unsigned int (*pFaceIndices)[3],
+		unsigned int (*pTextureIndices)[3],
 		ShadingModel shadingModel
 	) override;
 	Result GetBoundingBox(float min[3], float max[3]) const override;
@@ -562,13 +562,13 @@ public:
 private:
 	inline Result CreateMeshImpl(
 		MeshImpl* pMeshImpl,
-		unsigned long faceCount,
-		unsigned long vertexCount,
+		unsigned int faceCount,
+		unsigned int vertexCount,
 		float (*pPositions)[3],
 		float (*pNormals)[3],
 		float (*pTextureCoordinates)[2],
-		unsigned long (*pFaceIndices)[3],
-		unsigned long (*pTextureIndices)[3],
+		unsigned int (*pFaceIndices)[3],
+		unsigned int (*pTextureIndices)[3],
 		ShadingModel shadingModel
 	);
 

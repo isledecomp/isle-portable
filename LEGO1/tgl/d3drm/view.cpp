@@ -475,10 +475,10 @@ Result ViewImpl::Render(const Group* pGroup)
 // FUNCTION: BETA10 0x1016edd0
 inline Result ViewForceUpdate(
 	IDirect3DRMViewport* pViewport,
-	unsigned long x,
-	unsigned long y,
-	unsigned long width,
-	unsigned long height
+	unsigned int x,
+	unsigned int y,
+	unsigned int width,
+	unsigned int height
 )
 {
 	return ResultVal(pViewport->ForceUpdate(x, y, x + width - 1, y + height - 1));
@@ -486,7 +486,7 @@ inline Result ViewForceUpdate(
 
 // FUNCTION: LEGO1 0x100a3080
 // FUNCTION: BETA10 0x1016ed60
-Result ViewImpl::ForceUpdate(unsigned long x, unsigned long y, unsigned long width, unsigned long height)
+Result ViewImpl::ForceUpdate(unsigned int x, unsigned int y, unsigned int width, unsigned int height)
 {
 	assert(m_data);
 
@@ -495,8 +495,8 @@ Result ViewImpl::ForceUpdate(unsigned long x, unsigned long y, unsigned long wid
 
 // FUNCTION: BETA10 0x101710f0
 inline Result ViewImpl::Pick(
-	unsigned long x,
-	unsigned long y,
+	unsigned int x,
+	unsigned int y,
 	const GroupImpl** ppGroupsToPickFrom,
 	int groupsToPickFromCount,
 	const Group**& rppPickedGroups,
@@ -519,8 +519,8 @@ inline Result ViewImpl::Pick(
 // FUNCTION: LEGO1 0x100a30c0
 // FUNCTION: BETA10 0x1016ee10
 Result ViewImpl::Pick(
-	unsigned long x,
-	unsigned long y,
+	unsigned int x,
+	unsigned int y,
 	const Group** ppGroupsToPickFrom,
 	int groupsToPickFromCount,
 	const Group**& rppPickedGroups,
