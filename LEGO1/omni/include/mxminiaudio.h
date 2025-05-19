@@ -44,7 +44,7 @@ public:
 		return nullptr;
 	}
 
-	T* operator*()
+	operator T*()
 	{
 		assert(m_initialized);
 		if (m_initialized) {
@@ -53,6 +53,8 @@ public:
 
 		return nullptr;
 	}
+
+	explicit operator bool() { return m_initialized; }
 
 private:
 	T m_object;
