@@ -3,18 +3,21 @@
 
 #include "mxtypes.h"
 
+#include <assert.h>
 #include <miniaudio.h>
 #include <utility>
 
 template <typename T>
-class MxMiniaudio : public T {
+class MxMiniaudio {
 public:
 	MxMiniaudio() : m_initialized(false) {}
 
 	template <typename Fn, typename... Args>
 	ma_result Init(Fn p_init, Args&&... p_args)
 	{
-		ma_result result = p_init(std::forward<Args>(p_args)..., this);
+		assert(!m_initialized);
+
+		ma_result result = p_init(std::forward<Args>(p_args)..., &m_object);
 		if (result == MA_SUCCESS) {
 			m_initialized = true;
 		}
@@ -26,12 +29,33 @@ public:
 	void Destroy(Fn p_uninit)
 	{
 		if (m_initialized) {
-			p_uninit(this);
+			p_uninit(&m_object);
 			m_initialized = false;
 		}
 	}
 
+	T* operator->()
+	{
+		assert(m_initialized);
+		if (m_initialized) {
+			return &m_object;
+		}
+
+		return nullptr;
+	}
+
+	T* operator*()
+	{
+		assert(m_initialized);
+		if (m_initialized) {
+			return &m_object;
+		}
+
+		return nullptr;
+	}
+
 private:
+	T m_object;
 	bool m_initialized;
 };
 

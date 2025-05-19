@@ -71,15 +71,15 @@ MxBool MxWavePresenter::WriteToSoundBuffer(void* p_audioPtr, MxU32 p_length)
 		ma_uint32 acquiredFrames = requestedFrames;
 		void* bufferOut;
 
-		ma_pcm_rb_acquire_write(&m_rb, &acquiredFrames, &bufferOut);
+		ma_pcm_rb_acquire_write(*m_rb, &acquiredFrames, &bufferOut);
 
 		// [library:audio] If there isn't enough space in the buffer for a full chunk, try again later.
 		if (acquiredFrames != requestedFrames) {
-			ma_pcm_rb_commit_write(&m_rb, 0);
+			ma_pcm_rb_commit_write(*m_rb, 0);
 			return FALSE;
 		}
 
-		ma_uint32 acquiredBytes = acquiredFrames * ma_get_bytes_per_frame(m_rb.format, m_rb.channels);
+		ma_uint32 acquiredBytes = acquiredFrames * ma_get_bytes_per_frame(m_rb->format, m_rb->channels);
 		assert(p_length <= acquiredBytes);
 
 		memcpy(bufferOut, p_audioPtr, p_length);
@@ -89,7 +89,7 @@ MxBool MxWavePresenter::WriteToSoundBuffer(void* p_audioPtr, MxU32 p_length)
 			memset((ma_uint8*) bufferOut + p_length, m_silenceData, acquiredBytes - p_length);
 		}
 
-		ma_pcm_rb_commit_write(&m_rb, acquiredFrames);
+		ma_pcm_rb_commit_write(*m_rb, acquiredFrames);
 		return TRUE;
 	}
 }
@@ -161,13 +161,13 @@ void MxWavePresenter::StartingTickle()
 				goto done;
 			}
 
-			ma_pcm_rb_set_sample_rate(&m_rb, sampleRate);
+			ma_pcm_rb_set_sample_rate(*m_rb, sampleRate);
 		}
 
 		if (m_sound.Init(
 				ma_sound_init_from_data_source,
 				MSoundManager()->GetEngine(),
-				m_action->IsLooping() ? (ma_data_source*) &m_ab.m_buffer : (ma_data_source*) &m_rb,
+				m_action->IsLooping() ? (ma_data_source*) *m_ab.m_buffer : (ma_data_source*) *m_rb,
 				m_is3d ? 0 : MA_SOUND_FLAG_NO_SPATIALIZATION,
 				nullptr
 			) != MA_SUCCESS) {
@@ -178,8 +178,8 @@ void MxWavePresenter::StartingTickle()
 		// There is an issue with certain spatialized sounds causing an audio glitch.
 		// To temporarily resolve this, we can disable the Doppler effect.
 		// More info: https://github.com/mackron/miniaudio/issues/885
-		ma_sound_set_doppler_factor(&m_sound, 0.0f);
-		ma_sound_set_looping(&m_sound, m_action->IsLooping() ? m_action->GetLoopCount() > 1 : MA_TRUE);
+		ma_sound_set_doppler_factor(*m_sound, 0.0f);
+		ma_sound_set_looping(*m_sound, m_action->IsLooping() ? m_action->GetLoopCount() > 1 : MA_TRUE);
 
 		SetVolume(((MxDSSound*) m_action)->GetVolume());
 		ProgressTickleState(e_streaming);
@@ -222,8 +222,8 @@ void MxWavePresenter::StreamingTickle()
 // FUNCTION: LEGO1 0x100b20c0
 void MxWavePresenter::DoneTickle()
 {
-	if (!ma_sound_get_engine(&m_sound) || m_action->GetFlags() & MxDSAction::c_bit7 ||
-		m_action->GetFlags() & MxDSAction::c_looping || ma_pcm_rb_pointer_distance(&m_rb) == 0) {
+	if (!ma_sound_get_engine(*m_sound) || m_action->GetFlags() & MxDSAction::c_bit7 ||
+		m_action->GetFlags() & MxDSAction::c_looping || ma_pcm_rb_pointer_distance(*m_rb) == 0) {
 		MxMediaPresenter::DoneTickle();
 	}
 }
@@ -251,7 +251,7 @@ MxResult MxWavePresenter::PutData()
 			}
 
 			if (!m_started) {
-				if (ma_sound_start(&m_sound) == MA_SUCCESS) {
+				if (ma_sound_start(*m_sound) == MA_SUCCESS) {
 					m_started = TRUE;
 				}
 			}
@@ -261,10 +261,10 @@ MxResult MxWavePresenter::PutData()
 				break;
 			}
 
-			assert(!ma_sound_is_playing(&m_sound));
-			ma_sound_seek_to_pcm_frame(&m_sound, 0);
+			assert(!ma_sound_is_playing(*m_sound));
+			ma_sound_seek_to_pcm_frame(*m_sound, 0);
 
-			if (ma_sound_start(&m_sound) == MA_SUCCESS) {
+			if (ma_sound_start(*m_sound) == MA_SUCCESS) {
 				m_started = TRUE;
 			}
 		}
@@ -280,8 +280,8 @@ void MxWavePresenter::EndAction()
 		AUTOLOCK(m_criticalSection);
 		MxMediaPresenter::EndAction();
 
-		if (ma_sound_get_engine(&m_sound)) {
-			ma_sound_stop(&m_sound);
+		if (ma_sound_get_engine(*m_sound)) {
+			ma_sound_stop(*m_sound);
 		}
 	}
 }
@@ -292,10 +292,10 @@ void MxWavePresenter::SetVolume(MxS32 p_volume)
 	m_criticalSection.Enter();
 
 	m_volume = p_volume;
-	if (ma_sound_get_engine(&m_sound)) {
+	if (ma_sound_get_engine(*m_sound)) {
 		MxS32 volume = p_volume * MxOmni::GetInstance()->GetSoundManager()->GetVolume() / 100;
 		float attenuation = MxOmni::GetInstance()->GetSoundManager()->GetAttenuation(volume);
-		ma_sound_set_volume(&m_sound, attenuation);
+		ma_sound_set_volume(*m_sound, attenuation);
 	}
 
 	m_criticalSection.Leave();
@@ -310,8 +310,8 @@ void MxWavePresenter::Enable(MxBool p_enable)
 		if (p_enable) {
 			m_started = FALSE;
 		}
-		else if (ma_sound_get_engine(&m_sound)) {
-			ma_sound_stop(&m_sound);
+		else if (ma_sound_get_engine(*m_sound)) {
+			ma_sound_stop(*m_sound);
 		}
 	}
 }
@@ -343,8 +343,8 @@ void MxWavePresenter::ParseExtra()
 void MxWavePresenter::Pause()
 {
 	if (!m_paused && m_started) {
-		if (ma_sound_get_engine(&m_sound)) {
-			ma_sound_stop(&m_sound);
+		if (ma_sound_get_engine(*m_sound)) {
+			ma_sound_stop(*m_sound);
 		}
 		m_paused = TRUE;
 	}
@@ -354,15 +354,15 @@ void MxWavePresenter::Pause()
 void MxWavePresenter::Resume()
 {
 	if (m_paused) {
-		if (ma_sound_get_engine(&m_sound) && m_started) {
+		if (ma_sound_get_engine(*m_sound) && m_started) {
 			switch (m_currentTickleState) {
 			case e_streaming:
 			case e_repeating:
-				ma_sound_start(&m_sound);
+				ma_sound_start(*m_sound);
 				break;
 			case e_done:
-				if (!ma_sound_at_end(&m_sound)) {
-					ma_sound_start(&m_sound);
+				if (!ma_sound_at_end(*m_sound)) {
+					ma_sound_start(*m_sound);
 				}
 			}
 		}
