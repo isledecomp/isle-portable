@@ -9,6 +9,7 @@
 #include "mxtimer.h"
 #include "mxutilities.h"
 
+#include <SDL3/SDL_log.h>
 #include <SDL3/SDL_stdinc.h>
 #include <assert.h>
 
@@ -78,7 +79,11 @@ void MxControlPresenter::EndAction()
 MxBool MxControlPresenter::FUN_10044270(MxS32 p_x, MxS32 p_y, MxPresenter* p_presenter)
 {
 	assert(p_presenter);
-	MxStillPresenter* presenter = (MxStillPresenter*) p_presenter;
+	MxStillPresenter* presenter = dynamic_cast<MxStillPresenter*>(p_presenter);
+	if (!presenter) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Invalid presenter");
+		return FALSE;
+	}
 
 	if (m_unk0x4c == 3) {
 		MxStillPresenter* map = (MxStillPresenter*) m_list.front();

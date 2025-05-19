@@ -49,10 +49,10 @@ void MxFlcPresenter::LoadFrame(MxStreamChunk* p_chunk)
 {
 	MxU8* data = p_chunk->GetData();
 
-	MxS32 rectCount = *(MxS32*) data;
+	MxS32 rectCount = UnalignedRead<MxS32>(data);
 	data += sizeof(MxS32);
 
-	MxRect32* rects = (MxRect32*) data;
+	MxU8* rects = data;
 	data += rectCount * sizeof(MxRect32);
 
 	MxBool decodedColorMap;
@@ -69,7 +69,8 @@ void MxFlcPresenter::LoadFrame(MxStreamChunk* p_chunk)
 	}
 
 	for (MxS32 i = 0; i < rectCount; i++) {
-		MxRect32 rect(rects[i]);
+		MxRect32 rect = UnalignedRead<MxRect32>(rects);
+		rects += sizeof(MxRect32);
 		rect += m_location;
 		MVideoManager()->InvalidateRect(rect);
 	}

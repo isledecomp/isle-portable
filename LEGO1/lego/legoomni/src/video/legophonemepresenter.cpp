@@ -93,7 +93,7 @@ void LegoPhonemePresenter::LoadFrame(MxStreamChunk* p_chunk)
 {
 	MxU8* data = p_chunk->GetData();
 
-	m_rectCount = *(MxS32*) data;
+	m_rectCount = UnalignedRead<MxS32>(data);
 	data += sizeof(MxS32);
 
 	MxRect32* rects = (MxRect32*) data;

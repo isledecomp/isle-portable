@@ -1,5 +1,7 @@
 #include "impl.h"
 
+#include <SDL3/SDL_log.h>
+
 using namespace TglImpl;
 
 // FUNCTION: LEGO1 0x100a31d0
@@ -89,7 +91,11 @@ Result GroupImpl::Add(const Group* pGroup)
 // FUNCTION: LEGO1 0x100a3430
 Result GroupImpl::Add(const MeshBuilder* pMeshBuilder)
 {
-	const MeshBuilderImpl* pMeshBuilderImpl = static_cast<const MeshBuilderImpl*>(pMeshBuilder);
+	const MeshBuilderImpl* pMeshBuilderImpl = dynamic_cast<const MeshBuilderImpl*>(pMeshBuilder);
+	if (!pMeshBuilderImpl) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Invalid mesh builder");
+		return Result::Error;
+	}
 	return ResultVal(m_data->AddVisual(pMeshBuilderImpl->ImplementationData()));
 }
 

@@ -159,9 +159,10 @@ void WritePixelPairs(
 	short is_odd = p_count & 1;
 	p_count >>= 1;
 
-	WORD* dst = (WORD*) (((p_bitmapHeader->biWidth + 3) & -4) * p_row + p_column + p_pixelData);
+	BYTE* dst = ((p_bitmapHeader->biWidth + 3) & -4) * p_row + p_column + p_pixelData;
 	while (--p_count >= 0) {
-		*dst++ = p_pixel;
+		memcpy(dst, &p_pixel, sizeof(WORD));
+		dst += sizeof(WORD);
 	}
 
 	if (is_odd) {
