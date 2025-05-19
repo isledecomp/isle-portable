@@ -105,7 +105,12 @@ struct BITMAPINFOHEADER {
 	WORD biBitCount;
 	DWORD biCompression;
 	DWORD biSizeImage;
+	LONG biXPelsPerMeter;
+	LONG biYPelsPerMeter;
+	DWORD biClrUsed;
+	DWORD biClrImportant;
 };
+static_assert(sizeof(BITMAPINFOHEADER) == 40, "Incorrect size");
 typedef BITMAPINFOHEADER* LPBITMAPINFOHEADER;
 
 struct RGBQUAD {
