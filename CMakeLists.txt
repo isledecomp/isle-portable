@@ -468,7 +468,6 @@ if (ISLE_BUILD_APP)
     ISLE/res/isle.rc
     ISLE/isleapp.cpp
   )
-  target_precompile_headers(isle REUSE_FROM lego1)
   list(APPEND isle_targets isle)
   if (WIN32)
     add_custom_command(TARGET isle POST_BUILD
