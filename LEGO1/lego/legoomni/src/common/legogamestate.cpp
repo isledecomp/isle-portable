@@ -369,6 +369,7 @@ MxResult LegoGameState::Load(MxULong p_slot)
 
 	storage.ReadS32(version);
 
+	assert(version == 0x1000c);
 	if (version != 0x1000c) {
 		OmniError("Saved game version mismatch", 0);
 		goto done;

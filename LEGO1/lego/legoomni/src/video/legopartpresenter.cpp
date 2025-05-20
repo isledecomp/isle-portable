@@ -59,7 +59,7 @@ MxResult LegoPartPresenter::Read(MxDSChunk& p_chunk)
 {
 	MxResult result = FAILURE;
 	LegoU32 numROIs, numLODs;
-	LegoMemory storage(p_chunk.GetData());
+	LegoMemory storage(p_chunk.GetData(), p_chunk.GetLength());
 	LegoU32 textureInfoOffset, i, j, numTextures;
 	LegoU32 roiNameLength, roiInfoOffset, surplusLODs;
 	LegoLODList* lods;

@@ -152,6 +152,7 @@ target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/L
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/LEGO1/lego/legoomni/include>")
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/LEGO1/lego/legoomni/include/actions>")
 target_link_libraries(lego1 PRIVATE SDL3::SDL3)
+target_link_libraries(lego1 PUBLIC SDL3::Headers)
 target_link_libraries(lego1 PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5>)
 if(WIN32)
   set_property(TARGET lego1 PROPERTY PREFIX "")

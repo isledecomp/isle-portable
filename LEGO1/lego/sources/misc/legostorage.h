@@ -6,6 +6,7 @@
 #include "mxstring.h"
 
 #include <SDL3/SDL_iostream.h>
+#include <assert.h>
 
 // VTABLE: LEGO1 0x100d7d80
 // SIZE 0x08
@@ -192,7 +193,7 @@ protected:
 // SIZE 0x10
 class LegoMemory : public LegoStorage {
 public:
-	LegoMemory(void* p_buffer);
+	LegoMemory(void* p_buffer, LegoU32 p_size);
 	LegoResult Read(void* p_buffer, LegoU32 p_size) override;        // vtable+0x04
 	LegoResult Write(const void* p_buffer, LegoU32 p_size) override; // vtable+0x08
 
@@ -206,6 +207,7 @@ public:
 	// FUNCTION: LEGO1 0x100994b0
 	LegoResult SetPosition(LegoU32 p_position) override // vtable+0x10
 	{
+		assert(p_position <= m_size);
 		m_position = p_position;
 		return SUCCESS;
 	}
@@ -219,6 +221,7 @@ public:
 protected:
 	LegoU8* m_buffer;   // 0x04
 	LegoU32 m_position; // 0x08
+	LegoU32 m_size;
 };
 
 // VTABLE: LEGO1 0x100db730

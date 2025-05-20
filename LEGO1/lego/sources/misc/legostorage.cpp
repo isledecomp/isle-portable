@@ -10,15 +10,17 @@ DECOMP_SIZE_ASSERT(LegoMemory, 0x10);
 DECOMP_SIZE_ASSERT(LegoFile, 0x0c);
 
 // FUNCTION: LEGO1 0x10099080
-LegoMemory::LegoMemory(void* p_buffer) : LegoStorage()
+LegoMemory::LegoMemory(void* p_buffer, LegoU32 p_size) : LegoStorage()
 {
 	m_buffer = (LegoU8*) p_buffer;
 	m_position = 0;
+	m_size = p_size;
 }
 
 // FUNCTION: LEGO1 0x10099160
 LegoResult LegoMemory::Read(void* p_buffer, LegoU32 p_size)
 {
+	assert(m_position + p_size <= m_size);
 	memcpy(p_buffer, m_buffer + m_position, p_size);
 	m_position += p_size;
 	return SUCCESS;
@@ -27,6 +29,7 @@ LegoResult LegoMemory::Read(void* p_buffer, LegoU32 p_size)
 // FUNCTION: LEGO1 0x10099190
 LegoResult LegoMemory::Write(const void* p_buffer, LegoU32 p_size)
 {
+	assert(m_position + p_size <= m_size);
 	memcpy(m_buffer + m_position, p_buffer, p_size);
 	m_position += p_size;
 	return SUCCESS;

@@ -81,7 +81,7 @@ void LegoPathPresenter::ReadyTickle()
 			else {
 				ParseExtra();
 
-				controller->Create(chunk->GetData(), m_action->GetLocation(), m_trigger);
+				controller->Create(chunk->GetData(), chunk->GetLength(), m_action->GetLocation(), m_trigger);
 				world->AddPath(controller);
 
 				m_subscriber->FreeDataChunk(chunk);

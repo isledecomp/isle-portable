@@ -665,6 +665,7 @@ MxResult LegoAnimationManager::LoadWorldInfo(LegoOmni::World p_worldId)
 			goto done;
 		}
 
+		assert(version == 3);
 		if (version != 3) {
 			OmniError("World animation version mismatch", 0);
 			goto done;

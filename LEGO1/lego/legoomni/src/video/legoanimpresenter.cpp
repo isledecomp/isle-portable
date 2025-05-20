@@ -140,7 +140,7 @@ void LegoAnimPresenter::Destroy(MxBool p_fromDestructor)
 MxResult LegoAnimPresenter::CreateAnim(MxStreamChunk* p_chunk)
 {
 	MxResult result = FAILURE;
-	LegoMemory storage(p_chunk->GetData());
+	LegoMemory storage(p_chunk->GetData(), p_chunk->GetLength());
 	MxS32 magicSig;
 	LegoS32 parseScene = 0;
 	MxS32 val3;
