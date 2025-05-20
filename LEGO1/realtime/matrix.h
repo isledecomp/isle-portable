@@ -14,6 +14,9 @@ struct UnknownMatrixType {
 // VTABLE: BETA10 0x101b8340
 // SIZE 0x08
 class Matrix4 {
+public:
+	virtual ~Matrix4() {}
+
 protected:
 	float (*m_data)[4];
 
