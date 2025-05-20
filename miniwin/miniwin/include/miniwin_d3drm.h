@@ -145,7 +145,6 @@ struct D3DRMVERTEX {
 };
 
 struct IDirect3DRMObject : public IUnknown {
-	virtual HRESULT Clone(void** ppObject) = 0;
 	virtual HRESULT AddDestroyCallback(D3DRMOBJECTCALLBACK callback, void* arg) = 0;
 	virtual HRESULT DeleteDestroyCallback(D3DRMOBJECTCALLBACK callback, void* arg) = 0;
 	virtual HRESULT SetAppData(LPD3DRM_APPDATA appData) = 0;
