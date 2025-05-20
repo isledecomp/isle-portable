@@ -843,10 +843,12 @@ MxResult IsleApp::ParseArguments(int argc, char** argv)
 			m_iniPath = argv[i + 1];
 			consumed = 2;
 		}
+#ifdef ISLE_DEBUG
 		else if (strcmp(argv[i], "--debug") == 0) {
 			g_debugEnabled = true;
 			consumed = 1;
 		}
+#endif
 		if (consumed <= 0) {
 			SDL_Log("Invalid argument(s): %s", argv[i]);
 			return FAILURE;
