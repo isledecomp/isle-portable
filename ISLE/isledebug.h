@@ -15,11 +15,15 @@ extern void IsleDebug_Render();
 
 #else
 
-#define IsleDebug_Init() do {} while (0)
+#define IsleDebug_Init()                                                                                               \
+	do {                                                                                                               \
+	} while (0)
 
 #define IsleDebug_Event(EVENT) false
 
-#define IsleDebug_Render() do {} while (0)
+#define IsleDebug_Render()                                                                                             \
+	do {                                                                                                               \
+	} while (0)
 
 #define g_debugEnabled false
 
