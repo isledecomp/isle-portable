@@ -22,6 +22,7 @@ option(ISLE_BUILD_APP "Build isle application" ON)
 option(ISLE_ASAN "Enable Address Sanitizer" OFF)
 option(ISLE_UBSAN "Enable Undefined Behavior Sanitizer" OFF)
 option(ISLE_WERROR "Treat warnings as errors" OFF)
+option(ISLE_DEBUG "Enable imgui debug" ON)
 cmake_dependent_option(ISLE_USE_DX5 "Build with internal DirectX 5 SDK" "${NOT_MINGW}" "WIN32;CMAKE_SIZEOF_VOID_P EQUAL 4" OFF)
 cmake_dependent_option(ISLE_MINIWIN "Use miniwin and minimfc" ON "NOT ISLE_USE_DX5" OFF)
 cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "MSVC OR ISLE_MINIWIN" OFF)
@@ -34,6 +35,7 @@ message(STATUS "Isle app:               ${ISLE_BUILD_APP}")
 message(STATUS "Config app:             ${ISLE_BUILD_CONFIG}")
 message(STATUS "Internal DirectX5 SDK:  ${ISLE_USE_DX5}")
 message(STATUS "Internal miniwin:       ${ISLE_MINIWIN}")
+message(STATUS "Isle debugging:         ${ISLE_DEBUG}")
 
 if (DOWNLOAD_DEPENDENCIES)
     # FetchContent downloads and configures dependencies
@@ -344,6 +346,7 @@ if (WIN32)
   target_link_libraries(lego1 INTERFACE winmm)
 endif()
 target_link_libraries(lego1 PRIVATE libsmacker miniaudio)
+target_include_directories(lego1 PUBLIC $<BUILD_INTERFACE:$<TARGET_PROPERTY:miniaudio,INTERFACE_INCLUDE_DIRECTORIES>>)
 
 # lego1_impl sources
 target_sources(lego1 PRIVATE
@@ -490,6 +493,13 @@ if (ISLE_BUILD_APP)
   endif()
   # Link LEGO1
   target_link_libraries(isle PRIVATE lego1)
+  if(ISLE_DEBUG)
+    target_sources(isle PRIVATE
+      ISLE/isledebug.cpp
+    )
+    target_compile_definitions(isle PRIVATE ISLE_DEBUG)
+    target_link_libraries(isle PRIVATE imgui)
+  endif()
 endif()
 
 if (ISLE_BUILD_CONFIG)

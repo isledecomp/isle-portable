@@ -6,8 +6,7 @@
 #include "mxtypes.h"
 #include "mxvideoparam.h"
 
-#include <SDL3/SDL_mouse.h>
-#include <SDL3/SDL_video.h>
+#include <SDL3/SDL.h>
 #ifdef MINIWIN
 #include "miniwin.h"
 #else
@@ -86,5 +85,7 @@ private:
 
 	char* m_iniPath;
 };
+
+extern IsleApp* g_isle;
 
 #endif // ISLEAPP_H

@@ -16,7 +16,7 @@
 #define CALLBACK
 #define FAR
 #define WINAPI
-#define HWND_NOTOPMOST -2
+#define HWND_NOTOPMOST ((HWND) -2)
 #define RGB(r, g, b) (((BYTE) (r) | ((BYTE) (g) << 8) | ((BYTE) (b) << 16)))
 #define S_OK ((HRESULT) 0)
 #define E_NOINTERFACE (0x80004002)
@@ -154,7 +154,7 @@ protected:
 	int m_refCount;
 };
 
-BOOL SetWindowPos(HWND hWnd, int hWndInsertAfter, int X, int Y, int cx, int cy, UINT uFlags);
+BOOL SetWindowPos(HWND hWnd, HWND hWndInsertAfter, int X, int Y, int cx, int cy, UINT uFlags);
 
 inline HDC WINAPI GetDC(HWND hWnd)
 {
