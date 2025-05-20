@@ -7,6 +7,11 @@
 #include <assert.h>
 #include <vector>
 
+typedef struct PositionColorVertex {
+	float x, y, z;
+	Uint8 r, g, b, a;
+} PositionColorVertex;
+
 template <typename InterfaceType, typename ArrayInterface>
 class Direct3DRMArrayBase : public ArrayInterface {
 public:
@@ -257,13 +262,239 @@ struct Direct3DRMTextureImpl : public Direct3DRMObjectBase<IDirect3DRMTexture2> 
 	HRESULT Changed(BOOL pixels, BOOL palette) override { return DD_OK; }
 };
 
+SDL_GPUShader* LoadShader(
+	SDL_GPUDevice* device,
+	const char* shaderFilename,
+	Uint32 samplerCount,
+	Uint32 uniformBufferCount,
+	Uint32 storageBufferCount,
+	Uint32 storageTextureCount
+)
+{
+	const char* basePath = SDL_GetBasePath();
+	if (!basePath) {
+		SDL_Log("Failed to get base path.");
+		return NULL;
+	}
+
+	// Detect shader stage based on filename extension
+	SDL_GPUShaderStage stage;
+	if (SDL_strstr(shaderFilename, ".vert")) {
+		stage = SDL_GPU_SHADERSTAGE_VERTEX;
+	}
+	else if (SDL_strstr(shaderFilename, ".frag")) {
+		stage = SDL_GPU_SHADERSTAGE_FRAGMENT;
+	}
+	else {
+		SDL_Log("Invalid shader stage: %s", shaderFilename);
+		return NULL;
+	}
+
+	char fullPath[256];
+	SDL_GPUShaderFormat formats = SDL_GetGPUShaderFormats(device);
+	SDL_GPUShaderFormat format = SDL_GPU_SHADERFORMAT_INVALID;
+	const char* entrypoint = "main";
+
+	if (formats & SDL_GPU_SHADERFORMAT_SPIRV) {
+		SDL_snprintf(fullPath, sizeof(fullPath), "%sShaders/Compiled/SPIRV/%s.spv", basePath, shaderFilename);
+		format = SDL_GPU_SHADERFORMAT_SPIRV;
+	}
+	else if (formats & SDL_GPU_SHADERFORMAT_MSL) {
+		SDL_snprintf(fullPath, sizeof(fullPath), "%sShaders/Compiled/MSL/%s.msl", basePath, shaderFilename);
+		format = SDL_GPU_SHADERFORMAT_MSL;
+		entrypoint = "main0";
+	}
+	else if (formats & SDL_GPU_SHADERFORMAT_DXIL) {
+		SDL_snprintf(fullPath, sizeof(fullPath), "%sShaders/Compiled/DXIL/%s.dxil", basePath, shaderFilename);
+		format = SDL_GPU_SHADERFORMAT_DXIL;
+	}
+	else {
+		SDL_Log("Unsupported backend shader format.");
+		return NULL;
+	}
+
+	size_t codeSize;
+	void* code = SDL_LoadFile(fullPath, &codeSize);
+	if (!code) {
+		SDL_Log("Failed to load shader file: %s", fullPath);
+		return NULL;
+	}
+
+	SDL_GPUShaderCreateInfo shaderInfo = {
+		codeSize,
+		(const Uint8*) code,
+		entrypoint,
+		format,
+		stage,
+		samplerCount,
+		storageTextureCount,
+		storageBufferCount,
+		uniformBufferCount,
+	};
+
+	SDL_GPUShader* shader = SDL_CreateGPUShader(device, &shaderInfo);
+	if (!shader) {
+		SDL_Log("Shader creation failed.");
+	}
+
+	SDL_free(code);
+	return shader;
+}
+
+SDL_GPUDevice* m_device;
+SDL_GPUGraphicsPipeline* m_pipeline;
+SDL_GPUTexture* m_transferTexture;
+SDL_GPUTransferBuffer* m_downloadTransferBuffer;
+SDL_GPUBuffer* VertexBuffer;
+int m_vertexCount = 3;
+
 struct Direct3DRMDevice2Impl : public Direct3DRMObjectBase<IDirect3DRMDevice2> {
 	Direct3DRMDevice2Impl()
 	{
+		m_device = SDL_CreateGPUDevice(
+			SDL_GPU_SHADERFORMAT_SPIRV | SDL_GPU_SHADERFORMAT_DXIL | SDL_GPU_SHADERFORMAT_MSL,
+			true,
+			NULL
+		);
+		if (m_device == NULL) {
+			SDL_Log("GPUCreateDevice failed");
+			return;
+		}
+		if (DDWindow == NULL) {
+			SDL_Log("CreateWindow failed: %s", SDL_GetError());
+			return;
+		}
+		if (!SDL_ClaimWindowForGPUDevice(m_device, DDWindow)) {
+			SDL_Log("GPUClaimWindow failed");
+			return;
+		}
+		SDL_GPUShader* vertexShader = LoadShader(m_device, "PositionColor.vert", 0, 0, 0, 0);
+		if (vertexShader == NULL) {
+			SDL_Log("Failed to create vertex shader!");
+			return;
+		}
+		SDL_GPUShader* fragmentShader = LoadShader(m_device, "SolidColor.frag", 0, 0, 0, 0);
+		if (fragmentShader == NULL) {
+			SDL_Log("Failed to create fragment shader!");
+			return;
+		}
+
+		SDL_GPUColorTargetDescription colorTargets = {SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM_SRGB};
+		SDL_GPUVertexBufferDescription vertexBufferDescs[] = {
+			{.slot = 0,
+			 .pitch = sizeof(PositionColorVertex),
+			 .input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX,
+			 .instance_step_rate = 0}
+		};
+
+		SDL_GPUVertexAttribute vertexAttrs[] = {
+			{.location = 0, .buffer_slot = 0, .format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3, .offset = 0},
+			{.location = 1,
+			 .buffer_slot = 0,
+			 .format = SDL_GPU_VERTEXELEMENTFORMAT_UBYTE4_NORM,
+			 .offset = sizeof(float) * 3}
+		};
+
+		SDL_GPUVertexInputState vertexInputState = {
+			.vertex_buffer_descriptions = vertexBufferDescs,
+			.num_vertex_buffers = 1,
+			.vertex_attributes = vertexAttrs,
+			.num_vertex_attributes = 2
+		};
+
+		SDL_GPUGraphicsPipelineCreateInfo pipelineCreateInfo =
+			{.vertex_shader = vertexShader,
+			 .fragment_shader = fragmentShader,
+			 .vertex_input_state = vertexInputState,
+			 .primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST,
+			 .target_info = {
+				 .color_target_descriptions = &colorTargets,
+				 .num_color_targets = 1,
+			 }};
+
+		m_pipeline = SDL_CreateGPUGraphicsPipeline(m_device, &pipelineCreateInfo);
+		if (m_pipeline == NULL) {
+			SDL_Log("Failed to create fill pipeline!");
+			return;
+		}
+
+		// Clean up shader resources
+		SDL_ReleaseGPUShader(m_device, vertexShader);
+		SDL_ReleaseGPUShader(m_device, fragmentShader);
+		// Create the vertex buffer
+		SDL_GPUBufferCreateInfo bufferCreateInfo = {
+			.usage = SDL_GPU_BUFFERUSAGE_VERTEX,
+			.size = (Uint32) (sizeof(PositionColorVertex) * m_vertexCount)
+		};
+
+		VertexBuffer = SDL_CreateGPUBuffer(m_device, &bufferCreateInfo);
+
+		SDL_GPUTransferBufferCreateInfo transferCreateInfo = {
+			.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD,
+			.size = (Uint32) (sizeof(PositionColorVertex) * m_vertexCount)
+		};
+
+		SDL_GPUTransferBuffer* transferBuffer = SDL_CreateGPUTransferBuffer(m_device, &transferCreateInfo);
+
+		PositionColorVertex* transferData =
+			(PositionColorVertex*) SDL_MapGPUTransferBuffer(m_device, transferBuffer, false);
+
+		transferData[0] = (PositionColorVertex){-1, -1, 0, 255, 0, 0, 255};
+		transferData[1] = (PositionColorVertex){1, -1, 0, 0, 0, 255, 255};
+		transferData[2] = (PositionColorVertex){0, 1, 0, 0, 255, 0, 128};
+
+		SDL_UnmapGPUTransferBuffer(m_device, transferBuffer);
+
+		// Upload the transfer data to the vertex buffer
+		SDL_GPUCommandBuffer* uploadCmdBuf = SDL_AcquireGPUCommandBuffer(m_device);
+		SDL_GPUCopyPass* copyPass = SDL_BeginGPUCopyPass(uploadCmdBuf);
+
+		SDL_GPUTransferBufferLocation transferLocation = {.transfer_buffer = transferBuffer, .offset = 0};
+
+		SDL_GPUBufferRegion bufferRegion =
+			{.buffer = VertexBuffer, .offset = 0, .size = (Uint32) (sizeof(PositionColorVertex) * m_vertexCount)};
+
+		SDL_UploadToGPUBuffer(copyPass, &transferLocation, &bufferRegion, false);
+
+		SDL_EndGPUCopyPass(copyPass);
+		SDL_SubmitGPUCommandBuffer(uploadCmdBuf);
+		SDL_ReleaseGPUTransferBuffer(m_device, transferBuffer);
+
+		SDL_GPUTextureCreateInfo textureInfo = {};
+		textureInfo.type = SDL_GPU_TEXTURETYPE_2D;
+		textureInfo.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM_SRGB;
+		textureInfo.width = 640;
+		textureInfo.height = 480;
+		textureInfo.layer_count_or_depth = 1;
+		textureInfo.num_levels = 1;
+		textureInfo.usage = SDL_GPU_TEXTUREUSAGE_COLOR_TARGET;
+		m_transferTexture = SDL_CreateGPUTexture(m_device, &textureInfo);
+		if (m_transferTexture == NULL) {
+			SDL_Log("Failed to create fill pipeline!");
+			return;
+		}
+		SDL_GPUTransferBufferCreateInfo downloadTransferInfo = {
+			.usage = SDL_GPU_TRANSFERBUFFERUSAGE_DOWNLOAD,
+			.size = 640 * 480 * 4
+		};
+		m_downloadTransferBuffer = SDL_CreateGPUTransferBuffer(m_device, &downloadTransferInfo);
+		if (!m_downloadTransferBuffer) {
+			return;
+		}
+
 		m_viewports = new Direct3DRMViewportArrayImpl;
 		m_viewports->AddRef();
 	}
-	~Direct3DRMDevice2Impl() override { m_viewports->Release(); }
+	~Direct3DRMDevice2Impl() override
+	{
+		m_viewports->Release();
+
+		SDL_ReleaseGPUGraphicsPipeline(m_device, m_pipeline);
+		SDL_ReleaseWindowFromGPUDevice(m_device, DDWindow);
+		SDL_ReleaseGPUBuffer(m_device, VertexBuffer);
+		SDL_DestroyWindow(DDWindow);
+		SDL_DestroyGPUDevice(m_device);
+	}
 	unsigned int GetWidth() override { return 640; }
 	unsigned int GetHeight() override { return 480; }
 	HRESULT SetBufferCount(int count) override { return DD_OK; }
@@ -370,7 +601,93 @@ private:
 };
 
 struct Direct3DRMViewportImpl : public Direct3DRMObjectBase<IDirect3DRMViewport> {
-	HRESULT Render(IDirect3DRMFrame* group) override { return DD_OK; }
+	HRESULT Render(IDirect3DRMFrame* group) override
+	{
+		if (!m_transferTexture || !DDBackBuffer) {
+			return DDERR_GENERIC;
+		}
+		SDL_GPUCommandBuffer* cmdbuf = SDL_AcquireGPUCommandBuffer(m_device);
+		if (cmdbuf == NULL) {
+			return DDERR_GENERIC;
+		}
+
+		// Render the graphics
+		SDL_GPUColorTargetInfo colorTargetInfo = {};
+		colorTargetInfo.texture = m_transferTexture;
+		// Make the render target transparent so we can combine it with the back buffer
+		colorTargetInfo.clear_color = {0, 0, 0, 0};
+		colorTargetInfo.load_op = SDL_GPU_LOADOP_CLEAR;
+
+		SDL_GPURenderPass* renderPass = SDL_BeginGPURenderPass(cmdbuf, &colorTargetInfo, 1, NULL);
+		SDL_BindGPUGraphicsPipeline(renderPass, m_pipeline);
+		SDL_GPUBufferBinding vertexBufferBinding = {.buffer = VertexBuffer, .offset = 0};
+		SDL_BindGPUVertexBuffers(renderPass, 0, &vertexBufferBinding, 1);
+		SDL_DrawGPUPrimitives(renderPass, m_vertexCount, 1, 0, 0);
+		SDL_EndGPURenderPass(renderPass);
+
+		// Download rendered image
+		SDL_GPUCopyPass* copyPass = SDL_BeginGPUCopyPass(cmdbuf);
+		SDL_GPUTextureRegion region = {};
+		region.texture = m_transferTexture;
+		region.w = DDBackBuffer->w;
+		region.h = DDBackBuffer->h;
+		region.d = 1;
+		SDL_GPUTextureTransferInfo transferInfo = {};
+		transferInfo.transfer_buffer = m_downloadTransferBuffer;
+		transferInfo.offset = 0;
+		SDL_DownloadFromGPUTexture(copyPass, &region, &transferInfo);
+		SDL_EndGPUCopyPass(copyPass);
+		SDL_GPUFence* fence = SDL_SubmitGPUCommandBufferAndAcquireFence(cmdbuf);
+		if (!cmdbuf || !SDL_WaitForGPUFences(m_device, true, &fence, 1)) {
+			return DDERR_GENERIC;
+		}
+		SDL_ReleaseGPUFence(m_device, fence);
+		void* downloadedData = SDL_MapGPUTransferBuffer(m_device, m_downloadTransferBuffer, false);
+		if (!downloadedData) {
+			return DDERR_GENERIC;
+		}
+		SDL_Surface* renderedImage = SDL_CreateSurfaceFrom(
+			DDBackBuffer->w,
+			DDBackBuffer->h,
+			SDL_PIXELFORMAT_ABGR8888,
+			downloadedData,
+			DDBackBuffer->w * 4
+		);
+		if (!renderedImage) {
+			return DDERR_GENERIC;
+		}
+
+		// Blit the render back to our backbuffer
+		SDL_Rect srcRect{0, 0, DDBackBuffer->w, DDBackBuffer->h};
+
+		if (renderedImage->format == DDBackBuffer->format) {
+			// No conversion needed
+			SDL_BlitSurface(renderedImage, &srcRect, DDBackBuffer, &srcRect);
+			SDL_DestroySurface(renderedImage);
+			return DD_OK;
+		}
+
+		const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(DDBackBuffer->format);
+		if (details->Amask != 0) {
+			// Backbuffer supports transparnacy
+			SDL_Surface* convertedRender = SDL_ConvertSurface(renderedImage, DDBackBuffer->format);
+			SDL_DestroySurface(renderedImage);
+			SDL_BlitSurface(convertedRender, &srcRect, DDBackBuffer, &srcRect);
+			SDL_DestroySurface(convertedRender);
+			return DD_OK;
+		}
+
+		// Convert backbuffer to a format that supports transparancy
+		SDL_Surface* tempBackbuffer = SDL_ConvertSurface(DDBackBuffer, renderedImage->format);
+		SDL_BlitSurface(renderedImage, &srcRect, tempBackbuffer, &srcRect);
+		SDL_DestroySurface(renderedImage);
+		// Then convert the result back to the backbuffer format and write it back
+		SDL_Surface* newBackBuffer = SDL_ConvertSurface(tempBackbuffer, DDBackBuffer->format);
+		SDL_DestroySurface(tempBackbuffer);
+		SDL_BlitSurface(newBackBuffer, &srcRect, DDBackBuffer, &srcRect);
+		SDL_DestroySurface(newBackBuffer);
+		return DD_OK;
+	}
 	HRESULT ForceUpdate(int x, int y, int w, int h) override { return DD_OK; }
 	HRESULT Clear() override { return DD_OK; }
 	HRESULT SetCamera(IDirect3DRMFrame* camera) override
@@ -449,7 +766,7 @@ struct Direct3DRMImpl : virtual public IDirect3DRM2 {
 	HRESULT CreateMesh(IDirect3DRMMesh** outMesh) override
 	{
 		*outMesh = static_cast<IDirect3DRMMesh*>(new Direct3DRMMeshImpl);
-		return DDERR_GENERIC;
+		return DD_OK;
 	}
 	HRESULT CreateMaterial(D3DVAL power, IDirect3DRMMaterial** outMaterial) override
 	{

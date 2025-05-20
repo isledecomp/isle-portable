@@ -62,6 +62,10 @@ HRESULT DirectDrawSurfaceImpl::Blt(
 	if (!srcSurface || !srcSurface->m_surface) {
 		return DDERR_GENERIC;
 	}
+	if (m_autoFlip) {
+		DDBackBuffer = srcSurface->m_surface;
+		return Flip(nullptr, DDFLIP_WAIT);
+	}
 
 	SDL_Rect srcRect;
 	if (lpSrcRect) {
@@ -120,15 +124,15 @@ HRESULT DirectDrawSurfaceImpl::BltFast(
 
 HRESULT DirectDrawSurfaceImpl::Flip(LPDIRECTDRAWSURFACE lpDDSurfaceTargetOverride, DDFlipFlags dwFlags)
 {
-	if (!m_surface) {
+	if (!DDBackBuffer) {
 		return DDERR_GENERIC;
 	}
 	SDL_Surface* windowSurface = SDL_GetWindowSurface(DDWindow);
 	if (!windowSurface) {
 		return DDERR_GENERIC;
 	}
-	SDL_Rect srcRect{0, 0, m_surface->w, m_surface->h};
-	SDL_Surface* copy = SDL_ConvertSurface(m_surface, windowSurface->format);
+	SDL_Rect srcRect{0, 0, DDBackBuffer->w, DDBackBuffer->h};
+	SDL_Surface* copy = SDL_ConvertSurface(DDBackBuffer, windowSurface->format);
 	SDL_BlitSurface(copy, &srcRect, windowSurface, &srcRect);
 	SDL_DestroySurface(copy);
 	SDL_UpdateWindowSurface(DDWindow);
@@ -140,6 +144,7 @@ HRESULT DirectDrawSurfaceImpl::GetAttachedSurface(LPDDSCAPS lpDDSCaps, LPDIRECTD
 	if ((lpDDSCaps->dwCaps & DDSCAPS_BACKBUFFER) != DDSCAPS_BACKBUFFER) {
 		return DDERR_INVALIDPARAMS;
 	}
+	DDBackBuffer = m_surface;
 	*lplpDDAttachedSurface = static_cast<IDirectDrawSurface*>(this);
 	return DD_OK;
 }
