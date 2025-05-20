@@ -4,9 +4,9 @@
 #include "decomp.h"
 #include "mxatom.h"
 #include "mxaudiomanager.h"
+#include "mxminiaudio.h"
 
 #include <SDL3/SDL_audio.h>
-#include <miniaudio.h>
 
 // VTABLE: LEGO1 0x100dc128
 // VTABLE: BETA10 0x101c1ce8
@@ -22,7 +22,7 @@ public:
 	virtual void Pause();                                                // vtable+0x34
 	virtual void Resume();                                               // vtable+0x38
 
-	ma_engine* GetEngine() { return &m_engine; }
+	ma_engine* GetEngine() { return m_engine; }
 
 	float GetAttenuation(MxU32 p_volume);
 
@@ -44,7 +44,7 @@ protected:
 		int p_totalAmount
 	);
 
-	ma_engine m_engine;
+	MxMiniaudio<ma_engine> m_engine;
 	SDL_AudioStream* m_stream;
 	undefined m_unk0x38[4];
 };

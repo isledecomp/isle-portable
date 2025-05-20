@@ -63,16 +63,16 @@ MxResult LegoCacheSound::Create(
 		ma_audio_buffer_config_init(format, p_pwfx.m_channels, bufferSizeInFrames, m_data, NULL);
 	config.sampleRate = p_pwfx.m_samplesPerSec;
 
-	if (ma_audio_buffer_init(&config, &m_buffer) != MA_SUCCESS) {
+	if (m_buffer.Init(ma_audio_buffer_init, &config) != MA_SUCCESS) {
 		return FAILURE;
 	}
 
-	if (ma_sound_init_from_data_source(
+	if (m_cacheSound.Init(
+			ma_sound_init_from_data_source,
 			SoundManager()->GetEngine(),
 			&m_buffer,
 			MxOmni::IsSound3D() ? 0 : MA_SOUND_FLAG_NO_SPATIALIZATION,
-			NULL,
-			&m_cacheSound
+			nullptr
 		) != MA_SUCCESS) {
 		return FAILURE;
 	}
@@ -80,9 +80,9 @@ MxResult LegoCacheSound::Create(
 	m_volume = p_volume;
 
 	MxS32 volume = m_volume * SoundManager()->GetVolume() / 100;
-	ma_sound_set_volume(&m_cacheSound, SoundManager()->GetAttenuation(volume));
+	ma_sound_set_volume(m_cacheSound, SoundManager()->GetAttenuation(volume));
 
-	if (m_sound.Create(&m_cacheSound, NULL, m_volume) != SUCCESS) {
+	if (m_sound.Create(m_cacheSound, NULL, m_volume) != SUCCESS) {
 		return FAILURE;
 	}
 
@@ -108,8 +108,8 @@ void LegoCacheSound::CopyData(MxU8* p_data, MxU32 p_dataSize)
 // FUNCTION: BETA10 0x1006685b
 void LegoCacheSound::Destroy()
 {
-	ma_sound_uninit(&m_cacheSound);
-	ma_audio_buffer_uninit(&m_buffer);
+	m_cacheSound.Destroy(ma_sound_uninit);
+	m_buffer.Destroy(ma_audio_buffer_uninit);
 
 	delete[] m_data;
 	Init();
@@ -141,19 +141,19 @@ MxResult LegoCacheSound::Play(const char* p_name, MxBool p_looping)
 	}
 
 	m_unk0x6a = FALSE;
-	m_sound.FUN_10011a60(&m_cacheSound, p_name);
+	m_sound.FUN_10011a60(m_cacheSound, p_name);
 
 	if (p_name != NULL) {
 		m_unk0x74 = p_name;
 	}
 
-	if (ma_sound_seek_to_pcm_frame(&m_cacheSound, 0) != MA_SUCCESS) {
+	if (ma_sound_seek_to_pcm_frame(m_cacheSound, 0) != MA_SUCCESS) {
 		return FAILURE;
 	}
 
-	ma_sound_set_looping(&m_cacheSound, p_looping);
+	ma_sound_set_looping(m_cacheSound, p_looping);
 
-	if (ma_sound_start(&m_cacheSound) != MA_SUCCESS) {
+	if (ma_sound_start(m_cacheSound) != MA_SUCCESS) {
 		return FAILURE;
 	}
 
@@ -173,7 +173,7 @@ MxResult LegoCacheSound::Play(const char* p_name, MxBool p_looping)
 // FUNCTION: BETA10 0x10066ca3
 void LegoCacheSound::Stop()
 {
-	ma_sound_stop(&m_cacheSound);
+	ma_sound_stop(m_cacheSound);
 
 	m_unk0x58 = FALSE;
 	m_unk0x6a = FALSE;
@@ -190,15 +190,15 @@ void LegoCacheSound::FUN_10006be0()
 {
 	if (!m_looping) {
 		if (m_unk0x70) {
-			if (!ma_sound_is_playing(&m_cacheSound)) {
+			if (!ma_sound_is_playing(m_cacheSound)) {
 				return;
 			}
 
 			m_unk0x70 = FALSE;
 		}
 
-		if (!ma_sound_is_playing(&m_cacheSound)) {
-			ma_sound_stop(&m_cacheSound);
+		if (!ma_sound_is_playing(m_cacheSound)) {
+			ma_sound_stop(m_cacheSound);
 			m_sound.Reset();
 			if (m_unk0x74.GetLength() != 0) {
 				m_unk0x74 = "";
@@ -214,14 +214,14 @@ void LegoCacheSound::FUN_10006be0()
 	}
 
 	if (!m_muted) {
-		if (!m_sound.UpdatePosition(&m_cacheSound)) {
+		if (!m_sound.UpdatePosition(m_cacheSound)) {
 			if (!m_unk0x6a) {
-				ma_sound_stop(&m_cacheSound);
+				ma_sound_stop(m_cacheSound);
 				m_unk0x6a = TRUE;
 			}
 		}
 		else if (m_unk0x6a) {
-			ma_sound_start(&m_cacheSound);
+			ma_sound_start(m_cacheSound);
 			m_unk0x6a = FALSE;
 		}
 	}
@@ -247,11 +247,11 @@ void LegoCacheSound::MuteSilence(MxBool p_muted)
 		m_muted = p_muted;
 
 		if (m_muted) {
-			ma_sound_set_volume(&m_cacheSound, ma_volume_db_to_linear(-3000.0f / 100.0f));
+			ma_sound_set_volume(m_cacheSound, ma_volume_db_to_linear(-3000.0f / 100.0f));
 		}
 		else {
 			MxS32 volume = m_volume * SoundManager()->GetVolume() / 100;
-			ma_sound_set_volume(&m_cacheSound, SoundManager()->GetAttenuation(volume));
+			ma_sound_set_volume(m_cacheSound, SoundManager()->GetAttenuation(volume));
 		}
 	}
 }
@@ -264,10 +264,10 @@ void LegoCacheSound::MuteStop(MxBool p_muted)
 		m_muted = p_muted;
 
 		if (m_muted) {
-			ma_sound_stop(&m_cacheSound);
+			ma_sound_stop(m_cacheSound);
 		}
 		else {
-			ma_sound_start(&m_cacheSound);
+			ma_sound_start(m_cacheSound);
 		}
 	}
 }

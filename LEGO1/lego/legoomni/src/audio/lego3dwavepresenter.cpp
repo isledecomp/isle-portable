@@ -40,7 +40,7 @@ void Lego3DWavePresenter::StartingTickle()
 
 	MxWavePresenter::StartingTickle();
 
-	if (ma_sound_get_engine(&(MxWavePresenter::m_sound))) {
+	if (MxWavePresenter::m_sound) {
 		MxU16 extraLength;
 		char* buff;
 		m_action->GetExtra(extraLength, buff);
@@ -49,7 +49,7 @@ void Lego3DWavePresenter::StartingTickle()
 			m_compositePresenter->GetAction()->GetExtra(extraLength, buff);
 		}
 
-		if (m_sound.Create(&(MxWavePresenter::m_sound), buff, m_volume) != SUCCESS) {
+		if (m_sound.Create(MxWavePresenter::m_sound, buff, m_volume) != SUCCESS) {
 			EndAction();
 		}
 	}
@@ -60,5 +60,5 @@ void Lego3DWavePresenter::StartingTickle()
 void Lego3DWavePresenter::StreamingTickle()
 {
 	MxWavePresenter::StreamingTickle();
-	m_sound.UpdatePosition(&(MxWavePresenter::m_sound));
+	m_sound.UpdatePosition(MxWavePresenter::m_sound);
 }

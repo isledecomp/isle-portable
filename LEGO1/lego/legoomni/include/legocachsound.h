@@ -62,8 +62,8 @@ private:
 	// [library:audio] WAVE_FORMAT_PCM (audio in .SI files only used this format)
 	static const MxU32 g_supportedFormatTag = 1;
 
-	ma_audio_buffer m_buffer;
-	ma_sound m_cacheSound;
+	MxMiniaudio<ma_audio_buffer> m_buffer;
+	MxMiniaudio<ma_sound> m_cacheSound;
 	undefined m_unk0x0c[4];            // 0x0c
 	Lego3DSound m_sound;               // 0x10
 	MxU8* m_data;                      // 0x40

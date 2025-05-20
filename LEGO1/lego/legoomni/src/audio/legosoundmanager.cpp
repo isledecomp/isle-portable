@@ -96,16 +96,16 @@ void LegoSoundManager::UpdateListener(
 		// uses DirectX' left-handed system. The Z-axis needs to be inverted.
 
 		if (p_position != NULL) {
-			ma_engine_listener_set_position(&m_engine, 0, p_position[0], p_position[1], -p_position[2]);
+			ma_engine_listener_set_position(m_engine, 0, p_position[0], p_position[1], -p_position[2]);
 		}
 
 		if (p_direction != NULL && p_up != NULL) {
-			ma_engine_listener_set_direction(&m_engine, 0, p_direction[0], p_direction[1], -p_direction[2]);
-			ma_engine_listener_set_world_up(&m_engine, 0, p_up[0], p_up[1], -p_up[2]);
+			ma_engine_listener_set_direction(m_engine, 0, p_direction[0], p_direction[1], -p_direction[2]);
+			ma_engine_listener_set_world_up(m_engine, 0, p_up[0], p_up[1], -p_up[2]);
 		}
 
 		if (p_velocity != NULL) {
-			ma_engine_listener_set_velocity(&m_engine, 0, p_velocity[0], p_velocity[1], -p_velocity[2]);
+			ma_engine_listener_set_velocity(m_engine, 0, p_velocity[0], p_velocity[1], -p_velocity[2]);
 		}
 	}
 }

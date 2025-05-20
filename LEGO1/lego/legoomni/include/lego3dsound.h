@@ -2,9 +2,8 @@
 #define LEGO3DSOUND_H
 
 #include "decomp.h"
+#include "mxminiaudio.h"
 #include "mxtypes.h"
-
-#include <miniaudio.h>
 
 class LegoActor;
 class LegoROI;
