@@ -14,9 +14,6 @@ struct UnknownMatrixType {
 // VTABLE: BETA10 0x101b8340
 // SIZE 0x08
 class Matrix4 {
-public:
-	virtual ~Matrix4() {}
-
 protected:
 	float (*m_data)[4];
 
@@ -24,6 +21,8 @@ public:
 	// FUNCTION: LEGO1 0x10004500
 	// FUNCTION: BETA10 0x1000fc70
 	Matrix4(float (*p_data)[4]) { SetData(p_data); }
+
+	virtual ~Matrix4() {}
 
 	inline virtual void Equals(float (*p_data)[4]);                                           // vtable+0x04
 	inline virtual void Equals(const Matrix4& p_matrix);                                      // vtable+0x00
