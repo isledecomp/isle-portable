@@ -15,23 +15,6 @@ class LegoROI;
 // VTABLE: LEGO1 0x100d9248
 // class MxPtrList<LegoROI *>
 
-// Specialize MxPtrList for LegoROI* in order to fix Destroy.
-// TODO: Change to using constexpr in MxPtrList<T>::Destroy once C++17 standard works.
-template <>
-class MxPtrList<LegoROI*> : public MxList<LegoROI**> {
-public:
-	MxPtrList(MxBool p_ownership) { SetOwnership(p_ownership); }
-
-	static void Destroy(LegoROI** p_obj) { delete[] p_obj; }
-
-	void SetOwnership(MxBool p_ownership)
-	{
-		MxCollection<LegoROI**>::SetDestroy(
-			p_ownership ? MxPtrList<LegoROI*>::Destroy : MxCollection<LegoROI**>::Destroy
-		);
-	}
-};
-
 // VTABLE: LEGO1 0x100d9260
 // SIZE 0x18
 class LegoROIMapList : public MxPtrList<LegoROI*> {
