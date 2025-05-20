@@ -286,6 +286,9 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 
 SDL_AppResult SDL_AppIterate(void* appstate)
 {
+	if (g_closed) {
+		return SDL_APP_SUCCESS;
+	}
 
 	if (!g_isle->Tick()) {
 		SDL_ShowSimpleMessageBox(
@@ -299,14 +302,14 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 	}
 
 	if (!g_closed) {
+		IsleDebug_Render();
+
 		if (g_reqEnableRMDevice) {
 			g_reqEnableRMDevice = FALSE;
 			VideoManager()->EnableRMDevice();
 			g_rmDisabled = FALSE;
 			Lego()->Resume();
 		}
-
-		IsleDebug_Render();
 
 		if (g_closed) {
 			return SDL_APP_SUCCESS;
