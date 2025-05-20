@@ -344,6 +344,7 @@ if (WIN32)
   target_link_libraries(lego1 INTERFACE winmm)
 endif()
 target_link_libraries(lego1 PRIVATE libsmacker miniaudio)
+target_include_directories(lego1 PUBLIC $<BUILD_INTERFACE:$<TARGET_PROPERTY:miniaudio,INTERFACE_INCLUDE_DIRECTORIES>>)
 
 # lego1_impl sources
 target_sources(lego1 PRIVATE
@@ -467,6 +468,7 @@ if (ISLE_BUILD_APP)
   add_executable(isle WIN32
     ISLE/res/isle.rc
     ISLE/isleapp.cpp
+    ISLE/isledebug.cpp
   )
   list(APPEND isle_targets isle)
   if (WIN32)
@@ -490,6 +492,7 @@ if (ISLE_BUILD_APP)
   endif()
   # Link LEGO1
   target_link_libraries(isle PRIVATE lego1)
+  target_link_libraries(isle PRIVATE imgui)
 endif()
 
 if (ISLE_BUILD_CONFIG)

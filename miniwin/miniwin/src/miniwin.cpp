@@ -27,7 +27,7 @@ HRESULT IUnknown::QueryInterface(const GUID& riid, void** ppvObject)
 	return E_NOINTERFACE;
 }
 
-BOOL SetWindowPos(HWND hWnd, int hWndInsertAfter, int X, int Y, int cx, int cy, UINT uFlags)
+BOOL SetWindowPos(HWND hWnd, HWND hWndInsertAfter, int X, int Y, int cx, int cy, UINT uFlags)
 {
 	if (!hWnd) {
 		return FALSE;

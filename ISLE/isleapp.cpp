@@ -2,6 +2,7 @@
 
 #include "3dmanager/lego3dmanager.h"
 #include "decomp.h"
+#include "isledebug.h"
 #include "legoanimationmanager.h"
 #include "legobuildingmanager.h"
 #include "legogamestate.h"
@@ -29,8 +30,6 @@
 #include "res/resource.h"
 #include "roi/legoroi.h"
 #include "viewmanager/viewmanager.h"
-
-#include <SDL3/SDL_init.h>
 
 #define SDL_MAIN_USE_CALLBACKS
 #include <SDL3/SDL.h>
@@ -287,9 +286,6 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 
 SDL_AppResult SDL_AppIterate(void* appstate)
 {
-	if (g_closed) {
-		return SDL_APP_SUCCESS;
-	}
 
 	if (!g_isle->Tick()) {
 		SDL_ShowSimpleMessageBox(
@@ -309,6 +305,8 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 			g_rmDisabled = FALSE;
 			Lego()->Resume();
 		}
+
+		IsleDebug_Render();
 
 		if (g_closed) {
 			return SDL_APP_SUCCESS;
@@ -341,6 +339,10 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		return SDL_APP_CONTINUE;
 	}
 
+	if (IsleDebug_Event(event)) {
+		return SDL_APP_CONTINUE;
+	}
+
 	// [library:window]
 	// Remaining functionality to be implemented:
 	// Full screen - crashes when minimizing/maximizing, but this will probably be fixed once DirectDraw is replaced
@@ -348,12 +350,16 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 
 	switch (event->type) {
 	case SDL_EVENT_WINDOW_FOCUS_GAINED:
-		g_isle->SetWindowActive(TRUE);
-		Lego()->Resume();
+		if (!g_debugEnabled) {
+			g_isle->SetWindowActive(TRUE);
+			Lego()->Resume();
+		}
 		break;
 	case SDL_EVENT_WINDOW_FOCUS_LOST:
-		g_isle->SetWindowActive(FALSE);
-		Lego()->Pause();
+		if (!g_debugEnabled) {
+			g_isle->SetWindowActive(FALSE);
+			Lego()->Pause();
+		}
 		break;
 	case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
 		if (!g_closed) {
@@ -565,6 +571,8 @@ MxResult IsleApp::SetupWindow()
 			LegoOmni::GetInstance()->GetInputManager()->SetJoystickIndex(m_joystickIndex);
 		}
 	}
+
+	IsleDebug_Init();
 
 	return SUCCESS;
 }
@@ -831,6 +839,10 @@ MxResult IsleApp::ParseArguments(int argc, char** argv)
 		if (strcmp(argv[i], "--ini") == 0 && i + 1 < argc) {
 			m_iniPath = argv[i + 1];
 			consumed = 2;
+		}
+		else if (strcmp(argv[i], "--debug") == 0) {
+			g_debugEnabled = true;
+			consumed = 1;
 		}
 		if (consumed <= 0) {
 			SDL_Log("Invalid argument(s): %s", argv[i]);
