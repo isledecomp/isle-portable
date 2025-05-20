@@ -357,7 +357,7 @@ MxU32 LegoPathBoundary::FUN_10057fe0(LegoAnimPresenter* p_presenter)
 	}
 
 	m_presenters.insert(p_presenter);
-	return 0;
+	return 1;
 }
 
 // FUNCTION: LEGO1 0x100586e0
