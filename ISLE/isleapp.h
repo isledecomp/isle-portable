@@ -64,7 +64,7 @@ private:
 	MxS32 m_backBuffersInVram;   // 0x18
 	MxS32 m_using8bit;           // 0x1c
 	MxS32 m_using16bit;          // 0x20
-	MxS32 m_unk0x24;             // 0x24
+	MxS32 m_hasLightSupport;     // 0x24
 	MxS32 m_use3dSound;          // 0x28
 	MxS32 m_useMusic;            // 0x2c
 	MxS32 m_useJoystick;         // 0x30
