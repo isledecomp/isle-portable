@@ -188,11 +188,6 @@ private:
 };
 
 struct Direct3DRMMeshImpl : public Direct3DRMObjectBase<IDirect3DRMMesh> {
-	HRESULT Clone(void** ppObject) override
-	{
-		*ppObject = static_cast<void*>(new Direct3DRMMeshImpl);
-		return DD_OK;
-	}
 	HRESULT Clone(int flags, GUID iid, void** object) override
 	{
 		if (SDL_memcmp(&iid, &IID_IDirect3DRMMesh, sizeof(GUID)) == 0) {
@@ -259,11 +254,6 @@ struct Direct3DRMTextureImpl : public Direct3DRMObjectBase<IDirect3DRMTexture2> 
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Direct3DRMTextureImpl does not implement guid");
 		return E_NOINTERFACE;
 	}
-	HRESULT Clone(void** ppObject) override
-	{
-		*ppObject = static_cast<void*>(new Direct3DRMTextureImpl);
-		return DD_OK;
-	}
 	HRESULT Changed(BOOL pixels, BOOL palette) override { return DD_OK; }
 };
 
@@ -274,11 +264,6 @@ struct Direct3DRMDevice2Impl : public Direct3DRMObjectBase<IDirect3DRMDevice2> {
 		m_viewports->AddRef();
 	}
 	~Direct3DRMDevice2Impl() override { m_viewports->Release(); }
-	HRESULT Clone(void** ppObject) override
-	{
-		*ppObject = static_cast<void*>(new Direct3DRMDevice2Impl);
-		return DD_OK;
-	}
 	unsigned int GetWidth() override { return 640; }
 	unsigned int GetHeight() override { return 480; }
 	HRESULT SetBufferCount(int count) override { return DD_OK; }
@@ -323,11 +308,6 @@ struct Direct3DRMFrameImpl : public Direct3DRMObjectBase<IDirect3DRMFrame2> {
 		if (m_texture) {
 			m_texture->Release();
 		}
-	}
-	HRESULT Clone(void** ppObject) override
-	{
-		*ppObject = static_cast<void*>(new Direct3DRMFrameImpl);
-		return DD_OK;
 	}
 	HRESULT AddChild(IDirect3DRMFrame* child) override { return m_children->AddElement(child); }
 	HRESULT DeleteChild(IDirect3DRMFrame* child) override { return m_children->DeleteElement(child); }
@@ -390,11 +370,6 @@ private:
 };
 
 struct Direct3DRMViewportImpl : public Direct3DRMObjectBase<IDirect3DRMViewport> {
-	HRESULT Clone(void** ppObject) override
-	{
-		*ppObject = static_cast<void*>(new Direct3DRMViewportImpl);
-		return DD_OK;
-	}
 	HRESULT Render(IDirect3DRMFrame* group) override { return DD_OK; }
 	HRESULT ForceUpdate(int x, int y, int w, int h) override { return DD_OK; }
 	HRESULT Clear() override { return DD_OK; }
@@ -427,21 +402,10 @@ private:
 };
 
 struct Direct3DRMLightImpl : public Direct3DRMObjectBase<IDirect3DRMLight> {
-	HRESULT Clone(void** ppObject) override
-	{
-		*ppObject = static_cast<void*>(new Direct3DRMLightImpl);
-		return DD_OK;
-	}
 	HRESULT SetColorRGB(float r, float g, float b) override { return DD_OK; }
 };
 
-struct Direct3DRMMaterialImpl : public Direct3DRMObjectBase<IDirect3DRMMaterial> {
-	HRESULT Clone(void** ppObject) override
-	{
-		*ppObject = static_cast<void*>(new Direct3DRMMaterialImpl);
-		return DD_OK;
-	}
-};
+struct Direct3DRMMaterialImpl : public Direct3DRMObjectBase<IDirect3DRMMaterial> {};
 
 struct Direct3DRMImpl : virtual public IDirect3DRM2 {
 	// IUnknown interface
