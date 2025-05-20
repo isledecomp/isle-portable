@@ -1,6 +1,7 @@
 #include "miniwin_d3drm.h"
 
 #include "miniwin_ddsurface_p.h"
+#include "ShaderIndex.h"
 
 #include <SDL3/SDL.h>
 #include <algorithm>
@@ -262,82 +263,31 @@ struct Direct3DRMTextureImpl : public Direct3DRMObjectBase<IDirect3DRMTexture2> 
 	HRESULT Changed(BOOL pixels, BOOL palette) override { return DD_OK; }
 };
 
-SDL_GPUShader* LoadShader(
-	SDL_GPUDevice* device,
-	const char* shaderFilename,
-	Uint32 samplerCount,
-	Uint32 uniformBufferCount,
-	Uint32 storageBufferCount,
-	Uint32 storageTextureCount
-)
+SDL_GPUShader* CompileVertexShader(SDL_GPUDevice* device, VertexShaderId id)
 {
-	const char* basePath = SDL_GetBasePath();
-	if (!basePath) {
-		SDL_Log("Failed to get base path.");
+	size_t size;
+	const SDL_GPUShaderCreateInfo* createInfo = GetVertexShaderCode(id, SDL_GetGPUShaderFormats(device));
+	if (!createInfo) {
 		return NULL;
 	}
-
-	// Detect shader stage based on filename extension
-	SDL_GPUShaderStage stage;
-	if (SDL_strstr(shaderFilename, ".vert")) {
-		stage = SDL_GPU_SHADERSTAGE_VERTEX;
-	}
-	else if (SDL_strstr(shaderFilename, ".frag")) {
-		stage = SDL_GPU_SHADERSTAGE_FRAGMENT;
-	}
-	else {
-		SDL_Log("Invalid shader stage: %s", shaderFilename);
-		return NULL;
-	}
-
-	char fullPath[256];
-	SDL_GPUShaderFormat formats = SDL_GetGPUShaderFormats(device);
-	SDL_GPUShaderFormat format = SDL_GPU_SHADERFORMAT_INVALID;
-	const char* entrypoint = "main";
-
-	if (formats & SDL_GPU_SHADERFORMAT_SPIRV) {
-		SDL_snprintf(fullPath, sizeof(fullPath), "%sShaders/Compiled/SPIRV/%s.spv", basePath, shaderFilename);
-		format = SDL_GPU_SHADERFORMAT_SPIRV;
-	}
-	else if (formats & SDL_GPU_SHADERFORMAT_MSL) {
-		SDL_snprintf(fullPath, sizeof(fullPath), "%sShaders/Compiled/MSL/%s.msl", basePath, shaderFilename);
-		format = SDL_GPU_SHADERFORMAT_MSL;
-		entrypoint = "main0";
-	}
-	else if (formats & SDL_GPU_SHADERFORMAT_DXIL) {
-		SDL_snprintf(fullPath, sizeof(fullPath), "%sShaders/Compiled/DXIL/%s.dxil", basePath, shaderFilename);
-		format = SDL_GPU_SHADERFORMAT_DXIL;
-	}
-	else {
-		SDL_Log("Unsupported backend shader format.");
-		return NULL;
-	}
-
-	size_t codeSize;
-	void* code = SDL_LoadFile(fullPath, &codeSize);
-	if (!code) {
-		SDL_Log("Failed to load shader file: %s", fullPath);
-		return NULL;
-	}
-
-	SDL_GPUShaderCreateInfo shaderInfo = {
-		codeSize,
-		(const Uint8*) code,
-		entrypoint,
-		format,
-		stage,
-		samplerCount,
-		storageTextureCount,
-		storageBufferCount,
-		uniformBufferCount,
-	};
-
-	SDL_GPUShader* shader = SDL_CreateGPUShader(device, &shaderInfo);
+	SDL_GPUShader* shader = SDL_CreateGPUShader(device, createInfo);
 	if (!shader) {
-		SDL_Log("Shader creation failed.");
+		SDL_Log("Failed to create Vertex GPU shader: %s", SDL_GetError());
 	}
+	return shader;
+}
 
-	SDL_free(code);
+SDL_GPUShader* CompileFragmentShader(SDL_GPUDevice* device, FragmentShaderId id)
+{
+	size_t size;
+	const SDL_GPUShaderCreateInfo* createInfo = GetFragmentShaderCode(id, SDL_GetGPUShaderFormats(device));
+	if (!createInfo) {
+		return NULL;
+	}
+	SDL_GPUShader* shader = SDL_CreateGPUShader(device, createInfo);
+	if (!shader) {
+		SDL_Log("Failed to create Fragment GPU shader: %s", SDL_GetError());
+	}
 	return shader;
 }
 
@@ -368,12 +318,12 @@ struct Direct3DRMDevice2Impl : public Direct3DRMObjectBase<IDirect3DRMDevice2> {
 			SDL_Log("GPUClaimWindow failed");
 			return;
 		}
-		SDL_GPUShader* vertexShader = LoadShader(m_device, "PositionColor.vert", 0, 0, 0, 0);
+		SDL_GPUShader* vertexShader = CompileVertexShader(m_device, VertexShaderId::PositionColor);
 		if (vertexShader == NULL) {
 			SDL_Log("Failed to create vertex shader!");
 			return;
 		}
-		SDL_GPUShader* fragmentShader = LoadShader(m_device, "SolidColor.frag", 0, 0, 0, 0);
+		SDL_GPUShader* fragmentShader = CompileFragmentShader(m_device, FragmentShaderId::SolidColor);
 		if (fragmentShader == NULL) {
 			SDL_Log("Failed to create fragment shader!");
 			return;
