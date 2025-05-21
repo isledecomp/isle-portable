@@ -14,6 +14,12 @@
 SDL_Window* DDWindow;
 SDL_Surface* DDBackBuffer;
 
+HRESULT IDirectDrawClipper::SetHWnd(DWORD unnamedParam1, HWND hWnd)
+{
+	MINIWIN_NOT_IMPLEMENTED();
+	return DD_OK;
+}
+
 HRESULT DirectDrawImpl::QueryInterface(const GUID& riid, void** ppvObject)
 {
 	if (SDL_memcmp(&riid, &IID_IDirectDraw2, sizeof(GUID)) == 0) {
@@ -26,7 +32,7 @@ HRESULT DirectDrawImpl::QueryInterface(const GUID& riid, void** ppvObject)
 		*ppvObject = static_cast<IDirect3D2*>(this);
 		return S_OK;
 	}
-	SDL_LogError(LOG_CATEGORY_MINIWIN, "DirectDrawImpl does not implement guid");
+	MINIWIN_NOT_IMPLEMENTED();
 	return E_NOINTERFACE;
 }
 
@@ -87,9 +93,6 @@ HRESULT DirectDrawImpl::CreateSurface(
 			return DD_OK;
 		}
 		if ((lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) == DDSCAPS_PRIMARYSURFACE) {
-			if ((lpDDSurfaceDesc->dwFlags & DDSD_BACKBUFFERCOUNT) == DDSD_BACKBUFFERCOUNT) {
-				SDL_Log("Todo: Switch to %d buffering", lpDDSurfaceDesc->dwBackBufferCount);
-			}
 			SDL_Surface* windowSurface = SDL_GetWindowSurface(DDWindow);
 			if (!windowSurface) {
 				return DDERR_GENERIC;
@@ -190,6 +193,7 @@ HRESULT DirectDrawImpl::EnumDisplayModes(
 
 HRESULT DirectDrawImpl::FlipToGDISurface()
 {
+	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 
@@ -304,6 +308,7 @@ HRESULT DirectDrawImpl::GetDisplayMode(LPDDSURFACEDESC lpDDSurfaceDesc)
 
 HRESULT DirectDrawImpl::RestoreDisplayMode()
 {
+	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 
@@ -331,6 +336,7 @@ HRESULT DirectDrawImpl::SetCooperativeLevel(HWND hWnd, DDSCLFlags dwFlags)
 
 HRESULT DirectDrawImpl::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWORD dwBPP)
 {
+	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 
@@ -344,7 +350,7 @@ HRESULT DirectDrawImpl::CreateDevice(const GUID& guid, void* pBackBuffer, IDirec
 HRESULT DirectDrawCreate(LPGUID lpGuid, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOuter)
 {
 	if (lpGuid) {
-		MINIWIN_ERROR("Specifying a DirectDraw driver is not implemented");
+		MINIWIN_NOT_IMPLEMENTED();
 	}
 
 	*lplpDD = new DirectDrawImpl;
@@ -367,4 +373,34 @@ HRESULT DirectDrawEnumerate(LPDDENUMCALLBACKA cb, void* context)
 	}
 
 	return DD_OK;
+}
+
+UINT WINAPI GetSystemPaletteEntries(HDC hdc, UINT iStart, UINT cEntries, LPPALETTEENTRY pPalEntries)
+{
+	for (UINT i = 0; i < cEntries; i++) {
+		UINT val = iStart + i;
+		pPalEntries[i].peRed = val;
+		pPalEntries[i].peGreen = val;
+		pPalEntries[i].peBlue = val;
+		pPalEntries[i].peFlags = PC_NONE;
+	}
+	return cEntries;
+}
+
+HPALETTE CreatePalette(LPLOGPALETTE lpLogPalette)
+{
+	MINIWIN_NOT_IMPLEMENTED();
+	return nullptr;
+}
+
+int SelectPalette(HDC hdc, HPALETTE hpal, BOOL bForceBackground)
+{
+	MINIWIN_NOT_IMPLEMENTED();
+	return 0;
+}
+
+int RealizePalette(HDC hdc)
+{
+	MINIWIN_NOT_IMPLEMENTED();
+	return 0;
 }

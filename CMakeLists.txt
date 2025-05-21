@@ -199,6 +199,7 @@ add_library(minimfc STATIC EXCLUDE_FROM_ALL
   miniwin/minimfc/src/minimfc.cpp
 )
 target_include_directories(minimfc PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/miniwin/minimfc/include>")
+target_include_directories(minimfc PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/miniwin/miniwin/src/include")
 target_compile_definitions(minimfc PUBLIC "MINIMFC")
 target_link_libraries(minimfc PRIVATE SDL3::SDL3 miniwin)
 

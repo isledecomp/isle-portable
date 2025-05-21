@@ -33,6 +33,7 @@ HRESULT Direct3DRMFrameImpl::DeleteChild(IDirect3DRMFrame* child)
 
 HRESULT Direct3DRMFrameImpl::SetSceneBackgroundRGB(float r, float g, float b)
 {
+	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 
@@ -62,37 +63,31 @@ HRESULT Direct3DRMFrameImpl::GetPosition(int index, D3DVECTOR* position)
 
 HRESULT Direct3DRMFrameImpl::AddVisual(IDirect3DRMVisual* visual)
 {
-	MINIWIN_NOT_IMPLEMENTED();
 	return m_visuals->AddElement(visual);
 }
 
 HRESULT Direct3DRMFrameImpl::DeleteVisual(IDirect3DRMVisual* visual)
 {
-	MINIWIN_NOT_IMPLEMENTED();
 	return m_visuals->DeleteElement(visual);
 }
 
 HRESULT Direct3DRMFrameImpl::AddVisual(IDirect3DRMMesh* visual)
 {
-	MINIWIN_NOT_IMPLEMENTED();
 	return m_visuals->AddElement(visual);
 }
 
 HRESULT Direct3DRMFrameImpl::DeleteVisual(IDirect3DRMMesh* visual)
 {
-	MINIWIN_NOT_IMPLEMENTED();
 	return m_visuals->DeleteElement(visual);
 }
 
 HRESULT Direct3DRMFrameImpl::AddVisual(IDirect3DRMFrame* visual)
 {
-	MINIWIN_NOT_IMPLEMENTED();
 	return m_visuals->AddElement(visual);
 }
 
 HRESULT Direct3DRMFrameImpl::DeleteVisual(IDirect3DRMFrame* visual)
 {
-	MINIWIN_NOT_IMPLEMENTED();
 	return m_visuals->DeleteElement(visual);
 }
 

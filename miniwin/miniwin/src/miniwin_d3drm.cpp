@@ -8,6 +8,7 @@
 #include "miniwin_d3drmobject_p.h"
 #include "miniwin_d3drmviewport_p.h"
 #include "miniwin_ddsurface_p.h"
+#include "miniwin_p.h"
 
 #include <SDL3/SDL.h>
 
@@ -60,10 +61,18 @@ private:
 };
 
 struct Direct3DRMWinDeviceImpl : public IDirect3DRMWinDevice {
-	HRESULT Activate() override { return DD_OK; }
-	HRESULT Paint() override { return DD_OK; }
-	void HandleActivate(WORD wParam) override {}
-	void HandlePaint(void* p_dc) override {}
+	HRESULT Activate() override
+	{
+		MINIWIN_NOT_IMPLEMENTED();
+		return DD_OK;
+	}
+	HRESULT Paint() override
+	{
+		MINIWIN_NOT_IMPLEMENTED();
+		return DD_OK;
+	}
+	void HandleActivate(WORD wParam) override { MINIWIN_NOT_IMPLEMENTED(); }
+	void HandlePaint(void* p_dc) override { MINIWIN_NOT_IMPLEMENTED(); }
 };
 
 struct Direct3DRMTextureImpl : public Direct3DRMObjectBase<IDirect3DRMTexture2> {
@@ -74,11 +83,16 @@ struct Direct3DRMTextureImpl : public Direct3DRMObjectBase<IDirect3DRMTexture2> 
 			*ppvObject = static_cast<IDirect3DRMTexture2*>(this);
 			return DD_OK;
 		}
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Direct3DRMTextureImpl does not implement guid");
+		MINIWIN_NOT_IMPLEMENTED();
 		return E_NOINTERFACE;
 	}
-	HRESULT Changed(BOOL pixels, BOOL palette) override { return DD_OK; }
+	HRESULT Changed(BOOL pixels, BOOL palette) override
+	{
+		MINIWIN_NOT_IMPLEMENTED();
+		return DD_OK;
+	}
 };
+
 struct Direct3DRMMaterialImpl : public Direct3DRMObjectBase<IDirect3DRMMaterial> {};
 
 SDL_GPUGraphicsPipeline* InitializeGraphicsPipeline(SDL_GPUDevice* device)
@@ -181,6 +195,7 @@ struct Direct3DRMImpl : virtual public IDirect3DRM2 {
 	HRESULT CreateDeviceFromD3D(const IDirect3D2* d3d, IDirect3DDevice2* d3dDevice, IDirect3DRMDevice2** outDevice)
 		override
 	{
+		MINIWIN_NOT_IMPLEMENTED();
 		return CreateDevice(outDevice, 640, 480);
 	}
 	HRESULT CreateDeviceFromSurface(

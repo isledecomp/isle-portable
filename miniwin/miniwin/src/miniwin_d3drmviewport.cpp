@@ -38,6 +38,7 @@ void Direct3DRMViewportImpl::Update()
 
 	m_vertexBuffer = SDL_CreateGPUBuffer(m_device, &bufferCreateInfo);
 
+	MINIWIN_NOT_IMPLEMENTED();
 	SDL_GPUTransferBufferCreateInfo transferCreateInfo = {};
 	transferCreateInfo.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
 	transferCreateInfo.size = static_cast<Uint32>(sizeof(PositionColorVertex) * m_vertexCount);
@@ -208,13 +209,11 @@ HRESULT Direct3DRMViewportImpl::GetCamera(IDirect3DRMFrame** camera)
 
 HRESULT Direct3DRMViewportImpl::SetProjection(D3DRMPROJECTIONTYPE type)
 {
-	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 
 D3DRMPROJECTIONTYPE Direct3DRMViewportImpl::GetProjection()
 {
-	MINIWIN_NOT_IMPLEMENTED();
 	return D3DRMPROJECTIONTYPE::PERSPECTIVE;
 }
 
@@ -256,13 +255,11 @@ D3DVALUE Direct3DRMViewportImpl::GetField()
 
 DWORD Direct3DRMViewportImpl::GetWidth()
 {
-	MINIWIN_NOT_IMPLEMENTED();
 	return m_width;
 }
 
 DWORD Direct3DRMViewportImpl::GetHeight()
 {
-	MINIWIN_NOT_IMPLEMENTED();
 	return m_height;
 }
 

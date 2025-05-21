@@ -81,8 +81,8 @@ typedef struct IUnknown* LPUNKNOWN;
 
 struct CWnd {
 	HWND m_hWnd;
-	void EnableWindow(bool bEnable) {}
-	void SetWindowText(const char* text) {}
+	void EnableWindow(bool bEnable);
+	void SetWindowText(const char* text);
 };
 
 struct CDataExchange {
@@ -93,22 +93,22 @@ struct CDialog {
 	HWND m_hWnd;
 	int m_nIDTemplate;
 	CWnd* m_pParentWnd;
-	CDialog() : m_nIDTemplate(0), m_pParentWnd(nullptr) {}
-	CDialog(int nIDTemplate) : m_nIDTemplate(nIDTemplate), m_pParentWnd(nullptr) {}
-	CDialog(int nIDTemplate, CWnd* pParent) : m_nIDTemplate(nIDTemplate), m_pParentWnd(pParent) {}
-	virtual BOOL OnInitDialog() { return TRUE; }
-	void OnCancel() {}
-	virtual void OnOK() {}
-	virtual void DoModal() {}
-	virtual void Default() {}
-	virtual void EndDialog(int nResult) {}
-	virtual void DoDataExchange(CDataExchange* pDX) {}
+	CDialog();
+	CDialog(int nIDTemplate);
+	CDialog(int nIDTemplate, CWnd* pParent);
+	virtual BOOL OnInitDialog();
+	void OnCancel();
+	virtual void OnOK();
+	virtual void DoModal();
+	virtual void Default();
+	virtual void EndDialog(int nResult);
+	virtual void DoDataExchange(CDataExchange* pDX);
 };
 
 struct CPaintDC {
 	void* m_hDC;
-	CPaintDC(CDialog* hWnd) {}
-	void Draw() {}
+	CPaintDC(CDialog* hWnd);
+	void Draw();
 };
 
 struct CMenu {
@@ -120,10 +120,10 @@ struct CMenu {
 		pMenu->m_hMenu = hMenu;
 		return pMenu;
 	}
-	bool InsertMenu(UINT uPosition, UINT uFlags, UINT_PTR uIDNewItem, LPCTSTR lpszNewItem) { return true; }
-	bool RemoveMenu(UINT uPosition, UINT uFlags) { return true; }
-	bool SetMenuItemInfo(UINT uIDItem, const void* pMenuItemInfo, bool fByPosition = false) { return true; }
-	int GetMenuItemCount() const { return 0; }
+	bool InsertMenu(UINT uPosition, UINT uFlags, UINT_PTR uIDNewItem, LPCTSTR lpszNewItem);
+	bool RemoveMenu(UINT uPosition, UINT uFlags);
+	bool SetMenuItemInfo(UINT uIDItem, const void* pMenuItemInfo, bool fByPosition = false);
+	int GetMenuItemCount() const;
 };
 
 struct CWinApp {
@@ -251,92 +251,42 @@ inline LSTATUS RegCreateKeyEx(
 
 void OutputDebugString(const char* lpOutputString);
 
-inline void* GetProcAddress(HMODULE module, const char* name)
-{
-	return 0;
-}
+void* GetProcAddress(HMODULE module, const char* name);
 
 int miniwin_stricmp(const char* str1, const char* str2);
 #define _stricmp miniwin_stricmp
 
-inline HICON LoadIcon(HINSTANCE hInstance, LPCSTR lpIconName)
-{
-	return 0;
-}
+HICON LoadIcon(HINSTANCE hInstance, LPCSTR lpIconName);
 
-inline int lstrcmpi(LPCSTR lpString1, LPCSTR lpString2)
-{
-	return 0;
-}
+int lstrcmpi(LPCSTR lpString1, LPCSTR lpString2);
 
-inline HINSTANCE AfxFindResourceHandle(LPCTSTR lpszResourceName, int lpszResourceType)
-{
-	return 0;
-}
+HINSTANCE AfxFindResourceHandle(LPCTSTR lpszResourceName, int lpszResourceType);
 
-inline HMODULE LoadLibrary(const char* name)
-{
-	return 0;
-}
+HMODULE LoadLibrary(const char* name);
 
-inline int FreeLibrary(void* hModule)
-{
-	return 0;
-}
+int FreeLibrary(void* hModule);
 
-inline HMENU GetSystemMenu(HWND hWnd, bool bRevert)
-{
-	assert(false && "Needs implementation");
-	return reinterpret_cast<HMENU>(0x1234);
-}
+HMENU GetSystemMenu(HWND hWnd, bool bRevert);
 
-inline HWND WINAPI FindWindow(LPCSTR lpClassName, LPCSTR lpWindowName)
-{
-	return 0;
-}
+HWND WINAPI FindWindow(LPCSTR lpClassName, LPCSTR lpWindowName);
 
-inline LRESULT SendMessage(UINT Msg, WPARAM wParam, LPARAM lParam)
-{
-	return 0;
-}
+LRESULT SendMessage(UINT Msg, WPARAM wParam, LPARAM lParam);
 
-inline LRESULT SendMessage(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM lParam)
-{
-	return 0;
-}
+LRESULT SendMessage(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 
-inline BOOL IsDlgButtonChecked(int nIDButton)
-{
-	return 0;
-}
+BOOL IsDlgButtonChecked(int nIDButton);
 
-inline CWnd* GetDlgItem(int id)
-{
-	return new CWnd();
-}
+CWnd* GetDlgItem(int id);
 
-inline BOOL OnInitDialog(HWND hDlg, HWND hwndFocus, LPARAM lParam)
-{
-	return TRUE;
-}
+BOOL OnInitDialog(HWND hDlg, HWND hwndFocus, LPARAM lParam);
 
-inline BOOL CheckRadioButton(int nIDFirstButton, int nIDLastButton, int nIDCheckButton)
-{
-	return TRUE;
-}
+BOOL CheckRadioButton(int nIDFirstButton, int nIDLastButton, int nIDCheckButton);
 
-inline BOOL CheckDlgButton(int nIDButton, BOOL uCheck)
-{
-	return TRUE;
-}
+BOOL CheckDlgButton(int nIDButton, BOOL uCheck);
 
-inline void Enable3dControls()
-{
-}
+void Enable3dControls();
 
-inline void ParseCommandLine(CCommandLineInfo& cmdInfo)
-{
-}
+void ParseCommandLine(CCommandLineInfo& cmdInfo);
 
 struct AFX_MODULE_STATE {
 	CWinApp* m_pCurrentWinApp;
