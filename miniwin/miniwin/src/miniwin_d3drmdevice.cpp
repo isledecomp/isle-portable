@@ -41,10 +41,10 @@ HRESULT Direct3DRMDevice2Impl::SetBufferCount(int count)
 	return DD_OK;
 }
 
-HRESULT Direct3DRMDevice2Impl::GetBufferCount()
+DWORD Direct3DRMDevice2Impl::GetBufferCount()
 {
 	MINIWIN_NOT_IMPLEMENTED();
-	return DD_OK;
+	return 2;
 }
 
 HRESULT Direct3DRMDevice2Impl::SetShades(DWORD shadeCount)
@@ -77,10 +77,10 @@ HRESULT Direct3DRMDevice2Impl::SetDither(int dither)
 	return DD_OK;
 }
 
-HRESULT Direct3DRMDevice2Impl::GetDither()
+BOOL Direct3DRMDevice2Impl::GetDither()
 {
 	MINIWIN_NOT_IMPLEMENTED();
-	return DD_OK;
+	return false;
 }
 
 HRESULT Direct3DRMDevice2Impl::SetTextureQuality(D3DRMTEXTUREQUALITY quality)

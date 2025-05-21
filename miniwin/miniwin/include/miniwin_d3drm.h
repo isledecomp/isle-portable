@@ -195,7 +195,7 @@ struct IDirect3DRMMesh : public IDirect3DRMVisual {
 	virtual HRESULT GetGroupTexture(int groupIndex, LPDIRECT3DRMTEXTURE* texture) = 0;
 	virtual D3DRMMAPPING GetGroupMapping(int groupIndex) = 0;
 	virtual D3DRMRENDERQUALITY GetGroupQuality(int groupIndex) = 0;
-	virtual HRESULT GetGroupColor(D3DRMGROUPINDEX index) = 0;
+	virtual D3DCOLOR GetGroupColor(D3DRMGROUPINDEX index) = 0;
 	virtual HRESULT GetVertices(int groupIndex, int startIndex, int count, D3DRMVERTEX* vertices) = 0;
 };
 
@@ -308,13 +308,13 @@ struct IDirect3DRMDevice : virtual public IDirect3DRMObject {
 	virtual DWORD GetWidth() = 0;
 	virtual DWORD GetHeight() = 0;
 	virtual HRESULT SetBufferCount(int count) = 0;
-	virtual HRESULT GetBufferCount() = 0;
+	virtual DWORD GetBufferCount() = 0;
 	virtual HRESULT SetShades(DWORD shadeCount) = 0;
 	virtual HRESULT GetShades() = 0;
 	virtual HRESULT SetQuality(D3DRMRENDERQUALITY quality) = 0;
 	virtual D3DRMRENDERQUALITY GetQuality() = 0;
 	virtual HRESULT SetDither(int dither) = 0;
-	virtual HRESULT GetDither() = 0;
+	virtual BOOL GetDither() = 0;
 	virtual HRESULT SetTextureQuality(D3DRMTEXTUREQUALITY quality) = 0;
 	virtual D3DRMTEXTUREQUALITY GetTextureQuality() = 0;
 	virtual HRESULT SetRenderMode(D3DRMRENDERMODE mode) = 0;

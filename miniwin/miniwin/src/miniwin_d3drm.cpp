@@ -8,6 +8,7 @@
 #include "miniwin_d3drmobject_p.h"
 #include "miniwin_d3drmviewport_p.h"
 #include "miniwin_ddsurface_p.h"
+#include "miniwin_p.h"
 
 #include <SDL3/SDL.h>
 
@@ -251,7 +252,7 @@ struct Direct3DRMImpl : virtual public IDirect3DRM2 {
 		textureInfo.num_levels = 1;
 		textureInfo.usage = SDL_GPU_TEXTUREUSAGE_COLOR_TARGET;
 		SDL_GPUTexture* transferTexture = SDL_CreateGPUTexture(device->m_device, &textureInfo);
-		if (transferTexture == NULL) {
+		if (!transferTexture) {
 			return DDERR_GENERIC;
 		}
 
