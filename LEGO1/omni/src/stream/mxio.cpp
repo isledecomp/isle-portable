@@ -3,6 +3,7 @@
 #include "decomp.h"
 #include "mxstring.h"
 
+#include <SDL3/SDL_messagebox.h>
 #include <assert.h>
 #include <limits.h>
 
@@ -72,6 +73,15 @@ MxU16 MXIOINFO::Open(const char* p_filename, MxULong p_flags)
 		}
 	}
 	else {
+		char buffer[256];
+		SDL_snprintf(
+			buffer,
+			sizeof(buffer),
+			"\"LEGO® Island\" failed to load %s.\nPlease make sure this file is available on HD/CD.",
+			path.GetData()
+		);
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "LEGO® Island Error", buffer, NULL);
+
 		result = MMIOERR_CANNOTOPEN;
 	}
 

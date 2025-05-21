@@ -27,6 +27,7 @@
 #include "mxstl/stlcompat.h"
 #include "mxutilities.h"
 
+#include <SDL3/SDL_messagebox.h>
 #include <SDL3/SDL_stdinc.h>
 #include <stdio.h>
 
@@ -187,6 +188,12 @@ MxResult LegoWorldPresenter::LoadWorld(char* p_worldName, LegoWorld* p_world)
 		MxString::MapPathToFilesystem(wdbPath);
 
 		if ((wdbFile = SDL_IOFromFile(wdbPath, "rb")) == NULL) {
+			SDL_ShowSimpleMessageBox(
+				SDL_MESSAGEBOX_ERROR,
+				"LEGO® Island Error",
+				"\"LEGO® Island\" failed to load world.wdb.\nPlease make sure this file is available on HD/CD.",
+				NULL
+			);
 			return FAILURE;
 		}
 	}
