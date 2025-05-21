@@ -191,7 +191,8 @@ MxResult LegoWorldPresenter::LoadWorld(char* p_worldName, LegoWorld* p_world)
 			SDL_ShowSimpleMessageBox(
 				SDL_MESSAGEBOX_ERROR,
 				"LEGO® Island Error",
-				"\"LEGO® Island\" failed to load world.wdb.\nPlease make sure this file is available on HD/CD.",
+				"\"LEGO® Island\" failed to load lego\\data\\world.wdb.\nPlease make sure this file is available on "
+				"HD/CD.",
 				NULL
 			);
 			return FAILURE;
