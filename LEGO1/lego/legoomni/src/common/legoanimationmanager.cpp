@@ -29,6 +29,7 @@
 #include "viewmanager/viewmanager.h"
 
 #include <SDL3/SDL_filesystem.h>
+#include <SDL3/SDL_messagebox.h>
 #include <SDL3/SDL_stdinc.h>
 #include <stdio.h>
 #include <vec.h>
@@ -640,6 +641,8 @@ MxResult LegoAnimationManager::LoadWorldInfo(LegoOmni::World p_worldId)
 		}
 
 		strcat(path, filename);
+		MxString::MapPathToFilesystem(path);
+
 		SDL_PathInfo pathInfo;
 
 		if (!SDL_GetPathInfo(path, &pathInfo) || pathInfo.type != SDL_PATHTYPE_FILE) {
@@ -650,8 +653,17 @@ MxResult LegoAnimationManager::LoadWorldInfo(LegoOmni::World p_worldId)
 			}
 
 			strcat(path, filename);
+			MxString::MapPathToFilesystem(path);
 
 			if (!SDL_GetPathInfo(path, &pathInfo) || pathInfo.type != SDL_PATHTYPE_FILE) {
+				char buffer[256];
+				SDL_snprintf(
+					buffer,
+					sizeof(buffer),
+					"\"LEGO® Island\" failed to load %s.\nPlease make sure this file is available on HD/CD.",
+					filename
+				);
+				SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "LEGO® Island Error", buffer, NULL);
 				goto done;
 			}
 		}

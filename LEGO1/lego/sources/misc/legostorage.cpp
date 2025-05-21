@@ -128,14 +128,6 @@ LegoResult LegoFile::Open(const char* p_name, LegoU32 p_mode)
 	path.MapPathToFilesystem();
 
 	if (!(m_file = SDL_IOFromFile(path.GetData(), mode))) {
-		char buffer[256];
-		SDL_snprintf(
-			buffer,
-			sizeof(buffer),
-			"\"LEGO® Island\" failed to load %s.\nPlease make sure this file is available on HD/CD.",
-			path.GetData()
-		);
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "LEGO® Island Error", buffer, NULL);
 		return FAILURE;
 	}
 	return SUCCESS;
