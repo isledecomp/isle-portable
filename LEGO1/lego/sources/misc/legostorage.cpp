@@ -2,7 +2,6 @@
 
 #include "decomp.h"
 
-#include <SDL3/SDL_messagebox.h>
 #include <memory.h>
 #include <string.h>
 
