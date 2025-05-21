@@ -132,8 +132,8 @@ public:
 		ImGui::Text("cameraWidth: %g", videoManager->m_cameraWidth);
 		ImGui::Text("cameraHeight: %g", videoManager->m_cameraHeight);
 		ImGui::Text("fov: %g", videoManager->m_fov);
-		ImVec2 uv_min = ImVec2(1.0f, 1.0f);
-		ImVec2 uv_max = ImVec2(0.0f, 0.0f);
+		ImVec2 uv_min = ImVec2(0.0f, 0.0f);
+		ImVec2 uv_max = ImVec2(1.0f, 1.0f);
 		ImGui::PushStyleVar(ImGuiStyleVar_ImageBorderSize, SDL_max(1.0f, ImGui::GetStyle().ImageBorderSize));
 		ImGui::ImageWithBg(
 			(ImTextureID) (uintptr_t) g_videoPalette,
