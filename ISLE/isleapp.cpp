@@ -425,15 +425,15 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 			);
 		}
 		break;
+	case SDL_EVENT_QUIT:
+		return SDL_APP_SUCCESS;
+		break;
 	}
 
 	if (event->user.type == g_legoSdlEvents.m_windowsMessage) {
 		switch (event->user.code) {
 		case WM_ISLE_SETCURSOR:
 			g_isle->SetupCursor((Cursor) (uintptr_t) event->user.data1);
-			break;
-		case WM_QUIT:
-			return SDL_APP_SUCCESS;
 			break;
 		case WM_TIMER:
 			if (InputManager()) {
