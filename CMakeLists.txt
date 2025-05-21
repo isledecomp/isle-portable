@@ -97,6 +97,8 @@ add_library(miniwin STATIC EXCLUDE_FROM_ALL
   miniwin/miniwin/src/miniwin_ddsurface.cpp
   miniwin/miniwin/src/miniwin_ddraw.cpp
   miniwin/miniwin/src/miniwin_d3drm.cpp
+  miniwin/miniwin/src/miniwin_d3drmdevice.cpp
+  miniwin/miniwin/src/miniwin_d3drmviewport.cpp
 )
 # Force reported render mods from MiniWin
 target_compile_definitions(miniwin PRIVATE MINIWIN_PIXELFORMAT=SDL_PIXELFORMAT_RGB565)

@@ -35,7 +35,7 @@ HRESULT DirectDrawSurfaceImpl::QueryInterface(const GUID& riid, void** ppvObject
 		*ppvObject = static_cast<IDirectDrawSurface3*>(this);
 		return S_OK;
 	}
-	SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "DirectDrawImpl does not implement guid");
+	SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "DirectDrawSurfaceImpl does not implement guid");
 	return E_NOINTERFACE;
 }
 

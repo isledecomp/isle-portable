@@ -13,7 +13,7 @@
 // --- Typedefs ---
 typedef float D3DVAL;
 typedef void* LPD3DRM_APPDATA;
-typedef unsigned int D3DRMGROUPINDEX;
+typedef DWORD D3DRMGROUPINDEX;
 typedef DWORD D3DCOLOR, *LPD3DCOLOR;
 typedef float D3DVALUE, *LPD3DVALUE;
 
@@ -116,16 +116,16 @@ typedef struct D3DRMPALETTEENTRY {
 } D3DRMPALETTEENTRY;
 
 typedef struct D3DRMIMAGE {
-	unsigned int width, height, depth, bytes_per_line;
-	unsigned int red_mask, green_mask, blue_mask, alpha_mask;
-	unsigned int palette_size;
+	DWORD width, height, depth, bytes_per_line;
+	DWORD red_mask, green_mask, blue_mask, alpha_mask;
+	DWORD palette_size;
 	D3DRMPALETTEENTRY* palette;
 	void* buffer1;
 	void* buffer2;
 	void* data;
 	int rgb;
 	int aspectx, aspecty;
-	unsigned int format;
+	DWORD format;
 } D3DRMIMAGE;
 
 typedef struct D3DRMMATRIX4D {
@@ -179,11 +179,11 @@ struct IDirect3DRMMesh : public IDirect3DRMVisual {
 	) = 0;
 	virtual HRESULT GetGroup(
 		int groupIndex,
-		unsigned int* vertexCount,
-		unsigned int* faceCount,
-		unsigned int* vertexPerFace,
+		DWORD* vertexCount,
+		DWORD* faceCount,
+		DWORD* vertexPerFace,
 		DWORD* dataSize,
-		unsigned int* data
+		DWORD* data
 	) = 0;
 	virtual HRESULT SetGroupColor(int groupIndex, D3DCOLOR color) = 0;
 	virtual HRESULT SetGroupColorRGB(int groupIndex, float r, float g, float b) = 0;
@@ -284,8 +284,8 @@ struct IDirect3DRMViewport : public IDirect3DRMObject {
 	virtual D3DVALUE GetBack() = 0;
 	virtual HRESULT SetField(D3DVALUE field) = 0;
 	virtual D3DVALUE GetField() = 0;
-	virtual int GetWidth() = 0;
-	virtual int GetHeight() = 0;
+	virtual DWORD GetWidth() = 0;
+	virtual DWORD GetHeight() = 0;
 	virtual HRESULT Transform(D3DRMVECTOR4D* screen, D3DVECTOR* world) = 0;
 	virtual HRESULT InverseTransform(D3DVECTOR* world, D3DRMVECTOR4D* screen) = 0;
 	virtual HRESULT Pick(float x, float y, LPDIRECT3DRMPICKEDARRAY* pickedArray) = 0;
@@ -305,11 +305,11 @@ struct IDirect3DRMWinDevice : virtual public IDirect3DRMObject {
 };
 
 struct IDirect3DRMDevice : virtual public IDirect3DRMObject {
-	virtual unsigned int GetWidth() = 0;
-	virtual unsigned int GetHeight() = 0;
+	virtual DWORD GetWidth() = 0;
+	virtual DWORD GetHeight() = 0;
 	virtual HRESULT SetBufferCount(int count) = 0;
 	virtual HRESULT GetBufferCount() = 0;
-	virtual HRESULT SetShades(unsigned int shadeCount) = 0;
+	virtual HRESULT SetShades(DWORD shadeCount) = 0;
 	virtual HRESULT GetShades() = 0;
 	virtual HRESULT SetQuality(D3DRMRENDERQUALITY quality) = 0;
 	virtual D3DRMRENDERQUALITY GetQuality() = 0;
@@ -353,8 +353,8 @@ struct IDirect3DRM : virtual public IUnknown {
 		int height,
 		IDirect3DRMViewport** outViewport
 	) = 0;
-	virtual HRESULT SetDefaultTextureShades(unsigned int count) = 0;
-	virtual HRESULT SetDefaultTextureColors(unsigned int count) = 0;
+	virtual HRESULT SetDefaultTextureShades(DWORD count) = 0;
+	virtual HRESULT SetDefaultTextureColors(DWORD count) = 0;
 };
 typedef IDirect3DRM *LPDIRECT3DRM, **LPLPDIRECT3DRM;
 

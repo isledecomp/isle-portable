@@ -1,3 +1,5 @@
+#pragma once
+
 #include <type_traits>
 
 // Enable bitwise ops only for enum classes with the ENABLE_BITMASK_OPERATORS trait
