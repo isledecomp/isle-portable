@@ -55,6 +55,8 @@ public:
 
 private:
 	MxTickleClientPtrList m_clients; // 0x08
+
+	friend class DebugViewer;
 };
 
 #define TICKLE_MANAGER_NOT_FOUND 0x80000000

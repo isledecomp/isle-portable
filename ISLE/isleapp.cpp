@@ -353,13 +353,13 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 
 	switch (event->type) {
 	case SDL_EVENT_WINDOW_FOCUS_GAINED:
-		if (!g_debugEnabled) {
+		if (!IsleDebug_Enabled()) {
 			g_isle->SetWindowActive(TRUE);
 			Lego()->Resume();
 		}
 		break;
 	case SDL_EVENT_WINDOW_FOCUS_LOST:
-		if (!g_debugEnabled) {
+		if (!IsleDebug_Enabled()) {
 			g_isle->SetWindowActive(FALSE);
 			Lego()->Pause();
 		}
@@ -722,6 +722,10 @@ inline bool IsleApp::Tick()
 	// GLOBAL: ISLE 0x4101bc
 	static MxS32 g_startupDelay = 200;
 
+	if (IsleDebug_Paused() && IsleDebug_StepModeEnabled()) {
+		IsleDebug_SetPaused(false);
+	}
+
 	if (!m_windowActive) {
 		SDL_Delay(1);
 		return true;
@@ -751,6 +755,11 @@ inline bool IsleApp::Tick()
 		TickleManager()->Tickle();
 	}
 	g_lastFrameTime = currentTime;
+
+	if (IsleDebug_StepModeEnabled()) {
+		IsleDebug_SetPaused(true);
+		IsleDebug_ResetStepMode();
+	}
 
 	if (g_startupDelay == 0) {
 		return true;
@@ -845,7 +854,7 @@ MxResult IsleApp::ParseArguments(int argc, char** argv)
 		}
 #ifdef ISLE_DEBUG
 		else if (strcmp(argv[i], "--debug") == 0) {
-			g_debugEnabled = true;
+			IsleDebug_SetEnabled(true);
 			consumed = 1;
 		}
 #endif
