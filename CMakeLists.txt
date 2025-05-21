@@ -98,6 +98,9 @@ add_library(miniwin STATIC EXCLUDE_FROM_ALL
   miniwin/miniwin/src/miniwin_ddraw.cpp
   miniwin/miniwin/src/miniwin_d3drm.cpp
   miniwin/miniwin/src/miniwin_d3drmdevice.cpp
+  miniwin/miniwin/src/miniwin_d3drmframe.cpp
+  miniwin/miniwin/src/miniwin_d3drmlight.cpp
+  miniwin/miniwin/src/miniwin_d3drmmesh.cpp
   miniwin/miniwin/src/miniwin_d3drmviewport.cpp
 )
 # Force reported render mods from MiniWin
@@ -167,7 +170,7 @@ foreach(shader_src IN LISTS miniwin_shaders)
         "--dxil" "${dxil}" "--msl" "${msl}" "--spirv" "${spirv}"
       DEPENDS "${py_gencshadersource}" "${dxil}" "${msl}" "${spirv}")
   endif()
-  target_sources(miniwin PRIVATE "${shader_src}" "${shader_header}")
+  target_sources(miniwin PRIVATE "${shader_header}")
   list(APPEND shader_names "${shader_name}")
   list(APPEND shader_variables "${shader_variable}")
   list(APPEND shader_headers "${shader_header}")
