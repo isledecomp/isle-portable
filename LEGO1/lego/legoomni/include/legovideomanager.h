@@ -124,6 +124,8 @@ private:
 	D3DRMRENDERMODE m_rendermode;         // 0x584
 	BOOL m_dither;                        // 0x588
 	DWORD m_bufferCount;                  // 0x58c
+
+	friend class DebugViewer;
 };
 
 // SYNTHETIC: LEGO1 0x1007ab20
