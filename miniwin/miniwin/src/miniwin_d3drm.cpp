@@ -266,7 +266,7 @@ struct Direct3DRMImpl : virtual public IDirect3DRM2 {
 		textureInfo.num_levels = 1;
 		textureInfo.usage = SDL_GPU_TEXTUREUSAGE_COLOR_TARGET;
 		SDL_GPUTexture* transferTexture = SDL_CreateGPUTexture(device->m_device, &textureInfo);
-		if (transferTexture == NULL) {
+		if (!transferTexture) {
 			return DDERR_GENERIC;
 		}
 

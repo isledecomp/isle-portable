@@ -30,19 +30,25 @@ Direct3DRMViewportImpl::~Direct3DRMViewportImpl()
 
 void Direct3DRMViewportImpl::Update()
 {
-	m_vertexCount = 3;
+	int newVertexCount = 3;
 
-	SDL_GPUBufferCreateInfo bufferCreateInfo = {};
-	bufferCreateInfo.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
-	bufferCreateInfo.size = static_cast<Uint32>(sizeof(PositionColorVertex) * m_vertexCount);
+	if (newVertexCount > m_vertexBufferCount) {
+		if (m_vertexBuffer) {
+			SDL_ReleaseGPUBuffer(m_device, m_vertexBuffer);
+		}
+		SDL_GPUBufferCreateInfo bufferCreateInfo = {};
+		bufferCreateInfo.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
+		bufferCreateInfo.size = static_cast<Uint32>(sizeof(PositionColorVertex) * newVertexCount);
+		m_vertexBuffer = SDL_CreateGPUBuffer(m_device, &bufferCreateInfo);
+		m_vertexBufferCount = newVertexCount;
+	}
 
-	m_vertexBuffer = SDL_CreateGPUBuffer(m_device, &bufferCreateInfo);
+	m_vertexCount = newVertexCount;
 
 	MINIWIN_NOT_IMPLEMENTED();
 	SDL_GPUTransferBufferCreateInfo transferCreateInfo = {};
 	transferCreateInfo.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
 	transferCreateInfo.size = static_cast<Uint32>(sizeof(PositionColorVertex) * m_vertexCount);
-
 	SDL_GPUTransferBuffer* transferBuffer = SDL_CreateGPUTransferBuffer(m_device, &transferCreateInfo);
 
 	PositionColorVertex* transferData =
@@ -118,7 +124,7 @@ HRESULT Direct3DRMViewportImpl::Render(IDirect3DRMFrame* group)
 	SDL_DownloadFromGPUTexture(copyPass, &region, &transferInfo);
 	SDL_EndGPUCopyPass(copyPass);
 	SDL_GPUFence* fence = SDL_SubmitGPUCommandBufferAndAcquireFence(cmdbuf);
-	if (!cmdbuf || !SDL_WaitForGPUFences(m_device, true, &fence, 1)) {
+	if (!SDL_WaitForGPUFences(m_device, true, &fence, 1)) {
 		return DDERR_GENERIC;
 	}
 	SDL_ReleaseGPUFence(m_device, fence);

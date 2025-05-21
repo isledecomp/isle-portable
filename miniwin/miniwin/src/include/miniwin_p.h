@@ -28,7 +28,3 @@
 	do {                                                                                                               \
 		SDL_LogTrace(LOG_CATEGORY_MINIWIN, __VA_ARGS__);                                                               \
 	} while (0)
-static SDL_Rect ConvertRect(const RECT* r)
-{
-	return {r->left, r->top, r->right - r->left, r->bottom - r->top};
-}

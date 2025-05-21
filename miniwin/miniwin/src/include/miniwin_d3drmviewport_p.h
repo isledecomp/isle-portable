@@ -42,6 +42,7 @@ struct Direct3DRMViewportImpl : public Direct3DRMObjectBase<IDirect3DRMViewport>
 
 private:
 	void FreeDeviceResources();
+	int m_vertexBufferCount = 0;
 	int m_vertexCount;
 	bool m_updated = false;
 	DWORD m_width;
@@ -51,6 +52,6 @@ private:
 	SDL_GPUGraphicsPipeline* m_pipeline;
 	SDL_GPUTexture* m_transferTexture;
 	SDL_GPUTransferBuffer* m_downloadTransferBuffer;
-	SDL_GPUBuffer* m_vertexBuffer;
+	SDL_GPUBuffer* m_vertexBuffer = nullptr;
 	SDL_Surface* m_renderedImage = nullptr;
 };

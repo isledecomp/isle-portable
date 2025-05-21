@@ -11,13 +11,13 @@ struct Direct3DRMDevice2Impl : public Direct3DRMObjectBase<IDirect3DRMDevice2> {
 	DWORD GetWidth() override;
 	DWORD GetHeight() override;
 	HRESULT SetBufferCount(int count) override;
-	HRESULT GetBufferCount() override;
+	DWORD GetBufferCount() override;
 	HRESULT SetShades(DWORD shadeCount) override;
 	HRESULT GetShades() override;
 	HRESULT SetQuality(D3DRMRENDERQUALITY quality) override;
 	D3DRMRENDERQUALITY GetQuality() override;
 	HRESULT SetDither(int dither) override;
-	HRESULT GetDither() override;
+	BOOL GetDither() override;
 	HRESULT SetTextureQuality(D3DRMTEXTUREQUALITY quality) override;
 	D3DRMTEXTUREQUALITY GetTextureQuality() override;
 	HRESULT SetRenderMode(D3DRMRENDERMODE mode) override;

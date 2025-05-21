@@ -50,6 +50,11 @@ void DirectDrawSurfaceImpl::SetAutoFlip(bool enabled)
 	m_autoFlip = enabled;
 }
 
+static SDL_Rect ConvertRect(const RECT* r)
+{
+	return {r->left, r->top, r->right - r->left, r->bottom - r->top};
+}
+
 HRESULT DirectDrawSurfaceImpl::Blt(
 	LPRECT lpDestRect,
 	LPDIRECTDRAWSURFACE lpDDSrcSurface,
@@ -243,9 +248,6 @@ HRESULT DirectDrawSurfaceImpl::SetClipper(LPDIRECTDRAWCLIPPER lpDDClipper)
 
 HRESULT DirectDrawSurfaceImpl::SetColorKey(DDColorKeyFlags dwFlags, LPDDCOLORKEY lpDDColorKey)
 {
-	if (!lpDDColorKey) {
-		return DDERR_INVALIDPARAMS;
-	}
 	if (lpDDColorKey->dwColorSpaceLowValue != lpDDColorKey->dwColorSpaceHighValue) {
 		MINIWIN_NOT_IMPLEMENTED();
 	}
