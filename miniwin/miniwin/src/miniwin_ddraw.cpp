@@ -103,19 +103,19 @@ HRESULT DirectDrawImpl::CreateSurface(
 			return DD_OK;
 		}
 		if ((lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_OFFSCREENPLAIN) == DDSCAPS_OFFSCREENPLAIN) {
-			SDL_Log("DDSCAPS_OFFSCREENPLAIN"); // 2D surfaces?
+			MINIWIN_TRACE("DDSCAPS_OFFSCREENPLAIN"); // 2D surfaces?
 		}
 		if ((lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_SYSTEMMEMORY) == DDSCAPS_SYSTEMMEMORY) {
-			SDL_Log("DDSCAPS_SYSTEMMEMORY"); // Software rendering?
+			MINIWIN_TRACE("DDSCAPS_SYSTEMMEMORY"); // Software rendering?
 		}
 		if ((lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_TEXTURE) == DDSCAPS_TEXTURE) {
-			SDL_Log("DDSCAPS_TEXTURE"); // Texture for use in 3D
+			MINIWIN_TRACE("DDSCAPS_TEXTURE"); // Texture for use in 3D
 		}
 		if ((lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_3DDEVICE) == DDSCAPS_3DDEVICE) {
-			SDL_Log("DDSCAPS_3DDEVICE"); // back buffer
+			MINIWIN_TRACE("DDSCAPS_3DDEVICE"); // back buffer
 		}
 		if ((lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_VIDEOMEMORY) == DDSCAPS_VIDEOMEMORY) {
-			SDL_Log("DDSCAPS_VIDEOMEMORY"); // front / back buffer
+			MINIWIN_TRACE("DDSCAPS_VIDEOMEMORY"); // front / back buffer
 		}
 	}
 

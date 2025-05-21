@@ -2,11 +2,16 @@
 
 #include "ShaderIndex.h"
 #include "miniwin_d3drm_p.h"
+#include "miniwin_d3drmframe_p.h"
+#include "miniwin_d3drmlight_p.h"
+#include "miniwin_d3drmmesh_p.h"
 #include "miniwin_d3drmobject_p.h"
 #include "miniwin_d3drmviewport_p.h"
 #include "miniwin_ddsurface_p.h"
 
 #include <SDL3/SDL.h>
+
+#define RGBA_MAKE(r, g, b, a) ((D3DCOLOR) (((a) << 24) | ((r) << 16) | ((g) << 8) | (b)))
 
 struct PickRecord {
 	IDirect3DRMVisual* visual;
@@ -61,62 +66,6 @@ struct Direct3DRMWinDeviceImpl : public IDirect3DRMWinDevice {
 	void HandlePaint(void* p_dc) override {}
 };
 
-struct Direct3DRMMeshImpl : public Direct3DRMObjectBase<IDirect3DRMMesh> {
-	HRESULT Clone(int flags, GUID iid, void** object) override
-	{
-		if (SDL_memcmp(&iid, &IID_IDirect3DRMMesh, sizeof(GUID)) == 0) {
-			*object = static_cast<IDirect3DRMMesh*>(new Direct3DRMMeshImpl);
-			return DD_OK;
-		}
-
-		return DDERR_GENERIC;
-	}
-	HRESULT GetBox(D3DRMBOX* box) override { return DD_OK; }
-	HRESULT AddGroup(int vertexCount, int faceCount, int vertexPerFace, void* faceBuffer, D3DRMGROUPINDEX* groupIndex)
-		override
-	{
-		return DD_OK;
-	}
-	HRESULT GetGroup(
-		int groupIndex,
-		DWORD* vertexCount,
-		DWORD* faceCount,
-		DWORD* vertexPerFace,
-		DWORD* dataSize,
-		DWORD* data
-	) override
-	{
-		return DD_OK;
-	}
-	HRESULT SetGroupColor(int groupIndex, D3DCOLOR color) override { return DD_OK; }
-	HRESULT SetGroupColorRGB(int groupIndex, float r, float g, float b) override { return DD_OK; }
-	HRESULT SetGroupMaterial(int groupIndex, IDirect3DRMMaterial* material) override { return DD_OK; }
-	HRESULT SetGroupMapping(D3DRMGROUPINDEX groupIndex, D3DRMMAPPING mapping) override { return DD_OK; }
-	HRESULT SetGroupQuality(int groupIndex, D3DRMRENDERQUALITY quality) override { return DD_OK; }
-	HRESULT SetVertices(int groupIndex, int offset, int count, D3DRMVERTEX* vertices) override { return DD_OK; }
-	HRESULT SetGroupTexture(int groupIndex, IDirect3DRMTexture* texture) override
-	{
-		m_groupTexture = texture;
-		return DD_OK;
-	}
-	HRESULT GetGroupTexture(int groupIndex, LPDIRECT3DRMTEXTURE* texture) override
-	{
-		if (!m_groupTexture) {
-			return DDERR_GENERIC;
-		}
-		m_groupTexture->AddRef();
-		*texture = m_groupTexture;
-		return DD_OK;
-	}
-	D3DRMMAPPING GetGroupMapping(int groupIndex) override { return D3DRMMAP_PERSPCORRECT; }
-	D3DRMRENDERQUALITY GetGroupQuality(int groupIndex) override { return D3DRMRENDER_GOURAUD; }
-	HRESULT GetGroupColor(D3DRMGROUPINDEX index) override { return DD_OK; }
-	HRESULT GetVertices(int groupIndex, int startIndex, int count, D3DRMVERTEX* vertices) override { return DD_OK; }
-
-private:
-	IDirect3DRMTexture* m_groupTexture = nullptr;
-};
-
 struct Direct3DRMTextureImpl : public Direct3DRMObjectBase<IDirect3DRMTexture2> {
 	HRESULT QueryInterface(const GUID& riid, void** ppvObject) override
 	{
@@ -130,90 +79,6 @@ struct Direct3DRMTextureImpl : public Direct3DRMObjectBase<IDirect3DRMTexture2> 
 	}
 	HRESULT Changed(BOOL pixels, BOOL palette) override { return DD_OK; }
 };
-
-struct Direct3DRMFrameImpl : public Direct3DRMObjectBase<IDirect3DRMFrame2> {
-	Direct3DRMFrameImpl()
-	{
-		m_children = new Direct3DRMFrameArrayImpl;
-		m_children->AddRef();
-		m_lights = new Direct3DRMLightArrayImpl;
-		m_lights->AddRef();
-		m_visuals = new Direct3DRMVisualArrayImpl;
-		m_visuals->AddRef();
-	}
-	~Direct3DRMFrameImpl() override
-	{
-		m_children->Release();
-		m_lights->Release();
-		m_visuals->Release();
-		if (m_texture) {
-			m_texture->Release();
-		}
-	}
-	HRESULT AddChild(IDirect3DRMFrame* child) override { return m_children->AddElement(child); }
-	HRESULT DeleteChild(IDirect3DRMFrame* child) override { return m_children->DeleteElement(child); }
-	HRESULT SetSceneBackgroundRGB(float r, float g, float b) override { return DD_OK; }
-	HRESULT AddLight(IDirect3DRMLight* light) override { return m_lights->AddElement(light); }
-	HRESULT GetLights(IDirect3DRMLightArray** lightArray) override
-	{
-		*lightArray = m_lights;
-		m_lights->AddRef();
-		return DD_OK;
-	}
-	HRESULT AddTransform(D3DRMCOMBINETYPE combine, D3DRMMATRIX4D matrix) override { return DD_OK; }
-	HRESULT GetPosition(int index, D3DVECTOR* position) override { return DD_OK; }
-	HRESULT AddVisual(IDirect3DRMVisual* visual) override { return m_visuals->AddElement(visual); }
-	HRESULT DeleteVisual(IDirect3DRMVisual* visual) override { return m_visuals->DeleteElement(visual); }
-	HRESULT AddVisual(IDirect3DRMMesh* visual) override { return m_visuals->AddElement(visual); }
-	HRESULT DeleteVisual(IDirect3DRMMesh* visual) override { return m_visuals->DeleteElement(visual); }
-	HRESULT AddVisual(IDirect3DRMFrame* visual) override { return m_visuals->AddElement(visual); }
-	HRESULT DeleteVisual(IDirect3DRMFrame* visual) override { return m_visuals->DeleteElement(visual); }
-	HRESULT GetVisuals(IDirect3DRMVisualArray** visuals) override
-	{
-		*visuals = m_visuals;
-		m_visuals->AddRef();
-		return DD_OK;
-	}
-	HRESULT SetTexture(IDirect3DRMTexture* texture) override
-	{
-		if (m_texture) {
-			m_texture->Release();
-		}
-		m_texture = texture;
-		m_texture->AddRef();
-		return DD_OK;
-	}
-	HRESULT GetTexture(IDirect3DRMTexture** texture) override
-	{
-		if (!m_texture) {
-			return DDERR_GENERIC;
-		}
-		*texture = m_texture;
-		m_texture->AddRef();
-		return DD_OK;
-	}
-	HRESULT SetColor(float r, float g, float b, float a) override { return DD_OK; }
-	HRESULT SetColor(D3DCOLOR) override { return DD_OK; }
-	HRESULT SetColorRGB(float r, float g, float b) override { return DD_OK; }
-	HRESULT SetMaterialMode(D3DRMMATERIALMODE mode) override { return DD_OK; }
-	HRESULT GetChildren(IDirect3DRMFrameArray** children) override
-	{
-		*children = m_children;
-		m_children->AddRef();
-		return DD_OK;
-	}
-
-private:
-	IDirect3DRMFrameArray* m_children;
-	IDirect3DRMLightArray* m_lights;
-	IDirect3DRMVisualArray* m_visuals;
-	IDirect3DRMTexture* m_texture = nullptr;
-};
-
-struct Direct3DRMLightImpl : public Direct3DRMObjectBase<IDirect3DRMLight> {
-	HRESULT SetColorRGB(float r, float g, float b) override { return DD_OK; }
-};
-
 struct Direct3DRMMaterialImpl : public Direct3DRMObjectBase<IDirect3DRMMaterial> {};
 
 SDL_GPUGraphicsPipeline* InitializeGraphicsPipeline(SDL_GPUDevice* device)
@@ -423,5 +288,5 @@ HRESULT WINAPI Direct3DRMCreate(IDirect3DRM** direct3DRM)
 
 D3DCOLOR D3DRMCreateColorRGBA(D3DVALUE red, D3DVALUE green, D3DVALUE blue, D3DVALUE alpha)
 {
-	return 0;
+	return RGBA_MAKE((int) (255.f * red), (int) (255.f * green), (int) (255.f * blue), (int) (255.f * alpha));
 }

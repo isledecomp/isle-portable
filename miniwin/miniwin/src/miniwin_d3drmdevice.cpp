@@ -2,6 +2,7 @@
 #include "miniwin_d3drm_p.h"
 #include "miniwin_d3drmobject_p.h"
 #include "miniwin_d3drmviewport_p.h"
+#include "miniwin_p.h"
 
 #include <SDL3/SDL.h>
 
@@ -36,61 +37,73 @@ DWORD Direct3DRMDevice2Impl::GetHeight()
 
 HRESULT Direct3DRMDevice2Impl::SetBufferCount(int count)
 {
+	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 
 HRESULT Direct3DRMDevice2Impl::GetBufferCount()
 {
+	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 
 HRESULT Direct3DRMDevice2Impl::SetShades(DWORD shadeCount)
 {
+	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 
 HRESULT Direct3DRMDevice2Impl::GetShades()
 {
+	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 
 HRESULT Direct3DRMDevice2Impl::SetQuality(D3DRMRENDERQUALITY quality)
 {
+	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 
 D3DRMRENDERQUALITY Direct3DRMDevice2Impl::GetQuality()
 {
+	MINIWIN_NOT_IMPLEMENTED();
 	return D3DRMRENDERQUALITY::GOURAUD;
 }
 
 HRESULT Direct3DRMDevice2Impl::SetDither(int dither)
 {
+	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 
 HRESULT Direct3DRMDevice2Impl::GetDither()
 {
+	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 
 HRESULT Direct3DRMDevice2Impl::SetTextureQuality(D3DRMTEXTUREQUALITY quality)
 {
+	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 
 D3DRMTEXTUREQUALITY Direct3DRMDevice2Impl::GetTextureQuality()
 {
+	MINIWIN_NOT_IMPLEMENTED();
 	return D3DRMTEXTUREQUALITY::LINEAR;
 }
 
 HRESULT Direct3DRMDevice2Impl::SetRenderMode(D3DRMRENDERMODE mode)
 {
+	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 
 D3DRMRENDERMODE Direct3DRMDevice2Impl::GetRenderMode()
 {
+	MINIWIN_NOT_IMPLEMENTED();
 	return D3DRMRENDERMODE::BLENDEDTRANSPARENCY;
 }
 
@@ -112,6 +125,7 @@ HRESULT Direct3DRMDevice2Impl::AddViewport(IDirect3DRMViewport* viewport)
 
 HRESULT Direct3DRMDevice2Impl::GetViewports(IDirect3DRMViewportArray** ppViewportArray)
 {
+	m_viewports->AddRef();
 	*ppViewportArray = m_viewports;
 	return DD_OK;
 }

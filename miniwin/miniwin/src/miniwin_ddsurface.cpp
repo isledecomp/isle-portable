@@ -42,6 +42,7 @@ HRESULT DirectDrawSurfaceImpl::QueryInterface(const GUID& riid, void** ppvObject
 // IDirectDrawSurface interface
 HRESULT DirectDrawSurfaceImpl::AddAttachedSurface(LPDIRECTDRAWSURFACE lpDDSAttachedSurface)
 {
+	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 
