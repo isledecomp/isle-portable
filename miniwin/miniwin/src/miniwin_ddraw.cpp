@@ -12,6 +12,7 @@
 #include <cstring>
 
 SDL_Window* DDWindow;
+SDL_Surface* DDBackBuffer;
 
 HRESULT DirectDrawImpl::QueryInterface(const GUID& riid, void** ppvObject)
 {
@@ -89,10 +90,14 @@ HRESULT DirectDrawImpl::CreateSurface(
 			if ((lpDDSurfaceDesc->dwFlags & DDSD_BACKBUFFERCOUNT) == DDSD_BACKBUFFERCOUNT) {
 				SDL_Log("Todo: Switch to %d buffering", lpDDSurfaceDesc->dwBackBufferCount);
 			}
+			SDL_Surface* windowSurface = SDL_GetWindowSurface(DDWindow);
+			if (!windowSurface) {
+				return DDERR_GENERIC;
+			}
 			int width, height;
 			SDL_GetWindowSize(DDWindow, &width, &height);
 			bool implicitFlip = (lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_FLIP) != DDSCAPS_FLIP;
-			auto frontBuffer = new DirectDrawSurfaceImpl(width, height, format);
+			auto frontBuffer = new DirectDrawSurfaceImpl(width, height, windowSurface->format);
 			frontBuffer->SetAutoFlip(implicitFlip);
 			*lplpDDSurface = static_cast<IDirectDrawSurface*>(frontBuffer);
 			return DD_OK;

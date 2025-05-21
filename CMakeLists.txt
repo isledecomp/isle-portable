@@ -18,6 +18,9 @@ else()
   set(NOT_MINGW OFF)
 endif()
 
+find_program(SDL_SHADERCROSS_BIN NAMES "shadercross")
+find_package(Python3 COMPONENTS Interpreter)
+
 option(ISLE_BUILD_APP "Build isle application" ON)
 option(ISLE_ASAN "Enable Address Sanitizer" OFF)
 option(ISLE_UBSAN "Enable Undefined Behavior Sanitizer" OFF)
@@ -26,6 +29,7 @@ option(ISLE_DEBUG "Enable imgui debug" ON)
 cmake_dependent_option(ISLE_USE_DX5 "Build with internal DirectX 5 SDK" "${NOT_MINGW}" "WIN32;CMAKE_SIZEOF_VOID_P EQUAL 4" OFF)
 cmake_dependent_option(ISLE_MINIWIN "Use miniwin and minimfc" ON "NOT ISLE_USE_DX5" OFF)
 cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "MSVC OR ISLE_MINIWIN" OFF)
+cmake_dependent_option(ISLE_COMPILE_SHADERS "Compile shaders" ON "SDL_SHADERCROSS_BIN;TARGET Python3::Interpreter" OFF)
 option(CMAKE_POSITION_INDEPENDENT_CODE "Build with -fPIC" ON)
 option(ENABLE_CLANG_TIDY "Enable clang-tidy")
 option(DOWNLOAD_DEPENDENCIES "Download dependencies" ON)
@@ -36,6 +40,7 @@ message(STATUS "Config app:             ${ISLE_BUILD_CONFIG}")
 message(STATUS "Internal DirectX5 SDK:  ${ISLE_USE_DX5}")
 message(STATUS "Internal miniwin:       ${ISLE_MINIWIN}")
 message(STATUS "Isle debugging:         ${ISLE_DEBUG}")
+message(STATUS "Compile shaders:        ${ISLE_COMPILE_SHADERS}")
 
 if (DOWNLOAD_DEPENDENCIES)
     # FetchContent downloads and configures dependencies
@@ -92,13 +97,100 @@ add_library(miniwin STATIC EXCLUDE_FROM_ALL
   miniwin/miniwin/src/miniwin_ddsurface.cpp
   miniwin/miniwin/src/miniwin_ddraw.cpp
   miniwin/miniwin/src/miniwin_d3drm.cpp
+  miniwin/miniwin/src/miniwin_d3drmdevice.cpp
+  miniwin/miniwin/src/miniwin_d3drmviewport.cpp
 )
 # Force reported render mods from MiniWin
-target_compile_definitions(miniwin PRIVATE MINIWIN_PIXELFORMAT=SDL_PIXELFORMAT_INDEX8)
+target_compile_definitions(miniwin PRIVATE MINIWIN_PIXELFORMAT=SDL_PIXELFORMAT_RGB565)
 target_include_directories(miniwin PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/miniwin/miniwin/include>")
 target_include_directories(miniwin PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/miniwin/miniwin/src/include")
+target_include_directories(miniwin PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/miniwin/miniwin/shaders/generated")
 target_compile_definitions(miniwin PUBLIC "MINIWIN")
 target_link_libraries(miniwin PRIVATE SDL3::SDL3)
+
+set(shader_src_dir "${CMAKE_CURRENT_SOURCE_DIR}/miniwin/miniwin/shaders/src")
+set(shader_gen_dir "${CMAKE_CURRENT_SOURCE_DIR}/miniwin/miniwin/shaders/generated")
+set(py_gencshadersource "${CMAKE_CURRENT_SOURCE_DIR}/miniwin/miniwin/shaders/gencshadersource.py")
+set(miniwin_shaders
+  "${shader_src_dir}/PositionColor.vert.hlsl"
+  "${shader_src_dir}/SolidColor.frag.hlsl"
+)
+target_sources(miniwin PRIVATE ${py_gencshadersource})
+set(shader_variables )
+set(shader_headers )
+set(shader_stages )
+foreach(shader_src IN LISTS miniwin_shaders)
+  get_filename_component(filename_wle "${shader_src}" NAME_WLE)
+  get_filename_component(shader_name "${filename_wle}" NAME_WLE)
+  get_filename_component(src_format_ext "${shader_src}" LAST_EXT)
+  get_filename_component(src_stage_ext "${filename_wle}" LAST_EXT)
+  string(MAKE_C_IDENTIFIER "${filename_wle}" shader_variable)
+  set(shader_json "${shader_src}.json")
+  if(src_format_ext STREQUAL ".hlsl")
+    set(src_format "HLSL")
+  else()
+    message(FATAL_ERROR "Unknown source format (${src_format_ext})")
+  endif()
+  if(src_stage_ext STREQUAL ".vert")
+    set(shader_stage "vertex")
+  elseif(src_stage_ext STREQUAL ".frag")
+    set(shader_stage "fragment")
+  elseif(src_stage_ext STREQUAL ".comp")
+    set(shader_stage "compute")
+    message(FATAL_ERROR "Compute shaders are not (yet) supported")
+  else()
+    message(FATAL_ERROR "Unknown stage (${src_stage_ext})")
+  endif()
+  set(compiled_bindir "${CMAKE_CURRENT_BINARY_DIR}/shaders/compiled")
+  set(compiled_srcdir "${CMAKE_CURRENT_SOURCE_DIR}/miniwin/miniwin/shaders/compiled")
+  set(dxil "${compiled_bindir}/dxil/${filename_wle}.dxil")
+  set(msl "${compiled_bindir}/msl/${filename_wle}.msl")
+  set(spirv "${compiled_bindir}/spirv/${filename_wle}.spv")
+  set(shader_filename "${filename_wle}.h")
+  set(shader_header "${shader_gen_dir}/${shader_filename}")
+  if(ISLE_COMPILE_SHADERS)
+    add_custom_command(OUTPUT "${dxil}"
+      COMMAND "${SDL_SHADERCROSS_BIN}" "${shader_src}" -o "${dxil}"
+        -s "${src_format}" -d "DXIL" -t "${shader_stage}"
+      DEPENDS "${shader_src}")
+    add_custom_command(OUTPUT "${msl}"
+      COMMAND "${SDL_SHADERCROSS_BIN}" "${shader_src}" -o "${msl}"
+        -s "${src_format}" -d "MSL" -t "${shader_stage}"
+      DEPENDS "${shader_src}")
+    add_custom_command(OUTPUT "${spirv}"
+      COMMAND "${SDL_SHADERCROSS_BIN}" "${shader_src}" -o "${spirv}"
+        -s "${src_format}" -d "SPIRV" -t "${shader_stage}"
+      DEPENDS "${shader_src}")
+    add_custom_command(OUTPUT "${shader_header}"
+      COMMAND Python3::Interpreter "${py_gencshadersource}" "header" "--output" "${shader_header}"
+        "--stage" "${shader_stage}" "--variable" "${shader_variable}"
+        "--dxil" "${dxil}" "--msl" "${msl}" "--spirv" "${spirv}"
+      DEPENDS "${py_gencshadersource}" "${dxil}" "${msl}" "${spirv}")
+  endif()
+  target_sources(miniwin PRIVATE "${shader_src}" "${shader_header}")
+  list(APPEND shader_names "${shader_name}")
+  list(APPEND shader_variables "${shader_variable}")
+  list(APPEND shader_headers "${shader_header}")
+  list(APPEND shader_stages "${shader_stage}")
+  list(APPEND shader_jsons "${shader_json}")
+endforeach()
+
+set(index_cpp "${shader_gen_dir}/ShaderIndex.cpp")
+set(index_h "${shader_gen_dir}/ShaderIndex.h")
+
+if(ISLE_COMPILE_SHADERS)
+  add_custom_command(OUTPUT "${index_h}" "${index_cpp}"
+    COMMAND Python3::Interpreter "${py_gencshadersource}" "index"
+      "--output" "${index_cpp}"
+      "--header" "${index_h}"
+      "--shader-names" ${shader_names}
+      "--shader-variables" ${shader_variables}
+      "--shader-headers" ${shader_headers}
+      "--shader-stages" ${shader_stages}
+      "--shader-jsons" ${shader_jsons}
+    DEPENDS "${py_gencshadersource}" ${shader_headers} ${shader_jsons})
+endif()
+target_sources(miniwin PRIVATE "${index}" "${index_cpp}")
 
 add_library(minimfc STATIC EXCLUDE_FROM_ALL
   miniwin/minimfc/src/minimfc.cpp
