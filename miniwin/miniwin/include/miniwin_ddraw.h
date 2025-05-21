@@ -301,7 +301,7 @@ struct IDirectDrawPalette : virtual public IUnknown {
 typedef struct IDirectDrawPalette* LPDIRECTDRAWPALETTE;
 
 struct IDirectDrawClipper : virtual public IUnknown {
-	virtual HRESULT SetHWnd(DWORD unnamedParam1, HWND hWnd) { return DD_OK; }
+	virtual HRESULT SetHWnd(DWORD unnamedParam1, HWND hWnd);
 };
 typedef IDirectDrawClipper* LPDIRECTDRAWCLIPPER;
 
@@ -380,29 +380,10 @@ HRESULT DirectDrawCreate(LPGUID lpGuid, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOute
 typedef BOOL (*LPDDENUMCALLBACKA)(GUID*, LPSTR, LPSTR, LPVOID);
 HRESULT DirectDrawEnumerate(LPDDENUMCALLBACKA cb, void* context);
 
-inline UINT WINAPI GetSystemPaletteEntries(HDC hdc, UINT iStart, UINT cEntries, LPPALETTEENTRY pPalEntries)
-{
-	for (UINT i = 0; i < cEntries; i++) {
-		UINT val = iStart + i;
-		pPalEntries[i].peRed = val;
-		pPalEntries[i].peGreen = val;
-		pPalEntries[i].peBlue = val;
-		pPalEntries[i].peFlags = PC_NONE;
-	}
-	return cEntries;
-}
+UINT WINAPI GetSystemPaletteEntries(HDC hdc, UINT iStart, UINT cEntries, LPPALETTEENTRY pPalEntries);
 
-inline HPALETTE CreatePalette(LPLOGPALETTE lpLogPalette)
-{
-	return nullptr;
-}
+HPALETTE CreatePalette(LPLOGPALETTE lpLogPalette);
 
-inline int SelectPalette(HDC hdc, HPALETTE hpal, BOOL bForceBackground)
-{
-	return 0;
-}
+int SelectPalette(HDC hdc, HPALETTE hpal, BOOL bForceBackground);
 
-inline int RealizePalette(HDC hdc)
-{
-	return 0;
-}
+int RealizePalette(HDC hdc);

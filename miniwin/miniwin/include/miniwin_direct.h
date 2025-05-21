@@ -1,7 +1,4 @@
 #pragma once
 
 // --- Functions ---
-int _chdir(char* path)
-{
-	return 0;
-}
+int _chdir(char* path);

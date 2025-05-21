@@ -42,7 +42,6 @@ HRESULT DirectDrawSurfaceImpl::QueryInterface(const GUID& riid, void** ppvObject
 // IDirectDrawSurface interface
 HRESULT DirectDrawSurfaceImpl::AddAttachedSurface(LPDIRECTDRAWSURFACE lpDDSAttachedSurface)
 {
-	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 
@@ -152,6 +151,7 @@ HRESULT DirectDrawSurfaceImpl::GetAttachedSurface(LPDDSCAPS lpDDSCaps, LPDIRECTD
 
 HRESULT DirectDrawSurfaceImpl::GetDC(HDC* lphDC)
 {
+	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 
@@ -227,6 +227,7 @@ HRESULT DirectDrawSurfaceImpl::Lock(
 
 HRESULT DirectDrawSurfaceImpl::ReleaseDC(HDC hDC)
 {
+	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 
@@ -246,7 +247,7 @@ HRESULT DirectDrawSurfaceImpl::SetColorKey(DDColorKeyFlags dwFlags, LPDDCOLORKEY
 		return DDERR_INVALIDPARAMS;
 	}
 	if (lpDDColorKey->dwColorSpaceLowValue != lpDDColorKey->dwColorSpaceHighValue) {
-		return DDERR_GENERIC; // Not supported
+		MINIWIN_NOT_IMPLEMENTED();
 	}
 
 	if (SDL_SetSurfaceColorKey(m_surface, true, lpDDColorKey->dwColorSpaceLowValue) != 0) {
@@ -259,7 +260,7 @@ HRESULT DirectDrawSurfaceImpl::SetColorKey(DDColorKeyFlags dwFlags, LPDDCOLORKEY
 HRESULT DirectDrawSurfaceImpl::SetPalette(LPDIRECTDRAWPALETTE lpDDPalette)
 {
 	if (m_surface->format != SDL_PIXELFORMAT_INDEX8) {
-		return DDERR_GENERIC;
+		MINIWIN_NOT_IMPLEMENTED();
 	}
 
 	if (m_palette) {

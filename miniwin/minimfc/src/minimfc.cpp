@@ -1,6 +1,7 @@
 #include "minimfc.h"
 
 #include "miniwin.h"
+#include "miniwin_p.h"
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
@@ -13,6 +14,100 @@ CWinApp* wndTop;
 
 SDL_Window* window;
 const char* title = "Configure LEGO Island";
+
+void CWnd::EnableWindow(bool bEnable)
+{
+	MINIWIN_NOT_IMPLEMENTED();
+}
+void CWnd::SetWindowText(const char* text)
+{
+	MINIWIN_NOT_IMPLEMENTED();
+}
+
+CDialog::CDialog() : m_nIDTemplate(0), m_pParentWnd(nullptr)
+{
+	MINIWIN_NOT_IMPLEMENTED();
+}
+
+CDialog::CDialog(int nIDTemplate) : m_nIDTemplate(nIDTemplate), m_pParentWnd(nullptr)
+{
+	MINIWIN_NOT_IMPLEMENTED();
+}
+
+CDialog::CDialog(int nIDTemplate, CWnd* pParent) : m_nIDTemplate(nIDTemplate), m_pParentWnd(pParent)
+{
+	MINIWIN_NOT_IMPLEMENTED();
+}
+
+BOOL CDialog::OnInitDialog()
+{
+	MINIWIN_NOT_IMPLEMENTED();
+	return TRUE;
+}
+
+void CDialog::OnCancel()
+{
+	MINIWIN_NOT_IMPLEMENTED();
+}
+
+void CDialog::OnOK()
+{
+	MINIWIN_NOT_IMPLEMENTED();
+}
+
+void CDialog::DoModal()
+{
+	MINIWIN_NOT_IMPLEMENTED();
+}
+
+void CDialog::Default()
+{
+	MINIWIN_NOT_IMPLEMENTED();
+}
+
+void CDialog::EndDialog(int nResult)
+{
+	MINIWIN_NOT_IMPLEMENTED();
+}
+
+void CDialog::DoDataExchange(CDataExchange* pDX)
+{
+	MINIWIN_NOT_IMPLEMENTED();
+}
+
+CPaintDC::CPaintDC(CDialog* hWnd)
+{
+	MINIWIN_NOT_IMPLEMENTED();
+}
+
+bool CMenu::InsertMenu(UINT uPosition, UINT uFlags, UINT_PTR uIDNewItem, LPCTSTR lpszNewItem)
+{
+	MINIWIN_NOT_IMPLEMENTED();
+	return true;
+}
+
+bool CMenu::RemoveMenu(UINT uPosition, UINT uFlags)
+{
+	MINIWIN_NOT_IMPLEMENTED();
+	return true;
+}
+
+bool CMenu::SetMenuItemInfo(UINT uIDItem, const void* pMenuItemInfo, bool fByPosition)
+{
+	MINIWIN_NOT_IMPLEMENTED();
+	return true;
+}
+
+int CMenu::GetMenuItemCount() const
+{
+	MINIWIN_NOT_IMPLEMENTED();
+	return 0;
+}
+
+void CPaintDC::Draw()
+{
+	MINIWIN_NOT_IMPLEMENTED();
+}
 
 CWinApp::CWinApp()
 {
@@ -97,11 +192,7 @@ BOOL GetWindowRect(HWND hWnd, RECT* Rect)
 		return FALSE;
 	}
 	if (hWnd == NULL) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unregistered HWND %p", hWnd);
-		Rect->left = 0;
-		Rect->top = 0;
-		Rect->right = 640;
-		Rect->bottom = 480;
+		MINIWIN_NOT_IMPLEMENTED();
 		return FALSE;
 	}
 	SDL_GetWindowPosition(hWnd, &x, &y);
@@ -129,6 +220,12 @@ void OutputDebugString(const char* lpOutputString)
 	SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "%s", lpOutputString);
 }
 
+void* GetProcAddress(HMODULE module, const char* name)
+{
+	MINIWIN_NOT_IMPLEMENTED();
+	return 0;
+}
+
 int miniwin_stricmp(const char* str1, const char* str2)
 {
 	return SDL_strcasecmp(str1, str2);
@@ -138,4 +235,99 @@ void GlobalMemoryStatus(MEMORYSTATUS* memory_status)
 {
 	memory_status->dwLength = sizeof(*memory_status);
 	memory_status->dwTotalPhys = 1024 * SDL_GetSystemRAM();
+}
+
+HICON LoadIcon(HINSTANCE hInstance, LPCSTR lpIconName)
+{
+	MINIWIN_NOT_IMPLEMENTED();
+	return 0;
+}
+
+int lstrcmpi(LPCSTR lpString1, LPCSTR lpString2)
+{
+	MINIWIN_NOT_IMPLEMENTED();
+	return 0;
+}
+
+HINSTANCE AfxFindResourceHandle(LPCTSTR lpszResourceName, int lpszResourceType)
+{
+	MINIWIN_NOT_IMPLEMENTED();
+	return 0;
+}
+
+HMODULE LoadLibrary(const char* name)
+{
+	MINIWIN_NOT_IMPLEMENTED();
+	return 0;
+}
+
+int FreeLibrary(void* hModule)
+{
+	MINIWIN_NOT_IMPLEMENTED();
+	return 0;
+}
+
+HMENU GetSystemMenu(HWND hWnd, bool bRevert)
+{
+	MINIWIN_NOT_IMPLEMENTED();
+	assert(false && "Needs implementation");
+	return reinterpret_cast<HMENU>(0x1234);
+}
+
+HWND WINAPI FindWindow(LPCSTR lpClassName, LPCSTR lpWindowName)
+{
+	MINIWIN_NOT_IMPLEMENTED();
+	return 0;
+}
+
+LRESULT SendMessage(UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	MINIWIN_NOT_IMPLEMENTED();
+	return 0;
+}
+
+LRESULT SendMessage(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	MINIWIN_NOT_IMPLEMENTED();
+	return 0;
+}
+
+BOOL IsDlgButtonChecked(int nIDButton)
+{
+	MINIWIN_NOT_IMPLEMENTED();
+	return 0;
+}
+
+CWnd* GetDlgItem(int id)
+{
+	MINIWIN_NOT_IMPLEMENTED();
+	return new CWnd();
+}
+
+BOOL OnInitDialog(HWND hDlg, HWND hwndFocus, LPARAM lParam)
+{
+	MINIWIN_NOT_IMPLEMENTED();
+	return TRUE;
+}
+
+BOOL CheckRadioButton(int nIDFirstButton, int nIDLastButton, int nIDCheckButton)
+{
+	MINIWIN_NOT_IMPLEMENTED();
+	return TRUE;
+}
+
+BOOL CheckDlgButton(int nIDButton, BOOL uCheck)
+{
+	MINIWIN_NOT_IMPLEMENTED();
+	return TRUE;
+}
+
+void Enable3dControls()
+{
+	MINIWIN_NOT_IMPLEMENTED();
+}
+
+void ParseCommandLine(CCommandLineInfo& cmdInfo)
+{
+	MINIWIN_NOT_IMPLEMENTED();
 }

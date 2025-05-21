@@ -156,63 +156,25 @@ protected:
 
 BOOL SetWindowPos(HWND hWnd, HWND hWndInsertAfter, int X, int Y, int cx, int cy, UINT uFlags);
 
-inline HDC WINAPI GetDC(HWND hWnd)
-{
-	return 0;
-}
+HDC WINAPI GetDC(HWND hWnd);
 
-inline int WINAPI ReleaseDC(HWND hWnd, HDC hDC)
-{
-	return 0;
-}
+int WINAPI ReleaseDC(HWND hWnd, HDC hDC);
 
-inline int WINAPI GetDeviceCaps(HDC hdc, int index)
-{
+int WINAPI GetDeviceCaps(HDC hdc, int index);
 
-	if (index == RASTERCAPS) {
-		return 0;
-	}
-	if (index == SIZEPALETTE) {
-		return 256;
-	}
-	return 0;
-}
+BOOL RedrawWindow(void* hWnd, const void* lprcUpdate, void* hrgnUpdate, unsigned int flags);
 
-inline BOOL RedrawWindow(void* hWnd, const void* lprcUpdate, void* hrgnUpdate, unsigned int flags)
-{
-	return 1;
-}
+int SetBkColor(void*, int);
 
-inline int SetBkColor(void*, int)
-{
-	return 0;
-}
+int SetBkMode(void*, int);
 
-inline int SetBkMode(void*, int)
-{
-	return 0;
-}
+int SetTextColor(HDC hdc, int color);
 
-inline int SetTextColor(HDC hdc, int color)
-{
-	return color;
-}
+BOOL GetTextExtentPoint(HDC hdc, LPCSTR lpString, int c, SIZE* psizl);
 
-inline static BOOL GetTextExtentPoint(HDC hdc, LPCSTR lpString, int c, SIZE* psizl)
-{
-	if (psizl) {
-		psizl->cx = 8 * c;
-		psizl->cy = 16;
-	}
-	return TRUE;
-}
+int ExtTextOut(HDC, int, int, unsigned int, const RECT*, LPCSTR, unsigned int, void*);
 
-inline int ExtTextOut(HDC, int, int, unsigned int, const RECT*, LPCSTR, unsigned int, void*)
-{
-	return 1;
-}
-
-inline HFONT CreateFont(
+HFONT CreateFont(
 	int,
 	int,
 	int,
@@ -227,32 +189,17 @@ inline HFONT CreateFont(
 	unsigned int,
 	unsigned int,
 	LPCSTR
-)
-{
-	return nullptr;
-}
+);
 
-inline void* SelectObject(HDC, HFONT)
-{
-	return nullptr;
-}
+void* SelectObject(HDC, HFONT);
 
-inline int GetTextExtentPoint32(HDC hdc, LPCSTR str, int len, SIZE* out)
-{
-	return GetTextExtentPoint(hdc, str, len, out);
-}
+int GetTextExtentPoint32(HDC hdc, LPCSTR str, int len, SIZE* out);
 
-inline HMENU GetMenu(HWND hWnd)
-{
-	return NULL;
-}
+HMENU GetMenu(HWND hWnd);
 
-inline int DrawMenuBar(void* hWnd)
-{
-	return 1;
-}
+int DrawMenuBar(void* hWnd);
 
-inline static int StretchDIBits(
+int StretchDIBits(
 	void* hdc,
 	int xDest,
 	int yDest,
@@ -266,43 +213,18 @@ inline static int StretchDIBits(
 	const void* lpbmi,
 	unsigned int iUsage,
 	uint32_t rop
-)
-{
-	return 0;
-}
+);
 
-inline LONG GetWindowLong(HWND hWnd, int nIndex)
-{
-	return 0;
-}
+LONG GetWindowLong(HWND hWnd, int nIndex);
 
-inline LONG SetWindowLong(HWND hWnd, int nIndex, LONG dwNewLong)
-{
-	return 0;
-}
+LONG SetWindowLong(HWND hWnd, int nIndex, LONG dwNewLong);
 
-inline int DeleteObject(void*)
-{
-	return 1;
-}
+int DeleteObject(void*);
 
-inline BOOL AdjustWindowRectEx(LPRECT lpRect, DWORD dwStyle, BOOL bMenu, DWORD dwExStyle)
-{
-	return TRUE;
-}
+BOOL AdjustWindowRectEx(LPRECT lpRect, DWORD dwStyle, BOOL bMenu, DWORD dwExStyle);
 
-inline int SetRect(RECT* rc, int left, int top, int right, int bottom)
-{
-	rc->left = left;
-	rc->top = top;
-	rc->right = right;
-	rc->bottom = bottom;
-	return 1;
-}
+int SetRect(RECT* rc, int left, int top, int right, int bottom);
 
 VOID WINAPI Sleep(DWORD dwMilliseconds);
 
-inline BOOL ClientToScreen(HWND hWnd, LPPOINT lpPoint)
-{
-	return TRUE;
-}
+BOOL ClientToScreen(HWND hWnd, LPPOINT lpPoint);

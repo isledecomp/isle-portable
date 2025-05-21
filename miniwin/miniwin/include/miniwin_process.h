@@ -12,7 +12,4 @@ intptr_t _spawnl(
 	const char* arg2,
 	const char* arg3,
 	...
-)
-{
-	return 0;
-}
+);
