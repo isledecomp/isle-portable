@@ -170,7 +170,7 @@ foreach(shader_src IN LISTS miniwin_shaders)
         "--dxil" "${dxil}" "--msl" "${msl}" "--spirv" "${spirv}"
       DEPENDS "${py_gencshadersource}" "${dxil}" "${msl}" "${spirv}")
   endif()
-  target_sources(miniwin PRIVATE "${shader_src}" "${shader_header}")
+  target_sources(miniwin PRIVATE "${shader_header}")
   list(APPEND shader_names "${shader_name}")
   list(APPEND shader_variables "${shader_variable}")
   list(APPEND shader_headers "${shader_header}")
