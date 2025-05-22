@@ -18,7 +18,7 @@ struct MeshGroup {
 
 	MeshGroup(const MeshGroup& other)
 		: color(other.color), texture(other.texture), material(other.material), quality(other.quality),
-		  vertexPerFace(other.vertexPerFace), vertices(other.vertices), faces(other.faces)
+		  vertexPerFace(other.vertexPerFace), vertices(std::move(other.vertices)), faces(std::move(other.faces))
 	{
 		if (texture) {
 			texture->AddRef();
