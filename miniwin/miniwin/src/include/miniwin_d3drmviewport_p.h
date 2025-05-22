@@ -5,7 +5,6 @@
 #include "miniwin_d3drmobject_p.h"
 
 #include <SDL3/SDL.h>
-#include <span>
 
 struct Direct3DRMViewportImpl : public Direct3DRMObjectBase<IDirect3DRMViewport> {
 	Direct3DRMViewportImpl(
