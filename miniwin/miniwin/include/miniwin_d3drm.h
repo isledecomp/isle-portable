@@ -174,29 +174,29 @@ struct IDirect3DRMMesh : public IDirect3DRMVisual {
 		int vertexCount,
 		int faceCount,
 		int vertexPerFace,
-		void* faceBuffer,
+		DWORD* faceBuffer,
 		D3DRMGROUPINDEX* groupIndex
 	) = 0;
 	virtual HRESULT GetGroup(
-		int groupIndex,
+		DWORD groupIndex,
 		DWORD* vertexCount,
 		DWORD* faceCount,
 		DWORD* vertexPerFace,
 		DWORD* dataSize,
 		DWORD* data
 	) = 0;
-	virtual HRESULT SetGroupColor(int groupIndex, D3DCOLOR color) = 0;
-	virtual HRESULT SetGroupColorRGB(int groupIndex, float r, float g, float b) = 0;
-	virtual HRESULT SetGroupTexture(int groupIndex, IDirect3DRMTexture* texture) = 0;
-	virtual HRESULT SetGroupMaterial(int groupIndex, IDirect3DRMMaterial* material) = 0;
+	virtual HRESULT SetGroupColor(DWORD groupIndex, D3DCOLOR color) = 0;
+	virtual HRESULT SetGroupColorRGB(DWORD groupIndex, float r, float g, float b) = 0;
+	virtual HRESULT SetGroupTexture(DWORD groupIndex, IDirect3DRMTexture* texture) = 0;
+	virtual HRESULT SetGroupMaterial(DWORD groupIndex, IDirect3DRMMaterial* material) = 0;
 	virtual HRESULT SetGroupMapping(D3DRMGROUPINDEX groupIndex, D3DRMMAPPING mapping) = 0;
-	virtual HRESULT SetGroupQuality(int groupIndex, D3DRMRENDERQUALITY quality) = 0;
-	virtual HRESULT SetVertices(int groupIndex, int offset, int count, D3DRMVERTEX* vertices) = 0;
-	virtual HRESULT GetGroupTexture(int groupIndex, LPDIRECT3DRMTEXTURE* texture) = 0;
-	virtual D3DRMMAPPING GetGroupMapping(int groupIndex) = 0;
-	virtual D3DRMRENDERQUALITY GetGroupQuality(int groupIndex) = 0;
+	virtual HRESULT SetGroupQuality(DWORD groupIndex, D3DRMRENDERQUALITY quality) = 0;
+	virtual HRESULT SetVertices(DWORD groupIndex, int offset, int count, D3DRMVERTEX* vertices) = 0;
+	virtual HRESULT GetGroupTexture(DWORD groupIndex, LPDIRECT3DRMTEXTURE* texture) = 0;
+	virtual D3DRMMAPPING GetGroupMapping(DWORD groupIndex) = 0;
+	virtual D3DRMRENDERQUALITY GetGroupQuality(DWORD groupIndex) = 0;
 	virtual D3DCOLOR GetGroupColor(D3DRMGROUPINDEX index) = 0;
-	virtual HRESULT GetVertices(int groupIndex, int startIndex, int count, D3DRMVERTEX* vertices) = 0;
+	virtual HRESULT GetVertices(DWORD groupIndex, int startIndex, int count, D3DRMVERTEX* vertices) = 0;
 };
 
 struct IDirect3DRMLight : public IDirect3DRMObject {
