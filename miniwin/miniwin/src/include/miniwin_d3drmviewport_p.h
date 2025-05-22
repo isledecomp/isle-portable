@@ -38,13 +38,14 @@ struct Direct3DRMViewportImpl : public Direct3DRMObjectBase<IDirect3DRMViewport>
 	HRESULT InverseTransform(D3DVECTOR* world, D3DRMVECTOR4D* screen) override;
 	HRESULT Pick(float x, float y, LPDIRECT3DRMPICKEDARRAY* pickedArray) override;
 	void CloseDevice();
-	void Update();
+	void CollectSceneData(IDirect3DRMFrame* group);
+	void PushVertices(const PositionColorVertex* vertices, size_t count);
 
 private:
 	void FreeDeviceResources();
 	int m_vertexBufferCount = 0;
 	int m_vertexCount;
-	bool m_updated = false;
+	D3DCOLOR m_backgroundColor = 0xFF000000;
 	DWORD m_width;
 	DWORD m_height;
 	IDirect3DRMFrame* m_camera = nullptr;
