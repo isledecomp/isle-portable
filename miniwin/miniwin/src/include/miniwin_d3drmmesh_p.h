@@ -45,8 +45,8 @@ struct MeshGroup {
 		material = other.material;
 		quality = other.quality;
 		vertexPerFace = other.vertexPerFace;
-		vertices = other.vertices;
-		faces = other.faces;
+		vertices = std::move(other.vertices);
+		faces = std::move(other.faces);
 		other.texture = nullptr;
 		other.material = nullptr;
 		return *this;
