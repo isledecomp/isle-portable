@@ -4,4 +4,7 @@
 
 struct Direct3DRMLightImpl : public Direct3DRMObjectBase<IDirect3DRMLight> {
 	HRESULT SetColorRGB(float r, float g, float b) override;
+
+private:
+	D3DCOLOR m_color = 0xFFFFFFFF;
 };

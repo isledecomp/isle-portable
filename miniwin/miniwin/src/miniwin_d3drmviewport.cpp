@@ -1,4 +1,5 @@
 #include "miniwin_d3drm_p.h"
+#include "miniwin_d3drmframe_p.h"
 #include "miniwin_d3drmviewport_p.h"
 #include "miniwin_p.h"
 
@@ -28,22 +29,30 @@ Direct3DRMViewportImpl::~Direct3DRMViewportImpl()
 	FreeDeviceResources();
 }
 
-void Direct3DRMViewportImpl::Update()
+void Direct3DRMViewportImpl::CollectSceneData(IDirect3DRMFrame* group)
 {
-	int newVertexCount = 3;
+	m_backgroundColor = static_cast<Direct3DRMFrameImpl*>(group)->m_backgroundColor;
 
-	if (newVertexCount > m_vertexBufferCount) {
+	std::vector<PositionColorVertex> vertices =
+		{{-1, -1, 0, 0, 255, 0, 255}, {1, -1, 0, 0, 0, 255, 255}, {0, 1, 0, 255, 0, 0, 128}};
+
+	PushVertices(vertices.data(), vertices.size());
+}
+
+void Direct3DRMViewportImpl::PushVertices(const PositionColorVertex* vertices, size_t count)
+{
+	if (count > m_vertexBufferCount) {
 		if (m_vertexBuffer) {
 			SDL_ReleaseGPUBuffer(m_device, m_vertexBuffer);
 		}
 		SDL_GPUBufferCreateInfo bufferCreateInfo = {};
 		bufferCreateInfo.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
-		bufferCreateInfo.size = static_cast<Uint32>(sizeof(PositionColorVertex) * newVertexCount);
+		bufferCreateInfo.size = static_cast<Uint32>(sizeof(PositionColorVertex) * count);
 		m_vertexBuffer = SDL_CreateGPUBuffer(m_device, &bufferCreateInfo);
-		m_vertexBufferCount = newVertexCount;
+		m_vertexBufferCount = count;
 	}
 
-	m_vertexCount = newVertexCount;
+	m_vertexCount = count;
 
 	MINIWIN_NOT_IMPLEMENTED();
 	SDL_GPUTransferBufferCreateInfo transferCreateInfo = {};
@@ -54,9 +63,7 @@ void Direct3DRMViewportImpl::Update()
 	PositionColorVertex* transferData =
 		(PositionColorVertex*) SDL_MapGPUTransferBuffer(m_device, transferBuffer, false);
 
-	transferData[0] = {-1, -1, 0, 255, 0, 0, 255};
-	transferData[1] = {1, -1, 0, 0, 0, 255, 255};
-	transferData[2] = {0, 1, 0, 0, 255, 0, 128};
+	memcpy(transferData, vertices, m_vertexCount * sizeof(PositionColorVertex));
 
 	SDL_UnmapGPUTransferBuffer(m_device, transferBuffer);
 
@@ -77,19 +84,15 @@ void Direct3DRMViewportImpl::Update()
 	SDL_EndGPUCopyPass(copyPass);
 	SDL_SubmitGPUCommandBuffer(uploadCmdBuf);
 	SDL_ReleaseGPUTransferBuffer(m_device, transferBuffer);
-
-	m_updated = true;
 }
 
 HRESULT Direct3DRMViewportImpl::Render(IDirect3DRMFrame* group)
 {
-	if (!m_updated) {
-		return DDERR_GENERIC;
-	}
-
 	if (!m_device) {
 		return DDERR_GENERIC;
 	}
+
+	CollectSceneData(group);
 
 	SDL_GPUCommandBuffer* cmdbuf = SDL_AcquireGPUCommandBuffer(m_device);
 	if (cmdbuf == NULL) {
@@ -132,8 +135,6 @@ HRESULT Direct3DRMViewportImpl::Render(IDirect3DRMFrame* group)
 	if (!downloadedData) {
 		return DDERR_GENERIC;
 	}
-
-	m_updated = false;
 
 	SDL_DestroySurface(m_renderedImage);
 	m_renderedImage = SDL_CreateSurfaceFrom(
@@ -188,7 +189,16 @@ HRESULT Direct3DRMViewportImpl::ForceUpdate(int x, int y, int w, int h)
 
 HRESULT Direct3DRMViewportImpl::Clear()
 {
-	MINIWIN_NOT_IMPLEMENTED();
+	if (!DDBackBuffer) {
+		return DDERR_GENERIC;
+	}
+
+	uint8_t r = (m_backgroundColor >> 16) & 0xFF;
+	uint8_t g = (m_backgroundColor >> 8) & 0xFF;
+	uint8_t b = m_backgroundColor & 0xFF;
+
+	Uint32 color = SDL_MapRGB(SDL_GetPixelFormatDetails(DDBackBuffer->format), nullptr, r, g, b);
+	SDL_FillSurfaceRect(DDBackBuffer, NULL, color);
 	return DD_OK;
 }
 

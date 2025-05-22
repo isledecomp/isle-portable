@@ -33,7 +33,8 @@ HRESULT Direct3DRMFrameImpl::DeleteChild(IDirect3DRMFrame* child)
 
 HRESULT Direct3DRMFrameImpl::SetSceneBackgroundRGB(float r, float g, float b)
 {
-	MINIWIN_NOT_IMPLEMENTED();
+	m_backgroundColor = (0xFF << 24) | (static_cast<BYTE>(r * 255.0f) << 16) | (static_cast<BYTE>(g * 255.0f) << 8) |
+						(static_cast<BYTE>(b * 255.0f));
 	return DD_OK;
 }
 

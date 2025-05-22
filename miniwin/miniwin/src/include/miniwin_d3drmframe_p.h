@@ -28,6 +28,8 @@ struct Direct3DRMFrameImpl : public Direct3DRMObjectBase<IDirect3DRMFrame2> {
 	HRESULT SetMaterialMode(D3DRMMATERIALMODE mode) override;
 	HRESULT GetChildren(IDirect3DRMFrameArray** children) override;
 
+	D3DCOLOR m_backgroundColor = 0xFFFFFFFF;
+
 private:
 	IDirect3DRMFrameArray* m_children;
 	IDirect3DRMLightArray* m_lights;

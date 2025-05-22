@@ -105,12 +105,7 @@ D3DRMRENDERMODE Direct3DRMDevice2Impl::GetRenderMode()
 
 HRESULT Direct3DRMDevice2Impl::Update()
 {
-	for (int i = 0; i < m_viewports->GetSize(); i++) {
-		IDirect3DRMViewport* viewport;
-		m_viewports->GetElement(i, &viewport);
-		static_cast<Direct3DRMViewportImpl*>(viewport)->Update();
-	}
-
+	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 
