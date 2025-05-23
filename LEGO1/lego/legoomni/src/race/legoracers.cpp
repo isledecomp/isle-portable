@@ -346,7 +346,7 @@ void LegoRaceCar::FUN_10012ff0(float p_param)
 				r->GetCameraController()->FUN_100123e0(transformationMatrix, 0);
 			}
 
-			m_roi->FUN_100a58f0(transformationMatrix);
+			m_roi->SetLocal2World(transformationMatrix);
 		}
 	}
 }
@@ -472,7 +472,7 @@ MxResult LegoRaceCar::HitActor(LegoPathActor* p_actor, MxBool p_bool)
 			matr = roi->GetLocal2World();
 
 			Vector3(matr[3]) += g_unk0x10102af0;
-			roi->FUN_100a58f0(matr);
+			roi->SetLocal2World(matr);
 
 			p_actor->SetActorState(c_two);
 		}
@@ -686,7 +686,7 @@ MxResult LegoJetski::HitActor(LegoPathActor* p_actor, MxBool p_bool)
 			matr = roi->GetLocal2World();
 
 			Vector3(matr[3]) += g_unk0x10102af0;
-			roi->FUN_100a58f0(matr);
+			roi->SetLocal2World(matr);
 
 			p_actor->SetActorState(c_two);
 		}

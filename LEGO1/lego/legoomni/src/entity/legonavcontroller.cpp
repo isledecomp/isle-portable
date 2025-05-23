@@ -450,8 +450,8 @@ MxResult LegoNavController::UpdateLocation(const char* p_location)
 			Mx3DPointFloat vec;
 			vec.Clear();
 
-			viewROI->FUN_100a5a30(vec);
-			viewROI->WrappedSetLocalTransform(mat);
+			viewROI->SetWorldVelocity(vec);
+			viewROI->WrappedSetLocal2WorldWithWorldDataUpdate(mat);
 			VideoManager()->Get3DManager()->Moved(*viewROI);
 
 			SoundManager()->UpdateListener(
@@ -488,8 +488,8 @@ MxResult LegoNavController::UpdateLocation(MxU32 p_location)
 		Mx3DPointFloat vec;
 		vec.Clear();
 
-		viewROI->FUN_100a5a30(vec);
-		viewROI->WrappedSetLocalTransform(mat);
+		viewROI->SetWorldVelocity(vec);
+		viewROI->WrappedSetLocal2WorldWithWorldDataUpdate(mat);
 		VideoManager()->Get3DManager()->Moved(*viewROI);
 
 		SoundManager()->UpdateListener(
@@ -936,7 +936,7 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 					MxMatrix mat;
 					mat.SetIdentity();
 					mat.RotateX(0.2618f);
-					roi->WrappedVTable0x24(mat);
+					roi->WrappedUpdateWorldDataWithTransform(mat);
 					break;
 				}
 				case SDLK_J: {
@@ -944,7 +944,7 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 					MxMatrix mat;
 					mat.SetIdentity();
 					mat.RotateZ(0.2618f);
-					roi->WrappedVTable0x24(mat);
+					roi->WrappedUpdateWorldDataWithTransform(mat);
 					break;
 				}
 				case SDLK_K: {
@@ -952,7 +952,7 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 					LegoROI* roi = LegoOmni::GetInstance()->GetVideoManager()->GetViewROI();
 					mat.SetIdentity();
 					mat.RotateZ(-0.2618f);
-					roi->WrappedVTable0x24(mat);
+					roi->WrappedUpdateWorldDataWithTransform(mat);
 					break;
 				}
 				case SDLK_L:
@@ -963,7 +963,7 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 					MxMatrix mat;
 					mat.SetIdentity();
 					mat.RotateX(-0.2618f);
-					roi->WrappedVTable0x24(mat);
+					roi->WrappedUpdateWorldDataWithTransform(mat);
 					break;
 				}
 				case SDLK_N:
