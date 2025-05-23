@@ -695,7 +695,7 @@ inline Result MeshSetTextureMappingMode(MeshImpl::MeshData* pMesh, TextureMappin
 		return ResultVal(pMesh->groupMesh->SetGroupMapping(pMesh->groupIndex, D3DRMMAP_PERSPCORRECT));
 	}
 	else {
-		return ResultVal(pMesh->groupMesh->SetGroupMapping(pMesh->groupIndex, 0));
+		return ResultVal(pMesh->groupMesh->SetGroupMapping(pMesh->groupIndex, D3DRMMAP_NONE));
 	}
 }
 
