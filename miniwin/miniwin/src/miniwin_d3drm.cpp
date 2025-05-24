@@ -2,10 +2,12 @@
 
 #include "ShaderIndex.h"
 #include "miniwin_d3drm_p.h"
+#include "miniwin_d3drmdevice_p.h"
 #include "miniwin_d3drmframe_p.h"
 #include "miniwin_d3drmlight_p.h"
 #include "miniwin_d3drmmesh_p.h"
 #include "miniwin_d3drmobject_p.h"
+#include "miniwin_d3drmtexture_p.h"
 #include "miniwin_d3drmviewport_p.h"
 #include "miniwin_ddsurface_p.h"
 #include "miniwin_p.h"
@@ -73,24 +75,6 @@ struct Direct3DRMWinDeviceImpl : public IDirect3DRMWinDevice {
 	}
 	void HandleActivate(WORD wParam) override { MINIWIN_NOT_IMPLEMENTED(); }
 	void HandlePaint(void* p_dc) override { MINIWIN_NOT_IMPLEMENTED(); }
-};
-
-struct Direct3DRMTextureImpl : public Direct3DRMObjectBase<IDirect3DRMTexture2> {
-	HRESULT QueryInterface(const GUID& riid, void** ppvObject) override
-	{
-		if (SDL_memcmp(&riid, &IID_IDirect3DRMTexture2, sizeof(GUID)) == 0) {
-			this->IUnknown::AddRef();
-			*ppvObject = static_cast<IDirect3DRMTexture2*>(this);
-			return DD_OK;
-		}
-		MINIWIN_NOT_IMPLEMENTED();
-		return E_NOINTERFACE;
-	}
-	HRESULT Changed(BOOL pixels, BOOL palette) override
-	{
-		MINIWIN_NOT_IMPLEMENTED();
-		return DD_OK;
-	}
 };
 
 struct Direct3DRMMaterialImpl : public Direct3DRMObjectBase<IDirect3DRMMaterial> {};
@@ -241,11 +225,8 @@ struct Direct3DRMImpl : virtual public IDirect3DRM2 {
 	}
 	HRESULT CreateFrame(IDirect3DRMFrame* parent, IDirect3DRMFrame2** outFrame) override
 	{
-		auto frame = new Direct3DRMFrameImpl;
-		*outFrame = static_cast<IDirect3DRMFrame2*>(frame);
-		if (parent) {
-			parent->AddChild(static_cast<IDirect3DRMFrame*>(frame));
-		}
+		auto parentImpl = static_cast<Direct3DRMFrameImpl*>(parent);
+		*outFrame = static_cast<IDirect3DRMFrame2*>(new Direct3DRMFrameImpl{parentImpl});
 		return DD_OK;
 	}
 	HRESULT CreateViewport(

@@ -1,10 +1,12 @@
 #pragma once
 
 #include "miniwin_d3drm.h"
-#include "miniwin_d3drmdevice_p.h"
 #include "miniwin_d3drmobject_p.h"
 
 #include <SDL3/SDL.h>
+
+class Direct3DRMDeviceImpl;
+class Direct3DRMFrameImpl;
 
 struct Direct3DRMViewportImpl : public Direct3DRMObjectBase<IDirect3DRMViewport> {
 	Direct3DRMViewportImpl(
@@ -58,4 +60,12 @@ private:
 	SDL_GPUTransferBuffer* m_downloadTransferBuffer;
 	SDL_GPUBuffer* m_vertexBuffer = nullptr;
 	SDL_Surface* m_renderedImage = nullptr;
+	D3DVALUE m_front = 1.f;
+	D3DVALUE m_back = 10.f;
+	D3DVALUE m_field = 0.5f;
+};
+
+struct Direct3DRMViewportArrayImpl
+	: public Direct3DRMArrayBase<IDirect3DRMViewport, Direct3DRMViewportImpl, IDirect3DRMViewportArray> {
+	using Direct3DRMArrayBase::Direct3DRMArrayBase;
 };

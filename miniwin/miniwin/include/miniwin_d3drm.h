@@ -129,10 +129,7 @@ typedef struct D3DRMIMAGE {
 	DWORD format;
 } D3DRMIMAGE;
 
-typedef struct D3DRMMATRIX4D {
-	double* operator[](size_t i) { abort(); }
-	const double* operator[](size_t i) const { abort(); }
-} D3DRMMATRIX4D;
+typedef D3DVALUE D3DRMMATRIX4D[4][4];
 
 struct D3DRMBOX {
 	D3DVECTOR min;
@@ -229,7 +226,7 @@ struct IDirect3DRMFrame : public IDirect3DRMVisual {
 	virtual HRESULT AddLight(IDirect3DRMLight* light) = 0;
 	virtual HRESULT GetLights(IDirect3DRMLightArray** lightArray) = 0;
 	virtual HRESULT AddTransform(D3DRMCOMBINETYPE combine, D3DRMMATRIX4D matrix) = 0;
-	virtual HRESULT GetPosition(int index, D3DVECTOR* position) = 0;
+	virtual HRESULT GetPosition(IDirect3DRMFrame* reference, D3DVECTOR* position) = 0;
 	virtual HRESULT AddVisual(IDirect3DRMVisual* visual) = 0;
 	virtual HRESULT DeleteVisual(IDirect3DRMVisual* visual) = 0;
 	virtual HRESULT AddVisual(IDirect3DRMMesh* visual) = 0;
