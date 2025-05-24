@@ -528,12 +528,15 @@ MxAtomId* LegoOmni::GetWorldAtom(LegoOmni::World p_worldId)
 }
 
 // FUNCTION: LEGO1 0x1005b490
+// FUNCTION: BETA10 0x1008ee69
 LegoOmni::World LegoOmni::GetWorldId(const char* p_key)
 {
 	for (MxS32 i = 0; i < e_numWorlds; i++) {
-		// FIXME: this looks very fishy. Is this guarding against out-of-bounds access?
-		if ((MxS32*) &m_worlds[i] != (MxS32*) -4 && !SDL_strcasecmp(m_worlds[i].GetKey(), p_key)) {
-			return m_worlds[i].GetId();
+		// Note: m_key is never NULL
+		if (m_worlds[i].m_key != NULL) {
+			if (!strcmpi(m_worlds[i].m_key, p_key)) {
+				return m_worlds[i].m_id;
+			}
 		}
 	}
 
