@@ -235,38 +235,35 @@ D3DRMPROJECTIONTYPE Direct3DRMViewportImpl::GetProjection()
 
 HRESULT Direct3DRMViewportImpl::SetFront(D3DVALUE z)
 {
-	MINIWIN_NOT_IMPLEMENTED();
+	m_zMin = z;
 	return DD_OK;
 }
 
 D3DVALUE Direct3DRMViewportImpl::GetFront()
 {
-	MINIWIN_NOT_IMPLEMENTED();
-	return 0;
+	return m_zMin;
 }
 
 HRESULT Direct3DRMViewportImpl::SetBack(D3DVALUE z)
 {
-	MINIWIN_NOT_IMPLEMENTED();
+	m_zMax = z;
 	return DD_OK;
 }
 
 D3DVALUE Direct3DRMViewportImpl::GetBack()
 {
-	MINIWIN_NOT_IMPLEMENTED();
-	return 0;
+	return m_zMax;
 }
 
 HRESULT Direct3DRMViewportImpl::SetField(D3DVALUE field)
 {
-	MINIWIN_NOT_IMPLEMENTED();
+	m_fov = field;
 	return DD_OK;
 }
 
 D3DVALUE Direct3DRMViewportImpl::GetField()
 {
-	MINIWIN_NOT_IMPLEMENTED();
-	return 0;
+	return m_fov;
 }
 
 DWORD Direct3DRMViewportImpl::GetWidth()
