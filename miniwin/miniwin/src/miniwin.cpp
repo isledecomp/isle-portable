@@ -216,7 +216,6 @@ VOID WINAPI Sleep(DWORD dwMilliseconds)
 
 BOOL ClientToScreen(HWND hWnd, LPPOINT lpPoint)
 {
-	MINIWIN_NOT_IMPLEMENTED();
 	return TRUE;
 }
 
