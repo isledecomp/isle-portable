@@ -237,7 +237,11 @@ struct Direct3DRMImpl : virtual public IDirect3DRM2 {
 	}
 	HRESULT CreateFrame(IDirect3DRMFrame* parent, IDirect3DRMFrame2** outFrame) override
 	{
-		*outFrame = static_cast<IDirect3DRMFrame2*>(new Direct3DRMFrameImpl);
+		auto frame = new Direct3DRMFrameImpl;
+		*outFrame = static_cast<IDirect3DRMFrame2*>(frame);
+		if (parent) {
+			parent->AddChild(static_cast<IDirect3DRMFrame*>(frame));
+		}
 		return DD_OK;
 	}
 	HRESULT CreateViewport(
