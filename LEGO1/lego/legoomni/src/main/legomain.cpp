@@ -534,7 +534,7 @@ LegoOmni::World LegoOmni::GetWorldId(const char* p_key)
 	for (MxS32 i = 0; i < e_numWorlds; i++) {
 		// Note: m_key is never NULL
 		if (m_worlds[i].m_key != NULL) {
-			if (!strcmpi(m_worlds[i].m_key, p_key)) {
+			if (!SDL_strcasecmp(m_worlds[i].m_key, p_key)) {
 				return m_worlds[i].m_id;
 			}
 		}
