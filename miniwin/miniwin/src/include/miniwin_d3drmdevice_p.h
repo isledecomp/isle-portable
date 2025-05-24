@@ -16,7 +16,7 @@ struct Direct3DRMDevice2Impl : public Direct3DRMObjectBase<IDirect3DRMDevice2> {
 	HRESULT GetShades() override;
 	HRESULT SetQuality(D3DRMRENDERQUALITY quality) override;
 	D3DRMRENDERQUALITY GetQuality() override;
-	HRESULT SetDither(int dither) override;
+	HRESULT SetDither(BOOL dither) override;
 	BOOL GetDither() override;
 	HRESULT SetTextureQuality(D3DRMTEXTUREQUALITY quality) override;
 	D3DRMTEXTUREQUALITY GetTextureQuality() override;
