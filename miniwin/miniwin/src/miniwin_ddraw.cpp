@@ -16,7 +16,6 @@ SDL_Surface* DDBackBuffer;
 
 HRESULT IDirectDrawClipper::SetHWnd(DWORD unnamedParam1, HWND hWnd)
 {
-	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 
