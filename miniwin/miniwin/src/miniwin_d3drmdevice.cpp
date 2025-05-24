@@ -71,7 +71,7 @@ D3DRMRENDERQUALITY Direct3DRMDevice2Impl::GetQuality()
 	return D3DRMRENDERQUALITY::GOURAUD;
 }
 
-HRESULT Direct3DRMDevice2Impl::SetDither(int dither)
+HRESULT Direct3DRMDevice2Impl::SetDither(BOOL dither)
 {
 	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
