@@ -340,35 +340,35 @@ D3DRMPROJECTIONTYPE Direct3DRMViewport_SDL3GPUImpl::GetProjection()
 
 HRESULT Direct3DRMViewport_SDL3GPUImpl::SetFront(D3DVALUE z)
 {
-	m_zMin = z;
+	m_front = z;
 	return DD_OK;
 }
 
 D3DVALUE Direct3DRMViewport_SDL3GPUImpl::GetFront()
 {
-	return m_zMin;
+	return m_front;
 }
 
 HRESULT Direct3DRMViewport_SDL3GPUImpl::SetBack(D3DVALUE z)
 {
-	m_zMax = z;
+	m_back = z;
 	return DD_OK;
 }
 
 D3DVALUE Direct3DRMViewport_SDL3GPUImpl::GetBack()
 {
-	return m_zMax;
+	return m_back;
 }
 
 HRESULT Direct3DRMViewport_SDL3GPUImpl::SetField(D3DVALUE field)
 {
-	m_fov = field;
+	m_field = field;
 	return DD_OK;
 }
 
 D3DVALUE Direct3DRMViewport_SDL3GPUImpl::GetField()
 {
-	return m_fov;
+	return m_field;
 }
 
 DWORD Direct3DRMViewport_SDL3GPUImpl::GetWidth()

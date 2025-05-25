@@ -50,9 +50,6 @@ private:
 	D3DCOLOR m_backgroundColor = 0xFF000000;
 	DWORD m_width;
 	DWORD m_height;
-	D3DVALUE m_zMin;
-	D3DVALUE m_zMax;
-	D3DVALUE m_fov;
 	IDirect3DRMFrame* m_camera = nullptr;
 	SDL_GPUDevice* m_device;
 	SDL_GPUGraphicsPipeline* m_pipeline;
