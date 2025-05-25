@@ -43,7 +43,7 @@ static void D3DRMMatrixMultiply(D3DRMMATRIX4D out, const D3DRMMATRIX4D a, const 
 	}
 }
 
-void D3DRMMatrixInvert(D3DRMMATRIX4D out, const D3DRMMATRIX4D m)
+static void D3DRMMatrixInvert(D3DRMMATRIX4D out, const D3DRMMATRIX4D m)
 {
 	for (int i = 0; i < 3; ++i) {
 		for (int j = 0; j < 3; ++j) {
@@ -61,7 +61,7 @@ void D3DRMMatrixInvert(D3DRMMATRIX4D out, const D3DRMMATRIX4D m)
 	out[3][2] = -(out[0][2] * t.x + out[1][2] * t.y + out[2][2] * t.z);
 }
 
-void HMM_Perspective_LH_NO(D3DRMMATRIX4D Result, float FOV, float AspectRatio, float Near, float Far)
+static void HMM_Perspective_LH_NO(D3DRMMATRIX4D Result, float FOV, float AspectRatio, float Near, float Far)
 {
 	for (int i = 0; i < 4; i++) {
 		std::fill(Result[i], Result[i] + 4, 0.f);
