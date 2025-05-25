@@ -83,6 +83,7 @@ struct Direct3DRMMesh_SDL3GPUImpl : public Direct3DRMObjectBase_SDL3GPUImpl<IDir
 	HRESULT SetGroupMaterial(DWORD groupIndex, IDirect3DRMMaterial* material) override;
 	HRESULT SetGroupTexture(DWORD groupIndex, IDirect3DRMTexture* texture) override;
 	HRESULT GetGroupTexture(DWORD groupIndex, LPDIRECT3DRMTEXTURE* texture) override;
+	HRESULT GetGroupMaterial(DWORD groupIndex, LPDIRECT3DRMMATERIAL* material) override;
 	HRESULT SetGroupMapping(D3DRMGROUPINDEX groupIndex, D3DRMMAPPING mapping) override;
 	D3DRMMAPPING GetGroupMapping(DWORD groupIndex) override;
 	HRESULT SetGroupQuality(DWORD groupIndex, D3DRMRENDERQUALITY quality) override;

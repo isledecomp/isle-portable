@@ -158,6 +158,22 @@ HRESULT Direct3DRMMesh_SDL3GPUImpl::SetGroupTexture(DWORD groupIndex, IDirect3DR
 	return DD_OK;
 }
 
+HRESULT Direct3DRMMesh_SDL3GPUImpl::GetGroupMaterial(DWORD groupIndex, LPDIRECT3DRMMATERIAL* material)
+{
+	if (groupIndex >= m_groups.size()) {
+		return DDERR_GENERIC;
+	}
+
+	auto& group = m_groups[groupIndex];
+	if (!group.material) {
+		return DDERR_GENERIC;
+	}
+
+	group.material->AddRef();
+	*material = group.material;
+	return DD_OK;
+}
+
 HRESULT Direct3DRMMesh_SDL3GPUImpl::GetGroupTexture(DWORD groupIndex, LPDIRECT3DRMTEXTURE* texture)
 {
 	if (groupIndex >= m_groups.size()) {
