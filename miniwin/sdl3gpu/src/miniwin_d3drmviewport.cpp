@@ -43,7 +43,7 @@ static void D3DRMMatrixMultiply(D3DRMMATRIX4D out, const D3DRMMATRIX4D a, const 
 	}
 }
 
-static void D3DRMMatrixInvert(D3DRMMATRIX4D out, const D3DRMMATRIX4D m)
+static void D3DRMMatrixInvertOrthogonal(D3DRMMATRIX4D out, const D3DRMMATRIX4D m)
 {
 	for (int i = 0; i < 3; ++i) {
 		for (int j = 0; j < 3; ++j) {
@@ -82,7 +82,7 @@ static void HMM_Perspective_LH_NO(D3DRMMATRIX4D Result, float FOV, float AspectR
 	Result[2][3] = -Result[2][3];
 }
 
-void ComputeFrameWorldMatrix(IDirect3DRMFrame* frame, D3DRMMATRIX4D out)
+static void ComputeFrameWorldMatrix(IDirect3DRMFrame* frame, D3DRMMATRIX4D out)
 {
 	D3DRMMATRIX4D acc = {{1.f, 0.f, 0.f, 0.f}, {0.f, 1.f, 0.f, 0.f}, {0.f, 0.f, 1.f, 0.f}, {0.f, 0.f, 0.f, 1.f}};
 
@@ -113,7 +113,7 @@ HRESULT Direct3DRMViewport_SDL3GPUImpl::CollectSceneData(IDirect3DRMFrame* group
 	// Compute camera matrix
 	D3DRMMATRIX4D cameraWorld, viewMatrix;
 	ComputeFrameWorldMatrix(m_camera, cameraWorld);
-	D3DRMMatrixInvert(viewMatrix, cameraWorld);
+	D3DRMMatrixInvertOrthogonal(viewMatrix, cameraWorld);
 
 	std::function<void(IDirect3DRMFrame*, D3DRMMATRIX4D)> recurseFrame;
 
