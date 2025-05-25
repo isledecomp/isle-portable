@@ -89,7 +89,7 @@ jobs:
             -Werror=dev
 
       - name: Build (CMake)
-        run: cmake --build build --verbose -- -k0
+        run: cmake --build build --verbose
 
       - name: Package (CPack)
         run: |
