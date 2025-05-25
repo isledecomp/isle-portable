@@ -101,6 +101,7 @@ add_library(miniwin STATIC EXCLUDE_FROM_ALL
   miniwin/miniwin/src/miniwin_d3drmframe.cpp
   miniwin/miniwin/src/miniwin_d3drmlight.cpp
   miniwin/miniwin/src/miniwin_d3drmmesh.cpp
+  miniwin/miniwin/src/miniwin_d3drmtexture.cpp
   miniwin/miniwin/src/miniwin_d3drmviewport.cpp
 )
 # Force reported render mods from MiniWin

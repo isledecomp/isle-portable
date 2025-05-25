@@ -1,5 +1,6 @@
 #include "miniwin_d3drm.h"
 #include "miniwin_d3drm_p.h"
+#include "miniwin_d3drmdevice_p.h"
 #include "miniwin_d3drmobject_p.h"
 #include "miniwin_d3drmviewport_p.h"
 #include "miniwin_p.h"

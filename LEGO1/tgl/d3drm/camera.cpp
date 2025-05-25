@@ -22,10 +22,10 @@ Result CameraImpl::SetTransformation(FloatMatrix4& matrix)
 	Result result;
 	Result result2;
 
-	result2 = ResultVal(m_data->GetPosition(0, &position));
+	result2 = ResultVal(m_data->GetPosition(NULL, &position));
 	result = ResultVal(m_data->AddTransform(D3DRMCOMBINE_REPLACE, *pTransformation));
 	// The did this second call just to assert on the return value
-	result2 = ResultVal(m_data->GetPosition(0, &position));
+	result2 = ResultVal(m_data->GetPosition(NULL, &position));
 
 	return result;
 }
