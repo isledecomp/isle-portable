@@ -205,6 +205,7 @@ struct Direct3DRMImpl : virtual public IDirect3DRM2 {
 		IDirect3DRMDevice2** outDevice
 	) override
 	{
+		MINIWIN_NOT_IMPLEMENTED(); // Respect the chosen GUID
 		DDSURFACEDESC DDSDesc;
 		DDSDesc.dwSize = sizeof(DDSURFACEDESC);
 		surface->GetSurfaceDesc(&DDSDesc);
@@ -212,11 +213,13 @@ struct Direct3DRMImpl : virtual public IDirect3DRM2 {
 	}
 	HRESULT CreateTexture(D3DRMIMAGE* image, IDirect3DRMTexture2** outTexture) override
 	{
+		MINIWIN_NOT_IMPLEMENTED();
 		*outTexture = static_cast<IDirect3DRMTexture2*>(new Direct3DRMTextureImpl);
 		return DD_OK;
 	}
 	HRESULT CreateTextureFromSurface(LPDIRECTDRAWSURFACE surface, IDirect3DRMTexture2** outTexture) override
 	{
+		MINIWIN_NOT_IMPLEMENTED();
 		*outTexture = static_cast<IDirect3DRMTexture2*>(new Direct3DRMTextureImpl);
 		return DD_OK;
 	}
@@ -227,6 +230,7 @@ struct Direct3DRMImpl : virtual public IDirect3DRM2 {
 	}
 	HRESULT CreateMaterial(D3DVAL power, IDirect3DRMMaterial** outMaterial) override
 	{
+		MINIWIN_NOT_IMPLEMENTED();
 		*outMaterial = static_cast<IDirect3DRMMaterial*>(new Direct3DRMMaterialImpl);
 		return DD_OK;
 	}
@@ -237,6 +241,7 @@ struct Direct3DRMImpl : virtual public IDirect3DRM2 {
 	}
 	HRESULT CreateFrame(IDirect3DRMFrame* parent, IDirect3DRMFrame2** outFrame) override
 	{
+		MINIWIN_NOT_IMPLEMENTED();
 		*outFrame = static_cast<IDirect3DRMFrame2*>(new Direct3DRMFrameImpl);
 		return DD_OK;
 	}
