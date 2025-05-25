@@ -30,7 +30,7 @@ Direct3DRMViewport_SDL3GPUImpl::~Direct3DRMViewport_SDL3GPUImpl()
 	FreeDeviceResources();
 }
 
-void D3DRMMatrixMultiply(D3DRMMATRIX4D out, const D3DRMMATRIX4D a, const D3DRMMATRIX4D b)
+static void D3DRMMatrixMultiply(D3DRMMATRIX4D out, const D3DRMMATRIX4D a, const D3DRMMATRIX4D b)
 {
 	for (int i = 0; i < 4; ++i) {
 		for (int j = 0; j < 4; ++j) {
