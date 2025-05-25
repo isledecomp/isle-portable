@@ -1,15 +1,15 @@
 #pragma once
 
 #include "miniwin_d3drm.h"
-#include "miniwin_d3drmobject_p.h"
+#include "miniwin_d3drmobject_sdl3gpu.h"
 
 #include <SDL3/SDL.h>
 
-class Direct3DRMDeviceImpl;
-class Direct3DRMFrameImpl;
+class Direct3DRMDevice_SDL3GPUImpl;
+class Direct3DRMFrame_SDL3GPUImpl;
 
-struct Direct3DRMViewportImpl : public Direct3DRMObjectBase<IDirect3DRMViewport> {
-	Direct3DRMViewportImpl(
+struct Direct3DRMViewport_SDL3GPUImpl : public Direct3DRMObjectBase_SDL3GPUImpl<IDirect3DRMViewport> {
+	Direct3DRMViewport_SDL3GPUImpl(
 		DWORD width,
 		DWORD height,
 		SDL_GPUDevice* device,
@@ -17,7 +17,7 @@ struct Direct3DRMViewportImpl : public Direct3DRMObjectBase<IDirect3DRMViewport>
 		SDL_GPUTransferBuffer* downloadTransferBuffer,
 		SDL_GPUGraphicsPipeline* pipeline
 	);
-	~Direct3DRMViewportImpl() override;
+	~Direct3DRMViewport_SDL3GPUImpl() override;
 	HRESULT Render(IDirect3DRMFrame* group) override;
 	/**
 	 * @brief Blit the render back to our backbuffer
@@ -65,7 +65,9 @@ private:
 	D3DVALUE m_field = 0.5f;
 };
 
-struct Direct3DRMViewportArrayImpl
-	: public Direct3DRMArrayBase<IDirect3DRMViewport, Direct3DRMViewportImpl, IDirect3DRMViewportArray> {
-	using Direct3DRMArrayBase::Direct3DRMArrayBase;
+struct Direct3DRMViewportArray_SDL3GPUImpl : public Direct3DRMArrayBase_SDL3GPUImpl<
+												 IDirect3DRMViewport,
+												 Direct3DRMViewport_SDL3GPUImpl,
+												 IDirect3DRMViewportArray> {
+	using Direct3DRMArrayBase_SDL3GPUImpl::Direct3DRMArrayBase_SDL3GPUImpl;
 };

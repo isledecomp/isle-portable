@@ -1,6 +1,6 @@
 #pragma once
 
-#include "miniwin_d3drmobject_p.h"
+#include "miniwin_d3drmobject_sdl3gpu.h"
 
 #include <algorithm>
 #include <vector>
@@ -63,7 +63,7 @@ struct MeshGroup {
 	}
 };
 
-struct Direct3DRMMeshImpl : public Direct3DRMObjectBase<IDirect3DRMMesh> {
+struct Direct3DRMMesh_SDL3GPUImpl : public Direct3DRMObjectBase_SDL3GPUImpl<IDirect3DRMMesh> {
 	HRESULT QueryInterface(const GUID& riid, void** ppvObject) override;
 	HRESULT Clone(int flags, GUID iid, void** object) override;
 	HRESULT AddGroup(int vertexCount, int faceCount, int vertexPerFace, DWORD* faceBuffer, D3DRMGROUPINDEX* groupIndex)

@@ -6,7 +6,7 @@
 #include <vector>
 
 template <typename T>
-struct Direct3DRMObjectBase : public T {
+struct Direct3DRMObjectBase_SDL3GPUImpl : public T {
 	ULONG Release() override
 	{
 		if (IUnknown::m_refCount == 1) {

@@ -1,9 +1,9 @@
-#include "miniwin_d3drmmesh_p.h"
+#include "miniwin_d3drmmesh_sdl3gpu.h"
 #include "miniwin_p.h"
 
 #include <limits>
 
-HRESULT Direct3DRMMeshImpl::QueryInterface(const GUID& riid, void** ppvObject)
+HRESULT Direct3DRMMesh_SDL3GPUImpl::QueryInterface(const GUID& riid, void** ppvObject)
 {
 	if (SDL_memcmp(&riid, &IID_IDirect3DRMMesh, sizeof(GUID)) == 0) {
 		this->IUnknown::AddRef();
@@ -17,13 +17,13 @@ HRESULT Direct3DRMMeshImpl::QueryInterface(const GUID& riid, void** ppvObject)
 	return E_NOINTERFACE;
 }
 
-HRESULT Direct3DRMMeshImpl::Clone(int flags, GUID iid, void** object)
+HRESULT Direct3DRMMesh_SDL3GPUImpl::Clone(int flags, GUID iid, void** object)
 {
 	if (!object || SDL_memcmp(&iid, &IID_IDirect3DRMMesh, sizeof(GUID)) != 0) {
 		return DDERR_INVALIDPARAMS;
 	}
 
-	auto* clone = new Direct3DRMMeshImpl(*this);
+	auto* clone = new Direct3DRMMesh_SDL3GPUImpl(*this);
 
 	for (auto& group : clone->m_groups) {
 		// Reusing the same texture and material on the new mesh instead of cloning them might not be correct
@@ -39,7 +39,7 @@ HRESULT Direct3DRMMeshImpl::Clone(int flags, GUID iid, void** object)
 	return DD_OK;
 }
 
-HRESULT Direct3DRMMeshImpl::AddGroup(
+HRESULT Direct3DRMMesh_SDL3GPUImpl::AddGroup(
 	int vertexCount,
 	int faceCount,
 	int vertexPerFace,
@@ -66,7 +66,7 @@ HRESULT Direct3DRMMeshImpl::AddGroup(
 	return DD_OK;
 }
 
-HRESULT Direct3DRMMeshImpl::GetGroup(
+HRESULT Direct3DRMMesh_SDL3GPUImpl::GetGroup(
 	DWORD groupIndex,
 	DWORD* vertexCount,
 	DWORD* faceCount,
@@ -100,12 +100,12 @@ HRESULT Direct3DRMMeshImpl::GetGroup(
 	return DD_OK;
 }
 
-DWORD Direct3DRMMeshImpl::GetGroupCount()
+DWORD Direct3DRMMesh_SDL3GPUImpl::GetGroupCount()
 {
 	return m_groups.size();
 }
 
-HRESULT Direct3DRMMeshImpl::SetGroupColor(DWORD groupIndex, D3DCOLOR color)
+HRESULT Direct3DRMMesh_SDL3GPUImpl::SetGroupColor(DWORD groupIndex, D3DCOLOR color)
 {
 	if (groupIndex >= m_groups.size()) {
 		return DDERR_INVALIDPARAMS;
@@ -115,7 +115,7 @@ HRESULT Direct3DRMMeshImpl::SetGroupColor(DWORD groupIndex, D3DCOLOR color)
 	return DD_OK;
 }
 
-HRESULT Direct3DRMMeshImpl::SetGroupColorRGB(DWORD groupIndex, float r, float g, float b)
+HRESULT Direct3DRMMesh_SDL3GPUImpl::SetGroupColorRGB(DWORD groupIndex, float r, float g, float b)
 {
 	if (groupIndex >= m_groups.size()) {
 		return DDERR_INVALIDPARAMS;
@@ -128,7 +128,7 @@ HRESULT Direct3DRMMeshImpl::SetGroupColorRGB(DWORD groupIndex, float r, float g,
 	return DD_OK;
 }
 
-D3DCOLOR Direct3DRMMeshImpl::GetGroupColor(D3DRMGROUPINDEX index)
+D3DCOLOR Direct3DRMMesh_SDL3GPUImpl::GetGroupColor(D3DRMGROUPINDEX index)
 {
 	if (index < 0 || index >= static_cast<int>(m_groups.size())) {
 		return 0xFFFFFFFF;
@@ -136,7 +136,7 @@ D3DCOLOR Direct3DRMMeshImpl::GetGroupColor(D3DRMGROUPINDEX index)
 	return m_groups[index].color;
 }
 
-HRESULT Direct3DRMMeshImpl::SetGroupMaterial(DWORD groupIndex, IDirect3DRMMaterial* material)
+HRESULT Direct3DRMMesh_SDL3GPUImpl::SetGroupMaterial(DWORD groupIndex, IDirect3DRMMaterial* material)
 {
 	if (groupIndex >= m_groups.size()) {
 		return DDERR_INVALIDPARAMS;
@@ -147,7 +147,7 @@ HRESULT Direct3DRMMeshImpl::SetGroupMaterial(DWORD groupIndex, IDirect3DRMMateri
 	return DD_OK;
 }
 
-HRESULT Direct3DRMMeshImpl::SetGroupTexture(DWORD groupIndex, IDirect3DRMTexture* texture)
+HRESULT Direct3DRMMesh_SDL3GPUImpl::SetGroupTexture(DWORD groupIndex, IDirect3DRMTexture* texture)
 {
 	if (groupIndex >= m_groups.size()) {
 		return DDERR_INVALIDPARAMS;
@@ -158,7 +158,7 @@ HRESULT Direct3DRMMeshImpl::SetGroupTexture(DWORD groupIndex, IDirect3DRMTexture
 	return DD_OK;
 }
 
-HRESULT Direct3DRMMeshImpl::GetGroupTexture(DWORD groupIndex, LPDIRECT3DRMTEXTURE* texture)
+HRESULT Direct3DRMMesh_SDL3GPUImpl::GetGroupTexture(DWORD groupIndex, LPDIRECT3DRMTEXTURE* texture)
 {
 	if (groupIndex >= m_groups.size()) {
 		return DDERR_GENERIC;
@@ -174,17 +174,17 @@ HRESULT Direct3DRMMeshImpl::GetGroupTexture(DWORD groupIndex, LPDIRECT3DRMTEXTUR
 	return DD_OK;
 }
 
-HRESULT Direct3DRMMeshImpl::SetGroupMapping(D3DRMGROUPINDEX groupIndex, D3DRMMAPPING mapping)
+HRESULT Direct3DRMMesh_SDL3GPUImpl::SetGroupMapping(D3DRMGROUPINDEX groupIndex, D3DRMMAPPING mapping)
 {
 	return DD_OK;
 }
 
-D3DRMMAPPING Direct3DRMMeshImpl::GetGroupMapping(DWORD groupIndex)
+D3DRMMAPPING Direct3DRMMesh_SDL3GPUImpl::GetGroupMapping(DWORD groupIndex)
 {
 	return D3DRMMAP_PERSPCORRECT;
 }
 
-HRESULT Direct3DRMMeshImpl::SetGroupQuality(DWORD groupIndex, D3DRMRENDERQUALITY quality)
+HRESULT Direct3DRMMesh_SDL3GPUImpl::SetGroupQuality(DWORD groupIndex, D3DRMRENDERQUALITY quality)
 {
 	if (groupIndex >= m_groups.size()) {
 		return DDERR_INVALIDPARAMS;
@@ -194,7 +194,7 @@ HRESULT Direct3DRMMeshImpl::SetGroupQuality(DWORD groupIndex, D3DRMRENDERQUALITY
 	return DD_OK;
 }
 
-D3DRMRENDERQUALITY Direct3DRMMeshImpl::GetGroupQuality(DWORD groupIndex)
+D3DRMRENDERQUALITY Direct3DRMMesh_SDL3GPUImpl::GetGroupQuality(DWORD groupIndex)
 {
 	if (groupIndex >= m_groups.size()) {
 		return D3DRMRENDER_GOURAUD;
@@ -203,7 +203,7 @@ D3DRMRENDERQUALITY Direct3DRMMeshImpl::GetGroupQuality(DWORD groupIndex)
 	return m_groups[groupIndex].quality;
 }
 
-HRESULT Direct3DRMMeshImpl::SetVertices(DWORD groupIndex, int offset, int count, D3DRMVERTEX* vertices)
+HRESULT Direct3DRMMesh_SDL3GPUImpl::SetVertices(DWORD groupIndex, int offset, int count, D3DRMVERTEX* vertices)
 {
 	if (count <= 0 || offset < 0 || groupIndex < 0 || groupIndex >= static_cast<int>(m_groups.size())) {
 		return DDERR_INVALIDPARAMS;
@@ -219,7 +219,7 @@ HRESULT Direct3DRMMeshImpl::SetVertices(DWORD groupIndex, int offset, int count,
 	return DD_OK;
 }
 
-HRESULT Direct3DRMMeshImpl::GetVertices(DWORD groupIndex, int startIndex, int count, D3DRMVERTEX* vertices)
+HRESULT Direct3DRMMesh_SDL3GPUImpl::GetVertices(DWORD groupIndex, int startIndex, int count, D3DRMVERTEX* vertices)
 {
 	if (count <= 0 || startIndex < 0 || groupIndex < 0 || groupIndex >= static_cast<int>(m_groups.size())) {
 		return DDERR_INVALIDPARAMS;
@@ -238,7 +238,7 @@ HRESULT Direct3DRMMeshImpl::GetVertices(DWORD groupIndex, int startIndex, int co
 /**
  * @todo Maybe a good idea to cache this
  */
-HRESULT Direct3DRMMeshImpl::GetBox(D3DRMBOX* box)
+HRESULT Direct3DRMMesh_SDL3GPUImpl::GetBox(D3DRMBOX* box)
 {
 	box->min.x = box->min.y = box->min.z = std::numeric_limits<float>::max();
 	box->max.x = box->max.y = box->max.z = std::numeric_limits<float>::min();
