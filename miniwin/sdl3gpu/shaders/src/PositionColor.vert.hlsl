@@ -10,6 +10,11 @@ struct Output
     float4 Position : SV_Position;
 };
 
+cbuffer ViewportUniforms : register(b0, space1)
+{
+    float4x4 projection;
+};
+
 Output main(Input input)
 {
     Output output;

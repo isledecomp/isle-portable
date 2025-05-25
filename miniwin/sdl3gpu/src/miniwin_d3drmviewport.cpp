@@ -82,6 +82,10 @@ void ComputeFrameWorldMatrix(IDirect3DRMFrame* frame, D3DRMMATRIX4D out)
 	memcpy(out, acc, sizeof(acc));
 }
 
+typedef struct {
+	D3DRMMATRIX4D projection;
+} ViewportUniforms;
+
 HRESULT Direct3DRMViewport_SDL3GPUImpl::CollectSceneData(IDirect3DRMFrame* group)
 {
 	MINIWIN_NOT_IMPLEMENTED(); // Lights, camera, textures, materials
@@ -263,6 +267,17 @@ HRESULT Direct3DRMViewport_SDL3GPUImpl::Render(IDirect3DRMFrame* group)
 	colorTargetInfo.load_op = SDL_GPU_LOADOP_CLEAR;
 	SDL_GPURenderPass* renderPass = SDL_BeginGPURenderPass(cmdbuf, &colorTargetInfo, 1, NULL);
 	SDL_BindGPUGraphicsPipeline(renderPass, m_pipeline);
+
+	ViewportUniforms viewportUniforms = {0};
+	D3DRMMATRIX4D matrix =  {
+		{1.f, 0.f, 0.f, 0.f},
+		{0.f, 1.f, 0.f, 0.f},
+		{0.f, 0.f, 1.f, 0.f},
+		{0.f, 0.f, 0.f, 1.f}
+	};
+
+	memcpy(viewportUniforms.projection, matrix, sizeof(viewportUniforms.projection));
+	SDL_PushGPUVertexUniformData(cmdbuf, 0, &viewportUniforms, sizeof(viewportUniforms));
 
 	if (m_vertexCount) {
 		SDL_GPUBufferBinding vertexBufferBinding = {};
