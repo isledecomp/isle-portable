@@ -21,7 +21,7 @@ static const SDL_GPUShaderCreateInfo VertexShaderDXILCodes[] = {
     /* num_samplers */          0,
     /* num_storage_textures */  0,
     /* num_storage_buffers */   0,
-    /* num_uniform_buffers */   0,
+    /* num_uniform_buffers */   1,
   },
 };
 #endif
@@ -37,7 +37,7 @@ static const SDL_GPUShaderCreateInfo VertexShaderMSLCodes[] = {
     /* num_samplers */          0,
     /* num_storage_textures */  0,
     /* num_storage_buffers */   0,
-    /* num_uniform_buffers */   0,
+    /* num_uniform_buffers */   1,
   },
 };
 #endif
@@ -52,7 +52,7 @@ static const SDL_GPUShaderCreateInfo VertexShaderSPIRVCodes[] = {
     /* num_samplers */          0,
     /* num_storage_textures */  0,
     /* num_storage_buffers */   0,
-    /* num_uniform_buffers */   0,
+    /* num_uniform_buffers */   1,
   },
 };
 

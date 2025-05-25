@@ -10,10 +10,15 @@ struct Output
     float4 Position : SV_Position;
 };
 
+cbuffer ViewportUniforms : register(b0, space1)
+{
+    float4x4 perspective;
+};
+
 Output main(Input input)
 {
     Output output;
     output.Color = input.Color;
-    output.Position = float4(input.Position, 1.0f);
+    output.Position = mul(perspective, input.Position);
     return output;
 }
