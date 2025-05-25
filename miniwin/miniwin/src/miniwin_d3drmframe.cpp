@@ -86,26 +86,6 @@ HRESULT Direct3DRMFrameImpl::DeleteVisual(IDirect3DRMVisual* visual)
 	return m_visuals->DeleteElement(visual);
 }
 
-HRESULT Direct3DRMFrameImpl::AddVisual(IDirect3DRMMesh* visual)
-{
-	return m_visuals->AddElement(visual);
-}
-
-HRESULT Direct3DRMFrameImpl::DeleteVisual(IDirect3DRMMesh* visual)
-{
-	return m_visuals->DeleteElement(visual);
-}
-
-HRESULT Direct3DRMFrameImpl::AddVisual(IDirect3DRMFrame* visual)
-{
-	return m_visuals->AddElement(visual);
-}
-
-HRESULT Direct3DRMFrameImpl::DeleteVisual(IDirect3DRMFrame* visual)
-{
-	return m_visuals->DeleteElement(visual);
-}
-
 HRESULT Direct3DRMFrameImpl::GetVisuals(IDirect3DRMVisualArray** visuals)
 {
 	*visuals = m_visuals;

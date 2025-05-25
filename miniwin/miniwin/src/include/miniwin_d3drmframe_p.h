@@ -16,10 +16,6 @@ struct Direct3DRMFrameImpl : public Direct3DRMObjectBase<IDirect3DRMFrame2> {
 	HRESULT GetPosition(int index, D3DVECTOR* position) override;
 	HRESULT AddVisual(IDirect3DRMVisual* visual) override;
 	HRESULT DeleteVisual(IDirect3DRMVisual* visual) override;
-	HRESULT AddVisual(IDirect3DRMMesh* visual) override;
-	HRESULT DeleteVisual(IDirect3DRMMesh* visual) override;
-	HRESULT AddVisual(IDirect3DRMFrame* visual) override;
-	HRESULT DeleteVisual(IDirect3DRMFrame* visual) override;
 	HRESULT GetVisuals(IDirect3DRMVisualArray** visuals) override;
 	HRESULT SetTexture(IDirect3DRMTexture* texture) override;
 	HRESULT GetTexture(IDirect3DRMTexture** texture) override;
