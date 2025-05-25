@@ -118,6 +118,14 @@ set(miniwin_shaders
   "${shader_src_dir}/PositionColor.vert.hlsl"
   "${shader_src_dir}/SolidColor.frag.hlsl"
 )
+if(ISLE_COMPILE_SHADERS)
+  set(compiled_bindir "${CMAKE_CURRENT_BINARY_DIR}/shaders/compiled")
+  set(compiled_srcdir "${CMAKE_CURRENT_SOURCE_DIR}/miniwin/miniwin/shaders/compiled")
+  set(generated_dirs "${compiled_srcdir}" "${compiled_bindir}/dxil" "${compiled_bindir}/msl" "${compiled_bindir}/spirv")
+  add_custom_command(OUTPUT ${generated_dirs}
+    COMMAND "${CMAKE_COMMAND}" -E make_directory ${generated_dirs})
+  add_custom_target(create-generated-shader-directories DEPENDS ${generated_dirs})
+endif()
 target_sources(miniwin PRIVATE ${py_gencshadersource})
 set(shader_variables )
 set(shader_headers )
@@ -144,8 +152,6 @@ foreach(shader_src IN LISTS miniwin_shaders)
   else()
     message(FATAL_ERROR "Unknown stage (${src_stage_ext})")
   endif()
-  set(compiled_bindir "${CMAKE_CURRENT_BINARY_DIR}/shaders/compiled")
-  set(compiled_srcdir "${CMAKE_CURRENT_SOURCE_DIR}/miniwin/miniwin/shaders/compiled")
   set(dxil "${compiled_bindir}/dxil/${filename_wle}.dxil")
   set(msl "${compiled_bindir}/msl/${filename_wle}.msl")
   set(spirv "${compiled_bindir}/spirv/${filename_wle}.spv")
@@ -155,15 +161,15 @@ foreach(shader_src IN LISTS miniwin_shaders)
     add_custom_command(OUTPUT "${dxil}"
       COMMAND "${SDL_SHADERCROSS_BIN}" "${shader_src}" -o "${dxil}"
         -s "${src_format}" -d "DXIL" -t "${shader_stage}"
-      DEPENDS "${shader_src}")
+      DEPENDS create-generated-shader-directories "${shader_src}")
     add_custom_command(OUTPUT "${msl}"
       COMMAND "${SDL_SHADERCROSS_BIN}" "${shader_src}" -o "${msl}"
         -s "${src_format}" -d "MSL" -t "${shader_stage}"
-      DEPENDS "${shader_src}")
+      DEPENDS create-generated-shader-directories "${shader_src}")
     add_custom_command(OUTPUT "${spirv}"
       COMMAND "${SDL_SHADERCROSS_BIN}" "${shader_src}" -o "${spirv}"
         -s "${src_format}" -d "SPIRV" -t "${shader_stage}"
-      DEPENDS "${shader_src}")
+      DEPENDS create-generated-shader-directories "${shader_src}")
     add_custom_command(OUTPUT "${shader_header}"
       COMMAND Python3::Interpreter "${py_gencshadersource}" "header" "--output" "${shader_header}"
         "--stage" "${shader_stage}" "--variable" "${shader_variable}"
