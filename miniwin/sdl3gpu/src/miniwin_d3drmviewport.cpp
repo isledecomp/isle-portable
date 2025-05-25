@@ -208,13 +208,7 @@ HRESULT Direct3DRMViewport_SDL3GPUImpl::CollectSceneData(IDirect3DRMFrame* group
 	recurseFrame(group, identity);
 
 	PushVertices(verts.data(), verts.size());
-	HMM_Perspective_LH_NO(
-		m_uniforms.perspective,
-		m_field,
-		4.f/3.f,
-		m_front,
-		m_back
-	);
+	HMM_Perspective_LH_NO(m_uniforms.perspective, m_field, 4.f / 3.f, m_front, m_back);
 
 	// SDL_Log("FOV: %f", m_field);
 	HMM_Perspective_LH_NO(m_uniforms.perspective, m_field * SDL_PI_F * 4, 4.f / 3.f, m_front, m_back);
