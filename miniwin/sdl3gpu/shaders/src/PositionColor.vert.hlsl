@@ -19,6 +19,6 @@ Output main(Input input)
 {
     Output output;
     output.Color = input.Color;
-    output.Position = mul(perspective, input.Position);
+    output.Position = mul(perspective, float4(input.Position, 1.f));
     return output;
 }
