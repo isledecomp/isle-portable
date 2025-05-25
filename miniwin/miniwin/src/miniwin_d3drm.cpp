@@ -77,7 +77,13 @@ struct Direct3DRMWinDeviceImpl : public IDirect3DRMWinDevice {
 	void HandlePaint(void* p_dc) override { MINIWIN_NOT_IMPLEMENTED(); }
 };
 
-struct Direct3DRMMaterialImpl : public Direct3DRMObjectBase<IDirect3DRMMaterial> {};
+struct Direct3DRMMaterialImpl : public Direct3DRMObjectBase<IDirect3DRMMaterial> {
+	Direct3DRMMaterialImpl(D3DVALUE power) : m_power(power) {}
+	D3DVALUE GetPower() override { return m_power; }
+
+private:
+	D3DVALUE m_power;
+};
 
 SDL_GPUGraphicsPipeline* InitializeGraphicsPipeline(SDL_GPUDevice* device)
 {
@@ -214,8 +220,7 @@ struct Direct3DRMImpl : virtual public IDirect3DRM2 {
 	}
 	HRESULT CreateMaterial(D3DVAL power, IDirect3DRMMaterial** outMaterial) override
 	{
-		MINIWIN_NOT_IMPLEMENTED();
-		*outMaterial = static_cast<IDirect3DRMMaterial*>(new Direct3DRMMaterialImpl);
+		*outMaterial = static_cast<IDirect3DRMMaterial*>(new Direct3DRMMaterialImpl(power));
 		return DD_OK;
 	}
 	HRESULT CreateLightRGB(D3DRMLIGHTTYPE type, D3DVAL r, D3DVAL g, D3DVAL b, IDirect3DRMLight** outLight) override
