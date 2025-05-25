@@ -46,9 +46,6 @@ HRESULT Direct3DRMFrameImpl::QueryInterface(const GUID& riid, void** ppvObject)
 
 HRESULT Direct3DRMFrameImpl::AddChild(IDirect3DRMFrame* child)
 {
-	if (!child) {
-		return DDERR_GENERIC;
-	}
 	Direct3DRMFrameImpl* childImpl = static_cast<Direct3DRMFrameImpl*>(child);
 	if (childImpl->m_parent) {
 		if (childImpl->m_parent == this) {
@@ -64,9 +61,6 @@ HRESULT Direct3DRMFrameImpl::AddChild(IDirect3DRMFrame* child)
 HRESULT Direct3DRMFrameImpl::DeleteChild(IDirect3DRMFrame* child)
 {
 	Direct3DRMFrameImpl* childImpl = static_cast<Direct3DRMFrameImpl*>(child);
-	if (!childImpl) {
-		return DDERR_GENERIC;
-	}
 	HRESULT result = m_children->DeleteElement(childImpl);
 	if (result == DD_OK) {
 		childImpl->m_parent = nullptr;
@@ -119,7 +113,6 @@ HRESULT Direct3DRMFrameImpl::GetPosition(IDirect3DRMFrame* reference, D3DVECTOR*
 
 HRESULT Direct3DRMFrameImpl::AddVisual(IDirect3DRMVisual* visual)
 {
-	SDL_assert(false); // Is this actually used?
 	return m_visuals->AddElement(visual);
 }
 
@@ -137,9 +130,6 @@ HRESULT Direct3DRMFrameImpl::GetVisuals(IDirect3DRMVisualArray** visuals)
 
 HRESULT Direct3DRMFrameImpl::SetTexture(IDirect3DRMTexture* texture)
 {
-	if (!texture) {
-		return DDERR_GENERIC;
-	}
 	auto textureImpl = static_cast<Direct3DRMTextureImpl*>(texture);
 	if (m_texture) {
 		m_texture->Release();
