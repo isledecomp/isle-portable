@@ -195,6 +195,7 @@ struct IDirect3DRMMesh : public IDirect3DRMVisual {
 	virtual HRESULT SetVertices(DWORD groupIndex, int offset, int count, D3DRMVERTEX* vertices) = 0;
 	virtual HRESULT GetGroupTexture(DWORD groupIndex, LPDIRECT3DRMTEXTURE* texture) = 0;
 	virtual D3DRMMAPPING GetGroupMapping(DWORD groupIndex) = 0;
+	virtual HRESULT GetGroupMaterial(DWORD groupIndex, LPDIRECT3DRMMATERIAL* material) = 0;
 	virtual D3DRMRENDERQUALITY GetGroupQuality(DWORD groupIndex) = 0;
 	virtual D3DCOLOR GetGroupColor(D3DRMGROUPINDEX index) = 0;
 	virtual HRESULT GetVertices(DWORD groupIndex, int startIndex, int count, D3DRMVERTEX* vertices) = 0;
