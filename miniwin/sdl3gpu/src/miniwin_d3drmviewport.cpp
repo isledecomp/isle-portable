@@ -42,11 +42,57 @@ static void D3DRMMatrixMultiply(D3DRMMATRIX4D out, const D3DRMMATRIX4D a, const 
 	}
 }
 
+void D3DRMMatrixInvert(D3DRMMATRIX4D out, const D3DRMMATRIX4D m)
+{
+	for (int i = 0; i < 3; ++i) {
+		for (int j = 0; j < 3; ++j) {
+			out[i][j] = m[j][i];
+		}
+	}
+
+	out[0][3] = out[1][3] = out[2][3] = 0.f;
+	out[3][3] = 1.f;
+
+	D3DVECTOR t = {m[3][0], m[3][1], m[3][2]};
+
+	out[3][0] = -(out[0][0] * t.x + out[1][0] * t.y + out[2][0] * t.z);
+	out[3][1] = -(out[0][1] * t.x + out[1][1] * t.y + out[2][1] * t.z);
+	out[3][2] = -(out[0][2] * t.x + out[1][2] * t.y + out[2][2] * t.z);
+}
+
+void ComputeFrameWorldMatrix(IDirect3DRMFrame* frame, D3DRMMATRIX4D out)
+{
+	D3DRMMATRIX4D acc = {{1.f, 0.f, 0.f, 0.f}, {0.f, 1.f, 0.f, 0.f}, {0.f, 0.f, 1.f, 0.f}, {0.f, 0.f, 0.f, 1.f}};
+
+	IDirect3DRMFrame* cur = frame;
+	while (cur) {
+		auto* impl = static_cast<Direct3DRMFrame_SDL3GPUImpl*>(cur);
+		D3DRMMATRIX4D local;
+		memcpy(local, impl->m_transform, sizeof(local));
+
+		D3DRMMATRIX4D tmp;
+		D3DRMMatrixMultiply(tmp, local, acc);
+		memcpy(acc, tmp, sizeof(acc));
+
+		if (cur == impl->m_parent) {
+			break;
+		}
+		cur = impl->m_parent;
+	}
+	memcpy(out, acc, sizeof(acc));
+}
+
 HRESULT Direct3DRMViewport_SDL3GPUImpl::CollectSceneData(IDirect3DRMFrame* group)
 {
 	MINIWIN_NOT_IMPLEMENTED(); // Lights, camera, textures, materials
 
 	std::vector<PositionColorVertex> verts;
+
+	// Compute camera matrix
+	D3DRMMATRIX4D cameraWorld, viewMatrix;
+	ComputeFrameWorldMatrix(m_camera, cameraWorld);
+	D3DRMMatrixInvert(viewMatrix, cameraWorld);
+
 	std::function<void(IDirect3DRMFrame*, D3DRMMATRIX4D)> recurseFrame;
 
 	recurseFrame = [&](IDirect3DRMFrame* frame, D3DRMMATRIX4D parentMatrix) {
@@ -98,10 +144,19 @@ HRESULT Direct3DRMViewport_SDL3GPUImpl::CollectSceneData(IDirect3DRMFrame* group
 								worldPos.z = pos.x * worldMatrix[0][2] + pos.y * worldMatrix[1][2] +
 											 pos.z * worldMatrix[2][2] + worldMatrix[3][2];
 
+								// View transform
+								D3DVECTOR viewPos;
+								viewPos.x = worldPos.x * viewMatrix[0][0] + worldPos.y * viewMatrix[1][0] +
+											worldPos.z * viewMatrix[2][0] + viewMatrix[3][0];
+								viewPos.y = worldPos.x * viewMatrix[0][1] + worldPos.y * viewMatrix[1][1] +
+											worldPos.z * viewMatrix[2][1] + viewMatrix[3][1];
+								viewPos.z = worldPos.x * viewMatrix[0][2] + worldPos.y * viewMatrix[1][2] +
+											worldPos.z * viewMatrix[2][2] + viewMatrix[3][2];
+
 								PositionColorVertex vtx;
-								vtx.x = worldPos.x;
-								vtx.y = worldPos.y;
-								vtx.z = worldPos.z;
+								vtx.x = viewPos.x;
+								vtx.y = viewPos.y;
+								vtx.z = viewPos.z;
 								vtx.a = (color >> 24) & 0xFF;
 								vtx.r = (color >> 16) & 0xFF;
 								vtx.g = (color >> 8) & 0xFF;
