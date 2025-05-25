@@ -236,8 +236,7 @@ struct Direct3DRMImpl : virtual public IDirect3DRM2 {
 	}
 	HRESULT CreateLightRGB(D3DRMLIGHTTYPE type, D3DVAL r, D3DVAL g, D3DVAL b, IDirect3DRMLight** outLight) override
 	{
-		MINIWIN_NOT_IMPLEMENTED();
-		*outLight = static_cast<IDirect3DRMLight*>(new Direct3DRMLightImpl);
+		*outLight = static_cast<IDirect3DRMLight*>(new Direct3DRMLightImpl(r, g, b));
 		return DD_OK;
 	}
 	HRESULT CreateFrame(IDirect3DRMFrame* parent, IDirect3DRMFrame2** outFrame) override
