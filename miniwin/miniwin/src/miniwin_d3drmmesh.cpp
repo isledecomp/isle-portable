@@ -3,6 +3,20 @@
 
 #include <limits>
 
+HRESULT Direct3DRMMeshImpl::QueryInterface(const GUID& riid, void** ppvObject)
+{
+	if (SDL_memcmp(&riid, &IID_IDirect3DRMMesh, sizeof(GUID)) == 0) {
+		this->IUnknown::AddRef();
+		*ppvObject = static_cast<IDirect3DRMMesh*>(this);
+		return S_OK;
+	}
+	if (SDL_memcmp(&riid, &IID_IDirect3DRMFrame, sizeof(GUID)) == 0) {
+		return E_NOINTERFACE;
+	}
+	SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Direct3DRMMeshImpl does not implement guid");
+	return E_NOINTERFACE;
+}
+
 HRESULT Direct3DRMMeshImpl::Clone(int flags, GUID iid, void** object)
 {
 	if (!object || SDL_memcmp(&iid, &IID_IDirect3DRMMesh, sizeof(GUID)) != 0) {
@@ -84,6 +98,11 @@ HRESULT Direct3DRMMeshImpl::GetGroup(
 	}
 
 	return DD_OK;
+}
+
+DWORD Direct3DRMMeshImpl::GetGroupCount()
+{
+	return m_groups.size();
 }
 
 HRESULT Direct3DRMMeshImpl::SetGroupColor(DWORD groupIndex, D3DCOLOR color)
