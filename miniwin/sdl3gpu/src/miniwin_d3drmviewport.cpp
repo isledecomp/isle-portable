@@ -61,7 +61,8 @@ void D3DRMMatrixInvert(D3DRMMATRIX4D out, const D3DRMMATRIX4D m)
 	out[3][2] = -(out[0][2] * t.x + out[1][2] * t.y + out[2][2] * t.z);
 }
 
-void HMM_Perspective_LH_NO(D3DRMMATRIX4D Result, float FOV, float AspectRatio, float Near, float Far) {
+void HMM_Perspective_LH_NO(D3DRMMATRIX4D Result, float FOV, float AspectRatio, float Near, float Far)
+{
 	// See https://www.khronos.org/registry/OpenGL-Refpages/gl2.1/xhtml/gluPerspective.xml
 
 	float Cotangent = 1.0f / SDL_tanf(FOV / 2.0f);
@@ -205,13 +206,7 @@ HRESULT Direct3DRMViewport_SDL3GPUImpl::CollectSceneData(IDirect3DRMFrame* group
 	PushVertices(verts.data(), verts.size());
 
 	// SDL_Log("FOV: %f", m_field);
-	HMM_Perspective_LH_NO(
-		m_uniforms.perspective,
-		m_field * SDL_PI_F*4,
-		4.f/3.f,
-		m_front,
-		m_back
-	);
+	HMM_Perspective_LH_NO(m_uniforms.perspective, m_field * SDL_PI_F * 4, 4.f / 3.f, m_front, m_back);
 
 	return D3DRM_OK;
 }
