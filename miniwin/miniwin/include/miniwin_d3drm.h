@@ -162,7 +162,9 @@ typedef IDirect3DRMTexture* LPDIRECT3DRMTEXTURE;
 struct IDirect3DRMTexture2 : public IDirect3DRMTexture {};
 typedef IDirect3DRMTexture2* LPDIRECT3DRMTEXTURE2;
 
-struct IDirect3DRMMaterial : public IDirect3DRMObject {};
+struct IDirect3DRMMaterial : public IDirect3DRMObject {
+	virtual D3DVALUE GetPower() = 0;
+};
 typedef IDirect3DRMMaterial *LPDIRECT3DRMMATERIAL, **LPLPDIRECT3DRMMATERIAL;
 
 struct IDirect3DRMMesh : public IDirect3DRMVisual {
