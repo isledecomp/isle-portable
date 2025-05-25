@@ -3,7 +3,7 @@
 #include "miniwin_d3d.h"
 #include "miniwin_ddraw.h"
 
-struct DirectDrawImpl : public IDirectDraw2, public IDirect3D2 {
+struct DirectDraw_SDL3GPUImpl : public IDirectDraw2, public IDirect3D2 {
 	// IUnknown interface
 	HRESULT QueryInterface(const GUID& riid, void** ppvObject) override;
 	// IDirectDraw interface

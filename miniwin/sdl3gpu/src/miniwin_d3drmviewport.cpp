@@ -1,12 +1,12 @@
-#include "miniwin_d3drm_p.h"
-#include "miniwin_d3drmframe_p.h"
-#include "miniwin_d3drmviewport_p.h"
+#include "miniwin_d3drm_sdl3gpu.h"
+#include "miniwin_d3drmframe_sdl3gpu.h"
+#include "miniwin_d3drmviewport_sdl3gpu.h"
 #include "miniwin_p.h"
 
 #include <SDL3/SDL.h>
 #include <functional>
 
-Direct3DRMViewportImpl::Direct3DRMViewportImpl(
+Direct3DRMViewport_SDL3GPUImpl::Direct3DRMViewport_SDL3GPUImpl(
 	DWORD width,
 	DWORD height,
 	SDL_GPUDevice* device,
@@ -19,13 +19,13 @@ Direct3DRMViewportImpl::Direct3DRMViewportImpl(
 {
 }
 
-void Direct3DRMViewportImpl::FreeDeviceResources()
+void Direct3DRMViewport_SDL3GPUImpl::FreeDeviceResources()
 {
 	SDL_ReleaseGPUBuffer(m_device, m_vertexBuffer);
 	SDL_ReleaseGPUGraphicsPipeline(m_device, m_pipeline);
 }
 
-Direct3DRMViewportImpl::~Direct3DRMViewportImpl()
+Direct3DRMViewport_SDL3GPUImpl::~Direct3DRMViewport_SDL3GPUImpl()
 {
 	FreeDeviceResources();
 }
@@ -42,7 +42,7 @@ void D3DRMMatrixMultiply(D3DRMMATRIX4D out, const D3DRMMATRIX4D a, const D3DRMMA
 	}
 }
 
-HRESULT Direct3DRMViewportImpl::CollectSceneData(IDirect3DRMFrame* group)
+HRESULT Direct3DRMViewport_SDL3GPUImpl::CollectSceneData(IDirect3DRMFrame* group)
 {
 	MINIWIN_NOT_IMPLEMENTED(); // Lights, camera, textures, materials
 
@@ -51,7 +51,7 @@ HRESULT Direct3DRMViewportImpl::CollectSceneData(IDirect3DRMFrame* group)
 
 	recurseFrame = [&](IDirect3DRMFrame* frame, D3DRMMATRIX4D parentMatrix) {
 		// Retrieve the current frame's transform
-		Direct3DRMFrameImpl* frameImpl = static_cast<Direct3DRMFrameImpl*>(frame);
+		Direct3DRMFrame_SDL3GPUImpl* frameImpl = static_cast<Direct3DRMFrame_SDL3GPUImpl*>(frame);
 		D3DRMMATRIX4D localMatrix;
 		memcpy(localMatrix, frameImpl->m_transform, sizeof(D3DRMMATRIX4D));
 
@@ -135,7 +135,7 @@ HRESULT Direct3DRMViewportImpl::CollectSceneData(IDirect3DRMFrame* group)
 	return D3DRM_OK;
 }
 
-void Direct3DRMViewportImpl::PushVertices(const PositionColorVertex* vertices, size_t count)
+void Direct3DRMViewport_SDL3GPUImpl::PushVertices(const PositionColorVertex* vertices, size_t count)
 {
 	if (count > m_vertexBufferCount) {
 		if (m_vertexBuffer) {
@@ -184,7 +184,7 @@ void Direct3DRMViewportImpl::PushVertices(const PositionColorVertex* vertices, s
 	SDL_ReleaseGPUTransferBuffer(m_device, transferBuffer);
 }
 
-HRESULT Direct3DRMViewportImpl::Render(IDirect3DRMFrame* group)
+HRESULT Direct3DRMViewport_SDL3GPUImpl::Render(IDirect3DRMFrame* group)
 {
 	if (!m_device) {
 		return DDERR_GENERIC;
@@ -258,7 +258,7 @@ HRESULT Direct3DRMViewportImpl::Render(IDirect3DRMFrame* group)
 	return ForceUpdate(0, 0, DDBackBuffer->w, DDBackBuffer->h);
 }
 
-HRESULT Direct3DRMViewportImpl::ForceUpdate(int x, int y, int w, int h)
+HRESULT Direct3DRMViewport_SDL3GPUImpl::ForceUpdate(int x, int y, int w, int h)
 {
 	if (!m_renderedImage) {
 		return DDERR_GENERIC;
@@ -292,7 +292,7 @@ HRESULT Direct3DRMViewportImpl::ForceUpdate(int x, int y, int w, int h)
 	return DD_OK;
 }
 
-HRESULT Direct3DRMViewportImpl::Clear()
+HRESULT Direct3DRMViewport_SDL3GPUImpl::Clear()
 {
 	if (!DDBackBuffer) {
 		return DDERR_GENERIC;
@@ -307,7 +307,7 @@ HRESULT Direct3DRMViewportImpl::Clear()
 	return DD_OK;
 }
 
-HRESULT Direct3DRMViewportImpl::SetCamera(IDirect3DRMFrame* camera)
+HRESULT Direct3DRMViewport_SDL3GPUImpl::SetCamera(IDirect3DRMFrame* camera)
 {
 	if (m_camera) {
 		m_camera->Release();
@@ -319,7 +319,7 @@ HRESULT Direct3DRMViewportImpl::SetCamera(IDirect3DRMFrame* camera)
 	return DD_OK;
 }
 
-HRESULT Direct3DRMViewportImpl::GetCamera(IDirect3DRMFrame** camera)
+HRESULT Direct3DRMViewport_SDL3GPUImpl::GetCamera(IDirect3DRMFrame** camera)
 {
 	if (m_camera) {
 		m_camera->AddRef();
@@ -328,78 +328,78 @@ HRESULT Direct3DRMViewportImpl::GetCamera(IDirect3DRMFrame** camera)
 	return DD_OK;
 }
 
-HRESULT Direct3DRMViewportImpl::SetProjection(D3DRMPROJECTIONTYPE type)
+HRESULT Direct3DRMViewport_SDL3GPUImpl::SetProjection(D3DRMPROJECTIONTYPE type)
 {
 	return DD_OK;
 }
 
-D3DRMPROJECTIONTYPE Direct3DRMViewportImpl::GetProjection()
+D3DRMPROJECTIONTYPE Direct3DRMViewport_SDL3GPUImpl::GetProjection()
 {
 	return D3DRMPROJECTIONTYPE::PERSPECTIVE;
 }
 
-HRESULT Direct3DRMViewportImpl::SetFront(D3DVALUE z)
+HRESULT Direct3DRMViewport_SDL3GPUImpl::SetFront(D3DVALUE z)
 {
 	m_zMin = z;
 	return DD_OK;
 }
 
-D3DVALUE Direct3DRMViewportImpl::GetFront()
+D3DVALUE Direct3DRMViewport_SDL3GPUImpl::GetFront()
 {
 	return m_zMin;
 }
 
-HRESULT Direct3DRMViewportImpl::SetBack(D3DVALUE z)
+HRESULT Direct3DRMViewport_SDL3GPUImpl::SetBack(D3DVALUE z)
 {
 	m_zMax = z;
 	return DD_OK;
 }
 
-D3DVALUE Direct3DRMViewportImpl::GetBack()
+D3DVALUE Direct3DRMViewport_SDL3GPUImpl::GetBack()
 {
 	return m_zMax;
 }
 
-HRESULT Direct3DRMViewportImpl::SetField(D3DVALUE field)
+HRESULT Direct3DRMViewport_SDL3GPUImpl::SetField(D3DVALUE field)
 {
 	m_fov = field;
 	return DD_OK;
 }
 
-D3DVALUE Direct3DRMViewportImpl::GetField()
+D3DVALUE Direct3DRMViewport_SDL3GPUImpl::GetField()
 {
 	return m_fov;
 }
 
-DWORD Direct3DRMViewportImpl::GetWidth()
+DWORD Direct3DRMViewport_SDL3GPUImpl::GetWidth()
 {
 	return m_width;
 }
 
-DWORD Direct3DRMViewportImpl::GetHeight()
+DWORD Direct3DRMViewport_SDL3GPUImpl::GetHeight()
 {
 	return m_height;
 }
 
-HRESULT Direct3DRMViewportImpl::Transform(D3DRMVECTOR4D* screen, D3DVECTOR* world)
+HRESULT Direct3DRMViewport_SDL3GPUImpl::Transform(D3DRMVECTOR4D* screen, D3DVECTOR* world)
 {
 	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 
-HRESULT Direct3DRMViewportImpl::InverseTransform(D3DVECTOR* world, D3DRMVECTOR4D* screen)
+HRESULT Direct3DRMViewport_SDL3GPUImpl::InverseTransform(D3DVECTOR* world, D3DRMVECTOR4D* screen)
 {
 	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 
-HRESULT Direct3DRMViewportImpl::Pick(float x, float y, LPDIRECT3DRMPICKEDARRAY* pickedArray)
+HRESULT Direct3DRMViewport_SDL3GPUImpl::Pick(float x, float y, LPDIRECT3DRMPICKEDARRAY* pickedArray)
 {
 	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 
-void Direct3DRMViewportImpl::CloseDevice()
+void Direct3DRMViewport_SDL3GPUImpl::CloseDevice()
 {
 	FreeDeviceResources();
 	m_device = nullptr;

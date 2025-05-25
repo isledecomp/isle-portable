@@ -1,13 +1,13 @@
 #pragma once
 
 #include "miniwin_d3drm.h"
-#include "miniwin_d3drmobject_p.h"
+#include "miniwin_d3drmobject_sdl3gpu.h"
 
 #include <SDL3/SDL.h>
 
-struct Direct3DRMDevice2Impl : public Direct3DRMObjectBase<IDirect3DRMDevice2> {
-	Direct3DRMDevice2Impl(DWORD width, DWORD height, SDL_GPUDevice* device);
-	~Direct3DRMDevice2Impl() override;
+struct Direct3DRMDevice2_SDL3GPUImpl : public Direct3DRMObjectBase_SDL3GPUImpl<IDirect3DRMDevice2> {
+	Direct3DRMDevice2_SDL3GPUImpl(DWORD width, DWORD height, SDL_GPUDevice* device);
+	~Direct3DRMDevice2_SDL3GPUImpl() override;
 	DWORD GetWidth() override;
 	DWORD GetHeight() override;
 	HRESULT SetBufferCount(int count) override;

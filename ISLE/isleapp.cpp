@@ -31,6 +31,10 @@
 #include "roi/legoroi.h"
 #include "viewmanager/viewmanager.h"
 
+#ifdef MINIWIN
+#include "miniwin_config.h"
+#endif
+
 #define SDL_MAIN_USE_CALLBACKS
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
@@ -75,6 +79,10 @@ MxS32 g_reqEnableRMDevice = FALSE;
 #define WINDOW_TITLE "LEGO®"
 
 SDL_Window* window;
+
+#ifdef MINIWIN
+static MiniwinBackendType g_miniwinBackendType = MiniwinBackendType::eInvalid;
+#endif
 
 // FUNCTION: ISLE 0x401000
 IsleApp::IsleApp()
@@ -121,6 +129,10 @@ IsleApp::IsleApp()
 	LegoOmni::CreateInstance();
 
 	m_iniPath = NULL;
+
+#ifdef MINIWIN
+	g_miniwinBackendType = MiniwinBackendType::eSDL3GPU;
+#endif
 }
 
 // FUNCTION: ISLE 0x4011a0
@@ -267,6 +279,12 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 		);
 		return SDL_APP_FAILURE;
 	}
+
+#ifdef MINIWIN
+	Miniwin_ConfigureBackend(g_miniwinBackendType);
+	auto miniwinBackendString = Miniwin_BackendTypeToString(g_miniwinBackendType);
+	SDL_Log("miniwin backend: %s", miniwinBackendString.c_str());
+#endif
 
 	// Create window
 	if (g_isle->SetupWindow() != SUCCESS) {
@@ -852,12 +870,26 @@ MxResult IsleApp::ParseArguments(int argc, char** argv)
 			m_iniPath = argv[i + 1];
 			consumed = 2;
 		}
-#ifdef ISLE_DEBUG
 		else if (strcmp(argv[i], "--debug") == 0) {
+#ifdef ISLE_DEBUG
 			IsleDebug_SetEnabled(true);
+#else
+			SDL_Log("isle is built without debug support. Ignoring --debug argument.");
+#endif
 			consumed = 1;
 		}
+		else if (strcmp(argv[i], "--backend") == 0 && i + i < argc) {
+#ifdef MINIWIN
+			g_miniwinBackendType = Miniwin_StringToBackendType(argv[i + 1]);
+			if (g_miniwinBackendType == MiniwinBackendType::eInvalid) {
+				SDL_Log("Invalid backend type: %s", argv[i + 1]);
+				return FAILURE;
+			}
+#else
+			SDL_Log("isle is built without miniwin. Ignoring --backend XXX argument.");
 #endif
+			consumed = 2;
+		}
 		if (consumed <= 0) {
 			SDL_Log("Invalid argument(s): %s", argv[i]);
 			return FAILURE;

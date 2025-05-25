@@ -1,7 +1,7 @@
-#include "miniwin_d3drmtexture_p.h"
+#include "miniwin_d3drmtexture_sdl3gpu.h"
 #include "miniwin_p.h"
 
-HRESULT Direct3DRMTextureImpl::QueryInterface(const GUID& riid, void** ppvObject)
+HRESULT Direct3DRMTexture_SDL3GPUImpl::QueryInterface(const GUID& riid, void** ppvObject)
 {
 	if (SDL_memcmp(&riid, &IID_IDirect3DRMTexture2, sizeof(GUID)) == 0) {
 		this->IUnknown::AddRef();
@@ -12,7 +12,7 @@ HRESULT Direct3DRMTextureImpl::QueryInterface(const GUID& riid, void** ppvObject
 	return E_NOINTERFACE;
 }
 
-HRESULT Direct3DRMTextureImpl::Changed(BOOL pixels, BOOL palette)
+HRESULT Direct3DRMTexture_SDL3GPUImpl::Changed(BOOL pixels, BOOL palette)
 {
 	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;

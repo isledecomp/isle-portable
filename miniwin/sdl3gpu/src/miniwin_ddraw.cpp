@@ -1,8 +1,8 @@
 
 #include "miniwin_d3d.h"
-#include "miniwin_ddpalette_p.h"
-#include "miniwin_ddraw_p.h"
-#include "miniwin_ddsurface_p.h"
+#include "miniwin_ddpalette_sdl3gpu.h"
+#include "miniwin_ddraw_sdl3gpu.h"
+#include "miniwin_ddsurface_sdl3gpu.h"
 #include "miniwin_p.h"
 
 #include <SDL3/SDL.h>
@@ -19,7 +19,7 @@ HRESULT IDirectDrawClipper::SetHWnd(DWORD unnamedParam1, HWND hWnd)
 	return DD_OK;
 }
 
-HRESULT DirectDrawImpl::QueryInterface(const GUID& riid, void** ppvObject)
+HRESULT DirectDraw_SDL3GPUImpl::QueryInterface(const GUID& riid, void** ppvObject)
 {
 	if (SDL_memcmp(&riid, &IID_IDirectDraw2, sizeof(GUID)) == 0) {
 		this->IUnknown::AddRef();
@@ -36,14 +36,14 @@ HRESULT DirectDrawImpl::QueryInterface(const GUID& riid, void** ppvObject)
 }
 
 // IDirectDraw interface
-HRESULT DirectDrawImpl::CreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER* lplpDDClipper, IUnknown* pUnkOuter)
+HRESULT DirectDraw_SDL3GPUImpl::CreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER* lplpDDClipper, IUnknown* pUnkOuter)
 {
 	*lplpDDClipper = new IDirectDrawClipper;
 
 	return DD_OK;
 }
 
-HRESULT DirectDrawImpl::CreatePalette(
+HRESULT DirectDraw_SDL3GPUImpl::CreatePalette(
 	DDPixelCaps dwFlags,
 	LPPALETTEENTRY lpColorTable,
 	LPDIRECTDRAWPALETTE* lplpDDPalette,
@@ -54,11 +54,11 @@ HRESULT DirectDrawImpl::CreatePalette(
 		return DDERR_INVALIDPARAMS;
 	}
 
-	*lplpDDPalette = static_cast<LPDIRECTDRAWPALETTE>(new DirectDrawPaletteImpl(lpColorTable));
+	*lplpDDPalette = static_cast<LPDIRECTDRAWPALETTE>(new DirectDrawPalette_SDL3GPUImpl(lpColorTable));
 	return DD_OK;
 }
 
-HRESULT DirectDrawImpl::CreateSurface(
+HRESULT DirectDraw_SDL3GPUImpl::CreateSurface(
 	LPDDSURFACEDESC lpDDSurfaceDesc,
 	LPDIRECTDRAWSURFACE* lplpDDSurface,
 	IUnknown* pUnkOuter
@@ -88,7 +88,7 @@ HRESULT DirectDrawImpl::CreateSurface(
 				return DDERR_INVALIDPARAMS;
 			}
 			SDL_Log("Todo: Set %dbit Z-Buffer", lpDDSurfaceDesc->dwZBufferBitDepth);
-			*lplpDDSurface = static_cast<IDirectDrawSurface*>(new DirectDrawSurfaceImpl);
+			*lplpDDSurface = static_cast<IDirectDrawSurface*>(new DirectDrawSurface_SDL3GPUImpl);
 			return DD_OK;
 		}
 		if ((lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) == DDSCAPS_PRIMARYSURFACE) {
@@ -99,7 +99,7 @@ HRESULT DirectDrawImpl::CreateSurface(
 			int width, height;
 			SDL_GetWindowSize(DDWindow, &width, &height);
 			bool implicitFlip = (lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_FLIP) != DDSCAPS_FLIP;
-			auto frontBuffer = new DirectDrawSurfaceImpl(width, height, windowSurface->format);
+			auto frontBuffer = new DirectDrawSurface_SDL3GPUImpl(width, height, windowSurface->format);
 			frontBuffer->SetAutoFlip(implicitFlip);
 			*lplpDDSurface = static_cast<IDirectDrawSurface*>(frontBuffer);
 			return DD_OK;
@@ -130,11 +130,11 @@ HRESULT DirectDrawImpl::CreateSurface(
 	if (width == 0 || height == 0) {
 		return DDERR_INVALIDPARAMS;
 	}
-	*lplpDDSurface = static_cast<IDirectDrawSurface*>(new DirectDrawSurfaceImpl(width, height, format));
+	*lplpDDSurface = static_cast<IDirectDrawSurface*>(new DirectDrawSurface_SDL3GPUImpl(width, height, format));
 	return DD_OK;
 }
 
-HRESULT DirectDrawImpl::EnumDisplayModes(
+HRESULT DirectDraw_SDL3GPUImpl::EnumDisplayModes(
 	DWORD dwFlags,
 	LPDDSURFACEDESC lpDDSurfaceDesc,
 	LPVOID lpContext,
@@ -190,13 +190,13 @@ HRESULT DirectDrawImpl::EnumDisplayModes(
 	return status;
 }
 
-HRESULT DirectDrawImpl::FlipToGDISurface()
+HRESULT DirectDraw_SDL3GPUImpl::FlipToGDISurface()
 {
 	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 
-HRESULT DirectDrawImpl::GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELCaps)
+HRESULT DirectDraw_SDL3GPUImpl::GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELCaps)
 {
 	if (lpDDDriverCaps) {
 		if (lpDDDriverCaps->dwSize >= sizeof(DDCAPS)) {
@@ -213,7 +213,7 @@ HRESULT DirectDrawImpl::GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELCaps)
 	return S_OK;
 }
 
-HRESULT DirectDrawImpl::EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
+HRESULT DirectDraw_SDL3GPUImpl::EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
 	int numDrivers = SDL_GetNumRenderDrivers();
 	if (numDrivers <= 0) {
@@ -269,7 +269,7 @@ HRESULT DirectDrawImpl::EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 	return S_OK;
 }
 
-HRESULT DirectDrawImpl::GetDisplayMode(LPDDSURFACEDESC lpDDSurfaceDesc)
+HRESULT DirectDraw_SDL3GPUImpl::GetDisplayMode(LPDDSURFACEDESC lpDDSurfaceDesc)
 {
 	SDL_DisplayID displayID = SDL_GetPrimaryDisplay();
 	if (!displayID) {
@@ -305,13 +305,13 @@ HRESULT DirectDrawImpl::GetDisplayMode(LPDDSURFACEDESC lpDDSurfaceDesc)
 	return DD_OK;
 }
 
-HRESULT DirectDrawImpl::RestoreDisplayMode()
+HRESULT DirectDraw_SDL3GPUImpl::RestoreDisplayMode()
 {
 	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 
-HRESULT DirectDrawImpl::SetCooperativeLevel(HWND hWnd, DDSCLFlags dwFlags)
+HRESULT DirectDraw_SDL3GPUImpl::SetCooperativeLevel(HWND hWnd, DDSCLFlags dwFlags)
 {
 	if (hWnd) {
 		bool fullscreen;
@@ -333,14 +333,14 @@ HRESULT DirectDrawImpl::SetCooperativeLevel(HWND hWnd, DDSCLFlags dwFlags)
 	return DD_OK;
 }
 
-HRESULT DirectDrawImpl::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWORD dwBPP)
+HRESULT DirectDraw_SDL3GPUImpl::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWORD dwBPP)
 {
 	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 
 // IDirect3D2 interface
-HRESULT DirectDrawImpl::CreateDevice(const GUID& guid, void* pBackBuffer, IDirect3DDevice2** ppDirect3DDevice)
+HRESULT DirectDraw_SDL3GPUImpl::CreateDevice(const GUID& guid, void* pBackBuffer, IDirect3DDevice2** ppDirect3DDevice)
 {
 	*ppDirect3DDevice = new IDirect3DDevice2;
 	return DD_OK;
@@ -352,7 +352,7 @@ HRESULT DirectDrawCreate(LPGUID lpGuid, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOute
 		MINIWIN_NOT_IMPLEMENTED();
 	}
 
-	*lplpDD = new DirectDrawImpl;
+	*lplpDD = new DirectDraw_SDL3GPUImpl;
 
 	return DD_OK;
 }

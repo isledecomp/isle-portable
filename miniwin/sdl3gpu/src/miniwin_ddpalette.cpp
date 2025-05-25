@@ -1,20 +1,25 @@
-#include "miniwin_ddpalette_p.h"
+#include "miniwin_ddpalette_sdl3gpu.h"
 #include "miniwin_ddraw.h"
 
 #include <SDL3/SDL.h>
 
-DirectDrawPaletteImpl::DirectDrawPaletteImpl(LPPALETTEENTRY lpColorTable)
+DirectDrawPalette_SDL3GPUImpl::DirectDrawPalette_SDL3GPUImpl(LPPALETTEENTRY lpColorTable)
 {
 	m_palette = SDL_CreatePalette(256);
 	SetEntries(0, 0, 256, lpColorTable);
 }
 
-DirectDrawPaletteImpl::~DirectDrawPaletteImpl()
+DirectDrawPalette_SDL3GPUImpl::~DirectDrawPalette_SDL3GPUImpl()
 {
 	SDL_DestroyPalette(m_palette);
 }
 
-HRESULT DirectDrawPaletteImpl::GetEntries(DWORD dwFlags, DWORD dwBase, DWORD dwNumEntries, LPPALETTEENTRY lpEntries)
+HRESULT DirectDrawPalette_SDL3GPUImpl::GetEntries(
+	DWORD dwFlags,
+	DWORD dwBase,
+	DWORD dwNumEntries,
+	LPPALETTEENTRY lpEntries
+)
 {
 	for (DWORD i = 0; i < dwNumEntries; i++) {
 		lpEntries[i].peRed = m_palette->colors[dwBase + i].r;
@@ -25,7 +30,12 @@ HRESULT DirectDrawPaletteImpl::GetEntries(DWORD dwFlags, DWORD dwBase, DWORD dwN
 	return DD_OK;
 }
 
-HRESULT DirectDrawPaletteImpl::SetEntries(DWORD dwFlags, DWORD dwStartingEntry, DWORD dwCount, LPPALETTEENTRY lpEntries)
+HRESULT DirectDrawPalette_SDL3GPUImpl::SetEntries(
+	DWORD dwFlags,
+	DWORD dwStartingEntry,
+	DWORD dwCount,
+	LPPALETTEENTRY lpEntries
+)
 {
 	SDL_Color colors[256];
 	for (DWORD i = 0; i < dwCount; i++) {

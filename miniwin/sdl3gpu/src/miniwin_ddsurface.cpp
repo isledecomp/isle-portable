@@ -1,15 +1,15 @@
-#include "miniwin_ddpalette_p.h"
-#include "miniwin_ddraw_p.h"
-#include "miniwin_ddsurface_p.h"
+#include "miniwin_ddpalette_sdl3gpu.h"
+#include "miniwin_ddraw_sdl3gpu.h"
+#include "miniwin_ddsurface_sdl3gpu.h"
 #include "miniwin_p.h"
 
 #include <assert.h>
 
-DirectDrawSurfaceImpl::DirectDrawSurfaceImpl()
+DirectDrawSurface_SDL3GPUImpl::DirectDrawSurface_SDL3GPUImpl()
 {
 }
 
-DirectDrawSurfaceImpl::DirectDrawSurfaceImpl(int width, int height, SDL_PixelFormat format)
+DirectDrawSurface_SDL3GPUImpl::DirectDrawSurface_SDL3GPUImpl(int width, int height, SDL_PixelFormat format)
 {
 	m_surface = SDL_CreateSurface(width, height, format);
 	if (!m_surface) {
@@ -17,7 +17,7 @@ DirectDrawSurfaceImpl::DirectDrawSurfaceImpl(int width, int height, SDL_PixelFor
 	}
 }
 
-DirectDrawSurfaceImpl::~DirectDrawSurfaceImpl()
+DirectDrawSurface_SDL3GPUImpl::~DirectDrawSurface_SDL3GPUImpl()
 {
 	if (m_surface) {
 		SDL_DestroySurface(m_surface);
@@ -28,7 +28,7 @@ DirectDrawSurfaceImpl::~DirectDrawSurfaceImpl()
 }
 
 // IUnknown interface
-HRESULT DirectDrawSurfaceImpl::QueryInterface(const GUID& riid, void** ppvObject)
+HRESULT DirectDrawSurface_SDL3GPUImpl::QueryInterface(const GUID& riid, void** ppvObject)
 {
 	if (SDL_memcmp(&riid, &IID_IDirectDrawSurface3, sizeof(GUID)) == 0) {
 		this->IUnknown::AddRef();
@@ -40,12 +40,12 @@ HRESULT DirectDrawSurfaceImpl::QueryInterface(const GUID& riid, void** ppvObject
 }
 
 // IDirectDrawSurface interface
-HRESULT DirectDrawSurfaceImpl::AddAttachedSurface(LPDIRECTDRAWSURFACE lpDDSAttachedSurface)
+HRESULT DirectDrawSurface_SDL3GPUImpl::AddAttachedSurface(LPDIRECTDRAWSURFACE lpDDSAttachedSurface)
 {
 	return DD_OK;
 }
 
-void DirectDrawSurfaceImpl::SetAutoFlip(bool enabled)
+void DirectDrawSurface_SDL3GPUImpl::SetAutoFlip(bool enabled)
 {
 	m_autoFlip = enabled;
 }
@@ -55,7 +55,7 @@ static SDL_Rect ConvertRect(const RECT* r)
 	return {r->left, r->top, r->right - r->left, r->bottom - r->top};
 }
 
-HRESULT DirectDrawSurfaceImpl::Blt(
+HRESULT DirectDrawSurface_SDL3GPUImpl::Blt(
 	LPRECT lpDestRect,
 	LPDIRECTDRAWSURFACE lpDDSrcSurface,
 	LPRECT lpSrcRect,
@@ -63,7 +63,7 @@ HRESULT DirectDrawSurfaceImpl::Blt(
 	LPDDBLTFX lpDDBltFx
 )
 {
-	auto srcSurface = static_cast<DirectDrawSurfaceImpl*>(lpDDSrcSurface);
+	auto srcSurface = static_cast<DirectDrawSurface_SDL3GPUImpl*>(lpDDSrcSurface);
 	if (!srcSurface || !srcSurface->m_surface) {
 		return DDERR_GENERIC;
 	}
@@ -110,7 +110,7 @@ HRESULT DirectDrawSurfaceImpl::Blt(
 	return DD_OK;
 }
 
-HRESULT DirectDrawSurfaceImpl::BltFast(
+HRESULT DirectDrawSurface_SDL3GPUImpl::BltFast(
 	DWORD dwX,
 	DWORD dwY,
 	LPDIRECTDRAWSURFACE lpDDSrcSurface,
@@ -127,7 +127,7 @@ HRESULT DirectDrawSurfaceImpl::BltFast(
 	return Blt(&destRect, lpDDSrcSurface, lpSrcRect, DDBLT_NONE, nullptr);
 }
 
-HRESULT DirectDrawSurfaceImpl::Flip(LPDIRECTDRAWSURFACE lpDDSurfaceTargetOverride, DDFlipFlags dwFlags)
+HRESULT DirectDrawSurface_SDL3GPUImpl::Flip(LPDIRECTDRAWSURFACE lpDDSurfaceTargetOverride, DDFlipFlags dwFlags)
 {
 	if (!DDBackBuffer) {
 		return DDERR_GENERIC;
@@ -144,7 +144,10 @@ HRESULT DirectDrawSurfaceImpl::Flip(LPDIRECTDRAWSURFACE lpDDSurfaceTargetOverrid
 	return DD_OK;
 }
 
-HRESULT DirectDrawSurfaceImpl::GetAttachedSurface(LPDDSCAPS lpDDSCaps, LPDIRECTDRAWSURFACE* lplpDDAttachedSurface)
+HRESULT DirectDrawSurface_SDL3GPUImpl::GetAttachedSurface(
+	LPDDSCAPS lpDDSCaps,
+	LPDIRECTDRAWSURFACE* lplpDDAttachedSurface
+)
 {
 	if ((lpDDSCaps->dwCaps & DDSCAPS_BACKBUFFER) != DDSCAPS_BACKBUFFER) {
 		return DDERR_INVALIDPARAMS;
@@ -154,13 +157,13 @@ HRESULT DirectDrawSurfaceImpl::GetAttachedSurface(LPDDSCAPS lpDDSCaps, LPDIRECTD
 	return DD_OK;
 }
 
-HRESULT DirectDrawSurfaceImpl::GetDC(HDC* lphDC)
+HRESULT DirectDrawSurface_SDL3GPUImpl::GetDC(HDC* lphDC)
 {
 	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 
-HRESULT DirectDrawSurfaceImpl::GetPalette(LPDIRECTDRAWPALETTE* lplpDDPalette)
+HRESULT DirectDrawSurface_SDL3GPUImpl::GetPalette(LPDIRECTDRAWPALETTE* lplpDDPalette)
 {
 	if (!m_palette) {
 		return DDERR_GENERIC;
@@ -170,7 +173,7 @@ HRESULT DirectDrawSurfaceImpl::GetPalette(LPDIRECTDRAWPALETTE* lplpDDPalette)
 	return DD_OK;
 }
 
-HRESULT DirectDrawSurfaceImpl::GetPixelFormat(LPDDPIXELFORMAT lpDDPixelFormat)
+HRESULT DirectDrawSurface_SDL3GPUImpl::GetPixelFormat(LPDDPIXELFORMAT lpDDPixelFormat)
 {
 	if (!m_surface) {
 		return DDERR_GENERIC;
@@ -188,7 +191,7 @@ HRESULT DirectDrawSurfaceImpl::GetPixelFormat(LPDDPIXELFORMAT lpDDPixelFormat)
 	return DD_OK;
 }
 
-HRESULT DirectDrawSurfaceImpl::GetSurfaceDesc(LPDDSURFACEDESC lpDDSurfaceDesc)
+HRESULT DirectDrawSurface_SDL3GPUImpl::GetSurfaceDesc(LPDDSURFACEDESC lpDDSurfaceDesc)
 {
 	if (!m_surface) {
 		return DDERR_GENERIC;
@@ -203,12 +206,12 @@ HRESULT DirectDrawSurfaceImpl::GetSurfaceDesc(LPDDSURFACEDESC lpDDSurfaceDesc)
 	return DD_OK;
 }
 
-HRESULT DirectDrawSurfaceImpl::IsLost()
+HRESULT DirectDrawSurface_SDL3GPUImpl::IsLost()
 {
 	return DD_OK;
 }
 
-HRESULT DirectDrawSurfaceImpl::Lock(
+HRESULT DirectDrawSurface_SDL3GPUImpl::Lock(
 	LPRECT lpDestRect,
 	LPDDSURFACEDESC lpDDSurfaceDesc,
 	DDLockFlags dwFlags,
@@ -230,23 +233,23 @@ HRESULT DirectDrawSurfaceImpl::Lock(
 	return DD_OK;
 }
 
-HRESULT DirectDrawSurfaceImpl::ReleaseDC(HDC hDC)
+HRESULT DirectDrawSurface_SDL3GPUImpl::ReleaseDC(HDC hDC)
 {
 	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 
-HRESULT DirectDrawSurfaceImpl::Restore()
+HRESULT DirectDrawSurface_SDL3GPUImpl::Restore()
 {
 	return DD_OK;
 }
 
-HRESULT DirectDrawSurfaceImpl::SetClipper(LPDIRECTDRAWCLIPPER lpDDClipper)
+HRESULT DirectDrawSurface_SDL3GPUImpl::SetClipper(LPDIRECTDRAWCLIPPER lpDDClipper)
 {
 	return DD_OK;
 }
 
-HRESULT DirectDrawSurfaceImpl::SetColorKey(DDColorKeyFlags dwFlags, LPDDCOLORKEY lpDDColorKey)
+HRESULT DirectDrawSurface_SDL3GPUImpl::SetColorKey(DDColorKeyFlags dwFlags, LPDDCOLORKEY lpDDColorKey)
 {
 	if (lpDDColorKey->dwColorSpaceLowValue != lpDDColorKey->dwColorSpaceHighValue) {
 		MINIWIN_NOT_IMPLEMENTED();
@@ -259,7 +262,7 @@ HRESULT DirectDrawSurfaceImpl::SetColorKey(DDColorKeyFlags dwFlags, LPDDCOLORKEY
 	return DD_OK;
 }
 
-HRESULT DirectDrawSurfaceImpl::SetPalette(LPDIRECTDRAWPALETTE lpDDPalette)
+HRESULT DirectDrawSurface_SDL3GPUImpl::SetPalette(LPDIRECTDRAWPALETTE lpDDPalette)
 {
 	if (m_surface->format != SDL_PIXELFORMAT_INDEX8) {
 		MINIWIN_NOT_IMPLEMENTED();
@@ -270,12 +273,12 @@ HRESULT DirectDrawSurfaceImpl::SetPalette(LPDIRECTDRAWPALETTE lpDDPalette)
 	}
 
 	m_palette = lpDDPalette;
-	SDL_SetSurfacePalette(m_surface, ((DirectDrawPaletteImpl*) m_palette)->m_palette);
+	SDL_SetSurfacePalette(m_surface, ((DirectDrawPalette_SDL3GPUImpl*) m_palette)->m_palette);
 	m_palette->AddRef();
 	return DD_OK;
 }
 
-HRESULT DirectDrawSurfaceImpl::Unlock(LPVOID lpSurfaceData)
+HRESULT DirectDrawSurface_SDL3GPUImpl::Unlock(LPVOID lpSurfaceData)
 {
 	if (!m_surface) {
 		return DDERR_GENERIC;

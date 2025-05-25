@@ -3,10 +3,10 @@
 #include <SDL3/SDL.h>
 #include <miniwin_ddraw.h>
 
-struct DirectDrawSurfaceImpl : public IDirectDrawSurface3 {
-	DirectDrawSurfaceImpl();
-	DirectDrawSurfaceImpl(int width, int height, SDL_PixelFormat format);
-	~DirectDrawSurfaceImpl() override;
+struct DirectDrawSurface_SDL3GPUImpl : public IDirectDrawSurface3 {
+	DirectDrawSurface_SDL3GPUImpl();
+	DirectDrawSurface_SDL3GPUImpl(int width, int height, SDL_PixelFormat format);
+	~DirectDrawSurface_SDL3GPUImpl() override;
 
 	// IUnknown interface
 	HRESULT QueryInterface(const GUID& riid, void** ppvObject) override;

@@ -91,37 +91,43 @@ if (ISLE_UBSAN)
   add_link_options(-fsanitize=undefined)
 endif()
 
+set(miniwin_sdl3gpu_sources
+  miniwin/sdl3gpu/src/miniwin_ddpalette.cpp
+  miniwin/sdl3gpu/src/miniwin_ddsurface.cpp
+  miniwin/sdl3gpu/src/miniwin_ddraw.cpp
+  miniwin/sdl3gpu/src/miniwin_d3drm.cpp
+  miniwin/sdl3gpu/src/miniwin_d3drmdevice.cpp
+  miniwin/sdl3gpu/src/miniwin_d3drmframe.cpp
+  miniwin/sdl3gpu/src/miniwin_d3drmlight.cpp
+  miniwin/sdl3gpu/src/miniwin_d3drmmesh.cpp
+  miniwin/sdl3gpu/src/miniwin_d3drmtexture.cpp
+  miniwin/sdl3gpu/src/miniwin_d3drmviewport.cpp
+)
+set_property(SOURCE ${miniwin_sdl3gpu_sources} APPEND PROPERTY INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/miniwin/sdl3gpu/shaders/generated")
+
 add_library(miniwin STATIC EXCLUDE_FROM_ALL
-  miniwin/miniwin/src/miniwin.cpp
-  miniwin/miniwin/src/miniwin_ddpalette.cpp
-  miniwin/miniwin/src/miniwin_ddsurface.cpp
-  miniwin/miniwin/src/miniwin_ddraw.cpp
-  miniwin/miniwin/src/miniwin_d3drm.cpp
-  miniwin/miniwin/src/miniwin_d3drmdevice.cpp
-  miniwin/miniwin/src/miniwin_d3drmframe.cpp
-  miniwin/miniwin/src/miniwin_d3drmlight.cpp
-  miniwin/miniwin/src/miniwin_d3drmmesh.cpp
-  miniwin/miniwin/src/miniwin_d3drmtexture.cpp
-  miniwin/miniwin/src/miniwin_d3drmviewport.cpp
+  miniwin/common/src/d3drm.cpp
+  miniwin/common/src/miniwin.cpp
+  ${miniwin_sdl3gpu_sources}
 )
 # Force reported render mods from MiniWin
 target_compile_definitions(miniwin PRIVATE MINIWIN_PIXELFORMAT=SDL_PIXELFORMAT_RGB565)
-target_include_directories(miniwin PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/miniwin/miniwin/include>")
-target_include_directories(miniwin PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/miniwin/miniwin/src/include")
-target_include_directories(miniwin PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/miniwin/miniwin/shaders/generated")
+target_include_directories(miniwin PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/miniwin/include>")
+target_include_directories(miniwin PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/miniwin/common/include")
+target_include_directories(miniwin PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/miniwin/sdl3gpu/include")
 target_compile_definitions(miniwin PUBLIC "MINIWIN")
 target_link_libraries(miniwin PRIVATE SDL3::SDL3)
 
-set(shader_src_dir "${CMAKE_CURRENT_SOURCE_DIR}/miniwin/miniwin/shaders/src")
-set(shader_gen_dir "${CMAKE_CURRENT_SOURCE_DIR}/miniwin/miniwin/shaders/generated")
-set(py_gencshadersource "${CMAKE_CURRENT_SOURCE_DIR}/miniwin/miniwin/shaders/gencshadersource.py")
+set(shader_src_dir "${CMAKE_CURRENT_SOURCE_DIR}/miniwin/sdl3gpu/shaders/src")
+set(shader_gen_dir "${CMAKE_CURRENT_SOURCE_DIR}/miniwin/sdl3gpu/shaders/generated")
+set(py_gencshadersource "${CMAKE_CURRENT_SOURCE_DIR}/miniwin/sdl3gpu/shaders/gencshadersource.py")
 set(miniwin_shaders
   "${shader_src_dir}/PositionColor.vert.hlsl"
   "${shader_src_dir}/SolidColor.frag.hlsl"
 )
 if(ISLE_COMPILE_SHADERS)
   set(compiled_bindir "${CMAKE_CURRENT_BINARY_DIR}/shaders/compiled")
-  set(compiled_srcdir "${CMAKE_CURRENT_SOURCE_DIR}/miniwin/miniwin/shaders/compiled")
+  set(compiled_srcdir "${CMAKE_CURRENT_SOURCE_DIR}/miniwin/sdl3gpu/shaders/compiled")
   set(generated_dirs "${compiled_srcdir}" "${compiled_bindir}/dxil" "${compiled_bindir}/msl" "${compiled_bindir}/spirv")
   add_custom_command(OUTPUT ${generated_dirs}
     COMMAND "${CMAKE_COMMAND}" -E make_directory ${generated_dirs})
@@ -206,7 +212,8 @@ add_library(minimfc STATIC EXCLUDE_FROM_ALL
   miniwin/minimfc/src/minimfc.cpp
 )
 target_include_directories(minimfc PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/miniwin/minimfc/include>")
-target_include_directories(minimfc PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/miniwin/miniwin/src/include")
+target_include_directories(minimfc PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/miniwin/include")
+target_include_directories(minimfc PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/miniwin/common/include")
 target_compile_definitions(minimfc PUBLIC "MINIMFC")
 target_link_libraries(minimfc PRIVATE SDL3::SDL3 miniwin)
 
