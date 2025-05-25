@@ -8,6 +8,10 @@
 class Direct3DRMDevice_SDL3GPUImpl;
 class Direct3DRMFrame_SDL3GPUImpl;
 
+typedef struct {
+	D3DRMMATRIX4D perspective;
+} ViewportUniforms;
+
 struct Direct3DRMViewport_SDL3GPUImpl : public Direct3DRMObjectBase_SDL3GPUImpl<IDirect3DRMViewport> {
 	Direct3DRMViewport_SDL3GPUImpl(
 		DWORD width,
@@ -60,6 +64,8 @@ private:
 	D3DVALUE m_front = 1.f;
 	D3DVALUE m_back = 10.f;
 	D3DVALUE m_field = 0.5f;
+
+	ViewportUniforms m_uniforms;
 };
 
 struct Direct3DRMViewportArray_SDL3GPUImpl : public Direct3DRMArrayBase_SDL3GPUImpl<

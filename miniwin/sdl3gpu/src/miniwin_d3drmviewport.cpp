@@ -1,3 +1,4 @@
+#include "SDL3/SDL_stdinc.h"
 #include "miniwin_d3drm_sdl3gpu.h"
 #include "miniwin_d3drmframe_sdl3gpu.h"
 #include "miniwin_d3drmviewport_sdl3gpu.h"
@@ -60,6 +61,22 @@ void D3DRMMatrixInvert(D3DRMMATRIX4D out, const D3DRMMATRIX4D m)
 	out[3][2] = -(out[0][2] * t.x + out[1][2] * t.y + out[2][2] * t.z);
 }
 
+void HMM_Perspective_LH_NO(D3DRMMATRIX4D Result, float FOV, float AspectRatio, float Near, float Far) {
+	// See https://www.khronos.org/registry/OpenGL-Refpages/gl2.1/xhtml/gluPerspective.xml
+
+	float Cotangent = 1.0f / SDL_tanf(FOV / 2.0f);
+	Result[0][0] = Cotangent / AspectRatio;
+	Result[1][1] = Cotangent;
+	Result[2][3] = -1.0f;
+
+	Result[2][2] = (Near + Far) / (Near - Far);
+	Result[3][2] = (2.0f * Near * Far) / (Near - Far);
+
+	// Left handed
+	Result[2][2] = -Result[2][2];
+	Result[2][3] = -Result[2][3];
+}
+
 void ComputeFrameWorldMatrix(IDirect3DRMFrame* frame, D3DRMMATRIX4D out)
 {
 	D3DRMMATRIX4D acc = {{1.f, 0.f, 0.f, 0.f}, {0.f, 1.f, 0.f, 0.f}, {0.f, 0.f, 1.f, 0.f}, {0.f, 0.f, 0.f, 1.f}};
@@ -81,10 +98,6 @@ void ComputeFrameWorldMatrix(IDirect3DRMFrame* frame, D3DRMMATRIX4D out)
 	}
 	memcpy(out, acc, sizeof(acc));
 }
-
-typedef struct {
-	D3DRMMATRIX4D projection;
-} ViewportUniforms;
 
 HRESULT Direct3DRMViewport_SDL3GPUImpl::CollectSceneData(IDirect3DRMFrame* group)
 {
@@ -190,6 +203,13 @@ HRESULT Direct3DRMViewport_SDL3GPUImpl::CollectSceneData(IDirect3DRMFrame* group
 	recurseFrame(group, identity);
 
 	PushVertices(verts.data(), verts.size());
+	HMM_Perspective_LH_NO(
+		m_uniforms.perspective,
+		m_field,
+		4.f/3.f,
+		m_front,
+		m_back
+	);
 
 	return D3DRM_OK;
 }
@@ -268,16 +288,7 @@ HRESULT Direct3DRMViewport_SDL3GPUImpl::Render(IDirect3DRMFrame* group)
 	SDL_GPURenderPass* renderPass = SDL_BeginGPURenderPass(cmdbuf, &colorTargetInfo, 1, NULL);
 	SDL_BindGPUGraphicsPipeline(renderPass, m_pipeline);
 
-	ViewportUniforms viewportUniforms = {0};
-	D3DRMMATRIX4D matrix =  {
-		{1.f, 0.f, 0.f, 0.f},
-		{0.f, 1.f, 0.f, 0.f},
-		{0.f, 0.f, 1.f, 0.f},
-		{0.f, 0.f, 0.f, 1.f}
-	};
-
-	memcpy(viewportUniforms.projection, matrix, sizeof(viewportUniforms.projection));
-	SDL_PushGPUVertexUniformData(cmdbuf, 0, &viewportUniforms, sizeof(viewportUniforms));
+	SDL_PushGPUVertexUniformData(cmdbuf, 0, &m_uniforms, sizeof(m_uniforms));
 
 	if (m_vertexCount) {
 		SDL_GPUBufferBinding vertexBufferBinding = {};
