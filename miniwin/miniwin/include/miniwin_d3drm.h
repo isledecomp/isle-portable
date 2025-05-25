@@ -230,10 +230,6 @@ struct IDirect3DRMFrame : public IDirect3DRMVisual {
 	virtual HRESULT GetPosition(int index, D3DVECTOR* position) = 0;
 	virtual HRESULT AddVisual(IDirect3DRMVisual* visual) = 0;
 	virtual HRESULT DeleteVisual(IDirect3DRMVisual* visual) = 0;
-	virtual HRESULT AddVisual(IDirect3DRMMesh* visual) = 0;
-	virtual HRESULT DeleteVisual(IDirect3DRMMesh* visual) = 0;
-	virtual HRESULT AddVisual(IDirect3DRMFrame* visual) = 0;
-	virtual HRESULT DeleteVisual(IDirect3DRMFrame* visual) = 0;
 	virtual HRESULT GetVisuals(IDirect3DRMVisualArray** visuals) = 0;
 	virtual HRESULT SetTexture(IDirect3DRMTexture* texture) = 0;
 	virtual HRESULT GetTexture(IDirect3DRMTexture** texture) = 0;
