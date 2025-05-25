@@ -46,10 +46,10 @@ HRESULT Direct3DRMFrameImpl::QueryInterface(const GUID& riid, void** ppvObject)
 
 HRESULT Direct3DRMFrameImpl::AddChild(IDirect3DRMFrame* child)
 {
-	Direct3DRMFrameImpl* childImpl = static_cast<Direct3DRMFrameImpl*>(child);
-	if (!childImpl) {
+	if (!child) {
 		return DDERR_GENERIC;
 	}
+	Direct3DRMFrameImpl* childImpl = static_cast<Direct3DRMFrameImpl*>(child);
 	if (childImpl->m_parent) {
 		if (childImpl->m_parent == this) {
 			return DD_OK;
@@ -198,8 +198,7 @@ HRESULT Direct3DRMFrameImpl::SetColor(D3DCOLOR c)
 
 HRESULT Direct3DRMFrameImpl::SetColorRGB(float r, float g, float b)
 {
-	SetColor(r, g, b, 1.f);
-	return DD_OK;
+	return SetColor(r, g, b, 1.f);
 }
 
 HRESULT Direct3DRMFrameImpl::SetMaterialMode(D3DRMMATERIALMODE mode)

@@ -29,9 +29,6 @@ public:
 			return DDERR_INVALIDPARAMS;
 		}
 		auto inImpl = static_cast<ActualType*>(in);
-		if (!inImpl) {
-			return DDERR_INVALIDPARAMS;
-		}
 		inImpl->AddRef();
 		m_items.push_back(inImpl);
 		return DD_OK;
