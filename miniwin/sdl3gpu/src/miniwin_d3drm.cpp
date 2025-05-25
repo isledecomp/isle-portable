@@ -291,14 +291,18 @@ HRESULT Direct3DRM_SDL3GPUImpl::CreateViewport(
 		return DDERR_GENERIC;
 	}
 
-	*outViewport = static_cast<IDirect3DRMViewport*>(new Direct3DRMViewport_SDL3GPUImpl(
+	auto* viewport = new Direct3DRMViewport_SDL3GPUImpl(
 		width,
 		height,
 		device->m_device,
 		transferTexture,
 		downloadTransferBuffer,
 		pipeline
-	));
+	);
+	if (camera) {
+		viewport->SetCamera(camera);
+	}
+	*outViewport = static_cast<IDirect3DRMViewport*>(viewport);
 	device->AddViewport(*outViewport);
 	return DD_OK;
 }

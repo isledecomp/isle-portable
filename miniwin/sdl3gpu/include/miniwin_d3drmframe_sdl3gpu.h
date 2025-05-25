@@ -29,14 +29,15 @@ struct Direct3DRMFrame_SDL3GPUImpl : public Direct3DRMObjectBase_SDL3GPUImpl<IDi
 	HRESULT SetMaterialMode(D3DRMMATERIALMODE mode) override;
 	HRESULT GetChildren(IDirect3DRMFrameArray** children) override;
 
-private:
 	Direct3DRMFrame_SDL3GPUImpl* m_parent{};
+	D3DRMMATRIX4D m_transform =
+		{{1.f, 0.f, 0.f, 0.f}, {0.f, 1.f, 0.f, 0.f}, {0.f, 0.f, 1.f, 0.f}, {0.f, 0.f, 0.f, 1.f}};
+
+private:
 	Direct3DRMFrameArray_SDL3GPUImpl* m_children{};
 	Direct3DRMLightArray_SDL3GPUImpl* m_lights{};
 	Direct3DRMVisualArray_SDL3GPUImpl* m_visuals{};
 	Direct3DRMTexture_SDL3GPUImpl* m_texture{};
-	D3DRMMATRIX4D m_transform =
-		{{1.f, 0.f, 0.f, 0.f}, {0.f, 1.f, 0.f, 0.f}, {0.f, 0.f, 1.f, 0.f}, {0.f, 0.f, 0.f, 1.f}};
 
 	D3DCOLOR m_backgroundColor = 0xFF000000;
 	D3DCOLOR m_color = 0xffffff;
