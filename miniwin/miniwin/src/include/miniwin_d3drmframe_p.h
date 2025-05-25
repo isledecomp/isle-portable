@@ -6,6 +6,7 @@
 struct Direct3DRMFrameImpl : public Direct3DRMObjectBase<IDirect3DRMFrame2> {
 	Direct3DRMFrameImpl();
 	~Direct3DRMFrameImpl() override;
+	HRESULT QueryInterface(const GUID& riid, void** ppvObject) override;
 	HRESULT AddChild(IDirect3DRMFrame* child) override;
 	HRESULT DeleteChild(IDirect3DRMFrame* child) override;
 	HRESULT SetSceneBackgroundRGB(float r, float g, float b) override;

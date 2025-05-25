@@ -146,7 +146,6 @@ int GetTextExtentPoint32(HDC hdc, LPCSTR str, int len, SIZE* out)
 
 HMENU GetMenu(HWND hWnd)
 {
-	MINIWIN_NOT_IMPLEMENTED();
 	return NULL;
 }
 
@@ -178,13 +177,34 @@ int StretchDIBits(
 
 LONG GetWindowLong(HWND hWnd, int nIndex)
 {
+	if (nIndex == GWL_STYLE) {
+		Uint32 flags = SDL_GetWindowFlags(hWnd);
+		LONG style = WS_POPUP;
+		if ((flags & SDL_WINDOW_BORDERLESS) == 0) {
+			style = WS_OVERLAPPED | WS_CAPTION;
+			if (flags & SDL_WINDOW_RESIZABLE) {
+				style |= WS_THICKFRAME;
+			}
+		}
+		return style;
+	}
+	else if (nIndex == GWL_EXSTYLE) {
+		return 0;
+	}
+
 	MINIWIN_NOT_IMPLEMENTED();
 	return 0;
 }
 
 LONG SetWindowLong(HWND hWnd, int nIndex, LONG dwNewLong)
 {
-	MINIWIN_NOT_IMPLEMENTED();
+	if (nIndex == GWL_STYLE) {
+		SDL_SetWindowBordered(hWnd, (dwNewLong & WS_CAPTION) != 0);
+		SDL_SetWindowResizable(hWnd, (dwNewLong & WS_THICKFRAME) != 0);
+
+		return dwNewLong;
+	}
+
 	return 0;
 }
 
@@ -196,7 +216,6 @@ int DeleteObject(void*)
 
 BOOL AdjustWindowRectEx(LPRECT lpRect, DWORD dwStyle, BOOL bMenu, DWORD dwExStyle)
 {
-	MINIWIN_NOT_IMPLEMENTED();
 	return TRUE;
 }
 

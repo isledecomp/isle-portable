@@ -4,6 +4,7 @@
 #include "miniwin_p.h"
 
 #include <SDL3/SDL.h>
+#include <functional>
 
 Direct3DRMViewportImpl::Direct3DRMViewportImpl(
 	DWORD width,
@@ -29,14 +30,73 @@ Direct3DRMViewportImpl::~Direct3DRMViewportImpl()
 	FreeDeviceResources();
 }
 
-void Direct3DRMViewportImpl::CollectSceneData(IDirect3DRMFrame* group)
+HRESULT Direct3DRMViewportImpl::CollectSceneData(IDirect3DRMFrame* group)
 {
-	m_backgroundColor = static_cast<Direct3DRMFrameImpl*>(group)->m_backgroundColor;
+	MINIWIN_NOT_IMPLEMENTED(); // Lights, textures, materials
 
-	std::vector<PositionColorVertex> vertices =
-		{{-1, -1, 0, 0, 255, 0, 255}, {1, -1, 0, 0, 0, 255, 255}, {0, 1, 0, 255, 0, 0, 128}};
+	std::vector<PositionColorVertex> verts;
+	std::function<void(IDirect3DRMFrame*)> recurseFrame;
 
-	PushVertices(vertices.data(), vertices.size());
+	recurseFrame = [&](IDirect3DRMFrame* frame) {
+		IDirect3DRMVisualArray* va = nullptr;
+		if (SUCCEEDED(frame->GetVisuals(&va)) && va) {
+			DWORD n = va->GetSize();
+			for (DWORD i = 0; i < n; ++i) {
+				IDirect3DRMVisual* vis = nullptr;
+				va->GetElement(i, &vis);
+				if (!vis) {
+					continue;
+				}
+
+				// Pull geometry from meshes
+				IDirect3DRMMesh* mesh = nullptr;
+				if (SUCCEEDED(vis->QueryInterface(IID_IDirect3DRMMesh, (void**) &mesh)) && mesh) {
+					DWORD groupCount = mesh->GetGroupCount();
+					for (DWORD gi = 0; gi < groupCount; ++gi) {
+						DWORD vtxCount, faceCount, vpf, dataSize;
+						mesh->GetGroup(gi, &vtxCount, &faceCount, &vpf, &dataSize, nullptr);
+						std::vector<D3DRMVERTEX> d3dVerts(vtxCount);
+						std::vector<DWORD> faces(faceCount * vpf);
+						mesh->GetVertices(gi, 0, vtxCount, d3dVerts.data());
+						mesh->GetGroup(gi, &vtxCount, &faceCount, &vpf, nullptr, faces.data());
+						D3DCOLOR color = mesh->GetGroupColor(gi);
+
+						for (DWORD fi = 0; fi < faceCount; ++fi) {
+							for (int idx = 0; idx < vpf; ++idx) {
+								auto& dv = d3dVerts[faces[fi * vpf + idx]];
+								PositionColorVertex vtx;
+								vtx.x = dv.position.x;
+								vtx.y = dv.position.y;
+								vtx.z = dv.position.z;
+								vtx.a = (color >> 24) & 0xFF;
+								vtx.r = (color >> 16) & 0xFF;
+								vtx.g = (color >> 8) & 0xFF;
+								vtx.b = (color >> 0) & 0xFF;
+								verts.push_back(vtx);
+							}
+						}
+					}
+					mesh->Release();
+				}
+
+				// Recurse over sub-frames
+				IDirect3DRMFrame* childFrame = nullptr;
+				if (SUCCEEDED(vis->QueryInterface(IID_IDirect3DRMFrame, (void**) &childFrame)) && childFrame) {
+					recurseFrame(childFrame);
+					childFrame->Release();
+				}
+
+				vis->Release();
+			}
+			va->Release();
+		}
+	};
+
+	recurseFrame(group);
+
+	PushVertices(verts.data(), verts.size());
+
+	return D3DRM_OK;
 }
 
 void Direct3DRMViewportImpl::PushVertices(const PositionColorVertex* vertices, size_t count)
@@ -53,8 +113,10 @@ void Direct3DRMViewportImpl::PushVertices(const PositionColorVertex* vertices, s
 	}
 
 	m_vertexCount = count;
+	if (!count) {
+		return;
+	}
 
-	MINIWIN_NOT_IMPLEMENTED();
 	SDL_GPUTransferBufferCreateInfo transferCreateInfo = {};
 	transferCreateInfo.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
 	transferCreateInfo.size = static_cast<Uint32>(sizeof(PositionColorVertex) * m_vertexCount);
@@ -92,7 +154,10 @@ HRESULT Direct3DRMViewportImpl::Render(IDirect3DRMFrame* group)
 		return DDERR_GENERIC;
 	}
 
-	CollectSceneData(group);
+	HRESULT success = CollectSceneData(group);
+	if (success != DD_OK) {
+		return success;
+	}
 
 	SDL_GPUCommandBuffer* cmdbuf = SDL_AcquireGPUCommandBuffer(m_device);
 	if (cmdbuf == NULL) {
@@ -107,11 +172,15 @@ HRESULT Direct3DRMViewportImpl::Render(IDirect3DRMFrame* group)
 	colorTargetInfo.load_op = SDL_GPU_LOADOP_CLEAR;
 	SDL_GPURenderPass* renderPass = SDL_BeginGPURenderPass(cmdbuf, &colorTargetInfo, 1, NULL);
 	SDL_BindGPUGraphicsPipeline(renderPass, m_pipeline);
-	SDL_GPUBufferBinding vertexBufferBinding = {};
-	vertexBufferBinding.buffer = m_vertexBuffer;
-	vertexBufferBinding.offset = 0;
-	SDL_BindGPUVertexBuffers(renderPass, 0, &vertexBufferBinding, 1);
-	SDL_DrawGPUPrimitives(renderPass, m_vertexCount, 1, 0, 0);
+
+	if (m_vertexCount) {
+		SDL_GPUBufferBinding vertexBufferBinding = {};
+		vertexBufferBinding.buffer = m_vertexBuffer;
+		vertexBufferBinding.offset = 0;
+		SDL_BindGPUVertexBuffers(renderPass, 0, &vertexBufferBinding, 1);
+		SDL_DrawGPUPrimitives(renderPass, m_vertexCount, 1, 0, 0);
+	}
+
 	SDL_EndGPURenderPass(renderPass);
 
 	// Download rendered image
@@ -235,38 +304,35 @@ D3DRMPROJECTIONTYPE Direct3DRMViewportImpl::GetProjection()
 
 HRESULT Direct3DRMViewportImpl::SetFront(D3DVALUE z)
 {
-	MINIWIN_NOT_IMPLEMENTED();
+	m_zMin = z;
 	return DD_OK;
 }
 
 D3DVALUE Direct3DRMViewportImpl::GetFront()
 {
-	MINIWIN_NOT_IMPLEMENTED();
-	return 0;
+	return m_zMin;
 }
 
 HRESULT Direct3DRMViewportImpl::SetBack(D3DVALUE z)
 {
-	MINIWIN_NOT_IMPLEMENTED();
+	m_zMax = z;
 	return DD_OK;
 }
 
 D3DVALUE Direct3DRMViewportImpl::GetBack()
 {
-	MINIWIN_NOT_IMPLEMENTED();
-	return 0;
+	return m_zMax;
 }
 
 HRESULT Direct3DRMViewportImpl::SetField(D3DVALUE field)
 {
-	MINIWIN_NOT_IMPLEMENTED();
+	m_fov = field;
 	return DD_OK;
 }
 
 D3DVALUE Direct3DRMViewportImpl::GetField()
 {
-	MINIWIN_NOT_IMPLEMENTED();
-	return 0;
+	return m_fov;
 }
 
 DWORD Direct3DRMViewportImpl::GetWidth()
