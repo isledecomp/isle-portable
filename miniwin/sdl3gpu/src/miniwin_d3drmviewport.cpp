@@ -64,11 +64,7 @@ void D3DRMMatrixInvert(D3DRMMATRIX4D out, const D3DRMMATRIX4D m)
 void HMM_Perspective_LH_NO(D3DRMMATRIX4D Result, float FOV, float AspectRatio, float Near, float Far)
 {
 	for (int i = 0; i < 4; i++) {
-		std::fill(
-			Result[i],
-			Result[i]+4,
-			0.f
-		);
+		std::fill(Result[i], Result[i] + 4, 0.f);
 	}
 
 	// See https://www.khronos.org/registry/OpenGL-Refpages/gl2.1/xhtml/gluPerspective.xml
