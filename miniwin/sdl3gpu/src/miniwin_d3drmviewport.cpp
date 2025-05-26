@@ -64,13 +64,13 @@ static void D3DRMMatrixInvertOrthogonal(D3DRMMATRIX4D out, const D3DRMMATRIX4D m
 static void CalculateProjectionMatrix(D3DRMMATRIX4D Result, float field, float aspect, float near, float far)
 {
 	float f = near / field;
-	float debth = far - near;
+	float depth = far - near;
 
 	D3DRMMATRIX4D perspective = {
 		{f, 0, 0, 0},
 		{0, f * aspect, 0, 0},
-		{0, 0, far / debth, 1},
-		{0, 0, (-near * far) / debth, 0},
+		{0, 0, far / depth, 1},
+		{0, 0, (-near * far) / depth, 0},
 	};
 
 	memcpy(Result, &perspective, sizeof(D3DRMMATRIX4D));
