@@ -79,7 +79,7 @@ void MxControlPresenter::EndAction()
 MxBool MxControlPresenter::FUN_10044270(MxS32 p_x, MxS32 p_y, MxPresenter* p_presenter)
 {
 	assert(p_presenter);
-	MxStillPresenter* presenter = dynamic_cast<MxStillPresenter*>(p_presenter);
+	MxVideoPresenter* presenter = dynamic_cast<MxVideoPresenter*>(p_presenter);
 	if (!presenter) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Invalid presenter");
 		return FALSE;

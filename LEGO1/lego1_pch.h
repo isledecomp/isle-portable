@@ -161,7 +161,7 @@
 #include "lego/sources/3dmanager/tglsurface.h"
 #include "lego/sources/anim/legoanim.h"
 #include "lego/sources/geom/legoedge.h"
-#include "lego/sources/geom/legounkown100db7f4.h"
+#include "lego/sources/geom/legoorientededge.h"
 #include "lego/sources/geom/legoweedge.h"
 #include "lego/sources/geom/legowegedge.h"
 #include "lego/sources/misc/legocontainer.h"

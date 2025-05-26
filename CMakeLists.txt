@@ -330,7 +330,7 @@ target_link_libraries(lego1 PRIVATE Vec::Vec)
 # geom sources
 target_sources(lego1 PRIVATE
   LEGO1/lego/sources/geom/legoedge.cpp
-  LEGO1/lego/sources/geom/legounkown100db7f4.cpp
+  LEGO1/lego/sources/geom/legoorientededge.cpp
   LEGO1/lego/sources/geom/legoweedge.cpp
   LEGO1/lego/sources/geom/legowegedge.cpp
 )
