@@ -169,10 +169,10 @@ HRESULT Direct3DRM_SDL3GPUImpl::CreateDevice(IDirect3DRMDevice2** outDevice, DWO
 		SDL_LogError(LOG_CATEGORY_MINIWIN, "SDL_CreateGPUDevice failed (%s)", SDL_GetError());
 		return DDERR_GENERIC;
 	}
-	if (DDWindow == NULL) {
+	if (DDWindow_SDL3GPU == NULL) {
 		return DDERR_GENERIC;
 	}
-	if (!SDL_ClaimWindowForGPUDevice(device, DDWindow)) {
+	if (!SDL_ClaimWindowForGPUDevice(device, DDWindow_SDL3GPU)) {
 		SDL_LogError(LOG_CATEGORY_MINIWIN, "SDL_ClaimWindowForGPUDevice failed (%s)", SDL_GetError());
 		return DDERR_GENERIC;
 	}

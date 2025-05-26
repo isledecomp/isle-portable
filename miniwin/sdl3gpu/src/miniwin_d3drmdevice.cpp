@@ -22,7 +22,7 @@ Direct3DRMDevice2_SDL3GPUImpl::~Direct3DRMDevice2_SDL3GPUImpl()
 	}
 	m_viewports->Release();
 
-	SDL_ReleaseWindowFromGPUDevice(m_device, DDWindow);
+	SDL_ReleaseWindowFromGPUDevice(m_device, DDWindow_SDL3GPU);
 	SDL_DestroyGPUDevice(m_device);
 }
 

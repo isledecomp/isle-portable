@@ -298,8 +298,8 @@ HRESULT Direct3DRMViewport_SDL3GPUImpl::Render(IDirect3DRMFrame* group)
 	SDL_GPUCopyPass* copyPass = SDL_BeginGPUCopyPass(cmdbuf);
 	SDL_GPUTextureRegion region = {};
 	region.texture = m_transferTexture;
-	region.w = DDBackBuffer->w;
-	region.h = DDBackBuffer->h;
+	region.w = DDBackBuffer_SDL3GPU->w;
+	region.h = DDBackBuffer_SDL3GPU->h;
 	region.d = 1;
 	SDL_GPUTextureTransferInfo transferInfo = {};
 	transferInfo.transfer_buffer = m_downloadTransferBuffer;
@@ -318,11 +318,11 @@ HRESULT Direct3DRMViewport_SDL3GPUImpl::Render(IDirect3DRMFrame* group)
 
 	SDL_DestroySurface(m_renderedImage);
 	m_renderedImage = SDL_CreateSurfaceFrom(
-		DDBackBuffer->w,
-		DDBackBuffer->h,
+		DDBackBuffer_SDL3GPU->w,
+		DDBackBuffer_SDL3GPU->h,
 		SDL_PIXELFORMAT_ABGR8888,
 		downloadedData,
-		DDBackBuffer->w * 4
+		DDBackBuffer_SDL3GPU->w * 4
 	);
 
 	SDL_Surface* convertedRender = SDL_ConvertSurface(m_renderedImage, SDL_PIXELFORMAT_RGBA8888);
@@ -330,7 +330,7 @@ HRESULT Direct3DRMViewport_SDL3GPUImpl::Render(IDirect3DRMFrame* group)
 	SDL_UnmapGPUTransferBuffer(m_device, m_downloadTransferBuffer);
 	m_renderedImage = convertedRender;
 
-	return ForceUpdate(0, 0, DDBackBuffer->w, DDBackBuffer->h);
+	return ForceUpdate(0, 0, DDBackBuffer_SDL3GPU->w, DDBackBuffer_SDL3GPU->h);
 }
 
 HRESULT Direct3DRMViewport_SDL3GPUImpl::ForceUpdate(int x, int y, int w, int h)
@@ -339,37 +339,37 @@ HRESULT Direct3DRMViewport_SDL3GPUImpl::ForceUpdate(int x, int y, int w, int h)
 		return DDERR_GENERIC;
 	}
 	// Blit the render back to our backbuffer
-	SDL_Rect srcRect{0, 0, DDBackBuffer->w, DDBackBuffer->h};
+	SDL_Rect srcRect{0, 0, DDBackBuffer_SDL3GPU->w, DDBackBuffer_SDL3GPU->h};
 
-	const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(DDBackBuffer->format);
+	const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(DDBackBuffer_SDL3GPU->format);
 	if (details->Amask != 0) {
 		// Backbuffer supports transparnacy
-		SDL_Surface* convertedRender = SDL_ConvertSurface(m_renderedImage, DDBackBuffer->format);
+		SDL_Surface* convertedRender = SDL_ConvertSurface(m_renderedImage, DDBackBuffer_SDL3GPU->format);
 		SDL_DestroySurface(m_renderedImage);
 		m_renderedImage = convertedRender;
 		return DD_OK;
 	}
 
-	if (m_renderedImage->format == DDBackBuffer->format) {
+	if (m_renderedImage->format == DDBackBuffer_SDL3GPU->format) {
 		// No conversion needed
-		SDL_BlitSurface(m_renderedImage, &srcRect, DDBackBuffer, &srcRect);
+		SDL_BlitSurface(m_renderedImage, &srcRect, DDBackBuffer_SDL3GPU, &srcRect);
 		return DD_OK;
 	}
 
 	// Convert backbuffer to a format that supports transparancy
-	SDL_Surface* tempBackbuffer = SDL_ConvertSurface(DDBackBuffer, m_renderedImage->format);
+	SDL_Surface* tempBackbuffer = SDL_ConvertSurface(DDBackBuffer_SDL3GPU, m_renderedImage->format);
 	SDL_BlitSurface(m_renderedImage, &srcRect, tempBackbuffer, &srcRect);
 	// Then convert the result back to the backbuffer format and write it back
-	SDL_Surface* newBackBuffer = SDL_ConvertSurface(tempBackbuffer, DDBackBuffer->format);
+	SDL_Surface* newBackBuffer = SDL_ConvertSurface(tempBackbuffer, DDBackBuffer_SDL3GPU->format);
 	SDL_DestroySurface(tempBackbuffer);
-	SDL_BlitSurface(newBackBuffer, &srcRect, DDBackBuffer, &srcRect);
+	SDL_BlitSurface(newBackBuffer, &srcRect, DDBackBuffer_SDL3GPU, &srcRect);
 	SDL_DestroySurface(newBackBuffer);
 	return DD_OK;
 }
 
 HRESULT Direct3DRMViewport_SDL3GPUImpl::Clear()
 {
-	if (!DDBackBuffer) {
+	if (!DDBackBuffer_SDL3GPU) {
 		return DDERR_GENERIC;
 	}
 
@@ -377,8 +377,8 @@ HRESULT Direct3DRMViewport_SDL3GPUImpl::Clear()
 	uint8_t g = (m_backgroundColor >> 8) & 0xFF;
 	uint8_t b = m_backgroundColor & 0xFF;
 
-	Uint32 color = SDL_MapRGB(SDL_GetPixelFormatDetails(DDBackBuffer->format), nullptr, r, g, b);
-	SDL_FillSurfaceRect(DDBackBuffer, NULL, color);
+	Uint32 color = SDL_MapRGB(SDL_GetPixelFormatDetails(DDBackBuffer_SDL3GPU->format), nullptr, r, g, b);
+	SDL_FillSurfaceRect(DDBackBuffer_SDL3GPU, NULL, color);
 	return DD_OK;
 }
 
