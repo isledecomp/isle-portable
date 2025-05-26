@@ -9,6 +9,12 @@
 extern SDL_Window* DDWindow_SDL3GPU;
 extern SDL_Surface* DDBackBuffer_SDL3GPU;
 
+struct PickRecord {
+	IDirect3DRMVisual* visual;
+	IDirect3DRMFrameArray* frameArray;
+	D3DRMPICKDESC desc;
+};
+
 struct Direct3DRM_SDL3GPUImpl : virtual public IDirect3DRM2 {
 	// IUnknown interface
 	HRESULT QueryInterface(const GUID& riid, void** ppvObject) override;
@@ -93,4 +99,15 @@ public:
 
 protected:
 	std::vector<ActualType*> m_items;
+};
+
+struct Direct3DRMPickedArray_SDL3GPUImpl : public IDirect3DRMPickedArray {
+	Direct3DRMPickedArray_SDL3GPUImpl(const PickRecord* inputPicks, size_t count);
+	~Direct3DRMPickedArray_SDL3GPUImpl() override;
+	DWORD GetSize() override;
+	HRESULT GetPick(DWORD index, IDirect3DRMVisual** visual, IDirect3DRMFrameArray** frameArray, D3DRMPICKDESC* desc)
+		override;
+
+private:
+	std::vector<PickRecord> picks;
 };

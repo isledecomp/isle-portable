@@ -14,65 +14,64 @@
 
 #include <SDL3/SDL.h>
 
-struct PickRecord {
-	IDirect3DRMVisual* visual;
-	IDirect3DRMFrameArray* frameArray;
-	D3DRMPICKDESC desc;
-};
+Direct3DRMPickedArray_SDL3GPUImpl::Direct3DRMPickedArray_SDL3GPUImpl(const PickRecord* inputPicks, size_t count)
+{
+	picks.reserve(count);
+	for (size_t i = 0; i < count; ++i) {
+		const PickRecord& pick = inputPicks[i];
+		if (pick.visual) {
+			pick.visual->AddRef();
+		}
+		if (pick.frameArray) {
+			pick.frameArray->AddRef();
+		}
+		picks.push_back(pick);
+	}
+}
 
-struct Direct3DRMPickedArray_SDL3GPUImpl : public IDirect3DRMPickedArray {
-	Direct3DRMPickedArray_SDL3GPUImpl(const PickRecord* inputPicks, size_t count)
-	{
-		picks.reserve(count);
-		for (size_t i = 0; i < count; ++i) {
-			const PickRecord& pick = inputPicks[i];
-			if (pick.visual) {
-				pick.visual->AddRef();
-			}
-			if (pick.frameArray) {
-				pick.frameArray->AddRef();
-			}
-			picks.push_back(pick);
+Direct3DRMPickedArray_SDL3GPUImpl::~Direct3DRMPickedArray_SDL3GPUImpl()
+{
+	for (PickRecord& pick : picks) {
+		if (pick.visual) {
+			pick.visual->Release();
+		}
+		if (pick.frameArray) {
+			pick.frameArray->Release();
 		}
 	}
-	~Direct3DRMPickedArray_SDL3GPUImpl() override
-	{
-		for (PickRecord& pick : picks) {
-			if (pick.visual) {
-				pick.visual->Release();
-			}
-			if (pick.frameArray) {
-				pick.frameArray->Release();
-			}
-		}
-	}
-	DWORD GetSize() override { return static_cast<DWORD>(picks.size()); }
-	HRESULT GetPick(DWORD index, IDirect3DRMVisual** visual, IDirect3DRMFrameArray** frameArray, D3DRMPICKDESC* desc)
-		override
-	{
-		if (index >= picks.size()) {
-			return DDERR_INVALIDPARAMS;
-		}
+}
 
-		const PickRecord& pick = picks[index];
+DWORD Direct3DRMPickedArray_SDL3GPUImpl::GetSize()
+{
+	return static_cast<DWORD>(picks.size());
+}
 
-		*visual = pick.visual;
-		*frameArray = pick.frameArray;
-		*desc = pick.desc;
-
-		if (*visual) {
-			(*visual)->AddRef();
-		}
-		if (*frameArray) {
-			(*frameArray)->AddRef();
-		}
-
-		return DD_OK;
+HRESULT Direct3DRMPickedArray_SDL3GPUImpl::GetPick(
+	DWORD index,
+	IDirect3DRMVisual** visual,
+	IDirect3DRMFrameArray** frameArray,
+	D3DRMPICKDESC* desc
+)
+{
+	if (index >= picks.size()) {
+		return DDERR_INVALIDPARAMS;
 	}
 
-private:
-	std::vector<PickRecord> picks;
-};
+	const PickRecord& pick = picks[index];
+
+	*visual = pick.visual;
+	*frameArray = pick.frameArray;
+	*desc = pick.desc;
+
+	if (*visual) {
+		(*visual)->AddRef();
+	}
+	if (*frameArray) {
+		(*frameArray)->AddRef();
+	}
+
+	return DD_OK;
+}
 
 struct Direct3DRMWinDevice_SDL3GPUImpl : public IDirect3DRMWinDevice {
 	HRESULT Activate() override

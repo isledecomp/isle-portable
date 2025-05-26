@@ -5,7 +5,9 @@
 #include "miniwin_p.h"
 
 #include <SDL3/SDL.h>
+#include <float.h>
 #include <functional>
+#include <math.h>
 
 Direct3DRMViewport_SDL3GPUImpl::Direct3DRMViewport_SDL3GPUImpl(
 	DWORD width,
@@ -98,7 +100,7 @@ static void ComputeFrameWorldMatrix(IDirect3DRMFrame* frame, D3DRMMATRIX4D out)
 	memcpy(out, acc, sizeof(acc));
 }
 
-HRESULT Direct3DRMViewport_SDL3GPUImpl::CollectSceneData(IDirect3DRMFrame* group)
+HRESULT Direct3DRMViewport_SDL3GPUImpl::CollectSceneData()
 {
 	MINIWIN_NOT_IMPLEMENTED(); // Lights, camera, textures, materials
 
@@ -199,7 +201,7 @@ HRESULT Direct3DRMViewport_SDL3GPUImpl::CollectSceneData(IDirect3DRMFrame* group
 
 	D3DRMMATRIX4D identity = {{1.f, 0.f, 0.f, 0.f}, {0.f, 1.f, 0.f, 0.f}, {0.f, 0.f, 1.f, 0.f}, {0.f, 0.f, 0.f, 1.f}};
 
-	recurseFrame(group, identity);
+	recurseFrame(m_rootFrame, identity);
 
 	PushVertices(verts.data(), verts.size());
 
@@ -257,13 +259,14 @@ void Direct3DRMViewport_SDL3GPUImpl::PushVertices(const PositionColorVertex* ver
 	SDL_ReleaseGPUTransferBuffer(m_device, transferBuffer);
 }
 
-HRESULT Direct3DRMViewport_SDL3GPUImpl::Render(IDirect3DRMFrame* group)
+HRESULT Direct3DRMViewport_SDL3GPUImpl::Render(IDirect3DRMFrame* rootFrame)
 {
 	if (!m_device) {
 		return DDERR_GENERIC;
 	}
 
-	HRESULT success = CollectSceneData(group);
+	m_rootFrame = rootFrame;
+	HRESULT success = CollectSceneData();
 	if (success != DD_OK) {
 		return success;
 	}
@@ -468,10 +471,242 @@ HRESULT Direct3DRMViewport_SDL3GPUImpl::InverseTransform(D3DVECTOR* world, D3DRM
 	return DD_OK;
 }
 
+struct Ray {
+	D3DVECTOR origin;
+	D3DVECTOR direction;
+};
+
+// Ray-box intersection: slab method
+bool RayIntersectsBox(const Ray& ray, const D3DRMBOX& box, float& outT)
+{
+	float tmin = -FLT_MAX;
+	float tmax = FLT_MAX;
+
+	for (int i = 0; i < 3; ++i) {
+		float origin = (&ray.origin.x)[i];
+		float dir = (&ray.direction.x)[i];
+		float minB = (&box.min.x)[i];
+		float maxB = (&box.max.x)[i];
+
+		if (fabs(dir) < 1e-6f) {
+			if (origin < minB || origin > maxB) {
+				return false;
+			}
+		}
+		else {
+			float invD = 1.0f / dir;
+			float t1 = (minB - origin) * invD;
+			float t2 = (maxB - origin) * invD;
+			if (t1 > t2) {
+				std::swap(t1, t2);
+			}
+			if (t1 > tmin) {
+				tmin = t1;
+			}
+			if (t2 < tmax) {
+				tmax = t2;
+			}
+			if (tmin > tmax) {
+				return false;
+			}
+			if (tmax < 0) {
+				return false;
+			}
+		}
+	}
+
+	outT = tmin >= 0 ? tmin : tmax; // closest positive hit
+	return true;
+}
+
+// Convert screen (x,y) in viewport to picking ray in world space
+Ray BuildPickingRay(
+	float x,
+	float y,
+	int width,
+	int height,
+	IDirect3DRMFrame* camera,
+	float front,
+	float back,
+	float field,
+	float aspect
+)
+{
+	float nx = (2.0f * x) / width - 1.0f;
+	float ny = 1.0f - (2.0f * y) / height; // flip Y since screen Y down
+
+	D3DRMMATRIX4D proj;
+	CalculateProjectionMatrix(proj, field, aspect, front, back);
+
+	float f = front / field;
+
+	// Ray in view space at near plane:
+	D3DVECTOR rayDirView = {nx / f, ny / (f * aspect), 1.0f};
+
+	// Normalize ray direction
+	float len = sqrt(rayDirView.x * rayDirView.x + rayDirView.y * rayDirView.y + rayDirView.z * rayDirView.z);
+	rayDirView.x /= len;
+	rayDirView.y /= len;
+	rayDirView.z /= len;
+
+	// Compute camera world matrix and invert it to get view->world
+	D3DRMMATRIX4D cameraWorld;
+	ComputeFrameWorldMatrix(camera, cameraWorld);
+
+	// Transform ray origin (camera position) and direction to world space
+	D3DVECTOR rayOriginWorld = {cameraWorld[3][0], cameraWorld[3][1], cameraWorld[3][2]};
+	// Multiply direction by rotation part of matrix only (3x3 upper-left)
+	D3DVECTOR rayDirWorld = {
+		rayDirView.x * cameraWorld[0][0] + rayDirView.y * cameraWorld[1][0] + rayDirView.z * cameraWorld[2][0],
+		rayDirView.x * cameraWorld[0][1] + rayDirView.y * cameraWorld[1][1] + rayDirView.z * cameraWorld[2][1],
+		rayDirView.x * cameraWorld[0][2] + rayDirView.y * cameraWorld[1][2] + rayDirView.z * cameraWorld[2][2]
+	};
+
+	len = sqrt(rayDirWorld.x * rayDirWorld.x + rayDirWorld.y * rayDirWorld.y + rayDirWorld.z * rayDirWorld.z);
+	rayDirWorld.x /= len;
+	rayDirWorld.y /= len;
+	rayDirWorld.z /= len;
+
+	return Ray{rayOriginWorld, rayDirWorld};
+}
+
+/**
+ * @todo additionally check that we hit a triangle in the mesh
+ */
 HRESULT Direct3DRMViewport_SDL3GPUImpl::Pick(float x, float y, LPDIRECT3DRMPICKEDARRAY* pickedArray)
 {
-	MINIWIN_NOT_IMPLEMENTED();
-	return DD_OK;
+	if (!m_rootFrame) {
+		return DDERR_GENERIC;
+	}
+
+	std::vector<PickRecord> hits;
+
+	Ray pickRay = BuildPickingRay(
+		x,
+		y,
+		m_width,
+		m_height,
+		m_camera,
+		m_front,
+		m_back,
+		m_field,
+		(float) m_width / (float) m_height
+	);
+
+	std::function<void(IDirect3DRMFrame*, std::vector<IDirect3DRMFrame*>&)> recurse;
+	recurse = [&](IDirect3DRMFrame* frame, std::vector<IDirect3DRMFrame*>& path) {
+		Direct3DRMFrame_SDL3GPUImpl* frameImpl = static_cast<Direct3DRMFrame_SDL3GPUImpl*>(frame);
+		path.push_back(frame); // Push current frame
+
+		IDirect3DRMVisualArray* visuals = nullptr;
+		if (SUCCEEDED(frame->GetVisuals(&visuals)) && visuals) {
+			DWORD count = visuals->GetSize();
+			for (DWORD i = 0; i < count; ++i) {
+				IDirect3DRMVisual* vis = nullptr;
+				visuals->GetElement(i, &vis);
+
+				IDirect3DRMMesh* mesh = nullptr;
+				IDirect3DRMFrame* subFrame = nullptr;
+
+				if (SUCCEEDED(vis->QueryInterface(IID_IDirect3DRMFrame, (void**) &subFrame)) && subFrame) {
+					recurse(subFrame, path);
+					subFrame->Release();
+				}
+				else if (SUCCEEDED(vis->QueryInterface(IID_IDirect3DRMMesh, (void**) &mesh)) && mesh) {
+					D3DRMBOX box;
+					if (SUCCEEDED(mesh->GetBox(&box))) {
+						// Transform box corners to world space
+						D3DRMMATRIX4D worldMatrix;
+						ComputeFrameWorldMatrix(frame, worldMatrix);
+
+						// Transform box min and max points
+						// Because axis-aligned box can become oriented box after transform,
+						// but we simplify by transforming all 8 corners and computing new AABB
+
+						D3DVECTOR corners[8] = {
+							{box.min.x, box.min.y, box.min.z},
+							{box.min.x, box.min.y, box.max.z},
+							{box.min.x, box.max.y, box.min.z},
+							{box.min.x, box.max.y, box.max.z},
+							{box.max.x, box.min.y, box.min.z},
+							{box.max.x, box.min.y, box.max.z},
+							{box.max.x, box.max.y, box.min.z},
+							{box.max.x, box.max.y, box.max.z},
+						};
+
+						D3DRMBOX worldBox;
+						{
+							float x = corners[0].x * worldMatrix[0][0] + corners[0].y * worldMatrix[1][0] +
+									  corners[0].z * worldMatrix[2][0] + worldMatrix[3][0];
+							float y = corners[0].x * worldMatrix[0][1] + corners[0].y * worldMatrix[1][1] +
+									  corners[0].z * worldMatrix[2][1] + worldMatrix[3][1];
+							float z = corners[0].x * worldMatrix[0][2] + corners[0].y * worldMatrix[1][2] +
+									  corners[0].z * worldMatrix[2][2] + worldMatrix[3][2];
+							worldBox.min = {x, y, z};
+							worldBox.max = {x, y, z};
+						}
+
+						for (int c = 1; c < 8; ++c) {
+							float x = corners[c].x * worldMatrix[0][0] + corners[c].y * worldMatrix[1][0] +
+									  corners[c].z * worldMatrix[2][0] + worldMatrix[3][0];
+							float y = corners[c].x * worldMatrix[0][1] + corners[c].y * worldMatrix[1][1] +
+									  corners[c].z * worldMatrix[2][1] + worldMatrix[3][1];
+							float z = corners[c].x * worldMatrix[0][2] + corners[c].y * worldMatrix[1][2] +
+									  corners[c].z * worldMatrix[2][2] + worldMatrix[3][2];
+
+							if (x < worldBox.min.x) {
+								worldBox.min.x = x;
+							}
+							if (y < worldBox.min.y) {
+								worldBox.min.y = y;
+							}
+							if (z < worldBox.min.z) {
+								worldBox.min.z = z;
+							}
+							if (x > worldBox.max.x) {
+								worldBox.max.x = x;
+							}
+							if (y > worldBox.max.y) {
+								worldBox.max.y = y;
+							}
+							if (z > worldBox.max.z) {
+								worldBox.max.z = z;
+							}
+						}
+
+						float distance = 0.0f;
+						if (RayIntersectsBox(pickRay, worldBox, distance)) {
+							auto* arr = new Direct3DRMFrameArray_SDL3GPUImpl();
+							for (IDirect3DRMFrame* f : path) {
+								arr->AddElement(f);
+							}
+
+							PickRecord rec;
+							rec.visual = vis;
+							rec.frameArray = arr;
+							rec.desc.dist = distance;
+							hits.push_back(rec);
+						}
+					}
+					mesh->Release();
+				}
+				vis->Release();
+			}
+			visuals->Release();
+		}
+		path.pop_back(); // Pop after recursion
+	};
+
+	std::vector<IDirect3DRMFrame*> framePath;
+	recurse(m_rootFrame, framePath);
+
+	std::sort(hits.begin(), hits.end(), [](const PickRecord& a, const PickRecord& b) {
+		return a.desc.dist < b.desc.dist;
+	});
+
+	*pickedArray = new Direct3DRMPickedArray_SDL3GPUImpl(hits.data(), hits.size());
+
+	return D3DRM_OK;
 }
 
 void Direct3DRMViewport_SDL3GPUImpl::CloseDevice()
