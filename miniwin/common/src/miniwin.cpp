@@ -1,5 +1,6 @@
 #include "miniwin.h"
 
+#include "miniwin_ddraw.h"
 #include "miniwin_p.h"
 
 #include <SDL3/SDL.h>
@@ -25,6 +26,11 @@ HRESULT IUnknown::QueryInterface(const GUID& riid, void** ppvObject)
 {
 	MINIWIN_NOT_IMPLEMENTED();
 	return E_NOINTERFACE;
+}
+
+HRESULT IDirectDrawClipper::SetHWnd(DWORD unnamedParam1, HWND hWnd)
+{
+	return DD_OK;
 }
 
 BOOL SetWindowPos(HWND hWnd, HWND hWndInsertAfter, int X, int Y, int cx, int cy, UINT uFlags)
@@ -253,6 +259,37 @@ intptr_t _spawnl(
 	const char* arg3,
 	...
 )
+{
+	MINIWIN_NOT_IMPLEMENTED();
+	return 0;
+}
+
+UINT WINAPI GetSystemPaletteEntries(HDC hdc, UINT iStart, UINT cEntries, LPPALETTEENTRY pPalEntries)
+{
+	MINIWIN_NOT_IMPLEMENTED();
+	for (UINT i = 0; i < cEntries; i++) {
+		UINT val = iStart + i;
+		pPalEntries[i].peRed = val;
+		pPalEntries[i].peGreen = val;
+		pPalEntries[i].peBlue = val;
+		pPalEntries[i].peFlags = PC_NONE;
+	}
+	return cEntries;
+}
+
+HPALETTE CreatePalette(LPLOGPALETTE lpLogPalette)
+{
+	MINIWIN_NOT_IMPLEMENTED();
+	return nullptr;
+}
+
+int SelectPalette(HDC hdc, HPALETTE hpal, BOOL bForceBackground)
+{
+	MINIWIN_NOT_IMPLEMENTED();
+	return 0;
+}
+
+int RealizePalette(HDC hdc)
 {
 	MINIWIN_NOT_IMPLEMENTED();
 	return 0;

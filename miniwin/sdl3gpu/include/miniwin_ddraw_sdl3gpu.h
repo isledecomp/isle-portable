@@ -33,3 +33,7 @@ struct DirectDraw_SDL3GPUImpl : public IDirectDraw2, public IDirect3D2 {
 	HRESULT CreateDevice(const GUID& guid, void* pBackBuffer, IDirect3DDevice2** ppDirect3DDevice) override;
 	HRESULT EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx) override;
 };
+
+HRESULT DirectDrawEnumerate_SDL3GPU(LPDDENUMCALLBACKA cb, void* context);
+
+HRESULT DirectDrawCreate_SDL3GPU(LPGUID lpGuid, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOuter);

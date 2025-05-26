@@ -11,13 +11,8 @@
 #include <cstdlib>
 #include <cstring>
 
-SDL_Window* DDWindow;
-SDL_Surface* DDBackBuffer;
-
-HRESULT IDirectDrawClipper::SetHWnd(DWORD unnamedParam1, HWND hWnd)
-{
-	return DD_OK;
-}
+SDL_Window* DDWindow_SDL3GPU;
+SDL_Surface* DDBackBuffer_SDL3GPU;
 
 HRESULT DirectDraw_SDL3GPUImpl::QueryInterface(const GUID& riid, void** ppvObject)
 {
@@ -92,12 +87,12 @@ HRESULT DirectDraw_SDL3GPUImpl::CreateSurface(
 			return DD_OK;
 		}
 		if ((lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) == DDSCAPS_PRIMARYSURFACE) {
-			SDL_Surface* windowSurface = SDL_GetWindowSurface(DDWindow);
+			SDL_Surface* windowSurface = SDL_GetWindowSurface(DDWindow_SDL3GPU);
 			if (!windowSurface) {
 				return DDERR_GENERIC;
 			}
 			int width, height;
-			SDL_GetWindowSize(DDWindow, &width, &height);
+			SDL_GetWindowSize(DDWindow_SDL3GPU, &width, &height);
 			bool implicitFlip = (lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_FLIP) != DDSCAPS_FLIP;
 			auto frontBuffer = new DirectDrawSurface_SDL3GPUImpl(width, height, windowSurface->format);
 			frontBuffer->SetAutoFlip(implicitFlip);
@@ -328,7 +323,7 @@ HRESULT DirectDraw_SDL3GPUImpl::SetCooperativeLevel(HWND hWnd, DDSCLFlags dwFlag
 		if (!SDL_SetWindowFullscreen(hWnd, fullscreen)) {
 			return DDERR_GENERIC;
 		}
-		DDWindow = hWnd;
+		DDWindow_SDL3GPU = hWnd;
 	}
 	return DD_OK;
 }
@@ -346,18 +341,7 @@ HRESULT DirectDraw_SDL3GPUImpl::CreateDevice(const GUID& guid, void* pBackBuffer
 	return DD_OK;
 }
 
-HRESULT DirectDrawCreate(LPGUID lpGuid, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOuter)
-{
-	if (lpGuid) {
-		MINIWIN_NOT_IMPLEMENTED();
-	}
-
-	*lplpDD = new DirectDraw_SDL3GPUImpl;
-
-	return DD_OK;
-}
-
-HRESULT DirectDrawEnumerate(LPDDENUMCALLBACKA cb, void* context)
+HRESULT DirectDrawEnumerate_SDL3GPU(LPDDENUMCALLBACKA cb, void* context)
 {
 	int numDrivers = SDL_GetNumVideoDrivers();
 
@@ -374,32 +358,8 @@ HRESULT DirectDrawEnumerate(LPDDENUMCALLBACKA cb, void* context)
 	return DD_OK;
 }
 
-UINT WINAPI GetSystemPaletteEntries(HDC hdc, UINT iStart, UINT cEntries, LPPALETTEENTRY pPalEntries)
+HRESULT DirectDrawCreate_SDL3GPU(LPGUID lpGuid, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOuter)
 {
-	for (UINT i = 0; i < cEntries; i++) {
-		UINT val = iStart + i;
-		pPalEntries[i].peRed = val;
-		pPalEntries[i].peGreen = val;
-		pPalEntries[i].peBlue = val;
-		pPalEntries[i].peFlags = PC_NONE;
-	}
-	return cEntries;
-}
-
-HPALETTE CreatePalette(LPLOGPALETTE lpLogPalette)
-{
-	MINIWIN_NOT_IMPLEMENTED();
-	return nullptr;
-}
-
-int SelectPalette(HDC hdc, HPALETTE hpal, BOOL bForceBackground)
-{
-	MINIWIN_NOT_IMPLEMENTED();
-	return 0;
-}
-
-int RealizePalette(HDC hdc)
-{
-	MINIWIN_NOT_IMPLEMENTED();
-	return 0;
+	*lplpDD = new DirectDraw_SDL3GPUImpl;
+	return DD_OK;
 }

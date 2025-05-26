@@ -1,3 +1,4 @@
+#include "miniwin_d3drm_sdl3gpu.h"
 #include "miniwin_ddpalette_sdl3gpu.h"
 #include "miniwin_ddraw_sdl3gpu.h"
 #include "miniwin_ddsurface_sdl3gpu.h"
@@ -68,7 +69,7 @@ HRESULT DirectDrawSurface_SDL3GPUImpl::Blt(
 		return DDERR_GENERIC;
 	}
 	if (m_autoFlip) {
-		DDBackBuffer = srcSurface->m_surface;
+		DDBackBuffer_SDL3GPU = srcSurface->m_surface;
 		return Flip(nullptr, DDFLIP_WAIT);
 	}
 
@@ -129,18 +130,18 @@ HRESULT DirectDrawSurface_SDL3GPUImpl::BltFast(
 
 HRESULT DirectDrawSurface_SDL3GPUImpl::Flip(LPDIRECTDRAWSURFACE lpDDSurfaceTargetOverride, DDFlipFlags dwFlags)
 {
-	if (!DDBackBuffer) {
+	if (!DDBackBuffer_SDL3GPU) {
 		return DDERR_GENERIC;
 	}
-	SDL_Surface* windowSurface = SDL_GetWindowSurface(DDWindow);
+	SDL_Surface* windowSurface = SDL_GetWindowSurface(DDWindow_SDL3GPU);
 	if (!windowSurface) {
 		return DDERR_GENERIC;
 	}
-	SDL_Rect srcRect{0, 0, DDBackBuffer->w, DDBackBuffer->h};
-	SDL_Surface* copy = SDL_ConvertSurface(DDBackBuffer, windowSurface->format);
+	SDL_Rect srcRect{0, 0, DDBackBuffer_SDL3GPU->w, DDBackBuffer_SDL3GPU->h};
+	SDL_Surface* copy = SDL_ConvertSurface(DDBackBuffer_SDL3GPU, windowSurface->format);
 	SDL_BlitSurface(copy, &srcRect, windowSurface, &srcRect);
 	SDL_DestroySurface(copy);
-	SDL_UpdateWindowSurface(DDWindow);
+	SDL_UpdateWindowSurface(DDWindow_SDL3GPU);
 	return DD_OK;
 }
 
@@ -152,7 +153,7 @@ HRESULT DirectDrawSurface_SDL3GPUImpl::GetAttachedSurface(
 	if ((lpDDSCaps->dwCaps & DDSCAPS_BACKBUFFER) != DDSCAPS_BACKBUFFER) {
 		return DDERR_INVALIDPARAMS;
 	}
-	DDBackBuffer = m_surface;
+	DDBackBuffer_SDL3GPU = m_surface;
 	*lplpDDAttachedSurface = static_cast<IDirectDrawSurface*>(this);
 	return DD_OK;
 }

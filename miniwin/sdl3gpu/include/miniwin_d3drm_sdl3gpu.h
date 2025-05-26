@@ -6,6 +6,9 @@
 #include <algorithm>
 #include <vector>
 
+extern SDL_Window* DDWindow_SDL3GPU;
+extern SDL_Surface* DDBackBuffer_SDL3GPU;
+
 struct Direct3DRM_SDL3GPUImpl : virtual public IDirect3DRM2 {
 	// IUnknown interface
 	HRESULT QueryInterface(const GUID& riid, void** ppvObject) override;
