@@ -17,7 +17,7 @@ void* DeviceImpl::ImplementationDataPtr()
 }
 
 // FUNCTION: BETA10 0x1016dea0
-inline unsigned long DeviceGetWidth(IDirect3DRMDevice2* pDevice)
+inline unsigned int DeviceGetWidth(IDirect3DRMDevice2* pDevice)
 {
 	return pDevice->GetWidth();
 }
@@ -32,7 +32,7 @@ unsigned int DeviceImpl::GetWidth()
 }
 
 // FUNCTION: BETA10 0x1016df20
-inline unsigned long DeviceGetHeight(IDirect3DRMDevice2* pDevice)
+inline unsigned int DeviceGetHeight(IDirect3DRMDevice2* pDevice)
 {
 	return pDevice->GetHeight();
 }
@@ -78,7 +78,7 @@ Result DeviceImpl::SetShadingModel(ShadingModel model)
 }
 
 // FUNCTION: BETA10 0x1016e140
-inline Result DeviceSetShadeCount(IDirect3DRMDevice2* pDevice, unsigned long shadeCount)
+inline Result DeviceSetShadeCount(IDirect3DRMDevice2* pDevice, unsigned int shadeCount)
 {
 	return ResultVal(pDevice->SetShades(shadeCount));
 }
