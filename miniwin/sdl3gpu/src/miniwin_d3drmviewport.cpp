@@ -61,25 +61,19 @@ static void D3DRMMatrixInvertOrthogonal(D3DRMMATRIX4D out, const D3DRMMATRIX4D m
 	out[3][2] = -(out[0][2] * t.x + out[1][2] * t.y + out[2][2] * t.z);
 }
 
-static void HMM_Perspective_LH_NO(D3DRMMATRIX4D Result, float FOV, float AspectRatio, float Near, float Far)
+static void CalculateProjectionMatrix(D3DRMMATRIX4D Result, float field, float aspect, float near, float far)
 {
-	for (int i = 0; i < 4; i++) {
-		std::fill(Result[i], Result[i] + 4, 0.f);
-	}
+	float f = near / field;
+	float depth = far - near;
 
-	// See https://www.khronos.org/registry/OpenGL-Refpages/gl2.1/xhtml/gluPerspective.xml
+	D3DRMMATRIX4D perspective = {
+		{f, 0, 0, 0},
+		{0, f * aspect, 0, 0},
+		{0, 0, far / depth, 1},
+		{0, 0, (-near * far) / depth, 0},
+	};
 
-	float Cotangent = 1.0f / SDL_tanf(FOV / 2.0f);
-	Result[0][0] = Cotangent / AspectRatio;
-	Result[1][1] = Cotangent;
-	Result[2][3] = -1.0f;
-
-	Result[2][2] = (Near + Far) / (Near - Far);
-	Result[3][2] = (2.0f * Near * Far) / (Near - Far);
-
-	// Left handed
-	Result[2][2] = -Result[2][2];
-	Result[2][3] = -Result[2][3];
+	memcpy(Result, &perspective, sizeof(D3DRMMATRIX4D));
 }
 
 static void ComputeFrameWorldMatrix(IDirect3DRMFrame* frame, D3DRMMATRIX4D out)
@@ -208,10 +202,8 @@ HRESULT Direct3DRMViewport_SDL3GPUImpl::CollectSceneData(IDirect3DRMFrame* group
 	recurseFrame(group, identity);
 
 	PushVertices(verts.data(), verts.size());
-	HMM_Perspective_LH_NO(m_uniforms.perspective, m_field, 4.f / 3.f, m_front, m_back);
 
-	// SDL_Log("FOV: %f", m_field);
-	HMM_Perspective_LH_NO(m_uniforms.perspective, m_field * SDL_PI_F * 4, 4.f / 3.f, m_front, m_back);
+	CalculateProjectionMatrix(m_uniforms.perspective, m_field, (float) m_width / (float) m_height, m_front, m_back);
 
 	return D3DRM_OK;
 }
