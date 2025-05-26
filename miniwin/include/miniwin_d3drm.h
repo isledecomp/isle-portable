@@ -252,11 +252,7 @@ struct IDirect3DRMFrameArray : public IDirect3DRMArray {
 struct IDirect3DRMFrame2 : public IDirect3DRMFrame {};
 typedef IDirect3DRMFrame2* LPDIRECT3DRMFRAME2;
 
-struct D3DRMPICKDESC {
-	IDirect3DRMVisual* visual;
-	IDirect3DRMFrame* frame;
-	float dist;
-};
+struct D3DRMPICKDESC {};
 
 struct IDirect3DRMPickedArray : public IDirect3DRMArray {
 	virtual HRESULT GetPick(
