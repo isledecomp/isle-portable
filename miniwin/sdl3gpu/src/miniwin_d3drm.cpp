@@ -21,6 +21,20 @@ struct PickRecord {
 };
 
 struct Direct3DRMPickedArray_SDL3GPUImpl : public IDirect3DRMPickedArray {
+	Direct3DRMPickedArray_SDL3GPUImpl(const PickRecord* inputPicks, size_t count)
+	{
+		picks.reserve(count);
+		for (size_t i = 0; i < count; ++i) {
+			const PickRecord& pick = inputPicks[i];
+			if (pick.visual) {
+				pick.visual->AddRef();
+			}
+			if (pick.frameArray) {
+				pick.frameArray->AddRef();
+			}
+			picks.push_back(pick);
+		}
+	}
 	~Direct3DRMPickedArray_SDL3GPUImpl() override
 	{
 		for (PickRecord& pick : picks) {
