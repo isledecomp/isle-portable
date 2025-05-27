@@ -1,4 +1,9 @@
-float4 main(float4 Color : TEXCOORD0) : SV_Target0
+#include "Common.hlsl"
+
+FS_Output main(FS_Input input)
 {
-    return Color;
+    FS_Output output;
+    output.Color = input.Color;
+    output.Depth = input.Position.w;
+    return output;
 }

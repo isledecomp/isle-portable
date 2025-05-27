@@ -125,6 +125,9 @@ set(miniwin_shaders
   "${shader_src_dir}/PositionColor.vert.hlsl"
   "${shader_src_dir}/SolidColor.frag.hlsl"
 )
+set(miniwin_shaders_DEPENDS
+  "${shader_src_dir}/Common.hlsl"
+)
 if(ISLE_COMPILE_SHADERS)
   set(compiled_bindir "${CMAKE_CURRENT_BINARY_DIR}/shaders/compiled")
   set(compiled_srcdir "${CMAKE_CURRENT_SOURCE_DIR}/miniwin/sdl3gpu/shaders/compiled")
@@ -168,15 +171,15 @@ foreach(shader_src IN LISTS miniwin_shaders)
     add_custom_command(OUTPUT "${dxil}"
       COMMAND "${SDL_SHADERCROSS_BIN}" "${shader_src}" -o "${dxil}"
         -s "${src_format}" -d "DXIL" -t "${shader_stage}"
-      DEPENDS create-generated-shader-directories "${shader_src}")
+      DEPENDS create-generated-shader-directories "${shader_src}" ${miniwin_shaders_DEPENDS})
     add_custom_command(OUTPUT "${msl}"
       COMMAND "${SDL_SHADERCROSS_BIN}" "${shader_src}" -o "${msl}"
         -s "${src_format}" -d "MSL" -t "${shader_stage}"
-      DEPENDS create-generated-shader-directories "${shader_src}")
+      DEPENDS create-generated-shader-directories "${shader_src}" ${miniwin_shaders_DEPENDS})
     add_custom_command(OUTPUT "${spirv}"
       COMMAND "${SDL_SHADERCROSS_BIN}" "${shader_src}" -o "${spirv}"
         -s "${src_format}" -d "SPIRV" -t "${shader_stage}"
-      DEPENDS create-generated-shader-directories "${shader_src}")
+      DEPENDS create-generated-shader-directories "${shader_src}" ${miniwin_shaders_DEPENDS})
     add_custom_command(OUTPUT "${shader_header}"
       COMMAND Python3::Interpreter "${py_gencshadersource}" "header" "--output" "${shader_header}"
         "--stage" "${shader_stage}" "--variable" "${shader_variable}"

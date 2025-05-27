@@ -5,6 +5,7 @@
 #include "miniwin_p.h"
 
 #include <SDL3/SDL.h>
+#include <cassert>
 #include <float.h>
 #include <functional>
 #include <math.h>
@@ -14,16 +15,18 @@ Direct3DRMViewport_SDL3GPUImpl::Direct3DRMViewport_SDL3GPUImpl(
 	DWORD height,
 	SDL_GPUDevice* device,
 	SDL_GPUTexture* transferTexture,
+	SDL_GPUTexture* depthTexture,
 	SDL_GPUTransferBuffer* downloadTransferBuffer,
 	SDL_GPUGraphicsPipeline* pipeline
 )
 	: m_width(width), m_height(height), m_device(device), m_transferTexture(transferTexture),
-	  m_downloadTransferBuffer(downloadTransferBuffer), m_pipeline(pipeline)
+	  m_depthTexture(depthTexture), m_downloadTransferBuffer(downloadTransferBuffer), m_pipeline(pipeline)
 {
 }
 
 void Direct3DRMViewport_SDL3GPUImpl::FreeDeviceResources()
 {
+	SDL_ReleaseGPUBuffer(m_device, m_vertexBuffer);
 	SDL_ReleaseGPUBuffer(m_device, m_vertexBuffer);
 	SDL_ReleaseGPUGraphicsPipeline(m_device, m_pipeline);
 }
@@ -41,6 +44,25 @@ static void D3DRMMatrixMultiply(D3DRMMATRIX4D out, const D3DRMMATRIX4D a, const 
 			for (int k = 0; k < 4; ++k) {
 				out[i][j] += a[i][k] * b[k][j];
 			}
+		}
+	}
+}
+
+static D3DVALUE Cofactor3x3(const D3DRMMATRIX4D m, int i, int j)
+{
+	int i1 = (i + 1) % 3;
+	int i2 = (i + 1) % 3;
+	int j1 = (j + 1) % 3;
+	int j2 = (j + 1) % 3;
+	return m[i1][j1] * m[i2][j2] - m[i2][j1] * m[i1][j2];
+}
+
+static void D3DRMMatrixInvertForNormal(D3DRMMATRIX3D out, const D3DRMMATRIX4D m)
+{
+	assert(m[3][3] == 1.f);
+	for (int i = 0; i < 3; ++i) {
+		for (int j = 0; j < 3; ++j) {
+			out[i][j] = (((i + j) % 2) ? -1 : 1) * Cofactor3x3(m, i, j);
 		}
 	}
 }
@@ -121,7 +143,9 @@ HRESULT Direct3DRMViewport_SDL3GPUImpl::CollectSceneData()
 
 		// Compute combined world matrix: world = parent * local
 		D3DRMMATRIX4D worldMatrix;
+		D3DRMMATRIX3D worldMatrixInvert;
 		D3DRMMatrixMultiply(worldMatrix, parentMatrix, localMatrix);
+		D3DRMMatrixInvertForNormal(worldMatrixInvert, worldMatrix);
 
 		IDirect3DRMVisualArray* va = nullptr;
 		if (SUCCEEDED(frame->GetVisuals(&va)) && va) {
@@ -154,6 +178,7 @@ HRESULT Direct3DRMViewport_SDL3GPUImpl::CollectSceneData()
 
 								// Apply world transform to the vertex
 								D3DVECTOR pos = dv.position;
+								D3DVECTOR norm = dv.normal;
 								D3DVECTOR worldPos;
 								worldPos.x = pos.x * worldMatrix[0][0] + pos.y * worldMatrix[1][0] +
 											 pos.z * worldMatrix[2][0] + worldMatrix[3][0];
@@ -171,10 +196,22 @@ HRESULT Direct3DRMViewport_SDL3GPUImpl::CollectSceneData()
 								viewPos.z = worldPos.x * viewMatrix[0][2] + worldPos.y * viewMatrix[1][2] +
 											worldPos.z * viewMatrix[2][2] + viewMatrix[3][2];
 
+								// View transform
+								D3DVECTOR viewNorm;
+								viewNorm.x = norm.x * worldMatrixInvert[0][0] + norm.y * worldMatrixInvert[1][0] +
+											 norm.z * worldMatrixInvert[2][0];
+								viewNorm.y = norm.x * worldMatrixInvert[0][1] + norm.y * worldMatrixInvert[1][1] +
+											 norm.z * worldMatrixInvert[2][1];
+								viewNorm.z = norm.x * worldMatrixInvert[0][2] + norm.y * worldMatrixInvert[1][2] +
+											 norm.z * worldMatrixInvert[2][2];
+
 								PositionColorVertex vtx;
 								vtx.x = viewPos.x;
 								vtx.y = viewPos.y;
 								vtx.z = viewPos.z;
+								vtx.nx = viewNorm.x;
+								vtx.ny = viewNorm.y;
+								vtx.nz = viewNorm.z;
 								vtx.a = (color >> 24) & 0xFF;
 								vtx.r = (color >> 16) & 0xFF;
 								vtx.g = (color >> 8) & 0xFF;
@@ -220,6 +257,9 @@ void Direct3DRMViewport_SDL3GPUImpl::PushVertices(const PositionColorVertex* ver
 		bufferCreateInfo.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
 		bufferCreateInfo.size = static_cast<Uint32>(sizeof(PositionColorVertex) * count);
 		m_vertexBuffer = SDL_CreateGPUBuffer(m_device, &bufferCreateInfo);
+		if (!m_vertexBuffer) {
+			SDL_LogError(LOG_CATEGORY_MINIWIN, "SDL_CreateGPUBuffer returned NULL buffer (%s)", SDL_GetError());
+		}
 		m_vertexBufferCount = count;
 	}
 
@@ -232,9 +272,19 @@ void Direct3DRMViewport_SDL3GPUImpl::PushVertices(const PositionColorVertex* ver
 	transferCreateInfo.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
 	transferCreateInfo.size = static_cast<Uint32>(sizeof(PositionColorVertex) * m_vertexCount);
 	SDL_GPUTransferBuffer* transferBuffer = SDL_CreateGPUTransferBuffer(m_device, &transferCreateInfo);
+	if (!transferBuffer) {
+		SDL_LogError(
+			LOG_CATEGORY_MINIWIN,
+			"SDL_CreateGPUTransferBuffer returned NULL transfer buffer (%s)",
+			SDL_GetError()
+		);
+	}
 
 	PositionColorVertex* transferData =
 		(PositionColorVertex*) SDL_MapGPUTransferBuffer(m_device, transferBuffer, false);
+	if (!transferData) {
+		SDL_LogError(LOG_CATEGORY_MINIWIN, "SDL_MapGPUTransferBuffer returned NULL buffer (%s)", SDL_GetError());
+	}
 
 	memcpy(transferData, vertices, m_vertexCount * sizeof(PositionColorVertex));
 
@@ -255,7 +305,9 @@ void Direct3DRMViewport_SDL3GPUImpl::PushVertices(const PositionColorVertex* ver
 	SDL_UploadToGPUBuffer(copyPass, &transferLocation, &bufferRegion, false);
 
 	SDL_EndGPUCopyPass(copyPass);
-	SDL_SubmitGPUCommandBuffer(uploadCmdBuf);
+	if (!SDL_SubmitGPUCommandBuffer(uploadCmdBuf)) {
+		SDL_LogError(LOG_CATEGORY_MINIWIN, "SDL_SubmitGPUCommandBuffer failes (%s)", SDL_GetError());
+	}
 	SDL_ReleaseGPUTransferBuffer(m_device, transferBuffer);
 }
 
@@ -273,6 +325,7 @@ HRESULT Direct3DRMViewport_SDL3GPUImpl::Render(IDirect3DRMFrame* rootFrame)
 
 	SDL_GPUCommandBuffer* cmdbuf = SDL_AcquireGPUCommandBuffer(m_device);
 	if (cmdbuf == NULL) {
+		SDL_LogError(LOG_CATEGORY_MINIWIN, "SDL_AcquireGPUCommandBuffer failed (%s)", SDL_GetError());
 		return DDERR_GENERIC;
 	}
 
@@ -282,7 +335,17 @@ HRESULT Direct3DRMViewport_SDL3GPUImpl::Render(IDirect3DRMFrame* rootFrame)
 	// Make the render target transparent so we can combine it with the back buffer
 	colorTargetInfo.clear_color = {0, 0, 0, 0};
 	colorTargetInfo.load_op = SDL_GPU_LOADOP_CLEAR;
-	SDL_GPURenderPass* renderPass = SDL_BeginGPURenderPass(cmdbuf, &colorTargetInfo, 1, NULL);
+
+	SDL_GPUDepthStencilTargetInfo depthStencilTargetInfo = {};
+	depthStencilTargetInfo.texture = m_depthTexture;
+	depthStencilTargetInfo.clear_depth = 0.f;
+	depthStencilTargetInfo.clear_stencil = 0;
+	depthStencilTargetInfo.load_op = SDL_GPU_LOADOP_CLEAR;
+	depthStencilTargetInfo.store_op = SDL_GPU_STOREOP_STORE;
+	depthStencilTargetInfo.stencil_load_op = SDL_GPU_LOADOP_CLEAR;
+	depthStencilTargetInfo.stencil_store_op = SDL_GPU_STOREOP_STORE;
+
+	SDL_GPURenderPass* renderPass = SDL_BeginGPURenderPass(cmdbuf, &colorTargetInfo, 1, &depthStencilTargetInfo);
 	SDL_BindGPUGraphicsPipeline(renderPass, m_pipeline);
 
 	SDL_PushGPUVertexUniformData(cmdbuf, 0, &m_uniforms, sizeof(m_uniforms));

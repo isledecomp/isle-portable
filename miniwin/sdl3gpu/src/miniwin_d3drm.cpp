@@ -124,7 +124,7 @@ SDL_GPUGraphicsPipeline* InitializeGraphicsPipeline(SDL_GPUDevice* device)
 	vertexBufferDescs[0].input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX;
 	vertexBufferDescs[0].instance_step_rate = 0;
 
-	SDL_GPUVertexAttribute vertexAttrs[2] = {};
+	SDL_GPUVertexAttribute vertexAttrs[3] = {};
 	vertexAttrs[0].location = 0;
 	vertexAttrs[0].buffer_slot = 0;
 	vertexAttrs[0].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3;
@@ -132,14 +132,19 @@ SDL_GPUGraphicsPipeline* InitializeGraphicsPipeline(SDL_GPUDevice* device)
 
 	vertexAttrs[1].location = 1;
 	vertexAttrs[1].buffer_slot = 0;
-	vertexAttrs[1].format = SDL_GPU_VERTEXELEMENTFORMAT_UBYTE4_NORM;
+	vertexAttrs[1].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3;
 	vertexAttrs[1].offset = sizeof(float) * 3;
+
+	vertexAttrs[2].location = 2;
+	vertexAttrs[2].buffer_slot = 0;
+	vertexAttrs[2].format = SDL_GPU_VERTEXELEMENTFORMAT_UBYTE4_NORM;
+	vertexAttrs[2].offset = sizeof(float) * 6;
 
 	SDL_GPUVertexInputState vertexInputState = {};
 	vertexInputState.vertex_buffer_descriptions = vertexBufferDescs;
-	vertexInputState.num_vertex_buffers = 1;
+	vertexInputState.num_vertex_buffers = SDL_arraysize(vertexBufferDescs);
 	vertexInputState.vertex_attributes = vertexAttrs;
-	vertexInputState.num_vertex_attributes = 2;
+	vertexInputState.num_vertex_attributes = SDL_arraysize(vertexAttrs);
 
 	SDL_GPUColorTargetDescription colorTargets = {};
 	colorTargets.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM_SRGB;
@@ -151,6 +156,13 @@ SDL_GPUGraphicsPipeline* InitializeGraphicsPipeline(SDL_GPUDevice* device)
 	pipelineCreateInfo.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
 	pipelineCreateInfo.target_info.color_target_descriptions = &colorTargets;
 	pipelineCreateInfo.target_info.num_color_targets = 1;
+	pipelineCreateInfo.target_info.has_depth_stencil_target = true;
+	pipelineCreateInfo.target_info.depth_stencil_format = SDL_GPU_TEXTUREFORMAT_D16_UNORM;
+	pipelineCreateInfo.depth_stencil_state.enable_depth_test = true;
+	pipelineCreateInfo.depth_stencil_state.enable_depth_write = true;
+	pipelineCreateInfo.depth_stencil_state.enable_stencil_test = false;
+	pipelineCreateInfo.depth_stencil_state.compare_op = SDL_GPU_COMPAREOP_GREATER;
+	pipelineCreateInfo.depth_stencil_state.write_mask = 0xff;
 
 	SDL_GPUGraphicsPipeline* pipeline = SDL_CreateGPUGraphicsPipeline(device, &pipelineCreateInfo);
 	// Clean up shader resources
@@ -294,6 +306,19 @@ HRESULT Direct3DRM_SDL3GPUImpl::CreateViewport(
 		return DDERR_GENERIC;
 	}
 
+	SDL_GPUTextureCreateInfo depthTextureInfo = {};
+	depthTextureInfo.type = SDL_GPU_TEXTURETYPE_2D;
+	depthTextureInfo.format = SDL_GPU_TEXTUREFORMAT_D16_UNORM;
+	depthTextureInfo.width = width;
+	depthTextureInfo.height = height;
+	depthTextureInfo.layer_count_or_depth = 1;
+	depthTextureInfo.num_levels = 1;
+	depthTextureInfo.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER | SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET;
+	SDL_GPUTexture* depthTexture = SDL_CreateGPUTexture(device->m_device, &depthTextureInfo);
+	if (!depthTexture) {
+		return DDERR_GENERIC;
+	}
+
 	// Setup texture GPU-to-CPU transfer
 	SDL_GPUTransferBufferCreateInfo downloadTransferInfo = {};
 	downloadTransferInfo.usage = SDL_GPU_TRANSFERBUFFERUSAGE_DOWNLOAD;
@@ -309,6 +334,7 @@ HRESULT Direct3DRM_SDL3GPUImpl::CreateViewport(
 		height,
 		device->m_device,
 		transferTexture,
+		depthTexture,
 		downloadTransferBuffer,
 		pipeline
 	);
