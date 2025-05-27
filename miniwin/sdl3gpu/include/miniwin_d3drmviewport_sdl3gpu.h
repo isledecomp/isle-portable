@@ -44,7 +44,7 @@ struct Direct3DRMViewport_SDL3GPUImpl : public Direct3DRMObjectBase_SDL3GPUImpl<
 	HRESULT InverseTransform(D3DVECTOR* world, D3DRMVECTOR4D* screen) override;
 	HRESULT Pick(float x, float y, LPDIRECT3DRMPICKEDARRAY* pickedArray) override;
 	void CloseDevice();
-	HRESULT CollectSceneData(IDirect3DRMFrame* group);
+	HRESULT CollectSceneData();
 	void PushVertices(const PositionColorVertex* vertices, size_t count);
 
 private:
@@ -54,6 +54,7 @@ private:
 	D3DCOLOR m_backgroundColor = 0xFF000000;
 	DWORD m_width;
 	DWORD m_height;
+	IDirect3DRMFrame* m_rootFrame = nullptr;
 	IDirect3DRMFrame* m_camera = nullptr;
 	SDL_GPUDevice* m_device;
 	SDL_GPUGraphicsPipeline* m_pipeline;
