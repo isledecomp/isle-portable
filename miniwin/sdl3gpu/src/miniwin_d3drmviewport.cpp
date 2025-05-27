@@ -60,9 +60,10 @@ static D3DVALUE Cofactor3x3(const D3DRMMATRIX4D m, int i, int j)
 static void D3DRMMatrixInvertForNormal(D3DRMMATRIX3D out, const D3DRMMATRIX4D m)
 {
 	assert(m[3][3] == 1.f);
+	float detM = m[0][0] * Cofactor3x3(m, 0, 0) - m[0][1] * Cofactor3x3(m, 0, 1) + m[0][2] * Cofactor3x3(m, 0, 2);
 	for (int i = 0; i < 3; ++i) {
 		for (int j = 0; j < 3; ++j) {
-			out[i][j] = (((i + j) % 2) ? -1 : 1) * Cofactor3x3(m, i, j);
+			out[i][j] = (((i + j) % 2) ? -1 : 1) * Cofactor3x3(m, i, j) / detM;
 		}
 	}
 }
