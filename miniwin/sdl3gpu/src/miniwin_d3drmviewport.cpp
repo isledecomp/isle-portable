@@ -215,10 +215,10 @@ HRESULT Direct3DRMViewport_SDL3GPUImpl::CollectSceneData()
 								vtx.nx = viewNorm.x;
 								vtx.ny = viewNorm.y;
 								vtx.nz = viewNorm.z;
-								vtx.a = (color >> 24) & 0xFF;
 								vtx.r = (color >> 16) & 0xFF;
 								vtx.g = (color >> 8) & 0xFF;
 								vtx.b = (color >> 0) & 0xFF;
+								vtx.a = (color >> 24) & 0xFF;
 								verts.push_back(vtx);
 							}
 						}
