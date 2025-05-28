@@ -1081,7 +1081,9 @@ MxResult LegoAnimationManager::FUN_100609f0(MxU32 p_objectId, MxMatrix* p_matrix
 	char buf[256];
 	sprintf(buf, "%s:%d", g_strANIMMAN_ID, info->m_index);
 
-	action.SetAtomId(*Lego()->GetWorldAtom(m_worldId));
+	if (m_worldId != LegoOmni::e_undefined) {
+	    action.SetAtomId(*Lego()->GetWorldAtom(m_worldId));
+	}
 	action.SetObjectId(p_objectId);
 	action.SetUnknown24(-1);
 	action.AppendExtra(strlen(buf) + 1, buf);
