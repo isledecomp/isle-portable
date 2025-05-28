@@ -49,6 +49,7 @@ struct Direct3DRM_SDL3GPUImpl : virtual public IDirect3DRM2 {
 
 typedef struct PositionColorVertex {
 	float x, y, z;
+	float nx, ny, nz;
 	Uint8 r, g, b, a;
 } PositionColorVertex;
 

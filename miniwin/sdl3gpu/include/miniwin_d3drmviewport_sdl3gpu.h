@@ -18,6 +18,7 @@ struct Direct3DRMViewport_SDL3GPUImpl : public Direct3DRMObjectBase_SDL3GPUImpl<
 		DWORD height,
 		SDL_GPUDevice* device,
 		SDL_GPUTexture* transferTexture,
+		SDL_GPUTexture* depthTexture,
 		SDL_GPUTransferBuffer* downloadTransferBuffer,
 		SDL_GPUGraphicsPipeline* pipeline
 	);
@@ -59,6 +60,7 @@ private:
 	SDL_GPUDevice* m_device;
 	SDL_GPUGraphicsPipeline* m_pipeline;
 	SDL_GPUTexture* m_transferTexture;
+	SDL_GPUTexture* m_depthTexture;
 	SDL_GPUTransferBuffer* m_downloadTransferBuffer;
 	SDL_GPUBuffer* m_vertexBuffer = nullptr;
 	SDL_Surface* m_renderedImage = nullptr;
