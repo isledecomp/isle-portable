@@ -10,6 +10,8 @@
 #include <functional>
 #include <math.h>
 
+typedef D3DVALUE Matrix3x3[3][3];
+
 Direct3DRMViewport_SDL3GPUImpl::Direct3DRMViewport_SDL3GPUImpl(
 	DWORD width,
 	DWORD height,
@@ -27,7 +29,7 @@ Direct3DRMViewport_SDL3GPUImpl::Direct3DRMViewport_SDL3GPUImpl(
 void Direct3DRMViewport_SDL3GPUImpl::FreeDeviceResources()
 {
 	SDL_ReleaseGPUBuffer(m_device, m_vertexBuffer);
-	SDL_ReleaseGPUBuffer(m_device, m_vertexBuffer);
+	SDL_ReleaseGPUTexture(m_device, m_depthTexture);
 	SDL_ReleaseGPUGraphicsPipeline(m_device, m_pipeline);
 }
 
@@ -57,7 +59,7 @@ static D3DVALUE Cofactor3x3(const D3DRMMATRIX4D m, int i, int j)
 	return m[i1][j1] * m[i2][j2] - m[i2][j1] * m[i1][j2];
 }
 
-static void D3DRMMatrixInvertForNormal(D3DRMMATRIX3D out, const D3DRMMATRIX4D m)
+static void D3DRMMatrixInvertForNormal(Matrix3x3 out, const D3DRMMATRIX4D m)
 {
 	assert(m[3][3] == 1.f);
 	float detM = m[0][0] * Cofactor3x3(m, 0, 0) - m[0][1] * Cofactor3x3(m, 0, 1) + m[0][2] * Cofactor3x3(m, 0, 2);
@@ -144,7 +146,7 @@ HRESULT Direct3DRMViewport_SDL3GPUImpl::CollectSceneData()
 
 		// Compute combined world matrix: world = parent * local
 		D3DRMMATRIX4D worldMatrix;
-		D3DRMMATRIX3D worldMatrixInvert;
+		Matrix3x3 worldMatrixInvert;
 		D3DRMMatrixMultiply(worldMatrix, parentMatrix, localMatrix);
 		D3DRMMatrixInvertForNormal(worldMatrixInvert, worldMatrix);
 
