@@ -1,4 +1,5 @@
 #include "d3drmrenderer_sdl3gpu.h"
+#include "d3drmrenderer_software.h"
 #include "ddpalette_impl.h"
 #include "ddraw_impl.h"
 #include "ddsurface_impl.h"
@@ -208,14 +209,8 @@ HRESULT DirectDrawImpl::GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELCaps)
 	return S_OK;
 }
 
-HRESULT DirectDrawImpl::EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
+void EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx, Direct3DRMRenderer* device, GUID deviceGuid)
 {
-	auto device = Direct3DRMSDL3GPURenderer::Create(640, 480);
-	if (!device) {
-		return S_OK;
-	}
-
-	GUID deviceGuid = SDL3_GPU_GUID;
 	D3DDEVICEDESC halDesc = {};
 	D3DDEVICEDESC helDesc = {};
 	device->GetDesc(&halDesc, &helDesc);
@@ -224,6 +219,17 @@ HRESULT DirectDrawImpl::EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 	cb(&deviceGuid, deviceNameDup, deviceDescDup, &halDesc, &helDesc, ctx);
 	SDL_free(deviceDescDup);
 	SDL_free(deviceNameDup);
+}
+
+HRESULT DirectDrawImpl::EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
+{
+	Direct3DRMRenderer* device = Direct3DRMSDL3GPURenderer::Create(640, 480);
+	if (device) {
+		EnumDevice(cb, ctx, device, SDL3_GPU_GUID);
+		delete device;
+	}
+	device = new Direct3DRMSoftwareRenderer(640, 480);
+	EnumDevice(cb, ctx, device, SOFTWARE_GUID);
 	delete device;
 
 	return S_OK;
@@ -313,6 +319,9 @@ HRESULT DirectDrawImpl::CreateDevice(
 	Direct3DRMRenderer* renderer;
 	if (SDL_memcmp(&guid, &SDL3_GPU_GUID, sizeof(GUID)) == 0) {
 		renderer = Direct3DRMSDL3GPURenderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
+	}
+	else if (SDL_memcmp(&guid, &SOFTWARE_GUID, sizeof(GUID)) == 0) {
+		renderer = new Direct3DRMSoftwareRenderer(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
 	else {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Device GUID not recognized");

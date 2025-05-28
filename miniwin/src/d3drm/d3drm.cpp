@@ -8,6 +8,7 @@
 #include "d3drmobject_impl.h"
 #include "d3drmrenderer.h"
 #include "d3drmrenderer_sdl3gpu.h"
+#include "d3drmrenderer_software.h"
 #include "d3drmtexture_impl.h"
 #include "d3drmviewport_impl.h"
 #include "ddraw_impl.h"
@@ -136,6 +137,9 @@ HRESULT Direct3DRMImpl::CreateDeviceFromSurface(
 	Direct3DRMRenderer* renderer;
 	if (SDL_memcmp(&guid, &SDL3_GPU_GUID, sizeof(GUID)) == 0) {
 		renderer = Direct3DRMSDL3GPURenderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
+	}
+	else if (SDL_memcmp(&guid, &SOFTWARE_GUID, sizeof(GUID)) == 0) {
+		renderer = new Direct3DRMSoftwareRenderer(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
 	else {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Device GUID not recognized");
