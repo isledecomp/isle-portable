@@ -147,7 +147,7 @@ SDL_GPUGraphicsPipeline* InitializeGraphicsPipeline(SDL_GPUDevice* device)
 	vertexInputState.num_vertex_attributes = SDL_arraysize(vertexAttrs);
 
 	SDL_GPUColorTargetDescription colorTargets = {};
-	colorTargets.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM_SRGB;
+	colorTargets.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM;
 
 	SDL_GPUGraphicsPipelineCreateInfo pipelineCreateInfo = {};
 	pipelineCreateInfo.vertex_shader = vertexShader;
@@ -295,7 +295,7 @@ HRESULT Direct3DRM_SDL3GPUImpl::CreateViewport(
 
 	SDL_GPUTextureCreateInfo textureInfo = {};
 	textureInfo.type = SDL_GPU_TEXTURETYPE_2D;
-	textureInfo.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM_SRGB;
+	textureInfo.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM;
 	textureInfo.width = width;
 	textureInfo.height = height;
 	textureInfo.layer_count_or_depth = 1;
@@ -303,6 +303,8 @@ HRESULT Direct3DRM_SDL3GPUImpl::CreateViewport(
 	textureInfo.usage = SDL_GPU_TEXTUREUSAGE_COLOR_TARGET;
 	SDL_GPUTexture* transferTexture = SDL_CreateGPUTexture(device->m_device, &textureInfo);
 	if (!transferTexture) {
+		SDL_ReleaseGPUGraphicsPipeline(device->m_device, pipeline);
+		SDL_LogError(LOG_CATEGORY_MINIWIN, "SDL_CreateGPUTexture for backbuffer failed (%s)", SDL_GetError());
 		return DDERR_GENERIC;
 	}
 
@@ -313,9 +315,12 @@ HRESULT Direct3DRM_SDL3GPUImpl::CreateViewport(
 	depthTextureInfo.height = height;
 	depthTextureInfo.layer_count_or_depth = 1;
 	depthTextureInfo.num_levels = 1;
-	depthTextureInfo.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER | SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET;
+	depthTextureInfo.usage = SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET;
 	SDL_GPUTexture* depthTexture = SDL_CreateGPUTexture(device->m_device, &depthTextureInfo);
 	if (!depthTexture) {
+		SDL_ReleaseGPUGraphicsPipeline(device->m_device, pipeline);
+		SDL_ReleaseGPUTexture(device->m_device, transferTexture);
+		SDL_LogError(LOG_CATEGORY_MINIWIN, "SDL_CreateGPUTexture for depth buffer (%s)", SDL_GetError());
 		return DDERR_GENERIC;
 	}
 
@@ -326,6 +331,10 @@ HRESULT Direct3DRM_SDL3GPUImpl::CreateViewport(
 	SDL_GPUTransferBuffer* downloadTransferBuffer =
 		SDL_CreateGPUTransferBuffer(device->m_device, &downloadTransferInfo);
 	if (!downloadTransferBuffer) {
+		SDL_ReleaseGPUGraphicsPipeline(device->m_device, pipeline);
+		SDL_ReleaseGPUTexture(device->m_device, depthTexture);
+		SDL_ReleaseGPUTexture(device->m_device, transferTexture);
+		SDL_LogError(LOG_CATEGORY_MINIWIN, "SDL_CreateGPUTransferBuffer failed (%s)", SDL_GetError());
 		return DDERR_GENERIC;
 	}
 
