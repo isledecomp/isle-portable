@@ -8,7 +8,7 @@
 #include "mxvideoparamflags.h"
 
 #ifdef MINIWIN
-#include "miniwin_ddraw.h"
+#include "miniwin/ddraw.h"
 #else
 #include <ddraw.h>
 #endif

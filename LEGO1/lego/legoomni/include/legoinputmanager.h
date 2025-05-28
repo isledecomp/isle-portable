@@ -13,7 +13,7 @@
 #include <SDL3/SDL_keycode.h>
 #include <SDL3/SDL_timer.h>
 #ifdef MINIWIN
-#include "miniwin.h"
+#include "miniwin/windows.h"
 #else
 #include <windows.h>
 #endif

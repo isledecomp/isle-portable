@@ -5,8 +5,8 @@
 #include "mxdirectxinfo.h"
 
 #ifdef MINIWIN
-#include "miniwin.h"
-#include "miniwin_ddraw.h"
+#include "miniwin/ddraw.h"
+#include "miniwin/windows.h"
 #else
 #include <ddraw.h>
 #include <windows.h>

@@ -7,8 +7,8 @@
 #include <mxdirectx/legodxinfo.h>
 #include <mxdirectx/mxdirect3d.h>
 #ifdef MINIWIN
-#include "miniwin_direct.h"
-#include "miniwin_process.h"
+#include "miniwin/direct.h"
+#include "miniwin/process.h"
 #else
 #include <direct.h>  // _chdir
 #include <process.h> // _spawnl

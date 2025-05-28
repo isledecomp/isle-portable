@@ -6,15 +6,15 @@
 #include "tglvector.h"
 
 #ifdef MINIWIN
-#include "miniwin_d3d.h"
-#include "miniwin_ddraw.h"
+#include "miniwin/d3d.h"
+#include "miniwin/ddraw.h"
 #else
 #include <d3d.h>
 #include <ddraw.h>
 #endif
 
 #ifdef MINIWIN
-#include "miniwin.h"
+#include "miniwin/windows.h"
 #else
 #include <windows.h>
 #endif

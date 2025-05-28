@@ -8,7 +8,7 @@
 #include <limits.h> // ULONG_MAX
 #include <math.h>
 #ifdef MINIWIN
-#include "miniwin.h"
+#include "miniwin/windows.h"
 #else
 #include <windows.h>
 #endif

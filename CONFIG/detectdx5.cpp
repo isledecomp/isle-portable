@@ -1,9 +1,9 @@
 #include "detectdx5.h"
 
 #ifdef MINIWIN
-#include "minimfc.h"
-#include "miniwin_ddraw.h"
-#include "miniwin_dinput.h"
+#include "miniwin/ddraw.h"
+#include "miniwin/dinput.h"
+#include "miniwin/mfc.h"
 #else
 #include <ddraw.h>
 #include <dinput.h>
