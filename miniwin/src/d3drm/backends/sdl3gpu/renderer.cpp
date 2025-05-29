@@ -58,7 +58,14 @@ SDL_GPUGraphicsPipeline* InitializeGraphicsPipeline(SDL_GPUDevice* device)
 	SDL_GPUColorTargetDescription colorTargets = {};
 	colorTargets.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM;
 
+	SDL_GPURasterizerState rasterizerState = {};
+	rasterizerState.fill_mode = SDL_GPU_FILLMODE_FILL;
+	rasterizerState.cull_mode = SDL_GPU_CULLMODE_BACK;
+	rasterizerState.front_face = SDL_GPU_FRONTFACE_CLOCKWISE;
+	rasterizerState.enable_depth_clip = true;
+
 	SDL_GPUGraphicsPipelineCreateInfo pipelineCreateInfo = {};
+	pipelineCreateInfo.rasterizer_state = rasterizerState;
 	pipelineCreateInfo.vertex_shader = vertexShader;
 	pipelineCreateInfo.fragment_shader = fragmentShader;
 	pipelineCreateInfo.vertex_input_state = vertexInputState;
