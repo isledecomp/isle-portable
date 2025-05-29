@@ -364,7 +364,7 @@ void LegoCarBuildAnimPresenter::FUN_10079160()
 		if (StringEqualsPlatform(name)) {
 			m_unk0xc4 = data;
 			if (m_unk0xc4->GetNumRotationKeys() == 0) {
-				LegoRotationKey* key = new LegoRotationKey();
+				LegoRotationKey* key = new LegoRotationKey[1];
 				m_unk0xc4->SetNumRotationKeys(1);
 				m_unk0xc4->SetRotationKeys(key);
 			}
@@ -450,7 +450,7 @@ void LegoCarBuildAnimPresenter::FUN_100795d0(LegoChar* p_param)
 	if (data) {
 		LegoMorphKey* oldMorphKeys = data->GetMorphKeys();
 
-		LegoMorphKey* newHideKey = new LegoMorphKey();
+		LegoMorphKey* newHideKey = new LegoMorphKey[1];
 		assert(newHideKey);
 
 		newHideKey->SetTime(0);
