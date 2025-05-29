@@ -2,7 +2,7 @@
 #define AFX_DETECTDX5_H
 
 #ifdef MINIWIN
-#include "miniwin.h"
+#include "miniwin/windows.h"
 #else
 #include <windows.h>
 #endif

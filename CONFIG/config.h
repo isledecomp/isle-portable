@@ -6,7 +6,7 @@
 #include "decomp.h"
 
 #ifdef MINIWIN
-#include "miniwin_d3d.h"
+#include "miniwin/d3d.h"
 #else
 #include <d3d.h>
 #endif

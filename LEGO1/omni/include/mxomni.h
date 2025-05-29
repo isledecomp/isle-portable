@@ -9,7 +9,7 @@
 
 #include <SDL3/SDL_video.h>
 #ifdef MINIWIN
-#include "miniwin.h"
+#include "miniwin/windows.h"
 #else
 #include <windows.h>
 #endif

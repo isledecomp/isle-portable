@@ -6,7 +6,7 @@
 #include "tgl/tgl.h"
 
 #ifdef MINIWIN
-#include "miniwin_d3drm.h"
+#include "miniwin/d3drm.h"
 typedef void* LPD3DRM_APPDATA;
 #else
 #include <d3drm.h>

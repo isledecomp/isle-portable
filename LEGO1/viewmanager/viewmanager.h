@@ -7,7 +7,7 @@
 #include "viewroi.h"
 
 #ifdef MINIWIN
-#include "miniwin_d3drm.h"
+#include "miniwin/d3drm.h"
 #else
 #include <d3drm.h>
 #endif

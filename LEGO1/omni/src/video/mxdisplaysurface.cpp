@@ -11,7 +11,7 @@
 #include <SDL3/SDL_log.h>
 #include <assert.h>
 #ifdef MINIWIN
-#include "miniwin.h"
+#include "miniwin/windows.h"
 #else
 #include <windows.h>
 #endif
