@@ -1,8 +1,8 @@
 #include "mxdsselectaction.h"
 
 #include "mxmisc.h"
-#include "mxutilities.h"
 #include "mxtimer.h"
+#include "mxutilities.h"
 #include "mxvariabletable.h"
 
 #include <SDL3/SDL_stdinc.h>
