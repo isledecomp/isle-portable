@@ -640,6 +640,8 @@ MxResult LegoAnimationManager::LoadWorldInfo(LegoOmni::World p_worldId)
 		}
 
 		strcat(path, filename);
+		MxString::MapPathToFilesystem(path);
+
 		SDL_PathInfo pathInfo;
 
 		if (!SDL_GetPathInfo(path, &pathInfo) || pathInfo.type != SDL_PATHTYPE_FILE) {
@@ -650,6 +652,7 @@ MxResult LegoAnimationManager::LoadWorldInfo(LegoOmni::World p_worldId)
 			}
 
 			strcat(path, filename);
+			MxString::MapPathToFilesystem(path);
 
 			if (!SDL_GetPathInfo(path, &pathInfo) || pathInfo.type != SDL_PATHTYPE_FILE) {
 				goto done;
