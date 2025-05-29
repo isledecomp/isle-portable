@@ -39,10 +39,10 @@ HRESULT DirectDrawPalette_SDL3GPUImpl::SetEntries(
 {
 	SDL_Color colors[256];
 	for (DWORD i = 0; i < dwCount; i++) {
-		colors[i].r = lpEntries[dwStartingEntry + i].peRed;
-		colors[i].g = lpEntries[dwStartingEntry + i].peGreen;
-		colors[i].b = lpEntries[dwStartingEntry + i].peBlue;
-		colors[i].a = SDL_ALPHA_OPAQUE;
+		colors[i + dwStartingEntry].r = lpEntries[i].peRed;
+		colors[i + dwStartingEntry].g = lpEntries[i].peGreen;
+		colors[i + dwStartingEntry].b = lpEntries[i].peBlue;
+		colors[i + dwStartingEntry].a = SDL_ALPHA_OPAQUE;
 	}
 
 	SDL_SetPaletteColors(m_palette, colors, dwStartingEntry, dwCount);
