@@ -2,6 +2,7 @@
 
 #include "mxmisc.h"
 #include "mxtimer.h"
+#include "mxutilities.h"
 #include "mxvariabletable.h"
 
 #include <SDL3/SDL_stdinc.h>
@@ -100,7 +101,7 @@ void MxDSSelectAction::Deserialize(MxU8*& p_source, MxS16 p_flags)
 	MxString string;
 	MxDSAction::Deserialize(p_source, p_flags);
 
-	MxU32 extraFlag = *(MxU32*) (p_source + 4) & 1;
+	MxU32 extraFlag = UnalignedRead<MxU32>(p_source + 4) & 1;
 	p_source += 12;
 
 	m_unk0x9c = (char*) p_source;
@@ -119,7 +120,7 @@ void MxDSSelectAction::Deserialize(MxU8*& p_source, MxS16 p_flags)
 
 	p_source += strlen((char*) p_source) + 1;
 
-	MxU32 count = *(MxU32*) p_source;
+	MxU32 count = UnalignedRead<MxU32>(p_source);
 	p_source += sizeof(MxU32);
 
 	if (count) {
@@ -137,7 +138,7 @@ void MxDSSelectAction::Deserialize(MxU8*& p_source, MxS16 p_flags)
 		}
 
 		for (i = 0; i < count; i++) {
-			MxU32 extraFlag = *(MxU32*) (p_source + 4) & 1;
+			MxU32 extraFlag = UnalignedRead<MxU32>(p_source + 4) & 1;
 			p_source += 8;
 
 			action = (MxDSAction*) DeserializeDSObjectDispatch(p_source, p_flags);
