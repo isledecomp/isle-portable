@@ -1562,7 +1562,8 @@ MxResult LegoAnimationManager::Tickle()
 		return SUCCESS;
 	}
 
-	m_unk0x410 = (rand() * 10000 / SHRT_MAX) + 5000;
+	MxLong r = rand() % 32768;
+	m_unk0x410 = (r * 10000 / 32767) + 5000;
 	m_unk0x408 = time;
 
 	if (time - m_unk0x404 > 10000) {
@@ -1584,6 +1585,7 @@ MxResult LegoAnimationManager::Tickle()
 
 	return SUCCESS;
 }
+
 
 // FUNCTION: LEGO1 0x10062110
 // FUNCTION: BETA10 0x10042f41
