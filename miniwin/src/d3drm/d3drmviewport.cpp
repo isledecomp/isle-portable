@@ -95,6 +95,8 @@ HRESULT Direct3DRMViewportImpl::CollectSceneData()
 {
 	MINIWIN_NOT_IMPLEMENTED(); // Lights, camera, textures, materials
 
+	m_backgroundColor = static_cast<Direct3DRMFrameImpl*>(m_rootFrame)->m_backgroundColor;
+
 	std::vector<PositionColorVertex> verts;
 
 	// Compute camera matrix
