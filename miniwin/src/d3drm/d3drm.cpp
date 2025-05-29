@@ -177,7 +177,7 @@ HRESULT Direct3DRMImpl::CreateMaterial(D3DVAL power, IDirect3DRMMaterial** outMa
 
 HRESULT Direct3DRMImpl::CreateLightRGB(D3DRMLIGHTTYPE type, D3DVAL r, D3DVAL g, D3DVAL b, IDirect3DRMLight** outLight)
 {
-	*outLight = static_cast<IDirect3DRMLight*>(new Direct3DRMLightImpl(r, g, b));
+	*outLight = static_cast<IDirect3DRMLight*>(new Direct3DRMLightImpl(type, r, g, b));
 	return DD_OK;
 }
 

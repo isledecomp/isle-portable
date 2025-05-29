@@ -139,7 +139,7 @@ struct D3DRMBOX {
 struct D3DRMVERTEX {
 	D3DVECTOR position;
 	D3DVECTOR normal;
-	float tu, tv;
+	D3DVALUE tu, tv;
 };
 
 struct IDirect3DRMObject : public IUnknown {
@@ -203,6 +203,8 @@ struct IDirect3DRMMesh : public IDirect3DRMVisual {
 
 struct IDirect3DRMLight : public IDirect3DRMObject {
 	virtual HRESULT SetColorRGB(float r, float g, float b) = 0;
+	virtual D3DRMLIGHTTYPE GetType() = 0;
+	virtual D3DCOLOR GetColor() = 0;
 };
 
 struct IDirect3DRMArray : public IUnknown {

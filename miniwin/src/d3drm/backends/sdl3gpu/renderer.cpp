@@ -188,6 +188,16 @@ void Direct3DRMSDL3GPURenderer::SetBackbuffer(SDL_Surface* buf)
 	m_backbuffer = buf;
 }
 
+void Direct3DRMSDL3GPURenderer::PushLights(const SceneLight* vertices, size_t count)
+{
+	if (count > 3) {
+		SDL_LogError(LOG_CATEGORY_MINIWIN, "Unsupported number of lights (%d)", count);
+		count = 3;
+	}
+	memcpy(&m_lights.lights, vertices, sizeof(SceneLight) * count);
+	m_lights.count = count;
+}
+
 void Direct3DRMSDL3GPURenderer::PushVertices(const PositionColorVertex* vertices, size_t count)
 {
 	if (count > m_vertexBufferCount) {
@@ -315,6 +325,7 @@ HRESULT Direct3DRMSDL3GPURenderer::Render()
 	SDL_BindGPUGraphicsPipeline(renderPass, m_pipeline);
 
 	SDL_PushGPUVertexUniformData(cmdbuf, 0, &m_uniforms, sizeof(m_uniforms));
+	SDL_PushGPUVertexUniformData(cmdbuf, 1, &m_lights, sizeof(m_lights));
 
 	if (m_vertexCount) {
 		SDL_GPUBufferBinding vertexBufferBinding = {};

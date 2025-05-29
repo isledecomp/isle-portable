@@ -13,6 +13,7 @@ public:
 	Direct3DRMSoftwareRenderer(DWORD width, DWORD height);
 	void SetBackbuffer(SDL_Surface* backbuffer) override;
 	void PushVertices(const PositionColorVertex* vertices, size_t count) override;
+	void PushLights(const SceneLight* vertices, size_t count) override;
 	void SetProjection(D3DRMMATRIX4D perspective, D3DVALUE front, D3DVALUE back) override;
 	DWORD GetWidth() override;
 	DWORD GetHeight() override;

@@ -10,12 +10,18 @@ typedef struct {
 	D3DRMMATRIX4D perspective;
 } ViewportUniforms;
 
+struct SceneLights {
+	SceneLight lights[3];
+	int count;
+};
+
 class Direct3DRMSDL3GPURenderer : public Direct3DRMRenderer {
 public:
 	static Direct3DRMRenderer* Create(DWORD width, DWORD height);
 	~Direct3DRMSDL3GPURenderer() override;
 	void SetBackbuffer(SDL_Surface* backbuffer) override;
 	void PushVertices(const PositionColorVertex* vertices, size_t count) override;
+	void PushLights(const SceneLight* vertices, size_t count) override;
 	void SetProjection(D3DRMMATRIX4D perspective, D3DVALUE front, D3DVALUE back) override;
 	DWORD GetWidth() override;
 	DWORD GetHeight() override;
@@ -42,6 +48,7 @@ private:
 	int m_vertexCount;
 	int m_vertexBufferCount = 0;
 	ViewportUniforms m_uniforms;
+	SceneLights m_lights;
 	D3DDEVICEDESC m_desc;
 	SDL_Surface* m_backbuffer = nullptr;
 	SDL_GPUDevice* m_device;

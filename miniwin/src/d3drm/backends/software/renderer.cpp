@@ -1,5 +1,6 @@
 #include "d3drmrenderer.h"
 #include "d3drmrenderer_software.h"
+#include "miniwin.h"
 
 #include <SDL3/SDL.h>
 #include <algorithm>
@@ -18,6 +19,11 @@ void Direct3DRMSoftwareRenderer::SetBackbuffer(SDL_Surface* buf)
 		m_zBuffer.resize(m_width * m_height);
 		std::fill(m_zBuffer.begin(), m_zBuffer.end(), std::numeric_limits<float>::infinity());
 	}
+}
+
+void Direct3DRMSoftwareRenderer::PushLights(const SceneLight* vertices, size_t count)
+{
+	MINIWIN_NOT_IMPLEMENTED();
 }
 
 void Direct3DRMSoftwareRenderer::PushVertices(const PositionColorVertex* vertices, size_t count)
