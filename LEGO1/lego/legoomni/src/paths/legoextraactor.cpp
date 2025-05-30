@@ -122,7 +122,7 @@ void LegoExtraActor::VTable0xa4(MxBool& p_und1, MxS32& p_und2)
 		break;
 	default:
 		p_und1 = TRUE;
-		p_und2 = rand() % p_und2 + 1;
+		p_und2 = 1 + SDL_rand(p_und2);
 		break;
 	}
 }

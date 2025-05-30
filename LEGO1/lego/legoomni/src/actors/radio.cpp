@@ -215,17 +215,16 @@ RadioState::RadioState()
 {
 	srand(Timer()->GetTime());
 
-	MxS32 random = rand();
-	m_unk0x2c = random % 3;
+	m_unk0x2c = SDL_rand(3);
 
 	m_unk0x08[0] = Playlist((MxU32*) g_unk0x100f3218, sizeOfArray(g_unk0x100f3218), Playlist::e_loop);
-	m_unk0x08[0].m_nextIndex = (rand() % sizeOfArray(g_unk0x100f3218));
+	m_unk0x08[0].m_nextIndex = SDL_rand(sizeOfArray(g_unk0x100f3218));
 
 	m_unk0x08[1] = Playlist((MxU32*) g_unk0x100f3230, sizeOfArray(g_unk0x100f3230), Playlist::e_loop);
-	m_unk0x08[1].m_nextIndex = (rand() % sizeOfArray(g_unk0x100f3230));
+	m_unk0x08[1].m_nextIndex = SDL_rand(sizeOfArray(g_unk0x100f3230));
 
 	m_unk0x08[2] = Playlist((MxU32*) g_unk0x100f3268, sizeOfArray(g_unk0x100f3268), Playlist::e_loop);
-	m_unk0x08[2].m_nextIndex = (rand() % sizeOfArray(g_unk0x100f3268));
+	m_unk0x08[2].m_nextIndex = SDL_rand(sizeOfArray(g_unk0x100f3268));
 
 	m_active = FALSE;
 }

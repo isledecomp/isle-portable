@@ -174,7 +174,7 @@ MxLong TowTrack::HandleEndAction(MxEndActionNotificationParam& p_param)
 				m_actorId = LegoActor::c_laura;
 			}
 
-			switch ((rand() % ((m_actorId != 4 ? 4 : 3))) + 1) {
+			switch (1 + SDL_rand(m_actorId != 4 ? 4 : 3)) {
 			case 1:
 				PlayFinalAnimation(IsleScript::c_wrt074sl_RunAnim);
 				break;
@@ -353,7 +353,7 @@ MxLong TowTrack::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 					objectId = IsleScript::c_wns034na_PlayWav;
 					break;
 				case c_mama:
-					switch ((rand() % 2) + 1) {
+					switch (1 + SDL_rand(2)) {
 					case 1:
 						objectId = IsleScript::c_wns037na_PlayWav;
 						break;
@@ -363,7 +363,7 @@ MxLong TowTrack::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 					}
 					break;
 				case c_papa:
-					switch ((rand() % 2) + 1) {
+					switch (1 + SDL_rand(2)) {
 					case 1:
 						objectId = IsleScript::c_wns041na_PlayWav;
 						break;
@@ -373,7 +373,7 @@ MxLong TowTrack::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 					}
 					break;
 				case c_nick:
-					switch ((rand() % 2) + 1) {
+					switch (1 + SDL_rand(2)) {
 					case 1:
 						objectId = IsleScript::c_wns039na_PlayWav;
 						break;
@@ -383,7 +383,7 @@ MxLong TowTrack::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 					}
 					break;
 				case c_laura:
-					switch ((rand() % 2) + 1) {
+					switch (1 + SDL_rand(2)) {
 					case 1:
 						objectId = IsleScript::c_wns043na_PlayWav;
 						break;
