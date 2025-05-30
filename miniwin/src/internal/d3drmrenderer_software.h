@@ -29,10 +29,14 @@ private:
 		const PositionColorVertex& v2
 	);
 	void ProjectVertex(const PositionColorVertex&, float&, float&, float&) const;
+	void BlendPixel(Uint8* pixelAddr, const PositionColorVertex& srcColor);
 
 	DWORD m_width;
 	DWORD m_height;
 	SDL_Surface* m_backbuffer = nullptr;
+	SDL_Palette* m_palette;
+	const SDL_PixelFormatDetails* m_format;
+	int m_bytesPerPixel;
 	D3DVALUE m_front;
 	D3DVALUE m_back;
 	std::vector<PositionColorVertex> m_vertexBuffer;

@@ -104,9 +104,6 @@ HRESULT DirectDrawSurfaceImpl::Blt(
 	if (blitSource != srcSurface->m_surface) {
 		SDL_DestroySurface(blitSource);
 	}
-	if (m_autoFlip) {
-		return Flip(nullptr, DDFLIP_WAIT);
-	}
 	return DD_OK;
 }
 
