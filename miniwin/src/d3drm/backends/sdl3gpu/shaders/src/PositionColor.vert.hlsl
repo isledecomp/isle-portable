@@ -5,12 +5,6 @@ cbuffer ViewportUniforms : register(b0, space1)
 	float4x4 perspective;
 }
 
-cbuffer LightBuffer : register(b1, space1)
-{
-	SceneLight lights[3];
-	int lightCount;
-}
-
 FS_Input main(VS_Input input)
 {
 	FS_Input output;

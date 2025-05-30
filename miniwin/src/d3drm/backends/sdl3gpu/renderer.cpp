@@ -5,7 +5,7 @@
 
 #include <SDL3/SDL.h>
 
-SDL_GPUGraphicsPipeline* InitializeGraphicsPipeline(SDL_GPUDevice* device)
+static SDL_GPUGraphicsPipeline* InitializeGraphicsPipeline(SDL_GPUDevice* device)
 {
 	const SDL_GPUShaderCreateInfo* vertexCreateInfo =
 		GetVertexShaderCode(VertexShaderId::PositionColor, SDL_GetGPUShaderFormats(device));
@@ -325,7 +325,7 @@ HRESULT Direct3DRMSDL3GPURenderer::Render()
 	SDL_BindGPUGraphicsPipeline(renderPass, m_pipeline);
 
 	SDL_PushGPUVertexUniformData(cmdbuf, 0, &m_uniforms, sizeof(m_uniforms));
-	SDL_PushGPUVertexUniformData(cmdbuf, 1, &m_lights, sizeof(m_lights));
+	SDL_PushGPUFragmentUniformData(cmdbuf, 0, &m_lights, sizeof(m_lights));
 
 	if (m_vertexCount) {
 		SDL_GPUBufferBinding vertexBufferBinding = {};

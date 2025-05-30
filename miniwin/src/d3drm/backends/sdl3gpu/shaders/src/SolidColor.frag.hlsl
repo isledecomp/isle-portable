@@ -1,11 +1,6 @@
 #include "Common.hlsl"
 
-cbuffer ViewportUniforms : register(b0, space1)
-{
-	float4x4 perspective;
-}
-
-cbuffer LightBuffer : register(b1, space1)
+cbuffer LightBuffer : register(b0, space3)
 {
 	SceneLight lights[3];
 	int lightCount;
