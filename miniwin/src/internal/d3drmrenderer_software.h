@@ -30,7 +30,8 @@ private:
 		const PositionColorVertex& v2
 	);
 	void ProjectVertex(const PositionColorVertex&, float&, float&, float&) const;
-	void BlendPixel(Uint8* pixelAddr, const PositionColorVertex& srcColor);
+	void BlendPixel(Uint8* pixelAddr, Uint8 r, Uint8 g, Uint8 b, Uint8 a);
+	SDL_Color ApplyLighting(const PositionColorVertex& vertex);
 
 	DWORD m_width;
 	DWORD m_height;
@@ -38,9 +39,10 @@ private:
 	SDL_Palette* m_palette;
 	const SDL_PixelFormatDetails* m_format;
 	int m_bytesPerPixel;
+	std::vector<SceneLight> m_lights;
 	D3DVALUE m_front;
 	D3DVALUE m_back;
 	std::vector<PositionColorVertex> m_vertexBuffer;
 	float proj[4][4] = {0};
-	std::vector<float> m_zBuffer;
+	std::vector<double> m_zBuffer;
 };
