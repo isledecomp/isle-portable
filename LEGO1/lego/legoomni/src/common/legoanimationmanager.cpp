@@ -28,8 +28,7 @@
 #include "realtime/realtime.h"
 #include "viewmanager/viewmanager.h"
 
-#include <SDL3/SDL_filesystem.h>
-#include <SDL3/SDL_stdinc.h>
+#include <SDL3/SDL.h>
 #include <stdio.h>
 #include <vec.h>
 
@@ -1201,7 +1200,7 @@ void LegoAnimationManager::CameraTriggerFire(LegoPathActor* p_actor, MxBool, MxU
 				return;
 			}
 
-			if (location->m_unk0x5c && location->m_frequency < rand() % 100) {
+			if (location->m_unk0x5c && location->m_frequency < SDL_rand(100)) {
 				return;
 			}
 		}
@@ -1562,7 +1561,7 @@ MxResult LegoAnimationManager::Tickle()
 		return SUCCESS;
 	}
 
-	m_unk0x410 = (rand() * 10000 / RAND_MAX) + 5000;
+	m_unk0x410 = SDL_rand(10000) + 5000;
 	m_unk0x408 = time;
 
 	if (time - m_unk0x404 > 10000) {
@@ -1900,7 +1899,7 @@ void LegoAnimationManager::AddExtra(MxS32 p_location, MxBool p_und)
 				}
 
 				if (i != m_numAllowedExtras) {
-					MxU8 und = rand() % 2 != 0 ? 1 : 2;
+					MxU8 und = SDL_rand(2) != 0 ? 1 : 2;
 					MxBool bool1, bool2;
 
 					switch (g_unk0x100f7504 % 4) {
@@ -1957,7 +1956,7 @@ void LegoAnimationManager::AddExtra(MxS32 p_location, MxBool p_und)
 									active = TRUE;
 								}
 								else {
-									active = rand() % 100 < 50;
+									active = SDL_rand(100) < 50;
 								}
 
 							tryNextCharacter:
@@ -2002,7 +2001,7 @@ void LegoAnimationManager::AddExtra(MxS32 p_location, MxBool p_und)
 											MxS32 vehicleId = g_characters[m_lastExtraCharacterId].m_vehicleId;
 											if (vehicleId >= 0) {
 												g_vehicles[vehicleId].m_unk0x04 =
-													rand() % 100 < g_characters[m_lastExtraCharacterId].m_unk0x15;
+													SDL_rand(100) < g_characters[m_lastExtraCharacterId].m_unk0x15;
 											}
 
 											if (FUN_10063b90(
@@ -2020,10 +2019,10 @@ void LegoAnimationManager::AddExtra(MxS32 p_location, MxBool p_und)
 
 											float speed;
 											if (m_extras[i].m_unk0x14) {
-												speed = ((float) (rand() * 1.5) / RAND_MAX) + 0.9;
+												speed = 0.9f + 1.5f * SDL_randf();
 											}
 											else {
-												speed = ((float) (rand() * 1.4) / RAND_MAX) + 0.6;
+												speed = 0.6f + 1.4f * SDL_randf();
 											}
 
 											actor->SetWorldSpeed(speed);
@@ -2159,7 +2158,7 @@ MxBool LegoAnimationManager::FUN_10062e20(LegoROI* p_roi, LegoAnimPresenter* p_p
 		if (!local24) {
 			MxU8 unk0x0c;
 
-			switch (rand() % 3) {
+			switch (SDL_rand(3)) {
 			case 0:
 				unk0x0c = 1;
 				break;
@@ -2426,10 +2425,10 @@ void LegoAnimationManager::FUN_10063d10()
 
 						if (speed < 0.0f) {
 							if (m_extras[i].m_unk0x14) {
-								speed = ((float) (rand() * 1.5) / RAND_MAX) + 0.9;
+								speed = 0.9f + 1.5f * SDL_randf();
 							}
 							else {
-								speed = ((float) (rand() * 1.4) / RAND_MAX) + 0.6;
+								speed = 0.6f + 1.4f * SDL_randf();
 							}
 						}
 
@@ -2513,7 +2512,7 @@ MxBool LegoAnimationManager::FUN_10064010(LegoPathBoundary* p_boundary, LegoOrie
 MxBool LegoAnimationManager::FUN_10064120(LegoLocation::Boundary* p_boundary, MxBool p_bool1, MxBool p_bool2)
 {
 	MxU32 local2c = 12;
-	float destScale = ((rand() * 0.5) / RAND_MAX) + 0.25;
+	float destScale = 0.25f + 0.5f * SDL_randf();
 	LegoPathActor* actor = UserActor();
 
 	if (actor == NULL) {
@@ -2668,7 +2667,7 @@ MxResult LegoAnimationManager::FUN_10064380(
 	}
 
 	if (actor != NULL) {
-		MxU8 unk0x0c = rand() % 2 != 0 ? 1 : 2;
+		MxU8 unk0x0c = SDL_rand(2) != 0 ? 1 : 2;
 		actor->SetUnknown0x0c(unk0x0c);
 		actor->SetWorldSpeed(0.0f);
 
@@ -2724,7 +2723,7 @@ MxResult LegoAnimationManager::FUN_10064670(Vector3* p_position)
 	}
 
 	if (success) {
-		return FUN_10064380("brickstr", "EDG02_95", 1, 0.5f, 3, 0.5f, rand() % 3 + 14, -1, rand() % 3, -1, 0.5f);
+		return FUN_10064380("brickstr", "EDG02_95", 1, 0.5f, 3, 0.5f, SDL_rand(3) + 14, -1, SDL_rand(3), -1, 0.5f);
 	}
 
 	return FAILURE;
@@ -2749,11 +2748,11 @@ MxResult LegoAnimationManager::FUN_10064740(Vector3* p_position)
 
 	if (success) {
 		if (GameState()->GetActorId() != LegoActor::c_mama) {
-			FUN_10064380("mama", "USR00_47", 1, 0.43f, 3, 0.84f, rand() % 3 + 13, -1, rand() % 3, -1, 0.7f);
+			FUN_10064380("mama", "USR00_47", 1, 0.43f, 3, 0.84f, SDL_rand(3) + 13, -1, SDL_rand(3), -1, 0.7f);
 		}
 
 		if (GameState()->GetActorId() != LegoActor::c_papa) {
-			FUN_10064380("papa", "USR00_193", 3, 0.55f, 1, 0.4f, rand() % 3 + 13, -1, rand() % 3, -1, 0.9f);
+			FUN_10064380("papa", "USR00_193", 3, 0.55f, 1, 0.4f, SDL_rand(3) + 13, -1, SDL_rand(3), -1, 0.9f);
 		}
 
 		return SUCCESS;

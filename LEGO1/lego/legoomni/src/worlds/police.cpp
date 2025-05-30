@@ -198,7 +198,7 @@ MxBool Police::Escape()
 PoliceState::PoliceState()
 {
 	m_unk0x0c = 0;
-	m_policeScript = (rand() % 2 == 0) ? PoliceScript::c_nps002la_RunAnim : PoliceScript::c_nps001ni_RunAnim;
+	m_policeScript = (SDL_rand(2) == 0) ? PoliceScript::c_nps002la_RunAnim : PoliceScript::c_nps001ni_RunAnim;
 }
 
 // FUNCTION: LEGO1 0x1005e990

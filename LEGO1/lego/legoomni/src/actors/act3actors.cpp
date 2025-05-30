@@ -413,7 +413,7 @@ MxResult Act3Cop::FUN_10040360()
 		}
 
 		if (grec == NULL) {
-			MxS32 random = rand() % (MxS32) sizeOfArray(g_copDest);
+			MxS32 random = SDL_rand(sizeOfArray(g_copDest));
 			Vector3 localf8(g_copDest[random].m_unk0x08);
 			Vector3 local108(g_copDest[random].m_unk0x14);
 

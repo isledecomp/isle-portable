@@ -30,7 +30,7 @@ MxU32 LegoState::Playlist::Next()
 		break;
 
 	case e_random:
-		m_nextIndex = rand() % m_length;
+		m_nextIndex = SDL_rand(m_length);
 		objectId = m_objectIds[m_nextIndex];
 		break;
 

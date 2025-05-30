@@ -453,7 +453,7 @@ MxS32 Act2Actor::VTable0xa0()
 	assert(!m_grec);
 
 	CurrentWorld();
-	MxU16 randomVal = rand() / (RAND_MAX / 2) + 1;
+	MxU16 randomVal = 1 + SDL_rand(2);
 
 	if (m_unk0x48 == 8 && m_unk0x1d != 8) {
 		newLocation = 8;
