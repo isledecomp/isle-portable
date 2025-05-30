@@ -91,6 +91,21 @@ static void ComputeFrameWorldMatrix(IDirect3DRMFrame* frame, D3DRMMATRIX4D out)
 	memcpy(out, acc, sizeof(acc));
 }
 
+D3DVECTOR ComputeTriangleNormal(const D3DVECTOR& v0, const D3DVECTOR& v1, const D3DVECTOR& v2)
+{
+	D3DVECTOR u = {v1.x - v0.x, v1.y - v0.y, v1.z - v0.z};
+	D3DVECTOR v = {v2.x - v0.x, v2.y - v0.y, v2.z - v0.z};
+	D3DVECTOR normal = {u.y * v.z - u.z * v.y, u.z * v.x - u.x * v.z, u.x * v.y - u.y * v.x};
+	float len = std::sqrt(normal.x * normal.x + normal.y * normal.y + normal.z * normal.z);
+	if (len > 0.0f) {
+		normal.x /= len;
+		normal.y /= len;
+		normal.z /= len;
+	}
+
+	return normal;
+}
+
 HRESULT Direct3DRMViewportImpl::CollectSceneData()
 {
 	MINIWIN_NOT_IMPLEMENTED(); // Textures, Materials
@@ -205,14 +220,26 @@ HRESULT Direct3DRMViewportImpl::CollectSceneData()
 						mesh->GetGroup(gi, &vtxCount, &faceCount, &vpf, nullptr, faces.data());
 
 						D3DCOLOR color = mesh->GetGroupColor(gi);
+						D3DRMRENDERQUALITY quality = mesh->GetGroupQuality(gi);
 
 						for (DWORD fi = 0; fi < faceCount; ++fi) {
+							D3DVECTOR norm;
+
+							if (quality == D3DRMRENDER_FLAT || quality == D3DRMRENDER_UNLITFLAT) {
+								// Discard normals and calculate flat ones
+								D3DRMVERTEX& v0 = d3dVerts[faces[fi * vpf + 0]];
+								D3DRMVERTEX& v1 = d3dVerts[faces[fi * vpf + 1]];
+								D3DRMVERTEX& v2 = d3dVerts[faces[fi * vpf + 2]];
+								norm = ComputeTriangleNormal(v0.position, v1.position, v2.position);
+							}
 							for (int idx = 0; idx < vpf; ++idx) {
 								auto& dv = d3dVerts[faces[fi * vpf + idx]];
 
 								// Apply world transform to the vertex
 								D3DVECTOR pos = dv.position;
-								D3DVECTOR norm = dv.normal;
+								if (quality == D3DRMRENDER_GOURAUD || quality == D3DRMRENDER_PHONG) {
+									norm = dv.normal;
+								}
 								D3DVECTOR worldPos;
 								worldPos.x = pos.x * worldMatrix[0][0] + pos.y * worldMatrix[1][0] +
 											 pos.z * worldMatrix[2][0] + worldMatrix[3][0];
