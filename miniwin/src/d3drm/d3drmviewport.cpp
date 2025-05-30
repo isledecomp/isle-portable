@@ -34,9 +34,9 @@ static void D3DRMMatrixMultiply(D3DRMMATRIX4D out, const D3DRMMATRIX4D a, const 
 static D3DVALUE Cofactor3x3(const D3DRMMATRIX4D m, int i, int j)
 {
 	int i1 = (i + 1) % 3;
-	int i2 = (i + 1) % 3;
+	int i2 = (i + 2) % 3;
 	int j1 = (j + 1) % 3;
-	int j2 = (j + 1) % 3;
+	int j2 = (j + 2) % 3;
 	return m[i1][j1] * m[i2][j2] - m[i2][j1] * m[i1][j2];
 }
 
@@ -93,10 +93,11 @@ static void ComputeFrameWorldMatrix(IDirect3DRMFrame* frame, D3DRMMATRIX4D out)
 
 HRESULT Direct3DRMViewportImpl::CollectSceneData()
 {
-	MINIWIN_NOT_IMPLEMENTED(); // Lights, camera, textures, materials
+	MINIWIN_NOT_IMPLEMENTED(); // Textures, Materials
 
 	m_backgroundColor = static_cast<Direct3DRMFrameImpl*>(m_rootFrame)->m_backgroundColor;
 
+	std::vector<SceneLight> lights;
 	std::vector<PositionColorVertex> verts;
 
 	// Compute camera matrix
@@ -105,6 +106,68 @@ HRESULT Direct3DRMViewportImpl::CollectSceneData()
 	D3DRMMatrixInvertOrthogonal(viewMatrix, cameraWorld);
 
 	std::function<void(IDirect3DRMFrame*, D3DRMMATRIX4D)> recurseFrame;
+	std::function<void(IDirect3DRMFrame*, D3DRMMATRIX4D)> recurseChildren;
+
+	recurseChildren = [&](IDirect3DRMFrame* frame, D3DRMMATRIX4D parentMatrix) {
+		// Retrieve the current frame's transform
+		Direct3DRMFrameImpl* frameImpl = static_cast<Direct3DRMFrameImpl*>(frame);
+		D3DRMMATRIX4D localMatrix;
+		memcpy(localMatrix, frameImpl->m_transform, sizeof(D3DRMMATRIX4D));
+
+		// Compute combined world matrix: world = parent * local
+		D3DRMMATRIX4D worldMatrix;
+		D3DRMMatrixMultiply(worldMatrix, parentMatrix, localMatrix);
+
+		// === Extract lights from the frame ===
+		IDirect3DRMLightArray* lightArray = nullptr;
+		if (SUCCEEDED(frame->GetLights(&lightArray)) && lightArray) {
+			DWORD lightCount = lightArray->GetSize();
+			for (DWORD li = 0; li < lightCount; ++li) {
+				IDirect3DRMLight* light = nullptr;
+				if (SUCCEEDED(lightArray->GetElement(li, &light)) && light) {
+					D3DCOLOR color = light->GetColor();
+					D3DRMLIGHTTYPE type = light->GetType();
+
+					SceneLight extracted;
+					extracted.color.r = ((color >> 0) & 0xFF) / 255.0f;
+					extracted.color.g = ((color >> 8) & 0xFF) / 255.0f;
+					extracted.color.b = ((color >> 16) & 0xFF) / 255.0f;
+					extracted.color.a = ((color >> 24) & 0xFF) / 255.0f;
+
+					if (type == D3DRMLIGHT_POINT || type == D3DRMLIGHT_SPOT || type == D3DRMLIGHT_PARALLELPOINT) {
+						extracted.position.x = worldMatrix[3][0];
+						extracted.position.y = worldMatrix[3][1];
+						extracted.position.z = worldMatrix[3][2];
+						extracted.positional = 1.f;
+					}
+
+					if (type == D3DRMLIGHT_DIRECTIONAL || type == D3DRMLIGHT_SPOT) {
+						extracted.direction.x = worldMatrix[2][0];
+						extracted.direction.y = worldMatrix[2][1];
+						extracted.direction.z = worldMatrix[2][2];
+						extracted.directional = 1.f;
+					}
+
+					lights.push_back(extracted);
+
+					light->Release();
+				}
+			}
+			lightArray->Release();
+		}
+
+		IDirect3DRMFrameArray* children = nullptr;
+		if (SUCCEEDED(frame->GetChildren(&children)) && children) {
+			DWORD n = children->GetSize();
+			for (DWORD i = 0; i < n; ++i) {
+				IDirect3DRMFrame* childFrame = nullptr;
+				children->GetElement(i, &childFrame);
+				recurseChildren(childFrame, worldMatrix);
+				childFrame->Release();
+			}
+			children->Release();
+		}
+	};
 
 	recurseFrame = [&](IDirect3DRMFrame* frame, D3DRMMATRIX4D parentMatrix) {
 		// Retrieve the current frame's transform
@@ -137,7 +200,7 @@ HRESULT Direct3DRMViewportImpl::CollectSceneData()
 						mesh->GetGroup(gi, &vtxCount, &faceCount, &vpf, &dataSize, nullptr);
 
 						std::vector<D3DRMVERTEX> d3dVerts(vtxCount);
-						std::vector<DWORD> faces(faceCount * vpf);
+						std::vector<DWORD> faces(dataSize);
 						mesh->GetVertices(gi, 0, vtxCount, d3dVerts.data());
 						mesh->GetGroup(gi, &vtxCount, &faceCount, &vpf, nullptr, faces.data());
 
@@ -194,7 +257,7 @@ HRESULT Direct3DRMViewportImpl::CollectSceneData()
 					mesh->Release();
 				}
 
-				// Recurse into child frames
+				// Recurse into sub frames
 				IDirect3DRMFrame* childFrame = nullptr;
 				if (SUCCEEDED(vis->QueryInterface(IID_IDirect3DRMFrame, (void**) &childFrame)) && childFrame) {
 					recurseFrame(childFrame, worldMatrix);
@@ -210,7 +273,9 @@ HRESULT Direct3DRMViewportImpl::CollectSceneData()
 	D3DRMMATRIX4D identity = {{1.f, 0.f, 0.f, 0.f}, {0.f, 1.f, 0.f, 0.f}, {0.f, 0.f, 1.f, 0.f}, {0.f, 0.f, 0.f, 1.f}};
 
 	recurseFrame(m_rootFrame, identity);
+	recurseChildren(m_rootFrame, identity);
 
+	m_renderer->PushLights(lights.data(), lights.size());
 	m_renderer->PushVertices(verts.data(), verts.size());
 	m_renderer->SetBackbuffer(DDBackBuffer);
 

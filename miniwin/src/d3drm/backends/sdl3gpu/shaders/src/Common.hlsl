@@ -17,3 +17,9 @@ struct FS_Output
     float4 Color : SV_Target0;
     float Depth : SV_Depth;
 };
+
+struct SceneLight {
+    float4 color;
+    float4 position;
+    float4 direction;
+};
