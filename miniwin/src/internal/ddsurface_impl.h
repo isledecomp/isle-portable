@@ -37,8 +37,9 @@ struct DirectDrawSurfaceImpl : public IDirectDrawSurface3 {
 	void SetAutoFlip(bool enabled);
 	HRESULT Unlock(LPVOID lpSurfaceData) override;
 
+	SDL_Surface* m_surface = nullptr;
+
 private:
 	bool m_autoFlip = false;
-	SDL_Surface* m_surface = nullptr;
 	IDirectDrawPalette* m_palette = nullptr;
 };

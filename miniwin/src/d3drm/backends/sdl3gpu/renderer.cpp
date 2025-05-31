@@ -269,6 +269,11 @@ void Direct3DRMSDL3GPURenderer::SetProjection(D3DRMMATRIX4D perspective, D3DVALU
 	memcpy(&m_uniforms.perspective, perspective, sizeof(D3DRMMATRIX4D));
 }
 
+Uint32 Direct3DRMSDL3GPURenderer::GetTextureId(IDirect3DRMTexture* texture)
+{
+	return NO_TEXTURE_ID;
+}
+
 DWORD Direct3DRMSDL3GPURenderer::GetWidth()
 {
 	return m_width;

@@ -221,6 +221,13 @@ HRESULT Direct3DRMViewportImpl::CollectSceneData()
 
 						D3DCOLOR color = mesh->GetGroupColor(gi);
 						D3DRMRENDERQUALITY quality = mesh->GetGroupQuality(gi);
+						IDirect3DRMTexture* texture = nullptr;
+						mesh->GetGroupTexture(gi, &texture);
+						Uint32 texId = NO_TEXTURE_ID;
+						if (texture) {
+							texId = m_renderer->GetTextureId(texture);
+							texture->Release();
+						}
 
 						for (DWORD fi = 0; fi < faceCount; ++fi) {
 							D3DVECTOR norm;
@@ -277,6 +284,7 @@ HRESULT Direct3DRMViewportImpl::CollectSceneData()
 								vtx.g = (color >> 8) & 0xFF;
 								vtx.b = (color >> 0) & 0xFF;
 								vtx.a = (color >> 24) & 0xFF;
+								vtx.texId = texId;
 								verts.push_back(vtx);
 							}
 						}
