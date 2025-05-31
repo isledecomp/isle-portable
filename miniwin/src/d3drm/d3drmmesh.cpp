@@ -153,8 +153,13 @@ HRESULT Direct3DRMMeshImpl::SetGroupTexture(DWORD groupIndex, IDirect3DRMTexture
 		return DDERR_INVALIDPARAMS;
 	}
 
+	auto& group = m_groups[groupIndex];
+	if (group.texture) {
+		group.texture->Release();
+	}
+
 	texture->AddRef();
-	m_groups[groupIndex].texture = texture;
+	group.texture = texture;
 	return DD_OK;
 }
 
