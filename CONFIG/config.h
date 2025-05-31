@@ -1,6 +1,7 @@
 #if !defined(AFX_CONFIG_H)
 #define AFX_CONFIG_H
 
+#include "AboutDlg.h"
 #include "StdAfx.h"
 #include "compat.h"
 #include "decomp.h"
@@ -19,7 +20,7 @@ struct MxDriver;
 
 // VTABLE: CONFIG 0x00406040
 // SIZE 0x108
-class CConfigApp : public CWinApp {
+class CConfigApp : public QApplication {
 public:
 	CConfigApp();
 

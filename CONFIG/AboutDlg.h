@@ -7,7 +7,7 @@
 
 // VTABLE: CONFIG 0x00406308
 // SIZE 0x60
-class CAboutDialog : public CDialog {
+class CAboutDialog : public QDialog {
 public:
 	CAboutDialog();
 	enum {
@@ -15,10 +15,10 @@ public:
 	};
 
 protected:
-	void DoDataExchange(CDataExchange* pDX) override;
+	/*void DoDataExchange(CDataExchange* pDX) override;*/
 
 protected:
-	DECLARE_MESSAGE_MAP()
+	/*DECLARE_MESSAGE_MAP()*/
 };
 
 // SYNTHETIC: CONFIG 0x00403cb0

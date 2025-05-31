@@ -4,7 +4,9 @@
 #define VC_EXTRALEAN // Exclude rarely-used stuff from Windows headers
 
 #ifdef MINIMFC
-#include "miniwin/mfc.h"
+/*#include "miniwin/mfc.h"*/
+#include <QApplication>
+#include <QDialog>
 #else
 #include <afxext.h> // MFC extensions
 #include <afxwin.h> // MFC core and standard components

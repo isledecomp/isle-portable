@@ -491,7 +491,9 @@ if (ISLE_BUILD_APP)
 endif()
 
 if (ISLE_BUILD_CONFIG)
-  add_executable(config WIN32
+  find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
+  qt_standard_project_setup()
+  qt_add_executable(config
     LEGO1/mxdirectx/mxdirectxinfo.cpp
     LEGO1/mxdirectx/legodxinfo.cpp
     CONFIG/config.cpp
@@ -503,7 +505,8 @@ if (ISLE_BUILD_CONFIG)
     CONFIG/res/config.rc
   )
   if (ISLE_MINIWIN)
-    target_link_libraries(config PRIVATE minimfc)
+      target_link_libraries(config PRIVATE minimfc)
+      target_link_libraries(config PRIVATE Qt6::Core Qt6::Widgets)
   endif()
   list(APPEND isle_targets config)
   target_compile_definitions(config PRIVATE _AFXDLL MXDIRECTX_FOR_CONFIG)
