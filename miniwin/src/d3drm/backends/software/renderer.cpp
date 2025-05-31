@@ -19,6 +19,9 @@ void Direct3DRMSoftwareRenderer::SetBackbuffer(SDL_Surface* buf)
 
 void Direct3DRMSoftwareRenderer::PushVertices(const PositionColorVertex* vertices, size_t count)
 {
+	if (!count) {
+		return;
+	}
 	m_vertexBuffer.resize(count);
 	memcpy(m_vertexBuffer.data(), vertices, count * sizeof(PositionColorVertex));
 }
@@ -243,7 +246,7 @@ void Direct3DRMSoftwareRenderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* 
 
 const char* Direct3DRMSoftwareRenderer::GetName()
 {
-	return "Software Rendere";
+	return "Software Renderer";
 }
 
 HRESULT Direct3DRMSoftwareRenderer::Render()
