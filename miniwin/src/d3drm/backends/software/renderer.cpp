@@ -10,15 +10,12 @@
 
 Direct3DRMSoftwareRenderer::Direct3DRMSoftwareRenderer(DWORD width, DWORD height) : m_width(width), m_height(height)
 {
+	m_zBuffer.resize(m_width * m_height);
 }
 
 void Direct3DRMSoftwareRenderer::SetBackbuffer(SDL_Surface* buf)
 {
 	m_backbuffer = buf;
-	if (m_backbuffer) {
-		m_zBuffer.resize(m_width * m_height);
-		std::fill(m_zBuffer.begin(), m_zBuffer.end(), std::numeric_limits<float>::infinity());
-	}
 }
 
 void Direct3DRMSoftwareRenderer::PushLights(const SceneLight* vertices, size_t count)
@@ -28,7 +25,11 @@ void Direct3DRMSoftwareRenderer::PushLights(const SceneLight* vertices, size_t c
 
 void Direct3DRMSoftwareRenderer::PushVertices(const PositionColorVertex* vertices, size_t count)
 {
-	m_vertexBuffer.insert(m_vertexBuffer.end(), vertices, vertices + count);
+	if (!count) {
+		return;
+	}
+	m_vertexBuffer.resize(count);
+	memcpy(m_vertexBuffer.data(), vertices, count * sizeof(PositionColorVertex));
 }
 
 void Direct3DRMSoftwareRenderer::SetProjection(D3DRMMATRIX4D perspective, D3DVALUE front, D3DVALUE back)
@@ -121,6 +122,29 @@ void Direct3DRMSoftwareRenderer::DrawTriangleClipped(
 	}
 }
 
+/**
+ * @todo pre-compute a blending table when running in 256 colors since the game always uses an alpha of 152
+ */
+void Direct3DRMSoftwareRenderer::BlendPixel(Uint8* pixelAddr, const PositionColorVertex& srcColor)
+{
+	Uint32 dstPixel = 0;
+	memcpy(&dstPixel, pixelAddr, m_bytesPerPixel);
+
+	Uint8 dstR, dstG, dstB, dstA;
+	SDL_GetRGBA(dstPixel, m_format, m_palette, &dstR, &dstG, &dstB, &dstA);
+
+	float alpha = srcColor.a / 255.0f;
+	float invAlpha = 1.0f - alpha;
+
+	Uint8 outR = static_cast<Uint8>(srcColor.r * alpha + dstR * invAlpha);
+	Uint8 outG = static_cast<Uint8>(srcColor.g * alpha + dstG * invAlpha);
+	Uint8 outB = static_cast<Uint8>(srcColor.b * alpha + dstB * invAlpha);
+	Uint8 outA = static_cast<Uint8>(srcColor.a + dstA * invAlpha);
+
+	Uint32 blended = SDL_MapRGBA(m_format, m_palette, outR, outG, outB, outA);
+	memcpy(pixelAddr, &blended, m_bytesPerPixel);
+}
+
 void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 	const PositionColorVertex& v0,
 	const PositionColorVertex& v1,
@@ -160,10 +184,11 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 	}
 	float invArea = 1.0f / area;
 
-	const SDL_PixelFormatDetails* format = SDL_GetPixelFormatDetails(m_backbuffer->format);
-	Uint32 color = SDL_MapRGBA(format, nullptr, v0.r, v0.g, v0.b, v0.a);
+	Uint32 color;
+	if (v0.a == 255) {
+		color = SDL_MapRGBA(m_format, m_palette, v0.r, v0.g, v0.b, v0.a);
+	}
 
-	int bytesPerPixel = format->bits_per_pixel / 8;
 	Uint8* pixels = (Uint8*) m_backbuffer->pixels;
 	int pitch = m_backbuffer->pitch;
 
@@ -185,14 +210,19 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 			float z = w0 * z0 + w1 * z1 + w2 * z2;
 
 			int zidx = y * m_width + x;
-			if (z >= m_zBuffer[zidx]) {
+			float& zref = m_zBuffer[zidx];
+			if (z >= zref) {
 				continue;
 			}
 
-			m_zBuffer[zidx] = z;
-			Uint8* pixelAddr = pixels + y * pitch + x * bytesPerPixel;
-			// TODO make color endian safe
-			memcpy(pixelAddr, &color, bytesPerPixel);
+			Uint8* pixelAddr = pixels + y * pitch + x * m_bytesPerPixel;
+			if (v0.a == 255) {
+				zref = z;
+				memcpy(pixelAddr, &color, m_bytesPerPixel);
+			}
+			else {
+				BlendPixel(pixelAddr, v0);
+			}
 		}
 	}
 }
@@ -214,7 +244,7 @@ void Direct3DRMSoftwareRenderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* 
 	helDesc->dcmColorModel = D3DCOLORMODEL::RGB;
 	helDesc->dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
 	helDesc->dwDeviceZBufferBitDepth = DDBD_32;
-	helDesc->dwDeviceRenderBitDepth = DDBD_16 | DDBD_24 | DDBD_32;
+	helDesc->dwDeviceRenderBitDepth = DDBD_8 | DDBD_16 | DDBD_24 | DDBD_32;
 	helDesc->dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
 	helDesc->dpcTriCaps.dwShadeCaps = D3DPSHADECAPS_ALPHAFLATBLEND;
 	helDesc->dpcTriCaps.dwTextureFilterCaps = D3DPTFILTERCAPS_LINEAR;
@@ -222,7 +252,7 @@ void Direct3DRMSoftwareRenderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* 
 
 const char* Direct3DRMSoftwareRenderer::GetName()
 {
-	return "Software Rendere";
+	return "Software Renderer";
 }
 
 HRESULT Direct3DRMSoftwareRenderer::Render()
@@ -231,6 +261,9 @@ HRESULT Direct3DRMSoftwareRenderer::Render()
 		return DDERR_GENERIC;
 	}
 	ClearZBuffer();
+	m_format = SDL_GetPixelFormatDetails(m_backbuffer->format);
+	m_palette = SDL_GetSurfacePalette(m_backbuffer);
+	m_bytesPerPixel = m_format->bits_per_pixel / 8;
 	for (size_t i = 0; i + 2 < m_vertexBuffer.size(); i += 3) {
 		DrawTriangleClipped(m_vertexBuffer[i], m_vertexBuffer[i + 1], m_vertexBuffer[i + 2]);
 	}
