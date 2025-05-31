@@ -206,6 +206,13 @@ HRESULT Direct3DRMMeshImpl::SetGroupQuality(DWORD groupIndex, D3DRMRENDERQUALITY
 		return DDERR_INVALIDPARAMS;
 	}
 
+	switch (quality) {
+	case D3DRMRENDER_WIREFRAME:
+	case D3DRMRENDER_UNLITFLAT:
+		MINIWIN_NOT_IMPLEMENTED();
+		break;
+	}
+
 	m_groups[groupIndex].quality = quality;
 	return DD_OK;
 }
