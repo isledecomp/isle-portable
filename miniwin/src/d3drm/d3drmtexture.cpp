@@ -27,6 +27,6 @@ HRESULT Direct3DRMTextureImpl::Changed(BOOL pixels, BOOL palette)
 	if (!m_surface) {
 		return DDERR_GENERIC;
 	}
-	MINIWIN_NOT_IMPLEMENTED();
+	m_version++;
 	return DD_OK;
 }

@@ -1,5 +1,6 @@
 #include "d3drmrenderer.h"
 #include "d3drmrenderer_software.h"
+#include "ddsurface_impl.h"
 #include "miniwin.h"
 
 #include <SDL3/SDL.h>
@@ -240,6 +241,32 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 	SDL_Color c1 = ApplyLighting(v1);
 	SDL_Color c2 = ApplyLighting(v2);
 
+	SDL_Surface* texture = nullptr;
+	Uint32 texId = v0.texId;
+	if (texId != NO_TEXTURE_ID) {
+		texture = m_textures[texId];
+		if (texture && SDL_LockSurface(texture)) {
+			// Pointer to first pixel data
+			Uint8* pixelAddr = static_cast<Uint8*>(texture->pixels);
+
+			Uint32 pixel;
+			memcpy(&pixel, pixelAddr, m_bytesPerPixel);
+
+			Uint8 r, g, b, a;
+			SDL_GetRGBA(pixel, m_format, m_palette, &r, &g, &b, &a);
+
+			// TODO use the UV to read out and blend texels on the triangle
+			c0.r = r;
+			c0.g = g;
+			c0.b = b;
+			c0.a = a;
+			c1 = c0;
+			c2 = c0;
+
+			SDL_UnlockSurface(texture);
+		}
+	}
+
 	Uint8* pixels = (Uint8*) m_backbuffer->pixels;
 	int pitch = m_backbuffer->pitch;
 
@@ -282,6 +309,55 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 			}
 		}
 	}
+}
+
+struct TextureDestroyContext {
+	Direct3DRMSoftwareRenderer* renderer;
+	Uint32 textureId;
+};
+
+void Direct3DRMSoftwareRenderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture)
+{
+	auto* ctx = new TextureDestroyContext{this, id};
+	texture->AddDestroyCallback(
+		[](IDirect3DRMObject* obj, void* arg) {
+			auto* ctx = static_cast<TextureDestroyContext*>(arg);
+			auto& sufRef = ctx->renderer->m_textures[ctx->textureId];
+			SDL_DestroySurface(sufRef);
+			sufRef = nullptr;
+			delete ctx;
+		},
+		ctx
+	);
+}
+
+Uint32 Direct3DRMSoftwareRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
+{
+	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
+	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
+	SDL_Surface* convertedRender = SDL_ConvertSurface(surface->m_surface, m_backbuffer->format);
+	// Check if already mapped
+	for (Uint32 i = 0; i < m_textures.size(); ++i) {
+		if (m_textures[i] == convertedRender) {
+			return i;
+		}
+	}
+
+	// Reuse freed slot
+	for (Uint32 i = 0; i < m_textures.size(); ++i) {
+		auto& texRef = m_textures[i];
+		if (texRef == nullptr) {
+			texRef = convertedRender;
+			AddTextureDestroyCallback(i, texture);
+			return i;
+		}
+	}
+
+	// Append new
+	Uint32 newId = static_cast<Uint32>(m_textures.size());
+	m_textures.push_back(convertedRender);
+	AddTextureDestroyCallback(newId, texture);
+	return newId;
 }
 
 DWORD Direct3DRMSoftwareRenderer::GetWidth()

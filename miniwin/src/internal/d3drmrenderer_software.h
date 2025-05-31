@@ -1,6 +1,7 @@
 #pragma once
 
 #include "d3drmrenderer.h"
+#include "d3drmtexture_impl.h"
 
 #include <SDL3/SDL.h>
 #include <cstddef>
@@ -14,6 +15,7 @@ public:
 	void SetBackbuffer(SDL_Surface* backbuffer) override;
 	void PushVertices(const PositionColorVertex* vertices, size_t count) override;
 	void PushLights(const SceneLight* vertices, size_t count) override;
+	Uint32 GetTextureId(IDirect3DRMTexture* texture) override;
 	void SetProjection(D3DRMMATRIX4D perspective, D3DVALUE front, D3DVALUE back) override;
 	DWORD GetWidth() override;
 	DWORD GetHeight() override;
@@ -32,6 +34,7 @@ private:
 	void ProjectVertex(const PositionColorVertex&, float&, float&, float&) const;
 	void BlendPixel(Uint8* pixelAddr, Uint8 r, Uint8 g, Uint8 b, Uint8 a);
 	SDL_Color ApplyLighting(const PositionColorVertex& vertex);
+	void AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture);
 
 	DWORD m_width;
 	DWORD m_height;
@@ -40,6 +43,7 @@ private:
 	const SDL_PixelFormatDetails* m_format;
 	int m_bytesPerPixel;
 	std::vector<SceneLight> m_lights;
+	std::vector<SDL_Surface*> m_textures;
 	D3DVALUE m_front;
 	D3DVALUE m_back;
 	std::vector<PositionColorVertex> m_vertexBuffer;

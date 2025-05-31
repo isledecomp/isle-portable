@@ -8,6 +8,8 @@ struct Direct3DRMTextureImpl : public Direct3DRMObjectBaseImpl<IDirect3DRMTextur
 	HRESULT QueryInterface(const GUID& riid, void** ppvObject) override;
 	HRESULT Changed(BOOL pixels, BOOL palette) override;
 
-private:
 	IDirectDrawSurface* m_surface = nullptr;
+
+private:
+	Uint8 m_version = 0;
 };

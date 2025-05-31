@@ -216,7 +216,7 @@ HRESULT DirectDrawSurfaceImpl::Lock(
 		return DDERR_GENERIC;
 	}
 
-	if (SDL_LockSurface(m_surface) < 0) {
+	if (!SDL_LockSurface(m_surface)) {
 		return DDERR_GENERIC;
 	}
 
