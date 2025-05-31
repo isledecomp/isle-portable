@@ -108,8 +108,6 @@ D3DVECTOR ComputeTriangleNormal(const D3DVECTOR& v0, const D3DVECTOR& v1, const 
 
 HRESULT Direct3DRMViewportImpl::CollectSceneData()
 {
-	MINIWIN_NOT_IMPLEMENTED(); // Textures, Materials
-
 	m_backgroundColor = static_cast<Direct3DRMFrameImpl*>(m_rootFrame)->m_backgroundColor;
 
 	std::vector<SceneLight> lights;
@@ -285,6 +283,8 @@ HRESULT Direct3DRMViewportImpl::CollectSceneData()
 								vtx.b = (color >> 0) & 0xFF;
 								vtx.a = (color >> 24) & 0xFF;
 								vtx.texId = texId;
+								vtx.u = dv.tu;
+								vtx.v = dv.tv;
 								verts.push_back(vtx);
 							}
 						}

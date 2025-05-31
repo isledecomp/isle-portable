@@ -191,7 +191,7 @@ void Direct3DRMSDL3GPURenderer::SetBackbuffer(SDL_Surface* buf)
 void Direct3DRMSDL3GPURenderer::PushLights(const SceneLight* vertices, size_t count)
 {
 	if (count > 3) {
-		SDL_LogError(LOG_CATEGORY_MINIWIN, "Unsupported number of lights (%d)", count);
+		SDL_LogError(LOG_CATEGORY_MINIWIN, "Unsupported number of lights (%d)", static_cast<int>(count));
 		count = 3;
 	}
 	memcpy(&m_lights.lights, vertices, sizeof(SceneLight) * count);
