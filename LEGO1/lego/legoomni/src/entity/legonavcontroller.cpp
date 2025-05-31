@@ -352,7 +352,7 @@ MxBool LegoNavController::CalculateNewPosDir(
 		m_rotationalVel = CalculateNewVel(m_targetRotationalVel, m_rotationalVel, m_rotationalAccel * 40.0f, deltaTime);
 	}
 	else {
-		m_rotationalVel = m_targetRotationalVel;
+		m_rotationalVel = m_targetRotationalVel * m_maxRotationalVel * deltaTime;
 	}
 
 	m_linearVel = CalculateNewVel(m_targetLinearVel, m_linearVel, m_linearAccel, deltaTime);
