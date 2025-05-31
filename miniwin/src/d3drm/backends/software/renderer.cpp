@@ -18,9 +18,9 @@ void Direct3DRMSoftwareRenderer::SetBackbuffer(SDL_Surface* buf)
 	m_backbuffer = buf;
 }
 
-void Direct3DRMSoftwareRenderer::PushLights(const SceneLight* vertices, size_t count)
+void Direct3DRMSoftwareRenderer::PushLights(const SceneLight* lights, size_t count)
 {
-	MINIWIN_NOT_IMPLEMENTED();
+	m_lights.assign(lights, lights + count);
 }
 
 void Direct3DRMSoftwareRenderer::PushVertices(const PositionColorVertex* vertices, size_t count)
@@ -41,7 +41,7 @@ void Direct3DRMSoftwareRenderer::SetProjection(D3DRMMATRIX4D perspective, D3DVAL
 
 void Direct3DRMSoftwareRenderer::ClearZBuffer()
 {
-	std::fill(m_zBuffer.begin(), m_zBuffer.end(), std::numeric_limits<float>::infinity());
+	std::fill(m_zBuffer.begin(), m_zBuffer.end(), std::numeric_limits<double>::infinity());
 }
 
 void Direct3DRMSoftwareRenderer::ProjectVertex(const PositionColorVertex& v, float& out_x, float& out_y, float& out_z)
@@ -125,7 +125,7 @@ void Direct3DRMSoftwareRenderer::DrawTriangleClipped(
 /**
  * @todo pre-compute a blending table when running in 256 colors since the game always uses an alpha of 152
  */
-void Direct3DRMSoftwareRenderer::BlendPixel(Uint8* pixelAddr, const PositionColorVertex& srcColor)
+void Direct3DRMSoftwareRenderer::BlendPixel(Uint8* pixelAddr, Uint8 r, Uint8 g, Uint8 b, Uint8 a)
 {
 	Uint32 dstPixel = 0;
 	memcpy(&dstPixel, pixelAddr, m_bytesPerPixel);
@@ -133,16 +133,67 @@ void Direct3DRMSoftwareRenderer::BlendPixel(Uint8* pixelAddr, const PositionColo
 	Uint8 dstR, dstG, dstB, dstA;
 	SDL_GetRGBA(dstPixel, m_format, m_palette, &dstR, &dstG, &dstB, &dstA);
 
-	float alpha = srcColor.a / 255.0f;
+	float alpha = a / 255.0f;
 	float invAlpha = 1.0f - alpha;
 
-	Uint8 outR = static_cast<Uint8>(srcColor.r * alpha + dstR * invAlpha);
-	Uint8 outG = static_cast<Uint8>(srcColor.g * alpha + dstG * invAlpha);
-	Uint8 outB = static_cast<Uint8>(srcColor.b * alpha + dstB * invAlpha);
-	Uint8 outA = static_cast<Uint8>(srcColor.a + dstA * invAlpha);
+	Uint8 outR = static_cast<Uint8>(r * alpha + dstR * invAlpha);
+	Uint8 outG = static_cast<Uint8>(g * alpha + dstG * invAlpha);
+	Uint8 outB = static_cast<Uint8>(b * alpha + dstB * invAlpha);
+	Uint8 outA = static_cast<Uint8>(a + dstA * invAlpha);
 
 	Uint32 blended = SDL_MapRGBA(m_format, m_palette, outR, outG, outB, outA);
 	memcpy(pixelAddr, &blended, m_bytesPerPixel);
+}
+
+SDL_Color Direct3DRMSoftwareRenderer::ApplyLighting(const PositionColorVertex& vertex)
+{
+	float r = 0, g = 0, b = 0;
+	for (const SceneLight& light : m_lights) {
+		if (light.positional == 0.f && light.directional == 0.f) {
+			// Ambient light
+			r += light.color.r;
+			g += light.color.g;
+			b += light.color.b;
+		}
+		else if (light.directional == 1.f) {
+			// Directional
+			D3DVECTOR L = light.direction;
+			float Llen = std::sqrt(L.x * L.x + L.y * L.y + L.z * L.z);
+			if (Llen > 0.f) {
+				L.x /= Llen;
+				L.y /= Llen;
+				L.z /= Llen;
+				float ndotl = std::max(0.0f, -(vertex.nx * L.x + vertex.ny * L.y + vertex.nz * L.z));
+				r += light.color.r * ndotl;
+				g += light.color.g * ndotl;
+				b += light.color.b * ndotl;
+			}
+		}
+		else if (light.positional == 1.f) {
+			// Point
+			D3DVECTOR L = {light.position.x - vertex.x, light.position.y - vertex.y, light.position.z - vertex.z};
+			float Llen = std::sqrt(L.x * L.x + L.y * L.y + L.z * L.z);
+			if (Llen > 0.f) {
+				L.x /= Llen;
+				L.y /= Llen;
+				L.z /= Llen;
+				float ndotl = std::max(0.0f, vertex.nx * L.x + vertex.ny * L.y + vertex.nz * L.z);
+				r += light.color.r * ndotl;
+				g += light.color.g * ndotl;
+				b += light.color.b * ndotl;
+			}
+		}
+	}
+	r = std::min(1.0f, r);
+	g = std::min(1.0f, g);
+	b = std::min(1.0f, b);
+
+	return {
+		static_cast<Uint8>(vertex.r * r),
+		static_cast<Uint8>(vertex.g * g),
+		static_cast<Uint8>(vertex.b * b),
+		vertex.a
+	};
 }
 
 void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
@@ -175,53 +226,59 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 		return;
 	}
 
-	auto edge = [](float x0, float y0, float x1, float y1, float x, float y) {
+	auto edge = [](double x0, double y0, double x1, double y1, double x, double y) {
 		return (x - x0) * (y1 - y0) - (y - y0) * (x1 - x0);
 	};
-	float area = edge(x0, y0, x1, y1, x2, y2);
+	double area = edge(x0, y0, x1, y1, x2, y2);
 	if (area >= 0) {
 		return;
 	}
-	float invArea = 1.0f / area;
+	double invArea = 1.0f / area;
 
-	Uint32 color;
-	if (v0.a == 255) {
-		color = SDL_MapRGBA(m_format, m_palette, v0.r, v0.g, v0.b, v0.a);
-	}
+	// Per-vertex lighting using vertex normals
+	SDL_Color c0 = ApplyLighting(v0);
+	SDL_Color c1 = ApplyLighting(v1);
+	SDL_Color c2 = ApplyLighting(v2);
 
 	Uint8* pixels = (Uint8*) m_backbuffer->pixels;
 	int pitch = m_backbuffer->pitch;
 
 	for (int y = minY; y <= maxY; ++y) {
 		for (int x = minX; x <= maxX; ++x) {
-			float px = x + 0.5f;
-			float py = y + 0.5f;
-			float w0 = edge(x1, y1, x2, y2, px, py) * invArea;
+			double px = x + 0.5f;
+			double py = y + 0.5f;
+			double w0 = edge(x1, y1, x2, y2, px, py) * invArea;
 			if (w0 < 0.0f || w0 > 1.0f) {
 				continue;
 			}
 
-			float w1 = edge(x2, y2, x0, y0, px, py) * invArea;
+			double w1 = edge(x2, y2, x0, y0, px, py) * invArea;
 			if (w1 < 0.0f || w1 > 1.0f - w0) {
 				continue;
 			}
 
-			float w2 = 1.0f - w0 - w1;
-			float z = w0 * z0 + w1 * z1 + w2 * z2;
+			double w2 = 1.0f - w0 - w1;
+			double z = w0 * z0 + w1 * z1 + w2 * z2;
 
 			int zidx = y * m_width + x;
-			float& zref = m_zBuffer[zidx];
+			double& zref = m_zBuffer[zidx];
 			if (z >= zref) {
 				continue;
 			}
 
+			// Interpolate color
+			Uint8 r = static_cast<Uint8>(w0 * c0.r + w1 * c1.r + w2 * c2.r);
+			Uint8 g = static_cast<Uint8>(w0 * c0.g + w1 * c1.g + w2 * c2.g);
+			Uint8 b = static_cast<Uint8>(w0 * c0.b + w1 * c1.b + w2 * c2.b);
 			Uint8* pixelAddr = pixels + y * pitch + x * m_bytesPerPixel;
+
 			if (v0.a == 255) {
 				zref = z;
-				memcpy(pixelAddr, &color, m_bytesPerPixel);
+				Uint32 finalColor = SDL_MapRGBA(m_format, m_palette, r, g, b, 255);
+				memcpy(pixelAddr, &finalColor, m_bytesPerPixel);
 			}
 			else {
-				BlendPixel(pixelAddr, v0);
+				BlendPixel(pixelAddr, r, g, b, v0.a);
 			}
 		}
 	}
