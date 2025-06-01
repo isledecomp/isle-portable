@@ -31,24 +31,32 @@ static void D3DRMMatrixMultiply(D3DRMMATRIX4D out, const D3DRMMATRIX4D a, const 
 	}
 }
 
-static D3DVALUE Cofactor3x3(const D3DRMMATRIX4D m, int i, int j)
-{
-	int i1 = (i + 1) % 3;
-	int i2 = (i + 2) % 3;
-	int j1 = (j + 1) % 3;
-	int j2 = (j + 2) % 3;
-	return m[i1][j1] * m[i2][j2] - m[i2][j1] * m[i1][j2];
-}
-
 static void D3DRMMatrixInvertForNormal(Matrix3x3 out, const D3DRMMATRIX4D m)
 {
-	assert(m[3][3] == 1.f);
-	float detM = m[0][0] * Cofactor3x3(m, 0, 0) - m[0][1] * Cofactor3x3(m, 0, 1) + m[0][2] * Cofactor3x3(m, 0, 2);
-	for (int i = 0; i < 3; ++i) {
-		for (int j = 0; j < 3; ++j) {
-			out[i][j] = (((i + j) % 2) ? -1 : 1) * Cofactor3x3(m, i, j) / detM;
-		}
+	float a = m[0][0], b = m[0][1], c = m[0][2];
+	float d = m[1][0], e = m[1][1], f = m[1][2];
+	float g = m[2][0], h = m[2][1], i = m[2][2];
+
+	float det = a * (e * i - f * h) - b * (d * i - f * g) + c * (d * h - e * g);
+
+	if (fabs(det) < 1e-6f) {
+		memset(out, 0, sizeof(Matrix3x3));
+		return;
 	}
+
+	float invDet = 1.0f / det;
+
+	out[0][0] = (e * i - f * h) * invDet;
+	out[1][0] = (c * h - b * i) * invDet;
+	out[2][0] = (b * f - c * e) * invDet;
+
+	out[0][1] = (f * g - d * i) * invDet;
+	out[1][1] = (a * i - c * g) * invDet;
+	out[2][1] = (c * d - a * f) * invDet;
+
+	out[0][2] = (d * h - e * g) * invDet;
+	out[1][2] = (b * g - a * h) * invDet;
+	out[2][2] = (a * e - b * d) * invDet;
 }
 
 static void D3DRMMatrixInvertOrthogonal(D3DRMMATRIX4D out, const D3DRMMATRIX4D m)
@@ -270,6 +278,15 @@ HRESULT Direct3DRMViewportImpl::CollectSceneData()
 											 norm.z * worldMatrixInvert[2][1];
 								viewNorm.z = norm.x * worldMatrixInvert[0][2] + norm.y * worldMatrixInvert[1][2] +
 											 norm.z * worldMatrixInvert[2][2];
+
+								float len =
+									sqrtf(viewNorm.x * viewNorm.x + viewNorm.y * viewNorm.y + viewNorm.z * viewNorm.z);
+								if (len > 0.0f) {
+									float invLen = 1.0f / len;
+									viewNorm.x *= invLen;
+									viewNorm.y *= invLen;
+									viewNorm.z *= invLen;
+								}
 
 								PositionColorVertex vtx;
 								vtx.x = viewPos.x;
