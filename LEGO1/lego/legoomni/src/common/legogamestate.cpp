@@ -172,7 +172,7 @@ LegoGameState::LegoGameState()
 	VariableTable()->SetVariable(m_fullScreenMovie);
 
 	VariableTable()->SetVariable("lightposition", "2");
-	SerializeScoreHistory(1);
+	SerializeScoreHistory(LegoFile::c_read);
 }
 
 // FUNCTION: LEGO1 0x10039720
@@ -317,7 +317,7 @@ MxResult LegoGameState::Save(MxULong p_slot)
 
 	area = m_unk0x42c;
 	storage.WriteU16(area);
-	SerializeScoreHistory(2);
+	SerializeScoreHistory(LegoFile::c_write);
 	m_isDirty = FALSE;
 
 done:
