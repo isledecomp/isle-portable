@@ -573,6 +573,7 @@ void LegoGameState::GetFileSavePath(MxString* p_outPath, MxS16 p_slotn)
 	// Extension: ".GS"
 	strcat(path, g_fileExtensionGS);
 	*p_outPath = MxString(path);
+	p_outPath->MapPathToFilesystem();
 }
 
 // FUNCTION: LEGO1 0x1003a2e0
