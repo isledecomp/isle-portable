@@ -27,7 +27,7 @@ option(ISLE_UBSAN "Enable Undefined Behavior Sanitizer" OFF)
 option(ISLE_WERROR "Treat warnings as errors" OFF)
 option(ISLE_DEBUG "Enable imgui debug" ON)
 cmake_dependent_option(ISLE_USE_DX5 "Build with internal DirectX 5 SDK" "${NOT_MINGW}" "WIN32;CMAKE_SIZEOF_VOID_P EQUAL 4" OFF)
-cmake_dependent_option(ISLE_MINIWIN "Use miniwin and minimfc" ON "NOT ISLE_USE_DX5" OFF)
+cmake_dependent_option(ISLE_MINIWIN "Use miniwin" ON "NOT ISLE_USE_DX5" OFF)
 cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "MSVC OR ISLE_MINIWIN" OFF)
 cmake_dependent_option(ISLE_COMPILE_SHADERS "Compile shaders" ON "SDL_SHADERCROSS_BIN;TARGET Python3::Interpreter" OFF)
 option(CMAKE_POSITION_INDEPENDENT_CODE "Build with -fPIC" ON)
@@ -497,17 +497,17 @@ if (ISLE_BUILD_CONFIG)
     LEGO1/mxdirectx/mxdirectxinfo.cpp
     LEGO1/mxdirectx/legodxinfo.cpp
     CONFIG/config.cpp
-    CONFIG/ConfigCommandLineInfo.cpp
     CONFIG/AboutDlg.cpp
     CONFIG/MainDlg.cpp
     CONFIG/detectdx5.cpp
-    CONFIG/StdAfx.cpp
     CONFIG/res/config.rc
+    CONFIG/res/config.qrc
   )
-  if (ISLE_MINIWIN)
-      target_link_libraries(config PRIVATE minimfc)
-      target_link_libraries(config PRIVATE Qt6::Core Qt6::Widgets)
-  endif()
+  target_link_libraries(config PRIVATE Qt6::Core Qt6::Widgets)
+  set_property(TARGET config PROPERTY AUTOMOC ON)
+  set_property(TARGET config PROPERTY AUTORCC ON)
+  set_property(TARGET config PROPERTY AUTOUIC ON)
+  set_property(TARGET config PROPERTY AUTOUIC_SEARCH_PATHS "${CMAKE_CURRENT_SOURCE_DIR}/CONFIG/res")
   list(APPEND isle_targets config)
   target_compile_definitions(config PRIVATE _AFXDLL MXDIRECTX_FOR_CONFIG)
   target_include_directories(config PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/LEGO1")
@@ -516,7 +516,7 @@ if (ISLE_BUILD_CONFIG)
     target_link_libraries(config PRIVATE DirectX5::DirectX5)
   endif()
   target_compile_definitions(config PRIVATE DIRECT3D_VERSION=0x500)
-  target_link_libraries(config PRIVATE SDL3::SDL3)
+  target_link_libraries(config PRIVATE SDL3::SDL3 iniparser-static)
   if (NOT ISLE_MINIWIN)
     target_link_libraries(config PRIVATE ddraw dxguid)
   endif()

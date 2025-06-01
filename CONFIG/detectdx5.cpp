@@ -3,8 +3,8 @@
 #ifdef MINIWIN
 #include "miniwin/ddraw.h"
 #include "miniwin/dinput.h"
-#include "qoperatingsystemversion.h"
 #include "qlibrary.h"
+#include "qoperatingsystemversion.h"
 #else
 #include <ddraw.h>
 #include <dinput.h>
@@ -17,138 +17,142 @@ typedef HRESULT WINAPI
 DirectInputCreateA_fn(HINSTANCE hinst, DWORD dwVersion, LPDIRECTINPUTA* ppDI, LPUNKNOWN punkOuter);
 
 // FUNCTION: CONFIG 0x004048f0
-BOOL DetectDirectX5()
+bool DetectDirectX5()
 {
 	unsigned int version;
-	BOOL found;
+	bool found;
 	DetectDirectX(&version, &found);
 	return version >= 0x500;
 }
 
 // FUNCTION: CONFIG 0x00404920
-void DetectDirectX(unsigned int* p_version, BOOL* p_found)
+void DetectDirectX(unsigned int* p_version, bool* p_found)
 {
-    QOperatingSystemVersion os_version = QOperatingSystemVersion::current();
+#ifdef MINIWIN
+	QOperatingSystemVersion os_version = QOperatingSystemVersion::current();
+	*p_found = true;
+	*p_version = 0x500;
+#else
 
-	if (os_version.type() == QOperatingSystemVersion::Unknown) {
+	OSVERSIONINFOA os_version;
+
+	os_version.dwOSVersionInfoSize = sizeof(os_version);
+	if (!GetVersionEx(&os_version)) {
 		*p_version = 0;
 		*p_found = 0;
 		return;
 	}
-	if (os_version.type() == QOperatingSystemVersion::Windows) {
+	if (os_version.dwPlatformId == 2) {
 		*p_found = 2;
-		if (os_version.majorVersion() < 4) {
+		if (os_version.dwMajorVersion < 4) {
 			*p_found = 0;
 			return;
 		}
-		if (os_version.majorVersion() != 4) {
-			*p_version = 0x501;
+		if (os_version.dwMajorVersion != 4) {
+			*p_version = MAKEWORD(5, 1);
 			return;
 		}
 		*p_version = 0x200;
-		QLibrary dinput_module("DINPUT.DLL");
-		dinput_module.load();
-		if (!dinput_module.isLoaded()) {
-			QT_DEBUG("Couldn't LoadLibrary DInput\r\n");
+		HMODULE dinput_module = LoadLibrary("DINPUT.DLL");
+		if (!dinput_module) {
+			OutputDebugString("Couldn't LoadLibrary DInput\r\n");
 			return;
 		}
 		DirectInputCreateA_fn* func_DirectInputCreateA =
-			reinterpret_cast<DirectInputCreateA_fn*>(dinput_module.resolve("DirectInputCreateA"));
-		dinput_module.unload();
+			(DirectInputCreateA_fn*) GetProcAddress(dinput_module, "DirectInputCreateA");
+		FreeLibrary(dinput_module);
 		if (!func_DirectInputCreateA) {
-			QT_DEBUG("Couldn't GetProcAddress DInputCreate\r\n");
+			OutputDebugString("Couldn't GetProcAddress DInputCreate\r\n");
 			return;
 		}
-		*p_version = 0x300;
+		*p_version = MAKEWORD(3, 0);
 		return;
 	}
-	*p_found = 1;
-	if (os_version.majorVersion() >= 0x550) {
-		QT_DEBUG("what is this for??");
-		*p_version = 0x501;
+	*p_found = true;
+	if (LOWORD(os_version.dwBuildNumber) >= 0x550) {
+		*p_version = MAKEWORD(5, 1);
 		return;
 	}
-	QLibrary ddraw_module("DDRAW.DLL");
-	ddraw_module.load();
-	if (!ddraw_module.isLoaded()) {
+	HMODULE ddraw_module = LoadLibrary("DDRAW.DLL");
+	if (!ddraw_module) {
 		*p_version = 0;
-		*p_found = 0;
-		ddraw_module.unload();
+		*p_found = false;
+		FreeLibrary(ddraw_module);
 		return;
 	}
 	DirectDrawCreate_fn* func_DirectDrawCreate =
-		reinterpret_cast<DirectDrawCreate_fn*>(ddraw_module.resolve("DirectDrawCreate"));
+		(DirectDrawCreate_fn*) GetProcAddress(ddraw_module, "DirectDrawCreate");
 	if (!func_DirectDrawCreate) {
 		*p_version = 0;
-		*p_found = 0;
-		ddraw_module.unload();
-		QT_DEBUG("Couldn't LoadLibrary DDraw\r\n");
+		*p_found = false;
+		FreeLibrary(ddraw_module);
+		OutputDebugString("Couldn't LoadLibrary DDraw\r\n");
 		return;
 	}
 	LPDIRECTDRAW ddraw;
-	if (func_DirectDrawCreate(NULL, &ddraw, NULL) < 0) {
+	if (FAILED(func_DirectDrawCreate(NULL, &ddraw, NULL))) {
 		*p_version = 0;
-		*p_found = 0;
-		ddraw_module.unload();
-		QT_DEBUG("Couldn't create DDraw\r\n");
+		*p_found = false;
+		FreeLibrary(ddraw_module);
+		OutputDebugString("Couldn't create DDraw\r\n");
 		return;
 	}
-	*p_version = 0x100;
+	*p_version = MAKEWORD(1, 0);
 	LPDIRECTDRAW2 ddraw2;
-	if (ddraw->QueryInterface(IID_IDirectDraw2, (LPVOID*) &ddraw2) < 0) {
+	if (FAILED(ddraw->QueryInterface(IID_IDirectDraw2, (LPVOID*) &ddraw2))) {
 		ddraw->Release();
-		ddraw_module.unload();
-		QT_DEBUG("Couldn't QI DDraw2\r\n");
+		FreeLibrary(ddraw_module);
+		OutputDebugString("Couldn't QI DDraw2\r\n");
 		return;
 	}
 	ddraw->Release();
-	*p_version = 0x200;
-	QLibrary dinput_module("DINPUT.DLL");
-	dinput_module.load();
-	if (!dinput_module.isLoaded()) {
-		QT_DEBUG("Couldn't LoadLibrary DInput\r\n");
+	*p_version = MAKEWORD(2, 0);
+	HMODULE dinput_module = LoadLibrary("DINPUT.DLL");
+	if (!dinput_module) {
+		OutputDebugString("Couldn't LoadLibrary DInput\r\n");
 		ddraw2->Release();
-		ddraw_module.unload();
+		FreeLibrary(ddraw_module);
 		return;
 	}
 	DirectInputCreateA_fn* func_DirectInputCreateA =
-		reinterpret_cast<DirectInputCreateA_fn*>(dinput_module.resolve("DirectInputCreateA"));
-	dinput_module.unload();
+		(DirectInputCreateA_fn*) GetProcAddress(dinput_module, "DirectInputCreateA");
+	FreeLibrary(dinput_module);
 	if (!func_DirectInputCreateA) {
-		ddraw_module.unload();
+		FreeLibrary(ddraw_module);
 		ddraw2->Release();
-		QT_DEBUG("Couldn't GetProcAddress DInputCreate\r\n");
+		OutputDebugString("Couldn't GetProcAddress DInputCreate\r\n");
 		return;
 	}
-	*p_version = 0x300;
+	*p_version = MAKEWORD(3, 0);
 	DDSURFACEDESC surface_desc;
 	memset(&surface_desc, 0, sizeof(surface_desc));
 	surface_desc.dwSize = sizeof(surface_desc);
 	surface_desc.dwFlags = DDSD_CAPS;
 	surface_desc.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE;
-	if (ddraw2->SetCooperativeLevel(NULL, DDSCL_NORMAL) < 0) {
+	if (FAILED(ddraw2->SetCooperativeLevel(NULL, DDSCL_NORMAL))) {
 		ddraw2->Release();
-		ddraw_module.unload();
+		FreeLibrary(ddraw_module);
 		*p_version = 0;
-		QT_DEBUG("Couldn't Set coop level\r\n");
+		OutputDebugString("Couldn't Set coop level\r\n");
 		return;
 	}
 	LPDIRECTDRAWSURFACE surface;
-	if (ddraw2->CreateSurface(&surface_desc, &surface, NULL) < 0) {
+	if (FAILED(ddraw2->CreateSurface(&surface_desc, &surface, NULL))) {
 		ddraw2->Release();
-		ddraw_module.unload();
+		FreeLibrary(ddraw_module);
 		*p_version = 0;
-		QT_DEBUG("Couldn't CreateSurface\r\n");
+		OutputDebugString("Couldn't CreateSurface\r\n");
 		return;
 	}
 	LPDIRECTDRAWSURFACE3 surface3;
-	if (surface->QueryInterface(IID_IDirectDrawSurface3, reinterpret_cast<LPVOID*>(&surface3)) < 0) {
+	if (FAILED(surface->QueryInterface(IID_IDirectDrawSurface3, (LPVOID*) &surface3))) {
 		ddraw2->Release();
-		ddraw_module.unload();
+		FreeLibrary(ddraw_module);
 		return;
 	}
-	*p_version = 0x500;
+	*p_version = MAKEWORD(5, 0);
 	surface3->Release();
 	ddraw2->Release();
-	ddraw_module.unload();
+	FreeLibrary(ddraw_module);
+#endif
 }

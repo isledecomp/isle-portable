@@ -7,8 +7,8 @@
 #include <windows.h>
 #endif
 
-extern BOOL DetectDirectX5();
+extern bool DetectDirectX5();
 
-extern void DetectDirectX(unsigned int* p_version, BOOL* p_found);
+extern void DetectDirectX(unsigned int* p_version, bool* p_found);
 
 #endif // !defined(AFX_DETECTDX5_H)

@@ -1,24 +1,27 @@
 #if !defined(AFX_ABOUTDLG_H)
 #define AFX_ABOUTDLG_H
 
-#include "StdAfx.h"
 #include "compat.h"
 #include "res/resource.h"
+
+#include <QDialog>
+
+namespace Ui
+{
+class AboutDialog;
+}
 
 // VTABLE: CONFIG 0x00406308
 // SIZE 0x60
 class CAboutDialog : public QDialog {
 public:
 	CAboutDialog();
-	enum {
-		IDD = IDD_ABOUT
-	};
 
 protected:
 	/*void DoDataExchange(CDataExchange* pDX) override;*/
 
 protected:
-	/*DECLARE_MESSAGE_MAP()*/
+	Ui::AboutDialog* m_ui;
 };
 
 // SYNTHETIC: CONFIG 0x00403cb0
