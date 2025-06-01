@@ -11,6 +11,7 @@ typedef struct PositionColorVertex {
 	float nx, ny, nz;
 	Uint8 r, g, b, a;
 	Uint32 texId = NO_TEXTURE_ID;
+	float u, v;
 } PositionColorVertex;
 
 struct FColor {

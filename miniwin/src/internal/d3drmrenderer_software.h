@@ -9,6 +9,12 @@
 
 DEFINE_GUID(SOFTWARE_GUID, 0x682656F3, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02);
 
+struct TextureCache {
+	Direct3DRMTextureImpl* texture;
+	Uint8 version;
+	SDL_Surface* cached;
+};
+
 class Direct3DRMSoftwareRenderer : public Direct3DRMRenderer {
 public:
 	Direct3DRMSoftwareRenderer(DWORD width, DWORD height);
@@ -31,7 +37,7 @@ private:
 		const PositionColorVertex& v1,
 		const PositionColorVertex& v2
 	);
-	void ProjectVertex(const PositionColorVertex&, float&, float&, float&) const;
+	void ProjectVertex(const PositionColorVertex& v, D3DRMVECTOR4D& p) const;
 	void BlendPixel(Uint8* pixelAddr, Uint8 r, Uint8 g, Uint8 b, Uint8 a);
 	SDL_Color ApplyLighting(const PositionColorVertex& vertex);
 	void AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture);
@@ -43,10 +49,10 @@ private:
 	const SDL_PixelFormatDetails* m_format;
 	int m_bytesPerPixel;
 	std::vector<SceneLight> m_lights;
-	std::vector<SDL_Surface*> m_textures;
+	std::vector<TextureCache> m_textures;
 	D3DVALUE m_front;
 	D3DVALUE m_back;
 	std::vector<PositionColorVertex> m_vertexBuffer;
 	float proj[4][4] = {0};
-	std::vector<double> m_zBuffer;
+	std::vector<float> m_zBuffer;
 };
