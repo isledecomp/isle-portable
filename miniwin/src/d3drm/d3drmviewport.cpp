@@ -229,10 +229,17 @@ HRESULT Direct3DRMViewportImpl::CollectSceneData()
 						D3DRMRENDERQUALITY quality = mesh->GetGroupQuality(gi);
 						IDirect3DRMTexture* texture = nullptr;
 						mesh->GetGroupTexture(gi, &texture);
+						IDirect3DRMMaterial* material = nullptr;
+						mesh->GetGroupMaterial(gi, &material);
 						Uint32 texId = NO_TEXTURE_ID;
 						if (texture) {
 							texId = m_renderer->GetTextureId(texture);
 							texture->Release();
+						}
+						float shininess = 0.0f;
+						if (material) {
+							shininess = material->GetPower();
+							material->Release();
 						}
 
 						for (DWORD fi = 0; fi < faceCount; ++fi) {
@@ -299,6 +306,7 @@ HRESULT Direct3DRMViewportImpl::CollectSceneData()
 								vtx.g = (color >> 8) & 0xFF;
 								vtx.b = (color >> 0) & 0xFF;
 								vtx.a = (color >> 24) & 0xFF;
+								vtx.shininess = shininess;
 								vtx.texId = texId;
 								vtx.u = dv.tu;
 								vtx.v = dv.tv;

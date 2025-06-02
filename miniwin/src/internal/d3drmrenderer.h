@@ -12,6 +12,7 @@ typedef struct PositionColorVertex {
 	Uint8 r, g, b, a;
 	Uint32 texId = NO_TEXTURE_ID;
 	float u, v;
+	float shininess;
 } PositionColorVertex;
 
 struct FColor {
