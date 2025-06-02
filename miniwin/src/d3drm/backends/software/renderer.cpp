@@ -164,51 +164,70 @@ void Direct3DRMSoftwareRenderer::BlendPixel(Uint8* pixelAddr, Uint8 r, Uint8 g, 
 
 SDL_Color Direct3DRMSoftwareRenderer::ApplyLighting(const PositionColorVertex& vertex)
 {
-	float r = 0, g = 0, b = 0;
-	for (const SceneLight& light : m_lights) {
-		if (light.positional == 0.f && light.directional == 0.f) {
+	FColor specular = {0, 0, 0, 0};
+	FColor diffuse = {0, 0, 0, 0};
+
+	// Position and normal
+	D3DVECTOR position = {vertex.x, vertex.y, vertex.z};
+	D3DVECTOR normal = {vertex.nx, vertex.ny, vertex.nz};
+	float normLen = std::sqrt(normal.x * normal.x + normal.y * normal.y + normal.z * normal.z);
+	if (normLen == 0.0f) {
+		return {vertex.r, vertex.g, vertex.b, vertex.a};
+	}
+
+	normal.x /= normLen;
+	normal.y /= normLen;
+	normal.z /= normLen;
+
+	for (const auto& light : m_lights) {
+		FColor lightColor = light.color;
+
+		if (light.positional == 0.0f && light.directional == 0.0f) {
 			// Ambient light
-			r += light.color.r;
-			g += light.color.g;
-			b += light.color.b;
+			diffuse.r += lightColor.r;
+			diffuse.g += lightColor.g;
+			diffuse.b += lightColor.b;
+			continue;
 		}
-		else if (light.directional == 1.f) {
-			// Directional
-			D3DVECTOR L = light.direction;
-			float Llen = std::sqrt(L.x * L.x + L.y * L.y + L.z * L.z);
-			if (Llen > 0.f) {
-				L.x /= Llen;
-				L.y /= Llen;
-				L.z /= Llen;
-				float ndotl = std::max(0.0f, -(vertex.nx * L.x + vertex.ny * L.y + vertex.nz * L.z));
-				r += light.color.r * ndotl;
-				g += light.color.g * ndotl;
-				b += light.color.b * ndotl;
-			}
+
+		// TODO lightVec only has to be calculated once per frame for directional lights
+		D3DVECTOR lightVec;
+		if (light.directional == 1.0f) {
+			lightVec = {-light.direction.x, -light.direction.y, -light.direction.z};
 		}
-		else if (light.positional == 1.f) {
-			// Point
-			D3DVECTOR L = {light.position.x - vertex.x, light.position.y - vertex.y, light.position.z - vertex.z};
-			float Llen = std::sqrt(L.x * L.x + L.y * L.y + L.z * L.z);
-			if (Llen > 0.f) {
-				L.x /= Llen;
-				L.y /= Llen;
-				L.z /= Llen;
-				float ndotl = std::max(0.0f, vertex.nx * L.x + vertex.ny * L.y + vertex.nz * L.z);
-				r += light.color.r * ndotl;
-				g += light.color.g * ndotl;
-				b += light.color.b * ndotl;
+		else if (light.positional == 1.0f) {
+			lightVec = {light.position.x - position.x, light.position.y - position.y, light.position.z - position.z};
+		}
+
+		float len = std::sqrt(lightVec.x * lightVec.x + lightVec.y * lightVec.y + lightVec.z * lightVec.z);
+		if (len == 0.0f) {
+			continue;
+		}
+		lightVec.x /= len;
+		lightVec.y /= len;
+		lightVec.z /= len;
+
+		float dotNL = normal.x * lightVec.x + normal.y * lightVec.y + normal.z * lightVec.z;
+		if (dotNL > 0.0f) {
+			// Diffuse contribution
+			diffuse.r += dotNL * lightColor.r;
+			diffuse.g += dotNL * lightColor.g;
+			diffuse.b += dotNL * lightColor.b;
+
+			if (vertex.shininess != 0.0f) {
+				// Using dotNL ignores view angle, but this matches DirectX 5 behavior.
+				float spec = std::pow(dotNL, vertex.shininess);
+				specular.r += spec * lightColor.r;
+				specular.g += spec * lightColor.g;
+				specular.b += spec * lightColor.b;
 			}
 		}
 	}
-	r = std::min(1.0f, r);
-	g = std::min(1.0f, g);
-	b = std::min(1.0f, b);
 
-	return {
-		static_cast<Uint8>(vertex.r * r),
-		static_cast<Uint8>(vertex.g * g),
-		static_cast<Uint8>(vertex.b * b),
+	return SDL_Color{
+		static_cast<Uint8>(std::min(255.0f, diffuse.r * vertex.r + specular.r * 255.0f)),
+		static_cast<Uint8>(std::min(255.0f, diffuse.g * vertex.g + specular.g * 255.0f)),
+		static_cast<Uint8>(std::min(255.0f, diffuse.b * vertex.b + specular.b * 255.0f)),
 		vertex.a
 	};
 }
