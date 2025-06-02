@@ -8,7 +8,6 @@ Direct3DRMTextureImpl::Direct3DRMTextureImpl(D3DRMIMAGE* image)
 
 Direct3DRMTextureImpl::Direct3DRMTextureImpl(IDirectDrawSurface* surface) : m_surface(surface)
 {
-	MINIWIN_NOT_IMPLEMENTED();
 }
 
 HRESULT Direct3DRMTextureImpl::QueryInterface(const GUID& riid, void** ppvObject)
