@@ -374,19 +374,3 @@ int main(int argc, char* argv[])
 	g_theApp.ExitInstance();
 	return result;
 }
-
-#ifdef _WIN32
-extern "C" int APIENTRY WinMain(HINSTANCE instance, HINSTANCE prevInstance, LPSTR /*cmdParamarg*/, int cmdShow)
-{
-	// Work-around problems with wchar_t as a native type
-	const unsigned short* cmdLineUtf16 = reinterpret_cast<const unsigned short*>(GetCommandLineW());
-	QByteArray cmdParam = QString::fromUtf16(cmdLineUtf16).toLocal8Bit();
-
-	int argc = 0;
-	QVector<char*> argv(8);
-	qWinMain(instance, prevInstance, cmdParam.data(), cmdShow, argc, argv);
-
-	int result = main(argc, argv.data());
-	return result;
-}
-#endif

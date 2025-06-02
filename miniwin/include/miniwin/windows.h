@@ -79,7 +79,7 @@ typedef struct HWND__* HWND;
 typedef HINSTANCE HMODULE;
 typedef struct HDC__* HDC;
 typedef struct HPALETTE__* HPALETTE;
-typedef struct HCURSOR__* HCURSOR;
+typedef HICON HCURSOR;
 typedef HANDLE HFILE;
 typedef int LSTATUS, HKEY, REGSAM;
 
