@@ -60,7 +60,8 @@
 // --- Typedefs ---
 typedef uint8_t BYTE, byte;
 typedef int32_t LONG;
-typedef uint32_t ULONG, DWORD, HRESULT;
+typedef uint32_t ULONG, DWORD;
+typedef long HRESULT;
 typedef DWORD* LPDWORD;
 typedef int BOOL, WINBOOL, INT;
 typedef unsigned int UINT;
@@ -70,10 +71,16 @@ typedef void* LPVOID;
 typedef char* LPSTR;
 typedef const char* LPCSTR;
 typedef void* HANDLE;
-typedef HANDLE HICON, HFONT;
+typedef struct HICON__* HICON;
+typedef struct HFONT__* HFONT;
 typedef struct HINSTANCE__* HINSTANCE;
-typedef SDL_Window *HMENU, *HWND;
-typedef HANDLE HMODULE, HDC, HPALETTE, HFILE, HCURSOR;
+typedef struct HMENU__* HMENU;
+typedef struct HWND__* HWND;
+typedef HINSTANCE HMODULE;
+typedef struct HDC__* HDC;
+typedef struct HPALETTE__* HPALETTE;
+typedef struct HCURSOR__* HCURSOR;
+typedef HANDLE HFILE;
 typedef int LSTATUS, HKEY, REGSAM;
 
 // --- Structs ---

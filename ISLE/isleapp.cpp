@@ -511,11 +511,11 @@ MxResult IsleApp::SetupWindow()
 	SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, WINDOW_TITLE);
 
 	window = SDL_CreateWindowWithProperties(props);
-#ifndef MINIWIN
+#ifdef MINIWIN
+	m_windowHandle = reinterpret_cast<HWND>(window);
+#else
 	m_windowHandle =
 		(HWND) SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
-#else
-	m_windowHandle = window;
 #endif
 
 	SDL_DestroyProperties(props);

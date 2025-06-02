@@ -1,7 +1,6 @@
 add_library(miniwin STATIC EXCLUDE_FROM_ALL
   # Core
   src/windows/windows.cpp
-  src/mfc/mfc.cpp
 
   # DDraw
   src/ddraw/ddraw.cpp
@@ -136,16 +135,3 @@ if(ISLE_COMPILE_SHADERS)
     DEPENDS "${py_gencshadersource}" ${shader_headers} ${shader_jsons})
 endif()
 target_sources(miniwin PRIVATE "${index}" "${index_cpp}")
-
-# Minimfc lib
-add_library(minimfc STATIC EXCLUDE_FROM_ALL
-  src/mfc/mfc.cpp
-)
-
-target_include_directories(minimfc
-  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/internal
-)
-
-target_compile_definitions(minimfc PUBLIC MINIMFC)
-target_link_libraries(minimfc PRIVATE SDL3::SDL3 miniwin)

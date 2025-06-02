@@ -36,17 +36,18 @@ BOOL SetWindowPos(HWND hWnd, HWND hWndInsertAfter, int X, int Y, int cx, int cy,
 	if (!hWnd) {
 		return FALSE;
 	}
+	SDL_Window* sdlWindow = reinterpret_cast<SDL_Window*>(hWnd);
 
 	if (!(uFlags & SWP_NOACTIVATE)) {
-		SDL_RaiseWindow(hWnd);
+		SDL_RaiseWindow(sdlWindow);
 	}
 
 	if (!(uFlags & SWP_NOSIZE)) {
-		SDL_SetWindowSize(hWnd, cx, cy);
+		SDL_SetWindowSize(sdlWindow, cx, cy);
 	}
 
 	if (!(uFlags & SWP_NOMOVE)) {
-		SDL_SetWindowPosition(hWnd, X, Y);
+		SDL_SetWindowPosition(sdlWindow, X, Y);
 	}
 
 	return TRUE;
@@ -181,8 +182,9 @@ int StretchDIBits(
 
 LONG GetWindowLong(HWND hWnd, int nIndex)
 {
+	SDL_Window* sdlWindow = reinterpret_cast<SDL_Window*>(hWnd);
 	if (nIndex == GWL_STYLE) {
-		Uint32 flags = SDL_GetWindowFlags(hWnd);
+		Uint32 flags = SDL_GetWindowFlags(sdlWindow);
 		LONG style = WS_POPUP;
 		if ((flags & SDL_WINDOW_BORDERLESS) == 0) {
 			style = WS_OVERLAPPED | WS_CAPTION;
@@ -202,9 +204,10 @@ LONG GetWindowLong(HWND hWnd, int nIndex)
 
 LONG SetWindowLong(HWND hWnd, int nIndex, LONG dwNewLong)
 {
+	SDL_Window* sdlWindow = reinterpret_cast<SDL_Window*>(hWnd);
 	if (nIndex == GWL_STYLE) {
-		SDL_SetWindowBordered(hWnd, (dwNewLong & WS_CAPTION) != 0);
-		SDL_SetWindowResizable(hWnd, (dwNewLong & WS_THICKFRAME) != 0);
+		SDL_SetWindowBordered(sdlWindow, (dwNewLong & WS_CAPTION) != 0);
+		SDL_SetWindowResizable(sdlWindow, (dwNewLong & WS_THICKFRAME) != 0);
 
 		return dwNewLong;
 	}
