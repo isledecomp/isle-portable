@@ -64,7 +64,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             libx11-dev libxext-dev libxrandr-dev libxrender-dev libxfixes-dev libxi-dev libxinerama-dev \
-            libxcursor-dev libwayland-dev libxkbcommon-dev wayland-protocols
+            libxcursor-dev libwayland-dev libxkbcommon-dev wayland-protocols libgl1-mesa-dev libglew-dev
 
       - name: Install macOS dependencies (brew)
         if: ${{ matrix.brew }}
@@ -122,7 +122,7 @@ jobs:
         run: |
           action_headers=$(find LEGO1/lego/legoomni/include/actions \
             -name '*.h' -print0 | xargs -0 echo)
-          
+
           python3 tools/ncc/ncc.py \
             --clang-lib ${{ env.LLVM_PATH }}/lib/libclang.so \
             --recurse \

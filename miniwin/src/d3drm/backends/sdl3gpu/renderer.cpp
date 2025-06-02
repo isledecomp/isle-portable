@@ -388,36 +388,7 @@ HRESULT Direct3DRMSDL3GPURenderer::Render()
 	SDL_DestroySurface(m_renderedImage);
 	SDL_UnmapGPUTransferBuffer(m_device, m_downloadTransferBuffer);
 	m_renderedImage = convertedRender;
-	return Blit();
-}
+	SDL_BlitSurface(m_renderedImage, nullptr, m_backbuffer, nullptr);
 
-HRESULT Direct3DRMSDL3GPURenderer::Blit()
-{
-	// Blit the render back to our backbuffer
-	SDL_Rect srcRect{0, 0, (int) m_width, (int) m_height};
-
-	const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(m_backbuffer->format);
-	if (details->Amask != 0) {
-		// Backbuffer supports transparnacy
-		SDL_Surface* convertedRender = SDL_ConvertSurface(m_renderedImage, m_backbuffer->format);
-		SDL_DestroySurface(m_renderedImage);
-		m_renderedImage = convertedRender;
-		return DD_OK;
-	}
-
-	if (m_renderedImage->format == m_backbuffer->format) {
-		// No conversion needed
-		SDL_BlitSurface(m_renderedImage, &srcRect, m_backbuffer, &srcRect);
-		return DD_OK;
-	}
-
-	// Convert backbuffer to a format that supports transparancy
-	SDL_Surface* tempBackbuffer = SDL_ConvertSurface(m_backbuffer, m_renderedImage->format);
-	SDL_BlitSurface(m_renderedImage, &srcRect, tempBackbuffer, &srcRect);
-	// Then convert the result back to the backbuffer format and write it back
-	SDL_Surface* newBackBuffer = SDL_ConvertSurface(tempBackbuffer, m_backbuffer->format);
-	SDL_DestroySurface(tempBackbuffer);
-	SDL_BlitSurface(newBackBuffer, &srcRect, m_backbuffer, &srcRect);
-	SDL_DestroySurface(newBackBuffer);
 	return DD_OK;
 }
