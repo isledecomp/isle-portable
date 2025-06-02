@@ -296,20 +296,17 @@ HRESULT Direct3DRMViewportImpl::CollectSceneData()
 								}
 
 								PositionColorVertex vtx;
-								vtx.x = viewPos.x;
-								vtx.y = viewPos.y;
-								vtx.z = viewPos.z;
-								vtx.nx = viewNorm.x;
-								vtx.ny = viewNorm.y;
-								vtx.nz = viewNorm.z;
-								vtx.r = (color >> 16) & 0xFF;
-								vtx.g = (color >> 8) & 0xFF;
-								vtx.b = (color >> 0) & 0xFF;
-								vtx.a = (color >> 24) & 0xFF;
+								vtx.position = viewPos;
+								vtx.normals = viewNorm;
+								vtx.colors = {
+									static_cast<Uint8>((color >> 16) & 0xFF),
+									static_cast<Uint8>((color >> 8) & 0xFF),
+									static_cast<Uint8>((color >> 0) & 0xFF),
+									static_cast<Uint8>((color >> 24) & 0xFF)
+								};
 								vtx.shininess = shininess;
 								vtx.texId = texId;
-								vtx.u = dv.tu;
-								vtx.v = dv.tv;
+								vtx.texCoord = {dv.tu, dv.tv};
 								verts.push_back(vtx);
 							}
 						}
