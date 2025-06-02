@@ -223,14 +223,8 @@ void EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx, Direct3DRMRenderer* devi
 
 HRESULT DirectDrawImpl::EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
-	Direct3DRMRenderer* device = Direct3DRMSDL3GPURenderer::Create(640, 480);
-	if (device) {
-		EnumDevice(cb, ctx, device, SDL3_GPU_GUID);
-		delete device;
-	}
-	device = new Direct3DRMSoftwareRenderer(640, 480);
-	EnumDevice(cb, ctx, device, SOFTWARE_GUID);
-	delete device;
+	Direct3DRMSDL3GPU_EnumDevice(cb, ctx);
+	Direct3DRMSoftware_EnumDevice(cb, ctx);
 
 	return S_OK;
 }
