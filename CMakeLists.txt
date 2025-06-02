@@ -493,7 +493,7 @@ endif()
 if (ISLE_BUILD_CONFIG)
   find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
   qt_standard_project_setup()
-  qt_add_executable(config
+  qt_add_executable(config WIN32
     LEGO1/mxdirectx/mxdirectxinfo.cpp
     LEGO1/mxdirectx/legodxinfo.cpp
     CONFIG/config.cpp
