@@ -1,3 +1,6 @@
+#ifdef USE_OPENGL15
+#include "d3drmrenderer_opengl15.h"
+#endif
 #include "d3drmrenderer_sdl3gpu.h"
 #include "d3drmrenderer_software.h"
 #include "ddpalette_impl.h"
@@ -224,6 +227,9 @@ void EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx, Direct3DRMRenderer* devi
 HRESULT DirectDrawImpl::EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
 	Direct3DRMSDL3GPU_EnumDevice(cb, ctx);
+#ifdef USE_OPENGL15
+	OpenGL15Renderer_EnumDevice(cb, ctx);
+#endif
 	Direct3DRMSoftware_EnumDevice(cb, ctx);
 
 	return S_OK;
@@ -314,6 +320,11 @@ HRESULT DirectDrawImpl::CreateDevice(
 	if (SDL_memcmp(&guid, &SDL3_GPU_GUID, sizeof(GUID)) == 0) {
 		renderer = Direct3DRMSDL3GPURenderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
+#ifdef USE_OPENGL15
+	else if (SDL_memcmp(&guid, &OPENGL15_GUID, sizeof(GUID)) == 0) {
+		renderer = OpenGL15Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
+	}
+#endif
 	else if (SDL_memcmp(&guid, &SOFTWARE_GUID, sizeof(GUID)) == 0) {
 		renderer = new Direct3DRMSoftwareRenderer(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
