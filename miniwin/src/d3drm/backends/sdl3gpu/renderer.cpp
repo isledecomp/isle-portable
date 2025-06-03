@@ -316,7 +316,7 @@ void Direct3DRMSDL3GPURenderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* h
 
 const char* Direct3DRMSDL3GPURenderer::GetName()
 {
-	return "SDL3 GPU Rendere";
+	return "SDL3 GPU HAL";
 }
 
 HRESULT Direct3DRMSDL3GPURenderer::Render()

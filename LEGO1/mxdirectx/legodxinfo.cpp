@@ -342,7 +342,8 @@ unsigned char LegoDeviceEnumerate::FUN_1009d3d0(Direct3DDeviceInfo& p_device)
 	}
 
 	if (p_device.m_HWDesc.dcmColorModel != D3DCOLOR_NONE) {
-		if ((p_device.m_HWDesc.dwDeviceZBufferBitDepth & DDBD_16) == DDBD_16 &&
+		DDBitDepths zDepth = p_device.m_HWDesc.dwDeviceZBufferBitDepth;
+		if ((zDepth & (DDBD_16 | DDBD_24 | DDBD_32)) != static_cast<DDBitDepths>(0) &&
 			(p_device.m_HWDesc.dpcTriCaps.dwTextureCaps & D3DPTEXTURECAPS_PERSPECTIVE) == D3DPTEXTURECAPS_PERSPECTIVE) {
 			return TRUE;
 		}

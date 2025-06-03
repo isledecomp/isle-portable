@@ -463,7 +463,7 @@ void Direct3DRMSoftwareRenderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* 
 
 const char* Direct3DRMSoftwareRenderer::GetName()
 {
-	return "Software Renderer";
+	return "Miniwin Emulation";
 }
 
 HRESULT Direct3DRMSoftwareRenderer::Render()
