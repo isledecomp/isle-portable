@@ -93,5 +93,9 @@ struct Direct3DRMMeshImpl : public Direct3DRMObjectBaseImpl<IDirect3DRMMesh> {
 	HRESULT GetBox(D3DRMBOX* box) override;
 
 private:
+	void UpdateBox();
+	void UpdateBox(DWORD groupIndex);
+
 	std::vector<MeshGroup> m_groups;
+	D3DRMBOX m_box;
 };

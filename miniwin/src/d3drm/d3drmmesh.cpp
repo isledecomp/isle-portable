@@ -63,6 +63,9 @@ HRESULT Direct3DRMMeshImpl::AddGroup(
 	group.faces.assign(src, src + faceCount * vertexPerFace);
 
 	m_groups.push_back(std::move(group));
+
+	UpdateBox(newIndex);
+
 	return DD_OK;
 }
 
@@ -140,6 +143,11 @@ HRESULT Direct3DRMMeshImpl::SetGroupMaterial(DWORD groupIndex, IDirect3DRMMateri
 {
 	if (groupIndex >= m_groups.size()) {
 		return DDERR_INVALIDPARAMS;
+	}
+
+	auto& group = m_groups[groupIndex];
+	if (group.material) {
+		group.material->Release();
 	}
 
 	material->AddRef();
@@ -244,6 +252,9 @@ HRESULT Direct3DRMMeshImpl::SetVertices(DWORD groupIndex, int offset, int count,
 	}
 
 	std::copy(vertices, vertices + count, vertList.begin() + offset);
+
+	UpdateBox();
+
 	return DD_OK;
 }
 
@@ -263,24 +274,32 @@ HRESULT Direct3DRMMeshImpl::GetVertices(DWORD groupIndex, int startIndex, int co
 	return DD_OK;
 }
 
-/**
- * @todo Maybe a good idea to cache this
- */
+void Direct3DRMMeshImpl::UpdateBox()
+{
+	const float INF = std::numeric_limits<float>::max();
+	m_box.min = {INF, INF, INF};
+	m_box.max = {-INF, -INF, -INF};
+
+	for (size_t i = 0; i < m_groups.size(); ++i) {
+		UpdateBox(i);
+	}
+}
+
+void Direct3DRMMeshImpl::UpdateBox(DWORD groupIndex)
+{
+	for (const D3DRMVERTEX& v : m_groups[groupIndex].vertices) {
+		m_box.min.x = std::min(m_box.min.x, v.position.x);
+		m_box.min.y = std::min(m_box.min.y, v.position.y);
+		m_box.min.z = std::min(m_box.min.z, v.position.z);
+		m_box.max.x = std::max(m_box.max.x, v.position.x);
+		m_box.max.y = std::max(m_box.max.y, v.position.y);
+		m_box.max.z = std::max(m_box.max.z, v.position.z);
+	}
+}
+
 HRESULT Direct3DRMMeshImpl::GetBox(D3DRMBOX* box)
 {
-	box->min.x = box->min.y = box->min.z = std::numeric_limits<float>::max();
-	box->max.x = box->max.y = box->max.z = std::numeric_limits<float>::min();
-
-	for (const auto& group : m_groups) {
-		for (const D3DRMVERTEX& v : group.vertices) {
-			box->min.x = std::min(box->min.x, v.position.x);
-			box->min.y = std::min(box->min.y, v.position.y);
-			box->min.z = std::min(box->min.z, v.position.z);
-			box->max.x = std::max(box->max.x, v.position.x);
-			box->max.y = std::max(box->max.y, v.position.y);
-			box->max.z = std::max(box->max.z, v.position.z);
-		}
-	}
+	*box = m_box;
 
 	return DD_OK;
 }
