@@ -223,7 +223,7 @@ HRESULT Direct3DRMViewportImpl::CollectSceneData()
 						std::vector<D3DRMVERTEX> d3dVerts(vtxCount);
 						std::vector<DWORD> faces(dataSize);
 						mesh->GetVertices(gi, 0, vtxCount, d3dVerts.data());
-						mesh->GetGroup(gi, &vtxCount, &faceCount, &vpf, nullptr, faces.data());
+						mesh->GetGroup(gi, nullptr, nullptr, nullptr, nullptr, faces.data());
 
 						D3DCOLOR color = mesh->GetGroupColor(gi);
 						D3DRMRENDERQUALITY quality = mesh->GetGroupQuality(gi);
@@ -526,6 +526,11 @@ bool RayIntersectsBox(const Ray& ray, const D3DRMBOX& box, float& outT)
 	return true;
 }
 
+inline float DotProduct(const D3DVECTOR& a, const D3DVECTOR& b)
+{
+	return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
 // Convert screen (x,y) in viewport to picking ray in world space
 Ray BuildPickingRay(
 	float x,
@@ -548,7 +553,7 @@ Ray BuildPickingRay(
 	D3DVECTOR rayDirView = {nx / f, ny / (f * aspect), 1.0f};
 
 	// Normalize ray direction
-	float len = sqrt(rayDirView.x * rayDirView.x + rayDirView.y * rayDirView.y + rayDirView.z * rayDirView.z);
+	float len = sqrt(DotProduct(rayDirView, rayDirView));
 	rayDirView.x /= len;
 	rayDirView.y /= len;
 	rayDirView.z /= len;
@@ -574,9 +579,101 @@ Ray BuildPickingRay(
 	return Ray{rayOriginWorld, rayDirWorld};
 }
 
-/**
- * @todo additionally check that we hit a triangle in the mesh
- */
+inline D3DVECTOR CrossProduct(const D3DVECTOR& a, const D3DVECTOR& b)
+{
+	return {a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x};
+}
+
+bool RayIntersectsTriangle(
+	const Ray& ray,
+	const D3DVECTOR& v0,
+	const D3DVECTOR& v1,
+	const D3DVECTOR& v2,
+	float& outDist
+)
+{
+	const float EPSILON = 1e-6f;
+	D3DVECTOR edge1 = {v1.x - v0.x, v1.y - v0.y, v1.z - v0.z};
+	D3DVECTOR edge2 = {v2.x - v0.x, v2.y - v0.y, v2.z - v0.z};
+
+	D3DVECTOR h = CrossProduct(ray.direction, edge2);
+	float a = DotProduct(edge1, h);
+	if (fabs(a) < EPSILON) {
+		return false;
+	}
+
+	float f = 1.0f / a;
+	D3DVECTOR s = {ray.origin.x - v0.x, ray.origin.y - v0.y, ray.origin.z - v0.z};
+	float u = f * DotProduct(s, h);
+	if (u < 0.0f || u > 1.0f) {
+		return false;
+	}
+
+	D3DVECTOR q = CrossProduct(s, edge1);
+	float v = f * DotProduct(ray.direction, q);
+	if (v < 0.0f || u + v > 1.0f) {
+		return false;
+	}
+
+	float t = f * DotProduct(edge2, q);
+	if (t > EPSILON) {
+		outDist = t;
+		return true;
+	}
+	return false;
+}
+
+bool RayIntersectsMeshTriangles(
+	const Ray& ray,
+	IDirect3DRMMesh* mesh,
+	const D3DRMMATRIX4D& worldMatrix,
+	float& outDistance
+)
+{
+	DWORD groupCount = mesh->GetGroupCount();
+	for (DWORD g = 0; g < groupCount; ++g) {
+		DWORD vtxCount = 0, faceCount = 0, vpf = 0, dataSize = 0;
+		mesh->GetGroup(g, &vtxCount, &faceCount, &vpf, &dataSize, nullptr);
+
+		std::vector<D3DRMVERTEX> vertices(vtxCount);
+		mesh->GetVertices(g, 0, vtxCount, vertices.data());
+		std::vector<DWORD> faces(faceCount * vpf);
+		mesh->GetGroup(g, nullptr, nullptr, nullptr, nullptr, faces.data());
+
+		// Iterate over each face and do ray-triangle tests
+		for (DWORD fi = 0; fi < faceCount; ++fi) {
+			DWORD i0 = faces[fi * vpf + 0];
+			DWORD i1 = faces[fi * vpf + 1];
+			DWORD i2 = faces[fi * vpf + 2];
+
+			if (i0 >= vtxCount || i1 >= vtxCount || i2 >= vtxCount) {
+				continue;
+			}
+
+			// Transform vertices to world space
+			D3DVECTOR tri[3];
+			for (int j = 0; j < 3; ++j) {
+				const D3DVECTOR& v = vertices[(j == 0 ? i0 : (j == 1 ? i1 : i2))].position;
+				tri[j].x =
+					v.x * worldMatrix[0][0] + v.y * worldMatrix[1][0] + v.z * worldMatrix[2][0] + worldMatrix[3][0];
+				tri[j].y =
+					v.x * worldMatrix[0][1] + v.y * worldMatrix[1][1] + v.z * worldMatrix[2][1] + worldMatrix[3][1];
+				tri[j].z =
+					v.x * worldMatrix[0][2] + v.y * worldMatrix[1][2] + v.z * worldMatrix[2][2] + worldMatrix[3][2];
+			}
+
+			float dist;
+			if (RayIntersectsTriangle(ray, tri[0], tri[1], tri[2], dist)) {
+				if (dist < outDistance) {
+					outDistance = dist;
+				}
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 HRESULT Direct3DRMViewportImpl::Pick(float x, float y, LPDIRECT3DRMPICKEDARRAY* pickedArray)
 {
 	if (!m_rootFrame) {
@@ -680,16 +777,18 @@ HRESULT Direct3DRMViewportImpl::Pick(float x, float y, LPDIRECT3DRMPICKEDARRAY* 
 
 						float distance = 0.0f;
 						if (RayIntersectsBox(pickRay, worldBox, distance)) {
-							auto* arr = new Direct3DRMFrameArrayImpl();
-							for (IDirect3DRMFrame* f : path) {
-								arr->AddElement(f);
-							}
+							if (RayIntersectsMeshTriangles(pickRay, mesh, worldMatrix, distance)) {
+								auto* arr = new Direct3DRMFrameArrayImpl();
+								for (IDirect3DRMFrame* f : path) {
+									arr->AddElement(f);
+								}
 
-							PickRecord rec;
-							rec.visual = vis;
-							rec.frameArray = arr;
-							rec.desc.dist = distance;
-							hits.push_back(rec);
+								PickRecord rec;
+								rec.visual = vis;
+								rec.frameArray = arr;
+								rec.desc.dist = distance;
+								hits.push_back(rec);
+							}
 						}
 					}
 					mesh->Release();
