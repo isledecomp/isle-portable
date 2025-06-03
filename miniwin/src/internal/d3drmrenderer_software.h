@@ -2,6 +2,7 @@
 
 #include "d3drmrenderer.h"
 #include "d3drmtexture_impl.h"
+#include "ddraw_impl.h"
 
 #include <SDL3/SDL.h>
 #include <cstddef>
@@ -56,3 +57,11 @@ private:
 	float proj[4][4] = {0};
 	std::vector<float> m_zBuffer;
 };
+
+inline static void Direct3DRMSoftware_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
+{
+	Direct3DRMRenderer* device = nullptr;
+	device = new Direct3DRMSoftwareRenderer(640, 480);
+	EnumDevice(cb, ctx, device, SOFTWARE_GUID);
+	delete device;
+}

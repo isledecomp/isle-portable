@@ -1,6 +1,7 @@
 #pragma once
 
 #include "d3drmrenderer.h"
+#include "ddraw_impl.h"
 
 #include <SDL3/SDL.h>
 
@@ -60,3 +61,12 @@ private:
 	SDL_GPUBuffer* m_vertexBuffer = nullptr;
 	SDL_Surface* m_renderedImage = nullptr;
 };
+
+inline static void Direct3DRMSDL3GPU_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
+{
+	Direct3DRMRenderer* device = Direct3DRMSDL3GPURenderer::Create(640, 480);
+	if (device) {
+		EnumDevice(cb, ctx, device, SDL3_GPU_GUID);
+		delete device;
+	}
+}
