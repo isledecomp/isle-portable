@@ -132,7 +132,7 @@ void OpenGL15Renderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc)
 {
 	halDesc->dcmColorModel = D3DCOLORMODEL::RGB;
 	halDesc->dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
-	halDesc->dwDeviceZBufferBitDepth = DDBD_16 | DDBD_24; // Todo add support for other depths
+	halDesc->dwDeviceZBufferBitDepth = DDBD_24; // Todo add support for other depths
 	helDesc->dwDeviceRenderBitDepth = DDBD_8 | DDBD_16 | DDBD_24 | DDBD_32;
 	halDesc->dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
 	halDesc->dpcTriCaps.dwShadeCaps = D3DPSHADECAPS_ALPHAFLATBLEND;
