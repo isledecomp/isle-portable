@@ -9,53 +9,50 @@ cbuffer LightBuffer : register(b0, space3)
 FS_Output main(FS_Input input)
 {
 	FS_Output output;
-	float3 normal = normalize(input.Normal);
-	float3 fragPos = input.Position.xyz / input.Position.w;
 
-	float3 viewPos = float3(0, 0, 0);
-	float3 viewDir = normalize(viewPos - fragPos);
-
-	float3 result = float3(0, 0, 0);
-
-	const float shininess = 20.0; // All materials use this in Isle
+	float3 diffuse = float3(0, 0, 0);
+	float3 specular = float3(0, 0, 0);
 
 	for (int i = 0; i < lightCount; ++i) {
 		float3 lightColor = lights[i].color.rgb;
 
-		bool hasPos = lights[i].position.w == 1.0;
-		bool hasDir = lights[i].direction.w == 1.0;
-
-		if (!hasPos && !hasDir) {
-			// D3DRMLIGHT_AMBIENT
-			result += input.Color.rgb * lightColor;
+		if (lights[i].position.w == 0.0 && lights[i].direction.w == 0.0) {
+			diffuse += lightColor;
 			continue;
 		}
 
-		if (hasPos) {
-			// D3DRMLIGHT_POINT
+		float3 lightVec;
+		if (lights[i].direction.w == 1.0) {
+			lightVec = normalize(-lights[i].direction.xyz);
+		}
+		else {
 			float3 lightPos = lights[i].position.xyz;
-			float3 lightDir = normalize(lightPos - fragPos);
-			float diff = max(dot(normal, lightDir), 0.0);
-			float distance = length(lightPos - fragPos);
-			float attenuation = 1.0 / (1.0 + 0.09 * distance + 0.032 * distance * distance);
-			float3 halfwayDir = normalize(lightDir + viewDir);
-			float spec = pow(max(dot(normal, halfwayDir), 0.0), shininess);
-			result += (input.Color.rgb * diff + spec) * lightColor * attenuation;
-			continue;
+			lightVec = lightPos - input.WorldPosition;
+
+			float len = length(lightVec);
+			if (len == 0.0f) {
+				continue;
+			}
+
+			lightVec /= len;
 		}
 
-		if (hasDir) {
-			// D3DRMLIGHT_DIRECTIONAL
-			float3 lightDir = normalize(-lights[i].direction.xyz);
-			float diff = max(dot(normal, lightDir), 0.0);
-			float3 halfwayDir = normalize(lightDir + viewDir);
-			float spec = pow(max(dot(normal, halfwayDir), 0.0), shininess);
-			result += (input.Color.rgb * diff + spec) * lightColor;
-			continue;
+		float dotNL = dot(input.Normal, lightVec);
+		if (dotNL > 0.0f) {
+			diffuse += dotNL * lightColor;
+
+			if (input.Shininess != 0.0f) {
+				// Using dotNL ignores view angle, but this matches DirectX 5 behavior.
+				float spec1 = pow(dotNL, input.Shininess);
+				specular += spec1 * lightColor;
+			}
 		}
 	}
 
-	output.Color = float4(result, input.Color.a);
+	float3 baseColor = input.Color.rgb;
+	float3 finalColor = saturate(diffuse * baseColor + specular);
+
+	output.Color = float4(finalColor, input.Color.a);
 	output.Depth = input.Position.w;
 	return output;
 }
