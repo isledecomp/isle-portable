@@ -143,7 +143,7 @@ void OpenGL15Renderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc)
 
 const char* OpenGL15Renderer::GetName()
 {
-	return "OpenGL 1.5 Renderer";
+	return "OpenGL 1.5 HAL";
 }
 
 HRESULT OpenGL15Renderer::Render()

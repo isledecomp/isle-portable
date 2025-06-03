@@ -91,9 +91,8 @@ bool CMainDialog::OnInitDialog()
 			device_i += 1;
 			sprintf(
 				device_name,
-				"%s [%s] ( %s )",
+				"%s ( %s )",
 				device.m_deviceDesc,
-				device.m_deviceName,
 				driver_i == 0 ? "Primary Device" : "Secondary Device"
 			);
 			m_ui->devicesList->addItem(device_name);
