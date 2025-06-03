@@ -21,7 +21,6 @@ public:
 	CMainDialog(QWidget* pParent = nullptr);
 
 protected:
-	// void DoDataExchange(CDataExchange* pDX) override;
 	void UpdateInterface();
 	void SwitchToAdvanced(bool p_advanced);
 
