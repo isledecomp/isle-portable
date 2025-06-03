@@ -10,63 +10,70 @@
 #include "config.h"
 #include "res/resource.h"
 
+#include <QKeyEvent>
 #include <mxdirectx/legodxinfo.h>
+#include <ui_maindialog.h>
 
 DECOMP_SIZE_ASSERT(CDialog, 0x60)
 DECOMP_SIZE_ASSERT(CMainDialog, 0x70)
 
+// FIXME: disable dialog resizing
+// FIXME: advanced mode should resize dialog, ignoring advanced controls
+// FIXME: list widget should have less rows
+
 // FUNCTION: CONFIG 0x00403d50
-CMainDialog::CMainDialog(CWnd* pParent) : CDialog(IDD, pParent)
+CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 {
-	afxCurrentWinApp;
-	m_icon = LoadIcon(AfxFindResourceHandle(MAKEINTRESOURCE(IDI_CONFIG), RT_GROUP_ICON), MAKEINTRESOURCE(IDI_CONFIG));
+	m_ui = new Ui::MainDialog;
+	m_ui->setupUi(this);
+
+	// Populate the dialog prior to connecting all signals
+	OnInitDialog();
+
+	connect(m_ui->colorPalette16bitRadioButton, &QRadioButton::toggled, this, &CMainDialog::OnRadiobuttonPalette16bit);
+	connect(m_ui->colorPalette256RadioButton, &QRadioButton::toggled, this, &CMainDialog::OnRadiobuttonPalette256);
+	connect(
+		m_ui->modelQualityFastRadioButton,
+		&QRadioButton::toggled,
+		this,
+		&CMainDialog::OnRadiobuttonModelLowQuality
+	);
+	connect(
+		m_ui->modelQualityHighRadioButton,
+		&QRadioButton::toggled,
+		this,
+		&CMainDialog::OnRadiobuttonModelHighQuality
+	);
+	connect(
+		m_ui->textureQualityFastRadioButton,
+		&QRadioButton::toggled,
+		this,
+		&CMainDialog::OnRadiobuttonTextureLowQuality
+	);
+	connect(
+		m_ui->textureQualityHighRadioButton,
+		&QRadioButton::toggled,
+		this,
+		&CMainDialog::OnRadiobuttonTextureHighQuality
+	);
+	connect(m_ui->devicesList, &QListWidget::currentRowChanged, this, &CMainDialog::OnList3DevicesSelectionChanged);
+	connect(m_ui->musicCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxMusic);
+	connect(m_ui->drawCursorCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxDrawCursor);
+	connect(m_ui->videomemoryCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckbox3DVideoMemory);
+	connect(m_ui->flipVideoMemoryPagesCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxFlipVideoMemPages);
+	connect(m_ui->sound3DCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckbox3DSound);
+	connect(m_ui->joystickCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxJoystick);
+	connect(m_ui->okButton, &QPushButton::clicked, this, &CMainDialog::accept);
+	connect(m_ui->cancelButton, &QPushButton::clicked, this, &CMainDialog::reject);
+	connect(m_ui->advancedButton, &QPushButton::clicked, this, &CMainDialog::OnButtonAdvanced);
 }
-
-// FUNCTION: CONFIG 0x00403e50
-void CMainDialog::DoDataExchange(CDataExchange* pDX)
-{
-}
-
-BEGIN_MESSAGE_MAP(CMainDialog, CDialog)
-ON_WM_SYSCOMMAND()
-ON_WM_PAINT()
-ON_WM_QUERYDRAGICON()
-ON_COMMAND(IDC_CHK_FLIP_VIDEO_MEM_PAGES, OnCheckboxFlipVideoMemPages)
-ON_LBN_SELCHANGE(IDC_LIST_3DDEVICES, OnList3DevicesSelectionChanged)
-ON_COMMAND(IDC_RAD_PALETTE_16BIT, OnRadiobuttonPalette16bit)
-ON_COMMAND(IDC_RAD_PALETTE_256, OnRadiobuttonPalette256)
-ON_COMMAND(IDC_CHK_3D_VIDEO_MEMORY, OnCheckbox3DVideoMemory)
-ON_WM_DESTROY() // FIXME: CONFIG.EXE calls Default
-ON_COMMAND(IDABORT, OnButtonCancel)
-ON_COMMAND(IDC_CHK_3DSOUND, OnCheckbox3DSound)
-ON_COMMAND(IDC_RAD_MODEL_QUALITY_LOW, OnRadiobuttonModelLowQuality)
-ON_COMMAND(IDC_RAD_MODEL_QUALITY_HIGH, OnRadiobuttonModelHighQuality)
-ON_COMMAND(IDC_RAD_TEXTURE_QUALITY_LOW, OnRadiobuttonTextureLowQuality)
-ON_COMMAND(IDC_RAD_TEXTURE_QUALITY_HIGH, OnRadiobuttonTextureHighQuality)
-ON_COMMAND(IDC_CHK_JOYSTICK, OnCheckboxJoystick)
-ON_COMMAND(IDC_BTN_ADVANCED, OnButtonAdvanced)
-ON_COMMAND(IDC_CHK_DRAW_CURSOR, OnCheckboxDrawCursor)
-ON_COMMAND(IDC_CHK_MUSIC, OnCheckboxMusic)
-END_MESSAGE_MAP()
-
 // FUNCTION: CONFIG 0x00403e80
-BOOL CMainDialog::OnInitDialog()
+bool CMainDialog::OnInitDialog()
 {
-	CDialog::OnInitDialog();
-	SwitchToAdvanced(FALSE);
-	CMenu* system_menu = CMenu::FromHandle(::GetSystemMenu(m_hWnd, FALSE));
-	CString about_text;
-	about_text.LoadString(IDS_ABOUT);
-	if (system_menu) {
-		AppendMenu(system_menu->m_hMenu, MF_SEPARATOR, 0, NULL);
-		AppendMenu(system_menu->m_hMenu, MF_STRING, 16, (LPCTSTR) about_text);
-	}
-	SendMessage(WM_SETICON, ICON_BIG, (LPARAM) m_icon);
-	SendMessage(WM_SETICON, ICON_SMALL, (LPARAM) m_icon);
+	SwitchToAdvanced(false);
 	LegoDeviceEnumerate* enumerator = currentConfigApp->m_device_enumerator;
 	enumerator->FUN_1009d210();
 	m_modified = currentConfigApp->ReadRegisterSettings();
-	CWnd* list_3d_devices = GetDlgItem(IDC_LIST_3DDEVICES);
 	int driver_i = 0;
 	int device_i = 0;
 	int selected = 0;
@@ -84,227 +91,214 @@ BOOL CMainDialog::OnInitDialog()
 			device_i += 1;
 			sprintf(
 				device_name,
-				driver_i == 0 ? "%s ( Primary Device )" : "%s ( Secondary Device )",
-				device.m_deviceName
+				"%s [%s] ( %s )",
+				device.m_deviceDesc,
+				device.m_deviceName,
+				driver_i == 0 ? "Primary Device" : "Secondary Device"
 			);
-			::SendMessage(list_3d_devices->m_hWnd, LB_ADDSTRING, 0, (LPARAM) device_name);
+			m_ui->devicesList->addItem(device_name);
 		}
 		driver_i += 1;
 	}
-	::SendMessage(list_3d_devices->m_hWnd, LB_SETCURSEL, selected, 0);
+	m_ui->devicesList->setCurrentRow(selected);
 	UpdateInterface();
-	return TRUE;
+	return true;
 }
 
 // FUNCTION: CONFIG 0x00404080
-void CMainDialog::OnSysCommand(UINT nID, LPARAM lParam)
+void CMainDialog::keyReleaseEvent(QKeyEvent* event)
 {
-	if ((nID & 0xfff0) == 0x10) {
+	if (event->matches(QKeySequence::StandardKey::HelpContents)) {
 		CAboutDialog about_dialog;
-		about_dialog.DoModal();
+		about_dialog.exec();
 	}
 	else {
-		Default();
+		QDialog::keyReleaseEvent(event);
 	}
-}
-
-// FUNCTION: CONFIG 0x00404150
-void CMainDialog::OnPaint()
-{
-	if (IsIconic()) {
-		CPaintDC painter(this);
-		::SendMessage(m_hWnd, WM_ICONERASEBKGND, (WPARAM) painter.m_hDC, 0);
-		RECT dim;
-		GetClientRect(&dim);
-		DrawIcon(
-			painter.m_hDC,
-			(dim.right - dim.left - GetSystemMetrics(SM_CXICON) + 1) / 2,
-			(dim.bottom - dim.top - GetSystemMetrics(SM_CYICON) + 1) / 2,
-			m_icon
-		);
-	}
-	else {
-		Default();
-	}
-}
-
-// FUNCTION: CONFIG 0x00404230
-HCURSOR CMainDialog::OnQueryDragIcon()
-{
-	return m_icon;
 }
 
 // FUNCTION: CONFIG 0x00404240
-void CMainDialog::OnList3DevicesSelectionChanged()
+void CMainDialog::OnList3DevicesSelectionChanged(int selected)
 {
 	LegoDeviceEnumerate* device_enumerator = currentConfigApp->m_device_enumerator;
-	int selected = ::SendMessage(GetDlgItem(IDC_LIST_3DDEVICES)->m_hWnd, LB_GETCURSEL, 0, 0);
 	device_enumerator->GetDevice(selected, currentConfigApp->m_driver, currentConfigApp->m_device);
 	if (currentConfigApp->GetHardwareDeviceColorModel() != D3DCOLOR_NONE) {
-		GetDlgItem(IDC_CHK_DRAW_CURSOR)->EnableWindow(TRUE);
+		m_ui->drawCursorCheckBox->setEnabled(true);
 	}
 	else {
 		currentConfigApp->m_3d_video_ram = FALSE;
 		currentConfigApp->m_flip_surfaces = FALSE;
-		CheckDlgButton(IDC_CHK_3D_VIDEO_MEMORY, currentConfigApp->m_3d_video_ram);
-		CheckDlgButton(IDC_CHK_FLIP_VIDEO_MEM_PAGES, currentConfigApp->m_flip_surfaces);
+		m_ui->videomemoryCheckBox->setChecked(currentConfigApp->m_3d_video_ram);
+		m_ui->flipVideoMemoryPagesCheckBox->setChecked(currentConfigApp->m_flip_surfaces);
 	}
-	m_modified = TRUE;
+	m_modified = true;
 	UpdateInterface();
 }
 
-// FUNCTION: CONFIG 0x00404320
-void CMainDialog::OnCancel()
-{
-	CDialog::OnCancel();
-}
-
-// FUNCTION: CONFIG 0x00404330
-void CMainDialog::OnDestroy()
-{
-	CDialog::Default();
-}
-
 // FUNCTION: CONFIG 0x00404340
-void CMainDialog::OnButtonCancel()
+void CMainDialog::reject()
+{
+	QDialog::reject();
+}
+
+void CMainDialog::accept()
 {
 	if (m_modified) {
 		currentConfigApp->WriteRegisterSettings();
 	}
-	OnCancel();
+	QDialog::accept();
 }
 
 // FUNCTION: CONFIG 0x00404360
 void CMainDialog::UpdateInterface()
 {
 	currentConfigApp->ValidateSettings();
-	GetDlgItem(IDC_CHK_3D_VIDEO_MEMORY)
-		->EnableWindow(
-			!currentConfigApp->m_flip_surfaces && currentConfigApp->GetHardwareDeviceColorModel() == D3DCOLOR_NONE
-		);
-	CheckDlgButton(IDC_CHK_FLIP_VIDEO_MEM_PAGES, currentConfigApp->m_flip_surfaces);
-	CheckDlgButton(IDC_CHK_3D_VIDEO_MEMORY, currentConfigApp->m_3d_video_ram);
-	BOOL full_screen = currentConfigApp->m_full_screen;
+	m_ui->videomemoryCheckBox->setEnabled(
+		!currentConfigApp->m_flip_surfaces && currentConfigApp->GetHardwareDeviceColorModel() == D3DCOLOR_NONE
+	);
+	m_ui->flipVideoMemoryPagesCheckBox->setChecked(currentConfigApp->m_flip_surfaces);
+	m_ui->videomemoryCheckBox->setChecked(currentConfigApp->m_3d_video_ram);
+	bool full_screen = currentConfigApp->m_full_screen;
 	currentConfigApp->AdjustDisplayBitDepthBasedOnRenderStatus();
 	if (currentConfigApp->GetHardwareDeviceColorModel() != D3DCOLOR_NONE) {
-		CheckDlgButton(IDC_CHK_DRAW_CURSOR, TRUE);
+		m_ui->drawCursorCheckBox->setChecked(true);
 	}
 	else {
-		CheckDlgButton(IDC_CHK_DRAW_CURSOR, FALSE);
+		m_ui->drawCursorCheckBox->setChecked(false);
 		currentConfigApp->m_draw_cursor = FALSE;
-		GetDlgItem(IDC_CHK_DRAW_CURSOR)->EnableWindow(FALSE);
+		m_ui->drawCursorCheckBox->setEnabled(false);
 	}
 	if (full_screen) {
-		CheckRadioButton(
-			IDC_RAD_PALETTE_256,
-			IDC_RAD_PALETTE_16BIT,
-			currentConfigApp->m_display_bit_depth == 8 ? IDC_RAD_PALETTE_256 : IDC_RAD_PALETTE_16BIT
-		);
+		if (currentConfigApp->m_display_bit_depth == 8) {
+			m_ui->colorPalette256RadioButton->setChecked(true);
+		}
+		else {
+			m_ui->colorPalette16bitRadioButton->setChecked(true);
+		}
 	}
 	else {
-		CheckDlgButton(IDC_RAD_PALETTE_256, 0);
-		CheckDlgButton(IDC_RAD_PALETTE_16BIT, 0);
+		m_ui->colorPalette256RadioButton->setChecked(false);
+		m_ui->colorPalette256RadioButton->setChecked(false);
 		currentConfigApp->m_display_bit_depth = 0;
 	}
-	GetDlgItem(IDC_RAD_PALETTE_256)
-		->EnableWindow(full_screen && currentConfigApp->GetConditionalDeviceRenderBitDepth());
-	GetDlgItem(IDC_RAD_PALETTE_16BIT)->EnableWindow(full_screen && currentConfigApp->GetDeviceRenderBitStatus());
-	CheckDlgButton(IDC_CHK_3DSOUND, currentConfigApp->m_3d_sound);
-	CheckDlgButton(IDC_CHK_DRAW_CURSOR, currentConfigApp->m_draw_cursor);
+	m_ui->colorPalette256RadioButton->setEnabled(full_screen && currentConfigApp->GetConditionalDeviceRenderBitDepth());
+	m_ui->colorPalette16bitRadioButton->setEnabled(full_screen && currentConfigApp->GetDeviceRenderBitStatus());
+	m_ui->sound3DCheckBox->setChecked(currentConfigApp->m_3d_sound);
+	m_ui->drawCursorCheckBox->setChecked(currentConfigApp->m_draw_cursor);
 	switch (currentConfigApp->m_model_quality) {
 	case 1:
-		CheckRadioButton(IDC_RAD_MODEL_QUALITY_LOW, IDC_RAD_MODEL_QUALITY_HIGH, IDC_RAD_MODEL_QUALITY_LOW);
+		m_ui->modelQualityFastRadioButton->setChecked(true);
 		break;
 	case 2:
-		CheckRadioButton(IDC_RAD_MODEL_QUALITY_LOW, IDC_RAD_MODEL_QUALITY_HIGH, IDC_RAD_MODEL_QUALITY_HIGH);
+		m_ui->modelQualityHighRadioButton->setChecked(true);
 		break;
 	}
-	CheckRadioButton(
-		IDC_RAD_TEXTURE_QUALITY_LOW,
-		IDC_RAD_TEXTURE_QUALITY_HIGH,
-		currentConfigApp->m_texture_quality == 0 ? IDC_RAD_TEXTURE_QUALITY_LOW : IDC_RAD_TEXTURE_QUALITY_HIGH
-	);
-	CheckDlgButton(IDC_CHK_JOYSTICK, currentConfigApp->m_use_joystick);
-	CheckDlgButton(IDC_CHK_MUSIC, currentConfigApp->m_music);
+	if (currentConfigApp->m_texture_quality == 0) {
+		m_ui->textureQualityFastRadioButton->setChecked(true);
+	}
+	else {
+		m_ui->textureQualityHighRadioButton->setChecked(true);
+	}
+	m_ui->joystickCheckBox->setChecked(currentConfigApp->m_use_joystick);
+	m_ui->musicCheckBox->setChecked(currentConfigApp->m_music);
 }
 
 // FUNCTION: CONFIG 0x004045e0
-void CMainDialog::OnCheckbox3DSound()
+void CMainDialog::OnCheckbox3DSound(bool checked)
 {
-	currentConfigApp->m_3d_sound = IsDlgButtonChecked(IDC_CHK_3DSOUND);
-	m_modified = TRUE;
+	currentConfigApp->m_3d_sound = checked;
+	m_modified = true;
 	UpdateInterface();
 }
 
 // FUNCTION: CONFIG 0x00404610
-void CMainDialog::OnCheckbox3DVideoMemory()
+void CMainDialog::OnCheckbox3DVideoMemory(bool checked)
 {
-	currentConfigApp->m_3d_video_ram = IsDlgButtonChecked(IDC_CHK_3D_VIDEO_MEMORY);
-	m_modified = TRUE;
+	currentConfigApp->m_3d_video_ram = checked;
+	m_modified = true;
 	UpdateInterface();
 }
 
 // FUNCTION: CONFIG 0x00404640
-void CMainDialog::OnRadiobuttonPalette16bit()
+void CMainDialog::OnRadiobuttonPalette16bit(bool checked)
 {
-	currentConfigApp->m_display_bit_depth = 16;
-	m_modified = TRUE;
-	UpdateInterface();
+	if (checked) {
+		currentConfigApp->m_display_bit_depth = 16;
+		m_modified = true;
+		UpdateInterface();
+	}
 }
 
 // FUNCTION: CONFIG 0x00404670
-void CMainDialog::OnRadiobuttonPalette256()
+void CMainDialog::OnRadiobuttonPalette256(bool checked)
 {
-	currentConfigApp->m_display_bit_depth = 8;
-	m_modified = TRUE;
-	UpdateInterface();
+	if (checked) {
+		currentConfigApp->m_display_bit_depth = 8;
+		m_modified = true;
+		UpdateInterface();
+	}
 }
 
 // FUNCTION: CONFIG 0x004046a0
-void CMainDialog::OnCheckboxFlipVideoMemPages()
+void CMainDialog::OnCheckboxFlipVideoMemPages(bool checked)
 {
-	currentConfigApp->m_flip_surfaces = IsDlgButtonChecked(IDC_CHK_FLIP_VIDEO_MEM_PAGES);
-	m_modified = TRUE;
+	currentConfigApp->m_flip_surfaces = checked;
+	m_modified = true;
 	UpdateInterface();
 }
 
 // FUNCTION: CONFIG 0x004046d0
-void CMainDialog::OnRadiobuttonModelLowQuality()
+void CMainDialog::OnRadiobuttonModelLowQuality(bool checked)
 {
-	currentConfigApp->m_model_quality = 1;
-	m_modified = TRUE;
-	UpdateInterface();
+	if (checked) {
+		// FIXME: are OnRadiobuttonModelLowQuality and OnRadiobuttonModelHighQuality triggered both?
+		qInfo() << "OnRadiobuttonModelLowQuality";
+		currentConfigApp->m_model_quality = 1;
+		m_modified = true;
+		UpdateInterface();
+	}
 }
 
 // FUNCTION: CONFIG 0x00404700
-void CMainDialog::OnRadiobuttonModelHighQuality()
+void CMainDialog::OnRadiobuttonModelHighQuality(bool checked)
 {
-	currentConfigApp->m_model_quality = 2;
-	m_modified = TRUE;
-	UpdateInterface();
+	if (checked) {
+		qInfo() << "OnRadiobuttonModelHighQuality";
+		currentConfigApp->m_model_quality = 2;
+		m_modified = true;
+		UpdateInterface();
+	}
 }
 
 // FUNCTION: CONFIG 0x00404730
-void CMainDialog::OnRadiobuttonTextureLowQuality()
+void CMainDialog::OnRadiobuttonTextureLowQuality(bool checked)
 {
-	currentConfigApp->m_texture_quality = 0;
-	m_modified = TRUE;
-	UpdateInterface();
+	if (checked) {
+		// FIXME: are OnRadiobuttonTextureLowQuality and OnRadiobuttonTextureHighQuality triggered both?
+		qInfo() << "OnRadiobuttonTextureLowQuality";
+		currentConfigApp->m_texture_quality = 0;
+		m_modified = true;
+		UpdateInterface();
+	}
 }
 
 // FUNCTION: CONFIG 0x00404760
-void CMainDialog::OnRadiobuttonTextureHighQuality()
+void CMainDialog::OnRadiobuttonTextureHighQuality(bool checked)
 {
-	currentConfigApp->m_texture_quality = 1;
-	m_modified = TRUE;
-	UpdateInterface();
+	if (checked) {
+		// FIXME: are OnRadiobuttonTextureLowQuality and OnRadiobuttonTextureHighQuality triggered both?
+		qInfo() << "OnRadiobuttonTextureHighQuality";
+		currentConfigApp->m_texture_quality = 1;
+		m_modified = true;
+		UpdateInterface();
+	}
 }
 
 // FUNCTION: CONFIG 0x00404790
-void CMainDialog::OnCheckboxJoystick()
+void CMainDialog::OnCheckboxJoystick(bool checked)
 {
-	currentConfigApp->m_use_joystick = IsDlgButtonChecked(IDC_CHK_JOYSTICK);
-	m_modified = TRUE;
+	currentConfigApp->m_use_joystick = checked;
+	m_modified = true;
 	UpdateInterface();
 }
 
@@ -315,40 +309,25 @@ void CMainDialog::OnButtonAdvanced()
 }
 
 // FUNCTION: CONFIG 0x004047d0
-void CMainDialog::SwitchToAdvanced(BOOL p_advanced)
+void CMainDialog::SwitchToAdvanced(bool p_advanced)
 {
-	RECT dialog_rect;
-	RECT grp_advanced_rect;
-	::GetWindowRect(m_hWnd, &dialog_rect);
-	::GetWindowRect(GetDlgItem(IDC_GRP_ADVANCED)->m_hWnd, &grp_advanced_rect);
-	CWnd* button_advanced = GetDlgItem(IDC_BTN_ADVANCED);
+	m_ui->advancedGroup->setVisible(p_advanced);
+	layout()->setSizeConstraint(QLayout::SetMinAndMaxSize);
 	m_advanced = p_advanced;
-	int height;
-	if (p_advanced) {
-		height = grp_advanced_rect.bottom - dialog_rect.top + 10;
-		GetDlgItem(IDC_BMP_SHARK)->EnableWindow(TRUE);
-		button_advanced->SetWindowText("Basic");
-	}
-	else {
-		height = grp_advanced_rect.top - dialog_rect.top;
-		GetDlgItem(IDC_BMP_SHARK)->EnableWindow(FALSE);
-		button_advanced->SetWindowText("Advanced");
-	}
-	SetWindowPos(&wndTop, 0, 0, dialog_rect.right - dialog_rect.left, height, SWP_NOMOVE);
 }
 
 // FUNCTION: CONFIG 0x00404890
-void CMainDialog::OnCheckboxDrawCursor()
+void CMainDialog::OnCheckboxDrawCursor(bool checked)
 {
-	currentConfigApp->m_draw_cursor = IsDlgButtonChecked(IDC_CHK_DRAW_CURSOR);
-	m_modified = TRUE;
+	currentConfigApp->m_draw_cursor = checked;
+	m_modified = true;
 	UpdateInterface();
 }
 
 // FUNCTION: CONFIG 0x004048c0
-void CMainDialog::OnCheckboxMusic()
+void CMainDialog::OnCheckboxMusic(bool checked)
 {
-	currentConfigApp->m_music = IsDlgButtonChecked(IDC_CHK_MUSIC);
-	m_modified = TRUE;
+	currentConfigApp->m_music = checked;
+	m_modified = true;
 	UpdateInterface();
 }

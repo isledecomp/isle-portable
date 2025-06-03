@@ -3,28 +3,37 @@
 #ifdef MINIWIN
 #include "miniwin/ddraw.h"
 #include "miniwin/dinput.h"
-#include "miniwin/mfc.h"
+#include "qlibrary.h"
+#include "qoperatingsystemversion.h"
 #else
 #include <ddraw.h>
 #include <dinput.h>
 #endif
+
+typedef struct IUnknown* LPUNKNOWN;
 
 typedef HRESULT WINAPI DirectDrawCreate_fn(GUID FAR* lpGUID, LPDIRECTDRAW FAR* lplpDD, IUnknown FAR* pUnkOuter);
 typedef HRESULT WINAPI
 DirectInputCreateA_fn(HINSTANCE hinst, DWORD dwVersion, LPDIRECTINPUTA* ppDI, LPUNKNOWN punkOuter);
 
 // FUNCTION: CONFIG 0x004048f0
-BOOL DetectDirectX5()
+bool DetectDirectX5()
 {
 	unsigned int version;
-	BOOL found;
+	bool found;
 	DetectDirectX(&version, &found);
 	return version >= 0x500;
 }
 
 // FUNCTION: CONFIG 0x00404920
-void DetectDirectX(unsigned int* p_version, BOOL* p_found)
+void DetectDirectX(unsigned int* p_version, bool* p_found)
 {
+#ifdef MINIWIN
+	QOperatingSystemVersion os_version = QOperatingSystemVersion::current();
+	*p_found = true;
+	*p_version = 0x500;
+#else
+
 	OSVERSIONINFOA os_version;
 
 	os_version.dwOSVersionInfoSize = sizeof(os_version);
@@ -40,7 +49,7 @@ void DetectDirectX(unsigned int* p_version, BOOL* p_found)
 			return;
 		}
 		if (os_version.dwMajorVersion != 4) {
-			*p_version = 0x501;
+			*p_version = MAKEWORD(5, 1);
 			return;
 		}
 		*p_version = 0x200;
@@ -56,18 +65,18 @@ void DetectDirectX(unsigned int* p_version, BOOL* p_found)
 			OutputDebugString("Couldn't GetProcAddress DInputCreate\r\n");
 			return;
 		}
-		*p_version = 0x300;
+		*p_version = MAKEWORD(3, 0);
 		return;
 	}
-	*p_found = 1;
+	*p_found = true;
 	if (LOWORD(os_version.dwBuildNumber) >= 0x550) {
-		*p_version = 0x501;
+		*p_version = MAKEWORD(5, 1);
 		return;
 	}
 	HMODULE ddraw_module = LoadLibrary("DDRAW.DLL");
 	if (!ddraw_module) {
 		*p_version = 0;
-		*p_found = 0;
+		*p_found = false;
 		FreeLibrary(ddraw_module);
 		return;
 	}
@@ -75,7 +84,7 @@ void DetectDirectX(unsigned int* p_version, BOOL* p_found)
 		(DirectDrawCreate_fn*) GetProcAddress(ddraw_module, "DirectDrawCreate");
 	if (!func_DirectDrawCreate) {
 		*p_version = 0;
-		*p_found = 0;
+		*p_found = false;
 		FreeLibrary(ddraw_module);
 		OutputDebugString("Couldn't LoadLibrary DDraw\r\n");
 		return;
@@ -83,12 +92,12 @@ void DetectDirectX(unsigned int* p_version, BOOL* p_found)
 	LPDIRECTDRAW ddraw;
 	if (FAILED(func_DirectDrawCreate(NULL, &ddraw, NULL))) {
 		*p_version = 0;
-		*p_found = 0;
+		*p_found = false;
 		FreeLibrary(ddraw_module);
 		OutputDebugString("Couldn't create DDraw\r\n");
 		return;
 	}
-	*p_version = 0x100;
+	*p_version = MAKEWORD(1, 0);
 	LPDIRECTDRAW2 ddraw2;
 	if (FAILED(ddraw->QueryInterface(IID_IDirectDraw2, (LPVOID*) &ddraw2))) {
 		ddraw->Release();
@@ -97,7 +106,7 @@ void DetectDirectX(unsigned int* p_version, BOOL* p_found)
 		return;
 	}
 	ddraw->Release();
-	*p_version = 0x200;
+	*p_version = MAKEWORD(2, 0);
 	HMODULE dinput_module = LoadLibrary("DINPUT.DLL");
 	if (!dinput_module) {
 		OutputDebugString("Couldn't LoadLibrary DInput\r\n");
@@ -114,7 +123,7 @@ void DetectDirectX(unsigned int* p_version, BOOL* p_found)
 		OutputDebugString("Couldn't GetProcAddress DInputCreate\r\n");
 		return;
 	}
-	*p_version = 0x300;
+	*p_version = MAKEWORD(3, 0);
 	DDSURFACEDESC surface_desc;
 	memset(&surface_desc, 0, sizeof(surface_desc));
 	surface_desc.dwSize = sizeof(surface_desc);
@@ -141,8 +150,9 @@ void DetectDirectX(unsigned int* p_version, BOOL* p_found)
 		FreeLibrary(ddraw_module);
 		return;
 	}
-	*p_version = 0x500;
+	*p_version = MAKEWORD(5, 0);
 	surface3->Release();
 	ddraw2->Release();
 	FreeLibrary(ddraw_module);
+#endif
 }

@@ -1,6 +1,5 @@
 #include "config.h"
 
-#include "ConfigCommandLineInfo.h"
 #include "MainDlg.h"
 #include "detectdx5.h"
 
@@ -14,44 +13,47 @@
 #include <process.h> // _spawnl
 #endif
 
+#include <QApplication>
+#include <QCommandLineParser>
+#include <QMessageBox>
+#include <SDL3/SDL.h>
+#include <iniparser.h>
+
 DECOMP_SIZE_ASSERT(CWinApp, 0xc4)
 DECOMP_SIZE_ASSERT(CConfigApp, 0x108)
 
 DECOMP_STATIC_ASSERT(offsetof(CConfigApp, m_display_bit_depth) == 0xd0)
 
-BEGIN_MESSAGE_MAP(CConfigApp, CWinApp)
-ON_COMMAND(ID_HELP, OnHelp)
-END_MESSAGE_MAP()
-
 // FUNCTION: CONFIG 0x00402c40
 CConfigApp::CConfigApp()
 {
+	char* prefPath = SDL_GetPrefPath("isledecomp", "isle");
+	char* iniConfig;
+	if (prefPath) {
+		m_iniPath = std::string{prefPath} + "isle.ini";
+	}
+	else {
+		m_iniPath = "isle.ini";
+	}
+	SDL_free(prefPath);
 }
 
-#define MiB (1024 * 1024)
-
 // FUNCTION: CONFIG 0x00402dc0
-BOOL CConfigApp::InitInstance()
+bool CConfigApp::InitInstance()
 {
-	if (!IsLegoNotRunning()) {
-		return FALSE;
+	if (!SDL_Init(SDL_INIT_VIDEO)) {
+		QString err = QString{"SDL failed to initialize ("} + SDL_GetError() + ")";
+		QMessageBox::warning(nullptr, "SDL initialization error", err);
+		return false;
 	}
 	if (!DetectDirectX5()) {
-		AfxMessageBox(
-			"\"LEGO\xae Island\" is not detecting DirectX 5 or later.  Please quit all other applications and try "
+		QMessageBox::warning(
+			nullptr,
+			"Missing DirectX",
+			"\"LEGO\xc2\xae Island\" is not detecting DirectX 5 or later.  Please quit all other applications and try "
 			"again."
 		);
-		return FALSE;
-	}
-#ifdef _AFXDLL
-	Enable3dControls();
-#else
-	Enable3dControlsStatic();
-#endif
-	CConfigCommandLineInfo cmdInfo;
-	ParseCommandLine(cmdInfo);
-	if (_stricmp(afxCurrentAppName, "config") == 0) {
-		m_run_config_dialog = TRUE;
+		return false;
 	}
 	m_device_enumerator = new LegoDeviceEnumerate;
 	if (m_device_enumerator->DoEnumerate()) {
@@ -67,15 +69,13 @@ BOOL CConfigApp::InitInstance()
 	m_3d_video_ram = FALSE;
 	m_joystick_index = -1;
 	m_display_bit_depth = 16;
-	MEMORYSTATUS memory_status;
-	memory_status.dwLength = sizeof(memory_status);
-	GlobalMemoryStatus(&memory_status);
-	if (memory_status.dwTotalPhys < 12 * MiB) {
+	int totalRamMiB = SDL_GetSystemRAM();
+	if (totalRamMiB < 12) {
 		m_3d_sound = FALSE;
 		m_model_quality = 0;
 		m_texture_quality = 1;
 	}
-	else if (memory_status.dwTotalPhys < 20 * MiB) {
+	else if (totalRamMiB < 20) {
 		m_3d_sound = FALSE;
 		m_model_quality = 1;
 		m_texture_quality = 1;
@@ -85,126 +85,11 @@ BOOL CConfigApp::InitInstance()
 		m_3d_sound = TRUE;
 		m_texture_quality = 1;
 	}
-	if (!m_run_config_dialog) {
-		ReadRegisterSettings();
-		ValidateSettings();
-		WriteRegisterSettings();
-		delete m_device_enumerator;
-		m_device_enumerator = NULL;
-		m_driver = NULL;
-		m_device = NULL;
-		char password[256];
-		ReadReg("password", password, sizeof(password));
-		const char* exe = _stricmp("ogel", password) == 0 ? "isled.exe" : "isle.exe";
-		char diskpath[1024];
-		if (ReadReg("diskpath", diskpath, sizeof(diskpath))) {
-			_chdir(diskpath);
-		}
-		_spawnl(_P_NOWAIT, exe, exe, "/diskstream", "/script", "\\lego\\scripts\\isle\\isle.si", NULL);
-		return FALSE;
-	}
-	CMainDialog main_dialog(NULL);
-	main_dialog.DoModal();
-	return FALSE;
-}
-
-// FUNCTION: CONFIG 0x00403100
-BOOL CConfigApp::IsLegoNotRunning()
-{
-	HWND hWnd = FindWindow("Lego Island MainNoM App", "LEGO\xae");
-	if (_stricmp(afxCurrentAppName, "config") == 0 || !hWnd) {
-		return TRUE;
-	}
-	if (SetForegroundWindow(hWnd)) {
-		ShowWindow(hWnd, SW_RESTORE);
-	}
-	return FALSE;
-}
-
-// FUNCTION: CONFIG 0x004031b0
-BOOL CConfigApp::WriteReg(const char* p_key, const char* p_value) const
-{
-	HKEY hKey;
-	DWORD pos;
-
-	if (RegCreateKeyEx(
-			HKEY_LOCAL_MACHINE,
-			"SOFTWARE\\Mindscape\\LEGO Island",
-			0,
-			"string",
-			0,
-			KEY_READ | KEY_WRITE,
-			NULL,
-			&hKey,
-			&pos
-		) == ERROR_SUCCESS) {
-		if (RegSetValueEx(hKey, p_key, 0, REG_SZ, (LPBYTE) p_value, strlen(p_value)) == ERROR_SUCCESS) {
-			if (RegCloseKey(hKey) == ERROR_SUCCESS) {
-				return TRUE;
-			}
-		}
-		else {
-			RegCloseKey(hKey);
-		}
-	}
-	return FALSE;
-}
-
-// FUNCTION: CONFIG 0x00403240
-BOOL CConfigApp::ReadReg(LPCSTR p_key, LPCSTR p_value, DWORD p_size) const
-{
-	HKEY hKey;
-	DWORD valueType;
-
-	BOOL out = FALSE;
-	DWORD size = p_size;
-	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Mindscape\\LEGO Island", 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
-		if (RegQueryValueEx(hKey, p_key, NULL, &valueType, (LPBYTE) p_value, &size) == ERROR_SUCCESS) {
-			if (RegCloseKey(hKey) == ERROR_SUCCESS) {
-				out = TRUE;
-			}
-		}
-	}
-	return out;
-}
-
-// FUNCTION: CONFIG 0x004032b0
-BOOL CConfigApp::ReadRegBool(LPCSTR p_key, BOOL* p_bool) const
-{
-	char buffer[256];
-
-	BOOL read = ReadReg(p_key, buffer, sizeof(buffer));
-	if (read) {
-		if (strcmp("YES", buffer) == 0) {
-			*p_bool = TRUE;
-			return read;
-		}
-
-		if (strcmp("NO", buffer) == 0) {
-			*p_bool = FALSE;
-			return read;
-		}
-
-		read = FALSE;
-	}
-	return read;
-}
-
-// FUNCTION: CONFIG 0x00403380
-BOOL CConfigApp::ReadRegInt(LPCSTR p_key, int* p_value) const
-{
-	char buffer[256];
-
-	BOOL read = ReadReg(p_key, buffer, sizeof(buffer));
-	if (read) {
-		*p_value = atoi(buffer);
-	}
-
-	return read;
+	return true;
 }
 
 // FUNCTION: CONFIG 0x004033d0
-BOOL CConfigApp::IsDeviceInBasicRGBMode() const
+bool CConfigApp::IsDeviceInBasicRGBMode() const
 {
 	/*
 	 * BUG: should be:
@@ -220,71 +105,55 @@ D3DCOLORMODEL CConfigApp::GetHardwareDeviceColorModel() const
 }
 
 // FUNCTION: CONFIG 0x00403410
-BOOL CConfigApp::IsPrimaryDriver() const
+bool CConfigApp::IsPrimaryDriver() const
 {
 	return m_driver == &m_device_enumerator->GetDriverList().front();
 }
 
 // FUNCTION: CONFIG 0x00403430
-BOOL CConfigApp::ReadRegisterSettings()
+bool CConfigApp::ReadRegisterSettings()
 {
-	char buffer[256];
-	BOOL is_modified = FALSE;
 	int tmp = -1;
+#define NOT_FOUND (-2)
 
-	if (ReadReg("3D Device ID", buffer, sizeof(buffer))) {
-		tmp = m_device_enumerator->ParseDeviceName(buffer);
+	dictionary* dict = iniparser_load(m_iniPath.c_str());
+	if (!dict) {
+		dict = dictionary_new(0);
+	}
+
+	const char* device3D = iniparser_getstring(dict, "isle:3D Device ID", nullptr);
+	if (device3D) {
+		tmp = m_device_enumerator->ParseDeviceName(device3D);
 		if (tmp >= 0) {
 			tmp = m_device_enumerator->GetDevice(tmp, m_driver, m_device);
 		}
 	}
 	if (tmp != 0) {
-		is_modified = TRUE;
 		m_device_enumerator->FUN_1009d210();
 		tmp = m_device_enumerator->GetBestDevice();
 		m_device_enumerator->GetDevice(tmp, m_driver, m_device);
 	}
-	if (!ReadRegInt("Display Bit Depth", &m_display_bit_depth)) {
-		is_modified = TRUE;
-	}
-	if (!ReadRegBool("Flip Surfaces", &m_flip_surfaces)) {
-		is_modified = TRUE;
-	}
-	if (!ReadRegBool("Full Screen", &m_full_screen)) {
-		is_modified = TRUE;
-	}
-	if (!ReadRegBool("Back Buffers in Video RAM", &m_3d_video_ram)) {
-		is_modified = TRUE;
-	}
-	if (!ReadRegBool("Wide View Angle", &m_wide_view_angle)) {
-		is_modified = TRUE;
-	}
-	if (!ReadRegBool("3DSound", &m_3d_sound)) {
-		is_modified = TRUE;
-	}
-	if (!ReadRegBool("Draw Cursor", &m_draw_cursor)) {
-		is_modified = TRUE;
-	}
-	if (!ReadRegInt("Island Quality", &m_model_quality)) {
-		is_modified = TRUE;
-	}
-	if (!ReadRegInt("Island Texture", &m_texture_quality)) {
-		is_modified = TRUE;
-	}
-	if (!ReadRegBool("UseJoystick", &m_use_joystick)) {
-		is_modified = TRUE;
-	}
-	if (!ReadRegBool("Music", &m_music)) {
-		is_modified = TRUE;
-	}
-	if (!ReadRegInt("JoystickIndex", &m_joystick_index)) {
-		is_modified = TRUE;
-	}
-	return is_modified;
+	m_base_path = iniparser_getstring(dict, "isle:diskpath", m_base_path.c_str());
+	m_cd_path = iniparser_getstring(dict, "isle:cdpath", m_cd_path.c_str());
+	m_media_path = iniparser_getstring(dict, "isle:mediapath", m_media_path.c_str());
+	m_save_path = iniparser_getstring(dict, "isle:savepath", m_save_path.c_str());
+	m_display_bit_depth = iniparser_getint(dict, "isle:Display Bit Depth", -1);
+	m_flip_surfaces = iniparser_getboolean(dict, "isle:Flip Surfaces", m_flip_surfaces);
+	m_full_screen = iniparser_getboolean(dict, "isle:Full Screen", m_full_screen);
+	m_3d_video_ram = iniparser_getboolean(dict, "isle:Back Buffers in Video RAM", m_3d_video_ram);
+	m_wide_view_angle = iniparser_getboolean(dict, "isle:Wide View Angle", m_wide_view_angle);
+	m_3d_sound = iniparser_getboolean(dict, "isle:3DSound", m_3d_sound);
+	m_draw_cursor = iniparser_getboolean(dict, "isle:Draw Cursor", m_draw_cursor);
+	m_model_quality = iniparser_getint(dict, "isle:Island Quality", m_model_quality);
+	m_texture_quality = iniparser_getint(dict, "isle:Island Texture", m_texture_quality);
+	m_use_joystick = iniparser_getboolean(dict, "isle:UseJoystick", m_use_joystick);
+	m_music = iniparser_getboolean(dict, "isle:Music", m_music);
+	m_joystick_index = iniparser_getint(dict, "isle:JoystickIndex", m_joystick_index);
+	return true;
 }
 
 // FUNCTION: CONFIG 0x00403630
-BOOL CConfigApp::ValidateSettings()
+bool CConfigApp::ValidateSettings()
 {
 	BOOL is_modified = FALSE;
 
@@ -369,7 +238,7 @@ DWORD CConfigApp::GetDeviceRenderBitStatus() const
 }
 
 // FUNCTION: CONFIG 0x00403810
-BOOL CConfigApp::AdjustDisplayBitDepthBasedOnRenderStatus()
+bool CConfigApp::AdjustDisplayBitDepthBasedOnRenderStatus()
 {
 	if (m_display_bit_depth == 8) {
 		if (GetConditionalDeviceRenderBitDepth()) {
@@ -398,32 +267,55 @@ void CConfigApp::WriteRegisterSettings() const
 
 {
 	char buffer[128];
-
-#define WriteRegBool(NAME, VALUE) WriteReg(NAME, VALUE ? "YES" : "NO")
-#define WriteRegInt(NAME, VALUE)                                                                                       \
+#define SetIniBool(DICT, NAME, VALUE) iniparser_set(DICT, NAME, VALUE ? "true" : "false")
+#define SetIniInt(DICT, NAME, VALUE)                                                                                   \
 	do {                                                                                                               \
 		sprintf(buffer, "%d", VALUE);                                                                                  \
-		WriteReg(NAME, buffer);                                                                                        \
+		iniparser_set(DICT, NAME, buffer);                                                                             \
 	} while (0)
 
 	m_device_enumerator->FormatDeviceName(buffer, m_driver, m_device);
-	WriteReg("3D Device ID", buffer);
-	WriteReg("3D Device Name", m_device->m_deviceName);
-	WriteRegInt("Display Bit Depth", m_display_bit_depth);
-	WriteRegBool("Flip Surfaces", m_flip_surfaces);
-	WriteRegBool("Full Screen", m_full_screen);
-	WriteRegBool("Back Buffers in Video RAM", m_3d_video_ram);
-	WriteRegBool("Wide View Angle", m_wide_view_angle);
-	WriteRegBool("3DSound", m_3d_sound);
-	WriteRegBool("Draw Cursor", m_draw_cursor);
-	WriteRegInt("Island Quality", m_model_quality);
-	WriteRegInt("Island Texture", m_texture_quality);
-	WriteRegBool("UseJoystick", m_use_joystick);
-	WriteRegBool("Music", m_music);
-	WriteRegInt("JoystickIndex", m_joystick_index);
 
-#undef WriteRegBool
-#undef WriteRegInt
+	dictionary* dict = dictionary_new(0);
+	iniparser_set(dict, "isle", NULL);
+	if (m_device_enumerator->FormatDeviceName(buffer, m_driver, m_device) >= 0) {
+		iniparser_set(dict, "isle:3D Device ID", buffer);
+	}
+	iniparser_set(dict, "isle:diskpath", m_base_path.c_str());
+	iniparser_set(dict, "isle:cdpath", m_cd_path.c_str());
+	iniparser_set(dict, "isle:mediapath", m_media_path.c_str());
+	iniparser_set(dict, "isle:savepath", m_save_path.c_str());
+
+	SetIniBool(dict, "isle:Display Bit Depth", m_display_bit_depth);
+	SetIniBool(dict, "isle:Flip Surfaces", m_flip_surfaces);
+	SetIniBool(dict, "isle:Full Screen", m_full_screen);
+	SetIniBool(dict, "isle:Wide View Angle", m_wide_view_angle);
+
+	SetIniBool(dict, "isle:3DSound", m_3d_sound);
+	SetIniBool(dict, "isle:Music", m_music);
+
+	SetIniInt(dict, "isle:UseJoystick", m_use_joystick);
+	SetIniBool(dict, "isle:JoystickIndex", m_joystick_index);
+	SetIniBool(dict, "isle:Draw Cursor", m_draw_cursor);
+
+	SetIniBool(dict, "isle:Back Buffers in Video RAM", m_3d_video_ram);
+
+	SetIniInt(dict, "isle:Island Quality", m_model_quality);
+	SetIniInt(dict, "isle:Island Texture", m_texture_quality);
+
+#undef SetIniBool
+#undef SetIniInt
+
+	FILE* iniFP = fopen(m_iniPath.c_str(), "wb");
+	if (iniFP) {
+		iniparser_dump_ini(dict, iniFP);
+		qInfo() << "New config written at" << QString::fromStdString(m_iniPath);
+		fclose(iniFP);
+	}
+	else {
+		QMessageBox::warning(nullptr, "Failed to save ini", "Failed to save ini");
+	}
+	iniparser_freedict(dict);
 }
 
 // FUNCTION: CONFIG 0x00403a90
@@ -433,8 +325,52 @@ int CConfigApp::ExitInstance()
 		delete m_device_enumerator;
 		m_device_enumerator = NULL;
 	}
-	return CWinApp::ExitInstance();
+	SDL_Quit();
+	return 0;
+}
+
+void CConfigApp::SetIniPath(const std::string& p_path)
+{
+	m_iniPath = p_path;
+}
+const std::string& CConfigApp::GetIniPath() const
+{
+	return m_iniPath;
 }
 
 // GLOBAL: CONFIG 0x00408e50
 CConfigApp g_theApp;
+
+int main(int argc, char* argv[])
+{
+	QApplication app(argc, argv);
+	QCoreApplication::setApplicationName("config");
+	QCoreApplication::setApplicationVersion("1.0");
+
+	QCommandLineParser parser;
+	parser.setApplicationDescription("Configure LEGO Island");
+	parser.addHelpOption();
+	parser.addVersionOption();
+
+	QCommandLineOption iniOption(
+		QStringList() << "ini",
+		QCoreApplication::translate("config", "Set INI path."),
+		QCoreApplication::translate("config", "path")
+	);
+	parser.addOption(iniOption);
+	parser.process(app);
+
+	if (parser.isSet(iniOption)) {
+		g_theApp.SetIniPath(parser.value(iniOption).toStdString());
+	}
+	qInfo() << "Ini path =" << QString::fromStdString(g_theApp.GetIniPath());
+
+	int result = 1;
+	if (g_theApp.InitInstance()) {
+		CMainDialog main_dialog;
+		main_dialog.show();
+		result = app.exec();
+	}
+	g_theApp.ExitInstance();
+	return result;
+}

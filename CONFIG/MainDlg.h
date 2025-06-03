@@ -1,55 +1,53 @@
 #if !defined(AFX_MAINDLG_H)
 #define AFX_MAINDLG_H
 
-#include "StdAfx.h"
 #include "compat.h"
 #include "decomp.h"
 #include "res/resource.h"
 
+#include <QDialog>
+
+namespace Ui
+{
+class MainDialog;
+}
+
 // VTABLE: CONFIG 0x004063e0
 // SIZE 0x70
-class CMainDialog : public CDialog {
+class CMainDialog : public QDialog {
+	Q_OBJECT
+
 public:
-	CMainDialog(CWnd* pParent);
-	enum {
-		IDD = IDD_MAIN
-	};
+	CMainDialog(QWidget* pParent = nullptr);
 
 protected:
-	void DoDataExchange(CDataExchange* pDX) override;
 	void UpdateInterface();
-	void SwitchToAdvanced(BOOL p_advanced);
+	void SwitchToAdvanced(bool p_advanced);
 
-	undefined m_unk0x60[4]; // 0x60
-	HCURSOR m_icon;         // 0x64
-	BOOL m_modified;        // 0x68
-	BOOL m_advanced;        // 0x6c
-							// Implementation
+private:
+	bool m_modified = false;
+	bool m_advanced = false;
+	Ui::MainDialog* m_ui = nullptr;
 
-protected:
-	BOOL OnInitDialog() override;
-	void OnSysCommand(UINT nID, LPARAM lParam);
-	void OnPaint();
-	HCURSOR OnQueryDragIcon();
-	void OnList3DevicesSelectionChanged();
-	void OnCancel();
-	void OnDestroy();
-	void OnButtonCancel();
-	void OnCheckbox3DSound();
-	void OnCheckbox3DVideoMemory();
-	void OnRadiobuttonPalette16bit();
-	void OnRadiobuttonPalette256();
-	void OnCheckboxFlipVideoMemPages();
-	void OnRadiobuttonModelLowQuality();
-	void OnRadiobuttonModelHighQuality();
-	void OnRadiobuttonTextureLowQuality();
-	void OnRadiobuttonTextureHighQuality();
-	void OnCheckboxJoystick();
+	void keyReleaseEvent(QKeyEvent* event) override;
+	bool OnInitDialog();
+private slots:
+	void OnList3DevicesSelectionChanged(int row);
+	void OnCheckbox3DSound(bool checked);
+	void OnCheckbox3DVideoMemory(bool checked);
+	void OnRadiobuttonPalette16bit(bool checked);
+	void OnRadiobuttonPalette256(bool checked);
+	void OnCheckboxFlipVideoMemPages(bool checked);
+	void OnRadiobuttonModelLowQuality(bool checked);
+	void OnRadiobuttonModelHighQuality(bool checked);
+	void OnRadiobuttonTextureLowQuality(bool checked);
+	void OnRadiobuttonTextureHighQuality(bool checked);
+	void OnCheckboxJoystick(bool chedked);
+	void OnCheckboxDrawCursor(bool checked);
+	void OnCheckboxMusic(bool checked);
 	void OnButtonAdvanced();
-	void OnCheckboxDrawCursor();
-	void OnCheckboxMusic();
-
-	DECLARE_MESSAGE_MAP()
+	void accept() override;
+	void reject() override;
 };
 
 // SYNTHETIC: CONFIG 0x00403de0
