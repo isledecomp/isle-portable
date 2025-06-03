@@ -1,9 +1,11 @@
 #include "ShaderIndex.h"
+#include "d3drmrenderer.h"
 #include "d3drmrenderer_sdl3gpu.h"
 #include "ddraw_impl.h"
 #include "miniwin.h"
 
 #include <SDL3/SDL.h>
+#include <cstddef>
 
 static SDL_GPUGraphicsPipeline* InitializeGraphicsPipeline(SDL_GPUDevice* device)
 {
@@ -33,21 +35,36 @@ static SDL_GPUGraphicsPipeline* InitializeGraphicsPipeline(SDL_GPUDevice* device
 	vertexBufferDescs[0].input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX;
 	vertexBufferDescs[0].instance_step_rate = 0;
 
-	SDL_GPUVertexAttribute vertexAttrs[3] = {};
+	SDL_GPUVertexAttribute vertexAttrs[6] = {};
 	vertexAttrs[0].location = 0;
 	vertexAttrs[0].buffer_slot = 0;
 	vertexAttrs[0].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3;
-	vertexAttrs[0].offset = 0;
+	vertexAttrs[0].offset = offsetof(PositionColorVertex, position);
 
 	vertexAttrs[1].location = 1;
 	vertexAttrs[1].buffer_slot = 0;
 	vertexAttrs[1].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3;
-	vertexAttrs[1].offset = sizeof(float) * 3;
+	vertexAttrs[1].offset = offsetof(PositionColorVertex, normals);
 
 	vertexAttrs[2].location = 2;
 	vertexAttrs[2].buffer_slot = 0;
 	vertexAttrs[2].format = SDL_GPU_VERTEXELEMENTFORMAT_UBYTE4_NORM;
-	vertexAttrs[2].offset = sizeof(float) * 6;
+	vertexAttrs[2].offset = offsetof(PositionColorVertex, colors);
+
+	vertexAttrs[3].location = 3;
+	vertexAttrs[3].buffer_slot = 0;
+	vertexAttrs[3].format = SDL_GPU_VERTEXELEMENTFORMAT_UINT;
+	vertexAttrs[3].offset = offsetof(PositionColorVertex, texId);
+
+	vertexAttrs[4].location = 4;
+	vertexAttrs[4].buffer_slot = 0;
+	vertexAttrs[4].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2;
+	vertexAttrs[4].offset = offsetof(PositionColorVertex, texCoord);
+
+	vertexAttrs[5].location = 5;
+	vertexAttrs[5].buffer_slot = 0;
+	vertexAttrs[5].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT;
+	vertexAttrs[5].offset = offsetof(PositionColorVertex, shininess);
 
 	SDL_GPUVertexInputState vertexInputState = {};
 	vertexInputState.vertex_buffer_descriptions = vertexBufferDescs;
@@ -371,36 +388,7 @@ HRESULT Direct3DRMSDL3GPURenderer::Render()
 	SDL_DestroySurface(m_renderedImage);
 	SDL_UnmapGPUTransferBuffer(m_device, m_downloadTransferBuffer);
 	m_renderedImage = convertedRender;
-	return Blit();
-}
+	SDL_BlitSurface(m_renderedImage, nullptr, m_backbuffer, nullptr);
 
-HRESULT Direct3DRMSDL3GPURenderer::Blit()
-{
-	// Blit the render back to our backbuffer
-	SDL_Rect srcRect{0, 0, (int) m_width, (int) m_height};
-
-	const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(m_backbuffer->format);
-	if (details->Amask != 0) {
-		// Backbuffer supports transparnacy
-		SDL_Surface* convertedRender = SDL_ConvertSurface(m_renderedImage, m_backbuffer->format);
-		SDL_DestroySurface(m_renderedImage);
-		m_renderedImage = convertedRender;
-		return DD_OK;
-	}
-
-	if (m_renderedImage->format == m_backbuffer->format) {
-		// No conversion needed
-		SDL_BlitSurface(m_renderedImage, &srcRect, m_backbuffer, &srcRect);
-		return DD_OK;
-	}
-
-	// Convert backbuffer to a format that supports transparancy
-	SDL_Surface* tempBackbuffer = SDL_ConvertSurface(m_backbuffer, m_renderedImage->format);
-	SDL_BlitSurface(m_renderedImage, &srcRect, tempBackbuffer, &srcRect);
-	// Then convert the result back to the backbuffer format and write it back
-	SDL_Surface* newBackBuffer = SDL_ConvertSurface(tempBackbuffer, m_backbuffer->format);
-	SDL_DestroySurface(tempBackbuffer);
-	SDL_BlitSurface(newBackBuffer, &srcRect, m_backbuffer, &srcRect);
-	SDL_DestroySurface(newBackBuffer);
 	return DD_OK;
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "d3drmrenderer.h"
 #include "miniwin/d3d.h"
 #include "miniwin/ddraw.h"
 
@@ -43,3 +44,5 @@ struct DirectDrawImpl : public IDirectDraw2, public IDirect3D2 {
 HRESULT DirectDrawEnumerate(LPDDENUMCALLBACKA cb, void* context);
 
 HRESULT DirectDrawCreate(LPGUID lpGuid, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOuter);
+
+void EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx, Direct3DRMRenderer* device, GUID deviceGuid);

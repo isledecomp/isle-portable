@@ -47,10 +47,10 @@ void Direct3DRMSoftwareRenderer::ClearZBuffer()
 
 void Direct3DRMSoftwareRenderer::ProjectVertex(const PositionColorVertex& v, D3DRMVECTOR4D& p) const
 {
-	float px = proj[0][0] * v.x + proj[1][0] * v.y + proj[2][0] * v.z + proj[3][0];
-	float py = proj[0][1] * v.x + proj[1][1] * v.y + proj[2][1] * v.z + proj[3][1];
-	float pz = proj[0][2] * v.x + proj[1][2] * v.y + proj[2][2] * v.z + proj[3][2];
-	float pw = proj[0][3] * v.x + proj[1][3] * v.y + proj[2][3] * v.z + proj[3][3];
+	float px = proj[0][0] * v.position.x + proj[1][0] * v.position.y + proj[2][0] * v.position.z + proj[3][0];
+	float py = proj[0][1] * v.position.x + proj[1][1] * v.position.y + proj[2][1] * v.position.z + proj[3][1];
+	float pz = proj[0][2] * v.position.x + proj[1][2] * v.position.y + proj[2][2] * v.position.z + proj[3][2];
+	float pw = proj[0][3] * v.position.x + proj[1][3] * v.position.y + proj[2][3] * v.position.z + proj[3][3];
 
 	p.w = pw;
 
@@ -69,23 +69,23 @@ void Direct3DRMSoftwareRenderer::ProjectVertex(const PositionColorVertex& v, D3D
 
 PositionColorVertex SplitEdge(PositionColorVertex a, const PositionColorVertex& b, float plane)
 {
-	float t = (plane - a.z) / (b.z - a.z);
-	a.x = a.x + t * (b.x - a.x);
-	a.y = a.y + t * (b.y - a.y);
-	a.z = plane;
+	float t = (plane - a.position.z) / (b.position.z - a.position.z);
+	a.position.x = a.position.x + t * (b.position.x - a.position.x);
+	a.position.y = a.position.y + t * (b.position.y - a.position.y);
+	a.position.z = plane;
 
-	a.u = a.u + t * (b.u - a.u);
-	a.v = a.v + t * (b.v - a.v);
+	a.texCoord.u = a.texCoord.u + t * (b.texCoord.u - a.texCoord.u);
+	a.texCoord.v = a.texCoord.v + t * (b.texCoord.v - a.texCoord.v);
 
-	a.nx = a.nx + t * (b.nx - a.nx);
-	a.ny = a.ny + t * (b.ny - a.ny);
-	a.nz = a.nz + t * (b.nz - a.nz);
+	a.normals.x = a.normals.x + t * (b.normals.x - a.normals.x);
+	a.normals.y = a.normals.y + t * (b.normals.y - a.normals.y);
+	a.normals.z = a.normals.z + t * (b.normals.z - a.normals.z);
 
-	float len = std::sqrt(a.nx * a.nx + a.ny * a.ny + a.nz * a.nz);
+	float len = std::sqrt(a.normals.x * a.normals.x + a.normals.y * a.normals.y + a.normals.z * a.normals.z);
 	if (len > 0.0001f) {
-		a.nx /= len;
-		a.ny /= len;
-		a.nz /= len;
+		a.normals.x /= len;
+		a.normals.y /= len;
+		a.normals.z /= len;
 	}
 
 	return a;
@@ -97,9 +97,9 @@ void Direct3DRMSoftwareRenderer::DrawTriangleClipped(
 	const PositionColorVertex& v2
 )
 {
-	bool in0 = v0.z >= m_front;
-	bool in1 = v1.z >= m_front;
-	bool in2 = v2.z >= m_front;
+	bool in0 = v0.position.z >= m_front;
+	bool in1 = v1.position.z >= m_front;
+	bool in2 = v2.position.z >= m_front;
 
 	int insideCount = in0 + in1 + in2;
 
@@ -164,52 +164,71 @@ void Direct3DRMSoftwareRenderer::BlendPixel(Uint8* pixelAddr, Uint8 r, Uint8 g, 
 
 SDL_Color Direct3DRMSoftwareRenderer::ApplyLighting(const PositionColorVertex& vertex)
 {
-	float r = 0, g = 0, b = 0;
-	for (const SceneLight& light : m_lights) {
-		if (light.positional == 0.f && light.directional == 0.f) {
+	FColor specular = {0, 0, 0, 0};
+	FColor diffuse = {0, 0, 0, 0};
+
+	// Position and normal
+	D3DVECTOR position = vertex.position;
+	D3DVECTOR normal = vertex.normals;
+	float normLen = std::sqrt(normal.x * normal.x + normal.y * normal.y + normal.z * normal.z);
+	if (normLen == 0.0f) {
+		return vertex.colors;
+	}
+
+	normal.x /= normLen;
+	normal.y /= normLen;
+	normal.z /= normLen;
+
+	for (const auto& light : m_lights) {
+		FColor lightColor = light.color;
+
+		if (light.positional == 0.0f && light.directional == 0.0f) {
 			// Ambient light
-			r += light.color.r;
-			g += light.color.g;
-			b += light.color.b;
+			diffuse.r += lightColor.r;
+			diffuse.g += lightColor.g;
+			diffuse.b += lightColor.b;
+			continue;
 		}
-		else if (light.directional == 1.f) {
-			// Directional
-			D3DVECTOR L = light.direction;
-			float Llen = std::sqrt(L.x * L.x + L.y * L.y + L.z * L.z);
-			if (Llen > 0.f) {
-				L.x /= Llen;
-				L.y /= Llen;
-				L.z /= Llen;
-				float ndotl = std::max(0.0f, -(vertex.nx * L.x + vertex.ny * L.y + vertex.nz * L.z));
-				r += light.color.r * ndotl;
-				g += light.color.g * ndotl;
-				b += light.color.b * ndotl;
-			}
+
+		// TODO lightVec only has to be calculated once per frame for directional lights
+		D3DVECTOR lightVec;
+		if (light.directional == 1.0f) {
+			lightVec = {-light.direction.x, -light.direction.y, -light.direction.z};
 		}
-		else if (light.positional == 1.f) {
-			// Point
-			D3DVECTOR L = {light.position.x - vertex.x, light.position.y - vertex.y, light.position.z - vertex.z};
-			float Llen = std::sqrt(L.x * L.x + L.y * L.y + L.z * L.z);
-			if (Llen > 0.f) {
-				L.x /= Llen;
-				L.y /= Llen;
-				L.z /= Llen;
-				float ndotl = std::max(0.0f, vertex.nx * L.x + vertex.ny * L.y + vertex.nz * L.z);
-				r += light.color.r * ndotl;
-				g += light.color.g * ndotl;
-				b += light.color.b * ndotl;
+		else if (light.positional == 1.0f) {
+			lightVec = {light.position.x - position.x, light.position.y - position.y, light.position.z - position.z};
+		}
+
+		float len = std::sqrt(lightVec.x * lightVec.x + lightVec.y * lightVec.y + lightVec.z * lightVec.z);
+		if (len == 0.0f) {
+			continue;
+		}
+		lightVec.x /= len;
+		lightVec.y /= len;
+		lightVec.z /= len;
+
+		float dotNL = normal.x * lightVec.x + normal.y * lightVec.y + normal.z * lightVec.z;
+		if (dotNL > 0.0f) {
+			// Diffuse contribution
+			diffuse.r += dotNL * lightColor.r;
+			diffuse.g += dotNL * lightColor.g;
+			diffuse.b += dotNL * lightColor.b;
+
+			if (vertex.shininess != 0.0f) {
+				// Using dotNL ignores view angle, but this matches DirectX 5 behavior.
+				float spec = std::pow(dotNL, vertex.shininess);
+				specular.r += spec * lightColor.r;
+				specular.g += spec * lightColor.g;
+				specular.b += spec * lightColor.b;
 			}
 		}
 	}
-	r = std::min(1.0f, r);
-	g = std::min(1.0f, g);
-	b = std::min(1.0f, b);
 
-	return {
-		static_cast<Uint8>(vertex.r * r),
-		static_cast<Uint8>(vertex.g * g),
-		static_cast<Uint8>(vertex.b * b),
-		vertex.a
+	return SDL_Color{
+		static_cast<Uint8>(std::min(255.0f, diffuse.r * vertex.colors.r + specular.r * 255.0f)),
+		static_cast<Uint8>(std::min(255.0f, diffuse.g * vertex.colors.g + specular.g * 255.0f)),
+		static_cast<Uint8>(std::min(255.0f, diffuse.b * vertex.colors.b + specular.b * 255.0f)),
+		vertex.colors.a
 	};
 }
 
@@ -305,7 +324,7 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 			Uint8 b = static_cast<Uint8>(w0 * c0.b + w1 * c1.b + w2 * c2.b);
 			Uint8* pixelAddr = pixels + y * pitch + x * m_bytesPerPixel;
 
-			if (v0.a == 255) {
+			if (v0.colors.a == 255) {
 				zref = z;
 
 				if (texels) {
@@ -315,8 +334,12 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 						continue;
 					}
 					invW = 1.0 / invW;
-					float u = static_cast<float>(((w0 * v0.u / p0.w) + (w1 * v1.u / p1.w) + (w2 * v2.u / p2.w)) * invW);
-					float v = static_cast<float>(((w0 * v0.v / p0.w) + (w1 * v1.v / p1.w) + (w2 * v2.v / p2.w)) * invW);
+					float u = static_cast<float>(
+						((w0 * v0.texCoord.u / p0.w) + (w1 * v1.texCoord.u / p1.w) + (w2 * v2.texCoord.u / p2.w)) * invW
+					);
+					float v = static_cast<float>(
+						((w0 * v0.texCoord.v / p0.w) + (w1 * v1.texCoord.v / p1.w) + (w2 * v2.texCoord.v / p2.w)) * invW
+					);
 
 					// Tile textures
 					u = u - std::floor(u);
@@ -344,7 +367,7 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 			}
 			else {
 				// Transparent alpha blending with vertex alpha
-				BlendPixel(pixelAddr, r, g, b, v0.a);
+				BlendPixel(pixelAddr, r, g, b, v0.colors.a);
 			}
 		}
 	}
@@ -403,6 +426,7 @@ Uint32 Direct3DRMSoftwareRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 		if (texRef.texture == nullptr) {
 			texRef.texture = texture;
 			texRef.cached = convertedRender;
+			texRef.version = texture->m_version;
 			AddTextureDestroyCallback(i, texture);
 			return i;
 		}

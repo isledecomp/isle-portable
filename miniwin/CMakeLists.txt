@@ -22,6 +22,18 @@ add_library(miniwin STATIC EXCLUDE_FROM_ALL
   src/d3drm/backends/sdl3gpu/shaders/generated/ShaderIndex.cpp
 )
 
+find_package(OpenGL)
+find_package(GLEW)
+if(OpenGL_FOUND AND GLEW_FOUND)
+  target_sources(miniwin PRIVATE src/d3drm/backends/opengl15/renderer.cpp)
+  target_compile_definitions(miniwin PRIVATE USE_OPENGL15)
+  # Find and link OpenGL (1.5)
+  target_link_libraries(miniwin PRIVATE OpenGL::GL)
+  # Glew is used for getting a FBO for off screen rendering
+  target_include_directories(miniwin PRIVATE ${GLEW_INCLUDE_DIRS})
+  target_link_libraries(miniwin PRIVATE ${GLEW_LIBRARIES})
+endif()
+
 # Force reported render mods from MiniWin
 target_compile_definitions(miniwin PRIVATE MINIWIN_PIXELFORMAT=SDL_PIXELFORMAT_RGB565)
 target_compile_definitions(miniwin PUBLIC MINIWIN)

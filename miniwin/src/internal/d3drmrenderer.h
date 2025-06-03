@@ -6,13 +6,19 @@
 
 #define NO_TEXTURE_ID 0xffffffff
 
-typedef struct PositionColorVertex {
-	float x, y, z;
-	float nx, ny, nz;
-	Uint8 r, g, b, a;
-	Uint32 texId = NO_TEXTURE_ID;
+struct TexCoord {
 	float u, v;
-} PositionColorVertex;
+};
+
+struct PositionColorVertex {
+	D3DVECTOR position;
+	D3DVECTOR normals;
+	SDL_Color colors;
+	Uint32 texId;
+	TexCoord texCoord;
+	float shininess;
+};
+static_assert(sizeof(PositionColorVertex) == 44);
 
 struct FColor {
 	float r, g, b, a;
@@ -25,6 +31,7 @@ struct SceneLight {
 	D3DVECTOR direction;
 	float directional = 0.f; // direction is valid if 1.f
 };
+static_assert(sizeof(SceneLight) == 48);
 
 class Direct3DRMRenderer : public IDirect3DDevice2 {
 public:

@@ -7,6 +7,9 @@
 #include "d3drmmesh_impl.h"
 #include "d3drmobject_impl.h"
 #include "d3drmrenderer.h"
+#ifdef USE_OPENGL15
+#include "d3drmrenderer_opengl15.h"
+#endif
 #include "d3drmrenderer_sdl3gpu.h"
 #include "d3drmrenderer_software.h"
 #include "d3drmtexture_impl.h"
@@ -141,6 +144,11 @@ HRESULT Direct3DRMImpl::CreateDeviceFromSurface(
 	else if (SDL_memcmp(&guid, &SOFTWARE_GUID, sizeof(GUID)) == 0) {
 		renderer = new Direct3DRMSoftwareRenderer(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
+#ifdef USE_OPENGL15
+	else if (SDL_memcmp(&guid, &OPENGL15_GUID, sizeof(GUID)) == 0) {
+		renderer = OpenGL15Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
+	}
+#endif
 	else {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Device GUID not recognized");
 		return E_NOINTERFACE;
