@@ -92,11 +92,6 @@ OpenGL15Renderer::~OpenGL15Renderer()
 	}
 }
 
-void OpenGL15Renderer::SetBackbuffer(SDL_Surface* surface)
-{
-	m_backbuffer = surface;
-}
-
 void OpenGL15Renderer::PushVertices(const PositionColorVertex* verts, size_t count)
 {
 	m_vertices.assign(verts, verts + count);
@@ -148,7 +143,7 @@ const char* OpenGL15Renderer::GetName()
 
 HRESULT OpenGL15Renderer::Render()
 {
-	if (!m_backbuffer) {
+	if (!DDBackBuffer) {
 		return DDERR_GENERIC;
 	}
 	SDL_GL_MakeCurrent(DDWindow, m_context);
@@ -251,7 +246,7 @@ HRESULT OpenGL15Renderer::Render()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// Composite onto SDL backbuffer
-	SDL_BlitSurface(m_renderedImage, nullptr, m_backbuffer, nullptr);
+	SDL_BlitSurface(m_renderedImage, nullptr, DDBackBuffer, nullptr);
 
 	return DD_OK;
 }

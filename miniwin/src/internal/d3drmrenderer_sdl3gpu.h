@@ -20,7 +20,6 @@ class Direct3DRMSDL3GPURenderer : public Direct3DRMRenderer {
 public:
 	static Direct3DRMRenderer* Create(DWORD width, DWORD height);
 	~Direct3DRMSDL3GPURenderer() override;
-	void SetBackbuffer(SDL_Surface* backbuffer) override;
 	void PushVertices(const PositionColorVertex* vertices, size_t count) override;
 	void PushLights(const SceneLight* vertices, size_t count) override;
 	Uint32 GetTextureId(IDirect3DRMTexture* texture) override;
@@ -52,7 +51,6 @@ private:
 	ViewportUniforms m_uniforms;
 	SceneLights m_lights;
 	D3DDEVICEDESC m_desc;
-	SDL_Surface* m_backbuffer = nullptr;
 	SDL_GPUDevice* m_device;
 	SDL_GPUGraphicsPipeline* m_pipeline;
 	SDL_GPUTexture* m_transferTexture;
