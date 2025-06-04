@@ -19,27 +19,35 @@ struct TextureCache {
 class Direct3DRMSoftwareRenderer : public Direct3DRMRenderer {
 public:
 	Direct3DRMSoftwareRenderer(DWORD width, DWORD height);
-	void PushVertices(const PositionColorVertex* vertices, size_t count) override;
 	void PushLights(const SceneLight* vertices, size_t count) override;
 	Uint32 GetTextureId(IDirect3DRMTexture* texture) override;
-	void SetProjection(D3DRMMATRIX4D perspective, D3DVALUE front, D3DVALUE back) override;
+	void SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back) override;
 	DWORD GetWidth() override;
 	DWORD GetHeight() override;
 	void GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc) override;
 	const char* GetName() override;
-	HRESULT Render() override;
+	HRESULT BeginFrame(const D3DRMMATRIX4D& viewMatrix) override;
+	void SubmitDraw(
+		const GeometryVertex* vertices,
+		const size_t count,
+		const D3DRMMATRIX4D& worldMatrix,
+		const Matrix3x3& normalMatrix,
+		const Appearance& appearance
+	) override;
+	HRESULT FinalizeFrame() override;
 
 private:
 	void ClearZBuffer();
-	void DrawTriangleProjected(const PositionColorVertex&, const PositionColorVertex&, const PositionColorVertex&);
-	void DrawTriangleClipped(
-		const PositionColorVertex& v0,
-		const PositionColorVertex& v1,
-		const PositionColorVertex& v2
+	void DrawTriangleProjected(
+		const GeometryVertex& v0,
+		const GeometryVertex& v1,
+		const GeometryVertex& v2,
+		const Appearance& appearance
 	);
-	void ProjectVertex(const PositionColorVertex& v, D3DRMVECTOR4D& p) const;
+	void DrawTriangleClipped(const GeometryVertex (&v)[3], const Appearance& appearance);
+	void ProjectVertex(const GeometryVertex& v, D3DRMVECTOR4D& p) const;
 	void BlendPixel(Uint8* pixelAddr, Uint8 r, Uint8 g, Uint8 b, Uint8 a);
-	SDL_Color ApplyLighting(const PositionColorVertex& vertex);
+	SDL_Color ApplyLighting(const GeometryVertex& vertex, const Appearance& appearance);
 	void AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture);
 
 	DWORD m_width;
@@ -51,8 +59,8 @@ private:
 	std::vector<TextureCache> m_textures;
 	D3DVALUE m_front;
 	D3DVALUE m_back;
-	std::vector<PositionColorVertex> m_vertexBuffer;
-	float proj[4][4] = {0};
+	D3DRMMATRIX4D m_viewMatrix;
+	D3DRMMATRIX4D m_projection;
 	std::vector<float> m_zBuffer;
 };
 
