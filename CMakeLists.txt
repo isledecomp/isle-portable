@@ -7,7 +7,7 @@ if (EMSCRIPTEN)
   add_compile_options("$<$<PLATFORM_ID:Emscripten>:-pthread>")
   add_link_options("$<$<PLATFORM_ID:Emscripten>:-sALLOW_MEMORY_GROWTH=1>")
   add_link_options("$<$<PLATFORM_ID:Emscripten>:-sMAXIMUM_MEMORY=2gb>")
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pthread -sUSE_PTHREADS=1 -sPROXY_TO_PTHREAD=1 -sPTHREAD_POOL_SIZE_STRICT=0 -sFORCE_FILESYSTEM=1 -sWASMFS=1 -sEXIT_RUNTIME=1")
+  add_link_options(-sUSE_PTHREADS=1 -sPROXY_TO_PTHREAD=1 -sPTHREAD_POOL_SIZE_STRICT=0 -sFORCE_FILESYSTEM=1 -sWASMFS=1 -sEXIT_RUNTIME=1)
   set(SDL_PTHREADS ON CACHE BOOL "Enable SDL pthreads" FORCE)
 endif()
 
@@ -44,6 +44,7 @@ option(ENABLE_CLANG_TIDY "Enable clang-tidy")
 option(DOWNLOAD_DEPENDENCIES "Download dependencies" ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}" CACHE PATH "Directory where to put executables and dll")
 set(ISLE_EMSCRIPTEN_HOST "" CACHE STRING "Host URL for Emscripten streaming (e.g., https://test.com)")
+cmake_dependent_option(BUILD_SHARED_LIBS "Build lego1 as a shared library" ON "NOT EMSCRIPTEN" OFF)
 
 message(STATUS "Isle app:               ${ISLE_BUILD_APP}")
 message(STATUS "Config app:             ${ISLE_BUILD_CONFIG}")
@@ -141,16 +142,9 @@ target_link_directories(DirectX5::DirectX5 INTERFACE "${CMAKE_SOURCE_DIR}/3rdpar
 add_library(Vec::Vec INTERFACE IMPORTED)
 target_include_directories(Vec::Vec INTERFACE "${CMAKE_SOURCE_DIR}/3rdparty/vec")
 
-if (EMSCRIPTEN)
-  add_library(lego1 STATIC
-    LEGO1/main.cpp
-  )
-else()
-  add_library(lego1 SHARED
-    LEGO1/main.cpp
-  )
-endif()
-
+add_library(lego1
+  LEGO1/main.cpp
+)
 target_precompile_headers(lego1 PRIVATE "LEGO1/lego1_pch.h")
 set_property(TARGET lego1 PROPERTY DEFINE_SYMBOL "LEGO1_DLL")
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/util>")
