@@ -7,7 +7,7 @@ if (EMSCRIPTEN)
   add_compile_options("$<$<PLATFORM_ID:Emscripten>:-pthread>")
   add_link_options("$<$<PLATFORM_ID:Emscripten>:-sALLOW_MEMORY_GROWTH=1>")
   add_link_options("$<$<PLATFORM_ID:Emscripten>:-sMAXIMUM_MEMORY=2gb>")
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pthread -sUSE_PTHREADS=1 -sPROXY_TO_PTHREAD=1 -sPTHREAD_POOL_SIZE_STRICT=0 -sFORCE_FILESYSTEM=1 -sWASMFS=1 -sEXIT_RUNTIME=1")
+  add_link_options(-sUSE_PTHREADS=1 -sPROXY_TO_PTHREAD=1 -sPTHREAD_POOL_SIZE_STRICT=0 -sFORCE_FILESYSTEM=1 -sWASMFS=1 -sEXIT_RUNTIME=1)
   set(SDL_PTHREADS ON CACHE BOOL "Enable SDL pthreads" FORCE)
 endif()
 
