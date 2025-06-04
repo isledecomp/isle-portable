@@ -754,14 +754,13 @@ void WriteDefaultTexture(LegoStorage* p_storage, const char* p_name)
 						paletteEntries[i].SetBlue(entries[i].peBlue);
 					}
 
-					SDL_Palette* newPalette = SDL_CreatePalette(i);
+					image->SetPalette(SDL_CreatePalette(i));
 
 					if (i > 0) {
 						for (MxS32 j = 0; j < i; j++) {
 							image->SetPaletteEntry(j, paletteEntries[j]);
 						}
 					}
-					image->SetPalette(newPalette);
 
 					LegoTexture texture;
 					texture.SetImage(image);
