@@ -504,7 +504,7 @@ HRESULT Direct3DRMViewportImpl::Transform(D3DRMVECTOR4D* screen, D3DVECTOR* worl
 	screen->x = (ndcX * 0.5f + 0.5f) * m_width;
 	screen->y = (1.0f - (ndcY * 0.5f + 0.5f)) * m_height;
 
-	// Undo perspective divice
+	// Undo perspective divide
 	screen->x *= screen->z;
 	screen->y *= screen->w;
 
