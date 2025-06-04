@@ -142,16 +142,9 @@ target_link_directories(DirectX5::DirectX5 INTERFACE "${CMAKE_SOURCE_DIR}/3rdpar
 add_library(Vec::Vec INTERFACE IMPORTED)
 target_include_directories(Vec::Vec INTERFACE "${CMAKE_SOURCE_DIR}/3rdparty/vec")
 
-if (EMSCRIPTEN)
-  add_library(lego1 STATIC
-    LEGO1/main.cpp
-  )
-else()
-  add_library(lego1 SHARED
-    LEGO1/main.cpp
-  )
-endif()
-
+add_library(lego1
+  LEGO1/main.cpp
+)
 target_precompile_headers(lego1 PRIVATE "LEGO1/lego1_pch.h")
 set_property(TARGET lego1 PROPERTY DEFINE_SYMBOL "LEGO1_DLL")
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/util>")
