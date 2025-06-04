@@ -122,9 +122,9 @@ HRESULT Direct3DRMViewportImpl::CollectSceneData()
 	std::vector<PositionColorVertex> verts;
 
 	// Compute camera matrix
-	D3DRMMATRIX4D cameraWorld, viewMatrix;
+	D3DRMMATRIX4D cameraWorld;
 	ComputeFrameWorldMatrix(m_camera, cameraWorld);
-	D3DRMMatrixInvertOrthogonal(viewMatrix, cameraWorld);
+	D3DRMMatrixInvertOrthogonal(m_viewMatrix, cameraWorld);
 
 	std::function<void(IDirect3DRMFrame*, D3DRMMATRIX4D)> recurseFrame;
 	std::function<void(IDirect3DRMFrame*, D3DRMMATRIX4D)> recurseChildren;
@@ -270,12 +270,12 @@ HRESULT Direct3DRMViewportImpl::CollectSceneData()
 
 								// View transform
 								D3DVECTOR viewPos;
-								viewPos.x = worldPos.x * viewMatrix[0][0] + worldPos.y * viewMatrix[1][0] +
-											worldPos.z * viewMatrix[2][0] + viewMatrix[3][0];
-								viewPos.y = worldPos.x * viewMatrix[0][1] + worldPos.y * viewMatrix[1][1] +
-											worldPos.z * viewMatrix[2][1] + viewMatrix[3][1];
-								viewPos.z = worldPos.x * viewMatrix[0][2] + worldPos.y * viewMatrix[1][2] +
-											worldPos.z * viewMatrix[2][2] + viewMatrix[3][2];
+								viewPos.x = worldPos.x * m_viewMatrix[0][0] + worldPos.y * m_viewMatrix[1][0] +
+											worldPos.z * m_viewMatrix[2][0] + m_viewMatrix[3][0];
+								viewPos.y = worldPos.x * m_viewMatrix[0][1] + worldPos.y * m_viewMatrix[1][1] +
+											worldPos.z * m_viewMatrix[2][1] + m_viewMatrix[3][1];
+								viewPos.z = worldPos.x * m_viewMatrix[0][2] + worldPos.y * m_viewMatrix[1][2] +
+											worldPos.z * m_viewMatrix[2][2] + m_viewMatrix[3][2];
 
 								// View transform
 								D3DVECTOR viewNorm;
@@ -440,14 +440,16 @@ void Direct3DRMViewportImpl::UpdateProjectionMatrix()
 	float f = m_front / m_field;
 	float depth = m_back - m_front;
 
-	D3DRMMATRIX4D perspective = {
+	D3DRMMATRIX4D projection = {
 		{f, 0, 0, 0},
 		{0, f * aspect, 0, 0},
 		{0, 0, m_back / depth, 1},
 		{0, 0, (-m_front * m_back) / depth, 0},
 	};
 
-	m_renderer->SetProjection(perspective, m_front, m_back);
+	memcpy(m_projectionMatrix, projection, sizeof(D3DRMMATRIX4D));
+
+	m_renderer->SetProjection(projection, m_front, m_back);
 }
 
 D3DVALUE Direct3DRMViewportImpl::GetField()
@@ -467,7 +469,38 @@ DWORD Direct3DRMViewportImpl::GetHeight()
 
 HRESULT Direct3DRMViewportImpl::Transform(D3DRMVECTOR4D* screen, D3DVECTOR* world)
 {
-	MINIWIN_NOT_IMPLEMENTED();
+	D3DRMVECTOR4D worldVec = {world->x, world->y, world->z, 1.0f};
+
+	D3DRMVECTOR4D viewVec;
+	viewVec.x = m_viewMatrix[0][0] * worldVec.x + m_viewMatrix[1][0] * worldVec.y + m_viewMatrix[2][0] * worldVec.z +
+				m_viewMatrix[3][0] * worldVec.w;
+	viewVec.y = m_viewMatrix[0][1] * worldVec.x + m_viewMatrix[1][1] * worldVec.y + m_viewMatrix[2][1] * worldVec.z +
+				m_viewMatrix[3][1] * worldVec.w;
+	viewVec.z = m_viewMatrix[0][2] * worldVec.x + m_viewMatrix[1][2] * worldVec.y + m_viewMatrix[2][2] * worldVec.z +
+				m_viewMatrix[3][2] * worldVec.w;
+	viewVec.w = m_viewMatrix[0][3] * worldVec.x + m_viewMatrix[1][3] * worldVec.y + m_viewMatrix[2][3] * worldVec.z +
+				m_viewMatrix[3][3] * worldVec.w;
+
+	screen->x = viewVec.x * m_projectionMatrix[0][0] + viewVec.y * m_projectionMatrix[1][0] +
+				viewVec.z * m_projectionMatrix[2][0] + viewVec.w * m_projectionMatrix[3][0];
+	screen->y = viewVec.x * m_projectionMatrix[0][1] + viewVec.y * m_projectionMatrix[1][1] +
+				viewVec.z * m_projectionMatrix[2][1] + viewVec.w * m_projectionMatrix[3][1];
+	screen->z = viewVec.x * m_projectionMatrix[0][2] + viewVec.y * m_projectionMatrix[1][2] +
+				viewVec.z * m_projectionMatrix[2][2] + viewVec.w * m_projectionMatrix[3][2];
+	screen->w = viewVec.x * m_projectionMatrix[0][3] + viewVec.y * m_projectionMatrix[1][3] +
+				viewVec.z * m_projectionMatrix[2][3] + viewVec.w * m_projectionMatrix[3][3];
+
+	float invW = 1.0f / screen->w;
+	float ndcX = screen->x * invW;
+	float ndcY = screen->y * invW;
+
+	screen->x = (ndcX * 0.5f + 0.5f) * m_width;
+	screen->y = (1.0f - (ndcY * 0.5f + 0.5f)) * m_height;
+
+	// Undo perspective divice
+	screen->x *= screen->z;
+	screen->y *= screen->w;
+
 	return DD_OK;
 }
 
