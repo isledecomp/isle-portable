@@ -446,10 +446,17 @@ void Direct3DRMViewportImpl::UpdateProjectionMatrix()
 		{0, 0, m_back / depth, 1},
 		{0, 0, (-m_front * m_back) / depth, 0},
 	};
-
 	memcpy(m_projectionMatrix, projection, sizeof(D3DRMMATRIX4D));
 
 	m_renderer->SetProjection(projection, m_front, m_back);
+
+	D3DRMMATRIX4D inverseProjectionMatrix = {
+		{1.0f / f, 0, 0, 0},
+		{0, 1.0f / (f * aspect), 0, 0},
+		{0, 0, 0, depth / (-m_front * m_back)},
+		{0, 0, 1, -(m_back / depth) * depth / (-m_front * m_back)},
+	};
+	memcpy(m_inverseProjectionMatrix, inverseProjectionMatrix, sizeof(D3DRMMATRIX4D));
 }
 
 D3DVALUE Direct3DRMViewportImpl::GetField()
@@ -506,7 +513,45 @@ HRESULT Direct3DRMViewportImpl::Transform(D3DRMVECTOR4D* screen, D3DVECTOR* worl
 
 HRESULT Direct3DRMViewportImpl::InverseTransform(D3DVECTOR* world, D3DRMVECTOR4D* screen)
 {
-	MINIWIN_NOT_IMPLEMENTED();
+	// Convert to screen coordinates
+	float screenX = screen->x / screen->z;
+	float screenY = screen->y / screen->w;
+
+	// Convert screen coordinates to NDC
+	float ndcX = screenX / m_width * 2.0f - 1.0f;
+	float ndcY = 1.0f - (screenY / m_height) * 2.0f;
+
+	float clipVec[4] = {ndcX * screen->w, ndcY * screen->w, screen->z, screen->w};
+
+	float viewVec[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 4; j++) {
+			viewVec[j] += m_inverseProjectionMatrix[i][j] * clipVec[i];
+		}
+	}
+
+	float invViewMatrix[4][4];
+	D3DRMMatrixInvertOrthogonal(invViewMatrix, m_viewMatrix);
+
+	float worldVec[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 4; j++) {
+			worldVec[j] += invViewMatrix[i][j] * viewVec[i];
+		}
+	}
+
+	// Perspective divide
+	if (worldVec[3] != 0.0f) {
+		world->x = worldVec[0] / worldVec[3];
+		world->y = worldVec[1] / worldVec[3];
+		world->z = worldVec[2] / worldVec[3];
+	}
+	else {
+		world->x = worldVec[0];
+		world->y = worldVec[1];
+		world->z = worldVec[2];
+	}
+
 	return DD_OK;
 }
 

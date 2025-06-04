@@ -43,6 +43,7 @@ private:
 	DWORD m_height;
 	D3DRMMATRIX4D m_viewMatrix;
 	D3DRMMATRIX4D m_projectionMatrix;
+	D3DRMMATRIX4D m_inverseProjectionMatrix;
 	IDirect3DRMFrame* m_rootFrame = nullptr;
 	IDirect3DRMFrame* m_camera = nullptr;
 	D3DVALUE m_front = 1.f;
