@@ -84,11 +84,8 @@ static void ComputeFrameWorldMatrix(IDirect3DRMFrame* frame, D3DRMMATRIX4D out)
 	IDirect3DRMFrame* cur = frame;
 	while (cur) {
 		auto* impl = static_cast<Direct3DRMFrameImpl*>(cur);
-		D3DRMMATRIX4D local;
-		memcpy(local, impl->m_transform, sizeof(local));
-
 		D3DRMMATRIX4D tmp;
-		D3DRMMatrixMultiply(tmp, local, acc);
+		D3DRMMatrixMultiply(tmp, impl->m_transform, acc);
 		memcpy(acc, tmp, sizeof(acc));
 
 		if (cur == impl->m_parent) {
@@ -99,243 +96,299 @@ static void ComputeFrameWorldMatrix(IDirect3DRMFrame* frame, D3DRMMATRIX4D out)
 	memcpy(out, acc, sizeof(acc));
 }
 
+inline D3DVECTOR CrossProduct(const D3DVECTOR& a, const D3DVECTOR& b)
+{
+	return {a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x};
+}
+
+inline D3DVECTOR Normalize(const D3DVECTOR& v)
+{
+	float len = sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
+	if (len > 0.0f) {
+		float invLen = 1.0f / len;
+		return {v.x * invLen, v.y * invLen, v.z * invLen};
+	}
+	return {0, 0, 0};
+}
+
 D3DVECTOR ComputeTriangleNormal(const D3DVECTOR& v0, const D3DVECTOR& v1, const D3DVECTOR& v2)
 {
 	D3DVECTOR u = {v1.x - v0.x, v1.y - v0.y, v1.z - v0.z};
 	D3DVECTOR v = {v2.x - v0.x, v2.y - v0.y, v2.z - v0.z};
-	D3DVECTOR normal = {u.y * v.z - u.z * v.y, u.z * v.x - u.x * v.z, u.x * v.y - u.y * v.x};
-	float len = std::sqrt(normal.x * normal.x + normal.y * normal.y + normal.z * normal.z);
-	if (len > 0.0f) {
-		normal.x /= len;
-		normal.y /= len;
-		normal.z /= len;
-	}
+	D3DVECTOR normal = CrossProduct(u, v);
+	normal = Normalize(normal);
 
 	return normal;
 }
 
-HRESULT Direct3DRMViewportImpl::CollectSceneData()
+inline D3DVECTOR TransformNormal(const D3DVECTOR& v, const Matrix3x3& m)
+{
+	return {
+		v.x * m[0][0] + v.y * m[1][0] + v.z * m[2][0],
+		v.x * m[0][1] + v.y * m[1][1] + v.z * m[2][1],
+		v.x * m[0][2] + v.y * m[1][2] + v.z * m[2][2]
+	};
+}
+
+inline D3DVECTOR TransformPoint(const D3DVECTOR& p, const D3DRMMATRIX4D& m)
+{
+	return {
+		p.x * m[0][0] + p.y * m[1][0] + p.z * m[2][0] + m[3][0],
+		p.x * m[0][1] + p.y * m[1][1] + p.z * m[2][1] + m[3][1],
+		p.x * m[0][2] + p.y * m[1][2] + p.z * m[2][2] + m[3][2]
+	};
+}
+
+void Direct3DRMViewportImpl::CollectLightsFromFrame(
+	IDirect3DRMFrame* frame,
+	D3DRMMATRIX4D parentToWorld,
+	std::vector<SceneLight>& lights
+)
+{
+	auto* frameImpl = static_cast<Direct3DRMFrameImpl*>(frame);
+	D3DRMMATRIX4D worldMatrix;
+	D3DRMMatrixMultiply(worldMatrix, parentToWorld, frameImpl->m_transform);
+
+	IDirect3DRMLightArray* lightArray = nullptr;
+	frame->GetLights(&lightArray);
+	DWORD lightCount = lightArray->GetSize();
+	for (DWORD li = 0; li < lightCount; ++li) {
+		IDirect3DRMLight* light = nullptr;
+		lightArray->GetElement(li, &light);
+		D3DCOLOR color = light->GetColor();
+		SceneLight extracted;
+		extracted.color = {
+			((color >> 0) & 0xFF) / 255.0f,
+			((color >> 8) & 0xFF) / 255.0f,
+			((color >> 16) & 0xFF) / 255.0f,
+			((color >> 24) & 0xFF) / 255.0f
+		};
+
+		D3DRMLIGHTTYPE type = light->GetType();
+		if (type == D3DRMLIGHT_POINT || type == D3DRMLIGHT_SPOT || type == D3DRMLIGHT_PARALLELPOINT) {
+			extracted.position = {worldMatrix[3][0], worldMatrix[3][1], worldMatrix[3][2]};
+			extracted.positional = 1.f;
+		}
+		if (type == D3DRMLIGHT_DIRECTIONAL || type == D3DRMLIGHT_SPOT) {
+			extracted.direction = {worldMatrix[2][0], worldMatrix[2][1], worldMatrix[2][2]};
+			extracted.directional = 1.f;
+		}
+
+		lights.push_back(extracted);
+		light->Release();
+	}
+	lightArray->Release();
+
+	IDirect3DRMFrameArray* children = nullptr;
+	frame->GetChildren(&children);
+	DWORD n = children->GetSize();
+	for (DWORD i = 0; i < n; ++i) {
+		IDirect3DRMFrame* childFrame = nullptr;
+		children->GetElement(i, &childFrame);
+		CollectLightsFromFrame(childFrame, worldMatrix, lights);
+		childFrame->Release();
+	}
+	children->Release();
+}
+
+struct Plane {
+	D3DVECTOR normal;
+	float d;
+};
+
+void NormalizePlane(Plane& plane)
+{
+	float len =
+		sqrtf(plane.normal.x * plane.normal.x + plane.normal.y * plane.normal.y + plane.normal.z * plane.normal.z);
+	if (len > 0.0f) {
+		float invLen = 1.0f / len;
+		plane.normal.x *= invLen;
+		plane.normal.y *= invLen;
+		plane.normal.z *= invLen;
+		plane.d *= invLen;
+	}
+}
+
+Plane frustumPlanes[6];
+
+void ExtractFrustumPlanes(const D3DRMMATRIX4D& m)
+{
+	static const int idx[][2] = {{0, 1}, {0, -1}, {1, 1}, {1, -1}, {2, 1}, {2, -1}};
+	for (int i = 0; i < 6; ++i) {
+		int axis = idx[i][0], sign = idx[i][1];
+		frustumPlanes[i]
+			.normal = {m[0][3] + sign * m[0][axis], m[1][3] + sign * m[1][axis], m[2][3] + sign * m[2][axis]};
+		frustumPlanes[i].d = m[3][3] + sign * m[3][axis];
+		NormalizePlane(frustumPlanes[i]);
+	}
+}
+
+bool IsBoxInFrustum(const D3DVECTOR corners[8], const Plane planes[6])
+{
+	for (int i = 0; i < 6; ++i) {
+		int out = 0;
+		for (int j = 0; j < 8; ++j) {
+			float dist = planes[i].normal.x * corners[j].x + planes[i].normal.y * corners[j].y +
+						 planes[i].normal.z * corners[j].z + planes[i].d;
+			if (dist < 0.0f) {
+				++out;
+			}
+		}
+		if (out == 8) {
+			return false;
+		}
+	}
+	return true;
+}
+
+void Direct3DRMViewportImpl::CollectMeshesFromFrame(
+	IDirect3DRMFrame* frame,
+	D3DRMMATRIX4D parentMatrix,
+	std::vector<PositionColorVertex>& verts
+)
+{
+	Direct3DRMFrameImpl* frameImpl = static_cast<Direct3DRMFrameImpl*>(frame);
+	D3DRMMATRIX4D localMatrix;
+	memcpy(localMatrix, frameImpl->m_transform, sizeof(D3DRMMATRIX4D));
+
+	D3DRMMATRIX4D worldMatrix;
+	D3DRMMatrixMultiply(worldMatrix, parentMatrix, localMatrix);
+
+	Matrix3x3 worldMatrixInvert;
+	D3DRMMatrixInvertForNormal(worldMatrixInvert, worldMatrix);
+
+	IDirect3DRMVisualArray* visuals = nullptr;
+	frame->GetVisuals(&visuals);
+	DWORD n = visuals->GetSize();
+	for (DWORD i = 0; i < n; ++i) {
+		IDirect3DRMVisual* visual = nullptr;
+		visuals->GetElement(i, &visual);
+
+		IDirect3DRMFrame* childFrame = nullptr;
+		visual->QueryInterface(IID_IDirect3DRMFrame, (void**) &childFrame);
+		if (childFrame) {
+			CollectMeshesFromFrame(childFrame, worldMatrix, verts);
+			childFrame->Release();
+			visual->Release();
+			continue;
+		}
+
+		IDirect3DRMMesh* mesh = nullptr;
+		visual->QueryInterface(IID_IDirect3DRMMesh, (void**) &mesh);
+		if (!mesh) {
+			visual->Release();
+			continue;
+		}
+
+		D3DRMBOX box;
+		mesh->GetBox(&box);
+		D3DVECTOR boxCorners[8] = {
+			{box.min.x, box.min.y, box.min.z},
+			{box.min.x, box.min.y, box.max.z},
+			{box.min.x, box.max.y, box.min.z},
+			{box.min.x, box.max.y, box.max.z},
+			{box.max.x, box.min.y, box.min.z},
+			{box.max.x, box.min.y, box.max.z},
+			{box.max.x, box.max.y, box.min.z},
+			{box.max.x, box.max.y, box.max.z},
+		};
+		for (D3DVECTOR& boxCorner : boxCorners) {
+			boxCorner = TransformPoint(boxCorner, worldMatrix);
+		}
+		if (!IsBoxInFrustum(boxCorners, frustumPlanes)) {
+			mesh->Release();
+			visual->Release();
+			continue;
+		}
+
+		DWORD groupCount = mesh->GetGroupCount();
+		for (DWORD gi = 0; gi < groupCount; ++gi) {
+			DWORD vtxCount, faceCount, vpf, dataSize;
+			mesh->GetGroup(gi, &vtxCount, &faceCount, &vpf, &dataSize, nullptr);
+
+			std::vector<D3DRMVERTEX> d3dVerts(vtxCount);
+			std::vector<DWORD> faces(dataSize);
+			mesh->GetVertices(gi, 0, vtxCount, d3dVerts.data());
+			mesh->GetGroup(gi, nullptr, nullptr, nullptr, nullptr, faces.data());
+
+			D3DCOLOR color = mesh->GetGroupColor(gi);
+			D3DRMRENDERQUALITY quality = mesh->GetGroupQuality(gi);
+
+			IDirect3DRMTexture* texture = nullptr;
+			mesh->GetGroupTexture(gi, &texture);
+			Uint32 texId = NO_TEXTURE_ID;
+			if (texture) {
+				texId = m_renderer->GetTextureId(texture);
+				texture->Release();
+			}
+
+			IDirect3DRMMaterial* material = nullptr;
+			mesh->GetGroupMaterial(gi, &material);
+			float shininess = 0.0f;
+			if (material) {
+				shininess = material->GetPower();
+				material->Release();
+			}
+
+			for (DWORD fi = 0; fi < faceCount; ++fi) {
+				D3DVECTOR norm;
+				if (quality == D3DRMRENDER_FLAT || quality == D3DRMRENDER_UNLITFLAT) {
+					D3DRMVERTEX& v0 = d3dVerts[faces[fi * vpf + 0]];
+					D3DRMVERTEX& v1 = d3dVerts[faces[fi * vpf + 1]];
+					D3DRMVERTEX& v2 = d3dVerts[faces[fi * vpf + 2]];
+					norm = ComputeTriangleNormal(v0.position, v1.position, v2.position);
+				}
+
+				for (DWORD idx = 0; idx < vpf; ++idx) {
+					D3DRMVERTEX& dv = d3dVerts[faces[fi * vpf + idx]];
+					D3DVECTOR pos = dv.position;
+					if (quality == D3DRMRENDER_GOURAUD || quality == D3DRMRENDER_PHONG) {
+						norm = dv.normal;
+					}
+
+					D3DVECTOR worldPos = TransformPoint(pos, worldMatrix);
+					D3DVECTOR viewNorm = TransformNormal(norm, worldMatrixInvert);
+
+					verts.push_back(
+						{TransformPoint(worldPos, m_viewMatrix),
+						 Normalize(viewNorm),
+						 {static_cast<Uint8>((color >> 16) & 0xFF),
+						  static_cast<Uint8>((color >> 8) & 0xFF),
+						  static_cast<Uint8>((color >> 0) & 0xFF),
+						  static_cast<Uint8>((color >> 24) & 0xFF)},
+						 texId,
+						 {dv.tu, dv.tv},
+						 shininess}
+					);
+				}
+			}
+		}
+		mesh->Release();
+		visual->Release();
+	}
+	visuals->Release();
+}
+
+void Direct3DRMViewportImpl::CollectSceneData()
 {
 	m_backgroundColor = static_cast<Direct3DRMFrameImpl*>(m_rootFrame)->m_backgroundColor;
 
-	std::vector<SceneLight> lights;
-	std::vector<PositionColorVertex> verts;
-
-	// Compute camera matrix
-	D3DRMMATRIX4D cameraWorld;
+	// Compute view-projection matrix
+	D3DRMMATRIX4D cameraWorld, viewProj;
 	ComputeFrameWorldMatrix(m_camera, cameraWorld);
 	D3DRMMatrixInvertOrthogonal(m_viewMatrix, cameraWorld);
-
-	std::function<void(IDirect3DRMFrame*, D3DRMMATRIX4D)> recurseFrame;
-	std::function<void(IDirect3DRMFrame*, D3DRMMATRIX4D)> recurseChildren;
-
-	recurseChildren = [&](IDirect3DRMFrame* frame, D3DRMMATRIX4D parentMatrix) {
-		// Retrieve the current frame's transform
-		Direct3DRMFrameImpl* frameImpl = static_cast<Direct3DRMFrameImpl*>(frame);
-		D3DRMMATRIX4D localMatrix;
-		memcpy(localMatrix, frameImpl->m_transform, sizeof(D3DRMMATRIX4D));
-
-		// Compute combined world matrix: world = parent * local
-		D3DRMMATRIX4D worldMatrix;
-		D3DRMMatrixMultiply(worldMatrix, parentMatrix, localMatrix);
-
-		// === Extract lights from the frame ===
-		IDirect3DRMLightArray* lightArray = nullptr;
-		if (SUCCEEDED(frame->GetLights(&lightArray)) && lightArray) {
-			DWORD lightCount = lightArray->GetSize();
-			for (DWORD li = 0; li < lightCount; ++li) {
-				IDirect3DRMLight* light = nullptr;
-				if (SUCCEEDED(lightArray->GetElement(li, &light)) && light) {
-					D3DCOLOR color = light->GetColor();
-					D3DRMLIGHTTYPE type = light->GetType();
-
-					SceneLight extracted;
-					extracted.color.r = ((color >> 0) & 0xFF) / 255.0f;
-					extracted.color.g = ((color >> 8) & 0xFF) / 255.0f;
-					extracted.color.b = ((color >> 16) & 0xFF) / 255.0f;
-					extracted.color.a = ((color >> 24) & 0xFF) / 255.0f;
-
-					if (type == D3DRMLIGHT_POINT || type == D3DRMLIGHT_SPOT || type == D3DRMLIGHT_PARALLELPOINT) {
-						extracted.position.x = worldMatrix[3][0];
-						extracted.position.y = worldMatrix[3][1];
-						extracted.position.z = worldMatrix[3][2];
-						extracted.positional = 1.f;
-					}
-
-					if (type == D3DRMLIGHT_DIRECTIONAL || type == D3DRMLIGHT_SPOT) {
-						extracted.direction.x = worldMatrix[2][0];
-						extracted.direction.y = worldMatrix[2][1];
-						extracted.direction.z = worldMatrix[2][2];
-						extracted.directional = 1.f;
-					}
-
-					lights.push_back(extracted);
-
-					light->Release();
-				}
-			}
-			lightArray->Release();
-		}
-
-		IDirect3DRMFrameArray* children = nullptr;
-		if (SUCCEEDED(frame->GetChildren(&children)) && children) {
-			DWORD n = children->GetSize();
-			for (DWORD i = 0; i < n; ++i) {
-				IDirect3DRMFrame* childFrame = nullptr;
-				children->GetElement(i, &childFrame);
-				recurseChildren(childFrame, worldMatrix);
-				childFrame->Release();
-			}
-			children->Release();
-		}
-	};
-
-	recurseFrame = [&](IDirect3DRMFrame* frame, D3DRMMATRIX4D parentMatrix) {
-		// Retrieve the current frame's transform
-		Direct3DRMFrameImpl* frameImpl = static_cast<Direct3DRMFrameImpl*>(frame);
-		D3DRMMATRIX4D localMatrix;
-		memcpy(localMatrix, frameImpl->m_transform, sizeof(D3DRMMATRIX4D));
-
-		// Compute combined world matrix: world = parent * local
-		D3DRMMATRIX4D worldMatrix;
-		Matrix3x3 worldMatrixInvert;
-		D3DRMMatrixMultiply(worldMatrix, parentMatrix, localMatrix);
-		D3DRMMatrixInvertForNormal(worldMatrixInvert, worldMatrix);
-
-		IDirect3DRMVisualArray* va = nullptr;
-		if (SUCCEEDED(frame->GetVisuals(&va)) && va) {
-			DWORD n = va->GetSize();
-			for (DWORD i = 0; i < n; ++i) {
-				IDirect3DRMVisual* vis = nullptr;
-				va->GetElement(i, &vis);
-				if (!vis) {
-					continue;
-				}
-
-				// Pull geometry from meshes
-				IDirect3DRMMesh* mesh = nullptr;
-				if (SUCCEEDED(vis->QueryInterface(IID_IDirect3DRMMesh, (void**) &mesh)) && mesh) {
-					DWORD groupCount = mesh->GetGroupCount();
-					for (DWORD gi = 0; gi < groupCount; ++gi) {
-						DWORD vtxCount, faceCount, vpf, dataSize;
-						mesh->GetGroup(gi, &vtxCount, &faceCount, &vpf, &dataSize, nullptr);
-
-						std::vector<D3DRMVERTEX> d3dVerts(vtxCount);
-						std::vector<DWORD> faces(dataSize);
-						mesh->GetVertices(gi, 0, vtxCount, d3dVerts.data());
-						mesh->GetGroup(gi, nullptr, nullptr, nullptr, nullptr, faces.data());
-
-						D3DCOLOR color = mesh->GetGroupColor(gi);
-						D3DRMRENDERQUALITY quality = mesh->GetGroupQuality(gi);
-						IDirect3DRMTexture* texture = nullptr;
-						mesh->GetGroupTexture(gi, &texture);
-						IDirect3DRMMaterial* material = nullptr;
-						mesh->GetGroupMaterial(gi, &material);
-						Uint32 texId = NO_TEXTURE_ID;
-						if (texture) {
-							texId = m_renderer->GetTextureId(texture);
-							texture->Release();
-						}
-						float shininess = 0.0f;
-						if (material) {
-							shininess = material->GetPower();
-							material->Release();
-						}
-
-						for (DWORD fi = 0; fi < faceCount; ++fi) {
-							D3DVECTOR norm;
-
-							if (quality == D3DRMRENDER_FLAT || quality == D3DRMRENDER_UNLITFLAT) {
-								// Discard normals and calculate flat ones
-								D3DRMVERTEX& v0 = d3dVerts[faces[fi * vpf + 0]];
-								D3DRMVERTEX& v1 = d3dVerts[faces[fi * vpf + 1]];
-								D3DRMVERTEX& v2 = d3dVerts[faces[fi * vpf + 2]];
-								norm = ComputeTriangleNormal(v0.position, v1.position, v2.position);
-							}
-							for (int idx = 0; idx < vpf; ++idx) {
-								auto& dv = d3dVerts[faces[fi * vpf + idx]];
-
-								// Apply world transform to the vertex
-								D3DVECTOR pos = dv.position;
-								if (quality == D3DRMRENDER_GOURAUD || quality == D3DRMRENDER_PHONG) {
-									norm = dv.normal;
-								}
-								D3DVECTOR worldPos;
-								worldPos.x = pos.x * worldMatrix[0][0] + pos.y * worldMatrix[1][0] +
-											 pos.z * worldMatrix[2][0] + worldMatrix[3][0];
-								worldPos.y = pos.x * worldMatrix[0][1] + pos.y * worldMatrix[1][1] +
-											 pos.z * worldMatrix[2][1] + worldMatrix[3][1];
-								worldPos.z = pos.x * worldMatrix[0][2] + pos.y * worldMatrix[1][2] +
-											 pos.z * worldMatrix[2][2] + worldMatrix[3][2];
-
-								// View transform
-								D3DVECTOR viewPos;
-								viewPos.x = worldPos.x * m_viewMatrix[0][0] + worldPos.y * m_viewMatrix[1][0] +
-											worldPos.z * m_viewMatrix[2][0] + m_viewMatrix[3][0];
-								viewPos.y = worldPos.x * m_viewMatrix[0][1] + worldPos.y * m_viewMatrix[1][1] +
-											worldPos.z * m_viewMatrix[2][1] + m_viewMatrix[3][1];
-								viewPos.z = worldPos.x * m_viewMatrix[0][2] + worldPos.y * m_viewMatrix[1][2] +
-											worldPos.z * m_viewMatrix[2][2] + m_viewMatrix[3][2];
-
-								// View transform
-								D3DVECTOR viewNorm;
-								viewNorm.x = norm.x * worldMatrixInvert[0][0] + norm.y * worldMatrixInvert[1][0] +
-											 norm.z * worldMatrixInvert[2][0];
-								viewNorm.y = norm.x * worldMatrixInvert[0][1] + norm.y * worldMatrixInvert[1][1] +
-											 norm.z * worldMatrixInvert[2][1];
-								viewNorm.z = norm.x * worldMatrixInvert[0][2] + norm.y * worldMatrixInvert[1][2] +
-											 norm.z * worldMatrixInvert[2][2];
-
-								float len =
-									sqrtf(viewNorm.x * viewNorm.x + viewNorm.y * viewNorm.y + viewNorm.z * viewNorm.z);
-								if (len > 0.0f) {
-									float invLen = 1.0f / len;
-									viewNorm.x *= invLen;
-									viewNorm.y *= invLen;
-									viewNorm.z *= invLen;
-								}
-
-								PositionColorVertex vtx;
-								vtx.position = viewPos;
-								vtx.normals = viewNorm;
-								vtx.colors = {
-									static_cast<Uint8>((color >> 16) & 0xFF),
-									static_cast<Uint8>((color >> 8) & 0xFF),
-									static_cast<Uint8>((color >> 0) & 0xFF),
-									static_cast<Uint8>((color >> 24) & 0xFF)
-								};
-								vtx.shininess = shininess;
-								vtx.texId = texId;
-								vtx.texCoord = {dv.tu, dv.tv};
-								verts.push_back(vtx);
-							}
-						}
-					}
-					mesh->Release();
-				}
-
-				// Recurse into sub frames
-				IDirect3DRMFrame* childFrame = nullptr;
-				if (SUCCEEDED(vis->QueryInterface(IID_IDirect3DRMFrame, (void**) &childFrame)) && childFrame) {
-					recurseFrame(childFrame, worldMatrix);
-					childFrame->Release();
-				}
-
-				vis->Release();
-			}
-			va->Release();
-		}
-	};
+	D3DRMMatrixMultiply(viewProj, m_viewMatrix, m_projectionMatrix);
 
 	D3DRMMATRIX4D identity = {{1.f, 0.f, 0.f, 0.f}, {0.f, 1.f, 0.f, 0.f}, {0.f, 0.f, 1.f, 0.f}, {0.f, 0.f, 0.f, 1.f}};
 
-	recurseFrame(m_rootFrame, identity);
-	recurseChildren(m_rootFrame, identity);
-
+	std::vector<SceneLight> lights;
+	CollectLightsFromFrame(m_rootFrame, identity, lights);
 	m_renderer->PushLights(lights.data(), lights.size());
-	m_renderer->PushVertices(verts.data(), verts.size());
 
-	return D3DRM_OK;
+	std::vector<PositionColorVertex> verts;
+	ExtractFrustumPlanes(viewProj);
+	CollectMeshesFromFrame(m_rootFrame, identity, verts);
+	m_renderer->PushVertices(verts.data(), verts.size());
 }
 
 HRESULT Direct3DRMViewportImpl::Render(IDirect3DRMFrame* rootFrame)
@@ -344,10 +397,7 @@ HRESULT Direct3DRMViewportImpl::Render(IDirect3DRMFrame* rootFrame)
 		return DDERR_GENERIC;
 	}
 	m_rootFrame = rootFrame;
-	HRESULT success = CollectSceneData();
-	if (success != DD_OK) {
-		return success;
-	}
+	CollectSceneData();
 	return m_renderer->Render();
 }
 
@@ -368,7 +418,8 @@ HRESULT Direct3DRMViewportImpl::Clear()
 	uint8_t b = m_backgroundColor & 0xFF;
 
 	Uint32 color = SDL_MapRGB(SDL_GetPixelFormatDetails(DDBackBuffer->format), nullptr, r, g, b);
-	SDL_FillSurfaceRect(DDBackBuffer, NULL, color);
+	SDL_FillSurfaceRect(DDBackBuffer, nullptr, color);
+
 	return DD_OK;
 }
 
@@ -474,39 +525,39 @@ DWORD Direct3DRMViewportImpl::GetHeight()
 	return m_height;
 }
 
+inline float FromNDC(float ndcCoord, float dim)
+{
+	return (ndcCoord * 0.5f + 0.5f) * dim;
+}
+
+inline void MultiplyMatrixVec4(D3DRMVECTOR4D& out, const D3DRMMATRIX4D& mat, const D3DRMVECTOR4D& vec)
+{
+	out.x = mat[0][0] * vec.x + mat[1][0] * vec.y + mat[2][0] * vec.z + mat[3][0] * vec.w;
+	out.y = mat[0][1] * vec.x + mat[1][1] * vec.y + mat[2][1] * vec.z + mat[3][1] * vec.w;
+	out.z = mat[0][2] * vec.x + mat[1][2] * vec.y + mat[2][2] * vec.z + mat[3][2] * vec.w;
+	out.w = mat[0][3] * vec.x + mat[1][3] * vec.y + mat[2][3] * vec.z + mat[3][3] * vec.w;
+}
+
 HRESULT Direct3DRMViewportImpl::Transform(D3DRMVECTOR4D* screen, D3DVECTOR* world)
 {
 	D3DRMVECTOR4D worldVec = {world->x, world->y, world->z, 1.0f};
+	D3DRMVECTOR4D viewVec, projVec;
 
-	D3DRMVECTOR4D viewVec;
-	viewVec.x = m_viewMatrix[0][0] * worldVec.x + m_viewMatrix[1][0] * worldVec.y + m_viewMatrix[2][0] * worldVec.z +
-				m_viewMatrix[3][0] * worldVec.w;
-	viewVec.y = m_viewMatrix[0][1] * worldVec.x + m_viewMatrix[1][1] * worldVec.y + m_viewMatrix[2][1] * worldVec.z +
-				m_viewMatrix[3][1] * worldVec.w;
-	viewVec.z = m_viewMatrix[0][2] * worldVec.x + m_viewMatrix[1][2] * worldVec.y + m_viewMatrix[2][2] * worldVec.z +
-				m_viewMatrix[3][2] * worldVec.w;
-	viewVec.w = m_viewMatrix[0][3] * worldVec.x + m_viewMatrix[1][3] * worldVec.y + m_viewMatrix[2][3] * worldVec.z +
-				m_viewMatrix[3][3] * worldVec.w;
+	MultiplyMatrixVec4(viewVec, m_viewMatrix, worldVec);
+	MultiplyMatrixVec4(projVec, m_projectionMatrix, viewVec);
 
-	screen->x = viewVec.x * m_projectionMatrix[0][0] + viewVec.y * m_projectionMatrix[1][0] +
-				viewVec.z * m_projectionMatrix[2][0] + viewVec.w * m_projectionMatrix[3][0];
-	screen->y = viewVec.x * m_projectionMatrix[0][1] + viewVec.y * m_projectionMatrix[1][1] +
-				viewVec.z * m_projectionMatrix[2][1] + viewVec.w * m_projectionMatrix[3][1];
-	screen->z = viewVec.x * m_projectionMatrix[0][2] + viewVec.y * m_projectionMatrix[1][2] +
-				viewVec.z * m_projectionMatrix[2][2] + viewVec.w * m_projectionMatrix[3][2];
-	screen->w = viewVec.x * m_projectionMatrix[0][3] + viewVec.y * m_projectionMatrix[1][3] +
-				viewVec.z * m_projectionMatrix[2][3] + viewVec.w * m_projectionMatrix[3][3];
+	*screen = projVec;
 
-	float invW = 1.0f / screen->w;
-	float ndcX = screen->x * invW;
-	float ndcY = screen->y * invW;
+	float invW = 1.0f / projVec.w;
+	float ndcX = projVec.x * invW;
+	float ndcY = projVec.y * invW;
 
-	screen->x = (ndcX * 0.5f + 0.5f) * m_width;
-	screen->y = (1.0f - (ndcY * 0.5f + 0.5f)) * m_height;
+	screen->x = FromNDC(ndcX, m_width);
+	screen->y = FromNDC(-ndcY, m_height); // Y-flip
 
-	// Undo perspective divide
-	screen->x *= screen->z;
-	screen->y *= screen->w;
+	// Undo perspective divide for screen-space coords
+	screen->x *= projVec.z;
+	screen->y *= projVec.w;
 
 	return DD_OK;
 }
@@ -521,35 +572,27 @@ HRESULT Direct3DRMViewportImpl::InverseTransform(D3DVECTOR* world, D3DRMVECTOR4D
 	float ndcX = screenX / m_width * 2.0f - 1.0f;
 	float ndcY = 1.0f - (screenY / m_height) * 2.0f;
 
-	float clipVec[4] = {ndcX * screen->w, ndcY * screen->w, screen->z, screen->w};
+	D3DRMVECTOR4D clipVec = {ndcX * screen->w, ndcY * screen->w, screen->z, screen->w};
 
-	float viewVec[4] = {0.0f, 0.0f, 0.0f, 0.0f};
-	for (int i = 0; i < 4; i++) {
-		for (int j = 0; j < 4; j++) {
-			viewVec[j] += m_inverseProjectionMatrix[i][j] * clipVec[i];
-		}
-	}
+	D3DRMVECTOR4D viewVec;
+	MultiplyMatrixVec4(viewVec, m_inverseProjectionMatrix, clipVec);
 
-	float invViewMatrix[4][4];
-	D3DRMMatrixInvertOrthogonal(invViewMatrix, m_viewMatrix);
+	D3DRMMATRIX4D inverseViewMatrix;
+	D3DRMMatrixInvertOrthogonal(inverseViewMatrix, m_viewMatrix);
 
-	float worldVec[4] = {0.0f, 0.0f, 0.0f, 0.0f};
-	for (int i = 0; i < 4; i++) {
-		for (int j = 0; j < 4; j++) {
-			worldVec[j] += invViewMatrix[i][j] * viewVec[i];
-		}
-	}
+	D3DRMVECTOR4D worldVec;
+	MultiplyMatrixVec4(worldVec, inverseViewMatrix, viewVec);
 
 	// Perspective divide
-	if (worldVec[3] != 0.0f) {
-		world->x = worldVec[0] / worldVec[3];
-		world->y = worldVec[1] / worldVec[3];
-		world->z = worldVec[2] / worldVec[3];
+	if (worldVec.w != 0.0f) {
+		world->x = worldVec.x / worldVec.w;
+		world->y = worldVec.y / worldVec.w;
+		world->z = worldVec.z / worldVec.w;
 	}
 	else {
-		world->x = worldVec[0];
-		world->y = worldVec[1];
-		world->z = worldVec[2];
+		world->x = worldVec.x;
+		world->y = worldVec.y;
+		world->z = worldVec.z;
 	}
 
 	return DD_OK;
@@ -631,9 +674,7 @@ Ray BuildPickingRay(
 
 	// Normalize ray direction
 	float len = sqrt(DotProduct(rayDirView, rayDirView));
-	rayDirView.x /= len;
-	rayDirView.y /= len;
-	rayDirView.z /= len;
+	rayDirView = Normalize(rayDirView);
 
 	// Compute camera world matrix and invert it to get view->world
 	D3DRMMATRIX4D cameraWorld;
@@ -649,16 +690,9 @@ Ray BuildPickingRay(
 	};
 
 	len = sqrt(rayDirWorld.x * rayDirWorld.x + rayDirWorld.y * rayDirWorld.y + rayDirWorld.z * rayDirWorld.z);
-	rayDirWorld.x /= len;
-	rayDirWorld.y /= len;
-	rayDirWorld.z /= len;
+	rayDirWorld = Normalize(rayDirWorld);
 
 	return Ray{rayOriginWorld, rayDirWorld};
-}
-
-inline D3DVECTOR CrossProduct(const D3DVECTOR& a, const D3DVECTOR& b)
-{
-	return {a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x};
 }
 
 bool RayIntersectsTriangle(
@@ -731,12 +765,7 @@ bool RayIntersectsMeshTriangles(
 			D3DVECTOR tri[3];
 			for (int j = 0; j < 3; ++j) {
 				const D3DVECTOR& v = vertices[(j == 0 ? i0 : (j == 1 ? i1 : i2))].position;
-				tri[j].x =
-					v.x * worldMatrix[0][0] + v.y * worldMatrix[1][0] + v.z * worldMatrix[2][0] + worldMatrix[3][0];
-				tri[j].y =
-					v.x * worldMatrix[0][1] + v.y * worldMatrix[1][1] + v.z * worldMatrix[2][1] + worldMatrix[3][1];
-				tri[j].z =
-					v.x * worldMatrix[0][2] + v.y * worldMatrix[1][2] + v.z * worldMatrix[2][2] + worldMatrix[3][2];
+				tri[j] = TransformPoint(v, worldMatrix);
 			}
 
 			float dist;
@@ -749,6 +778,43 @@ bool RayIntersectsMeshTriangles(
 		}
 	}
 	return false;
+}
+
+inline D3DVECTOR TransformVector(const D3DRMMATRIX4D& mat, const D3DVECTOR& vec)
+{
+	return {
+		vec.x * mat[0][0] + vec.y * mat[1][0] + vec.z * mat[2][0] + mat[3][0],
+		vec.x * mat[0][1] + vec.y * mat[1][1] + vec.z * mat[2][1] + mat[3][1],
+		vec.x * mat[0][2] + vec.y * mat[1][2] + vec.z * mat[2][2] + mat[3][2]
+	};
+}
+
+D3DRMBOX ComputeTransformedAABB(const D3DRMBOX& box, const D3DRMMATRIX4D& mat)
+{
+	D3DVECTOR corners[8] = {
+		{box.min.x, box.min.y, box.min.z},
+		{box.min.x, box.min.y, box.max.z},
+		{box.min.x, box.max.y, box.min.z},
+		{box.min.x, box.max.y, box.max.z},
+		{box.max.x, box.min.y, box.min.z},
+		{box.max.x, box.min.y, box.max.z},
+		{box.max.x, box.max.y, box.min.z},
+		{box.max.x, box.max.y, box.max.z}
+	};
+
+	D3DVECTOR transformed = TransformVector(mat, corners[0]);
+	D3DRMBOX worldBox = {transformed, transformed};
+
+	for (int i = 1; i < 8; ++i) {
+		D3DVECTOR v = TransformVector(mat, corners[i]);
+		worldBox.min.x = std::min(worldBox.min.x, v.x);
+		worldBox.min.y = std::min(worldBox.min.y, v.y);
+		worldBox.min.z = std::min(worldBox.min.z, v.z);
+		worldBox.max.x = std::max(worldBox.max.x, v.x);
+		worldBox.max.y = std::max(worldBox.max.y, v.y);
+		worldBox.max.z = std::max(worldBox.max.z, v.z);
+	}
+	return worldBox;
 }
 
 HRESULT Direct3DRMViewportImpl::Pick(float x, float y, LPDIRECT3DRMPICKEDARRAY* pickedArray)
@@ -773,107 +839,50 @@ HRESULT Direct3DRMViewportImpl::Pick(float x, float y, LPDIRECT3DRMPICKEDARRAY* 
 
 	std::function<void(IDirect3DRMFrame*, std::vector<IDirect3DRMFrame*>&)> recurse;
 	recurse = [&](IDirect3DRMFrame* frame, std::vector<IDirect3DRMFrame*>& path) {
-		Direct3DRMFrameImpl* frameImpl = static_cast<Direct3DRMFrameImpl*>(frame);
-		path.push_back(frame); // Push current frame
+		path.push_back(frame);
 
 		IDirect3DRMVisualArray* visuals = nullptr;
-		if (SUCCEEDED(frame->GetVisuals(&visuals)) && visuals) {
-			DWORD count = visuals->GetSize();
-			for (DWORD i = 0; i < count; ++i) {
-				IDirect3DRMVisual* vis = nullptr;
-				visuals->GetElement(i, &vis);
+		frame->GetVisuals(&visuals);
+		DWORD count = visuals->GetSize();
+		for (DWORD i = 0; i < count; ++i) {
+			IDirect3DRMVisual* visual = nullptr;
+			visuals->GetElement(i, &visual);
 
-				IDirect3DRMMesh* mesh = nullptr;
-				IDirect3DRMFrame* subFrame = nullptr;
-
-				if (SUCCEEDED(vis->QueryInterface(IID_IDirect3DRMFrame, (void**) &subFrame)) && subFrame) {
-					recurse(subFrame, path);
-					subFrame->Release();
-				}
-				else if (SUCCEEDED(vis->QueryInterface(IID_IDirect3DRMMesh, (void**) &mesh)) && mesh) {
-					D3DRMBOX box;
-					if (SUCCEEDED(mesh->GetBox(&box))) {
-						// Transform box corners to world space
-						D3DRMMATRIX4D worldMatrix;
-						ComputeFrameWorldMatrix(frame, worldMatrix);
-
-						// Transform box min and max points
-						// Because axis-aligned box can become oriented box after transform,
-						// but we simplify by transforming all 8 corners and computing new AABB
-
-						D3DVECTOR corners[8] = {
-							{box.min.x, box.min.y, box.min.z},
-							{box.min.x, box.min.y, box.max.z},
-							{box.min.x, box.max.y, box.min.z},
-							{box.min.x, box.max.y, box.max.z},
-							{box.max.x, box.min.y, box.min.z},
-							{box.max.x, box.min.y, box.max.z},
-							{box.max.x, box.max.y, box.min.z},
-							{box.max.x, box.max.y, box.max.z},
-						};
-
-						D3DRMBOX worldBox;
-						{
-							float x = corners[0].x * worldMatrix[0][0] + corners[0].y * worldMatrix[1][0] +
-									  corners[0].z * worldMatrix[2][0] + worldMatrix[3][0];
-							float y = corners[0].x * worldMatrix[0][1] + corners[0].y * worldMatrix[1][1] +
-									  corners[0].z * worldMatrix[2][1] + worldMatrix[3][1];
-							float z = corners[0].x * worldMatrix[0][2] + corners[0].y * worldMatrix[1][2] +
-									  corners[0].z * worldMatrix[2][2] + worldMatrix[3][2];
-							worldBox.min = {x, y, z};
-							worldBox.max = {x, y, z};
-						}
-
-						for (int c = 1; c < 8; ++c) {
-							float x = corners[c].x * worldMatrix[0][0] + corners[c].y * worldMatrix[1][0] +
-									  corners[c].z * worldMatrix[2][0] + worldMatrix[3][0];
-							float y = corners[c].x * worldMatrix[0][1] + corners[c].y * worldMatrix[1][1] +
-									  corners[c].z * worldMatrix[2][1] + worldMatrix[3][1];
-							float z = corners[c].x * worldMatrix[0][2] + corners[c].y * worldMatrix[1][2] +
-									  corners[c].z * worldMatrix[2][2] + worldMatrix[3][2];
-
-							if (x < worldBox.min.x) {
-								worldBox.min.x = x;
-							}
-							if (y < worldBox.min.y) {
-								worldBox.min.y = y;
-							}
-							if (z < worldBox.min.z) {
-								worldBox.min.z = z;
-							}
-							if (x > worldBox.max.x) {
-								worldBox.max.x = x;
-							}
-							if (y > worldBox.max.y) {
-								worldBox.max.y = y;
-							}
-							if (z > worldBox.max.z) {
-								worldBox.max.z = z;
-							}
-						}
-
-						float distance = 0.0f;
-						if (RayIntersectsBox(pickRay, worldBox, distance)) {
-							if (RayIntersectsMeshTriangles(pickRay, mesh, worldMatrix, distance)) {
-								auto* arr = new Direct3DRMFrameArrayImpl();
-								for (IDirect3DRMFrame* f : path) {
-									arr->AddElement(f);
-								}
-
-								PickRecord rec;
-								rec.visual = vis;
-								rec.frameArray = arr;
-								rec.desc.dist = distance;
-								hits.push_back(rec);
-							}
-						}
-					}
-					mesh->Release();
-				}
-				vis->Release();
+			IDirect3DRMFrame* subFrame = nullptr;
+			visual->QueryInterface(IID_IDirect3DRMFrame, (void**) &subFrame);
+			if (subFrame) {
+				recurse(subFrame, path);
+				subFrame->Release();
+				visual->Release();
+				continue;
 			}
-			visuals->Release();
+
+			IDirect3DRMMesh* mesh = nullptr;
+			visual->QueryInterface(IID_IDirect3DRMMesh, (void**) &mesh);
+			if (mesh) {
+				D3DRMBOX box;
+				mesh->GetBox(&box);
+				// Transform box corners to world space
+				D3DRMMATRIX4D worldMatrix;
+				ComputeFrameWorldMatrix(frame, worldMatrix);
+				D3DRMBOX worldBox = ComputeTransformedAABB(box, worldMatrix);
+
+				float distance = FLT_MAX;
+				if (RayIntersectsBox(pickRay, worldBox, distance) &&
+					RayIntersectsMeshTriangles(pickRay, mesh, worldMatrix, distance)) {
+					auto* arr = new Direct3DRMFrameArrayImpl();
+					for (IDirect3DRMFrame* f : path) {
+						arr->AddElement(f);
+					}
+
+					PickRecord rec = {visual, arr, {distance}};
+					hits.push_back(rec);
+				}
+				mesh->Release();
+			}
+			visual->Release();
 		}
+		visuals->Release();
 		path.pop_back(); // Pop after recursion
 	};
 

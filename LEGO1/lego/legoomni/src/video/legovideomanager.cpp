@@ -473,6 +473,7 @@ void LegoVideoManager::DrawFPS()
 			char buffer[32];
 			MxFloat time = (Timer()->GetTime() - m_unk0x54c) / 1000.0f;
 			MxS32 nb = sprintf(buffer, "%.02f", m_unk0x550 / time);
+			SDL_Log("%.02f", m_unk0x550 / time);
 			m_unk0x54c = Timer()->GetTime();
 
 			DDSURFACEDESC surfaceDesc;
