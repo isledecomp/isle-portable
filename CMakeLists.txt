@@ -2,6 +2,15 @@ cmake_minimum_required(VERSION 3.25...4.0 FATAL_ERROR)
 
 project(isle LANGUAGES CXX C VERSION 0.1)
 
+if (EMSCRIPTEN)
+  set(CMAKE_EXECUTABLE_SUFFIX ".html")
+  add_compile_options("$<$<PLATFORM_ID:Emscripten>:-pthread>")
+  add_link_options("$<$<PLATFORM_ID:Emscripten>:-sALLOW_MEMORY_GROWTH=1>")
+  add_link_options("$<$<PLATFORM_ID:Emscripten>:-sMAXIMUM_MEMORY=2gb>")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pthread -sUSE_PTHREADS=1 -sPROXY_TO_PTHREAD=1 -sPTHREAD_POOL_SIZE_STRICT=0 -sFORCE_FILESYSTEM=1 -sWASMFS=1 -sEXIT_RUNTIME=1")
+  set(SDL_PTHREADS ON CACHE BOOL "Enable SDL pthreads" FORCE)
+endif()
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 include(CheckCXXSourceCompiles)
@@ -34,6 +43,7 @@ option(CMAKE_POSITION_INDEPENDENT_CODE "Build with -fPIC" ON)
 option(ENABLE_CLANG_TIDY "Enable clang-tidy")
 option(DOWNLOAD_DEPENDENCIES "Download dependencies" ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}" CACHE PATH "Directory where to put executables and dll")
+set(ISLE_EMSCRIPTEN_HOST "" CACHE STRING "Host URL for Emscripten streaming (e.g., https://test.com)")
 
 message(STATUS "Isle app:               ${ISLE_BUILD_APP}")
 message(STATUS "Config app:             ${ISLE_BUILD_CONFIG}")
@@ -131,9 +141,16 @@ target_link_directories(DirectX5::DirectX5 INTERFACE "${CMAKE_SOURCE_DIR}/3rdpar
 add_library(Vec::Vec INTERFACE IMPORTED)
 target_include_directories(Vec::Vec INTERFACE "${CMAKE_SOURCE_DIR}/3rdparty/vec")
 
-add_library(lego1 SHARED
-  LEGO1/main.cpp
-)
+if (EMSCRIPTEN)
+  add_library(lego1 STATIC
+    LEGO1/main.cpp
+  )
+else()
+  add_library(lego1 SHARED
+    LEGO1/main.cpp
+  )
+endif()
+
 target_precompile_headers(lego1 PRIVATE "LEGO1/lego1_pch.h")
 set_property(TARGET lego1 PROPERTY DEFINE_SYMBOL "LEGO1_DLL")
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/util>")
@@ -487,6 +504,14 @@ if (ISLE_BUILD_APP)
     )
     target_compile_definitions(isle PRIVATE ISLE_DEBUG)
     target_link_libraries(isle PRIVATE imgui)
+  endif()
+  if(EMSCRIPTEN)
+    target_sources(isle PRIVATE
+      ISLE/emscripten/events.cpp
+      ISLE/emscripten/filesystem.cpp
+      ISLE/emscripten/messagebox.cpp
+    )
+    target_compile_definitions(isle PRIVATE "ISLE_EMSCRIPTEN_HOST=\"${ISLE_EMSCRIPTEN_HOST}\"")
   endif()
 endif()
 

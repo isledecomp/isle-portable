@@ -136,6 +136,8 @@ MxResult LegoInputManager::GetNavigationKeyStates(MxU32& p_keyFlags)
 		keyFlags |= c_ctrl;
 	}
 
+	GetNavigationTouchStates(keyFlags);
+
 	p_keyFlags = keyFlags;
 
 	return SUCCESS;
@@ -541,4 +543,46 @@ void LegoInputManager::EnableInputProcessing()
 	m_unk0x88 = FALSE;
 	g_unk0x100f31b0 = -1;
 	g_unk0x100f31b4 = NULL;
+}
+
+MxResult LegoInputManager::GetNavigationTouchStates(MxU32& p_keyStates)
+{
+	int count;
+	SDL_TouchID* touchDevices = SDL_GetTouchDevices(&count);
+
+	if (touchDevices) {
+		auto applyFingerNavigation = [&p_keyStates](SDL_TouchID touchId) {
+			int count;
+			SDL_Finger** fingers = SDL_GetTouchFingers(touchId, &count);
+
+			if (fingers) {
+				for (int i = 0; i < count; i++) {
+					if (fingers[i]->y > 3.0 / 4.0) {
+						if (fingers[i]->x < 1.0 / 3.0) {
+							p_keyStates |= c_left;
+						}
+						else if (fingers[i]->x > 2.0 / 3.0) {
+							p_keyStates |= c_right;
+						}
+						else {
+							p_keyStates |= c_down;
+						}
+					}
+					else {
+						p_keyStates |= c_up;
+					}
+				}
+
+				SDL_free(fingers);
+			}
+		};
+
+		for (int i = 0; i < count; i++) {
+			applyFingerNavigation(touchDevices[i]);
+		}
+
+		SDL_free(touchDevices);
+	}
+
+	return SUCCESS;
 }
