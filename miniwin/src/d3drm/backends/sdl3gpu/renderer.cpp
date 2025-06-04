@@ -200,11 +200,6 @@ Direct3DRMSDL3GPURenderer::~Direct3DRMSDL3GPURenderer()
 	SDL_DestroyGPUDevice(m_device);
 }
 
-void Direct3DRMSDL3GPURenderer::SetBackbuffer(SDL_Surface* buf)
-{
-	m_backbuffer = buf;
-}
-
 void Direct3DRMSDL3GPURenderer::PushLights(const SceneLight* vertices, size_t count)
 {
 	if (count > 3) {
@@ -388,7 +383,7 @@ HRESULT Direct3DRMSDL3GPURenderer::Render()
 	SDL_DestroySurface(m_renderedImage);
 	SDL_UnmapGPUTransferBuffer(m_device, m_downloadTransferBuffer);
 	m_renderedImage = convertedRender;
-	SDL_BlitSurface(m_renderedImage, nullptr, m_backbuffer, nullptr);
+	SDL_BlitSurface(m_renderedImage, nullptr, DDBackBuffer, nullptr);
 
 	return DD_OK;
 }

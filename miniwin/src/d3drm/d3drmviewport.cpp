@@ -334,7 +334,6 @@ HRESULT Direct3DRMViewportImpl::CollectSceneData()
 
 	m_renderer->PushLights(lights.data(), lights.size());
 	m_renderer->PushVertices(verts.data(), verts.size());
-	m_renderer->SetBackbuffer(DDBackBuffer);
 
 	return D3DRM_OK;
 }

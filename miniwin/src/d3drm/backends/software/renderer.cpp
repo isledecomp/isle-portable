@@ -14,11 +14,6 @@ Direct3DRMSoftwareRenderer::Direct3DRMSoftwareRenderer(DWORD width, DWORD height
 	m_zBuffer.resize(m_width * m_height);
 }
 
-void Direct3DRMSoftwareRenderer::SetBackbuffer(SDL_Surface* buf)
-{
-	m_backbuffer = buf;
-}
-
 void Direct3DRMSoftwareRenderer::PushLights(const SceneLight* lights, size_t count)
 {
 	m_lights.assign(lights, lights + count);
@@ -292,8 +287,8 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 		}
 	}
 
-	Uint8* pixels = (Uint8*) m_backbuffer->pixels;
-	int pitch = m_backbuffer->pitch;
+	Uint8* pixels = (Uint8*) DDBackBuffer->pixels;
+	int pitch = DDBackBuffer->pitch;
 
 	for (int y = minY; y <= maxY; ++y) {
 		for (int x = minX; x <= maxX; ++x) {
@@ -409,7 +404,7 @@ Uint32 Direct3DRMSoftwareRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 			if (texRef.version != texture->m_version) {
 				// Update animated textures
 				SDL_DestroySurface(texRef.cached);
-				texRef.cached = SDL_ConvertSurface(surface->m_surface, m_backbuffer->format);
+				texRef.cached = SDL_ConvertSurface(surface->m_surface, DDBackBuffer->format);
 				SDL_LockSurface(texRef.cached);
 				texRef.version = texture->m_version;
 			}
@@ -417,7 +412,7 @@ Uint32 Direct3DRMSoftwareRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 		}
 	}
 
-	SDL_Surface* convertedRender = SDL_ConvertSurface(surface->m_surface, m_backbuffer->format);
+	SDL_Surface* convertedRender = SDL_ConvertSurface(surface->m_surface, DDBackBuffer->format);
 	SDL_LockSurface(convertedRender);
 
 	// Reuse freed slot
@@ -468,17 +463,17 @@ const char* Direct3DRMSoftwareRenderer::GetName()
 
 HRESULT Direct3DRMSoftwareRenderer::Render()
 {
-	if (!m_backbuffer || m_vertexBuffer.size() % 3 != 0 || !SDL_LockSurface(m_backbuffer)) {
+	if (!DDBackBuffer || m_vertexBuffer.size() % 3 != 0 || !SDL_LockSurface(DDBackBuffer)) {
 		return DDERR_GENERIC;
 	}
 	ClearZBuffer();
-	m_format = SDL_GetPixelFormatDetails(m_backbuffer->format);
-	m_palette = SDL_GetSurfacePalette(m_backbuffer);
+	m_format = SDL_GetPixelFormatDetails(DDBackBuffer->format);
+	m_palette = SDL_GetSurfacePalette(DDBackBuffer);
 	m_bytesPerPixel = m_format->bits_per_pixel / 8;
 	for (size_t i = 0; i + 2 < m_vertexBuffer.size(); i += 3) {
 		DrawTriangleClipped(m_vertexBuffer[i], m_vertexBuffer[i + 1], m_vertexBuffer[i + 2]);
 	}
-	SDL_UnlockSurface(m_backbuffer);
+	SDL_UnlockSurface(DDBackBuffer);
 
 	m_vertexBuffer.clear();
 
