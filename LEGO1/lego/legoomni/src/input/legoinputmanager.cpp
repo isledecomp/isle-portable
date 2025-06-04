@@ -551,9 +551,9 @@ MxResult LegoInputManager::GetNavigationTouchStates(MxU32& p_keyStates)
 	SDL_TouchID* touchDevices = SDL_GetTouchDevices(&count);
 
 	if (touchDevices) {
-		auto applyFingerNavigation = [&p_keyStates](SDL_TouchID touchId) {
+		auto applyFingerNavigation = [&p_keyStates](SDL_TouchID p_touchId) {
 			int count;
-			SDL_Finger** fingers = SDL_GetTouchFingers(touchId, &count);
+			SDL_Finger** fingers = SDL_GetTouchFingers(p_touchId, &count);
 
 			if (fingers) {
 				for (int i = 0; i < count; i++) {
