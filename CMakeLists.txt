@@ -44,6 +44,7 @@ option(ENABLE_CLANG_TIDY "Enable clang-tidy")
 option(DOWNLOAD_DEPENDENCIES "Download dependencies" ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}" CACHE PATH "Directory where to put executables and dll")
 set(ISLE_EMSCRIPTEN_HOST "" CACHE STRING "Host URL for Emscripten streaming (e.g., https://test.com)")
+cmake_dependent_option(BUILD_SHARED_LIBS "Build lego1 as a shared library" ON "NOT EMSCRIPTEN" OFF)
 
 message(STATUS "Isle app:               ${ISLE_BUILD_APP}")
 message(STATUS "Config app:             ${ISLE_BUILD_CONFIG}")
