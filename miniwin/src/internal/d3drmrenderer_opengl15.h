@@ -15,7 +15,6 @@ public:
 	static Direct3DRMRenderer* Create(DWORD width, DWORD height);
 	OpenGL15Renderer(int width, int height, SDL_GLContext context, GLuint fbo, GLuint colorTex, GLuint depthRb);
 	~OpenGL15Renderer() override;
-	void SetBackbuffer(SDL_Surface* surface) override;
 	void PushVertices(const PositionColorVertex* verts, size_t count) override;
 	void PushLights(const SceneLight* lightsArray, size_t count) override;
 	void SetProjection(D3DRMMATRIX4D perspective, D3DVALUE front, D3DVALUE back) override;
@@ -29,7 +28,6 @@ public:
 private:
 	SDL_GLContext m_context;
 	D3DRMMATRIX4D m_projection;
-	SDL_Surface* m_backbuffer = nullptr;
 	SDL_Surface* m_renderedImage;
 	int m_width, m_height;
 	std::vector<PositionColorVertex> m_vertices;

@@ -19,7 +19,6 @@ struct TextureCache {
 class Direct3DRMSoftwareRenderer : public Direct3DRMRenderer {
 public:
 	Direct3DRMSoftwareRenderer(DWORD width, DWORD height);
-	void SetBackbuffer(SDL_Surface* backbuffer) override;
 	void PushVertices(const PositionColorVertex* vertices, size_t count) override;
 	void PushLights(const SceneLight* vertices, size_t count) override;
 	Uint32 GetTextureId(IDirect3DRMTexture* texture) override;
@@ -45,7 +44,6 @@ private:
 
 	DWORD m_width;
 	DWORD m_height;
-	SDL_Surface* m_backbuffer = nullptr;
 	SDL_Palette* m_palette;
 	const SDL_PixelFormatDetails* m_format;
 	int m_bytesPerPixel;
