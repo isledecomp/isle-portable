@@ -10,6 +10,12 @@
 
 DEFINE_GUID(OPENGL15_GUID, 0x682656F3, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03);
 
+struct GLTextureCacheEntry {
+	IDirect3DRMTexture* texture;
+	Uint32 version;
+	GLuint glTextureId;
+};
+
 class OpenGL15Renderer : public Direct3DRMRenderer {
 public:
 	static Direct3DRMRenderer* Create(DWORD width, DWORD height);
@@ -33,6 +39,8 @@ public:
 	HRESULT FinalizeFrame() override;
 
 private:
+	void AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture);
+	std::vector<GLTextureCacheEntry> m_textures;
 	D3DRMMATRIX4D m_viewMatrix;
 	D3DRMMATRIX4D m_projection;
 	SDL_Surface* m_renderedImage;
