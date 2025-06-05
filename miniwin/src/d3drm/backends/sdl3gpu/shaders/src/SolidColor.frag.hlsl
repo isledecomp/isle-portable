@@ -1,9 +1,21 @@
 #include "Common.hlsl"
 
-cbuffer LightBuffer : register(b0, space3)
+cbuffer FragmentShadingData : register(b0, space3)
 {
 	SceneLight lights[3];
 	int lightCount;
+	float Shininess;
+	uint ColorRaw;
+}
+
+float4 unpackColor(uint packed)
+{
+	float4 color;
+	color.r = ((packed >> 0) & 0xFF) / 255.0f;
+	color.g = ((packed >> 8) & 0xFF) / 255.0f;
+	color.b = ((packed >> 16) & 0xFF) / 255.0f;
+	color.a = ((packed >> 24) & 0xFF) / 255.0f;
+	return color;
 }
 
 FS_Output main(FS_Input input)
@@ -41,18 +53,17 @@ FS_Output main(FS_Input input)
 		if (dotNL > 0.0f) {
 			diffuse += dotNL * lightColor;
 
-			if (input.Shininess != 0.0f) {
+			if (Shininess != 0.0f) {
 				// Using dotNL ignores view angle, but this matches DirectX 5 behavior.
-				float spec1 = pow(dotNL, input.Shininess);
+				float spec1 = pow(dotNL, Shininess);
 				specular += spec1 * lightColor;
 			}
 		}
 	}
 
-	float3 baseColor = input.Color.rgb;
-	float3 finalColor = saturate(diffuse * baseColor + specular);
-
-	output.Color = float4(finalColor, input.Color.a);
+	float4 Color = unpackColor(ColorRaw);
+	float3 finalColor = saturate(diffuse * Color.rgb + specular);
+	output.Color = float4(finalColor, Color.a);
 	output.Depth = input.Position.w;
 	return output;
 }

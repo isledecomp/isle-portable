@@ -1,5 +1,6 @@
 #include "d3drmrenderer_opengl15.h"
 #include "ddraw_impl.h"
+#include "mathutils.h"
 
 #include <GL/glew.h>
 #include <cstring>
@@ -92,19 +93,14 @@ OpenGL15Renderer::~OpenGL15Renderer()
 	}
 }
 
-void OpenGL15Renderer::PushVertices(const PositionColorVertex* verts, size_t count)
-{
-	m_vertices.assign(verts, verts + count);
-}
-
 void OpenGL15Renderer::PushLights(const SceneLight* lightsArray, size_t count)
 {
 	m_lights.assign(lightsArray, lightsArray + count);
 }
 
-void OpenGL15Renderer::SetProjection(D3DRMMATRIX4D perspective, D3DVALUE front, D3DVALUE back)
+void OpenGL15Renderer::SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back)
 {
-	memcpy(&m_projection, perspective, sizeof(D3DRMMATRIX4D));
+	memcpy(&m_projection, projection, sizeof(D3DRMMATRIX4D));
 	m_projection[1][1] *= -1.0f; // OpenGL is upside down
 }
 
@@ -141,11 +137,14 @@ const char* OpenGL15Renderer::GetName()
 	return "OpenGL 1.5 HAL";
 }
 
-HRESULT OpenGL15Renderer::Render()
+HRESULT OpenGL15Renderer::BeginFrame(const D3DRMMATRIX4D& viewMatrix)
 {
 	if (!DDBackBuffer) {
 		return DDERR_GENERIC;
 	}
+
+	memcpy(m_viewMatrix, viewMatrix, sizeof(D3DRMMATRIX4D));
+
 	SDL_GL_MakeCurrent(DDWindow, m_context);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 	glViewport(0, 0, m_width, m_height);
@@ -220,21 +219,41 @@ HRESULT OpenGL15Renderer::Render()
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
-	// Render geometry
+	return DD_OK;
+}
+
+void OpenGL15Renderer::SubmitDraw(
+	const GeometryVertex* vertices,
+	const size_t count,
+	const D3DRMMATRIX4D& worldMatrix,
+	const Matrix3x3& normalMatrix,
+	const Appearance& appearance
+)
+{
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+
+	D3DRMMATRIX4D mvMatrix;
+	MultiplyMatrix(mvMatrix, worldMatrix, m_viewMatrix);
+	glLoadMatrixf(&mvMatrix[0][0]);
+	glEnable(GL_NORMALIZE);
+
 	glBegin(GL_TRIANGLES);
-	for (const auto& v : m_vertices) {
-		glColor4ub(v.colors.r, v.colors.g, v.colors.b, v.colors.a);
+	for (size_t i = 0; i < count; i++) {
+		const GeometryVertex& v = vertices[i];
+		glColor4ub(appearance.color.r, appearance.color.g, appearance.color.b, appearance.color.a);
 		glNormal3f(v.normals.x, v.normals.y, v.normals.z);
 		glTexCoord2f(v.texCoord.u, v.texCoord.v);
 
 		// Set per-vertex specular material
-		glMaterialf(GL_FRONT, GL_SHININESS, v.shininess);
-		if (v.shininess != 0.0f) {
-			GLfloat whiteSpec[] = {v.shininess, v.shininess, v.shininess, v.shininess};
+		float shininess = appearance.shininess;
+		glMaterialf(GL_FRONT, GL_SHININESS, shininess);
+		if (shininess != 0.0f) {
+			GLfloat whiteSpec[] = {shininess, shininess, shininess, shininess};
 			glMaterialfv(GL_FRONT, GL_SPECULAR, whiteSpec);
 		}
 		else {
-			GLfloat noSpec[] = {0.f, 0.f, 0.f, 1.f};
+			GLfloat noSpec[] = {0.0f, 0.0f, 0.0f, 1.0f};
 			glMaterialfv(GL_FRONT, GL_SPECULAR, noSpec);
 		}
 
@@ -242,6 +261,11 @@ HRESULT OpenGL15Renderer::Render()
 	}
 	glEnd();
 
+	glPopMatrix();
+}
+
+HRESULT OpenGL15Renderer::FinalizeFrame()
+{
 	glReadPixels(0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, m_renderedImage->pixels);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
