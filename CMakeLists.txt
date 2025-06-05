@@ -505,7 +505,7 @@ if (ISLE_BUILD_APP)
       ISLE/emscripten/messagebox.cpp
     )
     target_compile_definitions(isle PRIVATE "ISLE_EMSCRIPTEN_HOST=\"${ISLE_EMSCRIPTEN_HOST}\"")
-    set_proprety(TARGET isle PROPERTY SUFFIX ".html")
+    set_property(TARGET isle PROPERTY SUFFIX ".html")
   endif()
 endif()
 
