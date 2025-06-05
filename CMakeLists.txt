@@ -68,9 +68,11 @@ if (DOWNLOAD_DEPENDENCIES)
         GIT_TAG "main"
         EXCLUDE_FROM_ALL
     )
-    set(BUILD_DOCS off)
-    set(BUILD_SHARED_LIBS off)
-    FetchContent_MakeAvailable(iniparser)
+    block()
+        set(BUILD_DOCS off)
+        set(BUILD_SHARED_LIBS off)
+        FetchContent_MakeAvailable(iniparser)
+    endblock()
 else()
     # find_package looks for already-installed system packages.
     # Configure with `-DCMAKE_PREFIX_PATH="/path/to/package1;/path/to/package2"`
