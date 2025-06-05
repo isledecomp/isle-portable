@@ -37,6 +37,9 @@ Direct3DRMRenderer* OpenGL15Renderer::Create(DWORD width, DWORD height)
 		return nullptr;
 	}
 
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+	glFrontFace(GL_CCW);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_LIGHTING);
 	glEnable(GL_COLOR_MATERIAL);
@@ -316,6 +319,8 @@ void OpenGL15Renderer::SubmitDraw(
 	glLoadMatrixf(&mvMatrix[0][0]);
 	glEnable(GL_NORMALIZE);
 
+	glColor4ub(appearance.color.r, appearance.color.g, appearance.color.b, appearance.color.a);
+
 	// Bind texture if present
 	if (appearance.textureId != NO_TEXTURE_ID) {
 		auto& tex = m_textures[appearance.textureId];
@@ -342,7 +347,6 @@ void OpenGL15Renderer::SubmitDraw(
 	glBegin(GL_TRIANGLES);
 	for (size_t i = 0; i < count; i++) {
 		const GeometryVertex& v = vertices[i];
-		glColor4ub(appearance.color.r, appearance.color.g, appearance.color.b, appearance.color.a);
 		glNormal3f(v.normals.x, v.normals.y, v.normals.z);
 		glTexCoord2f(v.texCoord.u, v.texCoord.v);
 		glVertex3f(v.position.x, v.position.y, v.position.z);
