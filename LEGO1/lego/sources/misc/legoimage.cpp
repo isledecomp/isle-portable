@@ -162,7 +162,7 @@ LegoResult LegoImage::Write(LegoStorage* p_storage)
 	if ((result = p_storage->Write(&m_surface->h, sizeof(int))) != SUCCESS) {
 		return result;
 	}
-	if ((result = p_storage->Write(&m_surface->h, sizeof(int))) != SUCCESS) {
+	if ((result = p_storage->Write(&m_palette->ncolors, sizeof(int))) != SUCCESS) {
 		return result;
 	}
 	if (m_palette) {
