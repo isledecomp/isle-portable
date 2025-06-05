@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.25...4.0 FATAL_ERROR)
 project(isle LANGUAGES CXX C VERSION 0.1)
 
 if (EMSCRIPTEN)
-  set(CMAKE_EXECUTABLE_SUFFIX ".html")
   add_compile_options(-pthread)
   add_link_options(-sALLOW_MEMORY_GROWTH=1 -sMAXIMUM_MEMORY=2gb -sUSE_PTHREADS=1 -sPROXY_TO_PTHREAD=1 -sPTHREAD_POOL_SIZE_STRICT=0 -sFORCE_FILESYSTEM=1 -sWASMFS=1 -sEXIT_RUNTIME=1)
   set(SDL_PTHREADS ON CACHE BOOL "Enable SDL pthreads" FORCE)
@@ -506,6 +505,7 @@ if (ISLE_BUILD_APP)
       ISLE/emscripten/messagebox.cpp
     )
     target_compile_definitions(isle PRIVATE "ISLE_EMSCRIPTEN_HOST=\"${ISLE_EMSCRIPTEN_HOST}\"")
+    set_proprety(TARGET isle PROPERTY SUFFIX ".html")
   endif()
 endif()
 
@@ -612,10 +612,18 @@ else()
 endif()
 
 set(ISLE_PACKAGE_NAME "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}" CACHE STRING "Platform name of the package")
-install(TARGETS isle lego1 ${install_extra_targets}
+if(BUILD_SHARED_LIBS)
+  list(APPEND install_extra_targets lego1)
+endif()
+install(TARGETS isle ${install_extra_targets}
   RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
   LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
 )
+if(EMSCRIPTEN)
+  install(FILES "$<TARGET_FILE_DIR:isle>/isle.js" "$<TARGET_FILE_DIR:isle>/isle.wasm"
+    DESTINATION "${CMAKE_INSTALL_BINDIR}"
+  )
+endif()
 
 set(CPACK_PACKAGE_DIRECTORY "dist")
 set(CPACK_PACKAGE_FILE_NAME "isle-${PROJECT_VERSION}-${ISLE_PACKAGE_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
