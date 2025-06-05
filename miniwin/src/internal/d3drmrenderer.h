@@ -1,5 +1,6 @@
 #pragma once
 
+#include "mathutils.h"
 #include "miniwin/d3drm.h"
 
 #include <SDL3/SDL.h>
@@ -10,15 +11,18 @@ struct TexCoord {
 	float u, v;
 };
 
-struct PositionColorVertex {
+struct GeometryVertex {
 	D3DVECTOR position;
 	D3DVECTOR normals;
-	SDL_Color colors;
-	Uint32 texId;
 	TexCoord texCoord;
-	float shininess;
 };
-static_assert(sizeof(PositionColorVertex) == 44);
+static_assert(sizeof(GeometryVertex) == 32);
+
+struct Appearance {
+	SDL_Color color;
+	float shininess;
+	Uint32 textureId;
+};
 
 struct FColor {
 	float r, g, b, a;
@@ -35,13 +39,20 @@ static_assert(sizeof(SceneLight) == 48);
 
 class Direct3DRMRenderer : public IDirect3DDevice2 {
 public:
-	virtual void PushVertices(const PositionColorVertex* vertices, size_t count) = 0;
 	virtual void PushLights(const SceneLight* vertices, size_t count) = 0;
-	virtual void SetProjection(D3DRMMATRIX4D perspective, D3DVALUE front, D3DVALUE back) = 0;
+	virtual void SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back) = 0;
 	virtual Uint32 GetTextureId(IDirect3DRMTexture* texture) = 0;
 	virtual DWORD GetWidth() = 0;
 	virtual DWORD GetHeight() = 0;
 	virtual void GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc) = 0;
 	virtual const char* GetName() = 0;
-	virtual HRESULT Render() = 0;
+	virtual HRESULT BeginFrame(const D3DRMMATRIX4D& viewMatrix) = 0;
+	virtual void SubmitDraw(
+		const GeometryVertex* vertices,
+		const size_t count,
+		const D3DRMMATRIX4D& worldMatrix,
+		const Matrix3x3& normalMatrix,
+		const Appearance& appearance
+	) = 0;
+	virtual HRESULT FinalizeFrame() = 0;
 };

@@ -3,6 +3,7 @@
 #include "d3drmrenderer.h"
 #include "d3drmviewport_impl.h"
 #include "ddraw_impl.h"
+#include "mathutils.h"
 #include "miniwin.h"
 
 #include <SDL3/SDL.h>
@@ -11,8 +12,6 @@
 #include <float.h>
 #include <functional>
 #include <math.h>
-
-typedef D3DVALUE Matrix3x3[3][3];
 
 Direct3DRMViewportImpl::Direct3DRMViewportImpl(DWORD width, DWORD height, Direct3DRMRenderer* rendere)
 	: m_width(width), m_height(height), m_renderer(rendere)
@@ -101,16 +100,6 @@ inline D3DVECTOR CrossProduct(const D3DVECTOR& a, const D3DVECTOR& b)
 	return {a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x};
 }
 
-inline D3DVECTOR Normalize(const D3DVECTOR& v)
-{
-	float len = sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
-	if (len > 0.0f) {
-		float invLen = 1.0f / len;
-		return {v.x * invLen, v.y * invLen, v.z * invLen};
-	}
-	return {0, 0, 0};
-}
-
 D3DVECTOR ComputeTriangleNormal(const D3DVECTOR& v0, const D3DVECTOR& v1, const D3DVECTOR& v2)
 {
 	D3DVECTOR u = {v1.x - v0.x, v1.y - v0.y, v1.z - v0.z};
@@ -119,24 +108,6 @@ D3DVECTOR ComputeTriangleNormal(const D3DVECTOR& v0, const D3DVECTOR& v1, const 
 	normal = Normalize(normal);
 
 	return normal;
-}
-
-inline D3DVECTOR TransformNormal(const D3DVECTOR& v, const Matrix3x3& m)
-{
-	return {
-		v.x * m[0][0] + v.y * m[1][0] + v.z * m[2][0],
-		v.x * m[0][1] + v.y * m[1][1] + v.z * m[2][1],
-		v.x * m[0][2] + v.y * m[1][2] + v.z * m[2][2]
-	};
-}
-
-inline D3DVECTOR TransformPoint(const D3DVECTOR& p, const D3DRMMATRIX4D& m)
-{
-	return {
-		p.x * m[0][0] + p.y * m[1][0] + p.z * m[2][0] + m[3][0],
-		p.x * m[0][1] + p.y * m[1][1] + p.z * m[2][1] + m[3][1],
-		p.x * m[0][2] + p.y * m[1][2] + p.z * m[2][2] + m[3][2]
-	};
 }
 
 void Direct3DRMViewportImpl::CollectLightsFromFrame(
@@ -241,11 +212,7 @@ bool IsBoxInFrustum(const D3DVECTOR corners[8], const Plane planes[6])
 	return true;
 }
 
-void Direct3DRMViewportImpl::CollectMeshesFromFrame(
-	IDirect3DRMFrame* frame,
-	D3DRMMATRIX4D parentMatrix,
-	std::vector<PositionColorVertex>& verts
-)
+void Direct3DRMViewportImpl::CollectMeshesFromFrame(IDirect3DRMFrame* frame, D3DRMMATRIX4D parentMatrix)
 {
 	Direct3DRMFrameImpl* frameImpl = static_cast<Direct3DRMFrameImpl*>(frame);
 	D3DRMMATRIX4D localMatrix;
@@ -267,7 +234,7 @@ void Direct3DRMViewportImpl::CollectMeshesFromFrame(
 		IDirect3DRMFrame* childFrame = nullptr;
 		visual->QueryInterface(IID_IDirect3DRMFrame, (void**) &childFrame);
 		if (childFrame) {
-			CollectMeshesFromFrame(childFrame, worldMatrix, verts);
+			CollectMeshesFromFrame(childFrame, worldMatrix);
 			childFrame->Release();
 			visual->Release();
 			continue;
@@ -306,6 +273,7 @@ void Direct3DRMViewportImpl::CollectMeshesFromFrame(
 			DWORD vtxCount, faceCount, vpf, dataSize;
 			mesh->GetGroup(gi, &vtxCount, &faceCount, &vpf, &dataSize, nullptr);
 
+			std::vector<GeometryVertex> verts(dataSize * vpf);
 			std::vector<D3DRMVERTEX> d3dVerts(vtxCount);
 			std::vector<DWORD> faces(dataSize);
 			mesh->GetVertices(gi, 0, vtxCount, d3dVerts.data());
@@ -316,9 +284,9 @@ void Direct3DRMViewportImpl::CollectMeshesFromFrame(
 
 			IDirect3DRMTexture* texture = nullptr;
 			mesh->GetGroupTexture(gi, &texture);
-			Uint32 texId = NO_TEXTURE_ID;
+			Uint32 textureId = NO_TEXTURE_ID;
 			if (texture) {
-				texId = m_renderer->GetTextureId(texture);
+				textureId = m_renderer->GetTextureId(texture);
 				texture->Release();
 			}
 
@@ -346,22 +314,21 @@ void Direct3DRMViewportImpl::CollectMeshesFromFrame(
 						norm = dv.normal;
 					}
 
-					D3DVECTOR worldPos = TransformPoint(pos, worldMatrix);
-					D3DVECTOR viewNorm = TransformNormal(norm, worldMatrixInvert);
-
-					verts.push_back(
-						{TransformPoint(worldPos, m_viewMatrix),
-						 Normalize(viewNorm),
-						 {static_cast<Uint8>((color >> 16) & 0xFF),
-						  static_cast<Uint8>((color >> 8) & 0xFF),
-						  static_cast<Uint8>((color >> 0) & 0xFF),
-						  static_cast<Uint8>((color >> 24) & 0xFF)},
-						 texId,
-						 {dv.tu, dv.tv},
-						 shininess}
-					);
+					verts.push_back({pos, norm, {dv.tu, dv.tv}});
 				}
 			}
+			m_renderer->SubmitDraw(
+				verts.data(),
+				verts.size(),
+				worldMatrix,
+				worldMatrixInvert,
+				{{static_cast<Uint8>((color >> 16) & 0xFF),
+				  static_cast<Uint8>((color >> 8) & 0xFF),
+				  static_cast<Uint8>((color >> 0) & 0xFF),
+				  static_cast<Uint8>((color >> 24) & 0xFF)},
+				 shininess,
+				 textureId}
+			);
 		}
 		mesh->Release();
 		visual->Release();
@@ -369,7 +336,7 @@ void Direct3DRMViewportImpl::CollectMeshesFromFrame(
 	visuals->Release();
 }
 
-void Direct3DRMViewportImpl::CollectSceneData()
+HRESULT Direct3DRMViewportImpl::RenderScene()
 {
 	m_backgroundColor = static_cast<Direct3DRMFrameImpl*>(m_rootFrame)->m_backgroundColor;
 
@@ -384,11 +351,14 @@ void Direct3DRMViewportImpl::CollectSceneData()
 	std::vector<SceneLight> lights;
 	CollectLightsFromFrame(m_rootFrame, identity, lights);
 	m_renderer->PushLights(lights.data(), lights.size());
+	HRESULT status = m_renderer->BeginFrame(m_viewMatrix);
+	if (status != DD_OK) {
+		return status;
+	}
 
-	std::vector<PositionColorVertex> verts;
 	ExtractFrustumPlanes(viewProj);
-	CollectMeshesFromFrame(m_rootFrame, identity, verts);
-	m_renderer->PushVertices(verts.data(), verts.size());
+	CollectMeshesFromFrame(m_rootFrame, identity);
+	return m_renderer->FinalizeFrame();
 }
 
 HRESULT Direct3DRMViewportImpl::Render(IDirect3DRMFrame* rootFrame)
@@ -397,8 +367,7 @@ HRESULT Direct3DRMViewportImpl::Render(IDirect3DRMFrame* rootFrame)
 		return DDERR_GENERIC;
 	}
 	m_rootFrame = rootFrame;
-	CollectSceneData();
-	return m_renderer->Render();
+	return RenderScene();
 }
 
 HRESULT Direct3DRMViewportImpl::ForceUpdate(int x, int y, int w, int h)

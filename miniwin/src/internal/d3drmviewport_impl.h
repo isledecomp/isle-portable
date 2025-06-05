@@ -35,13 +35,9 @@ struct Direct3DRMViewportImpl : public Direct3DRMObjectBaseImpl<IDirect3DRMViewp
 	void CloseDevice();
 
 private:
-	void CollectSceneData();
+	HRESULT RenderScene();
 	void CollectLightsFromFrame(IDirect3DRMFrame* frame, D3DRMMATRIX4D parentMatrix, std::vector<SceneLight>& lights);
-	void CollectMeshesFromFrame(
-		IDirect3DRMFrame* frame,
-		D3DRMMATRIX4D parentMatrix,
-		std::vector<PositionColorVertex>& verts
-	);
+	void CollectMeshesFromFrame(IDirect3DRMFrame* frame, D3DRMMATRIX4D parentMatrix);
 	void UpdateProjectionMatrix();
 	Direct3DRMRenderer* m_renderer;
 	D3DCOLOR m_backgroundColor = 0xFF000000;

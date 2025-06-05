@@ -1,5 +1,7 @@
 #include "d3drmrenderer_opengl15.h"
 #include "ddraw_impl.h"
+#include "ddsurface_impl.h"
+#include "mathutils.h"
 
 #include <GL/glew.h>
 #include <cstring>
@@ -92,25 +94,97 @@ OpenGL15Renderer::~OpenGL15Renderer()
 	}
 }
 
-void OpenGL15Renderer::PushVertices(const PositionColorVertex* verts, size_t count)
-{
-	m_vertices.assign(verts, verts + count);
-}
-
 void OpenGL15Renderer::PushLights(const SceneLight* lightsArray, size_t count)
 {
 	m_lights.assign(lightsArray, lightsArray + count);
 }
 
-void OpenGL15Renderer::SetProjection(D3DRMMATRIX4D perspective, D3DVALUE front, D3DVALUE back)
+void OpenGL15Renderer::SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back)
 {
-	memcpy(&m_projection, perspective, sizeof(D3DRMMATRIX4D));
+	memcpy(&m_projection, projection, sizeof(D3DRMMATRIX4D));
 	m_projection[1][1] *= -1.0f; // OpenGL is upside down
 }
 
-Uint32 OpenGL15Renderer::GetTextureId(IDirect3DRMTexture* texture)
+struct TextureDestroyContextGL {
+	OpenGL15Renderer* renderer;
+	Uint32 textureId;
+};
+
+void OpenGL15Renderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture)
 {
-	return NO_TEXTURE_ID; // Stub
+	auto* ctx = new TextureDestroyContextGL{this, id};
+	texture->AddDestroyCallback(
+		[](IDirect3DRMObject* obj, void* arg) {
+			auto* ctx = static_cast<TextureDestroyContextGL*>(arg);
+			auto& cache = ctx->renderer->m_textures[ctx->textureId];
+			if (cache.glTextureId != 0) {
+				glDeleteTextures(1, &cache.glTextureId);
+				cache.glTextureId = 0;
+				cache.texture = nullptr;
+			}
+			delete ctx;
+		},
+		ctx
+	);
+}
+
+Uint32 OpenGL15Renderer::GetTextureId(IDirect3DRMTexture* iTexture)
+{
+	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
+	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
+
+	for (Uint32 i = 0; i < m_textures.size(); ++i) {
+		auto& tex = m_textures[i];
+		if (tex.texture == texture) {
+			if (tex.version != texture->m_version) {
+				glDeleteTextures(1, &tex.glTextureId);
+				glGenTextures(1, &tex.glTextureId);
+				glBindTexture(GL_TEXTURE_2D, tex.glTextureId);
+
+				SDL_Surface* surf =
+					SDL_ConvertSurface(surface->m_surface, SDL_PIXELFORMAT_ABGR8888); // Why are the colors backwarsd?
+				if (!surf) {
+					return NO_TEXTURE_ID;
+				}
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
+				SDL_DestroySurface(surf);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+				tex.version = texture->m_version;
+			}
+			return i;
+		}
+	}
+
+	GLuint texId;
+	glGenTextures(1, &texId);
+	glBindTexture(GL_TEXTURE_2D, texId);
+
+	SDL_Surface* surf =
+		SDL_ConvertSurface(surface->m_surface, SDL_PIXELFORMAT_ABGR8888); // Why are the colors backwarsd?
+	if (!surf) {
+		return NO_TEXTURE_ID;
+	}
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
+	SDL_DestroySurface(surf);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	for (Uint32 i = 0; i < m_textures.size(); ++i) {
+		auto& tex = m_textures[i];
+		if (tex.texture == nullptr) {
+			tex.texture = texture;
+			tex.version = texture->m_version;
+			tex.glTextureId = texId;
+			AddTextureDestroyCallback(i, texture);
+			return i;
+		}
+	}
+
+	m_textures.push_back({texture, texture->m_version, texId});
+	AddTextureDestroyCallback((Uint32) (m_textures.size() - 1), texture);
+	return (Uint32) (m_textures.size() - 1);
 }
 
 DWORD OpenGL15Renderer::GetWidth()
@@ -141,11 +215,14 @@ const char* OpenGL15Renderer::GetName()
 	return "OpenGL 1.5 HAL";
 }
 
-HRESULT OpenGL15Renderer::Render()
+HRESULT OpenGL15Renderer::BeginFrame(const D3DRMMATRIX4D& viewMatrix)
 {
 	if (!DDBackBuffer) {
 		return DDERR_GENERIC;
 	}
+
+	memcpy(m_viewMatrix, viewMatrix, sizeof(D3DRMMATRIX4D));
+
 	SDL_GL_MakeCurrent(DDWindow, m_context);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 	glViewport(0, 0, m_width, m_height);
@@ -220,28 +297,63 @@ HRESULT OpenGL15Renderer::Render()
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
-	// Render geometry
+	return DD_OK;
+}
+
+void OpenGL15Renderer::SubmitDraw(
+	const GeometryVertex* vertices,
+	const size_t count,
+	const D3DRMMATRIX4D& worldMatrix,
+	const Matrix3x3& normalMatrix,
+	const Appearance& appearance
+)
+{
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+
+	D3DRMMATRIX4D mvMatrix;
+	MultiplyMatrix(mvMatrix, worldMatrix, m_viewMatrix);
+	glLoadMatrixf(&mvMatrix[0][0]);
+	glEnable(GL_NORMALIZE);
+
+	// Bind texture if present
+	if (appearance.textureId != NO_TEXTURE_ID) {
+		auto& tex = m_textures[appearance.textureId];
+		if (tex.glTextureId) {
+			glEnable(GL_TEXTURE_2D);
+			glBindTexture(GL_TEXTURE_2D, tex.glTextureId);
+		}
+	}
+	else {
+		glDisable(GL_TEXTURE_2D);
+	}
+
+	float shininess = appearance.shininess;
+	glMaterialf(GL_FRONT, GL_SHININESS, shininess);
+	if (shininess != 0.0f) {
+		GLfloat whiteSpec[] = {shininess, shininess, shininess, shininess};
+		glMaterialfv(GL_FRONT, GL_SPECULAR, whiteSpec);
+	}
+	else {
+		GLfloat noSpec[] = {0.0f, 0.0f, 0.0f, 0.0f};
+		glMaterialfv(GL_FRONT, GL_SPECULAR, noSpec);
+	}
+
 	glBegin(GL_TRIANGLES);
-	for (const auto& v : m_vertices) {
-		glColor4ub(v.colors.r, v.colors.g, v.colors.b, v.colors.a);
+	for (size_t i = 0; i < count; i++) {
+		const GeometryVertex& v = vertices[i];
+		glColor4ub(appearance.color.r, appearance.color.g, appearance.color.b, appearance.color.a);
 		glNormal3f(v.normals.x, v.normals.y, v.normals.z);
 		glTexCoord2f(v.texCoord.u, v.texCoord.v);
-
-		// Set per-vertex specular material
-		glMaterialf(GL_FRONT, GL_SHININESS, v.shininess);
-		if (v.shininess != 0.0f) {
-			GLfloat whiteSpec[] = {v.shininess, v.shininess, v.shininess, v.shininess};
-			glMaterialfv(GL_FRONT, GL_SPECULAR, whiteSpec);
-		}
-		else {
-			GLfloat noSpec[] = {0.f, 0.f, 0.f, 1.f};
-			glMaterialfv(GL_FRONT, GL_SPECULAR, noSpec);
-		}
-
 		glVertex3f(v.position.x, v.position.y, v.position.z);
 	}
 	glEnd();
 
+	glPopMatrix();
+}
+
+HRESULT OpenGL15Renderer::FinalizeFrame()
+{
 	glReadPixels(0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, m_renderedImage->pixels);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
