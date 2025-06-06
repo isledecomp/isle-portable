@@ -19,7 +19,7 @@ struct GLTextureCacheEntry {
 class OpenGL15Renderer : public Direct3DRMRenderer {
 public:
 	static Direct3DRMRenderer* Create(DWORD width, DWORD height);
-	OpenGL15Renderer(int width, int height, SDL_GLContext context, GLuint fbo, GLuint colorTex, GLuint depthRb);
+	OpenGL15Renderer(int width, int height, SDL_GLContext context, GLuint fbo, GLuint msaaFBO);
 	~OpenGL15Renderer() override;
 	void PushLights(const SceneLight* lightsArray, size_t count) override;
 	void SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back) override;
@@ -48,8 +48,7 @@ private:
 	std::vector<SceneLight> m_lights;
 	SDL_GLContext m_context;
 	GLuint m_fbo = 0;
-	GLuint m_colorTex = 0;
-	GLuint m_depthRb = 0;
+	GLuint m_msaaFBO = 0;
 };
 
 inline static void OpenGL15Renderer_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
