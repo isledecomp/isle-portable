@@ -37,7 +37,7 @@ public:
 	const char* GetName() override;
 	HRESULT BeginFrame(const D3DRMMATRIX4D& viewMatrix) override;
 	void SubmitDraw(
-		const GeometryVertex* vertices,
+		const D3DRMVERTEX* vertices,
 		const size_t count,
 		const D3DRMMATRIX4D& worldMatrix,
 		const Matrix3x3& normalMatrix,

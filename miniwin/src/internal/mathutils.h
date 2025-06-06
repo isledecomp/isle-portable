@@ -6,6 +6,11 @@
 
 typedef D3DVALUE Matrix3x3[3][3];
 
+inline D3DVECTOR CrossProduct(const D3DVECTOR& a, const D3DVECTOR& b)
+{
+	return {a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x};
+}
+
 inline D3DVECTOR TransformNormal(const D3DVECTOR& v, const Matrix3x3& m)
 {
 	return {

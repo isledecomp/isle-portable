@@ -32,7 +32,7 @@ void Direct3DRMSoftwareRenderer::ClearZBuffer()
 	std::fill(m_zBuffer.begin(), m_zBuffer.end(), std::numeric_limits<float>::infinity());
 }
 
-void Direct3DRMSoftwareRenderer::ProjectVertex(const GeometryVertex& v, D3DRMVECTOR4D& p) const
+void Direct3DRMSoftwareRenderer::ProjectVertex(const D3DRMVERTEX& v, D3DRMVECTOR4D& p) const
 {
 	float px = m_projection[0][0] * v.position.x + m_projection[1][0] * v.position.y +
 			   m_projection[2][0] * v.position.z + m_projection[3][0];
@@ -58,31 +58,26 @@ void Direct3DRMSoftwareRenderer::ProjectVertex(const GeometryVertex& v, D3DRMVEC
 	p.z = pz;
 }
 
-GeometryVertex SplitEdge(GeometryVertex a, const GeometryVertex& b, float plane)
+D3DRMVERTEX SplitEdge(D3DRMVERTEX a, const D3DRMVERTEX& b, float plane)
 {
 	float t = (plane - a.position.z) / (b.position.z - a.position.z);
-	a.position.x = a.position.x + t * (b.position.x - a.position.x);
-	a.position.y = a.position.y + t * (b.position.y - a.position.y);
+	a.position.x += t * (b.position.x - a.position.x);
+	a.position.y += t * (b.position.y - a.position.y);
 	a.position.z = plane;
 
-	a.texCoord.u = a.texCoord.u + t * (b.texCoord.u - a.texCoord.u);
-	a.texCoord.v = a.texCoord.v + t * (b.texCoord.v - a.texCoord.v);
+	a.tu += t * (b.tu - a.tu);
+	a.tv += t * (b.tv - a.tv);
 
-	a.normals.x = a.normals.x + t * (b.normals.x - a.normals.x);
-	a.normals.y = a.normals.y + t * (b.normals.y - a.normals.y);
-	a.normals.z = a.normals.z + t * (b.normals.z - a.normals.z);
+	a.normal.x += t * (b.normal.x - a.normal.x);
+	a.normal.y += t * (b.normal.y - a.normal.y);
+	a.normal.z += t * (b.normal.z - a.normal.z);
 
-	float len = std::sqrt(a.normals.x * a.normals.x + a.normals.y * a.normals.y + a.normals.z * a.normals.z);
-	if (len > 0.0001f) {
-		a.normals.x /= len;
-		a.normals.y /= len;
-		a.normals.z /= len;
-	}
+	a.normal = Normalize(a.normal);
 
 	return a;
 }
 
-void Direct3DRMSoftwareRenderer::DrawTriangleClipped(const GeometryVertex (&v)[3], const Appearance& appearance)
+void Direct3DRMSoftwareRenderer::DrawTriangleClipped(const D3DRMVERTEX (&v)[3], const Appearance& appearance)
 {
 	bool in0 = v[0].position.z >= m_front;
 	bool in1 = v[1].position.z >= m_front;
@@ -98,7 +93,7 @@ void Direct3DRMSoftwareRenderer::DrawTriangleClipped(const GeometryVertex (&v)[3
 		DrawTriangleProjected(v[0], v[1], v[2], appearance);
 	}
 	else if (insideCount == 2) {
-		GeometryVertex split;
+		D3DRMVERTEX split;
 		if (!in0) {
 			split = SplitEdge(v[2], v[0], m_front);
 			DrawTriangleProjected(v[1], v[2], split, appearance);
@@ -149,14 +144,14 @@ void Direct3DRMSoftwareRenderer::BlendPixel(Uint8* pixelAddr, Uint8 r, Uint8 g, 
 	memcpy(pixelAddr, &blended, m_bytesPerPixel);
 }
 
-SDL_Color Direct3DRMSoftwareRenderer::ApplyLighting(const GeometryVertex& vertex, const Appearance& appearance)
+SDL_Color Direct3DRMSoftwareRenderer::ApplyLighting(const D3DRMVERTEX& vertex, const Appearance& appearance)
 {
 	FColor specular = {0, 0, 0, 0};
 	FColor diffuse = {0, 0, 0, 0};
 
 	// Position and normal
 	D3DVECTOR position = vertex.position;
-	D3DVECTOR normal = vertex.normals;
+	D3DVECTOR normal = vertex.normal;
 	float normLen = std::sqrt(normal.x * normal.x + normal.y * normal.y + normal.z * normal.z);
 	if (normLen == 0.0f) {
 		return appearance.color;
@@ -219,10 +214,166 @@ SDL_Color Direct3DRMSoftwareRenderer::ApplyLighting(const GeometryVertex& vertex
 	};
 }
 
+inline float EdgeFloat(float x0, float y0, float x1, float y1, float x, float y)
+{
+	return (x - x0) * (y1 - y0) - (y - y0) * (x1 - x0);
+}
+
+inline float EdgeDouble(double x0, double y0, double x1, double y1, double x, double y)
+{
+	return (x - x0) * (y1 - y0) - (y - y0) * (x1 - x0);
+}
+
+inline TexCoord InterpolateTexCoord(
+	const D3DRMVERTEX& v0,
+	const D3DRMVERTEX& v1,
+	const D3DRMVERTEX& v2,
+	const D3DRMVECTOR4D& p0,
+	const D3DRMVECTOR4D& p1,
+	const D3DRMVECTOR4D& p2,
+	float w0,
+	float w1,
+	float w2
+)
+{
+	float invW = w0 / p0.w + w1 / p1.w + w2 / p2.w;
+	if (invW == 0.0f) {
+		return {0.0f, 0.0f}; // caller must decide to skip or use fallback
+	}
+	invW = 1.0f / invW;
+
+	return {
+		((w0 * v0.tu / p0.w) + (w1 * v1.tu / p1.w) + (w2 * v2.tu / p2.w)) * invW,
+		((w0 * v0.tv / p0.w) + (w1 * v1.tv / p1.w) + (w2 * v2.tv / p2.w)) * invW
+	};
+}
+
+inline SDL_Color SampleTexelColor(
+	TexCoord texCoord,
+	int texWidthScale,
+	int texHeightScale,
+	int texturePitch,
+	const Uint8* texels,
+	int bytesPerPixel,
+	SDL_Palette* palette,
+	const SDL_PixelFormatDetails* format
+)
+{
+	// Tile texture coordinates
+	float u = texCoord.u - std::floor(texCoord.u);
+	float v = texCoord.v - std::floor(texCoord.v);
+
+	int texX = static_cast<int>(u * texWidthScale);
+	int texY = static_cast<int>(v * texHeightScale);
+
+	const Uint8* texelAddr = texels + texY * texturePitch + texX * bytesPerPixel;
+
+	Uint32 texelColor;
+	memcpy(&texelColor, texelAddr, bytesPerPixel);
+
+	SDL_Color color;
+	SDL_GetRGBA(texelColor, format, palette, &color.r, &color.g, &color.b, &color.a);
+
+	return color;
+}
+
+void Direct3DRMSoftwareRenderer::DrawTriangleFlatShaded(
+	const D3DRMVERTEX& v0,
+	const D3DRMVERTEX& v1,
+	const D3DRMVERTEX& v2,
+	const D3DRMVECTOR4D& p0,
+	const D3DRMVECTOR4D& p1,
+	const D3DRMVECTOR4D& p2,
+	const Appearance& appearance,
+	int minX,
+	int maxX,
+	int minY,
+	int maxY,
+	float invArea,
+	int texturePitch,
+	Uint8* texels,
+	int texWidthScale,
+	int texHeightScale
+)
+{
+	// Todo calculate on mesh upload
+	D3DRMVERTEX faceVertex = v0;
+	D3DVECTOR u = {v1.position.x - v0.position.x, v1.position.y - v0.position.y, v1.position.z - v0.position.z};
+	D3DVECTOR v = {v2.position.x - v0.position.x, v2.position.y - v0.position.y, v2.position.z - v0.position.z};
+	D3DVECTOR faceNormal = CrossProduct(u, v);
+	faceVertex.normal = Normalize(faceNormal);
+
+	// Calculate flat color for the entire triangle
+	SDL_Color flatColor = ApplyLighting(faceVertex, appearance);
+	SDL_Color texel;
+
+	Uint8* pixels = (Uint8*) DDBackBuffer->pixels;
+	int pitch = DDBackBuffer->pitch;
+
+	for (int y = minY; y <= maxY; ++y) {
+		for (int x = minX; x <= maxX; ++x) {
+			float px = x + 0.5f;
+			float py = y + 0.5f;
+			float w0 = EdgeDouble(p1.x, p1.y, p2.x, p2.y, px, py) * invArea;
+			if (w0 < 0.0f || w0 > 1.0f) {
+				continue;
+			}
+
+			float w1 = EdgeDouble(p2.x, p2.y, p0.x, p0.y, px, py) * invArea;
+			if (w1 < 0.0f || w1 > 1.0f - w0) {
+				continue;
+			}
+
+			float w2 = 1.0f - w0 - w1;
+			float z = w0 * p0.z + w1 * p1.z + w2 * p2.z;
+
+			int zidx = y * m_width + x;
+			float& zref = m_zBuffer[zidx];
+			if (z >= zref) {
+				continue;
+			}
+
+			Uint8* pixelAddr = pixels + y * pitch + x * m_bytesPerPixel;
+
+			if (appearance.color.a == 255) {
+				zref = z;
+
+				Uint8 r = flatColor.r;
+				Uint8 g = flatColor.g;
+				Uint8 b = flatColor.b;
+
+				if (texels) {
+					TexCoord texCoord = InterpolateTexCoord(v0, v1, v2, p0, p1, p2, w0, w1, w2);
+					texel = SampleTexelColor(
+						texCoord,
+						texWidthScale,
+						texHeightScale,
+						texturePitch,
+						texels,
+						m_bytesPerPixel,
+						m_palette,
+						m_format
+					);
+					r = (r * texel.r + 127) / 255;
+					g = (g * texel.g + 127) / 255;
+					b = (b * texel.b + 127) / 255;
+				}
+
+				Uint32 finalColor = SDL_MapRGBA(m_format, m_palette, r, g, b, 255);
+				memcpy(pixelAddr, &finalColor, m_bytesPerPixel);
+			}
+			else {
+				// Transparent alpha blending with vertex alpha
+				BlendPixel(pixelAddr, flatColor.r, flatColor.g, flatColor.b, appearance.color.a);
+			}
+		}
+	}
+}
+
 void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
-	const GeometryVertex& v0,
-	const GeometryVertex& v1,
-	const GeometryVertex& v2,
+	const D3DRMVERTEX& v0,
+	const D3DRMVERTEX& v1,
+	const D3DRMVERTEX& v2,
 	const Appearance& appearance
 )
 {
@@ -243,31 +394,28 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 		return;
 	}
 
-	int minX = std::max(0, (int) std::floor(std::min({p0.x, p1.x, p2.x})));
-	int maxX = std::min((int) m_width - 1, (int) std::ceil(std::max({p0.x, p1.x, p2.x})));
-	int minY = std::max(0, (int) std::floor(std::min({p0.y, p1.y, p2.y})));
-	int maxY = std::min((int) m_height - 1, (int) std::ceil(std::max({p0.y, p1.y, p2.y})));
-	if (minX > maxX || minY > maxY) {
+	int minX = std::clamp((int) std::floor(std::min({p0.x, p1.x, p2.x})), 0, (int) m_width - 1);
+	int maxX = std::clamp((int) std::ceil(std::max({p0.x, p1.x, p2.x})), 0, (int) m_width - 1);
+	if (minX > maxX) {
+		return;
+	}
+	int minY = std::clamp((int) std::floor(std::min({p0.y, p1.y, p2.y})), 0, (int) m_height - 1);
+	int maxY = std::clamp((int) std::ceil(std::max({p0.y, p1.y, p2.y})), 0, (int) m_height - 1);
+	if (minY > maxY) {
 		return;
 	}
 
-	auto edge = [](double x0, double y0, double x1, double y1, double x, double y) {
-		return (x - x0) * (y1 - y0) - (y - y0) * (x1 - x0);
-	};
-	float area = edge(p0.x, p0.y, p1.x, p1.y, p2.x, p2.y);
+	// Cull backfaces
+	float area = EdgeFloat(p0.x, p0.y, p1.x, p1.y, p2.x, p2.y);
 	if (area >= 0) {
 		return;
 	}
 	float invArea = 1.0f / area;
 
-	// Per-vertex lighting using vertex normals
-	SDL_Color c0 = ApplyLighting(v0, appearance);
-	SDL_Color c1 = ApplyLighting(v1, appearance);
-	SDL_Color c2 = ApplyLighting(v2, appearance);
-
 	Uint32 textureId = appearance.textureId;
 	int texturePitch;
 	Uint8* texels = nullptr;
+	SDL_Color texel;
 	int texWidthScale;
 	int texHeightScale;
 	if (textureId != NO_TEXTURE_ID) {
@@ -280,6 +428,33 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 		}
 	}
 
+	if (appearance.flat) {
+		DrawTriangleFlatShaded(
+			v0,
+			v1,
+			v2,
+			p0,
+			p1,
+			p2,
+			appearance,
+			minX,
+			maxX,
+			minY,
+			maxY,
+			invArea,
+			texturePitch,
+			texels,
+			texWidthScale,
+			texHeightScale
+		);
+		return;
+	}
+
+	// Per-vertex lighting using vertex normals
+	SDL_Color c0 = ApplyLighting(v0, appearance);
+	SDL_Color c1 = ApplyLighting(v1, appearance);
+	SDL_Color c2 = ApplyLighting(v2, appearance);
+
 	Uint8* pixels = (Uint8*) DDBackBuffer->pixels;
 	int pitch = DDBackBuffer->pitch;
 
@@ -287,12 +462,12 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 		for (int x = minX; x <= maxX; ++x) {
 			float px = x + 0.5f;
 			float py = y + 0.5f;
-			float w0 = edge(p1.x, p1.y, p2.x, p2.y, px, py) * invArea;
+			float w0 = EdgeDouble(p1.x, p1.y, p2.x, p2.y, px, py) * invArea;
 			if (w0 < 0.0f || w0 > 1.0f) {
 				continue;
 			}
 
-			float w1 = edge(p2.x, p2.y, p0.x, p0.y, px, py) * invArea;
+			float w1 = EdgeDouble(p2.x, p2.y, p0.x, p0.y, px, py) * invArea;
 			if (w1 < 0.0f || w1 > 1.0f - w0) {
 				continue;
 			}
@@ -316,38 +491,20 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 				zref = z;
 
 				if (texels) {
-					// Perspective correct interpolate texture coords
-					float invW = w0 / p0.w + w1 / p1.w + w2 / p2.w;
-					if (invW == 0.0) {
-						continue;
-					}
-					invW = 1.0 / invW;
-					float u = static_cast<float>(
-						((w0 * v0.texCoord.u / p0.w) + (w1 * v1.texCoord.u / p1.w) + (w2 * v2.texCoord.u / p2.w)) * invW
+					TexCoord texCoord = InterpolateTexCoord(v0, v1, v2, p0, p1, p2, w0, w1, w2);
+					texel = SampleTexelColor(
+						texCoord,
+						texWidthScale,
+						texHeightScale,
+						texturePitch,
+						texels,
+						m_bytesPerPixel,
+						m_palette,
+						m_format
 					);
-					float v = static_cast<float>(
-						((w0 * v0.texCoord.v / p0.w) + (w1 * v1.texCoord.v / p1.w) + (w2 * v2.texCoord.v / p2.w)) * invW
-					);
-
-					// Tile textures
-					u = u - std::floor(u);
-					v = v - std::floor(v);
-
-					int texX = static_cast<int>(u * texWidthScale);
-					int texY = static_cast<int>(v * texHeightScale);
-
-					Uint8* texelAddr = texels + texY * texturePitch + texX * m_bytesPerPixel;
-
-					Uint32 texelColor = 0;
-					memcpy(&texelColor, texelAddr, m_bytesPerPixel);
-
-					Uint8 tr, tg, tb, ta;
-					SDL_GetRGBA(texelColor, m_format, m_palette, &tr, &tg, &tb, &ta);
-
-					// Multiply vertex color by texel color
-					r = (r * tr + 127) / 255;
-					g = (g * tg + 127) / 255;
-					b = (b * tb + 127) / 255;
+					r = (r * texel.r + 127) / 255;
+					g = (g * texel.g + 127) / 255;
+					b = (b * texel.b + 127) / 255;
 				}
 
 				Uint32 finalColor = SDL_MapRGBA(m_format, m_palette, r, g, b, 255);
@@ -470,7 +627,7 @@ HRESULT Direct3DRMSoftwareRenderer::BeginFrame(const D3DRMMATRIX4D& viewMatrix)
 }
 
 void Direct3DRMSoftwareRenderer::SubmitDraw(
-	const GeometryVertex* vertices,
+	const D3DRMVERTEX* vertices,
 	const size_t count,
 	const D3DRMMATRIX4D& worldMatrix,
 	const Matrix3x3& normalMatrix,
@@ -481,12 +638,13 @@ void Direct3DRMSoftwareRenderer::SubmitDraw(
 	MultiplyMatrix(mvMatrix, worldMatrix, m_viewMatrix);
 
 	for (size_t i = 0; i + 2 < count; i += 3) {
-		GeometryVertex vrts[3];
+		D3DRMVERTEX vrts[3];
 		for (size_t j = 0; j < 3; ++j) {
-			const GeometryVertex& src = vertices[i + j];
+			const D3DRMVERTEX& src = vertices[i + j];
 			vrts[j].position = TransformPoint(src.position, mvMatrix);
-			vrts[j].normals = Normalize(TransformNormal(src.normals, normalMatrix));
-			vrts[j].texCoord = src.texCoord;
+			vrts[j].normal = Normalize(TransformNormal(src.normal, normalMatrix));
+			vrts[j].tv = src.tv;
+			vrts[j].tu = src.tu;
 		}
 		DrawTriangleClipped(vrts, appearance);
 	}
