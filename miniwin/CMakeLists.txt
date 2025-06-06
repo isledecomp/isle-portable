@@ -30,8 +30,7 @@ if(OpenGL_FOUND AND GLEW_FOUND)
   # Find and link OpenGL (1.5)
   target_link_libraries(miniwin PRIVATE OpenGL::GL)
   # Glew is used for getting a FBO for off screen rendering
-  target_include_directories(miniwin PRIVATE ${GLEW_INCLUDE_DIRS})
-  target_link_libraries(miniwin PRIVATE ${GLEW_LIBRARIES})
+  target_link_libraries(miniwin PRIVATE GLEW::GLEW)
 endif()
 
 # Force reported render mods from MiniWin
