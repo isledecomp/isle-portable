@@ -64,8 +64,6 @@ HRESULT Direct3DRMMeshImpl::AddGroup(
 
 	m_groups.push_back(std::move(group));
 
-	UpdateBox(newIndex);
-
 	return DD_OK;
 }
 
@@ -281,19 +279,14 @@ void Direct3DRMMeshImpl::UpdateBox()
 	m_box.max = {-INF, -INF, -INF};
 
 	for (size_t i = 0; i < m_groups.size(); ++i) {
-		UpdateBox(i);
-	}
-}
-
-void Direct3DRMMeshImpl::UpdateBox(DWORD groupIndex)
-{
-	for (const D3DRMVERTEX& v : m_groups[groupIndex].vertices) {
-		m_box.min.x = std::min(m_box.min.x, v.position.x);
-		m_box.min.y = std::min(m_box.min.y, v.position.y);
-		m_box.min.z = std::min(m_box.min.z, v.position.z);
-		m_box.max.x = std::max(m_box.max.x, v.position.x);
-		m_box.max.y = std::max(m_box.max.y, v.position.y);
-		m_box.max.z = std::max(m_box.max.z, v.position.z);
+		for (const D3DRMVERTEX& v : m_groups[i].vertices) {
+			m_box.min.x = std::min(m_box.min.x, v.position.x);
+			m_box.min.y = std::min(m_box.min.y, v.position.y);
+			m_box.min.z = std::min(m_box.min.z, v.position.z);
+			m_box.max.x = std::max(m_box.max.x, v.position.x);
+			m_box.max.y = std::max(m_box.max.y, v.position.y);
+			m_box.max.z = std::max(m_box.max.z, v.position.z);
+		}
 	}
 }
 

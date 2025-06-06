@@ -94,7 +94,6 @@ struct Direct3DRMMeshImpl : public Direct3DRMObjectBaseImpl<IDirect3DRMMesh> {
 
 private:
 	void UpdateBox();
-	void UpdateBox(DWORD groupIndex);
 
 	std::vector<MeshGroup> m_groups;
 	D3DRMBOX m_box;
