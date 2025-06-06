@@ -6,12 +6,13 @@
 #include <GL/glew.h>
 #include <cstring>
 #include <vector>
-
 Direct3DRMRenderer* OpenGL15Renderer::Create(DWORD width, DWORD height)
 {
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
+	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 8);
 
 	SDL_Window* window = DDWindow;
 	bool testWindow = false;
@@ -37,55 +38,82 @@ Direct3DRMRenderer* OpenGL15Renderer::Create(DWORD width, DWORD height)
 		return nullptr;
 	}
 
+	if (!GLEW_EXT_framebuffer_object) {
+		SDL_Log("FBOs are not supported (missing GL_EXT_framebuffer_object)");
+		return nullptr;
+	}
+
+	if (!GLEW_EXT_framebuffer_multisample || !GLEW_EXT_framebuffer_blit) {
+		SDL_Log("MSAA not supported (missing GL_EXT_framebuffer_multisample or GL_EXT_framebuffer_blit)");
+		return nullptr;
+	}
+
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CCW);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_LIGHTING);
 	glEnable(GL_COLOR_MATERIAL);
+	glEnable(GL_MULTISAMPLE);
 
-	// Setup FBO
-	GLuint fbo;
-	glGenFramebuffers(1, &fbo);
-	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-
-	// Create color texture
+	// Create color texture for resolved FBO
 	GLuint colorTex;
 	glGenTextures(1, &colorTex);
 	glBindTexture(GL_TEXTURE_2D, colorTex);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTex, 0);
 
-	// Create depth renderbuffer
-	GLuint depthRb;
-	glGenRenderbuffers(1, &depthRb);
-	glBindRenderbuffer(GL_RENDERBUFFER, depthRb);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthRb);
+	// Create multisample renderbuffers
+	GLuint msaaColorRb, msaaDepthRb;
+	glGenRenderbuffers(1, &msaaColorRb);
+	glBindRenderbuffer(GL_RENDERBUFFER, msaaColorRb);
+	glRenderbufferStorageMultisample(GL_RENDERBUFFER, 8, GL_RGBA8, width, height);
+
+	glGenRenderbuffers(1, &msaaDepthRb);
+	glBindRenderbuffer(GL_RENDERBUFFER, msaaDepthRb);
+	glRenderbufferStorageMultisample(GL_RENDERBUFFER, 8, GL_DEPTH_COMPONENT24, width, height);
+
+	// Create FBO for resolved (non-MSAA) rendering target
+	GLuint fbo;
+	glGenFramebuffers(1, &fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTex, 0);
+	// No depth buffer needed here for resolve FBO
 
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+		if (testWindow) {
+			SDL_DestroyWindow(window);
+		}
 		return nullptr;
 	}
+
+	// Create MSAA FBO for actual rendering
+	GLuint msaaFBO;
+	glGenFramebuffers(1, &msaaFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, msaaFBO);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, msaaColorRb);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, msaaDepthRb);
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+		if (testWindow) {
+			SDL_DestroyWindow(window);
+		}
+		return nullptr;
+	}
+
+	// Unbind FBO
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	if (testWindow) {
 		SDL_DestroyWindow(window);
 	}
 
-	return new OpenGL15Renderer(width, height, context, fbo, colorTex, depthRb);
+	return new OpenGL15Renderer(width, height, context, fbo, msaaFBO);
 }
 
-OpenGL15Renderer::OpenGL15Renderer(
-	int width,
-	int height,
-	SDL_GLContext context,
-	GLuint fbo,
-	GLuint colorTex,
-	GLuint depthRb
-)
-	: m_width(width), m_height(height), m_context(context), m_fbo(fbo), m_colorTex(colorTex), m_depthRb(depthRb)
+OpenGL15Renderer::OpenGL15Renderer(int width, int height, SDL_GLContext context, GLuint fbo, GLuint msaaFBO)
+	: m_width(width), m_height(height), m_context(context), m_fbo(fbo), m_msaaFBO(msaaFBO)
 {
 	m_renderedImage = SDL_CreateSurface(m_width, m_height, SDL_PIXELFORMAT_ABGR8888);
 }
@@ -95,6 +123,14 @@ OpenGL15Renderer::~OpenGL15Renderer()
 	if (m_renderedImage) {
 		SDL_DestroySurface(m_renderedImage);
 	}
+
+	if (m_fbo) {
+		glDeleteFramebuffers(1, &m_fbo);
+	}
+	if (m_msaaFBO) {
+		glDeleteFramebuffers(1, &m_msaaFBO);
+	}
+	// You may also want to delete textures and renderbuffers similarly if you keep references to them.
 }
 
 void OpenGL15Renderer::PushLights(const SceneLight* lightsArray, size_t count)
@@ -227,7 +263,7 @@ HRESULT OpenGL15Renderer::BeginFrame(const D3DRMMATRIX4D& viewMatrix)
 	memcpy(m_viewMatrix, viewMatrix, sizeof(D3DRMMATRIX4D));
 
 	SDL_GL_MakeCurrent(DDWindow, m_context);
-	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_msaaFBO);
 	glViewport(0, 0, m_width, m_height);
 
 	glEnable(GL_BLEND);
@@ -365,10 +401,19 @@ void OpenGL15Renderer::SubmitDraw(
 
 HRESULT OpenGL15Renderer::FinalizeFrame()
 {
+	// Resolve multisampled FBO into resolved FBO (texture)
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, m_msaaFBO);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_fbo);
+	glBlitFramebuffer(0, 0, m_width, m_height, 0, 0, m_width, m_height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+	// Read pixels from resolved FBO (texture)
+	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 	glReadPixels(0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, m_renderedImage->pixels);
+
+	// Unbind framebuffer to avoid side effects
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	// Composite onto SDL backbuffer
+	// Copy the pixels to SDL backbuffer surface
 	SDL_BlitSurface(m_renderedImage, nullptr, DDBackBuffer, nullptr);
 
 	return DD_OK;
