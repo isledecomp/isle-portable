@@ -46,9 +46,52 @@ private:
 	);
 	void DrawTriangleClipped(const GeometryVertex (&v)[3], const Appearance& appearance);
 	void ProjectVertex(const GeometryVertex& v, D3DRMVECTOR4D& p) const;
-	void BlendPixel(Uint8* pixelAddr, Uint8 r, Uint8 g, Uint8 b, Uint8 a);
 	SDL_Color ApplyLighting(const GeometryVertex& vertex, const Appearance& appearance);
 	void AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture);
+	void DrawTexturedTriangle(
+		const D3DRMVECTOR4D& p0,
+		const D3DRMVECTOR4D& p1,
+		const D3DRMVECTOR4D& p2,
+		const GeometryVertex& v0,
+		const GeometryVertex& v1,
+		const GeometryVertex& v2,
+		const SDL_Color& c0,
+		const SDL_Color& c1,
+		const SDL_Color& c2,
+		Uint32 textureId,
+		int minX,
+		int maxX,
+		int minY,
+		int maxY,
+		float invArea
+	);
+	void DrawSolidTriangle(
+		const D3DRMVECTOR4D& p0,
+		const D3DRMVECTOR4D& p1,
+		const D3DRMVECTOR4D& p2,
+		const SDL_Color& c0,
+		const SDL_Color& c1,
+		const SDL_Color& c2,
+		int minX,
+		int maxX,
+		int minY,
+		int maxY,
+		float invArea
+	);
+	void DrawTransparentTriangle(
+		const D3DRMVECTOR4D& p0,
+		const D3DRMVECTOR4D& p1,
+		const D3DRMVECTOR4D& p2,
+		const SDL_Color& c0,
+		const SDL_Color& c1,
+		const SDL_Color& c2,
+		Uint8 ca,
+		int minX,
+		int maxX,
+		int minY,
+		int maxY,
+		float invArea
+	);
 
 	DWORD m_width;
 	DWORD m_height;

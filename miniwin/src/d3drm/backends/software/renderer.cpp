@@ -126,29 +126,6 @@ void Direct3DRMSoftwareRenderer::DrawTriangleClipped(const GeometryVertex (&v)[3
 	}
 }
 
-/**
- * @todo pre-compute a blending table when running in 256 colors since the game always uses an alpha of 152
- */
-void Direct3DRMSoftwareRenderer::BlendPixel(Uint8* pixelAddr, Uint8 r, Uint8 g, Uint8 b, Uint8 a)
-{
-	Uint32 dstPixel = 0;
-	memcpy(&dstPixel, pixelAddr, m_bytesPerPixel);
-
-	Uint8 dstR, dstG, dstB, dstA;
-	SDL_GetRGBA(dstPixel, m_format, m_palette, &dstR, &dstG, &dstB, &dstA);
-
-	float alpha = a / 255.0f;
-	float invAlpha = 1.0f - alpha;
-
-	Uint8 outR = static_cast<Uint8>(r * alpha + dstR * invAlpha);
-	Uint8 outG = static_cast<Uint8>(g * alpha + dstG * invAlpha);
-	Uint8 outB = static_cast<Uint8>(b * alpha + dstB * invAlpha);
-	Uint8 outA = static_cast<Uint8>(a + dstA * invAlpha);
-
-	Uint32 blended = SDL_MapRGBA(m_format, m_palette, outR, outG, outB, outA);
-	memcpy(pixelAddr, &blended, m_bytesPerPixel);
-}
-
 SDL_Color Direct3DRMSoftwareRenderer::ApplyLighting(const GeometryVertex& vertex, const Appearance& appearance)
 {
 	FColor specular = {0, 0, 0, 0};
@@ -219,6 +196,14 @@ SDL_Color Direct3DRMSoftwareRenderer::ApplyLighting(const GeometryVertex& vertex
 	};
 }
 
+/**
+ * @brief Input be double for accuracy even though the input and result is float
+ */
+inline double EdgeFunction(double x0, double y0, double x1, double y1, double x, double y)
+{
+	return (x - x0) * (y1 - y0) - (y - y0) * (x1 - x0);
+}
+
 void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 	const GeometryVertex& v0,
 	const GeometryVertex& v1,
@@ -227,7 +212,6 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 )
 {
 	D3DRMVECTOR4D p0, p1, p2;
-
 	ProjectVertex(v0, p0);
 	ProjectVertex(v1, p1);
 	ProjectVertex(v2, p2);
@@ -251,10 +235,7 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 		return;
 	}
 
-	auto edge = [](double x0, double y0, double x1, double y1, double x, double y) {
-		return (x - x0) * (y1 - y0) - (y - y0) * (x1 - x0);
-	};
-	float area = edge(p0.x, p0.y, p1.x, p1.y, p2.x, p2.y);
+	float area = EdgeFunction(p0.x, p0.y, p1.x, p1.y, p2.x, p2.y);
 	if (area >= 0) {
 		return;
 	}
@@ -265,34 +246,112 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 	SDL_Color c1 = ApplyLighting(v1, appearance);
 	SDL_Color c2 = ApplyLighting(v2, appearance);
 
-	Uint32 textureId = appearance.textureId;
-	int texturePitch;
-	Uint8* texels = nullptr;
-	int texWidthScale;
-	int texHeightScale;
-	if (textureId != NO_TEXTURE_ID) {
-		SDL_Surface* texture = m_textures[textureId].cached;
-		if (texture) {
-			texturePitch = texture->pitch;
-			texels = static_cast<Uint8*>(texture->pixels);
-			texWidthScale = texture->w - 1;
-			texHeightScale = texture->h - 1;
+	if (appearance.color.a < 255) {
+		DrawTransparentTriangle(p0, p1, p2, c0, c1, c2, appearance.color.a, minX, maxX, minY, maxY, invArea);
+	}
+	else if (appearance.textureId != NO_TEXTURE_ID) {
+		DrawTexturedTriangle(p0, p1, p2, v0, v1, v2, c0, c1, c2, appearance.textureId, minX, maxX, minY, maxY, invArea);
+	}
+	else {
+		DrawSolidTriangle(p0, p1, p2, c0, c1, c2, minX, maxX, minY, maxY, invArea);
+	}
+}
+
+void Direct3DRMSoftwareRenderer::DrawTransparentTriangle(
+	const D3DRMVECTOR4D& p0,
+	const D3DRMVECTOR4D& p1,
+	const D3DRMVECTOR4D& p2,
+	const SDL_Color& c0,
+	const SDL_Color& c1,
+	const SDL_Color& c2,
+	Uint8 ca,
+	int minX,
+	int maxX,
+	int minY,
+	int maxY,
+	float invArea
+)
+{
+	Uint8* pixels = static_cast<Uint8*>(DDBackBuffer->pixels);
+	int pitch = DDBackBuffer->pitch;
+
+	const float alpha = ca / 255.0f;
+	const float invAlpha = 1.0f - alpha;
+
+	for (int y = minY; y <= maxY; ++y) {
+		for (int x = minX; x <= maxX; ++x) {
+			float px = x + 0.5f;
+			float py = y + 0.5f;
+
+			float w0 = EdgeFunction(p1.x, p1.y, p2.x, p2.y, px, py) * invArea;
+			if (w0 < 0.0f || w0 > 1.0f) {
+				continue;
+			}
+
+			float w1 = EdgeFunction(p2.x, p2.y, p0.x, p0.y, px, py) * invArea;
+			if (w1 < 0.0f || w1 > 1.0f - w0) {
+				continue;
+			}
+
+			float w2 = 1.0f - w0 - w1;
+			float z = w0 * p0.z + w1 * p1.z + w2 * p2.z;
+
+			int zidx = y * m_width + x;
+			if (z >= m_zBuffer[zidx]) {
+				continue;
+			}
+
+			// Interpolate color
+			Uint8 r = static_cast<Uint8>(w0 * c0.r + w1 * c1.r + w2 * c2.r);
+			Uint8 g = static_cast<Uint8>(w0 * c0.g + w1 * c1.g + w2 * c2.g);
+			Uint8 b = static_cast<Uint8>(w0 * c0.b + w1 * c1.b + w2 * c2.b);
+
+			Uint8* pixelAddr = pixels + y * pitch + x * m_bytesPerPixel;
+
+			Uint32 dstPixel;
+			memcpy(&dstPixel, pixelAddr, m_bytesPerPixel);
+
+			Uint8 dstR, dstG, dstB, dstA;
+			SDL_GetRGBA(dstPixel, m_format, m_palette, &dstR, &dstG, &dstB, &dstA);
+
+			Uint8 outR = static_cast<Uint8>(r * alpha + dstR * invAlpha);
+			Uint8 outG = static_cast<Uint8>(g * alpha + dstG * invAlpha);
+			Uint8 outB = static_cast<Uint8>(b * alpha + dstB * invAlpha);
+
+			Uint32 blended = SDL_MapRGBA(m_format, m_palette, outR, outG, outB, ca);
+			memcpy(pixelAddr, &blended, m_bytesPerPixel);
 		}
 	}
+}
 
-	Uint8* pixels = (Uint8*) DDBackBuffer->pixels;
+void Direct3DRMSoftwareRenderer::DrawSolidTriangle(
+	const D3DRMVECTOR4D& p0,
+	const D3DRMVECTOR4D& p1,
+	const D3DRMVECTOR4D& p2,
+	const SDL_Color& c0,
+	const SDL_Color& c1,
+	const SDL_Color& c2,
+	int minX,
+	int maxX,
+	int minY,
+	int maxY,
+	float invArea
+)
+{
+	Uint8* pixels = static_cast<Uint8*>(DDBackBuffer->pixels);
 	int pitch = DDBackBuffer->pitch;
 
 	for (int y = minY; y <= maxY; ++y) {
 		for (int x = minX; x <= maxX; ++x) {
 			float px = x + 0.5f;
 			float py = y + 0.5f;
-			float w0 = edge(p1.x, p1.y, p2.x, p2.y, px, py) * invArea;
+
+			float w0 = EdgeFunction(p1.x, p1.y, p2.x, p2.y, px, py) * invArea;
 			if (w0 < 0.0f || w0 > 1.0f) {
 				continue;
 			}
 
-			float w1 = edge(p2.x, p2.y, p0.x, p0.y, px, py) * invArea;
+			float w1 = EdgeFunction(p2.x, p2.y, p0.x, p0.y, px, py) * invArea;
 			if (w1 < 0.0f || w1 > 1.0f - w0) {
 				continue;
 			}
@@ -305,58 +364,106 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 			if (z >= zref) {
 				continue;
 			}
+			zref = z;
 
-			// Interpolate color
 			Uint8 r = static_cast<Uint8>(w0 * c0.r + w1 * c1.r + w2 * c2.r);
 			Uint8 g = static_cast<Uint8>(w0 * c0.g + w1 * c1.g + w2 * c2.g);
 			Uint8 b = static_cast<Uint8>(w0 * c0.b + w1 * c1.b + w2 * c2.b);
+
+			Uint32 finalColor = SDL_MapRGBA(m_format, m_palette, r, g, b, 255);
 			Uint8* pixelAddr = pixels + y * pitch + x * m_bytesPerPixel;
+			memcpy(pixelAddr, &finalColor, m_bytesPerPixel);
+		}
+	}
+}
 
-			if (appearance.color.a == 255) {
-				zref = z;
+void Direct3DRMSoftwareRenderer::DrawTexturedTriangle(
+	const D3DRMVECTOR4D& p0,
+	const D3DRMVECTOR4D& p1,
+	const D3DRMVECTOR4D& p2,
+	const GeometryVertex& v0,
+	const GeometryVertex& v1,
+	const GeometryVertex& v2,
+	const SDL_Color& c0,
+	const SDL_Color& c1,
+	const SDL_Color& c2,
+	Uint32 textureId,
+	int minX,
+	int maxX,
+	int minY,
+	int maxY,
+	float invArea
+)
+{
+	Uint8* pixels = static_cast<Uint8*>(DDBackBuffer->pixels);
+	int pitch = DDBackBuffer->pitch;
 
-				if (texels) {
-					// Perspective correct interpolate texture coords
-					float invW = w0 / p0.w + w1 / p1.w + w2 / p2.w;
-					if (invW == 0.0) {
-						continue;
-					}
-					invW = 1.0 / invW;
-					float u = static_cast<float>(
-						((w0 * v0.texCoord.u / p0.w) + (w1 * v1.texCoord.u / p1.w) + (w2 * v2.texCoord.u / p2.w)) * invW
-					);
-					float v = static_cast<float>(
-						((w0 * v0.texCoord.v / p0.w) + (w1 * v1.texCoord.v / p1.w) + (w2 * v2.texCoord.v / p2.w)) * invW
-					);
+	SDL_Surface* texture = m_textures[textureId].cached;
+	Uint8* texels = static_cast<Uint8*>(texture->pixels);
+	int texturePitch = texture->pitch;
+	int texWidthScale = texture->w - 1;
+	int texHeightScale = texture->h - 1;
 
-					// Tile textures
-					u = u - std::floor(u);
-					v = v - std::floor(v);
+	for (int y = minY; y <= maxY; ++y) {
+		for (int x = minX; x <= maxX; ++x) {
+			float px = x + 0.5f;
+			float py = y + 0.5f;
 
-					int texX = static_cast<int>(u * texWidthScale);
-					int texY = static_cast<int>(v * texHeightScale);
-
-					Uint8* texelAddr = texels + texY * texturePitch + texX * m_bytesPerPixel;
-
-					Uint32 texelColor = 0;
-					memcpy(&texelColor, texelAddr, m_bytesPerPixel);
-
-					Uint8 tr, tg, tb, ta;
-					SDL_GetRGBA(texelColor, m_format, m_palette, &tr, &tg, &tb, &ta);
-
-					// Multiply vertex color by texel color
-					r = (r * tr + 127) / 255;
-					g = (g * tg + 127) / 255;
-					b = (b * tb + 127) / 255;
-				}
-
-				Uint32 finalColor = SDL_MapRGBA(m_format, m_palette, r, g, b, 255);
-				memcpy(pixelAddr, &finalColor, m_bytesPerPixel);
+			float w0 = EdgeFunction(p1.x, p1.y, p2.x, p2.y, px, py) * invArea;
+			if (w0 < 0.0f || w0 > 1.0f) {
+				continue;
 			}
-			else {
-				// Transparent alpha blending with vertex alpha
-				BlendPixel(pixelAddr, r, g, b, appearance.color.a);
+
+			float w1 = EdgeFunction(p2.x, p2.y, p0.x, p0.y, px, py) * invArea;
+			if (w1 < 0.0f || w1 > 1.0f - w0) {
+				continue;
 			}
+
+			float w2 = 1.0f - w0 - w1;
+			float z = w0 * p0.z + w1 * p1.z + w2 * p2.z;
+
+			int zidx = y * m_width + x;
+			float& zref = m_zBuffer[zidx];
+			if (z >= zref) {
+				continue;
+			}
+			zref = z;
+
+			// Perspective correct interpolate texture coords
+			float invW = w0 / p0.w + w1 / p1.w + w2 / p2.w;
+			if (invW == 0.0f) {
+				continue;
+			}
+			invW = 1.0f / invW;
+
+			float u = ((w0 * v0.texCoord.u / p0.w) + (w1 * v1.texCoord.u / p1.w) + (w2 * v2.texCoord.u / p2.w)) * invW;
+			float v = ((w0 * v0.texCoord.v / p0.w) + (w1 * v1.texCoord.v / p1.w) + (w2 * v2.texCoord.v / p2.w)) * invW;
+
+			u = u - std::floor(u);
+			v = v - std::floor(v);
+
+			int texX = static_cast<int>(u * texWidthScale);
+			int texY = static_cast<int>(v * texHeightScale);
+
+			Uint8* texelAddr = texels + texY * texturePitch + texX * m_bytesPerPixel;
+
+			Uint32 texelColor;
+			memcpy(&texelColor, texelAddr, m_bytesPerPixel);
+
+			Uint8 tr, tg, tb, ta;
+			SDL_GetRGBA(texelColor, m_format, m_palette, &tr, &tg, &tb, &ta);
+
+			float litR = w0 * c0.r + w1 * c1.r + w2 * c2.r;
+			float litG = w0 * c0.g + w1 * c1.g + w2 * c2.g;
+			float litB = w0 * c0.b + w1 * c1.b + w2 * c2.b;
+
+			Uint8 r = static_cast<Uint8>((litR * tr + 127.0f) / 255.0f);
+			Uint8 g = static_cast<Uint8>((litG * tg + 127.0f) / 255.0f);
+			Uint8 b = static_cast<Uint8>((litB * tb + 127.0f) / 255.0f);
+
+			Uint32 finalColor = SDL_MapRGBA(m_format, m_palette, r, g, b, 255);
+			Uint8* pixelAddr = pixels + y * pitch + x * m_bytesPerPixel;
+			memcpy(pixelAddr, &finalColor, m_bytesPerPixel);
 		}
 	}
 }
