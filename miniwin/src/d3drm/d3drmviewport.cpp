@@ -282,9 +282,7 @@ void Direct3DRMViewportImpl::CollectMeshesFromFrame(
 			verts.reserve(dataSize);
 			verts.clear();
 			d3dVerts.resize(vtxCount);
-			d3dVerts.clear();
 			faces.resize(dataSize);
-			faces.clear();
 			mesh->GetVertices(gi, 0, vtxCount, d3dVerts.data());
 			mesh->GetGroup(gi, nullptr, nullptr, nullptr, nullptr, faces.data());
 
