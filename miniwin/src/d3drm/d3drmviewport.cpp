@@ -212,7 +212,13 @@ bool IsBoxInFrustum(const D3DVECTOR corners[8], const Plane planes[6])
 	return true;
 }
 
-void Direct3DRMViewportImpl::CollectMeshesFromFrame(IDirect3DRMFrame* frame, D3DRMMATRIX4D parentMatrix)
+void Direct3DRMViewportImpl::CollectMeshesFromFrame(
+	IDirect3DRMFrame* frame,
+	D3DRMMATRIX4D parentMatrix,
+	std::vector<GeometryVertex>& verts,
+	std::vector<D3DRMVERTEX>& d3dVerts,
+	std::vector<DWORD>& faces
+)
 {
 	Direct3DRMFrameImpl* frameImpl = static_cast<Direct3DRMFrameImpl*>(frame);
 	D3DRMMATRIX4D localMatrix;
@@ -234,7 +240,7 @@ void Direct3DRMViewportImpl::CollectMeshesFromFrame(IDirect3DRMFrame* frame, D3D
 		IDirect3DRMFrame* childFrame = nullptr;
 		visual->QueryInterface(IID_IDirect3DRMFrame, (void**) &childFrame);
 		if (childFrame) {
-			CollectMeshesFromFrame(childFrame, worldMatrix);
+			CollectMeshesFromFrame(childFrame, worldMatrix, verts, d3dVerts, faces);
 			childFrame->Release();
 			visual->Release();
 			continue;
@@ -273,9 +279,12 @@ void Direct3DRMViewportImpl::CollectMeshesFromFrame(IDirect3DRMFrame* frame, D3D
 			DWORD vtxCount, faceCount, vpf, dataSize;
 			mesh->GetGroup(gi, &vtxCount, &faceCount, &vpf, &dataSize, nullptr);
 
-			std::vector<GeometryVertex> verts(dataSize * vpf);
-			std::vector<D3DRMVERTEX> d3dVerts(vtxCount);
-			std::vector<DWORD> faces(dataSize);
+			verts.reserve(dataSize);
+			verts.clear();
+			d3dVerts.resize(vtxCount);
+			d3dVerts.clear();
+			faces.resize(dataSize);
+			faces.clear();
 			mesh->GetVertices(gi, 0, vtxCount, d3dVerts.data());
 			mesh->GetGroup(gi, nullptr, nullptr, nullptr, nullptr, faces.data());
 
@@ -356,8 +365,11 @@ HRESULT Direct3DRMViewportImpl::RenderScene()
 		return status;
 	}
 
+	std::vector<GeometryVertex> verts;
+	std::vector<D3DRMVERTEX> d3dVerts;
+	std::vector<DWORD> faces;
 	ExtractFrustumPlanes(viewProj);
-	CollectMeshesFromFrame(m_rootFrame, identity);
+	CollectMeshesFromFrame(m_rootFrame, identity, verts, d3dVerts, faces);
 	return m_renderer->FinalizeFrame();
 }
 
