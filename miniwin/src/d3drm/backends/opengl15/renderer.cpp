@@ -333,6 +333,10 @@ void OpenGL15Renderer::SubmitDraw(
 		glDisable(GL_TEXTURE_2D);
 	}
 
+	if (appearance.flat) {
+		glShadeModel(GL_FLAT);
+	}
+
 	float shininess = appearance.shininess;
 	glMaterialf(GL_FRONT, GL_SHININESS, shininess);
 	if (shininess != 0.0f) {

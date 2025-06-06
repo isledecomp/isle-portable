@@ -22,6 +22,7 @@ struct Appearance {
 	SDL_Color color;
 	float shininess;
 	Uint32 textureId;
+	bool flat;
 };
 
 struct FColor {
