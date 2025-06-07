@@ -281,8 +281,6 @@ MxResult LegoOmni::Create(MxOmniCreateParam& p_param)
 	SetAppCursor(e_cursorBusy);
 	m_gameState->SetCurrentAct(LegoGameState::e_act1);
 
-	InitSdlEvents();
-
 	result = SUCCESS;
 
 done:

@@ -48,8 +48,10 @@ public:
 	SDL_Cursor* GetCursorBusy() { return m_cursorBusy; }
 	SDL_Cursor* GetCursorNo() { return m_cursorNo; }
 	MxS32 GetDrawCursor() { return m_drawCursor; }
+	MxS32 GetGameStarted() { return m_gameStarted; }
 
 	void SetWindowActive(MxS32 p_windowActive) { m_windowActive = p_windowActive; }
+	void SetGameStarted(MxS32 p_gameStarted) { m_gameStarted = p_gameStarted; }
 
 	MxResult ParseArguments(int argc, char** argv);
 

@@ -224,6 +224,8 @@ public:
 	void FindLoadedAct();
 	void RegisterState(LegoState* p_state);
 
+	const char* GetSavePath() { return m_savePath; }
+
 private:
 	MxResult WriteVariable(LegoStorage* p_storage, MxVariableTable* p_from, const char* p_variableName);
 	MxResult WriteEndOfVariables(LegoStorage* p_storage);

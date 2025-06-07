@@ -204,7 +204,7 @@ int LegoDeviceEnumerate::GetBestDevice()
 // FUNCTION: BETA10 0x1011cf54
 bool LegoDeviceEnumerate::SupportsSIMD()
 {
-#if defined(__x86_64__) || defined(_M_X64) || defined(__aarch64__) || defined(_M_ARM64)
+#if defined(__x86_64__) || defined(_M_X64) || defined(__aarch64__) || defined(_M_ARM64) || defined(__EMSCRIPTEN__)
 	// All x86_64 and 64-bit ARM CPUs support at least SSE2 or NEON
 	return true;
 #elif defined(__i386__) || defined(_M_IX86)
@@ -320,6 +320,10 @@ int LegoDeviceEnumerate::FUN_1009d210()
 // FUNCTION: BETA10 0x1011d176
 unsigned char LegoDeviceEnumerate::DriverSupportsRequiredDisplayMode(MxDriver& p_driver)
 {
+#ifdef __EMSCRIPTEN__
+	return true;
+#endif
+
 	for (list<MxDisplayMode>::iterator it = p_driver.m_displayModes.begin(); it != p_driver.m_displayModes.end();
 		 it++) {
 		if ((*it).m_width == 640 && (*it).m_height == 480) {
