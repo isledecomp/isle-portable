@@ -2,6 +2,8 @@
 #include "miniwin.h"
 
 #include <limits>
+#include <unordered_map>
+#include <tuple>
 
 HRESULT Direct3DRMMeshImpl::QueryInterface(const GUID& riid, void** ppvObject)
 {
@@ -66,6 +68,75 @@ HRESULT Direct3DRMMeshImpl::AddGroup(
 
 	return DD_OK;
 }
+
+bool operator==(const D3DRMVERTEX& a, const D3DRMVERTEX& b) {
+    return memcmp(&a, &b, sizeof(D3DRMVERTEX)) == 0;
+}
+
+namespace std {
+    template <>
+    struct hash<D3DRMVERTEX> {
+        size_t operator()(const D3DRMVERTEX& v) const {
+            const float* f = reinterpret_cast<const float*>(&v);
+            size_t h = 0;
+            for (int i = 0; i < sizeof(D3DRMVERTEX) / sizeof(float); ++i) {
+                h ^= std::hash<float>()(f[i]) + 0x9e3779b9 + (h << 6) + (h >> 2);
+            }
+            return h;
+        }
+    };
+}
+
+int totalOld = 0;
+int totalNew = 0;
+void DeduplicateMeshGroupVertices(MeshGroup& group) {
+    const size_t originalVertexCount = group.vertices.size();
+    const size_t faceCount = group.faces.size() / group.vertexPerFace;
+
+    //SDL_Log("Deduplication starting. Vertex count: %zu, Face count: %zu", originalVertexCount, faceCount);
+
+    std::unordered_map<D3DRMVERTEX, unsigned int> uniqueVertexMap;
+    std::vector<D3DRMVERTEX> dedupedVertices;
+    std::vector<unsigned int> newFaces;
+
+    dedupedVertices.reserve(group.vertices.size());
+    newFaces.resize(group.faces.size());
+
+    for (size_t i = 0; i < group.faces.size(); ++i) {
+         D3DRMVERTEX& v = group.vertices[group.faces[i]];
+		if (group.quality == D3DRMRENDER_FLAT) {
+			v.normal.x = 0;
+			v.normal.y = 0;
+			v.normal.z = 0;
+		}
+		if (group.quality == D3DRMRENDER_FLAT) {
+			// Do this when we know if a texture was assigned
+			//v.tv = 0;
+			//v.tu = 0;
+		}
+
+        auto it = uniqueVertexMap.find(v);
+        if (it != uniqueVertexMap.end()) {
+            newFaces[i] = it->second;
+        } else {
+            unsigned int newIndex = static_cast<unsigned int>(dedupedVertices.size());
+            uniqueVertexMap[v] = newIndex;
+            dedupedVertices.push_back(v);
+            newFaces[i] = newIndex;
+        }
+    }
+
+    if (dedupedVertices.size() != originalVertexCount) {
+		totalOld += originalVertexCount;
+		totalNew += dedupedVertices.size();
+        SDL_Log("Deduplication complete. Reduced vertices from %zu to %zu", originalVertexCount, dedupedVertices.size());
+        SDL_Log("Data reduction to %d/%d (%d%%)", totalNew, totalOld, (int)((100.0 * totalNew) / totalOld));
+    }
+
+    group.vertices = std::move(dedupedVertices);
+    group.faces = std::move(newFaces);
+}
+
 
 HRESULT Direct3DRMMeshImpl::GetGroup(
 	DWORD groupIndex,
@@ -225,6 +296,9 @@ HRESULT Direct3DRMMeshImpl::SetGroupQuality(DWORD groupIndex, D3DRMRENDERQUALITY
 	}
 
 	m_groups[groupIndex].quality = quality;
+
+	DeduplicateMeshGroupVertices(m_groups[groupIndex]);
+
 	return DD_OK;
 }
 
@@ -250,6 +324,8 @@ HRESULT Direct3DRMMeshImpl::SetVertices(DWORD groupIndex, int offset, int count,
 	}
 
 	std::copy(vertices, vertices + count, vertList.begin() + offset);
+	
+	DeduplicateMeshGroupVertices(m_groups[groupIndex]);
 
 	UpdateBox();
 
