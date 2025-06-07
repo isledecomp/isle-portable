@@ -2,6 +2,8 @@
 
 #include "mxgeometry/mxmatrix.h"
 
+#include <math.h>
+
 DECOMP_SIZE_ASSERT(LegoUnknown, 0x50)
 
 // FUNCTION: LEGO1 0x1009a0f0
@@ -44,7 +46,7 @@ LegoResult LegoUnknown::FUN_1009a1e0(float p_f1, Matrix4& p_mat, Vector3& p_v, L
 	Vector3 v3(p_mat[1]);
 	Vector3 v4(p_mat[2]);
 
-	if (p_f1 <= 0.001) {
+	if (isnan(p_f1) || p_f1 <= 0.001) {
 		v1 = m_unk0x00[0];
 		v4 = m_unk0x00[1];
 	}
