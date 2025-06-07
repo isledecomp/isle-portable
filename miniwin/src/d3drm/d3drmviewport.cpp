@@ -95,11 +95,6 @@ static void ComputeFrameWorldMatrix(IDirect3DRMFrame* frame, D3DRMMATRIX4D out)
 	memcpy(out, acc, sizeof(acc));
 }
 
-inline D3DVECTOR CrossProduct(const D3DVECTOR& a, const D3DVECTOR& b)
-{
-	return {a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x};
-}
-
 D3DVECTOR ComputeTriangleNormal(const D3DVECTOR& v0, const D3DVECTOR& v1, const D3DVECTOR& v2)
 {
 	D3DVECTOR u = {v1.x - v0.x, v1.y - v0.y, v1.z - v0.z};
@@ -215,7 +210,7 @@ bool IsBoxInFrustum(const D3DVECTOR corners[8], const Plane planes[6])
 void Direct3DRMViewportImpl::CollectMeshesFromFrame(
 	IDirect3DRMFrame* frame,
 	D3DRMMATRIX4D parentMatrix,
-	std::vector<GeometryVertex>& verts,
+	std::vector<D3DRMVERTEX>& verts,
 	std::vector<D3DRMVERTEX>& d3dVerts,
 	std::vector<DWORD>& faces
 )
@@ -288,6 +283,7 @@ void Direct3DRMViewportImpl::CollectMeshesFromFrame(
 
 			D3DCOLOR color = mesh->GetGroupColor(gi);
 			D3DRMRENDERQUALITY quality = mesh->GetGroupQuality(gi);
+			bool flat = quality == D3DRMRENDER_FLAT || quality == D3DRMRENDER_UNLITFLAT;
 
 			IDirect3DRMTexture* texture = nullptr;
 			mesh->GetGroupTexture(gi, &texture);
@@ -307,21 +303,9 @@ void Direct3DRMViewportImpl::CollectMeshesFromFrame(
 
 			for (DWORD fi = 0; fi < faceCount; ++fi) {
 				D3DVECTOR norm;
-				if (quality == D3DRMRENDER_FLAT || quality == D3DRMRENDER_UNLITFLAT) {
-					D3DRMVERTEX& v0 = d3dVerts[faces[fi * vpf + 0]];
-					D3DRMVERTEX& v1 = d3dVerts[faces[fi * vpf + 1]];
-					D3DRMVERTEX& v2 = d3dVerts[faces[fi * vpf + 2]];
-					norm = ComputeTriangleNormal(v0.position, v1.position, v2.position);
-				}
-
 				for (DWORD idx = 0; idx < vpf; ++idx) {
 					D3DRMVERTEX& dv = d3dVerts[faces[fi * vpf + idx]];
-					D3DVECTOR pos = dv.position;
-					if (quality == D3DRMRENDER_GOURAUD || quality == D3DRMRENDER_PHONG) {
-						norm = dv.normal;
-					}
-
-					verts.push_back({pos, norm, {dv.tu, dv.tv}});
+					verts.push_back(dv);
 				}
 			}
 			m_renderer->SubmitDraw(
@@ -334,7 +318,8 @@ void Direct3DRMViewportImpl::CollectMeshesFromFrame(
 				  static_cast<Uint8>((color >> 0) & 0xFF),
 				  static_cast<Uint8>((color >> 24) & 0xFF)},
 				 shininess,
-				 textureId}
+				 textureId,
+				 flat}
 			);
 		}
 		mesh->Release();
@@ -363,7 +348,7 @@ HRESULT Direct3DRMViewportImpl::RenderScene()
 		return status;
 	}
 
-	std::vector<GeometryVertex> verts;
+	std::vector<D3DRMVERTEX> verts;
 	std::vector<D3DRMVERTEX> d3dVerts;
 	std::vector<DWORD> faces;
 	ExtractFrustumPlanes(viewProj);
