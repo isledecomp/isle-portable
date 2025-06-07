@@ -2,8 +2,6 @@
 
 #include "mxgeometry/mxmatrix.h"
 
-#include <math.h>
-
 DECOMP_SIZE_ASSERT(LegoUnknown, 0x50)
 
 // FUNCTION: LEGO1 0x1009a0f0
