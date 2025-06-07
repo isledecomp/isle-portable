@@ -8,6 +8,87 @@
 #include <SDL3/SDL.h>
 #include <cstddef>
 
+SDL_GPUTexture* CreateTextureFromSurface(SDL_GPUDevice* device, SDL_Surface* surface)
+{
+	SDL_Surface* surf = SDL_ConvertSurface(surface, SDL_PIXELFORMAT_ABGR8888);
+	if (!surf) {
+		SDL_LogError(LOG_CATEGORY_MINIWIN, "SDL_ConvertSurface (%s)", SDL_GetError());
+		return nullptr;
+	}
+
+	const Uint32 dataSize = surf->pitch * surf->h;
+
+	SDL_GPUTextureCreateInfo textureInfo = {};
+	textureInfo.type = SDL_GPU_TEXTURETYPE_2D;
+	textureInfo.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM;
+	textureInfo.width = surf->w;
+	textureInfo.height = surf->h;
+	textureInfo.layer_count_or_depth = 1;
+	textureInfo.num_levels = 1;
+	textureInfo.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER;
+	textureInfo.sample_count = SDL_GPU_SAMPLECOUNT_1;
+	SDL_GPUTexture* texture = SDL_CreateGPUTexture(device, &textureInfo);
+
+	if (!texture) {
+		SDL_LogError(LOG_CATEGORY_MINIWIN, "SDL_CreateGPUTexture (%s)", SDL_GetError());
+		SDL_DestroySurface(surf);
+		return nullptr;
+	}
+
+	SDL_GPUTransferBufferCreateInfo transferInfo = {};
+	transferInfo.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
+	transferInfo.size = dataSize;
+	SDL_GPUTransferBuffer* transferBuffer = SDL_CreateGPUTransferBuffer(device, &transferInfo);
+	if (!transferBuffer) {
+		SDL_LogError(LOG_CATEGORY_MINIWIN, "SDL_ConvertSurface (%s)", SDL_GetError());
+		return nullptr;
+	}
+
+	void* transferData = SDL_MapGPUTransferBuffer(device, transferBuffer, false);
+	if (!transferData) {
+		SDL_LogError(LOG_CATEGORY_MINIWIN, "SDL_MapGPUTransferBuffer (%s)", SDL_GetError());
+		SDL_ReleaseGPUTexture(device, texture);
+		SDL_DestroySurface(surf);
+		return nullptr;
+	}
+
+	memcpy(transferData, surf->pixels, dataSize);
+	SDL_UnmapGPUTransferBuffer(device, transferBuffer);
+
+	SDL_GPUCommandBuffer* cmdbuf = SDL_AcquireGPUCommandBuffer(device);
+	if (!cmdbuf) {
+		SDL_LogError(LOG_CATEGORY_MINIWIN, "SDL_AcquireGPUCommandBuffer (%s)", SDL_GetError());
+		SDL_ReleaseGPUTexture(device, texture);
+		SDL_DestroySurface(surf);
+		return nullptr;
+	}
+	SDL_GPUCopyPass* pass = SDL_BeginGPUCopyPass(cmdbuf);
+
+	SDL_GPUTextureTransferInfo transferRegionInfo = {};
+	transferRegionInfo.transfer_buffer = transferBuffer;
+	transferRegionInfo.offset = 0;
+	SDL_GPUTextureRegion textureRegion = {};
+	textureRegion.texture = texture;
+	textureRegion.mip_level = 0;
+	textureRegion.layer = 0;
+	textureRegion.x = 0;
+	textureRegion.y = 0;
+	textureRegion.z = 0;
+	textureRegion.w = surf->w;
+	textureRegion.h = surf->h;
+	textureRegion.d = 1;
+	SDL_UploadToGPUTexture(pass, &transferRegionInfo, &textureRegion, false);
+
+	SDL_EndGPUCopyPass(pass);
+	if (!SDL_SubmitGPUCommandBuffer(cmdbuf)) {
+		SDL_LogError(LOG_CATEGORY_MINIWIN, "SDL_SubmitGPUCommandBuffer (%s)", SDL_GetError());
+	}
+
+	SDL_ReleaseGPUTransferBuffer(device, transferBuffer);
+	SDL_DestroySurface(surf);
+	return texture;
+}
+
 static SDL_GPUGraphicsPipeline* InitializeGraphicsPipeline(SDL_GPUDevice* device, bool depthWrite)
 {
 	const SDL_GPUShaderCreateInfo* vertexCreateInfo =
@@ -93,7 +174,7 @@ static SDL_GPUGraphicsPipeline* InitializeGraphicsPipeline(SDL_GPUDevice* device
 	pipelineCreateInfo.depth_stencil_state.enable_depth_test = true;
 	pipelineCreateInfo.depth_stencil_state.enable_depth_write = depthWrite;
 	pipelineCreateInfo.depth_stencil_state.enable_stencil_test = false;
-	pipelineCreateInfo.depth_stencil_state.compare_op = SDL_GPU_COMPAREOP_LESS;
+	pipelineCreateInfo.depth_stencil_state.compare_op = SDL_GPU_COMPAREOP_GREATER;
 	pipelineCreateInfo.depth_stencil_state.write_mask = 0xff;
 
 	SDL_GPUGraphicsPipeline* pipeline = SDL_CreateGPUGraphicsPipeline(device, &pipelineCreateInfo);
@@ -133,6 +214,7 @@ Direct3DRMRenderer* Direct3DRMSDL3GPURenderer::Create(DWORD width, DWORD height)
 	textureInfo.layer_count_or_depth = 1;
 	textureInfo.num_levels = 1;
 	textureInfo.usage = SDL_GPU_TEXTUREUSAGE_COLOR_TARGET;
+	textureInfo.sample_count = SDL_GPU_SAMPLECOUNT_1;
 	SDL_GPUTexture* transferTexture = SDL_CreateGPUTexture(device, &textureInfo);
 	if (!transferTexture) {
 		SDL_ReleaseGPUGraphicsPipeline(device, opaquePipeline);
@@ -148,6 +230,7 @@ Direct3DRMRenderer* Direct3DRMSDL3GPURenderer::Create(DWORD width, DWORD height)
 	depthTextureInfo.height = height;
 	depthTextureInfo.layer_count_or_depth = 1;
 	depthTextureInfo.num_levels = 1;
+	depthTextureInfo.sample_count = SDL_GPU_SAMPLECOUNT_1;
 	depthTextureInfo.usage = SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET;
 	SDL_GPUTexture* depthTexture = SDL_CreateGPUTexture(device, &depthTextureInfo);
 	if (!depthTexture) {
@@ -198,14 +281,44 @@ Direct3DRMSDL3GPURenderer::Direct3DRMSDL3GPURenderer(
 	  m_transparentPipeline(transparentPipeline), m_transferTexture(transferTexture), m_depthTexture(depthTexture),
 	  m_downloadTransferBuffer(downloadTransferBuffer)
 {
+	SDL_GPUSamplerCreateInfo samplerInfo = {};
+	samplerInfo.min_filter = SDL_GPU_FILTER_LINEAR;
+	samplerInfo.mag_filter = SDL_GPU_FILTER_LINEAR;
+	samplerInfo.mipmap_mode = SDL_GPU_SAMPLERMIPMAPMODE_LINEAR;
+	samplerInfo.address_mode_u = SDL_GPU_SAMPLERADDRESSMODE_REPEAT;
+	samplerInfo.address_mode_v = SDL_GPU_SAMPLERADDRESSMODE_REPEAT;
+	samplerInfo.address_mode_w = SDL_GPU_SAMPLERADDRESSMODE_REPEAT;
+	m_sampler = SDL_CreateGPUSampler(m_device, &samplerInfo);
+	if (!m_sampler) {
+		SDL_Log("%s", SDL_GetError());
+	}
+
+	SDL_Surface* surface = SDL_CreateSurface(1, 1, SDL_PIXELFORMAT_RGBA8888);
+	if (surface) {
+		Uint32* pixels = (Uint32*) surface->pixels;
+		pixels[0] = 0xFFFFFFFF; // White pixel (RGBA)
+		SDL_GPUTexture* texture = CreateTextureFromSurface(m_device, surface);
+		SDL_DestroySurface(surface);
+		if (!texture) {
+			SDL_LogError(LOG_CATEGORY_MINIWIN, "Failed to create texture from surface");
+		}
+		else {
+			m_dummyTexture = texture;
+		}
+	}
+	else {
+		SDL_LogError(LOG_CATEGORY_MINIWIN, "Failed to create surface: %s", SDL_GetError());
+	}
 }
 
 Direct3DRMSDL3GPURenderer::~Direct3DRMSDL3GPURenderer()
 {
+	SDL_ReleaseGPUSampler(m_device, m_sampler);
 	SDL_ReleaseGPUBuffer(m_device, m_vertexBuffer);
 	SDL_ReleaseGPUTransferBuffer(m_device, m_downloadTransferBuffer);
 	SDL_ReleaseGPUTexture(m_device, m_depthTexture);
 	SDL_ReleaseGPUTexture(m_device, m_transferTexture);
+	SDL_ReleaseGPUTexture(m_device, m_dummyTexture);
 	SDL_ReleaseGPUGraphicsPipeline(m_device, m_opaquePipeline);
 	SDL_ReleaseGPUGraphicsPipeline(m_device, m_transparentPipeline);
 	SDL_DestroyGPUDevice(m_device);
@@ -228,9 +341,65 @@ void Direct3DRMSDL3GPURenderer::SetProjection(const D3DRMMATRIX4D& projection, D
 	memcpy(&m_uniforms.projection, projection, sizeof(D3DRMMATRIX4D));
 }
 
-Uint32 Direct3DRMSDL3GPURenderer::GetTextureId(IDirect3DRMTexture* texture)
+struct SDLTextureDestroyContext {
+	Direct3DRMSDL3GPURenderer* renderer;
+	Uint32 id;
+};
+
+void Direct3DRMSDL3GPURenderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture)
 {
-	return NO_TEXTURE_ID;
+	auto* ctx = new SDLTextureDestroyContext{this, id};
+	texture->AddDestroyCallback(
+		[](IDirect3DRMObject*, void* arg) {
+			auto* ctx = static_cast<SDLTextureDestroyContext*>(arg);
+			auto& cache = ctx->renderer->m_textures[ctx->id];
+			if (cache.gpuTexture) {
+				SDL_ReleaseGPUTexture(ctx->renderer->m_device, cache.gpuTexture);
+				cache.gpuTexture = nullptr;
+				cache.texture = nullptr;
+			}
+			delete ctx;
+		},
+		ctx
+	);
+}
+
+Uint32 Direct3DRMSDL3GPURenderer::GetTextureId(IDirect3DRMTexture* iTexture)
+{
+	auto* texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
+	auto* surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
+
+	for (Uint32 i = 0; i < m_textures.size(); ++i) {
+		auto& tex = m_textures[i];
+		if (tex.texture == texture) {
+			if (tex.version != texture->m_version) {
+				SDL_ReleaseGPUTexture(m_device, tex.gpuTexture);
+				tex.gpuTexture = CreateTextureFromSurface(m_device, surface->m_surface);
+				if (!tex.gpuTexture) {
+					return NO_TEXTURE_ID;
+				}
+				tex.version = texture->m_version;
+			}
+			return i;
+		}
+	}
+
+	SDL_GPUTexture* newTex = CreateTextureFromSurface(m_device, surface->m_surface);
+	if (!newTex) {
+		return NO_TEXTURE_ID;
+	}
+
+	for (Uint32 i = 0; i < m_textures.size(); ++i) {
+		if (!m_textures[i].texture) {
+			m_textures[i] = {texture, texture->m_version, newTex};
+			AddTextureDestroyCallback(i, texture);
+			return i;
+		}
+	}
+
+	m_textures.push_back({texture, texture->m_version, newTex});
+	AddTextureDestroyCallback((Uint32) (m_textures.size() - 1), texture);
+	return (Uint32) (m_textures.size() - 1);
 }
 
 DWORD Direct3DRMSDL3GPURenderer::GetWidth()
@@ -277,7 +446,7 @@ HRESULT Direct3DRMSDL3GPURenderer::BeginFrame(const D3DRMMATRIX4D& viewMatrix)
 
 	SDL_GPUDepthStencilTargetInfo depthStencilTargetInfo = {};
 	depthStencilTargetInfo.texture = m_depthTexture;
-	depthStencilTargetInfo.clear_depth = 1.f;
+	depthStencilTargetInfo.clear_depth = 0.0f;
 	depthStencilTargetInfo.load_op = SDL_GPU_LOADOP_CLEAR;
 
 	SDL_GPUCommandBuffer* cmdbuf = SDL_AcquireGPUCommandBuffer(m_device);
@@ -290,11 +459,23 @@ HRESULT Direct3DRMSDL3GPURenderer::BeginFrame(const D3DRMMATRIX4D& viewMatrix)
 	SDL_EndGPURenderPass(renderPass);
 
 	if (!SDL_SubmitGPUCommandBuffer(cmdbuf)) {
-		SDL_LogError(LOG_CATEGORY_MINIWIN, "SDL_SubmitGPUCommandBuffer failed (%s)", SDL_GetError());
-		return DDERR_GENERIC;
+		SDL_LogError(LOG_CATEGORY_MINIWIN, "SDL_SubmitGPUCommandBuffer (%s)", SDL_GetError());
 	}
 
 	return DD_OK;
+}
+
+void PackNormalMatrix(const Matrix3x3& normalMatrix3x3, D3DRMMATRIX4D& packedNormalMatrix4x4)
+{
+	for (int row = 0; row < 3; ++row) {
+		for (int col = 0; col < 3; ++col) {
+			packedNormalMatrix4x4[col][row] = normalMatrix3x3[row][col];
+		}
+		packedNormalMatrix4x4[3][row] = 0.0f;
+	}
+	for (int col = 0; col < 4; ++col) {
+		packedNormalMatrix4x4[col][3] = 0.0f;
+	}
 }
 
 void Direct3DRMSDL3GPURenderer::SubmitDraw(
@@ -308,6 +489,7 @@ void Direct3DRMSDL3GPURenderer::SubmitDraw(
 	D3DRMMATRIX4D worldViewMatrix;
 	MultiplyMatrix(worldViewMatrix, worldMatrix, m_viewMatrix);
 	memcpy(&m_uniforms.worldViewMatrix, worldViewMatrix, sizeof(D3DRMMATRIX4D));
+	PackNormalMatrix(normalMatrix, m_uniforms.normalMatrix);
 	m_fragmentShadingData.color = appearance.color;
 	m_fragmentShadingData.shininess = appearance.shininess;
 
@@ -345,6 +527,7 @@ void Direct3DRMSDL3GPURenderer::SubmitDraw(
 	GeometryVertex* transferData = (GeometryVertex*) SDL_MapGPUTransferBuffer(m_device, transferBuffer, false);
 	if (!transferData) {
 		SDL_LogError(LOG_CATEGORY_MINIWIN, "SDL_MapGPUTransferBuffer returned NULL buffer (%s)", SDL_GetError());
+		return;
 	}
 
 	memcpy(transferData, vertices, m_vertexCount * sizeof(GeometryVertex));
@@ -386,6 +569,30 @@ void Direct3DRMSDL3GPURenderer::SubmitDraw(
 	SDL_GPURenderPass* renderPass = SDL_BeginGPURenderPass(cmdbuf, &colorTargetInfo, 1, &depthStencilTargetInfo);
 	SDL_BindGPUGraphicsPipeline(renderPass, appearance.color.a == 255 ? m_opaquePipeline : m_transparentPipeline);
 
+	if (appearance.textureId != NO_TEXTURE_ID) {
+		const auto& tex = m_textures[appearance.textureId];
+		if (tex.gpuTexture && m_sampler) {
+			m_fragmentShadingData.useTexture = 1;
+			SDL_GPUTextureSamplerBinding samplerBinding;
+			samplerBinding.texture = tex.gpuTexture;
+			samplerBinding.sampler = m_sampler;
+			SDL_BindGPUFragmentSamplers(renderPass, 0, &samplerBinding, 1);
+		}
+		else {
+			SDL_LogError(LOG_CATEGORY_MINIWIN, "No sampler available for texture binding.");
+		}
+	}
+	else if (m_sampler) {
+		m_fragmentShadingData.useTexture = 0;
+		SDL_GPUTextureSamplerBinding samplerBinding;
+		samplerBinding.texture = m_dummyTexture;
+		samplerBinding.sampler = m_sampler;
+		SDL_BindGPUFragmentSamplers(renderPass, 0, &samplerBinding, 1);
+	}
+	else {
+		SDL_LogError(LOG_CATEGORY_MINIWIN, "No sampler available for texture binding.");
+	}
+
 	SDL_PushGPUVertexUniformData(cmdbuf, 0, &m_uniforms, sizeof(m_uniforms));
 	SDL_PushGPUFragmentUniformData(cmdbuf, 0, &m_fragmentShadingData, sizeof(m_fragmentShadingData));
 
@@ -400,7 +607,7 @@ void Direct3DRMSDL3GPURenderer::SubmitDraw(
 	SDL_EndGPURenderPass(renderPass);
 
 	if (!SDL_SubmitGPUCommandBuffer(cmdbuf)) {
-		SDL_LogError(LOG_CATEGORY_MINIWIN, "SDL_SubmitGPUCommandBuffer failes (%s)", SDL_GetError());
+		SDL_LogError(LOG_CATEGORY_MINIWIN, "SDL_SubmitGPUCommandBuffer (%s)", SDL_GetError());
 	}
 }
 
@@ -434,14 +641,11 @@ HRESULT Direct3DRMSDL3GPURenderer::FinalizeFrame()
 		return DDERR_GENERIC;
 	}
 
-	SDL_DestroySurface(m_renderedImage);
-	m_renderedImage = SDL_CreateSurfaceFrom(m_width, m_height, SDL_PIXELFORMAT_ABGR8888, downloadedData, m_width * 4);
-
-	SDL_Surface* convertedRender = SDL_ConvertSurface(m_renderedImage, SDL_PIXELFORMAT_RGBA8888);
-	SDL_DestroySurface(m_renderedImage);
+	SDL_Surface* renderedImage =
+		SDL_CreateSurfaceFrom(m_width, m_height, SDL_PIXELFORMAT_ABGR8888, downloadedData, m_width * 4);
+	SDL_BlitSurface(renderedImage, nullptr, DDBackBuffer, nullptr);
+	SDL_DestroySurface(renderedImage);
 	SDL_UnmapGPUTransferBuffer(m_device, m_downloadTransferBuffer);
-	m_renderedImage = convertedRender;
-	SDL_BlitSurface(m_renderedImage, nullptr, DDBackBuffer, nullptr);
 
 	return DD_OK;
 }
