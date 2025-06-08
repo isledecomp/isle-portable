@@ -288,6 +288,7 @@ void Direct3DRMViewportImpl::CollectMeshesFromFrame(
 
 			D3DCOLOR color = mesh->GetGroupColor(gi);
 			D3DRMRENDERQUALITY quality = mesh->GetGroupQuality(gi);
+			bool flat = quality == D3DRMRENDER_FLAT || quality == D3DRMRENDER_UNLITFLAT;
 
 			IDirect3DRMTexture* texture = nullptr;
 			mesh->GetGroupTexture(gi, &texture);
@@ -307,7 +308,7 @@ void Direct3DRMViewportImpl::CollectMeshesFromFrame(
 
 			for (DWORD fi = 0; fi < faceCount; ++fi) {
 				D3DVECTOR norm;
-				if (quality == D3DRMRENDER_FLAT || quality == D3DRMRENDER_UNLITFLAT) {
+				if (flat) {
 					D3DRMVERTEX& v0 = d3dVerts[faces[fi * vpf + 0]];
 					D3DRMVERTEX& v1 = d3dVerts[faces[fi * vpf + 1]];
 					D3DRMVERTEX& v2 = d3dVerts[faces[fi * vpf + 2]];
@@ -334,7 +335,8 @@ void Direct3DRMViewportImpl::CollectMeshesFromFrame(
 				  static_cast<Uint8>((color >> 0) & 0xFF),
 				  static_cast<Uint8>((color >> 24) & 0xFF)},
 				 shininess,
-				 textureId}
+				 textureId,
+				 flat}
 			);
 		}
 		mesh->Release();
