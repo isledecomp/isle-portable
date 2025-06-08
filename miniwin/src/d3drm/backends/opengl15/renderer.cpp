@@ -335,7 +335,8 @@ void OpenGL15Renderer::SubmitDraw(
 
 	if (appearance.flat) {
 		glShadeModel(GL_FLAT);
-	} else {
+	}
+	else {
 		glShadeModel(GL_SMOOTH);
 	}
 
