@@ -10,7 +10,7 @@ Please note: this project is dedicated to achieving platform independence withou
 
 ### Supported platforms
 
-| Platform | status |
+| Platform | Status |
 | - | - | 
 | Windows | [![CI](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml/badge.svg)](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml) | 
 | Linux | [![CI](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml/badge.svg)](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml) |
