@@ -335,6 +335,8 @@ void OpenGL15Renderer::SubmitDraw(
 
 	if (appearance.flat) {
 		glShadeModel(GL_FLAT);
+	} else {
+		glShadeModel(GL_SMOOTH);
 	}
 
 	float shininess = appearance.shininess;
