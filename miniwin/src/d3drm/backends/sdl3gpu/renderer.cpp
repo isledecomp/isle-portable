@@ -210,7 +210,7 @@ Direct3DRMRenderer* Direct3DRMSDL3GPURenderer::Create(DWORD width, DWORD height)
 	SDL_GPUTextureCreateInfo textureInfo = {};
 	textureInfo.type = SDL_GPU_TEXTURETYPE_2D;
 	textureInfo.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM;
-	textureInfo.usage = SDL_GPU_TEXTUREUSAGE_COLOR_TARGET;
+	textureInfo.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER | SDL_GPU_TEXTUREUSAGE_COLOR_TARGET;
 	textureInfo.width = width;
 	textureInfo.height = height;
 	textureInfo.layer_count_or_depth = 1;
@@ -325,6 +325,10 @@ Direct3DRMSDL3GPURenderer::Direct3DRMSDL3GPURenderer(
 
 	m_dummyTexture = CreateTextureFromSurface(dummySurface);
 	SDL_DestroySurface(dummySurface);
+
+	if (!SDL_ClaimWindowForGPUDevice(m_device, DDWindow)) {
+		SDL_LogError(LOG_CATEGORY_MINIWIN, "SDL_ClaimWindowForGPUDevice failed: %s", SDL_GetError());
+	}
 }
 
 Direct3DRMSDL3GPURenderer::~Direct3DRMSDL3GPURenderer()
@@ -342,6 +346,7 @@ Direct3DRMSDL3GPURenderer::~Direct3DRMSDL3GPURenderer()
 	if (m_uploadFence) {
 		SDL_ReleaseGPUFence(m_device, m_uploadFence);
 	}
+	SDL_ReleaseWindowFromGPUDevice(m_device, DDWindow);
 	SDL_DestroyGPUDevice(m_device);
 }
 
@@ -761,9 +766,32 @@ HRESULT Direct3DRMSDL3GPURenderer::FinalizeFrame()
 	SDL_GPUTextureTransferInfo transferInfo = {};
 	transferInfo.transfer_buffer = m_downloadBuffer;
 
-	SDL_GPUCopyPass* copyPass = SDL_BeginGPUCopyPass(m_cmdbuf);
-	SDL_DownloadFromGPUTexture(copyPass, &region, &transferInfo);
-	SDL_EndGPUCopyPass(copyPass);
+	SDL_GPUTexture* swapchainTexture;
+	Uint32 swapWidth, swapHeight;
+	if (!SDL_AcquireGPUSwapchainTexture(m_cmdbuf, DDWindow, &swapchainTexture, &swapWidth, &swapHeight) ||
+		!swapchainTexture) {
+		SDL_LogError(LOG_CATEGORY_MINIWIN, "SDL_AcquireGPUSwapchainTexture failed (%s)", SDL_GetError());
+	}
+
+	SDL_GPUBlitRegion srcRegion;
+	srcRegion.texture = m_transferTexture;
+	srcRegion.w = 640;
+	srcRegion.h = 480;
+
+	SDL_GPUBlitRegion dstRegion;
+	dstRegion.texture = swapchainTexture;
+	dstRegion.w = 640;
+	dstRegion.h = 480;
+
+	SDL_GPUBlitInfo blit;
+	blit.source = srcRegion;
+	blit.destination = dstRegion;
+	blit.load_op = SDL_GPU_LOADOP_CLEAR;
+	blit.clear_color = {0, 0, 0, 1};
+	blit.flip_mode = SDL_FLIP_NONE;
+	blit.filter = SDL_GPU_FILTER_LINEAR;
+
+	SDL_BlitGPUTexture(m_cmdbuf, &blit);
 
 	WaitForPendingUpload();
 

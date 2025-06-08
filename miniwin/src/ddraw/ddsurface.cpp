@@ -126,6 +126,7 @@ HRESULT DirectDrawSurfaceImpl::BltFast(
 
 HRESULT DirectDrawSurfaceImpl::Flip(LPDIRECTDRAWSURFACE lpDDSurfaceTargetOverride, DDFlipFlags dwFlags)
 {
+	return DD_OK;
 	if (!DDBackBuffer) {
 		return DDERR_GENERIC;
 	}
