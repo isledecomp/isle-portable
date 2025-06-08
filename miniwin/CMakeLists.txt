@@ -15,6 +15,7 @@ add_library(miniwin STATIC EXCLUDE_FROM_ALL
   src/d3drm/d3drmmesh.cpp
   src/d3drm/d3drmtexture.cpp
   src/d3drm/d3drmviewport.cpp
+  src/internal/meshutils.cpp
 
   # D3DRM backends
   src/d3drm/backends/software/renderer.cpp
