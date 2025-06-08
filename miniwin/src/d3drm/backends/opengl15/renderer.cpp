@@ -176,7 +176,7 @@ Uint32 OpenGL15Renderer::GetTextureId(IDirect3DRMTexture* iTexture)
 
 	for (Uint32 i = 0; i < m_textures.size(); ++i) {
 		auto& tex = m_textures[i];
-		if (tex.texture == nullptr) {
+		if (!tex.texture) {
 			tex.texture = texture;
 			tex.version = texture->m_version;
 			tex.glTextureId = texId;

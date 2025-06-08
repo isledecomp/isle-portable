@@ -394,10 +394,8 @@ Uint32 Direct3DRMSoftwareRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 	// Reuse freed slot
 	for (Uint32 i = 0; i < m_textures.size(); ++i) {
 		auto& texRef = m_textures[i];
-		if (texRef.texture == nullptr) {
-			texRef.texture = texture;
-			texRef.cached = convertedRender;
-			texRef.version = texture->m_version;
+		if (!texRef.texture) {
+			texRef = {texture, texture->m_version, convertedRender};
 			AddTextureDestroyCallback(i, texture);
 			return i;
 		}
