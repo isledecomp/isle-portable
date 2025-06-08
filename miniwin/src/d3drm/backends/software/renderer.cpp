@@ -47,9 +47,10 @@ void Direct3DRMSoftwareRenderer::ProjectVertex(const D3DRMVERTEX& v, D3DRMVECTOR
 
 	// Perspective divide
 	if (pw != 0.0f) {
-		px /= pw;
-		py /= pw;
-		pz /= pw;
+		float invW = 1.0f / pw;
+		px *= invW;
+		py *= invW;
+		pz *= invW;
 	}
 
 	// Map from NDC [-1,1] to screen coordinates
@@ -61,23 +62,18 @@ void Direct3DRMSoftwareRenderer::ProjectVertex(const D3DRMVERTEX& v, D3DRMVECTOR
 D3DRMVERTEX SplitEdge(D3DRMVERTEX a, const D3DRMVERTEX& b, float plane)
 {
 	float t = (plane - a.position.z) / (b.position.z - a.position.z);
-	a.position.x = a.position.x + t * (b.position.x - a.position.x);
-	a.position.y = a.position.y + t * (b.position.y - a.position.y);
+	a.position.x += t * (b.position.x - a.position.x);
+	a.position.y += t * (b.position.y - a.position.y);
 	a.position.z = plane;
 
-	a.texCoord.u = a.texCoord.u + t * (b.texCoord.u - a.texCoord.u);
-	a.texCoord.v = a.texCoord.v + t * (b.texCoord.v - a.texCoord.v);
+	a.texCoord.u += t * (b.texCoord.u - a.texCoord.u);
+	a.texCoord.v += t * (b.texCoord.v - a.texCoord.v);
 
-	a.normal.x = a.normal.x + t * (b.normal.x - a.normal.x);
-	a.normal.y = a.normal.y + t * (b.normal.y - a.normal.y);
-	a.normal.z = a.normal.z + t * (b.normal.z - a.normal.z);
+	a.normal.x += t * (b.normal.x - a.normal.x);
+	a.normal.y += t * (b.normal.y - a.normal.y);
+	a.normal.z += t * (b.normal.z - a.normal.z);
 
-	float len = std::sqrt(a.normal.x * a.normal.x + a.normal.y * a.normal.y + a.normal.z * a.normal.z);
-	if (len > 0.0001f) {
-		a.normal.x /= len;
-		a.normal.y /= len;
-		a.normal.z /= len;
-	}
+	a.normal = Normalize(a.normal);
 
 	return a;
 }
@@ -156,15 +152,7 @@ SDL_Color Direct3DRMSoftwareRenderer::ApplyLighting(const D3DRMVERTEX& vertex, c
 
 	// Position and normal
 	D3DVECTOR position = vertex.position;
-	D3DVECTOR normal = vertex.normal;
-	float normLen = std::sqrt(normal.x * normal.x + normal.y * normal.y + normal.z * normal.z);
-	if (normLen == 0.0f) {
-		return appearance.color;
-	}
-
-	normal.x /= normLen;
-	normal.y /= normLen;
-	normal.z /= normLen;
+	D3DVECTOR normal = Normalize(vertex.normal);
 
 	for (const auto& light : m_lights) {
 		FColor lightColor = light.color;
@@ -185,14 +173,7 @@ SDL_Color Direct3DRMSoftwareRenderer::ApplyLighting(const D3DRMVERTEX& vertex, c
 		else if (light.positional == 1.0f) {
 			lightVec = {light.position.x - position.x, light.position.y - position.y, light.position.z - position.z};
 		}
-
-		float len = std::sqrt(lightVec.x * lightVec.x + lightVec.y * lightVec.y + lightVec.z * lightVec.z);
-		if (len == 0.0f) {
-			continue;
-		}
-		lightVec.x /= len;
-		lightVec.y /= len;
-		lightVec.z /= len;
+		lightVec = Normalize(lightVec);
 
 		float dotNL = normal.x * lightVec.x + normal.y * lightVec.y + normal.z * lightVec.z;
 		if (dotNL > 0.0f) {
@@ -227,7 +208,6 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 )
 {
 	D3DRMVECTOR4D p0, p1, p2;
-
 	ProjectVertex(v0, p0);
 	ProjectVertex(v1, p1);
 	ProjectVertex(v2, p2);
@@ -243,11 +223,14 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 		return;
 	}
 
-	int minX = std::max(0, (int) std::floor(std::min({p0.x, p1.x, p2.x})));
-	int maxX = std::min((int) m_width - 1, (int) std::ceil(std::max({p0.x, p1.x, p2.x})));
-	int minY = std::max(0, (int) std::floor(std::min({p0.y, p1.y, p2.y})));
-	int maxY = std::min((int) m_height - 1, (int) std::ceil(std::max({p0.y, p1.y, p2.y})));
-	if (minX > maxX || minY > maxY) {
+	int minX = std::clamp((int) std::floor(std::min({p0.x, p1.x, p2.x})), 0, (int) m_width - 1);
+	int maxX = std::clamp((int) std::ceil(std::max({p0.x, p1.x, p2.x})), 0, (int) m_width - 1);
+	if (minX > maxX) {
+		return;
+	}
+	int minY = std::clamp((int) std::floor(std::min({p0.y, p1.y, p2.y})), 0, (int) m_height - 1);
+	int maxY = std::clamp((int) std::ceil(std::max({p0.y, p1.y, p2.y})), 0, (int) m_height - 1);
+	if (minY > maxY) {
 		return;
 	}
 
