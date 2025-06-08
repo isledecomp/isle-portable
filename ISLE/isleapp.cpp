@@ -721,6 +721,10 @@ bool IsleApp::LoadConfig()
 	}
 	SDL_Log("Reading configuration from \"%s\"", iniConfig);
 
+#ifdef __EMSCRIPTEN__
+	Emscripten_SetupConfig(iniConfig);
+#endif
+
 	dictionary* dict = iniparser_load(iniConfig);
 
 	// [library:config]
@@ -996,5 +1000,6 @@ MxResult IsleApp::ParseArguments(int argc, char** argv)
 			return FAILURE;
 		}
 	}
+
 	return SUCCESS;
 }

@@ -8,10 +8,29 @@
 #include <SDL3/SDL_log.h>
 #include <emscripten/wasmfs.h>
 
+static backend_t opfs = nullptr;
+static backend_t fetchfs = nullptr;
+
+void Emscripten_SetupConfig(const char* p_iniConfig)
+{
+	if (!p_iniConfig || !*p_iniConfig) {
+		return;
+	}
+
+	opfs = wasmfs_create_opfs_backend();
+	MxString iniConfig = p_iniConfig;
+
+	char* parse = iniConfig.GetData();
+	while ((parse = SDL_strchr(++parse, '/'))) {
+		*parse = '\0';
+		wasmfs_create_directory(iniConfig.GetData(), 0644, opfs);
+		*parse = '/';
+	}
+}
+
 void Emscripten_SetupFilesystem()
 {
-	auto fetchfs =
-		wasmfs_create_fetch_backend((MxString(Emscripten_streamHost) + MxString("/LEGO")).GetData(), 512 * 1024);
+	fetchfs = wasmfs_create_fetch_backend((MxString(Emscripten_streamHost) + MxString("/LEGO")).GetData(), 512 * 1024);
 
 	wasmfs_create_directory("/LEGO", 0644, fetchfs);
 	wasmfs_create_directory("/LEGO/Scripts", 0644, fetchfs);
@@ -26,7 +45,7 @@ void Emscripten_SetupFilesystem()
 	wasmfs_create_directory("/LEGO/Scripts/Race", 0644, fetchfs);
 	wasmfs_create_directory("/LEGO/data", 0644, fetchfs);
 
-	const auto registerFile = [&fetchfs](const char* p_path) {
+	const auto registerFile = [](const char* p_path) {
 		MxString path = MxString(Emscripten_bundledPath) + MxString(p_path);
 		path.MapPathToFilesystem();
 
@@ -89,7 +108,9 @@ void Emscripten_SetupFilesystem()
 	registerFile("/LEGO/data/testinf.dta");
 
 	if (GameState()->GetSavePath() && *GameState()->GetSavePath()) {
-		auto opfs = wasmfs_create_opfs_backend();
+		if (!opfs) {
+			opfs = wasmfs_create_opfs_backend();
+		}
 
 		MxString savePath = GameState()->GetSavePath();
 		if (savePath.GetData()[savePath.GetLength() - 1] != '/') {
