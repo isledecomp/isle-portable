@@ -28,7 +28,7 @@ public:
 	const char* GetName() override;
 	HRESULT BeginFrame(const D3DRMMATRIX4D& viewMatrix) override;
 	void SubmitDraw(
-		const GeometryVertex* vertices,
+		const D3DRMVERTEX* vertices,
 		const size_t count,
 		const D3DRMMATRIX4D& worldMatrix,
 		const Matrix3x3& normalMatrix,
@@ -39,15 +39,15 @@ public:
 private:
 	void ClearZBuffer();
 	void DrawTriangleProjected(
-		const GeometryVertex& v0,
-		const GeometryVertex& v1,
-		const GeometryVertex& v2,
+		const D3DRMVERTEX& v0,
+		const D3DRMVERTEX& v1,
+		const D3DRMVERTEX& v2,
 		const Appearance& appearance
 	);
-	void DrawTriangleClipped(const GeometryVertex (&v)[3], const Appearance& appearance);
-	void ProjectVertex(const GeometryVertex& v, D3DRMVECTOR4D& p) const;
+	void DrawTriangleClipped(const D3DRMVERTEX (&v)[3], const Appearance& appearance);
+	void ProjectVertex(const D3DRMVERTEX& v, D3DRMVECTOR4D& p) const;
 	void BlendPixel(Uint8* pixelAddr, Uint8 r, Uint8 g, Uint8 b, Uint8 a);
-	SDL_Color ApplyLighting(const GeometryVertex& vertex, const Appearance& appearance);
+	SDL_Color ApplyLighting(const D3DRMVERTEX& vertex, const Appearance& appearance);
 	void AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture);
 
 	DWORD m_width;

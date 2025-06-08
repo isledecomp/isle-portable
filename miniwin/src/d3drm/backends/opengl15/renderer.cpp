@@ -304,7 +304,7 @@ HRESULT OpenGL15Renderer::BeginFrame(const D3DRMMATRIX4D& viewMatrix)
 }
 
 void OpenGL15Renderer::SubmitDraw(
-	const GeometryVertex* vertices,
+	const D3DRMVERTEX* vertices,
 	const size_t count,
 	const D3DRMMATRIX4D& worldMatrix,
 	const Matrix3x3& normalMatrix,
@@ -350,8 +350,8 @@ void OpenGL15Renderer::SubmitDraw(
 
 	glBegin(GL_TRIANGLES);
 	for (size_t i = 0; i < count; i++) {
-		const GeometryVertex& v = vertices[i];
-		glNormal3f(v.normals.x, v.normals.y, v.normals.z);
+		const D3DRMVERTEX& v = vertices[i];
+		glNormal3f(v.normal.x, v.normal.y, v.normal.z);
 		glTexCoord2f(v.texCoord.u, v.texCoord.v);
 		glVertex3f(v.position.x, v.position.y, v.position.z);
 	}

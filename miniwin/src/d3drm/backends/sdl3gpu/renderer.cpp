@@ -32,7 +32,7 @@ static SDL_GPUGraphicsPipeline* InitializeGraphicsPipeline(SDL_GPUDevice* device
 
 	SDL_GPUVertexBufferDescription vertexBufferDescs[1] = {};
 	vertexBufferDescs[0].slot = 0;
-	vertexBufferDescs[0].pitch = sizeof(GeometryVertex);
+	vertexBufferDescs[0].pitch = sizeof(D3DRMVERTEX);
 	vertexBufferDescs[0].input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX;
 	vertexBufferDescs[0].instance_step_rate = 0;
 
@@ -40,17 +40,17 @@ static SDL_GPUGraphicsPipeline* InitializeGraphicsPipeline(SDL_GPUDevice* device
 	vertexAttrs[0].location = 0;
 	vertexAttrs[0].buffer_slot = 0;
 	vertexAttrs[0].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3;
-	vertexAttrs[0].offset = offsetof(GeometryVertex, position);
+	vertexAttrs[0].offset = offsetof(D3DRMVERTEX, position);
 
 	vertexAttrs[1].location = 1;
 	vertexAttrs[1].buffer_slot = 0;
 	vertexAttrs[1].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3;
-	vertexAttrs[1].offset = offsetof(GeometryVertex, normals);
+	vertexAttrs[1].offset = offsetof(D3DRMVERTEX, normal);
 
 	vertexAttrs[2].location = 2;
 	vertexAttrs[2].buffer_slot = 0;
 	vertexAttrs[2].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2;
-	vertexAttrs[2].offset = offsetof(GeometryVertex, texCoord);
+	vertexAttrs[2].offset = offsetof(D3DRMVERTEX, tv);
 
 	SDL_GPUVertexInputState vertexInputState = {};
 	vertexInputState.vertex_buffer_descriptions = vertexBufferDescs;
@@ -298,7 +298,7 @@ HRESULT Direct3DRMSDL3GPURenderer::BeginFrame(const D3DRMMATRIX4D& viewMatrix)
 }
 
 void Direct3DRMSDL3GPURenderer::SubmitDraw(
-	const GeometryVertex* vertices,
+	const D3DRMVERTEX* vertices,
 	const size_t count,
 	const D3DRMMATRIX4D& worldMatrix,
 	const Matrix3x3& normalMatrix,
@@ -317,7 +317,7 @@ void Direct3DRMSDL3GPURenderer::SubmitDraw(
 		}
 		SDL_GPUBufferCreateInfo bufferCreateInfo = {};
 		bufferCreateInfo.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
-		bufferCreateInfo.size = static_cast<Uint32>(sizeof(GeometryVertex) * count);
+		bufferCreateInfo.size = static_cast<Uint32>(sizeof(D3DRMVERTEX) * count);
 		m_vertexBuffer = SDL_CreateGPUBuffer(m_device, &bufferCreateInfo);
 		if (!m_vertexBuffer) {
 			SDL_LogError(LOG_CATEGORY_MINIWIN, "SDL_CreateGPUBuffer returned NULL buffer (%s)", SDL_GetError());
@@ -332,7 +332,7 @@ void Direct3DRMSDL3GPURenderer::SubmitDraw(
 
 	SDL_GPUTransferBufferCreateInfo transferCreateInfo = {};
 	transferCreateInfo.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
-	transferCreateInfo.size = static_cast<Uint32>(sizeof(GeometryVertex) * m_vertexCount);
+	transferCreateInfo.size = static_cast<Uint32>(sizeof(D3DRMVERTEX) * m_vertexCount);
 	SDL_GPUTransferBuffer* transferBuffer = SDL_CreateGPUTransferBuffer(m_device, &transferCreateInfo);
 	if (!transferBuffer) {
 		SDL_LogError(
@@ -342,12 +342,12 @@ void Direct3DRMSDL3GPURenderer::SubmitDraw(
 		);
 	}
 
-	GeometryVertex* transferData = (GeometryVertex*) SDL_MapGPUTransferBuffer(m_device, transferBuffer, false);
+	D3DRMVERTEX* transferData = (D3DRMVERTEX*) SDL_MapGPUTransferBuffer(m_device, transferBuffer, false);
 	if (!transferData) {
 		SDL_LogError(LOG_CATEGORY_MINIWIN, "SDL_MapGPUTransferBuffer returned NULL buffer (%s)", SDL_GetError());
 	}
 
-	memcpy(transferData, vertices, m_vertexCount * sizeof(GeometryVertex));
+	memcpy(transferData, vertices, m_vertexCount * sizeof(D3DRMVERTEX));
 
 	SDL_UnmapGPUTransferBuffer(m_device, transferBuffer);
 
@@ -366,7 +366,7 @@ void Direct3DRMSDL3GPURenderer::SubmitDraw(
 	SDL_GPUBufferRegion bufferRegion = {};
 	bufferRegion.buffer = m_vertexBuffer;
 	bufferRegion.offset = 0;
-	bufferRegion.size = static_cast<Uint32>(sizeof(GeometryVertex) * m_vertexCount);
+	bufferRegion.size = static_cast<Uint32>(sizeof(D3DRMVERTEX) * m_vertexCount);
 
 	SDL_UploadToGPUBuffer(copyPass, &transferLocation, &bufferRegion, false);
 

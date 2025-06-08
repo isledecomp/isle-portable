@@ -7,16 +7,7 @@
 
 #define NO_TEXTURE_ID 0xffffffff
 
-struct TexCoord {
-	float u, v;
-};
-
-struct GeometryVertex {
-	D3DVECTOR position;
-	D3DVECTOR normals;
-	TexCoord texCoord;
-};
-static_assert(sizeof(GeometryVertex) == 32);
+static_assert(sizeof(D3DRMVERTEX) == 32);
 
 struct Appearance {
 	SDL_Color color;
@@ -49,7 +40,7 @@ public:
 	virtual const char* GetName() = 0;
 	virtual HRESULT BeginFrame(const D3DRMMATRIX4D& viewMatrix) = 0;
 	virtual void SubmitDraw(
-		const GeometryVertex* vertices,
+		const D3DRMVERTEX* vertices,
 		const size_t count,
 		const D3DRMMATRIX4D& worldMatrix,
 		const Matrix3x3& normalMatrix,
