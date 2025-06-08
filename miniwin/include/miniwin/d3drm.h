@@ -136,10 +136,19 @@ struct D3DRMBOX {
 	D3DVECTOR max;
 };
 
+struct TexCoord {
+	float u, v;
+};
+
 struct D3DRMVERTEX {
 	D3DVECTOR position;
 	D3DVECTOR normal;
-	D3DVALUE tu, tv;
+	union {
+		struct {
+			D3DVALUE tu, tv;
+		};
+		TexCoord texCoord;
+	};
 };
 
 struct IDirect3DRMObject : public IUnknown {

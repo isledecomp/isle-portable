@@ -32,7 +32,7 @@ void Direct3DRMSoftwareRenderer::ClearZBuffer()
 	std::fill(m_zBuffer.begin(), m_zBuffer.end(), std::numeric_limits<float>::infinity());
 }
 
-void Direct3DRMSoftwareRenderer::ProjectVertex(const GeometryVertex& v, D3DRMVECTOR4D& p) const
+void Direct3DRMSoftwareRenderer::ProjectVertex(const D3DRMVERTEX& v, D3DRMVECTOR4D& p) const
 {
 	float px = m_projection[0][0] * v.position.x + m_projection[1][0] * v.position.y +
 			   m_projection[2][0] * v.position.z + m_projection[3][0];
@@ -58,7 +58,7 @@ void Direct3DRMSoftwareRenderer::ProjectVertex(const GeometryVertex& v, D3DRMVEC
 	p.z = pz;
 }
 
-GeometryVertex SplitEdge(GeometryVertex a, const GeometryVertex& b, float plane)
+D3DRMVERTEX SplitEdge(D3DRMVERTEX a, const D3DRMVERTEX& b, float plane)
 {
 	float t = (plane - a.position.z) / (b.position.z - a.position.z);
 	a.position.x = a.position.x + t * (b.position.x - a.position.x);
@@ -68,21 +68,21 @@ GeometryVertex SplitEdge(GeometryVertex a, const GeometryVertex& b, float plane)
 	a.texCoord.u = a.texCoord.u + t * (b.texCoord.u - a.texCoord.u);
 	a.texCoord.v = a.texCoord.v + t * (b.texCoord.v - a.texCoord.v);
 
-	a.normals.x = a.normals.x + t * (b.normals.x - a.normals.x);
-	a.normals.y = a.normals.y + t * (b.normals.y - a.normals.y);
-	a.normals.z = a.normals.z + t * (b.normals.z - a.normals.z);
+	a.normal.x = a.normal.x + t * (b.normal.x - a.normal.x);
+	a.normal.y = a.normal.y + t * (b.normal.y - a.normal.y);
+	a.normal.z = a.normal.z + t * (b.normal.z - a.normal.z);
 
-	float len = std::sqrt(a.normals.x * a.normals.x + a.normals.y * a.normals.y + a.normals.z * a.normals.z);
+	float len = std::sqrt(a.normal.x * a.normal.x + a.normal.y * a.normal.y + a.normal.z * a.normal.z);
 	if (len > 0.0001f) {
-		a.normals.x /= len;
-		a.normals.y /= len;
-		a.normals.z /= len;
+		a.normal.x /= len;
+		a.normal.y /= len;
+		a.normal.z /= len;
 	}
 
 	return a;
 }
 
-void Direct3DRMSoftwareRenderer::DrawTriangleClipped(const GeometryVertex (&v)[3], const Appearance& appearance)
+void Direct3DRMSoftwareRenderer::DrawTriangleClipped(const D3DRMVERTEX (&v)[3], const Appearance& appearance)
 {
 	bool in0 = v[0].position.z >= m_front;
 	bool in1 = v[1].position.z >= m_front;
@@ -98,7 +98,7 @@ void Direct3DRMSoftwareRenderer::DrawTriangleClipped(const GeometryVertex (&v)[3
 		DrawTriangleProjected(v[0], v[1], v[2], appearance);
 	}
 	else if (insideCount == 2) {
-		GeometryVertex split;
+		D3DRMVERTEX split;
 		if (!in0) {
 			split = SplitEdge(v[2], v[0], m_front);
 			DrawTriangleProjected(v[1], v[2], split, appearance);
@@ -149,14 +149,14 @@ void Direct3DRMSoftwareRenderer::BlendPixel(Uint8* pixelAddr, Uint8 r, Uint8 g, 
 	memcpy(pixelAddr, &blended, m_bytesPerPixel);
 }
 
-SDL_Color Direct3DRMSoftwareRenderer::ApplyLighting(const GeometryVertex& vertex, const Appearance& appearance)
+SDL_Color Direct3DRMSoftwareRenderer::ApplyLighting(const D3DRMVERTEX& vertex, const Appearance& appearance)
 {
 	FColor specular = {0, 0, 0, 0};
 	FColor diffuse = {0, 0, 0, 0};
 
 	// Position and normal
 	D3DVECTOR position = vertex.position;
-	D3DVECTOR normal = vertex.normals;
+	D3DVECTOR normal = vertex.normal;
 	float normLen = std::sqrt(normal.x * normal.x + normal.y * normal.y + normal.z * normal.z);
 	if (normLen == 0.0f) {
 		return appearance.color;
@@ -220,9 +220,9 @@ SDL_Color Direct3DRMSoftwareRenderer::ApplyLighting(const GeometryVertex& vertex
 }
 
 void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
-	const GeometryVertex& v0,
-	const GeometryVertex& v1,
-	const GeometryVertex& v2,
+	const D3DRMVERTEX& v0,
+	const D3DRMVERTEX& v1,
+	const D3DRMVERTEX& v2,
 	const Appearance& appearance
 )
 {
@@ -470,7 +470,7 @@ HRESULT Direct3DRMSoftwareRenderer::BeginFrame(const D3DRMMATRIX4D& viewMatrix)
 }
 
 void Direct3DRMSoftwareRenderer::SubmitDraw(
-	const GeometryVertex* vertices,
+	const D3DRMVERTEX* vertices,
 	const size_t count,
 	const D3DRMMATRIX4D& worldMatrix,
 	const Matrix3x3& normalMatrix,
@@ -481,11 +481,11 @@ void Direct3DRMSoftwareRenderer::SubmitDraw(
 	MultiplyMatrix(mvMatrix, worldMatrix, m_viewMatrix);
 
 	for (size_t i = 0; i + 2 < count; i += 3) {
-		GeometryVertex vrts[3];
+		D3DRMVERTEX vrts[3];
 		for (size_t j = 0; j < 3; ++j) {
-			const GeometryVertex& src = vertices[i + j];
+			const D3DRMVERTEX& src = vertices[i + j];
 			vrts[j].position = TransformPoint(src.position, mvMatrix);
-			vrts[j].normals = Normalize(TransformNormal(src.normals, normalMatrix));
+			vrts[j].normal = Normalize(TransformNormal(src.normal, normalMatrix));
 			vrts[j].texCoord = src.texCoord;
 		}
 		DrawTriangleClipped(vrts, appearance);

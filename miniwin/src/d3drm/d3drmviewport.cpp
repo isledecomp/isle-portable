@@ -215,7 +215,7 @@ bool IsBoxInFrustum(const D3DVECTOR corners[8], const Plane planes[6])
 void Direct3DRMViewportImpl::CollectMeshesFromFrame(
 	IDirect3DRMFrame* frame,
 	D3DRMMATRIX4D parentMatrix,
-	std::vector<GeometryVertex>& verts,
+	std::vector<D3DRMVERTEX>& verts,
 	std::vector<D3DRMVERTEX>& d3dVerts,
 	std::vector<DWORD>& faces
 )
@@ -365,7 +365,7 @@ HRESULT Direct3DRMViewportImpl::RenderScene()
 		return status;
 	}
 
-	std::vector<GeometryVertex> verts;
+	std::vector<D3DRMVERTEX> verts;
 	std::vector<D3DRMVERTEX> d3dVerts;
 	std::vector<DWORD> faces;
 	ExtractFrustumPlanes(viewProj);
