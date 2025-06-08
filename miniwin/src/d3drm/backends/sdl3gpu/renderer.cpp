@@ -93,7 +93,7 @@ static SDL_GPUGraphicsPipeline* InitializeGraphicsPipeline(SDL_GPUDevice* device
 	pipelineCreateInfo.depth_stencil_state.enable_depth_test = true;
 	pipelineCreateInfo.depth_stencil_state.enable_depth_write = depthWrite;
 	pipelineCreateInfo.depth_stencil_state.enable_stencil_test = false;
-	pipelineCreateInfo.depth_stencil_state.compare_op = SDL_GPU_COMPAREOP_LESS;
+	pipelineCreateInfo.depth_stencil_state.compare_op = SDL_GPU_COMPAREOP_GREATER;
 	pipelineCreateInfo.depth_stencil_state.write_mask = 0xff;
 
 	SDL_GPUGraphicsPipeline* pipeline = SDL_CreateGPUGraphicsPipeline(device, &pipelineCreateInfo);
@@ -277,7 +277,7 @@ HRESULT Direct3DRMSDL3GPURenderer::BeginFrame(const D3DRMMATRIX4D& viewMatrix)
 
 	SDL_GPUDepthStencilTargetInfo depthStencilTargetInfo = {};
 	depthStencilTargetInfo.texture = m_depthTexture;
-	depthStencilTargetInfo.clear_depth = 1.f;
+	depthStencilTargetInfo.clear_depth = 0.f;
 	depthStencilTargetInfo.load_op = SDL_GPU_LOADOP_CLEAR;
 
 	SDL_GPUCommandBuffer* cmdbuf = SDL_AcquireGPUCommandBuffer(m_device);
