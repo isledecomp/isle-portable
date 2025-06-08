@@ -91,7 +91,7 @@ MxResult LegoPartPresenter::Read(MxDSChunk& p_chunk)
 		SDL_strlwr(textureName);
 
 		if (textureName[0] == '^') {
-			strcpy(textureName, textureName + 1);
+			memmove(textureName, textureName + 1, strlen(textureName + 1));
 
 			if (g_partPresenterConfig1) {
 				texture = new LegoTexture();
