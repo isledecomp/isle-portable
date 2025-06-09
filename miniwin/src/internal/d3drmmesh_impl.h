@@ -76,6 +76,7 @@ struct Direct3DRMMeshImpl : public Direct3DRMObjectBaseImpl<IDirect3DRMMesh> {
 		DWORD* indexCount,
 		DWORD* indices
 	) override;
+	const MeshGroup& GetGroup(DWORD groupIndex);
 	DWORD GetGroupCount() override;
 	HRESULT SetGroupColor(DWORD groupIndex, D3DCOLOR color) override;
 	HRESULT SetGroupColorRGB(DWORD groupIndex, float r, float g, float b) override;

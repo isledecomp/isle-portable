@@ -1,5 +1,6 @@
 #include "d3drm_impl.h"
 #include "d3drmframe_impl.h"
+#include "d3drmmesh_impl.h"
 #include "d3drmrenderer.h"
 #include "d3drmviewport_impl.h"
 #include "ddraw_impl.h"
@@ -197,12 +198,7 @@ bool IsBoxInFrustum(const D3DVECTOR corners[8], const Plane planes[6])
 	return true;
 }
 
-void Direct3DRMViewportImpl::CollectMeshesFromFrame(
-	IDirect3DRMFrame* frame,
-	D3DRMMATRIX4D parentMatrix,
-	std::vector<D3DRMVERTEX>& d3dVerts,
-	std::vector<DWORD>& indices
-)
+void Direct3DRMViewportImpl::CollectMeshesFromFrame(IDirect3DRMFrame* frame, D3DRMMATRIX4D parentMatrix)
 {
 	Direct3DRMFrameImpl* frameImpl = static_cast<Direct3DRMFrameImpl*>(frame);
 	D3DRMMATRIX4D localMatrix;
@@ -226,13 +222,13 @@ void Direct3DRMViewportImpl::CollectMeshesFromFrame(
 		IDirect3DRMFrame* childFrame = nullptr;
 		visual->QueryInterface(IID_IDirect3DRMFrame, (void**) &childFrame);
 		if (childFrame) {
-			CollectMeshesFromFrame(childFrame, worldMatrix, d3dVerts, indices);
+			CollectMeshesFromFrame(childFrame, worldMatrix);
 			childFrame->Release();
 			visual->Release();
 			continue;
 		}
 
-		IDirect3DRMMesh* mesh = nullptr;
+		Direct3DRMMeshImpl* mesh = nullptr;
 		visual->QueryInterface(IID_IDirect3DRMMesh, (void**) &mesh);
 		if (!mesh) {
 			visual->Release();
@@ -262,47 +258,32 @@ void Direct3DRMViewportImpl::CollectMeshesFromFrame(
 
 		DWORD groupCount = mesh->GetGroupCount();
 		for (DWORD gi = 0; gi < groupCount; ++gi) {
-			DWORD vtxCount, indexCount;
-			mesh->GetGroup(gi, &vtxCount, nullptr, nullptr, &indexCount, nullptr);
+			const MeshGroup& meshGroup = mesh->GetGroup(gi);
 
-			d3dVerts.resize(vtxCount);
-			indices.resize(indexCount);
-			mesh->GetVertices(gi, 0, vtxCount, d3dVerts.data());
-			mesh->GetGroup(gi, nullptr, nullptr, nullptr, nullptr, indices.data());
-
-			D3DCOLOR color = mesh->GetGroupColor(gi);
-			D3DRMRENDERQUALITY quality = mesh->GetGroupQuality(gi);
-
-			IDirect3DRMTexture* texture = nullptr;
-			mesh->GetGroupTexture(gi, &texture);
 			Uint32 textureId = NO_TEXTURE_ID;
-			if (texture) {
-				textureId = m_renderer->GetTextureId(texture);
-				texture->Release();
+			if (meshGroup.texture) {
+				textureId = m_renderer->GetTextureId(meshGroup.texture);
 			}
 
-			IDirect3DRMMaterial* material = nullptr;
-			mesh->GetGroupMaterial(gi, &material);
 			float shininess = 0.0f;
-			if (material) {
-				shininess = material->GetPower() * shininessFactor;
-				material->Release();
+			if (meshGroup.material) {
+				shininess = meshGroup.material->GetPower() * shininessFactor;
 			}
 
 			m_renderer->SubmitDraw(
-				d3dVerts.data(),
-				d3dVerts.size(),
-				indices.data(),
-				indices.size(),
+				meshGroup.vertices.data(),
+				meshGroup.vertices.size(),
+				meshGroup.indices.data(),
+				meshGroup.indices.size(),
 				worldMatrix,
 				worldMatrixInvert,
-				{{static_cast<Uint8>((color >> 16) & 0xFF),
-				  static_cast<Uint8>((color >> 8) & 0xFF),
-				  static_cast<Uint8>((color >> 0) & 0xFF),
-				  static_cast<Uint8>((color >> 24) & 0xFF)},
+				{{static_cast<Uint8>((meshGroup.color >> 16) & 0xFF),
+				  static_cast<Uint8>((meshGroup.color >> 8) & 0xFF),
+				  static_cast<Uint8>((meshGroup.color >> 0) & 0xFF),
+				  static_cast<Uint8>((meshGroup.color >> 24) & 0xFF)},
 				 shininess,
 				 textureId,
-				 quality == D3DRMRENDER_FLAT || quality == D3DRMRENDER_UNLITFLAT}
+				 meshGroup.quality == D3DRMRENDER_FLAT || meshGroup.quality == D3DRMRENDER_UNLITFLAT}
 			);
 		}
 		mesh->Release();
@@ -331,10 +312,8 @@ HRESULT Direct3DRMViewportImpl::RenderScene()
 		return status;
 	}
 
-	std::vector<D3DRMVERTEX> d3dVerts;
-	std::vector<DWORD> indices;
 	ExtractFrustumPlanes(viewProj);
-	CollectMeshesFromFrame(m_rootFrame, identity, d3dVerts, indices);
+	CollectMeshesFromFrame(m_rootFrame, identity);
 	return m_renderer->FinalizeFrame();
 }
 
@@ -682,31 +661,25 @@ bool RayIntersectsTriangle(
 
 bool RayIntersectsMeshTriangles(
 	const Ray& ray,
-	IDirect3DRMMesh* mesh,
+	Direct3DRMMeshImpl& mesh,
 	const D3DRMMATRIX4D& worldMatrix,
 	float& outDistance
 )
 {
-	DWORD groupCount = mesh->GetGroupCount();
-	for (DWORD g = 0; g < groupCount; ++g) {
-		DWORD vtxCount, indexCount;
-		mesh->GetGroup(g, &vtxCount, nullptr, nullptr, &indexCount, nullptr);
-
-		std::vector<D3DRMVERTEX> vertices(vtxCount);
-		mesh->GetVertices(g, 0, vtxCount, vertices.data());
-		std::vector<DWORD> indices(indexCount);
-		mesh->GetGroup(g, nullptr, nullptr, nullptr, nullptr, indices.data());
+	DWORD groupCount = mesh.GetGroupCount();
+	for (DWORD gi = 0; gi < groupCount; ++gi) {
+		const MeshGroup& meshGroup = mesh.GetGroup(gi);
 
 		// Iterate over each face and do ray-triangle tests
-		for (DWORD fi = 0; fi < indexCount; fi += 3) {
-			DWORD i0 = indices[fi + 0];
-			DWORD i1 = indices[fi + 1];
-			DWORD i2 = indices[fi + 2];
+		for (DWORD fi = 0; fi < meshGroup.indices.size(); fi += 3) {
+			DWORD i0 = meshGroup.indices[fi + 0];
+			DWORD i1 = meshGroup.indices[fi + 1];
+			DWORD i2 = meshGroup.indices[fi + 2];
 
 			// Transform vertices to world space
 			D3DVECTOR tri[3];
 			for (int j = 0; j < 3; ++j) {
-				const D3DVECTOR& v = vertices[(j == 0 ? i0 : (j == 1 ? i1 : i2))].position;
+				const D3DVECTOR& v = meshGroup.vertices[(j == 0 ? i0 : (j == 1 ? i1 : i2))].position;
 				tri[j] = TransformPoint(v, worldMatrix);
 			}
 
@@ -799,7 +772,7 @@ HRESULT Direct3DRMViewportImpl::Pick(float x, float y, LPDIRECT3DRMPICKEDARRAY* 
 				continue;
 			}
 
-			IDirect3DRMMesh* mesh = nullptr;
+			Direct3DRMMeshImpl* mesh = nullptr;
 			visual->QueryInterface(IID_IDirect3DRMMesh, (void**) &mesh);
 			if (mesh) {
 				D3DRMBOX box;
@@ -811,7 +784,7 @@ HRESULT Direct3DRMViewportImpl::Pick(float x, float y, LPDIRECT3DRMPICKEDARRAY* 
 
 				float distance = FLT_MAX;
 				if (RayIntersectsBox(pickRay, worldBox, distance) &&
-					RayIntersectsMeshTriangles(pickRay, mesh, worldMatrix, distance)) {
+					RayIntersectsMeshTriangles(pickRay, *mesh, worldMatrix, distance)) {
 					auto* arr = new Direct3DRMFrameArrayImpl();
 					for (IDirect3DRMFrame* f : path) {
 						arr->AddElement(f);
