@@ -13,7 +13,7 @@ struct Appearance {
 	SDL_Color color;
 	float shininess;
 	Uint32 textureId;
-	bool flat;
+	Uint32 flat;
 };
 
 struct FColor {
@@ -41,7 +41,9 @@ public:
 	virtual HRESULT BeginFrame(const D3DRMMATRIX4D& viewMatrix) = 0;
 	virtual void SubmitDraw(
 		const D3DRMVERTEX* vertices,
-		const size_t count,
+		const size_t vertexCount,
+		const DWORD* indices,
+		const size_t indexCount,
 		const D3DRMMATRIX4D& worldMatrix,
 		const Matrix3x3& normalMatrix,
 		const Appearance& appearance

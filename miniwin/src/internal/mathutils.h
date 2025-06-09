@@ -25,6 +25,11 @@ inline D3DVECTOR Normalize(const D3DVECTOR& v)
 	return {0, 0, 0};
 }
 
+inline D3DVECTOR CrossProduct(const D3DVECTOR& a, const D3DVECTOR& b)
+{
+	return {a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x};
+}
+
 inline D3DVECTOR TransformPoint(const D3DVECTOR& p, const D3DRMMATRIX4D& m)
 {
 	return {

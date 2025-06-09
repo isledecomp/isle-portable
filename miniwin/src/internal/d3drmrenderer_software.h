@@ -29,7 +29,9 @@ public:
 	HRESULT BeginFrame(const D3DRMMATRIX4D& viewMatrix) override;
 	void SubmitDraw(
 		const D3DRMVERTEX* vertices,
-		const size_t count,
+		const size_t vertexCount,
+		const DWORD* indices,
+		const size_t indexCount,
 		const D3DRMMATRIX4D& worldMatrix,
 		const Matrix3x3& normalMatrix,
 		const Appearance& appearance

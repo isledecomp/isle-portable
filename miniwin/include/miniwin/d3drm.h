@@ -191,8 +191,8 @@ struct IDirect3DRMMesh : public IDirect3DRMVisual {
 		DWORD* vertexCount,
 		DWORD* faceCount,
 		DWORD* vertexPerFace,
-		DWORD* dataSize,
-		DWORD* data
+		DWORD* indexCount,
+		DWORD* indices
 	) = 0;
 	virtual DWORD GetGroupCount() = 0;
 	virtual HRESULT SetGroupColor(DWORD groupIndex, D3DCOLOR color) = 0;

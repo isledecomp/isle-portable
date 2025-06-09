@@ -60,7 +60,7 @@ HRESULT Direct3DRMMeshImpl::AddGroup(
 	group.vertexPerFace = vertexPerFace;
 
 	DWORD* src = faceBuffer;
-	group.faces.assign(src, src + faceCount * vertexPerFace);
+	group.indices.assign(src, src + faceCount * vertexPerFace);
 
 	m_groups.push_back(std::move(group));
 
@@ -72,8 +72,8 @@ HRESULT Direct3DRMMeshImpl::GetGroup(
 	DWORD* vertexCount,
 	DWORD* faceCount,
 	DWORD* vertexPerFace,
-	DWORD* dataSize,
-	DWORD* data
+	DWORD* indexCount,
+	DWORD* indices
 )
 {
 	if (groupIndex >= m_groups.size()) {
@@ -86,16 +86,16 @@ HRESULT Direct3DRMMeshImpl::GetGroup(
 		*vertexCount = static_cast<DWORD>(group.vertices.size());
 	}
 	if (faceCount) {
-		*faceCount = static_cast<DWORD>(group.faces.size() / group.vertexPerFace);
+		*faceCount = static_cast<DWORD>(group.indices.size() / group.vertexPerFace);
 	}
 	if (vertexPerFace) {
 		*vertexPerFace = static_cast<DWORD>(group.vertexPerFace);
 	}
-	if (dataSize) {
-		*dataSize = static_cast<DWORD>(group.faces.size());
+	if (indexCount) {
+		*indexCount = static_cast<DWORD>(group.indices.size());
 	}
-	if (data) {
-		std::copy(group.faces.begin(), group.faces.end(), reinterpret_cast<unsigned int*>(data));
+	if (indices) {
+		std::copy(group.indices.begin(), group.indices.end(), reinterpret_cast<unsigned int*>(indices));
 	}
 
 	return DD_OK;

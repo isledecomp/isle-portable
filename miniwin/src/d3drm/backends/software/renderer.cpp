@@ -2,6 +2,7 @@
 #include "d3drmrenderer_software.h"
 #include "ddsurface_impl.h"
 #include "mathutils.h"
+#include "meshutils.h"
 #include "miniwin.h"
 
 #include <SDL3/SDL.h>
@@ -452,7 +453,9 @@ HRESULT Direct3DRMSoftwareRenderer::BeginFrame(const D3DRMMATRIX4D& viewMatrix)
 
 void Direct3DRMSoftwareRenderer::SubmitDraw(
 	const D3DRMVERTEX* vertices,
-	const size_t count,
+	const size_t vertexCount,
+	const DWORD* indices,
+	const size_t indexCount,
 	const D3DRMMATRIX4D& worldMatrix,
 	const Matrix3x3& normalMatrix,
 	const Appearance& appearance
@@ -461,15 +464,42 @@ void Direct3DRMSoftwareRenderer::SubmitDraw(
 	D3DRMMATRIX4D mvMatrix;
 	MultiplyMatrix(mvMatrix, worldMatrix, m_viewMatrix);
 
-	for (size_t i = 0; i + 2 < count; i += 3) {
-		D3DRMVERTEX vrts[3];
-		for (size_t j = 0; j < 3; ++j) {
-			const D3DRMVERTEX& src = vertices[i + j];
-			vrts[j].position = TransformPoint(src.position, mvMatrix);
-			vrts[j].normal = Normalize(TransformNormal(src.normal, normalMatrix));
-			vrts[j].texCoord = src.texCoord;
-		}
-		DrawTriangleClipped(vrts, appearance);
+	std::vector<D3DRMVERTEX> newVertices;
+	std::vector<DWORD> newIndices;
+	if (appearance.flat) {
+		// FIXME move this to a one time mesh upload stage
+		FlattenSurfaces(
+			vertices,
+			vertexCount,
+			indices,
+			indexCount,
+			appearance.textureId != NO_TEXTURE_ID,
+			newVertices,
+			newIndices
+		);
+	}
+	else {
+		newVertices.assign(vertices, vertices + vertexCount);
+		newIndices.assign(indices, indices + indexCount);
+	}
+
+	// Pre-transform all vertex positions and normals
+	std::vector<D3DRMVERTEX> transformedVerts(newVertices.size());
+	for (size_t i = 0; i < newVertices.size(); ++i) {
+		const D3DRMVERTEX& src = newVertices[i];
+		D3DRMVERTEX& dst = transformedVerts[i];
+		dst.position = TransformPoint(src.position, mvMatrix);
+		// TODO defer normal transformation til lighting to allow culling first
+		dst.normal = Normalize(TransformNormal(src.normal, normalMatrix));
+		dst.texCoord = src.texCoord;
+	}
+
+	// Assemble triangles using index buffer
+	for (size_t i = 0; i + 2 < newIndices.size(); i += 3) {
+		DrawTriangleClipped(
+			{transformedVerts[newIndices[i]], transformedVerts[newIndices[i + 1]], transformedVerts[newIndices[i + 2]]},
+			appearance
+		);
 	}
 }
 
