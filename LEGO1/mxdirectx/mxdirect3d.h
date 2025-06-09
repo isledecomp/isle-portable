@@ -6,6 +6,8 @@
 #include "mxdirectxinfo.h"
 #include "mxstl/stlcompat.h"
 
+#include <string>
+
 #ifdef MINIWIN
 #include "miniwin/d3d.h"
 #else
@@ -44,6 +46,9 @@ public:
 
 	BOOL SetDevice(MxDeviceEnumerate& p_deviceEnumerate, MxDriver* p_driver, Direct3DDeviceInfo* p_device);
 
+	const std::string& GetDeviceName() const { return m_deviceName; }
+	const std::string& GetDeviceDescription() const { return m_deviceDesc; }
+
 protected:
 	BOOL D3DCreate();
 	BOOL D3DSetMode();
@@ -60,6 +65,8 @@ private:
 	IDirect3DDevice2* m_pDirect3dDevice;   // 0x888
 	BOOL m_bTexturesDisabled;              // 0x88c
 	undefined4 m_unk0x890;                 // 0x890
+	std::string m_deviceName;
+	std::string m_deviceDesc;
 };
 
 // GLOBAL: LEGO1 0x100dd1b0

@@ -214,6 +214,8 @@ void Direct3DRMViewportImpl::CollectMeshesFromFrame(
 	Matrix3x3 worldMatrixInvert;
 	D3DRMMatrixInvertForNormal(worldMatrixInvert, worldMatrix);
 
+	const float shininessFactor = m_renderer->GetShininessFactor();
+
 	IDirect3DRMVisualArray* visuals = nullptr;
 	frame->GetVisuals(&visuals);
 	DWORD n = visuals->GetSize();
@@ -283,7 +285,7 @@ void Direct3DRMViewportImpl::CollectMeshesFromFrame(
 			mesh->GetGroupMaterial(gi, &material);
 			float shininess = 0.0f;
 			if (material) {
-				shininess = material->GetPower();
+				shininess = material->GetPower() * shininessFactor;
 				material->Release();
 			}
 

@@ -91,9 +91,7 @@ if (ISLE_UBSAN)
   add_link_options(-fsanitize=undefined)
 endif()
 
-if(ISLE_MINIWIN)
-  add_subdirectory(miniwin)
-endif()
+add_subdirectory(miniwin EXCLUDE_FROM_ALL)
 
 set(isle_targets)
 
@@ -474,6 +472,9 @@ if (ISLE_BUILD_APP)
 
   # Link SDL and iniparser
   target_link_libraries(isle PRIVATE SDL3::SDL3 iniparser-static)
+
+  # Allow unconditional include of miniwin/miniwindevice.h
+  target_link_libraries(isle PRIVATE miniwin-headers)
 
   # Link DSOUND and WINMM
   if (WIN32)

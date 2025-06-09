@@ -2,6 +2,7 @@
 
 #include "mathutils.h"
 #include "miniwin/d3drm.h"
+#include "miniwin/miniwindevice.h"
 
 #include <SDL3/SDL.h>
 
@@ -49,4 +50,17 @@ public:
 		const Appearance& appearance
 	) = 0;
 	virtual HRESULT FinalizeFrame() = 0;
+
+	float GetShininessFactor() { return m_shininessFactor; }
+	HRESULT SetShininessFactor(float factor)
+	{
+		if (factor < 0.f) {
+			return DDERR_GENERIC;
+		}
+		m_shininessFactor = factor;
+		return DD_OK;
+	}
+
+protected:
+	float m_shininessFactor = 1.f;
 };

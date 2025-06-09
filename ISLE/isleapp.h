@@ -12,6 +12,7 @@
 #else
 #include <windows.h>
 #endif
+#include "miniwin/miniwindevice.h"
 
 // SIZE 0x8c
 class IsleApp {
@@ -87,5 +88,7 @@ private:
 };
 
 extern IsleApp* g_isle;
+
+extern IDirect3DRMMiniwinDevice* GetD3DRMMiniwinDevice();
 
 #endif // ISLEAPP_H
