@@ -126,6 +126,8 @@ IsleApp::IsleApp()
 	LegoOmni::CreateInstance();
 
 	m_iniPath = NULL;
+	m_maxLod = RealtimeView::GetUserMaxLOD();
+	m_maxAllowedExtras = m_islandQuality <= 1 ? 10 : 20;
 }
 
 // FUNCTION: ISLE 0x4011a0
@@ -574,7 +576,8 @@ MxResult IsleApp::SetupWindow()
 	LegoWorldPresenter::configureLegoWorldPresenter(m_islandQuality);
 	LegoBuildingManager::configureLegoBuildingManager(m_islandQuality);
 	LegoROI::configureLegoROI(iVar10);
-	LegoAnimationManager::configureLegoAnimationManager(m_islandQuality);
+	LegoAnimationManager::configureLegoAnimationManager(m_maxAllowedExtras);
+	RealtimeView::SetUserMaxLOD(m_maxLod);
 	if (LegoOmni::GetInstance()) {
 		if (LegoOmni::GetInstance()->GetInputManager()) {
 			LegoOmni::GetInstance()->GetInputManager()->SetUseJoystick(m_useJoystick);
@@ -664,6 +667,8 @@ bool IsleApp::LoadConfig()
 
 		iniparser_set(dict, "isle:Island Quality", "1");
 		iniparser_set(dict, "isle:Island Texture", "1");
+		iniparser_set(dict, "isle:Max LOD", "3.6");
+		iniparser_set(dict, "isle:Max Allowed Extras", "10");
 
 		iniparser_dump_ini(dict, iniFP);
 		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "New config written at '%s'", iniConfig);
@@ -710,6 +715,8 @@ bool IsleApp::LoadConfig()
 
 	m_islandQuality = iniparser_getint(dict, "isle:Island Quality", 1);
 	m_islandTexture = iniparser_getint(dict, "isle:Island Texture", 1);
+	m_maxLod = iniparser_getdouble(dict, "isle:Max LOD", 3.6);
+	m_maxAllowedExtras = iniparser_getint(dict, "isle:Max Allowed Extras", 10);
 
 	const char* deviceId = iniparser_getstring(dict, "isle:3D Device ID", NULL);
 	if (deviceId != NULL) {
