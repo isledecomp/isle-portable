@@ -31,12 +31,12 @@ HRESULT Direct3DRMDevice2Impl::QueryInterface(const GUID& riid, void** ppvObject
 {
 	if (SDL_memcmp(&riid, &IID_IDirect3DRMDevice2, sizeof(riid)) == 0) {
 		this->IUnknown::AddRef();
-		*ppvObject = dynamic_cast<IDirect3DRMDevice2*>(this);
+		*ppvObject = static_cast<IDirect3DRMDevice2*>(this);
 		return DD_OK;
 	}
 	else if (SDL_memcmp(&riid, &IID_IDirect3DRMMiniwinDevice, sizeof(riid)) == 0) {
 		this->IUnknown::AddRef();
-		*ppvObject = dynamic_cast<IDirect3DRMMiniwinDevice*>(this);
+		*ppvObject = static_cast<IDirect3DRMMiniwinDevice*>(this);
 		return DD_OK;
 	}
 	MINIWIN_NOT_IMPLEMENTED();

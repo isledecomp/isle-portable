@@ -460,8 +460,8 @@ void Direct3DRMSDL3GPURenderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRM
 
 Uint32 Direct3DRMSDL3GPURenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 {
-	auto texture = dynamic_cast<Direct3DRMTextureImpl*>(iTexture);
-	auto surface = dynamic_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
+	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
+	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
 	SDL_Surface* surf = surface->m_surface;
 
 	for (Uint32 i = 0; i < m_textures.size(); ++i) {
