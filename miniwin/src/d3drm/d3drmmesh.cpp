@@ -101,6 +101,11 @@ HRESULT Direct3DRMMeshImpl::GetGroup(
 	return DD_OK;
 }
 
+const MeshGroup& Direct3DRMMeshImpl::GetGroup(DWORD groupIndex)
+{
+	return m_groups[groupIndex];
+}
+
 DWORD Direct3DRMMeshImpl::GetGroupCount()
 {
 	return m_groups.size();
