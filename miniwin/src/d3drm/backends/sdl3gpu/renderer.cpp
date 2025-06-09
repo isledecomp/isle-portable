@@ -460,8 +460,8 @@ void Direct3DRMSDL3GPURenderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRM
 
 Uint32 Direct3DRMSDL3GPURenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 {
-	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
-	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
+	auto texture = dynamic_cast<Direct3DRMTextureImpl*>(iTexture);
+	auto surface = dynamic_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
 	SDL_Surface* surf = surface->m_surface;
 
 	for (Uint32 i = 0; i < m_textures.size(); ++i) {
@@ -742,5 +742,11 @@ HRESULT Direct3DRMSDL3GPURenderer::FinalizeFrame()
 	SDL_DestroySurface(renderedImage);
 	SDL_UnmapGPUTransferBuffer(m_device, m_downloadBuffer);
 
+	return DD_OK;
+}
+
+HRESULT Direct3DRMSDL3GPURenderer::GetDescription(char* buffer, int bufferSize)
+{
+	SDL_strlcpy(buffer, "Miniwin SDL3_gpu renderer", bufferSize);
 	return DD_OK;
 }

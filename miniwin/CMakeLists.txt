@@ -1,3 +1,6 @@
+add_library(miniwin-headers INTERFACE)
+target_include_directories(miniwin-headers INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+
 add_library(miniwin STATIC EXCLUDE_FROM_ALL
   # Core
   src/windows/windows.cpp
@@ -38,12 +41,11 @@ target_compile_definitions(miniwin PRIVATE MINIWIN_PIXELFORMAT=SDL_PIXELFORMAT_R
 target_compile_definitions(miniwin PUBLIC MINIWIN)
 
 target_include_directories(miniwin
-  PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/internal
     ${CMAKE_CURRENT_SOURCE_DIR}/src/d3drm/backends/sdl3gpu/shaders/generated
 )
+target_link_libraries(miniwin PUBLIC miniwin-headers)
 
 target_link_libraries(miniwin PRIVATE SDL3::SDL3)
 

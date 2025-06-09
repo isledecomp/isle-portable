@@ -54,6 +54,7 @@ public:
 		const Appearance& appearance
 	) override;
 	HRESULT FinalizeFrame() override;
+	HRESULT GetDescription(char* buffer, int bufferSize) override;
 
 private:
 	Direct3DRMSDL3GPURenderer(

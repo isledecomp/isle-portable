@@ -1,3 +1,5 @@
+#define INITGUID
+
 #include "isleapp.h"
 
 #include "3dmanager/lego3dmanager.h"
@@ -29,7 +31,10 @@
 #include "res/isle_bmp.h"
 #include "res/resource.h"
 #include "roi/legoroi.h"
+#include "tgl/d3drm/impl.h"
 #include "viewmanager/viewmanager.h"
+
+#include <miniwin/miniwindevice.h>
 
 #define SDL_MAIN_USE_CALLBACKS
 #include <SDL3/SDL.h>
@@ -451,6 +456,8 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 
 void SDL_AppQuit(void* appstate, SDL_AppResult result)
 {
+	IsleDebug_Quit();
+
 	if (appstate != NULL) {
 		SDL_DestroyWindow((SDL_Window*) appstate);
 	}
@@ -572,6 +579,15 @@ MxResult IsleApp::SetupWindow()
 		if (LegoOmni::GetInstance()->GetInputManager()) {
 			LegoOmni::GetInstance()->GetInputManager()->SetUseJoystick(m_useJoystick);
 			LegoOmni::GetInstance()->GetInputManager()->SetJoystickIndex(m_joystickIndex);
+		}
+
+		IDirect3DRMMiniwinDevice* d3drmMiniwinDev = GetD3DRMMiniwinDevice();
+		if (d3drmMiniwinDev) {
+			char buffer[256];
+			if (SUCCEEDED(d3drmMiniwinDev->GetDescription(buffer, sizeof(buffer)))) {
+				SDL_Log("D3DRM device: %s", buffer);
+			}
+			d3drmMiniwinDev->Release();
 		}
 	}
 
@@ -866,4 +882,33 @@ MxResult IsleApp::ParseArguments(int argc, char** argv)
 		}
 	}
 	return SUCCESS;
+}
+
+IDirect3DRMMiniwinDevice* GetD3DRMMiniwinDevice()
+{
+	LegoVideoManager* videoManager = LegoOmni::GetInstance()->GetVideoManager();
+	if (!videoManager) {
+		return nullptr;
+	}
+	Lego3DManager* lego3DManager = videoManager->Get3DManager();
+	if (!lego3DManager) {
+		return nullptr;
+	}
+	Lego3DView* lego3DView = lego3DManager->GetLego3DView();
+	if (!lego3DView) {
+		return nullptr;
+	}
+	TglImpl::DeviceImpl* tgl_device = (TglImpl::DeviceImpl*) lego3DView->GetDevice();
+	if (!tgl_device) {
+		return nullptr;
+	}
+	IDirect3DRMDevice2* d3drmdev = tgl_device->ImplementationData();
+	if (!d3drmdev) {
+		return nullptr;
+	}
+	IDirect3DRMMiniwinDevice* d3drmMiniwinDev = nullptr;
+	if (!SUCCEEDED(d3drmdev->QueryInterface(IID_IDirect3DRMMiniwinDevice, (void**) &d3drmMiniwinDev))) {
+		return nullptr;
+	}
+	return d3drmMiniwinDev;
 }

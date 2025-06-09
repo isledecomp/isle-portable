@@ -3,12 +3,14 @@
 #include "d3drmobject_impl.h"
 #include "d3drmrenderer.h"
 #include "miniwin/d3drm.h"
+#include "miniwin/miniwindevice.h"
 
 #include <SDL3/SDL.h>
 
-struct Direct3DRMDevice2Impl : public Direct3DRMObjectBaseImpl<IDirect3DRMDevice2> {
+struct Direct3DRMDevice2Impl : public Direct3DRMObjectBaseImpl<IDirect3DRMDevice2>, public IDirect3DRMMiniwinDevice {
 	Direct3DRMDevice2Impl(DWORD width, DWORD height, Direct3DRMRenderer* renderer);
 	~Direct3DRMDevice2Impl() override;
+	HRESULT QueryInterface(const GUID& riid, void** ppvObject) override;
 	DWORD GetWidth() override;
 	DWORD GetHeight() override;
 	HRESULT SetBufferCount(int count) override;
@@ -29,6 +31,11 @@ struct Direct3DRMDevice2Impl : public Direct3DRMObjectBaseImpl<IDirect3DRMDevice
 	HRESULT Update() override;
 	HRESULT AddViewport(IDirect3DRMViewport* viewport) override;
 	HRESULT GetViewports(IDirect3DRMViewportArray** ppViewportArray) override;
+
+	// IDirect3DRMMiniwinDevice interface
+	float GetShininessFactor() override;
+	HRESULT SetShininessFactor(float factor) override;
+	HRESULT GetDescription(char* buffer, int bufferSize) override;
 
 	Direct3DRMRenderer* m_renderer;
 

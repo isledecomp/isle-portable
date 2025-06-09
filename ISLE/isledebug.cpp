@@ -26,6 +26,7 @@ static SDL_Window* g_debugWindow;
 static SDL_Renderer* g_debugRenderer;
 
 static SDL_Texture* g_videoPalette;
+static IDirect3DRMMiniwinDevice* g_d3drmMiniwinDevice;
 
 class DebugViewer {
 public:
@@ -179,6 +180,7 @@ void IsleDebug_Init()
 			g_debugEnabled = false;
 			break;
 		}
+		g_d3drmMiniwinDevice = GetD3DRMMiniwinDevice();
 	} while (0);
 	if (!g_debugEnabled) {
 		if (g_debugRenderer) {
@@ -189,6 +191,15 @@ void IsleDebug_Init()
 			SDL_DestroyWindow(g_debugWindow);
 			g_debugWindow = nullptr;
 		}
+	}
+}
+
+void IsleDebug_Quit()
+{
+	SDL_DestroyRenderer(g_debugRenderer);
+	SDL_DestroyWindow(g_debugWindow);
+	if (g_d3drmMiniwinDevice) {
+		g_d3drmMiniwinDevice->Release();
 	}
 }
 
@@ -259,6 +270,17 @@ void IsleDebug_Render()
 				ImGui::Text("Previous area: %d", gameState->GetPreviousArea());
 				ImGui::Text("Unknown 0x42c: %d", gameState->GetUnknown0x42c());
 				ImGui::Value("Player count", gameState->GetPlayerCount());
+				ImGui::TreePop();
+			}
+			if (ImGui::TreeNode("Renderer")) {
+				if (g_d3drmMiniwinDevice) {
+					float shininess = g_d3drmMiniwinDevice->GetShininessFactor();
+					ImGui::SliderFloat("shininess", &shininess, 0.f, 10.f);
+					g_d3drmMiniwinDevice->SetShininessFactor(shininess);
+				}
+				else {
+					ImGui::Text("No miniwin driver");
+				}
 				ImGui::TreePop();
 			}
 			if (ImGui::TreeNode("Sound Manager")) {
