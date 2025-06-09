@@ -29,7 +29,9 @@ public:
 	HRESULT BeginFrame(const D3DRMMATRIX4D& viewMatrix) override;
 	void SubmitDraw(
 		const D3DRMVERTEX* vertices,
-		const size_t count,
+		const size_t vertexCount,
+		const DWORD* indices,
+		const size_t indexCount,
 		const D3DRMMATRIX4D& worldMatrix,
 		const Matrix3x3& normalMatrix,
 		const Appearance& appearance
@@ -48,7 +50,7 @@ private:
 	void DrawTriangleClipped(const D3DRMVERTEX (&v)[3], const Appearance& appearance);
 	void ProjectVertex(const D3DRMVERTEX& v, D3DRMVECTOR4D& p) const;
 	void BlendPixel(Uint8* pixelAddr, Uint8 r, Uint8 g, Uint8 b, Uint8 a);
-	SDL_Color ApplyLighting(const D3DRMVERTEX& vertex, const Appearance& appearance);
+	SDL_Color ApplyLighting(const D3DVECTOR& position, const D3DVECTOR& normal, const Appearance& appearance);
 	void AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture);
 
 	DWORD m_width;

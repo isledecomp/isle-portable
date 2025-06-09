@@ -40,7 +40,6 @@ private:
 	void CollectMeshesFromFrame(
 		IDirect3DRMFrame* frame,
 		D3DRMMATRIX4D parentMatrix,
-		std::vector<D3DRMVERTEX>& verts,
 		std::vector<D3DRMVERTEX>& d3dVerts,
 		std::vector<DWORD>& faces
 	);

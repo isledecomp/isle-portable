@@ -3,6 +3,7 @@
 #include "d3drmrenderer_sdl3gpu.h"
 #include "ddraw_impl.h"
 #include "mathutils.h"
+#include "meshutils.h"
 #include "miniwin.h"
 
 #include <SDL3/SDL.h>
@@ -600,7 +601,9 @@ SDL_GPUTransferBuffer* Direct3DRMSDL3GPURenderer::GetUploadBuffer(size_t size)
 
 void Direct3DRMSDL3GPURenderer::SubmitDraw(
 	const D3DRMVERTEX* vertices,
-	const size_t count,
+	const size_t vertexCount,
+	const DWORD* indices,
+	const size_t indexCount,
 	const D3DRMMATRIX4D& worldMatrix,
 	const Matrix3x3& normalMatrix,
 	const Appearance& appearance
@@ -613,21 +616,46 @@ void Direct3DRMSDL3GPURenderer::SubmitDraw(
 	m_fragmentShadingData.color = appearance.color;
 	m_fragmentShadingData.shininess = appearance.shininess;
 
-	if (count > m_vertexBufferCount) {
+	std::vector<D3DRMVERTEX> flatVertices;
+	if (appearance.flat) {
+		std::vector<D3DRMVERTEX> newVertices;
+		std::vector<DWORD> newIndices;
+		// FIXME move this to a one time mesh upload stage
+		FlattenSurfaces(
+			vertices,
+			vertexCount,
+			indices,
+			indexCount,
+			appearance.textureId != NO_TEXTURE_ID,
+			newVertices,
+			newIndices
+		);
+		for (DWORD& index : newIndices) {
+			flatVertices.push_back(newVertices[index]);
+		}
+	}
+	else {
+		// TODO handle indexed verticies on GPU
+		for (int i = 0; i < indexCount; ++i) {
+			flatVertices.push_back(vertices[indices[i]]);
+		}
+	}
+
+	if (flatVertices.size() > m_vertexBufferCount) {
 		if (m_vertexBuffer) {
 			SDL_ReleaseGPUBuffer(m_device, m_vertexBuffer);
 		}
 		SDL_GPUBufferCreateInfo bufferCreateInfo = {};
 		bufferCreateInfo.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
-		bufferCreateInfo.size = static_cast<Uint32>(sizeof(D3DRMVERTEX) * count);
+		bufferCreateInfo.size = static_cast<Uint32>(sizeof(D3DRMVERTEX) * flatVertices.size());
 		m_vertexBuffer = SDL_CreateGPUBuffer(m_device, &bufferCreateInfo);
 		if (!m_vertexBuffer) {
 			SDL_LogError(LOG_CATEGORY_MINIWIN, "SDL_CreateGPUBuffer failed (%s)", SDL_GetError());
 		}
-		m_vertexBufferCount = count;
+		m_vertexBufferCount = flatVertices.size();
 	}
 
-	m_vertexCount = count;
+	m_vertexCount = flatVertices.size();
 
 	SDL_GPUTransferBuffer* uploadBuffer = GetUploadBuffer(sizeof(D3DRMVERTEX) * m_vertexCount);
 	if (!uploadBuffer) {
@@ -639,7 +667,7 @@ void Direct3DRMSDL3GPURenderer::SubmitDraw(
 		return;
 	}
 
-	memcpy(transferData, vertices, m_vertexCount * sizeof(D3DRMVERTEX));
+	memcpy(transferData, flatVertices.data(), m_vertexCount * sizeof(D3DRMVERTEX));
 	SDL_UnmapGPUTransferBuffer(m_device, uploadBuffer);
 
 	// Upload the transfer data to the vertex buffer

@@ -2,8 +2,10 @@
 #include "ddraw_impl.h"
 #include "ddsurface_impl.h"
 #include "mathutils.h"
+#include "meshutils.h"
 
 #include <GL/glew.h>
+#include <algorithm>
 #include <cstring>
 #include <vector>
 
@@ -305,7 +307,9 @@ HRESULT OpenGL15Renderer::BeginFrame(const D3DRMMATRIX4D& viewMatrix)
 
 void OpenGL15Renderer::SubmitDraw(
 	const D3DRMVERTEX* vertices,
-	const size_t count,
+	const size_t vertexCount,
+	const DWORD* indices,
+	const size_t indexCount,
 	const D3DRMMATRIX4D& worldMatrix,
 	const Matrix3x3& normalMatrix,
 	const Appearance& appearance
@@ -319,26 +323,45 @@ void OpenGL15Renderer::SubmitDraw(
 	glLoadMatrixf(&mvMatrix[0][0]);
 	glEnable(GL_NORMALIZE);
 
-	glColor4ub(appearance.color.r, appearance.color.g, appearance.color.b, appearance.color.a);
-
-	// Bind texture if present
-	if (appearance.textureId != NO_TEXTURE_ID) {
-		auto& tex = m_textures[appearance.textureId];
-		if (tex.glTextureId) {
-			glEnable(GL_TEXTURE_2D);
-			glBindTexture(GL_TEXTURE_2D, tex.glTextureId);
-		}
-	}
-	else {
-		glDisable(GL_TEXTURE_2D);
-	}
-
+	std::vector<D3DRMVERTEX> newVertices;
+	std::vector<DWORD> newIndices;
 	if (appearance.flat) {
 		glShadeModel(GL_FLAT);
+		// FIXME move this to a one time mesh upload stage
+		FlattenSurfaces(
+			vertices,
+			vertexCount,
+			indices,
+			indexCount,
+			appearance.textureId != NO_TEXTURE_ID,
+			newVertices,
+			newIndices
+		);
 	}
 	else {
 		glShadeModel(GL_SMOOTH);
+		newVertices.assign(vertices, vertices + vertexCount);
+		newIndices.assign(indices, indices + indexCount);
 	}
+
+	// Bind texture if present
+	std::vector<TexCoord> texcoords;
+	if (appearance.textureId != NO_TEXTURE_ID) {
+		auto& tex = m_textures[appearance.textureId];
+		glEnable(GL_TEXTURE_2D);
+		glBindTexture(GL_TEXTURE_2D, tex.glTextureId);
+		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+		texcoords.resize(newVertices.size());
+		std::transform(newVertices.begin(), newVertices.end(), texcoords.begin(), [](const D3DRMVERTEX& v) {
+			return v.texCoord;
+		});
+	}
+	else {
+		glDisable(GL_TEXTURE_2D);
+		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	}
+
+	glColor4ub(appearance.color.r, appearance.color.g, appearance.color.b, appearance.color.a);
 
 	float shininess = appearance.shininess;
 	glMaterialf(GL_FRONT, GL_SHININESS, shininess);
@@ -351,14 +374,29 @@ void OpenGL15Renderer::SubmitDraw(
 		glMaterialfv(GL_FRONT, GL_SPECULAR, noSpec);
 	}
 
-	glBegin(GL_TRIANGLES);
-	for (size_t i = 0; i < count; i++) {
-		const D3DRMVERTEX& v = vertices[i];
-		glNormal3f(v.normal.x, v.normal.y, v.normal.z);
-		glTexCoord2f(v.texCoord.u, v.texCoord.v);
-		glVertex3f(v.position.x, v.position.y, v.position.z);
+	std::vector<D3DVECTOR> positions;
+	positions.resize(newVertices.size());
+	std::transform(newVertices.begin(), newVertices.end(), positions.begin(), [](const D3DRMVERTEX& v) {
+		return v.position;
+	});
+	std::vector<D3DVECTOR> normals;
+	normals.resize(newVertices.size());
+	std::transform(newVertices.begin(), newVertices.end(), normals.begin(), [](const D3DRMVERTEX& v) {
+		return v.normal;
+	});
+
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glVertexPointer(3, GL_FLOAT, 0, positions.data());
+
+	glEnableClientState(GL_NORMAL_ARRAY);
+	glNormalPointer(GL_FLOAT, 0, normals.data());
+
+	if (appearance.textureId != NO_TEXTURE_ID) {
+		glTexCoordPointer(2, GL_FLOAT, 0, texcoords.data());
 	}
-	glEnd();
+
+	// Draw triangles
+	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(newIndices.size()), GL_UNSIGNED_INT, newIndices.data());
 
 	glPopMatrix();
 }

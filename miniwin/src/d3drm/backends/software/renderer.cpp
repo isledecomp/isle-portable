@@ -2,6 +2,7 @@
 #include "d3drmrenderer_software.h"
 #include "ddsurface_impl.h"
 #include "mathutils.h"
+#include "meshutils.h"
 #include "miniwin.h"
 
 #include <SDL3/SDL.h>
@@ -145,14 +146,14 @@ void Direct3DRMSoftwareRenderer::BlendPixel(Uint8* pixelAddr, Uint8 r, Uint8 g, 
 	memcpy(pixelAddr, &blended, m_bytesPerPixel);
 }
 
-SDL_Color Direct3DRMSoftwareRenderer::ApplyLighting(const D3DRMVERTEX& vertex, const Appearance& appearance)
+SDL_Color Direct3DRMSoftwareRenderer::ApplyLighting(
+	const D3DVECTOR& position,
+	const D3DVECTOR& normal,
+	const Appearance& appearance
+)
 {
 	FColor specular = {0, 0, 0, 0};
 	FColor diffuse = {0, 0, 0, 0};
-
-	// Position and normal
-	D3DVECTOR position = vertex.position;
-	D3DVECTOR normal = Normalize(vertex.normal);
 
 	for (const auto& light : m_lights) {
 		FColor lightColor = light.color;
@@ -200,6 +201,16 @@ SDL_Color Direct3DRMSoftwareRenderer::ApplyLighting(const D3DRMVERTEX& vertex, c
 	};
 }
 
+inline float EdgeFloat(float x0, float y0, float x1, float y1, float x, float y)
+{
+	return (x - x0) * (y1 - y0) - (y - y0) * (x1 - x0);
+}
+
+inline float EdgeDouble(double x0, double y0, double x1, double y1, double x, double y)
+{
+	return (x - x0) * (y1 - y0) - (y - y0) * (x1 - x0);
+}
+
 void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 	const D3DRMVERTEX& v0,
 	const D3DRMVERTEX& v1,
@@ -234,19 +245,20 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 		return;
 	}
 
-	auto edge = [](double x0, double y0, double x1, double y1, double x, double y) {
-		return (x - x0) * (y1 - y0) - (y - y0) * (x1 - x0);
-	};
-	float area = edge(p0.x, p0.y, p1.x, p1.y, p2.x, p2.y);
+	// Cull backfaces
+	float area = EdgeFloat(p0.x, p0.y, p1.x, p1.y, p2.x, p2.y);
 	if (area >= 0) {
 		return;
 	}
 	float invArea = 1.0f / area;
 
-	// Per-vertex lighting using vertex normals
-	SDL_Color c0 = ApplyLighting(v0, appearance);
-	SDL_Color c1 = ApplyLighting(v1, appearance);
-	SDL_Color c2 = ApplyLighting(v2, appearance);
+	Uint8 r, g, b;
+	SDL_Color c0 = ApplyLighting(v0.position, v0.normal, appearance);
+	SDL_Color c1, c2;
+	if (!appearance.flat) {
+		c1 = ApplyLighting(v1.position, v1.normal, appearance);
+		c2 = ApplyLighting(v2.position, v2.normal, appearance);
+	}
 
 	Uint32 textureId = appearance.textureId;
 	int texturePitch;
@@ -270,12 +282,12 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 		for (int x = minX; x <= maxX; ++x) {
 			float px = x + 0.5f;
 			float py = y + 0.5f;
-			float w0 = edge(p1.x, p1.y, p2.x, p2.y, px, py) * invArea;
+			float w0 = EdgeDouble(p1.x, p1.y, p2.x, p2.y, px, py) * invArea;
 			if (w0 < 0.0f || w0 > 1.0f) {
 				continue;
 			}
 
-			float w1 = edge(p2.x, p2.y, p0.x, p0.y, px, py) * invArea;
+			float w1 = EdgeDouble(p2.x, p2.y, p0.x, p0.y, px, py) * invArea;
 			if (w1 < 0.0f || w1 > 1.0f - w0) {
 				continue;
 			}
@@ -289,10 +301,16 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 				continue;
 			}
 
-			// Interpolate color
-			Uint8 r = static_cast<Uint8>(w0 * c0.r + w1 * c1.r + w2 * c2.r);
-			Uint8 g = static_cast<Uint8>(w0 * c0.g + w1 * c1.g + w2 * c2.g);
-			Uint8 b = static_cast<Uint8>(w0 * c0.b + w1 * c1.b + w2 * c2.b);
+			if (appearance.flat) {
+				r = c0.r;
+				g = c0.g;
+				b = c0.b;
+			}
+			else {
+				r = static_cast<Uint8>(w0 * c0.r + w1 * c1.r + w2 * c2.r);
+				g = static_cast<Uint8>(w0 * c0.g + w1 * c1.g + w2 * c2.g);
+				b = static_cast<Uint8>(w0 * c0.b + w1 * c1.b + w2 * c2.b);
+			}
 			Uint8* pixelAddr = pixels + y * pitch + x * m_bytesPerPixel;
 
 			if (appearance.color.a == 255) {
@@ -321,8 +339,22 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 
 					Uint8* texelAddr = texels + texY * texturePitch + texX * m_bytesPerPixel;
 
-					Uint32 texelColor = 0;
-					memcpy(&texelColor, texelAddr, m_bytesPerPixel);
+					Uint32 texelColor;
+					switch (m_bytesPerPixel) {
+					case 1:
+						texelColor = *texelAddr;
+						break;
+					case 2:
+						texelColor = *(Uint16*) texelAddr;
+						break;
+					case 3:
+						// Manually build the 24-bit color (assuming byte order)
+						texelColor = texelAddr[0] | (texelAddr[1] << 8) | (texelAddr[2] << 16);
+						break;
+					case 4:
+						texelColor = *(Uint32*) texelAddr;
+						break;
+					}
 
 					Uint8 tr, tg, tb, ta;
 					SDL_GetRGBA(texelColor, m_format, m_palette, &tr, &tg, &tb, &ta);
@@ -452,7 +484,9 @@ HRESULT Direct3DRMSoftwareRenderer::BeginFrame(const D3DRMMATRIX4D& viewMatrix)
 
 void Direct3DRMSoftwareRenderer::SubmitDraw(
 	const D3DRMVERTEX* vertices,
-	const size_t count,
+	const size_t vertexCount,
+	const DWORD* indices,
+	const size_t indexCount,
 	const D3DRMMATRIX4D& worldMatrix,
 	const Matrix3x3& normalMatrix,
 	const Appearance& appearance
@@ -461,15 +495,42 @@ void Direct3DRMSoftwareRenderer::SubmitDraw(
 	D3DRMMATRIX4D mvMatrix;
 	MultiplyMatrix(mvMatrix, worldMatrix, m_viewMatrix);
 
-	for (size_t i = 0; i + 2 < count; i += 3) {
-		D3DRMVERTEX vrts[3];
-		for (size_t j = 0; j < 3; ++j) {
-			const D3DRMVERTEX& src = vertices[i + j];
-			vrts[j].position = TransformPoint(src.position, mvMatrix);
-			vrts[j].normal = Normalize(TransformNormal(src.normal, normalMatrix));
-			vrts[j].texCoord = src.texCoord;
-		}
-		DrawTriangleClipped(vrts, appearance);
+	std::vector<D3DRMVERTEX> newVertices;
+	std::vector<DWORD> newIndices;
+	if (appearance.flat) {
+		// FIXME move this to a one time mesh upload stage
+		FlattenSurfaces(
+			vertices,
+			vertexCount,
+			indices,
+			indexCount,
+			appearance.textureId != NO_TEXTURE_ID,
+			newVertices,
+			newIndices
+		);
+	}
+	else {
+		newVertices.assign(vertices, vertices + vertexCount);
+		newIndices.assign(indices, indices + indexCount);
+	}
+
+	// Pre-transform all vertex positions and normals
+	std::vector<D3DRMVERTEX> transformedVerts(newVertices.size());
+	for (size_t i = 0; i < newVertices.size(); ++i) {
+		const D3DRMVERTEX& src = newVertices[i];
+		D3DRMVERTEX& dst = transformedVerts[i];
+		dst.position = TransformPoint(src.position, mvMatrix);
+		// TODO defer normal transformation til lighting to allow culling first
+		dst.normal = Normalize(TransformNormal(src.normal, normalMatrix));
+		dst.texCoord = src.texCoord;
+	}
+
+	// Assemble triangles using index buffer
+	for (size_t i = 0; i + 2 < newIndices.size(); i += 3) {
+		DrawTriangleClipped(
+			{transformedVerts[newIndices[i]], transformedVerts[newIndices[i + 1]], transformedVerts[newIndices[i + 2]]},
+			appearance
+		);
 	}
 }
 
