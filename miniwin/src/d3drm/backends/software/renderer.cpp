@@ -540,9 +540,3 @@ HRESULT Direct3DRMSoftwareRenderer::FinalizeFrame()
 
 	return DD_OK;
 }
-
-HRESULT Direct3DRMSoftwareRenderer::GetDescription(char* buffer, int bufferSize)
-{
-	SDL_strlcpy(buffer, "Miniwin software renderer", bufferSize);
-	return DD_OK;
-}

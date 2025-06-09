@@ -580,14 +580,16 @@ MxResult IsleApp::SetupWindow()
 			LegoOmni::GetInstance()->GetInputManager()->SetUseJoystick(m_useJoystick);
 			LegoOmni::GetInstance()->GetInputManager()->SetJoystickIndex(m_joystickIndex);
 		}
-
-		IDirect3DRMMiniwinDevice* d3drmMiniwinDev = GetD3DRMMiniwinDevice();
-		if (d3drmMiniwinDev) {
-			char buffer[256];
-			if (SUCCEEDED(d3drmMiniwinDev->GetDescription(buffer, sizeof(buffer)))) {
-				SDL_Log("D3DRM device: %s", buffer);
-			}
-			d3drmMiniwinDev->Release();
+		MxDirect3D* d3d = LegoOmni::GetInstance()->GetVideoManager()->GetDirect3D();
+		if (d3d) {
+			SDL_Log(
+				"Direct3D driver name=\"%s\" description=\"%s\"",
+				d3d->GetDeviceName().c_str(),
+				d3d->GetDeviceDescription().c_str()
+			);
+		}
+		else {
+			SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Failed to get D3D device name and description");
 		}
 	}
 

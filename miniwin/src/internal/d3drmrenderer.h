@@ -60,7 +60,6 @@ public:
 		m_shininessFactor = factor;
 		return DD_OK;
 	}
-	virtual HRESULT GetDescription(char* buffer, int bufferSize) = 0;
 
 protected:
 	float m_shininessFactor = 1.f;

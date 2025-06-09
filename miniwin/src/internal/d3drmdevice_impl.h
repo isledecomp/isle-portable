@@ -35,7 +35,6 @@ struct Direct3DRMDevice2Impl : public Direct3DRMObjectBaseImpl<IDirect3DRMDevice
 	// IDirect3DRMMiniwinDevice interface
 	float GetShininessFactor() override;
 	HRESULT SetShininessFactor(float factor) override;
-	HRESULT GetDescription(char* buffer, int bufferSize) override;
 
 	Direct3DRMRenderer* m_renderer;
 

@@ -411,9 +411,3 @@ HRESULT OpenGL15Renderer::FinalizeFrame()
 
 	return DD_OK;
 }
-
-HRESULT OpenGL15Renderer::GetDescription(char* buffer, int bufferSize)
-{
-	SDL_strlcpy(buffer, "Miniwin OpenGL 1.5 renderer", bufferSize);
-	return DD_OK;
-}

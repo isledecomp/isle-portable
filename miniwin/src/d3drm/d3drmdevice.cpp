@@ -148,8 +148,3 @@ HRESULT Direct3DRMDevice2Impl::SetShininessFactor(float factor)
 {
 	return m_renderer->SetShininessFactor(factor);
 }
-
-HRESULT Direct3DRMDevice2Impl::GetDescription(char* buffer, int bufferSize)
-{
-	return m_renderer->GetDescription(buffer, bufferSize);
-}

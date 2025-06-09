@@ -772,9 +772,3 @@ HRESULT Direct3DRMSDL3GPURenderer::FinalizeFrame()
 
 	return DD_OK;
 }
-
-HRESULT Direct3DRMSDL3GPURenderer::GetDescription(char* buffer, int bufferSize)
-{
-	SDL_strlcpy(buffer, "Miniwin SDL3_gpu renderer", bufferSize);
-	return DD_OK;
-}
