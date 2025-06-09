@@ -36,7 +36,7 @@ DECOMP_SIZE_ASSERT(LegoWorldPresenter, 0x54)
 MxS32 g_legoWorldPresenterQuality = 1;
 
 // GLOBAL: LEGO1 0x100f75d8
-Sint64 g_wdbOffset = 0;
+Sint64 g_wdbSkipGlobalPartsOffset = 0;
 
 // FUNCTION: LEGO1 0x100665b0
 void LegoWorldPresenter::configureLegoWorldPresenter(MxS32 p_legoWorldPresenterQuality)
@@ -208,7 +208,7 @@ MxResult LegoWorldPresenter::LoadWorld(char* p_worldName, LegoWorld* p_world)
 		return FAILURE;
 	}
 
-	if (g_wdbOffset == 0) {
+	if (g_wdbSkipGlobalPartsOffset == 0) {
 		if (SDL_ReadIO(wdbFile, &size, sizeof(MxU32)) != sizeof(MxU32)) {
 			return FAILURE;
 		}
@@ -248,10 +248,10 @@ MxResult LegoWorldPresenter::LoadWorld(char* p_worldName, LegoWorld* p_world)
 
 		delete[] buff;
 
-		g_wdbOffset = SDL_TellIO(wdbFile);
+		g_wdbSkipGlobalPartsOffset = SDL_TellIO(wdbFile);
 	}
 	else {
-		if (SDL_SeekIO(wdbFile, g_wdbOffset, SDL_IO_SEEK_SET) != g_wdbOffset) {
+		if (SDL_SeekIO(wdbFile, g_wdbSkipGlobalPartsOffset, SDL_IO_SEEK_SET) != g_wdbSkipGlobalPartsOffset) {
 			return FAILURE;
 		}
 	}
