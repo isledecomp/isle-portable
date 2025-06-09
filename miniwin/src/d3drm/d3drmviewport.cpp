@@ -687,8 +687,8 @@ bool RayIntersectsMeshTriangles(
 {
 	DWORD groupCount = mesh->GetGroupCount();
 	for (DWORD g = 0; g < groupCount; ++g) {
-		DWORD vtxCount, faceCount, indexCount;
-		mesh->GetGroup(g, &vtxCount, &faceCount, nullptr, &indexCount, nullptr);
+		DWORD vtxCount, indexCount;
+		mesh->GetGroup(g, &vtxCount, nullptr, nullptr, &indexCount, nullptr);
 
 		std::vector<D3DRMVERTEX> vertices(vtxCount);
 		mesh->GetVertices(g, 0, vtxCount, vertices.data());
@@ -696,7 +696,7 @@ bool RayIntersectsMeshTriangles(
 		mesh->GetGroup(g, nullptr, nullptr, nullptr, nullptr, indices.data());
 
 		// Iterate over each face and do ray-triangle tests
-		for (DWORD fi = 0; fi < faceCount; fi += 3) {
+		for (DWORD fi = 0; fi < indexCount; fi += 3) {
 			DWORD i0 = indices[fi + 0];
 			DWORD i1 = indices[fi + 1];
 			DWORD i2 = indices[fi + 2];
