@@ -29,8 +29,8 @@ add_library(miniwin STATIC EXCLUDE_FROM_ALL
 find_package(OpenGL)
 find_package(GLEW)
 if(OpenGL_FOUND AND GLEW_FOUND)
-  target_sources(miniwin PRIVATE src/d3drm/backends/opengl15/renderer.cpp)
-  target_compile_definitions(miniwin PRIVATE USE_OPENGL15)
+  target_sources(miniwin PRIVATE src/d3drm/backends/opengl1/renderer.cpp)
+  target_compile_definitions(miniwin PRIVATE USE_OPENGL1)
   # Find and link OpenGL (1.5)
   target_link_libraries(miniwin PRIVATE OpenGL::GL)
   # Glew is used for getting a FBO for off screen rendering

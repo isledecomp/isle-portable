@@ -1,4 +1,4 @@
-#include "d3drmrenderer_opengl15.h"
+#include "d3drmrenderer_opengl1.h"
 #include "ddraw_impl.h"
 #include "ddsurface_impl.h"
 #include "mathutils.h"
@@ -9,16 +9,16 @@
 #include <cstring>
 #include <vector>
 
-Direct3DRMRenderer* OpenGL15Renderer::Create(DWORD width, DWORD height)
+Direct3DRMRenderer* OpenGL1Renderer::Create(DWORD width, DWORD height)
 {
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
 
 	SDL_Window* window = DDWindow;
 	bool testWindow = false;
 	if (!window) {
-		window = SDL_CreateWindow("OpenGL 1.5 test", width, height, SDL_WINDOW_HIDDEN | SDL_WINDOW_OPENGL);
+		window = SDL_CreateWindow("OpenGL 1.2 test", width, height, SDL_WINDOW_HIDDEN | SDL_WINDOW_OPENGL);
 		testWindow = true;
 	}
 
@@ -39,12 +39,16 @@ Direct3DRMRenderer* OpenGL15Renderer::Create(DWORD width, DWORD height)
 		return nullptr;
 	}
 
+	if (!GLEW_EXT_framebuffer_object) {
+		if (testWindow) {
+			SDL_DestroyWindow(window);
+		}
+		return nullptr;
+	}
+
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CCW);
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_LIGHTING);
-	glEnable(GL_COLOR_MATERIAL);
 
 	// Setup FBO
 	GLuint fbo;
@@ -76,10 +80,10 @@ Direct3DRMRenderer* OpenGL15Renderer::Create(DWORD width, DWORD height)
 		SDL_DestroyWindow(window);
 	}
 
-	return new OpenGL15Renderer(width, height, context, fbo, colorTex, depthRb);
+	return new OpenGL1Renderer(width, height, context, fbo, colorTex, depthRb);
 }
 
-OpenGL15Renderer::OpenGL15Renderer(
+OpenGL1Renderer::OpenGL1Renderer(
 	int width,
 	int height,
 	SDL_GLContext context,
@@ -90,32 +94,33 @@ OpenGL15Renderer::OpenGL15Renderer(
 	: m_width(width), m_height(height), m_context(context), m_fbo(fbo), m_colorTex(colorTex), m_depthRb(depthRb)
 {
 	m_renderedImage = SDL_CreateSurface(m_width, m_height, SDL_PIXELFORMAT_ABGR8888);
+	m_useVBOs = GLEW_ARB_vertex_buffer_object;
 }
 
-OpenGL15Renderer::~OpenGL15Renderer()
+OpenGL1Renderer::~OpenGL1Renderer()
 {
 	if (m_renderedImage) {
 		SDL_DestroySurface(m_renderedImage);
 	}
 }
 
-void OpenGL15Renderer::PushLights(const SceneLight* lightsArray, size_t count)
+void OpenGL1Renderer::PushLights(const SceneLight* lightsArray, size_t count)
 {
 	m_lights.assign(lightsArray, lightsArray + count);
 }
 
-void OpenGL15Renderer::SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back)
+void OpenGL1Renderer::SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back)
 {
 	memcpy(&m_projection, projection, sizeof(D3DRMMATRIX4D));
 	m_projection[1][1] *= -1.0f; // OpenGL is upside down
 }
 
 struct TextureDestroyContextGL {
-	OpenGL15Renderer* renderer;
+	OpenGL1Renderer* renderer;
 	Uint32 textureId;
 };
 
-void OpenGL15Renderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture)
+void OpenGL1Renderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture)
 {
 	auto* ctx = new TextureDestroyContextGL{this, id};
 	texture->AddDestroyCallback(
@@ -133,7 +138,7 @@ void OpenGL15Renderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* 
 	);
 }
 
-Uint32 OpenGL15Renderer::GetTextureId(IDirect3DRMTexture* iTexture)
+Uint32 OpenGL1Renderer::GetTextureId(IDirect3DRMTexture* iTexture)
 {
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
 	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
@@ -192,7 +197,7 @@ Uint32 OpenGL15Renderer::GetTextureId(IDirect3DRMTexture* iTexture)
 	return (Uint32) (m_textures.size() - 1);
 }
 
-GLMeshCacheEntry GLUploadMesh(const MeshGroup& meshGroup)
+GLMeshCacheEntry GLUploadMesh(const MeshGroup& meshGroup, bool useVBOs)
 {
 	GLMeshCacheEntry cache{&meshGroup, meshGroup.version};
 
@@ -211,14 +216,16 @@ GLMeshCacheEntry GLUploadMesh(const MeshGroup& meshGroup)
 		);
 	}
 	else {
-		vertices.assign(meshGroup.vertices.begin(), meshGroup.vertices.end());
-		cache.indices.assign(meshGroup.indices.begin(), meshGroup.indices.end());
+		vertices = meshGroup.vertices;
+		cache.indices = meshGroup.indices;
 	}
 
-	cache.texcoords.resize(vertices.size());
-	std::transform(vertices.begin(), vertices.end(), cache.texcoords.begin(), [](const D3DRMVERTEX& v) {
-		return v.texCoord;
-	});
+	if (meshGroup.texture != nullptr) {
+		cache.texcoords.resize(vertices.size());
+		std::transform(vertices.begin(), vertices.end(), cache.texcoords.begin(), [](const D3DRMVERTEX& v) {
+			return v.texCoord;
+		});
+	}
 	cache.positions.resize(vertices.size());
 	std::transform(vertices.begin(), vertices.end(), cache.positions.begin(), [](const D3DRMVERTEX& v) {
 		return v.position;
@@ -228,40 +235,82 @@ GLMeshCacheEntry GLUploadMesh(const MeshGroup& meshGroup)
 		return v.normal;
 	});
 
+	if (useVBOs) {
+		glGenBuffers(1, &cache.vboPositions);
+		glBindBuffer(GL_ARRAY_BUFFER, cache.vboPositions);
+		glBufferData(
+			GL_ARRAY_BUFFER,
+			cache.positions.size() * sizeof(D3DVECTOR),
+			cache.positions.data(),
+			GL_STATIC_DRAW
+		);
+
+		glGenBuffers(1, &cache.vboNormals);
+		glBindBuffer(GL_ARRAY_BUFFER, cache.vboNormals);
+		glBufferData(GL_ARRAY_BUFFER, cache.normals.size() * sizeof(D3DVECTOR), cache.normals.data(), GL_STATIC_DRAW);
+
+		if (meshGroup.texture != nullptr) {
+			glGenBuffers(1, &cache.vboTexcoords);
+			glBindBuffer(GL_ARRAY_BUFFER, cache.vboTexcoords);
+			glBufferData(
+				GL_ARRAY_BUFFER,
+				cache.texcoords.size() * sizeof(TexCoord),
+				cache.texcoords.data(),
+				GL_STATIC_DRAW
+			);
+		}
+
+		glGenBuffers(1, &cache.ibo);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cache.ibo);
+		glBufferData(
+			GL_ELEMENT_ARRAY_BUFFER,
+			cache.indices.size() * sizeof(Uint32),
+			cache.indices.data(),
+			GL_STATIC_DRAW
+		);
+	}
+
 	return cache;
 }
 
 struct GLMeshDestroyContext {
-	OpenGL15Renderer* renderer;
+	OpenGL1Renderer* renderer;
 	Uint32 id;
 };
 
-void OpenGL15Renderer::AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh)
+void OpenGL1Renderer::AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh)
 {
 	auto* ctx = new GLMeshDestroyContext{this, id};
 	mesh->AddDestroyCallback(
 		[](IDirect3DRMObject*, void* arg) {
 			auto* ctx = static_cast<GLMeshDestroyContext*>(arg);
-			ctx->renderer->m_meshs[ctx->id].meshGroup = nullptr;
+			auto& cache = ctx->renderer->m_meshs[ctx->id];
+			cache.meshGroup = nullptr;
+			if (ctx->renderer->m_useVBOs) {
+				glDeleteBuffers(1, &cache.vboPositions);
+				glDeleteBuffers(1, &cache.vboNormals);
+				glDeleteBuffers(1, &cache.vboTexcoords);
+				glDeleteBuffers(1, &cache.ibo);
+			}
 			delete ctx;
 		},
 		ctx
 	);
 }
 
-Uint32 OpenGL15Renderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup)
+Uint32 OpenGL1Renderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup)
 {
 	for (Uint32 i = 0; i < m_meshs.size(); ++i) {
 		auto& cache = m_meshs[i];
 		if (cache.meshGroup == meshGroup) {
 			if (cache.version != meshGroup->version) {
-				cache = std::move(GLUploadMesh(*meshGroup));
+				cache = std::move(GLUploadMesh(*meshGroup, m_useVBOs));
 			}
 			return i;
 		}
 	}
 
-	auto newCache = GLUploadMesh(*meshGroup);
+	auto newCache = GLUploadMesh(*meshGroup, m_useVBOs);
 
 	for (Uint32 i = 0; i < m_meshs.size(); ++i) {
 		auto& cache = m_meshs[i];
@@ -277,17 +326,17 @@ Uint32 OpenGL15Renderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshG
 	return (Uint32) (m_meshs.size() - 1);
 }
 
-DWORD OpenGL15Renderer::GetWidth()
+DWORD OpenGL1Renderer::GetWidth()
 {
 	return m_width;
 }
 
-DWORD OpenGL15Renderer::GetHeight()
+DWORD OpenGL1Renderer::GetHeight()
 {
 	return m_height;
 }
 
-void OpenGL15Renderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc)
+void OpenGL1Renderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc)
 {
 	halDesc->dcmColorModel = D3DCOLORMODEL::RGB;
 	halDesc->dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
@@ -300,12 +349,12 @@ void OpenGL15Renderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc)
 	memset(helDesc, 0, sizeof(D3DDEVICEDESC));
 }
 
-const char* OpenGL15Renderer::GetName()
+const char* OpenGL1Renderer::GetName()
 {
-	return "OpenGL 1.5 HAL";
+	return "OpenGL 1.2 HAL";
 }
 
-HRESULT OpenGL15Renderer::BeginFrame(const D3DRMMATRIX4D& viewMatrix)
+HRESULT OpenGL1Renderer::BeginFrame(const D3DRMMATRIX4D& viewMatrix)
 {
 	if (!DDBackBuffer) {
 		return DDERR_GENERIC;
@@ -390,7 +439,7 @@ HRESULT OpenGL15Renderer::BeginFrame(const D3DRMMATRIX4D& viewMatrix)
 	return DD_OK;
 }
 
-void OpenGL15Renderer::SubmitDraw(
+void OpenGL1Renderer::SubmitDraw(
 	DWORD meshId,
 	const D3DRMMATRIX4D& worldMatrix,
 	const Matrix3x3& normalMatrix,
@@ -433,7 +482,6 @@ void OpenGL15Renderer::SubmitDraw(
 		glEnable(GL_TEXTURE_2D);
 		glBindTexture(GL_TEXTURE_2D, tex.glTextureId);
 		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-		glTexCoordPointer(2, GL_FLOAT, 0, mesh.texcoords.data());
 	}
 	else {
 		glDisable(GL_TEXTURE_2D);
@@ -441,18 +489,40 @@ void OpenGL15Renderer::SubmitDraw(
 	}
 
 	glEnableClientState(GL_VERTEX_ARRAY);
-	glVertexPointer(3, GL_FLOAT, 0, mesh.positions.data());
-
 	glEnableClientState(GL_NORMAL_ARRAY);
-	glNormalPointer(GL_FLOAT, 0, mesh.normals.data());
 
-	// Draw triangles
-	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh.indices.size()), GL_UNSIGNED_INT, mesh.indices.data());
+	if (m_useVBOs) {
+		glBindBuffer(GL_ARRAY_BUFFER, mesh.vboPositions);
+		glVertexPointer(3, GL_FLOAT, 0, nullptr);
+
+		glBindBuffer(GL_ARRAY_BUFFER, mesh.vboNormals);
+		glNormalPointer(GL_FLOAT, 0, nullptr);
+
+		if (appearance.textureId != NO_TEXTURE_ID) {
+			glBindBuffer(GL_ARRAY_BUFFER, mesh.vboTexcoords);
+			glTexCoordPointer(2, GL_FLOAT, 0, nullptr);
+		}
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ibo);
+		glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh.indices.size()), GL_UNSIGNED_INT, nullptr);
+
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	}
+	else {
+		glVertexPointer(3, GL_FLOAT, 0, mesh.positions.data());
+		glNormalPointer(GL_FLOAT, 0, mesh.normals.data());
+		if (appearance.textureId != NO_TEXTURE_ID) {
+			glTexCoordPointer(2, GL_FLOAT, 0, mesh.texcoords.data());
+		}
+
+		glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh.indices.size()), GL_UNSIGNED_INT, mesh.indices.data());
+	}
 
 	glPopMatrix();
 }
 
-HRESULT OpenGL15Renderer::FinalizeFrame()
+HRESULT OpenGL1Renderer::FinalizeFrame()
 {
 	glReadPixels(0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, m_renderedImage->pixels);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
