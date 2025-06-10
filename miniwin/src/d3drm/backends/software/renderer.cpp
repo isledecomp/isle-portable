@@ -554,6 +554,10 @@ HRESULT Direct3DRMSoftwareRenderer::BeginFrame(const D3DRMMATRIX4D& viewMatrix)
 	return DD_OK;
 }
 
+void Direct3DRMSoftwareRenderer::EnableTransparency()
+{
+}
+
 void Direct3DRMSoftwareRenderer::SubmitDraw(
 	DWORD meshId,
 	const D3DRMMATRIX4D& worldMatrix,

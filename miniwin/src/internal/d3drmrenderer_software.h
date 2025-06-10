@@ -36,6 +36,7 @@ public:
 	void GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc) override;
 	const char* GetName() override;
 	HRESULT BeginFrame(const D3DRMMATRIX4D& viewMatrix) override;
+	void EnableTransparency() override;
 	void SubmitDraw(
 		DWORD meshId,
 		const D3DRMMATRIX4D& worldMatrix,

@@ -735,6 +735,11 @@ HRESULT Direct3DRMSDL3GPURenderer::BeginFrame(const D3DRMMATRIX4D& viewMatrix)
 	return DD_OK;
 }
 
+void Direct3DRMSDL3GPURenderer::EnableTransparency()
+{
+	SDL_BindGPUGraphicsPipeline(m_renderPass, m_transparentPipeline);
+}
+
 void Direct3DRMSDL3GPURenderer::SubmitDraw(
 	DWORD meshId,
 	const D3DRMMATRIX4D& worldMatrix,
@@ -742,9 +747,6 @@ void Direct3DRMSDL3GPURenderer::SubmitDraw(
 	const Appearance& appearance
 )
 {
-	// TODO only switch piplinen after all opaque's have been rendered
-	SDL_BindGPUGraphicsPipeline(m_renderPass, appearance.color.a == 255 ? m_opaquePipeline : m_transparentPipeline);
-
 	D3DRMMATRIX4D worldViewMatrix;
 	MultiplyMatrix(worldViewMatrix, worldMatrix, m_viewMatrix);
 	memcpy(&m_uniforms.worldViewMatrix, worldViewMatrix, sizeof(D3DRMMATRIX4D));
