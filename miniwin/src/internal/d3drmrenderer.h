@@ -1,5 +1,6 @@
 #pragma once
 
+#include "d3drmmesh_impl.h"
 #include "mathutils.h"
 #include "miniwin/d3drm.h"
 #include "miniwin/miniwindevice.h"
@@ -35,16 +36,14 @@ public:
 	virtual void PushLights(const SceneLight* vertices, size_t count) = 0;
 	virtual void SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back) = 0;
 	virtual Uint32 GetTextureId(IDirect3DRMTexture* texture) = 0;
+	virtual Uint32 GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup) = 0;
 	virtual DWORD GetWidth() = 0;
 	virtual DWORD GetHeight() = 0;
 	virtual void GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc) = 0;
 	virtual const char* GetName() = 0;
 	virtual HRESULT BeginFrame(const D3DRMMATRIX4D& viewMatrix) = 0;
 	virtual void SubmitDraw(
-		const D3DRMVERTEX* vertices,
-		const size_t vertexCount,
-		const DWORD* indices,
-		const size_t indexCount,
+		DWORD meshId,
 		const D3DRMMATRIX4D& worldMatrix,
 		const Matrix3x3& normalMatrix,
 		const Appearance& appearance

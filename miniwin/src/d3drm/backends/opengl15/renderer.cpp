@@ -192,6 +192,91 @@ Uint32 OpenGL15Renderer::GetTextureId(IDirect3DRMTexture* iTexture)
 	return (Uint32) (m_textures.size() - 1);
 }
 
+GLMeshCacheEntry GLUploadMesh(const MeshGroup& meshGroup)
+{
+	GLMeshCacheEntry cache{&meshGroup, meshGroup.version};
+
+	cache.flat = meshGroup.quality == D3DRMRENDER_FLAT || meshGroup.quality == D3DRMRENDER_UNLITFLAT;
+
+	std::vector<D3DRMVERTEX> vertices;
+	if (cache.flat) {
+		FlattenSurfaces(
+			meshGroup.vertices.data(),
+			meshGroup.vertices.size(),
+			meshGroup.indices.data(),
+			meshGroup.indices.size(),
+			meshGroup.texture != nullptr,
+			vertices,
+			cache.indices
+		);
+	}
+	else {
+		vertices.assign(meshGroup.vertices.begin(), meshGroup.vertices.end());
+		cache.indices.assign(meshGroup.indices.begin(), meshGroup.indices.end());
+	}
+
+	cache.texcoords.resize(vertices.size());
+	std::transform(vertices.begin(), vertices.end(), cache.texcoords.begin(), [](const D3DRMVERTEX& v) {
+		return v.texCoord;
+	});
+	cache.positions.resize(vertices.size());
+	std::transform(vertices.begin(), vertices.end(), cache.positions.begin(), [](const D3DRMVERTEX& v) {
+		return v.position;
+	});
+	cache.normals.resize(vertices.size());
+	std::transform(vertices.begin(), vertices.end(), cache.normals.begin(), [](const D3DRMVERTEX& v) {
+		return v.normal;
+	});
+
+	return cache;
+}
+
+struct GLMeshDestroyContext {
+	OpenGL15Renderer* renderer;
+	Uint32 id;
+};
+
+void OpenGL15Renderer::AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh)
+{
+	auto* ctx = new GLMeshDestroyContext{this, id};
+	mesh->AddDestroyCallback(
+		[](IDirect3DRMObject*, void* arg) {
+			auto* ctx = static_cast<GLMeshDestroyContext*>(arg);
+			ctx->renderer->m_meshs[ctx->id].meshGroup = nullptr;
+			delete ctx;
+		},
+		ctx
+	);
+}
+
+Uint32 OpenGL15Renderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup)
+{
+	for (Uint32 i = 0; i < m_meshs.size(); ++i) {
+		auto& cache = m_meshs[i];
+		if (cache.meshGroup == meshGroup) {
+			if (cache.version != meshGroup->version) {
+				cache = std::move(GLUploadMesh(*meshGroup));
+			}
+			return i;
+		}
+	}
+
+	auto newCache = GLUploadMesh(*meshGroup);
+
+	for (Uint32 i = 0; i < m_meshs.size(); ++i) {
+		auto& cache = m_meshs[i];
+		if (!cache.meshGroup) {
+			cache = std::move(newCache);
+			AddMeshDestroyCallback(i, mesh);
+			return i;
+		}
+	}
+
+	m_meshs.push_back(std::move(newCache));
+	AddMeshDestroyCallback((Uint32) (m_meshs.size() - 1), mesh);
+	return (Uint32) (m_meshs.size() - 1);
+}
+
 DWORD OpenGL15Renderer::GetWidth()
 {
 	return m_width;
@@ -306,10 +391,7 @@ HRESULT OpenGL15Renderer::BeginFrame(const D3DRMMATRIX4D& viewMatrix)
 }
 
 void OpenGL15Renderer::SubmitDraw(
-	const D3DRMVERTEX* vertices,
-	const size_t vertexCount,
-	const DWORD* indices,
-	const size_t indexCount,
+	DWORD meshId,
 	const D3DRMMATRIX4D& worldMatrix,
 	const Matrix3x3& normalMatrix,
 	const Appearance& appearance
@@ -323,47 +405,9 @@ void OpenGL15Renderer::SubmitDraw(
 	glLoadMatrixf(&mvMatrix[0][0]);
 	glEnable(GL_NORMALIZE);
 
-	std::vector<D3DRMVERTEX> newVertices;
-	std::vector<DWORD> newIndices;
-	if (appearance.flat) {
-		glShadeModel(GL_FLAT);
-		// FIXME move this to a one time mesh upload stage
-		FlattenSurfaces(
-			vertices,
-			vertexCount,
-			indices,
-			indexCount,
-			appearance.textureId != NO_TEXTURE_ID,
-			newVertices,
-			newIndices
-		);
-	}
-	else {
-		glShadeModel(GL_SMOOTH);
-		newVertices.assign(vertices, vertices + vertexCount);
-		newIndices.assign(indices, indices + indexCount);
-	}
-
-	// Bind texture if present
-	std::vector<TexCoord> texcoords;
-	if (appearance.textureId != NO_TEXTURE_ID) {
-		auto& tex = m_textures[appearance.textureId];
-		glEnable(GL_TEXTURE_2D);
-		glBindTexture(GL_TEXTURE_2D, tex.glTextureId);
-		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-		texcoords.resize(newVertices.size());
-		std::transform(newVertices.begin(), newVertices.end(), texcoords.begin(), [](const D3DRMVERTEX& v) {
-			return v.texCoord;
-		});
-	}
-	else {
-		glDisable(GL_TEXTURE_2D);
-		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-	}
-
 	glColor4ub(appearance.color.r, appearance.color.g, appearance.color.b, appearance.color.a);
 
-	float shininess = appearance.shininess;
+	float shininess = appearance.shininess * m_shininessFactor;
 	glMaterialf(GL_FRONT, GL_SHININESS, shininess);
 	if (shininess != 0.0f) {
 		GLfloat whiteSpec[] = {shininess, shininess, shininess, shininess};
@@ -374,29 +418,36 @@ void OpenGL15Renderer::SubmitDraw(
 		glMaterialfv(GL_FRONT, GL_SPECULAR, noSpec);
 	}
 
-	std::vector<D3DVECTOR> positions;
-	positions.resize(newVertices.size());
-	std::transform(newVertices.begin(), newVertices.end(), positions.begin(), [](const D3DRMVERTEX& v) {
-		return v.position;
-	});
-	std::vector<D3DVECTOR> normals;
-	normals.resize(newVertices.size());
-	std::transform(newVertices.begin(), newVertices.end(), normals.begin(), [](const D3DRMVERTEX& v) {
-		return v.normal;
-	});
+	auto& mesh = m_meshs[meshId];
 
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glVertexPointer(3, GL_FLOAT, 0, positions.data());
-
-	glEnableClientState(GL_NORMAL_ARRAY);
-	glNormalPointer(GL_FLOAT, 0, normals.data());
-
-	if (appearance.textureId != NO_TEXTURE_ID) {
-		glTexCoordPointer(2, GL_FLOAT, 0, texcoords.data());
+	if (mesh.flat) {
+		glShadeModel(GL_FLAT);
+	}
+	else {
+		glShadeModel(GL_SMOOTH);
 	}
 
+	// Bind texture if present
+	if (appearance.textureId != NO_TEXTURE_ID) {
+		auto& tex = m_textures[appearance.textureId];
+		glEnable(GL_TEXTURE_2D);
+		glBindTexture(GL_TEXTURE_2D, tex.glTextureId);
+		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+		glTexCoordPointer(2, GL_FLOAT, 0, mesh.texcoords.data());
+	}
+	else {
+		glDisable(GL_TEXTURE_2D);
+		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	}
+
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glVertexPointer(3, GL_FLOAT, 0, mesh.positions.data());
+
+	glEnableClientState(GL_NORMAL_ARRAY);
+	glNormalPointer(GL_FLOAT, 0, mesh.normals.data());
+
 	// Draw triangles
-	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(newIndices.size()), GL_UNSIGNED_INT, newIndices.data());
+	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh.indices.size()), GL_UNSIGNED_INT, mesh.indices.data());
 
 	glPopMatrix();
 }

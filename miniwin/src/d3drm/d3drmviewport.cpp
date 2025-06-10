@@ -180,13 +180,31 @@ void ExtractFrustumPlanes(const D3DRMMATRIX4D& m)
 	}
 }
 
-bool IsBoxInFrustum(const D3DVECTOR corners[8], const Plane planes[6])
+bool IsMeshInFrustum(Direct3DRMMeshImpl* mesh, const D3DRMMATRIX4D& worldMatrix)
 {
+	D3DRMBOX box;
+	mesh->GetBox(&box);
+
+	D3DVECTOR boxCorners[8] = {
+		{box.min.x, box.min.y, box.min.z},
+		{box.min.x, box.min.y, box.max.z},
+		{box.min.x, box.max.y, box.min.z},
+		{box.min.x, box.max.y, box.max.z},
+		{box.max.x, box.min.y, box.min.z},
+		{box.max.x, box.min.y, box.max.z},
+		{box.max.x, box.max.y, box.min.z},
+		{box.max.x, box.max.y, box.max.z},
+	};
+
+	for (D3DVECTOR& corner : boxCorners) {
+		corner = TransformPoint(corner, worldMatrix);
+	}
+
 	for (int i = 0; i < 6; ++i) {
 		int out = 0;
 		for (int j = 0; j < 8; ++j) {
-			float dist = planes[i].normal.x * corners[j].x + planes[i].normal.y * corners[j].y +
-						 planes[i].normal.z * corners[j].z + planes[i].d;
+			float dist = frustumPlanes[i].normal.x * boxCorners[j].x + frustumPlanes[i].normal.y * boxCorners[j].y +
+						 frustumPlanes[i].normal.z * boxCorners[j].z + frustumPlanes[i].d;
 			if (dist < 0.0f) {
 				++out;
 			}
@@ -210,8 +228,6 @@ void Direct3DRMViewportImpl::CollectMeshesFromFrame(IDirect3DRMFrame* frame, D3D
 	Matrix3x3 worldMatrixInvert;
 	D3DRMMatrixInvertForNormal(worldMatrixInvert, worldMatrix);
 
-	const float shininessFactor = m_renderer->GetShininessFactor();
-
 	IDirect3DRMVisualArray* visuals = nullptr;
 	frame->GetVisuals(&visuals);
 	DWORD n = visuals->GetSize();
@@ -230,63 +246,24 @@ void Direct3DRMViewportImpl::CollectMeshesFromFrame(IDirect3DRMFrame* frame, D3D
 
 		Direct3DRMMeshImpl* mesh = nullptr;
 		visual->QueryInterface(IID_IDirect3DRMMesh, (void**) &mesh);
-		if (!mesh) {
-			visual->Release();
-			continue;
-		}
-
-		D3DRMBOX box;
-		mesh->GetBox(&box);
-		D3DVECTOR boxCorners[8] = {
-			{box.min.x, box.min.y, box.min.z},
-			{box.min.x, box.min.y, box.max.z},
-			{box.min.x, box.max.y, box.min.z},
-			{box.min.x, box.max.y, box.max.z},
-			{box.max.x, box.min.y, box.min.z},
-			{box.max.x, box.min.y, box.max.z},
-			{box.max.x, box.max.y, box.min.z},
-			{box.max.x, box.max.y, box.max.z},
-		};
-		for (D3DVECTOR& boxCorner : boxCorners) {
-			boxCorner = TransformPoint(boxCorner, worldMatrix);
-		}
-		if (!IsBoxInFrustum(boxCorners, frustumPlanes)) {
+		if (mesh) {
+			if (IsMeshInFrustum(mesh, worldMatrix)) {
+				DWORD groupCount = mesh->GetGroupCount();
+				for (DWORD gi = 0; gi < groupCount; ++gi) {
+					const MeshGroup& meshGroup = mesh->GetGroup(gi);
+					m_renderer->SubmitDraw(
+						m_renderer->GetMeshId(mesh, &meshGroup),
+						worldMatrix,
+						worldMatrixInvert,
+						{meshGroup.color,
+						 meshGroup.material ? meshGroup.material->GetPower() : 0.0f,
+						 meshGroup.texture ? m_renderer->GetTextureId(meshGroup.texture) : NO_TEXTURE_ID,
+						 meshGroup.quality == D3DRMRENDER_FLAT || meshGroup.quality == D3DRMRENDER_UNLITFLAT}
+					);
+				}
+			}
 			mesh->Release();
-			visual->Release();
-			continue;
 		}
-
-		DWORD groupCount = mesh->GetGroupCount();
-		for (DWORD gi = 0; gi < groupCount; ++gi) {
-			const MeshGroup& meshGroup = mesh->GetGroup(gi);
-
-			Uint32 textureId = NO_TEXTURE_ID;
-			if (meshGroup.texture) {
-				textureId = m_renderer->GetTextureId(meshGroup.texture);
-			}
-
-			float shininess = 0.0f;
-			if (meshGroup.material) {
-				shininess = meshGroup.material->GetPower() * shininessFactor;
-			}
-
-			m_renderer->SubmitDraw(
-				meshGroup.vertices.data(),
-				meshGroup.vertices.size(),
-				meshGroup.indices.data(),
-				meshGroup.indices.size(),
-				worldMatrix,
-				worldMatrixInvert,
-				{{static_cast<Uint8>((meshGroup.color >> 16) & 0xFF),
-				  static_cast<Uint8>((meshGroup.color >> 8) & 0xFF),
-				  static_cast<Uint8>((meshGroup.color >> 0) & 0xFF),
-				  static_cast<Uint8>((meshGroup.color >> 24) & 0xFF)},
-				 shininess,
-				 textureId,
-				 meshGroup.quality == D3DRMRENDER_FLAT || meshGroup.quality == D3DRMRENDER_UNLITFLAT}
-			);
-		}
-		mesh->Release();
 		visual->Release();
 	}
 	visuals->Release();

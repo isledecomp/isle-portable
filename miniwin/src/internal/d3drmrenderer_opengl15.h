@@ -16,6 +16,16 @@ struct GLTextureCacheEntry {
 	GLuint glTextureId;
 };
 
+struct GLMeshCacheEntry {
+	const MeshGroup* meshGroup;
+	int version;
+	bool flat;
+	std::vector<D3DVECTOR> positions;
+	std::vector<D3DVECTOR> normals;
+	std::vector<TexCoord> texcoords;
+	std::vector<DWORD> indices;
+};
+
 class OpenGL15Renderer : public Direct3DRMRenderer {
 public:
 	static Direct3DRMRenderer* Create(DWORD width, DWORD height);
@@ -24,16 +34,14 @@ public:
 	void PushLights(const SceneLight* lightsArray, size_t count) override;
 	void SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back) override;
 	Uint32 GetTextureId(IDirect3DRMTexture* texture) override;
+	Uint32 GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup) override;
 	DWORD GetWidth() override;
 	DWORD GetHeight() override;
 	void GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc) override;
 	const char* GetName() override;
 	HRESULT BeginFrame(const D3DRMMATRIX4D& viewMatrix) override;
 	void SubmitDraw(
-		const D3DRMVERTEX* vertices,
-		const size_t vertexCount,
-		const DWORD* indices,
-		const size_t indexCount,
+		DWORD meshId,
 		const D3DRMMATRIX4D& worldMatrix,
 		const Matrix3x3& normalMatrix,
 		const Appearance& appearance
@@ -42,7 +50,9 @@ public:
 
 private:
 	void AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture);
+	void AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh);
 	std::vector<GLTextureCacheEntry> m_textures;
+	std::vector<GLMeshCacheEntry> m_meshs;
 	D3DRMMATRIX4D m_viewMatrix;
 	D3DRMMATRIX4D m_projection;
 	SDL_Surface* m_renderedImage;
