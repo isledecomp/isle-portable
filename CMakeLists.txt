@@ -488,6 +488,14 @@ if (ISLE_BUILD_APP)
     )
     target_compile_definitions(isle PRIVATE ISLE_DEBUG)
     target_link_libraries(isle PRIVATE imgui)
+    find_path(valgrind_INCLUDE_PATH NAMES valgrind/callgrind.h)
+    if(valgrind_INCLUDE_PATH)
+      # Run isle under valgrind to create a profile. Use e.g. kcachegrind to view the profile.
+      # > valgrind --tool=callgrind --dump-instr=yes --simulate-cache=yes --collect-jumps=yes \
+      # >         --collect-atstart=no --instr-atstart=no ./isle --debug
+      target_compile_definitions(isle PRIVATE ISLE_VALGRIND)
+      target_include_directories(isle PRIVATE ${valgrind_INCLUDE_PATH})
+    endif()
   endif()
 endif()
 
