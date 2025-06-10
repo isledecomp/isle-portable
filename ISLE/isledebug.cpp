@@ -16,6 +16,10 @@
 #include <backends/imgui_impl_sdlrenderer3.h>
 #include <imgui.h>
 
+#ifdef ISLE_VALGRIND
+#include <valgrind/callgrind.h>
+#endif
+
 #define SCANCODE_KEY_PAUSE SDL_SCANCODE_KP_0
 #define SCANCODE_KEY_RESUME SDL_SCANCODE_KP_PERIOD
 
@@ -27,6 +31,10 @@ static SDL_Renderer* g_debugRenderer;
 
 static SDL_Texture* g_videoPalette;
 static IDirect3DRMMiniwinDevice* g_d3drmMiniwinDevice;
+
+#ifdef ISLE_VALGRIND
+static bool g_instrumentationEnabled;
+#endif
 
 class DebugViewer {
 public:
@@ -257,6 +265,19 @@ void IsleDebug_Render()
 				Lego()->Resume();
 			}
 		}
+#ifdef ISLE_VALGRIND
+		if (ImGui::MenuItem(g_instrumentationEnabled ? "Disable instrumentation" : "Enable instrumentation")) {
+			g_instrumentationEnabled = !g_instrumentationEnabled;
+			if (g_instrumentationEnabled) {
+				CALLGRIND_START_INSTRUMENTATION;
+				CALLGRIND_TOGGLE_COLLECT;
+			}
+			else {
+				CALLGRIND_TOGGLE_COLLECT;
+				CALLGRIND_STOP_INSTRUMENTATION;
+			}
+		}
+#endif
 		ImGui::EndMainMenuBar();
 		ImGui::ShowDemoWindow(nullptr);
 		LegoOmni* lego = Lego();
