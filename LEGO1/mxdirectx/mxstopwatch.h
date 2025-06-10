@@ -49,7 +49,7 @@ private:
 inline MxStopWatch::MxStopWatch()
 {
 	Reset();
-	m_ticksPerSeconds = SDL_GetPerformanceCounter();
+	m_ticksPerSeconds = SDL_GetPerformanceFrequency();
 }
 
 // FUNCTION: BETA10 0x100d8be0
