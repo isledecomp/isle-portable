@@ -185,7 +185,7 @@ SDL_Color Direct3DRMSoftwareRenderer::ApplyLighting(
 
 			if (appearance.shininess != 0.0f) {
 				// Using dotNL ignores view angle, but this matches DirectX 5 behavior.
-				float spec = std::pow(dotNL, appearance.shininess);
+				float spec = std::pow(dotNL, appearance.shininess * m_shininessFactor);
 				specular.r += spec * lightColor.r;
 				specular.g += spec * lightColor.g;
 				specular.b += spec * lightColor.b;
@@ -439,6 +439,78 @@ Uint32 Direct3DRMSoftwareRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 	return static_cast<Uint32>(m_textures.size() - 1);
 }
 
+MeshCache UploadMesh(const MeshGroup& meshGroup)
+{
+	MeshCache cache{&meshGroup, meshGroup.version};
+
+	cache.flat = meshGroup.quality == D3DRMRENDER_FLAT || meshGroup.quality == D3DRMRENDER_UNLITFLAT;
+
+	std::vector<D3DRMVERTEX> vertices;
+	if (cache.flat) {
+		FlattenSurfaces(
+			meshGroup.vertices.data(),
+			meshGroup.vertices.size(),
+			meshGroup.indices.data(),
+			meshGroup.indices.size(),
+			meshGroup.texture != nullptr,
+			cache.vertices,
+			cache.indices
+		);
+	}
+	else {
+		cache.vertices.assign(meshGroup.vertices.begin(), meshGroup.vertices.end());
+		cache.indices.assign(meshGroup.indices.begin(), meshGroup.indices.end());
+	}
+
+	return cache;
+}
+
+struct MeshDestroyContext {
+	Direct3DRMSoftwareRenderer* renderer;
+	Uint32 id;
+};
+
+void Direct3DRMSoftwareRenderer::AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh)
+{
+	auto* ctx = new MeshDestroyContext{this, id};
+	mesh->AddDestroyCallback(
+		[](IDirect3DRMObject*, void* arg) {
+			auto* ctx = static_cast<MeshDestroyContext*>(arg);
+			ctx->renderer->m_meshs[ctx->id].meshGroup = nullptr;
+			delete ctx;
+		},
+		ctx
+	);
+}
+
+Uint32 Direct3DRMSoftwareRenderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup)
+{
+	for (Uint32 i = 0; i < m_meshs.size(); ++i) {
+		auto& cache = m_meshs[i];
+		if (cache.meshGroup == meshGroup) {
+			if (cache.version != meshGroup->version) {
+				cache = std::move(UploadMesh(*meshGroup));
+			}
+			return i;
+		}
+	}
+
+	auto newCache = UploadMesh(*meshGroup);
+
+	for (Uint32 i = 0; i < m_meshs.size(); ++i) {
+		auto& cache = m_meshs[i];
+		if (!cache.meshGroup) {
+			cache = std::move(newCache);
+			AddMeshDestroyCallback(i, mesh);
+			return i;
+		}
+	}
+
+	m_meshs.push_back(std::move(newCache));
+	AddMeshDestroyCallback((Uint32) (m_meshs.size() - 1), mesh);
+	return (Uint32) (m_meshs.size() - 1);
+}
+
 DWORD Direct3DRMSoftwareRenderer::GetWidth()
 {
 	return m_width;
@@ -483,10 +555,7 @@ HRESULT Direct3DRMSoftwareRenderer::BeginFrame(const D3DRMMATRIX4D& viewMatrix)
 }
 
 void Direct3DRMSoftwareRenderer::SubmitDraw(
-	const D3DRMVERTEX* vertices,
-	const size_t vertexCount,
-	const DWORD* indices,
-	const size_t indexCount,
+	DWORD meshId,
 	const D3DRMMATRIX4D& worldMatrix,
 	const Matrix3x3& normalMatrix,
 	const Appearance& appearance
@@ -495,29 +564,12 @@ void Direct3DRMSoftwareRenderer::SubmitDraw(
 	D3DRMMATRIX4D mvMatrix;
 	MultiplyMatrix(mvMatrix, worldMatrix, m_viewMatrix);
 
-	std::vector<D3DRMVERTEX> newVertices;
-	std::vector<DWORD> newIndices;
-	if (appearance.flat) {
-		// FIXME move this to a one time mesh upload stage
-		FlattenSurfaces(
-			vertices,
-			vertexCount,
-			indices,
-			indexCount,
-			appearance.textureId != NO_TEXTURE_ID,
-			newVertices,
-			newIndices
-		);
-	}
-	else {
-		newVertices.assign(vertices, vertices + vertexCount);
-		newIndices.assign(indices, indices + indexCount);
-	}
+	auto& mesh = m_meshs[meshId];
 
 	// Pre-transform all vertex positions and normals
-	std::vector<D3DRMVERTEX> transformedVerts(newVertices.size());
-	for (size_t i = 0; i < newVertices.size(); ++i) {
-		const D3DRMVERTEX& src = newVertices[i];
+	std::vector<D3DRMVERTEX> transformedVerts(mesh.vertices.size());
+	for (size_t i = 0; i < mesh.vertices.size(); ++i) {
+		const D3DRMVERTEX& src = mesh.vertices[i];
 		D3DRMVERTEX& dst = transformedVerts[i];
 		dst.position = TransformPoint(src.position, mvMatrix);
 		// TODO defer normal transformation til lighting to allow culling first
@@ -526,9 +578,11 @@ void Direct3DRMSoftwareRenderer::SubmitDraw(
 	}
 
 	// Assemble triangles using index buffer
-	for (size_t i = 0; i + 2 < newIndices.size(); i += 3) {
+	for (size_t i = 0; i + 2 < mesh.indices.size(); i += 3) {
 		DrawTriangleClipped(
-			{transformedVerts[newIndices[i]], transformedVerts[newIndices[i + 1]], transformedVerts[newIndices[i + 2]]},
+			{transformedVerts[mesh.indices[i]],
+			 transformedVerts[mesh.indices[i + 1]],
+			 transformedVerts[mesh.indices[i + 2]]},
 			appearance
 		);
 	}

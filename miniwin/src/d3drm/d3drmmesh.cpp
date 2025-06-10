@@ -117,7 +117,12 @@ HRESULT Direct3DRMMeshImpl::SetGroupColor(DWORD groupIndex, D3DCOLOR color)
 		return DDERR_INVALIDPARAMS;
 	}
 
-	m_groups[groupIndex].color = color;
+	m_groups[groupIndex].color = {
+		static_cast<Uint8>((color >> 16) & 0xFF),
+		static_cast<Uint8>((color >> 8) & 0xFF),
+		static_cast<Uint8>((color >> 0) & 0xFF),
+		static_cast<Uint8>((color >> 24) & 0xFF)
+	};
 	return DD_OK;
 }
 
@@ -127,10 +132,9 @@ HRESULT Direct3DRMMeshImpl::SetGroupColorRGB(DWORD groupIndex, float r, float g,
 		return DDERR_INVALIDPARAMS;
 	}
 
-	D3DCOLOR color = (0xFF << 24) | (static_cast<BYTE>(r * 255.0f) << 16) | (static_cast<BYTE>(g * 255.0f) << 8) |
-					 (static_cast<BYTE>(b * 255.0f));
+	m_groups[groupIndex]
+		.color = {static_cast<Uint8>(r * 255.0f), static_cast<Uint8>(g * 255.0f), static_cast<Uint8>(b * 255.0f), 255};
 
-	m_groups[groupIndex].color = color;
 	return DD_OK;
 }
 
@@ -139,7 +143,9 @@ D3DCOLOR Direct3DRMMeshImpl::GetGroupColor(D3DRMGROUPINDEX index)
 	if (index < 0 || index >= static_cast<int>(m_groups.size())) {
 		return 0xFFFFFFFF;
 	}
-	return m_groups[index].color;
+
+	const SDL_Color& color = m_groups[index].color;
+	return (color.a << 24) | (color.r << 16) | (color.g << 8) | color.b;
 }
 
 HRESULT Direct3DRMMeshImpl::SetGroupMaterial(DWORD groupIndex, IDirect3DRMMaterial* material)
@@ -171,6 +177,7 @@ HRESULT Direct3DRMMeshImpl::SetGroupTexture(DWORD groupIndex, IDirect3DRMTexture
 
 	texture->AddRef();
 	group.texture = texture;
+	group.version++;
 	return DD_OK;
 }
 
@@ -229,7 +236,10 @@ HRESULT Direct3DRMMeshImpl::SetGroupQuality(DWORD groupIndex, D3DRMRENDERQUALITY
 		break;
 	}
 
-	m_groups[groupIndex].quality = quality;
+	auto& group = m_groups[groupIndex];
+	group.quality = quality;
+	group.version++;
+
 	return DD_OK;
 }
 
@@ -248,7 +258,8 @@ HRESULT Direct3DRMMeshImpl::SetVertices(DWORD groupIndex, int offset, int count,
 		return DDERR_INVALIDPARAMS;
 	}
 
-	auto& vertList = m_groups[groupIndex].vertices;
+	auto& group = m_groups[groupIndex];
+	auto& vertList = group.vertices;
 
 	if (offset + count > static_cast<int>(vertList.size())) {
 		vertList.resize(offset + count);
@@ -257,6 +268,8 @@ HRESULT Direct3DRMMeshImpl::SetVertices(DWORD groupIndex, int offset, int count,
 	std::copy(vertices, vertices + count, vertList.begin() + offset);
 
 	UpdateBox();
+
+	group.version++;
 
 	return DD_OK;
 }

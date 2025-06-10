@@ -6,11 +6,12 @@
 #include <vector>
 
 struct MeshGroup {
-	D3DCOLOR color = 0xFFFFFFFF;
+	SDL_Color color = {0xFF, 0xFF, 0xFF, 0xFF};
 	IDirect3DRMTexture* texture = nullptr;
 	IDirect3DRMMaterial* material = nullptr;
 	D3DRMRENDERQUALITY quality = D3DRMRENDER_GOURAUD;
 	int vertexPerFace = 0;
+	int version = 0;
 	std::vector<D3DRMVERTEX> vertices;
 	std::vector<unsigned int> indices;
 
