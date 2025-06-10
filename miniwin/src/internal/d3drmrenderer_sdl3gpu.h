@@ -38,7 +38,8 @@ struct SDL3MeshCache {
 	const MeshGroup* meshGroup;
 	int version;
 	SDL_GPUBuffer* vertexBuffer;
-	size_t vertexCount;
+	SDL_GPUBuffer* indexBuffer;
+	size_t indexCount;
 };
 
 class Direct3DRMSDL3GPURenderer : public Direct3DRMRenderer {
