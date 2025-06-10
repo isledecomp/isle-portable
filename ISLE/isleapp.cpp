@@ -665,10 +665,12 @@ bool IsleApp::LoadConfig()
 
 		iniparser_set(dict, "isle:Back Buffers in Video RAM", "-1");
 
-		iniparser_set(dict, "isle:Island Quality", "1");
-		iniparser_set(dict, "isle:Island Texture", "1");
-		iniparser_set(dict, "isle:Max LOD", "3.6");
-		iniparser_set(dict, "isle:Max Allowed Extras", "10");
+		char buf[32];
+		iniparser_set(dict, "isle:Island Quality", SDL_itoa(m_islandQuality, buf, 10));
+		iniparser_set(dict, "isle:Island Texture", SDL_itoa(m_islandTexture, buf, 10));
+		SDL_snprintf(buf, sizeof(buf), "%f", m_maxLod);
+		iniparser_set(dict, "isle:Max LOD", buf);
+		iniparser_set(dict, "isle:Max Allowed Extras", SDL_itoa(m_maxAllowedExtras, buf, 10));
 
 		iniparser_dump_ini(dict, iniFP);
 		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "New config written at '%s'", iniConfig);
@@ -713,10 +715,10 @@ bool IsleApp::LoadConfig()
 		}
 	}
 
-	m_islandQuality = iniparser_getint(dict, "isle:Island Quality", 1);
-	m_islandTexture = iniparser_getint(dict, "isle:Island Texture", 1);
-	m_maxLod = iniparser_getdouble(dict, "isle:Max LOD", 3.6);
-	m_maxAllowedExtras = iniparser_getint(dict, "isle:Max Allowed Extras", 10);
+	m_islandQuality = iniparser_getint(dict, "isle:Island Quality", m_islandQuality);
+	m_islandTexture = iniparser_getint(dict, "isle:Island Texture", m_islandTexture);
+	m_maxLod = iniparser_getdouble(dict, "isle:Max LOD", m_maxLod);
+	m_maxAllowedExtras = iniparser_getint(dict, "isle:Max Allowed Extras", m_maxAllowedExtras);
 
 	const char* deviceId = iniparser_getstring(dict, "isle:3D Device ID", NULL);
 	if (deviceId != NULL) {
