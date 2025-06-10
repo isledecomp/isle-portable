@@ -1,3 +1,5 @@
+#define INITGUID
+
 #include "isleapp.h"
 
 #include "3dmanager/lego3dmanager.h"
@@ -29,7 +31,10 @@
 #include "res/isle_bmp.h"
 #include "res/resource.h"
 #include "roi/legoroi.h"
+#include "tgl/d3drm/impl.h"
 #include "viewmanager/viewmanager.h"
+
+#include <miniwin/miniwindevice.h>
 
 #define SDL_MAIN_USE_CALLBACKS
 #include <SDL3/SDL.h>
@@ -127,6 +132,8 @@ IsleApp::IsleApp()
 	LegoOmni::CreateInstance();
 
 	m_iniPath = NULL;
+	m_maxLod = RealtimeView::GetUserMaxLOD();
+	m_maxAllowedExtras = m_islandQuality <= 1 ? 10 : 20;
 }
 
 // FUNCTION: ISLE 0x4011a0
@@ -567,6 +574,8 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 
 void SDL_AppQuit(void* appstate, SDL_AppResult result)
 {
+	IsleDebug_Quit();
+
 	if (appstate != NULL) {
 		SDL_DestroyWindow((SDL_Window*) appstate);
 	}
@@ -688,11 +697,23 @@ MxResult IsleApp::SetupWindow()
 	LegoWorldPresenter::configureLegoWorldPresenter(m_islandQuality);
 	LegoBuildingManager::configureLegoBuildingManager(m_islandQuality);
 	LegoROI::configureLegoROI(iVar10);
-	LegoAnimationManager::configureLegoAnimationManager(m_islandQuality);
+	LegoAnimationManager::configureLegoAnimationManager(m_maxAllowedExtras);
+	RealtimeView::SetUserMaxLOD(m_maxLod);
 	if (LegoOmni::GetInstance()) {
 		if (LegoOmni::GetInstance()->GetInputManager()) {
 			LegoOmni::GetInstance()->GetInputManager()->SetUseJoystick(m_useJoystick);
 			LegoOmni::GetInstance()->GetInputManager()->SetJoystickIndex(m_joystickIndex);
+		}
+		MxDirect3D* d3d = LegoOmni::GetInstance()->GetVideoManager()->GetDirect3D();
+		if (d3d) {
+			SDL_Log(
+				"Direct3D driver name=\"%s\" description=\"%s\"",
+				d3d->GetDeviceName().c_str(),
+				d3d->GetDeviceDescription().c_str()
+			);
+		}
+		else {
+			SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Failed to get D3D device name and description");
 		}
 	}
 
@@ -769,8 +790,12 @@ bool IsleApp::LoadConfig()
 
 		iniparser_set(dict, "isle:Back Buffers in Video RAM", "-1");
 
-		iniparser_set(dict, "isle:Island Quality", "2");
-		iniparser_set(dict, "isle:Island Texture", "1");
+		char buf[32];
+		iniparser_set(dict, "isle:Island Quality", SDL_itoa(m_islandQuality, buf, 10));
+		iniparser_set(dict, "isle:Island Texture", SDL_itoa(m_islandTexture, buf, 10));
+		SDL_snprintf(buf, sizeof(buf), "%f", m_maxLod);
+		iniparser_set(dict, "isle:Max LOD", buf);
+		iniparser_set(dict, "isle:Max Allowed Extras", SDL_itoa(m_maxAllowedExtras, buf, 10));
 
 		iniparser_dump_ini(dict, iniFP);
 		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "New config written at '%s'", iniConfig);
@@ -823,8 +848,10 @@ bool IsleApp::LoadConfig()
 		}
 	}
 
-	m_islandQuality = iniparser_getint(dict, "isle:Island Quality", 2);
-	m_islandTexture = iniparser_getint(dict, "isle:Island Texture", 1);
+	m_islandQuality = iniparser_getint(dict, "isle:Island Quality", m_islandQuality);
+	m_islandTexture = iniparser_getint(dict, "isle:Island Texture", m_islandTexture);
+	m_maxLod = iniparser_getdouble(dict, "isle:Max LOD", m_maxLod);
+	m_maxAllowedExtras = iniparser_getint(dict, "isle:Max Allowed Extras", m_maxAllowedExtras);
 
 	const char* deviceId = iniparser_getstring(dict, "isle:3D Device ID", NULL);
 	if (deviceId != NULL) {
@@ -1002,4 +1029,33 @@ MxResult IsleApp::ParseArguments(int argc, char** argv)
 	}
 
 	return SUCCESS;
+}
+
+IDirect3DRMMiniwinDevice* GetD3DRMMiniwinDevice()
+{
+	LegoVideoManager* videoManager = LegoOmni::GetInstance()->GetVideoManager();
+	if (!videoManager) {
+		return nullptr;
+	}
+	Lego3DManager* lego3DManager = videoManager->Get3DManager();
+	if (!lego3DManager) {
+		return nullptr;
+	}
+	Lego3DView* lego3DView = lego3DManager->GetLego3DView();
+	if (!lego3DView) {
+		return nullptr;
+	}
+	TglImpl::DeviceImpl* tgl_device = (TglImpl::DeviceImpl*) lego3DView->GetDevice();
+	if (!tgl_device) {
+		return nullptr;
+	}
+	IDirect3DRMDevice2* d3drmdev = tgl_device->ImplementationData();
+	if (!d3drmdev) {
+		return nullptr;
+	}
+	IDirect3DRMMiniwinDevice* d3drmMiniwinDev = nullptr;
+	if (!SUCCEEDED(d3drmdev->QueryInterface(IID_IDirect3DRMMiniwinDevice, (void**) &d3drmMiniwinDev))) {
+		return nullptr;
+	}
+	return d3drmMiniwinDev;
 }

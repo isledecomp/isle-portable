@@ -12,6 +12,7 @@
 #else
 #include <windows.h>
 #endif
+#include "miniwin/miniwindevice.h"
 
 // SIZE 0x8c
 class IsleApp {
@@ -86,8 +87,12 @@ private:
 	char* m_mediaPath;
 
 	char* m_iniPath;
+	MxFloat m_maxLod;
+	MxU32 m_maxAllowedExtras;
 };
 
 extern IsleApp* g_isle;
+
+extern IDirect3DRMMiniwinDevice* GetD3DRMMiniwinDevice();
 
 #endif // ISLEAPP_H

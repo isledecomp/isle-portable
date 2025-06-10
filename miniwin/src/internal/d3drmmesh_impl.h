@@ -6,19 +6,20 @@
 #include <vector>
 
 struct MeshGroup {
-	D3DCOLOR color = 0xFFFFFFFF;
+	SDL_Color color = {0xFF, 0xFF, 0xFF, 0xFF};
 	IDirect3DRMTexture* texture = nullptr;
 	IDirect3DRMMaterial* material = nullptr;
 	D3DRMRENDERQUALITY quality = D3DRMRENDER_GOURAUD;
 	int vertexPerFace = 0;
+	int version = 0;
 	std::vector<D3DRMVERTEX> vertices;
-	std::vector<unsigned int> faces;
+	std::vector<unsigned int> indices;
 
 	MeshGroup() = default;
 
 	MeshGroup(const MeshGroup& other)
 		: color(other.color), texture(other.texture), material(other.material), quality(other.quality),
-		  vertexPerFace(other.vertexPerFace), vertices(std::move(other.vertices)), faces(std::move(other.faces))
+		  vertexPerFace(other.vertexPerFace), vertices(std::move(other.vertices)), indices(std::move(other.indices))
 	{
 		if (texture) {
 			texture->AddRef();
@@ -31,7 +32,7 @@ struct MeshGroup {
 	// Move constructor
 	MeshGroup(MeshGroup&& other) noexcept
 		: color(other.color), texture(other.texture), material(other.material), quality(other.quality),
-		  vertexPerFace(other.vertexPerFace), vertices(other.vertices), faces(other.faces)
+		  vertexPerFace(other.vertexPerFace), vertices(other.vertices), indices(other.indices)
 	{
 		other.texture = nullptr;
 		other.material = nullptr;
@@ -46,7 +47,7 @@ struct MeshGroup {
 		quality = other.quality;
 		vertexPerFace = other.vertexPerFace;
 		vertices = std::move(other.vertices);
-		faces = std::move(other.faces);
+		indices = std::move(other.indices);
 		other.texture = nullptr;
 		other.material = nullptr;
 		return *this;
@@ -73,9 +74,10 @@ struct Direct3DRMMeshImpl : public Direct3DRMObjectBaseImpl<IDirect3DRMMesh> {
 		DWORD* vertexCount,
 		DWORD* faceCount,
 		DWORD* vertexPerFace,
-		DWORD* dataSize,
-		DWORD* data
+		DWORD* indexCount,
+		DWORD* indices
 	) override;
+	const MeshGroup& GetGroup(DWORD groupIndex);
 	DWORD GetGroupCount() override;
 	HRESULT SetGroupColor(DWORD groupIndex, D3DCOLOR color) override;
 	HRESULT SetGroupColorRGB(DWORD groupIndex, float r, float g, float b) override;

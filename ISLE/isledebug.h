@@ -11,6 +11,8 @@ extern void IsleDebug_SetEnabled(bool);
 
 extern void IsleDebug_Init();
 
+extern void IsleDebug_Quit();
+
 extern bool IsleDebug_Event(SDL_Event* event);
 
 extern void IsleDebug_Render();
@@ -32,6 +34,10 @@ extern void IsleDebug_ResetStepMode();
 	} while (0)
 
 #define IsleDebug_Init()                                                                                               \
+	do {                                                                                                               \
+	} while (0)
+
+#define IsleDebug_Quit()                                                                                               \
 	do {                                                                                                               \
 	} while (0)
 

@@ -1,3 +1,6 @@
+add_library(miniwin-headers INTERFACE)
+target_include_directories(miniwin-headers INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+
 add_library(miniwin STATIC EXCLUDE_FROM_ALL
   # Core
   src/windows/windows.cpp
@@ -15,6 +18,7 @@ add_library(miniwin STATIC EXCLUDE_FROM_ALL
   src/d3drm/d3drmmesh.cpp
   src/d3drm/d3drmtexture.cpp
   src/d3drm/d3drmviewport.cpp
+  src/internal/meshutils.cpp
 
   # D3DRM backends
   src/d3drm/backends/software/renderer.cpp
@@ -25,8 +29,8 @@ add_library(miniwin STATIC EXCLUDE_FROM_ALL
 find_package(OpenGL)
 find_package(GLEW)
 if(OpenGL_FOUND AND GLEW_FOUND)
-  target_sources(miniwin PRIVATE src/d3drm/backends/opengl15/renderer.cpp)
-  target_compile_definitions(miniwin PRIVATE USE_OPENGL15)
+  target_sources(miniwin PRIVATE src/d3drm/backends/opengl1/renderer.cpp)
+  target_compile_definitions(miniwin PRIVATE USE_OPENGL1)
   # Find and link OpenGL (1.5)
   target_link_libraries(miniwin PRIVATE OpenGL::GL)
   # Glew is used for getting a FBO for off screen rendering
@@ -38,12 +42,11 @@ target_compile_definitions(miniwin PRIVATE MINIWIN_PIXELFORMAT=SDL_PIXELFORMAT_R
 target_compile_definitions(miniwin PUBLIC MINIWIN)
 
 target_include_directories(miniwin
-  PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/internal
     ${CMAKE_CURRENT_SOURCE_DIR}/src/d3drm/backends/sdl3gpu/shaders/generated
 )
+target_link_libraries(miniwin PUBLIC miniwin-headers)
 
 target_link_libraries(miniwin PRIVATE SDL3::SDL3)
 

@@ -2,6 +2,7 @@
 #include "d3drmrenderer_software.h"
 #include "ddsurface_impl.h"
 #include "mathutils.h"
+#include "meshutils.h"
 #include "miniwin.h"
 
 #include <SDL3/SDL.h>
@@ -32,7 +33,7 @@ void Direct3DRMSoftwareRenderer::ClearZBuffer()
 	std::fill(m_zBuffer.begin(), m_zBuffer.end(), std::numeric_limits<float>::infinity());
 }
 
-void Direct3DRMSoftwareRenderer::ProjectVertex(const GeometryVertex& v, D3DRMVECTOR4D& p) const
+void Direct3DRMSoftwareRenderer::ProjectVertex(const D3DRMVERTEX& v, D3DRMVECTOR4D& p) const
 {
 	float px = m_projection[0][0] * v.position.x + m_projection[1][0] * v.position.y +
 			   m_projection[2][0] * v.position.z + m_projection[3][0];
@@ -47,9 +48,10 @@ void Direct3DRMSoftwareRenderer::ProjectVertex(const GeometryVertex& v, D3DRMVEC
 
 	// Perspective divide
 	if (pw != 0.0f) {
-		px /= pw;
-		py /= pw;
-		pz /= pw;
+		float invW = 1.0f / pw;
+		px *= invW;
+		py *= invW;
+		pz *= invW;
 	}
 
 	// Map from NDC [-1,1] to screen coordinates
@@ -58,31 +60,26 @@ void Direct3DRMSoftwareRenderer::ProjectVertex(const GeometryVertex& v, D3DRMVEC
 	p.z = pz;
 }
 
-GeometryVertex SplitEdge(GeometryVertex a, const GeometryVertex& b, float plane)
+D3DRMVERTEX SplitEdge(D3DRMVERTEX a, const D3DRMVERTEX& b, float plane)
 {
 	float t = (plane - a.position.z) / (b.position.z - a.position.z);
-	a.position.x = a.position.x + t * (b.position.x - a.position.x);
-	a.position.y = a.position.y + t * (b.position.y - a.position.y);
+	a.position.x += t * (b.position.x - a.position.x);
+	a.position.y += t * (b.position.y - a.position.y);
 	a.position.z = plane;
 
-	a.texCoord.u = a.texCoord.u + t * (b.texCoord.u - a.texCoord.u);
-	a.texCoord.v = a.texCoord.v + t * (b.texCoord.v - a.texCoord.v);
+	a.texCoord.u += t * (b.texCoord.u - a.texCoord.u);
+	a.texCoord.v += t * (b.texCoord.v - a.texCoord.v);
 
-	a.normals.x = a.normals.x + t * (b.normals.x - a.normals.x);
-	a.normals.y = a.normals.y + t * (b.normals.y - a.normals.y);
-	a.normals.z = a.normals.z + t * (b.normals.z - a.normals.z);
+	a.normal.x += t * (b.normal.x - a.normal.x);
+	a.normal.y += t * (b.normal.y - a.normal.y);
+	a.normal.z += t * (b.normal.z - a.normal.z);
 
-	float len = std::sqrt(a.normals.x * a.normals.x + a.normals.y * a.normals.y + a.normals.z * a.normals.z);
-	if (len > 0.0001f) {
-		a.normals.x /= len;
-		a.normals.y /= len;
-		a.normals.z /= len;
-	}
+	a.normal = Normalize(a.normal);
 
 	return a;
 }
 
-void Direct3DRMSoftwareRenderer::DrawTriangleClipped(const GeometryVertex (&v)[3], const Appearance& appearance)
+void Direct3DRMSoftwareRenderer::DrawTriangleClipped(const D3DRMVERTEX (&v)[3], const Appearance& appearance)
 {
 	bool in0 = v[0].position.z >= m_front;
 	bool in1 = v[1].position.z >= m_front;
@@ -98,7 +95,7 @@ void Direct3DRMSoftwareRenderer::DrawTriangleClipped(const GeometryVertex (&v)[3
 		DrawTriangleProjected(v[0], v[1], v[2], appearance);
 	}
 	else if (insideCount == 2) {
-		GeometryVertex split;
+		D3DRMVERTEX split;
 		if (!in0) {
 			split = SplitEdge(v[2], v[0], m_front);
 			DrawTriangleProjected(v[1], v[2], split, appearance);
@@ -149,22 +146,14 @@ void Direct3DRMSoftwareRenderer::BlendPixel(Uint8* pixelAddr, Uint8 r, Uint8 g, 
 	memcpy(pixelAddr, &blended, m_bytesPerPixel);
 }
 
-SDL_Color Direct3DRMSoftwareRenderer::ApplyLighting(const GeometryVertex& vertex, const Appearance& appearance)
+SDL_Color Direct3DRMSoftwareRenderer::ApplyLighting(
+	const D3DVECTOR& position,
+	const D3DVECTOR& normal,
+	const Appearance& appearance
+)
 {
 	FColor specular = {0, 0, 0, 0};
 	FColor diffuse = {0, 0, 0, 0};
-
-	// Position and normal
-	D3DVECTOR position = vertex.position;
-	D3DVECTOR normal = vertex.normals;
-	float normLen = std::sqrt(normal.x * normal.x + normal.y * normal.y + normal.z * normal.z);
-	if (normLen == 0.0f) {
-		return appearance.color;
-	}
-
-	normal.x /= normLen;
-	normal.y /= normLen;
-	normal.z /= normLen;
 
 	for (const auto& light : m_lights) {
 		FColor lightColor = light.color;
@@ -185,14 +174,7 @@ SDL_Color Direct3DRMSoftwareRenderer::ApplyLighting(const GeometryVertex& vertex
 		else if (light.positional == 1.0f) {
 			lightVec = {light.position.x - position.x, light.position.y - position.y, light.position.z - position.z};
 		}
-
-		float len = std::sqrt(lightVec.x * lightVec.x + lightVec.y * lightVec.y + lightVec.z * lightVec.z);
-		if (len == 0.0f) {
-			continue;
-		}
-		lightVec.x /= len;
-		lightVec.y /= len;
-		lightVec.z /= len;
+		lightVec = Normalize(lightVec);
 
 		float dotNL = normal.x * lightVec.x + normal.y * lightVec.y + normal.z * lightVec.z;
 		if (dotNL > 0.0f) {
@@ -203,7 +185,7 @@ SDL_Color Direct3DRMSoftwareRenderer::ApplyLighting(const GeometryVertex& vertex
 
 			if (appearance.shininess != 0.0f) {
 				// Using dotNL ignores view angle, but this matches DirectX 5 behavior.
-				float spec = std::pow(dotNL, appearance.shininess);
+				float spec = std::pow(dotNL, appearance.shininess * m_shininessFactor);
 				specular.r += spec * lightColor.r;
 				specular.g += spec * lightColor.g;
 				specular.b += spec * lightColor.b;
@@ -219,15 +201,24 @@ SDL_Color Direct3DRMSoftwareRenderer::ApplyLighting(const GeometryVertex& vertex
 	};
 }
 
+inline float EdgeFloat(float x0, float y0, float x1, float y1, float x, float y)
+{
+	return (x - x0) * (y1 - y0) - (y - y0) * (x1 - x0);
+}
+
+inline float EdgeDouble(double x0, double y0, double x1, double y1, double x, double y)
+{
+	return (x - x0) * (y1 - y0) - (y - y0) * (x1 - x0);
+}
+
 void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
-	const GeometryVertex& v0,
-	const GeometryVertex& v1,
-	const GeometryVertex& v2,
+	const D3DRMVERTEX& v0,
+	const D3DRMVERTEX& v1,
+	const D3DRMVERTEX& v2,
 	const Appearance& appearance
 )
 {
 	D3DRMVECTOR4D p0, p1, p2;
-
 	ProjectVertex(v0, p0);
 	ProjectVertex(v1, p1);
 	ProjectVertex(v2, p2);
@@ -243,27 +234,31 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 		return;
 	}
 
-	int minX = std::max(0, (int) std::floor(std::min({p0.x, p1.x, p2.x})));
-	int maxX = std::min((int) m_width - 1, (int) std::ceil(std::max({p0.x, p1.x, p2.x})));
-	int minY = std::max(0, (int) std::floor(std::min({p0.y, p1.y, p2.y})));
-	int maxY = std::min((int) m_height - 1, (int) std::ceil(std::max({p0.y, p1.y, p2.y})));
-	if (minX > maxX || minY > maxY) {
+	int minX = std::clamp((int) std::floor(std::min({p0.x, p1.x, p2.x})), 0, (int) m_width - 1);
+	int maxX = std::clamp((int) std::ceil(std::max({p0.x, p1.x, p2.x})), 0, (int) m_width - 1);
+	if (minX > maxX) {
+		return;
+	}
+	int minY = std::clamp((int) std::floor(std::min({p0.y, p1.y, p2.y})), 0, (int) m_height - 1);
+	int maxY = std::clamp((int) std::ceil(std::max({p0.y, p1.y, p2.y})), 0, (int) m_height - 1);
+	if (minY > maxY) {
 		return;
 	}
 
-	auto edge = [](double x0, double y0, double x1, double y1, double x, double y) {
-		return (x - x0) * (y1 - y0) - (y - y0) * (x1 - x0);
-	};
-	float area = edge(p0.x, p0.y, p1.x, p1.y, p2.x, p2.y);
+	// Cull backfaces
+	float area = EdgeFloat(p0.x, p0.y, p1.x, p1.y, p2.x, p2.y);
 	if (area >= 0) {
 		return;
 	}
 	float invArea = 1.0f / area;
 
-	// Per-vertex lighting using vertex normals
-	SDL_Color c0 = ApplyLighting(v0, appearance);
-	SDL_Color c1 = ApplyLighting(v1, appearance);
-	SDL_Color c2 = ApplyLighting(v2, appearance);
+	Uint8 r, g, b;
+	SDL_Color c0 = ApplyLighting(v0.position, v0.normal, appearance);
+	SDL_Color c1, c2;
+	if (!appearance.flat) {
+		c1 = ApplyLighting(v1.position, v1.normal, appearance);
+		c2 = ApplyLighting(v2.position, v2.normal, appearance);
+	}
 
 	Uint32 textureId = appearance.textureId;
 	int texturePitch;
@@ -287,12 +282,12 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 		for (int x = minX; x <= maxX; ++x) {
 			float px = x + 0.5f;
 			float py = y + 0.5f;
-			float w0 = edge(p1.x, p1.y, p2.x, p2.y, px, py) * invArea;
+			float w0 = EdgeDouble(p1.x, p1.y, p2.x, p2.y, px, py) * invArea;
 			if (w0 < 0.0f || w0 > 1.0f) {
 				continue;
 			}
 
-			float w1 = edge(p2.x, p2.y, p0.x, p0.y, px, py) * invArea;
+			float w1 = EdgeDouble(p2.x, p2.y, p0.x, p0.y, px, py) * invArea;
 			if (w1 < 0.0f || w1 > 1.0f - w0) {
 				continue;
 			}
@@ -306,10 +301,16 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 				continue;
 			}
 
-			// Interpolate color
-			Uint8 r = static_cast<Uint8>(w0 * c0.r + w1 * c1.r + w2 * c2.r);
-			Uint8 g = static_cast<Uint8>(w0 * c0.g + w1 * c1.g + w2 * c2.g);
-			Uint8 b = static_cast<Uint8>(w0 * c0.b + w1 * c1.b + w2 * c2.b);
+			if (appearance.flat) {
+				r = c0.r;
+				g = c0.g;
+				b = c0.b;
+			}
+			else {
+				r = static_cast<Uint8>(w0 * c0.r + w1 * c1.r + w2 * c2.r);
+				g = static_cast<Uint8>(w0 * c0.g + w1 * c1.g + w2 * c2.g);
+				b = static_cast<Uint8>(w0 * c0.b + w1 * c1.b + w2 * c2.b);
+			}
 			Uint8* pixelAddr = pixels + y * pitch + x * m_bytesPerPixel;
 
 			if (appearance.color.a == 255) {
@@ -338,8 +339,22 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 
 					Uint8* texelAddr = texels + texY * texturePitch + texX * m_bytesPerPixel;
 
-					Uint32 texelColor = 0;
-					memcpy(&texelColor, texelAddr, m_bytesPerPixel);
+					Uint32 texelColor;
+					switch (m_bytesPerPixel) {
+					case 1:
+						texelColor = *texelAddr;
+						break;
+					case 2:
+						texelColor = *(Uint16*) texelAddr;
+						break;
+					case 3:
+						// Manually build the 24-bit color (assuming byte order)
+						texelColor = texelAddr[0] | (texelAddr[1] << 8) | (texelAddr[2] << 16);
+						break;
+					case 4:
+						texelColor = *(Uint32*) texelAddr;
+						break;
+					}
 
 					Uint8 tr, tg, tb, ta;
 					SDL_GetRGBA(texelColor, m_format, m_palette, &tr, &tg, &tb, &ta);
@@ -411,10 +426,8 @@ Uint32 Direct3DRMSoftwareRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 	// Reuse freed slot
 	for (Uint32 i = 0; i < m_textures.size(); ++i) {
 		auto& texRef = m_textures[i];
-		if (texRef.texture == nullptr) {
-			texRef.texture = texture;
-			texRef.cached = convertedRender;
-			texRef.version = texture->m_version;
+		if (!texRef.texture) {
+			texRef = {texture, texture->m_version, convertedRender};
 			AddTextureDestroyCallback(i, texture);
 			return i;
 		}
@@ -424,6 +437,78 @@ Uint32 Direct3DRMSoftwareRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 	m_textures.push_back({texture, texture->m_version, convertedRender});
 	AddTextureDestroyCallback(static_cast<Uint32>(m_textures.size() - 1), texture);
 	return static_cast<Uint32>(m_textures.size() - 1);
+}
+
+MeshCache UploadMesh(const MeshGroup& meshGroup)
+{
+	MeshCache cache{&meshGroup, meshGroup.version};
+
+	cache.flat = meshGroup.quality == D3DRMRENDER_FLAT || meshGroup.quality == D3DRMRENDER_UNLITFLAT;
+
+	std::vector<D3DRMVERTEX> vertices;
+	if (cache.flat) {
+		FlattenSurfaces(
+			meshGroup.vertices.data(),
+			meshGroup.vertices.size(),
+			meshGroup.indices.data(),
+			meshGroup.indices.size(),
+			meshGroup.texture != nullptr,
+			cache.vertices,
+			cache.indices
+		);
+	}
+	else {
+		cache.vertices.assign(meshGroup.vertices.begin(), meshGroup.vertices.end());
+		cache.indices.assign(meshGroup.indices.begin(), meshGroup.indices.end());
+	}
+
+	return cache;
+}
+
+struct MeshDestroyContext {
+	Direct3DRMSoftwareRenderer* renderer;
+	Uint32 id;
+};
+
+void Direct3DRMSoftwareRenderer::AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh)
+{
+	auto* ctx = new MeshDestroyContext{this, id};
+	mesh->AddDestroyCallback(
+		[](IDirect3DRMObject*, void* arg) {
+			auto* ctx = static_cast<MeshDestroyContext*>(arg);
+			ctx->renderer->m_meshs[ctx->id].meshGroup = nullptr;
+			delete ctx;
+		},
+		ctx
+	);
+}
+
+Uint32 Direct3DRMSoftwareRenderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup)
+{
+	for (Uint32 i = 0; i < m_meshs.size(); ++i) {
+		auto& cache = m_meshs[i];
+		if (cache.meshGroup == meshGroup) {
+			if (cache.version != meshGroup->version) {
+				cache = std::move(UploadMesh(*meshGroup));
+			}
+			return i;
+		}
+	}
+
+	auto newCache = UploadMesh(*meshGroup);
+
+	for (Uint32 i = 0; i < m_meshs.size(); ++i) {
+		auto& cache = m_meshs[i];
+		if (!cache.meshGroup) {
+			cache = std::move(newCache);
+			AddMeshDestroyCallback(i, mesh);
+			return i;
+		}
+	}
+
+	m_meshs.push_back(std::move(newCache));
+	AddMeshDestroyCallback((Uint32) (m_meshs.size() - 1), mesh);
+	return (Uint32) (m_meshs.size() - 1);
 }
 
 DWORD Direct3DRMSoftwareRenderer::GetWidth()
@@ -470,8 +555,7 @@ HRESULT Direct3DRMSoftwareRenderer::BeginFrame(const D3DRMMATRIX4D& viewMatrix)
 }
 
 void Direct3DRMSoftwareRenderer::SubmitDraw(
-	const GeometryVertex* vertices,
-	const size_t count,
+	DWORD meshId,
 	const D3DRMMATRIX4D& worldMatrix,
 	const Matrix3x3& normalMatrix,
 	const Appearance& appearance
@@ -480,15 +564,27 @@ void Direct3DRMSoftwareRenderer::SubmitDraw(
 	D3DRMMATRIX4D mvMatrix;
 	MultiplyMatrix(mvMatrix, worldMatrix, m_viewMatrix);
 
-	for (size_t i = 0; i + 2 < count; i += 3) {
-		GeometryVertex vrts[3];
-		for (size_t j = 0; j < 3; ++j) {
-			const GeometryVertex& src = vertices[i + j];
-			vrts[j].position = TransformPoint(src.position, mvMatrix);
-			vrts[j].normals = Normalize(TransformNormal(src.normals, normalMatrix));
-			vrts[j].texCoord = src.texCoord;
-		}
-		DrawTriangleClipped(vrts, appearance);
+	auto& mesh = m_meshs[meshId];
+
+	// Pre-transform all vertex positions and normals
+	std::vector<D3DRMVERTEX> transformedVerts(mesh.vertices.size());
+	for (size_t i = 0; i < mesh.vertices.size(); ++i) {
+		const D3DRMVERTEX& src = mesh.vertices[i];
+		D3DRMVERTEX& dst = transformedVerts[i];
+		dst.position = TransformPoint(src.position, mvMatrix);
+		// TODO defer normal transformation til lighting to allow culling first
+		dst.normal = Normalize(TransformNormal(src.normal, normalMatrix));
+		dst.texCoord = src.texCoord;
+	}
+
+	// Assemble triangles using index buffer
+	for (size_t i = 0; i + 2 < mesh.indices.size(); i += 3) {
+		DrawTriangleClipped(
+			{transformedVerts[mesh.indices[i]],
+			 transformedVerts[mesh.indices[i + 1]],
+			 transformedVerts[mesh.indices[i + 2]]},
+			appearance
+		);
 	}
 }
 

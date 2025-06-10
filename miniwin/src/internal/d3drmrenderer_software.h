@@ -16,11 +16,20 @@ struct TextureCache {
 	SDL_Surface* cached;
 };
 
+struct MeshCache {
+	const MeshGroup* meshGroup;
+	int version;
+	bool flat;
+	std::vector<D3DRMVERTEX> vertices;
+	std::vector<DWORD> indices;
+};
+
 class Direct3DRMSoftwareRenderer : public Direct3DRMRenderer {
 public:
 	Direct3DRMSoftwareRenderer(DWORD width, DWORD height);
 	void PushLights(const SceneLight* vertices, size_t count) override;
 	Uint32 GetTextureId(IDirect3DRMTexture* texture) override;
+	Uint32 GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup) override;
 	void SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back) override;
 	DWORD GetWidth() override;
 	DWORD GetHeight() override;
@@ -28,8 +37,7 @@ public:
 	const char* GetName() override;
 	HRESULT BeginFrame(const D3DRMMATRIX4D& viewMatrix) override;
 	void SubmitDraw(
-		const GeometryVertex* vertices,
-		const size_t count,
+		DWORD meshId,
 		const D3DRMMATRIX4D& worldMatrix,
 		const Matrix3x3& normalMatrix,
 		const Appearance& appearance
@@ -39,16 +47,17 @@ public:
 private:
 	void ClearZBuffer();
 	void DrawTriangleProjected(
-		const GeometryVertex& v0,
-		const GeometryVertex& v1,
-		const GeometryVertex& v2,
+		const D3DRMVERTEX& v0,
+		const D3DRMVERTEX& v1,
+		const D3DRMVERTEX& v2,
 		const Appearance& appearance
 	);
-	void DrawTriangleClipped(const GeometryVertex (&v)[3], const Appearance& appearance);
-	void ProjectVertex(const GeometryVertex& v, D3DRMVECTOR4D& p) const;
+	void DrawTriangleClipped(const D3DRMVERTEX (&v)[3], const Appearance& appearance);
+	void ProjectVertex(const D3DRMVERTEX& v, D3DRMVECTOR4D& p) const;
 	void BlendPixel(Uint8* pixelAddr, Uint8 r, Uint8 g, Uint8 b, Uint8 a);
-	SDL_Color ApplyLighting(const GeometryVertex& vertex, const Appearance& appearance);
+	SDL_Color ApplyLighting(const D3DVECTOR& position, const D3DVECTOR& normal, const Appearance& appearance);
 	void AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture);
+	void AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh);
 
 	DWORD m_width;
 	DWORD m_height;
@@ -57,6 +66,7 @@ private:
 	int m_bytesPerPixel;
 	std::vector<SceneLight> m_lights;
 	std::vector<TextureCache> m_textures;
+	std::vector<MeshCache> m_meshs;
 	D3DVALUE m_front;
 	D3DVALUE m_back;
 	D3DRMMATRIX4D m_viewMatrix;

@@ -312,6 +312,8 @@ BOOL MxDirect3D::SetDevice(MxDeviceEnumerate& p_deviceEnumerate, MxDriver* p_dri
 						d->m_desc = device.m_HELDesc;
 					}
 
+					m_deviceName = p_device->m_deviceName;
+					m_deviceDesc = p_device->m_deviceDesc;
 					m_currentDeviceInfo = d;
 					m_currentDevInfo = d->m_deviceInfo;
 					break;

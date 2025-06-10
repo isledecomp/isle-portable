@@ -100,6 +100,7 @@ typedef D3DRMPROJECTIONTYPE* LPD3DRMPROJECTIONTYPE;
 
 // --- GUIDs ---
 DEFINE_GUID(IID_IDirect3DRM2, 0x4516ecc8, 0x8f20, 0x11d0, 0x9b, 0x6d, 0x00, 0x00, 0xc0, 0x78, 0x1b, 0xc3);
+DEFINE_GUID(IID_IDirect3DRMDevice2, 0x4516ec78, 0x8f20, 0x11d0, 0x9b, 0x6d, 0x00, 0x00, 0xc0, 0x78, 0x1b, 0xc3);
 DEFINE_GUID(IID_IDirect3DRMWinDevice, 0xc5016cc0, 0xd273, 0x11ce, 0xac, 0x48, 0x00, 0x00, 0xc0, 0x38, 0x25, 0xa1);
 DEFINE_GUID(IID_IDirect3DRMFrame, 0xeb16cb03, 0xd271, 0x11ce, 0xac, 0x48, 0x0, 0x0, 0xc0, 0x38, 0x25, 0xa1);
 DEFINE_GUID(IID_IDirect3DRMMesh, 0xa3a80d01, 0x6e12, 0x11cf, 0xac, 0x4a, 0x00, 0x00, 0xc0, 0x38, 0x25, 0xa1);
@@ -136,13 +137,22 @@ struct D3DRMBOX {
 	D3DVECTOR max;
 };
 
+struct TexCoord {
+	float u, v;
+};
+
 struct D3DRMVERTEX {
 	D3DVECTOR position;
 	D3DVECTOR normal;
-	D3DVALUE tu, tv;
+	union {
+		struct {
+			D3DVALUE tu, tv;
+		};
+		TexCoord texCoord;
+	};
 };
 
-struct IDirect3DRMObject : public IUnknown {
+struct IDirect3DRMObject : virtual public IUnknown {
 	virtual HRESULT AddDestroyCallback(D3DRMOBJECTCALLBACK callback, void* arg) = 0;
 	virtual HRESULT DeleteDestroyCallback(D3DRMOBJECTCALLBACK callback, void* arg) = 0;
 	virtual HRESULT SetAppData(LPD3DRM_APPDATA appData) = 0;
@@ -182,8 +192,8 @@ struct IDirect3DRMMesh : public IDirect3DRMVisual {
 		DWORD* vertexCount,
 		DWORD* faceCount,
 		DWORD* vertexPerFace,
-		DWORD* dataSize,
-		DWORD* data
+		DWORD* indexCount,
+		DWORD* indices
 	) = 0;
 	virtual DWORD GetGroupCount() = 0;
 	virtual HRESULT SetGroupColor(DWORD groupIndex, D3DCOLOR color) = 0;

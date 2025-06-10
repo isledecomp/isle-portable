@@ -1,27 +1,21 @@
 #pragma once
 
+#include "d3drmmesh_impl.h"
 #include "mathutils.h"
 #include "miniwin/d3drm.h"
+#include "miniwin/miniwindevice.h"
 
 #include <SDL3/SDL.h>
 
 #define NO_TEXTURE_ID 0xffffffff
 
-struct TexCoord {
-	float u, v;
-};
-
-struct GeometryVertex {
-	D3DVECTOR position;
-	D3DVECTOR normals;
-	TexCoord texCoord;
-};
-static_assert(sizeof(GeometryVertex) == 32);
+static_assert(sizeof(D3DRMVERTEX) == 32);
 
 struct Appearance {
 	SDL_Color color;
 	float shininess;
 	Uint32 textureId;
+	Uint32 flat;
 };
 
 struct FColor {
@@ -42,17 +36,30 @@ public:
 	virtual void PushLights(const SceneLight* vertices, size_t count) = 0;
 	virtual void SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back) = 0;
 	virtual Uint32 GetTextureId(IDirect3DRMTexture* texture) = 0;
+	virtual Uint32 GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup) = 0;
 	virtual DWORD GetWidth() = 0;
 	virtual DWORD GetHeight() = 0;
 	virtual void GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc) = 0;
 	virtual const char* GetName() = 0;
 	virtual HRESULT BeginFrame(const D3DRMMATRIX4D& viewMatrix) = 0;
 	virtual void SubmitDraw(
-		const GeometryVertex* vertices,
-		const size_t count,
+		DWORD meshId,
 		const D3DRMMATRIX4D& worldMatrix,
 		const Matrix3x3& normalMatrix,
 		const Appearance& appearance
 	) = 0;
 	virtual HRESULT FinalizeFrame() = 0;
+
+	float GetShininessFactor() { return m_shininessFactor; }
+	HRESULT SetShininessFactor(float factor)
+	{
+		if (factor < 0.f) {
+			return DDERR_GENERIC;
+		}
+		m_shininessFactor = factor;
+		return DD_OK;
+	}
+
+protected:
+	float m_shininessFactor = 1.f;
 };

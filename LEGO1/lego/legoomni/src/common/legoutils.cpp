@@ -779,6 +779,6 @@ void FUN_1003f930(LegoNamedTexture* p_namedTexture)
 	LegoTextureInfo* textureInfo = TextureContainer()->Get(p_namedTexture->GetName()->GetData());
 
 	if (textureInfo != NULL) {
-		textureInfo->FUN_10066010(p_namedTexture->GetTexture()->GetImage()->GetBits());
+		textureInfo->LoadBits(p_namedTexture->GetTexture()->GetImage()->GetBits());
 	}
 }
