@@ -503,9 +503,10 @@ Uint32 Direct3DRMSDL3GPURenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 
 SDL3MeshCache Direct3DRMSDL3GPURenderer::UploadMesh(const MeshGroup& meshGroup)
 {
-	std::vector<D3DRMVERTEX> flatVertices;
+	std::vector<D3DRMVERTEX> finalVertices;
+	std::vector<Uint16> finalIndices;
+
 	if (meshGroup.quality == D3DRMRENDER_FLAT || meshGroup.quality == D3DRMRENDER_UNLITFLAT) {
-		std::vector<D3DRMVERTEX> newVertices;
 		std::vector<DWORD> newIndices;
 		FlattenSurfaces(
 			meshGroup.vertices.data(),
@@ -513,60 +514,79 @@ SDL3MeshCache Direct3DRMSDL3GPURenderer::UploadMesh(const MeshGroup& meshGroup)
 			meshGroup.indices.data(),
 			meshGroup.indices.size(),
 			meshGroup.texture != nullptr,
-			newVertices,
+			finalVertices,
 			newIndices
 		);
-		for (DWORD& index : newIndices) {
-			flatVertices.push_back(newVertices[index]);
-		}
+
+		finalIndices.assign(newIndices.begin(), newIndices.end());
 	}
 	else {
-		// TODO handle indexed verticies on GPU
-		for (int i = 0; i < meshGroup.indices.size(); ++i) {
-			flatVertices.push_back(meshGroup.vertices[meshGroup.indices[i]]);
-		}
+		finalVertices = meshGroup.vertices;
+		finalIndices.assign(meshGroup.indices.begin(), meshGroup.indices.end());
 	}
 
-	SDL_GPUBufferCreateInfo bufferCreateInfo = {};
-	bufferCreateInfo.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
-	bufferCreateInfo.size = sizeof(D3DRMVERTEX) * flatVertices.size();
-	SDL_GPUBuffer* vertexBuffer = SDL_CreateGPUBuffer(m_device, &bufferCreateInfo);
+	SDL_GPUBufferCreateInfo vertexBufferCreateInfo = {};
+	vertexBufferCreateInfo.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
+	vertexBufferCreateInfo.size = sizeof(D3DRMVERTEX) * finalVertices.size();
+	SDL_GPUBuffer* vertexBuffer = SDL_CreateGPUBuffer(m_device, &vertexBufferCreateInfo);
 	if (!vertexBuffer) {
 		SDL_LogError(LOG_CATEGORY_MINIWIN, "SDL_CreateGPUBuffer failed (%s)", SDL_GetError());
+		return {};
 	}
 
-	SDL_GPUTransferBuffer* uploadBuffer = GetUploadBuffer(sizeof(D3DRMVERTEX) * flatVertices.size());
+	SDL_GPUBufferCreateInfo indexBufferCreateInfo = {};
+	indexBufferCreateInfo.usage = SDL_GPU_BUFFERUSAGE_INDEX;
+	indexBufferCreateInfo.size = sizeof(Uint16) * finalIndices.size();
+	SDL_GPUBuffer* indexBuffer = SDL_CreateGPUBuffer(m_device, &indexBufferCreateInfo);
+	if (!indexBuffer) {
+		SDL_LogError(LOG_CATEGORY_MINIWIN, "Failed to create index buffer (%s)", SDL_GetError());
+		return {};
+	}
+
+	size_t verticesSize = sizeof(D3DRMVERTEX) * finalVertices.size();
+	size_t indicesSize = sizeof(Uint16) * finalIndices.size();
+
+	SDL_GPUTransferBuffer* uploadBuffer = GetUploadBuffer(verticesSize + indicesSize);
 	if (!uploadBuffer) {
 		return {};
 	}
-	D3DRMVERTEX* transferData = (D3DRMVERTEX*) SDL_MapGPUTransferBuffer(m_device, uploadBuffer, false);
+	auto* transferData = static_cast<Uint8*>(SDL_MapGPUTransferBuffer(m_device, uploadBuffer, false));
 	if (!transferData) {
-		SDL_LogError(LOG_CATEGORY_MINIWIN, "SDL_MapGPUTransferBuffer returned NULL buffer (%s)", SDL_GetError());
+		SDL_LogError(LOG_CATEGORY_MINIWIN, "Transfer buffer mapping failed (%s)", SDL_GetError());
 		return {};
 	}
-
-	memcpy(transferData, flatVertices.data(), sizeof(D3DRMVERTEX) * flatVertices.size());
+	memcpy(transferData, finalVertices.data(), verticesSize);
+	memcpy(transferData + verticesSize, finalIndices.data(), indicesSize);
 	SDL_UnmapGPUTransferBuffer(m_device, uploadBuffer);
 
-	SDL_GPUTransferBufferLocation transferLocation = {};
-	transferLocation.transfer_buffer = uploadBuffer;
+	SDL_GPUTransferBufferLocation transferLocation = {uploadBuffer};
 
-	SDL_GPUBufferRegion bufferRegion = {};
-	bufferRegion.buffer = vertexBuffer;
-	bufferRegion.size = static_cast<Uint32>(sizeof(D3DRMVERTEX) * flatVertices.size());
-
-	// Upload the transfer data to the vertex buffer
+	// Upload vertex + index data to GPU
 	SDL_GPUCommandBuffer* cmdbuf = SDL_AcquireGPUCommandBuffer(m_device);
 	if (!cmdbuf) {
-		SDL_LogError(LOG_CATEGORY_MINIWIN, "SDL_AcquireGPUCommandBuffer in SubmitDraw failed (%s)", SDL_GetError());
+		SDL_LogError(LOG_CATEGORY_MINIWIN, "SDL_AcquireGPUCommandBuffer failed (%s)", SDL_GetError());
 		return {};
 	}
+
 	SDL_GPUCopyPass* copyPass = SDL_BeginGPUCopyPass(cmdbuf);
-	SDL_UploadToGPUBuffer(copyPass, &transferLocation, &bufferRegion, false);
+
+	SDL_GPUBufferRegion vertexRegion = {};
+	vertexRegion.buffer = vertexBuffer;
+	vertexRegion.size = verticesSize;
+	SDL_UploadToGPUBuffer(copyPass, &transferLocation, &vertexRegion, false);
+
+	SDL_GPUTransferBufferLocation indexTransferLocation = {};
+	indexTransferLocation.transfer_buffer = uploadBuffer;
+	indexTransferLocation.offset = verticesSize;
+	SDL_GPUBufferRegion indexRegion = {};
+	indexRegion.buffer = indexBuffer;
+	indexRegion.size = indicesSize;
+	SDL_UploadToGPUBuffer(copyPass, &indexTransferLocation, &indexRegion, false);
+
 	SDL_EndGPUCopyPass(copyPass);
 	m_uploadFence = SDL_SubmitGPUCommandBufferAndAcquireFence(cmdbuf);
 
-	return {&meshGroup, meshGroup.version, vertexBuffer, flatVertices.size()};
+	return {&meshGroup, meshGroup.version, vertexBuffer, indexBuffer, finalIndices.size()};
 }
 
 struct SDLMeshDestroyContext {
@@ -744,7 +764,9 @@ void Direct3DRMSDL3GPURenderer::SubmitDraw(
 	SDL_PushGPUFragmentUniformData(m_cmdbuf, 0, &m_fragmentShadingData, sizeof(m_fragmentShadingData));
 	SDL_GPUBufferBinding vertexBufferBinding = {mesh.vertexBuffer};
 	SDL_BindGPUVertexBuffers(m_renderPass, 0, &vertexBufferBinding, 1);
-	SDL_DrawGPUPrimitives(m_renderPass, mesh.vertexCount, 1, 0, 0);
+	SDL_GPUBufferBinding indexBufferBinding = {mesh.indexBuffer};
+	SDL_BindGPUIndexBuffer(m_renderPass, &indexBufferBinding, SDL_GPU_INDEXELEMENTSIZE_16BIT);
+	SDL_DrawGPUIndexedPrimitives(m_renderPass, mesh.indexCount, 1, 0, 0, 0);
 }
 
 HRESULT Direct3DRMSDL3GPURenderer::FinalizeFrame()
