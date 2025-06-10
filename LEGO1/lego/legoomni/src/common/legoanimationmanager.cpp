@@ -503,7 +503,7 @@ void LegoAnimationManager::Init()
 	m_unk0x1a = FALSE;
 	m_tranInfoList = NULL;
 	m_tranInfoList2 = NULL;
-	m_maxAllowedExtras = g_legoAnimationManagerConfig <= 1 ? 10 : 20;
+	m_maxAllowedExtras = g_legoAnimationManagerConfig;
 
 	MxS32 i;
 	for (i = 0; i < (MxS32) sizeOfArray(m_unk0x28); i++) {

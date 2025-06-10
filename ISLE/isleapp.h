@@ -85,6 +85,8 @@ private:
 	char* m_mediaPath;
 
 	char* m_iniPath;
+	MxFloat m_maxLod;
+	MxU32 m_maxAllowedExtras;
 };
 
 extern IsleApp* g_isle;
