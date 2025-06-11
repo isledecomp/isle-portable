@@ -123,9 +123,6 @@ void Direct3DRMSoftwareRenderer::DrawTriangleClipped(const D3DRMVERTEX (&v)[3], 
 	}
 }
 
-/**
- * @todo pre-compute a blending table when running in 256 colors since the game always uses an alpha of 152
- */
 void Direct3DRMSoftwareRenderer::BlendPixel(Uint8* pixelAddr, Uint8 r, Uint8 g, Uint8 b, Uint8 a)
 {
 	Uint32 dstPixel = 0;
@@ -143,7 +140,17 @@ void Direct3DRMSoftwareRenderer::BlendPixel(Uint8* pixelAddr, Uint8 r, Uint8 g, 
 	Uint8 outA = static_cast<Uint8>(a + dstA * invAlpha);
 
 	Uint32 blended = SDL_MapRGBA(m_format, m_palette, outR, outG, outB, outA);
-	memcpy(pixelAddr, &blended, m_bytesPerPixel);
+	switch (m_bytesPerPixel) {
+	case 1:
+		*pixelAddr = static_cast<Uint8>(blended);
+		break;
+	case 2:
+		*reinterpret_cast<Uint16*>(pixelAddr) = static_cast<Uint16>(blended);
+		break;
+	case 4:
+		*reinterpret_cast<Uint32*>(pixelAddr) = blended;
+		break;
+	}
 }
 
 SDL_Color Direct3DRMSoftwareRenderer::ApplyLighting(
@@ -394,10 +401,6 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 					case 2:
 						texelColor = *(Uint16*) texelAddr;
 						break;
-					case 3:
-						// Manually build the 24-bit color (assuming byte order)
-						texelColor = texelAddr[0] | (texelAddr[1] << 8) | (texelAddr[2] << 16);
-						break;
 					case 4:
 						texelColor = *(Uint32*) texelAddr;
 						break;
@@ -413,7 +416,17 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 				}
 
 				Uint32 finalColor = SDL_MapRGBA(m_format, m_palette, r, g, b, 255);
-				memcpy(pixelAddr, &finalColor, m_bytesPerPixel);
+				switch (m_bytesPerPixel) {
+				case 1:
+					*pixelAddr = static_cast<Uint8>(finalColor);
+					break;
+				case 2:
+					*reinterpret_cast<Uint16*>(pixelAddr) = static_cast<Uint16>(finalColor);
+					break;
+				case 4:
+					*reinterpret_cast<Uint32*>(pixelAddr) = finalColor;
+					break;
+				}
 			}
 			else {
 				// Transparent alpha blending with vertex alpha
