@@ -9,10 +9,11 @@ template <typename T>
 struct Direct3DRMObjectBaseImpl : public T {
 	ULONG Release() override
 	{
-		if (IUnknown::m_refCount == 1) {
+		if (T::m_refCount == 1) {
 			for (auto it = m_callbacks.cbegin(); it != m_callbacks.cend(); it++) {
 				it->first(this, it->second);
 			}
+			m_callbacks.clear();
 		}
 		SDL_free(m_name);
 		return this->T::Release();
