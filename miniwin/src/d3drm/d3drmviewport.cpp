@@ -216,6 +216,23 @@ bool IsMeshInFrustum(Direct3DRMMeshImpl* mesh, const D3DRMMATRIX4D& worldMatrix)
 	return true;
 }
 
+inline D3DRMVECTOR4D TransformPoint4(const D3DRMVECTOR4D& p, const D3DRMMATRIX4D& m)
+{
+	return {
+		p.x * m[0][0] + p.y * m[1][0] + p.z * m[2][0] + p.w * m[3][0],
+		p.x * m[0][1] + p.y * m[1][1] + p.z * m[2][1] + p.w * m[3][1],
+		p.x * m[0][2] + p.y * m[1][2] + p.z * m[2][2] + p.w * m[3][2],
+		p.x * m[0][3] + p.y * m[1][3] + p.z * m[2][3] + p.w * m[3][3]
+	};
+}
+
+float CalculateDepth(const D3DRMMATRIX4D& viewProj, const D3DRMMATRIX4D& worldMatrix)
+{
+	D3DRMVECTOR4D position = {worldMatrix[3][0], worldMatrix[3][1], worldMatrix[3][2], 1.0f};
+	D3DRMVECTOR4D clipPos = TransformPoint4(position, viewProj);
+	return (clipPos.z / clipPos.w + 1.0f) * 0.5f;
+}
+
 void Direct3DRMViewportImpl::CollectMeshesFromFrame(IDirect3DRMFrame* frame, D3DRMMATRIX4D parentMatrix)
 {
 	Direct3DRMFrameImpl* frameImpl = static_cast<Direct3DRMFrameImpl*>(frame);
@@ -251,15 +268,33 @@ void Direct3DRMViewportImpl::CollectMeshesFromFrame(IDirect3DRMFrame* frame, D3D
 				DWORD groupCount = mesh->GetGroupCount();
 				for (DWORD gi = 0; gi < groupCount; ++gi) {
 					const MeshGroup& meshGroup = mesh->GetGroup(gi);
-					m_renderer->SubmitDraw(
-						m_renderer->GetMeshId(mesh, &meshGroup),
-						worldMatrix,
-						worldMatrixInvert,
-						{meshGroup.color,
-						 meshGroup.material ? meshGroup.material->GetPower() : 0.0f,
-						 meshGroup.texture ? m_renderer->GetTextureId(meshGroup.texture) : NO_TEXTURE_ID,
-						 meshGroup.quality == D3DRMRENDER_FLAT || meshGroup.quality == D3DRMRENDER_UNLITFLAT}
-					);
+
+					Appearance appearance = {
+						meshGroup.color,
+						meshGroup.material ? meshGroup.material->GetPower() : 0.0f,
+						meshGroup.texture ? m_renderer->GetTextureId(meshGroup.texture) : NO_TEXTURE_ID,
+						meshGroup.quality == D3DRMRENDER_FLAT || meshGroup.quality == D3DRMRENDER_UNLITFLAT
+					};
+
+					if (appearance.color.a != 255) {
+						m_deferredDraws.push_back(
+							{m_renderer->GetMeshId(mesh, &meshGroup),
+							 {},
+							 {},
+							 appearance,
+							 CalculateDepth(m_viewProjectionwMatrix, worldMatrix)}
+						);
+						memcpy(m_deferredDraws.back().worldMatrix, worldMatrix, sizeof(D3DRMMATRIX4D));
+						memcpy(m_deferredDraws.back().normalMatrix, worldMatrixInvert, sizeof(Matrix3x3));
+					}
+					else {
+						m_renderer->SubmitDraw(
+							m_renderer->GetMeshId(mesh, &meshGroup),
+							worldMatrix,
+							worldMatrixInvert,
+							appearance
+						);
+					}
 				}
 			}
 			mesh->Release();
@@ -274,10 +309,10 @@ HRESULT Direct3DRMViewportImpl::RenderScene()
 	m_backgroundColor = static_cast<Direct3DRMFrameImpl*>(m_rootFrame)->m_backgroundColor;
 
 	// Compute view-projection matrix
-	D3DRMMATRIX4D cameraWorld, viewProj;
+	D3DRMMATRIX4D cameraWorld;
 	ComputeFrameWorldMatrix(m_camera, cameraWorld);
 	D3DRMMatrixInvertOrthogonal(m_viewMatrix, cameraWorld);
-	D3DRMMatrixMultiply(viewProj, m_viewMatrix, m_projectionMatrix);
+	D3DRMMatrixMultiply(m_viewProjectionwMatrix, m_viewMatrix, m_projectionMatrix);
 
 	D3DRMMATRIX4D identity = {{1.f, 0.f, 0.f, 0.f}, {0.f, 1.f, 0.f, 0.f}, {0.f, 0.f, 1.f, 0.f}, {0.f, 0.f, 0.f, 1.f}};
 
@@ -289,8 +324,20 @@ HRESULT Direct3DRMViewportImpl::RenderScene()
 		return status;
 	}
 
-	ExtractFrustumPlanes(viewProj);
+	ExtractFrustumPlanes(m_viewProjectionwMatrix);
 	CollectMeshesFromFrame(m_rootFrame, identity);
+
+	std::sort(
+		m_deferredDraws.begin(),
+		m_deferredDraws.end(),
+		[](const DeferredDrawCommand& a, const DeferredDrawCommand& b) { return a.depth > b.depth; }
+	);
+	m_renderer->EnableTransparency();
+	for (const DeferredDrawCommand& cmd : m_deferredDraws) {
+		m_renderer->SubmitDraw(cmd.meshId, cmd.worldMatrix, cmd.normalMatrix, cmd.appearance);
+	}
+	m_deferredDraws.clear();
+
 	return m_renderer->FinalizeFrame();
 }
 

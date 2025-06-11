@@ -5,6 +5,15 @@
 #include "miniwin/d3drm.h"
 
 #include <SDL3/SDL.h>
+#include <vector>
+
+struct DeferredDrawCommand {
+	DWORD meshId;
+	D3DRMMATRIX4D worldMatrix;
+	Matrix3x3 normalMatrix;
+	Appearance appearance;
+	float depth;
+};
 
 class Direct3DRMDeviceImpl;
 class Direct3DRMFrameImpl;
@@ -40,9 +49,11 @@ private:
 	void CollectMeshesFromFrame(IDirect3DRMFrame* frame, D3DRMMATRIX4D parentMatrix);
 	void UpdateProjectionMatrix();
 	Direct3DRMRenderer* m_renderer;
+	std::vector<DeferredDrawCommand> m_deferredDraws;
 	D3DCOLOR m_backgroundColor = 0xFF000000;
 	DWORD m_width;
 	DWORD m_height;
+	D3DRMMATRIX4D m_viewProjectionwMatrix;
 	D3DRMMATRIX4D m_viewMatrix;
 	D3DRMMATRIX4D m_projectionMatrix;
 	D3DRMMATRIX4D m_inverseProjectionMatrix;
