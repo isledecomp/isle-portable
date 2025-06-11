@@ -439,6 +439,11 @@ HRESULT OpenGL1Renderer::BeginFrame(const D3DRMMATRIX4D& viewMatrix)
 	return DD_OK;
 }
 
+void OpenGL1Renderer::EnableTransparency()
+{
+	glDepthMask(GL_FALSE);
+}
+
 void OpenGL1Renderer::SubmitDraw(
 	DWORD meshId,
 	const D3DRMMATRIX4D& worldMatrix,
@@ -524,6 +529,7 @@ void OpenGL1Renderer::SubmitDraw(
 
 HRESULT OpenGL1Renderer::FinalizeFrame()
 {
+	glDepthMask(GL_TRUE);
 	glReadPixels(0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, m_renderedImage->pixels);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 

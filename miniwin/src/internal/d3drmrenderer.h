@@ -42,6 +42,7 @@ public:
 	virtual void GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc) = 0;
 	virtual const char* GetName() = 0;
 	virtual HRESULT BeginFrame(const D3DRMMATRIX4D& viewMatrix) = 0;
+	virtual void EnableTransparency() = 0;
 	virtual void SubmitDraw(
 		DWORD meshId,
 		const D3DRMMATRIX4D& worldMatrix,
