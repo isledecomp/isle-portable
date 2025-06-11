@@ -120,7 +120,7 @@ MxU32 ReadData(MxU8* p_buffer, MxU32 p_size)
 			delete obj;
 
 			data = MxDSChunk::End(data2);
-			while (data < p_buffer + p_size) {
+			while (data + sizeof(MxU32) < p_buffer + p_size) {
 				if (UnalignedRead<MxU32>(data) == FOURCC('M', 'x', 'C', 'h')) {
 					MxU8* data3 = data;
 					data = MxDSChunk::End(data3);
