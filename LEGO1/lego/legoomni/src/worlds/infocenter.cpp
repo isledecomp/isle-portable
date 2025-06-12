@@ -273,7 +273,11 @@ MxLong Infocenter::Notify(MxParam& p_param)
 			else if (m_destLocation != 0) {
 				BackgroundAudioManager()->RaiseVolume();
 				GameState()->SwitchArea(m_destLocation);
-				m_destLocation = LegoGameState::e_undefined;
+
+				if (GameState()->m_currentArea != LegoGameState::e_act2main &&
+					GameState()->m_currentArea != LegoGameState::e_act3script) {
+					m_destLocation = LegoGameState::e_undefined;
+				}
 			}
 			break;
 		}
