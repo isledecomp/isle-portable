@@ -17,6 +17,8 @@
 #define DDBitDepths DWORD
 #endif
 
+// SDL will not put the message box on the main thread by default.
+// See: https://github.com/libsdl-org/SDL/issues/12943
 #ifdef __EMSCRIPTEN__
 #define Any_ShowSimpleMessageBox Emscripten_ShowSimpleMessageBox
 #else

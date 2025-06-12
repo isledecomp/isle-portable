@@ -387,6 +387,7 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 #ifdef __EMSCRIPTEN__
 	// Workaround for the fact we are getting both mouse & touch events on mobile devices running Emscripten.
 	// On desktops, we are only getting mouse events, but a touch device (pen_input) may also be present...
+	// See: https://github.com/libsdl-org/SDL/issues/13161
 	static bool detectedTouchEvents = false;
 #endif
 
