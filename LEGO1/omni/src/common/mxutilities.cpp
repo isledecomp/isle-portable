@@ -12,6 +12,8 @@
 #include <SDL3/SDL_stdinc.h>
 #include <assert.h>
 
+LegoSdlEvents g_legoSdlEvents;
+
 // GLOBAL: LEGO1 0x101020e8
 void (*g_omniUserMessage)(const char*, MxS32) = NULL;
 

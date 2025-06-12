@@ -1,9 +1,18 @@
 #ifndef MXUTILITIES_H
 #define MXUTILITIES_H
 
+#include "lego1_export.h"
 #include "mxtypes.h"
 
+#include <SDL3/SDL_stdinc.h>
 #include <string.h>
+
+struct LegoSdlEvents {
+	Uint32 m_windowsMessage;
+	Uint32 m_presenterProgress;
+};
+
+LEGO1_EXPORT extern LegoSdlEvents g_legoSdlEvents;
 
 class MxDSFile;
 class MxDSObject;

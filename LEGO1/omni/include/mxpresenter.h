@@ -5,6 +5,9 @@
 #include "mxcore.h"
 #include "mxcriticalsection.h"
 #include "mxgeometry.h"
+#include "mxutilities.h"
+
+#include <SDL3/SDL_events.h>
 
 class MxCompositePresenter;
 class MxDSAction;
@@ -62,6 +65,12 @@ protected:
 	{
 		m_previousTickleStates |= 1 << (MxU8) m_currentTickleState;
 		m_currentTickleState = p_tickleState;
+
+		SDL_Event event;
+		event.user.type = g_legoSdlEvents.m_presenterProgress;
+		event.user.code = m_currentTickleState;
+		event.user.data1 = (void*) this;
+		SDL_PushEvent(&event);
 	}
 
 public:
