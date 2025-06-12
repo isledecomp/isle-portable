@@ -17,7 +17,6 @@ public:
 	int GetBestDevice();
 	static bool SupportsSIMD();
 	int FUN_1009d210();
-	unsigned char DriverSupportsRequiredDisplayMode(MxDriver& p_driver);
 	unsigned char FUN_1009d3d0(Direct3DDeviceInfo& p_device);
 
 	// SYNTHETIC: BETA10 0x100d8d10

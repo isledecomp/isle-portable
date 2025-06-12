@@ -17,6 +17,9 @@
 
 SDL_Window* DDWindow;
 SDL_Surface* DDBackBuffer;
+SDL_Texture* HWBackBuffer;
+SDL_PixelFormat HWBackBufferFormat;
+SDL_Renderer* DDRenderer;
 
 HRESULT DirectDrawImpl::QueryInterface(const GUID& riid, void** ppvObject)
 {
@@ -280,6 +283,7 @@ HRESULT DirectDrawImpl::RestoreDisplayMode()
 HRESULT DirectDrawImpl::SetCooperativeLevel(HWND hWnd, DDSCLFlags dwFlags)
 {
 	SDL_Window* sdlWindow = reinterpret_cast<SDL_Window*>(hWnd);
+
 	if (sdlWindow) {
 		bool fullscreen;
 		if ((dwFlags & DDSCL_NORMAL) == DDSCL_NORMAL) {
@@ -293,9 +297,13 @@ HRESULT DirectDrawImpl::SetCooperativeLevel(HWND hWnd, DDSCLFlags dwFlags)
 		}
 
 		if (!SDL_SetWindowFullscreen(sdlWindow, fullscreen)) {
+#ifndef __EMSCRIPTEN__
 			return DDERR_GENERIC;
+#endif
 		}
 		DDWindow = sdlWindow;
+		DDRenderer = SDL_CreateRenderer(DDWindow, NULL);
+		SDL_SetRenderLogicalPresentation(DDRenderer, 640, 480, SDL_LOGICAL_PRESENTATION_LETTERBOX);
 	}
 	return DD_OK;
 }

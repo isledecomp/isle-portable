@@ -40,6 +40,7 @@ jobs:
           - { name: 'msys2 mingw32',  os: 'windows-latest', dx5: false, config: false, build-type: 'Debug', mingw: true, werror: true,   clang-tidy: true,   msystem: 'mingw32', msys-env: 'mingw-w64-i686',   shell: 'msys2 {0}' }
           - { name: 'msys2 mingw64',  os: 'windows-latest', dx5: false, config: true,  build-type: 'Debug', mingw: true, werror: true,   clang-tidy: true,   msystem: 'mingw64', msys-env: 'mingw-w64-x86_64', shell: 'msys2 {0}' }
           - { name: 'macOS',          os: 'macos-latest',   dx5: false, config: true,  build-type: 'Debug', brew: true,  werror: true,   clang-tidy: false }
+          - { name: 'Emscripten',     os: 'ubuntu-latest',  dx5: false, config: false, build-type: 'Debug', emsdk: true, werror: true,   clang-tidy: false,  cmake-wrapper: 'emcmake' }
     steps:
       - name: Setup vcvars
         if: ${{ !!matrix.msvc }}
@@ -74,6 +75,10 @@ jobs:
           brew install cmake ninja llvm qt6
           echo "LLVM_ROOT=$(brew --prefix llvm)/bin" >> $GITHUB_ENV
 
+      - name: Setup Emscripten
+        uses: mymindstorm/setup-emsdk@master
+        if: ${{ matrix.emsdk }}
+
       - name: Setup ninja
         if: ${{ matrix.msvc }}
         uses: ashutoshvarma/setup-ninja@master
@@ -82,7 +87,7 @@ jobs:
 
       - name: Configure (CMake)
         run: |
-          cmake -S . -B build -GNinja \
+          ${{ matrix.cmake-wrapper || '' }} cmake -S . -B build -GNinja \
             -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
             -DISLE_USE_DX5=${{ !!matrix.dx5 }} \
             -DISLE_BUILD_CONFIG=${{ matrix.config }} \

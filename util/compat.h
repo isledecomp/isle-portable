@@ -17,6 +17,14 @@
 #define DDBitDepths DWORD
 #endif
 
+// SDL will not put the message box on the main thread by default.
+// See: https://github.com/libsdl-org/SDL/issues/12943
+#ifdef __EMSCRIPTEN__
+#define Any_ShowSimpleMessageBox Emscripten_ShowSimpleMessageBox
+#else
+#define Any_ShowSimpleMessageBox SDL_ShowSimpleMessageBox
+#endif
+
 // Disable "identifier was truncated to '255' characters" warning.
 // Impossible to avoid this if using STL map or set.
 // This removes most (but not all) occurrences of the warning.

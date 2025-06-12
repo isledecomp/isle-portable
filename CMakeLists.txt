@@ -2,6 +2,12 @@ cmake_minimum_required(VERSION 3.25...4.0 FATAL_ERROR)
 
 project(isle LANGUAGES CXX C VERSION 0.1)
 
+if (EMSCRIPTEN)
+  add_compile_options(-pthread)
+  add_link_options(-sALLOW_MEMORY_GROWTH=1 -sMAXIMUM_MEMORY=2gb -sUSE_PTHREADS=1 -sPROXY_TO_PTHREAD=1 -sPTHREAD_POOL_SIZE_STRICT=0 -sFORCE_FILESYSTEM=1 -sWASMFS=1 -sEXIT_RUNTIME=1)
+  set(SDL_PTHREADS ON CACHE BOOL "Enable SDL pthreads" FORCE)
+endif()
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 include(CheckCXXSourceCompiles)
@@ -34,6 +40,8 @@ option(CMAKE_POSITION_INDEPENDENT_CODE "Build with -fPIC" ON)
 option(ENABLE_CLANG_TIDY "Enable clang-tidy")
 option(DOWNLOAD_DEPENDENCIES "Download dependencies" ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}" CACHE PATH "Directory where to put executables and dll")
+set(ISLE_EMSCRIPTEN_HOST "" CACHE STRING "Host URL for Emscripten streaming (e.g., https://test.com)")
+cmake_dependent_option(BUILD_SHARED_LIBS "Build lego1 as a shared library" ON "NOT EMSCRIPTEN" OFF)
 
 message(STATUS "Isle app:               ${ISLE_BUILD_APP}")
 message(STATUS "Config app:             ${ISLE_BUILD_CONFIG}")
@@ -59,9 +67,11 @@ if (DOWNLOAD_DEPENDENCIES)
         GIT_TAG "main"
         EXCLUDE_FROM_ALL
     )
-    set(BUILD_DOCS off)
-    set(BUILD_SHARED_LIBS off)
-    FetchContent_MakeAvailable(iniparser)
+    block()
+      set(BUILD_DOCS off)
+      set(BUILD_SHARED_LIBS off)
+      FetchContent_MakeAvailable(iniparser)
+    endblock()
 else()
     # find_package looks for already-installed system packages.
     # Configure with `-DCMAKE_PREFIX_PATH="/path/to/package1;/path/to/package2"`
@@ -129,7 +139,7 @@ target_link_directories(DirectX5::DirectX5 INTERFACE "${CMAKE_SOURCE_DIR}/3rdpar
 add_library(Vec::Vec INTERFACE IMPORTED)
 target_include_directories(Vec::Vec INTERFACE "${CMAKE_SOURCE_DIR}/3rdparty/vec")
 
-add_library(lego1 SHARED
+add_library(lego1
   LEGO1/main.cpp
 )
 target_precompile_headers(lego1 PRIVATE "LEGO1/lego1_pch.h")
@@ -497,6 +507,15 @@ if (ISLE_BUILD_APP)
       target_include_directories(isle PRIVATE ${valgrind_INCLUDE_PATH})
     endif()
   endif()
+  if(EMSCRIPTEN)
+    target_sources(isle PRIVATE
+      ISLE/emscripten/events.cpp
+      ISLE/emscripten/filesystem.cpp
+      ISLE/emscripten/messagebox.cpp
+    )
+    target_compile_definitions(isle PRIVATE "ISLE_EMSCRIPTEN_HOST=\"${ISLE_EMSCRIPTEN_HOST}\"")
+    set_property(TARGET isle PROPERTY SUFFIX ".html")
+  endif()
 endif()
 
 if (ISLE_BUILD_CONFIG)
@@ -602,10 +621,18 @@ else()
 endif()
 
 set(ISLE_PACKAGE_NAME "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}" CACHE STRING "Platform name of the package")
-install(TARGETS isle lego1 ${install_extra_targets}
+if(BUILD_SHARED_LIBS)
+  list(APPEND install_extra_targets lego1)
+endif()
+install(TARGETS isle ${install_extra_targets}
   RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
   LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
 )
+if(EMSCRIPTEN)
+  install(FILES "$<TARGET_FILE_DIR:isle>/isle.js" "$<TARGET_FILE_DIR:isle>/isle.wasm"
+    DESTINATION "${CMAKE_INSTALL_BINDIR}"
+  )
+endif()
 
 set(CPACK_PACKAGE_DIRECTORY "dist")
 set(CPACK_PACKAGE_FILE_NAME "isle-${PROJECT_VERSION}-${ISLE_PACKAGE_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
