@@ -284,11 +284,6 @@ HRESULT DirectDrawImpl::SetCooperativeLevel(HWND hWnd, DDSCLFlags dwFlags)
 {
 	SDL_Window* sdlWindow = reinterpret_cast<SDL_Window*>(hWnd);
 
-#ifdef __EMSCRIPTEN__
-	DDWindow = sdlWindow;
-	return DD_OK;
-#endif
-
 	if (sdlWindow) {
 		bool fullscreen;
 		if ((dwFlags & DDSCL_NORMAL) == DDSCL_NORMAL) {
@@ -302,7 +297,9 @@ HRESULT DirectDrawImpl::SetCooperativeLevel(HWND hWnd, DDSCLFlags dwFlags)
 		}
 
 		if (!SDL_SetWindowFullscreen(sdlWindow, fullscreen)) {
+#ifndef __EMSCRIPTEN__
 			return DDERR_GENERIC;
+#endif
 		}
 		DDWindow = sdlWindow;
 		DDRenderer = SDL_CreateRenderer(DDWindow, NULL);
