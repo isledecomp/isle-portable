@@ -12,6 +12,7 @@
 #endif
 #include "d3drmrenderer_sdl3gpu.h"
 #include "d3drmrenderer_software.h"
+#include "d3drmrenderer_webgl.h"
 #include "d3drmtexture_impl.h"
 #include "d3drmviewport_impl.h"
 #include "ddraw_impl.h"
@@ -143,6 +144,9 @@ HRESULT Direct3DRMImpl::CreateDeviceFromSurface(
 	}
 	else if (SDL_memcmp(&guid, &SOFTWARE_GUID, sizeof(GUID)) == 0) {
 		renderer = new Direct3DRMSoftwareRenderer(DDSDesc.dwWidth, DDSDesc.dwHeight);
+	}
+	else if (SDL_memcmp(&guid, &WebGL_GUID, sizeof(GUID)) == 0) {
+		renderer = WebGLRenderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
 #ifdef USE_OPENGL1
 	else if (SDL_memcmp(&guid, &OpenGL1_GUID, sizeof(GUID)) == 0) {

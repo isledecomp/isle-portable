@@ -158,11 +158,12 @@ HRESULT DirectDrawSurfaceImpl::Flip(LPDIRECTDRAWSURFACE lpDDSurfaceTargetOverrid
 		return DDERR_GENERIC;
 	}
 
-	SDL_Surface* copy = SDL_ConvertSurface(DDBackBuffer, HWBackBufferFormat);
-	SDL_UpdateTexture(HWBackBuffer, nullptr, copy->pixels, copy->pitch);
-	SDL_DestroySurface(copy);
-	SDL_RenderTexture(DDRenderer, HWBackBuffer, nullptr, nullptr);
-	SDL_RenderPresent(DDRenderer);
+	//SDL_Surface* copy = SDL_ConvertSurface(DDBackBuffer, HWBackBufferFormat);
+	//SDL_UpdateTexture(HWBackBuffer, nullptr, copy->pixels, copy->pitch);
+	//SDL_DestroySurface(copy);
+	//SDL_RenderTexture(DDRenderer, HWBackBuffer, nullptr, nullptr);
+	//SDL_RenderPresent(DDRenderer);
+	//SDL_UpdateWindowSurface(DDWindow);
 	return DD_OK;
 }
 
