@@ -8,6 +8,9 @@
 
 extern SDL_Window* DDWindow;
 extern SDL_Surface* DDBackBuffer;
+extern SDL_Texture* HWBackBuffer;
+extern SDL_PixelFormat HWBackBufferFormat;
+extern SDL_Renderer* DDRenderer;
 
 struct DirectDrawImpl : public IDirectDraw2, public IDirect3D2 {
 	// IUnknown interface

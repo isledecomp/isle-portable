@@ -33,6 +33,7 @@ struct Direct3DRMDevice2Impl : public Direct3DRMObjectBaseImpl<IDirect3DRMDevice
 	HRESULT GetViewports(IDirect3DRMViewportArray** ppViewportArray) override;
 
 	// IDirect3DRMMiniwinDevice interface
+	bool ConvertEventToRenderCoordinates(SDL_Event* event) override;
 	float GetShininessFactor() override;
 	HRESULT SetShininessFactor(float factor) override;
 

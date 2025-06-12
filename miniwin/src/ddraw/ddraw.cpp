@@ -17,6 +17,9 @@
 
 SDL_Window* DDWindow;
 SDL_Surface* DDBackBuffer;
+SDL_Texture* HWBackBuffer;
+SDL_PixelFormat HWBackBufferFormat;
+SDL_Renderer* DDRenderer;
 
 HRESULT DirectDrawImpl::QueryInterface(const GUID& riid, void** ppvObject)
 {
@@ -296,6 +299,8 @@ HRESULT DirectDrawImpl::SetCooperativeLevel(HWND hWnd, DDSCLFlags dwFlags)
 			return DDERR_GENERIC;
 		}
 		DDWindow = sdlWindow;
+		DDRenderer = SDL_CreateRenderer(DDWindow, NULL);
+		SDL_SetRenderLogicalPresentation(DDRenderer, 640, 480, SDL_LOGICAL_PRESENTATION_LETTERBOX);
 	}
 	return DD_OK;
 }
