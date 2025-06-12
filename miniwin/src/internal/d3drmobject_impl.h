@@ -7,6 +7,13 @@
 
 template <typename T>
 struct Direct3DRMObjectBaseImpl : public T {
+	Direct3DRMObjectBaseImpl() : T() {}
+	Direct3DRMObjectBaseImpl(const Direct3DRMObjectBaseImpl& other) : m_appData(other.m_appData), T(other)
+	{
+		if (other.m_name) {
+			m_name = SDL_strdup(other.m_name);
+		}
+	}
 	ULONG Release() override
 	{
 		if (T::m_refCount == 1) {

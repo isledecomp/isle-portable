@@ -268,7 +268,7 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 
 	Uint8 r, g, b;
 	SDL_Color c0 = ApplyLighting(v0.position, v0.normal, appearance);
-	SDL_Color c1, c2;
+	SDL_Color c1 = {}, c2 = {};
 	if (!appearance.flat) {
 		c1 = ApplyLighting(v1.position, v1.normal, appearance);
 		c2 = ApplyLighting(v2.position, v2.normal, appearance);
