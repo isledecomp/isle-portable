@@ -7,6 +7,11 @@
 
 template <typename T>
 struct Direct3DRMObjectBaseImpl : public T {
+	Direct3DRMObjectBaseImpl(const Direct3DRMObjectBaseImpl& other) : T(other)
+	{
+		// We should not call the callback twice
+		m_callbacks.clear();
+	}
 	ULONG Release() override
 	{
 		if (T::m_refCount == 1) {
@@ -64,10 +69,8 @@ struct Direct3DRMObjectBaseImpl : public T {
 		return D3DRM_OK;
 	}
 
-protected:
-	std::vector<std::pair<D3DRMOBJECTCALLBACK, void*>> m_callbacks;
-
 private:
 	LPD3DRM_APPDATA m_appData = nullptr;
+	std::vector<std::pair<D3DRMOBJECTCALLBACK, void*>> m_callbacks;
 	char* m_name = nullptr;
 };
