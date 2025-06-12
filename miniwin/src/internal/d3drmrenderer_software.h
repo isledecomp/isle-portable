@@ -55,7 +55,7 @@ private:
 	);
 	void DrawTriangleClipped(const D3DRMVERTEX (&v)[3], const Appearance& appearance);
 	void ProjectVertex(const D3DRMVERTEX& v, D3DRMVECTOR4D& p) const;
-	void BlendPixel(Uint8* pixelAddr, Uint8 r, Uint8 g, Uint8 b, Uint8 a);
+	Uint32 BlendPixel(Uint8* pixelAddr, Uint8 r, Uint8 g, Uint8 b, Uint8 a);
 	SDL_Color ApplyLighting(const D3DVECTOR& position, const D3DVECTOR& normal, const Appearance& appearance);
 	void AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture);
 	void AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh);

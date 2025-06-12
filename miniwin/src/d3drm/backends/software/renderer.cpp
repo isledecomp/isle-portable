@@ -10,6 +10,18 @@
 #include <cmath>
 #include <cstring>
 #include <limits>
+#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
+#include <xmmintrin.h>
+#if defined(__i386__) || defined(_M_IX86)
+#include <xmmintrin.h>
+#endif
+#endif
+#if defined(__arm__) || defined(__aarch64__)
+#include <arm_neon.h>
+#endif
+#if defined(__wasm_simd128__)
+#include <wasm_simd128.h>
+#endif
 
 Direct3DRMSoftwareRenderer::Direct3DRMSoftwareRenderer(DWORD width, DWORD height) : m_width(width), m_height(height)
 {
@@ -30,7 +42,44 @@ void Direct3DRMSoftwareRenderer::SetProjection(const D3DRMMATRIX4D& projection, 
 
 void Direct3DRMSoftwareRenderer::ClearZBuffer()
 {
-	std::fill(m_zBuffer.begin(), m_zBuffer.end(), std::numeric_limits<float>::infinity());
+	const size_t size = m_zBuffer.size();
+	const float inf = std::numeric_limits<float>::infinity();
+	size_t i = 0;
+
+#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
+	if (SDL_HasSSE2()) {
+		__m128 inf4 = _mm_set1_ps(inf);
+		for (; i + 4 <= size; i += 4) {
+			_mm_storeu_ps(&m_zBuffer[i], inf4);
+		}
+	}
+#if defined(__i386__) || defined(_M_IX86)
+	else if (SDL_HasMMX()) {
+		const __m64 mm_inf = _mm_set_pi32(0x7F800000, 0x7F800000);
+		for (; i + 2 <= size; i += 2) {
+			*reinterpret_cast<__m64*>(&m_zBuffer[i]) = mm_inf;
+		}
+		_mm_empty();
+	}
+#endif
+#elif defined(__arm__) || defined(__aarch64__)
+	if (SDL_HasNEON()) {
+		float32x4_t inf4 = vdupq_n_f32(inf);
+		for (; i + 4 <= size; i += 4) {
+			vst1q_f32(&m_zBuffer[i], inf4);
+		}
+	}
+#elif defined(__wasm_simd128__)
+	const size_t simdWidth = 4;
+	v128_t infVec = wasm_f32x4_splat(inf);
+	for (; i + simdWidth <= size; i += simdWidth) {
+		wasm_v128_store(&m_zBuffer[i], infVec);
+	}
+#endif
+
+	for (; i < size; ++i) {
+		m_zBuffer[i] = inf;
+	}
 }
 
 void Direct3DRMSoftwareRenderer::ProjectVertex(const D3DRMVERTEX& v, D3DRMVECTOR4D& p) const
@@ -123,10 +172,20 @@ void Direct3DRMSoftwareRenderer::DrawTriangleClipped(const D3DRMVERTEX (&v)[3], 
 	}
 }
 
-void Direct3DRMSoftwareRenderer::BlendPixel(Uint8* pixelAddr, Uint8 r, Uint8 g, Uint8 b, Uint8 a)
+Uint32 Direct3DRMSoftwareRenderer::BlendPixel(Uint8* pixelAddr, Uint8 r, Uint8 g, Uint8 b, Uint8 a)
 {
-	Uint32 dstPixel = 0;
-	memcpy(&dstPixel, pixelAddr, m_bytesPerPixel);
+	Uint32 dstPixel;
+	switch (m_bytesPerPixel) {
+	case 1:
+		dstPixel = *pixelAddr;
+		break;
+	case 2:
+		dstPixel = *(Uint16*) pixelAddr;
+		break;
+	case 4:
+		dstPixel = *(Uint32*) pixelAddr;
+		break;
+	}
 
 	Uint8 dstR, dstG, dstB, dstA;
 	SDL_GetRGBA(dstPixel, m_format, m_palette, &dstR, &dstG, &dstB, &dstA);
@@ -139,18 +198,7 @@ void Direct3DRMSoftwareRenderer::BlendPixel(Uint8* pixelAddr, Uint8 r, Uint8 g, 
 	Uint8 outB = static_cast<Uint8>(b * alpha + dstB * invAlpha);
 	Uint8 outA = static_cast<Uint8>(a + dstA * invAlpha);
 
-	Uint32 blended = SDL_MapRGBA(m_format, m_palette, outR, outG, outB, outA);
-	switch (m_bytesPerPixel) {
-	case 1:
-		*pixelAddr = static_cast<Uint8>(blended);
-		break;
-	case 2:
-		*reinterpret_cast<Uint16*>(pixelAddr) = static_cast<Uint16>(blended);
-		break;
-	case 4:
-		*reinterpret_cast<Uint32*>(pixelAddr) = blended;
-		break;
-	}
+	return SDL_MapRGBA(m_format, m_palette, outR, outG, outB, outA);
 }
 
 SDL_Color Direct3DRMSoftwareRenderer::ApplyLighting(
@@ -370,6 +418,7 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 			}
 
 			Uint8* pixelAddr = pixels + y * pitch + x * m_bytesPerPixel;
+			Uint32 finalColor;
 
 			if (appearance.color.a == 255) {
 				zref = z;
@@ -415,22 +464,22 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 					b = (b * tb + 127) / 255;
 				}
 
-				Uint32 finalColor = SDL_MapRGBA(m_format, m_palette, r, g, b, 255);
-				switch (m_bytesPerPixel) {
-				case 1:
-					*pixelAddr = static_cast<Uint8>(finalColor);
-					break;
-				case 2:
-					*reinterpret_cast<Uint16*>(pixelAddr) = static_cast<Uint16>(finalColor);
-					break;
-				case 4:
-					*reinterpret_cast<Uint32*>(pixelAddr) = finalColor;
-					break;
-				}
+				finalColor = SDL_MapRGBA(m_format, m_palette, r, g, b, 255);
 			}
 			else {
-				// Transparent alpha blending with vertex alpha
-				BlendPixel(pixelAddr, r, g, b, appearance.color.a);
+				finalColor = BlendPixel(pixelAddr, r, g, b, appearance.color.a);
+			}
+
+			switch (m_bytesPerPixel) {
+			case 1:
+				*pixelAddr = static_cast<Uint8>(finalColor);
+				break;
+			case 2:
+				*reinterpret_cast<Uint16*>(pixelAddr) = static_cast<Uint16>(finalColor);
+				break;
+			case 4:
+				*reinterpret_cast<Uint32*>(pixelAddr) = finalColor;
+				break;
 			}
 		}
 	}

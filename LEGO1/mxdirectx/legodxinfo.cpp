@@ -1,10 +1,8 @@
 #include "legodxinfo.h"
 
+#include <SDL3/SDL_cpuinfo.h>
 #include <assert.h>
 #include <stdio.h> // for vsprintf
-#if defined(_MSC_VER) && _MSC_VER >= 1310
-#include <intrin.h>
-#endif
 
 // File name validated by BETA10 0x1011cba3; directory unknown
 
@@ -204,74 +202,7 @@ int LegoDeviceEnumerate::GetBestDevice()
 // FUNCTION: BETA10 0x1011cf54
 bool LegoDeviceEnumerate::SupportsSIMD()
 {
-#if defined(__x86_64__) || defined(_M_X64) || defined(__aarch64__) || defined(_M_ARM64) || defined(__EMSCRIPTEN__)
-	// All x86_64 and 64-bit ARM CPUs support at least SSE2 or NEON
-	return true;
-#elif defined(__i386__) || defined(_M_IX86)
-	// 32-bit x86 - need to use CPUID to check for MMX or SSE
-	if (!SupportsCPUID()) {
-		return false;
-	}
-
-	int edx;
-#if defined(_MSC_VER) && _MSC_VER >= 1310
-	int cpuInfo[4];
-	__cpuid(cpuInfo, 1);
-	edx = cpuInfo[3];
-#else
-	__asm__ __volatile__("movl $1, %%eax\n\t"
-						 "cpuid\n\t"
-						 : "=d"(edx)
-						 :
-						 : "%eax", "%ebx", "%ecx");
-#endif
-	return (edx & (1 << 23)) != 0; // Bit 23: MMX
-#elif defined(__arm__) && defined(__ANDROID__)
-	// Runtime check for NEON on 32-bit ARM (using Android NDK)
-	return android_getCpuFeatures() & ANDROID_CPU_ARM_FEATURE_NEON;
-#else
-// Prevent unsupported builds
-#error "Unsupported platform: SIMD feature detection not implemented"
-#endif
-}
-
-// FUNCTION: CONFIG 0x00402970
-// FUNCTION: LEGO1 0x1009d1e0
-// FUNCTION: BETA10 0x1011cf97
-bool LegoDeviceEnumerate::SupportsCPUID()
-{
-#if defined(_M_X64) || defined(__x86_64__) || defined(__amd64__)
-	return true;
-#elif defined(_M_IX86) || defined(__i386__)
-	int has_cpuid;
-#ifdef _MSC_VER
-	__asm {
-		xor eax, eax                    ; Zero EAX register
-		pushfd                          ; Push EFLAGS register value on the stack
-		or dword ptr[esp], 0x200000     ; Set bit 0x200000: Able to use CPUID instruction (Pentium+)
-		popfd                           ; Write the updated value into the EFLAGS register
-		pushfd                          ; Push EFLAGS register value on the stack (again)
-		btr dword ptr[esp], 0x15        ; Test bit 0x15 (21) and reset (set CF)
-		adc eax, eax                    ; Add with carry: EAX = EAX + EAX + CF = CF
-		popfd                           ; Push EFLAGS register value on the stack (again, and makes sure the stack remains the same)
-		mov has_cpuid, eax              ; Save eax into C variable
-	}
-#else
-	__asm__("xorl %%eax, %%eax\n\t"      // Zero EAX register
-			"pushfl\n\t"                 // Push EFLAGS register value on the stack
-			"orl $0x200000, (%%esp)\n\t" // Set bit 0x200000: Able to use CPUID instruction (Pentium+)
-			"popfl\n\t"                  // Write the updated value into the EFLAGS register
-			"pushfl\n\t"                 // Push EFLAGS register value on the stack (again)
-			"btrl $0x15, (%%esp)\n\t"    // Test bit 0x15 (21) and reset (set CF)
-			"adc %%eax, %%eax\n\t"       // Add with carry: EAX = EAX + EAX + CF = CF
-			"popfl" // Push EFLAGS register value on the stack (again, and makes sure the stack remains the same)
-			: "=a"(has_cpuid) // has_cpuid == EAX
-	);
-#endif
-	return has_cpuid;
-#else
-	return false;
-#endif
+	return SDL_HasSSE2() || SDL_HasNEON() || SDL_HasMMX();
 }
 
 // FUNCTION: CONFIG 0x004029a0
