@@ -31,6 +31,8 @@ struct SceneLight {
 };
 static_assert(sizeof(SceneLight) == 48);
 
+extern SDL_Renderer* DDRenderer;
+
 class Direct3DRMRenderer : public IDirect3DDevice2 {
 public:
 	virtual void PushLights(const SceneLight* vertices, size_t count) = 0;
@@ -51,6 +53,10 @@ public:
 	) = 0;
 	virtual HRESULT FinalizeFrame() = 0;
 
+	bool ConvertEventToRenderCoordinates(SDL_Event* event)
+	{
+		return SDL_ConvertEventToRenderCoordinates(DDRenderer, event);
+	}
 	float GetShininessFactor() { return m_shininessFactor; }
 	HRESULT SetShininessFactor(float factor)
 	{

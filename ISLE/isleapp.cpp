@@ -355,8 +355,18 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 
 	// [library:window]
 	// Remaining functionality to be implemented:
-	// Full screen - crashes when minimizing/maximizing, but this will probably be fixed once DirectDraw is replaced
 	// WM_TIMER - use SDL_Timer functionality instead
+
+	switch (event->type) {
+	case SDL_EVENT_MOUSE_MOTION:
+	case SDL_EVENT_MOUSE_BUTTON_DOWN:
+	case SDL_EVENT_MOUSE_BUTTON_UP:
+		IDirect3DRMMiniwinDevice* device = GetD3DRMMiniwinDevice();
+		if (device && !device->ConvertEventToRenderCoordinates(event)) {
+			SDL_Log("Failed to convert event coordinates: %s", SDL_GetError());
+		}
+		break;
+	}
 
 	switch (event->type) {
 	case SDL_EVENT_WINDOW_FOCUS_GAINED:
