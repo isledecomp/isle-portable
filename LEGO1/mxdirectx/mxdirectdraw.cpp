@@ -283,23 +283,6 @@ BOOL MxDirectDraw::DDInit(BOOL fullscreen)
 	return TRUE;
 }
 
-// FUNCTION: LEGO1 0x1009d9d0
-// FUNCTION: BETA10 0x10120e45
-BOOL MxDirectDraw::IsSupportedMode(int width, int height, int bpp)
-{
-	DeviceModesInfo::Mode mode = {width, height, bpp};
-
-	assert(m_currentDevInfo);
-
-	for (int i = 0; i < m_currentDevInfo->m_count; i++) {
-		if (m_currentDevInfo->m_modeArray[i] == mode) {
-			return TRUE;
-		}
-	}
-
-	return FALSE;
-}
-
 // FUNCTION: LEGO1 0x1009da20
 // FUNCTION: BETA10 0x10120efb
 void EnableResizing(HWND p_hwnd, BOOL p_flag)
@@ -338,12 +321,6 @@ BOOL MxDirectDraw::DDSetMode(int width, int height, int bpp)
 			}
 		}
 #endif
-
-		if (!IsSupportedMode(width, height, bpp)) {
-			width = m_currentDevInfo->m_modeArray[0].width;
-			height = m_currentDevInfo->m_modeArray[0].height;
-			bpp = m_currentDevInfo->m_modeArray[0].bitsPerPixel;
-		}
 
 		m_bIgnoreWMSIZE = TRUE;
 		result = m_pDirectDraw->SetDisplayMode(width, height, bpp);

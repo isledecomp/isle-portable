@@ -284,11 +284,6 @@ int LegoDeviceEnumerate::FUN_1009d210()
 	}
 
 	for (list<MxDriver>::iterator it = m_list.begin(); it != m_list.end();) {
-		if (!DriverSupportsRequiredDisplayMode(*it)) {
-			m_list.erase(it++);
-			continue;
-		}
-
 		MxDriver& driver = *it;
 
 		for (list<Direct3DDeviceInfo>::iterator it2 = driver.m_devices.begin(); it2 != driver.m_devices.end();) {
@@ -313,23 +308,6 @@ int LegoDeviceEnumerate::FUN_1009d210()
 	}
 
 	return 0;
-}
-
-// FUNCTION: CONFIG 0x00402b00
-// FUNCTION: LEGO1 0x1009d370
-// FUNCTION: BETA10 0x1011d176
-unsigned char LegoDeviceEnumerate::DriverSupportsRequiredDisplayMode(MxDriver& p_driver)
-{
-	for (list<MxDisplayMode>::iterator it = p_driver.m_displayModes.begin(); it != p_driver.m_displayModes.end();
-		 it++) {
-		if ((*it).m_width == 640 && (*it).m_height == 480) {
-			if ((*it).m_bitsPerPixel == 8 || (*it).m_bitsPerPixel == 16) {
-				return TRUE;
-			}
-		}
-	}
-
-	return FALSE;
 }
 
 // FUNCTION: CONFIG 0x00402b60

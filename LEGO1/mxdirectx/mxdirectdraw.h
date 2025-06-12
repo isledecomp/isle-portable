@@ -55,8 +55,6 @@ public:
 	// FUNCTION: BETA10 0x1011c170
 	BOOL IsFullScreen() { return m_bFullScreen; }
 
-	BOOL IsSupportedMode(int width, int height, int bpp);
-
 	int Pause(BOOL);
 	BOOL RestoreSurfaces();
 

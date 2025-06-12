@@ -216,7 +216,6 @@ BOOL MxDeviceEnumerate::EnumDirectDrawCallback(LPGUID p_guid, LPSTR p_driverDesc
 		BuildErrorString("DirectDraw Create failed: %s\n", EnumerateErrorToString(result));
 	}
 	else {
-		lpDD->EnumDisplayModes(0, NULL, this, DisplayModesEnumerateCallback);
 		newDevice.m_ddCaps.dwSize = sizeof(newDevice.m_ddCaps);
 		result = lpDD->GetCaps(&newDevice.m_ddCaps, NULL);
 
@@ -267,18 +266,6 @@ void MxDeviceEnumerate::BuildErrorString(const char* p_format, ...)
 	va_end(args);
 }
 
-// FUNCTION: CONFIG 0x00401bf0
-// FUNCTION: LEGO1 0x1009c4f0
-// FUNCTION: BETA10 0x1011e1dd
-HRESULT CALLBACK MxDeviceEnumerate::DisplayModesEnumerateCallback(LPDDSURFACEDESC p_ddsd, LPVOID p_context)
-{
-	if (p_context == NULL) {
-		assert(0);
-	}
-
-	return ((MxDeviceEnumerate*) p_context)->EnumDisplayModesCallback(p_ddsd);
-}
-
 // FUNCTION: CONFIG 0x00401c10
 // FUNCTION: LEGO1 0x1009c510
 // FUNCTION: BETA10 0x1011e226
@@ -297,20 +284,6 @@ HRESULT CALLBACK MxDeviceEnumerate::DevicesEnumerateCallback(
 
 	return ((MxDeviceEnumerate*) p_context)
 		->EnumDevicesCallback(p_guid, p_deviceDesc, p_deviceName, p_HWDesc, p_HELDesc);
-}
-
-// FUNCTION: CONFIG 0x00401c40
-// FUNCTION: LEGO1 0x1009c540
-// FUNCTION: BETA10 0x1011e27f
-HRESULT MxDeviceEnumerate::EnumDisplayModesCallback(LPDDSURFACEDESC p_ddsd)
-{
-	assert(m_list.size() > 0);
-	assert(p_ddsd);
-
-	// TODO: compat_mode?
-	MxDisplayMode displayMode(p_ddsd->dwWidth, p_ddsd->dwHeight, p_ddsd->ddpfPixelFormat.dwRGBBitCount);
-	m_list.back().m_displayModes.push_back(displayMode);
-	return DDENUMRET_OK;
 }
 
 // FUNCTION: CONFIG 0x00401cd0
@@ -581,9 +554,5 @@ DeviceModesInfo::~DeviceModesInfo()
 {
 	if (m_guid != NULL) {
 		delete m_guid;
-	}
-
-	if (m_modeArray != NULL) {
-		delete[] m_modeArray;
 	}
 }
