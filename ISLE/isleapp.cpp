@@ -88,7 +88,7 @@ IsleApp::IsleApp()
 	m_cdPath = NULL;
 	m_deviceId = NULL;
 	m_savePath = NULL;
-	m_fullScreen = FALSE;
+	m_fullScreen = TRUE;
 	m_flipSurfaces = FALSE;
 	m_backBuffersInVram = TRUE;
 	m_using8bit = FALSE;
