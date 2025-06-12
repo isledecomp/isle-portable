@@ -268,7 +268,7 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 
 	Uint8 r, g, b;
 	SDL_Color c0 = ApplyLighting(v0.position, v0.normal, appearance);
-	SDL_Color c1, c2;
+	SDL_Color c1 = {}, c2 = {};
 	if (!appearance.flat) {
 		c1 = ApplyLighting(v1.position, v1.normal, appearance);
 		c2 = ApplyLighting(v2.position, v2.normal, appearance);
@@ -436,18 +436,18 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 	}
 }
 
-struct TextureDestroyContext {
+struct CacheDestroyContext {
 	Direct3DRMSoftwareRenderer* renderer;
-	Uint32 textureId;
+	Uint32 id;
 };
 
 void Direct3DRMSoftwareRenderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture)
 {
-	auto* ctx = new TextureDestroyContext{this, id};
+	auto* ctx = new CacheDestroyContext{this, id};
 	texture->AddDestroyCallback(
 		[](IDirect3DRMObject* obj, void* arg) {
-			auto* ctx = static_cast<TextureDestroyContext*>(arg);
-			auto& cacheEntry = ctx->renderer->m_textures[ctx->textureId];
+			auto* ctx = static_cast<CacheDestroyContext*>(arg);
+			auto& cacheEntry = ctx->renderer->m_textures[ctx->id];
 			if (cacheEntry.cached) {
 				SDL_UnlockSurface(cacheEntry.cached);
 				SDL_DestroySurface(cacheEntry.cached);
@@ -525,18 +525,18 @@ MeshCache UploadMesh(const MeshGroup& meshGroup)
 	return cache;
 }
 
-struct MeshDestroyContext {
-	Direct3DRMSoftwareRenderer* renderer;
-	Uint32 id;
-};
-
 void Direct3DRMSoftwareRenderer::AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh)
 {
-	auto* ctx = new MeshDestroyContext{this, id};
+	auto* ctx = new CacheDestroyContext{this, id};
 	mesh->AddDestroyCallback(
-		[](IDirect3DRMObject*, void* arg) {
-			auto* ctx = static_cast<MeshDestroyContext*>(arg);
-			ctx->renderer->m_meshs[ctx->id].meshGroup = nullptr;
+		[](IDirect3DRMObject* obj, void* arg) {
+			auto* ctx = static_cast<CacheDestroyContext*>(arg);
+			auto& cacheEntry = ctx->renderer->m_meshs[ctx->id];
+			if (cacheEntry.meshGroup) {
+				cacheEntry.meshGroup = nullptr;
+				cacheEntry.vertices.clear();
+				cacheEntry.indices.clear();
+			}
 			delete ctx;
 		},
 		ctx

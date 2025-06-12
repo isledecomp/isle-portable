@@ -14,8 +14,8 @@
 #include <functional>
 #include <math.h>
 
-Direct3DRMViewportImpl::Direct3DRMViewportImpl(DWORD width, DWORD height, Direct3DRMRenderer* rendere)
-	: m_width(width), m_height(height), m_renderer(rendere)
+Direct3DRMViewportImpl::Direct3DRMViewportImpl(DWORD width, DWORD height, Direct3DRMRenderer* renderer)
+	: m_width(width), m_height(height), m_renderer(renderer)
 {
 }
 
