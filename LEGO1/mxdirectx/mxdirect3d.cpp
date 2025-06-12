@@ -167,14 +167,6 @@ BOOL MxDirect3D::D3DSetMode()
 	}
 
 	DeviceModesInfo::Mode mode = *CurrentMode();
-
-	if (IsFullScreen()) {
-		if (!IsSupportedMode(mode.width, mode.height, mode.bitsPerPixel)) {
-			Error("This device cannot support the current display mode", DDERR_GENERIC);
-			return FALSE;
-		}
-	}
-
 	LPDIRECTDRAWSURFACE frontBuffer = FrontBuffer();
 	LPDIRECTDRAWSURFACE backBuffer = BackBuffer();
 
@@ -275,21 +267,6 @@ BOOL MxDirect3D::SetDevice(MxDeviceEnumerate& p_deviceEnumerate, MxDriver* p_dri
 			if (driver.m_guid) {
 				d->m_deviceInfo->m_guid = new GUID;
 				*d->m_deviceInfo->m_guid = *driver.m_guid;
-			}
-
-			d->m_deviceInfo->m_count = driver.m_displayModes.size();
-
-			if (d->m_deviceInfo->m_count > 0) {
-				int j = 0;
-				d->m_deviceInfo->m_modeArray = new DeviceModesInfo::Mode[d->m_deviceInfo->m_count];
-
-				for (list<MxDisplayMode>::iterator it2 = driver.m_displayModes.begin();
-					 it2 != driver.m_displayModes.end();
-					 it2++, j++) {
-					d->m_deviceInfo->m_modeArray[j].width = (*it2).m_width;
-					d->m_deviceInfo->m_modeArray[j].height = (*it2).m_height;
-					d->m_deviceInfo->m_modeArray[j].bitsPerPixel = (*it2).m_bitsPerPixel;
-				}
 			}
 
 			d->m_deviceInfo->m_ddcaps = driver.m_ddCaps;
