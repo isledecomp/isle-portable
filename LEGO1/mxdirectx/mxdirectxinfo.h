@@ -28,11 +28,10 @@ struct DeviceModesInfo {
 	DeviceModesInfo();
 	~DeviceModesInfo();
 
-	GUID* m_guid;      // 0x00
-	Mode* m_modeArray; // 0x04
-	int m_count;       // 0x08
-	DDCAPS m_ddcaps;   // 0x0c
-	void* m_unk0x178;  // 0x178
+	GUID* m_guid;     // 0x00
+	int m_count;      // 0x08
+	DDCAPS m_ddcaps;  // 0x0c
+	void* m_unk0x178; // 0x178
 
 	// SYNTHETIC: BETA10 0x1011c650
 	// DeviceModesInfo::`scalar deleting destructor'
@@ -128,7 +127,6 @@ struct MxDriver {
 	char* m_driverName;                 // 0x08
 	DDCAPS m_ddCaps;                    // 0x0c
 	list<Direct3DDeviceInfo> m_devices; // 0x178
-	list<MxDisplayMode> m_displayModes; // 0x184
 
 	int operator==(MxDriver) const { return 0; }
 	int operator<(MxDriver) const { return 0; }
@@ -199,7 +197,6 @@ public:
 	virtual int DoEnumerate(); // vtable+0x00
 
 	BOOL EnumDirectDrawCallback(LPGUID p_guid, LPSTR p_driverDesc, LPSTR p_driverName);
-	HRESULT EnumDisplayModesCallback(LPDDSURFACEDESC p_ddsd);
 	HRESULT EnumDevicesCallback(
 		LPGUID p_guid,
 		LPCSTR p_deviceDesc,
@@ -211,7 +208,6 @@ public:
 	static void BuildErrorString(const char*, ...);
 	static BOOL CALLBACK
 	DirectDrawEnumerateCallback(LPGUID p_guid, LPSTR p_driverDesc, LPSTR p_driverName, LPVOID p_context);
-	static HRESULT CALLBACK DisplayModesEnumerateCallback(LPDDSURFACEDESC p_ddsd, LPVOID p_context);
 	static HRESULT CALLBACK DevicesEnumerateCallback(
 		LPGUID p_guid,
 		LPSTR p_deviceDesc,

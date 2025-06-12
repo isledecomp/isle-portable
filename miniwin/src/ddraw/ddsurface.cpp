@@ -55,6 +55,31 @@ static SDL_Rect ConvertRect(const RECT* r)
 	return {r->left, r->top, r->right - r->left, r->bottom - r->top};
 }
 
+bool SetupHWBackBuffer()
+{
+	HWBackBuffer = SDL_CreateTextureFromSurface(DDRenderer, DDBackBuffer);
+	if (!HWBackBuffer) {
+		return false;
+	}
+
+	SDL_PropertiesID props = SDL_GetTextureProperties(HWBackBuffer);
+	if (!props) {
+		SDL_DestroyTexture(HWBackBuffer);
+		HWBackBuffer = nullptr;
+		return false;
+	}
+
+	HWBackBufferFormat =
+		(SDL_PixelFormat) SDL_GetNumberProperty(props, SDL_PROP_TEXTURE_FORMAT_NUMBER, SDL_PIXELFORMAT_UNKNOWN);
+	if (HWBackBufferFormat == SDL_PIXELFORMAT_UNKNOWN) {
+		SDL_DestroyTexture(HWBackBuffer);
+		HWBackBuffer = nullptr;
+		return false;
+	}
+
+	return true;
+}
+
 HRESULT DirectDrawSurfaceImpl::Blt(
 	LPRECT lpDestRect,
 	LPDIRECTDRAWSURFACE lpDDSrcSurface,
@@ -69,6 +94,9 @@ HRESULT DirectDrawSurfaceImpl::Blt(
 	}
 	if (m_autoFlip) {
 		DDBackBuffer = srcSurface->m_surface;
+		if (!HWBackBuffer && !SetupHWBackBuffer()) {
+			return DDERR_GENERIC;
+		}
 		return Flip(nullptr, DDFLIP_WAIT);
 	}
 
@@ -126,18 +154,15 @@ HRESULT DirectDrawSurfaceImpl::BltFast(
 
 HRESULT DirectDrawSurfaceImpl::Flip(LPDIRECTDRAWSURFACE lpDDSurfaceTargetOverride, DDFlipFlags dwFlags)
 {
-	if (!DDBackBuffer) {
+	if (!DDBackBuffer || !DDRenderer) {
 		return DDERR_GENERIC;
 	}
-	SDL_Surface* windowSurface = SDL_GetWindowSurface(DDWindow);
-	if (!windowSurface) {
-		return DDERR_GENERIC;
-	}
-	SDL_Rect srcRect{0, 0, DDBackBuffer->w, DDBackBuffer->h};
-	SDL_Surface* copy = SDL_ConvertSurface(DDBackBuffer, windowSurface->format);
-	SDL_BlitSurface(copy, &srcRect, windowSurface, &srcRect);
+
+	SDL_Surface* copy = SDL_ConvertSurface(DDBackBuffer, HWBackBufferFormat);
+	SDL_UpdateTexture(HWBackBuffer, nullptr, copy->pixels, copy->pitch);
 	SDL_DestroySurface(copy);
-	SDL_UpdateWindowSurface(DDWindow);
+	SDL_RenderTexture(DDRenderer, HWBackBuffer, nullptr, nullptr);
+	SDL_RenderPresent(DDRenderer);
 	return DD_OK;
 }
 
@@ -147,6 +172,9 @@ HRESULT DirectDrawSurfaceImpl::GetAttachedSurface(LPDDSCAPS lpDDSCaps, LPDIRECTD
 		return DDERR_INVALIDPARAMS;
 	}
 	DDBackBuffer = m_surface;
+	if (!SetupHWBackBuffer()) {
+		return DDERR_GENERIC;
+	}
 	*lplpDDAttachedSurface = static_cast<IDirectDrawSurface*>(this);
 	return DD_OK;
 }
