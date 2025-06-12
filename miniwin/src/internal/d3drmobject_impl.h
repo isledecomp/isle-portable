@@ -66,6 +66,7 @@ struct Direct3DRMObjectBaseImpl : public T {
 
 protected:
 	std::vector<std::pair<D3DRMOBJECTCALLBACK, void*>> m_callbacks;
+
 private:
 	LPD3DRM_APPDATA m_appData = nullptr;
 	char* m_name = nullptr;
