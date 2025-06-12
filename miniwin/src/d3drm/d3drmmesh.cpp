@@ -25,6 +25,9 @@ HRESULT Direct3DRMMeshImpl::Clone(int flags, GUID iid, void** object)
 
 	auto* clone = new Direct3DRMMeshImpl(*this);
 
+	// We should not call the other meshes callbacks
+	clone->m_callbacks.clear();
+
 	for (auto& group : clone->m_groups) {
 		// Reusing the same texture and material on the new mesh instead of cloning them might not be correct
 		if (group.texture) {
