@@ -70,7 +70,7 @@ struct Direct3DRMObjectBaseImpl : public T {
 	}
 
 private:
-	LPD3DRM_APPDATA m_appData = nullptr;
 	std::vector<std::pair<D3DRMOBJECTCALLBACK, void*>> m_callbacks;
+	LPD3DRM_APPDATA m_appData = nullptr;
 	char* m_name = nullptr;
 };
