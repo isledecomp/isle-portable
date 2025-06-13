@@ -31,23 +31,29 @@ struct SceneLight {
 };
 static_assert(sizeof(SceneLight) == 48);
 
+struct Plane {
+	D3DVECTOR normal;
+	float d;
+};
+
 extern SDL_Renderer* DDRenderer;
 
 class Direct3DRMRenderer : public IDirect3DDevice2 {
 public:
 	virtual void PushLights(const SceneLight* vertices, size_t count) = 0;
 	virtual void SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back) = 0;
+	virtual void SetFrustumPlanes(const Plane* frustumPlanes) = 0;
 	virtual Uint32 GetTextureId(IDirect3DRMTexture* texture) = 0;
 	virtual Uint32 GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup) = 0;
 	virtual DWORD GetWidth() = 0;
 	virtual DWORD GetHeight() = 0;
 	virtual void GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc) = 0;
 	virtual const char* GetName() = 0;
-	virtual HRESULT BeginFrame(const D3DRMMATRIX4D& viewMatrix) = 0;
+	virtual HRESULT BeginFrame() = 0;
 	virtual void EnableTransparency() = 0;
 	virtual void SubmitDraw(
 		DWORD meshId,
-		const D3DRMMATRIX4D& worldMatrix,
+		const D3DRMMATRIX4D& modelViewMatrix,
 		const Matrix3x3& normalMatrix,
 		const Appearance& appearance
 	) = 0;

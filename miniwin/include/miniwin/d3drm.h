@@ -145,10 +145,10 @@ struct D3DRMVERTEX {
 	D3DVECTOR position;
 	D3DVECTOR normal;
 	union {
+		TexCoord texCoord;
 		struct {
 			D3DVALUE tu, tv;
 		};
-		TexCoord texCoord;
 	};
 };
 
