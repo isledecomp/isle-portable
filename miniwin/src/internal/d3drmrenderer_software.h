@@ -21,7 +21,9 @@ struct MeshCache {
 	int version;
 	bool flat;
 	std::vector<D3DRMVERTEX> vertices;
-	std::vector<DWORD> indices;
+	std::vector<uint16_t> indices;
+	std::vector<D3DVECTOR> flatNormal;
+	std::vector<uint16_t> flatLightIndices;
 };
 
 class Direct3DRMSoftwareRenderer : public Direct3DRMRenderer {
@@ -31,15 +33,16 @@ public:
 	Uint32 GetTextureId(IDirect3DRMTexture* texture) override;
 	Uint32 GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup) override;
 	void SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back) override;
+	void SetFrustumPlanes(const Plane* frustumPlanes) override;
 	DWORD GetWidth() override;
 	DWORD GetHeight() override;
 	void GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc) override;
 	const char* GetName() override;
-	HRESULT BeginFrame(const D3DRMMATRIX4D& viewMatrix) override;
+	HRESULT BeginFrame() override;
 	void EnableTransparency() override;
 	void SubmitDraw(
 		DWORD meshId,
-		const D3DRMMATRIX4D& worldMatrix,
+		const D3DRMMATRIX4D& modelViewMatrix,
 		const Matrix3x3& normalMatrix,
 		const Appearance& appearance
 	) override;
@@ -47,18 +50,41 @@ public:
 
 private:
 	void ClearZBuffer();
-	void DrawTriangleProjected(
-		const D3DRMVERTEX& v0,
-		const D3DRMVERTEX& v1,
-		const D3DRMVERTEX& v2,
-		const Appearance& appearance
+	void DrawTriangle(
+		const D3DRMVECTOR4D& p0,
+		const D3DRMVECTOR4D& p1,
+		const D3DRMVECTOR4D& p2,
+		const TexCoord& t0,
+		const TexCoord& t1,
+		const TexCoord& t2,
+		const SDL_Color& c0,
+		const SDL_Color& c1,
+		const SDL_Color& c2,
+		const Appearance& appearance,
+		bool flat
 	);
-	void DrawTriangleClipped(const D3DRMVERTEX (&v)[3], const Appearance& appearance);
-	void ProjectVertex(const D3DRMVERTEX& v, D3DRMVECTOR4D& p) const;
+	void ProjectVertex(const D3DVECTOR& v, D3DRMVECTOR4D& p) const;
 	Uint32 BlendPixel(Uint8* pixelAddr, Uint8 r, Uint8 g, Uint8 b, Uint8 a);
 	SDL_Color ApplyLighting(const D3DVECTOR& position, const D3DVECTOR& normal, const Appearance& appearance);
 	void AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture);
 	void AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh);
+	uint16_t RemapVertex(uint16_t oldIdx, const std::vector<D3DRMVERTEX>& meshVertices);
+	uint16_t PushVertex(const D3DRMVERTEX& v);
+	void SubmitClippedTriangle(
+		const D3DRMVERTEX& v0,
+		const D3DRMVERTEX& v1,
+		const D3DRMVERTEX& v2,
+		uint16_t i0,
+		const std::vector<D3DRMVERTEX>& originalVerts
+	);
+	void SubmitClippedQuad(
+		const D3DRMVERTEX& v0,
+		const D3DRMVERTEX& v1,
+		const D3DRMVERTEX& clip,
+		uint16_t i0,
+		uint16_t i1,
+		const std::vector<D3DRMVERTEX>& originalVerts
+	);
 
 	DWORD m_width;
 	DWORD m_height;
@@ -70,9 +96,17 @@ private:
 	std::vector<MeshCache> m_meshs;
 	D3DVALUE m_front;
 	D3DVALUE m_back;
-	D3DRMMATRIX4D m_viewMatrix;
 	D3DRMMATRIX4D m_projection;
 	std::vector<float> m_zBuffer;
+
+	// Vertext pipline
+	std::vector<D3DVECTOR> m_transformedVerts;
+	std::vector<D3DRMVERTEX> m_cleanVertices;
+	std::vector<uint16_t> m_newIndices;
+	std::vector<uint16_t> m_indexRemap;
+	std::vector<SDL_Color> m_lighting;
+	std::vector<D3DRMVECTOR4D> m_projectedVerts;
+	Plane m_frustumPlanes[6];
 };
 
 inline static void Direct3DRMSoftware_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx)

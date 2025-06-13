@@ -148,39 +148,30 @@ void Direct3DRMViewportImpl::CollectLightsFromFrame(
 	children->Release();
 }
 
-struct Plane {
-	D3DVECTOR normal;
-	float d;
-};
-
-void NormalizePlane(Plane& plane)
+inline Plane MakePlane(const D3DVECTOR& normal)
 {
-	float len =
-		sqrtf(plane.normal.x * plane.normal.x + plane.normal.y * plane.normal.y + plane.normal.z * plane.normal.z);
-	if (len > 0.0f) {
-		float invLen = 1.0f / len;
-		plane.normal.x *= invLen;
-		plane.normal.y *= invLen;
-		plane.normal.z *= invLen;
-		plane.d *= invLen;
-	}
+	return {Normalize(normal), 0.0f};
 }
 
-Plane frustumPlanes[6];
-
-void ExtractFrustumPlanes(const D3DRMMATRIX4D& m)
+void Direct3DRMViewportImpl::BuildViewFrustumPlanes()
 {
-	static const int idx[][2] = {{0, 1}, {0, -1}, {1, 1}, {1, -1}, {2, 1}, {2, -1}};
-	for (int i = 0; i < 6; ++i) {
-		int axis = idx[i][0], sign = idx[i][1];
-		frustumPlanes[i]
-			.normal = {m[0][3] + sign * m[0][axis], m[1][3] + sign * m[1][axis], m[2][3] + sign * m[2][axis]};
-		frustumPlanes[i].d = m[3][3] + sign * m[3][axis];
-		NormalizePlane(frustumPlanes[i]);
-	}
+
+	float aspect = (float) m_width / (float) m_height;
+	float tanFovX = m_field;
+	float tanFovY = m_field / aspect;
+
+	// View-space frustum planes
+	m_frustumPlanes[0] = MakePlane({tanFovX, 0.0f, 1.0f});  // Left
+	m_frustumPlanes[1] = MakePlane({-tanFovX, 0.0f, 1.0f}); // Right
+	m_frustumPlanes[2] = MakePlane({0.0f, -tanFovY, 1.0f}); // Top
+	m_frustumPlanes[3] = MakePlane({0.0f, tanFovY, 1.0f});  // Bottom
+
+	// Near and far planes
+	m_frustumPlanes[4] = {{0.0f, 0.0f, 1.0f}, -m_front}; // Near (Z >= m_front)
+	m_frustumPlanes[5] = {{0.0f, 0.0f, -1.0f}, m_back};  // Far  (Z <= m_back)
 }
 
-bool IsMeshInFrustum(Direct3DRMMeshImpl* mesh, const D3DRMMATRIX4D& worldMatrix)
+bool IsMeshInFrustum(Direct3DRMMeshImpl* mesh, const D3DRMMATRIX4D& worldViewMatrix, const Plane* frustumPlanes)
 {
 	D3DRMBOX box;
 	mesh->GetBox(&box);
@@ -197,14 +188,15 @@ bool IsMeshInFrustum(Direct3DRMMeshImpl* mesh, const D3DRMMATRIX4D& worldMatrix)
 	};
 
 	for (D3DVECTOR& corner : boxCorners) {
-		corner = TransformPoint(corner, worldMatrix);
+		corner = TransformPoint(corner, worldViewMatrix);
 	}
 
 	for (int i = 0; i < 6; ++i) {
+		const Plane& plane = frustumPlanes[i];
 		int out = 0;
 		for (int j = 0; j < 8; ++j) {
-			float dist = frustumPlanes[i].normal.x * boxCorners[j].x + frustumPlanes[i].normal.y * boxCorners[j].y +
-						 frustumPlanes[i].normal.z * boxCorners[j].z + frustumPlanes[i].d;
+			const D3DVECTOR& corner = boxCorners[j];
+			float dist = plane.normal.x * corner.x + plane.normal.y * corner.y + plane.normal.z * corner.z + plane.d;
 			if (dist < 0.0f) {
 				++out;
 			}
@@ -264,7 +256,9 @@ void Direct3DRMViewportImpl::CollectMeshesFromFrame(IDirect3DRMFrame* frame, D3D
 		Direct3DRMMeshImpl* mesh = nullptr;
 		visual->QueryInterface(IID_IDirect3DRMMesh, (void**) &mesh);
 		if (mesh) {
-			if (IsMeshInFrustum(mesh, worldMatrix)) {
+			D3DRMMATRIX4D modelViewMatrix;
+			MultiplyMatrix(modelViewMatrix, worldMatrix, m_viewMatrix);
+			if (IsMeshInFrustum(mesh, modelViewMatrix, m_frustumPlanes)) {
 				DWORD groupCount = mesh->GetGroupCount();
 				for (DWORD gi = 0; gi < groupCount; ++gi) {
 					const MeshGroup& meshGroup = mesh->GetGroup(gi);
@@ -272,8 +266,7 @@ void Direct3DRMViewportImpl::CollectMeshesFromFrame(IDirect3DRMFrame* frame, D3D
 					Appearance appearance = {
 						meshGroup.color,
 						meshGroup.material ? meshGroup.material->GetPower() : 0.0f,
-						meshGroup.texture ? m_renderer->GetTextureId(meshGroup.texture) : NO_TEXTURE_ID,
-						meshGroup.quality == D3DRMRENDER_FLAT || meshGroup.quality == D3DRMRENDER_UNLITFLAT
+						meshGroup.texture ? m_renderer->GetTextureId(meshGroup.texture) : NO_TEXTURE_ID
 					};
 
 					if (appearance.color.a != 255) {
@@ -284,13 +277,13 @@ void Direct3DRMViewportImpl::CollectMeshesFromFrame(IDirect3DRMFrame* frame, D3D
 							 appearance,
 							 CalculateDepth(m_viewProjectionwMatrix, worldMatrix)}
 						);
-						memcpy(m_deferredDraws.back().worldMatrix, worldMatrix, sizeof(D3DRMMATRIX4D));
+						memcpy(m_deferredDraws.back().modelViewMatrix, modelViewMatrix, sizeof(D3DRMMATRIX4D));
 						memcpy(m_deferredDraws.back().normalMatrix, worldMatrixInvert, sizeof(Matrix3x3));
 					}
 					else {
 						m_renderer->SubmitDraw(
 							m_renderer->GetMeshId(mesh, &meshGroup),
-							worldMatrix,
+							modelViewMatrix,
 							worldMatrixInvert,
 							appearance
 						);
@@ -319,12 +312,14 @@ HRESULT Direct3DRMViewportImpl::RenderScene()
 	std::vector<SceneLight> lights;
 	CollectLightsFromFrame(m_rootFrame, identity, lights);
 	m_renderer->PushLights(lights.data(), lights.size());
-	HRESULT status = m_renderer->BeginFrame(m_viewMatrix);
+	HRESULT status = m_renderer->BeginFrame();
 	if (status != DD_OK) {
 		return status;
 	}
 
-	ExtractFrustumPlanes(m_viewProjectionwMatrix);
+	BuildViewFrustumPlanes();
+	m_renderer->SetFrustumPlanes(m_frustumPlanes);
+
 	CollectMeshesFromFrame(m_rootFrame, identity);
 
 	std::sort(
@@ -334,7 +329,7 @@ HRESULT Direct3DRMViewportImpl::RenderScene()
 	);
 	m_renderer->EnableTransparency();
 	for (const DeferredDrawCommand& cmd : m_deferredDraws) {
-		m_renderer->SubmitDraw(cmd.meshId, cmd.worldMatrix, cmd.normalMatrix, cmd.appearance);
+		m_renderer->SubmitDraw(cmd.meshId, cmd.modelViewMatrix, cmd.normalMatrix, cmd.appearance);
 	}
 	m_deferredDraws.clear();
 
@@ -593,11 +588,6 @@ bool RayIntersectsBox(const Ray& ray, const D3DRMBOX& box, float& outT)
 
 	outT = tmin >= 0 ? tmin : tmax; // closest positive hit
 	return true;
-}
-
-inline float DotProduct(const D3DVECTOR& a, const D3DVECTOR& b)
-{
-	return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
 // Convert screen (x,y) in viewport to picking ray in world space

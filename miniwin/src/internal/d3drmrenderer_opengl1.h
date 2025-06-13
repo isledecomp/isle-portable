@@ -25,7 +25,7 @@ struct GLMeshCacheEntry {
 	std::vector<D3DVECTOR> positions;
 	std::vector<D3DVECTOR> normals;
 	std::vector<TexCoord> texcoords;
-	std::vector<DWORD> indices;
+	std::vector<uint16_t> indices;
 
 	// VBO cache
 	GLuint vboPositions;
@@ -41,17 +41,18 @@ public:
 	~OpenGL1Renderer() override;
 	void PushLights(const SceneLight* lightsArray, size_t count) override;
 	void SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back) override;
+	void SetFrustumPlanes(const Plane* frustumPlanes) override;
 	Uint32 GetTextureId(IDirect3DRMTexture* texture) override;
 	Uint32 GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup) override;
 	DWORD GetWidth() override;
 	DWORD GetHeight() override;
 	void GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc) override;
 	const char* GetName() override;
-	HRESULT BeginFrame(const D3DRMMATRIX4D& viewMatrix) override;
+	HRESULT BeginFrame() override;
 	void EnableTransparency() override;
 	void SubmitDraw(
 		DWORD meshId,
-		const D3DRMMATRIX4D& worldMatrix,
+		const D3DRMMATRIX4D& modelViewMatrix,
 		const Matrix3x3& normalMatrix,
 		const Appearance& appearance
 	) override;
@@ -62,7 +63,6 @@ private:
 	void AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh);
 	std::vector<GLTextureCacheEntry> m_textures;
 	std::vector<GLMeshCacheEntry> m_meshs;
-	D3DRMMATRIX4D m_viewMatrix;
 	D3DRMMATRIX4D m_projection;
 	SDL_Surface* m_renderedImage;
 	int m_width, m_height;

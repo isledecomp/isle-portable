@@ -33,6 +33,11 @@ void Direct3DRMSoftwareRenderer::PushLights(const SceneLight* lights, size_t cou
 	m_lights.assign(lights, lights + count);
 }
 
+void Direct3DRMSoftwareRenderer::SetFrustumPlanes(const Plane* frustumPlanes)
+{
+	memcpy(m_frustumPlanes, frustumPlanes, sizeof(m_frustumPlanes));
+}
+
 void Direct3DRMSoftwareRenderer::SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back)
 {
 	m_front = front;
@@ -82,16 +87,12 @@ void Direct3DRMSoftwareRenderer::ClearZBuffer()
 	}
 }
 
-void Direct3DRMSoftwareRenderer::ProjectVertex(const D3DRMVERTEX& v, D3DRMVECTOR4D& p) const
+void Direct3DRMSoftwareRenderer::ProjectVertex(const D3DVECTOR& v, D3DRMVECTOR4D& p) const
 {
-	float px = m_projection[0][0] * v.position.x + m_projection[1][0] * v.position.y +
-			   m_projection[2][0] * v.position.z + m_projection[3][0];
-	float py = m_projection[0][1] * v.position.x + m_projection[1][1] * v.position.y +
-			   m_projection[2][1] * v.position.z + m_projection[3][1];
-	float pz = m_projection[0][2] * v.position.x + m_projection[1][2] * v.position.y +
-			   m_projection[2][2] * v.position.z + m_projection[3][2];
-	float pw = m_projection[0][3] * v.position.x + m_projection[1][3] * v.position.y +
-			   m_projection[2][3] * v.position.z + m_projection[3][3];
+	float px = m_projection[0][0] * v.x + m_projection[1][0] * v.y + m_projection[2][0] * v.z + m_projection[3][0];
+	float py = m_projection[0][1] * v.x + m_projection[1][1] * v.y + m_projection[2][1] * v.z + m_projection[3][1];
+	float pz = m_projection[0][2] * v.x + m_projection[1][2] * v.y + m_projection[2][2] * v.z + m_projection[3][2];
+	float pw = m_projection[0][3] * v.x + m_projection[1][3] * v.y + m_projection[2][3] * v.z + m_projection[3][3];
 
 	p.w = pw;
 
@@ -126,50 +127,6 @@ D3DRMVERTEX SplitEdge(D3DRMVERTEX a, const D3DRMVERTEX& b, float plane)
 	a.normal = Normalize(a.normal);
 
 	return a;
-}
-
-void Direct3DRMSoftwareRenderer::DrawTriangleClipped(const D3DRMVERTEX (&v)[3], const Appearance& appearance)
-{
-	bool in0 = v[0].position.z >= m_front;
-	bool in1 = v[1].position.z >= m_front;
-	bool in2 = v[2].position.z >= m_front;
-
-	int insideCount = in0 + in1 + in2;
-
-	if (insideCount == 0) {
-		return;
-	}
-
-	if (insideCount == 3) {
-		DrawTriangleProjected(v[0], v[1], v[2], appearance);
-	}
-	else if (insideCount == 2) {
-		D3DRMVERTEX split;
-		if (!in0) {
-			split = SplitEdge(v[2], v[0], m_front);
-			DrawTriangleProjected(v[1], v[2], split, appearance);
-			DrawTriangleProjected(v[1], split, SplitEdge(v[1], v[0], m_front), appearance);
-		}
-		else if (!in1) {
-			split = SplitEdge(v[0], v[1], m_front);
-			DrawTriangleProjected(v[2], v[0], split, appearance);
-			DrawTriangleProjected(v[2], split, SplitEdge(v[2], v[1], m_front), appearance);
-		}
-		else {
-			split = SplitEdge(v[1], v[2], m_front);
-			DrawTriangleProjected(v[0], v[1], split, appearance);
-			DrawTriangleProjected(v[0], split, SplitEdge(v[0], v[2], m_front), appearance);
-		}
-	}
-	else if (in0) {
-		DrawTriangleProjected(v[0], SplitEdge(v[0], v[1], m_front), SplitEdge(v[0], v[2], m_front), appearance);
-	}
-	else if (in1) {
-		DrawTriangleProjected(SplitEdge(v[1], v[0], m_front), v[1], SplitEdge(v[1], v[2], m_front), appearance);
-	}
-	else {
-		DrawTriangleProjected(SplitEdge(v[2], v[0], m_front), SplitEdge(v[2], v[1], m_front), v[2], appearance);
-	}
 }
 
 Uint32 Direct3DRMSoftwareRenderer::BlendPixel(Uint8* pixelAddr, Uint8 r, Uint8 g, Uint8 b, Uint8 a)
@@ -286,41 +243,30 @@ VertexXY InterpolateVertex(float y, const VertexXY& v0, const VertexXY& v1)
 	return r;
 }
 
-void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
-	const D3DRMVERTEX& v0,
-	const D3DRMVERTEX& v1,
-	const D3DRMVERTEX& v2,
-	const Appearance& appearance
+void Direct3DRMSoftwareRenderer::DrawTriangle(
+	const D3DRMVECTOR4D& p0,
+	const D3DRMVECTOR4D& p1,
+	const D3DRMVECTOR4D& p2,
+	const TexCoord& t0,
+	const TexCoord& t1,
+	const TexCoord& t2,
+	const SDL_Color& c0,
+	const SDL_Color& c1,
+	const SDL_Color& c2,
+	const Appearance& appearance,
+	bool flat
 )
 {
-	D3DRMVECTOR4D p0, p1, p2;
-	ProjectVertex(v0, p0);
-	ProjectVertex(v1, p1);
-	ProjectVertex(v2, p2);
+	Uint8* pixels = (Uint8*) DDBackBuffer->pixels;
+	int pitch = DDBackBuffer->pitch;
 
-	// Skip triangles outside the frustum
-	if ((p0.z < m_front && p1.z < m_front && p2.z < m_front) || (p0.z > m_back && p1.z > m_back && p2.z > m_back)) {
-		return;
-	}
-
-	// Skip offscreen triangles
-	if ((p0.x < 0 && p1.x < 0 && p2.x < 0) || (p0.x >= m_width && p1.x >= m_width && p2.x >= m_width) ||
-		(p0.y < 0 && p1.y < 0 && p2.y < 0) || (p0.y >= m_height && p1.y >= m_height && p2.y >= m_height)) {
-		return;
-	}
-
-	// Cull backfaces
-	if ((p2.x - p0.x) * (p1.y - p0.y) - (p2.y - p0.y) * (p1.x - p0.x) >= 0) {
-		return;
-	}
+	VertexXY verts[3] = {
+		{p0.x, p0.y, p0.z, p0.w, c0, t0.u, t0.v},
+		{p1.x, p1.y, p1.z, p1.w, c1, t1.u, t1.v},
+		{p2.x, p2.y, p2.z, p2.w, c2, t2.u, t2.v}
+	};
 
 	Uint8 r, g, b;
-	SDL_Color c0 = ApplyLighting(v0.position, v0.normal, appearance);
-	SDL_Color c1 = {}, c2 = {};
-	if (!appearance.flat) {
-		c1 = ApplyLighting(v1.position, v1.normal, appearance);
-		c2 = ApplyLighting(v2.position, v2.normal, appearance);
-	}
 
 	Uint32 textureId = appearance.textureId;
 	int texturePitch;
@@ -335,28 +281,19 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 			texWidthScale = texture->w - 1;
 			texHeightScale = texture->h - 1;
 		}
+
+		verts[0].u_over_w = t0.u / p0.w;
+		verts[0].v_over_w = t0.v / p0.w;
+		verts[0].one_over_w = 1.0f / p0.w;
+
+		verts[1].u_over_w = t1.u / p1.w;
+		verts[1].v_over_w = t1.v / p1.w;
+		verts[1].one_over_w = 1.0f / p1.w;
+
+		verts[2].u_over_w = t2.u / p2.w;
+		verts[2].v_over_w = t2.v / p2.w;
+		verts[2].one_over_w = 1.0f / p2.w;
 	}
-
-	Uint8* pixels = (Uint8*) DDBackBuffer->pixels;
-	int pitch = DDBackBuffer->pitch;
-
-	VertexXY verts[3] = {
-		{p0.x, p0.y, p0.z, p0.w, c0, v0.texCoord.u, v0.texCoord.v},
-		{p1.x, p1.y, p1.z, p1.w, c1, v1.texCoord.u, v1.texCoord.v},
-		{p2.x, p2.y, p2.z, p2.w, c2, v2.texCoord.u, v2.texCoord.v}
-	};
-
-	verts[0].u_over_w = v0.texCoord.u / p0.w;
-	verts[0].v_over_w = v0.texCoord.v / p0.w;
-	verts[0].one_over_w = 1.0f / p0.w;
-
-	verts[1].u_over_w = v1.texCoord.u / p1.w;
-	verts[1].v_over_w = v1.texCoord.v / p1.w;
-	verts[1].one_over_w = 1.0f / p1.w;
-
-	verts[2].u_over_w = v2.texCoord.u / p2.w;
-	verts[2].v_over_w = v2.texCoord.v / p2.w;
-	verts[2].one_over_w = 1.0f / p2.w;
 
 	// Sort verts
 	if (verts[0].y > verts[1].y) {
@@ -406,7 +343,7 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 			}
 
 			Uint8 r, g, b;
-			if (appearance.flat) {
+			if (flat) {
 				r = c0.r;
 				g = c0.g;
 				b = c0.b;
@@ -554,7 +491,6 @@ MeshCache UploadMesh(const MeshGroup& meshGroup)
 
 	cache.flat = meshGroup.quality == D3DRMRENDER_FLAT || meshGroup.quality == D3DRMRENDER_UNLITFLAT;
 
-	std::vector<D3DRMVERTEX> vertices;
 	if (cache.flat) {
 		FlattenSurfaces(
 			meshGroup.vertices.data(),
@@ -648,14 +584,13 @@ const char* Direct3DRMSoftwareRenderer::GetName()
 	return "Miniwin Emulation";
 }
 
-HRESULT Direct3DRMSoftwareRenderer::BeginFrame(const D3DRMMATRIX4D& viewMatrix)
+HRESULT Direct3DRMSoftwareRenderer::BeginFrame()
 {
 	if (!DDBackBuffer || !SDL_LockSurface(DDBackBuffer)) {
 		return DDERR_GENERIC;
 	}
 	ClearZBuffer();
 
-	memcpy(m_viewMatrix, viewMatrix, sizeof(D3DRMMATRIX4D));
 	m_format = SDL_GetPixelFormatDetails(DDBackBuffer->format);
 	m_palette = SDL_GetSurfacePalette(DDBackBuffer);
 	m_bytesPerPixel = m_format->bits_per_pixel / 8;
@@ -667,36 +602,220 @@ void Direct3DRMSoftwareRenderer::EnableTransparency()
 {
 }
 
+inline D3DVECTOR Subtract(const D3DVECTOR& a, const D3DVECTOR& b)
+{
+	return {a.x - b.x, a.y - b.y, a.z - b.z};
+}
+
+bool IsTriangleOutsideViewCone(
+	const D3DVECTOR& v0,
+	const D3DVECTOR& v1,
+	const D3DVECTOR& v2,
+	const Plane* frustumPlanes
+)
+{
+	for (int i = 0; i < 4; ++i) {
+		const Plane& plane = frustumPlanes[i];
+
+		float d0 = DotProduct(plane.normal, v0) + plane.d;
+		float d1 = DotProduct(plane.normal, v1) + plane.d;
+		float d2 = DotProduct(plane.normal, v2) + plane.d;
+
+		if (d0 < 0 && d1 < 0 && d2 < 0) {
+			return true;
+		}
+	}
+	return false;
+}
+
+inline bool IsBackface(const D3DVECTOR& v0, const D3DVECTOR& v1, const D3DVECTOR& v2)
+{
+	D3DVECTOR normal = CrossProduct(Subtract(v1, v0), Subtract(v2, v0));
+
+	return DotProduct(normal, v0) >= 0.0f;
+}
+
+uint16_t Direct3DRMSoftwareRenderer::RemapVertex(uint16_t oldIdx, const std::vector<D3DRMVERTEX>& meshVertices)
+{
+	if (m_indexRemap[oldIdx] == static_cast<uint16_t>(-1)) {
+		m_indexRemap[oldIdx] = m_cleanVertices.size();
+		const D3DRMVERTEX& src = meshVertices[oldIdx];
+		m_cleanVertices.push_back(D3DRMVERTEX{m_transformedVerts[oldIdx], src.normal, src.texCoord});
+	}
+	return m_indexRemap[oldIdx];
+}
+
+uint16_t Direct3DRMSoftwareRenderer::PushVertex(const D3DRMVERTEX& v)
+{
+	uint16_t idx = m_cleanVertices.size();
+	m_cleanVertices.push_back(v);
+	return idx;
+}
+
+void Direct3DRMSoftwareRenderer::SubmitClippedTriangle(
+	const D3DRMVERTEX& v0,
+	const D3DRMVERTEX& v1,
+	const D3DRMVERTEX& v2,
+	uint16_t i0,
+	const std::vector<D3DRMVERTEX>& originalVerts
+)
+{
+	D3DRMVERTEX n0 = SplitEdge(v0, v1, m_front);
+	D3DRMVERTEX n1 = SplitEdge(v0, v2, m_front);
+
+	if (!IsBackface(v0.position, n0.position, n1.position)) {
+		uint16_t r0 = RemapVertex(i0, originalVerts);
+		uint16_t r1 = PushVertex(n0);
+		uint16_t r2 = PushVertex(n1);
+		m_newIndices.insert(m_newIndices.end(), {r0, r1, r2});
+	}
+}
+
+void Direct3DRMSoftwareRenderer::SubmitClippedQuad(
+	const D3DRMVERTEX& kept1,
+	const D3DRMVERTEX& kept2,
+	const D3DRMVERTEX& clipped,
+	uint16_t kept1Idx,
+	uint16_t kept2Idx,
+	const std::vector<D3DRMVERTEX>& originalVerts
+)
+{
+	// MATCH ORIGINAL SPLIT ORDER
+	D3DRMVERTEX n0 = SplitEdge(kept2, clipped, m_front);
+	D3DRMVERTEX n1 = SplitEdge(kept1, clipped, m_front);
+
+	// Use actual triangle vertices for backface test
+	if (!IsBackface(kept1.position, kept2.position, n0.position)) {
+		uint16_t i0 = RemapVertex(kept1Idx, originalVerts);
+		uint16_t i1 = RemapVertex(kept2Idx, originalVerts);
+		uint16_t i2 = PushVertex(n0);
+		uint16_t i3 = PushVertex(n1);
+		m_newIndices.insert(m_newIndices.end(), {i0, i1, i2, i0, i2, i3});
+	}
+}
+
 void Direct3DRMSoftwareRenderer::SubmitDraw(
 	DWORD meshId,
-	const D3DRMMATRIX4D& worldMatrix,
+	const D3DRMMATRIX4D& modelViewMatrix,
 	const Matrix3x3& normalMatrix,
 	const Appearance& appearance
 )
 {
-	D3DRMMATRIX4D mvMatrix;
-	MultiplyMatrix(mvMatrix, worldMatrix, m_viewMatrix);
-
 	auto& mesh = m_meshs[meshId];
 
 	// Pre-transform all vertex positions and normals
-	std::vector<D3DRMVERTEX> transformedVerts(mesh.vertices.size());
-	for (size_t i = 0; i < mesh.vertices.size(); ++i) {
-		const D3DRMVERTEX& src = mesh.vertices[i];
-		D3DRMVERTEX& dst = transformedVerts[i];
-		dst.position = TransformPoint(src.position, mvMatrix);
-		// TODO defer normal transformation til lighting to allow culling first
-		dst.normal = Normalize(TransformNormal(src.normal, normalMatrix));
-		dst.texCoord = src.texCoord;
+	m_transformedVerts.clear();
+	m_transformedVerts.reserve(mesh.vertices.size());
+	for (const auto& v : mesh.vertices) {
+		m_transformedVerts.push_back(TransformPoint(v.position, modelViewMatrix));
+	}
+
+	m_cleanVertices.clear();
+	m_newIndices.clear();
+
+	m_indexRemap.assign(m_transformedVerts.size(), static_cast<uint16_t>(-1));
+
+	for (size_t i = 0; i < mesh.indices.size(); i += 3) {
+		size_t i0 = mesh.indices[i + 0];
+		size_t i1 = mesh.indices[i + 1];
+		size_t i2 = mesh.indices[i + 2];
+
+		auto& d0 = m_transformedVerts[i0];
+		auto& d1 = m_transformedVerts[i1];
+		auto& d2 = m_transformedVerts[i2];
+
+		bool in0 = d0.z >= m_front;
+		bool in1 = d1.z >= m_front;
+		bool in2 = d2.z >= m_front;
+
+		int insideCount = in0 + in1 + in2;
+
+		if (insideCount == 0 || d0.z > m_back && d1.z > m_back && d2.z > m_back) {
+			continue; // Outside clipping
+		}
+		if (IsTriangleOutsideViewCone(d0, d1, d2, m_frustumPlanes)) {
+			continue;
+		}
+
+		if (insideCount == 3) {
+			if (!IsBackface(d0, d1, d2)) {
+				m_newIndices.push_back(RemapVertex(i0, mesh.vertices));
+				m_newIndices.push_back(RemapVertex(i1, mesh.vertices));
+				m_newIndices.push_back(RemapVertex(i2, mesh.vertices));
+			}
+			continue;
+		}
+
+		const D3DRMVERTEX& o0 = mesh.vertices[i0];
+		const D3DRMVERTEX& o1 = mesh.vertices[i1];
+		const D3DRMVERTEX& o2 = mesh.vertices[i2];
+		D3DRMVERTEX v0 = {d0, o0.normal, o0.texCoord};
+		D3DRMVERTEX v1 = {d1, o1.normal, o1.texCoord};
+		D3DRMVERTEX v2 = {d2, o2.normal, o2.texCoord};
+
+		if (insideCount == 1) {
+			if (in0) {
+				SubmitClippedTriangle(v0, v1, v2, i0, mesh.vertices);
+			}
+			else if (in1) {
+				SubmitClippedTriangle(v1, v2, v0, i1, mesh.vertices);
+			}
+			else { // in2
+				SubmitClippedTriangle(v2, v0, v1, i2, mesh.vertices);
+			}
+			continue;
+		}
+
+		if (!in0) {
+			SubmitClippedQuad(v1, v2, v0, i1, i2, mesh.vertices);
+		}
+		else if (!in1) {
+			SubmitClippedQuad(v2, v0, v1, i2, i0, mesh.vertices);
+		}
+		else { // !in2
+			SubmitClippedQuad(v0, v1, v2, i0, i1, mesh.vertices);
+		}
+	}
+
+	m_lighting.resize(m_cleanVertices.size());
+	m_projectedVerts.resize(m_cleanVertices.size());
+	if (!mesh.flat) {
+		for (size_t i = 0; i < m_cleanVertices.size(); ++i) {
+			const D3DRMVERTEX& v = m_cleanVertices[i];
+			m_lighting[i] = ApplyLighting(v.position, Normalize(TransformNormal(v.normal, normalMatrix)), appearance);
+			ProjectVertex(v.position, m_projectedVerts[i]);
+		}
+	}
+	else {
+		for (size_t i = 0; i < m_cleanVertices.size(); ++i) {
+			ProjectVertex(m_cleanVertices[i].position, m_projectedVerts[i]);
+		}
+		for (size_t i = 0; i + 2 < m_newIndices.size(); i += 3) {
+			uint16_t firstIndex = m_newIndices[i];
+			const D3DRMVERTEX& v = m_cleanVertices[firstIndex];
+			m_lighting[firstIndex] =
+				ApplyLighting(v.position, Normalize(TransformNormal(v.normal, normalMatrix)), appearance);
+		}
 	}
 
 	// Assemble triangles using index buffer
-	for (size_t i = 0; i + 2 < mesh.indices.size(); i += 3) {
-		DrawTriangleClipped(
-			{transformedVerts[mesh.indices[i]],
-			 transformedVerts[mesh.indices[i + 1]],
-			 transformedVerts[mesh.indices[i + 2]]},
-			appearance
+	for (size_t i = 0; i + 2 < m_newIndices.size(); i += 3) {
+		uint16_t i0 = m_newIndices[i + 0];
+		uint16_t i1 = m_newIndices[i + 1];
+		uint16_t i2 = m_newIndices[i + 2];
+
+		DrawTriangle(
+			m_projectedVerts[i0],
+			m_projectedVerts[i1],
+			m_projectedVerts[i2],
+			m_cleanVertices[i0].texCoord,
+			m_cleanVertices[i1].texCoord,
+			m_cleanVertices[i2].texCoord,
+			m_lighting[i0],
+			m_lighting[i1],
+			m_lighting[i2],
+			appearance,
+			mesh.flat
 		);
 	}
 }
