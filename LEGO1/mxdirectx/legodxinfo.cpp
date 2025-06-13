@@ -169,18 +169,17 @@ int LegoDeviceEnumerate::GetBestDevice()
 		return -1;
 	}
 
-	int i = 0;
 	int j = 0;
 	int k = -1;
 
-	for (list<MxDriver>::iterator it = m_list.begin(); it != m_list.end(); it++, i++) {
+	for (list<MxDriver>::iterator it = m_list.begin(); it != m_list.end(); it++) {
 
 		MxDriver& driver = *it;
 		for (list<Direct3DDeviceInfo>::iterator it2 = driver.m_devices.begin(); it2 != driver.m_devices.end(); it2++) {
 			if ((*it2).m_HWDesc.dcmColorModel != D3DCOLOR_NONE) {
 				return j;
 			}
-			else if ((*it2).m_HELDesc.dcmColorModel != D3DCOLOR_NONE && i == 0) {
+			else if ((*it2).m_HELDesc.dcmColorModel != D3DCOLOR_NONE) {
 				k = j;
 			}
 
