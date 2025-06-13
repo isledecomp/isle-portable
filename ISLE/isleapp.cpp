@@ -566,16 +566,15 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 			break;
 		}
 	}
+#ifdef __EMSCRIPTEN__
 	else if (event->user.type == g_legoSdlEvents.m_presenterProgress) {
 		MxPresenter* presenter = static_cast<MxPresenter*>(event->user.data1);
 		MxDSAction* action = presenter->GetAction();
 		MxPresenter::TickleState state = static_cast<MxPresenter::TickleState>(event->user.code);
 
-#ifdef __EMSCRIPTEN__
 		if (!g_isle->GetGameStarted()) {
 			Emscripten_SendPresenterProgress(presenter, state);
 		}
-#endif
 
 		if (!g_isle->GetGameStarted() && action && state == MxPresenter::e_ready &&
 			!SDL_strncmp(action->GetObjectName(), "Lego_Smk", 8)) {
@@ -583,6 +582,7 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 			SDL_Log("Game started");
 		}
 	}
+#endif
 
 	return SDL_APP_CONTINUE;
 }
