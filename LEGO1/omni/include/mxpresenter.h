@@ -69,7 +69,7 @@ protected:
 		SDL_Event event;
 		event.user.type = g_legoSdlEvents.m_presenterProgress;
 		event.user.code = m_currentTickleState;
-		event.user.data1 = (void*) this;
+		event.user.data1 = (void*) m_action;
 		SDL_PushEvent(&event);
 	}
 

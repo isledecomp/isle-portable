@@ -22,15 +22,15 @@ void Emscripten_SendEvent(const char* p_event, const char* p_json)
 }
 // clang-format on
 
-void Emscripten_SendPresenterProgress(MxPresenter* p_presenter, MxPresenter::TickleState p_tickleState)
+void Emscripten_SendPresenterProgress(MxDSAction* p_action, MxPresenter::TickleState p_tickleState)
 {
 	char buf[128];
 	SDL_snprintf(
 		buf,
 		sizeof(buf),
 		"{\"objectId\": %d, \"objectName\": \"%s\", \"tickleState\": %d}",
-		p_presenter->GetAction() ? p_presenter->GetAction()->GetObjectId() : 0,
-		p_presenter->GetAction() ? p_presenter->GetAction()->GetObjectName() : "",
+		p_action ? p_action->GetObjectId() : 0,
+		p_action ? p_action->GetObjectName() : "",
 		p_tickleState
 	);
 
