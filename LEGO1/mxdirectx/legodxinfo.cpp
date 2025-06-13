@@ -172,7 +172,6 @@ int LegoDeviceEnumerate::GetBestDevice()
 	int i = 0;
 	int j = 0;
 	int k = -1;
-	bool cpu_mmx = SupportsSIMD();
 
 	for (list<MxDriver>::iterator it = m_list.begin(); it != m_list.end(); it++, i++) {
 
@@ -181,13 +180,8 @@ int LegoDeviceEnumerate::GetBestDevice()
 			if ((*it2).m_HWDesc.dcmColorModel != D3DCOLOR_NONE) {
 				return j;
 			}
-			else {
-				if (cpu_mmx && (*it2).m_HELDesc.dcmColorModel == D3DCOLOR_RGB && i == 0) {
-					k = j;
-				}
-				else if ((*it2).m_HELDesc.dcmColorModel == D3DCOLOR_MONO && i == 0 && k < 0) {
-					k = j;
-				}
+			else if ((*it2).m_HELDesc.dcmColorModel != D3DCOLOR_NONE && i == 0) {
+				k = j;
 			}
 
 			j++;
@@ -195,14 +189,6 @@ int LegoDeviceEnumerate::GetBestDevice()
 	}
 
 	return k;
-}
-
-// FUNCTION: CONFIG 0x00402930
-// FUNCTION: LEGO1 0x1009d1a0
-// FUNCTION: BETA10 0x1011cf54
-bool LegoDeviceEnumerate::SupportsSIMD()
-{
-	return SDL_HasSSE2() || SDL_HasNEON() || SDL_HasMMX();
 }
 
 // FUNCTION: CONFIG 0x004029a0
