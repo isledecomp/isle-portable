@@ -567,13 +567,12 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		}
 	}
 	else if (event->user.type == g_legoSdlEvents.m_presenterProgress) {
-		MxPresenter* presenter = static_cast<MxPresenter*>(event->user.data1);
-		MxDSAction* action = presenter->GetAction();
+		MxDSAction* action = static_cast<MxDSAction*>(event->user.data1);
 		MxPresenter::TickleState state = static_cast<MxPresenter::TickleState>(event->user.code);
 
 #ifdef __EMSCRIPTEN__
 		if (!g_isle->GetGameStarted()) {
-			Emscripten_SendPresenterProgress(presenter, state);
+			Emscripten_SendPresenterProgress(action, state);
 		}
 #endif
 
