@@ -463,7 +463,7 @@ if (NOT ISLE_MINIWIN)
 endif()
 
 if (ISLE_BUILD_APP)
-  add_executable(isle WIN32
+  add_executable(isle WIN32 MACOSX_BUNDLE
     ISLE/res/isle.rc
     ISLE/isleapp.cpp
   )
@@ -627,6 +627,7 @@ endif()
 install(TARGETS isle ${install_extra_targets}
   RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
   LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+  BUNDLE DESTINATION "."
 )
 if(EMSCRIPTEN)
   install(FILES "$<TARGET_FILE_DIR:isle>/isle.js" "$<TARGET_FILE_DIR:isle>/isle.wasm"
@@ -638,6 +639,33 @@ set(CPACK_PACKAGE_DIRECTORY "dist")
 set(CPACK_PACKAGE_FILE_NAME "isle-${PROJECT_VERSION}-${ISLE_PACKAGE_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
 if(MSVC)
   set(CPACK_GENERATOR ZIP)
+elseif(APPLE)
+  set(MACOSX_BUNDLE_GUI_IDENTIFIER com.github.isledecomp.isle-portable)
+  set(MACOSX_BUNDLE_COPYRIGHT LGPLv3)
+  set(MACOSX_BUNDLE_BUNDLE_NAME isle)
+  set(MACOSX_BUNDLE_DISPLAY_NAME LEGO Island)
+  set(MACOSX_BUNDLE_INFO_STRING ${PROJECT_VERSION})
+  set(MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION})
+  set(MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION})
+  set(MACOSX_BUNDLE_LONG_VERSION_STRING "Version ${PROJECT_VERSION}")
+
+  # TODO: darwin < 9
+  set(MACOSX_BUNDLE_REQUIRED_PLATFORM Carbon)
+  set(_icon_file AppIcon)
+
+  target_sources(isle PRIVATE "ISLE/apple/${_icon_file}.icns")
+  set_source_files_properties("./ISLE/apple/${_icon_file}.icns" PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+  set_target_properties(isle PROPERTIES MACOSX_BUNDLE_ICON_FILE "${_icon_file}.icns")
+  set_target_properties(isle PROPERTIES MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/ISLE/apple/Info.plist")
+
+  install(TARGETS isle DESTINATION ./)
+  install(CODE "
+    include(BundleUtilities)
+    fixup_bundle(${CMAKE_BINARY_DIR}/${MACOSX_BUNDLE_BUNDLE_NAME}.app \"\" \"\")
+    "
+    COMPONENT Runtime)
+
+  set(CPACK_GENERATOR DragNDrop)
 else()
   set(CPACK_GENERATOR TGZ)
 endif()
