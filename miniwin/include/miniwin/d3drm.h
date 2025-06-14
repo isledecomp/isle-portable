@@ -318,7 +318,7 @@ struct IDirect3DRMDevice : virtual public IDirect3DRMObject {
 	virtual HRESULT SetBufferCount(int count) = 0;
 	virtual DWORD GetBufferCount() = 0;
 	virtual HRESULT SetShades(DWORD shadeCount) = 0;
-	virtual HRESULT GetShades() = 0;
+	virtual DWORD GetShades() = 0;
 	virtual HRESULT SetQuality(D3DRMRENDERQUALITY quality) = 0;
 	virtual D3DRMRENDERQUALITY GetQuality() = 0;
 	virtual HRESULT SetDither(BOOL dither) = 0;

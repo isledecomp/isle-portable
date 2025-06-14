@@ -252,6 +252,7 @@ struct DDPIXELFORMAT {
 	DWORD dwRBitMask;    // Red bit mask (0xF800)
 	DWORD dwGBitMask;    // Green bit mask (0x07E0)
 	DWORD dwBBitMask;    // Blue bit mask (0x001F)
+	DWORD dwRGBAlphaBitMask;
 };
 typedef struct DDPIXELFORMAT* LPDDPIXELFORMAT;
 

@@ -182,6 +182,7 @@ HRESULT DirectDrawImpl::EnumDisplayModes(
 		ddsd.ddpfPixelFormat.dwRBitMask = details->Rmask;
 		ddsd.ddpfPixelFormat.dwGBitMask = details->Gmask;
 		ddsd.ddpfPixelFormat.dwBBitMask = details->Bmask;
+		ddsd.ddpfPixelFormat.dwRGBAlphaBitMask = details->Amask;
 
 		if (!lpEnumModesCallback(&ddsd, lpContext)) {
 			status = DDERR_GENERIC;
@@ -270,6 +271,7 @@ HRESULT DirectDrawImpl::GetDisplayMode(LPDDSURFACEDESC lpDDSurfaceDesc)
 	lpDDSurfaceDesc->ddpfPixelFormat.dwRBitMask = details->Rmask;
 	lpDDSurfaceDesc->ddpfPixelFormat.dwGBitMask = details->Gmask;
 	lpDDSurfaceDesc->ddpfPixelFormat.dwBBitMask = details->Bmask;
+	lpDDSurfaceDesc->ddpfPixelFormat.dwRGBAlphaBitMask = details->Amask;
 
 	return DD_OK;
 }
