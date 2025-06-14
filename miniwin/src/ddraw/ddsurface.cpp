@@ -210,6 +210,7 @@ HRESULT DirectDrawSurfaceImpl::GetPixelFormat(LPDDPIXELFORMAT lpDDPixelFormat)
 	lpDDPixelFormat->dwRBitMask = details->Rmask;
 	lpDDPixelFormat->dwGBitMask = details->Gmask;
 	lpDDPixelFormat->dwBBitMask = details->Bmask;
+	lpDDPixelFormat->dwRGBAlphaBitMask = details->Amask;
 	return DD_OK;
 }
 

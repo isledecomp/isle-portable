@@ -67,31 +67,35 @@ DWORD Direct3DRMDevice2Impl::GetBufferCount()
 
 HRESULT Direct3DRMDevice2Impl::SetShades(DWORD shadeCount)
 {
-	MINIWIN_NOT_IMPLEMENTED();
+	if (shadeCount != 256) {
+		MINIWIN_NOT_IMPLEMENTED();
+	}
 	return DD_OK;
 }
 
-HRESULT Direct3DRMDevice2Impl::GetShades()
+DWORD Direct3DRMDevice2Impl::GetShades()
 {
-	MINIWIN_NOT_IMPLEMENTED();
-	return DD_OK;
+	return 256;
 }
 
 HRESULT Direct3DRMDevice2Impl::SetQuality(D3DRMRENDERQUALITY quality)
 {
-	MINIWIN_NOT_IMPLEMENTED();
+	if (quality != D3DRMRENDER_GOURAUD && quality != D3DRMRENDER_PHONG) {
+		MINIWIN_NOT_IMPLEMENTED();
+	}
 	return DD_OK;
 }
 
 D3DRMRENDERQUALITY Direct3DRMDevice2Impl::GetQuality()
 {
-	MINIWIN_NOT_IMPLEMENTED();
 	return D3DRMRENDERQUALITY::GOURAUD;
 }
 
 HRESULT Direct3DRMDevice2Impl::SetDither(BOOL dither)
 {
-	MINIWIN_NOT_IMPLEMENTED();
+	if (dither) {
+		MINIWIN_NOT_IMPLEMENTED();
+	}
 	return DD_OK;
 }
 
