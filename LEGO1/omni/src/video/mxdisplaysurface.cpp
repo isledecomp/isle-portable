@@ -19,6 +19,7 @@
 DECOMP_SIZE_ASSERT(MxDisplaySurface, 0xac);
 
 #define RGB555_CREATE(R, G, B) (((R) << 10) | (G) << 5 | (B) << 0)
+#define RGB8888_CREATE(R, G, B, A) (((A) << 24) | ((R) << 16) | ((G) << 8) | (B))
 
 // GLOBAL: LEGO1 0x1010215c
 MxU32 g_unk0x1010215c = 0;
@@ -42,6 +43,7 @@ void MxDisplaySurface::Init()
 	m_ddSurface2 = NULL;
 	m_ddClipper = NULL;
 	m_16bitPal = NULL;
+	m_32bitPal = NULL;
 	m_initialized = FALSE;
 	memset(&m_surfaceDesc, 0, sizeof(m_surfaceDesc));
 }
@@ -51,7 +53,6 @@ void MxDisplaySurface::ClearScreen()
 {
 	MxS32 backBuffers;
 	DDSURFACEDESC desc;
-	HRESULT hr;
 
 	if (!m_videoParam.Flags().GetFlipSurfaces()) {
 		backBuffers = 1;
@@ -60,29 +61,27 @@ void MxDisplaySurface::ClearScreen()
 		backBuffers = m_videoParam.GetBackBuffers() + 1;
 	}
 
+	MxS32 width = m_videoParam.GetRect().GetWidth();
+	MxS32 height = m_videoParam.GetRect().GetHeight();
+
+	RECT rc = {0, 0, width, height};
+
+	memset(&desc, 0, sizeof(desc));
+	desc.dwSize = sizeof(desc);
+	if (m_ddSurface2->GetSurfaceDesc(&desc) != DD_OK) {
+		return;
+	}
+
+	DDBLTFX ddBltFx = {};
+	ddBltFx.dwSize = sizeof(DDBLTFX);
+	ddBltFx.dwFillColor = 0;
+
 	for (MxS32 i = 0; i < backBuffers; i++) {
-		memset(&desc, 0, sizeof(DDSURFACEDESC));
-
-		desc.dwSize = sizeof(DDSURFACEDESC);
-		hr = m_ddSurface2->Lock(NULL, &desc, DDLOCK_WAIT, NULL);
-		if (hr == DDERR_SURFACELOST) {
+		if (m_ddSurface2->Blt(&rc, NULL, NULL, DDBLT_COLORFILL | DDBLT_WAIT, &ddBltFx) == DDERR_SURFACELOST) {
 			m_ddSurface2->Restore();
-			hr = m_ddSurface2->Lock(NULL, &desc, DDLOCK_WAIT, NULL);
+			m_ddSurface2->Blt(&rc, NULL, NULL, DDBLT_COLORFILL | DDBLT_WAIT, &ddBltFx);
 		}
 
-		if (hr != DD_OK) {
-			return;
-		}
-
-		MxU8* surface = (MxU8*) desc.lpSurface;
-		MxS32 height = m_videoParam.GetRect().GetHeight();
-
-		while (height--) {
-			memset(surface, 0, desc.lPitch);
-			surface += desc.lPitch;
-		}
-
-		m_ddSurface2->Unlock(desc.lpSurface);
 		if (m_videoParam.Flags().GetFlipSurfaces()) {
 			m_ddSurface1->Flip(NULL, DDFLIP_WAIT);
 		}
@@ -189,7 +188,7 @@ MxResult MxDisplaySurface::Create(MxVideoParam& p_videoParam)
 			goto done;
 		}
 
-		MxS32 bitdepth = !m_videoParam.Flags().Get16Bit() ? 8 : 16;
+		MxS32 bitdepth = !m_videoParam.Flags().Get16Bit() ? 8 : ddsd.ddpfPixelFormat.dwRGBBitCount;
 
 		if (ddsd.dwWidth != width || ddsd.dwHeight != height || ddsd.ddpfPixelFormat.dwRGBBitCount != bitdepth) {
 			if (lpDirectDraw->SetDisplayMode(width, height, bitdepth)) {
@@ -287,6 +286,10 @@ void MxDisplaySurface::Destroy()
 		delete[] m_16bitPal;
 	}
 
+	if (m_32bitPal) {
+		delete[] m_32bitPal;
+	}
+
 	Init();
 }
 
@@ -316,34 +319,56 @@ void MxDisplaySurface::SetPalette(MxPalette* p_palette)
 		}
 	}
 
-	switch (m_surfaceDesc.ddpfPixelFormat.dwRGBBitCount) {
-	case 8:
-		break;
-	case 16: {
+	MxS32 bitCount = m_surfaceDesc.ddpfPixelFormat.dwRGBBitCount;
+	if (bitCount == 8) {
+		return;
+	}
+
+	if (bitCount == 16) {
 		if (!m_16bitPal) {
 			m_16bitPal = new MxU16[256];
 		}
-
-		PALETTEENTRY palette[256];
-		p_palette->GetEntries(palette);
-
-		MxU8 contiguousBitsRed = CountContiguousBitsSetTo1(m_surfaceDesc.ddpfPixelFormat.dwRBitMask);
-		MxU8 totalBitsRed = CountTotalBitsSetTo1(m_surfaceDesc.ddpfPixelFormat.dwRBitMask);
-		MxU8 contiguousBitsGreen = CountContiguousBitsSetTo1(m_surfaceDesc.ddpfPixelFormat.dwGBitMask);
-		MxU8 totalBitsGreen = CountTotalBitsSetTo1(m_surfaceDesc.ddpfPixelFormat.dwGBitMask);
-		MxU8 contiguousBitsBlue = CountContiguousBitsSetTo1(m_surfaceDesc.ddpfPixelFormat.dwBBitMask);
-		MxU8 totalBitsBlue = CountTotalBitsSetTo1(m_surfaceDesc.ddpfPixelFormat.dwBBitMask);
-
-		for (MxS32 i = 0; i < 256; i++) {
-			m_16bitPal[i] = ((palette[i].peRed >> (8 - totalBitsRed)) << contiguousBitsRed) |
-							((palette[i].peGreen >> (8 - totalBitsGreen)) << contiguousBitsGreen) |
-							((palette[i].peBlue >> (8 - totalBitsBlue)) << contiguousBitsBlue);
-		}
-
-		break;
 	}
-	default:
-		break;
+	else {
+		if (!m_32bitPal) {
+			m_32bitPal = new MxU32[256];
+		}
+	}
+
+	PALETTEENTRY palette[256];
+	p_palette->GetEntries(palette);
+
+	auto& fmt = m_surfaceDesc.ddpfPixelFormat;
+
+	MxU8 cRed = CountContiguousBitsSetTo1(fmt.dwRBitMask);
+	MxU8 tRed = CountTotalBitsSetTo1(fmt.dwRBitMask);
+	MxU8 cGreen = CountContiguousBitsSetTo1(fmt.dwGBitMask);
+	MxU8 tGreen = CountTotalBitsSetTo1(fmt.dwGBitMask);
+	MxU8 cBlue = CountContiguousBitsSetTo1(fmt.dwBBitMask);
+	MxU8 tBlue = CountTotalBitsSetTo1(fmt.dwBBitMask);
+
+	MxU8 cAlpha = 0;
+	MxU8 tAlpha = 0;
+	if (bitCount == 32) {
+		cAlpha = CountContiguousBitsSetTo1(fmt.dwRGBAlphaBitMask);
+		tAlpha = CountTotalBitsSetTo1(fmt.dwRGBAlphaBitMask);
+	}
+
+	for (MxS32 i = 0; i < 256; i++) {
+		MxU32 red = (palette[i].peRed >> (8 - tRed)) << cRed;
+		MxU32 green = (palette[i].peGreen >> (8 - tGreen)) << cGreen;
+		MxU32 blue = (palette[i].peBlue >> (8 - tBlue)) << cBlue;
+
+		if (bitCount == 16) {
+			m_16bitPal[i] = static_cast<MxU16>(red | green | blue);
+		}
+		else {
+			MxU32 alpha = 0xFF;
+			if (bitCount == 32 && tAlpha > 0) {
+				alpha = (0xFF >> (8 - tAlpha)) << cAlpha;
+			}
+			m_32bitPal[i] = red | green | blue | alpha;
+		}
 	}
 }
 
@@ -389,120 +414,69 @@ void MxDisplaySurface::VTable0x28(
 
 	MxU8* data = p_bitmap->GetStart(p_left, p_top);
 
+	MxS32 bytesPerPixel = m_surfaceDesc.ddpfPixelFormat.dwRGBBitCount / 8;
 	if (m_videoParam.Flags().GetF1bit3()) {
 		p_bottom *= 2;
 		p_right *= 2;
 
-		switch (m_surfaceDesc.ddpfPixelFormat.dwRGBBitCount) {
-		case 8: {
-			MxU8* surface = (MxU8*) ddsd.lpSurface + p_right + (p_bottom * ddsd.lPitch);
-			MxLong stride = -p_width + GetAdjustedStride(p_bitmap);
+		MxU8* surface = (MxU8*) ddsd.lpSurface + (bytesPerPixel * p_right) + (p_bottom * ddsd.lPitch);
+		MxLong stride = -p_width + GetAdjustedStride(p_bitmap);
+		MxS32 copyWidth = p_width * bytesPerPixel * 2;
+		MxLong length = -(copyWidth) + ddsd.lPitch;
 
-			MxLong length = -2 * p_width + ddsd.lPitch;
-			while (p_height--) {
-				MxU8* surfaceBefore = surface;
+		while (p_height--) {
+			MxU8* surfaceBefore = surface;
 
-				for (MxS32 i = 0; p_width > i; i++) {
-					*surface++ = *data;
-					*surface++ = *data++;
+			for (MxS32 i = 0; i < p_width; i++) {
+				if (bytesPerPixel == 1) {
+					surface[0] = surface[1] = *data;
 				}
+				else if (bytesPerPixel == 2) {
+					((MxU16*) surface)[0] = ((MxU16*) surface)[1] = m_16bitPal[*data];
+				}
+				else {
+					((MxU32*) surface)[0] = ((MxU32*) surface)[1] = m_32bitPal[*data];
+				}
+				surface += bytesPerPixel * 2;
+				data++;
+			}
 
+			if (stride || length != ddsd.lPitch - copyWidth) {
 				data += stride;
 				surface += length;
-
-				memcpy(surface, surfaceBefore, 2 * p_width);
-				surface += ddsd.lPitch;
 			}
-			break;
-		}
-		case 16: {
-			MxU8* surface = (MxU8*) ddsd.lpSurface + (2 * p_right) + (p_bottom * ddsd.lPitch);
-			MxLong stride = -p_width + GetAdjustedStride(p_bitmap);
 
-			MxS32 length = -4 * p_width + ddsd.lPitch;
-			MxS32 height = p_height;
-			MxS32 width = p_width;
-			MxS32 copyWidth = width * 4;
-			MxU16* p16bitPal = m_16bitPal;
-
-			MxS32 i;
-			if (!stride && !length) {
-				while (height--) {
-					MxU8* surfaceBefore = surface;
-
-					for (i = 0; i < width; i++) {
-						MxU16 element = p16bitPal[*data];
-						*(MxU16*) surface = element;
-						surface += 2;
-						*(MxU16*) surface = element;
-
-						data++;
-						surface += 2;
-					}
-
-					memcpy(surface, surfaceBefore, copyWidth);
-					surface += ddsd.lPitch;
-				}
-			}
-			else {
-				while (height--) {
-					MxU8* surfaceBefore = surface;
-
-					for (i = 0; i < width; i++) {
-						MxU16 element = p16bitPal[*data];
-						*(MxU16*) surface = element;
-						surface += 2;
-						*(MxU16*) surface = element;
-
-						data++;
-						surface += 2;
-					}
-
-					data += stride;
-					surface += length;
-
-					memcpy(surface, surfaceBefore, p_width * 4);
-					surface += ddsd.lPitch;
-				}
-			}
-			break;
-		}
-		default:
-			break;
+			memcpy(surface, surfaceBefore, copyWidth);
+			surface += ddsd.lPitch;
 		}
 	}
 	else {
-		switch (m_surfaceDesc.ddpfPixelFormat.dwRGBBitCount) {
-		case 8: {
-			MxU8* surface = (MxU8*) ddsd.lpSurface + p_right + (p_bottom * ddsd.lPitch);
-			MxLong stride = GetAdjustedStride(p_bitmap);
+		MxU8* surface = (MxU8*) ddsd.lpSurface + (bytesPerPixel * p_right) + (p_bottom * ddsd.lPitch);
+		MxLong stride = (bytesPerPixel == 1) ? GetAdjustedStride(p_bitmap) : -p_width + GetAdjustedStride(p_bitmap);
+		MxLong length = ddsd.lPitch - (p_width * bytesPerPixel);
 
-			MxLong length = ddsd.lPitch;
-			while (p_height--) {
+		for (MxS32 i = 0; i < p_height; i++) {
+			if (bytesPerPixel == 1) {
 				memcpy(surface, data, p_width);
-				data += stride;
-				surface += length;
+				surface += length + p_width;
 			}
-			break;
-		}
-		case 16: {
-			MxU8* surface = (MxU8*) ddsd.lpSurface + (2 * p_right) + (p_bottom * ddsd.lPitch);
-			MxLong stride = -p_width + GetAdjustedStride(p_bitmap);
-
-			MxLong length = -2 * p_width + ddsd.lPitch;
-			for (MxS32 i = 0; i < p_height; i++) {
+			else if (bytesPerPixel == 2) {
 				for (MxS32 j = 0; j < p_width; j++) {
 					*(MxU16*) surface = m_16bitPal[*data++];
-					surface += 2;
+					surface += bytesPerPixel;
 				}
 
-				data += stride;
 				surface += length;
 			}
-			break;
-		}
-		default:
-			break;
+			else {
+				for (MxS32 j = 0; j < p_width; j++) {
+					*(MxU32*) surface = m_32bitPal[*data++];
+					surface += bytesPerPixel;
+				}
+				surface += length;
+			}
+
+			data += stride;
 		}
 	}
 
@@ -552,61 +526,38 @@ void MxDisplaySurface::VTable0x30(
 
 	MxU8* data = p_bitmap->GetStart(p_left, p_top);
 
-	switch (m_surfaceDesc.ddpfPixelFormat.dwRGBBitCount) {
-	case 8: {
-		MxU8* surface = (MxU8*) ddsd.lpSurface + p_right + (p_bottom * ddsd.lPitch);
-		if (p_RLE) {
-			MxS32 size = p_bitmap->GetBmiHeader()->biSizeImage;
-			DrawTransparentRLE(data, surface, size, p_width, p_height, ddsd.lPitch, 8);
-		}
-		else {
-			MxLong stride = -p_width + GetAdjustedStride(p_bitmap);
+	MxS32 bytesPerPixel = m_surfaceDesc.ddpfPixelFormat.dwRGBBitCount / 8;
+	MxU8* surface = (MxU8*) ddsd.lpSurface + (bytesPerPixel * p_right) + (p_bottom * ddsd.lPitch);
 
-			MxLong length = -p_width + ddsd.lPitch;
-			for (MxS32 i = 0; i < p_height; i++) {
-				for (MxS32 j = 0; j < p_width; j++) {
-					if (*data != 0) {
+	if (p_RLE) {
+		MxS32 size = p_bitmap->GetBmiHeader()->biSizeImage;
+		DrawTransparentRLE(data, surface, size, p_width, p_height, ddsd.lPitch, bytesPerPixel * 8);
+	}
+	else {
+		MxLong stride = -p_width + GetAdjustedStride(p_bitmap);
+		MxLong length = -bytesPerPixel * p_width + ddsd.lPitch;
+
+		for (MxS32 i = 0; i < p_height; i++) {
+			for (MxS32 j = 0; j < p_width; j++) {
+				if (*data != 0) {
+					switch (bytesPerPixel) {
+					case 1:
 						*surface = *data;
-					}
-
-					data++;
-					surface++;
-				}
-
-				data += stride;
-				surface += length;
-			}
-		}
-		break;
-	}
-	case 16: {
-		MxU8* surface = (MxU8*) ddsd.lpSurface + (2 * p_right) + (p_bottom * ddsd.lPitch);
-		if (p_RLE) {
-			MxS32 size = p_bitmap->GetBmiHeader()->biSizeImage;
-			DrawTransparentRLE(data, surface, size, p_width, p_height, ddsd.lPitch, 16);
-		}
-		else {
-			MxLong stride = -p_width + GetAdjustedStride(p_bitmap);
-
-			MxLong length = -2 * p_width + ddsd.lPitch;
-			for (MxS32 i = 0; i < p_height; i++) {
-				for (MxS32 j = 0; j < p_width; j++) {
-					if (*data != 0) {
+						break;
+					case 2:
 						*(MxU16*) surface = m_16bitPal[*data];
+						break;
+					default:
+						*(MxU32*) surface = m_32bitPal[*data];
+						break;
 					}
-
-					data++;
-					surface += 2;
 				}
-
-				data += stride;
-				surface += length;
+				data++;
+				surface += bytesPerPixel;
 			}
+			data += stride;
+			surface += length;
 		}
-		break;
-	}
-	default:
-		break;
 	}
 
 	m_ddSurface2->Unlock(ddsd.lpSurface);
@@ -784,54 +735,38 @@ void MxDisplaySurface::VTable0x34(MxU8* p_pixels, MxS32 p_bpp, MxS32 p_width, Mx
 
 	if (result == DD_OK) {
 		MxU8* pixels = p_pixels;
+		MxS32 bytesPerPixel = m_surfaceDesc.ddpfPixelFormat.dwRGBBitCount / 8;
+		if (p_bpp != 8 && bytesPerPixel != p_bpp) {
+			MxTrace("Source format to display format NOT_IMPLEMENTED");
+			assert(0);
+			return;
+		}
 
-		switch (m_surfaceDesc.ddpfPixelFormat.dwRGBBitCount) {
-		case 8: {
-			if (p_bpp == 16) {
-				MxTrace("16 bit source to 8 bit display NOT_IMPLEMENTED");
-				assert(0);
-				return;
-			}
+		MxU8* dst = (MxU8*) surfaceDesc.lpSurface + p_y * surfaceDesc.lPitch + bytesPerPixel * p_x;
+		MxLong stride = p_width * bytesPerPixel;
+		MxLong length = -bytesPerPixel * p_width + surfaceDesc.lPitch;
 
-			MxU8* dst = (MxU8*) surfaceDesc.lpSurface + p_y * surfaceDesc.lPitch + p_x;
-			MxLong stride = p_width;
-			MxLong length = surfaceDesc.lPitch;
-
+		if (bytesPerPixel == p_bpp) {
 			while (p_height--) {
-				memcpy(dst, pixels, p_width);
+				memcpy(dst, pixels, p_width * bytesPerPixel);
 				pixels += stride;
 				dst += length;
 			}
-			break;
 		}
-		case 16: {
-			if (p_bpp == 16) {
-				MxU8* dst = (MxU8*) surfaceDesc.lpSurface + p_y * surfaceDesc.lPitch + p_x;
-				MxLong stride = p_width * 2;
-				MxLong length = surfaceDesc.lPitch;
-
-				while (p_height--) {
-					memcpy(dst, pixels, 2 * p_width);
-					pixels += stride;
-					dst += length;
-				}
-			}
-			else if (p_bpp == 8) {
-				MxU8* dst = (MxU8*) surfaceDesc.lpSurface + p_y * surfaceDesc.lPitch + 2 * p_x;
-				MxLong stride = p_width * 2;
-				MxLong length = -2 * p_width + surfaceDesc.lPitch;
-
-				for (MxS32 i = 0; i < p_height; i++) {
-					for (MxS32 j = 0; j < p_width; j++) {
+		else {
+			for (MxS32 i = 0; i < p_height; i++) {
+				for (MxS32 j = 0; j < p_width; j++) {
+					if (bytesPerPixel == 2) {
 						*(MxU16*) dst = m_16bitPal[*pixels++];
-						dst += 2;
 					}
-
-					pixels += stride;
-					dst += length;
+					else {
+						*(MxU32*) dst = m_32bitPal[*pixels++];
+					}
+					dst += bytesPerPixel;
 				}
+				pixels += stride;
+				dst += length;
 			}
-		}
 		}
 
 		m_ddSurface2->Unlock(surfaceDesc.lpSurface);
@@ -965,77 +900,97 @@ LPDIRECTDRAWSURFACE MxDisplaySurface::VTable0x44(
 		}
 		else {
 			MxU8* bitmapSrcPtr = p_bitmap->GetStart(0, 0);
-			MxU16* surfaceData = (MxU16*) ddsd.lpSurface;
 			MxLong widthNormal = p_bitmap->GetBmiWidth();
 			MxLong heightAbs = p_bitmap->GetBmiHeightAbs();
 
 			MxLong newPitch = ddsd.lPitch;
-			MxS32 rowSeek = p_bitmap->AlignToFourByte(p_bitmap->GetBmiWidth());
+			MxS32 rowSeek = p_bitmap->AlignToFourByte(widthNormal);
 			if (!p_bitmap->IsTopDown()) {
 				rowSeek *= -1;
 			}
 
-			switch (ddsd.ddpfPixelFormat.dwRGBBitCount) {
-			case 8: {
-				for (MxS32 y = 0; y < heightAbs; y++) {
-					memcpy(surfaceData, bitmapSrcPtr, widthNormal);
-					bitmapSrcPtr += rowSeek;
-					surfaceData = (MxU16*) ((MxU8*) surfaceData + newPitch);
-				}
+			MxS32 bytesPerPixel = ddsd.ddpfPixelFormat.dwRGBBitCount / 8;
 
-				surface->Unlock(ddsd.lpSurface);
-
-				if (p_transparent && surface) {
-					DDCOLORKEY key;
-					key.dwColorSpaceLowValue = key.dwColorSpaceHighValue = 0;
-					surface->SetColorKey(DDCKEY_SRCBLT, &key);
-				}
-				break;
-			}
-			case 16: {
-				if (m_16bitPal == NULL) {
+			if (bytesPerPixel != 1) {
+				if ((bytesPerPixel == 2 && m_16bitPal == NULL) || (bytesPerPixel != 2 && m_32bitPal == NULL)) {
 					goto error;
 				}
+			}
 
-				rowSeek -= widthNormal;
-				newPitch -= 2 * widthNormal;
-
-				if (p_transparent) {
-					for (MxS32 y = 0; y < heightAbs; y++) {
-						for (MxS32 x = 0; x < widthNormal; x++) {
-							if (*bitmapSrcPtr == 0) {
-								*surfaceData = RGB555_CREATE(0x1f, 0, 0x1f);
-							}
-							else {
-								*surfaceData = m_16bitPal[*bitmapSrcPtr];
-							}
-
-							bitmapSrcPtr++;
-							surfaceData++;
-						}
-
-						bitmapSrcPtr += rowSeek;
-						surfaceData = (MxU16*) ((MxU8*) surfaceData + newPitch);
-					}
-
-					DDCOLORKEY key;
-					key.dwColorSpaceLowValue = key.dwColorSpaceHighValue = RGB555_CREATE(0x1f, 0, 0x1f);
-					surface->SetColorKey(DDCKEY_SRCBLT, &key);
-				}
-				else {
-					for (MxS32 y = 0; y < heightAbs; y++) {
-						for (MxS32 x = 0; x < widthNormal; x++) {
-							*surfaceData++ = m_16bitPal[*bitmapSrcPtr++];
-						}
-
-						bitmapSrcPtr += rowSeek;
-						surfaceData = (MxU16*) ((MxU8*) surfaceData + newPitch);
-					}
-				}
-
-				surface->Unlock(ddsd.lpSurface);
+			MxU32 transparentColor;
+			switch (bytesPerPixel) {
+			case 1:
+				transparentColor = 0;
+				break;
+			case 2:
+				transparentColor = RGB555_CREATE(0x1f, 0, 0x1f);
+				break;
+			default:
+				transparentColor = RGB8888_CREATE(0xff, 0, 0xff, 0);
 				break;
 			}
+
+			MxU8* surfacePtr = (MxU8*) ddsd.lpSurface;
+			MxS32 pixelSize = bytesPerPixel;
+			MxS32 adjustedRowSeek = rowSeek - widthNormal;
+			MxS32 adjustedPitch = newPitch - pixelSize * widthNormal;
+
+			for (MxS32 y = 0; y < heightAbs; y++) {
+				for (MxS32 x = 0; x < widthNormal; x++) {
+					switch (bytesPerPixel) {
+					case 1: {
+						// For 8-bit, just copy the pixel directly
+						*surfacePtr = *bitmapSrcPtr;
+						break;
+					}
+					case 2: {
+						MxU16* surfaceData16 = (MxU16*) surfacePtr;
+						if (p_transparent && *bitmapSrcPtr == 0) {
+							*surfaceData16 = transparentColor;
+						}
+						else {
+							*surfaceData16 = m_16bitPal[*bitmapSrcPtr];
+						}
+						break;
+					}
+					default: {
+						MxU32* surfaceData32 = (MxU32*) surfacePtr;
+						if (p_transparent && *bitmapSrcPtr == 0) {
+							*surfaceData32 = transparentColor;
+						}
+						else {
+							*surfaceData32 = m_32bitPal[*bitmapSrcPtr];
+						}
+						break;
+					}
+					}
+					bitmapSrcPtr++;
+					surfacePtr += pixelSize;
+				}
+				bitmapSrcPtr += adjustedRowSeek;
+				surfacePtr += adjustedPitch;
+			}
+
+			if (p_transparent && surface) {
+				DDCOLORKEY key;
+				key.dwColorSpaceLowValue = key.dwColorSpaceHighValue = transparentColor;
+				surface->SetColorKey(DDCKEY_SRCBLT, &key);
+			}
+
+			surface->Unlock(ddsd.lpSurface);
+
+			if (p_transparent && surface) {
+				DDCOLORKEY key;
+				if (bytesPerPixel == 1) {
+					key.dwColorSpaceLowValue = key.dwColorSpaceHighValue = 0;
+				}
+				else if (bytesPerPixel == 2) {
+					key.dwColorSpaceLowValue = key.dwColorSpaceHighValue = RGB555_CREATE(0x1f, 0, 0x1f);
+				}
+				else {
+					key.dwColorSpaceLowValue = key.dwColorSpaceHighValue = RGB8888_CREATE(0xff, 0, 0xff, 0);
+				}
+				surface->SetColorKey(DDCKEY_SRCBLT, &key);
 			}
 		}
 	}
@@ -1191,116 +1146,61 @@ void MxDisplaySurface::VTable0x24(
 		p_bottom *= 2;
 		p_right *= 2;
 
-		switch (m_surfaceDesc.ddpfPixelFormat.dwRGBBitCount) {
-		case 8: {
-			MxU8* surface = (MxU8*) p_desc->lpSurface + p_right + (p_bottom * p_desc->lPitch);
-			MxLong stride = -p_width + GetAdjustedStride(p_bitmap);
+		MxS32 bytesPerPixel = m_surfaceDesc.ddpfPixelFormat.dwRGBBitCount / 8;
+		MxU8* surface = (MxU8*) p_desc->lpSurface + bytesPerPixel * p_right + (p_bottom * p_desc->lPitch);
 
-			MxLong length = -2 * p_width + p_desc->lPitch;
-			while (p_height--) {
-				MxU8* surfaceBefore = surface;
+		MxLong srcSkip = GetAdjustedStride(p_bitmap) - p_width;
+		MxLong destSkip = p_desc->lPitch - 2 * bytesPerPixel * p_width;
+		MxS32 copyWidth = 2 * bytesPerPixel * p_width;
 
-				for (MxS32 i = 0; p_width > i; i++) {
-					*surface++ = *data;
-					*surface++ = *data++;
+		while (p_height--) {
+			MxU8* surfaceBefore = surface;
+
+			for (MxS32 x = 0; x < p_width; x++) {
+				if (bytesPerPixel == 1) {
+					surface[0] = surface[1] = *data;
 				}
-
-				data += stride;
-				surface += length;
-
-				memcpy(surface, surfaceBefore, 2 * p_width);
-				surface += p_desc->lPitch;
-			}
-			break;
-		}
-		case 16: {
-			MxU8* surface = (MxU8*) p_desc->lpSurface + (2 * p_right) + (p_bottom * p_desc->lPitch);
-			MxLong stride = -p_width + GetAdjustedStride(p_bitmap);
-
-			MxS32 length = -4 * p_width + p_desc->lPitch;
-			MxS32 height = p_height;
-			MxS32 width = p_width;
-			MxS32 copyWidth = width * 4;
-			MxU16* p16bitPal = m_16bitPal;
-
-			MxS32 i;
-			if (!stride && !length) {
-				while (height--) {
-					MxU8* surfaceBefore = surface;
-
-					for (i = 0; i < width; i++) {
-						MxU16 element = p16bitPal[*data];
-						*(MxU16*) surface = element;
-						surface += 2;
-						*(MxU16*) surface = element;
-
-						data++;
-						surface += 2;
-					}
-
-					memcpy(surface, surfaceBefore, copyWidth);
-					surface += p_desc->lPitch;
+				else if (bytesPerPixel == 2) {
+					MxU16 val = m_16bitPal[*data];
+					((MxU16*) surface)[0] = ((MxU16*) surface)[1] = val;
 				}
-			}
-			else {
-				while (height--) {
-					MxU8* surfaceBefore = surface;
-
-					for (i = 0; i < width; i++) {
-						MxU16 element = p16bitPal[*data];
-						*(MxU16*) surface = element;
-						surface += 2;
-						*(MxU16*) surface = element;
-
-						data++;
-						surface += 2;
-					}
-
-					data += stride;
-					surface += length;
-
-					memcpy(surface, surfaceBefore, p_width * 4);
-					surface += p_desc->lPitch;
+				else {
+					MxU32 val = m_32bitPal[*data];
+					((MxU32*) surface)[0] = ((MxU32*) surface)[1] = val;
 				}
+				surface += bytesPerPixel * 2;
+				data++;
 			}
-			break;
-		}
-		default:
-			break;
+
+			data += srcSkip;
+			surface += destSkip;
+
+			memcpy(surface, surfaceBefore, copyWidth);
+			surface += p_desc->lPitch;
 		}
 	}
 	else {
-		switch (m_surfaceDesc.ddpfPixelFormat.dwRGBBitCount) {
-		case 8: {
-			MxU8* surface = (MxU8*) p_desc->lpSurface + p_right + (p_bottom * p_desc->lPitch);
-			MxLong stride = GetAdjustedStride(p_bitmap);
+		MxS32 bytesPerPixel = m_surfaceDesc.ddpfPixelFormat.dwRGBBitCount / 8;
+		MxU8* surface = (MxU8*) p_desc->lpSurface + bytesPerPixel * p_right + (p_bottom * p_desc->lPitch);
 
-			MxLong length = p_desc->lPitch;
-			while (p_height--) {
-				memcpy(surface, data, p_width);
-				data += stride;
-				surface += length;
-			}
-			break;
-		}
-		case 16: {
-			MxU8* surface = (MxU8*) p_desc->lpSurface + (2 * p_right) + (p_bottom * p_desc->lPitch);
-			MxLong stride = -p_width + GetAdjustedStride(p_bitmap);
+		MxLong srcSkip = GetAdjustedStride(p_bitmap) - p_width;
+		MxLong destSkip = p_desc->lPitch - bytesPerPixel * p_width;
 
-			MxLong length = -2 * p_width + p_desc->lPitch;
-			for (MxS32 i = 0; i < p_height; i++) {
-				for (MxS32 j = 0; j < p_width; j++) {
-					*(MxU16*) surface = m_16bitPal[*data++];
-					surface += 2;
+		for (MxS32 y = 0; y < p_height; y++) {
+			for (MxS32 x = 0; x < p_width; x++) {
+				if (bytesPerPixel == 1) {
+					*surface = *data++;
 				}
-
-				data += stride;
-				surface += length;
+				else if (bytesPerPixel == 2) {
+					*(MxU16*) surface = m_16bitPal[*data++];
+				}
+				else {
+					*(MxU32*) surface = m_32bitPal[*data++];
+				}
+				surface += bytesPerPixel;
 			}
-			break;
-		}
-		default:
-			break;
+			data += srcSkip;
+			surface += destSkip;
 		}
 	}
 }
@@ -1337,52 +1237,43 @@ void MxDisplaySurface::VTable0x2c(
 
 	MxU8* src = p_bitmap->GetStart(p_left, p_top);
 
-	switch (m_surfaceDesc.ddpfPixelFormat.dwRGBBitCount) {
-	case 8: {
-		MxLong destStride = p_desc->lPitch;
-		MxU8* dest = (MxU8*) p_desc->lpSurface + p_right + (p_bottom * p_desc->lPitch);
+	MxS32 bytesPerPixel = m_surfaceDesc.ddpfPixelFormat.dwRGBBitCount / 8;
+	MxLong destStride = p_desc->lPitch;
+	MxU8* dest = (MxU8*) p_desc->lpSurface + bytesPerPixel * p_right + (p_bottom * destStride);
 
-		if (p_RLE) {
-			DrawTransparentRLE(src, dest, p_bitmap->GetBmiHeader()->biSizeImage, p_width, p_height, p_desc->lPitch, 8);
-		}
-		else {
-			MxLong srcSkip = GetAdjustedStride(p_bitmap) - p_width;
-			MxLong destSkip = destStride - p_width;
-
-			for (MxS32 i = 0; i < p_height; i++, src += srcSkip, dest += destSkip) {
-				for (MxS32 j = 0; j < p_width; j++, src++, dest++) {
-					if (*src) {
+	if (p_RLE) {
+		DrawTransparentRLE(
+			src,
+			dest,
+			p_bitmap->GetBmiHeader()->biSizeImage,
+			p_width,
+			p_height,
+			destStride,
+			m_surfaceDesc.ddpfPixelFormat.dwRGBBitCount
+		);
+	}
+	else {
+		MxLong srcStride = GetAdjustedStride(p_bitmap);
+		MxLong srcSkip = srcStride - p_width;
+		MxLong destSkip = destStride - bytesPerPixel * p_width;
+		for (MxS32 i = 0; i < p_height; i++, src += srcSkip, dest += destSkip) {
+			for (MxS32 j = 0; j < p_width; j++, src++) {
+				if (*src != 0) {
+					switch (bytesPerPixel) {
+					case 1:
 						*dest = *src;
-					}
-				}
-			}
-		}
-		break;
-	}
-	case 16: {
-		MxLong destStride = p_desc->lPitch;
-		MxU8* dest = (MxU8*) p_desc->lpSurface + (2 * p_right) + (p_bottom * p_desc->lPitch);
-
-		if (p_RLE) {
-			DrawTransparentRLE(src, dest, p_bitmap->GetBmiHeader()->biSizeImage, p_width, p_height, p_desc->lPitch, 16);
-		}
-		else {
-			MxLong srcStride = GetAdjustedStride(p_bitmap);
-			MxLong srcSkip = srcStride - p_width;
-			MxLong destSkip = destStride - 2 * p_width;
-
-			for (MxS32 i = 0; i < p_height; i++, src += srcSkip, dest += destSkip) {
-				for (MxS32 j = 0; j < p_width; j++, src++, dest += 2) {
-					if (*src != 0) {
+						break;
+					case 2:
 						*(MxU16*) dest = m_16bitPal[*src];
+						break;
+					default:
+						*(MxU32*) dest = m_32bitPal[*src];
+						break;
 					}
 				}
+				dest += bytesPerPixel;
 			}
 		}
-		break;
-	}
-	default:
-		break;
 	}
 }
 
@@ -1402,7 +1293,7 @@ LPDIRECTDRAWSURFACE MxDisplaySurface::FUN_100bc8b0(MxS32 p_width, MxS32 p_height
 		return NULL;
 	}
 
-	if (surfaceDesc.ddpfPixelFormat.dwRGBBitCount != 16) {
+	if (surfaceDesc.ddpfPixelFormat.dwRGBBitCount == 8) {
 		return NULL;
 	}
 

@@ -240,9 +240,13 @@ void MxTransitionManager::DissolveTransition()
 					MxU8* surf = (MxU8*) ddsd.lpSurface + ddsd.lPitch * row + xShift;
 					*surf = 0;
 				}
-				else {
+				else if (ddsd.ddpfPixelFormat.dwRGBBitCount == 16) {
 					MxU8* surf = (MxU8*) ddsd.lpSurface + ddsd.lPitch * row + xShift * 2;
 					*(MxU16*) surf = 0;
+				}
+				else {
+					MxU8* surf = (MxU8*) ddsd.lpSurface + ddsd.lPitch * row + xShift * 4;
+					*(MxU32*) surf = 0;
 				}
 			}
 		}
@@ -329,22 +333,43 @@ void MxTransitionManager::MosaicTransition()
 					MxU8* source = (MxU8*) ddsd.lpSurface + 10 * row * ddsd.lPitch + bytesPerPixel * xShift;
 
 					// Sample byte or word depending on display mode.
-					MxU32 sample = bytesPerPixel == 1 ? *source : *(MxU16*) source;
+					MxU32 sample;
+					switch (bytesPerPixel) {
+					case 1:
+						sample = *source;
+						break;
+					case 2:
+						sample = *(MxU16*) source;
+						break;
+					default:
+						sample = *(MxU32*) source;
+						break;
+					}
 
 					// For each of the 10 rows in the 10x10 square:
 					for (MxS32 k = 10 * row; k < 10 * row + 10; k++) {
-						if (ddsd.ddpfPixelFormat.dwRGBBitCount == 8) {
-							// Optimization: If the pixel is only one byte, we can use memset
-							MxU8* pos = ((MxU8*) ddsd.lpSurface + k * ddsd.lPitch + xShift);
-							memset(pos, sample, 10);
-						}
-						else {
-							// Need to double xShift because it measures pixels not bytes
-							MxU16* pos = (MxU16*) ((MxU8*) ddsd.lpSurface + k * ddsd.lPitch + 2 * xShift);
+						void* pos = (MxU8*) ddsd.lpSurface + k * ddsd.lPitch + bytesPerPixel * xShift;
 
+						switch (bytesPerPixel) {
+						case 1: {
+							// Optimization: If the pixel is only one byte, we can use memset
+							memset(pos, sample, 10);
+							break;
+						}
+						case 2: {
+							MxU16* p = (MxU16*) pos;
 							for (MxS32 tt = 0; tt < 10; tt++) {
-								pos[tt] = sample;
+								p[tt] = (MxU16) sample;
 							}
+							break;
+						}
+						default: {
+							MxU32* p = (MxU32*) pos;
+							for (MxS32 tt = 0; tt < 10; tt++) {
+								p[tt] = (MxU32) sample;
+							}
+							break;
+						}
 						}
 					}
 				}

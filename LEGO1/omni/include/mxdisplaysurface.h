@@ -128,6 +128,7 @@ private:
 	MxBool m_initialized;             // 0x38
 	DDSURFACEDESC m_surfaceDesc;      // 0x3c
 	MxU16* m_16bitPal;                // 0xa8
+	MxU32* m_32bitPal;
 };
 
 // SYNTHETIC: LEGO1 0x100ba580

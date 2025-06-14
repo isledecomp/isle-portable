@@ -132,10 +132,14 @@ ENABLE_BITMASK_OPERATORS(DDPixelCaps)
 #define DDBLT_NONE DDBltFlags::NONE
 #define DDBLT_KEYSRC DDBltFlags::KEYSRC
 #define DDBLT_ROP DDBltFlags::ROP
+#define DDBLT_COLORFILL DDBltFlags::COLORFILL
+#define DDBLT_WAIT DDBltFlags::WAIT
 enum class DDBltFlags : uint32_t {
 	NONE = 0,
+	COLORFILL = 1 << 10,
 	KEYSRC = 1 << 15,
 	ROP = 1 << 17,
+	WAIT = 1 << 24,
 };
 ENABLE_BITMASK_OPERATORS(DDBltFlags)
 
@@ -243,7 +247,9 @@ struct DDBLTFX {
 	DWORD dwSize;
 	DWORD dwDDFX;
 	DWORD dwROP;
+	DWORD dwFillColor;
 };
+typedef DDBLTFX *LPDDBLTFX, *LPDDENUMSURFACESCALLBACK;
 
 struct DDPIXELFORMAT {
 	DWORD dwSize;
@@ -303,7 +309,6 @@ struct IDirectDrawClipper : virtual public IUnknown {
 };
 typedef IDirectDrawClipper* LPDIRECTDRAWCLIPPER;
 
-typedef void *LPDDBLTFX, *LPDDENUMSURFACESCALLBACK;
 typedef struct IDirectDrawSurface* LPDIRECTDRAWSURFACE;
 struct IDirectDrawSurface : virtual public IUnknown {
 	virtual HRESULT AddAttachedSurface(LPDIRECTDRAWSURFACE lpDDSAttachedSurface) = 0;
