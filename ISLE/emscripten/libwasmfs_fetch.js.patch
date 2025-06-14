@@ -1,0 +1,112 @@
+diff --git a/src/lib/libwasmfs_fetch.js b/src/lib/libwasmfs_fetch.js
+index e8c9f7e21..5c3a3dfbe 100644
+--- a/src/lib/libwasmfs_fetch.js
++++ b/src/lib/libwasmfs_fetch.js
+@@ -38,36 +38,7 @@ addToLibrary({
+       var chunkSize = __wasmfs_fetch_get_chunk_size(file);
+       offset ??= 0;
+       len ??= chunkSize;
+-      // In which chunk does the seeked range start?  E.g., 5-14 with chunksize 8 will start in chunk 0.
+-      if (!(file in wasmFS$JSMemoryRanges)) {
+-        var fileInfo = await fetch(url, {method:'HEAD', headers:{'Range': 'bytes=0-'}});
+-        if (fileInfo.ok &&
+-            fileInfo.headers.has('Content-Length') &&
+-            fileInfo.headers.get('Accept-Ranges') == 'bytes' &&
+-            (parseInt(fileInfo.headers.get('Content-Length'), 10) > chunkSize*2)) {
+-          var size = parseInt(fileInfo.headers.get('Content-Length'), 10);
+-          wasmFS$JSMemoryRanges[file] = {
+-            size,
+-            chunks: [],
+-            chunkSize: chunkSize
+-          };
+-          len = Math.min(len, size-offset);
+-        } else {
+-          // may as well/forced to download the whole file
+-          var wholeFileReq = await fetch(url);
+-          if (!wholeFileReq.ok) {
+-            throw wholeFileReq;
+-          }
+-          var wholeFileData = new Uint8Array(await wholeFileReq.arrayBuffer());
+-          var text = new TextDecoder().decode(wholeFileData);
+-          wasmFS$JSMemoryRanges[file] = {
+-            size: wholeFileData.byteLength,
+-            chunks: [wholeFileData],
+-            chunkSize: wholeFileData.byteLength
+-          };
+-          return Promise.resolve();
+-        }
+-      }
++
+       var firstChunk = (offset / chunkSize) | 0;
+       // In which chunk does the seeked range end?  E.g., 5-14 with chunksize 8 will end in chunk 1, as will 5-16 (since byte 16 isn't requested).
+       // This will always give us a chunk >= firstChunk since len > 0.
+@@ -76,7 +47,7 @@ addToLibrary({
+       var i;
+       // Do we have all the chunks already?  If so, we don't need to do any fetches.
+       for (i = firstChunk; i <= lastChunk; i++) {
+-        if (!wasmFS$JSMemoryRanges[file].chunks[i]) {
++        if (!(file in wasmFS$JSMemoryRanges) || !wasmFS$JSMemoryRanges[file].chunks[i]) {
+           allPresent = false;
+           break;
+         }
+@@ -90,16 +61,36 @@ addToLibrary({
+       // one request for all the chunks we need, rather than one
+       // request per chunk.
+       var start = firstChunk * chunkSize;
++
++      // Out of bounds. No request necessary.
++      if ((file in wasmFS$JSMemoryRanges) && start >= wasmFS$JSMemoryRanges[file].size) {
++        return Promise.resolve();
++      }
++
+       // We must fetch *up to* the last byte of the last chunk.
+       var end = (lastChunk+1) * chunkSize;
+-      var response = await fetch(url, {headers:{'Range': `bytes=${start}-${end-1}`}});
++      var response = await fetch(url, {headers:{'Range': `bytes=${start}-${end-1}`, 'Accept-Language': wasmFS$language}});
+       if (!response.ok) {
+         throw response;
+       }
++
+       var bytes = await response['bytes']();
++      if (!(file in wasmFS$JSMemoryRanges)) {
++        var size = Math.max(
++          parseInt(response.headers.get('Content-Range').split('/')[1], 10),
++          bytes.length
++        );
++        wasmFS$JSMemoryRanges[file] = {
++          size,
++          chunks: [],
++          chunkSize: chunkSize
++        };
++      }
++
+       for (i = firstChunk; i <= lastChunk; i++) {
+         wasmFS$JSMemoryRanges[file].chunks[i] = bytes.slice(i*chunkSize-start,(i+1)*chunkSize-start);
+       }
++
+       return Promise.resolve();
+     }
+ 
+@@ -164,6 +155,21 @@ addToLibrary({
+         return wasmFS$JSMemoryRanges[file].size;
+       },
+     };
++ 
++    wasmFS$language = await (async () => {
++      try {
++        const fileHandle = await (await navigator.storage.getDirectory()).getFileHandle('isle.ini');
++        const content = await (await fileHandle.getFile()).text();
++        const match = content.match(/^Language\s*=\s*(.*)/m);
++    
++        if (match && match[1]) {
++          return match[1].trim();
++        }
++      } catch (e) {
++        console.warn("Could not read 'isle.ini' or 'Language' key not found. Falling back to 'en'.", e);
++      }
++  
++      return 'en';
++    })();
+   },
+-
+ });
