@@ -88,6 +88,21 @@ HRESULT DirectDrawSurfaceImpl::Blt(
 	LPDDBLTFX lpDDBltFx
 )
 {
+	if ((dwFlags & DDBLT_COLORFILL) == DDBLT_COLORFILL) {
+		SDL_Rect rect = {0, 0, m_surface->w, m_surface->h};
+		const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(m_surface->format);
+		Uint8 r = (lpDDBltFx->dwFillColor >> 16) & 0xFF;
+		Uint8 g = (lpDDBltFx->dwFillColor >> 8) & 0xFF;
+		Uint8 b = lpDDBltFx->dwFillColor & 0xFF;
+		DirectDrawPaletteImpl* ddPal = static_cast<DirectDrawPaletteImpl*>(m_palette);
+		SDL_Palette* sdlPalette = ddPal ? ddPal->m_palette : nullptr;
+		Uint32 color = SDL_MapRGB(details, sdlPalette, r, g, b);
+		SDL_FillSurfaceRect(m_surface, &rect, color);
+		if (m_autoFlip) {
+			return Flip(nullptr, DDFLIP_WAIT);
+		}
+		return DD_OK;
+	}
 	auto srcSurface = static_cast<DirectDrawSurfaceImpl*>(lpDDSrcSurface);
 	if (!srcSurface || !srcSurface->m_surface) {
 		return DDERR_GENERIC;

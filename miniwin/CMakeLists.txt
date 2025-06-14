@@ -37,8 +37,6 @@ if(OpenGL_FOUND AND GLEW_FOUND)
   target_link_libraries(miniwin PRIVATE GLEW::GLEW)
 endif()
 
-# Force reported render mods from MiniWin
-target_compile_definitions(miniwin PRIVATE MINIWIN_PIXELFORMAT=SDL_PIXELFORMAT_RGB565)
 target_compile_definitions(miniwin PUBLIC MINIWIN)
 
 target_include_directories(miniwin
