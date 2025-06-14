@@ -231,16 +231,21 @@ SDL_Color Direct3DRMSoftwareRenderer::ApplyLighting(
 		}
 		lightVec = Normalize(lightVec);
 
-		float dotNL = normal.x * lightVec.x + normal.y * lightVec.y + normal.z * lightVec.z;
+		float dotNL = DotProduct(normal, lightVec);
 		if (dotNL > 0.0f) {
 			// Diffuse contribution
 			diffuse.r += dotNL * lightColor.r;
 			diffuse.g += dotNL * lightColor.g;
 			diffuse.b += dotNL * lightColor.b;
 
-			if (appearance.shininess != 0.0f) {
-				// Using dotNL ignores view angle, but this matches DirectX 5 behavior.
-				float spec = std::pow(dotNL, appearance.shininess * m_shininessFactor);
+			// Specular
+			if (appearance.shininess > 0.0f && light.directional == 1.0f) {
+				D3DVECTOR viewVec = Normalize({-position.x, -position.y, -position.z});
+				D3DVECTOR H = Normalize({lightVec.x + viewVec.x, lightVec.y + viewVec.y, lightVec.z + viewVec.z});
+
+				float dotNH = std::max(DotProduct(normal, H), 0.0f);
+				float spec = std::pow(dotNH, appearance.shininess);
+
 				specular.r += spec * lightColor.r;
 				specular.g += spec * lightColor.g;
 				specular.b += spec * lightColor.b;

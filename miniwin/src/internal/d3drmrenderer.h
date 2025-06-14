@@ -57,16 +57,4 @@ public:
 	{
 		return SDL_ConvertEventToRenderCoordinates(DDRenderer, event);
 	}
-	float GetShininessFactor() { return m_shininessFactor; }
-	HRESULT SetShininessFactor(float factor)
-	{
-		if (factor < 0.f) {
-			return DDERR_GENERIC;
-		}
-		m_shininessFactor = factor;
-		return DD_OK;
-	}
-
-protected:
-	float m_shininessFactor = 1.f;
 };
