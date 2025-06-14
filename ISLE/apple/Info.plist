@@ -76,5 +76,7 @@
 	</dict>
 	<key>CFBundleAllowMixedLocalizations</key>
 	<true/>
+	<key>LSApplicationCategoryType</key>
+    <string>public.app-category.games</string>
 </dict>
 </plist>
