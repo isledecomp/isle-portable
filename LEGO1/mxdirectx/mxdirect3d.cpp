@@ -178,7 +178,7 @@ BOOL MxDirect3D::D3DSetMode()
 		unsigned char* surface = (unsigned char*) desc.lpSurface;
 
 		for (int i = 0; i < mode.height; i++) {
-			memset(surface, 0, mode.width * desc.ddpfPixelFormat.dwRGBBitCount / 8);
+			memset(surface, 0, desc.lPitch);
 			surface += desc.lPitch;
 		}
 
@@ -196,7 +196,7 @@ BOOL MxDirect3D::D3DSetMode()
 			unsigned char* surface = (unsigned char*) desc.lpSurface;
 
 			for (int i = 0; i < mode.height; i++) {
-				memset(surface, 0, mode.width * desc.ddpfPixelFormat.dwRGBBitCount / 8);
+				memset(surface, 0, desc.lPitch);
 				surface += desc.lPitch;
 			}
 
