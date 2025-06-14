@@ -521,7 +521,7 @@ endif()
 if (ISLE_BUILD_CONFIG)
   find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
   qt_standard_project_setup()
-  qt_add_executable(config WIN32
+  qt_add_executable(config WIN32 MACOSX_BUNDLE
     LEGO1/mxdirectx/mxdirectxinfo.cpp
     LEGO1/mxdirectx/legodxinfo.cpp
     CONFIG/config.cpp
@@ -643,7 +643,8 @@ elseif(APPLE)
   set(MACOSX_BUNDLE_GUI_IDENTIFIER com.github.isledecomp.isle-portable)
   set(MACOSX_BUNDLE_COPYRIGHT LGPLv3)
   set(MACOSX_BUNDLE_BUNDLE_NAME isle)
-  set(MACOSX_BUNDLE_DISPLAY_NAME LEGO Island)
+  set(MACOSX_CONFIG_BUNDLE_DISPLAY_NAME Configure LEGO Island)
+  set(MACOSX_ISLE_BUNDLE_DISPLAY_NAME LEGO Island)
   set(MACOSX_BUNDLE_INFO_STRING ${PROJECT_VERSION})
   set(MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION})
   set(MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION})
@@ -654,10 +655,18 @@ elseif(APPLE)
   set(_icon_file AppIcon)
 
   target_sources(isle PRIVATE "ISLE/apple/${_icon_file}.icns")
+  target_sources(config PRIVATE "CONFIG/apple/${_icon_file}.icns")
+
   set_source_files_properties("./ISLE/apple/${_icon_file}.icns" PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+  set_source_files_properties("./CONFIG/apple/${_icon_file}.icns" PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+
   set_target_properties(isle PROPERTIES MACOSX_BUNDLE_ICON_FILE "${_icon_file}.icns")
   set_target_properties(isle PROPERTIES MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/ISLE/apple/Info.plist")
 
+  set_target_properties(config PROPERTIES MACOSX_BUNDLE_ICON_FILE "${_icon_file}.icns")
+  set_target_properties(config PROPERTIES MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/CONFIG/apple/Info.plist")
+
+  install(TARGETS config DESTINATION ./)
   install(TARGETS isle DESTINATION ./)
   install(CODE "
     include(BundleUtilities)
