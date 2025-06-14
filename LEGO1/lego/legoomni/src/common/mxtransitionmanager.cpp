@@ -388,12 +388,11 @@ void MxTransitionManager::WipeDownTransition()
 
 		// For each of the 240 animation ticks, blank out two scanlines
 		// starting at the top of the screen.
-		// (dwRGBBitCount / 8) will tell how many bytes are used per pixel.
 		MxU8* line = (MxU8*) ddsd.lpSurface + 2 * ddsd.lPitch * m_animationTimer;
-		memset(line, 0, 640 * ddsd.ddpfPixelFormat.dwRGBBitCount / 8);
+		memset(line, 0, ddsd.lPitch);
 
 		line += ddsd.lPitch;
-		memset(line, 0, 640 * ddsd.ddpfPixelFormat.dwRGBBitCount / 8);
+		memset(line, 0, ddsd.lPitch);
 
 		SetupCopyRect(&ddsd);
 		m_ddSurface->Unlock(ddsd.lpSurface);
@@ -427,9 +426,8 @@ void MxTransitionManager::WindowsTransition()
 		MxU8* line = (MxU8*) ddsd.lpSurface + m_animationTimer * ddsd.lPitch;
 
 		MxS32 bytesPerPixel = ddsd.ddpfPixelFormat.dwRGBBitCount / 8;
-		MxS32 bytesPerLine = bytesPerPixel * 640;
 
-		memset(line, 0, bytesPerLine);
+		memset(line, 0, ddsd.lPitch);
 
 		for (MxS32 i = m_animationTimer + 1; i < 480 - m_animationTimer; i++) {
 			line += ddsd.lPitch;
@@ -439,7 +437,7 @@ void MxTransitionManager::WindowsTransition()
 		}
 
 		line += ddsd.lPitch;
-		memset(line, 0, bytesPerLine);
+		memset(line, 0, ddsd.lPitch);
 
 		SetupCopyRect(&ddsd);
 		m_ddSurface->Unlock(ddsd.lpSurface);

@@ -459,7 +459,7 @@ void LegoVideoManager::DrawFPS()
 			char* ptr = (char*) surfaceDesc.lpSurface;
 
 			for (i = 0; i < surfaceDesc.dwHeight; i++) {
-				memset(ptr, 0, surfaceDesc.dwWidth * surfaceDesc.ddpfPixelFormat.dwRGBBitCount / 8);
+				memset(ptr, 0, surfaceDesc.lPitch);
 				ptr += surfaceDesc.lPitch;
 			}
 
@@ -485,7 +485,7 @@ void LegoVideoManager::DrawFPS()
 				char* ptr = (char*) surfaceDesc.lpSurface;
 
 				for (i = 0; i < surfaceDesc.dwHeight; i++) {
-					memset(ptr, 0, surfaceDesc.dwWidth * surfaceDesc.ddpfPixelFormat.dwRGBBitCount / 8);
+					memset(ptr, 0, surfaceDesc.lPitch);
 					ptr += surfaceDesc.lPitch;
 				}
 

@@ -78,7 +78,7 @@ void MxDisplaySurface::ClearScreen()
 		MxS32 height = m_videoParam.GetRect().GetHeight();
 
 		while (height--) {
-			memset(surface, 0, m_videoParam.GetRect().GetWidth() * desc.ddpfPixelFormat.dwRGBBitCount / 8);
+			memset(surface, 0, desc.lPitch);
 			surface += desc.lPitch;
 		}
 
@@ -854,7 +854,7 @@ void MxDisplaySurface::Display(MxS32 p_left, MxS32 p_top, MxS32 p_left2, MxS32 p
 					MxS32 height = m_videoParam.GetRect().GetHeight();
 
 					for (MxU32 i = 0; i < ddsd.dwHeight; i++) {
-						memset(surface, 0, ddsd.dwWidth * ddsd.ddpfPixelFormat.dwRGBBitCount / 8);
+						memset(surface, 0, ddsd.lPitch);
 						surface += ddsd.lPitch;
 					}
 
