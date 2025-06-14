@@ -34,8 +34,6 @@ struct Direct3DRMDevice2Impl : public Direct3DRMObjectBaseImpl<IDirect3DRMDevice
 
 	// IDirect3DRMMiniwinDevice interface
 	bool ConvertEventToRenderCoordinates(SDL_Event* event) override;
-	float GetShininessFactor() override;
-	HRESULT SetShininessFactor(float factor) override;
 
 	Direct3DRMRenderer* m_renderer;
 

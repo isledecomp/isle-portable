@@ -139,17 +139,7 @@ HRESULT Direct3DRMDevice2Impl::GetViewports(IDirect3DRMViewportArray** ppViewpor
 	return DD_OK;
 }
 
-float Direct3DRMDevice2Impl::GetShininessFactor()
-{
-	return m_renderer->GetShininessFactor();
-}
-
 bool Direct3DRMDevice2Impl::ConvertEventToRenderCoordinates(SDL_Event* event)
 {
 	return m_renderer->ConvertEventToRenderCoordinates(event);
-}
-
-HRESULT Direct3DRMDevice2Impl::SetShininessFactor(float factor)
-{
-	return m_renderer->SetShininessFactor(factor);
 }
