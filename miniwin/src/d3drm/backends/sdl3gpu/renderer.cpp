@@ -752,7 +752,7 @@ void Direct3DRMSDL3GPURenderer::SubmitDraw(
 	memcpy(&m_uniforms.worldViewMatrix, worldViewMatrix, sizeof(D3DRMMATRIX4D));
 	PackNormalMatrix(normalMatrix, m_uniforms.normalMatrix);
 	m_fragmentShadingData.color = appearance.color;
-	m_fragmentShadingData.shininess = appearance.shininess * m_shininessFactor;
+	m_fragmentShadingData.shininess = appearance.shininess;
 	bool useTexture = appearance.textureId != NO_TEXTURE_ID;
 	m_fragmentShadingData.useTexture = appearance.textureId != NO_TEXTURE_ID;
 

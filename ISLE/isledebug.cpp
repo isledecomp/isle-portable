@@ -295,9 +295,7 @@ void IsleDebug_Render()
 			}
 			if (ImGui::TreeNode("Renderer")) {
 				if (g_d3drmMiniwinDevice) {
-					float shininess = g_d3drmMiniwinDevice->GetShininessFactor();
-					ImGui::SliderFloat("shininess", &shininess, 0.f, 10.f);
-					g_d3drmMiniwinDevice->SetShininessFactor(shininess);
+					ImGui::Text("Using miniwin driver");
 				}
 				else {
 					ImGui::Text("No miniwin driver");

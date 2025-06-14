@@ -44,28 +44,25 @@ FS_Output main(FS_Input input)
 
 		float3 lightVec;
 		if (lights[i].direction.w == 1.0) {
-			lightVec = normalize(-lights[i].direction.xyz);
+			lightVec = -lights[i].direction.xyz;
 		}
 		else {
-			float3 lightPos = lights[i].position.xyz;
-			lightVec = lightPos - input.WorldPosition;
-
-			float len = length(lightVec);
-			if (len == 0.0f) {
-				continue;
-			}
-
-			lightVec /= len;
+			lightVec = lights[i].position.xyz - input.WorldPosition;
 		}
+		lightVec = normalize(lightVec);
 
 		float dotNL = dot(input.Normal, lightVec);
 		if (dotNL > 0.0f) {
+			// Diffuse contribution
 			diffuse += dotNL * lightColor;
 
-			if (Shininess != 0.0f) {
-				// Using dotNL ignores view angle, but this matches DirectX 5 behavior.
-				float spec1 = pow(dotNL, Shininess);
-				specular += spec1 * lightColor;
+			// Specular
+			if (Shininess > 0.0f && lights[i].direction.w == 1.0) {
+				float3 viewVec = normalize(-input.WorldPosition); // Assuming camera at origin
+				float3 H = normalize(lightVec + viewVec);
+				float dotNH = max(dot(input.Normal, H), 0.0f);
+				float spec = pow(dotNH, Shininess);
+				specular += spec * lightColor;
 			}
 		}
 	}

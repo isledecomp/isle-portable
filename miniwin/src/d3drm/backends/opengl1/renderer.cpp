@@ -382,6 +382,8 @@ HRESULT OpenGL1Renderer::BeginFrame(const D3DRMMATRIX4D& viewMatrix)
 	}
 	const GLfloat zeroAmbient[4] = {0.f, 0.f, 0.f, 1.f};
 	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, zeroAmbient);
+	glLightModeli(GL_LIGHT_MODEL_COLOR_CONTROL, GL_SEPARATE_SPECULAR_COLOR);
+	glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE);
 
 	// Setup lights
 	glMatrixMode(GL_MODELVIEW);
@@ -396,7 +398,6 @@ HRESULT OpenGL1Renderer::BeginFrame(const D3DRMMATRIX4D& viewMatrix)
 		GLenum lightId = GL_LIGHT0 + lightIdx++;
 		const FColor& c = l.color;
 		GLfloat col[4] = {c.r, c.g, c.b, c.a};
-		GLfloat pos[4];
 
 		if (l.positional == 0.f && l.directional == 0.f) {
 			// Ambient light only
@@ -410,8 +411,15 @@ HRESULT OpenGL1Renderer::BeginFrame(const D3DRMMATRIX4D& viewMatrix)
 		else {
 			glLightfv(lightId, GL_AMBIENT, zeroAmbient);
 			glLightfv(lightId, GL_DIFFUSE, col);
-			glLightfv(lightId, GL_SPECULAR, col);
+			if (l.directional == 1.0f) {
+				glLightfv(lightId, GL_SPECULAR, col);
+			}
+			else {
+				const GLfloat black[4] = {0.f, 0.f, 0.f, 1.f};
+				glLightfv(lightId, GL_SPECULAR, black);
+			}
 
+			GLfloat pos[4];
 			if (l.directional == 1.f) {
 				pos[0] = -l.direction.x;
 				pos[1] = -l.direction.y;
@@ -461,15 +469,15 @@ void OpenGL1Renderer::SubmitDraw(
 
 	glColor4ub(appearance.color.r, appearance.color.g, appearance.color.b, appearance.color.a);
 
-	float shininess = appearance.shininess * m_shininessFactor;
-	glMaterialf(GL_FRONT, GL_SHININESS, shininess);
-	if (shininess != 0.0f) {
-		GLfloat whiteSpec[] = {shininess, shininess, shininess, shininess};
+	if (appearance.shininess != 0.0f) {
+		GLfloat whiteSpec[] = {1.f, 1.f, 1.f, 1.f};
 		glMaterialfv(GL_FRONT, GL_SPECULAR, whiteSpec);
+		glMaterialf(GL_FRONT, GL_SHININESS, appearance.shininess);
 	}
 	else {
 		GLfloat noSpec[] = {0.0f, 0.0f, 0.0f, 0.0f};
 		glMaterialfv(GL_FRONT, GL_SPECULAR, noSpec);
+		glMaterialf(GL_FRONT, GL_SHININESS, 0.0f);
 	}
 
 	auto& mesh = m_meshs[meshId];
