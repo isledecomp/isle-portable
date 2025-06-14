@@ -595,11 +595,6 @@ bool RayIntersectsBox(const Ray& ray, const D3DRMBOX& box, float& outT)
 	return true;
 }
 
-inline float DotProduct(const D3DVECTOR& a, const D3DVECTOR& b)
-{
-	return a.x * b.x + a.y * b.y + a.z * b.z;
-}
-
 // Convert screen (x,y) in viewport to picking ray in world space
 Ray BuildPickingRay(
 	float x,
