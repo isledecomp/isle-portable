@@ -9,7 +9,7 @@
 
 struct DeferredDrawCommand {
 	DWORD meshId;
-	D3DRMMATRIX4D worldMatrix;
+	D3DRMMATRIX4D modelViewMatrix;
 	Matrix3x3 normalMatrix;
 	Appearance appearance;
 	float depth;
@@ -47,6 +47,7 @@ private:
 	HRESULT RenderScene();
 	void CollectLightsFromFrame(IDirect3DRMFrame* frame, D3DRMMATRIX4D parentMatrix, std::vector<SceneLight>& lights);
 	void CollectMeshesFromFrame(IDirect3DRMFrame* frame, D3DRMMATRIX4D parentMatrix);
+	void BuildViewFrustumPlanes();
 	void UpdateProjectionMatrix();
 	Direct3DRMRenderer* m_renderer;
 	std::vector<DeferredDrawCommand> m_deferredDraws;
@@ -62,6 +63,7 @@ private:
 	D3DVALUE m_front = 1.f;
 	D3DVALUE m_back = 10.f;
 	D3DVALUE m_field = 0.5f;
+	Plane m_frustumPlanes[6];
 };
 
 struct Direct3DRMViewportArrayImpl
