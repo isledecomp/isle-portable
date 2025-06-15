@@ -15,7 +15,7 @@ Please note: this project is dedicated to achieving platform independence withou
 | Windows | [![CI](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml/badge.svg)](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml) | [Download here](https://github.com/isledecomp/isle-portable/releases/tag/continuous-Windows) |
 | Linux | [![CI](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml/badge.svg)](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml) | [Download here](https://github.com/isledecomp/isle-portable/releases/tag/continuous-Linux) |
 | macOS | [![CI](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml/badge.svg)](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml) | [Download here](https://github.com/isledecomp/isle-portable/releases/tag/continuous-macOS) |
-| [Web](https://isle.pizza) | [![CI](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml/badge.svg)](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml) | [Download here](https://github.com/isledecomp/isle-portable/releases/tag/continuous-Emscripten) |
+| [Web](https://isle.pizza) | [![CI](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml/badge.svg)](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml) | -
 
 ### Library substitutions
 
