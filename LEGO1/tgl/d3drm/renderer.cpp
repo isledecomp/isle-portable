@@ -22,7 +22,7 @@ IDirect3DRM2* g_pD3DRM = NULL;
 } // namespace TglImpl
 
 // Inlined only
-Result RendererImpl::Create()
+Tgl::Result RendererImpl::Create()
 {
 	if (g_pD3DRM) {
 		g_pD3DRM->AddRef();
@@ -37,19 +37,19 @@ Result RendererImpl::Create()
 }
 
 // FUNCTION: BETA10 0x1016cf00
-inline Result RendererCreateDevice(
+inline Tgl::Result RendererCreateDevice(
 	IDirect3DRM2* pD3DRM,
 	const DeviceDirect3DCreateData& rCreateData,
 	IDirect3DRMDevice2*& rpDevice
 )
 {
-	Result result =
+	Tgl::Result result =
 		ResultVal(pD3DRM->CreateDeviceFromD3D(rCreateData.m_pDirect3D, rCreateData.m_pDirect3DDevice, &rpDevice));
 	return result;
 }
 
 // FUNCTION: BETA10 0x1016ce60
-inline Result RendererImpl::CreateDevice(const DeviceDirect3DCreateData& rCreateData, DeviceImpl& rDevice)
+inline Tgl::Result RendererImpl::CreateDevice(const DeviceDirect3DCreateData& rCreateData, DeviceImpl& rDevice)
 {
 	assert(m_data);
 	assert(!rDevice.ImplementationData());
@@ -73,13 +73,13 @@ Device* RendererImpl::CreateDevice(const DeviceDirect3DCreateData& data)
 }
 
 // FUNCTION: BETA10 0x1016cfe0
-inline Result RendererCreateDevice(
+inline Tgl::Result RendererCreateDevice(
 	IDirect3DRM2* pD3DRM,
 	const DeviceDirectDrawCreateData& rCreateData,
 	IDirect3DRMDevice2*& rpDevice
 )
 {
-	Result result = ResultVal(pD3DRM->CreateDeviceFromSurface(
+	Tgl::Result result = ResultVal(pD3DRM->CreateDeviceFromSurface(
 		const_cast<GUID*>(rCreateData.m_driverGUID),
 		rCreateData.m_pDirectDraw,
 		rCreateData.m_pBackBuffer,
@@ -92,7 +92,7 @@ inline Result RendererCreateDevice(
 			// GLOBAL: BETA10 0x102055f4
 			static int g_setBufferCount = 1;
 			if (g_setBufferCount) {
-				Result result2 = ResultVal(rpDevice->SetBufferCount(2));
+				Tgl::Result result2 = ResultVal(rpDevice->SetBufferCount(2));
 				assert(Succeeded(result));
 			}
 		}
@@ -102,7 +102,7 @@ inline Result RendererCreateDevice(
 }
 
 // FUNCTION: BETA10 0x1016cf40
-inline Result RendererImpl::CreateDevice(const DeviceDirectDrawCreateData& rCreateData, DeviceImpl& rDevice)
+inline Tgl::Result RendererImpl::CreateDevice(const DeviceDirectDrawCreateData& rCreateData, DeviceImpl& rDevice)
 {
 	assert(m_data);
 	assert(!rDevice.ImplementationData());
@@ -126,7 +126,7 @@ Device* RendererImpl::CreateDevice(const DeviceDirectDrawCreateData& data)
 }
 
 // FUNCTION: BETA10 0x1016d1d0
-inline Result RendererCreateView(
+inline Tgl::Result RendererCreateView(
 	IDirect3DRM2* pRenderer,
 	const IDirect3DRMDevice2* pDevice,
 	const IDirect3DRMFrame2* pCamera,
@@ -137,7 +137,7 @@ inline Result RendererCreateView(
 	IDirect3DRMViewport*& rpView
 )
 {
-	Result result = ResultVal(pRenderer->CreateViewport(
+	Tgl::Result result = ResultVal(pRenderer->CreateViewport(
 		const_cast<IDirect3DRMDevice2*>(pDevice),
 		const_cast<IDirect3DRMFrame2*>(pCamera),
 		x,
@@ -159,7 +159,7 @@ inline Result RendererCreateView(
 }
 
 // FUNCTION: BETA10 0x1016d0b0
-inline Result RendererImpl::CreateView(
+inline Tgl::Result RendererImpl::CreateView(
 	const DeviceImpl& rDevice,
 	const CameraImpl& rCamera,
 	unsigned int x,
@@ -219,13 +219,13 @@ View* RendererImpl::CreateView(
 }
 
 // FUNCTION: BETA10 0x1016d380
-inline Result RendererCreateGroup(
+inline Tgl::Result RendererCreateGroup(
 	IDirect3DRM2* pRenderer,
 	const IDirect3DRMFrame2* pParent,
 	IDirect3DRMFrame2*& rpGroup
 )
 {
-	Result result = ResultVal(pRenderer->CreateFrame(NULL, &rpGroup));
+	Tgl::Result result = ResultVal(pRenderer->CreateFrame(NULL, &rpGroup));
 	if (Succeeded(result) && pParent) {
 		result = ResultVal(const_cast<IDirect3DRMFrame2*>(pParent)->AddVisual(rpGroup));
 		if (!Succeeded(result)) {
@@ -237,7 +237,7 @@ inline Result RendererCreateGroup(
 }
 
 // FUNCTION: BETA10 0x1016d280
-inline Result RendererImpl::CreateGroup(const GroupImpl* pParentGroup, GroupImpl& rGroup)
+inline Tgl::Result RendererImpl::CreateGroup(const GroupImpl* pParentGroup, GroupImpl& rGroup)
 {
 	assert(m_data);
 	assert(!pParentGroup || pParentGroup->ImplementationData());
@@ -265,13 +265,13 @@ Group* RendererImpl::CreateGroup(const Group* pParent)
 }
 
 // FUNCTION: BETA10 0x1016d4b0
-inline Result RendererCreateCamera(IDirect3DRM2* pD3DRM, IDirect3DRMFrame2*& rpCamera)
+inline Tgl::Result RendererCreateCamera(IDirect3DRM2* pD3DRM, IDirect3DRMFrame2*& rpCamera)
 {
 	return ResultVal(pD3DRM->CreateFrame(NULL, &rpCamera));
 }
 
 // FUNCTION: BETA10 0x1016d420
-inline Result RendererImpl::CreateCamera(CameraImpl& rCamera)
+inline Tgl::Result RendererImpl::CreateCamera(CameraImpl& rCamera)
 {
 	assert(m_data);
 	assert(!rCamera.ImplementationData());
@@ -295,7 +295,7 @@ Camera* RendererImpl::CreateCamera()
 }
 
 // FUNCTION: BETA10 0x1016d580
-inline Result RendererCreateLight(
+inline Tgl::Result RendererCreateLight(
 	IDirect3DRM2* pD3DRM,
 	LightType type,
 	float r,
@@ -307,7 +307,7 @@ inline Result RendererCreateLight(
 	D3DRMLIGHTTYPE lightType = Translate(type);
 	IDirect3DRMFrame2* pLightFrame;
 	IDirect3DRMLight* pLight;
-	Result result;
+	Tgl::Result result;
 
 	result = ResultVal(pD3DRM->CreateFrame(NULL, &pLightFrame));
 	assert(Succeeded(result));
@@ -348,7 +348,7 @@ inline Result RendererCreateLight(
 }
 
 // FUNCTION: BETA10 0x1016d4e0
-inline Result RendererImpl::CreateLight(LightType type, float r, float g, float b, LightImpl& rLight)
+inline Tgl::Result RendererImpl::CreateLight(LightType type, float r, float g, float b, LightImpl& rLight)
 {
 	assert(m_data);
 	assert(!rLight.ImplementationData());
@@ -373,13 +373,13 @@ Light* RendererImpl::CreateLight(LightType type, float r, float g, float b)
 }
 
 // FUNCTION: BETA10 0x1016d8e0
-inline Result RendererCreateMeshBuilder(IDirect3DRM2* pD3DRM, IDirect3DRMMesh*& rpMesh)
+inline Tgl::Result RendererCreateMeshBuilder(IDirect3DRM2* pD3DRM, IDirect3DRMMesh*& rpMesh)
 {
 	return ResultVal(pD3DRM->CreateMesh(&rpMesh));
 }
 
 // FUNCTION: BETA10 0x1016d850
-inline Result RendererImpl::CreateMeshBuilder(MeshBuilderImpl& rMesh)
+inline Tgl::Result RendererImpl::CreateMeshBuilder(MeshBuilderImpl& rMesh)
 {
 	assert(m_data);
 	assert(!rMesh.ImplementationData());
@@ -403,7 +403,7 @@ MeshBuilder* RendererImpl::CreateMeshBuilder()
 }
 
 // FUNCTION: BETA10 0x1016d9c0
-inline Result RendererCreateTexture(
+inline Tgl::Result RendererCreateTexture(
 	IDirect3DRM2* pRenderer,
 	int width,
 	int height,
@@ -415,7 +415,7 @@ inline Result RendererCreateTexture(
 	IDirect3DRMTexture*& rpTexture
 )
 {
-	Result result;
+	Tgl::Result result;
 
 	TglD3DRMIMAGE* pImage = new TglD3DRMIMAGE(width, height, bytesPerPixel, pBuffer, useBuffer, paletteSize, pEntries);
 	assert(pImage);
@@ -443,7 +443,7 @@ inline Result RendererCreateTexture(
 }
 
 // FUNCTION: BETA10 0x1016d910
-inline Result RendererImpl::CreateTexture(
+inline Tgl::Result RendererImpl::CreateTexture(
 	TextureImpl& rTexture,
 	int width,
 	int height,
@@ -502,13 +502,13 @@ Texture* RendererImpl::CreateTexture(
 }
 
 // FUNCTION: BETA10 0x1016dcb0
-inline Result RendererCreateTexture(IDirect3DRM2* pRenderer, IDirect3DRMTexture*& rpTexture)
+inline Tgl::Result RendererCreateTexture(IDirect3DRM2* pRenderer, IDirect3DRMTexture*& rpTexture)
 {
 	return RendererCreateTexture(pRenderer, 0, 0, 0, NULL, FALSE, 0, NULL, rpTexture);
 }
 
 // FUNCTION: BETA10 0x1016dc20
-inline Result RendererImpl::CreateTexture(TextureImpl& rTexture)
+inline Tgl::Result RendererImpl::CreateTexture(TextureImpl& rTexture)
 {
 	assert(m_data);
 	assert(!rTexture.ImplementationData());
@@ -532,14 +532,14 @@ Texture* RendererImpl::CreateTexture()
 }
 
 // FUNCTION: BETA10 0x1016af90
-inline Result RendererSetTextureDefaultShadeCount(IDirect3DRM2* pRenderer, unsigned long shadeCount)
+inline Tgl::Result RendererSetTextureDefaultShadeCount(IDirect3DRM2* pRenderer, unsigned long shadeCount)
 {
 	return ResultVal(pRenderer->SetDefaultTextureShades(shadeCount));
 }
 
 // FUNCTION: LEGO1 0x100a2270
 // FUNCTION: BETA10 0x1016af30
-Result RendererImpl::SetTextureDefaultShadeCount(unsigned int shadeCount)
+Tgl::Result RendererImpl::SetTextureDefaultShadeCount(unsigned int shadeCount)
 {
 	assert(m_data);
 
@@ -547,14 +547,14 @@ Result RendererImpl::SetTextureDefaultShadeCount(unsigned int shadeCount)
 }
 
 // FUNCTION: BETA10 0x1016b020
-inline Result RendererSetTextureDefaultColorCount(IDirect3DRM2* pRenderer, unsigned long colorCount)
+inline Tgl::Result RendererSetTextureDefaultColorCount(IDirect3DRM2* pRenderer, unsigned long colorCount)
 {
 	return ResultVal(pRenderer->SetDefaultTextureColors(colorCount));
 }
 
 // FUNCTION: LEGO1 0x100a2290
 // FUNCTION: BETA10 0x1016afc0
-Result RendererImpl::SetTextureDefaultColorCount(unsigned int colorCount)
+Tgl::Result RendererImpl::SetTextureDefaultColorCount(unsigned int colorCount)
 {
 	assert(m_data);
 
