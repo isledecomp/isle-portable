@@ -2,7 +2,7 @@
 
 [Development Vlog](https://www.youtube.com/playlist?list=PLbpl-gZkNl2Db4xcAsT_xOfOwRk-2DPHL) | [Contributing](/CONTRIBUTING.md) | [Matrix](https://matrix.to/#/#isledecomp:matrix.org) | [Forums](https://forum.mattkc.com/viewforum.php?f=1) | [Patreon](https://www.patreon.com/mattkc)
   
-This initiative is a **work-in-progress** portable version of LEGO Island (Version 1.1, English) based on the [decompilation project](https://github.com/isledecomp/isle). Our primary goal is to transform the codebase to achieve platform independence, thereby enhancing compatibility across various systems while preserving the original game's experience as faithfully as possible.
+This initiative is a portable version of LEGO Island (Version 1.1, English) based on the [decompilation project](https://github.com/isledecomp/isle). Our primary goal is to transform the codebase to achieve platform independence, thereby enhancing compatibility across various systems while preserving the original game's experience as faithfully as possible.
 
 Please note: this project is dedicated to achieving platform independence without altering the core gameplay, adding new features, enhancing visual quality, or rewriting code for improvement's sake. While those are worthwhile objectives, they are not within the scope of this project.
 
@@ -10,12 +10,12 @@ Please note: this project is dedicated to achieving platform independence withou
 
 ### Supported platforms
 
-| Platform | Status |
-| - | - | 
-| Windows | [![CI](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml/badge.svg)](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml) | 
-| Linux | [![CI](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml/badge.svg)](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml) |
-| macOS | [![CI](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml/badge.svg)](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml) |
-| [Web](https://isle.pizza) | [![CI](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml/badge.svg)](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml) |
+| Platform | Status | Latest release |
+| - | - | - |
+| Windows | [![CI](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml/badge.svg)](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml) | [Download here](https://github.com/isledecomp/isle-portable/releases/tag/continuous-Windows) |
+| Linux | [![CI](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml/badge.svg)](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml) | [Download here](https://github.com/isledecomp/isle-portable/releases/tag/continuous-Linux) |
+| macOS | [![CI](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml/badge.svg)](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml) | [Download here](https://github.com/isledecomp/isle-portable/releases/tag/continuous-macOS) |
+| [Web](https://isle.pizza) | [![CI](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml/badge.svg)](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml) | [Download here](https://github.com/isledecomp/isle-portable/releases/tag/continuous-Emscripten) |
 
 ### Library substitutions
 
@@ -39,12 +39,6 @@ To achieve our goal of platform independence, we need to replace any Windows-onl
 ## Building
 
 This project uses the [CMake](https://cmake.org/) build system, which allows for a high degree of versatility regarding compilers and development environments. Please refer to the [GitHub action](/.github/workflows//build.yml) for guidance.
-
-## Usage
-
-As it stands, this project is currently not ready to be played by end users. The nature of the porting process can leave the game unstable or even completely unplayable at times while the migration of game and engine code to modern APIs continues. For this reason, there is currently no support for running any executables produced by this project outside of a development environment, and no guarantees of playability or stability are provided.
-
-If you are a developer who feels like you can assist with porting efforts; especially if you have experience working with standard 3D libraries, please check <a href="#contributing">Contributing</a> and get in contact with our team on Matrix for help with setup.
 
 ## Contributing
 
