@@ -18,7 +18,7 @@ DECOMP_SIZE_ASSERT(LegoLOD::Mesh, 0x08)
 LPDIRECT3DRMMATERIAL g_unk0x101013d4 = NULL;
 
 // GLOBAL: LEGO1 0x101013dc
-const char* g_unk0x101013dc = "inh";
+const char* g_InhPrefix = "inh";
 
 inline IDirect3DRM2* GetD3DRM(Tgl::Renderer* pRenderer);
 inline BOOL GetMeshData(IDirect3DRMMesh*& mesh, D3DRMGROUPINDEX& index, Tgl::Mesh* pMesh);
@@ -68,7 +68,7 @@ LegoResult LegoLOD::Read(Tgl::Renderer* p_renderer, LegoTextureContainer* p_text
 	LegoU32(*textureIndices)[3] = NULL;
 	LegoTextureInfo* textureInfo = NULL;
 
-	LegoU32 i, meshUnd1, meshUnd2, tempNumVertsAndNormals;
+	LegoU32 i, indexBackwards, indexForwards, tempNumVertsAndNormals;
 	unsigned char paletteEntries[256];
 
 	if (p_storage->Read(&m_unk0x08, sizeof(undefined4)) != SUCCESS) {
@@ -95,8 +95,8 @@ LegoResult LegoLOD::Read(Tgl::Renderer* p_renderer, LegoTextureContainer* p_text
 	m_melems = new Mesh[m_numMeshes];
 	memset(m_melems, 0, sizeof(*m_melems) * m_numMeshes);
 
-	meshUnd1 = m_numMeshes - 1;
-	meshUnd2 = 0;
+	indexBackwards = m_numMeshes - 1;
+	indexForwards = 0;
 
 	if (p_storage->Read(&tempNumVertsAndNormals, sizeof(LegoU32)) != SUCCESS) {
 		goto done;
@@ -186,13 +186,13 @@ LegoResult LegoLOD::Read(Tgl::Renderer* p_renderer, LegoTextureContainer* p_text
 		textureName = mesh->GetTextureName();
 		materialName = mesh->GetMaterialName();
 
-		if (FUN_100aae20(textureName) || FUN_100aae20(materialName)) {
-			meshIndex = meshUnd1;
-			meshUnd1--;
+		if (HasInhPrefix(textureName) || HasInhPrefix(materialName)) {
+			meshIndex = indexBackwards;
+			indexBackwards--;
 		}
 		else {
-			meshIndex = meshUnd2;
-			meshUnd2++;
+			meshIndex = indexForwards;
+			indexForwards++;
 		}
 
 		m_melems[meshIndex].m_tglMesh = m_meshBuilder->CreateMesh(
@@ -267,7 +267,7 @@ LegoResult LegoLOD::Read(Tgl::Renderer* p_renderer, LegoTextureContainer* p_text
 		}
 	}
 
-	m_meshOffset = meshUnd2;
+	m_meshOffset = indexForwards;
 
 	if (textureVertices != NULL) {
 		delete[] textureVertices;
@@ -379,10 +379,10 @@ LegoResult LegoLOD::GetTextureInfo(LegoTextureInfo*& p_textureInfo)
 }
 
 // FUNCTION: LEGO1 0x100aae20
-LegoBool LegoLOD::FUN_100aae20(const LegoChar* p_name)
+LegoBool LegoLOD::HasInhPrefix(const LegoChar* p_name)
 {
 	if (p_name != NULL) {
-		if (!SDL_strncasecmp(p_name, g_unk0x101013dc, strlen(g_unk0x101013dc))) {
+		if (!SDL_strncasecmp(p_name, g_InhPrefix, strlen(g_InhPrefix))) {
 			return TRUE;
 		}
 	}
