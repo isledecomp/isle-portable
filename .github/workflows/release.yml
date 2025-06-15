@@ -84,14 +84,12 @@ jobs:
           cpack .
 
       - name: Checkout uploadtool
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.repository == 'isledecomp/isle-portable' }}
         uses: actions/checkout@v4
         with:
           repository: 'probonopd/uploadtool'
           path: 'uploadtool'
 
       - name: Upload Continuous Release
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.repository == 'isledecomp/isle-portable' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           UPLOAD_KEY: ${{ secrets.UPLOAD_KEY }}
