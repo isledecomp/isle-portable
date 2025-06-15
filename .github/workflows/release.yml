@@ -72,6 +72,7 @@ jobs:
             -DISLE_BUILD_CONFIG=${{ matrix.config }} \
             -DENABLE_CLANG_TIDY=${{ !!matrix.clang-tidy  }} \
             -DISLE_WERROR=${{ !!matrix.werror }} \
+            -DISLE_DEBUG=OFF \
             -Werror=dev
 
       - name: Build (CMake)
