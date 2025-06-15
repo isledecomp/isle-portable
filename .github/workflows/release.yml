@@ -17,9 +17,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: 'Linux',          os: 'ubuntu-latest',  dx5: false, config: true,  build-type: 'Release', linux: true, werror: true,   clang-tidy: true }
-          - { name: 'Windows',        os: 'windows-latest', dx5: false, config: false, build-type: 'Release', msvc: true,  werror: false,  clang-tidy: false,  vc-arch: 'amd64' }
-          - { name: 'macOS',          os: 'macos-latest',   dx5: false, config: true,  build-type: 'Release', brew: true,  werror: true,   clang-tidy: false }
+          - { name: 'Linux',   os: 'ubuntu-latest',  dx5: false, config: true,  build-type: 'Release', linux: true, werror: true,  clang-tidy: false }
+          - { name: 'Windows', os: 'windows-latest', dx5: false, config: false, build-type: 'Release', msvc: true,  werror: false, clang-tidy: false, vc-arch: 'amd64' }
+          - { name: 'macOS',   os: 'macos-latest',   dx5: false, config: true,  build-type: 'Release', brew: true,  werror: true,  clang-tidy: false }
     steps:
       - name: Setup vcvars
         if: ${{ !!matrix.msvc }}
