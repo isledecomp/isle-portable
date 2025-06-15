@@ -3,6 +3,7 @@
 #endif
 #include "d3drmrenderer_sdl3gpu.h"
 #include "d3drmrenderer_software.h"
+#include "d3drmrenderer_webgl.h"
 #include "ddpalette_impl.h"
 #include "ddraw_impl.h"
 #include "ddsurface_impl.h"
@@ -231,6 +232,7 @@ void EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx, Direct3DRMRenderer* devi
 HRESULT DirectDrawImpl::EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
 	Direct3DRMSDL3GPU_EnumDevice(cb, ctx);
+	WebGLRenderer_EnumDevice(cb, ctx);
 #ifdef USE_OPENGL1
 	OpenGL1Renderer_EnumDevice(cb, ctx);
 #endif
@@ -330,6 +332,9 @@ HRESULT DirectDrawImpl::CreateDevice(
 	Direct3DRMRenderer* renderer;
 	if (SDL_memcmp(&guid, &SDL3_GPU_GUID, sizeof(GUID)) == 0) {
 		renderer = Direct3DRMSDL3GPURenderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
+	}
+	else if (SDL_memcmp(&guid, &WebGL_GUID, sizeof(GUID)) == 0) {
+		renderer = WebGLRenderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
 #ifdef USE_OPENGL1
 	else if (SDL_memcmp(&guid, &OpenGL1_GUID, sizeof(GUID)) == 0) {
