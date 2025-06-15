@@ -517,7 +517,6 @@ void Direct3DRMSoftwareRenderer::AddTextureDestroyCallback(Uint32 id, IDirect3DR
 Uint32 Direct3DRMSoftwareRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 {
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
-	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
 
 	// Check if already mapped
 	for (Uint32 i = 0; i < m_textures.size(); ++i) {
@@ -526,7 +525,7 @@ Uint32 Direct3DRMSoftwareRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 			if (texRef.version != texture->m_version) {
 				// Update animated textures
 				SDL_DestroySurface(texRef.cached);
-				texRef.cached = SDL_ConvertSurface(surface->m_surface, DDBackBuffer->format);
+				texRef.cached = SDL_ConvertSurface(texture->m_surface, HWBackBufferFormat);
 				SDL_LockSurface(texRef.cached);
 				texRef.version = texture->m_version;
 			}
@@ -534,7 +533,7 @@ Uint32 Direct3DRMSoftwareRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 		}
 	}
 
-	SDL_Surface* convertedRender = SDL_ConvertSurface(surface->m_surface, DDBackBuffer->format);
+	SDL_Surface* convertedRender = SDL_ConvertSurface(texture->m_surface, HWBackBufferFormat);
 	SDL_LockSurface(convertedRender);
 
 	// Reuse freed slot
@@ -661,7 +660,7 @@ HRESULT Direct3DRMSoftwareRenderer::BeginFrame(const D3DRMMATRIX4D& viewMatrix)
 	ClearZBuffer();
 
 	memcpy(m_viewMatrix, viewMatrix, sizeof(D3DRMMATRIX4D));
-	m_format = SDL_GetPixelFormatDetails(DDBackBuffer->format);
+	m_format = SDL_GetPixelFormatDetails(HWBackBufferFormat);
 	m_palette = SDL_GetSurfacePalette(DDBackBuffer);
 	m_bytesPerPixel = m_format->bits_per_pixel / 8;
 

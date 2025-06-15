@@ -24,7 +24,7 @@ struct Direct3DRMImpl : virtual public IDirect3DRM2 {
 		IDirect3DRMDevice2** outDevice
 	) override;
 	HRESULT CreateTexture(D3DRMIMAGE* image, IDirect3DRMTexture2** outTexture) override;
-	HRESULT CreateTextureFromSurface(LPDIRECTDRAWSURFACE surface, IDirect3DRMTexture2** outTexture) override;
+	HRESULT CreateTextureFromSurface(IDirectDrawSurface* surface, IDirect3DRMTexture2** outTexture) override;
 	HRESULT CreateMesh(IDirect3DRMMesh** outMesh) override;
 	HRESULT CreateMaterial(D3DVAL power, IDirect3DRMMaterial** outMaterial) override;
 	HRESULT CreateLightRGB(D3DRMLIGHTTYPE type, D3DVAL r, D3DVAL g, D3DVAL b, IDirect3DRMLight** outLight) override;

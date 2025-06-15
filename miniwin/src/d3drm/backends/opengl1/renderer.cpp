@@ -141,7 +141,6 @@ void OpenGL1Renderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* t
 Uint32 OpenGL1Renderer::GetTextureId(IDirect3DRMTexture* iTexture)
 {
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
-	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
 
 	for (Uint32 i = 0; i < m_textures.size(); ++i) {
 		auto& tex = m_textures[i];
@@ -152,7 +151,7 @@ Uint32 OpenGL1Renderer::GetTextureId(IDirect3DRMTexture* iTexture)
 				glBindTexture(GL_TEXTURE_2D, tex.glTextureId);
 
 				SDL_Surface* surf =
-					SDL_ConvertSurface(surface->m_surface, SDL_PIXELFORMAT_ABGR8888); // Why are the colors backwarsd?
+					SDL_ConvertSurface(texture->m_surface, SDL_PIXELFORMAT_ABGR8888); // Why are the colors backwarsd?
 				if (!surf) {
 					return NO_TEXTURE_ID;
 				}
@@ -172,7 +171,7 @@ Uint32 OpenGL1Renderer::GetTextureId(IDirect3DRMTexture* iTexture)
 	glBindTexture(GL_TEXTURE_2D, texId);
 
 	SDL_Surface* surf =
-		SDL_ConvertSurface(surface->m_surface, SDL_PIXELFORMAT_ABGR8888); // Why are the colors backwarsd?
+		SDL_ConvertSurface(texture->m_surface, SDL_PIXELFORMAT_ABGR8888); // Why are the colors backwarsd?
 	if (!surf) {
 		return NO_TEXTURE_ID;
 	}

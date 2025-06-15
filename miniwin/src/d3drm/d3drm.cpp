@@ -160,14 +160,18 @@ HRESULT Direct3DRMImpl::CreateDeviceFromSurface(
 
 HRESULT Direct3DRMImpl::CreateTexture(D3DRMIMAGE* image, IDirect3DRMTexture2** outTexture)
 {
-	*outTexture = static_cast<IDirect3DRMTexture2*>(new Direct3DRMTextureImpl(image));
+	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 
-HRESULT Direct3DRMImpl::CreateTextureFromSurface(LPDIRECTDRAWSURFACE surface, IDirect3DRMTexture2** outTexture)
+HRESULT Direct3DRMImpl::CreateTextureFromSurface(IDirectDrawSurface* surface, IDirect3DRMTexture2** outTexture)
 
 {
-	*outTexture = static_cast<IDirect3DRMTexture2*>(new Direct3DRMTextureImpl(surface));
+	*outTexture = dynamic_cast<IDirect3DRMTexture2*>(surface);
+	if (!*outTexture) {
+		return DDERR_GENERIC;
+	}
+	surface->AddRef();
 	return DD_OK;
 }
 

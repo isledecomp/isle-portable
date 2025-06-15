@@ -464,15 +464,13 @@ SDL_GPUTexture* Direct3DRMSDL3GPURenderer::CreateTextureFromSurface(SDL_Surface*
 Uint32 Direct3DRMSDL3GPURenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 {
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
-	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
-	SDL_Surface* surf = surface->m_surface;
 
 	for (Uint32 i = 0; i < m_textures.size(); ++i) {
 		auto& tex = m_textures[i];
 		if (tex.texture == texture) {
 			if (tex.version != texture->m_version) {
 				SDL_ReleaseGPUTexture(m_device, tex.gpuTexture);
-				tex.gpuTexture = CreateTextureFromSurface(surf);
+				tex.gpuTexture = CreateTextureFromSurface(texture->m_surface);
 				if (!tex.gpuTexture) {
 					return NO_TEXTURE_ID;
 				}
@@ -482,7 +480,7 @@ Uint32 Direct3DRMSDL3GPURenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 		}
 	}
 
-	SDL_GPUTexture* newTex = CreateTextureFromSurface(surf);
+	SDL_GPUTexture* newTex = CreateTextureFromSurface(texture->m_surface);
 	if (!newTex) {
 		return NO_TEXTURE_ID;
 	}
