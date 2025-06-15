@@ -192,6 +192,7 @@ Direct3DRMRenderer* Direct3DRMSDL3GPURenderer::Create(DWORD width, DWORD height)
 	)};
 	if (!device.ptr) {
 		SDL_LogError(LOG_CATEGORY_MINIWIN, "SDL_CreateGPUDevice failed (%s)", SDL_GetError());
+		SDL_Log("width: %d height: %d", width, height);
 		return nullptr;
 	}
 
@@ -511,7 +512,7 @@ SDL3MeshCache Direct3DRMSDL3GPURenderer::UploadMesh(const MeshGroup& meshGroup)
 		FlattenSurfaces(
 			meshGroup.vertices.data(),
 			meshGroup.vertices.size(),
-			meshGroup.indices.data(),
+			(const DWORD*)meshGroup.indices.data(),
 			meshGroup.indices.size(),
 			meshGroup.texture != nullptr,
 			finalVertices,

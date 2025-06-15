@@ -84,7 +84,7 @@ BOOL TglSurface::Create(const CreateStruct& rCreateStruct, Renderer* pRenderer, 
 	BOOL dither = TRUE;
 	int textureShadeCount = -1;
 	int textureColorCount = -1;
-	Result result;
+	Tgl::Result result;
 
 	m_pRenderer = pRenderer;
 	m_pScene = pScene;
@@ -181,7 +181,7 @@ double TglSurface::Render()
 	MxStopWatch renderTimer;
 
 	if (m_isInitialized && !m_stopRendering) {
-		Result result;
+		Tgl::Result result;
 
 #ifdef _DEBUG
 		m_triangleRateMeter.StartOperation();

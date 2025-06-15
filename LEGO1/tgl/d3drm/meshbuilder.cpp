@@ -45,7 +45,7 @@ Mesh* MeshBuilderImpl::CreateMesh(
 	return pMeshImpl;
 }
 
-inline Result CreateMesh(
+inline Tgl::Result CreateMesh(
 	IDirect3DRMMesh* pD3DRM,
 	unsigned int faceCount,
 	unsigned int vertexCount,
@@ -63,7 +63,11 @@ inline Result CreateMesh(
 	int count = faceCount * 3;
 	int index = 0;
 
+#if defined(__3DS__)
+	unsigned long* fData = new unsigned long[count];
+#else
 	unsigned int* fData = new unsigned int[count];
+#endif
 
 	D3DRMVERTEX* vertices = new D3DRMVERTEX[vertexCount];
 	memset(vertices, 0, sizeof(*vertices) * vertexCount);
@@ -96,7 +100,7 @@ inline Result CreateMesh(
 		}
 	}
 
-	Result result;
+	Tgl::Result result;
 	result = ResultVal(pD3DRM->AddGroup(vertexCount, faceCount, 3, fData, &groupIndex));
 
 	if (Succeeded(result)) {
@@ -125,7 +129,7 @@ inline Result CreateMesh(
 	return result;
 }
 
-inline Result MeshBuilderImpl::CreateMeshImpl(
+inline Tgl::Result MeshBuilderImpl::CreateMeshImpl(
 	MeshImpl* pMeshImpl,
 	unsigned int faceCount,
 	unsigned int vertexCount,
@@ -152,10 +156,10 @@ inline Result MeshBuilderImpl::CreateMeshImpl(
 }
 
 // FUNCTION: BETA10 0x1016e060
-inline Result MeshBuilderGetBoundingBox(IDirect3DRMMesh* pMesh, float min[3], float max[3])
+inline Tgl::Result MeshBuilderGetBoundingBox(IDirect3DRMMesh* pMesh, float min[3], float max[3])
 {
 	D3DRMBOX box;
-	Result result = ResultVal(pMesh->GetBox(&box));
+	Tgl::Result result = ResultVal(pMesh->GetBox(&box));
 	if (Succeeded(result)) {
 		min[0] = box.min.x;
 		min[1] = box.min.y;
@@ -169,7 +173,7 @@ inline Result MeshBuilderGetBoundingBox(IDirect3DRMMesh* pMesh, float min[3], fl
 
 // FUNCTION: LEGO1 0x100a3ae0
 // FUNCTION: BETA10 0x1016ce00
-Result MeshBuilderImpl::GetBoundingBox(float min[3], float max[3]) const
+Tgl::Result MeshBuilderImpl::GetBoundingBox(float min[3], float max[3]) const
 {
 	assert(m_data);
 
