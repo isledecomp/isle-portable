@@ -512,7 +512,7 @@ SDL3MeshCache Direct3DRMSDL3GPURenderer::UploadMesh(const MeshGroup& meshGroup)
 		FlattenSurfaces(
 			meshGroup.vertices.data(),
 			meshGroup.vertices.size(),
-			meshGroup.indices.data(),
+			(const DWORD*)meshGroup.indices.data(),
 			meshGroup.indices.size(),
 			meshGroup.texture != nullptr,
 			finalVertices,

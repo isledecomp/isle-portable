@@ -63,7 +63,11 @@ inline Tgl::Result CreateMesh(
 	int count = faceCount * 3;
 	int index = 0;
 
+#if defined(__3DS__)
+	unsigned long* fData = new unsigned long[count];
+#else
 	unsigned int* fData = new unsigned int[count];
+#endif
 
 	D3DRMVERTEX* vertices = new D3DRMVERTEX[vertexCount];
 	memset(vertices, 0, sizeof(*vertices) * vertexCount);
@@ -97,7 +101,7 @@ inline Tgl::Result CreateMesh(
 	}
 
 	Tgl::Result result;
-	result = ResultVal(pD3DRM->AddGroup(vertexCount, faceCount, 3, (long unsigned int*)fData, &groupIndex));
+	result = ResultVal(pD3DRM->AddGroup(vertexCount, faceCount, 3, fData, &groupIndex));
 
 	if (Succeeded(result)) {
 		rpMesh->groupIndex = groupIndex;

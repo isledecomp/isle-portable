@@ -95,15 +95,24 @@ inline Tgl::Result MeshDeepClone(MeshImpl::MeshData* pSource, MeshImpl::MeshData
 
 	// Query information from old group
 	DWORD dataSize;
+#if defined(__3DS__)
+	unsigned long vcount, fcount, vperface;
+#else
 	unsigned int vcount, fcount, vperface;
+#endif
 
 	Tgl::Result result =
-		ResultVal(pSource->groupMesh->GetGroup(pSource->groupIndex, (long unsigned int*)&vcount, (long unsigned int*)&fcount, (long unsigned int*)&vperface, &dataSize, NULL));
+		ResultVal(pSource->groupMesh->GetGroup(pSource->groupIndex, &vcount, &fcount, &vperface, &dataSize, NULL));
 	assert(Succeeded(result));
 
+
+#if defined(__3DS__)
+	unsigned long* faceBuffer = new unsigned long[dataSize];
+#else
 	unsigned int* faceBuffer = new unsigned int[dataSize];
+#endif
 	result =
-		ResultVal(pSource->groupMesh->GetGroup(pSource->groupIndex, (long unsigned int*)&vcount, (long unsigned int*)&fcount, (long unsigned int*)&vperface, &dataSize, (long unsigned int*)&faceBuffer)
+		ResultVal(pSource->groupMesh->GetGroup(pSource->groupIndex, &vcount, &fcount, &vperface, &dataSize, faceBuffer)
 		);
 	assert(Succeeded(result));
 
@@ -122,7 +131,7 @@ inline Tgl::Result MeshDeepClone(MeshImpl::MeshData* pSource, MeshImpl::MeshData
 
 	// Push information to new group
 	D3DRMGROUPINDEX index;
-	result = ResultVal(pMesh->AddGroup(vcount, fcount, 3, (long unsigned int*)&faceBuffer, &index));
+	result = ResultVal(pMesh->AddGroup(vcount, fcount, 3, faceBuffer, &index));
 	assert(Succeeded(result));
 
 	rpTarget->groupIndex = index;
