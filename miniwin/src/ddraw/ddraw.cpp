@@ -6,6 +6,7 @@
 #include "ddpalette_impl.h"
 #include "ddraw_impl.h"
 #include "ddsurface_impl.h"
+#include "dummysurface_impl.h"
 #include "miniwin.h"
 #include "miniwin/d3d.h"
 
@@ -16,8 +17,7 @@
 #include <cstring>
 
 SDL_Window* DDWindow;
-SDL_Surface* DDBackBuffer;
-SDL_Texture* HWBackBuffer;
+FrameBufferImpl* DDFrameBuffer;
 SDL_PixelFormat HWBackBufferFormat;
 SDL_Renderer* DDRenderer;
 
@@ -38,7 +38,7 @@ HRESULT DirectDrawImpl::QueryInterface(const GUID& riid, void** ppvObject)
 }
 
 // IDirectDraw interface
-HRESULT DirectDrawImpl::CreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER* lplpDDClipper, IUnknown* pUnkOuter)
+HRESULT DirectDrawImpl::CreateClipper(DWORD dwFlags, IDirectDrawClipper** lplpDDClipper, IUnknown* pUnkOuter)
 {
 	*lplpDDClipper = new IDirectDrawClipper;
 
@@ -61,17 +61,37 @@ HRESULT DirectDrawImpl::CreatePalette(
 }
 
 HRESULT DirectDrawImpl::CreateSurface(
-	LPDDSURFACEDESC lpDDSurfaceDesc,
-	LPDIRECTDRAWSURFACE* lplpDDSurface,
+	DDSURFACEDESC* lpDDSurfaceDesc,
+	IDirectDrawSurface** lplpDDSurface,
 	IUnknown* pUnkOuter
 )
 {
-	SDL_PixelFormat format;
-#ifdef MINIWIN_PIXELFORMAT
-	format = MINIWIN_PIXELFORMAT;
-#else
-	format = SDL_PIXELFORMAT_RGBA8888;
-#endif
+	bool isTexture = false;
+	if ((lpDDSurfaceDesc->dwFlags & DDSD_CAPS) == DDSD_CAPS) {
+		if ((lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_ZBUFFER) == DDSCAPS_ZBUFFER) {
+			if ((lpDDSurfaceDesc->dwFlags & DDSD_ZBUFFERBITDEPTH) != DDSD_ZBUFFERBITDEPTH) {
+				return DDERR_INVALIDPARAMS;
+			}
+			SDL_Log("Todo: Set %dbit Z-Buffer", lpDDSurfaceDesc->dwZBufferBitDepth);
+			*lplpDDSurface = static_cast<IDirectDrawSurface*>(new DummySurfaceImpl);
+			return DD_OK;
+		}
+		if ((lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) == DDSCAPS_PRIMARYSURFACE) {
+			DDFrameBuffer = new FrameBufferImpl();
+			*lplpDDSurface = static_cast<IDirectDrawSurface*>(DDFrameBuffer);
+			return DD_OK;
+		}
+		if ((lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_3DDEVICE) == DDSCAPS_3DDEVICE) {
+			DDFrameBuffer->AddRef();
+			*lplpDDSurface = static_cast<IDirectDrawSurface*>(DDFrameBuffer);
+			return DD_OK;
+		}
+		if ((lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_TEXTURE) == DDSCAPS_TEXTURE) {
+			isTexture = true;
+		}
+	}
+
+	SDL_PixelFormat format = HWBackBufferFormat;
 	if ((lpDDSurfaceDesc->dwFlags & DDSD_PIXELFORMAT) == DDSD_PIXELFORMAT) {
 		if ((lpDDSurfaceDesc->ddpfPixelFormat.dwFlags & DDPF_RGB) == DDPF_RGB) {
 			switch (lpDDSurfaceDesc->ddpfPixelFormat.dwRGBBitCount) {
@@ -84,44 +104,6 @@ HRESULT DirectDrawImpl::CreateSurface(
 			}
 		}
 	}
-	if ((lpDDSurfaceDesc->dwFlags & DDSD_CAPS) == DDSD_CAPS) {
-		if ((lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_ZBUFFER) == DDSCAPS_ZBUFFER) {
-			if ((lpDDSurfaceDesc->dwFlags & DDSD_ZBUFFERBITDEPTH) != DDSD_ZBUFFERBITDEPTH) {
-				return DDERR_INVALIDPARAMS;
-			}
-			SDL_Log("Todo: Set %dbit Z-Buffer", lpDDSurfaceDesc->dwZBufferBitDepth);
-			*lplpDDSurface = static_cast<IDirectDrawSurface*>(new DirectDrawSurfaceImpl);
-			return DD_OK;
-		}
-		if ((lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) == DDSCAPS_PRIMARYSURFACE) {
-			SDL_Surface* windowSurface = SDL_GetWindowSurface(DDWindow);
-			if (!windowSurface) {
-				return DDERR_GENERIC;
-			}
-			int width, height;
-			SDL_GetWindowSize(DDWindow, &width, &height);
-			bool implicitFlip = (lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_FLIP) != DDSCAPS_FLIP;
-			auto frontBuffer = new DirectDrawSurfaceImpl(width, height, windowSurface->format);
-			frontBuffer->SetAutoFlip(implicitFlip);
-			*lplpDDSurface = static_cast<IDirectDrawSurface*>(frontBuffer);
-			return DD_OK;
-		}
-		if ((lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_OFFSCREENPLAIN) == DDSCAPS_OFFSCREENPLAIN) {
-			MINIWIN_TRACE("DDSCAPS_OFFSCREENPLAIN"); // 2D surfaces?
-		}
-		if ((lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_SYSTEMMEMORY) == DDSCAPS_SYSTEMMEMORY) {
-			MINIWIN_TRACE("DDSCAPS_SYSTEMMEMORY"); // Software rendering?
-		}
-		if ((lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_TEXTURE) == DDSCAPS_TEXTURE) {
-			MINIWIN_TRACE("DDSCAPS_TEXTURE"); // Texture for use in 3D
-		}
-		if ((lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_3DDEVICE) == DDSCAPS_3DDEVICE) {
-			MINIWIN_TRACE("DDSCAPS_3DDEVICE"); // back buffer
-		}
-		if ((lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_VIDEOMEMORY) == DDSCAPS_VIDEOMEMORY) {
-			MINIWIN_TRACE("DDSCAPS_VIDEOMEMORY"); // front / back buffer
-		}
-	}
 
 	if ((lpDDSurfaceDesc->dwFlags & (DDSD_WIDTH | DDSD_HEIGHT)) != (DDSD_WIDTH | DDSD_HEIGHT)) {
 		return DDERR_INVALIDPARAMS;
@@ -132,13 +114,20 @@ HRESULT DirectDrawImpl::CreateSurface(
 	if (width == 0 || height == 0) {
 		return DDERR_INVALIDPARAMS;
 	}
-	*lplpDDSurface = static_cast<IDirectDrawSurface*>(new DirectDrawSurfaceImpl(width, height, format));
+
+	if (isTexture) {
+		*lplpDDSurface = static_cast<IDirectDrawSurface*>(new Direct3DRMTextureImpl(width, height, format));
+	}
+	else {
+		*lplpDDSurface = static_cast<IDirectDrawSurface*>(new DirectDrawSurfaceImpl(width, height, format));
+	}
+
 	return DD_OK;
 }
 
 HRESULT DirectDrawImpl::EnumDisplayModes(
 	DWORD dwFlags,
-	LPDDSURFACEDESC lpDDSurfaceDesc,
+	DDSURFACEDESC* lpDDSurfaceDesc,
 	LPVOID lpContext,
 	LPDDENUMMODESCALLBACK lpEnumModesCallback
 )
@@ -158,11 +147,7 @@ HRESULT DirectDrawImpl::EnumDisplayModes(
 	HRESULT status = S_OK;
 
 	for (int i = 0; i < count_modes; i++) {
-#ifdef MINIWIN_PIXELFORMAT
-		format = MINIWIN_PIXELFORMAT;
-#else
 		format = modes[i]->format;
-#endif
 
 		const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(format);
 		if (!details) {
@@ -239,7 +224,7 @@ HRESULT DirectDrawImpl::EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 	return S_OK;
 }
 
-HRESULT DirectDrawImpl::GetDisplayMode(LPDDSURFACEDESC lpDDSurfaceDesc)
+HRESULT DirectDrawImpl::GetDisplayMode(DDSURFACEDESC* lpDDSurfaceDesc)
 {
 	SDL_DisplayID displayID = SDL_GetPrimaryDisplay();
 	if (!displayID) {
@@ -251,14 +236,7 @@ HRESULT DirectDrawImpl::GetDisplayMode(LPDDSURFACEDESC lpDDSurfaceDesc)
 		return DDERR_GENERIC;
 	}
 
-	SDL_PixelFormat format;
-#ifdef MINIWIN_PIXELFORMAT
-	format = MINIWIN_PIXELFORMAT;
-#else
-	format = mode->format;
-#endif
-
-	const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(format);
+	const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(mode->format);
 
 	lpDDSurfaceDesc->dwFlags = DDSD_WIDTH | DDSD_HEIGHT;
 	lpDDSurfaceDesc->dwWidth = mode->w;
@@ -305,6 +283,10 @@ HRESULT DirectDrawImpl::SetCooperativeLevel(HWND hWnd, DDSCLFlags dwFlags)
 		}
 		DDWindow = sdlWindow;
 		DDRenderer = SDL_CreateRenderer(DDWindow, NULL);
+		SDL_PropertiesID prop = SDL_GetRendererProperties(DDRenderer);
+		const SDL_PixelFormat* formats =
+			(SDL_PixelFormat*) SDL_GetPointerProperty(prop, SDL_PROP_RENDERER_TEXTURE_FORMATS_POINTER, NULL);
+		HWBackBufferFormat = formats[0];
 		SDL_SetRenderLogicalPresentation(DDRenderer, 640, 480, SDL_LOGICAL_PRESENTATION_LETTERBOX);
 	}
 	return DD_OK;

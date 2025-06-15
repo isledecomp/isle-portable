@@ -141,7 +141,6 @@ void OpenGL1Renderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* t
 Uint32 OpenGL1Renderer::GetTextureId(IDirect3DRMTexture* iTexture)
 {
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
-	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
 
 	for (Uint32 i = 0; i < m_textures.size(); ++i) {
 		auto& tex = m_textures[i];
@@ -151,8 +150,7 @@ Uint32 OpenGL1Renderer::GetTextureId(IDirect3DRMTexture* iTexture)
 				glGenTextures(1, &tex.glTextureId);
 				glBindTexture(GL_TEXTURE_2D, tex.glTextureId);
 
-				SDL_Surface* surf =
-					SDL_ConvertSurface(surface->m_surface, SDL_PIXELFORMAT_ABGR8888); // Why are the colors backwarsd?
+				SDL_Surface* surf = SDL_ConvertSurface(texture->m_surface, SDL_PIXELFORMAT_ABGR8888);
 				if (!surf) {
 					return NO_TEXTURE_ID;
 				}
@@ -171,8 +169,7 @@ Uint32 OpenGL1Renderer::GetTextureId(IDirect3DRMTexture* iTexture)
 	glGenTextures(1, &texId);
 	glBindTexture(GL_TEXTURE_2D, texId);
 
-	SDL_Surface* surf =
-		SDL_ConvertSurface(surface->m_surface, SDL_PIXELFORMAT_ABGR8888); // Why are the colors backwarsd?
+	SDL_Surface* surf = SDL_ConvertSurface(texture->m_surface, SDL_PIXELFORMAT_ABGR8888);
 	if (!surf) {
 		return NO_TEXTURE_ID;
 	}
@@ -356,7 +353,7 @@ const char* OpenGL1Renderer::GetName()
 
 HRESULT OpenGL1Renderer::BeginFrame(const D3DRMMATRIX4D& viewMatrix)
 {
-	if (!DDBackBuffer) {
+	if (!DDFrameBuffer) {
 		return DDERR_GENERIC;
 	}
 
@@ -538,11 +535,10 @@ void OpenGL1Renderer::SubmitDraw(
 HRESULT OpenGL1Renderer::FinalizeFrame()
 {
 	glDepthMask(GL_TRUE);
-	glReadPixels(0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, m_renderedImage->pixels);
+	glReadPixels(0, 0, m_width, m_height, GL_BGRA, GL_UNSIGNED_BYTE, m_renderedImage->pixels);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	// Composite onto SDL backbuffer
-	SDL_BlitSurface(m_renderedImage, nullptr, DDBackBuffer, nullptr);
+	DDFrameBuffer->Upload(m_renderedImage->pixels, m_renderedImage->pitch);
 
 	return DD_OK;
 }

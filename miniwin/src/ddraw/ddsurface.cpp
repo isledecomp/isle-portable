@@ -5,26 +5,17 @@
 
 #include <assert.h>
 
-DirectDrawSurfaceImpl::DirectDrawSurfaceImpl()
-{
-}
-
 DirectDrawSurfaceImpl::DirectDrawSurfaceImpl(int width, int height, SDL_PixelFormat format)
 {
-	m_surface = SDL_CreateSurface(width, height, format);
-	if (!m_surface) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create surface: %s", SDL_GetError());
+	m_texture = SDL_CreateTexture(DDRenderer, format, SDL_TEXTUREACCESS_STREAMING, width, height);
+	if (!m_texture) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create texture: %s", SDL_GetError());
 	}
 }
 
 DirectDrawSurfaceImpl::~DirectDrawSurfaceImpl()
 {
-	if (m_surface) {
-		SDL_DestroySurface(m_surface);
-	}
-	if (m_palette) {
-		m_palette->Release();
-	}
+	SDL_DestroyTexture(m_texture);
 }
 
 // IUnknown interface
@@ -40,120 +31,62 @@ HRESULT DirectDrawSurfaceImpl::QueryInterface(const GUID& riid, void** ppvObject
 }
 
 // IDirectDrawSurface interface
-HRESULT DirectDrawSurfaceImpl::AddAttachedSurface(LPDIRECTDRAWSURFACE lpDDSAttachedSurface)
+HRESULT DirectDrawSurfaceImpl::AddAttachedSurface(IDirectDrawSurface* lpDDSAttachedSurface)
 {
+	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
-}
-
-void DirectDrawSurfaceImpl::SetAutoFlip(bool enabled)
-{
-	m_autoFlip = enabled;
 }
 
 static SDL_Rect ConvertRect(const RECT* r)
 {
-	return {r->left, r->top, r->right - r->left, r->bottom - r->top};
-}
-
-bool SetupHWBackBuffer()
-{
-	HWBackBuffer = SDL_CreateTextureFromSurface(DDRenderer, DDBackBuffer);
-	if (!HWBackBuffer) {
-		return false;
-	}
-
-	SDL_PropertiesID props = SDL_GetTextureProperties(HWBackBuffer);
-	if (!props) {
-		SDL_DestroyTexture(HWBackBuffer);
-		HWBackBuffer = nullptr;
-		return false;
-	}
-
-	HWBackBufferFormat =
-		(SDL_PixelFormat) SDL_GetNumberProperty(props, SDL_PROP_TEXTURE_FORMAT_NUMBER, SDL_PIXELFORMAT_UNKNOWN);
-	if (HWBackBufferFormat == SDL_PIXELFORMAT_UNKNOWN) {
-		SDL_DestroyTexture(HWBackBuffer);
-		HWBackBuffer = nullptr;
-		return false;
-	}
-
-	return true;
+	return {r->left, r->top, (r->right - r->left), (r->bottom - r->top)};
 }
 
 HRESULT DirectDrawSurfaceImpl::Blt(
 	LPRECT lpDestRect,
-	LPDIRECTDRAWSURFACE lpDDSrcSurface,
+	IDirectDrawSurface* lpDDSrcSurface,
 	LPRECT lpSrcRect,
 	DDBltFlags dwFlags,
 	LPDDBLTFX lpDDBltFx
 )
 {
-	if ((dwFlags & DDBLT_COLORFILL) == DDBLT_COLORFILL) {
-		SDL_Rect rect = {0, 0, m_surface->w, m_surface->h};
-		const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(m_surface->format);
-		Uint8 r = (lpDDBltFx->dwFillColor >> 16) & 0xFF;
-		Uint8 g = (lpDDBltFx->dwFillColor >> 8) & 0xFF;
-		Uint8 b = lpDDBltFx->dwFillColor & 0xFF;
-		DirectDrawPaletteImpl* ddPal = static_cast<DirectDrawPaletteImpl*>(m_palette);
-		SDL_Palette* sdlPalette = ddPal ? ddPal->m_palette : nullptr;
-		Uint32 color = SDL_MapRGB(details, sdlPalette, r, g, b);
-		SDL_FillSurfaceRect(m_surface, &rect, color);
-		if (m_autoFlip) {
-			return Flip(nullptr, DDFLIP_WAIT);
-		}
-		return DD_OK;
-	}
-	auto srcSurface = static_cast<DirectDrawSurfaceImpl*>(lpDDSrcSurface);
-	if (!srcSurface || !srcSurface->m_surface) {
+	auto* other = dynamic_cast<DirectDrawSurfaceImpl*>(lpDDSrcSurface);
+	if (!other) {
+		MINIWIN_NOT_IMPLEMENTED();
 		return DDERR_GENERIC;
 	}
-	if (m_autoFlip) {
-		DDBackBuffer = srcSurface->m_surface;
-		if (!HWBackBuffer && !SetupHWBackBuffer()) {
-			return DDERR_GENERIC;
-		}
-		return Flip(nullptr, DDFLIP_WAIT);
-	}
 
-	SDL_Rect srcRect;
+	SDL_Rect srcRect, dstRect;
 	if (lpSrcRect) {
 		srcRect = ConvertRect(lpSrcRect);
 	}
-	else {
-		srcRect = {0, 0, srcSurface->m_surface->w, srcSurface->m_surface->h};
-	}
-
-	SDL_Rect dstRect;
 	if (lpDestRect) {
 		dstRect = ConvertRect(lpDestRect);
 	}
-	else {
-		dstRect = {0, 0, m_surface->w, m_surface->h};
-	}
 
-	SDL_Surface* blitSource = srcSurface->m_surface;
-
-	if (srcSurface->m_surface->format != m_surface->format) {
-		blitSource = SDL_ConvertSurface(srcSurface->m_surface, m_surface->format);
-		if (!blitSource) {
-			return DDERR_GENERIC;
-		}
-	}
-
-	if (!SDL_BlitSurfaceScaled(blitSource, &srcRect, m_surface, &dstRect, SDL_SCALEMODE_NEAREST)) {
+	void* otherPixels;
+	int otherPitch;
+	if (!SDL_LockTexture(other->m_texture, lpSrcRect ? &srcRect : nullptr, &otherPixels, &otherPitch)) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to lock other texture: %s", SDL_GetError());
 		return DDERR_GENERIC;
 	}
-
-	if (blitSource != srcSurface->m_surface) {
-		SDL_DestroySurface(blitSource);
+	void* pixels;
+	int pitch;
+	if (!SDL_LockTexture(m_texture, lpDestRect ? &dstRect : nullptr, &pixels, &pitch)) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to lock destination texture: %s", SDL_GetError());
+		return DDERR_GENERIC;
 	}
+	memcpy(pixels, otherPixels, (lpDestRect ? dstRect.h : m_texture->h) * pitch);
+	SDL_UnlockTexture(other->m_texture);
+	SDL_UnlockTexture(m_texture);
+
 	return DD_OK;
 }
 
 HRESULT DirectDrawSurfaceImpl::BltFast(
 	DWORD dwX,
 	DWORD dwY,
-	LPDIRECTDRAWSURFACE lpDDSrcSurface,
+	IDirectDrawSurface* lpDDSrcSurface,
 	LPRECT lpSrcRect,
 	DDBltFastFlags dwTrans
 )
@@ -167,30 +100,15 @@ HRESULT DirectDrawSurfaceImpl::BltFast(
 	return Blt(&destRect, lpDDSrcSurface, lpSrcRect, DDBLT_NONE, nullptr);
 }
 
-HRESULT DirectDrawSurfaceImpl::Flip(LPDIRECTDRAWSURFACE lpDDSurfaceTargetOverride, DDFlipFlags dwFlags)
+HRESULT DirectDrawSurfaceImpl::Flip(IDirectDrawSurface* lpDDSurfaceTargetOverride, DDFlipFlags dwFlags)
 {
-	if (!DDBackBuffer || !DDRenderer) {
-		return DDERR_GENERIC;
-	}
-
-	SDL_Surface* copy = SDL_ConvertSurface(DDBackBuffer, HWBackBufferFormat);
-	SDL_UpdateTexture(HWBackBuffer, nullptr, copy->pixels, copy->pitch);
-	SDL_DestroySurface(copy);
-	SDL_RenderTexture(DDRenderer, HWBackBuffer, nullptr, nullptr);
-	SDL_RenderPresent(DDRenderer);
+	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 
-HRESULT DirectDrawSurfaceImpl::GetAttachedSurface(LPDDSCAPS lpDDSCaps, LPDIRECTDRAWSURFACE* lplpDDAttachedSurface)
+HRESULT DirectDrawSurfaceImpl::GetAttachedSurface(LPDDSCAPS lpDDSCaps, IDirectDrawSurface** lplpDDAttachedSurface)
 {
-	if ((lpDDSCaps->dwCaps & DDSCAPS_BACKBUFFER) != DDSCAPS_BACKBUFFER) {
-		return DDERR_INVALIDPARAMS;
-	}
-	DDBackBuffer = m_surface;
-	if (!SetupHWBackBuffer()) {
-		return DDERR_GENERIC;
-	}
-	*lplpDDAttachedSurface = static_cast<IDirectDrawSurface*>(this);
+	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 
@@ -202,22 +120,14 @@ HRESULT DirectDrawSurfaceImpl::GetDC(HDC* lphDC)
 
 HRESULT DirectDrawSurfaceImpl::GetPalette(LPDIRECTDRAWPALETTE* lplpDDPalette)
 {
-	if (!m_palette) {
-		return DDERR_GENERIC;
-	}
-	m_palette->AddRef();
-	*lplpDDPalette = m_palette;
+	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 
 HRESULT DirectDrawSurfaceImpl::GetPixelFormat(LPDDPIXELFORMAT lpDDPixelFormat)
 {
-	if (!m_surface) {
-		return DDERR_GENERIC;
-	}
-	memset(lpDDPixelFormat, 0, sizeof(*lpDDPixelFormat));
 	lpDDPixelFormat->dwFlags = DDPF_RGB;
-	const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(m_surface->format);
+	const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(HWBackBufferFormat);
 	if (details->bits_per_pixel == 8) {
 		lpDDPixelFormat->dwFlags |= DDPF_PALETTEINDEXED8;
 	}
@@ -229,18 +139,13 @@ HRESULT DirectDrawSurfaceImpl::GetPixelFormat(LPDDPIXELFORMAT lpDDPixelFormat)
 	return DD_OK;
 }
 
-HRESULT DirectDrawSurfaceImpl::GetSurfaceDesc(LPDDSURFACEDESC lpDDSurfaceDesc)
+HRESULT DirectDrawSurfaceImpl::GetSurfaceDesc(DDSURFACEDESC* lpDDSurfaceDesc)
 {
-	if (!m_surface) {
-		return DDERR_GENERIC;
-	}
 	lpDDSurfaceDesc->dwFlags = DDSD_PIXELFORMAT;
 	GetPixelFormat(&lpDDSurfaceDesc->ddpfPixelFormat);
-	if (m_surface) {
-		lpDDSurfaceDesc->dwFlags |= DDSD_WIDTH | DDSD_HEIGHT;
-		lpDDSurfaceDesc->dwWidth = m_surface->w;
-		lpDDSurfaceDesc->dwHeight = m_surface->h;
-	}
+	lpDDSurfaceDesc->dwFlags |= DDSD_WIDTH | DDSD_HEIGHT;
+	lpDDSurfaceDesc->dwWidth = m_texture->w;
+	lpDDSurfaceDesc->dwHeight = m_texture->h;
 	return DD_OK;
 }
 
@@ -251,23 +156,16 @@ HRESULT DirectDrawSurfaceImpl::IsLost()
 
 HRESULT DirectDrawSurfaceImpl::Lock(
 	LPRECT lpDestRect,
-	LPDDSURFACEDESC lpDDSurfaceDesc,
+	DDSURFACEDESC* lpDDSurfaceDesc,
 	DDLockFlags dwFlags,
 	HANDLE hEvent
 )
 {
-	if (!m_surface) {
-		return DDERR_GENERIC;
-	}
-
-	if (!SDL_LockSurface(m_surface)) {
+	if (!SDL_LockTexture(m_texture, nullptr, &lpDDSurfaceDesc->lpSurface, &lpDDSurfaceDesc->lPitch)) {
 		return DDERR_GENERIC;
 	}
 
 	GetSurfaceDesc(lpDDSurfaceDesc);
-	lpDDSurfaceDesc->lpSurface = m_surface->pixels;
-	lpDDSurfaceDesc->lPitch = m_surface->pitch;
-
 	return DD_OK;
 }
 
@@ -279,48 +177,30 @@ HRESULT DirectDrawSurfaceImpl::ReleaseDC(HDC hDC)
 
 HRESULT DirectDrawSurfaceImpl::Restore()
 {
+	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 
-HRESULT DirectDrawSurfaceImpl::SetClipper(LPDIRECTDRAWCLIPPER lpDDClipper)
+HRESULT DirectDrawSurfaceImpl::SetClipper(IDirectDrawClipper* lpDDClipper)
 {
+	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 
 HRESULT DirectDrawSurfaceImpl::SetColorKey(DDColorKeyFlags dwFlags, LPDDCOLORKEY lpDDColorKey)
 {
-	if (lpDDColorKey->dwColorSpaceLowValue != lpDDColorKey->dwColorSpaceHighValue) {
-		MINIWIN_NOT_IMPLEMENTED();
-	}
-
-	if (SDL_SetSurfaceColorKey(m_surface, true, lpDDColorKey->dwColorSpaceLowValue) != 0) {
-		return DDERR_GENERIC;
-	}
-
+	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 
 HRESULT DirectDrawSurfaceImpl::SetPalette(LPDIRECTDRAWPALETTE lpDDPalette)
 {
-	if (m_surface->format != SDL_PIXELFORMAT_INDEX8) {
-		MINIWIN_NOT_IMPLEMENTED();
-	}
-
-	if (m_palette) {
-		m_palette->Release();
-	}
-
-	m_palette = lpDDPalette;
-	SDL_SetSurfacePalette(m_surface, ((DirectDrawPaletteImpl*) m_palette)->m_palette);
-	m_palette->AddRef();
+	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 
 HRESULT DirectDrawSurfaceImpl::Unlock(LPVOID lpSurfaceData)
 {
-	if (!m_surface) {
-		return DDERR_GENERIC;
-	}
-	SDL_UnlockSurface(m_surface);
+	SDL_UnlockTexture(m_texture);
 	return DD_OK;
 }

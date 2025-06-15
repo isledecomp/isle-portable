@@ -25,6 +25,7 @@
 
 Direct3DRMSoftwareRenderer::Direct3DRMSoftwareRenderer(DWORD width, DWORD height) : m_width(width), m_height(height)
 {
+	m_renderedImage = SDL_CreateSurface(m_width, m_height, SDL_PIXELFORMAT_ABGR8888);
 	m_zBuffer.resize(m_width * m_height);
 }
 
@@ -174,21 +175,8 @@ void Direct3DRMSoftwareRenderer::DrawTriangleClipped(const D3DRMVERTEX (&v)[3], 
 
 Uint32 Direct3DRMSoftwareRenderer::BlendPixel(Uint8* pixelAddr, Uint8 r, Uint8 g, Uint8 b, Uint8 a)
 {
-	Uint32 dstPixel;
-	switch (m_bytesPerPixel) {
-	case 1:
-		dstPixel = *pixelAddr;
-		break;
-	case 2:
-		dstPixel = *(Uint16*) pixelAddr;
-		break;
-	case 4:
-		dstPixel = *(Uint32*) pixelAddr;
-		break;
-	}
-
 	Uint8 dstR, dstG, dstB, dstA;
-	SDL_GetRGBA(dstPixel, m_format, m_palette, &dstR, &dstG, &dstB, &dstA);
+	SDL_GetRGBA(*(Uint32*) pixelAddr, m_format, m_palette, &dstR, &dstG, &dstB, &dstA);
 
 	float alpha = a / 255.0f;
 	float invAlpha = 1.0f - alpha;
@@ -342,8 +330,8 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 		}
 	}
 
-	Uint8* pixels = (Uint8*) DDBackBuffer->pixels;
-	int pitch = DDBackBuffer->pitch;
+	Uint8* pixels = (Uint8*) m_renderedImage->pixels;
+	int pitch = m_renderedImage->pitch;
 
 	VertexXY verts[3] = {
 		{p0.x, p0.y, p0.z, p0.w, c0, v0.texCoord.u, v0.texCoord.v},
@@ -446,22 +434,8 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 					int texY = static_cast<int>(v * texHeightScale);
 
 					Uint8* texelAddr = texels + texY * texturePitch + texX * m_bytesPerPixel;
-
-					Uint32 texelColor;
-					switch (m_bytesPerPixel) {
-					case 1:
-						texelColor = *texelAddr;
-						break;
-					case 2:
-						texelColor = *(Uint16*) texelAddr;
-						break;
-					case 4:
-						texelColor = *(Uint32*) texelAddr;
-						break;
-					}
-
 					Uint8 tr, tg, tb, ta;
-					SDL_GetRGBA(texelColor, m_format, m_palette, &tr, &tg, &tb, &ta);
+					SDL_GetRGBA(*(Uint32*) texelAddr, m_format, m_palette, &tr, &tg, &tb, &ta);
 
 					// Multiply vertex color by texel color
 					r = (r * tr + 127) / 255;
@@ -475,17 +449,7 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 				finalColor = BlendPixel(pixelAddr, r, g, b, appearance.color.a);
 			}
 
-			switch (m_bytesPerPixel) {
-			case 1:
-				*pixelAddr = static_cast<Uint8>(finalColor);
-				break;
-			case 2:
-				*reinterpret_cast<Uint16*>(pixelAddr) = static_cast<Uint16>(finalColor);
-				break;
-			case 4:
-				*reinterpret_cast<Uint32*>(pixelAddr) = finalColor;
-				break;
-			}
+			*reinterpret_cast<Uint32*>(pixelAddr) = finalColor;
 		}
 	}
 }
@@ -517,7 +481,6 @@ void Direct3DRMSoftwareRenderer::AddTextureDestroyCallback(Uint32 id, IDirect3DR
 Uint32 Direct3DRMSoftwareRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 {
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
-	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
 
 	// Check if already mapped
 	for (Uint32 i = 0; i < m_textures.size(); ++i) {
@@ -526,7 +489,7 @@ Uint32 Direct3DRMSoftwareRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 			if (texRef.version != texture->m_version) {
 				// Update animated textures
 				SDL_DestroySurface(texRef.cached);
-				texRef.cached = SDL_ConvertSurface(surface->m_surface, DDBackBuffer->format);
+				texRef.cached = SDL_ConvertSurface(texture->m_surface, HWBackBufferFormat);
 				SDL_LockSurface(texRef.cached);
 				texRef.version = texture->m_version;
 			}
@@ -534,7 +497,7 @@ Uint32 Direct3DRMSoftwareRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 		}
 	}
 
-	SDL_Surface* convertedRender = SDL_ConvertSurface(surface->m_surface, DDBackBuffer->format);
+	SDL_Surface* convertedRender = SDL_ConvertSurface(texture->m_surface, HWBackBufferFormat);
 	SDL_LockSurface(convertedRender);
 
 	// Reuse freed slot
@@ -655,14 +618,12 @@ const char* Direct3DRMSoftwareRenderer::GetName()
 
 HRESULT Direct3DRMSoftwareRenderer::BeginFrame(const D3DRMMATRIX4D& viewMatrix)
 {
-	if (!DDBackBuffer || !SDL_LockSurface(DDBackBuffer)) {
-		return DDERR_GENERIC;
-	}
 	ClearZBuffer();
+	Uint32 color = SDL_MapRGBA(SDL_GetPixelFormatDetails(m_renderedImage->format), nullptr, 0, 0, 0, 0);
+	SDL_FillSurfaceRect(m_renderedImage, nullptr, color);
 
 	memcpy(m_viewMatrix, viewMatrix, sizeof(D3DRMMATRIX4D));
-	m_format = SDL_GetPixelFormatDetails(DDBackBuffer->format);
-	m_palette = SDL_GetSurfacePalette(DDBackBuffer);
+	m_format = SDL_GetPixelFormatDetails(HWBackBufferFormat);
 	m_bytesPerPixel = m_format->bits_per_pixel / 8;
 
 	return DD_OK;
@@ -708,7 +669,7 @@ void Direct3DRMSoftwareRenderer::SubmitDraw(
 
 HRESULT Direct3DRMSoftwareRenderer::FinalizeFrame()
 {
-	SDL_UnlockSurface(DDBackBuffer);
+	DDFrameBuffer->Upload(m_renderedImage->pixels, m_renderedImage->pitch);
 
 	return DD_OK;
 }

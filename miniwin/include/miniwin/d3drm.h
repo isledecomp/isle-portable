@@ -347,7 +347,7 @@ struct IDirect3DRM : virtual public IUnknown {
 		IDirect3DRMDevice2** outDevice
 	) = 0;
 	virtual HRESULT CreateTexture(D3DRMIMAGE* image, IDirect3DRMTexture2** outTexture) = 0;
-	virtual HRESULT CreateTextureFromSurface(LPDIRECTDRAWSURFACE surface, IDirect3DRMTexture2** outTexture) = 0;
+	virtual HRESULT CreateTextureFromSurface(IDirectDrawSurface* surface, IDirect3DRMTexture2** outTexture) = 0;
 	virtual HRESULT CreateMesh(IDirect3DRMMesh** outMesh) = 0;
 	virtual HRESULT CreateMaterial(D3DVAL power, IDirect3DRMMaterial** outMaterial) = 0;
 	virtual HRESULT CreateLightRGB(D3DRMLIGHTTYPE type, D3DVAL r, D3DVAL g, D3DVAL b, IDirect3DRMLight** outLight) = 0;

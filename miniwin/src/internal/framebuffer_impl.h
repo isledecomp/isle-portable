@@ -1,11 +1,12 @@
 #pragma once
 
 #include <SDL3/SDL.h>
+#include <ddsurface_impl.h>
 #include <miniwin/ddraw.h>
 
-struct DirectDrawSurfaceImpl : public IDirectDrawSurface3 {
-	DirectDrawSurfaceImpl(int width, int height, SDL_PixelFormat format);
-	~DirectDrawSurfaceImpl() override;
+struct FrameBufferImpl : public IDirectDrawSurface3 {
+	FrameBufferImpl();
+	~FrameBufferImpl() override;
 
 	// IUnknown interface
 	HRESULT QueryInterface(const GUID& riid, void** ppvObject) override;
@@ -35,5 +36,10 @@ struct DirectDrawSurfaceImpl : public IDirectDrawSurface3 {
 	HRESULT SetPalette(LPDIRECTDRAWPALETTE lpDDPalette) override;
 	HRESULT Unlock(LPVOID lpSurfaceData) override;
 
-	SDL_Texture* m_texture;
+	void Upload(void* pixels, int pitch);
+
+private:
+	SDL_Surface* m_readBackBuffer;
+	SDL_Texture* m_backBuffer;
+	SDL_Texture* m_uploadBuffer;
 };

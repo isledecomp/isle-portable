@@ -62,6 +62,7 @@ private:
 
 	DWORD m_width;
 	DWORD m_height;
+	SDL_Surface* m_renderedImage;
 	SDL_Palette* m_palette;
 	const SDL_PixelFormatDetails* m_format;
 	int m_bytesPerPixel;

@@ -141,7 +141,7 @@ static SDL_GPUGraphicsPipeline* InitializeGraphicsPipeline(SDL_GPUDevice* device
 	vertexInputState.num_vertex_attributes = SDL_arraysize(vertexAttrs);
 
 	SDL_GPUColorTargetDescription colorTargets = {};
-	colorTargets.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM;
+	colorTargets.format = SDL_GPU_TEXTUREFORMAT_B8G8R8A8_UNORM;
 	if (depthWrite) {
 		colorTargets.blend_state.enable_blend = false;
 	}
@@ -209,7 +209,7 @@ Direct3DRMRenderer* Direct3DRMSDL3GPURenderer::Create(DWORD width, DWORD height)
 
 	SDL_GPUTextureCreateInfo textureInfo = {};
 	textureInfo.type = SDL_GPU_TEXTURETYPE_2D;
-	textureInfo.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM;
+	textureInfo.format = SDL_GPU_TEXTUREFORMAT_B8G8R8A8_UNORM;
 	textureInfo.usage = SDL_GPU_TEXTUREUSAGE_COLOR_TARGET;
 	textureInfo.width = width;
 	textureInfo.height = height;
@@ -310,7 +310,7 @@ Direct3DRMSDL3GPURenderer::Direct3DRMSDL3GPURenderer(
 	  m_transparentPipeline(transparentPipeline), m_transferTexture(transferTexture), m_depthTexture(depthTexture),
 	  m_sampler(sampler), m_uploadBuffer(uploadBuffer), m_downloadBuffer(downloadBuffer)
 {
-	SDL_Surface* dummySurface = SDL_CreateSurface(1, 1, SDL_PIXELFORMAT_ABGR8888);
+	SDL_Surface* dummySurface = SDL_CreateSurface(1, 1, SDL_PIXELFORMAT_ARGB8888);
 	if (!dummySurface) {
 		SDL_LogError(LOG_CATEGORY_MINIWIN, "Failed to create surface: %s", SDL_GetError());
 		return;
@@ -400,7 +400,7 @@ void Direct3DRMSDL3GPURenderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRM
 
 SDL_GPUTexture* Direct3DRMSDL3GPURenderer::CreateTextureFromSurface(SDL_Surface* surface)
 {
-	ScopedSurface surf{SDL_ConvertSurface(surface, SDL_PIXELFORMAT_ABGR8888)};
+	ScopedSurface surf{SDL_ConvertSurface(surface, SDL_PIXELFORMAT_ARGB8888)};
 	if (!surf.ptr) {
 		SDL_LogError(LOG_CATEGORY_MINIWIN, "SDL_ConvertSurface (%s)", SDL_GetError());
 		return nullptr;
@@ -410,7 +410,7 @@ SDL_GPUTexture* Direct3DRMSDL3GPURenderer::CreateTextureFromSurface(SDL_Surface*
 
 	SDL_GPUTextureCreateInfo textureInfo = {};
 	textureInfo.type = SDL_GPU_TEXTURETYPE_2D;
-	textureInfo.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM;
+	textureInfo.format = SDL_GPU_TEXTUREFORMAT_B8G8R8A8_UNORM;
 	textureInfo.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER;
 	textureInfo.width = surf.ptr->w;
 	textureInfo.height = surf.ptr->h;
@@ -464,15 +464,13 @@ SDL_GPUTexture* Direct3DRMSDL3GPURenderer::CreateTextureFromSurface(SDL_Surface*
 Uint32 Direct3DRMSDL3GPURenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 {
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
-	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
-	SDL_Surface* surf = surface->m_surface;
 
 	for (Uint32 i = 0; i < m_textures.size(); ++i) {
 		auto& tex = m_textures[i];
 		if (tex.texture == texture) {
 			if (tex.version != texture->m_version) {
 				SDL_ReleaseGPUTexture(m_device, tex.gpuTexture);
-				tex.gpuTexture = CreateTextureFromSurface(surf);
+				tex.gpuTexture = CreateTextureFromSurface(texture->m_surface);
 				if (!tex.gpuTexture) {
 					return NO_TEXTURE_ID;
 				}
@@ -482,7 +480,7 @@ Uint32 Direct3DRMSDL3GPURenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 		}
 	}
 
-	SDL_GPUTexture* newTex = CreateTextureFromSurface(surf);
+	SDL_GPUTexture* newTex = CreateTextureFromSurface(texture->m_surface);
 	if (!newTex) {
 		return NO_TEXTURE_ID;
 	}
@@ -705,7 +703,7 @@ SDL_GPUTransferBuffer* Direct3DRMSDL3GPURenderer::GetUploadBuffer(size_t size)
 
 HRESULT Direct3DRMSDL3GPURenderer::BeginFrame(const D3DRMMATRIX4D& viewMatrix)
 {
-	if (!DDBackBuffer) {
+	if (!DDFrameBuffer) {
 		return DDERR_GENERIC;
 	}
 
@@ -807,10 +805,7 @@ HRESULT Direct3DRMSDL3GPURenderer::FinalizeFrame()
 		return DDERR_GENERIC;
 	}
 
-	SDL_Surface* renderedImage =
-		SDL_CreateSurfaceFrom(m_width, m_height, SDL_PIXELFORMAT_ABGR8888, downloadedData, m_width * 4);
-	SDL_BlitSurface(renderedImage, nullptr, DDBackBuffer, nullptr);
-	SDL_DestroySurface(renderedImage);
+	DDFrameBuffer->Upload(downloadedData, m_width * 4);
 	SDL_UnmapGPUTransferBuffer(m_device, m_downloadBuffer);
 
 	return DD_OK;
