@@ -86,7 +86,7 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@main
         with:
-          name: Release
+          name: Release-${{ matrix.name }}
           path: |
             build/dist/isle-*
 
@@ -98,8 +98,9 @@ jobs:
       - name: Download All Artifacts
         uses: actions/download-artifact@main
         with:
-          name: Release
+          pattern: Release-*
           path: Release
+          merge-multiple: true
 
       - name: Checkout uploadtool
         uses: actions/checkout@v4
