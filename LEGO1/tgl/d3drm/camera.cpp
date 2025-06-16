@@ -15,14 +15,14 @@ void* CameraImpl::ImplementationDataPtr()
 }
 
 // FUNCTION: BETA10 0x1016f390
-inline Tgl::Result CameraSetTransformation(IDirect3DRMFrame2* pCamera, FloatMatrix4& matrix)
+inline Result CameraSetTransformation(IDirect3DRMFrame2* pCamera, FloatMatrix4& matrix)
 {
 	D3DRMMATRIX4D helper;
 	D3DRMMATRIX4D* pTransformation = Translate(matrix, helper);
 
 	D3DVECTOR position;
-	Tgl::Result result;
-	Tgl::Result result2;
+	Result result;
+	Result result2;
 
 	result2 = ResultVal(pCamera->GetPosition(NULL, &position));
 	assert(Succeeded(result2));
@@ -38,7 +38,7 @@ inline Tgl::Result CameraSetTransformation(IDirect3DRMFrame2* pCamera, FloatMatr
 
 // FUNCTION: LEGO1 0x100a3700
 // FUNCTION: BETA10 0x1016f330
-Tgl::Result CameraImpl::SetTransformation(FloatMatrix4& matrix)
+Result CameraImpl::SetTransformation(FloatMatrix4& matrix)
 {
 	assert(m_data);
 

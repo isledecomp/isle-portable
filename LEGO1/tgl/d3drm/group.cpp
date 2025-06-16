@@ -12,7 +12,7 @@ void* GroupImpl::ImplementationDataPtr()
 }
 
 // FUNCTION: BETA10 0x1016c340
-inline Tgl::Result GroupSetTransformation(IDirect3DRMFrame2* pGroup, FloatMatrix4& matrix)
+inline Result GroupSetTransformation(IDirect3DRMFrame2* pGroup, FloatMatrix4& matrix)
 {
 	D3DRMMATRIX4D helper;
 	D3DRMMATRIX4D* d3dMatrix = Translate(matrix, helper);
@@ -21,7 +21,7 @@ inline Tgl::Result GroupSetTransformation(IDirect3DRMFrame2* pGroup, FloatMatrix
 
 // FUNCTION: LEGO1 0x100a31e0
 // FUNCTION: BETA10 0x1016a4d0
-Tgl::Result GroupImpl::SetTransformation(FloatMatrix4& matrix)
+Result GroupImpl::SetTransformation(FloatMatrix4& matrix)
 {
 	assert(m_data);
 
@@ -29,7 +29,7 @@ Tgl::Result GroupImpl::SetTransformation(FloatMatrix4& matrix)
 }
 
 // FUNCTION: BETA10 0x1016c400
-inline Tgl::Result GroupSetColor(IDirect3DRMFrame2* pGroup, float r, float g, float b, float a)
+inline Result GroupSetColor(IDirect3DRMFrame2* pGroup, float r, float g, float b, float a)
 {
 	if (a > 0) {
 		D3DCOLOR color = D3DRMCreateColorRGBA(r, g, b, a);
@@ -42,7 +42,7 @@ inline Tgl::Result GroupSetColor(IDirect3DRMFrame2* pGroup, float r, float g, fl
 
 // FUNCTION: LEGO1 0x100a3240
 // FUNCTION: BETA10 0x1016a530
-Tgl::Result GroupImpl::SetColor(float r, float g, float b, float a)
+Result GroupImpl::SetColor(float r, float g, float b, float a)
 {
 	assert(m_data);
 
@@ -50,13 +50,13 @@ Tgl::Result GroupImpl::SetColor(float r, float g, float b, float a)
 }
 
 // FUNCTION: BETA10 0x1016c5a0
-inline Tgl::Result GroupSetTexture(IDirect3DRMFrame2* pGroup, IDirect3DRMTexture* pD3DTexture)
+inline Result GroupSetTexture(IDirect3DRMFrame2* pGroup, IDirect3DRMTexture* pD3DTexture)
 {
 	return ResultVal(pGroup->SetTexture(pD3DTexture));
 }
 
 // FUNCTION: BETA10 0x1016bcc0
-inline Tgl::Result GroupImpl::SetTexture(const TextureImpl* pTexture)
+inline Result GroupImpl::SetTexture(const TextureImpl* pTexture)
 {
 	assert(m_data);
 	assert(!pTexture || pTexture->ImplementationData());
@@ -67,7 +67,7 @@ inline Tgl::Result GroupImpl::SetTexture(const TextureImpl* pTexture)
 
 // FUNCTION: LEGO1 0x100a32b0
 // FUNCTION: BETA10 0x1016a5a0
-Tgl::Result GroupImpl::SetTexture(const Texture* pTexture)
+Result GroupImpl::SetTexture(const Texture* pTexture)
 {
 	assert(m_data);
 
@@ -75,13 +75,13 @@ Tgl::Result GroupImpl::SetTexture(const Texture* pTexture)
 }
 
 // FUNCTION: BETA10 0x1016c640
-inline Tgl::Result GroupGetTexture(IDirect3DRMFrame2* pGroup, IDirect3DRMTexture** pD3DTexture)
+inline Result GroupGetTexture(IDirect3DRMFrame2* pGroup, IDirect3DRMTexture** pD3DTexture)
 {
 	return ResultVal(pGroup->GetTexture(pD3DTexture));
 }
 
 // FUNCTION: BETA10 0x1016beb0
-inline Tgl::Result GroupImpl::GetTexture(TextureImpl** ppTexture)
+inline Result GroupImpl::GetTexture(TextureImpl** ppTexture)
 {
 	assert(m_data);
 	assert(ppTexture);
@@ -91,7 +91,7 @@ inline Tgl::Result GroupImpl::GetTexture(TextureImpl** ppTexture)
 
 	// TODO: This helps retail match, but it adds to the stack
 	IDirect3DRMTexture* tex;
-	Tgl::Result result = GroupGetTexture(m_data, &tex);
+	Result result = GroupGetTexture(m_data, &tex);
 
 #ifndef BETA10
 	if (Succeeded(result)) {
@@ -106,7 +106,7 @@ inline Tgl::Result GroupImpl::GetTexture(TextureImpl** ppTexture)
 
 // FUNCTION: LEGO1 0x100a32e0
 // FUNCTION: BETA10 0x1016a600
-Tgl::Result GroupImpl::GetTexture(Texture*& pTexture)
+Result GroupImpl::GetTexture(Texture*& pTexture)
 {
 	assert(m_data);
 
@@ -114,7 +114,7 @@ Tgl::Result GroupImpl::GetTexture(Texture*& pTexture)
 }
 
 // FUNCTION: BETA10 0x1016c500
-inline Tgl::Result GroupSetMaterialMode(IDirect3DRMFrame2* pGroup, MaterialMode mode)
+inline Result GroupSetMaterialMode(IDirect3DRMFrame2* pGroup, MaterialMode mode)
 {
 	D3DRMMATERIALMODE d3dMode = Translate(mode);
 	return ResultVal(pGroup->SetMaterialMode(d3dMode));
@@ -122,7 +122,7 @@ inline Tgl::Result GroupSetMaterialMode(IDirect3DRMFrame2* pGroup, MaterialMode 
 
 // FUNCTION: LEGO1 0x100a33c0
 // FUNCTION: BETA10 0x1016a660
-Tgl::Result GroupImpl::SetMaterialMode(MaterialMode mode)
+Result GroupImpl::SetMaterialMode(MaterialMode mode)
 {
 	assert(m_data);
 
@@ -130,13 +130,13 @@ Tgl::Result GroupImpl::SetMaterialMode(MaterialMode mode)
 }
 
 // FUNCTION: BETA10 0x1016c670
-inline Tgl::Result GroupAddGroup(IDirect3DRMFrame2* pGroup, const IDirect3DRMFrame* pChildGroup)
+inline Result GroupAddGroup(IDirect3DRMFrame2* pGroup, const IDirect3DRMFrame* pChildGroup)
 {
 	return ResultVal(pGroup->AddVisual(const_cast<IDirect3DRMFrame*>(pChildGroup)));
 }
 
 // FUNCTION: BETA10 0x1016c090
-inline Tgl::Result GroupImpl::Add(const GroupImpl& rGroup)
+inline Result GroupImpl::Add(const GroupImpl& rGroup)
 {
 	assert(m_data);
 	assert(rGroup.ImplementationData());
@@ -146,7 +146,7 @@ inline Tgl::Result GroupImpl::Add(const GroupImpl& rGroup)
 
 // FUNCTION: LEGO1 0x100a3410
 // FUNCTION: BETA10 0x1016a6c0
-Tgl::Result GroupImpl::Add(const Group* pGroup)
+Result GroupImpl::Add(const Group* pGroup)
 {
 	assert(m_data);
 	assert(pGroup);
@@ -155,13 +155,13 @@ Tgl::Result GroupImpl::Add(const Group* pGroup)
 }
 
 // FUNCTION: BETA10 0x1016c700
-inline Tgl::Result GroupAddMeshBuilder(IDirect3DRMFrame2* pGroup, const IDirect3DRMMesh* pMesh)
+inline Result GroupAddMeshBuilder(IDirect3DRMFrame2* pGroup, const IDirect3DRMMesh* pMesh)
 {
 	return ResultVal(pGroup->AddVisual(const_cast<IDirect3DRMMesh*>(pMesh)));
 }
 
 // FUNCTION: BETA10 0x1016bff0
-inline Tgl::Result GroupImpl::Add(const MeshBuilderImpl& rMesh)
+inline Result GroupImpl::Add(const MeshBuilderImpl& rMesh)
 {
 	assert(m_data);
 	assert(rMesh.ImplementationData());
@@ -171,7 +171,7 @@ inline Tgl::Result GroupImpl::Add(const MeshBuilderImpl& rMesh)
 
 // FUNCTION: LEGO1 0x100a3430
 // FUNCTION: BETA10 0x1016a740
-Tgl::Result GroupImpl::Add(const MeshBuilder* pMeshBuilder)
+Result GroupImpl::Add(const MeshBuilder* pMeshBuilder)
 {
 	assert(m_data);
 	assert(pMeshBuilder);
@@ -180,13 +180,13 @@ Tgl::Result GroupImpl::Add(const MeshBuilder* pMeshBuilder)
 }
 
 // FUNCTION: BETA10 0x1016c7b0
-inline Tgl::Result GroupRemoveMeshBuilder(IDirect3DRMFrame2* pGroup, const IDirect3DRMMesh* pMesh)
+inline Result GroupRemoveMeshBuilder(IDirect3DRMFrame2* pGroup, const IDirect3DRMMesh* pMesh)
 {
 	return ResultVal(pGroup->DeleteVisual(const_cast<IDirect3DRMMesh*>(pMesh)));
 }
 
 // FUNCTION: BETA10 0x1016c130
-inline Tgl::Result GroupImpl::Remove(const MeshBuilderImpl& rMesh)
+inline Result GroupImpl::Remove(const MeshBuilderImpl& rMesh)
 {
 	assert(m_data);
 	assert(rMesh.ImplementationData());
@@ -196,7 +196,7 @@ inline Tgl::Result GroupImpl::Remove(const MeshBuilderImpl& rMesh)
 
 // FUNCTION: LEGO1 0x100a3450
 // FUNCTION: BETA10 0x1016a7c0
-Tgl::Result GroupImpl::Remove(const MeshBuilder* pMeshBuilder)
+Result GroupImpl::Remove(const MeshBuilder* pMeshBuilder)
 {
 	assert(m_data);
 	assert(pMeshBuilder);
@@ -205,13 +205,13 @@ Tgl::Result GroupImpl::Remove(const MeshBuilder* pMeshBuilder)
 }
 
 // FUNCTION: BETA10 0x1016c730
-inline Tgl::Result GroupRemoveGroup(IDirect3DRMFrame2* pGroup, const IDirect3DRMFrame* pChildGroup)
+inline Result GroupRemoveGroup(IDirect3DRMFrame2* pGroup, const IDirect3DRMFrame* pChildGroup)
 {
 	return ResultVal(pGroup->DeleteVisual(const_cast<IDirect3DRMFrame*>(pChildGroup)));
 }
 
 // FUNCTION: BETA10 0x1016c1d0
-inline Tgl::Result GroupImpl::Remove(const GroupImpl& rGroup)
+inline Result GroupImpl::Remove(const GroupImpl& rGroup)
 {
 	assert(m_data);
 	assert(rGroup.ImplementationData());
@@ -221,7 +221,7 @@ inline Tgl::Result GroupImpl::Remove(const GroupImpl& rGroup)
 
 // FUNCTION: LEGO1 0x100a3480
 // FUNCTION: BETA10 0x1016a840
-Tgl::Result GroupImpl::Remove(const Group* pGroup)
+Result GroupImpl::Remove(const Group* pGroup)
 {
 	assert(m_data);
 	assert(pGroup);
@@ -230,12 +230,12 @@ Tgl::Result GroupImpl::Remove(const Group* pGroup)
 }
 
 // FUNCTION: BETA10 0x1016c850
-inline Tgl::Result GroupRemoveAll(IDirect3DRMFrame2* pFrame)
+inline Result GroupRemoveAll(IDirect3DRMFrame2* pFrame)
 {
 	IDirect3DRMVisualArray* visuals;
 	int refCount;
 
-	Tgl::Result result = ResultVal(pFrame->GetVisuals(&visuals));
+	Result result = ResultVal(pFrame->GetVisuals(&visuals));
 	assert(Succeeded(result));
 
 	if (Succeeded(result)) {
@@ -260,7 +260,7 @@ inline Tgl::Result GroupRemoveAll(IDirect3DRMFrame2* pFrame)
 
 // FUNCTION: LEGO1 0x100a34b0
 // FUNCTION: BETA10 0x1016a8c0
-Tgl::Result GroupImpl::RemoveAll()
+Result GroupImpl::RemoveAll()
 {
 	assert(m_data);
 
@@ -268,7 +268,7 @@ Tgl::Result GroupImpl::RemoveAll()
 }
 
 // FUNCTION: BETA10 0x1016cb70
-inline Tgl::Result GroupBounds(IDirect3DRMFrame2* pFrame, D3DVECTOR* p_min, D3DVECTOR* p_max)
+inline Result GroupBounds(IDirect3DRMFrame2* pFrame, D3DVECTOR* p_min, D3DVECTOR* p_max)
 {
 	D3DRMBOX size;
 	int refCount;
@@ -277,7 +277,7 @@ inline Tgl::Result GroupBounds(IDirect3DRMFrame2* pFrame, D3DVECTOR* p_min, D3DV
 	size.max.x = size.max.y = size.max.z = -88888.f;
 
 	IDirect3DRMVisualArray* visuals;
-	Tgl::Result result = ResultVal(pFrame->GetVisuals(&visuals));
+	Result result = ResultVal(pFrame->GetVisuals(&visuals));
 	assert(Succeeded(result));
 
 	if (Succeeded(result)) {
@@ -337,7 +337,7 @@ inline Tgl::Result GroupBounds(IDirect3DRMFrame2* pFrame, D3DVECTOR* p_min, D3DV
 
 // FUNCTION: LEGO1 0x100a3540
 // FUNCTION: BETA10 0x1016a920
-Tgl::Result GroupImpl::Bounds(D3DVECTOR* p_min, D3DVECTOR* p_max)
+Result GroupImpl::Bounds(D3DVECTOR* p_min, D3DVECTOR* p_max)
 {
 	assert(m_data);
 

@@ -17,10 +17,10 @@ void TextureDestroyCallback(IDirect3DRMObject* pObject, void* pArg);
 
 // FUNCTION: LEGO1 0x100a12a0
 // FUNCTION: BETA10 0x10169113
-Tgl::Result TextureImpl::SetImage(IDirect3DRMTexture* pSelf, TglD3DRMIMAGE* pImage)
+Result TextureImpl::SetImage(IDirect3DRMTexture* pSelf, TglD3DRMIMAGE* pImage)
 {
 	void* appData;
-	Tgl::Result result;
+	Result result;
 
 	appData = pImage;
 	assert(reinterpret_cast<TglD3DRMIMAGE*>(appData) == pImage);
@@ -84,7 +84,7 @@ TglD3DRMIMAGE::TglD3DRMIMAGE(
 	m_image.palette = NULL;
 	m_texelsAllocatedByClient = 0;
 
-	Tgl::Result result;
+	Result result;
 	if (pBuffer != NULL) {
 		result = CreateBuffer(width, height, depth, pBuffer, useBuffer);
 		assert(Succeeded(result));
@@ -122,7 +122,7 @@ inline static int IsPowerOfTwo(int v)
 
 // FUNCTION: LEGO1 0x100a13e0
 // FUNCTION: BETA10 0x101694a4
-Tgl::Result TglD3DRMIMAGE::CreateBuffer(int width, int height, int depth, void* pBuffer, int useBuffer)
+Result TglD3DRMIMAGE::CreateBuffer(int width, int height, int depth, void* pBuffer, int useBuffer)
 {
 	int bytesPerScanline = width;
 
@@ -162,7 +162,7 @@ Tgl::Result TglD3DRMIMAGE::CreateBuffer(int width, int height, int depth, void* 
 
 // FUNCTION: LEGO1 0x100a1510
 // FUNCTION: BETA10 0x1016969c
-Tgl::Result TglD3DRMIMAGE::FillRowsOfTexture(int destVOffset, int srcHeight, char* pTexels)
+Result TglD3DRMIMAGE::FillRowsOfTexture(int destVOffset, int srcHeight, char* pTexels)
 {
 	assert(m_image.buffer1 && pTexels);
 	assert((destVOffset + srcHeight) <= m_image.height);
@@ -175,7 +175,7 @@ Tgl::Result TglD3DRMIMAGE::FillRowsOfTexture(int destVOffset, int srcHeight, cha
 
 // FUNCTION: LEGO1 0x100a1550
 // FUNCTION: BETA10 0x10169758
-Tgl::Result TglD3DRMIMAGE::InitializePalette(int paletteSize, PaletteEntry* pEntries)
+Result TglD3DRMIMAGE::InitializePalette(int paletteSize, PaletteEntry* pEntries)
 {
 	// This function is a 100% match if the PaletteEntry class is copied
 	// into into the TglD3DRMIMAGE class instead of being a global struct.
@@ -204,7 +204,7 @@ Tgl::Result TglD3DRMIMAGE::InitializePalette(int paletteSize, PaletteEntry* pEnt
 }
 
 // FUNCTION: BETA10 0x1016ee80
-inline Tgl::Result TextureSetTexels(
+inline Result TextureSetTexels(
 	IDirect3DRMTexture* pTexture,
 	int width,
 	int height,
@@ -216,7 +216,7 @@ inline Tgl::Result TextureSetTexels(
 	TglD3DRMIMAGE* pImage = TextureGetImage(pTexture);
 	assert(pImage);
 
-	Tgl::Result result = pImage->CreateBuffer(width, height, bitsPerTexel, pTexels, pTexelsArePersistent);
+	Result result = pImage->CreateBuffer(width, height, bitsPerTexel, pTexels, pTexelsArePersistent);
 	assert(Succeeded(result));
 
 	if (Succeeded(result)) {
@@ -229,7 +229,7 @@ inline Tgl::Result TextureSetTexels(
 
 // FUNCTION: LEGO1 0x100a3c10
 // FUNCTION: BETA10 0x1016c390
-Tgl::Result TextureImpl::SetTexels(int width, int height, int bitsPerTexel, void* pTexels, int pTexelsArePersistent)
+Result TextureImpl::SetTexels(int width, int height, int bitsPerTexel, void* pTexels, int pTexelsArePersistent)
 {
 	assert(m_data);
 
@@ -237,12 +237,12 @@ Tgl::Result TextureImpl::SetTexels(int width, int height, int bitsPerTexel, void
 }
 
 // FUNCTION: BETA10 0x1016f160
-inline Tgl::Result TextureFillRowsOfTexture(IDirect3DRMTexture* pTexture, int y, int height, void* pBuffer)
+inline Result TextureFillRowsOfTexture(IDirect3DRMTexture* pTexture, int y, int height, void* pBuffer)
 {
 	TglD3DRMIMAGE* pImage = TextureGetImage(pTexture);
 	assert(pImage);
 
-	Tgl::Result result = pImage->FillRowsOfTexture(y, height, (char*) pBuffer);
+	Result result = pImage->FillRowsOfTexture(y, height, (char*) pBuffer);
 	assert(Succeeded(result));
 
 	return result;
@@ -258,16 +258,16 @@ void TextureImpl::FillRowsOfTexture(int y, int height, void* pBuffer)
 }
 
 // FUNCTION: BETA10 0x1016f270
-inline Tgl::Result TextureChanged(IDirect3DRMTexture* pTexture, int texelsChanged, int paletteChanged)
+inline Result TextureChanged(IDirect3DRMTexture* pTexture, int texelsChanged, int paletteChanged)
 {
-	Tgl::Result result = ResultVal(pTexture->Changed(texelsChanged, paletteChanged));
+	Result result = ResultVal(pTexture->Changed(texelsChanged, paletteChanged));
 	assert(Succeeded(result));
 	return result;
 }
 
 // FUNCTION: LEGO1 0x100a3c90
 // FUNCTION: BETA10 0x1016c540
-Tgl::Result TextureImpl::Changed(int texelsChanged, int paletteChanged)
+Result TextureImpl::Changed(int texelsChanged, int paletteChanged)
 {
 	assert(m_data);
 
@@ -275,7 +275,7 @@ Tgl::Result TextureImpl::Changed(int texelsChanged, int paletteChanged)
 }
 
 // FUNCTION: BETA10 0x1016f4c0
-inline Tgl::Result TextureGetBufferAndPalette(
+inline Result TextureGetBufferAndPalette(
 	IDirect3DRMTexture* pTexture,
 	int* width,
 	int* height,
@@ -305,7 +305,7 @@ inline Tgl::Result TextureGetBufferAndPalette(
 
 // FUNCTION: LEGO1 0x100a3cc0
 // FUNCTION: BETA10 0x1016c5d0
-Tgl::Result TextureImpl::GetBufferAndPalette(
+Result TextureImpl::GetBufferAndPalette(
 	int* width,
 	int* height,
 	int* depth,
@@ -320,13 +320,13 @@ Tgl::Result TextureImpl::GetBufferAndPalette(
 }
 
 // FUNCTION: BETA10 0x1016f730
-inline Tgl::Result TextureSetPalette(IDirect3DRMTexture* pTexture, int entryCount, PaletteEntry* pEntries)
+inline Result TextureSetPalette(IDirect3DRMTexture* pTexture, int entryCount, PaletteEntry* pEntries)
 {
 	TglD3DRMIMAGE* pImage = TextureGetImage(pTexture);
 	assert(pImage);
 
 	pImage->InitializePalette(entryCount, pEntries);
-	Tgl::Result result = ResultVal(pTexture->Changed(FALSE, TRUE));
+	Result result = ResultVal(pTexture->Changed(FALSE, TRUE));
 	assert(Succeeded(result));
 
 	return Success;
@@ -334,7 +334,7 @@ inline Tgl::Result TextureSetPalette(IDirect3DRMTexture* pTexture, int entryCoun
 
 // FUNCTION: LEGO1 0x100a3d40
 // FUNCTION: BETA10 0x1016c6a0
-Tgl::Result TextureImpl::SetPalette(int entryCount, PaletteEntry* pEntries)
+Result TextureImpl::SetPalette(int entryCount, PaletteEntry* pEntries)
 {
 	assert(m_data);
 

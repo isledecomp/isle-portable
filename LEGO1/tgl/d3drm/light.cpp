@@ -15,7 +15,7 @@ void* LightImpl::ImplementationDataPtr()
 }
 
 // FUNCTION: BETA10 0x1016f6e0
-inline Tgl::Result LightSetTransformation(IDirect3DRMFrame2* pLight, FloatMatrix4& matrix)
+inline Result LightSetTransformation(IDirect3DRMFrame2* pLight, FloatMatrix4& matrix)
 {
 	D3DRMMATRIX4D helper;
 	D3DRMMATRIX4D* d3dMatrix = Translate(matrix, helper);
@@ -24,7 +24,7 @@ inline Tgl::Result LightSetTransformation(IDirect3DRMFrame2* pLight, FloatMatrix
 
 // FUNCTION: LEGO1 0x100a3780
 // FUNCTION: BETA10 0x1016f680
-Tgl::Result LightImpl::SetTransformation(FloatMatrix4& matrix)
+Result LightImpl::SetTransformation(FloatMatrix4& matrix)
 {
 	assert(m_data);
 
@@ -32,11 +32,11 @@ Tgl::Result LightImpl::SetTransformation(FloatMatrix4& matrix)
 }
 
 // FUNCTION: BETA10 0x1016f860
-inline Tgl::Result LightSetColor(IDirect3DRMFrame2* pLight, float r, float g, float b)
+inline Result LightSetColor(IDirect3DRMFrame2* pLight, float r, float g, float b)
 {
 	IDirect3DRMLightArray* lights;
 	IDirect3DRMLight* light;
-	Tgl::Result result = ResultVal(pLight->GetLights(&lights));
+	Result result = ResultVal(pLight->GetLights(&lights));
 	assert(Succeeded(result));
 	assert(lights->GetSize() == 1);
 
@@ -48,7 +48,7 @@ inline Tgl::Result LightSetColor(IDirect3DRMFrame2* pLight, float r, float g, fl
 
 // FUNCTION: LEGO1 0x100a37e0
 // FUNCTION: BETA10 0x1016f7f0
-Tgl::Result LightImpl::SetColor(float r, float g, float b)
+Result LightImpl::SetColor(float r, float g, float b)
 {
 	assert(m_data);
 

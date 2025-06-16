@@ -30,7 +30,7 @@ using namespace Tgl;
 
 // Utility function used by implementations
 // FUNCTION: BETA10 0x10169cf0
-inline Tgl::Result ResultVal(HRESULT result)
+inline Result ResultVal(HRESULT result)
 {
 	return SUCCEEDED(result) ? Success : Error;
 }
@@ -88,10 +88,10 @@ public:
 	) override;
 	Texture* CreateTexture() override;
 
-	Tgl::Result SetTextureDefaultShadeCount(unsigned int) override;
+	Result SetTextureDefaultShadeCount(unsigned int) override;
 
 	// vtable+0x30
-	Tgl::Result SetTextureDefaultColorCount(unsigned int) override;
+	Result SetTextureDefaultColorCount(unsigned int) override;
 
 	HRESULT CreateTextureFromSurface(LPDIRECTDRAWSURFACE pSurface, LPDIRECT3DRMTEXTURE2* pTexture2)
 	{
@@ -106,11 +106,11 @@ public:
 	RendererDataType& ImplementationData() { return m_data; }
 
 public:
-	inline Tgl::Result Create();
+	inline Result Create();
 	inline void Destroy();
-	inline Tgl::Result CreateLight(LightType type, float r, float g, float b, LightImpl& rLight);
-	inline Tgl::Result CreateGroup(const GroupImpl* pParentGroup, GroupImpl& rpGroup);
-	inline Tgl::Result CreateView(
+	inline Result CreateLight(LightType type, float r, float g, float b, LightImpl& rLight);
+	inline Result CreateGroup(const GroupImpl* pParentGroup, GroupImpl& rpGroup);
+	inline Result CreateView(
 		const DeviceImpl& rDevice,
 		const CameraImpl& rCamera,
 		unsigned int x,
@@ -119,10 +119,10 @@ public:
 		unsigned int height,
 		ViewImpl& rView
 	);
-	inline Tgl::Result CreateMeshBuilder(MeshBuilderImpl& rMesh);
-	inline Tgl::Result CreateCamera(CameraImpl& rCamera);
-	inline Tgl::Result CreateTexture(TextureImpl& rTexture);
-	inline Tgl::Result CreateTexture(
+	inline Result CreateMeshBuilder(MeshBuilderImpl& rMesh);
+	inline Result CreateCamera(CameraImpl& rCamera);
+	inline Result CreateTexture(TextureImpl& rTexture);
+	inline Result CreateTexture(
 		TextureImpl& rTexture,
 		int width,
 		int height,
@@ -132,8 +132,8 @@ public:
 		int paletteEntryCount,
 		const PaletteEntry* pEntries
 	);
-	inline Tgl::Result CreateDevice(const DeviceDirect3DCreateData& rCreateData, DeviceImpl& rDevice);
-	inline Tgl::Result CreateDevice(const DeviceDirectDrawCreateData& rCreateData, DeviceImpl& rDevice);
+	inline Result CreateDevice(const DeviceDirect3DCreateData& rCreateData, DeviceImpl& rDevice);
+	inline Result CreateDevice(const DeviceDirectDrawCreateData& rCreateData, DeviceImpl& rDevice);
 
 private:
 	RendererDataType m_data;
@@ -177,13 +177,13 @@ public:
 	unsigned int GetHeight() override;
 
 	// vtable+0x10
-	Tgl::Result SetColorModel(ColorModel) override;
-	Tgl::Result SetShadingModel(ShadingModel) override;
-	Tgl::Result SetShadeCount(unsigned int) override;
-	Tgl::Result SetDither(int) override;
+	Result SetColorModel(ColorModel) override;
+	Result SetShadingModel(ShadingModel) override;
+	Result SetShadeCount(unsigned int) override;
+	Result SetDither(int) override;
 
 	// vtable+0x20
-	Tgl::Result Update() override;
+	Result Update() override;
 	void HandleActivate(WORD) override;
 	void HandlePaint(void*) override;
 
@@ -233,25 +233,25 @@ public:
 	void* ImplementationDataPtr() override;
 
 	// vtable+0x08
-	Tgl::Result Add(const Light*) override;
-	Tgl::Result Remove(const Light*) override;
+	Result Add(const Light*) override;
+	Result Remove(const Light*) override;
 
 	// vtable+0x10
-	Tgl::Result SetCamera(const Camera*) override;
-	Tgl::Result SetProjection(ProjectionType) override;
-	Tgl::Result SetFrustrum(float frontClippingDistance, float backClippingDistance, float degrees) override;
-	Tgl::Result SetBackgroundColor(float r, float g, float b) override;
+	Result SetCamera(const Camera*) override;
+	Result SetProjection(ProjectionType) override;
+	Result SetFrustrum(float frontClippingDistance, float backClippingDistance, float degrees) override;
+	Result SetBackgroundColor(float r, float g, float b) override;
 
 	// vtable+0x20
-	Tgl::Result GetBackgroundColor(float* r, float* g, float* b) override;
-	Tgl::Result Clear() override;
-	Tgl::Result Render(const Group*) override;
-	Tgl::Result ForceUpdate(unsigned int x, unsigned int y, unsigned int width, unsigned int height) override;
+	Result GetBackgroundColor(float* r, float* g, float* b) override;
+	Result Clear() override;
+	Result Render(const Group*) override;
+	Result ForceUpdate(unsigned int x, unsigned int y, unsigned int width, unsigned int height) override;
 
 	// vtable+0x30
-	Tgl::Result TransformWorldToScreen(const float world[3], float screen[4]) override;
-	Tgl::Result TransformScreenToWorld(const float screen[4], float world[3]) override;
-	Tgl::Result Pick(
+	Result TransformWorldToScreen(const float world[3], float screen[4]) override;
+	Result TransformScreenToWorld(const float screen[4], float world[3]) override;
+	Result Pick(
 		unsigned int x,
 		unsigned int y,
 		const Group** ppGroupsToPickFrom,
@@ -269,14 +269,14 @@ public:
 
 	void SetImplementationData(IDirect3DRMViewport* viewport) { m_data = viewport; }
 
-	static Tgl::Result ViewportCreateAppData(IDirect3DRM2*, IDirect3DRMViewport*, IDirect3DRMFrame2*);
+	static Result ViewportCreateAppData(IDirect3DRM2*, IDirect3DRMViewport*, IDirect3DRMFrame2*);
 
 	inline void Destroy();
-	Tgl::Result Add(const LightImpl& rLight);
-	Tgl::Result Remove(const LightImpl& rLight);
-	Tgl::Result SetCamera(const CameraImpl& rCamera);
-	Tgl::Result Render(const GroupImpl& rScene);
-	Tgl::Result Pick(
+	Result Add(const LightImpl& rLight);
+	Result Remove(const LightImpl& rLight);
+	Result SetCamera(const CameraImpl& rCamera);
+	Result Render(const GroupImpl& rScene);
+	Result Pick(
 		unsigned int x,
 		unsigned int y,
 		const GroupImpl** ppGroupsToPickFrom,
@@ -319,7 +319,7 @@ public:
 	void* ImplementationDataPtr() override;
 
 	// vtable+0x08
-	Tgl::Result SetTransformation(FloatMatrix4&) override;
+	Result SetTransformation(FloatMatrix4&) override;
 
 	typedef IDirect3DRMFrame2* CameraDataType;
 
@@ -365,8 +365,8 @@ public:
 	void* ImplementationDataPtr() override;
 
 	// vtable+0x08
-	Tgl::Result SetTransformation(FloatMatrix4&) override;
-	Tgl::Result SetColor(float r, float g, float b) override;
+	Result SetTransformation(FloatMatrix4&) override;
+	Result SetColor(float r, float g, float b) override;
 
 	typedef IDirect3DRMFrame2* LightDataType;
 
@@ -412,13 +412,13 @@ public:
 	void* ImplementationDataPtr() override;
 
 	// vtable+0x08
-	Tgl::Result SetColor(float r, float g, float b, float a) override;
-	Tgl::Result SetTexture(const Texture*) override;
+	Result SetColor(float r, float g, float b, float a) override;
+	Result SetTexture(const Texture*) override;
 
 	// vtable+0x10
-	Tgl::Result GetTexture(Texture*&) override;
-	Tgl::Result SetTextureMappingMode(TextureMappingMode) override;
-	Tgl::Result SetShadingModel(ShadingModel) override;
+	Result GetTexture(Texture*&) override;
+	Result SetTextureMappingMode(TextureMappingMode) override;
+	Result SetShadingModel(ShadingModel) override;
 	Mesh* DeepClone(MeshBuilder*) override;
 
 	// vtable+0x20
@@ -438,8 +438,8 @@ public:
 
 	inline void Destroy();
 	inline Mesh* DeepClone(const MeshBuilderImpl& rMesh);
-	inline Tgl::Result GetTexture(TextureImpl** ppTexture);
-	inline Tgl::Result SetTexture(const TextureImpl* pTexture);
+	inline Result GetTexture(TextureImpl** ppTexture);
+	inline Result SetTexture(const TextureImpl* pTexture);
 	inline Mesh* ShallowClone(const MeshBuilderImpl& rMesh);
 
 	friend class RendererImpl;
@@ -476,23 +476,23 @@ public:
 	void* ImplementationDataPtr() override;
 
 	// vtable+0x08
-	Tgl::Result SetTransformation(FloatMatrix4&) override;
-	Tgl::Result SetColor(float r, float g, float b, float a) override;
+	Result SetTransformation(FloatMatrix4&) override;
+	Result SetColor(float r, float g, float b, float a) override;
 
 	// vtable+0x10
-	Tgl::Result SetTexture(const Texture*) override;
-	Tgl::Result GetTexture(Texture*&) override;
-	Tgl::Result SetMaterialMode(MaterialMode) override;
-	Tgl::Result Add(const Group*) override;
+	Result SetTexture(const Texture*) override;
+	Result GetTexture(Texture*&) override;
+	Result SetMaterialMode(MaterialMode) override;
+	Result Add(const Group*) override;
 
 	// vtable+0x20
-	Tgl::Result Add(const MeshBuilder*) override;
-	Tgl::Result Remove(const Group*) override;
-	Tgl::Result Remove(const MeshBuilder*) override;
-	Tgl::Result RemoveAll() override;
+	Result Add(const MeshBuilder*) override;
+	Result Remove(const Group*) override;
+	Result Remove(const MeshBuilder*) override;
+	Result RemoveAll() override;
 
 	// vtable+0x30
-	Tgl::Result Bounds(D3DVECTOR* p_min, D3DVECTOR* p_max) override;
+	Result Bounds(D3DVECTOR* p_min, D3DVECTOR* p_max) override;
 
 	typedef IDirect3DRMFrame2* GroupDataType;
 
@@ -503,12 +503,12 @@ public:
 	GroupDataType& ImplementationData() { return m_data; }
 
 	inline void Destroy();
-	inline Tgl::Result SetTexture(const TextureImpl* pTexture);
-	inline Tgl::Result GetTexture(TextureImpl** ppTexture);
-	inline Tgl::Result Add(const GroupImpl& rGroup);
-	inline Tgl::Result Add(const MeshBuilderImpl& rMesh);
-	inline Tgl::Result Remove(const GroupImpl& rGroup);
-	inline Tgl::Result Remove(const MeshBuilderImpl& rMesh);
+	inline Result SetTexture(const TextureImpl* pTexture);
+	inline Result GetTexture(TextureImpl** ppTexture);
+	inline Result Add(const GroupImpl& rGroup);
+	inline Result Add(const MeshBuilderImpl& rMesh);
+	inline Result Remove(const GroupImpl& rGroup);
+	inline Result Remove(const MeshBuilderImpl& rMesh);
 
 	friend class RendererImpl;
 
@@ -554,7 +554,7 @@ public:
 		unsigned int (*pTextureIndices)[3],
 		ShadingModel shadingModel
 	) override;
-	Tgl::Result GetBoundingBox(float min[3], float max[3]) const override;
+	Result GetBoundingBox(float min[3], float max[3]) const override;
 
 	// vtable+0x10
 	MeshBuilder* Clone() override;
@@ -572,7 +572,7 @@ public:
 	friend class RendererImpl;
 
 private:
-	inline Tgl::Result CreateMeshImpl(
+	inline Result CreateMeshImpl(
 		MeshImpl* pMeshImpl,
 		unsigned int faceCount,
 		unsigned int vertexCount,
@@ -616,10 +616,10 @@ public:
 	);
 	~TglD3DRMIMAGE();
 
-	Tgl::Result CreateBuffer(int width, int height, int depth, void* pBuffer, int useBuffer);
+	Result CreateBuffer(int width, int height, int depth, void* pBuffer, int useBuffer);
 	void Destroy();
-	Tgl::Result FillRowsOfTexture(int y, int height, char* content);
-	Tgl::Result InitializePalette(int paletteSize, PaletteEntry* pEntries);
+	Result FillRowsOfTexture(int y, int height, char* content);
+	Result InitializePalette(int paletteSize, PaletteEntry* pEntries);
 
 	D3DRMIMAGE m_image;
 	int m_texelsAllocatedByClient;
@@ -641,12 +641,12 @@ public:
 	void* ImplementationDataPtr() override;
 
 	// vtable+0x08
-	Tgl::Result SetTexels(int width, int height, int bitsPerTexel, void* pTexels, int pTexelsArePersistent) override;
+	Result SetTexels(int width, int height, int bitsPerTexel, void* pTexels, int pTexelsArePersistent) override;
 	void FillRowsOfTexture(int y, int height, void* pBuffer) override;
 
 	// vtable+0x10
-	Tgl::Result Changed(int texelsChanged, int paletteChanged) override;
-	Tgl::Result GetBufferAndPalette(
+	Result Changed(int texelsChanged, int paletteChanged) override;
+	Result GetBufferAndPalette(
 		int* pWidth,
 		int* pHeight,
 		int* pDepth,
@@ -654,7 +654,7 @@ public:
 		int* ppPaletteSize,
 		unsigned char (*pEntries)[3]
 	) override;
-	Tgl::Result SetPalette(int entryCount, PaletteEntry* entries) override;
+	Result SetPalette(int entryCount, PaletteEntry* entries) override;
 
 	typedef IDirect3DRMTexture* TextureDataType;
 
@@ -670,7 +670,7 @@ public:
 
 	friend class RendererImpl;
 
-	static Tgl::Result SetImage(IDirect3DRMTexture* pSelf, TglD3DRMIMAGE* pImage);
+	static Result SetImage(IDirect3DRMTexture* pSelf, TglD3DRMIMAGE* pImage);
 
 private:
 	TextureDataType m_data;
@@ -693,7 +693,7 @@ void TextureImpl::Destroy()
 
 // Used by both Mesh and MeshBuilder
 // FUNCTION: BETA10 0x10170270
-inline Tgl::Result MeshSetTextureMappingMode(MeshImpl::MeshData* pMesh, TextureMappingMode mode)
+inline Result MeshSetTextureMappingMode(MeshImpl::MeshData* pMesh, TextureMappingMode mode)
 {
 	if (mode == PerspectiveCorrect) {
 		return ResultVal(pMesh->groupMesh->SetGroupMapping(pMesh->groupIndex, D3DRMMAP_PERSPCORRECT));

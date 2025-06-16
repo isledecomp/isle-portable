@@ -1,8 +1,5 @@
 #pragma once
 
-#if defined(__3DS__)
-	#include <3ds/types.h>
-#endif
 #include <SDL3/SDL_video.h>
 #include <limits.h>
 #include <stdint.h>

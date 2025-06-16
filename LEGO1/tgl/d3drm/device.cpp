@@ -47,14 +47,14 @@ unsigned int DeviceImpl::GetHeight()
 }
 
 // FUNCTION: BETA10 0x1016dfa0
-inline Tgl::Result DeviceSetColorModel(IDirect3DRMDevice2* pDevice, ColorModel)
+inline Result DeviceSetColorModel(IDirect3DRMDevice2* pDevice, ColorModel)
 {
 	return Success;
 }
 
 // FUNCTION: LEGO1 0x100a2c20
 // FUNCTION: BETA10 0x1016df40
-Tgl::Result DeviceImpl::SetColorModel(ColorModel p_model)
+Result DeviceImpl::SetColorModel(ColorModel p_model)
 {
 	assert(m_data);
 
@@ -62,7 +62,7 @@ Tgl::Result DeviceImpl::SetColorModel(ColorModel p_model)
 }
 
 // FUNCTION: BETA10 0x1016e020
-inline Tgl::Result DeviceSetShadingModel(IDirect3DRMDevice2* pDevice, ShadingModel model)
+inline Result DeviceSetShadingModel(IDirect3DRMDevice2* pDevice, ShadingModel model)
 {
 	D3DRMRENDERQUALITY renderQuality = Translate(model);
 	return ResultVal(pDevice->SetQuality(renderQuality));
@@ -70,7 +70,7 @@ inline Tgl::Result DeviceSetShadingModel(IDirect3DRMDevice2* pDevice, ShadingMod
 
 // FUNCTION: LEGO1 0x100a2c30
 // FUNCTION: BETA10 0x1016dfc0
-Tgl::Result DeviceImpl::SetShadingModel(ShadingModel model)
+Result DeviceImpl::SetShadingModel(ShadingModel model)
 {
 	assert(m_data);
 
@@ -78,14 +78,14 @@ Tgl::Result DeviceImpl::SetShadingModel(ShadingModel model)
 }
 
 // FUNCTION: BETA10 0x1016e140
-inline Tgl::Result DeviceSetShadeCount(IDirect3DRMDevice2* pDevice, unsigned int shadeCount)
+inline Result DeviceSetShadeCount(IDirect3DRMDevice2* pDevice, unsigned int shadeCount)
 {
 	return ResultVal(pDevice->SetShades(shadeCount));
 }
 
 // FUNCTION: LEGO1 0x100a2ca0
 // FUNCTION: BETA10 0x1016e0e0
-Tgl::Result DeviceImpl::SetShadeCount(unsigned int shadeCount)
+Result DeviceImpl::SetShadeCount(unsigned int shadeCount)
 {
 	assert(m_data);
 
@@ -93,14 +93,14 @@ Tgl::Result DeviceImpl::SetShadeCount(unsigned int shadeCount)
 }
 
 // FUNCTION: BETA10 0x1016e1d0
-inline Tgl::Result DeviceSetDither(IDirect3DRMDevice2* pDevice, int dither)
+inline Result DeviceSetDither(IDirect3DRMDevice2* pDevice, int dither)
 {
 	return ResultVal(pDevice->SetDither(dither));
 }
 
 // FUNCTION: LEGO1 0x100a2cc0
 // FUNCTION: BETA10 0x1016e170
-Tgl::Result DeviceImpl::SetDither(int dither)
+Result DeviceImpl::SetDither(int dither)
 {
 	assert(m_data);
 
@@ -112,7 +112,7 @@ inline void DeviceHandleActivate(IDirect3DRMDevice2* pDevice, WORD wParam)
 {
 	IDirect3DRMWinDevice* winDevice;
 
-	Tgl::Result result = ResultVal(pDevice->QueryInterface(IID_IDirect3DRMWinDevice, (LPVOID*) &winDevice));
+	Result result = ResultVal(pDevice->QueryInterface(IID_IDirect3DRMWinDevice, (LPVOID*) &winDevice));
 	if (Succeeded(result)) {
 		winDevice->HandleActivate(wParam);
 		int refCount = winDevice->Release();
@@ -134,7 +134,7 @@ inline void DeviceHandlePaint(IDirect3DRMDevice2* pDevice, void* p_data)
 {
 	IDirect3DRMWinDevice* winDevice;
 
-	Tgl::Result result = ResultVal(pDevice->QueryInterface(IID_IDirect3DRMWinDevice, (LPVOID*) &winDevice));
+	Result result = ResultVal(pDevice->QueryInterface(IID_IDirect3DRMWinDevice, (LPVOID*) &winDevice));
 	if (Succeeded(result)) {
 		HDC hdc = (HDC) p_data;
 		winDevice->HandlePaint(hdc);
@@ -153,14 +153,14 @@ void DeviceImpl::HandlePaint(void* p_data)
 }
 
 // FUNCTION: BETA10 0x1016e460
-inline Tgl::Result DeviceUpdate(IDirect3DRMDevice2* pDevice)
+inline Result DeviceUpdate(IDirect3DRMDevice2* pDevice)
 {
 	return ResultVal(pDevice->Update());
 }
 
 // FUNCTION: LEGO1 0x100a2d60
 // FUNCTION: BETA10 0x1016e400
-Tgl::Result DeviceImpl::Update()
+Result DeviceImpl::Update()
 {
 	assert(m_data);
 

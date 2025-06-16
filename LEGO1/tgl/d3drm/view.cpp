@@ -22,7 +22,7 @@ DECOMP_SIZE_ASSERT(ViewportAppData, 0x18);
 // FUNCTION: BETA10 0x10168920
 ViewportAppData::ViewportAppData(IDirect3DRM2* pRenderer)
 {
-	Tgl::Result result = ResultVal(pRenderer->CreateFrame(NULL, &m_pLightFrame));
+	Result result = ResultVal(pRenderer->CreateFrame(NULL, &m_pLightFrame));
 	assert(Succeeded(result));
 
 	m_pCamera = NULL;
@@ -39,7 +39,7 @@ ViewportAppData::~ViewportAppData()
 	int refCount;
 	IDirect3DRMFrameArray* pChildFrames;
 	IDirect3DRMFrame* pChildFrame = NULL;
-	Tgl::Result result = ResultVal(m_pLightFrame->GetChildren(&pChildFrames));
+	Result result = ResultVal(m_pLightFrame->GetChildren(&pChildFrames));
 	assert(Succeeded(result));
 
 	for (int i = 0; i < (int) pChildFrames->GetSize(); i++) {
@@ -65,7 +65,7 @@ void ViewportDestroyCallback(IDirect3DRMObject* pObject, void* pArg);
 
 // FUNCTION: LEGO1 0x100a1160
 // FUNCTION: BETA10 0x10168ba5
-Tgl::Result ViewImpl::ViewportCreateAppData(
+Result ViewImpl::ViewportCreateAppData(
 	IDirect3DRM2* pDevice,
 	IDirect3DRMViewport* pViewport,
 	IDirect3DRMFrame2* pCamera
@@ -77,7 +77,7 @@ Tgl::Result ViewImpl::ViewportCreateAppData(
 	pViewportAppData->m_pCamera = pCamera;
 	assert(!pViewport->GetAppData());
 
-	Tgl::Result result = ResultVal(pViewport->SetAppData(reinterpret_cast<LPD3DRM_APPDATA>(pViewportAppData)));
+	Result result = ResultVal(pViewport->SetAppData(reinterpret_cast<LPD3DRM_APPDATA>(pViewportAppData)));
 	assert(Succeeded(result));
 	assert(reinterpret_cast<ViewportAppData*>(pViewport->GetAppData()) == pViewportAppData);
 
@@ -95,13 +95,13 @@ Tgl::Result ViewImpl::ViewportCreateAppData(
 }
 
 // FUNCTION: BETA10 0x1016bd80
-inline Tgl::Result ViewRestoreFrameAfterRender(
+inline Result ViewRestoreFrameAfterRender(
 	IDirect3DRMFrame* pFrame,
 	IDirect3DRMFrame* pCamera,
 	IDirect3DRMFrame* pLightFrame
 )
 {
-	Tgl::Result result = Success;
+	Result result = Success;
 	if (pFrame) {
 		// remove camera and light frame from frame that was rendered
 		// this doesn't destroy the camera as it is still the camera of the viewport...
@@ -128,7 +128,7 @@ void ViewportDestroyCallback(IDirect3DRMObject* pObject, void* pArg)
 	assert(static_cast<ViewImpl::ViewDataType>(pObject));
 	assert(pViewportAppData);
 
-	Tgl::Result result = ViewRestoreFrameAfterRender(
+	Result result = ViewRestoreFrameAfterRender(
 		pViewportAppData->m_pLastRenderedFrame,
 		pViewportAppData->m_pCamera,
 		pViewportAppData->m_pLightFrame
@@ -141,7 +141,7 @@ void ViewportDestroyCallback(IDirect3DRMObject* pObject, void* pArg)
 
 // FUNCTION: LEGO1 0x100a1290
 // FUNCTION: BETA10 0x10168eab
-Tgl::Result ViewportPickImpl(
+Result ViewportPickImpl(
 	IDirect3DRMViewport* pViewport,
 	int x,
 	int y,
@@ -175,7 +175,7 @@ void* ViewImpl::ImplementationDataPtr()
 }
 
 // FUNCTION: BETA10 0x10170a40
-inline Tgl::Result ViewAddLight(IDirect3DRMViewport* pViewport, const IDirect3DRMFrame* pLight)
+inline Result ViewAddLight(IDirect3DRMViewport* pViewport, const IDirect3DRMFrame* pLight)
 {
 	IDirect3DRMFrame* pLightFrame = ViewportGetLightFrame(pViewport);
 
@@ -184,7 +184,7 @@ inline Tgl::Result ViewAddLight(IDirect3DRMViewport* pViewport, const IDirect3DR
 }
 
 // FUNCTION: BETA10 0x101709a0
-inline Tgl::Result ViewImpl::Add(const LightImpl& rLight)
+inline Result ViewImpl::Add(const LightImpl& rLight)
 {
 	assert(m_data);
 	assert(rLight.ImplementationData());
@@ -194,7 +194,7 @@ inline Tgl::Result ViewImpl::Add(const LightImpl& rLight)
 
 // FUNCTION: LEGO1 0x100a2d90
 // FUNCTION: BETA10 0x1016e690
-Tgl::Result ViewImpl::Add(const Light* pLight)
+Result ViewImpl::Add(const Light* pLight)
 {
 	assert(m_data);
 	assert(pLight);
@@ -203,7 +203,7 @@ Tgl::Result ViewImpl::Add(const Light* pLight)
 }
 
 // FUNCTION: BETA10 0x10170bb0
-inline Tgl::Result ViewRemoveLight(IDirect3DRMViewport* pViewport, const IDirect3DRMFrame* pLight)
+inline Result ViewRemoveLight(IDirect3DRMViewport* pViewport, const IDirect3DRMFrame* pLight)
 {
 	IDirect3DRMFrame* pLightFrame = ViewportGetLightFrame(pViewport);
 
@@ -212,7 +212,7 @@ inline Tgl::Result ViewRemoveLight(IDirect3DRMViewport* pViewport, const IDirect
 }
 
 // FUNCTION: BETA10 0x10170b10
-inline Tgl::Result ViewImpl::Remove(const LightImpl& rLight)
+inline Result ViewImpl::Remove(const LightImpl& rLight)
 {
 	assert(m_data);
 	assert(rLight.ImplementationData());
@@ -222,7 +222,7 @@ inline Tgl::Result ViewImpl::Remove(const LightImpl& rLight)
 
 // FUNCTION: LEGO1 0x100a2dc0
 // FUNCTION: BETA10 0x1016e710
-Tgl::Result ViewImpl::Remove(const Light* pLight)
+Result ViewImpl::Remove(const Light* pLight)
 {
 	assert(m_data);
 	assert(pLight);
@@ -231,10 +231,10 @@ Tgl::Result ViewImpl::Remove(const Light* pLight)
 }
 
 // FUNCTION: BETA10 0x10170cc0
-inline Tgl::Result ViewSetCamera(IDirect3DRMViewport* pViewport, const IDirect3DRMFrame2* pCamera)
+inline Result ViewSetCamera(IDirect3DRMViewport* pViewport, const IDirect3DRMFrame2* pCamera)
 {
 	ViewportAppData* pViewportAppData;
-	Tgl::Result result;
+	Result result;
 
 	pViewportAppData = reinterpret_cast<ViewportAppData*>(pViewport->GetAppData());
 	assert(pViewportAppData);
@@ -252,7 +252,7 @@ inline Tgl::Result ViewSetCamera(IDirect3DRMViewport* pViewport, const IDirect3D
 }
 
 // FUNCTION: BETA10 0x10170c20
-inline Tgl::Result ViewImpl::SetCamera(const CameraImpl& rCamera)
+inline Result ViewImpl::SetCamera(const CameraImpl& rCamera)
 {
 	assert(m_data);
 	assert(rCamera.ImplementationData());
@@ -262,7 +262,7 @@ inline Tgl::Result ViewImpl::SetCamera(const CameraImpl& rCamera)
 
 // FUNCTION: LEGO1 0x100a2df0
 // FUNCTION: BETA10 0x1016e790
-Tgl::Result ViewImpl::SetCamera(const Camera* pCamera)
+Result ViewImpl::SetCamera(const Camera* pCamera)
 {
 	assert(m_data);
 	assert(pCamera);
@@ -271,7 +271,7 @@ Tgl::Result ViewImpl::SetCamera(const Camera* pCamera)
 }
 
 // FUNCTION: BETA10 0x1016e870
-inline Tgl::Result ViewSetProjection(IDirect3DRMViewport* pViewport, ProjectionType type)
+inline Result ViewSetProjection(IDirect3DRMViewport* pViewport, ProjectionType type)
 {
 	D3DRMPROJECTIONTYPE projectionType = Translate(type);
 
@@ -280,7 +280,7 @@ inline Tgl::Result ViewSetProjection(IDirect3DRMViewport* pViewport, ProjectionT
 
 // FUNCTION: LEGO1 0x100a2e70
 // FUNCTION: BETA10 0x1016e810
-Tgl::Result ViewImpl::SetProjection(ProjectionType type)
+Result ViewImpl::SetProjection(ProjectionType type)
 {
 	assert(m_data);
 
@@ -288,7 +288,7 @@ Tgl::Result ViewImpl::SetProjection(ProjectionType type)
 }
 
 // FUNCTION: BETA10 0x1016e920
-inline Tgl::Result ViewSetFrustrum(
+inline Result ViewSetFrustrum(
 	IDirect3DRMViewport* pViewport,
 	float frontClippingDistance,
 	float backClippingDistance,
@@ -296,7 +296,7 @@ inline Tgl::Result ViewSetFrustrum(
 )
 {
 	float field = frontClippingDistance * tan(DegreesToRadians(degrees / 2));
-	Tgl::Result result;
+	Result result;
 	result = ResultVal(pViewport->SetFront(frontClippingDistance));
 	if (Succeeded(result)) {
 		result = ResultVal(pViewport->SetBack(backClippingDistance));
@@ -310,7 +310,7 @@ inline Tgl::Result ViewSetFrustrum(
 
 // FUNCTION: LEGO1 0x100a2eb0
 // FUNCTION: BETA10 0x1016e8b0
-Tgl::Result ViewImpl::SetFrustrum(float frontClippingDistance, float backClippingDistance, float degrees)
+Result ViewImpl::SetFrustrum(float frontClippingDistance, float backClippingDistance, float degrees)
 {
 	assert(m_data);
 
@@ -318,9 +318,9 @@ Tgl::Result ViewImpl::SetFrustrum(float frontClippingDistance, float backClippin
 }
 
 // FUNCTION: BETA10 0x1016ea70
-inline Tgl::Result ViewSetBackgroundColor(IDirect3DRMViewport* pViewport, float r, float g, float b)
+inline Result ViewSetBackgroundColor(IDirect3DRMViewport* pViewport, float r, float g, float b)
 {
-	Tgl::Result result = Success;
+	Result result = Success;
 
 	ViewportAppData* pViewportAppData = reinterpret_cast<ViewportAppData*>(pViewport->GetAppData());
 	assert(pViewportAppData);
@@ -339,7 +339,7 @@ inline Tgl::Result ViewSetBackgroundColor(IDirect3DRMViewport* pViewport, float 
 
 // FUNCTION: LEGO1 0x100a2f30
 // FUNCTION: BETA10 0x1016ea00
-Tgl::Result ViewImpl::SetBackgroundColor(float r, float g, float b)
+Result ViewImpl::SetBackgroundColor(float r, float g, float b)
 {
 	assert(m_data);
 
@@ -347,7 +347,7 @@ Tgl::Result ViewImpl::SetBackgroundColor(float r, float g, float b)
 }
 
 // FUNCTION: BETA10 0x1016ebd0
-inline Tgl::Result ViewGetBackgroundColor(IDirect3DRMViewport* pViewport, float* r, float* g, float* b)
+inline Result ViewGetBackgroundColor(IDirect3DRMViewport* pViewport, float* r, float* g, float* b)
 {
 	ViewportAppData* pViewportAppData = reinterpret_cast<ViewportAppData*>(pViewport->GetAppData());
 	assert(pViewportAppData);
@@ -361,7 +361,7 @@ inline Tgl::Result ViewGetBackgroundColor(IDirect3DRMViewport* pViewport, float*
 
 // FUNCTION: LEGO1 0x100a2f80
 // FUNCTION: BETA10 0x1016eb60
-Tgl::Result ViewImpl::GetBackgroundColor(float* r, float* g, float* b)
+Result ViewImpl::GetBackgroundColor(float* r, float* g, float* b)
 {
 	assert(m_data);
 
@@ -369,14 +369,14 @@ Tgl::Result ViewImpl::GetBackgroundColor(float* r, float* g, float* b)
 }
 
 // FUNCTION: BETA10 0x1016ecb0
-inline Tgl::Result ViewClear(IDirect3DRMViewport* pViewport)
+inline Result ViewClear(IDirect3DRMViewport* pViewport)
 {
 	return ResultVal(pViewport->Clear());
 }
 
 // FUNCTION: LEGO1 0x100a2fb0
 // FUNCTION: BETA10 0x1016ec50
-Tgl::Result ViewImpl::Clear()
+Result ViewImpl::Clear()
 {
 	assert(m_data);
 
@@ -384,7 +384,7 @@ Tgl::Result ViewImpl::Clear()
 }
 
 // FUNCTION: BETA10 0x10170fb0
-inline Tgl::Result ViewPrepareFrameForRender(
+inline Result ViewPrepareFrameForRender(
 	IDirect3DRMFrame* pFrame,
 	IDirect3DRMFrame* pCamera,
 	IDirect3DRMFrame* pLightFrame,
@@ -393,7 +393,7 @@ inline Tgl::Result ViewPrepareFrameForRender(
 	float backgroundBlue
 )
 {
-	Tgl::Result result = Success;
+	Result result = Success;
 
 	if (pFrame) {
 		// set background color
@@ -416,10 +416,10 @@ inline Tgl::Result ViewPrepareFrameForRender(
 }
 
 // FUNCTION: BETA10 0x10170e30
-inline Tgl::Result ViewRender(IDirect3DRMViewport* pViewport, const IDirect3DRMFrame2* pGroup)
+inline Result ViewRender(IDirect3DRMViewport* pViewport, const IDirect3DRMFrame2* pGroup)
 {
 	ViewportAppData* pViewportAppData;
-	Tgl::Result result;
+	Result result;
 
 	pViewportAppData = reinterpret_cast<ViewportAppData*>(pViewport->GetAppData());
 	assert(pViewportAppData);
@@ -454,7 +454,7 @@ inline Tgl::Result ViewRender(IDirect3DRMViewport* pViewport, const IDirect3DRMF
 }
 
 // FUNCTION: BETA10 0x10170d90
-inline Tgl::Result ViewImpl::Render(const GroupImpl& rScene)
+inline Result ViewImpl::Render(const GroupImpl& rScene)
 {
 	assert(m_data);
 	assert(rScene.ImplementationData());
@@ -464,7 +464,7 @@ inline Tgl::Result ViewImpl::Render(const GroupImpl& rScene)
 
 // FUNCTION: LEGO1 0x100a2fd0
 // FUNCTION: BETA10 0x1016ece0
-Tgl::Result ViewImpl::Render(const Group* pGroup)
+Result ViewImpl::Render(const Group* pGroup)
 {
 	assert(m_data);
 	assert(pGroup);
@@ -473,7 +473,7 @@ Tgl::Result ViewImpl::Render(const Group* pGroup)
 }
 
 // FUNCTION: BETA10 0x1016edd0
-inline Tgl::Result ViewForceUpdate(
+inline Result ViewForceUpdate(
 	IDirect3DRMViewport* pViewport,
 	unsigned int x,
 	unsigned int y,
@@ -486,7 +486,7 @@ inline Tgl::Result ViewForceUpdate(
 
 // FUNCTION: LEGO1 0x100a3080
 // FUNCTION: BETA10 0x1016ed60
-Tgl::Result ViewImpl::ForceUpdate(unsigned int x, unsigned int y, unsigned int width, unsigned int height)
+Result ViewImpl::ForceUpdate(unsigned int x, unsigned int y, unsigned int width, unsigned int height)
 {
 	assert(m_data);
 
@@ -494,7 +494,7 @@ Tgl::Result ViewImpl::ForceUpdate(unsigned int x, unsigned int y, unsigned int w
 }
 
 // FUNCTION: BETA10 0x101710f0
-inline Tgl::Result ViewImpl::Pick(
+inline Result ViewImpl::Pick(
 	unsigned int x,
 	unsigned int y,
 	const GroupImpl** ppGroupsToPickFrom,
@@ -518,7 +518,7 @@ inline Tgl::Result ViewImpl::Pick(
 
 // FUNCTION: LEGO1 0x100a30c0
 // FUNCTION: BETA10 0x1016ee10
-Tgl::Result ViewImpl::Pick(
+Result ViewImpl::Pick(
 	unsigned int x,
 	unsigned int y,
 	const Group** ppGroupsToPickFrom,
@@ -540,12 +540,12 @@ Tgl::Result ViewImpl::Pick(
 }
 
 // FUNCTION: BETA10 0x1016eff0
-inline Tgl::Result ViewTransformWorldToScreen(IDirect3DRMViewport* pViewport, const float world[3], float screen[4])
+inline Result ViewTransformWorldToScreen(IDirect3DRMViewport* pViewport, const float world[3], float screen[4])
 {
 	D3DRMVECTOR4D d3dRMScreen;
 	D3DVECTOR d3dRMWorld;
 	D3DVECTOR* pD3DRMWorld = Translate(world, d3dRMWorld);
-	Tgl::Result result;
+	Result result;
 
 	result = ResultVal(pViewport->Transform(&d3dRMScreen, pD3DRMWorld));
 
@@ -561,7 +561,7 @@ inline Tgl::Result ViewTransformWorldToScreen(IDirect3DRMViewport* pViewport, co
 
 // FUNCTION: LEGO1 0x100a30f0
 // FUNCTION: BETA10 0x1016ef90
-Tgl::Result ViewImpl::TransformWorldToScreen(const float world[3], float screen[4])
+Result ViewImpl::TransformWorldToScreen(const float world[3], float screen[4])
 {
 	assert(m_data);
 
@@ -569,7 +569,7 @@ Tgl::Result ViewImpl::TransformWorldToScreen(const float world[3], float screen[
 }
 
 // FUNCTION: BETA10 0x1016f0d0
-inline Tgl::Result ViewTransformScreenToWorld(IDirect3DRMViewport* pViewport, const float screen[4], float world[3])
+inline Result ViewTransformScreenToWorld(IDirect3DRMViewport* pViewport, const float screen[4], float world[3])
 {
 	D3DVECTOR d3dRMWorld;
 	D3DRMVECTOR4D d3dScreen;
@@ -577,7 +577,7 @@ inline Tgl::Result ViewTransformScreenToWorld(IDirect3DRMViewport* pViewport, co
 	d3dScreen.y = screen[1];
 	d3dScreen.z = screen[2];
 	d3dScreen.w = screen[3];
-	Tgl::Result result;
+	Result result;
 
 	result = ResultVal(pViewport->InverseTransform(&d3dRMWorld, &d3dScreen));
 
@@ -592,7 +592,7 @@ inline Tgl::Result ViewTransformScreenToWorld(IDirect3DRMViewport* pViewport, co
 
 // FUNCTION: LEGO1 0x100a3160
 // FUNCTION: BETA10 0x1016f070
-Tgl::Result ViewImpl::TransformScreenToWorld(const float screen[4], float world[3])
+Result ViewImpl::TransformScreenToWorld(const float screen[4], float world[3])
 {
 	assert(m_data);
 
