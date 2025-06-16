@@ -50,15 +50,16 @@ public:
 	Uint32 GetTextureId(IDirect3DRMTexture* texture) override;
 	Uint32 GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup) override;
 	void SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back) override;
+	void SetFrustumPlanes(const Plane* frustumPlanes) override;
 	DWORD GetWidth() override;
 	DWORD GetHeight() override;
 	void GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc) override;
 	const char* GetName() override;
-	HRESULT BeginFrame(const D3DRMMATRIX4D& viewMatrix) override;
+	HRESULT BeginFrame() override;
 	void EnableTransparency() override;
 	void SubmitDraw(
 		DWORD meshId,
-		const D3DRMMATRIX4D& worldMatrix,
+		const D3DRMMATRIX4D& modelViewMatrix,
 		const Matrix3x3& normalMatrix,
 		const Appearance& appearance
 	) override;
@@ -91,7 +92,6 @@ private:
 	ViewportUniforms m_uniforms;
 	FragmentShadingData m_fragmentShadingData;
 	D3DDEVICEDESC m_desc;
-	D3DRMMATRIX4D m_viewMatrix;
 	std::vector<SDL3TextureCache> m_textures;
 	std::vector<SDL3MeshCache> m_meshs;
 	SDL_GPUDevice* m_device;

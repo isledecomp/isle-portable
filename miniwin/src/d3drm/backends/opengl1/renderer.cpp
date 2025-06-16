@@ -109,6 +109,10 @@ void OpenGL1Renderer::PushLights(const SceneLight* lightsArray, size_t count)
 	m_lights.assign(lightsArray, lightsArray + count);
 }
 
+void OpenGL1Renderer::SetFrustumPlanes(const Plane* frustumPlanes)
+{
+}
+
 void OpenGL1Renderer::SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back)
 {
 	memcpy(&m_projection, projection, sizeof(D3DRMMATRIX4D));
@@ -217,7 +221,10 @@ GLMeshCacheEntry GLUploadMesh(const MeshGroup& meshGroup, bool useVBOs)
 	}
 	else {
 		vertices = meshGroup.vertices;
-		cache.indices = meshGroup.indices;
+		cache.indices.resize(meshGroup.indices.size());
+		std::transform(meshGroup.indices.begin(), meshGroup.indices.end(), cache.indices.begin(), [](DWORD index) {
+			return static_cast<uint16_t>(index);
+		});
 	}
 
 	if (meshGroup.texture != nullptr) {
@@ -354,13 +361,11 @@ const char* OpenGL1Renderer::GetName()
 	return "OpenGL 1.2 HAL";
 }
 
-HRESULT OpenGL1Renderer::BeginFrame(const D3DRMMATRIX4D& viewMatrix)
+HRESULT OpenGL1Renderer::BeginFrame()
 {
 	if (!DDBackBuffer) {
 		return DDERR_GENERIC;
 	}
-
-	memcpy(m_viewMatrix, viewMatrix, sizeof(D3DRMMATRIX4D));
 
 	SDL_GL_MakeCurrent(DDWindow, m_context);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
@@ -454,7 +459,7 @@ void OpenGL1Renderer::EnableTransparency()
 
 void OpenGL1Renderer::SubmitDraw(
 	DWORD meshId,
-	const D3DRMMATRIX4D& worldMatrix,
+	const D3DRMMATRIX4D& modelViewMatrix,
 	const Matrix3x3& normalMatrix,
 	const Appearance& appearance
 )
@@ -462,9 +467,7 @@ void OpenGL1Renderer::SubmitDraw(
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 
-	D3DRMMATRIX4D mvMatrix;
-	MultiplyMatrix(mvMatrix, worldMatrix, m_viewMatrix);
-	glLoadMatrixf(&mvMatrix[0][0]);
+	glLoadMatrixf(&modelViewMatrix[0][0]);
 	glEnable(GL_NORMALIZE);
 
 	glColor4ub(appearance.color.r, appearance.color.g, appearance.color.b, appearance.color.a);
@@ -517,7 +520,7 @@ void OpenGL1Renderer::SubmitDraw(
 		}
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ibo);
-		glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh.indices.size()), GL_UNSIGNED_INT, nullptr);
+		glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh.indices.size()), GL_UNSIGNED_SHORT, nullptr);
 
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -529,7 +532,7 @@ void OpenGL1Renderer::SubmitDraw(
 			glTexCoordPointer(2, GL_FLOAT, 0, mesh.texcoords.data());
 		}
 
-		glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh.indices.size()), GL_UNSIGNED_INT, mesh.indices.data());
+		glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh.indices.size()), GL_UNSIGNED_SHORT, mesh.indices.data());
 	}
 
 	glPopMatrix();

@@ -43,7 +43,7 @@ void FlattenSurfaces(
 	const size_t indexCount,
 	bool hasTexture,
 	std::vector<D3DRMVERTEX>& dedupedVertices,
-	std::vector<DWORD>& newIndices
+	std::vector<uint16_t>& newIndices
 )
 {
 	std::unordered_map<D3DRMVERTEX, DWORD> uniqueVertexMap;

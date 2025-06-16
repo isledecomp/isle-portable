@@ -355,6 +355,10 @@ void Direct3DRMSDL3GPURenderer::PushLights(const SceneLight* vertices, size_t co
 	m_fragmentShadingData.lightCount = count;
 }
 
+void Direct3DRMSDL3GPURenderer::SetFrustumPlanes(const Plane* frustumPlanes)
+{
+}
+
 void Direct3DRMSDL3GPURenderer::SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back)
 {
 	m_front = front;
@@ -507,7 +511,7 @@ SDL3MeshCache Direct3DRMSDL3GPURenderer::UploadMesh(const MeshGroup& meshGroup)
 	std::vector<Uint16> finalIndices;
 
 	if (meshGroup.quality == D3DRMRENDER_FLAT || meshGroup.quality == D3DRMRENDER_UNLITFLAT) {
-		std::vector<DWORD> newIndices;
+		std::vector<uint16_t> newIndices;
 		FlattenSurfaces(
 			meshGroup.vertices.data(),
 			meshGroup.vertices.size(),
@@ -703,13 +707,11 @@ SDL_GPUTransferBuffer* Direct3DRMSDL3GPURenderer::GetUploadBuffer(size_t size)
 	return m_uploadBuffer;
 }
 
-HRESULT Direct3DRMSDL3GPURenderer::BeginFrame(const D3DRMMATRIX4D& viewMatrix)
+HRESULT Direct3DRMSDL3GPURenderer::BeginFrame()
 {
 	if (!DDBackBuffer) {
 		return DDERR_GENERIC;
 	}
-
-	memcpy(&m_viewMatrix, viewMatrix, sizeof(D3DRMMATRIX4D));
 
 	// Clear color and depth targets
 	SDL_GPUColorTargetInfo colorTargetInfo = {};
@@ -742,14 +744,12 @@ void Direct3DRMSDL3GPURenderer::EnableTransparency()
 
 void Direct3DRMSDL3GPURenderer::SubmitDraw(
 	DWORD meshId,
-	const D3DRMMATRIX4D& worldMatrix,
+	const D3DRMMATRIX4D& modelViewMatrix,
 	const Matrix3x3& normalMatrix,
 	const Appearance& appearance
 )
 {
-	D3DRMMATRIX4D worldViewMatrix;
-	MultiplyMatrix(worldViewMatrix, worldMatrix, m_viewMatrix);
-	memcpy(&m_uniforms.worldViewMatrix, worldViewMatrix, sizeof(D3DRMMATRIX4D));
+	memcpy(&m_uniforms.worldViewMatrix, modelViewMatrix, sizeof(D3DRMMATRIX4D));
 	PackNormalMatrix(normalMatrix, m_uniforms.normalMatrix);
 	m_fragmentShadingData.color = appearance.color;
 	m_fragmentShadingData.shininess = appearance.shininess;
