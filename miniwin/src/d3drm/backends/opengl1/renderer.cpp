@@ -271,7 +271,7 @@ GLMeshCacheEntry GLUploadMesh(const MeshGroup& meshGroup, bool useVBOs)
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cache.ibo);
 		glBufferData(
 			GL_ELEMENT_ARRAY_BUFFER,
-			cache.indices.size() * sizeof(Uint16),
+			cache.indices.size() * sizeof(cache.indices[0]),
 			cache.indices.data(),
 			GL_STATIC_DRAW
 		);
