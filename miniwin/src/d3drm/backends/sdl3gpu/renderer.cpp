@@ -351,8 +351,9 @@ void Direct3DRMSDL3GPURenderer::PushLights(const SceneLight* vertices, size_t co
 		SDL_LogError(LOG_CATEGORY_MINIWIN, "Unsupported number of lights (%d)", static_cast<int>(count));
 		count = 3;
 	}
-	memcpy(&m_fragmentShadingData.lights, vertices, sizeof(SceneLight) * count);
-	m_fragmentShadingData.lightCount = count;
+	int lightCount = std::min(static_cast<int>(count), 3);
+	memcpy(&m_fragmentShadingData.lights, vertices, sizeof(SceneLight) * lightCount);
+	m_fragmentShadingData.lightCount = lightCount;
 }
 
 void Direct3DRMSDL3GPURenderer::SetFrustumPlanes(const Plane* frustumPlanes)

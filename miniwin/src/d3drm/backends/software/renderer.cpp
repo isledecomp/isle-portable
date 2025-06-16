@@ -668,7 +668,7 @@ void Direct3DRMSoftwareRenderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* 
 	helDesc->dcmColorModel = D3DCOLORMODEL::RGB;
 	helDesc->dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
 	helDesc->dwDeviceZBufferBitDepth = DDBD_32;
-	helDesc->dwDeviceRenderBitDepth = DDBD_8 | DDBD_16 | DDBD_24 | DDBD_32;
+	helDesc->dwDeviceRenderBitDepth = DDBD_32;
 	helDesc->dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
 	helDesc->dpcTriCaps.dwShadeCaps = D3DPSHADECAPS_ALPHAFLATBLEND;
 	helDesc->dpcTriCaps.dwTextureFilterCaps = D3DPTFILTERCAPS_LINEAR;
