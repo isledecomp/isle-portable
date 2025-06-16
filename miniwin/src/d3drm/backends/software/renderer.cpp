@@ -4,7 +4,6 @@
 #include "mathutils.h"
 #include "meshutils.h"
 #include "miniwin.h"
-#include "miniwin/windows.h"
 
 #include <SDL3/SDL.h>
 #include <algorithm>
@@ -68,16 +67,7 @@ void Direct3DRMSoftwareRenderer::ClearZBuffer()
 		_mm_empty();
 	}
 #endif
-#elif defined(__3DS__)
-	SDL_Log("FIXME!");
-	// if (SDL_HasNEON()) {
-	// 	float32x4_t inf4 = vdupq_n_f32(inf);
-	// 	for (; i + 4 <= size; i += 4) {
-	// 		vst1q_f32(&m_zBuffer[i], inf4);
-	// 	}
-	// }
-	// FIXME
-#elif defined(__arm__) || defined(__aarch64__)
+#elif (defined(__arm__) || defined(__aarch64__)) && !defined(__3DS__)
 	if (SDL_HasNEON()) {
 		float32x4_t inf4 = vdupq_n_f32(inf);
 		for (; i + 4 <= size; i += 4) {
