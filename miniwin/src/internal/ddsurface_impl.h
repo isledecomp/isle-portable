@@ -4,7 +4,6 @@
 #include <miniwin/ddraw.h>
 
 struct DirectDrawSurfaceImpl : public IDirectDrawSurface3 {
-	DirectDrawSurfaceImpl();
 	DirectDrawSurfaceImpl(int width, int height, SDL_PixelFormat format);
 	~DirectDrawSurfaceImpl() override;
 
@@ -34,12 +33,10 @@ struct DirectDrawSurfaceImpl : public IDirectDrawSurface3 {
 	HRESULT SetClipper(LPDIRECTDRAWCLIPPER lpDDClipper) override;
 	HRESULT SetColorKey(DDColorKeyFlags dwFlags, LPDDCOLORKEY lpDDColorKey) override;
 	HRESULT SetPalette(LPDIRECTDRAWPALETTE lpDDPalette) override;
-	void SetAutoFlip(bool enabled);
 	HRESULT Unlock(LPVOID lpSurfaceData) override;
 
 	SDL_Surface* m_surface = nullptr;
 
 private:
-	bool m_autoFlip = false;
 	IDirectDrawPalette* m_palette = nullptr;
 };

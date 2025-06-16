@@ -1,6 +1,7 @@
 #pragma once
 
 #include "d3drmrenderer.h"
+#include "framebuffer_impl.h"
 #include "miniwin/d3d.h"
 #include "miniwin/ddraw.h"
 
@@ -8,9 +9,13 @@
 
 extern SDL_Window* DDWindow;
 extern SDL_Surface* DDBackBuffer;
-extern SDL_Texture* HWBackBuffer;
-extern SDL_PixelFormat HWBackBufferFormat;
+extern FrameBufferImpl* DDFrameBuffer;
 extern SDL_Renderer* DDRenderer;
+
+inline static SDL_Rect ConvertRect(const RECT* r)
+{
+	return {r->left, r->top, r->right - r->left, r->bottom - r->top};
+}
 
 struct DirectDrawImpl : public IDirectDraw2, public IDirect3D2 {
 	// IUnknown interface
