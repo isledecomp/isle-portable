@@ -13,7 +13,7 @@ struct MeshGroup {
 	int vertexPerFace = 0;
 	int version = 0;
 	std::vector<D3DRMVERTEX> vertices;
-	std::vector<unsigned int> indices;
+	std::vector<DWORD> indices;
 
 	MeshGroup() = default;
 
