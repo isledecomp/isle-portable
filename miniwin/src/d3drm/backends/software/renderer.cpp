@@ -600,7 +600,7 @@ MeshCache UploadMesh(const MeshGroup& meshGroup)
 		FlattenSurfaces(
 			meshGroup.vertices.data(),
 			meshGroup.vertices.size(),
-			(const DWORD*) meshGroup.indices.data(),
+			meshGroup.indices.data(),
 			meshGroup.indices.size(),
 			meshGroup.texture != nullptr,
 			cache.vertices,
