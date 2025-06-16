@@ -102,11 +102,7 @@ inline Result MeshDeepClone(MeshImpl::MeshData* pSource, MeshImpl::MeshData*& rp
 	assert(Succeeded(result));
 
 
-#if defined(__3DS__)
-	unsigned long* faceBuffer = new unsigned long[dataSize];
-#else
-	unsigned int* faceBuffer = new unsigned int[dataSize];
-#endif
+	DWORD* faceBuffer = new DWORD[dataSize];
 	result =
 		ResultVal(pSource->groupMesh->GetGroup(pSource->groupIndex, &vcount, &fcount, &vperface, &dataSize, faceBuffer)
 		);

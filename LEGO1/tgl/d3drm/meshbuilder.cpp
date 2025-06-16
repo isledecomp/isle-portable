@@ -63,11 +63,7 @@ inline Result CreateMesh(
 	int count = faceCount * 3;
 	int index = 0;
 
-#if defined(__3DS__)
-	unsigned long* fData = new unsigned long[count];
-#else
-	unsigned int* fData = new unsigned int[count];
-#endif
+	DWORD* fData = new DWORD[count];
 
 	D3DRMVERTEX* vertices = new D3DRMVERTEX[vertexCount];
 	memset(vertices, 0, sizeof(*vertices) * vertexCount);
