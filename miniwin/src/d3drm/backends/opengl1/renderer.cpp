@@ -271,7 +271,7 @@ GLMeshCacheEntry GLUploadMesh(const MeshGroup& meshGroup, bool useVBOs)
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cache.ibo);
 		glBufferData(
 			GL_ELEMENT_ARRAY_BUFFER,
-			cache.indices.size() * sizeof(Uint32),
+			cache.indices.size() * sizeof(Uint16),
 			cache.indices.data(),
 			GL_STATIC_DRAW
 		);
@@ -371,9 +371,9 @@ HRESULT OpenGL1Renderer::BeginFrame()
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 	glViewport(0, 0, m_width, m_height);
 
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDisable(GL_BLEND);
 	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_TRUE);
 	glEnable(GL_LIGHTING);
 	glEnable(GL_COLOR_MATERIAL);
 	glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
@@ -454,6 +454,8 @@ HRESULT OpenGL1Renderer::BeginFrame()
 
 void OpenGL1Renderer::EnableTransparency()
 {
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDepthMask(GL_FALSE);
 }
 
@@ -540,7 +542,6 @@ void OpenGL1Renderer::SubmitDraw(
 
 HRESULT OpenGL1Renderer::FinalizeFrame()
 {
-	glDepthMask(GL_TRUE);
 	glReadPixels(0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, m_renderedImage->pixels);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
