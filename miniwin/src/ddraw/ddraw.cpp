@@ -6,6 +6,7 @@
 #include "ddpalette_impl.h"
 #include "ddraw_impl.h"
 #include "ddsurface_impl.h"
+#include "dummysurface_impl.h"
 #include "miniwin.h"
 #include "miniwin/d3d.h"
 
@@ -17,8 +18,7 @@
 
 SDL_Window* DDWindow;
 SDL_Surface* DDBackBuffer;
-SDL_Texture* HWBackBuffer;
-SDL_PixelFormat HWBackBufferFormat;
+FrameBufferImpl* DDFrameBuffer;
 SDL_Renderer* DDRenderer;
 
 HRESULT DirectDrawImpl::QueryInterface(const GUID& riid, void** ppvObject)
@@ -66,6 +66,30 @@ HRESULT DirectDrawImpl::CreateSurface(
 	IUnknown* pUnkOuter
 )
 {
+	if ((lpDDSurfaceDesc->dwFlags & DDSD_CAPS) == DDSD_CAPS) {
+		if ((lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_ZBUFFER) == DDSCAPS_ZBUFFER) {
+			if ((lpDDSurfaceDesc->dwFlags & DDSD_ZBUFFERBITDEPTH) != DDSD_ZBUFFERBITDEPTH) {
+				return DDERR_INVALIDPARAMS;
+			}
+			SDL_Log("Todo: Set %dbit Z-Buffer", lpDDSurfaceDesc->dwZBufferBitDepth);
+			*lplpDDSurface = static_cast<IDirectDrawSurface*>(new DummySurfaceImpl);
+			return DD_OK;
+		}
+		if ((lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) == DDSCAPS_PRIMARYSURFACE) {
+			DDFrameBuffer = new FrameBufferImpl();
+			*lplpDDSurface = static_cast<IDirectDrawSurface*>(DDFrameBuffer);
+			return DD_OK;
+		}
+		if ((lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_3DDEVICE) == DDSCAPS_3DDEVICE) {
+			DDFrameBuffer->AddRef();
+			*lplpDDSurface = static_cast<IDirectDrawSurface*>(DDFrameBuffer);
+			return DD_OK;
+		}
+		if ((lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_TEXTURE) == DDSCAPS_TEXTURE) {
+			MINIWIN_TRACE("DDSCAPS_TEXTURE"); // Texture for use in 3D
+		}
+	}
+
 	SDL_PixelFormat format;
 #ifdef MINIWIN_PIXELFORMAT
 	format = MINIWIN_PIXELFORMAT;
@@ -82,44 +106,6 @@ HRESULT DirectDrawImpl::CreateSurface(
 				format = SDL_PIXELFORMAT_RGB565;
 				break;
 			}
-		}
-	}
-	if ((lpDDSurfaceDesc->dwFlags & DDSD_CAPS) == DDSD_CAPS) {
-		if ((lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_ZBUFFER) == DDSCAPS_ZBUFFER) {
-			if ((lpDDSurfaceDesc->dwFlags & DDSD_ZBUFFERBITDEPTH) != DDSD_ZBUFFERBITDEPTH) {
-				return DDERR_INVALIDPARAMS;
-			}
-			SDL_Log("Todo: Set %dbit Z-Buffer", lpDDSurfaceDesc->dwZBufferBitDepth);
-			*lplpDDSurface = static_cast<IDirectDrawSurface*>(new DirectDrawSurfaceImpl);
-			return DD_OK;
-		}
-		if ((lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) == DDSCAPS_PRIMARYSURFACE) {
-			SDL_Surface* windowSurface = SDL_GetWindowSurface(DDWindow);
-			if (!windowSurface) {
-				return DDERR_GENERIC;
-			}
-			int width, height;
-			SDL_GetWindowSize(DDWindow, &width, &height);
-			bool implicitFlip = (lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_FLIP) != DDSCAPS_FLIP;
-			auto frontBuffer = new DirectDrawSurfaceImpl(width, height, windowSurface->format);
-			frontBuffer->SetAutoFlip(implicitFlip);
-			*lplpDDSurface = static_cast<IDirectDrawSurface*>(frontBuffer);
-			return DD_OK;
-		}
-		if ((lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_OFFSCREENPLAIN) == DDSCAPS_OFFSCREENPLAIN) {
-			MINIWIN_TRACE("DDSCAPS_OFFSCREENPLAIN"); // 2D surfaces?
-		}
-		if ((lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_SYSTEMMEMORY) == DDSCAPS_SYSTEMMEMORY) {
-			MINIWIN_TRACE("DDSCAPS_SYSTEMMEMORY"); // Software rendering?
-		}
-		if ((lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_TEXTURE) == DDSCAPS_TEXTURE) {
-			MINIWIN_TRACE("DDSCAPS_TEXTURE"); // Texture for use in 3D
-		}
-		if ((lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_3DDEVICE) == DDSCAPS_3DDEVICE) {
-			MINIWIN_TRACE("DDSCAPS_3DDEVICE"); // back buffer
-		}
-		if ((lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_VIDEOMEMORY) == DDSCAPS_VIDEOMEMORY) {
-			MINIWIN_TRACE("DDSCAPS_VIDEOMEMORY"); // front / back buffer
 		}
 	}
 
@@ -305,14 +291,14 @@ HRESULT DirectDrawImpl::SetCooperativeLevel(HWND hWnd, DDSCLFlags dwFlags)
 		}
 		DDWindow = sdlWindow;
 		DDRenderer = SDL_CreateRenderer(DDWindow, NULL);
-		SDL_SetRenderLogicalPresentation(DDRenderer, 640, 480, SDL_LOGICAL_PRESENTATION_LETTERBOX);
+		SDL_PropertiesID prop = SDL_GetRendererProperties(DDRenderer);
 	}
 	return DD_OK;
 }
 
 HRESULT DirectDrawImpl::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWORD dwBPP)
 {
-	MINIWIN_NOT_IMPLEMENTED();
+	SDL_SetRenderLogicalPresentation(DDRenderer, dwWidth, dwHeight, SDL_LOGICAL_PRESENTATION_LETTERBOX);
 	return DD_OK;
 }
 
