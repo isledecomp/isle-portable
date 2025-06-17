@@ -143,6 +143,9 @@ const char* g_strEnable = "enable";
 // STRING: LEGO1 0x100f3bf4
 const char* g_strDisable = "disable";
 
+const InternationalCharacter LegoGameState::g_intCharacters[4] =
+	{{'\xe4', "Aum_Bitmap", 29}, {'\xf6', "Oum_Bitmap", 30}, {'\xdf', "Beta_Bitmap", 31}, {'\xfc', "Uum_Bitmap", 32}};
+
 // FUNCTION: LEGO1 0x10039550
 LegoGameState::LegoGameState()
 {

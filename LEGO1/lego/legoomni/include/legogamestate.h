@@ -23,6 +23,12 @@ struct ColorStringStruct {
 	const char* m_colorName;  // 0x04
 };
 
+struct InternationalCharacter {
+	unsigned char m_character;
+	const char* m_bitmap;
+	MxU32 buttonId;
+};
+
 // VTABLE: LEGO1 0x100d74a8
 // SIZE 0x30
 class LegoBackgroundColor : public MxVariable {
@@ -256,6 +262,8 @@ public:
 	Area m_currentArea;                   // 0x424
 	Area m_previousArea;                  // 0x428
 	Area m_unk0x42c;                      // 0x42c
+
+	static const InternationalCharacter g_intCharacters[4];
 };
 
 MxBool ROIColorOverride(const char* p_input, char* p_output, MxU32 p_copyLen);
