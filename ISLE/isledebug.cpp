@@ -69,8 +69,8 @@ public:
 	{
 		auto buildingManager = Lego()->GetBuildingManager();
 		ImGui::Text("nextVariant: %d", buildingManager->m_nextVariant);
-		ImGui::Text("m_unk0x09: %d", buildingManager->m_unk0x09);
-		ImGui::Text("m_unk0x28: %d", buildingManager->m_unk0x28);
+		ImGui::Text("m_boundariesDetermined: %d", buildingManager->m_boundariesDetermined);
+		ImGui::Text("m_hideAfterAnimation: %d", buildingManager->m_hideAfterAnimation);
 		ImGui::Text("#Animated Entries", buildingManager->m_numEntries);
 		if (buildingManager->m_numEntries) {
 			if (ImGui::BeginTable("Animated Entries", 6, ImGuiTableFlags_Borders)) {
@@ -78,7 +78,7 @@ public:
 				ImGui::TableSetupColumn("ROI m_unk0x100");
 				ImGui::TableSetupColumn("Entity Name");
 				ImGui::TableSetupColumn("Time");
-				ImGui::TableSetupColumn("unk_0x0c");
+				ImGui::TableSetupColumn("Y");
 				ImGui::TableSetupColumn("Muted");
 				ImGui::TableHeadersRow();
 				for (MxS8 i = 0; i < buildingManager->m_numEntries; i++) {
@@ -92,7 +92,7 @@ public:
 					ImGui::TableNextColumn();
 					ImGui::Text("%d", entry->m_time);
 					ImGui::TableNextColumn();
-					ImGui::Text("%d", entry->m_unk0x0c);
+					ImGui::Text("%d", entry->m_y);
 					ImGui::TableNextColumn();
 					ImGui::Text("%d", entry->m_muted);
 				}
