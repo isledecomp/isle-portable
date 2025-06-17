@@ -4,6 +4,9 @@
 #ifdef USE_OPENGLES2
 #include "d3drmrenderer_opengles2.h"
 #endif
+#ifdef _WIN32
+#include "d3drmrenderer_directx9.h"
+#endif
 #include "d3drmrenderer_sdl3gpu.h"
 #include "d3drmrenderer_software.h"
 #include "ddpalette_impl.h"
@@ -226,6 +229,9 @@ HRESULT DirectDrawImpl::EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 #ifdef USE_OPENGL1
 	OpenGL1Renderer_EnumDevice(cb, ctx);
 #endif
+#ifdef _WIN32
+	DirectX9Renderer_EnumDevice(cb, ctx);
+#endif
 	Direct3DRMSoftware_EnumDevice(cb, ctx);
 
 	return S_OK;
@@ -331,6 +337,11 @@ HRESULT DirectDrawImpl::CreateDevice(
 #ifdef USE_OPENGL1
 	else if (SDL_memcmp(&guid, &OpenGL1_GUID, sizeof(GUID)) == 0) {
 		renderer = OpenGL1Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
+	}
+#endif
+#ifdef _WIN32
+	else if (SDL_memcmp(&guid, &DirectX9_GUID, sizeof(GUID)) == 0) {
+		renderer = DirectX9Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
 #endif
 	else if (SDL_memcmp(&guid, &SOFTWARE_GUID, sizeof(GUID)) == 0) {
