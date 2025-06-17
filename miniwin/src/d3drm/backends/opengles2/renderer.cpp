@@ -77,7 +77,7 @@ Direct3DRMRenderer* OpenGLES2Renderer::Create(DWORD width, DWORD height)
 	GLuint depthRb;
 	glGenRenderbuffers(1, &depthRb);
 	glBindRenderbuffer(GL_RENDERBUFFER, depthRb);
-	const char* extensions = (const char*)glGetString(GL_EXTENSIONS);
+	const char* extensions = (const char*) glGetString(GL_EXTENSIONS);
 	if (strstr(extensions, "GL_OES_depth24")) {
 		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24_OES, width, height);
 	}
@@ -464,7 +464,7 @@ void OpenGLES2Renderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc)
 	halDesc->dcmColorModel = D3DCOLORMODEL::RGB;
 	halDesc->dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
 	halDesc->dwDeviceZBufferBitDepth = DDBD_16;
-	const char* extensions = (const char*)glGetString(GL_EXTENSIONS);
+	const char* extensions = (const char*) glGetString(GL_EXTENSIONS);
 	if (strstr(extensions, "GL_OES_depth24")) {
 		halDesc->dwDeviceZBufferBitDepth |= DDBD_24;
 	}
