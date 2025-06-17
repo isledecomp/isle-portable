@@ -73,7 +73,7 @@ Direct3DRMRenderer* OpenGL1Renderer::Create(DWORD width, DWORD height)
 	GLuint depthRb;
 	glGenRenderbuffers(1, &depthRb);
 	glBindRenderbuffer(GL_RENDERBUFFER, depthRb);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, width, height);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthRb);
 
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
@@ -351,7 +351,7 @@ void OpenGL1Renderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc)
 {
 	halDesc->dcmColorModel = D3DCOLORMODEL::RGB;
 	halDesc->dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
-	halDesc->dwDeviceZBufferBitDepth = DDBD_16;
+	halDesc->dwDeviceZBufferBitDepth = DDBD_24;
 	helDesc->dwDeviceRenderBitDepth = DDBD_32;
 	halDesc->dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
 	halDesc->dpcTriCaps.dwShadeCaps = D3DPSHADECAPS_ALPHAFLATBLEND;
