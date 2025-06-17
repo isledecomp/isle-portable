@@ -212,8 +212,9 @@ MxLong RegistrationBook::HandleKeyPress(SDL_Keycode p_key)
 			}
 
 			m_unk0x280.m_letters[m_unk0x280.m_cursorPos] =
-				key >= SDLK_A && key <= SDLK_Z ? key - SDLK_A
-											   : (intoAlphabet - m_intAlphabet) + sizeOfArray(m_alphabet);
+				key >= SDLK_A && key <= SDLK_Z
+					? key - SDLK_A
+					: (intoAlphabet - m_intAlphabet) + sizeOfArray(m_alphabet) - m_intAlphabetOffset;
 			m_unk0x280.m_cursorPos++;
 		}
 	}
@@ -460,6 +461,16 @@ void RegistrationBook::ReadyWorld()
 		m_intAlphabet[i] = (MxStillPresenter*) Find("MxStillPresenter", LegoGameState::g_intCharacters[i].m_bitmap);
 	}
 
+	m_intAlphabetOffset = 0;
+	for (i = 0; i < sizeOfArray(m_intAlphabet); i++) {
+		if (!m_intAlphabet[i]) {
+			m_intAlphabetOffset++;
+		}
+		else {
+			break;
+		}
+	}
+
 	// Now we have to do the checkmarks
 	char checkmarkBuffer[] = "Check0_Ctl";
 	for (i = 0; i < 10; i++) {
@@ -488,9 +499,9 @@ void RegistrationBook::ReadyWorld()
 					}
 
 					index -= sizeOfArray(m_alphabet);
-					assert(index < sizeOfArray(m_intAlphabet));
+					index += m_intAlphabetOffset;
 
-					if (!m_intAlphabet[index]) {
+					if (index >= sizeOfArray(m_intAlphabet) || !m_intAlphabet[index]) {
 						SDL_Log("Warning: international character not present in current game. Falling back to X");
 						return &m_alphabet[SDLK_X - SDLK_A];
 					}

@@ -119,6 +119,16 @@ void HistoryBook::ReadyWorld()
 		m_intAlphabet[i] = (MxStillPresenter*) Find("MxStillPresenter", LegoGameState::g_intCharacters[i].m_bitmap);
 	}
 
+	m_intAlphabetOffset = 0;
+	for (i = 0; i < sizeOfArray(m_intAlphabet); i++) {
+		if (!m_intAlphabet[i]) {
+			m_intAlphabetOffset++;
+		}
+		else {
+			break;
+		}
+	}
+
 	MxStillPresenter* scoreboxMaster = (MxStillPresenter*) Find("MxStillPresenter", "ScoreBox");
 	MxU8 scoreColors[3] =
 		{0x76, 0x4c, 0x38}; // yellow - #FFB900, blue - #00548C, red - #CB1220, background - #CECECE, border - #74818B
@@ -181,9 +191,9 @@ void HistoryBook::ReadyWorld()
 				}
 
 				index -= sizeOfArray(m_alphabet);
-				assert(index < sizeOfArray(m_intAlphabet));
+				index += m_intAlphabetOffset;
 
-				if (!m_intAlphabet[index]) {
+				if (index >= sizeOfArray(m_intAlphabet) || !m_intAlphabet[index]) {
 					SDL_Log("Warning: international character not present in current game. Falling back to X");
 					return &m_alphabet[SDLK_X - SDLK_A];
 				}

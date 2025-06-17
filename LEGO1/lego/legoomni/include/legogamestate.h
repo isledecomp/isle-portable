@@ -263,7 +263,7 @@ public:
 	Area m_previousArea;                  // 0x428
 	Area m_unk0x42c;                      // 0x42c
 
-	static const InternationalCharacter g_intCharacters[4];
+	static const InternationalCharacter g_intCharacters[7];
 };
 
 MxBool ROIColorOverride(const char* p_input, char* p_output, MxU32 p_copyLen);

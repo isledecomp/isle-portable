@@ -48,6 +48,7 @@ private:
 	MxStillPresenter* m_scores[20]; // 0x394
 
 	MxStillPresenter* m_intAlphabet[sizeOfArray(LegoGameState::g_intCharacters)];
+	MxU32 m_intAlphabetOffset;
 };
 
 #endif // HISTORYBOOK_H
