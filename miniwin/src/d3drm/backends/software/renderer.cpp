@@ -710,10 +710,9 @@ void Direct3DRMSoftwareRenderer::SubmitDraw(
 
 	// Pre-transform all vertex positions and normals
 	m_transformedVerts.clear();
-	m_transformedVerts.reserve(mesh.vertices.size());
-	for (size_t i = 0; i < mesh.vertices.size(); ++i) {
-		const D3DRMVERTEX& src = mesh.vertices[i];
-		D3DRMVERTEX& dst = m_transformedVerts[i];
+	m_transformedVerts.resize(mesh.vertices.size());
+	for (const auto& src : mesh.vertices) {
+		D3DRMVERTEX& dst = m_transformedVerts.emplace_back();
 		dst.position = TransformPoint(src.position, modelViewMatrix);
 		dst.normal = src.normal;
 		dst.texCoord = src.texCoord;
