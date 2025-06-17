@@ -24,7 +24,7 @@ struct ColorStringStruct {
 };
 
 struct InternationalCharacter {
-	char32_t m_character;
+	unsigned char m_character;
 	const char* m_bitmap;
 	MxU32 m_buttonId;
 };
