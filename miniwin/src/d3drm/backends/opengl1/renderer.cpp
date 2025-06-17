@@ -1,19 +1,21 @@
+#include <GL/glew.h>
+// must come after GLEW
 #include "d3drmrenderer_opengl1.h"
 #include "ddraw_impl.h"
 #include "ddsurface_impl.h"
 #include "mathutils.h"
 #include "meshutils.h"
 
-#include <GL/glew.h>
+#include <SDL3/SDL.h>
 #include <algorithm>
 #include <cstring>
 #include <vector>
 
 Direct3DRMRenderer* OpenGL1Renderer::Create(DWORD width, DWORD height)
 {
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
 
 	SDL_Window* window = DDWindow;
 	bool testWindow = false;
@@ -30,7 +32,10 @@ Direct3DRMRenderer* OpenGL1Renderer::Create(DWORD width, DWORD height)
 		return nullptr;
 	}
 
-	SDL_GL_MakeCurrent(window, context);
+	if (!SDL_GL_MakeCurrent(window, context)) {
+		return nullptr;
+	}
+
 	GLenum err = glewInit();
 	if (err != GLEW_OK) {
 		if (testWindow) {
@@ -68,7 +73,7 @@ Direct3DRMRenderer* OpenGL1Renderer::Create(DWORD width, DWORD height)
 	GLuint depthRb;
 	glGenRenderbuffers(1, &depthRb);
 	glBindRenderbuffer(GL_RENDERBUFFER, depthRb);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, width, height);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthRb);
 
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
@@ -84,8 +89,8 @@ Direct3DRMRenderer* OpenGL1Renderer::Create(DWORD width, DWORD height)
 }
 
 OpenGL1Renderer::OpenGL1Renderer(
-	int width,
-	int height,
+	DWORD width,
+	DWORD height,
 	SDL_GLContext context,
 	GLuint fbo,
 	GLuint colorTex,
@@ -99,9 +104,10 @@ OpenGL1Renderer::OpenGL1Renderer(
 
 OpenGL1Renderer::~OpenGL1Renderer()
 {
-	if (m_renderedImage) {
-		SDL_DestroySurface(m_renderedImage);
-	}
+	SDL_DestroySurface(m_renderedImage);
+	glDeleteFramebuffers(1, &m_fbo);
+	glDeleteRenderbuffers(1, &m_depthRb);
+	glDeleteTextures(1, &m_colorTex);
 }
 
 void OpenGL1Renderer::PushLights(const SceneLight* lightsArray, size_t count)
@@ -155,8 +161,7 @@ Uint32 OpenGL1Renderer::GetTextureId(IDirect3DRMTexture* iTexture)
 				glGenTextures(1, &tex.glTextureId);
 				glBindTexture(GL_TEXTURE_2D, tex.glTextureId);
 
-				SDL_Surface* surf =
-					SDL_ConvertSurface(surface->m_surface, SDL_PIXELFORMAT_ABGR8888); // Why are the colors backwarsd?
+				SDL_Surface* surf = SDL_ConvertSurface(surface->m_surface, SDL_PIXELFORMAT_ABGR8888);
 				if (!surf) {
 					return NO_TEXTURE_ID;
 				}
@@ -175,8 +180,7 @@ Uint32 OpenGL1Renderer::GetTextureId(IDirect3DRMTexture* iTexture)
 	glGenTextures(1, &texId);
 	glBindTexture(GL_TEXTURE_2D, texId);
 
-	SDL_Surface* surf =
-		SDL_ConvertSurface(surface->m_surface, SDL_PIXELFORMAT_ABGR8888); // Why are the colors backwarsd?
+	SDL_Surface* surf = SDL_ConvertSurface(surface->m_surface, SDL_PIXELFORMAT_ABGR8888);
 	if (!surf) {
 		return NO_TEXTURE_ID;
 	}
@@ -227,7 +231,7 @@ GLMeshCacheEntry GLUploadMesh(const MeshGroup& meshGroup, bool useVBOs)
 		});
 	}
 
-	if (meshGroup.texture != nullptr) {
+	if (meshGroup.texture) {
 		cache.texcoords.resize(vertices.size());
 		std::transform(vertices.begin(), vertices.end(), cache.texcoords.begin(), [](const D3DRMVERTEX& v) {
 			return v.texCoord;
@@ -347,8 +351,8 @@ void OpenGL1Renderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc)
 {
 	halDesc->dcmColorModel = D3DCOLORMODEL::RGB;
 	halDesc->dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
-	halDesc->dwDeviceZBufferBitDepth = DDBD_24; // Todo add support for other depths
-	helDesc->dwDeviceRenderBitDepth = DDBD_8 | DDBD_16 | DDBD_24 | DDBD_32;
+	halDesc->dwDeviceZBufferBitDepth = DDBD_16;
+	helDesc->dwDeviceRenderBitDepth = DDBD_32;
 	halDesc->dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
 	halDesc->dpcTriCaps.dwShadeCaps = D3DPSHADECAPS_ALPHAFLATBLEND;
 	halDesc->dpcTriCaps.dwTextureFilterCaps = D3DPTFILTERCAPS_LINEAR;
@@ -363,10 +367,6 @@ const char* OpenGL1Renderer::GetName()
 
 HRESULT OpenGL1Renderer::BeginFrame()
 {
-	if (!DDBackBuffer) {
-		return DDERR_GENERIC;
-	}
-
 	SDL_GL_MakeCurrent(DDWindow, m_context);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 	glViewport(0, 0, m_width, m_height);
@@ -466,6 +466,8 @@ void OpenGL1Renderer::SubmitDraw(
 	const Appearance& appearance
 )
 {
+	auto& mesh = m_meshs[meshId];
+
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 
@@ -484,8 +486,6 @@ void OpenGL1Renderer::SubmitDraw(
 		glMaterialfv(GL_FRONT, GL_SPECULAR, noSpec);
 		glMaterialf(GL_FRONT, GL_SHININESS, 0.0f);
 	}
-
-	auto& mesh = m_meshs[meshId];
 
 	if (mesh.flat) {
 		glShadeModel(GL_FLAT);

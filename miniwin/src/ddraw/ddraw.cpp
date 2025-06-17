@@ -1,6 +1,9 @@
 #ifdef USE_OPENGL1
 #include "d3drmrenderer_opengl1.h"
 #endif
+#ifdef USE_OPENGLES2
+#include "d3drmrenderer_opengles2.h"
+#endif
 #include "d3drmrenderer_sdl3gpu.h"
 #include "d3drmrenderer_software.h"
 #include "ddpalette_impl.h"
@@ -217,6 +220,9 @@ void EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx, Direct3DRMRenderer* devi
 HRESULT DirectDrawImpl::EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
 	Direct3DRMSDL3GPU_EnumDevice(cb, ctx);
+#ifdef USE_OPENGLES2
+	OpenGLES2Renderer_EnumDevice(cb, ctx);
+#endif
 #ifdef USE_OPENGL1
 	OpenGL1Renderer_EnumDevice(cb, ctx);
 #endif
@@ -292,13 +298,13 @@ HRESULT DirectDrawImpl::SetCooperativeLevel(HWND hWnd, DDSCLFlags dwFlags)
 		DDWindow = sdlWindow;
 		DDRenderer = SDL_CreateRenderer(DDWindow, NULL);
 		SDL_PropertiesID prop = SDL_GetRendererProperties(DDRenderer);
+		SDL_SetRenderLogicalPresentation(DDRenderer, 640, 480, SDL_LOGICAL_PRESENTATION_LETTERBOX);
 	}
 	return DD_OK;
 }
 
 HRESULT DirectDrawImpl::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWORD dwBPP)
 {
-	SDL_SetRenderLogicalPresentation(DDRenderer, dwWidth, dwHeight, SDL_LOGICAL_PRESENTATION_LETTERBOX);
 	return DD_OK;
 }
 
@@ -317,6 +323,11 @@ HRESULT DirectDrawImpl::CreateDevice(
 	if (SDL_memcmp(&guid, &SDL3_GPU_GUID, sizeof(GUID)) == 0) {
 		renderer = Direct3DRMSDL3GPURenderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
+#ifdef USE_OPENGLES2
+	else if (SDL_memcmp(&guid, &OpenGLES2_GUID, sizeof(GUID)) == 0) {
+		renderer = OpenGLES2Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
+	}
+#endif
 #ifdef USE_OPENGL1
 	else if (SDL_memcmp(&guid, &OpenGL1_GUID, sizeof(GUID)) == 0) {
 		renderer = OpenGL1Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
