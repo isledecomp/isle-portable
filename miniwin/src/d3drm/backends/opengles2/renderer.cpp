@@ -1,8 +1,8 @@
 #include "d3drmrenderer_opengles2.h"
 #include "meshutils.h"
 
-#include <GLES2/gl2ext.h>
 #include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
 #include <SDL3/SDL.h>
 #include <algorithm>
 #include <string>
@@ -78,11 +78,13 @@ Direct3DRMRenderer* OpenGLES2Renderer::Create(DWORD width, DWORD height)
 	glGenRenderbuffers(1, &depthRb);
 	glBindRenderbuffer(GL_RENDERBUFFER, depthRb);
 	const char* extensions = (const char*) glGetString(GL_EXTENSIONS);
-	if (strstr(extensions, "GL_OES_depth24")) {
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24_OES, width, height);
-	}
-	else if (strstr(extensions, "GL_OES_depth32")) {
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32_OES, width, height);
+	if (extensions) {
+		if (strstr(extensions, "GL_OES_depth24")) {
+			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24_OES, width, height);
+		}
+		else if (strstr(extensions, "GL_OES_depth32")) {
+			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32_OES, width, height);
+		}
 	}
 	else {
 		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, width, height);
@@ -465,11 +467,13 @@ void OpenGLES2Renderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc)
 	halDesc->dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
 	halDesc->dwDeviceZBufferBitDepth = DDBD_16;
 	const char* extensions = (const char*) glGetString(GL_EXTENSIONS);
-	if (strstr(extensions, "GL_OES_depth24")) {
-		halDesc->dwDeviceZBufferBitDepth |= DDBD_24;
-	}
-	if (strstr(extensions, "GL_OES_depth32")) {
-		halDesc->dwDeviceZBufferBitDepth |= DDBD_32;
+	if (extensions) {
+		if (strstr(extensions, "GL_OES_depth24")) {
+			halDesc->dwDeviceZBufferBitDepth |= DDBD_24;
+		}
+		if (strstr(extensions, "GL_OES_depth32")) {
+			halDesc->dwDeviceZBufferBitDepth |= DDBD_32;
+		}
 	}
 	helDesc->dwDeviceRenderBitDepth = DDBD_32;
 	halDesc->dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
