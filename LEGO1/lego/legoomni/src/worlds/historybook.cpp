@@ -10,7 +10,7 @@
 #include "mxstillpresenter.h"
 #include "mxtransitionmanager.h"
 
-#include <SDL3/SDL_Log.h>
+#include <SDL3/SDL_log.h>
 
 DECOMP_SIZE_ASSERT(HistoryBook, 0x3e4)
 

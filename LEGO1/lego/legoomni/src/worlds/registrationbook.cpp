@@ -29,7 +29,7 @@
 #include "regbook_actions.h"
 #include "scripts.h"
 
-#include <SDL3/SDL_Log.h>
+#include <SDL3/SDL_log.h>
 
 DECOMP_SIZE_ASSERT(RegistrationBook, 0x2d0)
 
@@ -250,7 +250,7 @@ MxLong RegistrationBook::HandleControl(LegoControlManagerNotificationParam& p_pa
 		}
 	}
 
-	if (buttonId >= 1 && buttonId <= 28 || intChar) {
+	if ((buttonId >= 1 && buttonId <= 28) || intChar) {
 		if (p_param.m_clickedObjectId == RegbookScript::c_Alphabet_Ctl) {
 			// buttonId:
 			// - [1, 26]: alphabet
@@ -300,8 +300,9 @@ MxLong RegistrationBook::HandleControl(LegoControlManagerNotificationParam& p_pa
 			FUN_100775c0(i);
 		}
 	}
+}
 
-	return 1;
+return 1;
 }
 
 // FUNCTION: LEGO1 0x100775c0
