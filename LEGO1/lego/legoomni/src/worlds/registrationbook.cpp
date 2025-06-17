@@ -302,9 +302,6 @@ MxLong RegistrationBook::HandleControl(LegoControlManagerNotificationParam& p_pa
 	}
 }
 
-return 1;
-}
-
 // FUNCTION: LEGO1 0x100775c0
 // STUB: BETA10 0x100f32b2
 void RegistrationBook::FUN_100775c0(MxS16 p_playerIndex)
