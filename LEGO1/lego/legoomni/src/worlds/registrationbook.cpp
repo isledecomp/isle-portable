@@ -300,6 +300,8 @@ MxLong RegistrationBook::HandleControl(LegoControlManagerNotificationParam& p_pa
 			FUN_100775c0(i);
 		}
 	}
+
+	return 1;
 }
 
 // FUNCTION: LEGO1 0x100775c0
