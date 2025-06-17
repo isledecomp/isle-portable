@@ -175,10 +175,13 @@ bool CConfigApp::ValidateSettings()
 			is_modified = TRUE;
 		}
 	}
+	/* This code disables Draw Cursor whenever a software mode is selected.
+	 * This isn't relevant on modern platforms.
 	if (GetHardwareDeviceColorModel() == D3DCOLOR_NONE) {
 		m_draw_cursor = FALSE;
 		is_modified = TRUE;
 	}
+	*/
 	else {
 		if (!m_3d_video_ram) {
 			m_3d_video_ram = TRUE;

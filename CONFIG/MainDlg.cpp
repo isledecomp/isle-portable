@@ -121,6 +121,10 @@ void CMainDialog::OnList3DevicesSelectionChanged(int selected)
 {
 	LegoDeviceEnumerate* device_enumerator = currentConfigApp->m_device_enumerator;
 	device_enumerator->GetDevice(selected, currentConfigApp->m_driver, currentConfigApp->m_device);
+	/* The code below originally forced the drawCursorCheckBox to be enabled (not necessarily checked) in any hardware mode.
+	 * Oddly enough, this same condition is also run in UpdateInterface(), so it ends up doing this check twice.
+	 * Additionally, some of the actions taken were weirdly split between them.
+	 * Disabling the Draw Cursor checkbox on software modes is no longer relevant, nor is forcing it on with hardware modes.
 	if (currentConfigApp->GetHardwareDeviceColorModel() != D3DCOLOR_NONE) {
 		m_ui->drawCursorCheckBox->setEnabled(true);
 	}
@@ -130,6 +134,14 @@ void CMainDialog::OnList3DevicesSelectionChanged(int selected)
 		m_ui->videomemoryCheckBox->setChecked(currentConfigApp->m_3d_video_ram);
 		m_ui->flipVideoMemoryPagesCheckBox->setChecked(currentConfigApp->m_flip_surfaces);
 	}
+	*/
+	if (currentConfigApp->GetHardwareDeviceColorModel() == D3DCOLOR_NONE) {
+		currentConfigApp->m_3d_video_ram = FALSE;
+		currentConfigApp->m_flip_surfaces = FALSE;
+		m_ui->videomemoryCheckBox->setChecked(currentConfigApp->m_3d_video_ram);
+		m_ui->flipVideoMemoryPagesCheckBox->setChecked(currentConfigApp->m_flip_surfaces);
+	}
+	// The above code was rewritten so that the Draw Cursor checkbox is always enabled, in any mode.
 	m_modified = true;
 	UpdateInterface();
 }
@@ -159,6 +171,9 @@ void CMainDialog::UpdateInterface()
 	m_ui->videomemoryCheckBox->setChecked(currentConfigApp->m_3d_video_ram);
 	bool full_screen = currentConfigApp->m_full_screen;
 	currentConfigApp->AdjustDisplayBitDepthBasedOnRenderStatus();
+	/* The code below is used to force the Draw Cursor checkbox on in any hardware mode, but still have it enabled.
+	 * Additionally, it disables it in software mode, and forces it to be off.
+	 * This is not relevant on modern platforms.
 	if (currentConfigApp->GetHardwareDeviceColorModel() != D3DCOLOR_NONE) {
 		m_ui->drawCursorCheckBox->setChecked(true);
 	}
@@ -167,6 +182,7 @@ void CMainDialog::UpdateInterface()
 		currentConfigApp->m_draw_cursor = FALSE;
 		m_ui->drawCursorCheckBox->setEnabled(false);
 	}
+	*/
 	if (full_screen) {
 		if (currentConfigApp->m_display_bit_depth == 8) {
 			m_ui->colorPalette256RadioButton->setChecked(true);
