@@ -175,7 +175,7 @@ static SDL_GPUGraphicsPipeline* InitializeGraphicsPipeline(SDL_GPUDevice* device
 	pipelineCreateInfo.depth_stencil_state.enable_stencil_test = false;
 	pipelineCreateInfo.target_info.color_target_descriptions = &colorTargets;
 	pipelineCreateInfo.target_info.num_color_targets = 1;
-	pipelineCreateInfo.target_info.depth_stencil_format = SDL_GPU_TEXTUREFORMAT_D16_UNORM;
+	pipelineCreateInfo.target_info.depth_stencil_format = SDL_GPU_TEXTUREFORMAT_D32_FLOAT;
 	pipelineCreateInfo.target_info.has_depth_stencil_target = true;
 
 	SDL_GPUGraphicsPipeline* pipeline = SDL_CreateGPUGraphicsPipeline(device, &pipelineCreateInfo);
@@ -223,7 +223,7 @@ Direct3DRMRenderer* Direct3DRMSDL3GPURenderer::Create(DWORD width, DWORD height)
 	}
 
 	SDL_GPUTextureCreateInfo depthTexInfo = textureInfo;
-	depthTexInfo.format = SDL_GPU_TEXTUREFORMAT_D16_UNORM;
+	depthTexInfo.format = SDL_GPU_TEXTUREFORMAT_D32_FLOAT;
 	depthTexInfo.usage = SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET;
 	ScopedTexture depthTexture{device.ptr, SDL_CreateGPUTexture(device.ptr, &depthTexInfo)};
 	if (!depthTexture.ptr) {
@@ -657,7 +657,7 @@ void Direct3DRMSDL3GPURenderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* h
 {
 	halDesc->dcmColorModel = D3DCOLORMODEL::RGB;
 	halDesc->dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
-	halDesc->dwDeviceZBufferBitDepth = DDBD_16; // Todo add support for other depths
+	halDesc->dwDeviceZBufferBitDepth = DDBD_32; // Todo add support for other depths
 	halDesc->dwDeviceRenderBitDepth = DDBD_32;
 	halDesc->dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
 	halDesc->dpcTriCaps.dwShadeCaps = D3DPSHADECAPS_ALPHAFLATBLEND;
