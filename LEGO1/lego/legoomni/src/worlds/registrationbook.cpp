@@ -244,7 +244,7 @@ MxLong RegistrationBook::HandleControl(LegoControlManagerNotificationParam& p_pa
 	const InternationalCharacter* intChar = NULL;
 
 	for (int i = 0; i < sizeOfArray(m_intAlphabet); i++) {
-		if (m_intAlphabet[i] && LegoGameState::g_intCharacters[i].buttonId == buttonId) {
+		if (m_intAlphabet[i] && LegoGameState::g_intCharacters[i].m_buttonId == buttonId) {
 			intChar = &LegoGameState::g_intCharacters[i];
 			break;
 		}

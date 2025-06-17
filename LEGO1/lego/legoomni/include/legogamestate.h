@@ -24,9 +24,9 @@ struct ColorStringStruct {
 };
 
 struct InternationalCharacter {
-	unsigned char m_character;
+	char32_t m_character;
 	const char* m_bitmap;
-	MxU32 buttonId;
+	MxU32 m_buttonId;
 };
 
 // VTABLE: LEGO1 0x100d74a8
