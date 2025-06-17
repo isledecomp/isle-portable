@@ -294,8 +294,8 @@ void CConfigApp::WriteRegisterSettings() const
 	SetIniBool(dict, "isle:3DSound", m_3d_sound);
 	SetIniBool(dict, "isle:Music", m_music);
 
-	SetIniInt(dict, "isle:UseJoystick", m_use_joystick);
-	SetIniBool(dict, "isle:JoystickIndex", m_joystick_index);
+	SetIniBool(dict, "isle:UseJoystick", m_use_joystick);
+	SetIniInt(dict, "isle:JoystickIndex", m_joystick_index);
 	SetIniBool(dict, "isle:Draw Cursor", m_draw_cursor);
 
 	SetIniBool(dict, "isle:Back Buffers in Video RAM", m_3d_video_ram);
