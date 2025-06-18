@@ -332,13 +332,6 @@
               </property>
              </widget>
             </item>
-            <item row="1" column="1">
-             <widget class="QCheckBox" name="drawCursorCheckBox">
-              <property name="text">
-               <string>Draw Cursor</string>
-              </property>
-             </widget>
-            </item>
            </layout>
           </widget>
          </item>
