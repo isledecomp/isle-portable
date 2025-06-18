@@ -318,7 +318,7 @@
                <number>35</number>
               </property>
               <property name="tracking">
-               <bool>true</bool>
+               <bool>false</bool>
               </property>
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
@@ -391,6 +391,9 @@
               </property>
               <property name="sliderPosition">
                <number>20</number>
+              </property>
+              <property name="tracking">
+               <bool>false</bool>
               </property>
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
@@ -615,13 +618,6 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="saveAs">
-           <property name="text">
-            <string>PushButton</string>
-           </property>
-          </widget>
-         </item>
-         <item>
           <widget class="QPushButton" name="cancelButton">
            <property name="text">
             <string>Cancel</string>
@@ -636,6 +632,33 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>diskPath</tabstop>
+  <tabstop>diskPathOpen</tabstop>
+  <tabstop>cdPath</tabstop>
+  <tabstop>cdPathOpen</tabstop>
+  <tabstop>mediaPath</tabstop>
+  <tabstop>mediaPathOpen</tabstop>
+  <tabstop>savePath</tabstop>
+  <tabstop>savePathOpen</tabstop>
+  <tabstop>textureQualityFastRadioButton</tabstop>
+  <tabstop>textureQualityHighRadioButton</tabstop>
+  <tabstop>modelQualityLowRadioButton</tabstop>
+  <tabstop>modelQualityMediumRadioButton</tabstop>
+  <tabstop>modelQualityHighRadioButton</tabstop>
+  <tabstop>maxLoDSlider</tabstop>
+  <tabstop>maxActorsSlider</tabstop>
+  <tabstop>colorPalette256RadioButton</tabstop>
+  <tabstop>colorPalette16bitRadioButton</tabstop>
+  <tabstop>sound3DCheckBox</tabstop>
+  <tabstop>musicCheckBox</tabstop>
+  <tabstop>joystickCheckBox</tabstop>
+  <tabstop>devicesList</tabstop>
+  <tabstop>flipVideoMemoryPagesCheckBox</tabstop>
+  <tabstop>videomemoryCheckBox</tabstop>
+  <tabstop>okButton</tabstop>
+  <tabstop>cancelButton</tabstop>
+ </tabstops>
  <resources>
   <include location="config.qrc"/>
  </resources>

@@ -51,10 +51,10 @@ private slots:
 	void SelectCDPathDialog();
 	void SelectMediaPathDialog();
 	void SelectSavePathDialog();
-	void DiskPathEdited(QString &text);
-	void CDPathEdited(QString &text);
-	void MediaPathEdited(QString &text);
-	void SavePathEdited(QString &text);
+	void DiskPathEdited(const QString &text);
+	void CDPathEdited(const QString &text);
+	void MediaPathEdited(const QString &text);
+	void SavePathEdited(const QString &text);
 	void MaxLoDChanged(int value);
 	void MaxActorsChanged(int value);
 };

@@ -130,6 +130,9 @@ bool CMainDialog::OnInitDialog()
 		driver_i += 1;
 	}
 	m_ui->devicesList->setCurrentRow(selected);
+
+	m_ui->maxLoDSlider->setValue((int)currentConfigApp->m_max_lod * 10);
+	m_ui->maxActorsSlider->setValue(currentConfigApp->m_max_actors);
 	UpdateInterface();
 	return true;
 }
@@ -353,9 +356,12 @@ void CMainDialog::SelectDiskPathDialog()
                                                     disk_path,
                                                     QFileDialog::ShowDirsOnly
                                                     | QFileDialog::DontResolveSymlinks);
-	currentConfigApp->m_base_path = disk_path.toStdString();
-	m_modified = true;
-	UpdateInterface();
+
+	if (disk_path.toStdString() != "") {
+		currentConfigApp->m_base_path = disk_path.toStdString();
+		m_modified = true;
+		UpdateInterface();
+	}
 }
 
 void CMainDialog::SelectCDPathDialog()
@@ -365,9 +371,12 @@ void CMainDialog::SelectCDPathDialog()
                                                     cd_path,
                                                     QFileDialog::ShowDirsOnly
                                                     | QFileDialog::DontResolveSymlinks);
-	currentConfigApp->m_cd_path = cd_path.toStdString();
-	m_modified = true;
-	UpdateInterface();
+
+	if (cd_path.toStdString() != "") {
+		currentConfigApp->m_cd_path = cd_path.toStdString();
+		m_modified = true;
+		UpdateInterface();
+	}
 }
 
 void CMainDialog::SelectMediaPathDialog()
@@ -377,9 +386,11 @@ void CMainDialog::SelectMediaPathDialog()
                                                     media_path,
                                                     QFileDialog::ShowDirsOnly
                                                     | QFileDialog::DontResolveSymlinks);
-	currentConfigApp->m_media_path = media_path.toStdString();
-	m_modified = true;
-	UpdateInterface();
+	if (media_path.toStdString() != "") {
+		currentConfigApp->m_media_path = media_path.toStdString();
+		m_modified = true;
+		UpdateInterface();
+	}
 }
 
 void CMainDialog::SelectSavePathDialog()
@@ -389,34 +400,37 @@ void CMainDialog::SelectSavePathDialog()
                                                     save_path,
                                                     QFileDialog::ShowDirsOnly
                                                     | QFileDialog::DontResolveSymlinks);
-	currentConfigApp->m_save_path = save_path.toStdString();
-	m_modified = true;
-	UpdateInterface();
+
+	if (save_path.toStdString() != "") {
+		currentConfigApp->m_save_path = save_path.toStdString();
+		m_modified = true;
+		UpdateInterface();
+	}
 }
 
 
-void CMainDialog::DiskPathEdited(QString &text)
+void CMainDialog::DiskPathEdited(const QString &text)
 {
 	currentConfigApp->m_base_path = text.toStdString();
 	m_modified = true;
 	UpdateInterface();
 }
 
-void CMainDialog::CDPathEdited(QString &text)
+void CMainDialog::CDPathEdited(const QString &text)
 {
 	currentConfigApp->m_cd_path = text.toStdString();
 	m_modified = true;
 	UpdateInterface();
 }
 
-void CMainDialog::MediaPathEdited(QString &text)
+void CMainDialog::MediaPathEdited(const QString &text)
 {
 	currentConfigApp->m_media_path = text.toStdString();
 	m_modified = true;
 	UpdateInterface();
 }
 
-void CMainDialog::SavePathEdited(QString &text)
+void CMainDialog::SavePathEdited(const QString &text)
 {
 	currentConfigApp->m_save_path = text.toStdString();
 	m_modified = true;

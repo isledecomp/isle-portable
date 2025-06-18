@@ -321,7 +321,7 @@ void CConfigApp::WriteRegisterSettings() const
 	SetIniInt(dict, "isle:Island Quality", m_model_quality);
 	SetIniInt(dict, "isle:Island Texture", m_texture_quality);
 
-	iniparser_set(dict, "isle:Max LOD", (const char)m_max_lod);
+	iniparser_set(dict, "isle:Max LOD", std::to_string(m_max_lod).c_str());
 	SetIniInt(dict, "isle:Max Allowed Extras", m_max_actors);
 
 #undef SetIniBool
