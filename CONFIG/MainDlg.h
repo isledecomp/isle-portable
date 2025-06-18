@@ -43,7 +43,6 @@ private slots:
 	void OnRadiobuttonTextureLowQuality(bool checked);
 	void OnRadiobuttonTextureHighQuality(bool checked);
 	void OnCheckboxJoystick(bool chedked);
-	void OnCheckboxDrawCursor(bool checked);
 	void OnCheckboxMusic(bool checked);
 	void OnButtonAdvanced();
 	void accept() override;
