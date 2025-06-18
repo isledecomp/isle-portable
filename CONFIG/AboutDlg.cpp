@@ -14,4 +14,5 @@ CAboutDialog::CAboutDialog() : QDialog()
 {
 	m_ui = new Ui::AboutDialog;
 	m_ui->setupUi(this);
+	layout()->setSizeConstraint( QLayout::SetFixedSize );
 }
