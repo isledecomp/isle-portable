@@ -30,13 +30,30 @@ CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 	// Populate the dialog prior to connecting all signals
 	OnInitDialog();
 
-	connect(m_ui->colorPalette16bitRadioButton, &QRadioButton::toggled, this, &CMainDialog::OnRadiobuttonPalette16bit);
-	connect(m_ui->colorPalette256RadioButton, &QRadioButton::toggled, this, &CMainDialog::OnRadiobuttonPalette256);
 	connect(
-		m_ui->modelQualityFastRadioButton,
+		m_ui->colorPalette16bitRadioButton,
+		 &QRadioButton::toggled,
+		 this,
+		 &CMainDialog::OnRadiobuttonPalette16bit
+	);
+	connect(
+		m_ui->colorPalette256RadioButton,
+		 &QRadioButton::toggled,
+		 this,
+		 &CMainDialog::OnRadiobuttonPalette256
+	);
+
+	connect(
+		m_ui->modelQualityLowRadioButton,
 		&QRadioButton::toggled,
 		this,
 		&CMainDialog::OnRadiobuttonModelLowQuality
+	);
+	connect(
+		m_ui->modelQualityMediumRadioButton,
+		&QRadioButton::toggled,
+		this,
+		&CMainDialog::OnRadiobuttonModelMediumQuality
 	);
 	connect(
 		m_ui->modelQualityHighRadioButton,
@@ -44,6 +61,7 @@ CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 		this,
 		&CMainDialog::OnRadiobuttonModelHighQuality
 	);
+
 	connect(
 		m_ui->textureQualityFastRadioButton,
 		&QRadioButton::toggled,
@@ -64,12 +82,25 @@ CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 	connect(m_ui->joystickCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxJoystick);
 	connect(m_ui->okButton, &QPushButton::clicked, this, &CMainDialog::accept);
 	connect(m_ui->cancelButton, &QPushButton::clicked, this, &CMainDialog::reject);
-	connect(m_ui->advancedButton, &QPushButton::clicked, this, &CMainDialog::OnButtonAdvanced);
+
+	connect(m_ui->diskPathOpen, &QPushButton::clicked, this, &CMainDialog::SelectDiskPathDialog);
+	connect(m_ui->cdPathOpen, &QPushButton::clicked, this, &CMainDialog::SelectCDPathDialog);
+	connect(m_ui->mediaPathOpen, &QPushButton::clicked, this, &CMainDialog::SelectMediaPathDialog);
+	connect(m_ui->savePathOpen, &QPushButton::clicked, this, &CMainDialog::SelectSavePathDialog);
+
+	connect(m_ui->diskPath, &QLineEdit::textEdited, this, &CMainDialog::DiskPathEdited);
+	connect(m_ui->cdPath, &QLineEdit::textEdited, this, &CMainDialog::CDPathEdited);
+	connect(m_ui->mediaPath, &QLineEdit::textEdited, this, &CMainDialog::MediaPathEdited);
+	connect(m_ui->savePath, &QLineEdit::textEdited, this, &CMainDialog::SavePathEdited);
+
+	connect(m_ui->maxLoDSlider, &QSlider::valueChanged, this, &CMainDialog::MaxLoDChanged);
+	connect(m_ui->maxActorsSlider, &QSlider::valueChanged, this, &CMainDialog::MaxActorsChanged);
+
+	layout()->setSizeConstraint( QLayout::SetFixedSize );
 }
 // FUNCTION: CONFIG 0x00403e80
 bool CMainDialog::OnInitDialog()
 {
-	SwitchToAdvanced(false);
 	LegoDeviceEnumerate* enumerator = currentConfigApp->m_device_enumerator;
 	enumerator->FUN_1009d210();
 	m_modified = currentConfigApp->ReadRegisterSettings();
@@ -172,8 +203,11 @@ void CMainDialog::UpdateInterface()
 	m_ui->colorPalette16bitRadioButton->setEnabled(full_screen && currentConfigApp->GetDeviceRenderBitStatus());
 	m_ui->sound3DCheckBox->setChecked(currentConfigApp->m_3d_sound);
 	switch (currentConfigApp->m_model_quality) {
+	case 0:
+		m_ui->modelQualityLowRadioButton->setChecked(true);
+		break;
 	case 1:
-		m_ui->modelQualityFastRadioButton->setChecked(true);
+		m_ui->modelQualityMediumRadioButton->setChecked(true);
 		break;
 	case 2:
 		m_ui->modelQualityHighRadioButton->setChecked(true);
@@ -187,6 +221,10 @@ void CMainDialog::UpdateInterface()
 	}
 	m_ui->joystickCheckBox->setChecked(currentConfigApp->m_use_joystick);
 	m_ui->musicCheckBox->setChecked(currentConfigApp->m_music);
+	m_ui->diskPath->setText(QString::fromStdString(currentConfigApp->m_base_path));
+	m_ui->cdPath->setText(QString::fromStdString(currentConfigApp->m_cd_path));
+	m_ui->mediaPath->setText(QString::fromStdString(currentConfigApp->m_media_path));
+	m_ui->savePath->setText(QString::fromStdString(currentConfigApp->m_save_path));
 }
 
 // FUNCTION: CONFIG 0x004045e0
@@ -239,6 +277,17 @@ void CMainDialog::OnRadiobuttonModelLowQuality(bool checked)
 	if (checked) {
 		// FIXME: are OnRadiobuttonModelLowQuality and OnRadiobuttonModelHighQuality triggered both?
 		qInfo() << "OnRadiobuttonModelLowQuality";
+		currentConfigApp->m_model_quality = 0;
+		m_modified = true;
+		UpdateInterface();
+	}
+}
+
+void CMainDialog::OnRadiobuttonModelMediumQuality(bool checked)
+{
+	if (checked) {
+		// FIXME: are OnRadiobuttonModelLowQuality and OnRadiobuttonModelHighQuality triggered both?
+		qInfo() << "OnRadiobuttonModelMediumQuality";
 		currentConfigApp->m_model_quality = 1;
 		m_modified = true;
 		UpdateInterface();
@@ -288,24 +337,101 @@ void CMainDialog::OnCheckboxJoystick(bool checked)
 	UpdateInterface();
 }
 
-// FUNCTION: CONFIG 0x004047c0
-void CMainDialog::OnButtonAdvanced()
-{
-	SwitchToAdvanced(!m_advanced);
-}
-
-// FUNCTION: CONFIG 0x004047d0
-void CMainDialog::SwitchToAdvanced(bool p_advanced)
-{
-	m_ui->advancedGroup->setVisible(p_advanced);
-	layout()->setSizeConstraint(QLayout::SetMinAndMaxSize);
-	m_advanced = p_advanced;
-}
-
 // FUNCTION: CONFIG 0x004048c0
 void CMainDialog::OnCheckboxMusic(bool checked)
 {
 	currentConfigApp->m_music = checked;
 	m_modified = true;
 	UpdateInterface();
+}
+
+
+void CMainDialog::SelectDiskPathDialog()
+{
+	QString disk_path = QString::fromStdString(currentConfigApp->m_base_path);
+	disk_path = QFileDialog::getExistingDirectory(this, tr("Open Directory"),
+                                                    disk_path,
+                                                    QFileDialog::ShowDirsOnly
+                                                    | QFileDialog::DontResolveSymlinks);
+	currentConfigApp->m_base_path = disk_path.toStdString();
+	m_modified = true;
+	UpdateInterface();
+}
+
+void CMainDialog::SelectCDPathDialog()
+{
+	QString cd_path = QString::fromStdString(currentConfigApp->m_cd_path);
+	cd_path = QFileDialog::getExistingDirectory(this, tr("Open Directory"),
+                                                    cd_path,
+                                                    QFileDialog::ShowDirsOnly
+                                                    | QFileDialog::DontResolveSymlinks);
+	currentConfigApp->m_cd_path = cd_path.toStdString();
+	m_modified = true;
+	UpdateInterface();
+}
+
+void CMainDialog::SelectMediaPathDialog()
+{
+	QString media_path = QString::fromStdString(currentConfigApp->m_media_path);
+	media_path = QFileDialog::getExistingDirectory(this, tr("Open Directory"),
+                                                    media_path,
+                                                    QFileDialog::ShowDirsOnly
+                                                    | QFileDialog::DontResolveSymlinks);
+	currentConfigApp->m_media_path = media_path.toStdString();
+	m_modified = true;
+	UpdateInterface();
+}
+
+void CMainDialog::SelectSavePathDialog()
+{
+	QString save_path = QString::fromStdString(currentConfigApp->m_save_path);
+	save_path = QFileDialog::getExistingDirectory(this, tr("Open Directory"),
+                                                    save_path,
+                                                    QFileDialog::ShowDirsOnly
+                                                    | QFileDialog::DontResolveSymlinks);
+	currentConfigApp->m_save_path = save_path.toStdString();
+	m_modified = true;
+	UpdateInterface();
+}
+
+
+void CMainDialog::DiskPathEdited(QString &text)
+{
+	currentConfigApp->m_base_path = text.toStdString();
+	m_modified = true;
+	UpdateInterface();
+}
+
+void CMainDialog::CDPathEdited(QString &text)
+{
+	currentConfigApp->m_cd_path = text.toStdString();
+	m_modified = true;
+	UpdateInterface();
+}
+
+void CMainDialog::MediaPathEdited(QString &text)
+{
+	currentConfigApp->m_media_path = text.toStdString();
+	m_modified = true;
+	UpdateInterface();
+}
+
+void CMainDialog::SavePathEdited(QString &text)
+{
+	currentConfigApp->m_save_path = text.toStdString();
+	m_modified = true;
+	UpdateInterface();
+}
+
+
+void CMainDialog::MaxLoDChanged(int value)
+{
+	currentConfigApp->m_max_lod = static_cast<float>(value) / 10.0f;
+	m_modified = true;
+}
+
+void CMainDialog::MaxActorsChanged(int value)
+{
+	currentConfigApp->m_max_actors = value;
+	m_modified = true;
 }

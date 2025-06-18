@@ -74,16 +74,22 @@ bool CConfigApp::InitInstance()
 		m_3d_sound = FALSE;
 		m_model_quality = 0;
 		m_texture_quality = 1;
+		m_max_lod = 1.5f;
+		m_max_actors = 5;
 	}
 	else if (totalRamMiB < 20) {
 		m_3d_sound = FALSE;
 		m_model_quality = 1;
 		m_texture_quality = 1;
+		m_max_lod = 2.5f;
+		m_max_actors = 10;
 	}
 	else {
 		m_model_quality = 2;
 		m_3d_sound = TRUE;
 		m_texture_quality = 1;
+		m_max_lod = 3.5f;
+		m_max_actors = 20;
 	}
 	return true;
 }
@@ -149,6 +155,8 @@ bool CConfigApp::ReadRegisterSettings()
 	m_use_joystick = iniparser_getboolean(dict, "isle:UseJoystick", m_use_joystick);
 	m_music = iniparser_getboolean(dict, "isle:Music", m_music);
 	m_joystick_index = iniparser_getint(dict, "isle:JoystickIndex", m_joystick_index);
+	m_max_lod = iniparser_getdouble(dict, "isle:Max LOD", m_max_lod);
+	m_max_actors = iniparser_getint(dict, "isle:Max Allowed Extras", m_max_actors);
 	return true;
 }
 
@@ -211,6 +219,16 @@ bool CConfigApp::ValidateSettings()
 		m_texture_quality = 0;
 		is_modified = TRUE;
 	}
+
+	if (m_max_lod < 0.0f || m_max_lod > 5.0f) {
+		m_max_lod = 3.5f;
+		is_modified = TRUE;
+	}
+	if (m_max_actors < 5 || m_max_actors > 40) {
+		m_max_actors = 20;
+		is_modified = TRUE;
+	}
+
 	return is_modified;
 }
 
@@ -302,6 +320,9 @@ void CConfigApp::WriteRegisterSettings() const
 
 	SetIniInt(dict, "isle:Island Quality", m_model_quality);
 	SetIniInt(dict, "isle:Island Texture", m_texture_quality);
+
+	iniparser_set(dict, "isle:Max LOD", (const char)m_max_lod);
+	SetIniInt(dict, "isle:Max Allowed Extras", m_max_actors);
 
 #undef SetIniBool
 #undef SetIniInt
