@@ -64,6 +64,8 @@ private:
 	LPDIRECTDRAWSURFACE m_checkboxHilite;  // 0x2c4
 	LPDIRECTDRAWSURFACE m_checkboxSurface; // 0x2c8
 	LPDIRECTDRAWSURFACE m_checkboxNormal;  // 0x2cc
+	MxStillPresenter* m_intAlphabet[sizeOfArray(LegoGameState::g_intCharacters)];
+	MxU32 m_intAlphabetOffset;
 
 	MxLong HandleEndAction(MxEndActionNotificationParam& p_param);
 	MxLong HandleKeyPress(SDL_Keycode p_key);

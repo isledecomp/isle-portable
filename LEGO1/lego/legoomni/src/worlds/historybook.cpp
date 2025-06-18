@@ -10,12 +10,15 @@
 #include "mxstillpresenter.h"
 #include "mxtransitionmanager.h"
 
+#include <SDL3/SDL_log.h>
+
 DECOMP_SIZE_ASSERT(HistoryBook, 0x3e4)
 
 // FUNCTION: LEGO1 0x100822f0
 HistoryBook::HistoryBook()
 {
 	memset(m_alphabet, 0, sizeof(m_alphabet));
+	memset(m_intAlphabet, 0, sizeof(m_intAlphabet));
 	memset(m_name, 0, sizeof(m_name));
 	memset(m_scores, 0, sizeof(m_scores));
 	NotificationManager()->Register(this);
@@ -112,6 +115,20 @@ void HistoryBook::ReadyWorld()
 		}
 	}
 
+	for (i = 0; i < sizeOfArray(m_intAlphabet); i++) {
+		m_intAlphabet[i] = (MxStillPresenter*) Find("MxStillPresenter", LegoGameState::g_intCharacters[i].m_bitmap);
+	}
+
+	m_intAlphabetOffset = 0;
+	for (i = 0; i < sizeOfArray(m_intAlphabet); i++) {
+		if (!m_intAlphabet[i]) {
+			m_intAlphabetOffset++;
+		}
+		else {
+			break;
+		}
+	}
+
 	MxStillPresenter* scoreboxMaster = (MxStillPresenter*) Find("MxStillPresenter", "ScoreBox");
 	MxU8 scoreColors[3] =
 		{0x76, 0x4c, 0x38}; // yellow - #FFB900, blue - #00548C, red - #CB1220, background - #CECECE, border - #74818B
@@ -167,7 +184,24 @@ void HistoryBook::ReadyWorld()
 		for (MxS16 j = 0; j < (MxS16) sizeOfArray(m_name[0]) && score->m_name.m_letters[j] != -1; j++, scoreX += 0x17)
 #endif
 		{
-			m_name[i][j] = m_alphabet[score->m_name.m_letters[j]]->Clone();
+			MxStillPresenter** intoAlphabet = [this,
+											   index = score->m_name.m_letters[j]]() mutable -> MxStillPresenter** {
+				if (index < sizeOfArray(m_alphabet)) {
+					return &m_alphabet[index];
+				}
+
+				index -= sizeOfArray(m_alphabet);
+				index += m_intAlphabetOffset;
+
+				if (index >= sizeOfArray(m_intAlphabet) || !m_intAlphabet[index]) {
+					SDL_Log("Warning: international character not present in current game. Falling back to X");
+					return &m_alphabet[SDLK_X - SDLK_A];
+				}
+
+				return &m_intAlphabet[index];
+			}();
+
+			m_name[i][j] = (*intoAlphabet)->Clone();
 
 			assert(m_name[i][j]);
 			m_name[i][j]->Enable(TRUE);

@@ -29,6 +29,8 @@
 #include "regbook_actions.h"
 #include "scripts.h"
 
+#include <SDL3/SDL_log.h>
+
 DECOMP_SIZE_ASSERT(RegistrationBook, 0x2d0)
 
 // GLOBAL: LEGO1 0x100d9924
@@ -45,6 +47,7 @@ MxBool g_nextCheckbox = FALSE;
 RegistrationBook::RegistrationBook() : m_registerDialogueTimer(0x80000000), m_unk0xfc(1)
 {
 	memset(m_alphabet, 0, sizeof(m_alphabet));
+	memset(m_intAlphabet, 0, sizeof(m_intAlphabet));
 	memset(m_name, 0, sizeof(m_name));
 	m_unk0x280.m_cursorPos = 0;
 
@@ -175,19 +178,31 @@ MxLong RegistrationBook::HandleKeyPress(SDL_Keycode p_key)
 	// keycode is case-insensitive
 	SDL_Keycode key = p_key;
 
-	if ((key < SDLK_A || key > SDLK_Z) && key != SDLK_BACKSPACE) {
+	MxStillPresenter** intoAlphabet = [this, key]() -> MxStillPresenter** {
+		if (key >= SDLK_A && key <= SDLK_Z) {
+			return &m_alphabet[key - SDLK_A];
+		}
+
+		for (int i = 0; i < sizeOfArray(m_intAlphabet); i++) {
+			if (m_intAlphabet[i] && LegoGameState::g_intCharacters[i].m_character == key) {
+				return &m_intAlphabet[i];
+			}
+		}
+
+		return nullptr;
+	}();
+
+	if (!intoAlphabet && key != SDLK_BACKSPACE) {
 		if (key == SDLK_SPACE) {
 			DeleteObjects(&m_atomId, RegbookScript::c_iic006in_RunAnim, RegbookScript::c_iic008in_PlayWav);
 			BackgroundAudioManager()->RaiseVolume();
 		}
 	}
 	else if (key != SDLK_BACKSPACE && m_unk0x280.m_cursorPos < 7) {
-		m_name[0][m_unk0x280.m_cursorPos] = m_alphabet[key - SDLK_A]->Clone();
+		m_name[0][m_unk0x280.m_cursorPos] = (*intoAlphabet)->Clone();
 
 		if (m_name[0][m_unk0x280.m_cursorPos] != NULL) {
-			m_alphabet[key - SDLK_A]->GetAction()->SetUnknown24(
-				m_alphabet[key - SDLK_A]->GetAction()->GetUnknown24() + 1
-			);
+			(*intoAlphabet)->GetAction()->SetUnknown24((*intoAlphabet)->GetAction()->GetUnknown24() + 1);
 			m_name[0][m_unk0x280.m_cursorPos]->Enable(TRUE);
 			m_name[0][m_unk0x280.m_cursorPos]->SetTickleState(MxPresenter::e_repeating);
 			m_name[0][m_unk0x280.m_cursorPos]->SetPosition(m_unk0x280.m_cursorPos * 23 + 343, 121);
@@ -196,7 +211,10 @@ MxLong RegistrationBook::HandleKeyPress(SDL_Keycode p_key)
 				m_checkmark[0]->Enable(TRUE);
 			}
 
-			m_unk0x280.m_letters[m_unk0x280.m_cursorPos] = key - SDLK_A;
+			m_unk0x280.m_letters[m_unk0x280.m_cursorPos] =
+				key >= SDLK_A && key <= SDLK_Z
+					? key - SDLK_A
+					: (intoAlphabet - m_intAlphabet) + sizeOfArray(m_alphabet) - m_intAlphabetOffset;
 			m_unk0x280.m_cursorPos++;
 		}
 	}
@@ -224,13 +242,22 @@ MxLong RegistrationBook::HandleKeyPress(SDL_Keycode p_key)
 MxLong RegistrationBook::HandleControl(LegoControlManagerNotificationParam& p_param)
 {
 	MxS16 buttonId = p_param.m_unk0x28;
+	const InternationalCharacter* intChar = NULL;
 
-	if (buttonId >= 1 && buttonId <= 28) {
+	for (int i = 0; i < sizeOfArray(m_intAlphabet); i++) {
+		if (m_intAlphabet[i] && LegoGameState::g_intCharacters[i].m_buttonId == buttonId) {
+			intChar = &LegoGameState::g_intCharacters[i];
+			break;
+		}
+	}
+
+	if ((buttonId >= 1 && buttonId <= 28) || intChar) {
 		if (p_param.m_clickedObjectId == RegbookScript::c_Alphabet_Ctl) {
 			// buttonId:
 			// - [1, 26]: alphabet
 			// - 27: backspace
 			// - 28: go back to information center
+			// - 29+: international alphabet
 			if (buttonId == 28) {
 				DeleteObjects(&m_atomId, RegbookScript::c_iic006in_RunAnim, RegbookScript::c_iic008in_PlayWav);
 
@@ -244,11 +271,19 @@ MxLong RegistrationBook::HandleControl(LegoControlManagerNotificationParam& p_pa
 				TransitionManager()->StartTransition(MxTransitionManager::e_mosaic, 50, FALSE, FALSE);
 			}
 			else {
-				if (buttonId > 28) {
+				if (buttonId > 28 && !intChar) {
 					return 1;
 				}
 
-				HandleKeyPress(buttonId < 27 ? SDLK_A + buttonId - 1 : SDLK_BACKSPACE);
+				if (buttonId < 27) {
+					HandleKeyPress(SDLK_A + buttonId - 1);
+				}
+				else if (intChar) {
+					HandleKeyPress((SDL_Keycode) intChar->m_character);
+				}
+				else {
+					HandleKeyPress(SDLK_BACKSPACE);
+				}
 			}
 		}
 		else {
@@ -422,6 +457,20 @@ void RegistrationBook::ReadyWorld()
 		}
 	}
 
+	for (i = 0; i < sizeOfArray(m_intAlphabet); i++) {
+		m_intAlphabet[i] = (MxStillPresenter*) Find("MxStillPresenter", LegoGameState::g_intCharacters[i].m_bitmap);
+	}
+
+	m_intAlphabetOffset = 0;
+	for (i = 0; i < sizeOfArray(m_intAlphabet); i++) {
+		if (!m_intAlphabet[i]) {
+			m_intAlphabetOffset++;
+		}
+		else {
+			break;
+		}
+	}
+
 	// Now we have to do the checkmarks
 	char checkmarkBuffer[] = "Check0_Ctl";
 	for (i = 0; i < 10; i++) {
@@ -443,8 +492,25 @@ void RegistrationBook::ReadyWorld()
 					m_checkmark[i]->Enable(TRUE);
 				}
 
+				MxStillPresenter** intoAlphabet =
+					[this, index = players[i - 1].m_letters[j]]() mutable -> MxStillPresenter** {
+					if (index < sizeOfArray(m_alphabet)) {
+						return &m_alphabet[index];
+					}
+
+					index -= sizeOfArray(m_alphabet);
+					index += m_intAlphabetOffset;
+
+					if (index >= sizeOfArray(m_intAlphabet) || !m_intAlphabet[index]) {
+						SDL_Log("Warning: international character not present in current game. Falling back to X");
+						return &m_alphabet[SDLK_X - SDLK_A];
+					}
+
+					return &m_intAlphabet[index];
+				}();
+
 				// Start building the player names using a two-dimensional array
-				m_name[i][j] = m_alphabet[players[i - 1].m_letters[j]]->Clone();
+				m_name[i][j] = (*intoAlphabet)->Clone();
 
 				assert(m_name[i][j]);
 				// Enable the presenter to actually show the letter in the grid
