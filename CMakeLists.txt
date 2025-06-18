@@ -50,10 +50,13 @@ message(STATUS "Internal miniwin:       ${ISLE_MINIWIN}")
 message(STATUS "Isle debugging:         ${ISLE_DEBUG}")
 message(STATUS "Compile shaders:        ${ISLE_COMPILE_SHADERS}")
 
-message(STATUS "Fetching SDL3, please wait...")
+
 
 if (DOWNLOAD_DEPENDENCIES)
     # FetchContent downloads and configures dependencies
+
+    message(STATUS "Fetching SDL3 and iniparser. This might take a while...")
+
     include(FetchContent)
     FetchContent_Declare(
         SDL3
