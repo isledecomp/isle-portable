@@ -630,6 +630,26 @@ install(TARGETS isle ${install_extra_targets}
   RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
   LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
 )
+if (ISLE_BUILD_CONFIG)
+  find_program(WINDEPLOYQT_EXECUTABLE windeployqt)
+  if(WINDEPLOYQT_EXECUTABLE)
+    add_custom_command(TARGET config POST_BUILD
+      COMMAND "${WINDEPLOYQT_EXECUTABLE}"
+              "$<TARGET_FILE:config>"
+              "--no-compiler-runtime"
+              "--no-opengl-sw"
+              "--no-system-d3d-compiler"
+              "--no-translations"
+              "--no-quick-import"
+      COMMENT "Running windeployqt with minimal dependencies"
+    )
+  else()
+    message(WARNING "windeployqt not found.")
+  endif()
+  install(TARGETS config
+    RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+  )
+endif()
 if(EMSCRIPTEN)
   install(FILES "$<TARGET_FILE_DIR:isle>/isle.js" "$<TARGET_FILE_DIR:isle>/isle.wasm"
     DESTINATION "${CMAKE_INSTALL_BINDIR}"

@@ -17,15 +17,21 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: 'Linux',   os: 'ubuntu-latest',  dx5: false, config: true,  build-type: 'Release', linux: true, werror: true,  clang-tidy: false }
-          - { name: 'Windows', os: 'windows-latest', dx5: false, config: false, build-type: 'Release', msvc: true,  werror: false, clang-tidy: false, vc-arch: 'amd64' }
-          - { name: 'macOS',   os: 'macos-latest',   dx5: false, config: true,  build-type: 'Release', brew: true,  werror: true,  clang-tidy: false }
+          - { name: 'Linux',   os: 'ubuntu-latest',  dx5: false, config: true, build-type: 'Release', linux: true, werror: true,  clang-tidy: false }
+          - { name: 'Windows', os: 'windows-latest', dx5: false, config: true, build-type: 'Release', msvc: true,  werror: false, clang-tidy: false, vc-arch: 'amd64' }
+          - { name: 'macOS',   os: 'macos-latest',   dx5: false, config: true, build-type: 'Release', brew: true,  werror: true,  clang-tidy: false }
     steps:
       - name: Setup vcvars
         if: ${{ !!matrix.msvc }}
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: ${{ matrix.vc-arch }}
+
+      - name: Install Qt
+        if: ${{ !!matrix.msvc && matrix.config }}
+        uses: jurplel/install-qt-action@v4
+        with:
+          cache: 'true'
 
       - name: Set up MSYS2
         if: ${{ !!matrix.msystem }}
