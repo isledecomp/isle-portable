@@ -58,7 +58,6 @@ CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 	);
 	connect(m_ui->devicesList, &QListWidget::currentRowChanged, this, &CMainDialog::OnList3DevicesSelectionChanged);
 	connect(m_ui->musicCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxMusic);
-	connect(m_ui->drawCursorCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxDrawCursor);
 	connect(m_ui->videomemoryCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckbox3DVideoMemory);
 	connect(m_ui->flipVideoMemoryPagesCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxFlipVideoMemPages);
 	connect(m_ui->sound3DCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckbox3DSound);
@@ -121,10 +120,7 @@ void CMainDialog::OnList3DevicesSelectionChanged(int selected)
 {
 	LegoDeviceEnumerate* device_enumerator = currentConfigApp->m_device_enumerator;
 	device_enumerator->GetDevice(selected, currentConfigApp->m_driver, currentConfigApp->m_device);
-	if (currentConfigApp->GetHardwareDeviceColorModel() != D3DCOLOR_NONE) {
-		m_ui->drawCursorCheckBox->setEnabled(true);
-	}
-	else {
+	if (currentConfigApp->GetHardwareDeviceColorModel() == D3DCOLOR_NONE) {
 		currentConfigApp->m_3d_video_ram = FALSE;
 		currentConfigApp->m_flip_surfaces = FALSE;
 		m_ui->videomemoryCheckBox->setChecked(currentConfigApp->m_3d_video_ram);
@@ -159,14 +155,6 @@ void CMainDialog::UpdateInterface()
 	m_ui->videomemoryCheckBox->setChecked(currentConfigApp->m_3d_video_ram);
 	bool full_screen = currentConfigApp->m_full_screen;
 	currentConfigApp->AdjustDisplayBitDepthBasedOnRenderStatus();
-	if (currentConfigApp->GetHardwareDeviceColorModel() != D3DCOLOR_NONE) {
-		m_ui->drawCursorCheckBox->setChecked(true);
-	}
-	else {
-		m_ui->drawCursorCheckBox->setChecked(false);
-		currentConfigApp->m_draw_cursor = FALSE;
-		m_ui->drawCursorCheckBox->setEnabled(false);
-	}
 	if (full_screen) {
 		if (currentConfigApp->m_display_bit_depth == 8) {
 			m_ui->colorPalette256RadioButton->setChecked(true);
@@ -183,7 +171,6 @@ void CMainDialog::UpdateInterface()
 	m_ui->colorPalette256RadioButton->setEnabled(full_screen && currentConfigApp->GetConditionalDeviceRenderBitDepth());
 	m_ui->colorPalette16bitRadioButton->setEnabled(full_screen && currentConfigApp->GetDeviceRenderBitStatus());
 	m_ui->sound3DCheckBox->setChecked(currentConfigApp->m_3d_sound);
-	m_ui->drawCursorCheckBox->setChecked(currentConfigApp->m_draw_cursor);
 	switch (currentConfigApp->m_model_quality) {
 	case 1:
 		m_ui->modelQualityFastRadioButton->setChecked(true);
@@ -313,14 +300,6 @@ void CMainDialog::SwitchToAdvanced(bool p_advanced)
 	m_ui->advancedGroup->setVisible(p_advanced);
 	layout()->setSizeConstraint(QLayout::SetMinAndMaxSize);
 	m_advanced = p_advanced;
-}
-
-// FUNCTION: CONFIG 0x00404890
-void CMainDialog::OnCheckboxDrawCursor(bool checked)
-{
-	currentConfigApp->m_draw_cursor = checked;
-	m_modified = true;
-	UpdateInterface();
 }
 
 // FUNCTION: CONFIG 0x004048c0
