@@ -120,16 +120,17 @@
             <string>Island Model Quality</string>
            </property>
            <layout class="QHBoxLayout" name="horizontalLayout_2">
-            <property name="topMargin">
-             <number>0</number>
-            </property>
-            <property name="bottomMargin">
-             <number>0</number>
-            </property>
             <item>
-             <widget class="QRadioButton" name="modelQualityFastRadioButton">
+             <widget class="QRadioButton" name="modelQualityLowRadioButton">
               <property name="text">
-               <string>Fast</string>
+               <string>Low</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QRadioButton" name="modelQualityMediumRadioButton">
+              <property name="text">
+               <string>Medium</string>
               </property>
              </widget>
             </item>
@@ -181,6 +182,13 @@
             <property name="bottomMargin">
              <number>0</number>
             </property>
+            <item>
+             <widget class="QCheckBox" name="sound3DCheckBox">
+              <property name="text">
+               <string>3D Sound</string>
+              </property>
+             </widget>
+            </item>
             <item>
              <widget class="QCheckBox" name="musicCheckBox">
               <property name="text">
@@ -298,7 +306,7 @@
          </item>
          <item>
           <widget class="QWidget" name="D3DCheckboxWidget" native="true">
-           <layout class="QGridLayout" name="gridLayout">
+           <layout class="QVBoxLayout" name="verticalLayout_4">
             <property name="leftMargin">
              <number>0</number>
             </property>
@@ -311,24 +319,17 @@
             <property name="bottomMargin">
              <number>0</number>
             </property>
-            <item row="1" column="0">
-             <widget class="QCheckBox" name="flipVideoMemoryPagesCheckBox">
-              <property name="text">
-               <string>Flip Video Memory Pages</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="0">
+            <item>
              <widget class="QCheckBox" name="videomemoryCheckBox">
               <property name="text">
                <string>Draw 3D to Video Memory</string>
               </property>
              </widget>
             </item>
-            <item row="0" column="1">
-             <widget class="QCheckBox" name="sound3DCheckBox">
+            <item>
+             <widget class="QCheckBox" name="flipVideoMemoryPagesCheckBox">
               <property name="text">
-               <string>3D Sound</string>
+               <string>Flip Video Memory Pages</string>
               </property>
              </widget>
             </item>
