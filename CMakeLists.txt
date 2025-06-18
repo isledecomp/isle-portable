@@ -22,6 +22,7 @@ if (NOT MINGW)
   set(NOT_MINGW ON)
 else()
   set(NOT_MINGW OFF)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static -static-libgcc -static-libstdc++")
 endif()
 
 find_program(SDL_SHADERCROSS_BIN NAMES "shadercross")

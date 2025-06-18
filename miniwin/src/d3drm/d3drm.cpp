@@ -13,6 +13,9 @@
 #ifdef USE_OPENGLES2
 #include "d3drmrenderer_opengles2.h"
 #endif
+#ifdef _WIN32
+#include "d3drmrenderer_directx9.h"
+#endif
 #include "d3drmrenderer_sdl3gpu.h"
 #include "d3drmrenderer_software.h"
 #include "d3drmtexture_impl.h"
@@ -155,6 +158,11 @@ HRESULT Direct3DRMImpl::CreateDeviceFromSurface(
 #ifdef USE_OPENGL1
 	else if (SDL_memcmp(&guid, &OpenGL1_GUID, sizeof(GUID)) == 0) {
 		renderer = OpenGL1Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
+	}
+#endif
+#ifdef _WIN32
+	else if (SDL_memcmp(&guid, &DirectX9_GUID, sizeof(GUID)) == 0) {
+		renderer = DirectX9Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
 #endif
 	else {
