@@ -52,6 +52,7 @@ message(STATUS "Compile shaders:        ${ISLE_COMPILE_SHADERS}")
 
 if (DOWNLOAD_DEPENDENCIES)
     # FetchContent downloads and configures dependencies
+    message(STATUS "Fetching SDL3 and iniparser. This might take a while...")
     include(FetchContent)
     FetchContent_Declare(
         SDL3
