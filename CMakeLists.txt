@@ -644,16 +644,15 @@ endif()
 set(CPACK_PACKAGE_DIRECTORY "dist")
 set(CPACK_PACKAGE_FILE_NAME "isle-${PROJECT_VERSION}-${ISLE_PACKAGE_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
 if(NINTENDO_3DS)
-  include(Tools3DS)
   set(APP_TITLE       "LEGO Island")
   set(APP_DESCRIPTION "LEGO Island port for 3DS")
   set(APP_AUTHOR      "LEGO Island Team")
   set(APP_ICON        "${PROJECT_SOURCE_DIR}/CONFIG/res/lego3ds.png")
   set(APP_VERSION ${PROJECT_VERSION})
 
-  add_3dsx_target(isle)
+  ctr_create_3dsx(isle)
 endif()
-  
+
 if(MSVC)
   set(CPACK_GENERATOR ZIP)
 else()
