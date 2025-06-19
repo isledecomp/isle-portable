@@ -98,12 +98,12 @@ inline Tgl::Result MeshDeepClone(MeshImpl::MeshData* pSource, MeshImpl::MeshData
 	unsigned int vcount, fcount, vperface;
 
 	Tgl::Result result =
-		ResultVal(pSource->groupMesh->GetGroup(pSource->groupIndex, (long unsigned int*)&vcount, (long unsigned int*)&fcount, (long unsigned int*)&vperface, &dataSize, NULL));
+		ResultVal(pSource->groupMesh->GetGroup(pSource->groupIndex, (unsigned int*)&vcount, (unsigned int*)&fcount, (unsigned int*)&vperface, &dataSize, NULL));
 	assert(Succeeded(result));
 
 	unsigned int* faceBuffer = new unsigned int[dataSize];
 	result =
-		ResultVal(pSource->groupMesh->GetGroup(pSource->groupIndex, (long unsigned int*)&vcount, (long unsigned int*)&fcount, (long unsigned int*)&vperface, &dataSize, (long unsigned int*)&faceBuffer)
+		ResultVal(pSource->groupMesh->GetGroup(pSource->groupIndex, (unsigned int*)&vcount, (unsigned int*)&fcount, (unsigned int*)&vperface, &dataSize, (unsigned int*)&faceBuffer)
 		);
 	assert(Succeeded(result));
 
