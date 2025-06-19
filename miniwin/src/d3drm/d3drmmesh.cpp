@@ -40,10 +40,10 @@ HRESULT Direct3DRMMeshImpl::Clone(int flags, GUID iid, void** object)
 }
 
 HRESULT Direct3DRMMeshImpl::AddGroup(
-	int vertexCount,
-	int faceCount,
-	int vertexPerFace,
-	DWORD* faceBuffer,
+	unsigned int vertexCount,
+	unsigned int faceCount,
+	unsigned int vertexPerFace,
+	unsigned int* faceBuffer,
 	D3DRMGROUPINDEX* groupIndex
 )
 {
