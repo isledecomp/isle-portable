@@ -819,6 +819,9 @@ HRESULT Direct3DRMViewportImpl::Pick(float x, float y, LPDIRECT3DRMPICKEDARRAY* 
 	});
 
 	*pickedArray = new Direct3DRMPickedArrayImpl(hits.data(), hits.size());
+	for (PickRecord& hit : hits) {
+		hit.frameArray->Release();
+	}
 
 	return D3DRM_OK;
 }
