@@ -95,14 +95,14 @@ inline Result MeshDeepClone(MeshImpl::MeshData* pSource, MeshImpl::MeshData*& rp
 
 	// Query information from old group
 	DWORD dataSize;
-	DWORD vcount, fcount, vperface;
+	unsigned int vcount, fcount, vperface;
 
 	Result result =
 		ResultVal(pSource->groupMesh->GetGroup(pSource->groupIndex, &vcount, &fcount, &vperface, &dataSize, NULL));
 	assert(Succeeded(result));
 
 
-	DWORD* faceBuffer = new DWORD[dataSize];
+	unsigned int* faceBuffer = new unsigned int[dataSize];
 	result =
 		ResultVal(pSource->groupMesh->GetGroup(pSource->groupIndex, &vcount, &fcount, &vperface, &dataSize, faceBuffer)
 		);
