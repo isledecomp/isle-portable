@@ -97,6 +97,8 @@ void LegoInputManager::Destroy()
 	if (m_controlManager) {
 		delete m_controlManager;
 	}
+
+	SDL_free(m_joyids);
 }
 
 // FUNCTION: LEGO1 0x1005c0f0
@@ -151,7 +153,9 @@ MxResult LegoInputManager::GetJoystick()
 	}
 
 	MxS32 numJoysticks = 0;
-	m_joyids = SDL_GetJoysticks(&numJoysticks);
+	if (m_joyids == NULL) {
+		m_joyids = SDL_GetJoysticks(&numJoysticks);
+	}
 
 	if (m_useJoystick != FALSE && numJoysticks != 0) {
 		MxS32 joyid = m_joystickIndex;
