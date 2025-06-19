@@ -74,6 +74,12 @@ CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 
 	layout()->setSizeConstraint(QLayout::SetFixedSize);
 }
+
+CMainDialog::~CMainDialog()
+{
+	delete m_ui;
+}
+
 // FUNCTION: CONFIG 0x00403e80
 bool CMainDialog::OnInitDialog()
 {

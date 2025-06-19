@@ -20,6 +20,7 @@ class CMainDialog : public QDialog {
 
 public:
 	CMainDialog(QWidget* pParent = nullptr);
+	~CMainDialog() override;
 
 protected:
 	void UpdateInterface();
