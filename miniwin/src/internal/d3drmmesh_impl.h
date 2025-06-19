@@ -70,28 +70,28 @@ struct Direct3DRMMeshImpl : public Direct3DRMObjectBaseImpl<IDirect3DRMMesh> {
 	HRESULT AddGroup(int vertexCount, int faceCount, int vertexPerFace, DWORD* faceBuffer, D3DRMGROUPINDEX* groupIndex)
 		override;
 	HRESULT GetGroup(
-		DWORD groupIndex,
-		DWORD* vertexCount,
-		DWORD* faceCount,
-		DWORD* vertexPerFace,
+		D3DRMGROUPINDEX groupIndex,
+		unsigned int* vertexCount,
+		unsigned int* faceCount,
+		unsigned int* vertexPerFace,
 		DWORD* indexCount,
-		DWORD* indices
+		unsigned int* indices
 	) override;
-	const MeshGroup& GetGroup(DWORD groupIndex);
+	const MeshGroup& GetGroup(D3DRMGROUPINDEX groupIndex);
 	DWORD GetGroupCount() override;
-	HRESULT SetGroupColor(DWORD groupIndex, D3DCOLOR color) override;
-	HRESULT SetGroupColorRGB(DWORD groupIndex, float r, float g, float b) override;
+	HRESULT SetGroupColor(D3DRMGROUPINDEX groupIndex, D3DCOLOR color) override;
+	HRESULT SetGroupColorRGB(D3DRMGROUPINDEX groupIndex, float r, float g, float b) override;
 	D3DCOLOR GetGroupColor(D3DRMGROUPINDEX index) override;
-	HRESULT SetGroupMaterial(DWORD groupIndex, IDirect3DRMMaterial* material) override;
-	HRESULT SetGroupTexture(DWORD groupIndex, IDirect3DRMTexture* texture) override;
-	HRESULT GetGroupTexture(DWORD groupIndex, LPDIRECT3DRMTEXTURE* texture) override;
-	HRESULT GetGroupMaterial(DWORD groupIndex, LPDIRECT3DRMMATERIAL* material) override;
+	HRESULT SetGroupMaterial(D3DRMGROUPINDEX groupIndex, IDirect3DRMMaterial* material) override;
+	HRESULT SetGroupTexture(D3DRMGROUPINDEX groupIndex, IDirect3DRMTexture* texture) override;
+	HRESULT GetGroupTexture(D3DRMGROUPINDEX groupIndex, LPDIRECT3DRMTEXTURE* texture) override;
+	HRESULT GetGroupMaterial(D3DRMGROUPINDEX groupIndex, LPDIRECT3DRMMATERIAL* material) override;
 	HRESULT SetGroupMapping(D3DRMGROUPINDEX groupIndex, D3DRMMAPPING mapping) override;
-	D3DRMMAPPING GetGroupMapping(DWORD groupIndex) override;
-	HRESULT SetGroupQuality(DWORD groupIndex, D3DRMRENDERQUALITY quality) override;
-	D3DRMRENDERQUALITY GetGroupQuality(DWORD groupIndex) override;
-	HRESULT SetVertices(DWORD groupIndex, int offset, int count, D3DRMVERTEX* vertices) override;
-	HRESULT GetVertices(DWORD groupIndex, int startIndex, int count, D3DRMVERTEX* vertices) override;
+	D3DRMMAPPING GetGroupMapping(D3DRMGROUPINDEX groupIndex) override;
+	HRESULT SetGroupQuality(D3DRMGROUPINDEX groupIndex, D3DRMRENDERQUALITY quality) override;
+	D3DRMRENDERQUALITY GetGroupQuality(D3DRMGROUPINDEX groupIndex) override;
+	HRESULT SetVertices(D3DRMGROUPINDEX groupIndex, int offset, int count, D3DRMVERTEX* vertices) override;
+	HRESULT GetVertices(D3DRMGROUPINDEX groupIndex, int startIndex, int count, D3DRMVERTEX* vertices) override;
 	HRESULT GetBox(D3DRMBOX* box) override;
 
 private:
