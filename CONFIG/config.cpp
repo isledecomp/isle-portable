@@ -157,6 +157,7 @@ bool CConfigApp::ReadRegisterSettings()
 	m_joystick_index = iniparser_getint(dict, "isle:JoystickIndex", m_joystick_index);
 	m_max_lod = iniparser_getdouble(dict, "isle:Max LOD", m_max_lod);
 	m_max_actors = iniparser_getint(dict, "isle:Max Allowed Extras", m_max_actors);
+	iniparser_freedict(dict);
 	return true;
 }
 
