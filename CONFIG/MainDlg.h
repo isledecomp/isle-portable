@@ -6,6 +6,7 @@
 #include "res/resource.h"
 
 #include <QDialog>
+#include <QFileDialog>
 
 namespace Ui
 {
@@ -22,7 +23,6 @@ public:
 
 protected:
 	void UpdateInterface();
-	void SwitchToAdvanced(bool p_advanced);
 
 private:
 	bool m_modified = false;
@@ -34,19 +34,25 @@ private:
 private slots:
 	void OnList3DevicesSelectionChanged(int row);
 	void OnCheckbox3DSound(bool checked);
-	void OnCheckbox3DVideoMemory(bool checked);
-	void OnRadiobuttonPalette16bit(bool checked);
-	void OnRadiobuttonPalette256(bool checked);
-	void OnCheckboxFlipVideoMemPages(bool checked);
 	void OnRadiobuttonModelLowQuality(bool checked);
+	void OnRadiobuttonModelMediumQuality(bool checked);
 	void OnRadiobuttonModelHighQuality(bool checked);
 	void OnRadiobuttonTextureLowQuality(bool checked);
 	void OnRadiobuttonTextureHighQuality(bool checked);
-	void OnCheckboxJoystick(bool chedked);
+	void OnCheckboxJoystick(bool checked);
 	void OnCheckboxMusic(bool checked);
-	void OnButtonAdvanced();
 	void accept() override;
 	void reject() override;
+	void SelectDiskPathDialog();
+	void SelectCDPathDialog();
+	void SelectMediaPathDialog();
+	void SelectSavePathDialog();
+	void DiskPathEdited(const QString& text);
+	void CDPathEdited(const QString& text);
+	void MediaPathEdited(const QString& text);
+	void SavePathEdited(const QString& text);
+	void MaxLoDChanged(int value);
+	void MaxActorsChanged(int value);
 };
 
 // SYNTHETIC: CONFIG 0x00403de0
