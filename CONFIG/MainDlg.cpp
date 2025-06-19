@@ -228,8 +228,6 @@ void CMainDialog::OnCheckboxFlipVideoMemPages(bool checked)
 void CMainDialog::OnRadiobuttonModelLowQuality(bool checked)
 {
 	if (checked) {
-		// FIXME: are OnRadiobuttonModelLowQuality and OnRadiobuttonModelHighQuality triggered both?
-		qInfo() << "OnRadiobuttonModelLowQuality";
 		currentConfigApp->m_model_quality = 0;
 		m_modified = true;
 		UpdateInterface();
@@ -239,8 +237,6 @@ void CMainDialog::OnRadiobuttonModelLowQuality(bool checked)
 void CMainDialog::OnRadiobuttonModelMediumQuality(bool checked)
 {
 	if (checked) {
-		// FIXME: are OnRadiobuttonModelLowQuality and OnRadiobuttonModelHighQuality triggered both?
-		qInfo() << "OnRadiobuttonModelMediumQuality";
 		currentConfigApp->m_model_quality = 1;
 		m_modified = true;
 		UpdateInterface();
@@ -251,7 +247,6 @@ void CMainDialog::OnRadiobuttonModelMediumQuality(bool checked)
 void CMainDialog::OnRadiobuttonModelHighQuality(bool checked)
 {
 	if (checked) {
-		qInfo() << "OnRadiobuttonModelHighQuality";
 		currentConfigApp->m_model_quality = 2;
 		m_modified = true;
 		UpdateInterface();
@@ -262,8 +257,6 @@ void CMainDialog::OnRadiobuttonModelHighQuality(bool checked)
 void CMainDialog::OnRadiobuttonTextureLowQuality(bool checked)
 {
 	if (checked) {
-		// FIXME: are OnRadiobuttonTextureLowQuality and OnRadiobuttonTextureHighQuality triggered both?
-		qInfo() << "OnRadiobuttonTextureLowQuality";
 		currentConfigApp->m_texture_quality = 0;
 		m_modified = true;
 		UpdateInterface();
@@ -274,8 +267,6 @@ void CMainDialog::OnRadiobuttonTextureLowQuality(bool checked)
 void CMainDialog::OnRadiobuttonTextureHighQuality(bool checked)
 {
 	if (checked) {
-		// FIXME: are OnRadiobuttonTextureLowQuality and OnRadiobuttonTextureHighQuality triggered both?
-		qInfo() << "OnRadiobuttonTextureHighQuality";
 		currentConfigApp->m_texture_quality = 1;
 		m_modified = true;
 		UpdateInterface();
