@@ -30,25 +30,7 @@ CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 	// Populate the dialog prior to connecting all signals
 	OnInitDialog();
 
-	connect(
-		m_ui->colorPalette16bitRadioButton,
-		 &QRadioButton::toggled,
-		 this,
-		 &CMainDialog::OnRadiobuttonPalette16bit
-	);
-	connect(
-		m_ui->colorPalette256RadioButton,
-		 &QRadioButton::toggled,
-		 this,
-		 &CMainDialog::OnRadiobuttonPalette256
-	);
-
-	connect(
-		m_ui->modelQualityLowRadioButton,
-		&QRadioButton::toggled,
-		this,
-		&CMainDialog::OnRadiobuttonModelLowQuality
-	);
+	connect(m_ui->modelQualityLowRadioButton, &QRadioButton::toggled, this, &CMainDialog::OnRadiobuttonModelLowQuality);
 	connect(
 		m_ui->modelQualityMediumRadioButton,
 		&QRadioButton::toggled,
@@ -96,7 +78,7 @@ CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 	connect(m_ui->maxLoDSlider, &QSlider::valueChanged, this, &CMainDialog::MaxLoDChanged);
 	connect(m_ui->maxActorsSlider, &QSlider::valueChanged, this, &CMainDialog::MaxActorsChanged);
 
-	layout()->setSizeConstraint( QLayout::SetFixedSize );
+	layout()->setSizeConstraint(QLayout::SetFixedSize);
 }
 // FUNCTION: CONFIG 0x00403e80
 bool CMainDialog::OnInitDialog()
@@ -131,7 +113,7 @@ bool CMainDialog::OnInitDialog()
 	}
 	m_ui->devicesList->setCurrentRow(selected);
 
-	m_ui->maxLoDSlider->setValue((int)currentConfigApp->m_max_lod * 10);
+	m_ui->maxLoDSlider->setValue((int) currentConfigApp->m_max_lod * 10);
 	m_ui->maxActorsSlider->setValue(currentConfigApp->m_max_actors);
 	UpdateInterface();
 	return true;
@@ -189,21 +171,9 @@ void CMainDialog::UpdateInterface()
 	m_ui->videomemoryCheckBox->setChecked(currentConfigApp->m_3d_video_ram);
 	bool full_screen = currentConfigApp->m_full_screen;
 	currentConfigApp->AdjustDisplayBitDepthBasedOnRenderStatus();
-	if (full_screen) {
-		if (currentConfigApp->m_display_bit_depth == 8) {
-			m_ui->colorPalette256RadioButton->setChecked(true);
-		}
-		else {
-			m_ui->colorPalette16bitRadioButton->setChecked(true);
-		}
-	}
-	else {
-		m_ui->colorPalette256RadioButton->setChecked(false);
-		m_ui->colorPalette256RadioButton->setChecked(false);
+	if (!full_screen) {
 		currentConfigApp->m_display_bit_depth = 0;
 	}
-	m_ui->colorPalette256RadioButton->setEnabled(full_screen && currentConfigApp->GetConditionalDeviceRenderBitDepth());
-	m_ui->colorPalette16bitRadioButton->setEnabled(full_screen && currentConfigApp->GetDeviceRenderBitStatus());
 	m_ui->sound3DCheckBox->setChecked(currentConfigApp->m_3d_sound);
 	switch (currentConfigApp->m_model_quality) {
 	case 0:
@@ -244,26 +214,6 @@ void CMainDialog::OnCheckbox3DVideoMemory(bool checked)
 	currentConfigApp->m_3d_video_ram = checked;
 	m_modified = true;
 	UpdateInterface();
-}
-
-// FUNCTION: CONFIG 0x00404640
-void CMainDialog::OnRadiobuttonPalette16bit(bool checked)
-{
-	if (checked) {
-		currentConfigApp->m_display_bit_depth = 16;
-		m_modified = true;
-		UpdateInterface();
-	}
-}
-
-// FUNCTION: CONFIG 0x00404670
-void CMainDialog::OnRadiobuttonPalette256(bool checked)
-{
-	if (checked) {
-		currentConfigApp->m_display_bit_depth = 8;
-		m_modified = true;
-		UpdateInterface();
-	}
 }
 
 // FUNCTION: CONFIG 0x004046a0
@@ -348,14 +298,15 @@ void CMainDialog::OnCheckboxMusic(bool checked)
 	UpdateInterface();
 }
 
-
 void CMainDialog::SelectDiskPathDialog()
 {
 	QString disk_path = QString::fromStdString(currentConfigApp->m_base_path);
-	disk_path = QFileDialog::getExistingDirectory(this, tr("Open Directory"),
-                                                    disk_path,
-                                                    QFileDialog::ShowDirsOnly
-                                                    | QFileDialog::DontResolveSymlinks);
+	disk_path = QFileDialog::getExistingDirectory(
+		this,
+		tr("Open Directory"),
+		disk_path,
+		QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
+	);
 
 	if (disk_path.toStdString() != "") {
 		currentConfigApp->m_base_path = disk_path.toStdString();
@@ -367,10 +318,12 @@ void CMainDialog::SelectDiskPathDialog()
 void CMainDialog::SelectCDPathDialog()
 {
 	QString cd_path = QString::fromStdString(currentConfigApp->m_cd_path);
-	cd_path = QFileDialog::getExistingDirectory(this, tr("Open Directory"),
-                                                    cd_path,
-                                                    QFileDialog::ShowDirsOnly
-                                                    | QFileDialog::DontResolveSymlinks);
+	cd_path = QFileDialog::getExistingDirectory(
+		this,
+		tr("Open Directory"),
+		cd_path,
+		QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
+	);
 
 	if (cd_path.toStdString() != "") {
 		currentConfigApp->m_cd_path = cd_path.toStdString();
@@ -382,10 +335,12 @@ void CMainDialog::SelectCDPathDialog()
 void CMainDialog::SelectMediaPathDialog()
 {
 	QString media_path = QString::fromStdString(currentConfigApp->m_media_path);
-	media_path = QFileDialog::getExistingDirectory(this, tr("Open Directory"),
-                                                    media_path,
-                                                    QFileDialog::ShowDirsOnly
-                                                    | QFileDialog::DontResolveSymlinks);
+	media_path = QFileDialog::getExistingDirectory(
+		this,
+		tr("Open Directory"),
+		media_path,
+		QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
+	);
 	if (media_path.toStdString() != "") {
 		currentConfigApp->m_media_path = media_path.toStdString();
 		m_modified = true;
@@ -396,10 +351,12 @@ void CMainDialog::SelectMediaPathDialog()
 void CMainDialog::SelectSavePathDialog()
 {
 	QString save_path = QString::fromStdString(currentConfigApp->m_save_path);
-	save_path = QFileDialog::getExistingDirectory(this, tr("Open Directory"),
-                                                    save_path,
-                                                    QFileDialog::ShowDirsOnly
-                                                    | QFileDialog::DontResolveSymlinks);
+	save_path = QFileDialog::getExistingDirectory(
+		this,
+		tr("Open Directory"),
+		save_path,
+		QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
+	);
 
 	if (save_path.toStdString() != "") {
 		currentConfigApp->m_save_path = save_path.toStdString();
@@ -408,35 +365,33 @@ void CMainDialog::SelectSavePathDialog()
 	}
 }
 
-
-void CMainDialog::DiskPathEdited(const QString &text)
+void CMainDialog::DiskPathEdited(const QString& text)
 {
 	currentConfigApp->m_base_path = text.toStdString();
 	m_modified = true;
 	UpdateInterface();
 }
 
-void CMainDialog::CDPathEdited(const QString &text)
+void CMainDialog::CDPathEdited(const QString& text)
 {
 	currentConfigApp->m_cd_path = text.toStdString();
 	m_modified = true;
 	UpdateInterface();
 }
 
-void CMainDialog::MediaPathEdited(const QString &text)
+void CMainDialog::MediaPathEdited(const QString& text)
 {
 	currentConfigApp->m_media_path = text.toStdString();
 	m_modified = true;
 	UpdateInterface();
 }
 
-void CMainDialog::SavePathEdited(const QString &text)
+void CMainDialog::SavePathEdited(const QString& text)
 {
 	currentConfigApp->m_save_path = text.toStdString();
 	m_modified = true;
 	UpdateInterface();
 }
-
 
 void CMainDialog::MaxLoDChanged(int value)
 {

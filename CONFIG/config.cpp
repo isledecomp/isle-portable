@@ -208,7 +208,7 @@ bool CConfigApp::ValidateSettings()
 		}
 	}
 	if ((m_display_bit_depth != 8 && m_display_bit_depth != 16) && (m_display_bit_depth != 0 || m_full_screen)) {
-		m_display_bit_depth = 8;
+		m_display_bit_depth = 16;
 		is_modified = TRUE;
 	}
 	if (m_model_quality < 0 || m_model_quality > 2) {
@@ -276,7 +276,7 @@ bool CConfigApp::AdjustDisplayBitDepthBasedOnRenderStatus()
 		m_display_bit_depth = 16;
 		return TRUE;
 	}
-	m_display_bit_depth = 8;
+	m_display_bit_depth = 16;
 	return TRUE;
 }
 
@@ -304,7 +304,7 @@ void CConfigApp::WriteRegisterSettings() const
 	iniparser_set(dict, "isle:mediapath", m_media_path.c_str());
 	iniparser_set(dict, "isle:savepath", m_save_path.c_str());
 
-	SetIniBool(dict, "isle:Display Bit Depth", m_display_bit_depth);
+	SetIniInt(dict, "isle:Display Bit Depth", m_display_bit_depth);
 	SetIniBool(dict, "isle:Flip Surfaces", m_flip_surfaces);
 	SetIniBool(dict, "isle:Full Screen", m_full_screen);
 	SetIniBool(dict, "isle:Wide View Angle", m_wide_view_angle);

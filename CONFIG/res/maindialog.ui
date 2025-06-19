@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>575</width>
-    <height>725</height>
+    <height>666</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -422,41 +422,6 @@
        </widget>
       </item>
       <item>
-       <widget class="QGroupBox" name="colorPaletteGroup">
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>50</height>
-         </size>
-        </property>
-        <property name="title">
-         <string>Color Palette</string>
-        </property>
-        <layout class="QHBoxLayout" name="horizontalLayout_4">
-         <property name="topMargin">
-          <number>0</number>
-         </property>
-         <property name="bottomMargin">
-          <number>0</number>
-         </property>
-         <item>
-          <widget class="QRadioButton" name="colorPalette256RadioButton">
-           <property name="text">
-            <string>256 Color</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QRadioButton" name="colorPalette16bitRadioButton">
-           <property name="text">
-            <string>High Color (16 bit)</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
-      </item>
-      <item>
        <widget class="QWidget" name="musicJoystickWidget" native="true">
         <layout class="QHBoxLayout" name="horizontalLayout_5">
          <property name="topMargin">
@@ -675,8 +640,6 @@
   <tabstop>modelQualityHighRadioButton</tabstop>
   <tabstop>maxLoDSlider</tabstop>
   <tabstop>maxActorsSlider</tabstop>
-  <tabstop>colorPalette256RadioButton</tabstop>
-  <tabstop>colorPalette16bitRadioButton</tabstop>
   <tabstop>sound3DCheckBox</tabstop>
   <tabstop>musicCheckBox</tabstop>
   <tabstop>joystickCheckBox</tabstop>

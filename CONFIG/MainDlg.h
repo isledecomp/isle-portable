@@ -35,8 +35,6 @@ private slots:
 	void OnList3DevicesSelectionChanged(int row);
 	void OnCheckbox3DSound(bool checked);
 	void OnCheckbox3DVideoMemory(bool checked);
-	void OnRadiobuttonPalette16bit(bool checked);
-	void OnRadiobuttonPalette256(bool checked);
 	void OnCheckboxFlipVideoMemPages(bool checked);
 	void OnRadiobuttonModelLowQuality(bool checked);
 	void OnRadiobuttonModelMediumQuality(bool checked);
@@ -51,10 +49,10 @@ private slots:
 	void SelectCDPathDialog();
 	void SelectMediaPathDialog();
 	void SelectSavePathDialog();
-	void DiskPathEdited(const QString &text);
-	void CDPathEdited(const QString &text);
-	void MediaPathEdited(const QString &text);
-	void SavePathEdited(const QString &text);
+	void DiskPathEdited(const QString& text);
+	void CDPathEdited(const QString& text);
+	void MediaPathEdited(const QString& text);
+	void SavePathEdited(const QString& text);
 	void MaxLoDChanged(int value);
 	void MaxActorsChanged(int value);
 };
