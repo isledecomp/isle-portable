@@ -48,6 +48,14 @@ else()
   message(STATUS "🧩 OpenGL ES 2.x support not enabled")
 endif()
 
+if(WIN32)
+  target_sources(miniwin PRIVATE
+    src/d3drm/backends/directx9/actual.cpp
+    src/d3drm/backends/directx9/renderer.cpp
+  )
+  target_link_libraries(miniwin PRIVATE d3d9)
+endif()
+
 target_compile_definitions(miniwin PUBLIC MINIWIN)
 
 target_include_directories(miniwin

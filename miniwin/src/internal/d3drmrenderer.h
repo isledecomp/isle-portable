@@ -4,23 +4,13 @@
 #include "mathutils.h"
 #include "miniwin/d3drm.h"
 #include "miniwin/miniwindevice.h"
+#include "structs.h"
 
 #include <SDL3/SDL.h>
 
 #define NO_TEXTURE_ID 0xffffffff
 
 static_assert(sizeof(D3DRMVERTEX) == 32);
-
-struct Appearance {
-	SDL_Color color;
-	float shininess;
-	Uint32 textureId;
-	Uint32 flat;
-};
-
-struct FColor {
-	float r, g, b, a;
-};
 
 struct SceneLight {
 	FColor color;
