@@ -63,7 +63,7 @@ bool CConfigApp::InitInstance()
 	m_device = NULL;
 	m_full_screen = TRUE;
 	m_wide_view_angle = TRUE;
-	m_use_joystick = FALSE;
+	m_use_joystick = TRUE;
 	m_music = TRUE;
 	m_flip_surfaces = FALSE;
 	m_3d_video_ram = FALSE;

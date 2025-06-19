@@ -34,8 +34,6 @@ private:
 private slots:
 	void OnList3DevicesSelectionChanged(int row);
 	void OnCheckbox3DSound(bool checked);
-	void OnCheckbox3DVideoMemory(bool checked);
-	void OnCheckboxFlipVideoMemPages(bool checked);
 	void OnRadiobuttonModelLowQuality(bool checked);
 	void OnRadiobuttonModelMediumQuality(bool checked);
 	void OnRadiobuttonModelHighQuality(bool checked);

@@ -482,7 +482,7 @@
           <number>6</number>
          </property>
          <property name="bottomMargin">
-          <number>0</number>
+          <number>6</number>
          </property>
          <item>
           <widget class="QLabel" name="direct3DDevicesLabel">
@@ -532,50 +532,6 @@
            <property name="selectionBehavior">
             <enum>QAbstractItemView::SelectRows</enum>
            </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QWidget" name="D3DCheckboxWidget" native="true">
-           <property name="minimumSize">
-            <size>
-             <width>0</width>
-             <height>25</height>
-            </size>
-           </property>
-           <layout class="QHBoxLayout" name="horizontalLayout_2">
-            <property name="leftMargin">
-             <number>0</number>
-            </property>
-            <property name="topMargin">
-             <number>0</number>
-            </property>
-            <property name="rightMargin">
-             <number>0</number>
-            </property>
-            <property name="bottomMargin">
-             <number>6</number>
-            </property>
-            <item>
-             <widget class="QCheckBox" name="flipVideoMemoryPagesCheckBox">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="text">
-               <string>Flip Video Memory Pages</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QCheckBox" name="videomemoryCheckBox">
-              <property name="text">
-               <string>Draw 3D to Video Memory</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
           </widget>
          </item>
         </layout>
@@ -644,8 +600,6 @@
   <tabstop>musicCheckBox</tabstop>
   <tabstop>joystickCheckBox</tabstop>
   <tabstop>devicesList</tabstop>
-  <tabstop>flipVideoMemoryPagesCheckBox</tabstop>
-  <tabstop>videomemoryCheckBox</tabstop>
   <tabstop>okButton</tabstop>
   <tabstop>cancelButton</tabstop>
  </tabstops>

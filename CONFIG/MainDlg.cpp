@@ -17,10 +17,6 @@
 DECOMP_SIZE_ASSERT(CDialog, 0x60)
 DECOMP_SIZE_ASSERT(CMainDialog, 0x70)
 
-// FIXME: disable dialog resizing
-// FIXME: advanced mode should resize dialog, ignoring advanced controls
-// FIXME: list widget should have less rows
-
 // FUNCTION: CONFIG 0x00403d50
 CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 {
@@ -58,8 +54,6 @@ CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 	);
 	connect(m_ui->devicesList, &QListWidget::currentRowChanged, this, &CMainDialog::OnList3DevicesSelectionChanged);
 	connect(m_ui->musicCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxMusic);
-	connect(m_ui->videomemoryCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckbox3DVideoMemory);
-	connect(m_ui->flipVideoMemoryPagesCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxFlipVideoMemPages);
 	connect(m_ui->sound3DCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckbox3DSound);
 	connect(m_ui->joystickCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxJoystick);
 	connect(m_ui->okButton, &QPushButton::clicked, this, &CMainDialog::accept);
@@ -139,8 +133,6 @@ void CMainDialog::OnList3DevicesSelectionChanged(int selected)
 	if (currentConfigApp->GetHardwareDeviceColorModel() == D3DCOLOR_NONE) {
 		currentConfigApp->m_3d_video_ram = FALSE;
 		currentConfigApp->m_flip_surfaces = FALSE;
-		m_ui->videomemoryCheckBox->setChecked(currentConfigApp->m_3d_video_ram);
-		m_ui->flipVideoMemoryPagesCheckBox->setChecked(currentConfigApp->m_flip_surfaces);
 	}
 	m_modified = true;
 	UpdateInterface();
@@ -164,11 +156,6 @@ void CMainDialog::accept()
 void CMainDialog::UpdateInterface()
 {
 	currentConfigApp->ValidateSettings();
-	m_ui->videomemoryCheckBox->setEnabled(
-		!currentConfigApp->m_flip_surfaces && currentConfigApp->GetHardwareDeviceColorModel() == D3DCOLOR_NONE
-	);
-	m_ui->flipVideoMemoryPagesCheckBox->setChecked(currentConfigApp->m_flip_surfaces);
-	m_ui->videomemoryCheckBox->setChecked(currentConfigApp->m_3d_video_ram);
 	bool full_screen = currentConfigApp->m_full_screen;
 	currentConfigApp->AdjustDisplayBitDepthBasedOnRenderStatus();
 	if (!full_screen) {
@@ -204,22 +191,6 @@ void CMainDialog::UpdateInterface()
 void CMainDialog::OnCheckbox3DSound(bool checked)
 {
 	currentConfigApp->m_3d_sound = checked;
-	m_modified = true;
-	UpdateInterface();
-}
-
-// FUNCTION: CONFIG 0x00404610
-void CMainDialog::OnCheckbox3DVideoMemory(bool checked)
-{
-	currentConfigApp->m_3d_video_ram = checked;
-	m_modified = true;
-	UpdateInterface();
-}
-
-// FUNCTION: CONFIG 0x004046a0
-void CMainDialog::OnCheckboxFlipVideoMemPages(bool checked)
-{
-	currentConfigApp->m_flip_surfaces = checked;
 	m_modified = true;
 	UpdateInterface();
 }
