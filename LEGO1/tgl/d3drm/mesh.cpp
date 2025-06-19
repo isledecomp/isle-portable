@@ -17,7 +17,7 @@ void* MeshImpl::ImplementationDataPtr()
 }
 
 // FUNCTION: BETA10 0x10170590
-inline Result MeshSetColor(MeshImpl::MeshData* pMesh, float r, float g, float b, float a)
+inline Tgl::Result MeshSetColor(MeshImpl::MeshData* pMesh, float r, float g, float b, float a)
 {
 	if (a > 0) {
 		D3DCOLOR color = D3DRMCreateColorRGBA(r, g, b, a);
@@ -30,7 +30,7 @@ inline Result MeshSetColor(MeshImpl::MeshData* pMesh, float r, float g, float b,
 
 // FUNCTION: LEGO1 0x100a3ee0
 // FUNCTION: BETA10 0x10170520
-Result MeshImpl::SetColor(float r, float g, float b, float a)
+Tgl::Result MeshImpl::SetColor(float r, float g, float b, float a)
 {
 	assert(m_data);
 
@@ -38,14 +38,14 @@ Result MeshImpl::SetColor(float r, float g, float b, float a)
 }
 
 // FUNCTION: BETA10 0x10171320
-inline Result MeshSetTexture(MeshImpl::MeshData* pMesh, IDirect3DRMTexture* pD3DTexture)
+inline Tgl::Result MeshSetTexture(MeshImpl::MeshData* pMesh, IDirect3DRMTexture* pD3DTexture)
 {
-	Result result = ResultVal(pMesh->groupMesh->SetGroupTexture(pMesh->groupIndex, pD3DTexture));
+	Tgl::Result result = ResultVal(pMesh->groupMesh->SetGroupTexture(pMesh->groupIndex, pD3DTexture));
 	return result;
 }
 
 // FUNCTION: BETA10 0x10171260
-inline Result MeshImpl::SetTexture(const TextureImpl* pTexture)
+inline Tgl::Result MeshImpl::SetTexture(const TextureImpl* pTexture)
 {
 	assert(m_data);
 	assert(!pTexture || pTexture->ImplementationData());
@@ -56,7 +56,7 @@ inline Result MeshImpl::SetTexture(const TextureImpl* pTexture)
 
 // FUNCTION: LEGO1 0x100a3f50
 // FUNCTION: BETA10 0x10170630
-Result MeshImpl::SetTexture(const Texture* pTexture)
+Tgl::Result MeshImpl::SetTexture(const Texture* pTexture)
 {
 	assert(m_data);
 
@@ -65,7 +65,7 @@ Result MeshImpl::SetTexture(const Texture* pTexture)
 
 // FUNCTION: LEGO1 0x100a3f80
 // FUNCTION: BETA10 0x10170690
-Result MeshImpl::SetTextureMappingMode(TextureMappingMode mode)
+Tgl::Result MeshImpl::SetTextureMappingMode(TextureMappingMode mode)
 {
 	assert(m_data);
 
@@ -73,7 +73,7 @@ Result MeshImpl::SetTextureMappingMode(TextureMappingMode mode)
 }
 
 // FUNCTION: BETA10 0x10170750
-inline Result MeshSetShadingModel(MeshImpl::MeshData* pMesh, ShadingModel model)
+inline Tgl::Result MeshSetShadingModel(MeshImpl::MeshData* pMesh, ShadingModel model)
 {
 	D3DRMRENDERQUALITY mode = Translate(model);
 	return ResultVal(pMesh->groupMesh->SetGroupQuality(pMesh->groupIndex, mode));
@@ -81,14 +81,14 @@ inline Result MeshSetShadingModel(MeshImpl::MeshData* pMesh, ShadingModel model)
 
 // FUNCTION: LEGO1 0x100a3fc0
 // FUNCTION: BETA10 0x101706f0
-Result MeshImpl::SetShadingModel(ShadingModel model)
+Tgl::Result MeshImpl::SetShadingModel(ShadingModel model)
 {
 	assert(m_data);
 	return MeshSetShadingModel(m_data, model);
 }
 
 // FUNCTION: BETA10 0x101714e0
-inline Result MeshDeepClone(MeshImpl::MeshData* pSource, MeshImpl::MeshData*& rpTarget, IDirect3DRMMesh* pMesh)
+inline Tgl::Result MeshDeepClone(MeshImpl::MeshData* pSource, MeshImpl::MeshData*& rpTarget, IDirect3DRMMesh* pMesh)
 {
 	rpTarget = new MeshImpl::MeshData();
 	rpTarget->groupMesh = pMesh;
@@ -97,13 +97,13 @@ inline Result MeshDeepClone(MeshImpl::MeshData* pSource, MeshImpl::MeshData*& rp
 	DWORD dataSize;
 	unsigned int vcount, fcount, vperface;
 
-	Result result =
-		ResultVal(pSource->groupMesh->GetGroup(pSource->groupIndex, &vcount, &fcount, &vperface, &dataSize, NULL));
+	Tgl::Result result =
+		ResultVal(pSource->groupMesh->GetGroup(pSource->groupIndex, (long unsigned int*)&vcount, (long unsigned int*)&fcount, (long unsigned int*)&vperface, &dataSize, NULL));
 	assert(Succeeded(result));
 
 	unsigned int* faceBuffer = new unsigned int[dataSize];
 	result =
-		ResultVal(pSource->groupMesh->GetGroup(pSource->groupIndex, &vcount, &fcount, &vperface, &dataSize, faceBuffer)
+		ResultVal(pSource->groupMesh->GetGroup(pSource->groupIndex, (long unsigned int*)&vcount, (long unsigned int*)&fcount, (long unsigned int*)&vperface, &dataSize, (long unsigned int*)&faceBuffer)
 		);
 	assert(Succeeded(result));
 
@@ -122,7 +122,7 @@ inline Result MeshDeepClone(MeshImpl::MeshData* pSource, MeshImpl::MeshData*& rp
 
 	// Push information to new group
 	D3DRMGROUPINDEX index;
-	result = ResultVal(pMesh->AddGroup(vcount, fcount, 3, faceBuffer, &index));
+	result = ResultVal(pMesh->AddGroup(vcount, fcount, 3, (long unsigned int*)&faceBuffer, &index));
 	assert(Succeeded(result));
 
 	rpTarget->groupIndex = index;
@@ -180,9 +180,9 @@ Mesh* MeshImpl::DeepClone(MeshBuilder* pMesh)
 	return DeepClone(*static_cast<MeshBuilderImpl*>(pMesh));
 }
 
-inline Result MeshShallowClone(MeshImpl::MeshData* pSource, MeshImpl::MeshData*& rpTarget, IDirect3DRMMesh* pMesh)
+inline Tgl::Result MeshShallowClone(MeshImpl::MeshData* pSource, MeshImpl::MeshData*& rpTarget, IDirect3DRMMesh* pMesh)
 {
-	Result result = Error;
+	Tgl::Result result = Error;
 	rpTarget = new MeshImpl::MeshData();
 
 	if (rpTarget) {
@@ -220,13 +220,13 @@ Mesh* MeshImpl::ShallowClone(MeshBuilder* pMeshBuilder)
 }
 
 // FUNCTION: BETA10 0x10171ac0
-inline Result MeshGetTexture(MeshImpl::MeshData* pMesh, IDirect3DRMTexture** pD3DTexture)
+inline Tgl::Result MeshGetTexture(MeshImpl::MeshData* pMesh, IDirect3DRMTexture** pD3DTexture)
 {
 	return ResultVal(pMesh->groupMesh->GetGroupTexture(pMesh->groupIndex, pD3DTexture));
 }
 
 // FUNCTION: BETA10 0x10171980
-inline Result MeshImpl::GetTexture(TextureImpl** ppTexture)
+inline Tgl::Result MeshImpl::GetTexture(TextureImpl** ppTexture)
 {
 	assert(m_data);
 	assert(ppTexture);
@@ -236,7 +236,7 @@ inline Result MeshImpl::GetTexture(TextureImpl** ppTexture)
 
 	// TODO: This helps retail match, but it adds to the stack
 	IDirect3DRMTexture* tex;
-	Result result = MeshGetTexture(m_data, &tex);
+	Tgl::Result result = MeshGetTexture(m_data, &tex);
 
 #ifndef BETA10
 	if (Succeeded(result)) {
@@ -251,7 +251,7 @@ inline Result MeshImpl::GetTexture(TextureImpl** ppTexture)
 
 // FUNCTION: LEGO1 0x100a4330
 // FUNCTION: BETA10 0x10170820
-Result MeshImpl::GetTexture(Texture*& rpTexture)
+Tgl::Result MeshImpl::GetTexture(Texture*& rpTexture)
 {
 	assert(m_data);
 
