@@ -68,12 +68,12 @@ HRESULT Direct3DRMMeshImpl::AddGroup(
 }
 
 HRESULT Direct3DRMMeshImpl::GetGroup(
-	DWORD groupIndex,
-	DWORD* vertexCount,
-	DWORD* faceCount,
-	DWORD* vertexPerFace,
+	D3DRMGROUPINDEX groupIndex,
+	unsigned int* vertexCount,
+	unsigned int* faceCount,
+	unsigned int* vertexPerFace,
 	DWORD* indexCount,
-	DWORD* indices
+	unsigned int* indices
 )
 {
 	if (groupIndex >= m_groups.size()) {
@@ -101,7 +101,7 @@ HRESULT Direct3DRMMeshImpl::GetGroup(
 	return DD_OK;
 }
 
-const MeshGroup& Direct3DRMMeshImpl::GetGroup(DWORD groupIndex)
+const MeshGroup& Direct3DRMMeshImpl::GetGroup(D3DRMGROUPINDEX groupIndex)
 {
 	return m_groups[groupIndex];
 }
@@ -111,7 +111,7 @@ DWORD Direct3DRMMeshImpl::GetGroupCount()
 	return m_groups.size();
 }
 
-HRESULT Direct3DRMMeshImpl::SetGroupColor(DWORD groupIndex, D3DCOLOR color)
+HRESULT Direct3DRMMeshImpl::SetGroupColor(D3DRMGROUPINDEX groupIndex, D3DCOLOR color)
 {
 	if (groupIndex >= m_groups.size()) {
 		return DDERR_INVALIDPARAMS;
@@ -126,7 +126,7 @@ HRESULT Direct3DRMMeshImpl::SetGroupColor(DWORD groupIndex, D3DCOLOR color)
 	return DD_OK;
 }
 
-HRESULT Direct3DRMMeshImpl::SetGroupColorRGB(DWORD groupIndex, float r, float g, float b)
+HRESULT Direct3DRMMeshImpl::SetGroupColorRGB(D3DRMGROUPINDEX groupIndex, float r, float g, float b)
 {
 	if (groupIndex >= m_groups.size()) {
 		return DDERR_INVALIDPARAMS;
@@ -148,7 +148,7 @@ D3DCOLOR Direct3DRMMeshImpl::GetGroupColor(D3DRMGROUPINDEX index)
 	return (color.a << 24) | (color.r << 16) | (color.g << 8) | color.b;
 }
 
-HRESULT Direct3DRMMeshImpl::SetGroupMaterial(DWORD groupIndex, IDirect3DRMMaterial* material)
+HRESULT Direct3DRMMeshImpl::SetGroupMaterial(D3DRMGROUPINDEX groupIndex, IDirect3DRMMaterial* material)
 {
 	if (groupIndex >= m_groups.size()) {
 		return DDERR_INVALIDPARAMS;
@@ -164,7 +164,7 @@ HRESULT Direct3DRMMeshImpl::SetGroupMaterial(DWORD groupIndex, IDirect3DRMMateri
 	return DD_OK;
 }
 
-HRESULT Direct3DRMMeshImpl::SetGroupTexture(DWORD groupIndex, IDirect3DRMTexture* texture)
+HRESULT Direct3DRMMeshImpl::SetGroupTexture(D3DRMGROUPINDEX groupIndex, IDirect3DRMTexture* texture)
 {
 	if (groupIndex >= m_groups.size()) {
 		return DDERR_INVALIDPARAMS;
@@ -181,7 +181,7 @@ HRESULT Direct3DRMMeshImpl::SetGroupTexture(DWORD groupIndex, IDirect3DRMTexture
 	return DD_OK;
 }
 
-HRESULT Direct3DRMMeshImpl::GetGroupMaterial(DWORD groupIndex, LPDIRECT3DRMMATERIAL* material)
+HRESULT Direct3DRMMeshImpl::GetGroupMaterial(D3DRMGROUPINDEX groupIndex, LPDIRECT3DRMMATERIAL* material)
 {
 	if (groupIndex >= m_groups.size()) {
 		return DDERR_GENERIC;
@@ -197,7 +197,7 @@ HRESULT Direct3DRMMeshImpl::GetGroupMaterial(DWORD groupIndex, LPDIRECT3DRMMATER
 	return DD_OK;
 }
 
-HRESULT Direct3DRMMeshImpl::GetGroupTexture(DWORD groupIndex, LPDIRECT3DRMTEXTURE* texture)
+HRESULT Direct3DRMMeshImpl::GetGroupTexture(D3DRMGROUPINDEX groupIndex, LPDIRECT3DRMTEXTURE* texture)
 {
 	if (groupIndex >= m_groups.size()) {
 		return DDERR_GENERIC;
@@ -218,12 +218,12 @@ HRESULT Direct3DRMMeshImpl::SetGroupMapping(D3DRMGROUPINDEX groupIndex, D3DRMMAP
 	return DD_OK;
 }
 
-D3DRMMAPPING Direct3DRMMeshImpl::GetGroupMapping(DWORD groupIndex)
+D3DRMMAPPING Direct3DRMMeshImpl::GetGroupMapping(D3DRMGROUPINDEX groupIndex)
 {
 	return D3DRMMAP_PERSPCORRECT;
 }
 
-HRESULT Direct3DRMMeshImpl::SetGroupQuality(DWORD groupIndex, D3DRMRENDERQUALITY quality)
+HRESULT Direct3DRMMeshImpl::SetGroupQuality(D3DRMGROUPINDEX groupIndex, D3DRMRENDERQUALITY quality)
 {
 	if (groupIndex >= m_groups.size()) {
 		return DDERR_INVALIDPARAMS;
@@ -243,7 +243,7 @@ HRESULT Direct3DRMMeshImpl::SetGroupQuality(DWORD groupIndex, D3DRMRENDERQUALITY
 	return DD_OK;
 }
 
-D3DRMRENDERQUALITY Direct3DRMMeshImpl::GetGroupQuality(DWORD groupIndex)
+D3DRMRENDERQUALITY Direct3DRMMeshImpl::GetGroupQuality(D3DRMGROUPINDEX groupIndex)
 {
 	if (groupIndex >= m_groups.size()) {
 		return D3DRMRENDER_GOURAUD;
@@ -252,7 +252,7 @@ D3DRMRENDERQUALITY Direct3DRMMeshImpl::GetGroupQuality(DWORD groupIndex)
 	return m_groups[groupIndex].quality;
 }
 
-HRESULT Direct3DRMMeshImpl::SetVertices(DWORD groupIndex, int offset, int count, D3DRMVERTEX* vertices)
+HRESULT Direct3DRMMeshImpl::SetVertices(D3DRMGROUPINDEX groupIndex, int offset, int count, D3DRMVERTEX* vertices)
 {
 	if (count <= 0 || offset < 0 || groupIndex < 0 || groupIndex >= static_cast<int>(m_groups.size())) {
 		return DDERR_INVALIDPARAMS;
@@ -274,7 +274,7 @@ HRESULT Direct3DRMMeshImpl::SetVertices(DWORD groupIndex, int offset, int count,
 	return DD_OK;
 }
 
-HRESULT Direct3DRMMeshImpl::GetVertices(DWORD groupIndex, int startIndex, int count, D3DRMVERTEX* vertices)
+HRESULT Direct3DRMMeshImpl::GetVertices(D3DRMGROUPINDEX groupIndex, int startIndex, int count, D3DRMVERTEX* vertices)
 {
 	if (count <= 0 || startIndex < 0 || groupIndex < 0 || groupIndex >= static_cast<int>(m_groups.size())) {
 		return DDERR_INVALIDPARAMS;
