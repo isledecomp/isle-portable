@@ -181,10 +181,10 @@ struct IDirect3DRMMesh : public IDirect3DRMVisual {
 	virtual HRESULT Clone(int flags, GUID iid, void** object) = 0;
 	virtual HRESULT GetBox(D3DRMBOX* box) = 0;
 	virtual HRESULT AddGroup(
-		int vertexCount,
-		int faceCount,
-		int vertexPerFace,
-		DWORD* faceBuffer,
+		unsigned int vertexCount,
+		unsigned int faceCount,
+		unsigned int vertexPerFace,
+		unsigned int* faceBuffer,
 		D3DRMGROUPINDEX* groupIndex
 	) = 0;
 	virtual HRESULT GetGroup(
