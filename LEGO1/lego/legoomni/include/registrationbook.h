@@ -1,6 +1,7 @@
 #ifndef REGISTRATIONBOOK_H
 #define REGISTRATIONBOOK_H
 
+#include "legogamestate.h"
 #include "legoworld.h"
 
 class InfocenterState;
