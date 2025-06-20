@@ -67,13 +67,8 @@ struct MeshGroup {
 struct Direct3DRMMeshImpl : public Direct3DRMObjectBaseImpl<IDirect3DRMMesh> {
 	HRESULT QueryInterface(const GUID& riid, void** ppvObject) override;
 	HRESULT Clone(int flags, GUID iid, void** object) override;
-	HRESULT AddGroup(
-		unsigned int vertexCount,
-		unsigned int faceCount,
-		unsigned int vertexPerFace,
-		unsigned int* faceBuffer,
-		D3DRMGROUPINDEX* groupIndex
-	) override;
+	HRESULT AddGroup(int vertexCount, int faceCount, int vertexPerFace, DWORD* faceBuffer, D3DRMGROUPINDEX* groupIndex)
+		override;
 	HRESULT GetGroup(
 		D3DRMGROUPINDEX groupIndex,
 		unsigned int* vertexCount,
