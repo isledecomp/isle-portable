@@ -11,14 +11,14 @@ class MxString : public MxCore {
 public:
 	MxString();
 	MxString(const MxString& p_str);
-	MxString(const char* p_str);
+	LEGO1_EXPORT MxString(const char* p_str);
 	MxString(const char* p_str, MxU16 p_maxlen);
 	LEGO1_EXPORT ~MxString() override;
 
 	void Reverse();
 	void ToUpperCase();
 	void ToLowerCase();
-	void MapPathToFilesystem() { MapPathToFilesystem(m_data); }
+	LEGO1_EXPORT void MapPathToFilesystem() { MapPathToFilesystem(m_data); }
 
 	MxString& operator=(const MxString& p_str);
 	const MxString& operator=(const char* p_str);
