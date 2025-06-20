@@ -710,10 +710,6 @@ SDL_GPUTransferBuffer* Direct3DRMSDL3GPURenderer::GetUploadBuffer(size_t size)
 
 HRESULT Direct3DRMSDL3GPURenderer::BeginFrame()
 {
-	if (!DDBackBuffer) {
-		return DDERR_GENERIC;
-	}
-
 	// Clear color and depth targets
 	SDL_GPUColorTargetInfo colorTargetInfo = {};
 	colorTargetInfo.texture = m_transferTexture;
@@ -810,9 +806,25 @@ HRESULT Direct3DRMSDL3GPURenderer::FinalizeFrame()
 
 	SDL_Surface* renderedImage =
 		SDL_CreateSurfaceFrom(m_width, m_height, SDL_PIXELFORMAT_ABGR8888, downloadedData, m_width * 4);
-	SDL_BlitSurface(renderedImage, nullptr, DDBackBuffer, nullptr);
+	// SDL_BlitSurface(renderedImage, nullptr, DDBackBuffer, nullptr);
 	SDL_DestroySurface(renderedImage);
 	SDL_UnmapGPUTransferBuffer(m_device, m_downloadBuffer);
 
 	return DD_OK;
+}
+
+void Direct3DRMSDL3GPURenderer::Clear(float r, float g, float b)
+{
+}
+
+void Direct3DRMSDL3GPURenderer::Flip()
+{
+}
+
+void Direct3DRMSDL3GPURenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect)
+{
+}
+
+void Direct3DRMSDL3GPURenderer::Download(SDL_Surface* target)
+{
 }

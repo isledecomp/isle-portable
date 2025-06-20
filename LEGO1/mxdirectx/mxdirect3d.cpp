@@ -174,7 +174,7 @@ BOOL MxDirect3D::D3DSetMode()
 	memset(&desc, 0, sizeof(desc));
 	desc.dwSize = sizeof(desc);
 
-	if (backBuffer->Lock(NULL, &desc, DDLOCK_WAIT, NULL) == DD_OK) {
+	if (backBuffer->Lock(NULL, &desc, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL) == DD_OK) {
 		unsigned char* surface = (unsigned char*) desc.lpSurface;
 
 		for (int i = 0; i < mode.height; i++) {
@@ -192,7 +192,7 @@ BOOL MxDirect3D::D3DSetMode()
 		memset(&desc, 0, sizeof(desc));
 		desc.dwSize = sizeof(desc);
 
-		if (frontBuffer->Lock(NULL, &desc, DDLOCK_WAIT, NULL) == DD_OK) {
+		if (frontBuffer->Lock(NULL, &desc, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL) == DD_OK) {
 			unsigned char* surface = (unsigned char*) desc.lpSurface;
 
 			for (int i = 0; i < mode.height; i++) {

@@ -42,7 +42,7 @@ struct GLMeshCacheEntry {
 class OpenGL1Renderer : public Direct3DRMRenderer {
 public:
 	static Direct3DRMRenderer* Create(DWORD width, DWORD height);
-	OpenGL1Renderer(DWORD width, DWORD height, SDL_GLContext context, GLuint fbo, GLuint colorTex, GLuint depthRb);
+	OpenGL1Renderer(DWORD width, DWORD height, SDL_GLContext context);
 	~OpenGL1Renderer() override;
 
 	void PushLights(const SceneLight* lightsArray, size_t count) override;
@@ -63,6 +63,10 @@ public:
 		const Appearance& appearance
 	) override;
 	HRESULT FinalizeFrame() override;
+	void Clear(float r, float g, float b) override;
+	void Flip() override;
+	void Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect) override;
+	void Download(SDL_Surface* target) override;
 
 private:
 	void AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture);
@@ -74,11 +78,9 @@ private:
 	SDL_Surface* m_renderedImage;
 	DWORD m_width, m_height;
 	bool m_useVBOs;
+	bool m_dirty = false;
 	std::vector<SceneLight> m_lights;
 	SDL_GLContext m_context;
-	GLuint m_fbo;
-	GLuint m_colorTex;
-	GLuint m_depthRb;
 };
 
 inline static void OpenGL1Renderer_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx)

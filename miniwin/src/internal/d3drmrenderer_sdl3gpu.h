@@ -64,6 +64,10 @@ public:
 		const Appearance& appearance
 	) override;
 	HRESULT FinalizeFrame() override;
+	void Clear(float r, float g, float b) override;
+	void Flip() override;
+	void Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect) override;
+	void Download(SDL_Surface* target) override;
 
 private:
 	Direct3DRMSDL3GPURenderer(

@@ -349,16 +349,14 @@ HRESULT Direct3DRMViewportImpl::ForceUpdate(int x, int y, int w, int h)
 
 HRESULT Direct3DRMViewportImpl::Clear()
 {
-	if (!DDBackBuffer) {
+	if (!m_renderer) {
 		return DDERR_GENERIC;
 	}
 
 	uint8_t r = (m_backgroundColor >> 16) & 0xFF;
 	uint8_t g = (m_backgroundColor >> 8) & 0xFF;
 	uint8_t b = m_backgroundColor & 0xFF;
-
-	Uint32 color = SDL_MapRGB(SDL_GetPixelFormatDetails(DDBackBuffer->format), nullptr, r, g, b);
-	SDL_FillSurfaceRect(DDBackBuffer, nullptr, color);
+	m_renderer->Clear(r / 255.0f, g / 255.0f, b / 255.0f);
 
 	return DD_OK;
 }

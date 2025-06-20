@@ -25,6 +25,7 @@
 
 Direct3DRMSoftwareRenderer::Direct3DRMSoftwareRenderer(DWORD width, DWORD height) : m_width(width), m_height(height)
 {
+	m_renderedImage = SDL_CreateSurface(m_width, m_height, SDL_PIXELFORMAT_ABGR8888);
 	m_zBuffer.resize(m_width * m_height);
 }
 
@@ -354,8 +355,8 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 		c2 = ApplyLighting(v2.position, v2.normal, appearance);
 	}
 
-	Uint8* pixels = (Uint8*) DDBackBuffer->pixels;
-	int pitch = DDBackBuffer->pitch;
+	Uint8* pixels = (Uint8*) m_renderedImage->pixels;
+	int pitch = m_renderedImage->pitch;
 
 	VertexXY verts[3] = {
 		{p0.x, p0.y, p0.z, p0.w, c0, v0.texCoord.u, v0.texCoord.v},
@@ -553,7 +554,7 @@ Uint32 Direct3DRMSoftwareRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 			if (texRef.version != texture->m_version) {
 				// Update animated textures
 				SDL_DestroySurface(texRef.cached);
-				texRef.cached = SDL_ConvertSurface(surface->m_surface, DDBackBuffer->format);
+				texRef.cached = SDL_ConvertSurface(surface->m_surface, m_renderedImage->format);
 				SDL_LockSurface(texRef.cached);
 				texRef.version = texture->m_version;
 			}
@@ -561,7 +562,7 @@ Uint32 Direct3DRMSoftwareRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 		}
 	}
 
-	SDL_Surface* convertedRender = SDL_ConvertSurface(surface->m_surface, DDBackBuffer->format);
+	SDL_Surface* convertedRender = SDL_ConvertSurface(surface->m_surface, m_renderedImage->format);
 	SDL_LockSurface(convertedRender);
 
 	// Reuse freed slot
@@ -681,13 +682,13 @@ const char* Direct3DRMSoftwareRenderer::GetName()
 
 HRESULT Direct3DRMSoftwareRenderer::BeginFrame()
 {
-	if (!DDBackBuffer || !SDL_LockSurface(DDBackBuffer)) {
+	if (!m_renderedImage || !SDL_LockSurface(m_renderedImage)) {
 		return DDERR_GENERIC;
 	}
 	ClearZBuffer();
 
-	m_format = SDL_GetPixelFormatDetails(DDBackBuffer->format);
-	m_palette = SDL_GetSurfacePalette(DDBackBuffer);
+	m_format = SDL_GetPixelFormatDetails(m_renderedImage->format);
+	m_palette = SDL_GetSurfacePalette(m_renderedImage);
 	m_bytesPerPixel = m_format->bits_per_pixel / 8;
 
 	return DD_OK;
@@ -731,7 +732,23 @@ void Direct3DRMSoftwareRenderer::SubmitDraw(
 
 HRESULT Direct3DRMSoftwareRenderer::FinalizeFrame()
 {
-	SDL_UnlockSurface(DDBackBuffer);
+	SDL_UnlockSurface(m_renderedImage);
 
 	return DD_OK;
+}
+
+void Direct3DRMSoftwareRenderer::Clear(float r, float g, float b)
+{
+}
+
+void Direct3DRMSoftwareRenderer::Flip()
+{
+}
+
+void Direct3DRMSoftwareRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect)
+{
+}
+
+void Direct3DRMSoftwareRenderer::Download(SDL_Surface* target)
+{
 }

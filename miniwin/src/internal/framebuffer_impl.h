@@ -37,6 +37,7 @@ struct FrameBufferImpl : public IDirectDrawSurface3 {
 	HRESULT Unlock(LPVOID lpSurfaceData) override;
 
 private:
+	DirectDrawSurfaceImpl* m_transferBuffer;
 	SDL_Texture* m_uploadBuffer;
 	IDirectDrawPalette* m_palette = nullptr;
 };

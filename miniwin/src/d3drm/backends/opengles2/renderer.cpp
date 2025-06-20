@@ -610,7 +610,23 @@ HRESULT OpenGLES2Renderer::FinalizeFrame()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// Composite onto SDL backbuffer
-	SDL_BlitSurface(m_renderedImage, nullptr, DDBackBuffer, nullptr);
+	// SDL_BlitSurface(m_renderedImage, nullptr, DDBackBuffer, nullptr);
 
 	return DD_OK;
+}
+
+void OpenGLES2Renderer::Clear(float r, float g, float b)
+{
+}
+
+void OpenGLES2Renderer::Flip()
+{
+}
+
+void OpenGLES2Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect)
+{
+}
+
+void OpenGLES2Renderer::Download(SDL_Surface* target)
+{
 }

@@ -15,14 +15,16 @@ Direct3DRMRenderer* OpenGL1Renderer::Create(DWORD width, DWORD height)
 {
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 
 	SDL_Window* window = DDWindow;
 	bool testWindow = false;
 	if (!window) {
-		window = SDL_CreateWindow("OpenGL 1.2 test", width, height, SDL_WINDOW_HIDDEN | SDL_WINDOW_OPENGL);
+		window = SDL_CreateWindow("OpenGL 1.1 test", width, height, SDL_WINDOW_HIDDEN | SDL_WINDOW_OPENGL);
 		testWindow = true;
 	}
+
+	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
 	SDL_GLContext context = SDL_GL_CreateContext(window);
 	if (!context) {
@@ -33,6 +35,9 @@ Direct3DRMRenderer* OpenGL1Renderer::Create(DWORD width, DWORD height)
 	}
 
 	if (!SDL_GL_MakeCurrent(window, context)) {
+		if (testWindow) {
+			SDL_DestroyWindow(window);
+		}
 		return nullptr;
 	}
 
@@ -44,59 +49,19 @@ Direct3DRMRenderer* OpenGL1Renderer::Create(DWORD width, DWORD height)
 		return nullptr;
 	}
 
-	if (!GLEW_EXT_framebuffer_object) {
-		if (testWindow) {
-			SDL_DestroyWindow(window);
-		}
-		return nullptr;
-	}
-
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
-	glFrontFace(GL_CCW);
-
-	// Setup FBO
-	GLuint fbo;
-	glGenFramebuffers(1, &fbo);
-	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-
-	// Create color texture
-	GLuint colorTex;
-	glGenTextures(1, &colorTex);
-	glBindTexture(GL_TEXTURE_2D, colorTex);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTex, 0);
-
-	// Create depth renderbuffer
-	GLuint depthRb;
-	glGenRenderbuffers(1, &depthRb);
-	glBindRenderbuffer(GL_RENDERBUFFER, depthRb);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthRb);
-
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-		return nullptr;
-	}
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glFrontFace(GL_CW);
 
 	if (testWindow) {
 		SDL_DestroyWindow(window);
 	}
 
-	return new OpenGL1Renderer(width, height, context, fbo, colorTex, depthRb);
+	return new OpenGL1Renderer(width, height, context);
 }
 
-OpenGL1Renderer::OpenGL1Renderer(
-	DWORD width,
-	DWORD height,
-	SDL_GLContext context,
-	GLuint fbo,
-	GLuint colorTex,
-	GLuint depthRb
-)
-	: m_width(width), m_height(height), m_context(context), m_fbo(fbo), m_colorTex(colorTex), m_depthRb(depthRb)
+OpenGL1Renderer::OpenGL1Renderer(DWORD width, DWORD height, SDL_GLContext context)
+	: m_width(width), m_height(height), m_context(context)
 {
 	m_renderedImage = SDL_CreateSurface(m_width, m_height, SDL_PIXELFORMAT_ABGR8888);
 	m_useVBOs = GLEW_ARB_vertex_buffer_object;
@@ -105,9 +70,6 @@ OpenGL1Renderer::OpenGL1Renderer(
 OpenGL1Renderer::~OpenGL1Renderer()
 {
 	SDL_DestroySurface(m_renderedImage);
-	glDeleteFramebuffers(1, &m_fbo);
-	glDeleteRenderbuffers(1, &m_depthRb);
-	glDeleteTextures(1, &m_colorTex);
 }
 
 void OpenGL1Renderer::PushLights(const SceneLight* lightsArray, size_t count)
@@ -122,7 +84,6 @@ void OpenGL1Renderer::SetFrustumPlanes(const Plane* frustumPlanes)
 void OpenGL1Renderer::SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back)
 {
 	memcpy(&m_projection, projection, sizeof(D3DRMMATRIX4D));
-	m_projection[1][1] *= -1.0f; // OpenGL is upside down
 }
 
 struct TextureDestroyContextGL {
@@ -165,7 +126,7 @@ Uint32 OpenGL1Renderer::GetTextureId(IDirect3DRMTexture* iTexture)
 				if (!surf) {
 					return NO_TEXTURE_ID;
 				}
-				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
 				SDL_DestroySurface(surf);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -184,7 +145,7 @@ Uint32 OpenGL1Renderer::GetTextureId(IDirect3DRMTexture* iTexture)
 	if (!surf) {
 		return NO_TEXTURE_ID;
 	}
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
 	SDL_DestroySurface(surf);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -362,13 +323,13 @@ void OpenGL1Renderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc)
 
 const char* OpenGL1Renderer::GetName()
 {
-	return "OpenGL 1.2 HAL";
+	return "OpenGL 1.1 HAL";
 }
 
 HRESULT OpenGL1Renderer::BeginFrame()
 {
+	m_dirty = true;
 	SDL_GL_MakeCurrent(DDWindow, m_context);
-	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 	glViewport(0, 0, m_width, m_height);
 
 	glDisable(GL_BLEND);
@@ -377,9 +338,6 @@ HRESULT OpenGL1Renderer::BeginFrame()
 	glEnable(GL_LIGHTING);
 	glEnable(GL_COLOR_MATERIAL);
 	glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
-
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// Disable all lights and reset global ambient
 	for (int i = 0; i < 8; ++i) {
@@ -542,11 +500,107 @@ void OpenGL1Renderer::SubmitDraw(
 
 HRESULT OpenGL1Renderer::FinalizeFrame()
 {
-	glReadPixels(0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, m_renderedImage->pixels);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	// Composite onto SDL backbuffer
-	SDL_BlitSurface(m_renderedImage, nullptr, DDBackBuffer, nullptr);
-
 	return DD_OK;
+}
+
+void OpenGL1Renderer::Clear(float r, float g, float b)
+{
+	m_dirty = true;
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_TRUE);
+	glClearColor(r, g, b, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void OpenGL1Renderer::Flip()
+{
+	if (m_dirty) {
+		SDL_GL_SwapWindow(DDWindow);
+		m_dirty = false;
+	}
+}
+
+void OpenGL1Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect)
+{
+	m_dirty = true;
+	glDisable(GL_DEPTH_TEST);
+	glDepthMask(GL_FALSE);
+
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	glOrtho(0, 640, 480, 0, -1, 1);
+
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	glDisable(GL_LIGHTING);
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, m_textures[textureId].glTextureId);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	// Normalize source rect to texture coords
+	float texW = 1.0f; // fallback
+	float texH = 1.0f;
+
+	GLint boundTexture = 0;
+	glGetIntegerv(GL_TEXTURE_BINDING_2D, &boundTexture);
+
+	GLint w = 1, h = 1;
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &w);
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &h);
+	texW = (float) w;
+	texH = (float) h;
+
+	float u1 = srcRect.x / texW;
+	float v1 = srcRect.y / texH;
+	float u2 = (srcRect.x + srcRect.w) / texW;
+	float v2 = (srcRect.y + srcRect.h) / texH;
+
+	float x1 = (float) dstRect.x;
+	float y1 = (float) dstRect.y;
+	float x2 = x1 + dstRect.w;
+	float y2 = y1 + dstRect.h;
+
+	glBegin(GL_QUADS);
+	glTexCoord2f(u1, v1);
+	glVertex2f(x1, y1);
+	glTexCoord2f(u2, v1);
+	glVertex2f(x2, y1);
+	glTexCoord2f(u2, v2);
+	glVertex2f(x2, y2);
+	glTexCoord2f(u1, v2);
+	glVertex2f(x1, y2);
+	glEnd();
+
+	// Restore state
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+}
+
+void OpenGL1Renderer::Download(SDL_Surface* target)
+{
+	glFinish();
+
+	glReadPixels(0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, m_renderedImage->pixels);
+
+	// Flip image vertically
+	SDL_Rect srcRect, dstRect;
+	srcRect.x = dstRect.x = 0;
+	srcRect.w = dstRect.w = m_renderedImage->w;
+	srcRect.h = dstRect.h = 1;
+	for (int y = 0; y < m_renderedImage->h; ++y) {
+		srcRect.y = y;
+		dstRect.y = m_renderedImage->h - 1 - y;
+		SDL_BlitSurface(m_renderedImage, &srcRect, target, &dstRect);
+	}
 }

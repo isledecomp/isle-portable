@@ -26,8 +26,6 @@ struct Plane {
 	float d;
 };
 
-extern SDL_Renderer* DDRenderer;
-
 class Direct3DRMRenderer : public IDirect3DDevice2 {
 public:
 	virtual void PushLights(const SceneLight* vertices, size_t count) = 0;
@@ -48,9 +46,9 @@ public:
 		const Appearance& appearance
 	) = 0;
 	virtual HRESULT FinalizeFrame() = 0;
-
-	bool ConvertEventToRenderCoordinates(SDL_Event* event)
-	{
-		return SDL_ConvertEventToRenderCoordinates(DDRenderer, event);
-	}
+	bool ConvertEventToRenderCoordinates(SDL_Event* event) { return true; }
+	virtual void Clear(float r, float g, float b) = 0;
+	virtual void Flip() = 0;
+	virtual void Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect) = 0;
+	virtual void Download(SDL_Surface* target) = 0;
 };

@@ -272,6 +272,22 @@ HRESULT DirectX9Renderer::FinalizeFrame()
 	}
 
 	// Composite onto SDL backbuffer
-	SDL_BlitSurface(m_renderedImage, nullptr, DDBackBuffer, nullptr);
+	// SDL_BlitSurface(m_renderedImage, nullptr, DDBackBuffer, nullptr);
 	return hr;
+}
+
+void DirectX9Renderer::Clear(float r, float g, float b)
+{
+}
+
+void DirectX9Renderer::Flip()
+{
+}
+
+void DirectX9Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect)
+{
+}
+
+void DirectX9Renderer::Download(SDL_Surface* target)
+{
 }

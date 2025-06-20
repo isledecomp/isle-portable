@@ -210,10 +210,10 @@ void MxTransitionManager::DissolveTransition()
 	memset(&ddsd, 0, sizeof(ddsd));
 	ddsd.dwSize = sizeof(ddsd);
 
-	HRESULT res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+	HRESULT res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
 	if (res == DDERR_SURFACELOST) {
 		m_ddSurface->Restore();
-		res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+		res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
 	}
 
 	if (res == DD_OK) {
@@ -402,10 +402,10 @@ void MxTransitionManager::WipeDownTransition()
 	memset(&ddsd, 0, sizeof(ddsd));
 	ddsd.dwSize = sizeof(ddsd);
 
-	HRESULT res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+	HRESULT res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
 	if (res == DDERR_SURFACELOST) {
 		m_ddSurface->Restore();
-		res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+		res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
 	}
 
 	if (res == DD_OK) {
@@ -439,10 +439,10 @@ void MxTransitionManager::WindowsTransition()
 	memset(&ddsd, 0, sizeof(ddsd));
 	ddsd.dwSize = sizeof(ddsd);
 
-	HRESULT res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+	HRESULT res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
 	if (res == DDERR_SURFACELOST) {
 		m_ddSurface->Restore();
-		res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+		res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
 	}
 
 	if (res == DD_OK) {
@@ -483,10 +483,10 @@ void MxTransitionManager::BrokenTransition()
 	memset(&ddsd, 0, sizeof(ddsd));
 	ddsd.dwSize = sizeof(ddsd);
 
-	HRESULT res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+	HRESULT res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
 	if (res == DDERR_SURFACELOST) {
 		m_ddSurface->Restore();
-		res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+		res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
 	}
 
 	if (res == DD_OK) {
