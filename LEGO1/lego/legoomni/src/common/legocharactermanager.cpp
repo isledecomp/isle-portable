@@ -645,7 +645,7 @@ MxBool LegoCharacterManager::SetHeadTexture(LegoROI* p_roi, LegoTextureInfo* p_t
 		lodList->Release();
 		lodList = dupLodList;
 
-		if (head->GetUnknown0xe0() >= 0) {
+		if (head->GetLodLevel() >= 0) {
 			VideoManager()->Get3DManager()->GetLego3DView()->GetViewManager()->RemoveROIDetailFromScene(head);
 		}
 
@@ -846,7 +846,7 @@ MxBool LegoCharacterManager::SwitchVariant(LegoROI* p_roi)
 		lodList->Release();
 		lodList = dupLodList;
 
-		if (childROI->GetUnknown0xe0() >= 0) {
+		if (childROI->GetLodLevel() >= 0) {
 			VideoManager()->Get3DManager()->GetLego3DView()->GetViewManager()->RemoveROIDetailFromScene(childROI);
 		}
 
