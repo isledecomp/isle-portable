@@ -55,6 +55,7 @@ public:
 	void SetGameStarted(MxS32 p_gameStarted) { m_gameStarted = p_gameStarted; }
 
 	MxResult ParseArguments(int argc, char** argv);
+	MxResult VerifyFilesystem();
 
 private:
 	char* m_hdPath;              // 0x00
