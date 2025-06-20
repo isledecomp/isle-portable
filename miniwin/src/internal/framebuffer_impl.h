@@ -5,7 +5,7 @@
 #include <miniwin/ddraw.h>
 
 struct FrameBufferImpl : public IDirectDrawSurface3 {
-	FrameBufferImpl();
+	FrameBufferImpl(DWORD virtualWidth, DWORD virtualHeight);
 	~FrameBufferImpl() override;
 
 	// IUnknown interface
@@ -27,16 +27,18 @@ struct FrameBufferImpl : public IDirectDrawSurface3 {
 	HRESULT GetPalette(LPDIRECTDRAWPALETTE* lplpDDPalette) override;
 	HRESULT GetPixelFormat(LPDDPIXELFORMAT lpDDPixelFormat) override;
 	HRESULT GetSurfaceDesc(DDSURFACEDESC* lpDDSurfaceDesc) override;
-	HRESULT IsLost() override;
+	HRESULT IsLost() override { return DD_OK; }
 	HRESULT Lock(LPRECT lpDestRect, DDSURFACEDESC* lpDDSurfaceDesc, DDLockFlags dwFlags, HANDLE hEvent) override;
 	HRESULT ReleaseDC(HDC hDC) override;
 	HRESULT Restore() override;
-	HRESULT SetClipper(IDirectDrawClipper* lpDDClipper) override;
+	HRESULT SetClipper(IDirectDrawClipper* lpDDClipper) override { return DD_OK; }
 	HRESULT SetColorKey(DDColorKeyFlags dwFlags, LPDDCOLORKEY lpDDColorKey) override;
 	HRESULT SetPalette(LPDIRECTDRAWPALETTE lpDDPalette) override;
 	HRESULT Unlock(LPVOID lpSurfaceData) override;
 
 private:
-	SDL_Texture* m_uploadBuffer;
+	uint32_t m_virtualWidth;
+	uint32_t m_virtualHeight;
+	DirectDrawSurfaceImpl* m_transferBuffer;
 	IDirectDrawPalette* m_palette = nullptr;
 };

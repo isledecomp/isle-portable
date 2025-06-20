@@ -495,8 +495,8 @@ Result ViewImpl::ForceUpdate(unsigned int x, unsigned int y, unsigned int width,
 
 // FUNCTION: BETA10 0x101710f0
 inline Result ViewImpl::Pick(
-	unsigned int x,
-	unsigned int y,
+	int x,
+	int y,
 	const GroupImpl** ppGroupsToPickFrom,
 	int groupsToPickFromCount,
 	const Group**& rppPickedGroups,
@@ -519,8 +519,8 @@ inline Result ViewImpl::Pick(
 // FUNCTION: LEGO1 0x100a30c0
 // FUNCTION: BETA10 0x1016ee10
 Result ViewImpl::Pick(
-	unsigned int x,
-	unsigned int y,
+	int x,
+	int y,
 	const Group** ppGroupsToPickFrom,
 	int groupsToPickFromCount,
 	const Group**& rppPickedGroups,

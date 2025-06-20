@@ -11,8 +11,9 @@
 #include <SDL3/SDL.h>
 
 Direct3DRMDevice2Impl::Direct3DRMDevice2Impl(DWORD width, DWORD height, Direct3DRMRenderer* renderer)
-	: m_width(width), m_height(height), m_renderer(renderer), m_viewports(new Direct3DRMViewportArrayImpl)
+	: m_virtualWidth(width), m_virtualHeight(height), m_renderer(renderer), m_viewports(new Direct3DRMViewportArrayImpl)
 {
+	Resize();
 }
 
 Direct3DRMDevice2Impl::~Direct3DRMDevice2Impl()
@@ -41,16 +42,6 @@ HRESULT Direct3DRMDevice2Impl::QueryInterface(const GUID& riid, void** ppvObject
 	}
 	MINIWIN_NOT_IMPLEMENTED();
 	return E_NOINTERFACE;
-}
-
-DWORD Direct3DRMDevice2Impl::GetWidth()
-{
-	return m_width;
-}
-
-DWORD Direct3DRMDevice2Impl::GetHeight()
-{
-	return m_height;
 }
 
 HRESULT Direct3DRMDevice2Impl::SetBufferCount(int count)
@@ -133,7 +124,9 @@ HRESULT Direct3DRMDevice2Impl::Update()
 
 HRESULT Direct3DRMDevice2Impl::AddViewport(IDirect3DRMViewport* viewport)
 {
-	return m_viewports->AddElement(viewport);
+	HRESULT status = m_viewports->AddElement(viewport);
+	Resize();
+	return status;
 }
 
 HRESULT Direct3DRMDevice2Impl::GetViewports(IDirect3DRMViewportArray** ppViewportArray)
@@ -143,7 +136,53 @@ HRESULT Direct3DRMDevice2Impl::GetViewports(IDirect3DRMViewportArray** ppViewpor
 	return DD_OK;
 }
 
+ViewportTransform CalculateViewportTransform(int virtualW, int virtualH, int windowW, int windowH)
+{
+	float scaleX = (float) windowW / virtualW;
+	float scaleY = (float) windowH / virtualH;
+	float scale = (scaleX < scaleY) ? scaleX : scaleY;
+
+	float viewportW = virtualW * scale;
+	float viewportH = virtualH * scale;
+
+	float offsetX = (windowW - viewportW) * 0.5f;
+	float offsetY = (windowH - viewportH) * 0.5f;
+
+	return {scale, offsetX, offsetY};
+}
+
+void Direct3DRMDevice2Impl::Resize()
+{
+	int width, height;
+	SDL_GetWindowSizeInPixels(DDWindow, &width, &height);
+	m_viewportTransform = CalculateViewportTransform(m_virtualWidth, m_virtualHeight, width, height);
+	m_renderer->Resize(width, height, m_viewportTransform);
+	for (int i = 0; i < m_viewports->GetSize(); i++) {
+		IDirect3DRMViewport* viewport;
+		m_viewports->GetElement(i, &viewport);
+		static_cast<Direct3DRMViewportImpl*>(viewport)->UpdateProjectionMatrix();
+	}
+}
+
 bool Direct3DRMDevice2Impl::ConvertEventToRenderCoordinates(SDL_Event* event)
 {
-	return m_renderer->ConvertEventToRenderCoordinates(event);
+	switch (event->type) {
+	case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED: {
+		Resize();
+		break;
+	}
+	case SDL_EVENT_MOUSE_MOTION:
+	case SDL_EVENT_MOUSE_BUTTON_DOWN:
+	case SDL_EVENT_MOUSE_BUTTON_UP: {
+		int rawX = event->motion.x;
+		int rawY = event->motion.y;
+		float x = (rawX - m_viewportTransform.offsetX) / m_viewportTransform.scale;
+		float y = (rawY - m_viewportTransform.offsetY) / m_viewportTransform.scale;
+		event->motion.x = static_cast<Sint32>(x);
+		event->motion.y = static_cast<Sint32>(y);
+		break;
+	} break;
+	}
+
+	return true;
 }
