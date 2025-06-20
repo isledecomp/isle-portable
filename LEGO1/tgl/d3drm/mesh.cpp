@@ -101,7 +101,6 @@ inline Result MeshDeepClone(MeshImpl::MeshData* pSource, MeshImpl::MeshData*& rp
 		ResultVal(pSource->groupMesh->GetGroup(pSource->groupIndex, &vcount, &fcount, &vperface, &dataSize, NULL));
 	assert(Succeeded(result));
 
-
 	unsigned int* faceBuffer = new unsigned int[dataSize];
 	result =
 		ResultVal(pSource->groupMesh->GetGroup(pSource->groupIndex, &vcount, &fcount, &vperface, &dataSize, faceBuffer)
