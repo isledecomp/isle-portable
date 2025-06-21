@@ -11,7 +11,7 @@ class MxString : public MxCore {
 public:
 	MxString();
 	MxString(const MxString& p_str);
-	MxString(const char* p_str);
+	LEGO1_EXPORT MxString(const char* p_str);
 	MxString(const char* p_str, MxU16 p_maxlen);
 	LEGO1_EXPORT ~MxString() override;
 
@@ -27,7 +27,7 @@ public:
 	MxString& operator+=(const char* p_str);
 
 	static void CharSwap(char* p_a, char* p_b);
-	static void MapPathToFilesystem(char* p_path);
+	LEGO1_EXPORT static void MapPathToFilesystem(char* p_path);
 
 	// FUNCTION: BETA10 0x10017c50
 	char* GetData() const { return m_data; }
