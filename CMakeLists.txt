@@ -656,8 +656,11 @@ elseif(DPKG)
   # Don't replace system SDL3
   list(REMOVE_ITEM install_extra_targets "SDL3-shared")
 
-  # "config" is a vague binary name
-  set_property(TARGET config PROPERTY OUTPUT_NAME "isle-config")
+
+  if(ISLE_BUILD_CONFIG)
+    # "config" is a vague binary name
+    set_property(TARGET config PROPERTY OUTPUT_NAME "isle-config")
+  endif()
 
   set(CPACK_GENERATOR DEB)
 else()
