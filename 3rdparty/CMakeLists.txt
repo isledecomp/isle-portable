@@ -30,12 +30,6 @@ target_compile_definitions(miniaudio PUBLIC
     MA_NO_RUNTIME_LINKING
 )
 
-if(NINTENDO_3DS)
-  target_compile_definitions(miniaudio PUBLIC
-    MA_NO_RUNTIME_LINKING
-  )
-endif()
-
 if(DOWNLOAD_DEPENDENCIES)
     include(FetchContent)
     FetchContent_Declare(
