@@ -1059,8 +1059,18 @@ MxResult IsleApp::VerifyFilesystem()
 		MxString path(&file[1]);
 		path.MapPathToFilesystem();
 
-		if (!SDL_GetPathInfo(path.GetData(), NULL)) {
-			char buffer[512];
+		const char* searchPaths[] = {".", m_hdPath, m_cdPath};
+		char buffer[1024];
+
+		bool found = false;
+		for (const char* base : searchPaths) {
+			SDL_snprintf(buffer, sizeof(buffer), "%s%s", base, path.GetData());
+			found = SDL_GetPathInfo(buffer, NULL);
+			if (found) {
+				break;
+			}
+		}
+		if (!found) {
 			SDL_snprintf(
 				buffer,
 				sizeof(buffer),
