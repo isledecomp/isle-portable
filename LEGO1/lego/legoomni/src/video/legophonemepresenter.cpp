@@ -100,13 +100,14 @@ void LegoPhonemePresenter::LoadFrame(MxStreamChunk* p_chunk)
 	data += m_rectCount * sizeof(MxRect32);
 
 	MxBool decodedColorMap;
-	DecodeFLCFrame(
-		&m_frameBitmap->GetBitmapInfo()->m_bmiHeader,
-		m_frameBitmap->GetImage(),
-		m_flcHeader,
-		(FLIC_FRAME*) data,
-		&decodedColorMap
-	);
+	// TODO for 3DS: Temporarily disable FLC frames, as they were causing crashes
+	// DecodeFLCFrame(
+	// 	&m_frameBitmap->GetBitmapInfo()->m_bmiHeader,
+	// 	m_frameBitmap->GetImage(),
+	// 	m_flcHeader,
+	// 	(FLIC_FRAME*) data,
+	// 	&decodedColorMap
+	// );
 }
 
 // FUNCTION: LEGO1 0x1004e840
