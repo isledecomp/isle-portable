@@ -1062,21 +1062,22 @@ MxResult IsleApp::VerifyFilesystem()
 	Emscripten_SetupFilesystem();
 #else
 	for (const char* file : g_files) {
-		MxString path(&file[1]);
-		path.MapPathToFilesystem();
-
 		const char* searchPaths[] = {".", m_hdPath, m_cdPath};
-		char buffer[1024];
-
 		bool found = false;
+
 		for (const char* base : searchPaths) {
-			SDL_snprintf(buffer, sizeof(buffer), "%s%s", base, path.GetData());
-			found = SDL_GetPathInfo(buffer, NULL);
-			if (found) {
+			MxString path(base);
+			path += file;
+			path.MapPathToFilesystem();
+
+			if (SDL_GetPathInfo(path.GetData(), NULL)) {
+				found = true;
 				break;
 			}
 		}
+
 		if (!found) {
+			char buffer[1024];
 			SDL_snprintf(
 				buffer,
 				sizeof(buffer),

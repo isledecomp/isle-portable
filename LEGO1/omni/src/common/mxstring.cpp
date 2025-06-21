@@ -229,5 +229,14 @@ void MxString::MapPathToFilesystem(char* p_path)
 	if (!mapPath(MxOmni::GetHDFiles())) {
 		mapPath(MxOmni::GetCDFiles());
 	}
+#else
+	char* path = p_path;
+	while (*path) {
+		if (*path == '/') {
+			*path = '\\';
+		}
+
+		path++;
+	}
 #endif
 }
