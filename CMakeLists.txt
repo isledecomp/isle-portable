@@ -627,10 +627,6 @@ set(ISLE_PACKAGE_NAME "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}" CACHE STR
 if(BUILD_SHARED_LIBS)
   list(APPEND install_extra_targets lego1)
 endif()
-install(TARGETS isle ${install_extra_targets}
-  RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
-  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-)
 if (ISLE_BUILD_CONFIG)
   install(TARGETS config
     RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
@@ -644,9 +640,33 @@ endif()
 
 set(CPACK_PACKAGE_DIRECTORY "dist")
 set(CPACK_PACKAGE_FILE_NAME "isle-${PROJECT_VERSION}-${ISLE_PACKAGE_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+
+find_program(DPKG dpkg)
 if(MSVC)
   set(CPACK_GENERATOR ZIP)
+elseif(DPKG)
+  set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "LEGO Island for Debian-based distros")
+  set(CPACK_DEBIAN_PACKAGE_VERSION ${PROJECT_VERSION})
+  set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt6core6t64 libsdl3-0")
+  set(CPACK_DEBIAN_PACKAGE_SECTION games)
+  set(CPACK_DEBIAN_PACKAGE_PRIORITY optional)
+  set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/isledecomp/isle-portable")
+  set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Joshua Peisach <itzswirlz2020@outlook.com>")
+
+  # Don't replace system SDL3
+  list(REMOVE_ITEM install_extra_targets "SDL3-shared")
+
+  # "config" is a vague binary name
+  set_property(TARGET config PROPERTY OUTPUT_NAME "isle-config")
+
+  set(CPACK_GENERATOR DEB)
 else()
   set(CPACK_GENERATOR TGZ)
 endif()
+
+install(TARGETS isle ${install_extra_targets}
+  RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+)
+
 include(CPack)
