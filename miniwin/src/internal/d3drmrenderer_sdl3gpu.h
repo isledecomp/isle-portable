@@ -112,7 +112,9 @@ private:
 
 inline static void Direct3DRMSDL3GPU_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
-	Direct3DRMRenderer* device = Direct3DRMSDL3GPURenderer::Create(640, 480);
+	// TODO: quick hack for getting the game to load on 3ds
+	Direct3DRMRenderer* device = Direct3DRMSDL3GPURenderer::Create(400, 240);
+	// Direct3DRMRenderer* device = Direct3DRMSDL3GPURenderer::Create(640, 480);
 	if (device) {
 		EnumDevice(cb, ctx, device, SDL3_GPU_GUID);
 		delete device;
