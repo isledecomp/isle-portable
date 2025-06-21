@@ -433,8 +433,14 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		}
 
 		SDL_Keycode keyCode = event->key.key;
-		if (InputManager()) {
-			InputManager()->QueueEvent(c_notificationKeyPress, keyCode, 0, 0, keyCode);
+
+		if (event->key.mod == SDL_KMOD_LALT && keyCode == SDLK_RETURN) {
+			SDL_SetWindowFullscreen(window, !(SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN));
+		}
+		else {
+			if (InputManager()) {
+				InputManager()->QueueEvent(c_notificationKeyPress, keyCode, 0, 0, keyCode);
+			}
 		}
 		break;
 	}
