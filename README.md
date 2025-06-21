@@ -38,7 +38,7 @@ To achieve our goal of platform independence, we need to replace any Windows-onl
 
 ## Building
 
-This project uses the [CMake](https://cmake.org/) build system, which allows for a high degree of versatility regarding compilers and development environments. Please refer to the [GitHub action](/.github/workflows//build.yml) for guidance.
+This project uses the [CMake](https://cmake.org/) build system, which allows for a high degree of versatility regarding compilers and development environments. Please refer to the [GitHub action](/.github/workflows//ci.yml) for guidance.
 
 ## Contributing
 
