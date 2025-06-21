@@ -26,7 +26,7 @@ else()
 endif()
 
 find_program(SDL_SHADERCROSS_BIN NAMES "shadercross")
-find_package(Python3 COMPONENTS Interpreter)
+find_package(Python3 3.11 COMPONENTS Interpreter)
 
 option(ISLE_BUILD_APP "Build isle application" ON)
 option(ISLE_ASAN "Enable Address Sanitizer" OFF)
