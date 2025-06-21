@@ -23,10 +23,17 @@
 #include <wasm_simd128.h>
 #endif
 
-Direct3DRMSoftwareRenderer::Direct3DRMSoftwareRenderer(DWORD width, DWORD height) : m_width(width), m_height(height)
+Direct3DRMSoftwareRenderer::Direct3DRMSoftwareRenderer(DWORD width, DWORD height)
 {
-	m_renderedImage = SDL_CreateSurface(m_width, m_height, SDL_PIXELFORMAT_ABGR8888);
+	m_width = width;
+	m_height = height;
+	m_renderedImage = SDL_CreateSurface(m_width, m_height, SDL_PIXELFORMAT_RGBA32);
 	m_zBuffer.resize(m_width * m_height);
+}
+
+Direct3DRMSoftwareRenderer::~Direct3DRMSoftwareRenderer()
+{
+	SDL_DestroySurface(m_renderedImage);
 }
 
 void Direct3DRMSoftwareRenderer::PushLights(const SceneLight* lights, size_t count)
@@ -650,16 +657,6 @@ Uint32 Direct3DRMSoftwareRenderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGr
 	m_meshs.push_back(std::move(newCache));
 	AddMeshDestroyCallback((Uint32) (m_meshs.size() - 1), mesh);
 	return (Uint32) (m_meshs.size() - 1);
-}
-
-DWORD Direct3DRMSoftwareRenderer::GetWidth()
-{
-	return m_width;
-}
-
-DWORD Direct3DRMSoftwareRenderer::GetHeight()
-{
-	return m_height;
 }
 
 void Direct3DRMSoftwareRenderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc)

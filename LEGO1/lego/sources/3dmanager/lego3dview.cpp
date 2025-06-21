@@ -154,7 +154,7 @@ double Lego3DView::Render(double p_und)
 }
 
 // FUNCTION: LEGO1 0x100ab2b0
-ViewROI* Lego3DView::Pick(unsigned int x, unsigned int y)
+ViewROI* Lego3DView::Pick(int x, int y)
 {
 	return m_pViewManager->Pick(GetView(), x, y);
 }

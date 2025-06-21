@@ -98,7 +98,7 @@ HRESULT DirectDrawImpl::CreateSurface(
 #ifdef MINIWIN_PIXELFORMAT
 	format = MINIWIN_PIXELFORMAT;
 #else
-	format = SDL_PIXELFORMAT_RGBA8888;
+	format = SDL_PIXELFORMAT_RGBA32;
 #endif
 	if ((lpDDSurfaceDesc->dwFlags & DDSD_PIXELFORMAT) == DDSD_PIXELFORMAT) {
 		if ((lpDDSurfaceDesc->ddpfPixelFormat.dwFlags & DDPF_RGB) == DDPF_RGB) {

@@ -20,14 +20,16 @@ Direct3DRMRenderer* DirectX9Renderer::Create(DWORD width, DWORD height)
 	return new DirectX9Renderer(width, height);
 }
 
-DirectX9Renderer::DirectX9Renderer(DWORD width, DWORD height) : m_width(width), m_height(height)
+DirectX9Renderer::DirectX9Renderer(DWORD width, DWORD height)
 {
+	m_width = width;
+	m_height = height;
 	Actual_Initialize(
 		SDL_GetPointerProperty(SDL_GetWindowProperties(DDWindow), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL),
 		width,
 		height
 	);
-	m_renderedImage = SDL_CreateSurface(m_width, m_height, SDL_PIXELFORMAT_ARGB8888);
+	m_renderedImage = SDL_CreateSurface(m_width, m_height, SDL_PIXELFORMAT_RGBA32);
 }
 
 DirectX9Renderer::~DirectX9Renderer()
@@ -210,16 +212,6 @@ Uint32 DirectX9Renderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshG
 
 	m_meshs.push_back(std::move(newCache));
 	return static_cast<Uint32>(m_meshs.size() - 1);
-}
-
-DWORD DirectX9Renderer::GetWidth()
-{
-	return m_width;
-}
-
-DWORD DirectX9Renderer::GetHeight()
-{
-	return m_height;
 }
 
 void DirectX9Renderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc)

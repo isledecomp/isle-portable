@@ -60,11 +60,16 @@ Direct3DRMRenderer* OpenGL1Renderer::Create(DWORD width, DWORD height)
 	return new OpenGL1Renderer(width, height, context);
 }
 
-OpenGL1Renderer::OpenGL1Renderer(DWORD width, DWORD height, SDL_GLContext context)
-	: m_width(width), m_height(height), m_context(context)
+OpenGL1Renderer::OpenGL1Renderer(DWORD width, DWORD height, SDL_GLContext context) : m_context(context)
 {
-	m_renderedImage = SDL_CreateSurface(m_width, m_height, SDL_PIXELFORMAT_ABGR8888);
+	m_width = width;
+	m_height = height;
+	m_renderedImage = SDL_CreateSurface(m_width, m_height, SDL_PIXELFORMAT_RGBA32);
 	m_useVBOs = GLEW_ARB_vertex_buffer_object;
+	SDL_GL_MakeCurrent(DDWindow, m_context);
+	glViewport(0, 0, m_width, m_height);
+	m_virtualWidth = 640;
+	m_virtualHeight = 480;
 }
 
 OpenGL1Renderer::~OpenGL1Renderer()
@@ -122,14 +127,12 @@ Uint32 OpenGL1Renderer::GetTextureId(IDirect3DRMTexture* iTexture)
 				glGenTextures(1, &tex.glTextureId);
 				glBindTexture(GL_TEXTURE_2D, tex.glTextureId);
 
-				SDL_Surface* surf = SDL_ConvertSurface(surface->m_surface, SDL_PIXELFORMAT_ABGR8888);
+				SDL_Surface* surf = SDL_ConvertSurface(surface->m_surface, SDL_PIXELFORMAT_RGBA32);
 				if (!surf) {
 					return NO_TEXTURE_ID;
 				}
 				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
 				SDL_DestroySurface(surf);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 				tex.version = texture->m_version;
 			}
@@ -141,14 +144,12 @@ Uint32 OpenGL1Renderer::GetTextureId(IDirect3DRMTexture* iTexture)
 	glGenTextures(1, &texId);
 	glBindTexture(GL_TEXTURE_2D, texId);
 
-	SDL_Surface* surf = SDL_ConvertSurface(surface->m_surface, SDL_PIXELFORMAT_ABGR8888);
+	SDL_Surface* surf = SDL_ConvertSurface(surface->m_surface, SDL_PIXELFORMAT_RGBA32);
 	if (!surf) {
 		return NO_TEXTURE_ID;
 	}
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
 	SDL_DestroySurface(surf);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	for (Uint32 i = 0; i < m_textures.size(); ++i) {
 		auto& tex = m_textures[i];
@@ -298,16 +299,6 @@ Uint32 OpenGL1Renderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGr
 	return (Uint32) (m_meshs.size() - 1);
 }
 
-DWORD OpenGL1Renderer::GetWidth()
-{
-	return m_width;
-}
-
-DWORD OpenGL1Renderer::GetHeight()
-{
-	return m_height;
-}
-
 void OpenGL1Renderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc)
 {
 	halDesc->dcmColorModel = D3DCOLORMODEL::RGB;
@@ -329,9 +320,6 @@ const char* OpenGL1Renderer::GetName()
 HRESULT OpenGL1Renderer::BeginFrame()
 {
 	m_dirty = true;
-	SDL_GL_MakeCurrent(DDWindow, m_context);
-	glViewport(0, 0, m_width, m_height);
-
 	glDisable(GL_BLEND);
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
@@ -454,6 +442,8 @@ void OpenGL1Renderer::SubmitDraw(
 
 	// Bind texture if present
 	if (appearance.textureId != NO_TEXTURE_ID) {
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		auto& tex = m_textures[appearance.textureId];
 		glEnable(GL_TEXTURE_2D);
 		glBindTexture(GL_TEXTURE_2D, tex.glTextureId);
@@ -503,6 +493,54 @@ HRESULT OpenGL1Renderer::FinalizeFrame()
 	return DD_OK;
 }
 
+struct ViewportTransform {
+	float scale;
+	float offsetX;
+	float offsetY;
+};
+
+ViewportTransform CalculateViewportTransform(int virtualW, int virtualH, int windowW, int windowH)
+{
+	float scaleX = (float) windowW / virtualW;
+	float scaleY = (float) windowH / virtualH;
+	float scale = (scaleX < scaleY) ? scaleX : scaleY;
+
+	float viewportW = virtualW * scale;
+	float viewportH = virtualH * scale;
+
+	float offsetX = (windowW - viewportW) * 0.5f;
+	float offsetY = (windowH - viewportH) * 0.5f;
+
+	return {scale, offsetX, offsetY};
+}
+
+bool OpenGL1Renderer::ConvertEventToRenderCoordinates(SDL_Event* event)
+{
+	switch (event->type) {
+	case SDL_EVENT_MOUSE_MOTION:
+	case SDL_EVENT_MOUSE_BUTTON_DOWN:
+	case SDL_EVENT_MOUSE_BUTTON_UP: {
+		ViewportTransform vp = CalculateViewportTransform(m_virtualWidth, m_virtualHeight, m_width, m_height);
+		int rawX = event->motion.x;
+		int rawY = event->motion.y;
+		float x = (rawX - vp.offsetX) / vp.scale;
+		float y = (rawY - vp.offsetY) / vp.scale;
+		event->motion.x = static_cast<Sint32>(x);
+		event->motion.y = static_cast<Sint32>(y);
+		break;
+	} break;
+	case SDL_EVENT_WINDOW_RESIZED:
+		m_width = event->window.data1;
+		m_height = event->window.data2;
+		SDL_DestroySurface(m_renderedImage);
+		m_renderedImage = SDL_CreateSurface(m_width, m_height, SDL_PIXELFORMAT_RGBA32);
+		glViewport(0, 0, m_width, m_height);
+		break;
+	}
+
+	return true;
+}
+
 void OpenGL1Renderer::Clear(float r, float g, float b)
 {
 	m_dirty = true;
@@ -529,7 +567,13 @@ void OpenGL1Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, con
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glLoadIdentity();
-	glOrtho(0, 640, 480, 0, -1, 1);
+
+	ViewportTransform vp = CalculateViewportTransform(m_virtualWidth, m_virtualHeight, m_width, m_height);
+	float left = -vp.offsetX / vp.scale;
+	float right = (m_width - vp.offsetX) / vp.scale;
+	float top = -vp.offsetY / vp.scale;
+	float bottom = (m_height - vp.offsetY) / vp.scale;
+	glOrtho(left, right, bottom, top, -1, 1);
 
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
@@ -547,17 +591,13 @@ void OpenGL1Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, con
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	// Normalize source rect to texture coords
-	float texW = 1.0f; // fallback
-	float texH = 1.0f;
 
 	GLint boundTexture = 0;
 	glGetIntegerv(GL_TEXTURE_BINDING_2D, &boundTexture);
 
-	GLint w = 1, h = 1;
-	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &w);
-	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &h);
-	texW = (float) w;
-	texH = (float) h;
+	GLfloat texW, texH;
+	glGetTexLevelParameterfv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &texW);
+	glGetTexLevelParameterfv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &texH);
 
 	float u1 = srcRect.x / texW;
 	float v1 = srcRect.y / texH;
@@ -586,21 +626,36 @@ void OpenGL1Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, con
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
 }
-
 void OpenGL1Renderer::Download(SDL_Surface* target)
 {
 	glFinish();
-
 	glReadPixels(0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, m_renderedImage->pixels);
 
-	// Flip image vertically
-	SDL_Rect srcRect, dstRect;
-	srcRect.x = dstRect.x = 0;
-	srcRect.w = dstRect.w = m_renderedImage->w;
-	srcRect.h = dstRect.h = 1;
-	for (int y = 0; y < m_renderedImage->h; ++y) {
-		srcRect.y = y;
-		dstRect.y = m_renderedImage->h - 1 - y;
-		SDL_BlitSurface(m_renderedImage, &srcRect, target, &dstRect);
+	ViewportTransform vp = CalculateViewportTransform(m_virtualWidth, m_virtualHeight, m_width, m_height);
+
+	SDL_Rect srcRect = {
+		static_cast<int>(vp.offsetX),
+		static_cast<int>(vp.offsetY),
+		static_cast<int>(m_virtualWidth * vp.scale),
+		static_cast<int>(m_virtualHeight * vp.scale),
+	};
+
+	SDL_Surface* bufferClone = SDL_CreateSurface(m_virtualWidth, m_virtualHeight, SDL_PIXELFORMAT_RGBA32);
+	if (!bufferClone) {
+		SDL_Log("SDL_CreateSurface: %s", SDL_GetError());
+		return;
 	}
+
+	SDL_BlitSurfaceScaled(m_renderedImage, &srcRect, bufferClone, nullptr, SDL_SCALEMODE_NEAREST);
+
+	// Flip image vertically into target
+	SDL_Rect rowSrc = {0, 0, bufferClone->w, 1};
+	SDL_Rect rowDst = {0, 0, bufferClone->w, 1};
+	for (int y = 0; y < bufferClone->h; ++y) {
+		rowSrc.y = y;
+		rowDst.y = bufferClone->h - 1 - y;
+		SDL_BlitSurface(bufferClone, &rowSrc, target, &rowDst);
+	}
+
+	SDL_DestroySurface(bufferClone);
 }

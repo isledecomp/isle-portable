@@ -8,9 +8,7 @@
 
 FrameBufferImpl::FrameBufferImpl()
 {
-	int width, height;
-	SDL_GetWindowSizeInPixels(DDWindow, &width, &height);
-	m_transferBuffer = new DirectDrawSurfaceImpl(width, height, SDL_PIXELFORMAT_RGBA8888);
+	m_transferBuffer = new DirectDrawSurfaceImpl(640, 480, SDL_PIXELFORMAT_RGBA32);
 }
 
 FrameBufferImpl::~FrameBufferImpl()

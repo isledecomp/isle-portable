@@ -20,8 +20,6 @@ public:
 	void SetFrustumPlanes(const Plane* frustumPlanes) override;
 	Uint32 GetTextureId(IDirect3DRMTexture* texture) override;
 	Uint32 GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup) override;
-	DWORD GetWidth() override;
-	DWORD GetHeight() override;
 	void GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc) override;
 	const char* GetName() override;
 	HRESULT BeginFrame() override;
@@ -43,7 +41,6 @@ private:
 	void AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh);
 
 	SDL_Surface* m_renderedImage;
-	DWORD m_width, m_height;
 	std::vector<SceneLight> m_lights;
 	std::vector<D3D9MeshCacheEntry> m_meshs;
 	std::vector<D3D9TextureCacheEntry> m_textures;

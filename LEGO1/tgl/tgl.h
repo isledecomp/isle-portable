@@ -257,8 +257,8 @@ public:
 	//      output parameter
 	//      size of rppPickedGroups
 	virtual Result Pick(
-		unsigned int x,
-		unsigned int y,
+		int x,
+		int y,
 		const Group** ppGroupsToPickFrom,
 		int groupsToPickFromCount,
 		const Group**& rppPickedGroups,

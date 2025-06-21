@@ -27,13 +27,12 @@ struct MeshCache {
 class Direct3DRMSoftwareRenderer : public Direct3DRMRenderer {
 public:
 	Direct3DRMSoftwareRenderer(DWORD width, DWORD height);
+	~Direct3DRMSoftwareRenderer();
 	void PushLights(const SceneLight* vertices, size_t count) override;
 	Uint32 GetTextureId(IDirect3DRMTexture* texture) override;
 	Uint32 GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup) override;
 	void SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back) override;
 	void SetFrustumPlanes(const Plane* frustumPlanes) override;
-	DWORD GetWidth() override;
-	DWORD GetHeight() override;
 	void GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc) override;
 	const char* GetName() override;
 	HRESULT BeginFrame() override;

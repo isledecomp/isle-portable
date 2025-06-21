@@ -47,8 +47,6 @@ public:
 	void SetFrustumPlanes(const Plane* frustumPlanes) override;
 	Uint32 GetTextureId(IDirect3DRMTexture* texture) override;
 	Uint32 GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup) override;
-	DWORD GetWidth() override;
-	DWORD GetHeight() override;
 	void GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc) override;
 	const char* GetName() override;
 	HRESULT BeginFrame() override;
@@ -73,7 +71,6 @@ private:
 	std::vector<GLES2MeshCacheEntry> m_meshs;
 	D3DRMMATRIX4D m_projection;
 	SDL_Surface* m_renderedImage;
-	DWORD m_width, m_height;
 	std::vector<SceneLight> m_lights;
 	SDL_GLContext m_context;
 	GLuint m_fbo;

@@ -51,8 +51,6 @@ public:
 	Uint32 GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup) override;
 	void SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back) override;
 	void SetFrustumPlanes(const Plane* frustumPlanes) override;
-	DWORD GetWidth() override;
-	DWORD GetHeight() override;
 	void GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc) override;
 	const char* GetName() override;
 	HRESULT BeginFrame() override;
@@ -89,8 +87,6 @@ private:
 	void AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh);
 	SDL3MeshCache UploadMesh(const MeshGroup& meshGroup);
 
-	DWORD m_width;
-	DWORD m_height;
 	D3DVALUE m_front;
 	D3DVALUE m_back;
 	ViewportUniforms m_uniforms;
