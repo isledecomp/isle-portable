@@ -218,10 +218,11 @@ OpenGLES2Renderer::OpenGLES2Renderer(
 	GLuint depthRb,
 	GLuint shaderProgram
 )
-	: m_width(width), m_height(height), m_context(context), m_fbo(fbo), m_colorTex(colorTex), m_depthRb(depthRb),
-	  m_shaderProgram(shaderProgram)
+	: m_context(context), m_fbo(fbo), m_colorTex(colorTex), m_depthRb(depthRb), m_shaderProgram(shaderProgram)
 {
-	m_renderedImage = SDL_CreateSurface(m_width, m_height, SDL_PIXELFORMAT_ABGR8888);
+	m_width = width;
+	m_height = height;
+	m_renderedImage = SDL_CreateSurface(m_width, m_height, SDL_PIXELFORMAT_RGBA32);
 }
 
 OpenGLES2Renderer::~OpenGLES2Renderer()
@@ -289,7 +290,7 @@ Uint32 OpenGLES2Renderer::GetTextureId(IDirect3DRMTexture* iTexture)
 				glGenTextures(1, &tex.glTextureId);
 				glBindTexture(GL_TEXTURE_2D, tex.glTextureId);
 
-				SDL_Surface* surf = SDL_ConvertSurface(surface->m_surface, SDL_PIXELFORMAT_ABGR8888);
+				SDL_Surface* surf = SDL_ConvertSurface(surface->m_surface, SDL_PIXELFORMAT_RGBA32);
 				if (!surf) {
 					return NO_TEXTURE_ID;
 				}
@@ -308,7 +309,7 @@ Uint32 OpenGLES2Renderer::GetTextureId(IDirect3DRMTexture* iTexture)
 	glGenTextures(1, &texId);
 	glBindTexture(GL_TEXTURE_2D, texId);
 
-	SDL_Surface* surf = SDL_ConvertSurface(surface->m_surface, SDL_PIXELFORMAT_ABGR8888);
+	SDL_Surface* surf = SDL_ConvertSurface(surface->m_surface, SDL_PIXELFORMAT_RGBA32);
 	if (!surf) {
 		return NO_TEXTURE_ID;
 	}
@@ -449,16 +450,6 @@ Uint32 OpenGLES2Renderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* mesh
 	m_meshs.push_back(std::move(newCache));
 	AddMeshDestroyCallback((Uint32) (m_meshs.size() - 1), mesh);
 	return (Uint32) (m_meshs.size() - 1);
-}
-
-DWORD OpenGLES2Renderer::GetWidth()
-{
-	return m_width;
-}
-
-DWORD OpenGLES2Renderer::GetHeight()
-{
-	return m_height;
 }
 
 void OpenGLES2Renderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc)
@@ -610,7 +601,23 @@ HRESULT OpenGLES2Renderer::FinalizeFrame()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// Composite onto SDL backbuffer
-	SDL_BlitSurface(m_renderedImage, nullptr, DDBackBuffer, nullptr);
+	// SDL_BlitSurface(m_renderedImage, nullptr, DDBackBuffer, nullptr);
 
 	return DD_OK;
+}
+
+void OpenGLES2Renderer::Clear(float r, float g, float b)
+{
+}
+
+void OpenGLES2Renderer::Flip()
+{
+}
+
+void OpenGLES2Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect)
+{
+}
+
+void OpenGLES2Renderer::Download(SDL_Surface* target)
+{
 }

@@ -151,7 +151,7 @@ void Direct3DRMViewportImpl::CollectLightsFromFrame(
 void Direct3DRMViewportImpl::BuildViewFrustumPlanes()
 {
 
-	float aspect = (float) m_width / (float) m_height;
+	float aspect = (float) m_renderer->GetWidth() / (float) m_renderer->GetHeight();
 	float tanFovX = m_field;
 	float tanFovY = m_field / aspect;
 
@@ -301,6 +301,7 @@ HRESULT Direct3DRMViewportImpl::RenderScene()
 	D3DRMMATRIX4D cameraWorld;
 	ComputeFrameWorldMatrix(m_camera, cameraWorld);
 	D3DRMMatrixInvertOrthogonal(m_viewMatrix, cameraWorld);
+	UpdateProjectionMatrix();
 	D3DRMMatrixMultiply(m_viewProjectionwMatrix, m_viewMatrix, m_projectionMatrix);
 
 	D3DRMMATRIX4D identity = {{1.f, 0.f, 0.f, 0.f}, {0.f, 1.f, 0.f, 0.f}, {0.f, 0.f, 1.f, 0.f}, {0.f, 0.f, 0.f, 1.f}};
@@ -349,16 +350,14 @@ HRESULT Direct3DRMViewportImpl::ForceUpdate(int x, int y, int w, int h)
 
 HRESULT Direct3DRMViewportImpl::Clear()
 {
-	if (!DDBackBuffer) {
+	if (!m_renderer) {
 		return DDERR_GENERIC;
 	}
 
 	uint8_t r = (m_backgroundColor >> 16) & 0xFF;
 	uint8_t g = (m_backgroundColor >> 8) & 0xFF;
 	uint8_t b = m_backgroundColor & 0xFF;
-
-	Uint32 color = SDL_MapRGB(SDL_GetPixelFormatDetails(DDBackBuffer->format), nullptr, r, g, b);
-	SDL_FillSurfaceRect(DDBackBuffer, nullptr, color);
+	m_renderer->Clear(r / 255.0f, g / 255.0f, b / 255.0f);
 
 	return DD_OK;
 }
@@ -427,13 +426,24 @@ HRESULT Direct3DRMViewportImpl::SetField(D3DVALUE field)
 
 void Direct3DRMViewportImpl::UpdateProjectionMatrix()
 {
-	float aspect = (float) m_width / (float) m_height;
-	float f = m_front / m_field;
+	float virtualAspect = (float) 640 / (float) 480;
+	float windowAspect = (float) m_renderer->GetWidth() / (float) m_renderer->GetHeight();
+
+	float base_f = m_front / m_field;
+	float f_v = base_f * virtualAspect;
+	float f_h = base_f;
+	if (windowAspect >= virtualAspect) {
+		f_h *= virtualAspect / windowAspect;
+	}
+	else {
+		f_v *= windowAspect / virtualAspect;
+	}
+
 	float depth = m_back - m_front;
 
 	D3DRMMATRIX4D projection = {
-		{f, 0, 0, 0},
-		{0, f * aspect, 0, 0},
+		{f_h, 0, 0, 0},
+		{0, f_v, 0, 0},
 		{0, 0, m_back / depth, 1},
 		{0, 0, (-m_front * m_back) / depth, 0},
 	};
@@ -442,8 +452,8 @@ void Direct3DRMViewportImpl::UpdateProjectionMatrix()
 	m_renderer->SetProjection(projection, m_front, m_back);
 
 	D3DRMMATRIX4D inverseProjectionMatrix = {
-		{1.0f / f, 0, 0, 0},
-		{0, 1.0f / (f * aspect), 0, 0},
+		{1.0f / f_h, 0, 0, 0},
+		{0, 1.0f / f_v, 0, 0},
 		{0, 0, 0, depth / (-m_front * m_back)},
 		{0, 0, 1, -(m_back / depth) * depth / (-m_front * m_back)},
 	};

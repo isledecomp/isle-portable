@@ -1,3 +1,4 @@
+#include "d3drmtexture_impl.h"
 #include "ddpalette_impl.h"
 #include "ddraw_impl.h"
 #include "ddsurface_impl.h"
@@ -18,6 +19,9 @@ DirectDrawSurfaceImpl::~DirectDrawSurfaceImpl()
 	SDL_DestroySurface(m_surface);
 	if (m_palette) {
 		m_palette->Release();
+	}
+	if (m_texture) {
+		m_texture->Release();
 	}
 }
 
@@ -68,6 +72,9 @@ HRESULT DirectDrawSurfaceImpl::Blt(
 
 	if (blitSource != other->m_surface) {
 		SDL_DestroySurface(blitSource);
+	}
+	if (m_texture) {
+		m_texture->Changed(TRUE, FALSE);
 	}
 	return DD_OK;
 }
@@ -203,6 +210,10 @@ HRESULT DirectDrawSurfaceImpl::SetPalette(LPDIRECTDRAWPALETTE lpDDPalette)
 		MINIWIN_NOT_IMPLEMENTED();
 	}
 
+	if (m_texture) {
+		m_texture->Changed(FALSE, TRUE);
+	}
+
 	if (m_palette) {
 		m_palette->Release();
 	}
@@ -216,5 +227,16 @@ HRESULT DirectDrawSurfaceImpl::SetPalette(LPDIRECTDRAWPALETTE lpDDPalette)
 HRESULT DirectDrawSurfaceImpl::Unlock(LPVOID lpSurfaceData)
 {
 	SDL_UnlockSurface(m_surface);
+	if (m_texture) {
+		m_texture->Changed(TRUE, FALSE);
+	}
 	return DD_OK;
+}
+
+IDirect3DRMTexture2* DirectDrawSurfaceImpl::ToTexture()
+{
+	if (!m_texture) {
+		m_texture = new Direct3DRMTextureImpl(this, false);
+	}
+	return m_texture;
 }

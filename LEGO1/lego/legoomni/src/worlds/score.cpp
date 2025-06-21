@@ -254,7 +254,7 @@ void Score::Paint()
 		memset(&desc, 0, sizeof(desc));
 		desc.dwSize = sizeof(desc);
 
-		HRESULT result = cube->m_surface->Lock(NULL, &desc, DDLOCK_SURFACEMEMORYPTR, NULL);
+		HRESULT result = cube->m_surface->Lock(NULL, &desc, DDLOCK_SURFACEMEMORYPTR | DDLOCK_WRITEONLY, NULL);
 		if (result == DD_OK) {
 			if (desc.lPitch != desc.dwWidth) {
 				cube->m_surface->Unlock(desc.lpSurface);

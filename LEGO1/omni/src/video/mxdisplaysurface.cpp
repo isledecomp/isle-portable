@@ -402,10 +402,10 @@ void MxDisplaySurface::VTable0x28(
 	memset(&ddsd, 0, sizeof(ddsd));
 	ddsd.dwSize = sizeof(ddsd);
 
-	HRESULT hr = m_ddSurface2->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+	HRESULT hr = m_ddSurface2->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
 	if (hr == DDERR_SURFACELOST) {
 		m_ddSurface2->Restore();
-		hr = m_ddSurface2->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+		hr = m_ddSurface2->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
 	}
 
 	if (hr != DD_OK) {
@@ -514,10 +514,10 @@ void MxDisplaySurface::VTable0x30(
 	memset(&ddsd, 0, sizeof(ddsd));
 	ddsd.dwSize = sizeof(ddsd);
 
-	HRESULT hr = m_ddSurface2->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+	HRESULT hr = m_ddSurface2->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
 	if (hr == DDERR_SURFACELOST) {
 		m_ddSurface2->Restore();
-		hr = m_ddSurface2->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+		hr = m_ddSurface2->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
 	}
 
 	if (hr != DD_OK) {
@@ -726,11 +726,11 @@ void MxDisplaySurface::VTable0x34(MxU8* p_pixels, MxS32 p_bpp, MxS32 p_width, Mx
 	memset(&surfaceDesc, 0, sizeof(surfaceDesc));
 	surfaceDesc.dwSize = sizeof(surfaceDesc);
 
-	HRESULT result = m_ddSurface2->Lock(NULL, &surfaceDesc, DDLOCK_WAIT, NULL);
+	HRESULT result = m_ddSurface2->Lock(NULL, &surfaceDesc, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
 
 	if (result == DDERR_SURFACELOST) {
 		m_ddSurface2->Restore();
-		result = m_ddSurface2->Lock(NULL, &surfaceDesc, DDLOCK_WAIT, NULL);
+		result = m_ddSurface2->Lock(NULL, &surfaceDesc, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
 	}
 
 	if (result == DD_OK) {
@@ -784,7 +784,7 @@ void MxDisplaySurface::Display(MxS32 p_left, MxS32 p_top, MxS32 p_left2, MxS32 p
 				DDSURFACEDESC ddsd;
 				memset(&ddsd, 0, sizeof(ddsd));
 				ddsd.dwSize = sizeof(ddsd);
-				if (m_ddSurface2->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL) == DD_OK) {
+				if (m_ddSurface2->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL) == DD_OK) {
 					MxU8* surface = (MxU8*) ddsd.lpSurface;
 					MxS32 height = m_videoParam.GetRect().GetHeight();
 
@@ -891,7 +891,7 @@ LPDIRECTDRAWSURFACE MxDisplaySurface::VTable0x44(
 		memset(&ddsd, 0, sizeof(ddsd));
 		ddsd.dwSize = sizeof(ddsd);
 
-		if (surface->Lock(NULL, &ddsd, DDLOCK_WAIT, 0) != DD_OK) {
+		if (surface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, 0) != DD_OK) {
 			surface->Release();
 			surface = NULL;
 		}
@@ -1067,7 +1067,7 @@ LPDIRECTDRAWSURFACE MxDisplaySurface::CreateCursorSurface()
 	memset(&ddsd, 0, sizeof(ddsd));
 	ddsd.dwSize = sizeof(ddsd);
 
-	if (newSurface->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL) != DD_OK) {
+	if (newSurface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL) != DD_OK) {
 		goto done;
 	}
 	else {

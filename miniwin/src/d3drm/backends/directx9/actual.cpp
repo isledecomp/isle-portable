@@ -122,7 +122,7 @@ IDirect3DTexture9* UploadSurfaceToD3DTexture(SDL_Surface* surface)
 		return nullptr;
 	}
 
-	SDL_Surface* conv = SDL_ConvertSurface(surface, SDL_PIXELFORMAT_ARGB8888);
+	SDL_Surface* conv = SDL_ConvertSurface(surface, SDL_PIXELFORMAT_RGBA32);
 	if (!conv) {
 		texture->Release();
 		return nullptr;

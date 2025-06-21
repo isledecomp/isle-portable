@@ -539,10 +539,10 @@ void MxDirectDraw::ClearBackBuffers()
 		memset(&ddsd, 0, sizeof(ddsd));
 		ddsd.dwSize = sizeof(ddsd);
 
-		result = m_pBackBuffer->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+		result = m_pBackBuffer->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
 		if (result == DDERR_SURFACELOST) {
 			m_pBackBuffer->Restore();
-			result = m_pBackBuffer->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+			result = m_pBackBuffer->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
 		}
 
 		if (result != DD_OK) {
