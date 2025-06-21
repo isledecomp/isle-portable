@@ -27,6 +27,7 @@ target_compile_definitions(miniaudio PUBLIC
     MA_NO_RESOURCE_MANAGER
     MA_NO_GENERATION
     MA_NO_THREADING
+    MA_NO_RUNTIME_LINKING
 )
 
 if(NINTENDO_3DS)

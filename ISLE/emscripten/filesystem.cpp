@@ -11,6 +11,8 @@
 static backend_t opfs = nullptr;
 static backend_t fetchfs = nullptr;
 
+extern const char* g_files[46];
+
 void Emscripten_SetupConfig(const char* p_iniConfig)
 {
 	if (!p_iniConfig || !*p_iniConfig) {
@@ -60,52 +62,9 @@ void Emscripten_SetupFilesystem()
 		}
 	};
 
-	registerFile("/LEGO/Scripts/CREDITS.SI");
-	registerFile("/LEGO/Scripts/INTRO.SI");
-	registerFile("/LEGO/Scripts/NOCD.SI");
-	registerFile("/LEGO/Scripts/SNDANIM.SI");
-	registerFile("/LEGO/Scripts/Act2/ACT2MAIN.SI");
-	registerFile("/LEGO/Scripts/Act3/ACT3.SI");
-	registerFile("/LEGO/Scripts/Build/COPTER.SI");
-	registerFile("/LEGO/Scripts/Build/DUNECAR.SI");
-	registerFile("/LEGO/Scripts/Build/JETSKI.SI");
-	registerFile("/LEGO/Scripts/Build/RACECAR.SI");
-	registerFile("/LEGO/Scripts/Garage/GARAGE.SI");
-	registerFile("/LEGO/Scripts/Hospital/HOSPITAL.SI");
-	registerFile("/LEGO/Scripts/Infocntr/ELEVBOTT.SI");
-	registerFile("/LEGO/Scripts/Infocntr/HISTBOOK.SI");
-	registerFile("/LEGO/Scripts/Infocntr/INFODOOR.SI");
-	registerFile("/LEGO/Scripts/Infocntr/INFOMAIN.SI");
-	registerFile("/LEGO/Scripts/Infocntr/INFOSCOR.SI");
-	registerFile("/LEGO/Scripts/Infocntr/REGBOOK.SI");
-	registerFile("/LEGO/Scripts/Isle/ISLE.SI");
-	registerFile("/LEGO/Scripts/Isle/JUKEBOX.SI");
-	registerFile("/LEGO/Scripts/Isle/JUKEBOXW.SI");
-	registerFile("/LEGO/Scripts/Police/POLICE.SI");
-	registerFile("/LEGO/Scripts/Race/CARRACE.SI");
-	registerFile("/LEGO/Scripts/Race/CARRACER.SI");
-	registerFile("/LEGO/Scripts/Race/JETRACE.SI");
-	registerFile("/LEGO/Scripts/Race/JETRACER.SI");
-	registerFile("/LEGO/data/ACT1INF.DTA");
-	registerFile("/LEGO/data/ACT2INF.DTA");
-	registerFile("/LEGO/data/ACT3INF.DTA");
-	registerFile("/LEGO/data/BLDDINF.DTA");
-	registerFile("/LEGO/data/BLDHINF.DTA");
-	registerFile("/LEGO/data/BLDJINF.DTA");
-	registerFile("/LEGO/data/BLDRINF.DTA");
-	registerFile("/LEGO/data/GMAININF.DTA");
-	registerFile("/LEGO/data/HOSPINF.DTA");
-	registerFile("/LEGO/data/ICUBEINF.DTA");
-	registerFile("/LEGO/data/IELEVINF.DTA");
-	registerFile("/LEGO/data/IISLEINF.DTA");
-	registerFile("/LEGO/data/IMAININF.DTA");
-	registerFile("/LEGO/data/IREGINF.DTA");
-	registerFile("/LEGO/data/OBSTINF.DTA");
-	registerFile("/LEGO/data/PMAININF.DTA");
-	registerFile("/LEGO/data/RACCINF.DTA");
-	registerFile("/LEGO/data/RACJINF.DTA");
-	registerFile("/LEGO/data/WORLD.WDB");
-	registerFile("/LEGO/data/testinf.dta");
+	for (const char* file : g_files) {
+		registerFile(file);
+	}
 
 	if (GameState()->GetSavePath() && *GameState()->GetSavePath()) {
 		if (!opfs) {

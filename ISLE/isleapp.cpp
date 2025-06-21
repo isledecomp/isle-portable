@@ -87,6 +87,8 @@ MxS32 g_reqEnableRMDevice = FALSE;
 
 SDL_Window* window;
 
+extern const char* g_files[46];
+
 // FUNCTION: ISLE 0x401000
 IsleApp::IsleApp()
 {
@@ -689,9 +691,9 @@ MxResult IsleApp::SetupWindow()
 
 	GameState()->SetSavePath(m_savePath);
 
-#ifdef __EMSCRIPTEN__
-	Emscripten_SetupFilesystem();
-#endif
+	if (VerifyFilesystem() != SUCCESS) {
+		return FAILURE;
+	}
 
 	GameState()->SerializePlayersInfo(LegoStorage::c_read);
 	GameState()->SerializeScoreHistory(LegoStorage::c_read);
@@ -1044,6 +1046,35 @@ MxResult IsleApp::ParseArguments(int argc, char** argv)
 			return FAILURE;
 		}
 	}
+
+	return SUCCESS;
+}
+
+MxResult IsleApp::VerifyFilesystem()
+{
+#ifdef __EMSCRIPTEN__
+	Emscripten_SetupFilesystem();
+#else
+	for (const char* file : g_files) {
+		MxString path(&file[1]);
+		path.MapPathToFilesystem();
+
+		if (!SDL_GetPathInfo(path.GetData(), NULL)) {
+			char buffer[512];
+			SDL_snprintf(
+				buffer,
+				sizeof(buffer),
+				"\"LEGO® Island\" failed to start.\nPlease make sure the file %s is located in either diskpath or "
+				"cdpath.\nSDL error: %s",
+				file,
+				SDL_GetError()
+			);
+
+			Any_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "LEGO® Island Error", buffer, NULL);
+			return FAILURE;
+		}
+	}
+#endif
 
 	return SUCCESS;
 }
