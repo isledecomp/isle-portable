@@ -27,7 +27,7 @@ struct MeshCache {
 class Direct3DRMSoftwareRenderer : public Direct3DRMRenderer {
 public:
 	Direct3DRMSoftwareRenderer(DWORD width, DWORD height);
-	~Direct3DRMSoftwareRenderer();
+	~Direct3DRMSoftwareRenderer() override;
 	void PushLights(const SceneLight* vertices, size_t count) override;
 	Uint32 GetTextureId(IDirect3DRMTexture* texture) override;
 	Uint32 GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup) override;
