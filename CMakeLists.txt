@@ -35,7 +35,7 @@ option(ISLE_WERROR "Treat warnings as errors" OFF)
 option(ISLE_DEBUG "Enable imgui debug" ON)
 cmake_dependent_option(ISLE_USE_DX5 "Build with internal DirectX 5 SDK" "${NOT_MINGW}" "WIN32;CMAKE_SIZEOF_VOID_P EQUAL 4" OFF)
 cmake_dependent_option(ISLE_MINIWIN "Use miniwin" ON "NOT ISLE_USE_DX5" OFF)
-cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "MSVC OR ISLE_MINIWIN" OFF)
+cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "MSVC OR ISLE_MINIWIN;NOT VITA" OFF)
 cmake_dependent_option(ISLE_COMPILE_SHADERS "Compile shaders" ON "SDL_SHADERCROSS_BIN;TARGET Python3::Interpreter" OFF)
 option(CMAKE_POSITION_INDEPENDENT_CODE "Build with -fPIC" ON)
 option(ENABLE_CLANG_TIDY "Enable clang-tidy")
@@ -43,6 +43,7 @@ option(DOWNLOAD_DEPENDENCIES "Download dependencies" ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}" CACHE PATH "Directory where to put executables and dll")
 set(ISLE_EMSCRIPTEN_HOST "" CACHE STRING "Host URL for Emscripten streaming (e.g., https://test.com)")
 cmake_dependent_option(BUILD_SHARED_LIBS "Build lego1 as a shared library" ON "NOT EMSCRIPTEN" OFF)
+set(LIBRARY_TYPE "SHARED")
 
 message(STATUS "Isle app:               ${ISLE_BUILD_APP}")
 message(STATUS "Config app:             ${ISLE_BUILD_CONFIG}")
@@ -51,7 +52,42 @@ message(STATUS "Internal miniwin:       ${ISLE_MINIWIN}")
 message(STATUS "Isle debugging:         ${ISLE_DEBUG}")
 message(STATUS "Compile shaders:        ${ISLE_COMPILE_SHADERS}")
 
-if (DOWNLOAD_DEPENDENCIES)
+macro(fetch_iniparser)
+  FetchContent_Declare(
+      iniparser
+      GIT_REPOSITORY "https://gitlab.com/iniparser/iniparser.git"
+      GIT_TAG "main"
+      EXCLUDE_FROM_ALL
+  )
+  block()
+    set(BUILD_DOCS off)
+    set(BUILD_SHARED_LIBS off)
+    FetchContent_MakeAvailable(iniparser)
+  endblock()
+endmacro()
+
+if(VITA)
+  set(LIBRARY_TYPE "STATIC")
+  list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/modules")
+  include(cmake/modules/pvr_psp2.cmake)
+  
+  FetchContent_Declare(
+      SDL3
+      GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
+      GIT_TAG "main"
+      EXCLUDE_FROM_ALL
+  )
+  block()
+    set(VIDEO_VITA_PVR ON)
+    get_target_property(PVR_INCLUDES GLESv2 INTERFACE_INCLUDE_DIRECTORIES)
+    list(APPEND CMAKE_REQUIRED_INCLUDES ${PVR_INCLUDES})
+    FetchContent_MakeAvailable(SDL3)
+    target_include_directories(SDL3-static PRIVATE ${PVR_INCLUDES})
+  endblock()
+
+  fetch_iniparser()
+
+elseif (DOWNLOAD_DEPENDENCIES)
     # FetchContent downloads and configures dependencies
     message(STATUS "Fetching SDL3 and iniparser. This might take a while...")
     include(FetchContent)
@@ -63,17 +99,7 @@ if (DOWNLOAD_DEPENDENCIES)
     )
     FetchContent_MakeAvailable(SDL3)
 
-    FetchContent_Declare(
-        iniparser
-        GIT_REPOSITORY "https://gitlab.com/iniparser/iniparser.git"
-        GIT_TAG "main"
-        EXCLUDE_FROM_ALL
-    )
-    block()
-      set(BUILD_DOCS off)
-      set(BUILD_SHARED_LIBS off)
-      FetchContent_MakeAvailable(iniparser)
-    endblock()
+    fetch_iniparser()
 else()
     # find_package looks for already-installed system packages.
     # Configure with `-DCMAKE_PREFIX_PATH="/path/to/package1;/path/to/package2"`
@@ -141,7 +167,7 @@ target_link_directories(DirectX5::DirectX5 INTERFACE "${CMAKE_SOURCE_DIR}/3rdpar
 add_library(Vec::Vec INTERFACE IMPORTED)
 target_include_directories(Vec::Vec INTERFACE "${CMAKE_SOURCE_DIR}/3rdparty/vec")
 
-add_library(lego1
+add_library(lego1 ${LIBRARY_TYPE}
   LEGO1/main.cpp
 )
 target_precompile_headers(lego1 PRIVATE "LEGO1/lego1_pch.h")
@@ -644,6 +670,23 @@ endif()
 
 set(CPACK_PACKAGE_DIRECTORY "dist")
 set(CPACK_PACKAGE_FILE_NAME "isle-${PROJECT_VERSION}-${ISLE_PACKAGE_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+if(VITA)
+  include("${VITASDK}/share/vita.cmake" REQUIRED)
+
+  target_link_libraries(lego1 PRIVATE GLESv2)
+
+  set(ISLE_PACKAGE_NAME "vita-isle")
+  set(VITA_APP_NAME "Hello World")
+  set(VITA_TITLEID  "VSDK00006")
+  set(VITA_VERSION  "01.00")
+  
+  vita_create_self(isle.self isle)
+
+  vita_create_vpk(isle.vpk ${VITA_TITLEID} isle.self
+    VERSION ${VITA_VERSION}
+    NAME ${VITA_APP_NAME}
+  )
+endif()
 if(MSVC)
   set(CPACK_GENERATOR ZIP)
 else()

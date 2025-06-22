@@ -1,0 +1,41 @@
+{
+    "version": 5,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 22,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "release",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "debug",
+            "inherits": ["release"],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+
+        {
+            "name": "vita",
+            "inherits": ["release"],
+            "cacheVariables": {
+                "CMAKE_TOOLCHAIN_FILE": "$env{VITASDK}/share/vita.toolchain.cmake"
+            }
+        },
+
+        {
+            "name": "vita-debug",
+            "inherits": ["debug"],
+            "cacheVariables": {
+                "CMAKE_TOOLCHAIN_FILE": "$env{VITASDK}/share/vita.toolchain.cmake"
+            }
+        }
+    ]
+}
