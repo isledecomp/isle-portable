@@ -15,9 +15,9 @@ Exec=isle
 Actions=play;configure
 
 [Desktop Action play]
-Name=play
+Name=Play Game
 Exec=isle
 
 [Desktop Action configure]
-Name=Configure
+Name=Configure Settings
 Exec=config

@@ -8,3 +8,4 @@
 **/*.ico binary
 **/*.png binary
 **/*.svg text eol=lf
+**/*.desktop text eol=lf
