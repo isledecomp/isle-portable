@@ -9,6 +9,7 @@ FetchContent_Declare(
     GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
     GIT_TAG "main"
     EXCLUDE_FROM_ALL
+    UPDATE_DISCONNECTED TRUE
     PATCH_COMMAND git apply "${SDL3_PATCH_FILE}"
 )
 

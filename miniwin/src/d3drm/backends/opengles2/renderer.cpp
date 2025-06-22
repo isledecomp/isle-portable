@@ -35,17 +35,9 @@ Direct3DRMRenderer* OpenGLES2Renderer::Create(DWORD width, DWORD height)
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 
 	SDL_Window* window = DDWindow;
-	bool testWindow = false;
-	if (!window) {
-		window = SDL_CreateWindow("OpenGL ES 2.0 test", width, height, SDL_WINDOW_HIDDEN | SDL_WINDOW_OPENGL);
-		testWindow = true;
-	}
 
 	SDL_GLContext context = SDL_GL_CreateContext(window);
 	if (!context) {
-		if (testWindow) {
-			SDL_DestroyWindow(window);
-		}
 		return nullptr;
 	}
 
@@ -201,10 +193,6 @@ Direct3DRMRenderer* OpenGLES2Renderer::Create(DWORD width, DWORD height)
 	glLinkProgram(shaderProgram);
 	glDeleteShader(vs);
 	glDeleteShader(fs);
-
-	if (testWindow) {
-		SDL_DestroyWindow(window);
-	}
 
 	return new OpenGLES2Renderer(width, height, context, fbo, colorTex, depthRb, shaderProgram);
 }

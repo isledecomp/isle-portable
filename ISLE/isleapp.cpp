@@ -313,7 +313,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 	PVRSRVCreateVirtualAppHint(&hint);
 #endif
 
-	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK)) {
+	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK | SDL_INIT_GAMEPAD)) {
 		char buffer[256];
 		SDL_snprintf(
 			buffer,
