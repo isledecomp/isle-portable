@@ -109,7 +109,7 @@ IsleApp::IsleApp()
 	m_drawCursor = FALSE;
 	m_use3dSound = TRUE;
 	m_useMusic = TRUE;
-	m_useJoystick = FALSE;
+	m_useJoystick = TRUE;
 	m_joystickIndex = 0;
 	m_wideViewAngle = TRUE;
 	m_islandQuality = 2;
