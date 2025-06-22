@@ -68,6 +68,7 @@ endmacro()
 
 if(VITA)
   set(LIBRARY_TYPE "STATIC")
+  set(CMAKE_POSITION_INDEPENDENT_CODE OFF)
   list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/modules")
   include(cmake/modules/pvr_psp2.cmake)
   
