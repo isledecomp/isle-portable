@@ -477,6 +477,7 @@ if (ISLE_BUILD_APP)
   add_executable(isle WIN32
     ISLE/res/isle.rc
     ISLE/isleapp.cpp
+    ISLE/islefiles.cpp
   )
   list(APPEND isle_targets isle)
   if (WIN32)
