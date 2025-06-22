@@ -50,6 +50,13 @@
 #include "emscripten/messagebox.h"
 #endif
 
+#ifdef __vita__
+extern "C"{
+#include <gpu_es4/psp2_pvr_hint.h>
+}
+#include <psp2/kernel/modulemgr.h>
+#endif
+
 DECOMP_SIZE_ASSERT(IsleApp, 0x8c)
 
 // GLOBAL: ISLE 0x410030
@@ -260,6 +267,29 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 
 	SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
 	SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
+
+#ifdef __vita__
+	SDL_setenv_unsafe("VITA_PVR_SKIP_INIT", "enable", 1);
+	PVRSRV_PSP2_APPHINT hint;
+	
+	sceKernelLoadStartModule("vs0:sys/external/libfios2.suprx", 0, NULL, 0, NULL, NULL);
+	sceKernelLoadStartModule("vs0:sys/external/libc.suprx", 0, NULL, 0, NULL, NULL);
+	sceKernelLoadStartModule("app0:/module/libgpu_es4_ext.suprx", 0, NULL, 0, NULL, NULL);
+	sceKernelLoadStartModule("app0:/module/libIMGEGL.suprx", 0, NULL, 0, NULL, NULL);
+	PVRSRVInitializeAppHint(&hint);
+	
+	#if DO_HARDWARE_TRANSFERS == 0
+	hint.bDisableHWTextureUpload = 1;
+	hint.bDisableHWTQBufferBlit = 1;
+	hint.bDisableHWTQMipGen = 1;
+	hint.bDisableHWTQNormalBlit = 1;
+	hint.bDisableHWTQTextureUpload = 1;
+	#endif
+	
+	#define GPU_MEM_SIZE 16777216
+	hint.ui32DriverMemorySize = GPU_MEM_SIZE;
+	PVRSRVCreateVirtualAppHint(&hint);
+#endif
 
 	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK)) {
 		char buffer[256];
@@ -671,6 +701,7 @@ MxResult IsleApp::SetupWindow()
 	SDL_DestroyProperties(props);
 
 	if (!m_windowHandle) {
+		SDL_Log("failed to create window: %s", SDL_GetError());
 		return FAILURE;
 	}
 

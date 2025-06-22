@@ -520,6 +520,11 @@ if (ISLE_BUILD_APP)
   if (WIN32)
     target_link_libraries(isle PRIVATE winmm)
   endif()
+
+  if(VITA)
+    target_link_libraries(isle PRIVATE GLESv2)
+  endif()
+
   # Link LEGO1
   target_link_libraries(isle PRIVATE lego1)
   if(ISLE_DEBUG)
