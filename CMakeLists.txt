@@ -28,7 +28,6 @@ endif()
 find_program(SDL_SHADERCROSS_BIN NAMES "shadercross")
 find_package(Python3 3.11 COMPONENTS Interpreter)
 
-option(ISLE_STARTUP_DELAY "Enable startup delay" ON)
 option(ISLE_BUILD_APP "Build isle application" ON)
 option(ISLE_ASAN "Enable Address Sanitizer" OFF)
 option(ISLE_UBSAN "Enable Undefined Behavior Sanitizer" OFF)
@@ -45,7 +44,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}" CACHE PATH "Directory w
 set(ISLE_EMSCRIPTEN_HOST "" CACHE STRING "Host URL for Emscripten streaming (e.g., https://test.com)")
 cmake_dependent_option(BUILD_SHARED_LIBS "Build lego1 as a shared library" ON "NOT EMSCRIPTEN" OFF)
 
-message(STATUS "Startup delay:          ${ISLE_STARTUP_DELAY}")
 message(STATUS "Isle app:               ${ISLE_BUILD_APP}")
 message(STATUS "Config app:             ${ISLE_BUILD_CONFIG}")
 message(STATUS "Internal DirectX5 SDK:  ${ISLE_USE_DX5}")
@@ -553,10 +551,6 @@ if (ISLE_BUILD_CONFIG)
   if (NOT ISLE_MINIWIN)
     target_link_libraries(config PRIVATE ddraw dxguid)
   endif()
-endif()
-
-if (ISLE_STARTUP_DELAY)
-  target_compile_definitions(STARTUP_DELAY);
 endif()
 
 if (ISLE_MINIWIN)
