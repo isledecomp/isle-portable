@@ -28,6 +28,24 @@
       Please note: this project is dedicated to achieving platform independence without altering the core gameplay, adding new features, enhancing visual quality, or rewriting code for improvement&apos;s sake. While those are worthwhile objectives, they are not within the scope of this project.
     </p>
   </description>
+
+  <categories>
+    <category>Game</category>
+    <category>KidsGame</category>
+    <category>AdventureGame</category>
+    <category>Qt</category>
+  </categories>
+
+  <keywords>
+    <keyword translate="no">LEGO</keyword>
+    <keyword translate="no">lego</keyword>
+    <keyword>LEGO Island</keyword>
+  </keywords>
   
+  <url>
+    <homepage>https://github.com/isledecomp/isle-portable</homepage>
+    <bugtracker>https://github.com/isledecomp/isle-portable/issues</bugtracker>
+  </url>
+
   <launchable type="desktop-id">pizza.isle.Isle.desktop</launchable>
 </component>
