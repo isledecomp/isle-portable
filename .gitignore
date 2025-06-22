@@ -20,7 +20,6 @@ LEGO1PROGRESS.*
 ISLEPROGRESS.*
 *.pyc
 tools/ghidra_scripts/import.log
-.flatpak-builder/
 
 # By convention we put the retail binaries into ./legobin.
 # These entries are kept for now since that convention has not always been around.
@@ -31,3 +30,9 @@ LEGO1.DLL
 
 # Kate - Text
 /.cache
+
+# Flatpak build cache
+**/.flatpak-builder/
+
+# Flatpak build dir
+**/flatpak-build/

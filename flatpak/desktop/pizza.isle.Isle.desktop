@@ -1,0 +1,23 @@
+[Desktop Entry]
+Version=1.5
+
+Name=Isle Decomp
+Comment=LEGO Island decompilation project
+Icon=pizza.isle.Isle
+Type=Application
+Categories=Game;KidsGame;AdventureGame;Qt
+Keywords=LEGO;lego;LEGO Island
+SingleMainWindow=true
+
+TryExec=isle
+Exec=isle
+
+Actions=play;configure
+
+[Desktop Action play]
+Name=play
+Exec=isle
+
+[Desktop Action configure]
+Name=Configure
+Exec=config

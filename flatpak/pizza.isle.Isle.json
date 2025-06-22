@@ -1,0 +1,65 @@
+{
+    "id": "pizza.isle.Isle",
+
+    "runtime": "org.kde.Platform",
+    "sdk": "org.kde.Sdk",
+    "runtime-version": "6.9",
+
+    "command": "isle",
+
+    "finish-args": [
+        "--share=ipc",
+        "--socket=wayland",
+        "--socket=fallback-x11",
+        "--socket=pulseaudio",
+        "--device=dri",
+        "--device=input"
+    ],
+
+    "modules": [
+        {
+            "name": "isle",
+            "buildsystem": "cmake-ninja",
+            "config-opts": [
+                "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
+                "-DISLE_DEBUG=OFF"
+            ],
+            "sources": [
+                {
+                    "type": "git",
+                    "url": "https://github.com/isledecomp/isle-portable.git",
+                    "branch": "master"
+                }
+            ],
+            "build-options": {
+                "build-args": [
+                    "--share=network"
+                ]
+            }
+        },
+        {
+            "name": "desktop-assets",
+            "buildsystem": "simple",
+            "sources": [
+                {
+                    "type": "file",
+                    "dest-filename": "pizza.isle.Isle.svg",
+                    "path": "desktop/isle_icon.svg"
+                },
+                {
+                    "type": "file",
+                    "path": "desktop/pizza.isle.Isle.desktop"
+                },
+                {
+                    "type": "file",
+                    "path": "desktop/pizza.isle.Isle.metainfo.xml"
+                }
+            ],
+            "build-commands": [
+                "install -Dm0644 pizza.isle.Isle.svg -t ${FLATPAK_DEST}/share/icons/hicolor/scalable/apps/",
+                "install -Dm0644 pizza.isle.Isle.desktop -t ${FLATPAK_DEST}/share/applications/",
+                "install -Dm0644 pizza.isle.Isle.metainfo.xml -t ${FLATPAK_DEST}/share/metainfo/"
+            ]
+        }
+    ]
+}
