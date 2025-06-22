@@ -677,15 +677,23 @@ if(VITA)
   target_link_libraries(lego1 PRIVATE GLESv2)
 
   set(ISLE_PACKAGE_NAME "vita-isle")
-  set(VITA_APP_NAME "Hello World")
-  set(VITA_TITLEID  "VSDK00006")
+  set(VITA_APP_NAME "Lego Island")
+  set(VITA_TITLEID  "LEGO00001")
   set(VITA_VERSION  "01.00")
   
   vita_create_self(isle.self isle)
 
+  set(VPK_FILE_ARGS)
+  get_target_property(gles_modules GLESv2 MODULES)
+  foreach(file IN LISTS gles_modules)
+    get_filename_component(fname ${file} NAME)
+    list(APPEND VPK_FILE_ARGS FILE ${file} module/${fname})
+  endforeach()
+
   vita_create_vpk(isle.vpk ${VITA_TITLEID} isle.self
     VERSION ${VITA_VERSION}
     NAME ${VITA_APP_NAME}
+    ${VPK_FILE_ARGS}
   )
 endif()
 if(MSVC)

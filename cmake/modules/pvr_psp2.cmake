@@ -51,3 +51,6 @@ target_link_libraries(GLESv2 INTERFACE
   libgpu_es4_ext_stub_weak
   libIMGEGL_stub_weak
 )
+set_target_properties(GLESv2 PROPERTIES
+  MODULES "${PVR_PSP2_BINARY_DIR}/extracted/libGLESv2.suprx;${PVR_PSP2_BINARY_DIR}/extracted/libIMGEGL.suprx;${PVR_PSP2_BINARY_DIR}/extracted/libgpu_es4_ext.suprx"
+)
