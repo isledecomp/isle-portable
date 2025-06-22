@@ -183,7 +183,7 @@ void IsleDebug_Init()
 		}
 		g_videoPalette =
 			SDL_CreateTexture(g_debugRenderer, SDL_PIXELFORMAT_RGBX32, SDL_TEXTUREACCESS_STREAMING, 16, 16);
-		SDL_SetTextureScaleMode(g_videoPalette, SDL_SCALEMODE_PIXELART);
+		SDL_SetTextureScaleMode(g_videoPalette, SDL_SCALEMODE_LINEAR);
 		if (!ImGui_ImplSDLRenderer3_Init(g_debugRenderer)) {
 			g_debugEnabled = false;
 			break;
@@ -305,7 +305,7 @@ void IsleDebug_Render()
 			if (ImGui::TreeNode("Sound Manager")) {
 				LegoSoundManager* soundManager = lego->GetSoundManager();
 				Sint32 oldVolume = soundManager->GetVolume();
-				Sint32 volume = oldVolume;
+				int volume = oldVolume;
 				ImGui::SliderInt("volume", &volume, 0, 100);
 				if (volume != oldVolume) {
 					soundManager->SetVolume(volume);
