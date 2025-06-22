@@ -908,6 +908,7 @@ inline bool IsleApp::Tick()
 	// GLOBAL: ISLE 0x4101c0
 	static MxLong g_lastFrameTime = 0;
 
+	// GLOBAL: ISLE 0x4101bc
 	static MxS32 g_startupDelay = 1;
 
 	if (IsleDebug_Paused() && IsleDebug_StepModeEnabled()) {
