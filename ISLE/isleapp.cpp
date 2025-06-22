@@ -794,6 +794,7 @@ bool IsleApp::LoadConfig()
 			return false;
 		}
 
+		char buf[32];
 		dict = iniparser_load(iniConfig);
 		iniparser_set(dict, "isle", NULL);
 
@@ -810,12 +811,11 @@ bool IsleApp::LoadConfig()
 		iniparser_set(dict, "isle:Music", m_useMusic ? "true" : "false");
 
 		iniparser_set(dict, "isle:UseJoystick", m_useJoystick ? "true" : "false");
-		iniparser_set(dict, "isle:JoystickIndex", m_joystickIndex ? "true" : "false");
+		iniparser_set(dict, "isle:JoystickIndex", SDL_itoa(m_joystickIndex, buf, 10));
 		iniparser_set(dict, "isle:Draw Cursor", m_drawCursor ? "true" : "false");
 
 		iniparser_set(dict, "isle:Back Buffers in Video RAM", "-1");
 
-		char buf[32];
 		iniparser_set(dict, "isle:Island Quality", SDL_itoa(m_islandQuality, buf, 10));
 		iniparser_set(dict, "isle:Island Texture", SDL_itoa(m_islandTexture, buf, 10));
 		SDL_snprintf(buf, sizeof(buf), "%f", m_maxLod);
