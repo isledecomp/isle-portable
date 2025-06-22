@@ -55,6 +55,27 @@ extern "C"{
 #include <gpu_es4/psp2_pvr_hint.h>
 }
 #include <psp2/kernel/modulemgr.h>
+
+#define DO_HARDWARE_TRANSFERS 1
+
+#define NEWLIB_HEAP_SIZE 157286400
+#define LIBC_HEAP_SIZE 41943040
+#define GPU_MEM_SIZE 16777216
+
+
+#if (NEWLIB_HEAP_SIZE + LIBC_HEAP_SIZE) > 382730240
+#error Memory usage, exceeds maximum memory for userland applications.
+#endif
+
+#if (GPU_MEM_SIZE) > 134217728
+#error GPU Memory exceeds maximum memblck size
+#endif
+
+
+int _newlib_heap_size_user = NEWLIB_HEAP_SIZE;
+unsigned int sceLibcHeapSize = LIBC_HEAP_SIZE;
+unsigned int sceLibcHeapExtendedAlloc = 1;
+
 #endif
 
 DECOMP_SIZE_ASSERT(IsleApp, 0x8c)
@@ -268,8 +289,9 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 	SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
 	SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
 
-#ifdef __vita__
-	SDL_setenv_unsafe("VITA_PVR_SKIP_INIT", "enable", 1);
+#if __vita__
+	SDL_SetHint("VITA_PVR_SKIP_INIT", "enable");
+	SDL_SetHint("SDL_RENDER_OPENGLES2_TEXCOORD_PRECISION", "high"); // not really needed
 	PVRSRV_PSP2_APPHINT hint;
 	
 	sceKernelLoadStartModule("vs0:sys/external/libfios2.suprx", 0, NULL, 0, NULL, NULL);

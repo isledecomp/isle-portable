@@ -296,13 +296,18 @@ HRESULT DirectDrawImpl::SetCooperativeLevel(HWND hWnd, DDSCLFlags dwFlags)
 			return DDERR_INVALIDPARAMS;
 		}
 
+		char* sdlRendererName = nullptr;
+#ifdef __vita__
+		sdlRendererName = "opengles2";
+#endif
+
 		if (!SDL_SetWindowFullscreen(sdlWindow, fullscreen)) {
 #ifndef __EMSCRIPTEN__
 			return DDERR_GENERIC;
 #endif
 		}
 		DDWindow = sdlWindow;
-		DDRenderer = SDL_CreateRenderer(DDWindow, NULL);
+		DDRenderer = SDL_CreateRenderer(DDWindow, sdlRendererName);
 		SDL_PropertiesID prop = SDL_GetRendererProperties(DDRenderer);
 		SDL_SetRenderLogicalPresentation(DDRenderer, 640, 480, SDL_LOGICAL_PRESENTATION_LETTERBOX);
 	}

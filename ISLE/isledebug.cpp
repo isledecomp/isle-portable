@@ -26,8 +26,13 @@
 static bool g_debugEnabled;
 static bool g_debugPaused;
 static bool g_debugDoStep;
+
+#ifdef __vita__ // cant have multiple windows
+SDL_Window* window;
+#else
 static SDL_Window* g_debugWindow;
 static SDL_Renderer* g_debugRenderer;
+#endif
 
 static SDL_Texture* g_videoPalette;
 static IDirect3DRMMiniwinDevice* g_d3drmMiniwinDevice;

@@ -69,7 +69,11 @@ endmacro()
 if(VITA)
   set(LIBRARY_TYPE "STATIC")
   set(CMAKE_POSITION_INDEPENDENT_CODE OFF)
+  set(ISLE_DEBUG OFF)
   list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/modules")
+  
+  include(FetchContent)
+  
   include(cmake/modules/pvr_psp2.cmake)
   
   FetchContent_Declare(
@@ -686,7 +690,7 @@ if(VITA)
   set(VITA_TITLEID  "LEGO00001")
   set(VITA_VERSION  "01.00")
   
-  vita_create_self(isle.self isle)
+  vita_create_self(isle.self isle UNSAFE)
 
   set(VPK_FILE_ARGS)
   get_target_property(gles_modules GLESv2 MODULES)
