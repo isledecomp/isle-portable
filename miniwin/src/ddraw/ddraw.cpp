@@ -296,9 +296,11 @@ HRESULT DirectDrawImpl::SetCooperativeLevel(HWND hWnd, DDSCLFlags dwFlags)
 			return DDERR_INVALIDPARAMS;
 		}
 
-		char* sdlRendererName = nullptr;
+		
 #ifdef __vita__
-		sdlRendererName = "opengles2";
+		const char* sdlRendererName = "opengles2";
+#else
+		const char* sdlRendererName = nullptr;
 #endif
 
 		if (!SDL_SetWindowFullscreen(sdlWindow, fullscreen)) {

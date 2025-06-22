@@ -75,20 +75,7 @@ if(VITA)
   include(FetchContent)
   
   include(cmake/modules/pvr_psp2.cmake)
-  
-  FetchContent_Declare(
-      SDL3
-      GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
-      GIT_TAG "main"
-      EXCLUDE_FROM_ALL
-  )
-  block()
-    set(VIDEO_VITA_PVR ON)
-    get_target_property(PVR_INCLUDES GLESv2 INTERFACE_INCLUDE_DIRECTORIES)
-    list(APPEND CMAKE_REQUIRED_INCLUDES ${PVR_INCLUDES})
-    FetchContent_MakeAvailable(SDL3)
-    target_include_directories(SDL3-static PRIVATE ${PVR_INCLUDES})
-  endblock()
+  include(cmake/modules/sdl3_pvr_psp2.cmake)
 
   fetch_iniparser()
 

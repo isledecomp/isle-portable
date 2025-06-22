@@ -1,0 +1,46 @@
+--- sdl3-src/src/render/opengles2/SDL_shaders_gles2.c	2025-06-22 13:18:27.905488716 +0200
++++ "sdl3-src/src/render/opengles2/SDL_shaders_gles2.c"	2025-06-22 13:18:21.377485749 +0200
+@@ -130,9 +130,7 @@
+ "void main()\n"
+ "{\n"
+ "    mediump vec4 color = texture2D(u_texture, v_texCoord);\n"
+-"    gl_FragColor = color;\n"
+-"    gl_FragColor.r = color.b;\n"
+-"    gl_FragColor.b = color.r;\n"
++"    gl_FragColor.rgba = color.bgra;\n"
+ "    gl_FragColor *= v_color;\n"
+ "}\n"
+ ;
+@@ -144,9 +142,7 @@
+ "void main()\n"
+ "{\n"
+ "    mediump vec4 color = texture2D(u_texture, v_texCoord);\n"
+-"    gl_FragColor = color;\n"
+-"    gl_FragColor.r = color.b;\n"
+-"    gl_FragColor.b = color.r;\n"
++"    gl_FragColor.rgb = color.bgr;\n"
+ "    gl_FragColor.a = 1.0;\n"
+ "    gl_FragColor *= v_color;\n"
+ "}\n"
+@@ -183,9 +179,7 @@
+ "void main()\n"
+ "{\n"
+     RGB_PIXELART_GETCOLOR
+-"    gl_FragColor = color;\n"
+-"    gl_FragColor.r = color.b;\n"
+-"    gl_FragColor.b = color.r;\n"
++"    gl_FragColor.rgba = color.bgra;\n"
+ "    gl_FragColor *= v_color;\n"
+ "}\n"
+ ;
+@@ -197,9 +191,7 @@
+ "void main()\n"
+ "{\n"
+     RGB_PIXELART_GETCOLOR
+-"    gl_FragColor = color;\n"
+-"    gl_FragColor.r = color.b;\n"
+-"    gl_FragColor.b = color.r;\n"
++"    gl_FragColor.rgb = color.bgr;\n"
+ "    gl_FragColor.a = 1.0;\n"
+ "    gl_FragColor *= v_color;\n"
+ "}\n"
