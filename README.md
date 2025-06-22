@@ -17,7 +17,7 @@ Please note: this project is dedicated to achieving platform independence withou
 | macOS | [![CI](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml/badge.svg)](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml) |
 | [Web](https://isle.pizza) | [![CI](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml/badge.svg)](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml) |
 
-If you want to see if any other ports exist or are being made, look at the [PORTS](ports.md) page
+If you want to see if any other ports exist or are being made, look at the [PORTS](PORTS.md) page
 
 ### Library substitutions
 
