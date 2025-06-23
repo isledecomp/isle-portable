@@ -141,7 +141,7 @@ jobs:
         uses: actions/download-artifact@main
         with:
           pattern: "*.flatpak"
-          path: Flatpak
+          path: Release
           merge-multiple: true
 
       - name: Checkout uploadtool
