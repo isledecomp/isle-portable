@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - flatpak # TODO: Remove this line once the workflow has been validated to work.
 
 jobs:
   build:
@@ -91,6 +92,35 @@ jobs:
           path: |
             build/dist/isle-*
 
+  flatpak:
+    name: "Flatpak (${{ matrix.arch }})"
+    runs-on: ${{ matrix.os }}
+
+    env:
+      APP_ID: pizza.isle.Isle
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            os: ubuntu-latest
+          
+          - arch: aarch64
+            os: ubuntu-22.04-arm
+    
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:kde-6.8
+      options: --privileged
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          bundle: ${{ env.APP_ID }}.${{ matrix.arch }}.flatpak
+          manifest-path: flatpak/${{ env.APP_ID }}.json
+          arch: ${{ matrix.arch }}
+  
   release:
     name: 'Release'
     runs-on: ubuntu-latest
