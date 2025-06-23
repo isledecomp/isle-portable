@@ -115,22 +115,33 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+
+      - name: Build Flatpak
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
-          bundle: ${{ env.APP_ID }}.${{ matrix.arch }}.flatpak
+          bundle: ${{ env.APP_ID }}.flatpak
           manifest-path: flatpak/${{ env.APP_ID }}.json
           arch: ${{ matrix.arch }}
   
   release:
     name: 'Release'
     runs-on: ubuntu-latest
-    needs: build
+    needs:
+      - build
+      - flatpak
     steps:
       - name: Download All Artifacts
         uses: actions/download-artifact@main
         with:
           pattern: Release-*
           path: Release
+          merge-multiple: true
+
+      - name: Download Flatpak Artifacts
+        uses: actions/download-artifact@main
+        with:
+          pattern: "*.flatpak"
+          path: Flatpak
           merge-multiple: true
 
       - name: Checkout uploadtool
