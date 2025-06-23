@@ -4,8 +4,7 @@ on:
   push:
     branches:
     - master
-  # TODO: Remove the following once the workflow has been validated to work.
-  workflow_dispatch:
+    - flatpak # TODO: Remove this line once the workflow has been validated to work.
 
 env:
   APP_ID: pizza.isle.Isle
