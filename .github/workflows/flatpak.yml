@@ -1,0 +1,106 @@
+name: Build Release Flatpaks
+
+on:
+  push:
+    branches:
+    - master
+  # TODO: Remove the following once the workflow has been validated to work.
+  workflow_dispatch:
+
+env:
+  APP_ID: pizza.isle.Isle
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+
+    env:
+      BUILD_DIR: "./flatpak-build"
+      PLATFORM: "org.kde"
+      PLATFORM_VERSION: 6.8
+      REPO_DIR: "./isle-repo/"
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - name: 'x86_64'
+          os: 'ubuntu-latest'
+
+          # The Ubuntu ARM runner is in preview, so we may have to figure out Flatpak cross-compilation
+        - name: "aarch64"
+          os: 'ubuntu-22.04-arm'
+
+    steps:
+      - name: Get Date
+        id: get-date
+        run: |
+          echo "date=$(/bin/date -u "+%Y%m%d")" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Cache APT repo data
+        id: cache-apt
+        uses: actions/cache@v4
+        with:
+          path: |
+            /var/cache/apt/
+            /var/lib/apt/lists/
+          key: ${{ runner.os }}-${{ matrix.name }}-${{ steps.get-date.outputs.date }}
+
+      - name: Update APT cache
+        if: steps.cache-apt.outputs.cache-hit != 'true'
+        run: sudo apt update
+
+      - name: Install build dependencies
+        run: |
+          sudo apt install -y flatpak flatpak-builder
+          flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+          flatpak install \
+            ${{ env.PLATFORM }}.Platform//${{ env.PLATFORM_VERSION }} \
+            ${{ env.PLATFORM }}.Sdk//${{ env.PLATFORM_VERSION }}
+
+      - name: Cache .flatpak-builder
+        id: cache-fp-builder
+        uses: actions/cache@v4
+        with:
+          path: ".flatpak-builder/"
+          key: ${{ runner.os }}-${{ matrix.name }}-fp-builder
+      
+      - name: Build Flatpak
+        run: |
+          mkdir ${{ env.REPO_DIR }}
+          flatpak-builder --repo=${{ env.REPO_DIR }} ${{ env.BUILD_DIR }} flatpak/${{ env.APP_ID }}.json
+
+      - name: Bundle Flatpak
+        run: flatpak build-bundle ${{ env.REPO_DIR }} ${{ env.APP_ID }}.${{ matrix.name }}.flatpak ${{ env.APP_ID }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: Release-${{ matrix.name }}
+          path: ${{ env.APP_ID }}.${{ matrix.name }}.flatpak
+  
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Download All Artifacts
+        uses: actions/download-artifact@main
+        with:
+          pattern: Release-*
+          path: Release
+          merge-multiple: true
+
+      - name: Checkout uploadtool
+        uses: actions/checkout@v4
+        with:
+          repository: 'probonopd/uploadtool'
+          path: 'uploadtool'
+
+      - name: Upload Continuous Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./uploadtool/upload.sh Release/*
