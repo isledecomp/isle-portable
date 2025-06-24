@@ -21,7 +21,7 @@
   <url type="bugtracker">https://github.com/isledecomp/isle-portable/issues</url>
 
   <metadata_license>MIT</metadata_license>
-  <project_license>GPL-3.0-or-later</project_license>
+  <project_license>@APP_SPDX@</project_license>
 
   <requires>
     <display_length side="longest" compare="ge">640</display_length>
