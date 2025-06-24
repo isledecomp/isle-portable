@@ -117,13 +117,15 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Configure Package Scripts
-        run: cmake -S . -B build -GNinja -DCONFIGURE_FLATPAK=ON
+        run: |
+          git config --add safe.directory .
+          cmake -S . -B build_config -GNinja -DCONFIGURE_FLATPAK=ON
 
       - name: Build Flatpak
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
           bundle: ${{ env.APP_ID }}.${{ matrix.arch }}.flatpak
-          manifest-path: build/packaging/linux/flatpak/${{ env.APP_ID }}.json
+          manifest-path: build_config/packaging/linux/${{ env.APP_ID }}.json
           arch: ${{ matrix.arch }}
   
   release:
