@@ -71,12 +71,14 @@ if(VITA)
   set(CMAKE_POSITION_INDEPENDENT_CODE OFF)
   set(ISLE_DEBUG OFF)
   list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/modules")
-  
+  set(VITA_USE_OPENGLES2 ON)
+endif()
+
+if(VITA_USE_OPENGLES2)
   include(FetchContent)
   
   include(cmake/modules/pvr_psp2.cmake)
   include(cmake/modules/sdl3_pvr_psp2.cmake)
-
   fetch_iniparser()
 
 elseif (DOWNLOAD_DEPENDENCIES)
@@ -87,6 +89,7 @@ elseif (DOWNLOAD_DEPENDENCIES)
         SDL3
         GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
         GIT_TAG "main"
+        UPDATE_DISCONNECTED TRUE
         EXCLUDE_FROM_ALL
     )
     FetchContent_MakeAvailable(SDL3)
@@ -512,8 +515,9 @@ if (ISLE_BUILD_APP)
     target_link_libraries(isle PRIVATE winmm)
   endif()
 
-  if(VITA)
+  if(VITA AND VITA_USE_OPENGLES2)
     target_link_libraries(isle PRIVATE GLESv2)
+    target_compile_definitions(isle PRIVATE USE_OPENGLES2)
   endif()
 
   # Link LEGO1
@@ -670,7 +674,9 @@ set(CPACK_PACKAGE_FILE_NAME "isle-${PROJECT_VERSION}-${ISLE_PACKAGE_NAME}-${CMAK
 if(VITA)
   include("${VITASDK}/share/vita.cmake" REQUIRED)
 
-  target_link_libraries(lego1 PRIVATE GLESv2)
+  if(VITA_USE_OPENGLES2)
+    target_link_libraries(lego1 PRIVATE GLESv2)
+  endif()
 
   set(ISLE_PACKAGE_NAME "vita-isle")
   set(VITA_APP_NAME "Lego Island")
@@ -679,12 +685,14 @@ if(VITA)
   
   vita_create_self(isle.self isle UNSAFE)
 
-  set(VPK_FILE_ARGS)
-  get_target_property(gles_modules GLESv2 MODULES)
-  foreach(file IN LISTS gles_modules)
-    get_filename_component(fname ${file} NAME)
-    list(APPEND VPK_FILE_ARGS FILE ${file} module/${fname})
-  endforeach()
+  if(VITA_USE_OPENGLES2)
+    set(VPK_FILE_ARGS)
+    get_target_property(gles_modules GLESv2 MODULES)
+    foreach(file IN LISTS gles_modules)
+      get_filename_component(fname ${file} NAME)
+      list(APPEND VPK_FILE_ARGS FILE ${file} module/${fname})
+    endforeach()
+  endif()
 
   vita_create_vpk(isle.vpk ${VITA_TITLEID} isle.self
     VERSION ${VITA_VERSION}

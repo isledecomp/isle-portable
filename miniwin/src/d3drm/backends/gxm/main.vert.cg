@@ -1,0 +1,20 @@
+void main(
+    float3 aPosition : POSITION,
+    float3 aNormal : NORMAL,
+    float2 aTexCoord : TEXCOORD0,
+
+    uniform float4x4 uModelViewMatrix,
+    uniform float3x3 uNormalMatrix,
+    uniform float4x4 uProjectionMatrix,
+
+    out float4 vPosition : POSITION,
+    out float3 vViewPos : TEXCOORD1,
+    out float3 vNormal : TEXCOORD2,
+    out float2 vTexCoord : TEXCOORD3
+) {
+    float4 viewPos = mul(uModelViewMatrix, float4(aPosition, 1.0));
+    vPosition = mul(uProjectionMatrix, viewPos);
+    vViewPos = viewPos.xyz;
+    vNormal = normalize(mul(uNormalMatrix, aNormal));
+    vTexCoord = aTexCoord;
+}

@@ -51,8 +51,12 @@
 #endif
 
 #ifdef __vita__
+#include <SDL3/SDL_gxm.h>
+#endif
+
+#if defined(__vita__) && defined(USE_OPENGLES2)
 extern "C"{
-#include <gpu_es4/psp2_pvr_hint.h>
+	#include <gpu_es4/psp2_pvr_hint.h>
 }
 #include <psp2/kernel/modulemgr.h>
 
@@ -71,6 +75,7 @@ extern "C"{
 #error GPU Memory exceeds maximum memblck size
 #endif
 
+extern SDL_Window* DDWindow;
 
 int _newlib_heap_size_user = NEWLIB_HEAP_SIZE;
 unsigned int sceLibcHeapSize = LIBC_HEAP_SIZE;
@@ -289,9 +294,8 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 	SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
 	SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
 
-#if __vita__
+#if defined(__vita__) && defined(USE_OPENGLES2)
 	SDL_SetHint("VITA_PVR_SKIP_INIT", "enable");
-	SDL_SetHint("SDL_RENDER_OPENGLES2_TEXCOORD_PRECISION", "high"); // not really needed
 	PVRSRV_PSP2_APPHINT hint;
 	
 	sceKernelLoadStartModule("vs0:sys/external/libfios2.suprx", 0, NULL, 0, NULL, NULL);
@@ -708,7 +712,7 @@ MxResult IsleApp::SetupWindow()
 	SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, g_targetHeight);
 	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_FULLSCREEN_BOOLEAN, m_fullScreen);
 	SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, WINDOW_TITLE);
-#ifdef MINIWIN
+#if defined(MINIWIN) && !defined(USE_GXM)
 	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
 #endif
 
@@ -719,6 +723,8 @@ MxResult IsleApp::SetupWindow()
 	m_windowHandle =
 		(HWND) SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
 #endif
+
+	DDWindow = window;
 
 	SDL_DestroyProperties(props);
 

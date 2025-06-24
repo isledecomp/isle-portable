@@ -52,6 +52,20 @@ else()
   message(STATUS "🧩 OpenGL ES 2.x support not enabled")
 endif()
 
+if(VITA)
+  target_sources(miniwin PRIVATE
+    src/d3drm/backends/gxm/renderer.cpp
+    src/d3drm/backends/gxm/memory.cpp
+  )
+  target_link_libraries(miniwin PRIVATE
+    SceGxm_stub
+    SceRazorCapture_stub
+  )
+  # for shaders incbin
+  target_include_directories(miniwin PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/d3drm/backends/gxm)
+  target_link_directories(miniwin PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/d3drm/backends/gxm)
+endif()
+
 if(WIN32)
   target_sources(miniwin PRIVATE
     src/d3drm/backends/directx9/actual.cpp

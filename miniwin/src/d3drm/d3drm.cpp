@@ -16,6 +16,9 @@
 #ifdef _WIN32
 #include "d3drmrenderer_directx9.h"
 #endif
+#ifdef __vita__
+#include "d3drmrenderer_gxm.h"
+#endif
 #include "d3drmrenderer_sdl3gpu.h"
 #include "d3drmrenderer_software.h"
 #include "d3drmtexture_impl.h"
@@ -163,6 +166,11 @@ HRESULT Direct3DRMImpl::CreateDeviceFromSurface(
 #ifdef _WIN32
 	else if (SDL_memcmp(&guid, &DirectX9_GUID, sizeof(GUID)) == 0) {
 		renderer = DirectX9Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
+	}
+#endif
+#ifdef __vita__
+	else if (SDL_memcmp(&guid, &GXM_GUID, sizeof(GUID)) == 0) {
+		renderer = GXMRenderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
 #endif
 	else {
