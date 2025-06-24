@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - flatpak # TODO: Remove after testing
 
 jobs:
   build:
@@ -115,11 +116,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Configure Package Scripts
+        run: cmake -S . -B build -GNinja -DCONFIGURE_FLATPAK=ON
+
       - name: Build Flatpak
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
           bundle: ${{ env.APP_ID }}.${{ matrix.arch }}.flatpak
-          manifest-path: flatpak/${{ env.APP_ID }}.json
+          manifest-path: build/packaging/linux/flatpak/${{ env.APP_ID }}.json
           arch: ${{ matrix.arch }}
   
   release:

@@ -1,0 +1,32 @@
+[Desktop Entry]
+Version=1.5
+
+Name=@APP_NAME@
+Comment=@APP_SUMMARY@
+
+Icon=@APP_ID@
+Type=Application
+Categories=Game;KidsGame;AdventureGame;Qt
+
+Keywords=LEGO;lego;LEGO Island
+Keywords[es]=LEGO;lego;La Isla LEGO
+Keywords[fr]=LEGO;lego;Aventures sur L'île LEGO
+Keywords[it]=LEGO;lego;Isola LEGO
+Keywords[de]=LEGO;lego;Abenteuer auf der LEGO Insel
+Keywords[jp]=LEGO;lego;レゴアイランドの大冒険
+Keywords[pt_BR]=LEGO;lego;A Ilha LEGO
+
+SingleMainWindow=true
+
+TryExec=isle
+Exec=isle
+
+Actions=play;configure
+
+[Desktop Action play]
+Name=Play Game
+Exec=isle
+
+[Desktop Action configure]
+Name=Configure Settings
+Exec=config

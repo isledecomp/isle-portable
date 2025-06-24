@@ -2,6 +2,15 @@ cmake_minimum_required(VERSION 3.25...4.0 FATAL_ERROR)
 
 project(isle LANGUAGES CXX C VERSION 0.1)
 
+option(CONFIGURE_FLATPAK "Configure required Flatpak data and exit" OFF)
+if (NOT DEFINED ENV{FLATPAK_DEST})
+  add_subdirectory(packaging EXCLUDE_FROM_ALL)
+endif()
+if (CONFIGURE_FLATPAK)
+  # Exit early since the remaining configuration will otherwise fail
+  return()
+endif()
+
 if (EMSCRIPTEN)
   add_compile_options(-pthread)
   add_link_options(-sALLOW_MEMORY_GROWTH=1 -sMAXIMUM_MEMORY=2gb -sUSE_PTHREADS=1 -sPROXY_TO_PTHREAD=1 -sPTHREAD_POOL_SIZE_STRICT=0 -sFORCE_FILESYSTEM=1 -sWASMFS=1 -sEXIT_RUNTIME=1)
