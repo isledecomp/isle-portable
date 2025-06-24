@@ -406,37 +406,14 @@ inline void LegoVideoManager::DrawCursor()
 // FUNCTION: LEGO1 0x1007bbc0
 void LegoVideoManager::DrawFPS()
 {
-	char zeros[8] = "0000.00";
-
 	if (m_unk0x528 == NULL) {
-		m_arialFont = CreateFont(
-			12,
-			0,
-			0,
-			0,
-			FW_NORMAL,
-			FALSE,
-			FALSE,
-			FALSE,
-			ANSI_CHARSET,
-			OUT_DEFAULT_PRECIS,
-			CLIP_DEFAULT_PRECIS,
-			DEFAULT_QUALITY,
-			FF_DONTCARE | VARIABLE_PITCH,
-			"Arial"
-		);
+		int width = 64; // Big enough for 9999.99
+		int height = 16;
 
-		HDC dc = GetDC(NULL);
-		SelectObject(dc, m_arialFont);
-		GetTextExtentPoint(dc, zeros, strlen(zeros), &m_fpsSize);
-		ReleaseDC(NULL, dc);
-
-		m_unk0x528 = m_displaySurface->FUN_100bc8b0(m_fpsSize.cx, m_fpsSize.cy);
-		SetRect(&m_fpsRect, 0, 0, m_fpsSize.cx, m_fpsSize.cy);
+		m_unk0x528 = m_displaySurface->FUN_100bc8b0(width, height);
+		SetRect(&m_fpsRect, 0, 0, width, height);
 
 		if (m_unk0x528 == NULL) {
-			DeleteObject(m_arialFont);
-			m_arialFont = NULL;
 			return;
 		}
 
@@ -450,9 +427,7 @@ void LegoVideoManager::DrawFPS()
 
 		if (m_unk0x528->Lock(NULL, &surfaceDesc, DDLOCK_WAIT, NULL) != DD_OK) {
 			m_unk0x528->Release();
-			DeleteObject(m_arialFont);
 			m_unk0x528 = NULL;
-			m_arialFont = NULL;
 		}
 		else {
 			DWORD i;
@@ -472,8 +447,7 @@ void LegoVideoManager::DrawFPS()
 		if (Timer()->GetTime() > m_unk0x54c + 5000.f) {
 			char buffer[32];
 			MxFloat time = (Timer()->GetTime() - m_unk0x54c) / 1000.0f;
-			MxS32 nb = sprintf(buffer, "%.02f", m_unk0x550 / time);
-			SDL_Log("%.02f", m_unk0x550 / time);
+			sprintf(buffer, "%.02f", m_unk0x550 / time);
 			m_unk0x54c = Timer()->GetTime();
 
 			DDSURFACEDESC surfaceDesc;
@@ -481,37 +455,13 @@ void LegoVideoManager::DrawFPS()
 			surfaceDesc.dwSize = sizeof(surfaceDesc);
 
 			if (m_unk0x528->Lock(NULL, &surfaceDesc, DDLOCK_WAIT, NULL) == DD_OK) {
-				DWORD i;
-				char* ptr = (char*) surfaceDesc.lpSurface;
+				memset(surfaceDesc.lpSurface, 0, surfaceDesc.lPitch * surfaceDesc.dwHeight);
 
-				for (i = 0; i < surfaceDesc.dwHeight; i++) {
-					memset(ptr, 0, surfaceDesc.lPitch);
-					ptr += surfaceDesc.lPitch;
-				}
+				DrawTextToSurface32((uint8_t*) surfaceDesc.lpSurface, surfaceDesc.lPitch, 0, 0, buffer, 0xFF0000FF);
 
 				m_unk0x528->Unlock(surfaceDesc.lpSurface);
+				m_unk0x550 = 1.f;
 			}
-
-			HDC dc;
-			if (m_unk0x528->GetDC(&dc) != DD_OK) {
-				m_unk0x528->Release();
-				m_unk0x528 = NULL;
-				DeleteObject(m_arialFont);
-				m_arialFont = NULL;
-				return;
-			}
-
-			SelectObject(dc, m_arialFont);
-			SetTextColor(dc, RGB(255, 255, 0));
-			SetBkColor(dc, RGB(0, 0, 0));
-			SetBkMode(dc, OPAQUE);
-			GetTextExtentPoint32(dc, buffer, nb, &m_fpsSize);
-
-			RECT rect;
-			SetRect(&rect, 0, 0, m_fpsSize.cx, m_fpsSize.cy);
-			ExtTextOut(dc, 0, 0, ETO_OPAQUE, &rect, buffer, nb, NULL);
-			m_unk0x528->ReleaseDC(dc);
-			m_unk0x550 = 1.f;
 		}
 		else {
 			m_unk0x550 += 1.f;
@@ -825,4 +775,64 @@ MxResult LegoVideoManager::ConfigureD3DRM()
 	}
 
 	return SUCCESS;
+}
+
+void LegoVideoManager::DrawDigitToBuffer32(uint8_t* p_dst, int p_pitch, int p_x, int p_y, int p_digit, uint32_t p_color)
+{
+	if (p_digit < 0 || p_digit > 9) {
+		return;
+	}
+
+	uint32_t* pixels = (uint32_t*) p_dst;
+	int rowStride = p_pitch / 4;
+
+	// 4x5 bitmap font
+	const uint8_t digitFont[5][10] = {
+		{0b1111, 0b0001, 0b1111, 0b1111, 0b1001, 0b1111, 0b1111, 0b1111, 0b1111, 0b1111},
+		{0b1001, 0b0001, 0b0001, 0b0001, 0b1001, 0b1000, 0b1000, 0b0001, 0b1001, 0b1001},
+		{0b1001, 0b0001, 0b1111, 0b1111, 0b1111, 0b1111, 0b1111, 0b0010, 0b1111, 0b1111},
+		{0b1001, 0b0001, 0b1000, 0b0001, 0b0001, 0b0001, 0b1001, 0b0010, 0b1001, 0b0001},
+		{0b1111, 0b0001, 0b1111, 0b1111, 0b0001, 0b1111, 0b1111, 0b0100, 0b1111, 0b1111},
+	};
+
+	for (int row = 0; row < 5; ++row) {
+		uint8_t bits = digitFont[row][p_digit];
+		for (int col = 0; col < 5; ++col) {
+			if (bits & (1 << (4 - col))) {
+				for (int dy = 0; dy < 2; ++dy) {
+					for (int dx = 0; dx < 2; ++dx) {
+						pixels[(p_y + row * 2 + dy) * rowStride + (p_x + col * 2 + dx)] = p_color;
+					}
+				}
+			}
+		}
+	}
+}
+
+void LegoVideoManager::DrawTextToSurface32(
+	uint8_t* p_dst,
+	int p_pitch,
+	int p_x,
+	int p_y,
+	const char* p_text,
+	uint32_t p_color
+)
+{
+	while (*p_text) {
+		if (*p_text >= '0' && *p_text <= '9') {
+			DrawDigitToBuffer32(p_dst, p_pitch, p_x, p_y, *p_text - '0', p_color);
+			p_x += 10;
+		}
+		else if (*p_text == '.') {
+			uint32_t* pixels = (uint32_t*) p_dst;
+			int rowStride = p_pitch / 4;
+			for (int dy = 0; dy < 2; ++dy) {
+				for (int dx = 0; dx < 2; ++dx) {
+					pixels[(p_y + 10 + dy) * rowStride + (p_x + 2 + dx)] = p_color;
+				}
+			}
+			p_x += 4;
+		}
+		++p_text;
+	}
 }

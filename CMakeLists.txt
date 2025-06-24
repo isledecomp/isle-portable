@@ -60,6 +60,8 @@ message(STATUS "Internal miniwin:       ${ISLE_MINIWIN}")
 message(STATUS "Isle debugging:         ${ISLE_DEBUG}")
 message(STATUS "Compile shaders:        ${ISLE_COMPILE_SHADERS}")
 
+add_library(Isle::iniparser INTERFACE IMPORTED)
+
 if (DOWNLOAD_DEPENDENCIES)
     # FetchContent downloads and configures dependencies
     message(STATUS "Fetching SDL3 and iniparser. This might take a while...")
@@ -82,6 +84,7 @@ if (DOWNLOAD_DEPENDENCIES)
       set(BUILD_DOCS off)
       set(BUILD_SHARED_LIBS off)
       FetchContent_MakeAvailable(iniparser)
+      target_link_libraries(Isle::iniparser INTERFACE iniparser-static)
     endblock()
 else()
     # find_package looks for already-installed system packages.
@@ -89,10 +92,8 @@ else()
     # to add search paths.
     find_package(SDL3 CONFIG REQUIRED)
 
-    find_package(iniparser CONFIG COMPONENTS static)
-    if (NOT TARGET iniparser-static)
-        find_package(iniparser REQUIRED MODULE COMPONENTS static)
-    endif()
+    find_package(iniparser REQUIRED CONFIG COMPONENTS shared)
+    target_link_libraries(Isle::iniparser INTERFACE iniparser-shared)
 endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -493,7 +494,7 @@ if (ISLE_BUILD_APP)
   target_link_libraries(isle PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5>)
 
   # Link SDL and iniparser
-  target_link_libraries(isle PRIVATE SDL3::SDL3 iniparser-static)
+  target_link_libraries(isle PRIVATE SDL3::SDL3 Isle::iniparser)
 
   # Allow unconditional include of miniwin/miniwindevice.h
   target_link_libraries(isle PRIVATE miniwin-headers)
@@ -556,7 +557,7 @@ if (ISLE_BUILD_CONFIG)
     target_link_libraries(config PRIVATE DirectX5::DirectX5)
   endif()
   target_compile_definitions(config PRIVATE DIRECT3D_VERSION=0x500)
-  target_link_libraries(config PRIVATE SDL3::SDL3 iniparser-static)
+  target_link_libraries(config PRIVATE SDL3::SDL3 Isle::iniparser)
   if (NOT ISLE_MINIWIN)
     target_link_libraries(config PRIVATE ddraw dxguid)
   endif()
