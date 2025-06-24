@@ -292,9 +292,9 @@ void IsleDebug_Render()
 				ImGui::Text("Actor Name: %s", gameState->GetActorName());
 				ImGui::Text("Current act: %d", gameState->GetCurrentAct());
 				ImGui::Text("Loaded act: %d", gameState->GetLoadedAct());
-				ImGui::Text("Previous area: %d", gameState->GetPreviousArea());
-				ImGui::Text("Unknown 0x42c: %d", gameState->GetUnknown0x42c());
-				ImGui::Value("Player count", gameState->GetPlayerCount());
+				ImGui::Text("Previous area: %d", gameState->m_previousArea);
+				ImGui::Text("Unknown 0x42c: %d", gameState->m_unk0x42c);
+				ImGui::Value("Player count", gameState->m_playerCount);
 				ImGui::TreePop();
 			}
 			if (ImGui::TreeNode("Renderer")) {
