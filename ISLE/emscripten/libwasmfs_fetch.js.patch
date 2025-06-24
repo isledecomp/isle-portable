@@ -1,5 +1,5 @@
 diff --git a/src/lib/libwasmfs_fetch.js b/src/lib/libwasmfs_fetch.js
-index e8c9f7e21..5c3a3dfbe 100644
+index e8c9f7e21..1c0eea957 100644
 --- a/src/lib/libwasmfs_fetch.js
 +++ b/src/lib/libwasmfs_fetch.js
 @@ -38,36 +38,7 @@ addToLibrary({
@@ -49,7 +49,7 @@ index e8c9f7e21..5c3a3dfbe 100644
            allPresent = false;
            break;
          }
-@@ -90,16 +61,36 @@ addToLibrary({
+@@ -90,16 +61,37 @@ addToLibrary({
        // one request for all the chunks we need, rather than one
        // request per chunk.
        var start = firstChunk * chunkSize;
@@ -66,8 +66,10 @@ index e8c9f7e21..5c3a3dfbe 100644
        if (!response.ok) {
          throw response;
        }
+-      var bytes = await response['bytes']();
 +
-       var bytes = await response['bytes']();
++      const buffer = await response.arrayBuffer();
++      const bytes = new Uint8Array(buffer);
 +      if (!(file in wasmFS$JSMemoryRanges)) {
 +        var size = Math.max(
 +          parseInt(response.headers.get('Content-Range').split('/')[1], 10),
@@ -87,7 +89,7 @@ index e8c9f7e21..5c3a3dfbe 100644
        return Promise.resolve();
      }
  
-@@ -164,6 +155,21 @@ addToLibrary({
+@@ -164,6 +156,21 @@ addToLibrary({
          return wasmFS$JSMemoryRanges[file].size;
        },
      };
