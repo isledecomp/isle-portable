@@ -115,11 +115,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true
 
       - name: Configure Package Scripts
-        run: |
-          git config --add safe.directory .
-          cmake -S . -B build_config -GNinja -DCONFIGURE_FLATPAK=ON
+        run: cmake -S . -B build_config -GNinja -DCONFIGURE_FLATPAK=ON
 
       - name: Build Flatpak
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
