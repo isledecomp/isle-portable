@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - flatpak # TODO: Remove this line once the workflow has been validated to work.
 
 jobs:
   build:
@@ -136,13 +135,6 @@ jobs:
           pattern: "{Release-*,*.flatpak}"
           path: Release
           merge-multiple: true
-
-      # - name: Download Flatpak Artifacts
-      #   uses: actions/download-artifact@main
-      #   with:
-      #     pattern: "*.flatpak"
-      #     path: Release
-      #     merge-multiple: true
 
       - name: Checkout uploadtool
         uses: actions/checkout@v4
