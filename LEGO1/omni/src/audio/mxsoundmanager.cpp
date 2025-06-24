@@ -105,7 +105,11 @@ MxResult MxSoundManager::Create(MxU32 p_frequencyMS, MxBool p_createThread)
 		SDL_ResumeAudioDevice(SDL_GetAudioStreamDevice(m_stream));
 	}
 	else {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to open default audio device for playback");
+		SDL_LogError(
+			SDL_LOG_CATEGORY_APPLICATION,
+			"Failed to open default audio device for playback: %s",
+			SDL_GetError()
+		);
 	}
 
 	if (p_createThread) {
