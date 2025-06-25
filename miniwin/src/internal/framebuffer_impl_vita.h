@@ -1,15 +1,28 @@
 #pragma once
 
-#ifdef __vita__
-#include "framebuffer_impl_vita.h"
-#else
-
 #include <SDL3/SDL.h>
 #include <ddsurface_impl.h>
 #include <miniwin/ddraw.h>
 
+#include <SDL3/SDL_gxm.h>
+#include <psp2/gxm.h>
+#define VITA_GXM_DISPLAY_BUFFER_COUNT 2
+
+typedef struct GXMDisplayBuffer {
+	SceUID uid;
+	SceGxmSyncObject* sync;
+	void* data;
+	SceGxmColorSurface surface;
+} GXMDisplayBuffer;
+
+typedef struct {
+    void *address;
+    int width;
+	int height;
+} GXMDisplayData;
+
 struct FrameBufferImpl : public IDirectDrawSurface3 {
-	FrameBufferImpl();
+	FrameBufferImpl(LPDDSURFACEDESC lpDDSurfaceDesc);
 	~FrameBufferImpl() override;
 
 	// IUnknown interface
@@ -40,8 +53,40 @@ struct FrameBufferImpl : public IDirectDrawSurface3 {
 	HRESULT SetPalette(LPDIRECTDRAWPALETTE lpDDPalette) override;
 	HRESULT Unlock(LPVOID lpSurfaceData) override;
 
+// added
+	inline GXMDisplayBuffer* backBuffer() {
+		return &displayBuffers[backBufferIndex];
+	}
+	inline SceGxmRenderTarget* GetRenderTarget() {
+		return this->renderTarget;
+	}
+
 private:
-	SDL_Texture* m_uploadBuffer;
+	SceGxmContext* context;
+	SceGxmShaderPatcher* shaderPatcher;
+	SceGxmRenderTarget* renderTarget;
+	SceClibMspace cdramPool;
+
+	SceGxmShaderPatcherId blitVertexProgramId;
+	SceGxmVertexProgram* blitVertexProgram;
+	SceGxmShaderPatcherId blitColorFragmentProgramId;
+	SceGxmFragmentProgram* blitColorFragmentProgram;
+	SceGxmShaderPatcherId blitTexFragmentProgramId;
+	SceGxmFragmentProgram* blitTexFragmentProgram;
+
+	const SceGxmProgramParameter* uScreenMatrix;
+	const SceGxmProgramParameter* uColor;
+	const SceGxmProgramParameter* uTexMatrix;
+
+	void* quadMeshBuffer;
+	float* quadVerticies;
+	uint16_t* quadIndicies;
+
+	GXMDisplayBuffer displayBuffers[VITA_GXM_DISPLAY_BUFFER_COUNT];
+	int backBufferIndex = 0;
+	int frontBufferIndex = 1;
+	int width;
+	int height;
+	bool sceneStarted;
 	IDirectDrawPalette* m_palette = nullptr;
 };
-#endif

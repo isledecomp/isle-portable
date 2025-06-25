@@ -1,0 +1,12 @@
+void main(
+    float4 vPosition : POSITION,
+    float2 vTexCoord : TEXCOORD0,
+
+    uniform float4x4 uTexMatrix,
+    uniform sampler2D uTexture,
+
+    out float4 outColor : COLOR
+) {
+    float2 samplingCoord = mul(uTexMatrix, float4(vTexCoord, 0, 1)).xy;
+    outColor = tex2D(uTexture, samplingCoord);
+}

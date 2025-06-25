@@ -28,7 +28,9 @@
 SDL_Window* DDWindow;
 SDL_Surface* DDBackBuffer;
 FrameBufferImpl* DDFrameBuffer;
+#ifndef __vita__
 SDL_Renderer* DDRenderer;
+#endif
 
 HRESULT DirectDrawImpl::QueryInterface(const GUID& riid, void** ppvObject)
 {
@@ -85,7 +87,11 @@ HRESULT DirectDrawImpl::CreateSurface(
 			return DD_OK;
 		}
 		if ((lpDDSurfaceDesc->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE) == DDSCAPS_PRIMARYSURFACE) {
+#ifdef __vita__
+			DDFrameBuffer = new FrameBufferImpl(lpDDSurfaceDesc);
+#else
 			DDFrameBuffer = new FrameBufferImpl();
+#endif
 			*lplpDDSurface = static_cast<IDirectDrawSurface*>(DDFrameBuffer);
 			return DD_OK;
 		}
@@ -316,9 +322,11 @@ HRESULT DirectDrawImpl::SetCooperativeLevel(HWND hWnd, DDSCLFlags dwFlags)
 #endif
 		}
 		DDWindow = sdlWindow;
+#ifndef __vita__
 		DDRenderer = SDL_CreateRenderer(DDWindow, sdlRendererName);
 		SDL_PropertiesID prop = SDL_GetRendererProperties(DDRenderer);
 		SDL_SetRenderLogicalPresentation(DDRenderer, 640, 480, SDL_LOGICAL_PRESENTATION_LETTERBOX);
+#endif
 	}
 	return DD_OK;
 }
@@ -340,9 +348,12 @@ HRESULT DirectDrawImpl::CreateDevice(
 	pBackBuffer->GetSurfaceDesc(&DDSDesc);
 
 	Direct3DRMRenderer* renderer;
-	if (SDL_memcmp(&guid, &SDL3_GPU_GUID, sizeof(GUID)) == 0) {
+	if(false) {}
+#ifndef __vita__
+	else if (SDL_memcmp(&guid, &SDL3_GPU_GUID, sizeof(GUID)) == 0) {
 		renderer = Direct3DRMSDL3GPURenderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
+#endif
 #ifdef USE_OPENGLES2
 	else if (SDL_memcmp(&guid, &OpenGLES2_GUID, sizeof(GUID)) == 0) {
 		renderer = OpenGLES2Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
@@ -360,7 +371,7 @@ HRESULT DirectDrawImpl::CreateDevice(
 #endif
 #ifdef __vita__
 	else if (SDL_memcmp(&guid, &GXM_GUID, sizeof(GUID)) == 0) {
-		renderer = GXMRenderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
+		renderer = GXMRenderer::Create(pBackBuffer);
 	}
 #endif
 	else if (SDL_memcmp(&guid, &SOFTWARE_GUID, sizeof(GUID)) == 0) {

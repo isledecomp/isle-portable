@@ -63,61 +63,64 @@ INCBIN("main.vert.gxp", main_vert_gxp_start);
 INCBIN("main.frag.gxp", main_frag_gxp_start);
 INCBIN("clear.vert.gxp", clear_vert_gxp_start);
 INCBIN("clear.frag.gxp", clear_frag_gxp_start);
+INCBIN("blit.vert.gxp", blit_vert_gxp_start);
+INCBIN("blit.color.frag.gxp", blit_color_frag_gxp_start);
+INCBIN("blit.tex.frag.gxp", blit_tex_frag_gxp_start);
 
 const SceGxmProgram* clearVertexProgramGxp = (const SceGxmProgram*)&clear_vert_gxp_start;
 const SceGxmProgram* clearFragmentProgramGxp = (const SceGxmProgram*)&clear_frag_gxp_start;
 const SceGxmProgram* mainVertexProgramGxp = (const SceGxmProgram*)&main_vert_gxp_start;
 const SceGxmProgram* mainFragmentProgramGxp = (const SceGxmProgram*)&main_frag_gxp_start;
-
-
-static const size_t clearMeshVerticiesSize = 3 * sizeof(float)*2;
-static const size_t clearMeshIndiciesSize = 3 * sizeof(uint16_t);
+const SceGxmProgram* blitVertexProgramGxp = (const SceGxmProgram*)&blit_vert_gxp_start;
+const SceGxmProgram* blitColorFragmentProgramGxp = (const SceGxmProgram*)&blit_color_frag_gxp_start;
+const SceGxmProgram* blitTexFragmentProgramGxp = (const SceGxmProgram*)&blit_tex_frag_gxp_start;
 
 
 extern "C" int sceRazorGpuCaptureSetTrigger(int frames, const char* path);
 extern "C" int sceRazorGpuCaptureEnableSalvage(const char* path);
 extern "C" int sceRazorGpuCaptureSetTriggerNextFrame(const char* path);
 
+static GXMRendererContext gxm_renderer_context;
 
 
-#define GET_SHADER_PARAM(var, gxp, name) \
-	const SceGxmProgramParameter* var = sceGxmProgramFindParameterByName(gxp, name); \
-	if(!var) { \
-		SDL_Log("Failed to find param %s", name); \
-		return false; \
+bool gxm_init() {
+	if(SDL_gxm_is_init()) {
+		return true;
 	}
 
-static bool create_gxm_renderer(int width, int height, GXMRendererData* data) {
-	const unsigned int alignedWidth = ALIGN(width, SCE_GXM_TILE_SIZEX);
-    const unsigned int alignedHeight = ALIGN(height, SCE_GXM_TILE_SIZEY);
+	SDL_gxm_init();
 
-	unsigned int sampleCount = alignedWidth * alignedHeight;
-    unsigned int depthStrideInSamples = alignedWidth;
+	/*
+	SceGxmInitializeParams initializeParams;
+    SDL_memset(&initializeParams, 0, sizeof(SceGxmInitializeParams));
+    initializeParams.flags = 0;
+    initializeParams.displayQueueMaxPendingCount = VITA_GXM_PENDING_SWAPS;
+    initializeParams.displayQueueCallback = display_callback;
+    initializeParams.displayQueueCallbackDataSize = sizeof(GXMDisplayData);
+    initializeParams.parameterBufferSize = SCE_GXM_DEFAULT_PARAMETER_BUFFER_SIZE;
+
+    int err = sceGxmInitialize(&initializeParams);
+    if (err != 0) {
+        SDL_LogError(SDL_LOG_CATEGORY_RENDER, "gxm init failed: %d", err);
+        return err;
+    }
+	*/
+	return true;
+}
+
+static bool create_gxm_context() {
+	GXMRendererContext* data = &gxm_renderer_context;
+	if(data->context) {
+		return true;
+	}
+
+	if(!gxm_init()) {
+		return false;
+	}
 
 	const unsigned int patcherBufferSize = 64 * 1024;
     const unsigned int patcherVertexUsseSize = 64 * 1024;
     const unsigned int patcherFragmentUsseSize = 64 * 1024;
-
-
-	static const SceGxmBlendInfo blendInfoOpaque = {
-        .colorMask = SCE_GXM_COLOR_MASK_ALL,
-		.colorFunc = SCE_GXM_BLEND_FUNC_NONE,
-        .alphaFunc = SCE_GXM_BLEND_FUNC_NONE,
-        .colorSrc = SCE_GXM_BLEND_FACTOR_ZERO,
-        .colorDst = SCE_GXM_BLEND_FACTOR_ZERO,
-        .alphaSrc = SCE_GXM_BLEND_FACTOR_ZERO,
-        .alphaDst = SCE_GXM_BLEND_FACTOR_ZERO,
-    };
-
-	static const SceGxmBlendInfo blendInfoTransparent = {
-		.colorMask = SCE_GXM_COLOR_MASK_ALL,
-        .colorFunc = SCE_GXM_BLEND_FUNC_ADD,
-        .alphaFunc = SCE_GXM_BLEND_FUNC_ADD,
-        .colorSrc = SCE_GXM_BLEND_FACTOR_SRC_ALPHA,
-        .colorDst = SCE_GXM_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
-        .alphaSrc = SCE_GXM_BLEND_FACTOR_ONE,
-        .alphaDst = SCE_GXM_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
-    };
 
 	data->cdramPool = SDL_gxm_get_cdramPool();
 	if(!data->cdramPool) {
@@ -225,7 +228,62 @@ static bool create_gxm_renderer(int width, int height, GXMRendererData* data) {
 	if(SCE_ERR(sceGxmShaderPatcherCreate, &patcherParams, &data->shaderPatcher)) {
 		return false;
 	}
+	return true;
+}
 
+static void destroy_gxm_context() {
+	sceGxmShaderPatcherDestroy(gxm_renderer_context.shaderPatcher);
+	sceGxmDestroyContext(gxm_renderer_context.context);
+	vita_mem_fragment_usse_free(gxm_renderer_context.fragmentUsseRingBufferUid);
+	vita_mem_free(gxm_renderer_context.fragmentRingBufferUid);
+    vita_mem_free(gxm_renderer_context.vertexRingBufferUid);
+    vita_mem_free(gxm_renderer_context.vdmRingBufferUid);
+	SDL_free(gxm_renderer_context.contextHostMem);
+}
+
+bool get_gxm_context(SceGxmContext** context, SceGxmShaderPatcher** shaderPatcher, SceClibMspace* cdramPool) {
+	if(!create_gxm_context()) {
+		return false;
+	}
+	*context = gxm_renderer_context.context;
+	*shaderPatcher = gxm_renderer_context.shaderPatcher;
+	*cdramPool = gxm_renderer_context.cdramPool;
+	return true;
+}
+
+
+static bool create_gxm_renderer(int width, int height, GXMRendererData* data) {
+	const unsigned int alignedWidth = ALIGN(width, SCE_GXM_TILE_SIZEX);
+    const unsigned int alignedHeight = ALIGN(height, SCE_GXM_TILE_SIZEY);
+
+	unsigned int sampleCount = alignedWidth * alignedHeight;
+    unsigned int depthStrideInSamples = alignedWidth;
+
+	if(!get_gxm_context(&data->context, &data->shaderPatcher, &data->cdramPool)) {
+		return false;
+	}
+
+	static const SceGxmBlendInfo blendInfoOpaque = {
+        .colorMask = SCE_GXM_COLOR_MASK_ALL,
+		.colorFunc = SCE_GXM_BLEND_FUNC_NONE,
+        .alphaFunc = SCE_GXM_BLEND_FUNC_NONE,
+        .colorSrc = SCE_GXM_BLEND_FACTOR_ZERO,
+        .colorDst = SCE_GXM_BLEND_FACTOR_ZERO,
+        .alphaSrc = SCE_GXM_BLEND_FACTOR_ZERO,
+        .alphaDst = SCE_GXM_BLEND_FACTOR_ZERO,
+    };
+
+	static const SceGxmBlendInfo blendInfoTransparent = {
+		.colorMask = SCE_GXM_COLOR_MASK_ALL,
+        .colorFunc = SCE_GXM_BLEND_FUNC_ADD,
+        .alphaFunc = SCE_GXM_BLEND_FUNC_ADD,
+        .colorSrc = SCE_GXM_BLEND_FACTOR_SRC_ALPHA,
+        .colorDst = SCE_GXM_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+        .alphaSrc = SCE_GXM_BLEND_FACTOR_ONE,
+        .alphaDst = SCE_GXM_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+    };
+
+	/*
 	// render target
 	SceGxmRenderTargetParams renderTargetParams;
     memset(&renderTargetParams, 0, sizeof(SceGxmRenderTargetParams));
@@ -265,6 +323,7 @@ static bool create_gxm_renderer(int width, int height, GXMRendererData* data) {
 	if(SCE_ERR(sceGxmSyncObjectCreate, &data->renderBufferSync)) {
 		return false;
 	}
+	*/
 
 
 	// depth & stencil
@@ -308,7 +367,7 @@ static bool create_gxm_renderer(int width, int height, GXMRendererData* data) {
 		if(SCE_ERR(sceGxmShaderPatcherRegisterProgram, data->shaderPatcher, clearFragmentProgramGxp, &data->clearFragmentProgramId)) {
 			return false;
 		}
-		GET_SHADER_PARAM(positionAttribute, clearVertexProgramGxp, "aPosition");
+		GET_SHADER_PARAM(positionAttribute, clearVertexProgramGxp, "aPosition", false);
 
 		SceGxmVertexAttribute vertexAttributes[1];
 		SceGxmVertexStream vertexStreams[1];
@@ -352,9 +411,9 @@ static bool create_gxm_renderer(int width, int height, GXMRendererData* data) {
 			return false;
 		}
 
-		GET_SHADER_PARAM(positionAttribute, mainVertexProgramGxp, "aPosition");
-        GET_SHADER_PARAM(normalAttribute, mainVertexProgramGxp, "aNormal");
-		GET_SHADER_PARAM(texCoordAttribute, mainVertexProgramGxp, "aTexCoord");
+		GET_SHADER_PARAM(positionAttribute, mainVertexProgramGxp, "aPosition", false);
+        GET_SHADER_PARAM(normalAttribute, mainVertexProgramGxp, "aNormal", false);
+		GET_SHADER_PARAM(texCoordAttribute, mainVertexProgramGxp, "aTexCoord", false);
 
 		SceGxmVertexAttribute vertexAttributes[3];
 		SceGxmVertexStream vertexStreams[1];
@@ -415,6 +474,8 @@ static bool create_gxm_renderer(int width, int height, GXMRendererData* data) {
 
 	
 	// clear mesh
+	const size_t clearMeshVerticiesSize = 3 * sizeof(float)*2;
+	const size_t clearMeshIndiciesSize = 3 * sizeof(uint16_t);
 	data->clearMeshBuffer = sceClibMspaceMalloc(data->cdramPool, clearMeshVerticiesSize + clearMeshIndiciesSize);
 	data->clearVerticies = (float*)data->clearMeshBuffer;
 	data->clearIndicies = (uint16_t*)((uint8_t*)(data->clearMeshBuffer)+clearMeshVerticiesSize);
@@ -433,18 +494,6 @@ static bool create_gxm_renderer(int width, int height, GXMRendererData* data) {
 	// light uniforms buffer
 	data->lightDataBuffer = sceClibMspaceMalloc(data->cdramPool,
 		3 * sizeof(SceneLightGXM) + 4 // 3 lights + light count
-	);
-	sceGxmSetFragmentUniformBuffer(data->context, 0, data->lightDataBuffer);
-
-	sceGxmSetFrontStencilRef(data->context, 1);
-	sceGxmSetFrontStencilFunc(
-        data->context,
-        SCE_GXM_STENCIL_FUNC_ALWAYS,
-        SCE_GXM_STENCIL_OP_KEEP,
-        SCE_GXM_STENCIL_OP_KEEP,
-        SCE_GXM_STENCIL_OP_KEEP,
-        0xFF,
-        0xFF
 	);
 	return true;
 }
@@ -486,34 +535,20 @@ extern "C" void load_razor() {
 	}
 }
 
+Direct3DRMRenderer* GXMRenderer::Create(IDirectDrawSurface* surface)
+{
+	DDSURFACEDESC DDSDesc;
+	DDSDesc.dwSize = sizeof(DDSURFACEDESC);
+	surface->GetSurfaceDesc(&DDSDesc);
+	int width = DDSDesc.dwWidth;
+	int height = DDSDesc.dwHeight;
 
-bool gxm_init() {
-	if(SDL_gxm_is_init()) {
-		return true;
+	FrameBufferImpl* frameBuffer = static_cast<FrameBufferImpl*>(surface);
+	if(!frameBuffer) {
+		SDL_Log("cant create with something that isnt a framebuffer");
+		return nullptr;
 	}
 
-	SDL_gxm_init();
-
-	/*
-	SceGxmInitializeParams initializeParams;
-    SDL_memset(&initializeParams, 0, sizeof(SceGxmInitializeParams));
-    initializeParams.flags = 0;
-    initializeParams.displayQueueMaxPendingCount = VITA_GXM_PENDING_SWAPS;
-    initializeParams.displayQueueCallback = display_callback;
-    initializeParams.displayQueueCallbackDataSize = sizeof(GXMDisplayData);
-    initializeParams.parameterBufferSize = SCE_GXM_DEFAULT_PARAMETER_BUFFER_SIZE;
-
-    int err = sceGxmInitialize(&initializeParams);
-    if (err != 0) {
-        SDL_LogError(SDL_LOG_CATEGORY_RENDER, "gxm init failed: %d", err);
-        return err;
-    }
-	*/
-	return true;
-}
-
-Direct3DRMRenderer* GXMRenderer::Create(DWORD width, DWORD height)
-{
 	SDL_Log("GXMRenderer::Create width=%d height=%d", width, height);
 
 	bool success = gxm_init();
@@ -526,6 +561,7 @@ Direct3DRMRenderer* GXMRenderer::Create(DWORD width, DWORD height)
 	if(!success) {
 		return nullptr;
 	}
+	gxm_data.frameBuffer = frameBuffer;
 	
 	return new GXMRenderer(width, height, gxm_data);
 }
@@ -541,23 +577,17 @@ GXMRenderer::~GXMRenderer() {
 	if(!m_initialized) {
 		return;
 	}
-	sceGxmShaderPatcherDestroy(this->m_data.shaderPatcher);
-	sceGxmDestroyRenderTarget(this->m_data.renderTarget);
 
+	/*
+	sceGxmDestroyRenderTarget(this->m_data.renderTarget);
 	vita_mem_free(this->m_data.renderBufferUid);
 	sceGxmSyncObjectDestroy(this->m_data.renderBufferSync);
+	*/
 
 	vita_mem_free(this->m_data.depthBufferUid);
 	this->m_data.depthBufferData = nullptr;
 	vita_mem_free(this->m_data.stencilBufferUid);
 	this->m_data.stencilBufferData = nullptr;
-
-	sceGxmDestroyContext(this->m_data.context);
-	vita_mem_fragment_usse_free(this->m_data.fragmentUsseRingBufferUid);
-	vita_mem_free(this->m_data.fragmentRingBufferUid);
-    vita_mem_free(this->m_data.vertexRingBufferUid);
-    vita_mem_free(this->m_data.vdmRingBufferUid);
-	SDL_free(this->m_data.contextHostMem);
 }
 
 void* GXMRenderer::AllocateGpu(size_t size, size_t align) {
@@ -811,18 +841,38 @@ HRESULT GXMRenderer::BeginFrame()
 		razor_triggered = true;
 	}
 
+	SceGxmRenderTarget* renderTarget = this->m_data.frameBuffer->GetRenderTarget();
+	GXMDisplayBuffer* backBuffer = this->m_data.frameBuffer->backBuffer();
+
 	sceGxmBeginScene(
 		this->m_data.context,
 		0,
-		this->m_data.renderTarget,
+		renderTarget,
+		//this->m_data.renderTarget,
 		nullptr,
 		nullptr,
-		this->m_data.renderBufferSync,
-		&this->m_data.renderSurface,
+		backBuffer->sync,
+		&backBuffer->surface,
+		//this->m_data.renderBufferSync,
+		//&this->m_data.renderSurface,
 		&this->m_data.depthSurface
 	);
 
 	sceGxmSetViewport(this->m_data.context, 0, m_width, 0, m_height, 0, 0);
+
+	sceGxmSetFragmentUniformBuffer(this->m_data.context, 0, this->m_data.lightDataBuffer);
+
+	sceGxmSetFrontStencilRef(this->m_data.context, 1);
+	sceGxmSetFrontStencilFunc(
+        this->m_data.context,
+        SCE_GXM_STENCIL_FUNC_ALWAYS,
+        SCE_GXM_STENCIL_OP_KEEP,
+        SCE_GXM_STENCIL_OP_KEEP,
+        SCE_GXM_STENCIL_OP_KEEP,
+        0xFF,
+        0xFF
+	);
+	sceGxmSetFrontDepthFunc(this->m_data.context, SCE_GXM_DEPTH_FUNC_ALWAYS);
 
 	// clear screen
 	sceGxmSetVertexProgram(this->m_data.context, this->m_data.clearVertexProgram);
@@ -870,13 +920,6 @@ void GXMRenderer::EnableTransparency()
 {
 	sceGxmSetFragmentProgram(this->m_data.context, this->m_data.transparentFragmentProgram);
 }
-
-#define SET_UNIFORM(buffer, param, value) \
-    do { \
-        size_t __offset = sceGxmProgramParameterGetResourceIndex(param); \
-        void* __dst = (uint8_t*)(buffer) + (__offset * sizeof(uint32_t)); \
-		memcpy(__dst, reinterpret_cast<const void*>(&(value)), sizeof(value)); \
-    } while (0)
 
 void TransposeD3DRMMATRIX4D(const D3DRMMATRIX4D input, D3DRMMATRIX4D output) {
     for (int i = 0; i < 4; ++i) {
@@ -937,12 +980,14 @@ HRESULT GXMRenderer::FinalizeFrame()
 		nullptr, nullptr
 	);
 
+	/*
 	SDL_Surface* renderedImage = SDL_CreateSurfaceFrom(
 		m_width, m_height, SDL_PIXELFORMAT_ABGR8888,
 		this->m_data.renderBuffer, this->m_width*4
 	);
 	SDL_BlitSurface(renderedImage, nullptr, DDBackBuffer, nullptr);
 	SDL_DestroySurface(renderedImage);
+	*/
 
 	return DD_OK;
 }

@@ -18,7 +18,8 @@
             "name": "debug",
             "inherits": ["release"],
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug"
+                "CMAKE_BUILD_TYPE": "Debug",
+                "ISLE_BUILD_CONFIG": false
             }
         },
 

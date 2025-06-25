@@ -147,9 +147,13 @@ HRESULT Direct3DRMImpl::CreateDeviceFromSurface(
 	surface->GetSurfaceDesc(&DDSDesc);
 
 	Direct3DRMRenderer* renderer;
-	if (SDL_memcmp(&guid, &SDL3_GPU_GUID, sizeof(GUID)) == 0) {
+
+	if(false) {}
+#ifndef __vita__
+	else if (SDL_memcmp(&guid, &SDL3_GPU_GUID, sizeof(GUID)) == 0) {
 		renderer = Direct3DRMSDL3GPURenderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
+#endif
 	else if (SDL_memcmp(&guid, &SOFTWARE_GUID, sizeof(GUID)) == 0) {
 		renderer = new Direct3DRMSoftwareRenderer(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
@@ -170,7 +174,7 @@ HRESULT Direct3DRMImpl::CreateDeviceFromSurface(
 #endif
 #ifdef __vita__
 	else if (SDL_memcmp(&guid, &GXM_GUID, sizeof(GUID)) == 0) {
-		renderer = GXMRenderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
+		renderer = GXMRenderer::Create(surface);
 	}
 #endif
 	else {

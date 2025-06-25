@@ -26,7 +26,9 @@ struct Plane {
 	float d;
 };
 
+#ifndef __vita__
 extern SDL_Renderer* DDRenderer;
+#endif
 
 class Direct3DRMRenderer : public IDirect3DDevice2 {
 public:
@@ -51,6 +53,7 @@ public:
 
 	bool ConvertEventToRenderCoordinates(SDL_Event* event)
 	{
-		return SDL_ConvertEventToRenderCoordinates(DDRenderer, event);
+		//return SDL_ConvertEventToRenderCoordinates(DDRenderer, event);
+		return true;
 	}
 };

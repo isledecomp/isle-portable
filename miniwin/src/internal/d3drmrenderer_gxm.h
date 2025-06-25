@@ -32,13 +32,8 @@ struct GXMMeshCacheEntry {
 	uint16_t indexCount;
 };
 
-typedef struct GXMRendererInit {
-	SceGxmContext* context;
-	SceGxmShaderPatcher* shaderPatcher;
-	SceClibMspace gpuPool;
-} GXMRendererInit;
-
-typedef struct GXMRendererData {
+typedef struct GXMRendererContext {
+	// context
 	SceUID vdmRingBufferUid;
 	SceUID vertexRingBufferUid;
 	SceUID fragmentRingBufferUid;
@@ -55,18 +50,7 @@ typedef struct GXMRendererData {
 	void* contextHostMem;
 	SceGxmContext* context;
 
-	SceGxmRenderTarget* renderTarget;
-	SceUID renderBufferUid;
-	void* renderBuffer;
-	SceGxmColorSurface renderSurface;
-	SceGxmSyncObject* renderBufferSync;
-
-	SceUID depthBufferUid;
-	void* depthBufferData;
-	SceUID stencilBufferUid;
-	void* stencilBufferData;
-	SceGxmDepthStencilSurface depthSurface;
-
+	// shader patcher
 	SceUID patcherBufferUid;
 	void* patcherBuffer;
 
@@ -79,38 +63,68 @@ typedef struct GXMRendererData {
     void* patcherFragmentUsse;
 
 	SceGxmShaderPatcher* shaderPatcher;
+} GXMRendererContext;
 
+typedef struct GXMRendererData {
+	SceGxmContext* context;
+	SceGxmShaderPatcher* shaderPatcher;
+	SceClibMspace cdramPool;
+
+	// color buffer
+	/*
+	SceGxmRenderTarget* renderTarget;
+	SceUID renderBufferUid;
+	void* renderBuffer;
+	SceGxmColorSurface renderSurface;
+	SceGxmSyncObject* renderBufferSync;
+	*/
+
+	// depth buffer
+	SceUID depthBufferUid;
+	void* depthBufferData;
+	SceUID stencilBufferUid;
+	void* stencilBufferData;
+	SceGxmDepthStencilSurface depthSurface;
+
+	// clear shader
 	SceGxmShaderPatcherId clearVertexProgramId;
 	SceGxmVertexProgram* clearVertexProgram;
 	SceGxmShaderPatcherId clearFragmentProgramId;
 	SceGxmFragmentProgram* clearFragmentProgram;
 
+	// main shader
 	SceGxmShaderPatcherId mainVertexProgramId;
 	SceGxmShaderPatcherId mainFragmentProgramId;
 	SceGxmVertexProgram* mainVertexProgram;
 	SceGxmFragmentProgram* opaqueFragmentProgram;
 	SceGxmFragmentProgram* transparentFragmentProgram;
 
+	// main shader vertex uniforms
 	const SceGxmProgramParameter* uModelViewMatrixParam;
 	const SceGxmProgramParameter* uNormalMatrixParam;
 	const SceGxmProgramParameter* uProjectionMatrixParam;
 
+	// main shader fragment uniforms
 	const SceGxmProgramParameter* uLights;
 	const SceGxmProgramParameter* uLightCount;
 	const SceGxmProgramParameter* uShininess;
 	const SceGxmProgramParameter* uColor;
 	const SceGxmProgramParameter* uUseTexture;
 
+	// clear mesh
 	void* clearMeshBuffer;
 	float* clearVerticies;
 	uint16_t* clearIndicies;
 
+	// scene light data
 	void* lightDataBuffer;
+	
+	FrameBufferImpl* frameBuffer;
 } GXMRendererData;
 
 class GXMRenderer : public Direct3DRMRenderer {
 public:
-	static Direct3DRMRenderer* Create(DWORD width, DWORD height);
+	static Direct3DRMRenderer* Create(IDirectDrawSurface* surface);
 	GXMRenderer(
 		DWORD width,
 		DWORD height,

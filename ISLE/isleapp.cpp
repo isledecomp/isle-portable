@@ -52,6 +52,7 @@
 
 #ifdef __vita__
 #include <SDL3/SDL_gxm.h>
+#define USE_GXM
 #endif
 
 #if defined(__vita__) && defined(USE_OPENGLES2)
@@ -724,7 +725,9 @@ MxResult IsleApp::SetupWindow()
 		(HWND) SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
 #endif
 
+#if defined(__vita__) && defined(USE_OPENGLES2)
 	DDWindow = window;
+#endif
 
 	SDL_DestroyProperties(props);
 

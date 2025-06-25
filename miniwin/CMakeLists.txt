@@ -9,7 +9,6 @@ add_library(miniwin STATIC EXCLUDE_FROM_ALL
   src/ddraw/ddpalette.cpp
   src/ddraw/ddraw.cpp
   src/ddraw/ddsurface.cpp
-  src/ddraw/framebuffer.cpp
 
   # D3DRM
   src/d3drm/d3drm.cpp
@@ -22,10 +21,21 @@ add_library(miniwin STATIC EXCLUDE_FROM_ALL
   src/internal/meshutils.cpp
 
   # D3DRM backends
-  src/d3drm/backends/sdl3gpu/renderer.cpp
-  src/d3drm/backends/sdl3gpu/shaders/generated/ShaderIndex.cpp
   src/d3drm/backends/software/renderer.cpp
 )
+
+if(VITA)
+  target_sources(miniwin PRIVATE
+    src/ddraw/framebuffer_vita.cpp
+  )
+else()
+  target_sources(miniwin PRIVATE
+    src/ddraw/framebuffer.cpp
+
+    src/d3drm/backends/sdl3gpu/renderer.cpp
+    src/d3drm/backends/sdl3gpu/shaders/generated/ShaderIndex.cpp
+  )
+endif()
 
 find_package(OpenGL)
 find_package(GLEW)

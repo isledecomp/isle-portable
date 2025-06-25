@@ -10,7 +10,9 @@
 extern SDL_Window* DDWindow;
 extern SDL_Surface* DDBackBuffer;
 extern FrameBufferImpl* DDFrameBuffer;
+#ifndef __vita__
 extern SDL_Renderer* DDRenderer;
+#endif
 
 inline static SDL_Rect ConvertRect(const RECT* r)
 {

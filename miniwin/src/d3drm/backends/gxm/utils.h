@@ -1,17 +1,17 @@
 #pragma once
 
 #include <SDL3/SDL_log.h>
+#include <psp2/gxm.h>
+#include <psp2/kernel/clib.h>
 
-static bool _sce_err(const char* expr, int err) {
-	if(err >= 0) {
-		SDL_Log("sce: %s", expr);
-		return false;
-	}
-	SDL_Log("SCE_ERR: %s failed 0x%x", expr, err);
-	return true;
-}
-
-#define SCE_ERR(func, ...) _sce_err(#func, func(__VA_ARGS__))
+#define SCE_ERR(func, ...) ({ \
+    sceClibPrintf(#func "\n"); \
+    int __sce_err_ret_val = func(__VA_ARGS__); \
+    if (__sce_err_ret_val < 0) { \
+        sceClibPrintf(#func " error: 0x%x\n", __sce_err_ret_val); \
+    } \
+    __sce_err_ret_val < 0; \
+})
 
 #define ALIGN(x, a) (((x) + ((a)-1)) & ~((a)-1))
 
@@ -22,3 +22,24 @@ static bool _sce_err(const char* expr, int err) {
 		".incbin \"" filename "\"" \
 	); \
 	extern const void* symbol
+
+#define SET_UNIFORM(buffer, param, value) \
+    do { \
+        size_t __offset = sceGxmProgramParameterGetResourceIndex(param); \
+        void* __dst = (uint8_t*)(buffer) + (__offset * sizeof(uint32_t)); \
+		memcpy(__dst, reinterpret_cast<const void*>(&(value)), sizeof(value)); \
+    } while (0)
+
+#define GET_SHADER_PARAM(var, gxp, name, ret) \
+	const SceGxmProgramParameter* var = sceGxmProgramFindParameterByName(gxp, name); \
+	if(!var) { \
+		SDL_Log("Failed to find param %s", name); \
+		return ret; \
+	}
+
+
+extern const SceGxmProgram* blitVertexProgramGxp;
+extern const SceGxmProgram* blitColorFragmentProgramGxp;
+extern const SceGxmProgram* blitTexFragmentProgramGxp;
+
+bool get_gxm_context(SceGxmContext** context, SceGxmShaderPatcher** shaderPatcher, SceClibMspace* cdramPool);

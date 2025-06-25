@@ -43,6 +43,8 @@ HRESULT FrameBufferImpl::AddAttachedSurface(LPDIRECTDRAWSURFACE lpDDSAttachedSur
 	return DDERR_GENERIC;
 }
 
+#include <cstdio>
+
 HRESULT FrameBufferImpl::Blt(
 	LPRECT lpDestRect,
 	LPDIRECTDRAWSURFACE lpDDSrcSurface,
@@ -66,6 +68,7 @@ HRESULT FrameBufferImpl::Blt(
 		SDL_FillSurfaceRect(DDBackBuffer, &rect, color);
 		return DD_OK;
 	}
+	auto start = SDL_GetTicksNS();
 	auto other = static_cast<DirectDrawSurfaceImpl*>(lpDDSrcSurface);
 	if (!other) {
 		return DDERR_GENERIC;
@@ -89,6 +92,8 @@ HRESULT FrameBufferImpl::Blt(
 	if (blitSource != other->m_surface) {
 		SDL_DestroySurface(blitSource);
 	}
+
+	auto end = SDL_GetTicksNS();
 	return DD_OK;
 }
 
@@ -114,6 +119,7 @@ HRESULT FrameBufferImpl::Flip(LPDIRECTDRAWSURFACE lpDDSurfaceTargetOverride, DDF
 	SDL_UpdateTexture(m_uploadBuffer, nullptr, DDBackBuffer->pixels, DDBackBuffer->pitch);
 	SDL_RenderTexture(DDRenderer, m_uploadBuffer, nullptr, nullptr);
 	SDL_RenderPresent(DDRenderer);
+	printf("Flip\n");
 	return DD_OK;
 }
 
