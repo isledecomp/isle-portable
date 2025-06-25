@@ -286,7 +286,6 @@ void CMainDialog::SelectDataPathDialog()
 		data_dir.cd(QString("DATA"));
 		data_dir.cd(QString("disk"));
 		currentConfigApp->m_base_path = data_dir.absolutePath().toStdString();
-		;
 		m_modified = true;
 	}
 	UpdateInterface();
