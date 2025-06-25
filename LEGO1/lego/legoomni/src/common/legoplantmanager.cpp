@@ -214,7 +214,7 @@ LegoEntity* LegoPlantManager::CreatePlant(MxS32 p_index, LegoWorld* p_world, Leg
 {
 	LegoEntity* entity = NULL;
 
-	if (p_index < sizeOfArray(g_plantInfo)) {
+	if (p_worldId != LegoOmni::e_undefined && p_index < sizeOfArray(g_plantInfo)) {
 		MxU32 world = 1 << (MxU8) p_worldId;
 
 		if (g_plantInfo[p_index].m_worlds & world && g_plantInfo[p_index].m_counter != 0) {

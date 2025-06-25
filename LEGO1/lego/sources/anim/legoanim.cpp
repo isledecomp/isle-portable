@@ -725,6 +725,7 @@ void LegoAnimNodeData::SetName(LegoChar* p_name)
 }
 
 // FUNCTION: LEGO1 0x100a03c0
+// FUNCTION: BETA10 0x1017f254
 LegoResult LegoAnimNodeData::CreateLocalTransform(LegoFloat p_time, Matrix4& p_matrix)
 {
 	LegoU32 index;
@@ -1062,7 +1063,7 @@ LegoResult LegoAnim::Read(LegoStorage* p_storage, LegoS32 p_parseScene)
 
 			m_modelList[i].m_name[length] = '\0';
 
-			if (p_storage->Read(&m_modelList[i].m_unk0x04, sizeof(undefined4)) != SUCCESS) {
+			if (p_storage->Read(&m_modelList[i].m_type, sizeof(LegoU32)) != SUCCESS) {
 				goto done;
 			}
 		}
@@ -1123,7 +1124,7 @@ LegoResult LegoAnim::Write(LegoStorage* p_storage)
 				goto done;
 			}
 
-			if (p_storage->Write(&m_modelList[i].m_unk0x04, sizeof(m_modelList[i].m_unk0x04)) != SUCCESS) {
+			if (p_storage->Write(&m_modelList[i].m_type, sizeof(m_modelList[i].m_type)) != SUCCESS) {
 				goto done;
 			}
 		}
@@ -1158,10 +1159,10 @@ const LegoChar* LegoAnim::GetActorName(LegoU32 p_index)
 
 // FUNCTION: LEGO1 0x100a0f40
 // FUNCTION: BETA10 0x1018023c
-undefined4 LegoAnim::GetActorUnknown0x04(LegoU32 p_index)
+LegoU32 LegoAnim::GetActorType(LegoU32 p_index)
 {
 	if (p_index < m_numActors) {
-		return m_modelList[p_index].m_unk0x04;
+		return m_modelList[p_index].m_type;
 	}
 
 	return 0;

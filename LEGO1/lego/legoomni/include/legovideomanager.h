@@ -78,6 +78,9 @@ private:
 
 	inline void DrawCursor();
 
+	void DrawDigitToBuffer32(uint8_t* p_dst, int p_pitch, int p_x, int p_y, int p_digit, uint32_t p_color);
+	void DrawTextToSurface32(uint8_t* p_dst, int p_pitch, int p_x, int p_y, const char* p_text, uint32_t p_color);
+
 	Tgl::Renderer* m_renderer;            // 0x64
 	Lego3DManager* m_3dManager;           // 0x68
 	LegoROI* m_viewROI;                   // 0x6c

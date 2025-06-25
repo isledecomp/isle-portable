@@ -24,7 +24,7 @@ public:
 	const MxString& operator=(const char* p_str);
 	MxString operator+(const MxString& p_str) const;
 	MxString operator+(const char* p_str) const;
-	MxString& operator+=(const char* p_str);
+	LEGO1_EXPORT MxString& operator+=(const char* p_str);
 
 	static void CharSwap(char* p_a, char* p_b);
 	LEGO1_EXPORT static void MapPathToFilesystem(char* p_path);
