@@ -59,7 +59,7 @@ HRESULT Direct3DRMMeshImpl::AddGroup(
 	MeshGroup group;
 	group.vertexPerFace = vertexPerFace;
 
-	DWORD* src = faceBuffer;
+	unsigned int* src = faceBuffer;
 	group.indices.assign(src, src + faceCount * vertexPerFace);
 
 	m_groups.push_back(std::move(group));
