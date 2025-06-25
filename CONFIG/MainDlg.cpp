@@ -269,7 +269,6 @@ void CMainDialog::OnCheckboxFullscreen(bool checked)
 	UpdateInterface();
 }
 
-
 void CMainDialog::SelectDataPathDialog()
 {
 	QString data_path = QString::fromStdString(currentConfigApp->m_cd_path);
@@ -286,7 +285,8 @@ void CMainDialog::SelectDataPathDialog()
 		currentConfigApp->m_cd_path = data_dir.absolutePath().toStdString();
 		data_dir.cd(QString("DATA"));
 		data_dir.cd(QString("disk"));
-		currentConfigApp->m_base_path = data_dir.absolutePath().toStdString();;
+		currentConfigApp->m_base_path = data_dir.absolutePath().toStdString();
+		;
 		m_modified = true;
 	}
 	UpdateInterface();
