@@ -1,0 +1,93 @@
+; From https://github.com/devkitPro/citro3d/blob/master/test/3ds/source/vshader.v.pica
+; zlib license
+; ----------
+
+; Example PICA200 vertex shader
+
+; Uniforms
+.fvec projection[4], modelView[4], texView[2]
+.fvec lightVec, lightHalfVec, lightClr, material[4]
+.alias mat_amb material[0]
+.alias mat_dif material[1]
+.alias mat_spe material[2]
+.alias mat_emi material[3]
+
+; Constants
+.constf myconst(0.0, 1.0, -1.0, -0.5)
+.alias  zeros myconst.xxxx ; Vector full of zeros
+.alias  ones  myconst.yyyy ; Vector full of ones
+
+; Outputs
+.out outpos position
+.out outtc0 texcoord0
+.out outclr color
+
+; Inputs (defined as aliases for convenience)
+.alias inpos v0
+.alias intex v1
+.alias innrm v2
+
+.proc main
+	; Force the w component of inpos to be 1.0
+	mov r0.xyz, inpos
+	mov r0.w,   ones
+
+	; r1 = modelView * inpos
+	dp4 r1.x, modelView[0], r0
+	dp4 r1.y, modelView[1], r0
+	dp4 r1.z, modelView[2], r0
+	dp4 r1.w, modelView[3], r0
+
+	; outpos = projection * r1
+	dp4 outpos.x, projection[0], r1
+	dp4 outpos.y, projection[1], r1
+	dp4 outpos.z, projection[2], r1
+	dp4 outpos.w, projection[3], r1
+
+	; outtex = intex
+	dp4 outtc0.x, texView[0], intex
+	dp4 outtc0.y, texView[1], intex
+	mov outtc0.zw, myconst.xy
+
+	; Transform the normal vector with the modelView matrix
+	; r1 = normalize(modelView * innrm)
+	mov r0.xyz, innrm
+	mov r0.w,   zeros
+	dp4 r1.x,   modelView[0], r0
+	dp4 r1.y,   modelView[1], r0
+	dp4 r1.z,   modelView[2], r0
+	mov r1.w,   zeros
+	dp3 r2,     r1, r1 ; r2 = x^2+y^2+z^2 for each component
+	rsq r2,     r2     ; r2 = 1/sqrt(r2)  ''
+	mul r1,     r2, r1 ; r1 = r1*r2
+
+	; Calculate the diffuse level (r0.x) and the shininess level (r0.y)
+	; r0.x = max(0, -(lightVec * r1))
+	; r0.y = max(0, (-lightHalfVec[i]) * r1) ^ 2
+	dp3 r0.x, lightVec,      r1
+	add r0.x, zeros,         -r0
+	dp3 r0.y, -lightHalfVec, r1
+	max r0,   zeros,         r0
+	mul r0.y, r0,            r0
+
+	; Accumulate the vertex color in r1, initializing it to the emission color
+	mov r1, mat_emi
+
+	; r1 += specularColor * lightClr * shininessLevel
+	mul r2, lightClr, r0.yyyy
+	mad r1, r2, mat_spe, r1
+
+	; r1 += diffuseColor * lightClr * diffuseLevel
+	mul r2, lightClr, r0.xxxx
+	mad r1, r2, mat_dif, r1
+
+	; r1 += ambientColor * lightClr
+	mov r2, lightClr
+	mad r1, r2, mat_amb, r1
+
+	; outclr = clamp r1 to [0,1]
+	min outclr, ones, r1
+
+	; We're finished
+	end
+.end
