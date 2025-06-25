@@ -42,7 +42,7 @@ struct GLMeshCacheEntry {
 class OpenGL1Renderer : public Direct3DRMRenderer {
 public:
 	static Direct3DRMRenderer* Create(DWORD width, DWORD height);
-	OpenGL1Renderer(DWORD width, DWORD height, SDL_GLContext context, GLuint fbo, GLuint colorTex, GLuint depthRb);
+	OpenGL1Renderer(DWORD width, DWORD height, SDL_GLContext context);
 	~OpenGL1Renderer() override;
 
 	void PushLights(const SceneLight* lightsArray, size_t count) override;
@@ -50,8 +50,6 @@ public:
 	void SetFrustumPlanes(const Plane* frustumPlanes) override;
 	Uint32 GetTextureId(IDirect3DRMTexture* texture) override;
 	Uint32 GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup) override;
-	DWORD GetWidth() override;
-	DWORD GetHeight() override;
 	void GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc) override;
 	const char* GetName() override;
 	HRESULT BeginFrame() override;
@@ -59,10 +57,17 @@ public:
 	void SubmitDraw(
 		DWORD meshId,
 		const D3DRMMATRIX4D& modelViewMatrix,
+		const D3DRMMATRIX4D& worldMatrix,
+		const D3DRMMATRIX4D& viewMatrix,
 		const Matrix3x3& normalMatrix,
 		const Appearance& appearance
 	) override;
 	HRESULT FinalizeFrame() override;
+	void Resize(int width, int height, const ViewportTransform& viewportTransform) override;
+	void Clear(float r, float g, float b) override;
+	void Flip() override;
+	void Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect) override;
+	void Download(SDL_Surface* target) override;
 
 private:
 	void AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture);
@@ -72,13 +77,11 @@ private:
 	std::vector<GLMeshCacheEntry> m_meshs;
 	D3DRMMATRIX4D m_projection;
 	SDL_Surface* m_renderedImage;
-	DWORD m_width, m_height;
 	bool m_useVBOs;
+	bool m_dirty = false;
 	std::vector<SceneLight> m_lights;
 	SDL_GLContext m_context;
-	GLuint m_fbo;
-	GLuint m_colorTex;
-	GLuint m_depthRb;
+	ViewportTransform m_viewportTransform;
 };
 
 inline static void OpenGL1Renderer_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx)

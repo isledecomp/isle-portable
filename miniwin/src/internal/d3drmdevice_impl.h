@@ -11,8 +11,8 @@ struct Direct3DRMDevice2Impl : public Direct3DRMObjectBaseImpl<IDirect3DRMDevice
 	Direct3DRMDevice2Impl(DWORD width, DWORD height, Direct3DRMRenderer* renderer);
 	~Direct3DRMDevice2Impl() override;
 	HRESULT QueryInterface(const GUID& riid, void** ppvObject) override;
-	DWORD GetWidth() override;
-	DWORD GetHeight() override;
+	DWORD GetWidth() override { return m_virtualWidth; }
+	DWORD GetHeight() override { return m_virtualHeight; }
 	HRESULT SetBufferCount(int count) override;
 	DWORD GetBufferCount() override;
 	HRESULT SetShades(DWORD shadeCount) override;
@@ -38,7 +38,10 @@ struct Direct3DRMDevice2Impl : public Direct3DRMObjectBaseImpl<IDirect3DRMDevice
 	Direct3DRMRenderer* m_renderer;
 
 private:
-	DWORD m_width;
-	DWORD m_height;
+	void Resize();
+
+	uint32_t m_virtualWidth;
+	uint32_t m_virtualHeight;
+	ViewportTransform m_viewportTransform;
 	IDirect3DRMViewportArray* m_viewports;
 };

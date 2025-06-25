@@ -15,3 +15,9 @@ struct Appearance {
 	uint32_t textureId;
 	uint32_t flat;
 };
+
+struct ViewportTransform {
+	float scale;
+	float offsetX;
+	float offsetY;
+};

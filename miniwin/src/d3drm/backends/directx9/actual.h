@@ -69,8 +69,14 @@ void Actual_EnableTransparency();
 void Actual_SubmitDraw(
 	const D3D9MeshCacheEntry* mesh,
 	const Matrix4x4* modelViewMatrix,
+	const Matrix4x4* worldMatrix,
+	const Matrix4x4* viewMatrix,
 	const Matrix3x3* normalMatrix,
 	const Appearance* appearance,
 	IDirect3DTexture9* texture
 );
-uint32_t Actual_FinalizeFrame(void* pixels, int pitch);
+void Actual_Resize(int width, int height, const ViewportTransform& viewportTransform);
+void Actual_Clear(float r, float g, float b);
+uint32_t Actual_Flip();
+void Actual_Draw2DImage(IDirect3DTexture9* texture, const SDL_Rect& srcRect, const SDL_Rect& dstRect);
+uint32_t Actual_Download(SDL_Surface* target);

@@ -27,6 +27,10 @@ add_library(miniwin STATIC EXCLUDE_FROM_ALL
   src/d3drm/backends/software/renderer.cpp
 )
 
+target_compile_definitions(miniwin PRIVATE
+    $<$<CONFIG:Debug>:DEBUG>
+)
+
 find_package(OpenGL)
 find_package(GLEW)
 if(OpenGL_FOUND AND GLEW_FOUND)

@@ -708,7 +708,7 @@ void WriteDefaultTexture(LegoStorage* p_storage, const char* p_name)
 		memset(&desc, 0, sizeof(desc));
 		desc.dwSize = sizeof(desc);
 
-		if (surface->Lock(NULL, &desc, DDLOCK_SURFACEMEMORYPTR, NULL) == DD_OK) {
+		if (surface->Lock(NULL, &desc, DDLOCK_SURFACEMEMORYPTR | DDLOCK_WRITEONLY, NULL) == DD_OK) {
 			LegoImage* image = new LegoImage(desc.dwWidth, desc.dwHeight);
 
 			if (image != NULL) {

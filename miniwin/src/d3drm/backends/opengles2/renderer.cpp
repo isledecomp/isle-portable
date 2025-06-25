@@ -41,6 +41,8 @@ Direct3DRMRenderer* OpenGLES2Renderer::Create(DWORD width, DWORD height)
 		testWindow = true;
 	}
 
+	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+
 	SDL_GLContext context = SDL_GL_CreateContext(window);
 	if (!context) {
 		if (testWindow) {
@@ -50,51 +52,16 @@ Direct3DRMRenderer* OpenGLES2Renderer::Create(DWORD width, DWORD height)
 	}
 
 	if (!SDL_GL_MakeCurrent(window, context)) {
+		if (testWindow) {
+			SDL_DestroyWindow(window);
+		}
 		return nullptr;
 	}
 
 	glDepthFunc(GL_LEQUAL);
-	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
-	glFrontFace(GL_CCW);
-
-	// Setup FBO
-	GLuint fbo;
-	glGenFramebuffers(1, &fbo);
-	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-
-	// Create color texture
-	GLuint colorTex;
-	glGenTextures(1, &colorTex);
-	glBindTexture(GL_TEXTURE_2D, colorTex);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTex, 0);
-
-	// Create depth renderbuffer
-	GLuint depthRb;
-	glGenRenderbuffers(1, &depthRb);
-	glBindRenderbuffer(GL_RENDERBUFFER, depthRb);
-	const char* extensions = (const char*) glGetString(GL_EXTENSIONS);
-	if (extensions) {
-		if (strstr(extensions, "GL_OES_depth24")) {
-			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24_OES, width, height);
-		}
-		else if (strstr(extensions, "GL_OES_depth32")) {
-			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32_OES, width, height);
-		}
-	}
-	else {
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, width, height);
-	}
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthRb);
-
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-		return nullptr;
-	}
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glFrontFace(GL_CW);
 
 	const char* vertexShaderSource = R"(
 		attribute vec3 a_position;
@@ -183,6 +150,7 @@ Direct3DRMRenderer* OpenGLES2Renderer::Create(DWORD width, DWORD height)
 			if (u_useTexture != 0) {
 				vec4 texel = texture2D(u_texture, v_texCoord);
 				finalColor.rgb = clamp(texel.rgb * finalColor.rgb, 0.0, 1.0);
+				finalColor.a = texel.a;
 			}
 
 			gl_FragColor = finalColor;
@@ -206,31 +174,23 @@ Direct3DRMRenderer* OpenGLES2Renderer::Create(DWORD width, DWORD height)
 		SDL_DestroyWindow(window);
 	}
 
-	return new OpenGLES2Renderer(width, height, context, fbo, colorTex, depthRb, shaderProgram);
+	return new OpenGLES2Renderer(width, height, context, shaderProgram);
 }
 
-OpenGLES2Renderer::OpenGLES2Renderer(
-	DWORD width,
-	DWORD height,
-	SDL_GLContext context,
-	GLuint fbo,
-	GLuint colorTex,
-	GLuint depthRb,
-	GLuint shaderProgram
-)
-	: m_width(width), m_height(height), m_context(context), m_fbo(fbo), m_colorTex(colorTex), m_depthRb(depthRb),
-	  m_shaderProgram(shaderProgram)
+OpenGLES2Renderer::OpenGLES2Renderer(DWORD width, DWORD height, SDL_GLContext context, GLuint shaderProgram)
+	: m_context(context), m_shaderProgram(shaderProgram)
 {
-	m_renderedImage = SDL_CreateSurface(m_width, m_height, SDL_PIXELFORMAT_ABGR8888);
+	m_width = width;
+	m_height = height;
+	m_virtualWidth = width;
+	m_virtualHeight = height;
+	m_renderedImage = SDL_CreateSurface(m_width, m_height, SDL_PIXELFORMAT_RGBA32);
 }
 
 OpenGLES2Renderer::~OpenGLES2Renderer()
 {
 	SDL_DestroySurface(m_renderedImage);
-	glDeleteFramebuffers(1, &m_fbo);
-	glDeleteRenderbuffers(1, &m_depthRb);
 	glDeleteProgram(m_shaderProgram);
-	glDeleteTextures(1, &m_colorTex);
 }
 
 void OpenGLES2Renderer::PushLights(const SceneLight* lightsArray, size_t count)
@@ -250,7 +210,6 @@ void OpenGLES2Renderer::SetFrustumPlanes(const Plane* frustumPlanes)
 void OpenGLES2Renderer::SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back)
 {
 	memcpy(&m_projection, projection, sizeof(D3DRMMATRIX4D));
-	m_projection[1][1] *= -1.0f; // OpenGL is upside down
 }
 
 struct TextureDestroyContextGLS2 {
@@ -289,14 +248,12 @@ Uint32 OpenGLES2Renderer::GetTextureId(IDirect3DRMTexture* iTexture)
 				glGenTextures(1, &tex.glTextureId);
 				glBindTexture(GL_TEXTURE_2D, tex.glTextureId);
 
-				SDL_Surface* surf = SDL_ConvertSurface(surface->m_surface, SDL_PIXELFORMAT_ABGR8888);
+				SDL_Surface* surf = SDL_ConvertSurface(surface->m_surface, SDL_PIXELFORMAT_RGBA32);
 				if (!surf) {
 					return NO_TEXTURE_ID;
 				}
 				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
 				SDL_DestroySurface(surf);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 				tex.version = texture->m_version;
 			}
@@ -308,14 +265,11 @@ Uint32 OpenGLES2Renderer::GetTextureId(IDirect3DRMTexture* iTexture)
 	glGenTextures(1, &texId);
 	glBindTexture(GL_TEXTURE_2D, texId);
 
-	SDL_Surface* surf = SDL_ConvertSurface(surface->m_surface, SDL_PIXELFORMAT_ABGR8888);
+	SDL_Surface* surf = SDL_ConvertSurface(surface->m_surface, SDL_PIXELFORMAT_RGBA32);
 	if (!surf) {
 		return NO_TEXTURE_ID;
 	}
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
-	SDL_DestroySurface(surf);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	for (Uint32 i = 0; i < m_textures.size(); ++i) {
 		auto& tex = m_textures[i];
@@ -323,12 +277,15 @@ Uint32 OpenGLES2Renderer::GetTextureId(IDirect3DRMTexture* iTexture)
 			tex.texture = texture;
 			tex.version = texture->m_version;
 			tex.glTextureId = texId;
+			tex.width = surf->w;
+			tex.height = surf->h;
 			AddTextureDestroyCallback(i, texture);
 			return i;
 		}
 	}
 
-	m_textures.push_back({texture, texture->m_version, texId});
+	m_textures.push_back({texture, texture->m_version, texId, (uint16_t) surf->w, (uint16_t) surf->h});
+	SDL_DestroySurface(surf);
 	AddTextureDestroyCallback((Uint32) (m_textures.size() - 1), texture);
 	return (Uint32) (m_textures.size() - 1);
 }
@@ -366,7 +323,6 @@ GLES2MeshCacheEntry GLES2UploadMesh(const MeshGroup& meshGroup)
 			return v.texCoord;
 		});
 	}
-
 	std::vector<D3DVECTOR> positions(vertices.size());
 	std::transform(vertices.begin(), vertices.end(), positions.begin(), [](const D3DRMVERTEX& v) {
 		return v.position;
@@ -451,16 +407,6 @@ Uint32 OpenGLES2Renderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* mesh
 	return (Uint32) (m_meshs.size() - 1);
 }
 
-DWORD OpenGLES2Renderer::GetWidth()
-{
-	return m_width;
-}
-
-DWORD OpenGLES2Renderer::GetHeight()
-{
-	return m_height;
-}
-
 void OpenGLES2Renderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc)
 {
 	halDesc->dcmColorModel = D3DCOLORMODEL::RGB;
@@ -490,18 +436,13 @@ const char* OpenGLES2Renderer::GetName()
 
 HRESULT OpenGLES2Renderer::BeginFrame()
 {
-	SDL_GL_MakeCurrent(DDWindow, m_context);
-	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
-	glViewport(0, 0, m_width, m_height);
+	m_dirty = true;
 
 	glDisable(GL_BLEND);
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
 
 	glUseProgram(m_shaderProgram);
-
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	SceneLightGLES2 lightData[3];
 	int lightCount = std::min(static_cast<int>(m_lights.size()), 3);
@@ -531,7 +472,6 @@ HRESULT OpenGLES2Renderer::BeginFrame()
 		glUniform4fv(glGetUniformLocation(m_shaderProgram, (base + ".direction").c_str()), 1, lightData[i].direction);
 	}
 	glUniform1i(glGetUniformLocation(m_shaderProgram, "u_lightCount"), lightCount);
-
 	return DD_OK;
 }
 
@@ -545,6 +485,8 @@ void OpenGLES2Renderer::EnableTransparency()
 void OpenGLES2Renderer::SubmitDraw(
 	DWORD meshId,
 	const D3DRMMATRIX4D& modelViewMatrix,
+	const D3DRMMATRIX4D& worldMatrix,
+	const D3DRMMATRIX4D& viewMatrix,
 	const Matrix3x3& normalMatrix,
 	const Appearance& appearance
 )
@@ -570,6 +512,8 @@ void OpenGLES2Renderer::SubmitDraw(
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, m_textures[appearance.textureId].glTextureId);
 		glUniform1i(glGetUniformLocation(m_shaderProgram, "u_texture"), 0);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	}
 	else {
 		glUniform1i(glGetUniformLocation(m_shaderProgram, "u_useTexture"), 0);
@@ -606,11 +550,168 @@ HRESULT OpenGLES2Renderer::FinalizeFrame()
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	glUseProgram(0);
 
-	glReadPixels(0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, m_renderedImage->pixels);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	// Composite onto SDL backbuffer
-	SDL_BlitSurface(m_renderedImage, nullptr, DDBackBuffer, nullptr);
-
 	return DD_OK;
+}
+
+void OpenGLES2Renderer::Resize(int width, int height, const ViewportTransform& viewportTransform)
+{
+	m_width = width;
+	m_height = height;
+	m_viewportTransform = viewportTransform;
+	SDL_DestroySurface(m_renderedImage);
+	m_renderedImage = SDL_CreateSurface(m_width, m_height, SDL_PIXELFORMAT_RGBA32);
+	glViewport(0, 0, m_width, m_height);
+}
+
+void OpenGLES2Renderer::Clear(float r, float g, float b)
+{
+	m_dirty = true;
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_TRUE);
+	glClearColor(r, g, b, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void OpenGLES2Renderer::Flip()
+{
+	if (m_dirty) {
+		SDL_GL_SwapWindow(DDWindow);
+		m_dirty = false;
+	}
+}
+
+void CreateOrthoMatrix(float left, float right, float bottom, float top, D3DRMMATRIX4D& outMatrix)
+{
+	float near = -1.0f;
+	float far = 1.0f;
+	float rl = right - left;
+	float tb = top - bottom;
+	float fn = far - near;
+
+	outMatrix[0][0] = 2.0f / rl;
+	outMatrix[0][1] = 0.0f;
+	outMatrix[0][2] = 0.0f;
+	outMatrix[0][3] = 0.0f;
+
+	outMatrix[1][0] = 0.0f;
+	outMatrix[1][1] = 2.0f / tb;
+	outMatrix[1][2] = 0.0f;
+	outMatrix[1][3] = 0.0f;
+
+	outMatrix[2][0] = 0.0f;
+	outMatrix[2][1] = 0.0f;
+	outMatrix[2][2] = -2.0f / fn;
+	outMatrix[2][3] = 0.0f;
+
+	outMatrix[3][0] = -(right + left) / rl;
+	outMatrix[3][1] = -(top + bottom) / tb;
+	outMatrix[3][2] = -(far + near) / fn;
+	outMatrix[3][3] = 1.0f;
+}
+
+void OpenGLES2Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect)
+{
+	m_dirty = true;
+
+	glDisable(GL_DEPTH_TEST);
+	glDepthMask(GL_FALSE);
+
+	glUseProgram(m_shaderProgram);
+
+	float color[] = {1.0f, 1.0f, 1.0f, 1.0f};
+	float blank[] = {0.0f, 0.0f, 0.0f, 0.0f};
+	glUniform4fv(glGetUniformLocation(m_shaderProgram, "u_lights[0].color"), 1, color);
+	glUniform4fv(glGetUniformLocation(m_shaderProgram, "u_lights[0].position"), 1, blank);
+	glUniform4fv(glGetUniformLocation(m_shaderProgram, "u_lights[0].direction"), 1, blank);
+	glUniform1i(glGetUniformLocation(m_shaderProgram, "u_lightCount"), 1);
+
+	glUniform4f(glGetUniformLocation(m_shaderProgram, "u_color"), 1.0f, 1.0f, 1.0f, 1.0f);
+	glUniform1f(glGetUniformLocation(m_shaderProgram, "u_shininess"), 0.0f);
+
+	float left = -m_viewportTransform.offsetX / m_viewportTransform.scale;
+	float right = (m_width - m_viewportTransform.offsetX) / m_viewportTransform.scale;
+	float top = -m_viewportTransform.offsetY / m_viewportTransform.scale;
+	float bottom = (m_height - m_viewportTransform.offsetY) / m_viewportTransform.scale;
+
+	D3DRMMATRIX4D projection;
+	CreateOrthoMatrix(left, right, bottom, top, projection);
+
+	D3DRMMATRIX4D identity = {{1.f, 0.f, 0.f, 0.f}, {0.f, 1.f, 0.f, 0.f}, {0.f, 0.f, 1.f, 0.f}, {0.f, 0.f, 0.f, 1.f}};
+	glUniformMatrix4fv(glGetUniformLocation(m_shaderProgram, "u_modelViewMatrix"), 1, GL_FALSE, &identity[0][0]);
+	glUniformMatrix3fv(glGetUniformLocation(m_shaderProgram, "u_normalMatrix"), 1, GL_FALSE, &identity[0][0]);
+	glUniformMatrix4fv(glGetUniformLocation(m_shaderProgram, "u_projectionMatrix"), 1, GL_FALSE, &projection[0][0]);
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	glActiveTexture(GL_TEXTURE0);
+	glUniform1i(glGetUniformLocation(m_shaderProgram, "u_useTexture"), 1);
+	const GLES2TextureCacheEntry& texture = m_textures[textureId];
+	glBindTexture(GL_TEXTURE_2D, texture.glTextureId);
+	glUniform1i(glGetUniformLocation(m_shaderProgram, "u_texture"), 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	float texW = texture.width;
+	float texH = texture.height;
+
+	float u1 = srcRect.x / texW;
+	float v1 = srcRect.y / texH;
+	float u2 = (srcRect.x + srcRect.w) / texW;
+	float v2 = (srcRect.y + srcRect.h) / texH;
+
+	float x1 = static_cast<float>(dstRect.x);
+	float y1 = static_cast<float>(dstRect.y);
+	float x2 = x1 + dstRect.w;
+	float y2 = y1 + dstRect.h;
+
+	GLfloat vertices[] = {x1, y1, u1, v1, x2, y1, u2, v1, x1, y2, u1, v2, x2, y2, u2, v2};
+
+	GLint posLoc = glGetAttribLocation(m_shaderProgram, "a_position");
+	GLint texLoc = glGetAttribLocation(m_shaderProgram, "a_texCoord");
+
+	glEnableVertexAttribArray(posLoc);
+	glEnableVertexAttribArray(texLoc);
+
+	glVertexAttribPointer(posLoc, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), vertices);
+	glVertexAttribPointer(texLoc, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), vertices + 2);
+
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+	glDisableVertexAttribArray(posLoc);
+	glDisableVertexAttribArray(texLoc);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glUseProgram(0);
+}
+
+void OpenGLES2Renderer::Download(SDL_Surface* target)
+{
+	glFinish();
+	glReadPixels(0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, m_renderedImage->pixels);
+
+	SDL_Rect srcRect = {
+		static_cast<int>(m_viewportTransform.offsetX),
+		static_cast<int>(m_viewportTransform.offsetY),
+		static_cast<int>(target->w * m_viewportTransform.scale),
+		static_cast<int>(target->h * m_viewportTransform.scale),
+	};
+
+	SDL_Surface* bufferClone = SDL_CreateSurface(target->w, target->h, SDL_PIXELFORMAT_RGBA32);
+	if (!bufferClone) {
+		SDL_Log("SDL_CreateSurface: %s", SDL_GetError());
+		return;
+	}
+
+	SDL_BlitSurfaceScaled(m_renderedImage, &srcRect, bufferClone, nullptr, SDL_SCALEMODE_NEAREST);
+
+	// Flip image vertically into target
+	SDL_Rect rowSrc = {0, 0, bufferClone->w, 1};
+	SDL_Rect rowDst = {0, 0, bufferClone->w, 1};
+	for (int y = 0; y < bufferClone->h; ++y) {
+		rowSrc.y = y;
+		rowDst.y = bufferClone->h - 1 - y;
+		SDL_BlitSurface(bufferClone, &rowSrc, target, &rowDst);
+	}
+
+	SDL_DestroySurface(bufferClone);
 }
