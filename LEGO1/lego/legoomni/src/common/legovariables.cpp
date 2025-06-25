@@ -1,6 +1,7 @@
 #include "legovariables.h"
 
 #include "3dmanager/lego3dmanager.h"
+#include "legoactor.h"
 #include "legogamestate.h"
 #include "legonavcontroller.h"
 #include "legovideomanager.h"
@@ -159,18 +160,18 @@ void WhoAmIVariable::SetValue(const char* p_value)
 	MxVariable::SetValue(p_value);
 
 	if (!SDL_strcasecmp(p_value, g_papa)) {
-		GameState()->SetActorId(3);
+		GameState()->SetActorId(LegoActor::c_papa);
 	}
 	else if (!SDL_strcasecmp(p_value, g_mama)) {
-		GameState()->SetActorId(2);
+		GameState()->SetActorId(LegoActor::c_mama);
 	}
 	else if (!SDL_strcasecmp(p_value, g_pepper)) {
-		GameState()->SetActorId(1);
+		GameState()->SetActorId(LegoActor::c_pepper);
 	}
 	else if (!SDL_strcasecmp(p_value, g_nick)) {
-		GameState()->SetActorId(4);
+		GameState()->SetActorId(LegoActor::c_nick);
 	}
 	else if (!SDL_strcasecmp(p_value, g_laura)) {
-		GameState()->SetActorId(5);
+		GameState()->SetActorId(LegoActor::c_laura);
 	}
 }

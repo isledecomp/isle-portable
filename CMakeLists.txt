@@ -43,7 +43,14 @@ option(DOWNLOAD_DEPENDENCIES "Download dependencies" ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}" CACHE PATH "Directory where to put executables and dll")
 set(ISLE_EMSCRIPTEN_HOST "" CACHE STRING "Host URL for Emscripten streaming (e.g., https://test.com)")
 cmake_dependent_option(BUILD_SHARED_LIBS "Build lego1 as a shared library" ON "NOT EMSCRIPTEN" OFF)
-set(LIBRARY_TYPE "SHARED")
+
+if(VITA)
+  set(BUILD_SHARED_LIBS OFF)
+  set(ISLE_DEBUG OFF)
+  set(CMAKE_POSITION_INDEPENDENT_CODE OFF)
+  list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/modules")
+  #set(VITA_USE_OPENGLES2 ON)
+endif()
 
 message(STATUS "Isle app:               ${ISLE_BUILD_APP}")
 message(STATUS "Config app:             ${ISLE_BUILD_CONFIG}")
@@ -52,59 +59,62 @@ message(STATUS "Internal miniwin:       ${ISLE_MINIWIN}")
 message(STATUS "Isle debugging:         ${ISLE_DEBUG}")
 message(STATUS "Compile shaders:        ${ISLE_COMPILE_SHADERS}")
 
-macro(fetch_iniparser)
-  FetchContent_Declare(
-      iniparser
-      GIT_REPOSITORY "https://gitlab.com/iniparser/iniparser.git"
-      GIT_TAG "main"
-      EXCLUDE_FROM_ALL
-  )
-  block()
-    set(BUILD_DOCS off)
-    set(BUILD_SHARED_LIBS off)
-    FetchContent_MakeAvailable(iniparser)
-  endblock()
-endmacro()
+add_library(Isle::iniparser INTERFACE IMPORTED)
 
-if(VITA)
-  set(LIBRARY_TYPE "STATIC")
-  set(CMAKE_POSITION_INDEPENDENT_CODE OFF)
-  set(ISLE_DEBUG OFF)
-  list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/modules")
-  #set(VITA_USE_OPENGLES2 ON)
-endif()
-
-if(VITA_USE_OPENGLES2)
-  include(FetchContent)
-  
-  include(cmake/modules/pvr_psp2.cmake)
-  include(cmake/modules/sdl3_pvr_psp2.cmake)
-  fetch_iniparser()
-
-elseif (DOWNLOAD_DEPENDENCIES)
+if (DOWNLOAD_DEPENDENCIES)
     # FetchContent downloads and configures dependencies
     message(STATUS "Fetching SDL3 and iniparser. This might take a while...")
     include(FetchContent)
+
+    if(VITA)
+      set(SDL_PATCH "${CMAKE_CURRENT_LIST_DIR}/cmake/modules/sdl3_vita_shaders_fix.patch")
+    endif()
+
+    if(VITA_USE_OPENGLES2)
+      include(cmake/modules/pvr_psp2.cmake)
+    endif()
+
     FetchContent_Declare(
         SDL3
         GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
         GIT_TAG "main"
         UPDATE_DISCONNECTED TRUE
         EXCLUDE_FROM_ALL
+        PATCH_COMMAND ${SDL_PATCH}
     )
-    FetchContent_MakeAvailable(SDL3)
 
-    fetch_iniparser()
+    block()
+      if(VITA_USE_OPENGLES2)
+        set(VIDEO_VITA_PVR ON)
+        get_target_property(PVR_INCLUDES GLESv2 INTERFACE_INCLUDE_DIRECTORIES)
+        list(APPEND CMAKE_REQUIRED_INCLUDES ${PVR_INCLUDES})
+      endif()
+      FetchContent_MakeAvailable(SDL3)
+      if(VITA_USE_OPENGLES2)
+        target_include_directories(SDL3-static PRIVATE ${PVR_INCLUDES})
+      endif()
+    endblock()
+
+    FetchContent_Declare(
+        iniparser
+        GIT_REPOSITORY "https://gitlab.com/iniparser/iniparser.git"
+        GIT_TAG "main"
+        EXCLUDE_FROM_ALL
+    )
+    block()
+      set(BUILD_DOCS off)
+      set(BUILD_SHARED_LIBS off)
+      FetchContent_MakeAvailable(iniparser)
+      target_link_libraries(Isle::iniparser INTERFACE iniparser-static)
+    endblock()
 else()
     # find_package looks for already-installed system packages.
     # Configure with `-DCMAKE_PREFIX_PATH="/path/to/package1;/path/to/package2"`
     # to add search paths.
     find_package(SDL3 CONFIG REQUIRED)
 
-    find_package(iniparser CONFIG COMPONENTS static)
-    if (NOT TARGET iniparser-static)
-        find_package(iniparser REQUIRED MODULE COMPONENTS static)
-    endif()
+    find_package(iniparser REQUIRED CONFIG COMPONENTS shared)
+    target_link_libraries(Isle::iniparser INTERFACE iniparser-shared)
 endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -161,6 +171,11 @@ target_link_directories(DirectX5::DirectX5 INTERFACE "${CMAKE_SOURCE_DIR}/3rdpar
 
 add_library(Vec::Vec INTERFACE IMPORTED)
 target_include_directories(Vec::Vec INTERFACE "${CMAKE_SOURCE_DIR}/3rdparty/vec")
+
+set(LIBRARY_TYPE "STATIC")
+if(BUILD_SHARED_LIBS)
+  set(LIBRARY_TYPE "SHARED")
+endif()
 
 add_library(lego1 ${LIBRARY_TYPE}
   LEGO1/main.cpp
@@ -505,7 +520,7 @@ if (ISLE_BUILD_APP)
   target_link_libraries(isle PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5>)
 
   # Link SDL and iniparser
-  target_link_libraries(isle PRIVATE SDL3::SDL3 iniparser-static)
+  target_link_libraries(isle PRIVATE SDL3::SDL3 Isle::iniparser)
 
   # Allow unconditional include of miniwin/miniwindevice.h
   target_link_libraries(isle PRIVATE miniwin-headers)
@@ -574,7 +589,7 @@ if (ISLE_BUILD_CONFIG)
     target_link_libraries(config PRIVATE DirectX5::DirectX5)
   endif()
   target_compile_definitions(config PRIVATE DIRECT3D_VERSION=0x500)
-  target_link_libraries(config PRIVATE SDL3::SDL3 iniparser-static)
+  target_link_libraries(config PRIVATE SDL3::SDL3 Isle::iniparser)
   if (NOT ISLE_MINIWIN)
     target_link_libraries(config PRIVATE ddraw dxguid)
   endif()

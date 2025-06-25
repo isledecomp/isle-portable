@@ -27,13 +27,12 @@ struct MeshCache {
 class Direct3DRMSoftwareRenderer : public Direct3DRMRenderer {
 public:
 	Direct3DRMSoftwareRenderer(DWORD width, DWORD height);
+	~Direct3DRMSoftwareRenderer() override;
 	void PushLights(const SceneLight* vertices, size_t count) override;
 	Uint32 GetTextureId(IDirect3DRMTexture* texture) override;
 	Uint32 GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup) override;
 	void SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back) override;
 	void SetFrustumPlanes(const Plane* frustumPlanes) override;
-	DWORD GetWidth() override;
-	DWORD GetHeight() override;
 	void GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc) override;
 	const char* GetName() override;
 	HRESULT BeginFrame() override;
@@ -41,10 +40,17 @@ public:
 	void SubmitDraw(
 		DWORD meshId,
 		const D3DRMMATRIX4D& modelViewMatrix,
+		const D3DRMMATRIX4D& worldMatrix,
+		const D3DRMMATRIX4D& viewMatrix,
 		const Matrix3x3& normalMatrix,
 		const Appearance& appearance
 	) override;
 	HRESULT FinalizeFrame() override;
+	void Resize(int width, int height, const ViewportTransform& viewportTransform) override;
+	void Clear(float r, float g, float b) override;
+	void Flip() override;
+	void Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect) override;
+	void Download(SDL_Surface* target) override;
 
 private:
 	void ClearZBuffer();
@@ -61,9 +67,10 @@ private:
 	void AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture);
 	void AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh);
 
-	DWORD m_width;
-	DWORD m_height;
+	SDL_Surface* m_renderedImage = nullptr;
 	SDL_Palette* m_palette;
+	SDL_Texture* m_uploadBuffer = nullptr;
+	SDL_Renderer* m_renderer;
 	const SDL_PixelFormatDetails* m_format;
 	int m_bytesPerPixel;
 	std::vector<SceneLight> m_lights;

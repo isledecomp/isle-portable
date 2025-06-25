@@ -143,7 +143,7 @@ IsleApp::IsleApp()
 	m_drawCursor = FALSE;
 	m_use3dSound = TRUE;
 	m_useMusic = TRUE;
-	m_useJoystick = FALSE;
+	m_useJoystick = TRUE;
 	m_joystickIndex = 0;
 	m_wideViewAngle = TRUE;
 	m_islandQuality = 2;
@@ -451,6 +451,7 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 #endif
 
 	switch (event->type) {
+	case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
 	case SDL_EVENT_MOUSE_MOTION:
 	case SDL_EVENT_MOUSE_BUTTON_DOWN:
 	case SDL_EVENT_MOUSE_BUTTON_UP:
@@ -715,6 +716,7 @@ MxResult IsleApp::SetupWindow()
 	SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, WINDOW_TITLE);
 #if defined(MINIWIN) && !defined(USE_GXM)
 	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
+	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 #endif
 
 	window = SDL_CreateWindowWithProperties(props);
@@ -856,6 +858,7 @@ bool IsleApp::LoadConfig()
 			return false;
 		}
 
+		char buf[32];
 		dict = iniparser_load(iniConfig);
 		iniparser_set(dict, "isle", NULL);
 
@@ -872,12 +875,11 @@ bool IsleApp::LoadConfig()
 		iniparser_set(dict, "isle:Music", m_useMusic ? "true" : "false");
 
 		iniparser_set(dict, "isle:UseJoystick", m_useJoystick ? "true" : "false");
-		iniparser_set(dict, "isle:JoystickIndex", m_joystickIndex ? "true" : "false");
+		iniparser_set(dict, "isle:JoystickIndex", SDL_itoa(m_joystickIndex, buf, 10));
 		iniparser_set(dict, "isle:Draw Cursor", m_drawCursor ? "true" : "false");
 
 		iniparser_set(dict, "isle:Back Buffers in Video RAM", "-1");
 
-		char buf[32];
 		iniparser_set(dict, "isle:Island Quality", SDL_itoa(m_islandQuality, buf, 10));
 		iniparser_set(dict, "isle:Island Texture", SDL_itoa(m_islandTexture, buf, 10));
 		SDL_snprintf(buf, sizeof(buf), "%f", m_maxLod);

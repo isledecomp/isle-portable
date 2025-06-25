@@ -188,7 +188,11 @@ void IsleDebug_Init()
 		}
 		g_videoPalette =
 			SDL_CreateTexture(g_debugRenderer, SDL_PIXELFORMAT_RGBX32, SDL_TEXTUREACCESS_STREAMING, 16, 16);
+#if SDL_VERSION_ATLEAST(3, 3, 0)
 		SDL_SetTextureScaleMode(g_videoPalette, SDL_SCALEMODE_PIXELART);
+#else
+		SDL_SetTextureScaleMode(g_videoPalette, SDL_SCALEMODE_NEAREST);
+#endif
 		if (!ImGui_ImplSDLRenderer3_Init(g_debugRenderer)) {
 			g_debugEnabled = false;
 			break;
@@ -293,9 +297,9 @@ void IsleDebug_Render()
 				ImGui::Text("Actor Name: %s", gameState->GetActorName());
 				ImGui::Text("Current act: %d", gameState->GetCurrentAct());
 				ImGui::Text("Loaded act: %d", gameState->GetLoadedAct());
-				ImGui::Text("Previous area: %d", gameState->GetPreviousArea());
-				ImGui::Text("Unknown 0x42c: %d", gameState->GetUnknown0x42c());
-				ImGui::Value("Player count", gameState->GetPlayerCount());
+				ImGui::Text("Previous area: %d", gameState->m_previousArea);
+				ImGui::Text("Unknown 0x42c: %d", gameState->m_unk0x42c);
+				ImGui::Value("Player count", gameState->m_playerCount);
 				ImGui::TreePop();
 			}
 			if (ImGui::TreeNode("Renderer")) {

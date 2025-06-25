@@ -52,7 +52,7 @@ MxResult ModelDbModel::Read(SDL_IOStream* p_file)
 	if (SDL_ReadIO(p_file, m_up, 3 * sizeof(float)) != 3 * sizeof(float)) {
 		return FAILURE;
 	}
-	if (SDL_ReadIO(p_file, &m_unk0x34, sizeof(undefined)) != sizeof(undefined)) {
+	if (SDL_ReadIO(p_file, &m_visible, sizeof(MxU8)) != sizeof(MxU8)) {
 		return FAILURE;
 	}
 

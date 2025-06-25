@@ -26,10 +26,6 @@ struct Plane {
 	float d;
 };
 
-#ifndef __vita__
-extern SDL_Renderer* DDRenderer;
-#endif
-
 class Direct3DRMRenderer : public IDirect3DDevice2 {
 public:
 	virtual void PushLights(const SceneLight* vertices, size_t count) = 0;
@@ -37,8 +33,10 @@ public:
 	virtual void SetFrustumPlanes(const Plane* frustumPlanes) = 0;
 	virtual Uint32 GetTextureId(IDirect3DRMTexture* texture) = 0;
 	virtual Uint32 GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup) = 0;
-	virtual DWORD GetWidth() = 0;
-	virtual DWORD GetHeight() = 0;
+	int GetWidth() { return m_width; }
+	int GetHeight() { return m_height; }
+	int GetVirtualWidth() { return m_virtualWidth; }
+	int GetVirtualHeight() { return m_virtualHeight; }
 	virtual void GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc) = 0;
 	virtual const char* GetName() = 0;
 	virtual HRESULT BeginFrame() = 0;
@@ -46,14 +44,20 @@ public:
 	virtual void SubmitDraw(
 		DWORD meshId,
 		const D3DRMMATRIX4D& modelViewMatrix,
+		const D3DRMMATRIX4D& worldMatrix,
+		const D3DRMMATRIX4D& viewMatrix,
 		const Matrix3x3& normalMatrix,
 		const Appearance& appearance
 	) = 0;
 	virtual HRESULT FinalizeFrame() = 0;
+	virtual void Resize(int width, int height, const ViewportTransform& viewportTransform) = 0;
+	virtual void Clear(float r, float g, float b) = 0;
+	virtual void Flip() = 0;
+	virtual void Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect) = 0;
+	virtual void Download(SDL_Surface* target) = 0;
 
-	bool ConvertEventToRenderCoordinates(SDL_Event* event)
-	{
-		//return SDL_ConvertEventToRenderCoordinates(DDRenderer, event);
-		return true;
-	}
+protected:
+	int m_width, m_height;
+	int m_virtualWidth, m_virtualHeight;
+	ViewportTransform m_viewportTransform;
 };

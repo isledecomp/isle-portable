@@ -20,14 +20,18 @@ Direct3DRMRenderer* DirectX9Renderer::Create(DWORD width, DWORD height)
 	return new DirectX9Renderer(width, height);
 }
 
-DirectX9Renderer::DirectX9Renderer(DWORD width, DWORD height) : m_width(width), m_height(height)
+DirectX9Renderer::DirectX9Renderer(DWORD width, DWORD height)
 {
+	m_width = width;
+	m_height = height;
+	m_virtualWidth = width;
+	m_virtualHeight = height;
 	Actual_Initialize(
 		SDL_GetPointerProperty(SDL_GetWindowProperties(DDWindow), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL),
 		width,
 		height
 	);
-	m_renderedImage = SDL_CreateSurface(m_width, m_height, SDL_PIXELFORMAT_ARGB8888);
+	m_renderedImage = SDL_CreateSurface(m_width, m_height, SDL_PIXELFORMAT_RGBA32);
 }
 
 DirectX9Renderer::~DirectX9Renderer()
@@ -212,16 +216,6 @@ Uint32 DirectX9Renderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshG
 	return static_cast<Uint32>(m_meshs.size() - 1);
 }
 
-DWORD DirectX9Renderer::GetWidth()
-{
-	return m_width;
-}
-
-DWORD DirectX9Renderer::GetHeight()
-{
-	return m_height;
-}
-
 void DirectX9Renderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc)
 {
 	halDesc->dcmColorModel = D3DCOLORMODEL::RGB;
@@ -253,6 +247,8 @@ void DirectX9Renderer::EnableTransparency()
 void DirectX9Renderer::SubmitDraw(
 	DWORD meshId,
 	const D3DRMMATRIX4D& modelViewMatrix,
+	const D3DRMMATRIX4D& worldMatrix,
+	const D3DRMMATRIX4D& viewMatrix,
 	const Matrix3x3& normalMatrix,
 	const Appearance& appearance
 )
@@ -261,17 +257,46 @@ void DirectX9Renderer::SubmitDraw(
 	if (appearance.textureId != NO_TEXTURE_ID) {
 		texture = m_textures[appearance.textureId].dxTexture;
 	}
-	Actual_SubmitDraw(&m_meshs[meshId], &modelViewMatrix, &normalMatrix, &appearance, texture);
+	Actual_SubmitDraw(
+		&m_meshs[meshId],
+		&modelViewMatrix,
+		&worldMatrix,
+		&viewMatrix,
+		&normalMatrix,
+		&appearance,
+		texture
+	);
 }
 
 HRESULT DirectX9Renderer::FinalizeFrame()
 {
-	HRESULT hr = Actual_FinalizeFrame(m_renderedImage->pixels, m_renderedImage->pitch);
-	if (hr != DD_OK) {
-		return hr;
-	}
+	return DD_OK;
+}
 
-	// Composite onto SDL backbuffer
-	SDL_BlitSurface(m_renderedImage, nullptr, DDBackBuffer, nullptr);
-	return hr;
+void DirectX9Renderer::Resize(int width, int height, const ViewportTransform& viewportTransform)
+{
+	m_width = width;
+	m_height = height;
+	m_viewportTransform = viewportTransform;
+	Actual_Resize(width, height, viewportTransform);
+}
+
+void DirectX9Renderer::Clear(float r, float g, float b)
+{
+	Actual_Clear(r, g, b);
+}
+
+void DirectX9Renderer::Flip()
+{
+	Actual_Flip();
+}
+
+void DirectX9Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect)
+{
+	Actual_Draw2DImage(m_textures[textureId].dxTexture, srcRect, dstRect);
+}
+
+void DirectX9Renderer::Download(SDL_Surface* target)
+{
+	Actual_Download(target);
 }

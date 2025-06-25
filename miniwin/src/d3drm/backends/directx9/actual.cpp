@@ -11,19 +11,22 @@
 static LPDIRECT3D9 g_d3d;
 static LPDIRECT3DDEVICE9 g_device;
 static HWND g_hwnd;
-static LPDIRECT3DTEXTURE9 g_renderTargetTex;
-static LPDIRECT3DSURFACE9 g_renderTargetSurf;
-static LPDIRECT3DSURFACE9 g_oldRenderTarget;
-static int m_width;
-static int m_height;
-static std::vector<BridgeSceneLight> m_lights;
-static Matrix4x4 m_projection;
+static int g_width;
+static int g_height;
+static int g_virtualWidth;
+static int g_virtualHeight;
+static bool g_hasScene = false;
+static std::vector<BridgeSceneLight> g_lights;
+static Matrix4x4 g_projection;
+static ViewportTransform g_viewportTransform;
 
 bool Actual_Initialize(void* hwnd, int width, int height)
 {
 	g_hwnd = (HWND) hwnd;
-	m_width = width;
-	m_height = height;
+	g_width = width;
+	g_height = height;
+	g_virtualWidth = width;
+	g_virtualHeight = height;
 	g_d3d = Direct3DCreate9(D3D_SDK_VERSION);
 	if (!g_d3d) {
 		return false;
@@ -52,45 +55,17 @@ bool Actual_Initialize(void* hwnd, int width, int height)
 		return false;
 	}
 
-	hr = g_device->CreateTexture(
-		width,
-		height,
-		1,
-		D3DUSAGE_RENDERTARGET,
-		D3DFMT_A8R8G8B8,
-		D3DPOOL_DEFAULT,
-		&g_renderTargetTex,
-		nullptr
-	);
 	if (FAILED(hr)) {
 		g_device->Release();
 		g_d3d->Release();
 		return false;
 	}
-
-	hr = g_renderTargetTex->GetSurfaceLevel(0, &g_renderTargetSurf);
-	if (FAILED(hr)) {
-		g_renderTargetTex->Release();
-		g_device->Release();
-		g_d3d->Release();
-		return false;
-	}
-
-	g_device->SetFVF(D3DFVF_XYZ | D3DFVF_NORMAL | D3DFVF_TEX1);
 
 	return true;
 }
 
 void Actual_Shutdown()
 {
-	if (g_renderTargetSurf) {
-		g_renderTargetSurf->Release();
-		g_renderTargetSurf = nullptr;
-	}
-	if (g_renderTargetTex) {
-		g_renderTargetTex->Release();
-		g_renderTargetTex = nullptr;
-	}
 	if (g_device) {
 		g_device->Release();
 		g_device = nullptr;
@@ -103,12 +78,12 @@ void Actual_Shutdown()
 
 void Actual_PushLights(const BridgeSceneLight* lightsArray, size_t count)
 {
-	m_lights.assign(lightsArray, lightsArray + count);
+	g_lights.assign(lightsArray, lightsArray + count);
 }
 
 void Actual_SetProjection(const Matrix4x4* projection, float front, float back)
 {
-	memcpy(&m_projection, projection, sizeof(Matrix4x4));
+	memcpy(&g_projection, projection, sizeof(Matrix4x4));
 }
 
 IDirect3DTexture9* UploadSurfaceToD3DTexture(SDL_Surface* surface)
@@ -188,18 +163,71 @@ void UploadMeshBuffers(
 	cache.ibo->Unlock();
 }
 
-constexpr float PI = 3.14159265358979323846f;
-
-void SetupLights()
+void Actual_Resize(int width, int height, const ViewportTransform& viewportTransform)
 {
+	g_width = width;
+	g_height = height;
+	g_viewportTransform = viewportTransform;
+
+	D3DPRESENT_PARAMETERS pp = {};
+	pp.Windowed = TRUE;
+	pp.SwapEffect = D3DSWAPEFFECT_DISCARD;
+	pp.hDeviceWindow = g_hwnd;
+	pp.BackBufferFormat = D3DFMT_A8R8G8B8;
+	pp.BackBufferWidth = width;
+	pp.BackBufferHeight = height;
+	pp.EnableAutoDepthStencil = TRUE;
+	pp.AutoDepthStencilFormat = D3DFMT_D24S8;
+	g_device->Reset(&pp);
+}
+
+void StartScene()
+{
+	if (g_hasScene) {
+		return;
+	}
+	g_device->BeginScene();
+	g_hasScene = true;
+}
+
+void Actual_Clear(float r, float g, float b)
+{
+	StartScene();
+
+	g_device->Clear(
+		0,
+		nullptr,
+		D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER,
+		D3DCOLOR_ARGB(255, static_cast<int>(r * 255), static_cast<int>(g * 255), static_cast<int>(b * 255)),
+		1.0f,
+		0
+	);
+}
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+uint32_t Actual_BeginFrame()
+{
+	StartScene();
+
 	g_device->SetRenderState(D3DRS_LIGHTING, TRUE);
+
+	g_device->SetRenderState(D3DRS_ZENABLE, D3DZB_TRUE);
+	g_device->SetRenderState(D3DRS_ZWRITEENABLE, TRUE);
+	g_device->SetRenderState(D3DRS_ZFUNC, D3DCMP_LESSEQUAL);
+
+	g_device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+	g_device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+	g_device->SetSamplerState(0, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
 
 	for (DWORD i = 0; i < 8; ++i) {
 		g_device->LightEnable(i, FALSE);
 	}
 
 	DWORD lightIdx = 0;
-	for (const auto& l : m_lights) {
+	for (const auto& l : g_lights) {
 		if (lightIdx >= 8) {
 			break;
 		}
@@ -235,30 +263,16 @@ void SetupLights()
 		}
 
 		light.Falloff = 1.0f;
-		light.Phi = PI;
-		light.Theta = PI / 2;
+		light.Phi = M_PI;
+		light.Theta = M_PI / 2;
 
 		if (SUCCEEDED(g_device->SetLight(lightIdx, &light))) {
 			g_device->LightEnable(lightIdx, TRUE);
 		}
 		++lightIdx;
 	}
-}
 
-uint32_t Actual_BeginFrame()
-{
-	g_device->GetRenderTarget(0, &g_oldRenderTarget);
-	g_device->SetRenderTarget(0, g_renderTargetSurf);
-
-	g_device->Clear(0, nullptr, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, D3DCOLOR_ARGB(0, 0, 0, 0), 1.0f, 0);
-
-	g_device->SetRenderState(D3DRS_ZENABLE, D3DZB_TRUE);
-	g_device->SetRenderState(D3DRS_ZWRITEENABLE, TRUE);
-	g_device->SetRenderState(D3DRS_ZFUNC, D3DCMP_LESSEQUAL);
-
-	g_device->BeginScene();
-
-	SetupLights();
+	g_device->SetFVF(D3DFVF_XYZ | D3DFVF_NORMAL | D3DFVF_TEX1);
 
 	return D3D_OK;
 }
@@ -286,15 +300,19 @@ D3DMATRIX ToD3DMATRIX(const Matrix4x4& in)
 void Actual_SubmitDraw(
 	const D3D9MeshCacheEntry* mesh,
 	const Matrix4x4* modelViewMatrix,
+	const Matrix4x4* worldMatrix,
+	const Matrix4x4* viewMatrix,
 	const Matrix3x3* normalMatrix,
 	const Appearance* appearance,
 	IDirect3DTexture9* texture
 )
 {
-	D3DMATRIX worldView = ToD3DMATRIX(*modelViewMatrix);
-	g_device->SetTransform(D3DTS_WORLD, &worldView);
-	D3DMATRIX proj = ToD3DMATRIX(m_projection);
+	D3DMATRIX proj = ToD3DMATRIX(g_projection);
 	g_device->SetTransform(D3DTS_PROJECTION, &proj);
+	D3DMATRIX view = ToD3DMATRIX(*viewMatrix);
+	g_device->SetTransform(D3DTS_VIEW, &view);
+	D3DMATRIX world = ToD3DMATRIX(*worldMatrix);
+	g_device->SetTransform(D3DTS_WORLD, &world);
 
 	D3DMATERIAL9 mat = {};
 	mat.Diffuse.r = appearance->color.r / 255.0f;
@@ -342,44 +360,149 @@ void Actual_SubmitDraw(
 	g_device->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, mesh->vertexCount, 0, mesh->indexCount / 3);
 }
 
-uint32_t Actual_FinalizeFrame(void* pixels, int pitch)
+uint32_t Actual_Flip()
 {
 	g_device->EndScene();
+	g_hasScene = false;
+	return g_device->Present(nullptr, nullptr, nullptr, nullptr);
+}
 
-	g_device->SetRenderTarget(0, g_oldRenderTarget);
-	g_oldRenderTarget->Release();
+void Actual_Draw2DImage(IDirect3DTexture9* texture, const SDL_Rect& srcRect, const SDL_Rect& dstRect)
+{
+	StartScene();
 
-	LPDIRECT3DSURFACE9 sysMemSurf;
-	HRESULT hr =
-		g_device
-			->CreateOffscreenPlainSurface(m_width, m_height, D3DFMT_A8R8G8B8, D3DPOOL_SYSTEMMEM, &sysMemSurf, nullptr);
+	float left = -g_viewportTransform.offsetX / g_viewportTransform.scale;
+	float right = (g_width - g_viewportTransform.offsetX) / g_viewportTransform.scale;
+	float top = -g_viewportTransform.offsetY / g_viewportTransform.scale;
+	float bottom = (g_height - g_viewportTransform.offsetY) / g_viewportTransform.scale;
+
+	auto virtualToScreenX = [&](float x) { return ((x - left) / (right - left)) * g_width; };
+	auto virtualToScreenY = [&](float y) { return ((y - top) / (bottom - top)) * g_height; };
+
+	float x1_virtual = static_cast<float>(dstRect.x);
+	float y1_virtual = static_cast<float>(dstRect.y);
+	float x2_virtual = x1_virtual + dstRect.w;
+	float y2_virtual = y1_virtual + dstRect.h;
+
+	float x1 = virtualToScreenX(x1_virtual);
+	float y1 = virtualToScreenY(y1_virtual);
+	float x2 = virtualToScreenX(x2_virtual);
+	float y2 = virtualToScreenY(y2_virtual);
+
+	D3DMATRIX identity =
+		{1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+	g_device->SetTransform(D3DTS_PROJECTION, &identity);
+	g_device->SetTransform(D3DTS_VIEW, &identity);
+	g_device->SetTransform(D3DTS_WORLD, &identity);
+
+	g_device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+	g_device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+
+	g_device->SetRenderState(D3DRS_ZENABLE, FALSE);
+	g_device->SetRenderState(D3DRS_ZWRITEENABLE, FALSE);
+	g_device->SetRenderState(D3DRS_LIGHTING, FALSE);
+	g_device->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+	g_device->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
+	g_device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+
+	g_device->SetTexture(0, texture);
+	g_device->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
+	g_device->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+	g_device->SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+
+	D3DSURFACE_DESC texDesc;
+	texture->GetLevelDesc(0, &texDesc);
+	float texW = static_cast<float>(texDesc.Width);
+	float texH = static_cast<float>(texDesc.Height);
+
+	float u1 = static_cast<float>(srcRect.x) / texW;
+	float v1 = static_cast<float>(srcRect.y) / texH;
+	float u2 = static_cast<float>(srcRect.x + srcRect.w) / texW;
+	float v2 = static_cast<float>(srcRect.y + srcRect.h) / texH;
+
+	struct Vertex {
+		float x, y, z, rhw;
+		float u, v;
+	};
+
+	Vertex quad[4] = {
+		{x1, y1, 0.0f, 1.0f, u1, v1},
+		{x2, y1, 0.0f, 1.0f, u2, v1},
+		{x2, y2, 0.0f, 1.0f, u2, v2},
+		{x1, y2, 0.0f, 1.0f, u1, v2},
+	};
+
+	g_device->SetFVF(D3DFVF_XYZRHW | D3DFVF_TEX1);
+	g_device->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, quad, sizeof(Vertex));
+}
+
+uint32_t Actual_Download(SDL_Surface* target)
+{
+	IDirect3DSurface9* backBuffer;
+	HRESULT hr = g_device->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &backBuffer);
 	if (FAILED(hr)) {
 		return hr;
 	}
 
-	hr = g_device->GetRenderTargetData(g_renderTargetSurf, sysMemSurf);
+	IDirect3DSurface9* sysMemSurface;
+	hr = g_device->CreateOffscreenPlainSurface(
+		g_width,
+		g_height,
+		D3DFMT_A8R8G8B8,
+		D3DPOOL_SYSTEMMEM,
+		&sysMemSurface,
+		nullptr
+	);
 	if (FAILED(hr)) {
-		sysMemSurf->Release();
+		backBuffer->Release();
 		return hr;
 	}
 
-	D3DLOCKED_RECT lockedRect;
-	hr = sysMemSurf->LockRect(&lockedRect, nullptr, D3DLOCK_READONLY);
+	hr = g_device->GetRenderTargetData(backBuffer, sysMemSurface);
+	backBuffer->Release();
 	if (FAILED(hr)) {
-		sysMemSurf->Release();
+		sysMemSurface->Release();
 		return hr;
 	}
 
-	BYTE* src = static_cast<BYTE*>(lockedRect.pBits);
-	BYTE* dst = static_cast<BYTE*>(pixels);
-	int copyWidth = m_width * 4;
-
-	for (int y = 0; y < m_height; y++) {
-		memcpy(dst + y * pitch, src + y * lockedRect.Pitch, copyWidth);
+	D3DLOCKED_RECT locked;
+	hr = sysMemSurface->LockRect(&locked, nullptr, D3DLOCK_READONLY);
+	if (FAILED(hr)) {
+		sysMemSurface->Release();
+		return hr;
 	}
 
-	sysMemSurf->UnlockRect();
-	sysMemSurf->Release();
+	SDL_Surface* srcSurface =
+		SDL_CreateSurfaceFrom(g_width, g_height, SDL_PIXELFORMAT_ARGB8888, locked.pBits, locked.Pitch);
+	if (!srcSurface) {
+		sysMemSurface->UnlockRect();
+		sysMemSurface->Release();
+		return E_FAIL;
+	}
 
-	return hr;
+	float srcAspect = static_cast<float>(g_width) / g_height;
+	float dstAspect = static_cast<float>(target->w) / target->h;
+
+	SDL_Rect srcRect;
+	if (srcAspect > dstAspect) {
+		int cropWidth = static_cast<int>(g_height * dstAspect);
+		srcRect = {(g_width - cropWidth) / 2, 0, cropWidth, g_height};
+	}
+	else {
+		int cropHeight = static_cast<int>(g_width / dstAspect);
+		srcRect = {0, (g_height - cropHeight) / 2, g_width, cropHeight};
+	}
+
+	if (SDL_BlitSurfaceScaled(srcSurface, &srcRect, target, nullptr, SDL_SCALEMODE_NEAREST)) {
+		SDL_DestroySurface(srcSurface);
+		sysMemSurface->UnlockRect();
+		sysMemSurface->Release();
+		return E_FAIL;
+	}
+
+	SDL_DestroySurface(srcSurface);
+	sysMemSurface->UnlockRect();
+	sysMemSurface->Release();
+
+	return D3D_OK;
 }
