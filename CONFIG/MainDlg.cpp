@@ -173,17 +173,12 @@ void CMainDialog::launch()
 		QMessageBox::Close
 	);
 
-#ifdef _WIN32
-	if (!QProcess::startDetached("./isle.exe")) {
-		msgBox.exec();
-	}
-#else
 	if (!QProcess::startDetached("./isle")) {   // Check in isle-config directory
 		if (!QProcess::startDetached("isle")) { // Check in $PATH
 			msgBox.exec();
 		}
 	}
-#endif
+
 	QDialog::accept();
 }
 
