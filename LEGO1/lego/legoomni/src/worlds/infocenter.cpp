@@ -309,29 +309,32 @@ MxLong Infocenter::HandleEndAction(MxEndActionNotificationParam& p_param)
 
 		if (!m_unk0x1d4) {
 			PlayMusic(JukeboxScript::c_InformationCenter_Music);
-			GameState()->SetActor(m_selectedCharacter);
 
-			switch (m_selectedCharacter) {
-			case e_pepper:
-				PlayAction(InfomainScript::c_avo901in_RunAnim);
-				break;
-			case e_mama:
-				PlayAction(InfomainScript::c_avo902in_RunAnim);
-				break;
-			case e_papa:
-				PlayAction(InfomainScript::c_avo903in_RunAnim);
-				break;
-			case e_nick:
-				PlayAction(InfomainScript::c_avo904in_RunAnim);
-				break;
-			case e_laura:
-				PlayAction(InfomainScript::c_avo905in_RunAnim);
-				break;
-			default:
-				break;
+			if (!Lego()->IsVersion10()) {
+				GameState()->SetActor(m_selectedCharacter);
+
+				switch (m_selectedCharacter) {
+				case e_pepper:
+					PlayAction(InfomainScript::c_avo901in_RunAnim);
+					break;
+				case e_mama:
+					PlayAction(InfomainScript::c_avo902in_RunAnim);
+					break;
+				case e_papa:
+					PlayAction(InfomainScript::c_avo903in_RunAnim);
+					break;
+				case e_nick:
+					PlayAction(InfomainScript::c_avo904in_RunAnim);
+					break;
+				case e_laura:
+					PlayAction(InfomainScript::c_avo905in_RunAnim);
+					break;
+				default:
+					break;
+				}
+
+				UpdateFrameHot(TRUE);
 			}
-
-			UpdateFrameHot(TRUE);
 		}
 	}
 
