@@ -163,20 +163,23 @@ void CMainDialog::launch()
 	if (m_modified) {
 		currentConfigApp->WriteRegisterSettings();
 	}
+
 	QDir::setCurrent(QCoreApplication::applicationDirPath());
+
+	QMessageBox msgBox = QMessageBox(
+		QMessageBox::Warning,
+		QString("Error!"),
+		QString("Unable to locate isle executable!"),
+		QMessageBox::Close
+	);
+
 #ifdef _WIN32
 	if (!QProcess::startDetached("./isle.exe")) {
-		QMessageBox msgBox;
-		msgBox.setText("Unable to locate isle executable!");
-		msgBox.setWindowTitle("Error");
 		msgBox.exec();
 	}
 #else
 	if (!QProcess::startDetached("./isle")) {   // Check in isle-config directory
 		if (!QProcess::startDetached("isle")) { // Check in $PATH
-			QMessageBox msgBox;
-			msgBox.setText("Unable to locate isle executable!");
-			msgBox.setWindowTitle("Error");
 			msgBox.exec();
 		}
 	}
