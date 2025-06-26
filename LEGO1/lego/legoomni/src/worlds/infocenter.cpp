@@ -149,7 +149,6 @@ Infocenter::Infocenter()
 	m_bookAnimationTimer = 0;
 	m_unk0x1d4 = 0;
 	m_unk0x1d6 = 0;
-	m_is10 = FALSE;
 }
 
 // FUNCTION: LEGO1 0x1006ec80
