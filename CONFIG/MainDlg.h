@@ -45,6 +45,7 @@ private slots:
 	void OnCheckboxFullscreen(bool checked);
 	void accept() override;
 	void reject() override;
+	void launch();
 	void SelectDataPathDialog();
 	void SelectSavePathDialog();
 	void DataPathEdited();
