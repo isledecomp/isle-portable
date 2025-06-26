@@ -3,6 +3,7 @@
 #include "d3drmrenderer.h"
 #include "d3drmtexture_impl.h"
 #include "ddraw_impl.h"
+#include "ddpalette_impl.h"
 
 #include <SDL3/SDL.h>
 #include <vector>
@@ -35,6 +36,19 @@ struct GXMMeshCacheEntry {
 typedef struct GXMDisplayData {
 	void* address;
 } GXMDisplayData;
+
+struct SceneLightGXM {
+	float color[4];
+	float position[4];
+	float direction[4];
+};
+
+typedef struct Vertex {
+	float position[3];
+    float normal[3];
+    float texCoord[2];
+} Vertex;
+
 
 typedef struct GXMRendererContext {
 	// context
@@ -88,8 +102,6 @@ typedef struct GXMRendererData {
 	SceGxmDepthStencilSurface depthSurface;
 
 	// clear shader
-	SceGxmShaderPatcherId clearVertexProgramId;
-	SceGxmVertexProgram* clearVertexProgram;
 	SceGxmShaderPatcherId clearFragmentProgramId;
 	SceGxmFragmentProgram* clearFragmentProgram;
 
@@ -116,13 +128,13 @@ typedef struct GXMRendererData {
 
 	const SceGxmProgramParameter* clearShader_uColor;
 
-	// clear mesh
-	void* clearMeshBuffer;
-	float* clearVerticies;
-	uint16_t* clearIndicies;
-
 	// scene light data
 	void* lightDataBuffer;
+
+	void* quadMeshBuffer;
+	uint16_t* quadIndices;
+	Vertex* quadVertices;
+
 } GXMRendererData;
 
 class GXMRenderer : public Direct3DRMRenderer {
@@ -167,6 +179,7 @@ private:
 	GXMMeshCacheEntry GXMUploadMesh(const MeshGroup& meshGroup);
 
 	void StartScene();
+	Vertex* GetQuadVertices();
 
 	std::vector<GXMTextureCacheEntry> m_textures;
 	std::vector<GXMMeshCacheEntry> m_meshes;

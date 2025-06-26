@@ -15,6 +15,8 @@
 
 #define ALIGN(x, a) (((x) + ((a)-1)) & ~((a)-1))
 
+#define ALIGNMENT(n, a) (((a) - ((n) % (a))) % (a))
+
 
 #define SET_UNIFORM(buffer, param, value, program) \
     do { \
