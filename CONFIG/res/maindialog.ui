@@ -508,6 +508,9 @@
          </property>
          <item>
           <widget class="QPushButton" name="okButton">
+           <property name="toolTip">
+            <string>Save configuration and close the config tool.</string>
+           </property>
            <property name="text">
             <string>Save and Exit</string>
            </property>
@@ -518,6 +521,9 @@
          </item>
          <item>
           <widget class="QPushButton" name="launchButton">
+           <property name="toolTip">
+            <string>Save configuration and launch LEGO Island.</string>
+           </property>
            <property name="text">
             <string>Launch Game</string>
            </property>
@@ -525,6 +531,9 @@
          </item>
          <item>
           <widget class="QPushButton" name="cancelButton">
+           <property name="toolTip">
+            <string>Discard changed settings and close the config tool.</string>
+           </property>
            <property name="text">
             <string>Exit without saving</string>
            </property>
