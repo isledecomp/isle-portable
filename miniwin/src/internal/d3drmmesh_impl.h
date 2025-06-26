@@ -10,7 +10,7 @@ struct MeshGroup {
 	IDirect3DRMTexture* texture = nullptr;
 	IDirect3DRMMaterial* material = nullptr;
 	D3DRMRENDERQUALITY quality = D3DRMRENDER_GOURAUD;
-	int vertexPerFace = 0;
+	int vertexPerFace = 3;
 	int version = 0;
 	std::vector<D3DRMVERTEX> vertices;
 	std::vector<DWORD> indices;
@@ -67,8 +67,13 @@ struct MeshGroup {
 struct Direct3DRMMeshImpl : public Direct3DRMObjectBaseImpl<IDirect3DRMMesh> {
 	HRESULT QueryInterface(const GUID& riid, void** ppvObject) override;
 	HRESULT Clone(int flags, GUID iid, void** object) override;
-	HRESULT AddGroup(int vertexCount, int faceCount, int vertexPerFace, DWORD* faceBuffer, D3DRMGROUPINDEX* groupIndex)
-		override;
+	HRESULT AddGroup(
+		unsigned int vertexCount,
+		unsigned int faceCount,
+		unsigned int vertexPerFace,
+		unsigned int* faceBuffer,
+		D3DRMGROUPINDEX* groupIndex
+	) override;
 	HRESULT GetGroup(
 		D3DRMGROUPINDEX groupIndex,
 		unsigned int* vertexCount,

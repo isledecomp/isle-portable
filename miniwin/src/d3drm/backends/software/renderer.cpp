@@ -23,9 +23,22 @@
 #include <wasm_simd128.h>
 #endif
 
-Direct3DRMSoftwareRenderer::Direct3DRMSoftwareRenderer(DWORD width, DWORD height) : m_width(width), m_height(height)
+Direct3DRMSoftwareRenderer::Direct3DRMSoftwareRenderer(DWORD width, DWORD height)
 {
-	m_zBuffer.resize(m_width * m_height);
+	m_virtualWidth = width;
+	m_virtualHeight = height;
+
+	m_renderer = SDL_CreateRenderer(DDWindow, NULL);
+
+	ViewportTransform viewportTransform = {1.0f, 0.0f, 0.0f};
+	Resize(width, height, viewportTransform);
+}
+
+Direct3DRMSoftwareRenderer::~Direct3DRMSoftwareRenderer()
+{
+	SDL_DestroySurface(m_renderedImage);
+	SDL_DestroyTexture(m_uploadBuffer);
+	SDL_DestroyRenderer(m_renderer);
 }
 
 void Direct3DRMSoftwareRenderer::PushLights(const SceneLight* lights, size_t count)
@@ -354,8 +367,8 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 		c2 = ApplyLighting(v2.position, v2.normal, appearance);
 	}
 
-	Uint8* pixels = (Uint8*) DDBackBuffer->pixels;
-	int pitch = DDBackBuffer->pitch;
+	Uint8* pixels = (Uint8*) m_renderedImage->pixels;
+	int pitch = m_renderedImage->pitch;
 
 	VertexXY verts[3] = {
 		{p0.x, p0.y, p0.z, p0.w, c0, v0.texCoord.u, v0.texCoord.v},
@@ -553,7 +566,7 @@ Uint32 Direct3DRMSoftwareRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 			if (texRef.version != texture->m_version) {
 				// Update animated textures
 				SDL_DestroySurface(texRef.cached);
-				texRef.cached = SDL_ConvertSurface(surface->m_surface, DDBackBuffer->format);
+				texRef.cached = SDL_ConvertSurface(surface->m_surface, m_renderedImage->format);
 				SDL_LockSurface(texRef.cached);
 				texRef.version = texture->m_version;
 			}
@@ -561,7 +574,7 @@ Uint32 Direct3DRMSoftwareRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 		}
 	}
 
-	SDL_Surface* convertedRender = SDL_ConvertSurface(surface->m_surface, DDBackBuffer->format);
+	SDL_Surface* convertedRender = SDL_ConvertSurface(surface->m_surface, m_renderedImage->format);
 	SDL_LockSurface(convertedRender);
 
 	// Reuse freed slot
@@ -651,16 +664,6 @@ Uint32 Direct3DRMSoftwareRenderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGr
 	return (Uint32) (m_meshs.size() - 1);
 }
 
-DWORD Direct3DRMSoftwareRenderer::GetWidth()
-{
-	return m_width;
-}
-
-DWORD Direct3DRMSoftwareRenderer::GetHeight()
-{
-	return m_height;
-}
-
 void Direct3DRMSoftwareRenderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc)
 {
 	memset(halDesc, 0, sizeof(D3DDEVICEDESC));
@@ -681,13 +684,13 @@ const char* Direct3DRMSoftwareRenderer::GetName()
 
 HRESULT Direct3DRMSoftwareRenderer::BeginFrame()
 {
-	if (!DDBackBuffer || !SDL_LockSurface(DDBackBuffer)) {
+	if (!m_renderedImage || !SDL_LockSurface(m_renderedImage)) {
 		return DDERR_GENERIC;
 	}
 	ClearZBuffer();
 
-	m_format = SDL_GetPixelFormatDetails(DDBackBuffer->format);
-	m_palette = SDL_GetSurfacePalette(DDBackBuffer);
+	m_format = SDL_GetPixelFormatDetails(m_renderedImage->format);
+	m_palette = SDL_GetSurfacePalette(m_renderedImage);
 	m_bytesPerPixel = m_format->bits_per_pixel / 8;
 
 	return DD_OK;
@@ -700,6 +703,8 @@ void Direct3DRMSoftwareRenderer::EnableTransparency()
 void Direct3DRMSoftwareRenderer::SubmitDraw(
 	DWORD meshId,
 	const D3DRMMATRIX4D& modelViewMatrix,
+	const D3DRMMATRIX4D& worldMatrix,
+	const D3DRMMATRIX4D& viewMatrix,
 	const Matrix3x3& normalMatrix,
 	const Appearance& appearance
 )
@@ -731,7 +736,84 @@ void Direct3DRMSoftwareRenderer::SubmitDraw(
 
 HRESULT Direct3DRMSoftwareRenderer::FinalizeFrame()
 {
-	SDL_UnlockSurface(DDBackBuffer);
+	SDL_UnlockSurface(m_renderedImage);
 
 	return DD_OK;
+}
+
+void Direct3DRMSoftwareRenderer::Resize(int width, int height, const ViewportTransform& viewportTransform)
+{
+	m_viewportTransform = viewportTransform;
+	float aspect = static_cast<float>(width) / height;
+	float virtualAspect = static_cast<float>(m_virtualWidth) / m_virtualHeight;
+
+	// Cap to virtual canvase for performance
+	if (aspect > virtualAspect) {
+		m_height = std::min(height, m_virtualHeight);
+		m_width = static_cast<int>(m_height * aspect);
+	}
+	else {
+		m_width = std::min(width, m_virtualWidth);
+		m_height = static_cast<int>(m_width / aspect);
+	}
+
+	m_viewportTransform.scale =
+		std::min(static_cast<float>(m_width) / m_virtualWidth, static_cast<float>(m_height) / m_virtualHeight);
+
+	m_viewportTransform.offsetX = (m_width - (m_virtualWidth * m_viewportTransform.scale)) / 2.0f;
+	m_viewportTransform.offsetY = (m_height - (m_virtualHeight * m_viewportTransform.scale)) / 2.0f;
+
+	if (m_renderedImage) {
+		SDL_DestroySurface(m_renderedImage);
+	}
+	m_renderedImage = SDL_CreateSurface(m_width, m_height, SDL_PIXELFORMAT_RGBA32);
+
+	if (m_uploadBuffer) {
+		SDL_DestroyTexture(m_uploadBuffer);
+	}
+	m_uploadBuffer =
+		SDL_CreateTexture(m_renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, m_width, m_height);
+
+	m_zBuffer.resize(m_width * m_height);
+}
+
+void Direct3DRMSoftwareRenderer::Clear(float r, float g, float b)
+{
+	SDL_Rect rect = {0, 0, m_renderedImage->w, m_renderedImage->h};
+	const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(m_renderedImage->format);
+	Uint32 color = SDL_MapRGB(details, m_palette, r * 255, g * 255, b * 255);
+	SDL_FillSurfaceRect(m_renderedImage, &rect, color);
+}
+
+void Direct3DRMSoftwareRenderer::Flip()
+{
+	SDL_UpdateTexture(m_uploadBuffer, nullptr, m_renderedImage->pixels, m_renderedImage->pitch);
+	SDL_RenderTexture(m_renderer, m_uploadBuffer, nullptr, nullptr);
+	SDL_RenderPresent(m_renderer);
+}
+
+void Direct3DRMSoftwareRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect)
+{
+	SDL_Surface* surface = m_textures[textureId].cached;
+	SDL_UnlockSurface(surface);
+	SDL_Rect centeredRect = {
+		static_cast<int>(dstRect.x * m_viewportTransform.scale + m_viewportTransform.offsetX),
+		static_cast<int>(dstRect.y * m_viewportTransform.scale + m_viewportTransform.offsetY),
+		static_cast<int>(dstRect.w * m_viewportTransform.scale),
+		static_cast<int>(dstRect.h * m_viewportTransform.scale),
+	};
+	SDL_BlitSurfaceScaled(surface, &srcRect, m_renderedImage, &centeredRect, SDL_SCALEMODE_LINEAR);
+	SDL_LockSurface(surface);
+}
+
+void Direct3DRMSoftwareRenderer::Download(SDL_Surface* target)
+{
+	SDL_Rect srcRect = {
+		static_cast<int>(m_viewportTransform.offsetX),
+		static_cast<int>(m_viewportTransform.offsetY),
+		static_cast<int>(m_virtualWidth * m_viewportTransform.scale),
+		static_cast<int>(m_virtualHeight * m_viewportTransform.scale),
+	};
+
+	SDL_BlitSurfaceScaled(m_renderedImage, &srcRect, target, nullptr, SDL_SCALEMODE_LINEAR);
 }

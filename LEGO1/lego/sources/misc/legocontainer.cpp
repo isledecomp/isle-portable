@@ -22,7 +22,7 @@ LegoTextureInfo* LegoTextureContainer::GetCached(LegoTextureInfo* p_textureInfo)
 	memset(&desc, 0, sizeof(desc));
 	desc.dwSize = sizeof(desc);
 
-	if (p_textureInfo->m_surface->Lock(NULL, &desc, DDLOCK_SURFACEMEMORYPTR, NULL) == DD_OK) {
+	if (p_textureInfo->m_surface->Lock(NULL, &desc, DDLOCK_SURFACEMEMORYPTR | DDLOCK_WRITEONLY, NULL) == DD_OK) {
 		width = desc.dwWidth;
 		height = desc.dwHeight;
 		p_textureInfo->m_surface->Unlock(desc.lpSurface);
@@ -35,7 +35,7 @@ LegoTextureInfo* LegoTextureContainer::GetCached(LegoTextureInfo* p_textureInfo)
 				memset(&newDesc, 0, sizeof(newDesc));
 				newDesc.dwSize = sizeof(newDesc);
 
-				if (surface->Lock(NULL, &newDesc, DDLOCK_SURFACEMEMORYPTR, NULL) == DD_OK) {
+				if (surface->Lock(NULL, &newDesc, DDLOCK_SURFACEMEMORYPTR | DDLOCK_WRITEONLY, NULL) == DD_OK) {
 					BOOL und = FALSE;
 					if (newDesc.dwWidth == width && newDesc.dwHeight == height) {
 						und = TRUE;
