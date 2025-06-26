@@ -394,6 +394,7 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 #endif
 
 	switch (event->type) {
+	case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
 	case SDL_EVENT_MOUSE_MOTION:
 	case SDL_EVENT_MOUSE_BUTTON_DOWN:
 	case SDL_EVENT_MOUSE_BUTTON_UP:
@@ -658,6 +659,7 @@ MxResult IsleApp::SetupWindow()
 	SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, WINDOW_TITLE);
 #ifdef MINIWIN
 	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
+	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 #endif
 
 	window = SDL_CreateWindowWithProperties(props);

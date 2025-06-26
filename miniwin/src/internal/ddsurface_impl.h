@@ -35,8 +35,11 @@ struct DirectDrawSurfaceImpl : public IDirectDrawSurface3 {
 	HRESULT SetPalette(LPDIRECTDRAWPALETTE lpDDPalette) override;
 	HRESULT Unlock(LPVOID lpSurfaceData) override;
 
+	IDirect3DRMTexture2* ToTexture();
+
 	SDL_Surface* m_surface = nullptr;
 
 private:
+	IDirect3DRMTexture2* m_texture = nullptr;
 	IDirectDrawPalette* m_palette = nullptr;
 };

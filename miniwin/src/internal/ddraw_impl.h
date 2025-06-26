@@ -8,9 +8,7 @@
 #include <SDL3/SDL.h>
 
 extern SDL_Window* DDWindow;
-extern SDL_Surface* DDBackBuffer;
-extern FrameBufferImpl* DDFrameBuffer;
-extern SDL_Renderer* DDRenderer;
+extern Direct3DRMRenderer* DDRenderer;
 
 inline static SDL_Rect ConvertRect(const RECT* r)
 {
@@ -47,6 +45,11 @@ struct DirectDrawImpl : public IDirectDraw2, public IDirect3D2 {
 	HRESULT CreateDevice(const GUID& guid, IDirectDrawSurface* pBackBuffer, IDirect3DDevice2** ppDirect3DDevice)
 		override;
 	HRESULT EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx) override;
+
+private:
+	FrameBufferImpl* m_frameBuffer;
+	int m_virtualWidth = 0;
+	int m_virtualHeight = 0;
 };
 
 HRESULT DirectDrawEnumerate(LPDDENUMCALLBACKA cb, void* context);

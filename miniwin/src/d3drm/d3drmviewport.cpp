@@ -15,7 +15,7 @@
 #include <math.h>
 
 Direct3DRMViewportImpl::Direct3DRMViewportImpl(DWORD width, DWORD height, Direct3DRMRenderer* renderer)
-	: m_width(width), m_height(height), m_renderer(renderer)
+	: m_virtualWidth(width), m_virtualHeight(height), m_renderer(renderer)
 {
 }
 
@@ -151,7 +151,7 @@ void Direct3DRMViewportImpl::CollectLightsFromFrame(
 void Direct3DRMViewportImpl::BuildViewFrustumPlanes()
 {
 
-	float aspect = (float) m_width / (float) m_height;
+	float aspect = (float) m_renderer->GetWidth() / (float) m_renderer->GetHeight();
 	float tanFovX = m_field;
 	float tanFovY = m_field / aspect;
 
@@ -270,16 +270,20 @@ void Direct3DRMViewportImpl::CollectMeshesFromFrame(IDirect3DRMFrame* frame, D3D
 							{m_renderer->GetMeshId(mesh, &meshGroup),
 							 {},
 							 {},
+							 {},
 							 appearance,
 							 CalculateDepth(m_viewProjectionwMatrix, worldMatrix)}
 						);
 						memcpy(m_deferredDraws.back().modelViewMatrix, modelViewMatrix, sizeof(D3DRMMATRIX4D));
+						memcpy(m_deferredDraws.back().worldMatrix, worldMatrix, sizeof(D3DRMMATRIX4D));
 						memcpy(m_deferredDraws.back().normalMatrix, worldMatrixInvert, sizeof(Matrix3x3));
 					}
 					else {
 						m_renderer->SubmitDraw(
 							m_renderer->GetMeshId(mesh, &meshGroup),
 							modelViewMatrix,
+							worldMatrix,
+							m_viewMatrix,
 							worldMatrixInvert,
 							appearance
 						);
@@ -325,7 +329,14 @@ HRESULT Direct3DRMViewportImpl::RenderScene()
 	);
 	m_renderer->EnableTransparency();
 	for (const DeferredDrawCommand& cmd : m_deferredDraws) {
-		m_renderer->SubmitDraw(cmd.meshId, cmd.modelViewMatrix, cmd.normalMatrix, cmd.appearance);
+		m_renderer->SubmitDraw(
+			cmd.meshId,
+			cmd.modelViewMatrix,
+			cmd.worldMatrix,
+			m_viewMatrix,
+			cmd.normalMatrix,
+			cmd.appearance
+		);
 	}
 	m_deferredDraws.clear();
 
@@ -349,16 +360,14 @@ HRESULT Direct3DRMViewportImpl::ForceUpdate(int x, int y, int w, int h)
 
 HRESULT Direct3DRMViewportImpl::Clear()
 {
-	if (!DDBackBuffer) {
+	if (!m_renderer) {
 		return DDERR_GENERIC;
 	}
 
 	uint8_t r = (m_backgroundColor >> 16) & 0xFF;
 	uint8_t g = (m_backgroundColor >> 8) & 0xFF;
 	uint8_t b = m_backgroundColor & 0xFF;
-
-	Uint32 color = SDL_MapRGB(SDL_GetPixelFormatDetails(DDBackBuffer->format), nullptr, r, g, b);
-	SDL_FillSurfaceRect(DDBackBuffer, nullptr, color);
+	m_renderer->Clear(r / 255.0f, g / 255.0f, b / 255.0f);
 
 	return DD_OK;
 }
@@ -427,13 +436,24 @@ HRESULT Direct3DRMViewportImpl::SetField(D3DVALUE field)
 
 void Direct3DRMViewportImpl::UpdateProjectionMatrix()
 {
-	float aspect = (float) m_width / (float) m_height;
-	float f = m_front / m_field;
+	float virtualAspect = (float) m_virtualWidth / (float) m_virtualHeight;
+	float windowAspect = (float) m_renderer->GetWidth() / (float) m_renderer->GetHeight();
+
+	float base_f = m_front / m_field;
+	float f_v = base_f * virtualAspect;
+	float f_h = base_f;
+	if (windowAspect >= virtualAspect) {
+		f_h *= virtualAspect / windowAspect;
+	}
+	else {
+		f_v *= windowAspect / virtualAspect;
+	}
+
 	float depth = m_back - m_front;
 
 	D3DRMMATRIX4D projection = {
-		{f, 0, 0, 0},
-		{0, f * aspect, 0, 0},
+		{f_h, 0, 0, 0},
+		{0, f_v, 0, 0},
 		{0, 0, m_back / depth, 1},
 		{0, 0, (-m_front * m_back) / depth, 0},
 	};
@@ -442,8 +462,8 @@ void Direct3DRMViewportImpl::UpdateProjectionMatrix()
 	m_renderer->SetProjection(projection, m_front, m_back);
 
 	D3DRMMATRIX4D inverseProjectionMatrix = {
-		{1.0f / f, 0, 0, 0},
-		{0, 1.0f / (f * aspect), 0, 0},
+		{1.0f / f_h, 0, 0, 0},
+		{0, 1.0f / f_v, 0, 0},
 		{0, 0, 0, depth / (-m_front * m_back)},
 		{0, 0, 1, -(m_back / depth) * depth / (-m_front * m_back)},
 	};
@@ -453,16 +473,6 @@ void Direct3DRMViewportImpl::UpdateProjectionMatrix()
 D3DVALUE Direct3DRMViewportImpl::GetField()
 {
 	return m_field;
-}
-
-DWORD Direct3DRMViewportImpl::GetWidth()
-{
-	return m_width;
-}
-
-DWORD Direct3DRMViewportImpl::GetHeight()
-{
-	return m_height;
 }
 
 inline float FromNDC(float ndcCoord, float dim)
@@ -492,8 +502,8 @@ HRESULT Direct3DRMViewportImpl::Transform(D3DRMVECTOR4D* screen, D3DVECTOR* worl
 	float ndcX = projVec.x * invW;
 	float ndcY = projVec.y * invW;
 
-	screen->x = FromNDC(ndcX, m_width);
-	screen->y = FromNDC(-ndcY, m_height); // Y-flip
+	screen->x = FromNDC(ndcX, m_virtualWidth);
+	screen->y = FromNDC(-ndcY, m_virtualHeight); // Y-flip
 
 	// Undo perspective divide for screen-space coords
 	screen->x *= projVec.z;
@@ -509,8 +519,8 @@ HRESULT Direct3DRMViewportImpl::InverseTransform(D3DVECTOR* world, D3DRMVECTOR4D
 	float screenY = screen->y / screen->w;
 
 	// Convert screen coordinates to NDC
-	float ndcX = screenX / m_width * 2.0f - 1.0f;
-	float ndcY = 1.0f - (screenY / m_height) * 2.0f;
+	float ndcX = screenX / m_virtualWidth * 2.0f - 1.0f;
+	float ndcY = 1.0f - (screenY / m_virtualHeight) * 2.0f;
 
 	D3DRMVECTOR4D clipVec = {ndcX * screen->w, ndcY * screen->w, screen->z, screen->w};
 
@@ -753,13 +763,13 @@ HRESULT Direct3DRMViewportImpl::Pick(float x, float y, LPDIRECT3DRMPICKEDARRAY* 
 	Ray pickRay = BuildPickingRay(
 		x,
 		y,
-		m_width,
-		m_height,
+		m_virtualWidth,
+		m_virtualHeight,
 		m_camera,
 		m_front,
 		m_back,
 		m_field,
-		(float) m_width / (float) m_height
+		(float) m_virtualWidth / (float) m_virtualHeight
 	);
 
 	std::function<void(IDirect3DRMFrame*, std::vector<IDirect3DRMFrame*>&)> recurse;
