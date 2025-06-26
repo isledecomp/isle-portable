@@ -11,6 +11,7 @@
 #include "res/resource.h"
 
 #include <QKeyEvent>
+#include <QProcess>
 #include <mxdirectx/legodxinfo.h>
 #include <ui_maindialog.h>
 
@@ -59,6 +60,7 @@ CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 	connect(m_ui->fullscreenCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxFullscreen);
 	connect(m_ui->okButton, &QPushButton::clicked, this, &CMainDialog::accept);
 	connect(m_ui->cancelButton, &QPushButton::clicked, this, &CMainDialog::reject);
+	connect(m_ui->launchButton, &QPushButton::clicked, this, &CMainDialog::launch);
 
 	connect(m_ui->dataPathOpen, &QPushButton::clicked, this, &CMainDialog::SelectDataPathDialog);
 	connect(m_ui->savePathOpen, &QPushButton::clicked, this, &CMainDialog::SelectSavePathDialog);
@@ -152,6 +154,20 @@ void CMainDialog::accept()
 	if (m_modified) {
 		currentConfigApp->WriteRegisterSettings();
 	}
+	QDialog::accept();
+}
+
+void CMainDialog::launch()
+{
+	if (m_modified) {
+		currentConfigApp->WriteRegisterSettings();
+	}
+	QDir::setCurrent(QCoreApplication::applicationDirPath());
+#ifdef _WIN32
+	QProcess::startDetached("./isle.exe");
+#else
+	QProcess::startDetached("./isle");
+#endif
 	QDialog::accept();
 }
 
