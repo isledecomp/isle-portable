@@ -126,6 +126,8 @@ jobs:
       options: --privileged
 
     steps:
+      - uses: actions/checkout@v4
+
       - name: Configure Package Scripts
         run: cmake -S . -B build_config -GNinja -DCONFIGURE_FLATPAK=ON
 
