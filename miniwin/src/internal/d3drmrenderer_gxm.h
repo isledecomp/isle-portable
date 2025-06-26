@@ -13,7 +13,7 @@
 
 DEFINE_GUID(GXM_GUID, 0x682656F3, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x47, 0x58, 0x4D);
 
-#define VITA_GXM_DISPLAY_BUFFER_COUNT 2
+#define VITA_GXM_DISPLAY_BUFFER_COUNT 3
 
 struct GXMTextureCacheEntry {
 	IDirect3DRMTexture* texture;
@@ -103,9 +103,9 @@ typedef struct GXMRendererData {
 	SceGxmFragmentProgram* imageFragmentProgram; // 2d images, no lighting
 
 	// main shader vertex uniforms
-	const SceGxmProgramParameter* uModelViewMatrixParam;
-	const SceGxmProgramParameter* uNormalMatrixParam;
-	const SceGxmProgramParameter* uProjectionMatrixParam;
+	const SceGxmProgramParameter* uModelViewMatrix;
+	const SceGxmProgramParameter* uNormalMatrix;
+	const SceGxmProgramParameter* uProjectionMatrix;
 
 	// main shader fragment uniforms
 	const SceGxmProgramParameter* uLights;
@@ -171,7 +171,6 @@ private:
 	std::vector<GXMTextureCacheEntry> m_textures;
 	std::vector<GXMMeshCacheEntry> m_meshes;
 	D3DRMMATRIX4D m_projection;
-	DWORD m_width, m_height;
 	std::vector<SceneLight> m_lights;
 
 	bool transparencyEnabled = false;

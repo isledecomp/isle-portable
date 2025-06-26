@@ -23,7 +23,7 @@ bool with_razor = false;
 #define VITA_GXM_SCREEN_WIDTH  960
 #define VITA_GXM_SCREEN_HEIGHT 544
 #define VITA_GXM_SCREEN_STRIDE 960
-#define VITA_GXM_PENDING_SWAPS 2
+#define VITA_GXM_PENDING_SWAPS 3
 
 #define VITA_GXM_COLOR_FORMAT SCE_GXM_COLOR_FORMAT_A8B8G8R8
 #define VITA_GXM_PIXEL_FORMAT SCE_DISPLAY_PIXELFORMAT_A8B8G8R8
@@ -41,11 +41,11 @@ typedef struct Vertex {
 } Vertex;
 
 
-INCBIN(main_vert_gxp, "main.vert.gxp");
-INCBIN(main_frag_gxp, "main.frag.gxp");
-INCBIN(clear_vert_gxp, "clear.vert.gxp");
-INCBIN(clear_frag_gxp, "clear.frag.gxp");
-INCBIN(image_frag_gxp, "image.frag.gxp");
+INCBIN(main_vert_gxp, "shaders/main.vert.gxp");
+INCBIN(main_frag_gxp, "shaders/main.frag.gxp");
+INCBIN(clear_vert_gxp, "shaders/clear.vert.gxp");
+INCBIN(clear_frag_gxp, "shaders/clear.frag.gxp");
+INCBIN(image_frag_gxp, "shaders/image.frag.gxp");
 
 const SceGxmProgram* mainVertexProgramGxp = (const SceGxmProgram*)_inc_main_vert_gxpData;
 const SceGxmProgram* mainFragmentProgramGxp = (const SceGxmProgram*)_inc_main_frag_gxpData;
@@ -481,7 +481,7 @@ static bool create_gxm_renderer(int width, int height, GXMRendererData* data) {
 	// image
 	if(SCE_ERR(sceGxmShaderPatcherCreateFragmentProgram,
         data->shaderPatcher,
-        data->mainFragmentProgramId,
+        data->imageFragmentProgramId,
         SCE_GXM_OUTPUT_REGISTER_FORMAT_UCHAR4,
         SCE_GXM_MULTISAMPLE_NONE,
         &blendInfoTransparent,
@@ -490,9 +490,9 @@ static bool create_gxm_renderer(int width, int height, GXMRendererData* data) {
 	)) return false;
 
 	// vertex uniforms
-	data->uModelViewMatrixParam = sceGxmProgramFindParameterByName(mainVertexProgramGxp, "uModelViewMatrix");
-	data->uNormalMatrixParam = sceGxmProgramFindParameterByName(mainVertexProgramGxp, "uNormalMatrix");
-	data->uProjectionMatrixParam = sceGxmProgramFindParameterByName(mainVertexProgramGxp, "uProjectionMatrix");
+	data->uModelViewMatrix = sceGxmProgramFindParameterByName(mainVertexProgramGxp, "uModelViewMatrix");
+	data->uNormalMatrix = sceGxmProgramFindParameterByName(mainVertexProgramGxp, "uNormalMatrix");
+	data->uProjectionMatrix = sceGxmProgramFindParameterByName(mainVertexProgramGxp, "uProjectionMatrix");
 
 	// fragment uniforms
 	data->uLights = sceGxmProgramFindParameterByName(mainFragmentProgramGxp, "uLights"); // SceneLight[3]
@@ -530,31 +530,6 @@ static bool create_gxm_renderer(int width, int height, GXMRendererData* data) {
 }
 
 
-#define VITA_GXM_PENDING_SWAPS 2
-
-/*
-#include <taihen.h>
-static tai_hook_ref_t local_open_hook;
-
-extern "C" {
-	SceUID hook_local_open(const char *path, int flags, SceMode mode) {
-		SceUID fd = ({
-			struct _tai_hook_user *cur, *next;
-			cur = (struct _tai_hook_user *)(local_open_hook);
-			next = (struct _tai_hook_user *)cur->next;
-			(next == __null) ?
-				((SceUID(*)(const char*, int, int))cur->old)(path, flags, mode) :
-				((SceUID(*)(const char*, int, int))next->func)(path, flags, mode);
-			});
-
-		printf("open in razor: %s, ret: %x", path, fd);
-		return fd;
-	}
-}
-*/
-
-
-
 Direct3DRMRenderer* GXMRenderer::Create(DWORD width, DWORD height)
 {
 	SDL_Log("GXMRenderer::Create width=%d height=%d", width, height);
@@ -577,7 +552,11 @@ GXMRenderer::GXMRenderer(
 	DWORD width,
 	DWORD height,
 	GXMRendererData data
-) : m_width(width), m_height(height), m_data(data) {
+) : m_data(data) {
+	m_width = width;
+	m_height = height;
+	m_virtualWidth = width;
+	m_virtualHeight = height;
 	m_initialized = true;
 }
 
@@ -810,8 +789,7 @@ void GXMRenderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc)
 	memset(helDesc, 0, sizeof(D3DDEVICEDESC));
 }
 
-const char* GXMRenderer::GetName()
-{
+const char* GXMRenderer::GetName() {
 	return "GXM";
 }
 
@@ -906,6 +884,10 @@ void GXMRenderer::SubmitDraw(
 ) {
 	auto& mesh = m_meshes[meshId];
 
+	char marker[256];
+	snprintf(marker, sizeof(marker), "SubmitDraw: %d", meshId);
+	sceGxmPushUserMarker(this->m_data.context, marker);
+
 	sceGxmSetVertexProgram(this->m_data.context, this->m_data.mainVertexProgram);
 	if(this->transparencyEnabled) {
 		sceGxmSetFragmentProgram(this->m_data.context, this->m_data.transparentFragmentProgram);
@@ -918,9 +900,14 @@ void GXMRenderer::SubmitDraw(
 	sceGxmReserveVertexDefaultUniformBuffer(this->m_data.context, &vertUniforms);
 	sceGxmReserveFragmentDefaultUniformBuffer(this->m_data.context, &fragUniforms);
 
-	SET_UNIFORM(vertUniforms, this->m_data.uModelViewMatrixParam, modelViewMatrix, mainVertexProgramGxp);
-	SET_UNIFORM(vertUniforms, this->m_data.uNormalMatrixParam, normalMatrix, mainVertexProgramGxp);
-	SET_UNIFORM(vertUniforms, this->m_data.uProjectionMatrixParam, m_projection, mainVertexProgramGxp);
+	D3DRMMATRIX4D modelViewMatrixTrans;
+	D3DRMMATRIX4D projectionTrans;
+	transpose4x4(modelViewMatrix, modelViewMatrixTrans);
+	transpose4x4(m_projection, projectionTrans);
+
+	SET_UNIFORM(vertUniforms, this->m_data.uModelViewMatrix, modelViewMatrixTrans, mainVertexProgramGxp);
+	SET_UNIFORM(vertUniforms, this->m_data.uNormalMatrix, normalMatrix, mainVertexProgramGxp);
+	SET_UNIFORM(vertUniforms, this->m_data.uProjectionMatrix, projectionTrans, mainVertexProgramGxp);
 	
 	float color[4] = {
 		appearance.color.r / 255.0f,
@@ -946,6 +933,8 @@ void GXMRenderer::SubmitDraw(
 		mesh.indexBuffer,
 		mesh.indexCount
 	);
+
+	sceGxmPopUserMarker(this->m_data.context);
 }
 
 HRESULT GXMRenderer::FinalizeFrame() {
@@ -960,6 +949,10 @@ void GXMRenderer::Resize(int width, int height, const ViewportTransform& viewpor
 
 void GXMRenderer::Clear(float r, float g, float b) {
 	this->StartScene();
+
+	char marker[256];
+	snprintf(marker, sizeof(marker), "Clear");
+	sceGxmPushUserMarker(this->m_data.context, marker);
 
 	sceGxmSetVertexProgram(this->m_data.context, this->m_data.clearVertexProgram);
     sceGxmSetFragmentProgram(this->m_data.context, this->m_data.clearFragmentProgram);
@@ -979,6 +972,8 @@ void GXMRenderer::Clear(float r, float g, float b) {
 		SCE_GXM_INDEX_FORMAT_U16,
 		this->m_data.clearIndicies, 3
 	);
+
+	sceGxmPopUserMarker(this->m_data.context);
 }
 
 void GXMRenderer::Flip() {
@@ -1008,7 +1003,7 @@ void GXMRenderer::Flip() {
     this->backBufferIndex = (this->backBufferIndex + 1) % VITA_GXM_DISPLAY_BUFFER_COUNT;
 }
 
-void CreateOrthoMatrix(float left, float right, float bottom, float top, D3DRMMATRIX4D& outMatrix)
+static void CreateOrthoMatrix(float left, float right, float bottom, float top, D3DRMMATRIX4D& outMatrix)
 {
 	float near = -1.0f;
 	float far = 1.0f;
@@ -1040,6 +1035,10 @@ void CreateOrthoMatrix(float left, float right, float bottom, float top, D3DRMMA
 void GXMRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect) {
 	this->StartScene();
 
+	char marker[256];
+	snprintf(marker, sizeof(marker), "Draw2DImage: %d", textureId);
+	sceGxmPushUserMarker(this->m_data.context, marker);
+
 	sceGxmSetVertexProgram(this->m_data.context, this->m_data.mainVertexProgram);
 	sceGxmSetFragmentProgram(this->m_data.context, this->m_data.imageFragmentProgram);
 	
@@ -1057,10 +1056,11 @@ void GXMRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const S
 	CreateOrthoMatrix(left, right, bottom, top, projection);
 
 	D3DRMMATRIX4D identity = {{1.f, 0.f, 0.f, 0.f}, {0.f, 1.f, 0.f, 0.f}, {0.f, 0.f, 1.f, 0.f}, {0.f, 0.f, 0.f, 1.f}};
+	Matrix3x3 normal = {{1.f, 0.f, 0.f}, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}};
 
-	SET_UNIFORM(vertUniforms, this->m_data.uModelViewMatrixParam, identity, mainVertexProgramGxp);
-	SET_UNIFORM(vertUniforms, this->m_data.uNormalMatrixParam, identity, mainVertexProgramGxp);
-	SET_UNIFORM(vertUniforms, this->m_data.uProjectionMatrixParam, m_projection, mainVertexProgramGxp);
+	SET_UNIFORM(vertUniforms, this->m_data.uModelViewMatrix, identity, mainVertexProgramGxp); // float4x4
+	SET_UNIFORM(vertUniforms, this->m_data.uNormalMatrix, normal, mainVertexProgramGxp); // float3x3
+	SET_UNIFORM(vertUniforms, this->m_data.uProjectionMatrix, projection, mainVertexProgramGxp); // float4x4
 
 	const GXMTextureCacheEntry& texture = m_textures[textureId];
 	sceGxmSetFragmentTexture(this->m_data.context, 0, &texture.gxmTexture);
@@ -1100,6 +1100,7 @@ void GXMRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const S
 		gpuIndices, 4
 	);
 
+	sceGxmPopUserMarker(this->m_data.context);
 	sceClibMspaceFree(this->m_data.cdramPool, meshBuffer);
 }
 
