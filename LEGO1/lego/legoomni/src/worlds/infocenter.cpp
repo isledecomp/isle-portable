@@ -341,7 +341,7 @@ MxLong Infocenter::HandleEndAction(MxEndActionNotificationParam& p_param)
 		return result;
 	}
 
-	if (action->GetObjectId() == InfomainScript::c_iicx26in_RunAnim - Lego()->GetIs10()) {
+	if (action->GetObjectId() == InfomainScript::c_iicx26in_RunAnim - Lego()->IsVersion10()) {
 		ControlManager()->FUN_100293c0(InfomainScript::c_BigInfo_Ctl, action->GetAtomId().GetInternal(), 0);
 		m_unk0x1d6 = 0;
 	}
@@ -481,7 +481,7 @@ void Infocenter::ReadyWorld()
 			InfomainScript::Script script = m_infocenterState->GetNextReturnDialogue();
 			PlayAction(script);
 
-			if (script == InfomainScript::c_iicx26in_RunAnim - Lego()->GetIs10()) {
+			if (script == InfomainScript::c_iicx26in_RunAnim - Lego()->IsVersion10()) {
 				m_unk0x1d6 = 1;
 			}
 
@@ -1189,13 +1189,13 @@ MxLong Infocenter::HandleNotification0(MxNotificationParam& p_param)
 				m_currentInfomainScript == InfomainScript::c_Pepper_All_Movie ||
 				m_currentInfomainScript == InfomainScript::c_Nick_All_Movie ||
 				m_currentInfomainScript == InfomainScript::c_Laura_All_Movie ||
-				m_currentInfomainScript == InfomainScript::c_iic007ra_PlayWav - Lego()->GetIs10() ||
-				m_currentInfomainScript == InfomainScript::c_ijs002ra_PlayWav - Lego()->GetIs10() ||
-				m_currentInfomainScript == InfomainScript::c_irt001ra_PlayWav - Lego()->GetIs10() ||
-				m_currentInfomainScript == InfomainScript::c_ipz006ra_PlayWav - Lego()->GetIs10() ||
-				m_currentInfomainScript == InfomainScript::c_igs004ra_PlayWav - Lego()->GetIs10() ||
-				m_currentInfomainScript == InfomainScript::c_iho003ra_PlayWav - Lego()->GetIs10() ||
-				m_currentInfomainScript == InfomainScript::c_ips005ra_PlayWav - Lego()->GetIs10()) {
+				m_currentInfomainScript == InfomainScript::c_iic007ra_PlayWav - Lego()->IsVersion10() ||
+				m_currentInfomainScript == InfomainScript::c_ijs002ra_PlayWav - Lego()->IsVersion10() ||
+				m_currentInfomainScript == InfomainScript::c_irt001ra_PlayWav - Lego()->IsVersion10() ||
+				m_currentInfomainScript == InfomainScript::c_ipz006ra_PlayWav - Lego()->IsVersion10() ||
+				m_currentInfomainScript == InfomainScript::c_igs004ra_PlayWav - Lego()->IsVersion10() ||
+				m_currentInfomainScript == InfomainScript::c_iho003ra_PlayWav - Lego()->IsVersion10() ||
+				m_currentInfomainScript == InfomainScript::c_ips005ra_PlayWav - Lego()->IsVersion10()) {
 				StopCurrentAction();
 			}
 		}
@@ -1509,7 +1509,7 @@ void Infocenter::StopCredits()
 // FUNCTION: BETA10 0x1002ee8c
 void Infocenter::PlayAction(InfomainScript::Script p_script)
 {
-	if (Lego()->GetIs10()) {
+	if (Lego()->IsVersion10()) {
 		if (p_script == InfomainScript::c_iicx18in_RunAnim) {
 			// Alternative dialogue after signing in (1.0 version)
 			p_script = InfomainScript::c_iic016in_RunAnim;

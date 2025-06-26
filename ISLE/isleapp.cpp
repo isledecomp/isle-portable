@@ -1116,9 +1116,9 @@ void IsleApp::DetectGameVersion()
 	assert(success);
 
 	// File sizes of INFOMAIN.SI in English 1.0 and Japanese 1.0
-	Lego()->SetIs10(info.size == 58130432 || info.size == 57737216);
+	Lego()->SetVersion10(info.size == 58130432 || info.size == 57737216);
 
-	if (Lego()->GetIs10()) {
+	if (Lego()->IsVersion10()) {
 		SDL_Log("Detected game version 1.0");
 		SDL_SetWindowTitle(reinterpret_cast<SDL_Window*>(m_windowHandle), "Lego Island");
 	}

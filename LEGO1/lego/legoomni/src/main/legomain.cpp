@@ -76,7 +76,7 @@ void LegoOmni::Init()
 	m_bkgAudioManager = NULL;
 	m_unk0x13c = TRUE;
 	m_transitionManager = NULL;
-	m_is10 = FALSE;
+	m_version10 = FALSE;
 }
 
 // FUNCTION: LEGO1 0x10058c30
