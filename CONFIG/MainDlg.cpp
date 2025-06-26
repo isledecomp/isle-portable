@@ -11,6 +11,7 @@
 #include "res/resource.h"
 
 #include <QKeyEvent>
+#include <QMessageBox>
 #include <QProcess>
 #include <mxdirectx/legodxinfo.h>
 #include <ui_maindialog.h>
@@ -164,9 +165,21 @@ void CMainDialog::launch()
 	}
 	QDir::setCurrent(QCoreApplication::applicationDirPath());
 #ifdef _WIN32
-	QProcess::startDetached("./isle.exe");
+	if (!QProcess::startDetached("./isle.exe")) {
+		QMessageBox msgBox;
+		msgBox.setText("Unable to locate isle executable!");
+		msgBox.setWindowTitle("Error");
+		msgBox.exec();
+	}
 #else
-	QProcess::startDetached("./isle");
+	if (!QProcess::startDetached("./isle")) {   // Check in isle-config directory
+		if (!QProcess::startDetached("isle")) { // Check in $PATH
+			QMessageBox msgBox;
+			msgBox.setText("Unable to locate isle executable!");
+			msgBox.setWindowTitle("Error");
+			msgBox.exec();
+		}
+	}
 #endif
 	QDialog::accept();
 }
