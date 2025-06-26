@@ -165,6 +165,8 @@ private:
 	void PlayBookAnimation();
 	void StopBookAnimation();
 
+	void DetectGameVersion();
+
 	InfomainScript::Script m_currentInfomainScript; // 0xf8
 	MxS16 m_selectedCharacter;                      // 0xfc
 	InfocenterState* m_infocenterState;             // 0x100
@@ -179,6 +181,7 @@ private:
 	MxS16 m_bookAnimationTimer;                     // 0x1d2
 	MxU16 m_unk0x1d4;                               // 0x1d4
 	MxS16 m_unk0x1d6;                               // 0x1d6
+	MxBool m_is10;
 };
 
 #endif // INFOCENTER_H

@@ -200,6 +200,9 @@ public:
 		SDL_PushEvent(&event);
 	}
 
+	void SetIs10(MxBool p_is10) { m_is10 = p_is10; }
+	MxBool GetIs10() { return m_is10; }
+
 	// SYNTHETIC: LEGO1 0x10058b30
 	// LegoOmni::`scalar deleting destructor'
 
@@ -221,6 +224,7 @@ private:
 	MxDSAction m_action;                         // 0xa0
 	MxBackgroundAudioManager* m_bkgAudioManager; // 0x134
 	MxTransitionManager* m_transitionManager;    // 0x138
+	MxBool m_is10;
 
 public:
 	MxBool m_unk0x13c; // 0x13c

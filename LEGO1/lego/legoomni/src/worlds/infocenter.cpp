@@ -31,6 +31,9 @@
 #include "sndanim_actions.h"
 #include "viewmanager/viewmanager.h"
 
+#include <SDL3/SDL_filesystem.h>
+#include <SDL3/SDL_log.h>
+
 DECOMP_SIZE_ASSERT(Infocenter, 0x1d8)
 DECOMP_SIZE_ASSERT(InfocenterMapEntry, 0x18)
 DECOMP_SIZE_ASSERT(InfocenterState, 0x94)
@@ -146,6 +149,7 @@ Infocenter::Infocenter()
 	m_bookAnimationTimer = 0;
 	m_unk0x1d4 = 0;
 	m_unk0x1d6 = 0;
+	m_is10 = FALSE;
 }
 
 // FUNCTION: LEGO1 0x1006ec80
@@ -338,7 +342,7 @@ MxLong Infocenter::HandleEndAction(MxEndActionNotificationParam& p_param)
 		return result;
 	}
 
-	if (action->GetObjectId() == InfomainScript::c_iicx26in_RunAnim) {
+	if (action->GetObjectId() == InfomainScript::c_iicx26in_RunAnim - Lego()->GetIs10()) {
 		ControlManager()->FUN_100293c0(InfomainScript::c_BigInfo_Ctl, action->GetAtomId().GetInternal(), 0);
 		m_unk0x1d6 = 0;
 	}
@@ -443,6 +447,8 @@ MxLong Infocenter::HandleEndAction(MxEndActionNotificationParam& p_param)
 // FUNCTION: LEGO1 0x1006f4e0
 void Infocenter::ReadyWorld()
 {
+	DetectGameVersion();
+
 	m_infoManDialogueTimer = 0;
 	m_bookAnimationTimer = 0;
 	m_unk0x1d4 = 0;
@@ -478,7 +484,7 @@ void Infocenter::ReadyWorld()
 			InfomainScript::Script script = m_infocenterState->GetNextReturnDialogue();
 			PlayAction(script);
 
-			if (script == InfomainScript::c_iicx26in_RunAnim) {
+			if (script == InfomainScript::c_iicx26in_RunAnim - Lego()->GetIs10()) {
 				m_unk0x1d6 = 1;
 			}
 
@@ -1186,13 +1192,13 @@ MxLong Infocenter::HandleNotification0(MxNotificationParam& p_param)
 				m_currentInfomainScript == InfomainScript::c_Pepper_All_Movie ||
 				m_currentInfomainScript == InfomainScript::c_Nick_All_Movie ||
 				m_currentInfomainScript == InfomainScript::c_Laura_All_Movie ||
-				m_currentInfomainScript == InfomainScript::c_iic007ra_PlayWav ||
-				m_currentInfomainScript == InfomainScript::c_ijs002ra_PlayWav ||
-				m_currentInfomainScript == InfomainScript::c_irt001ra_PlayWav ||
-				m_currentInfomainScript == InfomainScript::c_ipz006ra_PlayWav ||
-				m_currentInfomainScript == InfomainScript::c_igs004ra_PlayWav ||
-				m_currentInfomainScript == InfomainScript::c_iho003ra_PlayWav ||
-				m_currentInfomainScript == InfomainScript::c_ips005ra_PlayWav) {
+				m_currentInfomainScript == InfomainScript::c_iic007ra_PlayWav - Lego()->GetIs10() ||
+				m_currentInfomainScript == InfomainScript::c_ijs002ra_PlayWav - Lego()->GetIs10() ||
+				m_currentInfomainScript == InfomainScript::c_irt001ra_PlayWav - Lego()->GetIs10() ||
+				m_currentInfomainScript == InfomainScript::c_ipz006ra_PlayWav - Lego()->GetIs10() ||
+				m_currentInfomainScript == InfomainScript::c_igs004ra_PlayWav - Lego()->GetIs10() ||
+				m_currentInfomainScript == InfomainScript::c_iho003ra_PlayWav - Lego()->GetIs10() ||
+				m_currentInfomainScript == InfomainScript::c_ips005ra_PlayWav - Lego()->GetIs10()) {
 				StopCurrentAction();
 			}
 		}
@@ -1506,6 +1512,17 @@ void Infocenter::StopCredits()
 // FUNCTION: BETA10 0x1002ee8c
 void Infocenter::PlayAction(InfomainScript::Script p_script)
 {
+	if (Lego()->GetIs10()) {
+		if (p_script == InfomainScript::c_iicx18in_RunAnim) {
+			// Alternative dialogue after signing in (1.0 version)
+			p_script = InfomainScript::c_iic016in_RunAnim;
+		}
+		else if (p_script > InfomainScript::c_iicx18in_RunAnim) {
+			// Shift all other actions by 1
+			p_script = (InfomainScript::Script)((int) p_script - 1);
+		}
+	}
+
 	MxDSAction action;
 	action.SetObjectId(p_script);
 	action.SetAtomId(*g_infomainScript);
@@ -1589,4 +1606,38 @@ InfocenterState::~InfocenterState()
 		}
 		i++;
 	} while (i < GetMaxNameLength());
+}
+
+void Infocenter::DetectGameVersion()
+{
+	static bool done = false;
+	if (done) {
+		return;
+	}
+
+	const char* file = "/lego/scripts/infocntr/infomain.si";
+	SDL_PathInfo info;
+	bool success = false;
+
+	MxString path = MxString(MxOmni::GetHD()) + file;
+	path.MapPathToFilesystem();
+	if (!(success = SDL_GetPathInfo(path.GetData(), &info))) {
+		path = MxString(MxOmni::GetCD()) + file;
+		path.MapPathToFilesystem();
+		success = SDL_GetPathInfo(path.GetData(), &info);
+	}
+
+	assert(success);
+
+	// File sizes of INFOMAIN.SI in English 1.0 and Japanese 1.0
+	Lego()->SetIs10(info.size == 58130432 || info.size == 57737216);
+
+	if (Lego()->GetIs10()) {
+		SDL_Log("Detected game version 1.0");
+	}
+	else {
+		SDL_Log("Detected game version 1.1");
+	}
+
+	done = true;
 }
