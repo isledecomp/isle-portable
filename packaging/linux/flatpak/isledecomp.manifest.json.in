@@ -84,9 +84,9 @@
             "buildsystem": "simple",
             "sources": [
                 {
-                    "type": "file",
-                    "dest-filename": "@APP_ID@.svg",
-                    "path": "@CMAKE_CURRENT_SOURCE_DIR@/../icons/isle.svg"
+                    "type": "dir",
+                    "dest": "icons",
+                    "path": "@CMAKE_CURRENT_SOURCE_DIR@/../icons/"
                 },
                 {
                     "type": "file",
@@ -95,12 +95,16 @@
                 {
                     "type": "file",
                     "path": "./@APP_ID@.metainfo.xml"
+                },
+                {
+                    "type": "file",
+                    "path": "@CMAKE_CURRENT_SOURCE_DIR@/flatpak/install_desktop_assets.sh",
+                    "dest-filename": "fp_install.sh"
                 }
             ],
             "build-commands": [
-                "install -Dm0644 @APP_ID@.svg -t ${FLATPAK_DEST}/share/icons/hicolor/scalable/apps/",
-                "install -Dm0644 @APP_ID@.desktop -t ${FLATPAK_DEST}/share/applications/",
-                "install -Dm0644 @APP_ID@.metainfo.xml -t ${FLATPAK_DEST}/share/metainfo/"
+                "chmod +x ./fp_install.sh",
+                "./fp_install.sh @APP_ID@"
             ]
         }
     ]

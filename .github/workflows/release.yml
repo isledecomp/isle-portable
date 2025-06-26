@@ -4,7 +4,13 @@ on:
   push:
     branches:
       - master
-      - flatpak # TODO: Remove after testing
+      - flatpak
+
+env:
+  APP_ID: org.legoisland.Isle
+  APT_CACHE_DIRS: |
+    /var/cache/apt/
+    /var/lib/apt/lists/
 
 jobs:
   build:
@@ -40,11 +46,20 @@ jobs:
             ${{ matrix.msys-env }}-clang-tools-extra
             ${{ (matrix.config && format('{0}-qt6-base', matrix.msys-env)) || '' }}
 
+        # Get a small speed up by caching APT repo data between runs
+        # `apt update` should now only run a full update if the cache is out of date
+      - name: Cache APT data
+        uses: actions/cache@v4
+        if: ${{ matrix.linux }}
+        with:
+          path: ${{ env.APT_CACHE_DIRS }}
+          key: apt-${{ runner.arch }}
+
       - name: Install Linux dependencies (apt-get)
         if: ${{ matrix.linux }}
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
+          sudo apt update
+          sudo apt install -y \
             libx11-dev libxext-dev libxrandr-dev libxrender-dev libxfixes-dev libxi-dev libxinerama-dev \
             libxcursor-dev libwayland-dev libxkbcommon-dev wayland-protocols libgl1-mesa-dev libglew-dev qt6-base-dev \
             libasound2-dev
@@ -95,9 +110,6 @@ jobs:
   flatpak:
     name: "Flatpak (${{ matrix.arch }})"
     runs-on: ${{ matrix.os }}
-
-    env:
-      APP_ID: pizza.isle.Isle
 
     strategy:
       fail-fast: false

@@ -1,5 +1,5 @@
-set(APP_ID "pizza.isle.Isle")
-set(APP_NAME "Isle Decomp")
+set(APP_ID "org.legoisland.Isle")
+set(APP_NAME "Isle Portable")
 set(APP_SUMMARY "Portable version of the LEGO Island Decompilation Project")
 set(APP_SPDX "LGPL-3.0-or-later")
 set(QT_VERSION 6.8)

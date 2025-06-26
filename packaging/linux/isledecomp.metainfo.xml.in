@@ -18,6 +18,8 @@
   </developer>
 
   <url type="homepage">https://github.com/isledecomp/isle-portable</url>
+  <url type="contribute">https://github.com/isledecomp/isle-portable/blob/master/CONTRIBUTING.md</url>
+  <url type="vcs-browser">https://github.com/isledecomp/isle-portable/tree/master</url>
   <url type="bugtracker">https://github.com/isledecomp/isle-portable/issues</url>
 
   <metadata_license>MIT</metadata_license>
@@ -81,6 +83,6 @@
   </keywords>
 
   <releases>
-    <release version="@PROJECT_VERSION@-@GIT_HASH@" type="development" date="@BUILD_DATE@"/>
+    <release version="@PROJECT_VERSION@+@GIT_HASH@" type="development" date="@BUILD_DATE@"/>
   </releases>
 </component>
