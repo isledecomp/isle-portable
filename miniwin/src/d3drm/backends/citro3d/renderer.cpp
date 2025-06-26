@@ -243,12 +243,6 @@ Uint32 Citro3DRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 		auto& tex = m_textures[i];
 		if (tex.texture == texture) {
 			if (tex.version != texture->m_version) {
-				// This, for some reason, causes the app to close
-				// instead of crashing the cpu, useful for
-				// debugging :)
-				//for(i = 0; i < 1000000; i++)
-				//	SDL_LogError(LOG_CATEGORY_MINIWIN, "%s: HI IM DAISY", MINIWIN_PRETTY_FUNCTION);
-
 				C3D_TexDelete(tex.c3dTex);
 
 				SDL_Surface* surf = SDL_ConvertSurface(surface->m_surface, SDL_PIXELFORMAT_RGBA32);
@@ -257,10 +251,13 @@ Uint32 Citro3DRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 				}
 				// Apparently a crash may be caused due to large textures? Hopefully this fixes that.
 				surf = SDL_ScaleSurface(surf, (surf->w / 2), (surf->h / 2), SDL_SCALEMODE_LINEAR);
+
 				// TODO: C3D_TexGenerateMipmap or C3D_TexInit?
 				// glGenTextures(1, &tex.glTextureId);
 				// FIXME: GPU_RGBA8 may be wrong
-				C3D_TexInit(tex.c3dTex, surf->w, surf->h, GPU_RGBA8);
+				C3D_TexInitMipmap(tex.c3dTex, surf->w, surf->h, GPU_RGBA8);
+				Tex3DS_Texture t3x = Tex3DS_TextureImport(t3x, (size_t)(surf->w * surf->h), tex.c3dTex, NULL, false); 
+				Tex3DS_TextureFree(t3x);
 
 				C3D_TexBind(0, tex.c3dTex);
 				C3D_TexUpload(tex.c3dTex, surf->pixels);
