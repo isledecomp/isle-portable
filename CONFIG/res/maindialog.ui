@@ -525,7 +525,7 @@
             <string>Save configuration and launch LEGO Island.</string>
            </property>
            <property name="text">
-            <string>Launch Game</string>
+            <string>Save and Launch</string>
            </property>
           </widget>
          </item>
