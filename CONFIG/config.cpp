@@ -165,13 +165,6 @@ bool CConfigApp::ValidateSettings()
 {
 	BOOL is_modified = FALSE;
 
-	/*	Forces full screen if not IsPrimaryDriver(). Not sure exactly why,
-	/*	but it's not relevant, so we can just comment it out.
-	if (!IsPrimaryDriver() && !m_full_screen) {
-		m_full_screen = TRUE;
-		is_modified = TRUE;
-	}
-	*/
 	if (IsDeviceInBasicRGBMode()) {
 		if (m_3d_video_ram) {
 			m_3d_video_ram = FALSE;
