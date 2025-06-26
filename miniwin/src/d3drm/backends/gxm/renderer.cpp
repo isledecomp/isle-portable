@@ -29,14 +29,12 @@ bool with_razor = false;
 
 INCBIN(main_vert_gxp, "shaders/main.vert.gxp");
 INCBIN(main_frag_gxp, "shaders/main.frag.gxp");
-//INCBIN(clear_vert_gxp, "shaders/clear.vert.gxp");
-INCBIN(clear_frag_gxp, "shaders/clear.frag.gxp");
+INCBIN(color_frag_gxp, "shaders/color.frag.gxp");
 INCBIN(image_frag_gxp, "shaders/image.frag.gxp");
 
 const SceGxmProgram* mainVertexProgramGxp = (const SceGxmProgram*)_inc_main_vert_gxpData;
 const SceGxmProgram* mainFragmentProgramGxp = (const SceGxmProgram*)_inc_main_frag_gxpData;
-//const SceGxmProgram* clearVertexProgramGxp = (const SceGxmProgram*)_inc_clear_vert_gxpData;
-const SceGxmProgram* clearFragmentProgramGxp = (const SceGxmProgram*)_inc_clear_frag_gxpData;
+const SceGxmProgram* colorFragmentProgramGxp = (const SceGxmProgram*)_inc_color_frag_gxpData;
 const SceGxmProgram* imageFragmentProgramGxp = (const SceGxmProgram*)_inc_image_frag_gxpData;
 
 extern "C" int sceRazorGpuCaptureSetTrigger(int frames, const char* path);
@@ -67,7 +65,7 @@ static void load_razor() {
 	}
 
 	if(with_razor) {
-		//sceRazorGpuCaptureEnableSalvage("ux0:data/gpu_crash.sgx");
+		sceRazorGpuCaptureEnableSalvage("ux0:data/gpu_crash.sgx");
 	}
 }
 
@@ -244,9 +242,8 @@ bool get_gxm_context(SceGxmContext** context, SceGxmShaderPatcher** shaderPatche
 static bool create_gxm_renderer(int width, int height, GXMRendererData* data) {
 	const unsigned int alignedWidth = ALIGN(VITA_GXM_SCREEN_WIDTH, SCE_GXM_TILE_SIZEX);
     const unsigned int alignedHeight = ALIGN(VITA_GXM_SCREEN_HEIGHT, SCE_GXM_TILE_SIZEY);
-
-	unsigned int sampleCount = alignedWidth * alignedHeight;
-    unsigned int depthStrideInSamples = alignedWidth;
+	const unsigned int sampleCount = alignedWidth * alignedHeight;
+    const unsigned int depthStrideInSamples = alignedWidth;
 
 	if(!get_gxm_context(&data->context, &data->shaderPatcher, &data->cdramPool)) {
 		return false;
@@ -347,7 +344,7 @@ static bool create_gxm_renderer(int width, int height, GXMRendererData* data) {
 	}
 
 	// register shader programs
-	if(SCE_ERR(sceGxmShaderPatcherRegisterProgram, data->shaderPatcher, clearFragmentProgramGxp, &data->clearFragmentProgramId)) {
+	if(SCE_ERR(sceGxmShaderPatcherRegisterProgram, data->shaderPatcher, colorFragmentProgramGxp, &data->colorFragmentProgramId)) {
 		return false;
 	}
 	if(SCE_ERR(sceGxmShaderPatcherRegisterProgram, data->shaderPatcher, mainVertexProgramGxp, &data->mainVertexProgramId)) {
@@ -359,34 +356,6 @@ static bool create_gxm_renderer(int width, int height, GXMRendererData* data) {
 	if(SCE_ERR(sceGxmShaderPatcherRegisterProgram, data->shaderPatcher, imageFragmentProgramGxp, &data->imageFragmentProgramId)) {
 		return false;
 	}
-
-	
-	// clear shader
-	/*
-	{
-		GET_SHADER_PARAM(positionAttribute, clearVertexProgramGxp, "aPosition", false);
-
-		SceGxmVertexAttribute vertexAttributes[1];
-		SceGxmVertexStream vertexStreams[1];
-		vertexAttributes[0].streamIndex = 0;
-		vertexAttributes[0].offset = 0;
-		vertexAttributes[0].format = SCE_GXM_ATTRIBUTE_FORMAT_F32;
-		vertexAttributes[0].componentCount = 2;
-		vertexAttributes[0].regIndex = sceGxmProgramParameterGetResourceIndex(positionAttribute);
-		vertexStreams[0].stride = sizeof(float)*2;
-		vertexStreams[0].indexSource = SCE_GXM_INDEX_SOURCE_INDEX_16BIT;
-
-		if(SCE_ERR(sceGxmShaderPatcherCreateVertexProgram,
-			data->shaderPatcher,
-			data->clearVertexProgramId,
-			vertexAttributes, 1,
-			vertexStreams, 1,
-			&data->clearVertexProgram
-		)) {
-			return false;
-		}
-	}
-	*/
 
 	// main shader
 	{
@@ -465,12 +434,12 @@ static bool create_gxm_renderer(int width, int height, GXMRendererData* data) {
 	// color
 	if(SCE_ERR(sceGxmShaderPatcherCreateFragmentProgram,
 		data->shaderPatcher,
-		data->clearFragmentProgramId,
+		data->colorFragmentProgramId,
 		SCE_GXM_OUTPUT_REGISTER_FORMAT_UCHAR4,
 		SCE_GXM_MULTISAMPLE_NONE,
 		NULL,
 		mainVertexProgramGxp,
-		&data->clearFragmentProgram
+		&data->colorFragmentProgram
 	)) {
 		return false;
 	}
@@ -488,7 +457,7 @@ static bool create_gxm_renderer(int width, int height, GXMRendererData* data) {
 	data->uUseTexture = sceGxmProgramFindParameterByName(mainFragmentProgramGxp, "uUseTexture"); // int
 
 	// clear uniforms
-	data->clearShader_uColor = sceGxmProgramFindParameterByName(clearFragmentProgramGxp, "uColor"); // vec4
+	data->colorShader_uColor = sceGxmProgramFindParameterByName(colorFragmentProgramGxp, "uColor"); // vec4
 
 	// light uniforms buffer
 	data->lightDataBuffer = sceClibMspaceMalloc(data->cdramPool,
@@ -513,28 +482,28 @@ static void CreateOrthoMatrix(float left, float right, float bottom, float top, 
 {
 	float near = -1.0f;
 	float far = 1.0f;
-	float rl = right - left;
-	float tb = top - bottom;
-	float fn = far - near;
+	float width = right - left;
+	float height = top - bottom;
+	float depth = far - near;
 
-	outMatrix[0][0] = 2.0f / rl;
+	outMatrix[0][0] = 2.0f / width;
 	outMatrix[0][1] = 0.0f;
 	outMatrix[0][2] = 0.0f;
-	outMatrix[0][3] = 0.0f;
+	outMatrix[0][3] = -(right + left) / width; // translation x
 
 	outMatrix[1][0] = 0.0f;
-	outMatrix[1][1] = -2.0f / tb;
+	outMatrix[1][1] = 2.0f / height;
 	outMatrix[1][2] = 0.0f;
-	outMatrix[1][3] = 0.0f;
+	outMatrix[1][3] = -(top + bottom) / height; // translation y
 
 	outMatrix[2][0] = 0.0f;
 	outMatrix[2][1] = 0.0f;
-	outMatrix[2][2] = -2.0f / fn;
-	outMatrix[2][3] = 0.0f;
+	outMatrix[2][2] = -2.0f / depth;
+	outMatrix[2][3] = -(far + near) / depth; // translation z
 
-	outMatrix[3][0] = -(right + left) / rl;
-	outMatrix[3][1] = -(top + bottom) / tb;
-	outMatrix[3][2] = -(far + near) / fn;
+	outMatrix[3][0] = 0.0f;
+	outMatrix[3][1] = 0.0f;
+	outMatrix[3][2] = 0.0f;
 	outMatrix[3][3] = 1.0f;
 }
 
@@ -598,7 +567,7 @@ void GXMRenderer::SetFrustumPlanes(const Plane* frustumPlanes)
 void GXMRenderer::SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back)
 {
 	memcpy(&m_projection, projection, sizeof(D3DRMMATRIX4D));
-	m_projection[1][1] *= -1.0f; // OpenGL is upside down
+	m_projection[1][1] *= -1.0f; // GXM is upside down
 }
 
 struct TextureDestroyContextGXM {
@@ -621,7 +590,7 @@ void GXMRenderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* textu
 	);
 }
 
-void convertTextureMetadata(SDL_Surface* surface, bool* supportedFormat, SceGxmTextureFormat* textureFormat, size_t* textureSize, size_t* textureAlignment) {
+static void convertTextureMetadata(SDL_Surface* surface, bool* supportedFormat, SceGxmTextureFormat* textureFormat, size_t* textureSize, size_t* textureAlignment) {
 	*supportedFormat = true;
 	*textureAlignment = SCE_GXM_TEXTURE_ALIGNMENT;
 	switch(surface->format) {
@@ -630,6 +599,7 @@ void convertTextureMetadata(SDL_Surface* surface, bool* supportedFormat, SceGxmT
 			*textureSize = surface->h * surface->pitch;
 			break;
 		}
+		/* crashes when opening the guestbook for some reason
 		case SDL_PIXELFORMAT_INDEX8: {
 			*textureFormat = SCE_GXM_TEXTURE_FORMAT_P8_ABGR;
 			int pixelsSize = surface->h * surface->pitch;
@@ -638,20 +608,11 @@ void convertTextureMetadata(SDL_Surface* surface, bool* supportedFormat, SceGxmT
 			*textureAlignment = SCE_GXM_PALETTE_ALIGNMENT;
 			break;
 		}
+		*/
 		default: {
 			*supportedFormat = false;
 		}
 	}
-}
-
-bool createRgbaCopySurface(SDL_Surface* surface, size_t *textureSize, SceGxmTextureFormat* textureFormat, SDL_Surface** copy_surf) {
-	*copy_surf = SDL_ConvertSurface(surface, SDL_PIXELFORMAT_ABGR8888);
-	if (!*copy_surf) {
-		return false;
-	}
-	*textureFormat = SCE_GXM_TEXTURE_FORMAT_U8U8U8U8_ABGR;
-	*textureSize = (*copy_surf)->w * (*copy_surf)->h * 4;
-	return true;
 }
 
 Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
@@ -666,9 +627,6 @@ Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 	SceGxmTextureFormat textureFormat;
 
 	convertTextureMetadata(surface->m_surface, &supportedFormat, &textureFormat, &textureSize, &textureAlignment);
-	if(!supportedFormat) {
-		SDL_Log("unsupported SDL texture format %s, falling back on SDL_PIXELFORMAT_ABGR8888", SDL_GetPixelFormatName(surface->m_surface->format));
-	}
 
 	for (Uint32 i = 0; i < m_textures.size(); ++i) {
 		auto& tex = m_textures[i];
@@ -676,12 +634,13 @@ Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 			if (tex.version != texture->m_version) {
 				void* textureData = sceGxmTextureGetData(&tex.gxmTexture);
 				if(!supportedFormat) {
-					SDL_Surface* copy_surf;
-					if(!createRgbaCopySurface(surface->m_surface, &textureSize, &textureFormat, &copy_surf)) {
-						return NO_TEXTURE_ID;
-					}
-					memcpy(textureData, copy_surf->pixels, textureSize);
-					SDL_DestroySurface(copy_surf);
+					SDL_ConvertPixels(
+						surface->m_surface->w, surface->m_surface->h,
+						surface->m_surface->format,
+						surface->m_surface->pixels,
+						surface->m_surface->pitch,
+						SDL_PIXELFORMAT_ABGR8888, textureData, surface->m_surface->pitch
+					);
 				} else {
 					memcpy(textureData, surface->m_surface->pixels, textureSize);
 				}
@@ -698,21 +657,25 @@ Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 	SDL_Log("Create Texture %s w=%d h=%d s=%d",
 		SDL_GetPixelFormatName(surface->m_surface->format), textureWidth, textureHeight, textureStride);
 
-	SDL_Surface* copy_surf = nullptr;
 	if(!supportedFormat) {
-		if(!createRgbaCopySurface(surface->m_surface, &textureSize, &textureFormat, &copy_surf)) {
-			return NO_TEXTURE_ID;
-		}
+		textureAlignment = SCE_GXM_TEXTURE_ALIGNMENT;
+		textureSize = textureHeight * textureStride * 4;
+		textureFormat = SCE_GXM_TEXTURE_FORMAT_U8U8U8U8_ABGR;
 	}
 	
 	// allocate gpu memory
 	void* textureData = sceClibMspaceMemalign(this->m_data.cdramPool, textureAlignment, textureSize);
 	uint8_t* paletteData = nullptr;
 
-	if(copy_surf)
-	{
-		memcpy(textureData, copy_surf->pixels, textureSize);
-		SDL_DestroySurface(copy_surf);
+	if(!supportedFormat) {
+		SDL_Log("unsupported SDL texture format %s, falling back on SDL_PIXELFORMAT_ABGR8888", SDL_GetPixelFormatName(surface->m_surface->format));
+		SDL_ConvertPixels(
+			surface->m_surface->w, surface->m_surface->h,
+			surface->m_surface->format,
+			surface->m_surface->pixels,
+			surface->m_surface->pitch,
+			SDL_PIXELFORMAT_ABGR8888, textureData, surface->m_surface->pitch
+		);
 	}
 	else if(surface->m_surface->format == SDL_PIXELFORMAT_INDEX8)
 	{
@@ -733,9 +696,8 @@ Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 	}
 
 	SceGxmTexture gxmTexture;
-	SDL_Log("textureData: %p", textureData);
 	SCE_ERR(sceGxmTextureInitLinearStrided, &gxmTexture, textureData, textureFormat, textureWidth, textureHeight, textureStride);
-	sceGxmTextureSetMinFilter(&gxmTexture, SCE_GXM_TEXTURE_FILTER_LINEAR);
+	//sceGxmTextureSetMinFilter(&gxmTexture, SCE_GXM_TEXTURE_FILTER_LINEAR);
 	sceGxmTextureSetMagFilter(&gxmTexture, SCE_GXM_TEXTURE_FILTER_LINEAR);
 	if(paletteData) {
 		sceGxmTextureSetPalette(&gxmTexture, paletteData);
@@ -902,8 +864,8 @@ void GXMRenderer::StartScene() {
 		&this->m_data.displayBuffersSurface[this->backBufferIndex],
 		&this->m_data.depthSurface
 	);
-	sceGxmSetViewport(this->m_data.context, 0, m_width, 0, m_height, 0, 0);
 	this->sceneStarted = true;
+	// reset quad vertices buffer
 	this->m_data.quadVertices = (Vertex*)(this->m_data.quadIndices + 4);
 }
 
@@ -991,9 +953,9 @@ void GXMRenderer::SubmitDraw(
 	transpose4x4(modelViewMatrix, modelViewMatrixTrans);
 	transpose4x4(m_projection, projectionTrans);
 
-	SET_UNIFORM(vertUniforms, this->m_data.uModelViewMatrix, modelViewMatrixTrans, mainVertexProgramGxp);
-	SET_UNIFORM(vertUniforms, this->m_data.uNormalMatrix, normalMatrix, mainVertexProgramGxp);
-	SET_UNIFORM(vertUniforms, this->m_data.uProjectionMatrix, projectionTrans, mainVertexProgramGxp);
+	SET_UNIFORM(vertUniforms, this->m_data.uModelViewMatrix, modelViewMatrixTrans);
+	SET_UNIFORM(vertUniforms, this->m_data.uProjectionMatrix, projectionTrans);
+	SET_UNIFORM(vertUniforms, this->m_data.uNormalMatrix, normalMatrix);
 	
 	float color[4] = {
 		appearance.color.r / 255.0f,
@@ -1001,11 +963,11 @@ void GXMRenderer::SubmitDraw(
 		appearance.color.b / 255.0f,
 		appearance.color.a / 255.0f
 	};
-	SET_UNIFORM(fragUniforms, this->m_data.uColor, color, mainFragmentProgramGxp);
-	SET_UNIFORM(fragUniforms, this->m_data.uShininess, appearance.shininess, mainFragmentProgramGxp);
+	SET_UNIFORM(fragUniforms, this->m_data.uColor, color);
+	SET_UNIFORM(fragUniforms, this->m_data.uShininess, appearance.shininess);
 
 	int useTexture = appearance.textureId != NO_TEXTURE_ID ? 1 : 0;
-	SET_UNIFORM(fragUniforms, this->m_data.uUseTexture, useTexture, mainFragmentProgramGxp);
+	SET_UNIFORM(fragUniforms, this->m_data.uUseTexture, useTexture);
 	if(useTexture) {
 		auto& texture = m_textures[appearance.textureId];
 		sceGxmSetFragmentTexture(this->m_data.context, 0, &texture.gxmTexture);
@@ -1025,26 +987,6 @@ void GXMRenderer::SubmitDraw(
 
 HRESULT GXMRenderer::FinalizeFrame() {
 	return DD_OK;
-}
-
-void orthoMatrixRowMajor(float mat[4][4], float left, float right, float bottom, float top, float nearZ, float farZ) {
-    memset(mat, 0, sizeof(float) * 16);
-
-    mat[0][0] = 2.0f / (right - left);
-    mat[1][1] = 2.0f / (top - bottom);
-    mat[2][2] = -2.0f / (farZ - nearZ);
-    mat[3][0] = -(right + left) / (right - left);
-    mat[3][1] = -(top + bottom) / (top - bottom);
-    mat[3][2] = -(farZ + nearZ) / (farZ - nearZ);
-    mat[3][3] = 1.0f;
-}
-
-void identityMatrix(float mat[4][4]) {
-    memset(mat, 0, sizeof(float) * 16);
-    mat[0][0] = 1.0f;
-    mat[1][1] = 1.0f;
-    mat[2][2] = 1.0f;
-    mat[3][3] = 1.0f;
 }
 
 Vertex* GXMRenderer::GetQuadVertices() {
@@ -1067,32 +1009,31 @@ void GXMRenderer::Clear(float r, float g, float b) {
 	sceGxmPushUserMarker(this->m_data.context, marker);
 
 	sceGxmSetVertexProgram(this->m_data.context, this->m_data.mainVertexProgram);
-    sceGxmSetFragmentProgram(this->m_data.context, this->m_data.clearFragmentProgram);
+    sceGxmSetFragmentProgram(this->m_data.context, this->m_data.colorFragmentProgram);
 
 	void* vertUniforms;
 	void* fragUniforms;
 	sceGxmReserveVertexDefaultUniformBuffer(this->m_data.context, &vertUniforms);
 	sceGxmReserveFragmentDefaultUniformBuffer(this->m_data.context, &fragUniforms);
 
-	float left = -m_viewportTransform.offsetX / m_viewportTransform.scale;
-	float right = (m_width - m_viewportTransform.offsetX) / m_viewportTransform.scale;
-	float top = -m_viewportTransform.offsetY / m_viewportTransform.scale;
-	float bottom = (m_height - m_viewportTransform.offsetY) / m_viewportTransform.scale;
-
 	D3DRMMATRIX4D projection;
-	orthoMatrixRowMajor(projection, left, right, bottom, top, -1.0, 1.0);
+	CreateOrthoMatrix(0.0, 1.0, 1.0, 0.0, projection);
 
 	D3DRMMATRIX4D identity;
-	identityMatrix(identity);
+	memset(identity, 0, sizeof(identity));
+	identity[0][0] = 1.0f;
+    identity[1][1] = 1.0f;
+    identity[2][2] = 1.0f;
+    identity[3][3] = 1.0f;
 
 	Matrix3x3 normal = {{1.f, 0.f, 0.f}, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}};
 
-	SET_UNIFORM(vertUniforms, this->m_data.uModelViewMatrix, identity, mainVertexProgramGxp); // float4x4
-	SET_UNIFORM(vertUniforms, this->m_data.uNormalMatrix, normal, mainVertexProgramGxp); // float3x3
-	SET_UNIFORM(vertUniforms, this->m_data.uProjectionMatrix, projection, mainVertexProgramGxp); // float4x4
+	SET_UNIFORM(vertUniforms, this->m_data.uModelViewMatrix, identity); // float4x4
+	SET_UNIFORM(vertUniforms, this->m_data.uNormalMatrix, normal); // float3x3
+	SET_UNIFORM(vertUniforms, this->m_data.uProjectionMatrix, projection); // float4x4
 
 	float color[] = {r,g,b,1};
-	SET_UNIFORM(fragUniforms, this->m_data.clearShader_uColor, color, clearFragmentProgramGxp);
+	SET_UNIFORM(fragUniforms, this->m_data.colorShader_uColor, color);
 
 	float x1 = 0;
 	float y1 = 0;
@@ -1117,19 +1058,22 @@ void GXMRenderer::Clear(float r, float g, float b) {
 }
 
 void GXMRenderer::Flip() {
-	if(this->sceneStarted) {
-		sceGxmEndScene(
-			this->m_data.context,
-			nullptr, nullptr
-		);
-
-		sceGxmPadHeartbeat(
-			&this->m_data.displayBuffersSurface[this->backBufferIndex],
-			this->m_data.displayBuffersSync[this->backBufferIndex]
-		);
-		this->sceneStarted = false;
+	if(!this->sceneStarted) {
+		this->Clear(0,0,0);
 	}
 
+	// end scene
+	sceGxmEndScene(
+		this->m_data.context,
+		nullptr, nullptr
+	);
+	sceGxmPadHeartbeat(
+		&this->m_data.displayBuffersSurface[this->backBufferIndex],
+		this->m_data.displayBuffersSync[this->backBufferIndex]
+	);
+	this->sceneStarted = false;
+
+	// display
 	GXMDisplayData displayData;
 	displayData.address = this->m_data.displayBuffers[this->backBufferIndex];
 
@@ -1158,25 +1102,38 @@ void GXMRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const S
 	sceGxmReserveVertexDefaultUniformBuffer(this->m_data.context, &vertUniforms);
 	sceGxmReserveFragmentDefaultUniformBuffer(this->m_data.context, &fragUniforms);
 
-	float left = -m_viewportTransform.offsetX / m_viewportTransform.scale;
-	float right = (m_width - m_viewportTransform.offsetX) / m_viewportTransform.scale;
-	float top = -m_viewportTransform.offsetY / m_viewportTransform.scale;
-	float bottom = (m_height - m_viewportTransform.offsetY) / m_viewportTransform.scale;
+	float left = -this->m_viewportTransform.offsetX / this->m_viewportTransform.scale;
+	float right = (this->m_width - this->m_viewportTransform.offsetX) / this->m_viewportTransform.scale;
+	float top = -this->m_viewportTransform.offsetY / this->m_viewportTransform.scale;
+	float bottom = (this->m_height - this->m_viewportTransform.offsetY) / this->m_viewportTransform.scale;
+
+	#define virtualToNDCX(x) (((x - left) / (right - left)));
+	#define virtualToNDCY(y) (((y - top) / (bottom - top)));
+
+	float x1_virtual = static_cast<float>(dstRect.x);
+	float y1_virtual = static_cast<float>(dstRect.y);
+	float x2_virtual = x1_virtual + dstRect.w;
+	float y2_virtual = y1_virtual + dstRect.h;
+
+	float x1 = virtualToNDCX(x1_virtual);
+	float y1 = virtualToNDCY(y1_virtual);
+	float x2 = virtualToNDCX(x2_virtual);
+	float y2 = virtualToNDCY(y2_virtual);
 
 	D3DRMMATRIX4D projection;
-	CreateOrthoMatrix(left, right, bottom, top, projection);
-	D3DRMMATRIX4D projectionTrans;
-	transpose4x4(projection, projectionTrans);
+	CreateOrthoMatrix(0.0, 1.0, 1.0, 0.0, projection);
+	static const Matrix3x3 normal = {{1.f, 0.f, 0.f}, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}};
 
-	D3DRMMATRIX4D identity = {{1.f, 0.f, 0.f, 0.f}, {0.f, 1.f, 0.f, 0.f}, {0.f, 0.f, 1.f, 0.f}, {0.f, 0.f, 0.f, 1.f}};
-	Matrix3x3 normal = {{1.f, 0.f, 0.f}, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}};
+	D3DRMMATRIX4D identity;
+	memset(identity, 0, sizeof(identity));
+	identity[0][0] = 1.0f;
+    identity[1][1] = 1.0f;
+    identity[2][2] = 1.0f;
+    identity[3][3] = 1.0f;
 
-	D3DRMMATRIX4D identityTrans;
-	transpose4x4(identity, identityTrans);
-
-	SET_UNIFORM(vertUniforms, this->m_data.uModelViewMatrix, identityTrans, mainVertexProgramGxp); // float4x4
-	SET_UNIFORM(vertUniforms, this->m_data.uNormalMatrix, normal, mainVertexProgramGxp); // float3x3
-	SET_UNIFORM(vertUniforms, this->m_data.uProjectionMatrix, projectionTrans, mainVertexProgramGxp); // float4x4
+	SET_UNIFORM(vertUniforms, this->m_data.uModelViewMatrix, identity); // float4x4
+	SET_UNIFORM(vertUniforms, this->m_data.uNormalMatrix, normal); // float3x3
+	SET_UNIFORM(vertUniforms, this->m_data.uProjectionMatrix, projection); // float4x4
 
 	const GXMTextureCacheEntry& texture = m_textures[textureId];
 	sceGxmSetFragmentTexture(this->m_data.context, 0, &texture.gxmTexture);
@@ -1184,16 +1141,11 @@ void GXMRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const S
 	float texW = sceGxmTextureGetWidth(&texture.gxmTexture);
 	float texH = sceGxmTextureGetHeight(&texture.gxmTexture);
 
-	float u1 = srcRect.x / texW;
-	float v1 = srcRect.y / texH;
-	float u2 = (srcRect.x + srcRect.w) / texW;
-	float v2 = (srcRect.y + srcRect.h) / texH;
+	float u1 = static_cast<float>(srcRect.x) / texW;
+	float v1 = static_cast<float>(srcRect.y) / texH;
+	float u2 = static_cast<float>(srcRect.x + srcRect.w) / texW;
+	float v2 = static_cast<float>(srcRect.y + srcRect.h) / texH;
 
-	float x1 = static_cast<float>(dstRect.x);
-	float y1 = static_cast<float>(dstRect.y);
-	float x2 = x1 + dstRect.w;
-	float y2 = y1 + dstRect.h;
-	
 	Vertex* quadVertices = this->GetQuadVertices();
 	quadVertices[0] = Vertex{ .position = {x1, y1, 0}, .normal = {0,0,0}, .texCoord = {u1, v1}};
 	quadVertices[1] = Vertex{ .position = {x2, y1, 0}, .normal = {0,0,0}, .texCoord = {u2, v1}};
@@ -1212,18 +1164,17 @@ void GXMRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const S
 }
 
 void GXMRenderer::Download(SDL_Surface* target) {
-	SDL_Surface* src = SDL_CreateSurfaceFrom(
-		this->m_width, this->m_height,
-		SDL_PIXELFORMAT_RGBA32,
-		this->m_data.displayBuffers[this->backBufferIndex], VITA_GXM_SCREEN_STRIDE
-	);
-
 	SDL_Rect srcRect = {
 		static_cast<int>(m_viewportTransform.offsetX),
 		static_cast<int>(m_viewportTransform.offsetY),
 		static_cast<int>(target->w * m_viewportTransform.scale),
 		static_cast<int>(target->h * m_viewportTransform.scale),
 	};
-
+	SDL_Surface* src = SDL_CreateSurfaceFrom(
+		this->m_width, this->m_height,
+		SDL_PIXELFORMAT_RGBA32,
+		this->m_data.displayBuffers[this->backBufferIndex], VITA_GXM_SCREEN_STRIDE
+	);
 	SDL_BlitSurfaceScaled(src, &srcRect, target, nullptr, SDL_SCALEMODE_NEAREST);
+	SDL_DestroySurface(src);
 }

@@ -18,13 +18,11 @@
 #define ALIGNMENT(n, a) (((a) - ((n) % (a))) % (a))
 
 
-#define SET_UNIFORM(buffer, param, value, program) \
+#define SET_UNIFORM(buffer, param, value) \
     do { \
         size_t __offset = sceGxmProgramParameterGetResourceIndex(param); \
         void* __dst = (uint8_t*)(buffer) + (__offset * sizeof(uint32_t)); \
 		memcpy(__dst, reinterpret_cast<const void*>(&(value)), sizeof(value)); \
-        /*SDL_Log("set uniform param=%s offset=%d size=%d buffer_size=%d", \
-                sceGxmProgramParameterGetName(param), __offset*4, sizeof(value), sceGxmProgramGetDefaultUniformBufferSize(program));*/ \
     } while (0)
 
 #define GET_SHADER_PARAM(var, gxp, name, ret) \
@@ -33,3 +31,11 @@
 		SDL_Log("Failed to find param %s", name); \
 		return ret; \
 	}
+
+static void printMatrix4x4(float mat[4][4]) {
+    sceClibPrintf("mat4{\n");
+    for(int i = 0; i < 4; i++) {
+        sceClibPrintf("%f %f %f %f\n", mat[i][0], mat[i][1], mat[i][2], mat[i][3]);
+    }
+    sceClibPrintf("}\n");
+}

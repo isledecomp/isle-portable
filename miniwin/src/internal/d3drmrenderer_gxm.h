@@ -101,18 +101,17 @@ typedef struct GXMRendererData {
 	void* stencilBufferData;
 	SceGxmDepthStencilSurface depthSurface;
 
-	// clear shader
-	SceGxmShaderPatcherId clearFragmentProgramId;
-	SceGxmFragmentProgram* clearFragmentProgram;
-
 	// main shader
 	SceGxmShaderPatcherId mainVertexProgramId;
 	SceGxmShaderPatcherId mainFragmentProgramId;
 	SceGxmShaderPatcherId imageFragmentProgramId;
+	SceGxmShaderPatcherId colorFragmentProgramId;
+
 	SceGxmVertexProgram* mainVertexProgram;
 	SceGxmFragmentProgram* opaqueFragmentProgram; // 3d with no transparency
 	SceGxmFragmentProgram* transparentFragmentProgram; // 3d with transparency
 	SceGxmFragmentProgram* imageFragmentProgram; // 2d images, no lighting
+	SceGxmFragmentProgram* colorFragmentProgram; // 2d color, no lighting
 
 	// main shader vertex uniforms
 	const SceGxmProgramParameter* uModelViewMatrix;
@@ -126,7 +125,7 @@ typedef struct GXMRendererData {
 	const SceGxmProgramParameter* uColor;
 	const SceGxmProgramParameter* uUseTexture;
 
-	const SceGxmProgramParameter* clearShader_uColor;
+	const SceGxmProgramParameter* colorShader_uColor;
 
 	// scene light data
 	void* lightDataBuffer;
