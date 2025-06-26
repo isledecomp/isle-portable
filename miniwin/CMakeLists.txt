@@ -9,6 +9,7 @@ add_library(miniwin STATIC EXCLUDE_FROM_ALL
   src/ddraw/ddpalette.cpp
   src/ddraw/ddraw.cpp
   src/ddraw/ddsurface.cpp
+  src/ddraw/framebuffer.cpp
 
   # D3DRM
   src/d3drm/d3drm.cpp

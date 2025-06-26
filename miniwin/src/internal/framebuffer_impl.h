@@ -1,9 +1,5 @@
 #pragma once
 
-#ifdef __vita__
-#include "framebuffer_impl_vita.h"
-#else
-
 #include <SDL3/SDL.h>
 #include <ddsurface_impl.h>
 #include <miniwin/ddraw.h>
@@ -46,4 +42,3 @@ private:
 	DirectDrawSurfaceImpl* m_transferBuffer;
 	IDirectDrawPalette* m_palette = nullptr;
 };
-#endif

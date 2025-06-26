@@ -15,19 +15,14 @@
 
 #define ALIGN(x, a) (((x) + ((a)-1)) & ~((a)-1))
 
-#define INCBIN(filename, symbol) \
-	__asm__( \
-		".balign 16 \n" \
-		#symbol ":" \
-		".incbin \"" filename "\"" \
-	); \
-	extern const void* symbol
 
-#define SET_UNIFORM(buffer, param, value) \
+#define SET_UNIFORM(buffer, param, value, program) \
     do { \
         size_t __offset = sceGxmProgramParameterGetResourceIndex(param); \
         void* __dst = (uint8_t*)(buffer) + (__offset * sizeof(uint32_t)); \
 		memcpy(__dst, reinterpret_cast<const void*>(&(value)), sizeof(value)); \
+        /*SDL_Log("set uniform param=%s offset=%d size=%d buffer_size=%d", \
+                sceGxmProgramParameterGetName(param), __offset*4, sizeof(value), sceGxmProgramGetDefaultUniformBufferSize(program));*/ \
     } while (0)
 
 #define GET_SHADER_PARAM(var, gxp, name, ret) \
@@ -36,10 +31,3 @@
 		SDL_Log("Failed to find param %s", name); \
 		return ret; \
 	}
-
-
-extern const SceGxmProgram* blitVertexProgramGxp;
-extern const SceGxmProgram* blitColorFragmentProgramGxp;
-extern const SceGxmProgram* blitTexFragmentProgramGxp;
-
-bool get_gxm_context(SceGxmContext** context, SceGxmShaderPatcher** shaderPatcher, SceClibMspace* cdramPool);

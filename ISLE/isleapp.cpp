@@ -51,7 +51,6 @@
 #endif
 
 #ifdef __vita__
-#include <SDL3/SDL_gxm.h>
 #define USE_GXM
 #endif
 

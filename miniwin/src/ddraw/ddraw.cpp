@@ -227,7 +227,7 @@ HRESULT DirectDrawImpl::EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 	Direct3DRMSDL3GPU_EnumDevice(cb, ctx);
 #endif
 #ifdef USE_OPENGLES2
-	//OpenGLES2Renderer_EnumDevice(cb, ctx);
+	OpenGLES2Renderer_EnumDevice(cb, ctx);
 #endif
 #ifdef USE_OPENGL1
 	OpenGL1Renderer_EnumDevice(cb, ctx);
@@ -236,9 +236,9 @@ HRESULT DirectDrawImpl::EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 	DirectX9Renderer_EnumDevice(cb, ctx);
 #endif
 #ifdef __vita__
-	//GXMRenderer_EnumDevice(cb, ctx);
+	GXMRenderer_EnumDevice(cb, ctx);
 #endif
-	Direct3DRMSoftware_EnumDevice(cb, ctx);
+	//Direct3DRMSoftware_EnumDevice(cb, ctx);
 
 	return S_OK;
 }
@@ -365,7 +365,7 @@ HRESULT DirectDrawImpl::CreateDevice(
 #endif
 #ifdef __vita__
 	else if (SDL_memcmp(&guid, &GXM_GUID, sizeof(GUID)) == 0) {
-		DDRenderer = GXMRenderer::Create(pBackBuffer);
+		DDRenderer = GXMRenderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
 #endif
 	else if (SDL_memcmp(&guid, &SOFTWARE_GUID, sizeof(GUID)) == 0) {

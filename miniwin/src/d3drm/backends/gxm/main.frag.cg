@@ -54,13 +54,13 @@ void main(
                 specular += spec * lightColor;
             }
         }
+    }
 
-        outColor = uColor;
-        outColor.rgb = clamp(diffuse * uColor.rgb + specular, 0.0, 1.0);
-        if (uUseTexture != 0) {
-            float4 texel = tex2D(uTexture, vTexCoord);
-            outColor.rgb *= texel.rgb;
-            outColor.rgb = clamp(outColor.rgb, 0.0, 1.0);
-        }
+    outColor = uColor;
+    outColor.rgb = clamp(diffuse * uColor.rgb + specular, 0.0, 1.0);
+    if (uUseTexture != 0) {
+        float4 texel = tex2D(uTexture, vTexCoord);
+        outColor.rgb *= texel.rgb;
+        outColor.rgb = clamp(outColor.rgb, 0.0, 1.0);
     }
 }

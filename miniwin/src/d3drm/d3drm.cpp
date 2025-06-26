@@ -173,7 +173,7 @@ HRESULT Direct3DRMImpl::CreateDeviceFromSurface(
 #endif
 #ifdef __vita__
 	else if (SDL_memcmp(&guid, &GXM_GUID, sizeof(GUID)) == 0) {
-		DDRenderer = GXMRenderer::Create(surface);
+		DDRenderer = GXMRenderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
 #endif
 	else {

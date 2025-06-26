@@ -1,6 +1,5 @@
-shaders += main.frag.gxp main.vert.gxp
+shaders += main.frag.gxp main.vert.gxp image.frag.gxp
 shaders += clear.frag.gxp clear.vert.gxp
-shaders += blit.color.frag.gxp blit.tex.frag.gxp blit.vert.gxp
 
 all: $(shaders)
 

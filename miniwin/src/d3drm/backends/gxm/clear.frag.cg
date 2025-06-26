@@ -1,5 +1,6 @@
 void main(
+    uniform float4 uColor : COLOR,
     out float4 outColor : COLOR
 ) {
-    outColor = float4(0.0, 0.0, 0.5, 1.0);
+    outColor = uColor;
 }

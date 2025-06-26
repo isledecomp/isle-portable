@@ -1,0 +1,12 @@
+void main(
+    float4 vPosition : POSITION,
+    float3 vViewPos : TEXCOORD1,
+    float3 vNormal : TEXCOORD2,
+    float2 vTexCoord : TEXCOORD3,
+
+    uniform sampler2D uTexture,
+
+    out float4 outColor : COLOR
+) {
+    outColor = tex2D(uTexture, vTexCoord);
+}

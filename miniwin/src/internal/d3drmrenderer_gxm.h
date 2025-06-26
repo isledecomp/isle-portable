@@ -32,6 +32,10 @@ struct GXMMeshCacheEntry {
 	uint16_t indexCount;
 };
 
+typedef struct GXMDisplayData {
+	void* address;
+} GXMDisplayData;
+
 typedef struct GXMRendererContext {
 	// context
 	SceUID vdmRingBufferUid;
@@ -70,14 +74,11 @@ typedef struct GXMRendererData {
 	SceGxmShaderPatcher* shaderPatcher;
 	SceClibMspace cdramPool;
 
-	// color buffer
-	/*
 	SceGxmRenderTarget* renderTarget;
-	SceUID renderBufferUid;
-	void* renderBuffer;
-	SceGxmColorSurface renderSurface;
-	SceGxmSyncObject* renderBufferSync;
-	*/
+	void* displayBuffers[VITA_GXM_DISPLAY_BUFFER_COUNT];
+	SceUID displayBuffersUid[VITA_GXM_DISPLAY_BUFFER_COUNT];
+	SceGxmColorSurface displayBuffersSurface[VITA_GXM_DISPLAY_BUFFER_COUNT];
+	SceGxmSyncObject* displayBuffersSync[VITA_GXM_DISPLAY_BUFFER_COUNT];
 
 	// depth buffer
 	SceUID depthBufferUid;
@@ -95,9 +96,11 @@ typedef struct GXMRendererData {
 	// main shader
 	SceGxmShaderPatcherId mainVertexProgramId;
 	SceGxmShaderPatcherId mainFragmentProgramId;
+	SceGxmShaderPatcherId imageFragmentProgramId;
 	SceGxmVertexProgram* mainVertexProgram;
-	SceGxmFragmentProgram* opaqueFragmentProgram;
-	SceGxmFragmentProgram* transparentFragmentProgram;
+	SceGxmFragmentProgram* opaqueFragmentProgram; // 3d with no transparency
+	SceGxmFragmentProgram* transparentFragmentProgram; // 3d with transparency
+	SceGxmFragmentProgram* imageFragmentProgram; // 2d images, no lighting
 
 	// main shader vertex uniforms
 	const SceGxmProgramParameter* uModelViewMatrixParam;
@@ -111,6 +114,8 @@ typedef struct GXMRendererData {
 	const SceGxmProgramParameter* uColor;
 	const SceGxmProgramParameter* uUseTexture;
 
+	const SceGxmProgramParameter* clearShader_uColor;
+
 	// clear mesh
 	void* clearMeshBuffer;
 	float* clearVerticies;
@@ -118,13 +123,11 @@ typedef struct GXMRendererData {
 
 	// scene light data
 	void* lightDataBuffer;
-	
-	FrameBufferImpl* frameBuffer;
 } GXMRendererData;
 
 class GXMRenderer : public Direct3DRMRenderer {
 public:
-	static Direct3DRMRenderer* Create(IDirectDrawSurface* surface);
+	static Direct3DRMRenderer* Create(DWORD width, DWORD height);
 	GXMRenderer(
 		DWORD width,
 		DWORD height,
@@ -138,8 +141,6 @@ public:
 	void SetFrustumPlanes(const Plane* frustumPlanes) override;
 	Uint32 GetTextureId(IDirect3DRMTexture* texture) override;
 	Uint32 GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup) override;
-	DWORD GetWidth() override;
-	DWORD GetHeight() override;
 	void GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc) override;
 	const char* GetName() override;
 	HRESULT BeginFrame() override;
@@ -147,25 +148,37 @@ public:
 	void SubmitDraw(
 		DWORD meshId,
 		const D3DRMMATRIX4D& modelViewMatrix,
+		const D3DRMMATRIX4D& worldMatrix,
+		const D3DRMMATRIX4D& viewMatrix,
 		const Matrix3x3& normalMatrix,
 		const Appearance& appearance
 	) override;
 	HRESULT FinalizeFrame() override;
+	void Resize(int width, int height, const ViewportTransform& viewportTransform) override;
+	void Clear(float r, float g, float b) override;
+	void Flip() override;
+	void Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect) override;
+	void Download(SDL_Surface* target) override;
 
 private:
 	void AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture);
 	void AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh);
 
-	void* AllocateGpu(size_t size, size_t align = 4);
-	void FreeGpu(void* ptr);
-
 	GXMMeshCacheEntry GXMUploadMesh(const MeshGroup& meshGroup);
+
+	void StartScene();
 
 	std::vector<GXMTextureCacheEntry> m_textures;
 	std::vector<GXMMeshCacheEntry> m_meshes;
 	D3DRMMATRIX4D m_projection;
 	DWORD m_width, m_height;
 	std::vector<SceneLight> m_lights;
+
+	bool transparencyEnabled = false;
+	bool sceneStarted = false;
+
+	int backBufferIndex = 0;
+	int frontBufferIndex = 1;
 
 	GXMRendererData m_data;
 	bool m_initialized = false;

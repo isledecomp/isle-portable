@@ -6,6 +6,8 @@
 #include <SDL3/SDL_stdinc.h>
 
 
+static SceUID cdramPoolUID = -1;
+static SceClibMspace cdramPool = NULL;
 
 
 void *patcher_host_alloc(void *user_data, unsigned int size)
@@ -125,4 +127,45 @@ void vita_mem_fragment_usse_free(SceUID uid)
     }
     sceGxmUnmapFragmentUsseMemory(mem);
     sceKernelFreeMemBlock(uid);
+}
+
+bool cdramPool_init() {
+    if(cdramPool) {
+        return true;
+    }
+    int poolsize;
+    int ret;
+    void* mem;
+    SceKernelFreeMemorySizeInfo info;
+    info.size = sizeof(SceKernelFreeMemorySizeInfo);
+    sceKernelGetFreeMemorySize(&info);
+
+    poolsize = ALIGN(info.size_cdram, 256 * 1024);
+    if (poolsize > info.size_cdram) {
+        poolsize = ALIGN(info.size_cdram - 256 * 1024, 256 * 1024);
+    }
+    poolsize -= 16 * 1024 * 1024;
+    cdramPoolUID = sceKernelAllocMemBlock("gpu_cdram_pool", SCE_KERNEL_MEMBLOCK_TYPE_USER_CDRAM_RW, poolsize, NULL);
+    if (cdramPool < 0) {
+        return false;
+    }
+
+    ret = sceKernelGetMemBlockBase(cdramPoolUID, &mem);
+    if (ret < 0) {
+        return false;
+    }
+    cdramPool = sceClibMspaceCreate(mem, poolsize);
+
+    if (!cdramPool) {
+        return false;
+    }
+    ret = sceGxmMapMemory(mem, poolsize, (SceGxmMemoryAttribFlags)(SCE_GXM_MEMORY_ATTRIB_READ | SCE_GXM_MEMORY_ATTRIB_WRITE));
+    if (ret < 0) {
+        return false;
+    }
+    return true;
+}
+
+SceClibMspace cdramPool_get() {
+    return cdramPool;
 }
