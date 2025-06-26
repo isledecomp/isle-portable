@@ -125,7 +125,9 @@ void sceneInit(shaderProgram_s* prog) {
 Direct3DRMRenderer* Citro3DRenderer::Create(DWORD width, DWORD height)
 {
 	// TODO: Doesn't SDL call this function?
+	// Actually it's in ctrulib -max
 	gfxInitDefault();
+	gfxSetWide(true);
 	gfxSet3D(false);
 	consoleInit(GFX_BOTTOM, nullptr);
 
@@ -141,9 +143,9 @@ Citro3DRenderer::Citro3DRenderer(DWORD width, DWORD height)
 	DVLB_s *vsh_dvlb;
 
 	m_width = width;
-	m_height = height;
+	m_height = height / 2;
 	m_virtualWidth = width;
-	m_virtualHeight = height;
+	m_virtualHeight = height / 2;
 
 	// FIXME: is this the right pixel format?
 
@@ -241,6 +243,12 @@ Uint32 Citro3DRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 		auto& tex = m_textures[i];
 		if (tex.texture == texture) {
 			if (tex.version != texture->m_version) {
+				// This, for some reason, causes the app to close
+				// instead of crashing the cpu, useful for
+				// debugging :)
+				for(i = 0; i < 10000000; i++)
+					printf("HI IM DAISY");
+
 				C3D_TexDelete(tex.c3dTex);
 
 				SDL_Surface* surf = SDL_ConvertSurface(surface->m_surface, SDL_PIXELFORMAT_RGBA32);
