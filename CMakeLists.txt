@@ -663,9 +663,11 @@ elseif(PSP)
     # Create an EBOOT.PBP file
     create_pbp_file(
         TARGET ${PROJECT_NAME}
-        ICON_PATH NULL
-        BACKGROUND_PATH NULL
+        ICON_PATH "${CMAKE_SOURCE_DIR}/XMB/Game/ICON0.png"
+        ANIM_PATH "${CMAKE_SOURCE_DIR}/XMB/Game/ICON1.pmf"
+        BACKGROUND_PATH "${CMAKE_SOURCE_DIR}/XMB/Game/PIC1.png"
         PREVIEW_PATH NULL
+        MUSIC_PATH "${CMAKE_SOURCE_DIR}/XMB/Game/SND0.at3"
         TITLE ${PROJECT_NAME}
         VERSION 01.00
     )
