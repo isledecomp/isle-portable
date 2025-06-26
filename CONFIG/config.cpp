@@ -141,7 +141,6 @@ bool CConfigApp::ReadRegisterSettings()
 	}
 	m_base_path = iniparser_getstring(dict, "isle:diskpath", m_base_path.c_str());
 	m_cd_path = iniparser_getstring(dict, "isle:cdpath", m_cd_path.c_str());
-	m_media_path = iniparser_getstring(dict, "isle:mediapath", m_media_path.c_str());
 	m_save_path = iniparser_getstring(dict, "isle:savepath", m_save_path.c_str());
 	m_display_bit_depth = iniparser_getint(dict, "isle:Display Bit Depth", -1);
 	m_flip_surfaces = iniparser_getboolean(dict, "isle:Flip Surfaces", m_flip_surfaces);
@@ -166,10 +165,6 @@ bool CConfigApp::ValidateSettings()
 {
 	BOOL is_modified = FALSE;
 
-	if (!IsPrimaryDriver() && !m_full_screen) {
-		m_full_screen = TRUE;
-		is_modified = TRUE;
-	}
 	if (IsDeviceInBasicRGBMode()) {
 		if (m_3d_video_ram) {
 			m_3d_video_ram = FALSE;
@@ -201,10 +196,6 @@ bool CConfigApp::ValidateSettings()
 	if (m_flip_surfaces) {
 		if (!m_3d_video_ram) {
 			m_3d_video_ram = TRUE;
-			is_modified = TRUE;
-		}
-		if (!m_full_screen) {
-			m_full_screen = TRUE;
 			is_modified = TRUE;
 		}
 	}
@@ -302,7 +293,6 @@ void CConfigApp::WriteRegisterSettings() const
 	}
 	iniparser_set(dict, "isle:diskpath", m_base_path.c_str());
 	iniparser_set(dict, "isle:cdpath", m_cd_path.c_str());
-	iniparser_set(dict, "isle:mediapath", m_media_path.c_str());
 	iniparser_set(dict, "isle:savepath", m_save_path.c_str());
 
 	SetIniInt(dict, "isle:Display Bit Depth", m_display_bit_depth);

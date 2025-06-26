@@ -77,7 +77,6 @@ public:
 	std::string m_iniPath;
 	std::string m_base_path;
 	std::string m_cd_path;
-	std::string m_media_path;
 	std::string m_save_path;
 	float m_max_lod;
 	int m_max_actors;

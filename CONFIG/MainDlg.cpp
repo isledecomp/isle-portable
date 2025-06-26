@@ -56,18 +56,15 @@ CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 	connect(m_ui->musicCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxMusic);
 	connect(m_ui->sound3DCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckbox3DSound);
 	connect(m_ui->joystickCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxJoystick);
+	connect(m_ui->fullscreenCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxFullscreen);
 	connect(m_ui->okButton, &QPushButton::clicked, this, &CMainDialog::accept);
 	connect(m_ui->cancelButton, &QPushButton::clicked, this, &CMainDialog::reject);
 
-	connect(m_ui->diskPathOpen, &QPushButton::clicked, this, &CMainDialog::SelectDiskPathDialog);
-	connect(m_ui->cdPathOpen, &QPushButton::clicked, this, &CMainDialog::SelectCDPathDialog);
-	connect(m_ui->mediaPathOpen, &QPushButton::clicked, this, &CMainDialog::SelectMediaPathDialog);
+	connect(m_ui->dataPathOpen, &QPushButton::clicked, this, &CMainDialog::SelectDataPathDialog);
 	connect(m_ui->savePathOpen, &QPushButton::clicked, this, &CMainDialog::SelectSavePathDialog);
 
-	connect(m_ui->diskPath, &QLineEdit::textEdited, this, &CMainDialog::DiskPathEdited);
-	connect(m_ui->cdPath, &QLineEdit::textEdited, this, &CMainDialog::CDPathEdited);
-	connect(m_ui->mediaPath, &QLineEdit::textEdited, this, &CMainDialog::MediaPathEdited);
-	connect(m_ui->savePath, &QLineEdit::textEdited, this, &CMainDialog::SavePathEdited);
+	connect(m_ui->dataPath, &QLineEdit::editingFinished, this, &CMainDialog::DataPathEdited);
+	connect(m_ui->savePath, &QLineEdit::editingFinished, this, &CMainDialog::SavePathEdited);
 
 	connect(m_ui->maxLoDSlider, &QSlider::valueChanged, this, &CMainDialog::MaxLoDChanged);
 	connect(m_ui->maxActorsSlider, &QSlider::valueChanged, this, &CMainDialog::MaxActorsChanged);
@@ -187,9 +184,8 @@ void CMainDialog::UpdateInterface()
 	}
 	m_ui->joystickCheckBox->setChecked(currentConfigApp->m_use_joystick);
 	m_ui->musicCheckBox->setChecked(currentConfigApp->m_music);
-	m_ui->diskPath->setText(QString::fromStdString(currentConfigApp->m_base_path));
-	m_ui->cdPath->setText(QString::fromStdString(currentConfigApp->m_cd_path));
-	m_ui->mediaPath->setText(QString::fromStdString(currentConfigApp->m_media_path));
+	m_ui->fullscreenCheckBox->setChecked(currentConfigApp->m_full_screen);
+	m_ui->dataPath->setText(QString::fromStdString(currentConfigApp->m_cd_path));
 	m_ui->savePath->setText(QString::fromStdString(currentConfigApp->m_save_path));
 }
 
@@ -266,54 +262,33 @@ void CMainDialog::OnCheckboxMusic(bool checked)
 	UpdateInterface();
 }
 
-void CMainDialog::SelectDiskPathDialog()
+void CMainDialog::OnCheckboxFullscreen(bool checked)
 {
-	QString disk_path = QString::fromStdString(currentConfigApp->m_base_path);
-	disk_path = QFileDialog::getExistingDirectory(
-		this,
-		tr("Open Directory"),
-		disk_path,
-		QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
-	);
-
-	if (disk_path.toStdString() != "") {
-		currentConfigApp->m_base_path = disk_path.toStdString();
-		m_modified = true;
-		UpdateInterface();
-	}
+	currentConfigApp->m_full_screen = checked;
+	m_modified = true;
+	UpdateInterface();
 }
 
-void CMainDialog::SelectCDPathDialog()
+void CMainDialog::SelectDataPathDialog()
 {
-	QString cd_path = QString::fromStdString(currentConfigApp->m_cd_path);
-	cd_path = QFileDialog::getExistingDirectory(
+	QString data_path = QString::fromStdString(currentConfigApp->m_cd_path);
+	data_path = QFileDialog::getExistingDirectory(
 		this,
 		tr("Open Directory"),
-		cd_path,
+		data_path,
 		QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
 	);
 
-	if (cd_path.toStdString() != "") {
-		currentConfigApp->m_cd_path = cd_path.toStdString();
-		m_modified = true;
-		UpdateInterface();
-	}
-}
+	QDir data_dir = QDir(data_path);
 
-void CMainDialog::SelectMediaPathDialog()
-{
-	QString media_path = QString::fromStdString(currentConfigApp->m_media_path);
-	media_path = QFileDialog::getExistingDirectory(
-		this,
-		tr("Open Directory"),
-		media_path,
-		QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
-	);
-	if (media_path.toStdString() != "") {
-		currentConfigApp->m_media_path = media_path.toStdString();
+	if (data_dir.exists()) {
+		currentConfigApp->m_cd_path = data_dir.absolutePath().toStdString();
+		data_dir.cd(QString("DATA"));
+		data_dir.cd(QString("disk"));
+		currentConfigApp->m_base_path = data_dir.absolutePath().toStdString();
 		m_modified = true;
-		UpdateInterface();
 	}
+	UpdateInterface();
 }
 
 void CMainDialog::SelectSavePathDialog()
@@ -326,38 +301,39 @@ void CMainDialog::SelectSavePathDialog()
 		QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
 	);
 
-	if (save_path.toStdString() != "") {
-		currentConfigApp->m_save_path = save_path.toStdString();
+	QDir save_dir = QDir(save_path);
+
+	if (save_dir.exists()) {
+		currentConfigApp->m_save_path = save_dir.absolutePath().toStdString();
 		m_modified = true;
-		UpdateInterface();
 	}
-}
-
-void CMainDialog::DiskPathEdited(const QString& text)
-{
-	currentConfigApp->m_base_path = text.toStdString();
-	m_modified = true;
 	UpdateInterface();
 }
 
-void CMainDialog::CDPathEdited(const QString& text)
+void CMainDialog::DataPathEdited()
 {
-	currentConfigApp->m_cd_path = text.toStdString();
-	m_modified = true;
+	QDir data_dir = QDir(m_ui->dataPath->text());
+
+	if (data_dir.exists()) {
+		currentConfigApp->m_cd_path = data_dir.absolutePath().toStdString();
+		data_dir.cd(QString("DATA"));
+		data_dir.cd(QString("disk"));
+		currentConfigApp->m_base_path = data_dir.absolutePath().toStdString();
+		m_modified = true;
+	}
+
 	UpdateInterface();
 }
 
-void CMainDialog::MediaPathEdited(const QString& text)
+void CMainDialog::SavePathEdited()
 {
-	currentConfigApp->m_media_path = text.toStdString();
-	m_modified = true;
-	UpdateInterface();
-}
 
-void CMainDialog::SavePathEdited(const QString& text)
-{
-	currentConfigApp->m_save_path = text.toStdString();
-	m_modified = true;
+	QDir save_dir = QDir(m_ui->savePath->text());
+
+	if (save_dir.exists()) {
+		currentConfigApp->m_save_path = save_dir.absolutePath().toStdString();
+		m_modified = true;
+	}
 	UpdateInterface();
 }
 
