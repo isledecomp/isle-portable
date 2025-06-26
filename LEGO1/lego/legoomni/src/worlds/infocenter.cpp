@@ -446,8 +446,6 @@ MxLong Infocenter::HandleEndAction(MxEndActionNotificationParam& p_param)
 // FUNCTION: LEGO1 0x1006f4e0
 void Infocenter::ReadyWorld()
 {
-	DetectGameVersion();
-
 	m_infoManDialogueTimer = 0;
 	m_bookAnimationTimer = 0;
 	m_unk0x1d4 = 0;
@@ -1605,38 +1603,4 @@ InfocenterState::~InfocenterState()
 		}
 		i++;
 	} while (i < GetMaxNameLength());
-}
-
-void Infocenter::DetectGameVersion()
-{
-	static bool done = false;
-	if (done) {
-		return;
-	}
-
-	const char* file = "/lego/scripts/infocntr/infomain.si";
-	SDL_PathInfo info;
-	bool success = false;
-
-	MxString path = MxString(MxOmni::GetHD()) + file;
-	path.MapPathToFilesystem();
-	if (!(success = SDL_GetPathInfo(path.GetData(), &info))) {
-		path = MxString(MxOmni::GetCD()) + file;
-		path.MapPathToFilesystem();
-		success = SDL_GetPathInfo(path.GetData(), &info);
-	}
-
-	assert(success);
-
-	// File sizes of INFOMAIN.SI in English 1.0 and Japanese 1.0
-	Lego()->SetIs10(info.size == 58130432 || info.size == 57737216);
-
-	if (Lego()->GetIs10()) {
-		SDL_Log("Detected game version 1.0");
-	}
-	else {
-		SDL_Log("Detected game version 1.1");
-	}
-
-	done = true;
 }

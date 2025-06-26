@@ -165,8 +165,6 @@ private:
 	void PlayBookAnimation();
 	void StopBookAnimation();
 
-	void DetectGameVersion();
-
 	InfomainScript::Script m_currentInfomainScript; // 0xf8
 	MxS16 m_selectedCharacter;                      // 0xfc
 	InfocenterState* m_infocenterState;             // 0x100
