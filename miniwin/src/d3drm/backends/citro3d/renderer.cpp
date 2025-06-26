@@ -246,8 +246,8 @@ Uint32 Citro3DRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 				// This, for some reason, causes the app to close
 				// instead of crashing the cpu, useful for
 				// debugging :)
-				for(i = 0; i < 10000000; i++)
-					printf("HI IM DAISY");
+				//for(i = 0; i < 1000000; i++)
+				//	SDL_LogError(LOG_CATEGORY_MINIWIN, "%s: HI IM DAISY", MINIWIN_PRETTY_FUNCTION);
 
 				C3D_TexDelete(tex.c3dTex);
 
@@ -255,6 +255,8 @@ Uint32 Citro3DRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 				if (!surf) {
 					return NO_TEXTURE_ID;
 				}
+				// Apparently a crash may be caused due to large textures? Hopefully this fixes that.
+				surf = SDL_ScaleSurface(surf, (surf->w / 2), (surf->h / 2), SDL_SCALEMODE_LINEAR);
 				// TODO: C3D_TexGenerateMipmap or C3D_TexInit?
 				// glGenTextures(1, &tex.glTextureId);
 				// FIXME: GPU_RGBA8 may be wrong
