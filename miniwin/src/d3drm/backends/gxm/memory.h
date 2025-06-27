@@ -13,9 +13,7 @@ void* vita_mem_alloc(
 	size_t size,
 	size_t alignment,
 	int attribs,
-	SceUID* uid,
-	const char* name,
-	size_t* alignedSize
+	SceUID* uid
 );
 void vita_mem_free(SceUID uid);
 

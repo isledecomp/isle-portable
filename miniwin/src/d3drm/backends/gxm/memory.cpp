@@ -28,9 +28,7 @@ void* vita_mem_alloc(
 	size_t size,
 	size_t alignment,
 	int attribs,
-	SceUID *uid,
-	const char* name,
-	size_t* alignedSize
+	SceUID *uid
 ) {
     void *mem;
 
@@ -42,7 +40,7 @@ void* vita_mem_alloc(
         size = ALIGN(size, 4 * 1024);
     }
 
-    *uid = sceKernelAllocMemBlock(name, type, size, NULL);
+    *uid = sceKernelAllocMemBlock("gpu_mem", type, size, NULL);
 
     if (*uid < 0) {
 		SDL_Log("sceKernelAllocMemBlock: 0x%x", *uid);
@@ -57,10 +55,6 @@ void* vita_mem_alloc(
         SDL_Log("sceGxmMapMemory 0x%x 0x%x %d failed", mem, size, attribs);
 		return NULL;
     }
-
-	if(alignedSize) {
-		*alignedSize = size;
-	}
 
     return mem;
 }

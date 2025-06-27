@@ -4,7 +4,7 @@ void main(
     float2 aTexCoord : TEXCOORD0,
 
     column_major uniform float4x4 uModelViewMatrix,
-    uniform float3x3 uNormalMatrix,
+    column_major uniform float3x3 uNormalMatrix,
     column_major uniform float4x4 uProjectionMatrix,
 
     out float4 vPosition : POSITION,

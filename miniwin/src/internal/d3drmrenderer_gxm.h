@@ -44,6 +44,14 @@ struct SceneLightGXM {
 	float direction[4];
 };
 
+static_assert(sizeof(SceneLightGXM) == 4*4*3);
+
+struct GXMSceneLightUniform {
+	SceneLightGXM lights[3];
+	int lightCount;
+};
+
+
 typedef struct Vertex {
 	float position[3];
     float normal[3];
@@ -84,66 +92,12 @@ typedef struct GXMRendererContext {
 	SceGxmShaderPatcher* shaderPatcher;
 } GXMRendererContext;
 
-typedef struct GXMRendererData {
-	SceGxmContext* context;
-	SceGxmShaderPatcher* shaderPatcher;
-	SceClibMspace cdramPool;
-
-	SceGxmRenderTarget* renderTarget;
-	void* displayBuffers[VITA_GXM_DISPLAY_BUFFER_COUNT];
-	SceUID displayBuffersUid[VITA_GXM_DISPLAY_BUFFER_COUNT];
-	SceGxmColorSurface displayBuffersSurface[VITA_GXM_DISPLAY_BUFFER_COUNT];
-	SceGxmSyncObject* displayBuffersSync[VITA_GXM_DISPLAY_BUFFER_COUNT];
-
-	// depth buffer
-	SceUID depthBufferUid;
-	void* depthBufferData;
-	SceUID stencilBufferUid;
-	void* stencilBufferData;
-	SceGxmDepthStencilSurface depthSurface;
-
-	// main shader
-	SceGxmShaderPatcherId mainVertexProgramId;
-	SceGxmShaderPatcherId mainFragmentProgramId;
-	SceGxmShaderPatcherId imageFragmentProgramId;
-	SceGxmShaderPatcherId colorFragmentProgramId;
-
-	SceGxmVertexProgram* mainVertexProgram;
-	SceGxmFragmentProgram* opaqueFragmentProgram; // 3d with no transparency
-	SceGxmFragmentProgram* transparentFragmentProgram; // 3d with transparency
-	SceGxmFragmentProgram* imageFragmentProgram; // 2d images, no lighting
-	SceGxmFragmentProgram* colorFragmentProgram; // 2d color, no lighting
-
-	// main shader vertex uniforms
-	const SceGxmProgramParameter* uModelViewMatrix;
-	const SceGxmProgramParameter* uNormalMatrix;
-	const SceGxmProgramParameter* uProjectionMatrix;
-
-	// main shader fragment uniforms
-	const SceGxmProgramParameter* uLights;
-	const SceGxmProgramParameter* uLightCount;
-	const SceGxmProgramParameter* uShininess;
-	const SceGxmProgramParameter* uColor;
-	const SceGxmProgramParameter* uUseTexture;
-
-	const SceGxmProgramParameter* colorShader_uColor;
-
-	// scene light data
-	void* lightDataBuffer;
-
-	void* quadMeshBuffer;
-	uint16_t* quadIndices;
-	Vertex* quadVertices;
-
-} GXMRendererData;
-
 class GXMRenderer : public Direct3DRMRenderer {
 public:
 	static Direct3DRMRenderer* Create(DWORD width, DWORD height);
 	GXMRenderer(
 		DWORD width,
-		DWORD height,
-		GXMRendererData data
+		DWORD height
 	);
 	GXMRenderer(int forEnum) {};
 	~GXMRenderer() override;
@@ -179,7 +133,20 @@ private:
 	GXMMeshCacheEntry GXMUploadMesh(const MeshGroup& meshGroup);
 
 	void StartScene();
-	Vertex* GetQuadVertices();
+
+	inline Vertex* QuadVerticesBuffer() {
+		Vertex* verts = &this->quadVertices[this->backBufferIndex][this->quadsUsed*4];
+		this->quadsUsed += 1;
+		if(this->quadsUsed >= 50) {
+			SDL_Log("QuadVerticesBuffer overflow");
+			this->quadsUsed = 0; // declare bankruptcy
+		}
+		return verts;
+	}
+
+	inline GXMSceneLightUniform* LightsBuffer() {
+		return this->lights[this->backBufferIndex];
+	}
 
 	std::vector<GXMTextureCacheEntry> m_textures;
 	std::vector<GXMMeshCacheEntry> m_meshes;
@@ -189,10 +156,57 @@ private:
 	bool transparencyEnabled = false;
 	bool sceneStarted = false;
 
+	SceGxmContext* context;
+	SceGxmShaderPatcher* shaderPatcher;
+	SceClibMspace cdramPool;
+
+	SceGxmRenderTarget* renderTarget;
+	void* displayBuffers[VITA_GXM_DISPLAY_BUFFER_COUNT];
+	SceUID displayBuffersUid[VITA_GXM_DISPLAY_BUFFER_COUNT];
+	SceGxmColorSurface displayBuffersSurface[VITA_GXM_DISPLAY_BUFFER_COUNT];
+	SceGxmSyncObject* displayBuffersSync[VITA_GXM_DISPLAY_BUFFER_COUNT];
 	int backBufferIndex = 0;
 	int frontBufferIndex = 1;
 
-	GXMRendererData m_data;
+	// depth buffer
+	SceUID depthBufferUid;
+	void* depthBufferData;
+	SceUID stencilBufferUid;
+	void* stencilBufferData;
+	SceGxmDepthStencilSurface depthSurface;
+
+	// shader
+	SceGxmShaderPatcherId mainVertexProgramId;
+	SceGxmShaderPatcherId mainFragmentProgramId;
+	SceGxmShaderPatcherId imageFragmentProgramId;
+	SceGxmShaderPatcherId colorFragmentProgramId;
+
+	SceGxmVertexProgram* mainVertexProgram; // 3d vert
+	SceGxmFragmentProgram* opaqueFragmentProgram; // 3d with no transparency
+	SceGxmFragmentProgram* transparentFragmentProgram; // 3d with transparency
+	SceGxmFragmentProgram* imageFragmentProgram; // 2d images, no lighting
+	SceGxmFragmentProgram* colorFragmentProgram; // 2d color, no lighting
+
+	// main shader vertex uniforms
+	const SceGxmProgramParameter* uModelViewMatrix;
+	const SceGxmProgramParameter* uNormalMatrix;
+	const SceGxmProgramParameter* uProjectionMatrix;
+
+	// main shader fragment uniforms
+	const SceGxmProgramParameter* uLights;
+	const SceGxmProgramParameter* uLightCount;
+	const SceGxmProgramParameter* uShininess;
+	const SceGxmProgramParameter* uColor;
+	const SceGxmProgramParameter* uUseTexture;
+
+	// color shader frament uniforms
+	const SceGxmProgramParameter* colorShader_uColor;
+
+	GXMSceneLightUniform (*lights)[VITA_GXM_DISPLAY_BUFFER_COUNT];
+	Vertex* quadVertices[VITA_GXM_DISPLAY_BUFFER_COUNT];
+	uint16_t* quadIndices;
+	int quadsUsed;
+
 	bool m_initialized = false;
 };
 
