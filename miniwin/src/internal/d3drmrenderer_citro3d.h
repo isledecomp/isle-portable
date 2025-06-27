@@ -1,9 +1,6 @@
 #pragma once
 
-#include "SDL3/SDL_log.h"
 #include "d3drmrenderer.h"
-#include "d3drmtexture_impl.h"
-#include "ddraw_impl.h"
 
 #include <SDL3/SDL.h>
 #include <citro3d.h>
@@ -21,10 +18,16 @@ struct C3DTextureCacheEntry {
 
 struct C3DMeshCacheEntry {
 	const MeshGroup* meshGroup = nullptr;
-	Uint32 version = 0;
-	bool flat = false;
+	int version = 0;
 	void* vbo = nullptr;
+	int vertexCount = 0;
 };
+
+typedef struct {
+	float position[3];
+	float texcoord[2];
+	float normal[3];
+} vertex;
 
 class Citro3DRenderer : public Direct3DRMRenderer {
 public:
@@ -57,6 +60,7 @@ public:
 
 private:
 	void AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture);
+	void AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh);
 	void StartFrame();
 
 	D3DRMMATRIX4D m_projection;

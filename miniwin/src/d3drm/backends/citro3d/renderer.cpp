@@ -1,22 +1,11 @@
-#include "SDL3/SDL_surface.h"
 #include "d3drmrenderer_citro3d.h"
+#include "d3drmtexture_impl.h"
+#include "ddraw_impl.h"
+#include "meshutils.h"
 #include "miniwin.h"
-#include "miniwin/d3d.h"
-#include "miniwin/d3drm.h"
-#include "miniwin/windows.h"
 #include "vshader_shbin.h"
 
-#include <3ds/console.h>
-#include <3ds/gfx.h>
-#include <3ds/gpu/enums.h>
-#include <3ds/gpu/gx.h>
-#include <3ds/gpu/shaderProgram.h>
-#include <c3d/framebuffer.h>
-#include <c3d/renderqueue.h>
-#include <c3d/texture.h>
-#include <citro3d.h>
 #include <cstring>
-#include <tex3ds.h>
 
 bool g_rendering = false;
 
@@ -30,22 +19,6 @@ static shaderProgram_s program;
 static int uLoc_projection;
 static int uLoc_modelView;
 static int uLoc_meshColor;
-
-typedef struct {
-	float position[3];
-	float texcoord[2];
-	float normal[3];
-} vertex;
-
-static void* vbo_data_pos = nullptr;
-
-static const vertex position_list[] = {
-	{{200.0f, 200.0f, 0.5f}, {1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-	{{100.0f, 40.0f, 0.5f}, {0.0f, 1.0f}, {0.0f, 1.0f, 0.0f}},
-	{{300.0f, 40.0f, 0.5f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
-};
-int g_vertexCount = 0;
-_Static_assert(sizeof(vbo_data_pos) % 4 == 0, "vertex size not 4-byte aligned");
 
 Citro3DRenderer::Citro3DRenderer(DWORD width, DWORD height)
 {
@@ -79,7 +52,6 @@ Citro3DRenderer::Citro3DRenderer(DWORD width, DWORD height)
 
 Citro3DRenderer::~Citro3DRenderer()
 {
-	linearFree(vbo_data_pos);
 	shaderProgramFree(&program);
 	DVLB_Free(vshader_dvlb);
 	C3D_Fini();
@@ -88,11 +60,20 @@ Citro3DRenderer::~Citro3DRenderer()
 
 void Citro3DRenderer::PushLights(const SceneLight* lightsArray, size_t count)
 {
+	MINIWIN_NOT_IMPLEMENTED();
 }
 
 void Citro3DRenderer::SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back)
 {
 	memcpy(&m_projection, projection, sizeof(D3DRMMATRIX4D));
+
+	MINIWIN_NOT_IMPLEMENTED();
+	// FIXME is this correct?
+	float depth = back - front;
+	m_projection[2][2] = 1.0f / depth;
+	m_projection[2][3] = 1.0f;
+	m_projection[3][2] = -front / depth;
+	m_projection[3][3] = 0.0f;
 }
 
 void Citro3DRenderer::SetFrustumPlanes(const Plane* frustumPlanes)
@@ -281,42 +262,100 @@ Uint32 Citro3DRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 	return (Uint32) (m_textures.size() - 1);
 }
 
-Uint32 Citro3DRenderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup)
+C3DMeshCacheEntry C3DUploadMesh(const MeshGroup& meshGroup)
 {
-	if (vbo_data_pos) {
-		linearFree(vbo_data_pos);
+	C3DMeshCacheEntry cache{&meshGroup, meshGroup.version};
+
+	std::vector<D3DRMVERTEX> vertexBuffer;
+	std::vector<uint16_t> indexBuffer;
+
+	if (meshGroup.quality == D3DRMRENDER_FLAT || meshGroup.quality == D3DRMRENDER_UNLITFLAT) {
+		FlattenSurfaces(
+			meshGroup.vertices.data(),
+			meshGroup.vertices.size(),
+			meshGroup.indices.data(),
+			meshGroup.indices.size(),
+			meshGroup.texture != nullptr,
+			vertexBuffer,
+			indexBuffer
+		);
+	}
+	else {
+		vertexBuffer.assign(meshGroup.vertices.begin(), meshGroup.vertices.end());
+		indexBuffer.assign(meshGroup.indices.begin(), meshGroup.indices.end());
 	}
 
-	const auto& verts = meshGroup->vertices;
-	const auto& indices = meshGroup->indices;
+	std::vector<vertex> vertexUploadBuffer;
+	vertexUploadBuffer.reserve(indexBuffer.size());
 
-	std::vector<vertex> vertices;
-	vertices.reserve(indices.size());
-
-	for (size_t i = 0; i < indices.size(); ++i) {
-		const D3DRMVERTEX& src = verts[indices[i]];
+	for (size_t i = 0; i < indexBuffer.size(); ++i) {
+		const D3DRMVERTEX& src = vertexBuffer[indexBuffer[i]];
 		vertex dst;
 
 		dst.position[0] = src.position.x;
 		dst.position[1] = src.position.y;
 		dst.position[2] = src.position.z;
 
+		dst.texcoord[0] = src.tu;
+		dst.texcoord[1] = src.tv;
+
 		dst.normal[0] = src.normal.x;
 		dst.normal[1] = src.normal.y;
 		dst.normal[2] = src.normal.z;
 
-		dst.texcoord[0] = src.tu;
-		dst.texcoord[1] = src.tv;
-
-		vertices.push_back(dst);
+		vertexUploadBuffer.emplace_back(dst);
 	}
-	g_vertexCount = indices.size();
 
-	vbo_data_pos = linearAlloc(sizeof(position_list));
-	memcpy(vbo_data_pos, position_list, sizeof(position_list));
-	g_vertexCount = 3;
+	MINIWIN_NOT_IMPLEMENTED();
+	// FIXME Render debug triangle untill meshes work
+	static const vertex position_list[] = {
+		{{200.0f, 200.0f, 0.5f}, {1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+		{{100.0f, 40.0f, 0.5f}, {0.0f, 1.0f}, {0.0f, 1.0f, 0.0f}},
+		{{300.0f, 40.0f, 0.5f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+	};
+	cache.vbo = linearAlloc(sizeof(position_list));
+	memcpy(cache.vbo, position_list, sizeof(position_list));
+	cache.vertexCount = 3;
 
-	return 0;
+	// size_t bufferSize = vertexUploadBuffer.size() * sizeof(vertex);
+	// cache.vbo = linearAlloc(bufferSize);
+	// memcpy(cache.vbo, vertexUploadBuffer.data(), bufferSize);
+	// cache.vertexCount = indexBuffer.size();
+
+	return cache;
+}
+
+void Citro3DRenderer::AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh)
+{
+	MINIWIN_NOT_IMPLEMENTED();
+}
+
+Uint32 Citro3DRenderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup)
+{
+	for (Uint32 i = 0; i < m_meshs.size(); ++i) {
+		auto& cache = m_meshs[i];
+		if (cache.meshGroup == meshGroup) {
+			if (cache.version != meshGroup->version) {
+				cache = std::move(C3DUploadMesh(*meshGroup));
+			}
+			return i;
+		}
+	}
+
+	auto newCache = C3DUploadMesh(*meshGroup);
+
+	for (Uint32 i = 0; i < m_meshs.size(); ++i) {
+		auto& cache = m_meshs[i];
+		if (!cache.meshGroup) {
+			cache = std::move(newCache);
+			AddMeshDestroyCallback(i, mesh);
+			return i;
+		}
+	}
+
+	m_meshs.push_back(std::move(newCache));
+	AddMeshDestroyCallback((Uint32) (m_meshs.size() - 1), mesh);
+	return (Uint32) (m_meshs.size() - 1);
 }
 
 void Citro3DRenderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc)
@@ -340,12 +379,24 @@ void Citro3DRenderer::StartFrame()
 HRESULT Citro3DRenderer::BeginFrame()
 {
 	StartFrame();
-	// C3D_DepthTest(false, GPU_GREATER, GPU_WRITE_COLOR);
+	MINIWIN_NOT_IMPLEMENTED();
+	// TODO DepthTest should be true, but off while testing
+	C3D_DepthTest(false, GPU_GREATER, GPU_WRITE_COLOR);
 	return S_OK;
 }
 
 void Citro3DRenderer::EnableTransparency()
 {
+}
+
+void ConvertMatrix(const D3DRMMATRIX4D in, C3D_Mtx* out)
+{
+	for (int i = 0; i < 4; i++) {
+		out->r[i].x = in[i][0];
+		out->r[i].y = in[i][1];
+		out->r[i].z = in[i][2];
+		out->r[i].w = in[i][3];
+	}
 }
 
 void Citro3DRenderer::SubmitDraw(
@@ -358,14 +409,22 @@ void Citro3DRenderer::SubmitDraw(
 )
 {
 	C3D_Mtx projection, modelView;
-	Mtx_OrthoTilt(&projection, 0.0, 400.0, 0.0, 240.0, 0.0, 1.0, true);
-	C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER, uLoc_projection, &projection);
+
+	MINIWIN_NOT_IMPLEMENTED();
+	// FIXME are we converting it right?
+	// ConvertMatrix(m_projection, &projection);
+	// ConvertMatrix(modelViewMatrix, &modelView);
+	Mtx_OrthoTilt(&projection, 0, 400, 0, 272, 0.0f, 1.0f, true);
 	Mtx_Identity(&modelView);
+
+	C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER, uLoc_projection, &projection);
 	C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER, uLoc_modelView, &modelView);
+
+	auto& mesh = m_meshs[meshId];
 
 	C3D_BufInfo* bufInfo = C3D_GetBufInfo();
 	BufInfo_Init(bufInfo);
-	BufInfo_Add(bufInfo, vbo_data_pos, sizeof(vertex), 3, 0x210);
+	BufInfo_Add(bufInfo, mesh.vbo, sizeof(vertex), 3, 0x210);
 
 	C3D_FVUnifSet(
 		GPU_VERTEX_SHADER,
@@ -387,7 +446,7 @@ void Citro3DRenderer::SubmitDraw(
 		C3D_TexBind(0, nullptr);
 	}
 
-	C3D_DrawArrays(GPU_TRIANGLES, 0, g_vertexCount);
+	C3D_DrawArrays(GPU_TRIANGLES, 0, mesh.vertexCount);
 }
 
 HRESULT Citro3DRenderer::FinalizeFrame()
@@ -488,4 +547,5 @@ void Citro3DRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, con
 
 void Citro3DRenderer::Download(SDL_Surface* target)
 {
+	MINIWIN_NOT_IMPLEMENTED();
 }
