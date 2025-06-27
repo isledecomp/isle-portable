@@ -395,8 +395,9 @@ void Citro3DRenderer::Resize(int width, int height, const ViewportTransform& vie
 
 void Citro3DRenderer::Clear(float r, float g, float b)
 {
-	// FIXME: check colors
-	C3D_RenderTargetClear(m_renderTarget, C3D_CLEAR_ALL, RGB(static_cast<int>(r * 255), static_cast<int>(g * 255), static_cast<int>(b * 255)), 0);
+	u32 color =
+		(static_cast<u32>(r * 255) << 24) | (static_cast<u32>(g * 255) << 16) | (static_cast<u32>(b * 255) << 8) | 255;
+	C3D_RenderTargetClear(m_renderTarget, C3D_CLEAR_ALL, color, 0);
 }
 
 void Citro3DRenderer::Flip()
