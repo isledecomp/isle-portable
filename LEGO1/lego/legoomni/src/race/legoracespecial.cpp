@@ -401,13 +401,8 @@ void LegoJetskiRaceActor::Animate(float p_time)
 {
 	if (m_animState == 0) {
 		const LegoChar* raceState = VariableTable()->GetVariable(g_raceState);
-<<<<<<< HEAD
 		if (!SDL_strcasecmp(raceState, g_racing)) {
-			m_unk0x0c = 1;
-=======
-		if (!stricmp(raceState, g_racing)) {
 			m_animState = 1;
->>>>>>> isle/master
 			m_lastTime = p_time - 1.0f;
 			m_unk0x1c = p_time;
 		}
