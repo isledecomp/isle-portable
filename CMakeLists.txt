@@ -646,13 +646,16 @@ endif()
 set(CPACK_PACKAGE_DIRECTORY "dist")
 set(CPACK_PACKAGE_FILE_NAME "isle-${PROJECT_VERSION}-${ISLE_PACKAGE_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
 if(NINTENDO_3DS)
-  set(APP_TITLE       "LEGO Island")
-  set(APP_DESCRIPTION "LEGO Island port for 3DS")
-  set(APP_AUTHOR      "LEGO Island Team")
-  set(APP_ICON        "${PROJECT_SOURCE_DIR}/CONFIG/res/lego3ds.png")
-  set(APP_VERSION ${PROJECT_VERSION})
+  ctr_generate_smdh(isle.smdh
+    NAME "LEGO Island"
+    TITLE "LEGO Island"
+    DESCRIPTION "LEGO Island for the Nintendo 3DS"
+    AUTHOR "LEGO Island Decompilation and Porting Team"
+    VERSION "${PROJECT_VERSION}"
+    ICON "isle/res/3ds/isle.png"
+  )
 
-  ctr_create_3dsx(isle)
+  ctr_create_3dsx(isle SMDH isle.smdh)
 endif()
 if(MSVC)
   set(CPACK_GENERATOR ZIP)
