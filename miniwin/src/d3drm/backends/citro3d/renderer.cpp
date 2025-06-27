@@ -38,14 +38,14 @@ typedef struct {
 	float normal[3];
 } vertex;
 
-static void* vbo_data_pos;
+static void* vbo_data_pos = nullptr;
 
 static const vertex position_list[] = {
 	{{200.0f, 200.0f, 0.5f}, {1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
 	{{100.0f, 40.0f, 0.5f}, {0.0f, 1.0f}, {0.0f, 1.0f, 0.0f}},
 	{{300.0f, 40.0f, 0.5f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
 };
-
+int g_vertexCount = 0;
 _Static_assert(sizeof(vbo_data_pos) % 4 == 0, "vertex size not 4-byte aligned");
 
 static void sceneInit(void)
@@ -69,9 +69,6 @@ static void sceneInit(void)
 
 	C3D_Mtx projection;
 	Mtx_OrthoTilt(&projection, 0.0, 400.0, 0.0, 240.0, 0.0, 1.0, true);
-
-	vbo_data_pos = linearAlloc(sizeof(position_list));
-	memcpy(vbo_data_pos, position_list, sizeof(position_list));
 }
 
 Direct3DRMRenderer* Citro3DRenderer::Create(DWORD width, DWORD height)
@@ -100,6 +97,7 @@ Citro3DRenderer::Citro3DRenderer(DWORD width, DWORD height)
 
 Citro3DRenderer::~Citro3DRenderer()
 {
+	linearFree(vbo_data_pos);
 	shaderProgramFree(&program);
 	DVLB_Free(vshader_dvlb);
 	C3D_Fini();
@@ -112,6 +110,7 @@ void Citro3DRenderer::PushLights(const SceneLight* lightsArray, size_t count)
 
 void Citro3DRenderer::SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back)
 {
+	memcpy(&m_projection, projection, sizeof(D3DRMMATRIX4D));
 }
 
 void Citro3DRenderer::SetFrustumPlanes(const Plane* frustumPlanes)
@@ -302,6 +301,39 @@ Uint32 Citro3DRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 
 Uint32 Citro3DRenderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup)
 {
+	if (vbo_data_pos) {
+		linearFree(vbo_data_pos);
+	}
+
+	const auto& verts = meshGroup->vertices;
+	const auto& indices = meshGroup->indices;
+
+	std::vector<vertex> vertices;
+	vertices.reserve(indices.size());
+
+	for (size_t i = 0; i < indices.size(); ++i) {
+		const D3DRMVERTEX& src = verts[indices[i]];
+		vertex dst;
+
+		dst.position[0] = src.position.x;
+		dst.position[1] = src.position.y;
+		dst.position[2] = src.position.z;
+
+		dst.normal[0] = src.normal.x;
+		dst.normal[1] = src.normal.y;
+		dst.normal[2] = src.normal.z;
+
+		dst.texcoord[0] = src.tu;
+		dst.texcoord[1] = src.tv;
+
+		vertices.push_back(dst);
+	}
+	g_vertexCount = indices.size();
+
+	vbo_data_pos = linearAlloc(sizeof(position_list));
+	memcpy(vbo_data_pos, position_list, sizeof(position_list));
+	g_vertexCount = 3;
+
 	return 0;
 }
 
@@ -382,7 +414,7 @@ void Citro3DRenderer::SubmitDraw(
 		C3D_TexBind(0, nullptr);
 	}
 
-	C3D_DrawArrays(GPU_TRIANGLES, 0, sizeof(position_list) / sizeof(position_list[0]));
+	C3D_DrawArrays(GPU_TRIANGLES, 0, g_vertexCount);
 }
 
 HRESULT Citro3DRenderer::FinalizeFrame()
