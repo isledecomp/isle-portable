@@ -625,7 +625,7 @@ MxS32 UpdateLightPosition(MxS32 p_increase)
 	SetLightPosition(lightPosition);
 
 	char lightPositionBuffer[32];
-	sprintf(lightPositionBuffer, "%d", lightPosition);
+	snprintf(lightPositionBuffer, sizeof(lightPositionBuffer), "%d", lightPosition);
 
 	VariableTable()->SetVariable("lightposition", lightPositionBuffer);
 

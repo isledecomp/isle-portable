@@ -201,7 +201,7 @@ LegoChar* LegoAnimPresenter::FUN_10069150(const LegoChar* p_und1)
 	}
 	else {
 		LegoChar buffer[32];
-		sprintf(buffer, "%d", m_action->GetUnknown24());
+		snprintf(buffer, sizeof(buffer), "%d", m_action->GetUnknown24());
 		str = new LegoChar[strlen(p_und1) + strlen(buffer) + strlen(GetActionObjectName()) + 1];
 
 		if (str != NULL) {
@@ -343,11 +343,11 @@ LegoChar* LegoAnimPresenter::GetVariableOrIdentity(const LegoChar* p_varName, co
 		*result = '\0';
 
 		if (p_prefix) {
-			strcpy(result, p_prefix);
-			strcat(result, ":");
+			strncpy(result, p_prefix, len);
+			strncat(result, ":", len - strlen(result) - 1);
 		}
 
-		strcat(result, str);
+		strncat(result, str, len - strlen(result) - 1);
 	}
 
 	return result;

@@ -447,7 +447,7 @@ void LegoVideoManager::DrawFPS()
 		if (Timer()->GetTime() > m_unk0x54c + 5000.f) {
 			char buffer[32];
 			MxFloat time = (Timer()->GetTime() - m_unk0x54c) / 1000.0f;
-			sprintf(buffer, "%.02f", m_unk0x550 / time);
+			snprintf(buffer, sizeof(buffer), "%.02f", m_unk0x550 / time);
 			m_unk0x54c = Timer()->GetTime();
 
 			DDSURFACEDESC surfaceDesc;

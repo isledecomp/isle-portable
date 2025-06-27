@@ -577,12 +577,12 @@ void LegoGameState::GetFileSavePath(MxString* p_outPath, MxS16 p_slotn)
 	}
 
 	// Slot: "G0", "G1", ...
-	strcat(path, "\\G");
+	strncat(path, "\\G", sizeof(path) - strlen(path) - 1);
 	baseForSlot[0] += p_slotn;
-	strcat(path, baseForSlot);
+	strncat(path, baseForSlot, sizeof(path) - strlen(path) - 1);
 
 	// Extension: ".GS"
-	strcat(path, g_fileExtensionGS);
+	strncat(path, g_fileExtensionGS, sizeof(path) - strlen(path) - 1);
 	*p_outPath = MxString(path);
 	p_outPath->MapPathToFilesystem();
 }
@@ -1088,7 +1088,7 @@ MxBool ROIColorOverride(const char* p_input, char* p_output, MxU32 p_copyLen)
 		 SDL_strncasecmp(p_input, "INDIR-G-", strlen("INDIR-F-")) == 0)) {
 
 		char buf[256];
-		sprintf(buf, "c_%s", &p_input[strlen("INDIR-F-")]);
+		snprintf(buf, sizeof(buf), "c_%s", &p_input[strlen("INDIR-F-")]);
 
 		const char* value = VariableTable()->GetVariable(buf);
 		if (value != NULL) {
@@ -1285,7 +1285,7 @@ void LegoBackgroundColor::ToggleDayNight(MxBool p_sun)
 		}
 	}
 
-	sprintf(buffer, "set %d %d %d", (MxU32) (m_h * 100.0f), (MxU32) (m_s * 100.0f), (MxU32) (m_v * 100.0f));
+	snprintf(buffer, sizeof(buffer), "set %d %d %d", (MxU32) (m_h * 100.0f), (MxU32) (m_s * 100.0f), (MxU32) (m_v * 100.0f));
 	m_value = buffer;
 
 	float convertedR, convertedG, convertedB;
@@ -1305,7 +1305,7 @@ void LegoBackgroundColor::ToggleSkyColor()
 		m_h -= 1.0;
 	}
 
-	sprintf(buffer, "set %d %d %d", (MxU32) (m_h * 100.0f), (MxU32) (m_s * 100.0f), (MxU32) (m_v * 100.0f));
+	snprintf(buffer, sizeof(buffer), "set %d %d %d", (MxU32) (m_h * 100.0f), (MxU32) (m_s * 100.0f), (MxU32) (m_v * 100.0f));
 	m_value = buffer;
 
 	float convertedR, convertedG, convertedB;

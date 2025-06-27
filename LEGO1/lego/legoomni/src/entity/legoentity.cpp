@@ -310,19 +310,19 @@ void LegoEntity::ClickAnimation()
 		case e_actor:
 			objectId = LegoOmni::GetInstance()->GetCharacterManager()->GetAnimationId(m_roi);
 			action.SetAtomId(MxAtomId(LegoCharacterManager::GetCustomizeAnimFile(), e_lowerCase2));
-			sprintf(extra, "SUBST:actor_01:%s", name);
+			snprintf(extra, sizeof(extra), "SUBST:actor_01:%s", name);
 			break;
 		case e_unk1:
 			break;
 		case e_plant:
 			objectId = LegoOmni::GetInstance()->GetPlantManager()->GetAnimationId(this);
 			action.SetAtomId(MxAtomId(LegoPlantManager::GetCustomizeAnimFile(), e_lowerCase2));
-			sprintf(extra, "SUBST:bush:%s:tree:%s:flwrred:%s:palm:%s", name, name, name, name);
+			snprintf(extra, sizeof(extra), "SUBST:bush:%s:tree:%s:flwrred:%s:palm:%s", name, name, name, name);
 			break;
 		case e_building:
 			objectId = LegoOmni::GetInstance()->GetBuildingManager()->GetAnimationId(this);
 			action.SetAtomId(MxAtomId(BuildingManager()->GetCustomizeAnimFile(), e_lowerCase2));
-			sprintf(extra, "SUBST:haus1:%s", name);
+			snprintf(extra, sizeof(extra), "SUBST:haus1:%s", name);
 			break;
 		case e_autoROI:
 			break;

@@ -29,8 +29,8 @@ void LegoFlcTexturePresenter::StartingTickle()
 	m_action->GetExtra(extraLength, pp);
 
 	if (pp != NULL) {
-		strcpy(extraCopy, pp);
-		strcat(extraCopy, ".gif");
+		strncpy(extraCopy, pp, sizeof(extraCopy));
+		strncat(extraCopy, ".gif", sizeof(extraCopy) - strlen(extraCopy) - 1);
 		m_texture = TextureContainer()->Get(extraCopy);
 	}
 

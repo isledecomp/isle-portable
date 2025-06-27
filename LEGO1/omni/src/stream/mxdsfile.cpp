@@ -71,7 +71,7 @@ MxResult MxDSFile::ReadChunks()
 
 	m_io.Read(&m_header, 0x0c);
 	if ((m_header.m_majorVersion != SI_MAJOR_VERSION) || (m_header.m_minorVersion != SI_MINOR_VERSION)) {
-		sprintf(tempBuffer, "Wrong SI file version. %d.%d expected.", SI_MAJOR_VERSION, SI_MINOR_VERSION);
+		snprintf(tempBuffer, sizeof(tempBuffer), "Wrong SI file version. %d.%d expected.", SI_MAJOR_VERSION, SI_MINOR_VERSION);
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "LEGO® Island Error", tempBuffer, NULL);
 		return FAILURE;
 	}

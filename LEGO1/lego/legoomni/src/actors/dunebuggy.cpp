@@ -59,7 +59,7 @@ void DuneBuggy::Animate(float p_time)
 	float speed = abs(m_worldSpeed);
 	float maxLinearVel = NavController()->GetMaxLinearVel();
 
-	sprintf(buf, "%g", speed / maxLinearVel);
+	snprintf(buf, sizeof(buf), "%g", speed / maxLinearVel);
 	VariableTable()->SetVariable(g_varDUNESPEED, buf);
 
 	m_fuel += (p_time - m_time) * -3.333333333e-06f;
@@ -69,7 +69,7 @@ void DuneBuggy::Animate(float p_time)
 
 	m_time = p_time;
 
-	sprintf(buf, "%g", m_fuel);
+	snprintf(buf, sizeof(buf), "%g", m_fuel);
 	VariableTable()->SetVariable(g_varDUNEFUEL, buf);
 }
 

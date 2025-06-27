@@ -193,7 +193,7 @@ MxLong CarRace::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 
 			m_unk0x104 = paramData;
 			LegoChar buffer[20];
-			sprintf(buffer, "%g", 0.036 + 0.928 * (m_unk0xf8 * 20.0 + m_unk0x104) / (g_unk0x100f0c7c * 20.0));
+			snprintf(buffer, sizeof(buffer), "%g", 0.036 + 0.928 * (m_unk0xf8 * 20.0 + m_unk0x104) / (g_unk0x100f0c7c * 20.0));
 			VariableTable()->SetVariable("DISTANCE", buffer);
 
 			if (m_unk0x104 == 0x14) {

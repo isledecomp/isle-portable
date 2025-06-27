@@ -49,7 +49,7 @@ MxResult Act2Brick::Create(MxS32 p_index)
 	}
 
 	char name[12];
-	sprintf(name, "chbrick%d", p_index);
+	snprintf(name, sizeof(name), "chbrick%d", p_index);
 
 	m_roi = CharacterManager()->CreateAutoROI(name, g_lodNames[p_index], FALSE);
 	assert(m_roi);

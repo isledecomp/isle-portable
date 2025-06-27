@@ -425,7 +425,7 @@ void LegoRaceCar::Animate(float p_time)
 		float maximumSpeed = NavController()->GetMaxLinearVel();
 		char buffer[200];
 
-		sprintf(buffer, "%g", absoluteSpeed / maximumSpeed);
+		snprintf(buffer, sizeof(buffer), "%g", absoluteSpeed / maximumSpeed);
 
 		VariableTable()->SetVariable(g_strSpeed, buffer);
 
@@ -624,7 +624,7 @@ void LegoJetski::Animate(float p_time)
 		float speedRatio = absoluteSpeed / NavController()->GetMaxLinearVel();
 		char buffer[200];
 
-		sprintf(buffer, "%g", speedRatio);
+		snprintf(buffer, sizeof(buffer), "%g", speedRatio);
 
 		VariableTable()->SetVariable(g_strJetSpeed, buffer);
 

@@ -222,8 +222,8 @@ LegoEntity* LegoPlantManager::CreatePlant(MxS32 p_index, LegoWorld* p_world, Leg
 				char name[256];
 				char lodName[256];
 
-				sprintf(name, "plant%d", p_index);
-				sprintf(lodName, "%s", g_plantLodNames[g_plantInfo[p_index].m_variant][g_plantInfo[p_index].m_color]);
+				snprintf(name, sizeof(name), "plant%d", p_index);
+				snprintf(lodName, sizeof(lodName), "%s", g_plantLodNames[g_plantInfo[p_index].m_variant][g_plantInfo[p_index].m_color]);
 
 				LegoROI* roi = CharacterManager()->CreateAutoROI(name, lodName, TRUE);
 				assert(roi != NULL);

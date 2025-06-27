@@ -84,7 +84,7 @@ ViewLODList* ViewLODListManager::Create(const ROIName& rROIName, int lodCount)
 		list->Release();
 
 		char num[12];
-		sprintf(num, "%d", g_ROINameUID);
+		snprintf(num, sizeof(num), "%d", g_ROINameUID);
 		pROIName = new char[strlen(rROIName) + strlen(num) + 1];
 		strcpy(pROIName, rROIName);
 		strcat(pROIName, num);

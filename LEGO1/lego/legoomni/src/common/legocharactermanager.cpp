@@ -521,7 +521,7 @@ LegoROI* LegoCharacterManager::CreateActorROI(const char* p_key)
 
 		ViewLODList* lodList = lodManager->Lookup(parentName);
 		MxS32 lodSize = lodList->Size();
-		sprintf(lodName, "%s%d", p_key, i);
+		snprintf(lodName, sizeof(lodName), "%s%d", p_key, i);
 		ViewLODList* dupLodList = lodManager->Create(lodName, lodSize);
 
 		for (MxS32 j = 0; j < lodSize; j++) {
@@ -616,7 +616,7 @@ MxBool LegoCharacterManager::SetHeadTexture(LegoROI* p_roi, LegoTextureInfo* p_t
 		assert(lodList);
 
 		MxS32 lodSize = lodList->Size();
-		sprintf(lodName, "%s%s%d", p_roi->GetName(), "head", g_headTextureCounter++);
+		snprintf(lodName, sizeof(lodName), "%s%s%d", p_roi->GetName(), "head", g_headTextureCounter++);
 		ViewLODList* dupLodList = GetViewLODListManager()->Create(lodName, lodSize);
 		assert(dupLodList);
 
@@ -829,7 +829,7 @@ MxBool LegoCharacterManager::SwitchVariant(LegoROI* p_roi)
 
 		ViewLODList* lodList = GetViewLODListManager()->Lookup(part.m_partName[partNameIndex]);
 		MxS32 lodSize = lodList->Size();
-		sprintf(lodName, "%s%d", p_roi->GetName(), g_infohatVariantCounter++);
+		snprintf(lodName, sizeof(lodName), "%s%d", p_roi->GetName(), g_infohatVariantCounter++);
 		ViewLODList* dupLodList = GetViewLODListManager()->Create(lodName, lodSize);
 
 		Tgl::Renderer* renderer = VideoManager()->GetRenderer();
@@ -1007,7 +1007,7 @@ LegoROI* LegoCharacterManager::CreateAutoROI(const char* p_name, const char* p_l
 		name = p_name;
 	}
 	else {
-		sprintf(buf, "autoROI_%d", g_autoRoiCounter++);
+		snprintf(buf, sizeof(buf), "autoROI_%d", g_autoRoiCounter++);
 		name = buf;
 	}
 

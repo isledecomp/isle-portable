@@ -165,25 +165,25 @@ void LegoWorldPresenter::StartingTickle()
 MxResult LegoWorldPresenter::LoadWorld(char* p_worldName, LegoWorld* p_world)
 {
 	char wdbPath[512];
-	sprintf(wdbPath, "%s", MxOmni::GetHD());
+	snprintf(wdbPath, sizeof(wdbPath), "%s", MxOmni::GetHD());
 
 	if (wdbPath[strlen(wdbPath) - 1] != '\\' && wdbPath[strlen(wdbPath) - 1] != '/') {
-		strcat(wdbPath, "\\");
+		strncat(wdbPath, "\\", sizeof(wdbPath) - strlen(wdbPath) - 1);
 	}
 
-	strcat(wdbPath, "lego\\data\\world.wdb");
+	strncat(wdbPath, "lego\\data\\world.wdb", sizeof(wdbPath) - strlen(wdbPath) - 1);
 	MxString::MapPathToFilesystem(wdbPath);
 
 	SDL_IOStream* wdbFile;
 
 	if ((wdbFile = SDL_IOFromFile(wdbPath, "rb")) == NULL) {
-		sprintf(wdbPath, "%s", MxOmni::GetCD());
+		snprintf(wdbPath, sizeof(wdbPath), "%s", MxOmni::GetCD());
 
 		if (wdbPath[strlen(wdbPath) - 1] != '\\' && wdbPath[strlen(wdbPath) - 1] != '/') {
-			strcat(wdbPath, "\\");
+			strncat(wdbPath, "\\", sizeof(wdbPath) - strlen(wdbPath) - 1);
 		}
 
-		strcat(wdbPath, "lego\\data\\world.wdb");
+		strncat(wdbPath, "lego\\data\\world.wdb", sizeof(wdbPath) - strlen(wdbPath) - 1);
 		MxString::MapPathToFilesystem(wdbPath);
 
 		if ((wdbFile = SDL_IOFromFile(wdbPath, "rb")) == NULL) {

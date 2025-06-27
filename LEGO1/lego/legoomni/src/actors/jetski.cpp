@@ -62,7 +62,7 @@ void Jetski::Animate(float p_time)
 	float speed = abs(m_worldSpeed);
 	float maxLinearVel = NavController()->GetMaxLinearVel();
 
-	sprintf(buf, "%g", speed / maxLinearVel);
+	snprintf(buf, sizeof(buf), "%g", speed / maxLinearVel);
 	VariableTable()->SetVariable(g_varJETSPEED, buf);
 }
 

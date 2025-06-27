@@ -76,7 +76,7 @@ MxResult Act3Ammo::Create(Act3* p_world, MxU32 p_isPizza, MxS32 p_index)
 	char name[12];
 
 	if (p_isPizza) {
-		sprintf(name, "pammo%d", p_index);
+		snprintf(name, sizeof(name), "pammo%d", p_index);
 		m_roi = CharacterManager()->CreateAutoROI(name, "pizpie", FALSE);
 		m_roi->SetVisibility(TRUE);
 
@@ -90,7 +90,7 @@ MxResult Act3Ammo::Create(Act3* p_world, MxU32 p_isPizza, MxS32 p_index)
 		assert(m_roi);
 	}
 	else {
-		sprintf(name, "dammo%d", p_index);
+		snprintf(name, sizeof(name), "dammo%d", p_index);
 		m_roi = CharacterManager()->CreateAutoROI(name, "donut", FALSE);
 		m_roi->SetVisibility(TRUE);
 

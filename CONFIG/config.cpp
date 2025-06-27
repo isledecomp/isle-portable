@@ -280,7 +280,7 @@ void CConfigApp::WriteRegisterSettings() const
 #define SetIniBool(DICT, NAME, VALUE) iniparser_set(DICT, NAME, VALUE ? "true" : "false")
 #define SetIniInt(DICT, NAME, VALUE)                                                                                   \
 	do {                                                                                                               \
-		sprintf(buffer, "%d", VALUE);                                                                                  \
+		snprintf(buffer, sizeof(buffer), "%d", VALUE);                                                                 \
 		iniparser_set(DICT, NAME, buffer);                                                                             \
 	} while (0)
 

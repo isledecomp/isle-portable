@@ -600,7 +600,7 @@ MxLong Act3::Notify(MxParam& p_param)
 					char buf[80];
 
 					do {
-						sprintf(buf, "HelicopterDotOn%d_Bitmap", length + 1);
+						snprintf(buf, sizeof(buf), "HelicopterDotOn%d_Bitmap", length + 1);
 						m_helicopterDots[length] = (MxPresenter*) Find("MxPresenter", buf);
 
 						if (m_unk0x421e > length) {

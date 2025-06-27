@@ -101,8 +101,9 @@ bool CMainDialog::OnInitDialog()
 				selected = device_i;
 			}
 			device_i += 1;
-			sprintf(
+			snprintf(
 				device_name,
+				sizeof(device_name),
 				"%s ( %s )",
 				device.m_deviceDesc,
 				driver_i == 0 ? "Primary Device" : "Secondary Device"

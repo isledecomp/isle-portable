@@ -631,26 +631,26 @@ MxResult LegoAnimationManager::LoadWorldInfo(LegoOmni::World p_worldId)
 
 		char filename[128];
 		char path[1024];
-		sprintf(filename, "lego\\data\\%sinf.dta", Lego()->GetWorldName(p_worldId));
-		sprintf(path, "%s", MxOmni::GetHD());
+		snprintf(filename, sizeof(filename), "lego\\data\\%sinf.dta", Lego()->GetWorldName(p_worldId));
+		snprintf(path, sizeof(path), "%s", MxOmni::GetHD());
 
 		if (path[strlen(path) - 1] != '\\') {
-			strcat(path, "\\");
+			strncat(path, "\\", sizeof(path) - strlen(path) - 1);
 		}
 
-		strcat(path, filename);
+		strncat(path, filename, sizeof(path) - strlen(path) - 1);
 		MxString::MapPathToFilesystem(path);
 
 		SDL_PathInfo pathInfo;
 
 		if (!SDL_GetPathInfo(path, &pathInfo) || pathInfo.type != SDL_PATHTYPE_FILE) {
-			sprintf(path, "%s", MxOmni::GetCD());
+			snprintf(path, sizeof(path), "%s", MxOmni::GetCD());
 
 			if (path[strlen(path) - 1] != '\\') {
-				strcat(path, "\\");
+				strncat(path, "\\", sizeof(path) - strlen(path) - 1);
 			}
 
-			strcat(path, filename);
+			strncat(path, filename, sizeof(path) - strlen(path) - 1);
 			MxString::MapPathToFilesystem(path);
 
 			if (!SDL_GetPathInfo(path, &pathInfo) || pathInfo.type != SDL_PATHTYPE_FILE) {
@@ -1014,7 +1014,7 @@ MxResult LegoAnimationManager::FUN_100605e0(
 		}
 
 		char buf[256];
-		sprintf(buf, "%s:%d", g_strANIMMAN_ID, tranInfo->m_index);
+		snprintf(buf, sizeof(buf), "%s:%d", g_strANIMMAN_ID, tranInfo->m_index);
 
 		action.SetAtomId(*Lego()->GetWorldAtom(m_worldId));
 		action.SetObjectId(animInfo.m_objectId);
@@ -1081,7 +1081,7 @@ MxResult LegoAnimationManager::FUN_100609f0(MxU32 p_objectId, MxMatrix* p_matrix
 	}
 
 	char buf[256];
-	sprintf(buf, "%s:%d", g_strANIMMAN_ID, info->m_index);
+	snprintf(buf, sizeof(buf), "%s:%d", g_strANIMMAN_ID, info->m_index);
 
 	action.SetAtomId(*Lego()->GetWorldAtom(m_worldId));
 	action.SetObjectId(p_objectId);
