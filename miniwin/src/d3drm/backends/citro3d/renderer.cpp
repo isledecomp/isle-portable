@@ -32,6 +32,22 @@ static int uLoc_modelView;
 static int uLoc_meshColor;
 C3D_RenderTarget* target;
 
+typedef struct {
+	float position[3];
+	float texcoord[2];
+	float normal[3];
+} vertex;
+
+static void* vbo_data_pos;
+
+static const vertex position_list[] = {
+	{{200.0f, 200.0f, 0.5f}, {1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+	{{100.0f, 40.0f, 0.5f}, {0.0f, 1.0f}, {0.0f, 1.0f, 0.0f}},
+	{{300.0f, 40.0f, 0.5f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+};
+
+_Static_assert(sizeof(vbo_data_pos) % 4 == 0, "vertex size not 4-byte aligned");
+
 static void sceneInit(void)
 {
 	// Load the vertex shader, create a shader program and bind it
@@ -45,32 +61,21 @@ static void sceneInit(void)
 	uLoc_modelView = shaderInstanceGetUniformLocation(program.vertexShader, "modelView");
 	uLoc_meshColor = shaderInstanceGetUniformLocation(program.vertexShader, "meshColor");
 
-	// Configure attributes for use with the vertex shader
-	// Attribute format and element count are ignored in immediate mode
 	C3D_AttrInfo* attrInfo = C3D_GetAttrInfo();
 	AttrInfo_Init(attrInfo);
-  	AttrInfo_AddLoader(attrInfo, 0, GPU_FLOAT, 3); // v0=position
-  	AttrInfo_AddLoader(attrInfo, 1, GPU_FLOAT, 2); // v1=texcoord
-  	AttrInfo_AddLoader(attrInfo, 2, GPU_FLOAT, 3); // v2=normal
+	AttrInfo_AddLoader(attrInfo, 0, GPU_FLOAT, 3); // v0=position
+	AttrInfo_AddLoader(attrInfo, 1, GPU_FLOAT, 2); // v1=texcoord
+	AttrInfo_AddLoader(attrInfo, 2, GPU_FLOAT, 3); // v2=normal
 
-	// Configure the first fragment shading substage to just pass through the vertex color
-	// See https://www.opengl.org/sdk/docs/man2/xhtml/glTexEnv.xml for more insight
-	C3D_TexEnv* env = C3D_GetTexEnv(0);
-	C3D_TexEnvInit(env);
-	C3D_TexEnvSrc(env, C3D_Both, GPU_PRIMARY_COLOR, GPU_PRIMARY_COLOR, GPU_PRIMARY_COLOR);
-	C3D_TexEnvFunc(env, C3D_Both, GPU_REPLACE);
-}
+	C3D_Mtx projection;
+	Mtx_OrthoTilt(&projection, 0.0, 400.0, 0.0, 240.0, 0.0, 1.0, true);
 
-static void sceneExit(void)
-{
-	// Free the shader program
-	shaderProgramFree(&program);
-	DVLB_Free(vshader_dvlb);
+	vbo_data_pos = linearAlloc(sizeof(position_list));
+	memcpy(vbo_data_pos, position_list, sizeof(position_list));
 }
 
 Direct3DRMRenderer* Citro3DRenderer::Create(DWORD width, DWORD height)
 {
-
 	gfxInitDefault();
 	consoleInit(GFX_BOTTOM, nullptr);
 	C3D_Init(C3D_DEFAULT_CMDBUF_SIZE);
@@ -79,7 +84,6 @@ Direct3DRMRenderer* Citro3DRenderer::Create(DWORD width, DWORD height)
 	target = C3D_RenderTargetCreate(240, 400, GPU_RB_RGBA8, GPU_RB_DEPTH24_STENCIL8);
 	C3D_RenderTargetSetOutput(target, GFX_TOP, GFX_LEFT, DISPLAY_TRANSFER_FLAGS);
 
-	// Initialize the scene
 	sceneInit();
 
 	return new Citro3DRenderer(width, height);
@@ -96,7 +100,8 @@ Citro3DRenderer::Citro3DRenderer(DWORD width, DWORD height)
 
 Citro3DRenderer::~Citro3DRenderer()
 {
-	sceneExit();
+	shaderProgramFree(&program);
+	DVLB_Free(vshader_dvlb);
 	C3D_Fini();
 	gfxExit();
 }
@@ -330,6 +335,7 @@ void StartFrame()
 HRESULT Citro3DRenderer::BeginFrame()
 {
 	StartFrame();
+	// C3D_DepthTest(false, GPU_GREATER, GPU_WRITE_COLOR);
 	return S_OK;
 }
 
@@ -346,6 +352,37 @@ void Citro3DRenderer::SubmitDraw(
 	const Appearance& appearance
 )
 {
+	C3D_Mtx projection, modelView;
+	Mtx_OrthoTilt(&projection, 0.0, 400.0, 0.0, 240.0, 0.0, 1.0, true);
+	C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER, uLoc_projection, &projection);
+	Mtx_Identity(&modelView);
+	C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER, uLoc_modelView, &modelView);
+
+	C3D_BufInfo* bufInfo = C3D_GetBufInfo();
+	BufInfo_Init(bufInfo);
+	BufInfo_Add(bufInfo, vbo_data_pos, sizeof(vertex), 3, 0x210);
+
+	C3D_FVUnifSet(
+		GPU_VERTEX_SHADER,
+		uLoc_meshColor,
+		appearance.color.r / 255.0f,
+		appearance.color.g / 255.0f,
+		appearance.color.b / 255.0f,
+		appearance.color.a / 255.0f
+	);
+
+	if (appearance.textureId != NO_TEXTURE_ID) {
+		C3D_TexBind(0, &m_textures[appearance.textureId].c3dTex);
+		C3D_TexEnv* env = C3D_GetTexEnv(0);
+		C3D_TexEnvInit(env);
+		C3D_TexEnvSrc(env, C3D_Both, GPU_TEXTURE0, GPU_PRIMARY_COLOR, GPU_PRIMARY_COLOR);
+		C3D_TexEnvFunc(env, C3D_Both, GPU_MODULATE);
+	}
+	else {
+		C3D_TexBind(0, nullptr);
+	}
+
+	C3D_DrawArrays(GPU_TRIANGLES, 0, sizeof(position_list) / sizeof(position_list[0]));
 }
 
 HRESULT Citro3DRenderer::FinalizeFrame()
@@ -371,6 +408,7 @@ void Citro3DRenderer::Flip()
 {
 	C3D_FrameEnd(0);
 }
+
 void Citro3DRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect)
 {
 	C3D_AlphaBlend(GPU_BLEND_ADD, GPU_BLEND_ADD, GPU_ONE, GPU_ONE_MINUS_SRC_ALPHA, GPU_ONE, GPU_ONE_MINUS_SRC_ALPHA);
@@ -393,7 +431,6 @@ void Citro3DRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, con
 	C3DTextureCacheEntry& texture = m_textures[textureId];
 
 	C3D_TexBind(0, &texture.c3dTex);
-
 	C3D_TexEnv* env = C3D_GetTexEnv(0);
 	C3D_TexEnvInit(env);
 	C3D_TexEnvSrc(env, C3D_Both, GPU_TEXTURE0, GPU_PRIMARY_COLOR, GPU_PRIMARY_COLOR);
