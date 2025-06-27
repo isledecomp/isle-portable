@@ -23,16 +23,7 @@ struct C3DMeshCacheEntry {
 	const MeshGroup* meshGroup = nullptr;
 	Uint32 version = 0;
 	bool flat = false;
-
-	C3D_AttrInfo attrInfo;
-	C3D_BufInfo bufInfo;
-
-	// CPU-side vertex data
-	std::vector<D3DRMVERTEX> vertices;
-	std::vector<D3DVECTOR> positions;
-	std::vector<D3DVECTOR> normals;
-	std::vector<TexCoord> texcoords; // Only if you have textures
-	std::vector<uint16_t> indices;   // Indices for indexed drawing
+	void* vbo = nullptr;
 };
 
 class Citro3DRenderer : public Direct3DRMRenderer {
@@ -65,26 +56,15 @@ public:
 	void Download(SDL_Surface* target) override;
 
 private:
-	C3DMeshCacheEntry UploadMesh(const MeshGroup& meshGroup);
 	void AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture);
-	void AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh);
+	void StartFrame();
+
 	D3DRMMATRIX4D m_projection;
-	C3D_Mtx m_projectionMatrix;
 	SDL_Surface* m_renderedImage;
 	C3D_RenderTarget* m_renderTarget;
-	int m_projectionShaderUniformLocation;
 	std::vector<C3DTextureCacheEntry> m_textures;
 	std::vector<C3DMeshCacheEntry> m_meshs;
 	ViewportTransform m_viewportTransform;
-
-	// TODO: All these flags can likely be cleaned up
-	bool m_flipVertFlag;
-	bool m_outTiledFlag;
-	bool m_rawCopyFlag;
-	GX_TRANSFER_FORMAT m_transferInputFormatFlag;
-	GX_TRANSFER_FORMAT m_transferOutputFormatFlag;
-	GX_TRANSFER_SCALE m_transferScaleFlag;
-	u32 m_transferFlags;
 };
 
 inline static void Citro3DRenderer_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx)

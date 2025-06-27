@@ -30,7 +30,6 @@ static shaderProgram_s program;
 static int uLoc_projection;
 static int uLoc_modelView;
 static int uLoc_meshColor;
-C3D_RenderTarget* target;
 
 typedef struct {
 	float position[3];
@@ -59,8 +58,8 @@ Citro3DRenderer::Citro3DRenderer(DWORD width, DWORD height)
 	consoleInit(GFX_BOTTOM, nullptr);
 	C3D_Init(C3D_DEFAULT_CMDBUF_SIZE);
 
-	target = C3D_RenderTargetCreate(m_height, m_width, GPU_RB_RGBA8, GPU_RB_DEPTH24_STENCIL8);
-	C3D_RenderTargetSetOutput(target, GFX_TOP, GFX_LEFT, DISPLAY_TRANSFER_FLAGS);
+	m_renderTarget = C3D_RenderTargetCreate(m_height, m_width, GPU_RB_RGBA8, GPU_RB_DEPTH24_STENCIL8);
+	C3D_RenderTargetSetOutput(m_renderTarget, GFX_TOP, GFX_LEFT, DISPLAY_TRANSFER_FLAGS);
 
 	vshader_dvlb = DVLB_ParseFile((u32*) vshader_shbin, vshader_shbin_size);
 	shaderProgramInit(&program);
@@ -329,13 +328,13 @@ const char* Citro3DRenderer::GetName()
 	return "Citro3D";
 }
 
-void StartFrame()
+void Citro3DRenderer::StartFrame()
 {
 	if (g_rendering) {
 		return;
 	}
 	C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
-	C3D_FrameDrawOn(target);
+	C3D_FrameDrawOn(m_renderTarget);
 }
 
 HRESULT Citro3DRenderer::BeginFrame()
@@ -407,7 +406,7 @@ void Citro3DRenderer::Clear(float r, float g, float b)
 {
 	u32 color =
 		(static_cast<u32>(r * 255) << 24) | (static_cast<u32>(g * 255) << 16) | (static_cast<u32>(b * 255) << 8) | 255;
-	C3D_RenderTargetClear(target, C3D_CLEAR_ALL, color, 0);
+	C3D_RenderTargetClear(m_renderTarget, C3D_CLEAR_ALL, color, 0);
 }
 
 void Citro3DRenderer::Flip()
