@@ -48,15 +48,25 @@ static const vertex position_list[] = {
 int g_vertexCount = 0;
 _Static_assert(sizeof(vbo_data_pos) % 4 == 0, "vertex size not 4-byte aligned");
 
-static void sceneInit(void)
+Citro3DRenderer::Citro3DRenderer(DWORD width, DWORD height)
 {
-	// Load the vertex shader, create a shader program and bind it
+	m_width = 400;
+	m_height = 240;
+	m_virtualWidth = width;
+	m_virtualHeight = height;
+
+	gfxInitDefault();
+	consoleInit(GFX_BOTTOM, nullptr);
+	C3D_Init(C3D_DEFAULT_CMDBUF_SIZE);
+
+	target = C3D_RenderTargetCreate(m_height, m_width, GPU_RB_RGBA8, GPU_RB_DEPTH24_STENCIL8);
+	C3D_RenderTargetSetOutput(target, GFX_TOP, GFX_LEFT, DISPLAY_TRANSFER_FLAGS);
+
 	vshader_dvlb = DVLB_ParseFile((u32*) vshader_shbin, vshader_shbin_size);
 	shaderProgramInit(&program);
 	shaderProgramSetVsh(&program, &vshader_dvlb->DVLE[0]);
 	C3D_BindProgram(&program);
 
-	// Get the location of the uniforms
 	uLoc_projection = shaderInstanceGetUniformLocation(program.vertexShader, "projection");
 	uLoc_modelView = shaderInstanceGetUniformLocation(program.vertexShader, "modelView");
 	uLoc_meshColor = shaderInstanceGetUniformLocation(program.vertexShader, "meshColor");
@@ -66,33 +76,6 @@ static void sceneInit(void)
 	AttrInfo_AddLoader(attrInfo, 0, GPU_FLOAT, 3); // v0=position
 	AttrInfo_AddLoader(attrInfo, 1, GPU_FLOAT, 2); // v1=texcoord
 	AttrInfo_AddLoader(attrInfo, 2, GPU_FLOAT, 3); // v2=normal
-
-	C3D_Mtx projection;
-	Mtx_OrthoTilt(&projection, 0.0, 400.0, 0.0, 240.0, 0.0, 1.0, true);
-}
-
-Direct3DRMRenderer* Citro3DRenderer::Create(DWORD width, DWORD height)
-{
-	gfxInitDefault();
-	consoleInit(GFX_BOTTOM, nullptr);
-	C3D_Init(C3D_DEFAULT_CMDBUF_SIZE);
-
-	// Initialize the render target
-	target = C3D_RenderTargetCreate(240, 400, GPU_RB_RGBA8, GPU_RB_DEPTH24_STENCIL8);
-	C3D_RenderTargetSetOutput(target, GFX_TOP, GFX_LEFT, DISPLAY_TRANSFER_FLAGS);
-
-	sceneInit();
-
-	return new Citro3DRenderer(width, height);
-}
-
-Citro3DRenderer::Citro3DRenderer(DWORD width, DWORD height)
-{
-	SDL_Log("Citro3DRenderer %dx%d", width, height);
-	m_width = width;
-	m_height = height;
-	m_virtualWidth = width;
-	m_virtualHeight = height;
 }
 
 Citro3DRenderer::~Citro3DRenderer()
@@ -339,15 +322,6 @@ Uint32 Citro3DRenderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGr
 
 void Citro3DRenderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc)
 {
-	halDesc->dcmColorModel = D3DCOLORMODEL::RGB;
-	halDesc->dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
-	halDesc->dwDeviceZBufferBitDepth = DDBD_24;
-	halDesc->dwDeviceRenderBitDepth = DDBD_32;
-	halDesc->dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
-	halDesc->dpcTriCaps.dwShadeCaps = D3DPSHADECAPS_ALPHAFLATBLEND;
-	halDesc->dpcTriCaps.dwTextureFilterCaps = D3DPTFILTERCAPS_LINEAR;
-
-	memset(helDesc, 0, sizeof(D3DDEVICEDESC));
 }
 
 const char* Citro3DRenderer::GetName()

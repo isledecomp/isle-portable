@@ -5,12 +5,11 @@
 #include "d3drmtexture_impl.h"
 #include "ddraw_impl.h"
 
-#include <citro3d.h>
 #include <SDL3/SDL.h>
-#include <c3d/texture.h>
+#include <citro3d.h>
 #include <vector>
 
-DEFINE_GUID(Citro3D_GUID, 0x682656F3, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07);
+DEFINE_GUID(Citro3D_GUID, 0x682656F3, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3D, 0x53);
 
 struct C3DTextureCacheEntry {
 	IDirect3DRMTexture* texture;
@@ -21,27 +20,23 @@ struct C3DTextureCacheEntry {
 };
 
 struct C3DMeshCacheEntry {
-    const MeshGroup* meshGroup = nullptr;
-    Uint32 version = 0;
-    bool flat = false;
+	const MeshGroup* meshGroup = nullptr;
+	Uint32 version = 0;
+	bool flat = false;
 
-    C3D_AttrInfo attrInfo;
-    C3D_BufInfo bufInfo;
+	C3D_AttrInfo attrInfo;
+	C3D_BufInfo bufInfo;
 
-    // CPU-side vertex data
+	// CPU-side vertex data
 	std::vector<D3DRMVERTEX> vertices;
-    std::vector<D3DVECTOR> positions;
-    std::vector<D3DVECTOR> normals;
-    std::vector<TexCoord> texcoords;  // Only if you have textures
-    std::vector<uint16_t> indices;    // Indices for indexed drawing
+	std::vector<D3DVECTOR> positions;
+	std::vector<D3DVECTOR> normals;
+	std::vector<TexCoord> texcoords; // Only if you have textures
+	std::vector<uint16_t> indices;   // Indices for indexed drawing
 };
-
 
 class Citro3DRenderer : public Direct3DRMRenderer {
 public:
-	static Direct3DRMRenderer* Create(DWORD width, DWORD height);
-
-	// constructor parameters not finalized
 	Citro3DRenderer(DWORD width, DWORD height);
 	~Citro3DRenderer() override;
 
@@ -94,10 +89,21 @@ private:
 
 inline static void Citro3DRenderer_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
-	SDL_Log("Hello, enuming device");
-	Direct3DRMRenderer* device = Citro3DRenderer::Create(400, 240);
-	if (device) {
-		EnumDevice(cb, ctx, device, Citro3D_GUID);
-		delete device;
-	}
+	GUID guid = Citro3D_GUID;
+	char* deviceNameDup = SDL_strdup("Citro3D");
+	char* deviceDescDup = SDL_strdup("Miniwin driver");
+	D3DDEVICEDESC halDesc = {};
+	halDesc.dcmColorModel = D3DCOLOR_RGB;
+	halDesc.dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
+	halDesc.dwDeviceZBufferBitDepth = DDBD_24;
+	halDesc.dwDeviceRenderBitDepth = DDBD_32;
+	halDesc.dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
+	halDesc.dpcTriCaps.dwShadeCaps = D3DPSHADECAPS_ALPHAFLATBLEND;
+	halDesc.dpcTriCaps.dwTextureFilterCaps = D3DPTFILTERCAPS_LINEAR;
+	D3DDEVICEDESC helDesc = {};
+
+	cb(&guid, deviceNameDup, deviceDescDup, &halDesc, &helDesc, ctx);
+
+	SDL_free(deviceDescDup);
+	SDL_free(deviceNameDup);
 }
