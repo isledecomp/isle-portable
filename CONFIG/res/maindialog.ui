@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>575</width>
-    <height>650</height>
+    <height>600</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -44,6 +44,9 @@
        <height>16777215</height>
       </size>
      </property>
+     <property name="toolTip">
+      <string>Jaws.</string>
+     </property>
      <property name="text">
       <string/>
      </property>
@@ -76,13 +79,7 @@
          <property name="bottomMargin">
           <number>0</number>
          </property>
-         <item row="2" column="1">
-          <widget class="QLineEdit" name="cdPath"/>
-         </item>
-         <item row="3" column="1">
-          <widget class="QLineEdit" name="mediaPath"/>
-         </item>
-         <item row="7" column="2">
+         <item row="5" column="2">
           <widget class="QPushButton" name="savePathOpen">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
@@ -101,68 +98,8 @@
            </property>
           </widget>
          </item>
-         <item row="3" column="2">
-          <widget class="QPushButton" name="mediaPathOpen">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>55</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>Open</string>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="2">
-          <widget class="QPushButton" name="cdPathOpen">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>55</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>Open</string>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="0">
-          <widget class="QLabel" name="cdPathLabel">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string>CD Path:</string>
-           </property>
-           <property name="textFormat">
-            <enum>Qt::PlainText</enum>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QLineEdit" name="diskPath"/>
-         </item>
          <item row="0" column="2">
-          <widget class="QPushButton" name="diskPathOpen">
+          <widget class="QPushButton" name="dataPathOpen">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -180,26 +117,7 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="0">
-          <widget class="QLabel" name="diskPathLabel">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string>Disk Path:</string>
-           </property>
-           <property name="textFormat">
-            <enum>Qt::PlainText</enum>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item row="7" column="0">
+         <item row="5" column="0">
           <widget class="QLabel" name="savePathLabel">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
@@ -218,8 +136,22 @@
            </property>
           </widget>
          </item>
-         <item row="3" column="0">
-          <widget class="QLabel" name="mediaPathLabel">
+         <item row="0" column="1">
+          <widget class="QLineEdit" name="dataPath">
+           <property name="toolTip">
+            <string>Path to the game data files. Set this to the CD image root.</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="1">
+          <widget class="QLineEdit" name="savePath">
+           <property name="toolTip">
+            <string>Folder where save files are kept.</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="dataPathLabel">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
              <horstretch>0</horstretch>
@@ -227,7 +159,7 @@
             </sizepolicy>
            </property>
            <property name="text">
-            <string>Media Path:</string>
+            <string>Data Path:</string>
            </property>
            <property name="textFormat">
             <enum>Qt::PlainText</enum>
@@ -236,9 +168,6 @@
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
           </widget>
-         </item>
-         <item row="7" column="1">
-          <widget class="QLineEdit" name="savePath"/>
          </item>
         </layout>
        </widget>
@@ -265,6 +194,9 @@
              <width>16777215</width>
              <height>120</height>
             </size>
+           </property>
+           <property name="toolTip">
+            <string>Set 3D model detail level.</string>
            </property>
            <property name="title">
             <string>Island Model Quality</string>
@@ -345,6 +277,9 @@
          </item>
          <item row="0" column="2">
           <widget class="QGroupBox" name="textureQualityGroup">
+           <property name="toolTip">
+            <string>Set texture detail level.</string>
+           </property>
            <property name="title">
             <string>Island Texture Quality</string>
            </property>
@@ -422,16 +357,13 @@
        </widget>
       </item>
       <item>
-       <widget class="QWidget" name="musicJoystickWidget" native="true">
-        <layout class="QHBoxLayout" name="horizontalLayout_5">
-         <property name="topMargin">
-          <number>0</number>
-         </property>
-         <property name="bottomMargin">
-          <number>0</number>
-         </property>
+       <widget class="QWidget" name="checkboxWidget" native="true">
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
          <item>
           <widget class="QCheckBox" name="sound3DCheckBox">
+           <property name="toolTip">
+            <string>Enable 3D positional audio effects.</string>
+           </property>
            <property name="text">
             <string>3D Sound</string>
            </property>
@@ -439,6 +371,9 @@
          </item>
          <item>
           <widget class="QCheckBox" name="musicCheckBox">
+           <property name="toolTip">
+            <string>Enable in-game background music.</string>
+           </property>
            <property name="text">
             <string>Music</string>
            </property>
@@ -446,8 +381,21 @@
          </item>
          <item>
           <widget class="QCheckBox" name="joystickCheckBox">
+           <property name="toolTip">
+            <string>Enable joystick and gamepad support for LEGO Island.</string>
+           </property>
            <property name="text">
             <string>Use Joystick</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="fullscreenCheckBox">
+           <property name="toolTip">
+            <string>Toggle fullscreen display mode.</string>
+           </property>
+           <property name="text">
+            <string>Fullscreen</string>
            </property>
           </widget>
          </item>
@@ -461,6 +409,9 @@
           <width>16777215</width>
           <height>225</height>
          </size>
+        </property>
+        <property name="toolTip">
+         <string>3D graphics device used to render the game.</string>
         </property>
         <property name="title">
          <string/>
@@ -557,8 +508,11 @@
          </property>
          <item>
           <widget class="QPushButton" name="okButton">
+           <property name="toolTip">
+            <string>Save configuration and close the config tool.</string>
+           </property>
            <property name="text">
-            <string>OK</string>
+            <string>Save and Exit</string>
            </property>
            <property name="default">
             <bool>true</bool>
@@ -566,9 +520,22 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="cancelButton">
+          <widget class="QPushButton" name="launchButton">
+           <property name="toolTip">
+            <string>Save configuration and launch LEGO Island.</string>
+           </property>
            <property name="text">
-            <string>Cancel</string>
+            <string>Save and Launch</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="cancelButton">
+           <property name="toolTip">
+            <string>Discard changed settings and close the config tool.</string>
+           </property>
+           <property name="text">
+            <string>Exit without saving</string>
            </property>
           </widget>
          </item>
@@ -581,12 +548,8 @@
   </layout>
  </widget>
  <tabstops>
-  <tabstop>diskPath</tabstop>
-  <tabstop>diskPathOpen</tabstop>
-  <tabstop>cdPath</tabstop>
-  <tabstop>cdPathOpen</tabstop>
-  <tabstop>mediaPath</tabstop>
-  <tabstop>mediaPathOpen</tabstop>
+  <tabstop>dataPath</tabstop>
+  <tabstop>dataPathOpen</tabstop>
   <tabstop>savePath</tabstop>
   <tabstop>savePathOpen</tabstop>
   <tabstop>textureQualityFastRadioButton</tabstop>
