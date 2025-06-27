@@ -3,9 +3,9 @@ void main(
     float3 aNormal : NORMAL,
     float2 aTexCoord : TEXCOORD0,
 
-    uniform float4x4 uModelViewMatrix,
+    column_major uniform float4x4 uModelViewMatrix,
     uniform float3x3 uNormalMatrix,
-    uniform float4x4 uProjectionMatrix,
+    column_major uniform float4x4 uProjectionMatrix,
 
     out float4 vPosition : POSITION,
     out float3 vViewPos : TEXCOORD1,

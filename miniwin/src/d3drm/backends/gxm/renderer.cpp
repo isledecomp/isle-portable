@@ -482,28 +482,28 @@ static void CreateOrthoMatrix(float left, float right, float bottom, float top, 
 {
 	float near = -1.0f;
 	float far = 1.0f;
-	float width = right - left;
-	float height = top - bottom;
-	float depth = far - near;
+	float rl = right - left;
+	float tb = top - bottom;
+	float fn = far - near;
 
-	outMatrix[0][0] = 2.0f / width;
+	outMatrix[0][0] = 2.0f / rl;
 	outMatrix[0][1] = 0.0f;
 	outMatrix[0][2] = 0.0f;
-	outMatrix[0][3] = -(right + left) / width; // translation x
+	outMatrix[0][3] = 0.0f;
 
 	outMatrix[1][0] = 0.0f;
-	outMatrix[1][1] = 2.0f / height;
+	outMatrix[1][1] = 2.0f / tb;
 	outMatrix[1][2] = 0.0f;
-	outMatrix[1][3] = -(top + bottom) / height; // translation y
+	outMatrix[1][3] = 0.0f;
 
 	outMatrix[2][0] = 0.0f;
 	outMatrix[2][1] = 0.0f;
-	outMatrix[2][2] = -2.0f / depth;
-	outMatrix[2][3] = -(far + near) / depth; // translation z
+	outMatrix[2][2] = -2.0f / fn;
+	outMatrix[2][3] = 0.0f;
 
-	outMatrix[3][0] = 0.0f;
-	outMatrix[3][1] = 0.0f;
-	outMatrix[3][2] = 0.0f;
+	outMatrix[3][0] = -(right + left) / rl;
+	outMatrix[3][1] = -(top + bottom) / tb;
+	outMatrix[3][2] = -(far + near) / fn;
 	outMatrix[3][3] = 1.0f;
 }
 
@@ -567,7 +567,6 @@ void GXMRenderer::SetFrustumPlanes(const Plane* frustumPlanes)
 void GXMRenderer::SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back)
 {
 	memcpy(&m_projection, projection, sizeof(D3DRMMATRIX4D));
-	m_projection[1][1] *= -1.0f; // GXM is upside down
 }
 
 struct TextureDestroyContextGXM {
@@ -590,22 +589,24 @@ void GXMRenderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* textu
 	);
 }
 
-static void convertTextureMetadata(SDL_Surface* surface, bool* supportedFormat, SceGxmTextureFormat* textureFormat, size_t* textureSize, size_t* textureAlignment) {
+static void convertTextureMetadata(SDL_Surface* surface, bool* supportedFormat, SceGxmTextureFormat* textureFormat, size_t* textureSize, size_t* textureAlignment, size_t* textureStride) {
 	*supportedFormat = true;
 	*textureAlignment = SCE_GXM_TEXTURE_ALIGNMENT;
 	switch(surface->format) {
 		case SDL_PIXELFORMAT_ABGR8888: {
 			*textureFormat = SCE_GXM_TEXTURE_FORMAT_U8U8U8U8_ABGR;
 			*textureSize = surface->h * surface->pitch;
+			*textureStride = surface->pitch;
 			break;
 		}
-		/* crashes when opening the guestbook for some reason
+		/*
 		case SDL_PIXELFORMAT_INDEX8: {
 			*textureFormat = SCE_GXM_TEXTURE_FORMAT_P8_ABGR;
 			int pixelsSize = surface->h * surface->pitch;
 			int alignBytes = ALIGNMENT(pixelsSize, SCE_GXM_PALETTE_ALIGNMENT);
 			*textureSize = pixelsSize + alignBytes + 0xff;
 			*textureAlignment = SCE_GXM_PALETTE_ALIGNMENT;
+			*textureStride = surface->pitch;
 			break;
 		}
 		*/
@@ -613,6 +614,12 @@ static void convertTextureMetadata(SDL_Surface* surface, bool* supportedFormat, 
 			*supportedFormat = false;
 		}
 	}
+}
+
+void copySurfaceTo(SDL_Surface* src, void* dstData, size_t textureStride) {
+	SDL_Surface* dst = SDL_CreateSurfaceFrom(src->w, src->h, SDL_PIXELFORMAT_ABGR8888, dstData, textureStride);
+	SDL_BlitSurface(src, nullptr, dst, nullptr);
+	SDL_DestroySurface(dst);
 }
 
 Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
@@ -624,9 +631,19 @@ Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 	bool supportedFormat;
 	size_t textureSize;
 	size_t textureAlignment;
+	size_t textureStride;
 	SceGxmTextureFormat textureFormat;
+	int textureWidth = surface->m_surface->w;
+	int textureHeight = surface->m_surface->h;
 
-	convertTextureMetadata(surface->m_surface, &supportedFormat, &textureFormat, &textureSize, &textureAlignment);
+	convertTextureMetadata(surface->m_surface, &supportedFormat, &textureFormat, &textureSize, &textureAlignment, &textureStride);
+
+	if(!supportedFormat) {
+		textureAlignment = SCE_GXM_TEXTURE_ALIGNMENT;
+		textureStride = textureWidth * 4;
+		textureSize = textureHeight * textureStride;
+		textureFormat = SCE_GXM_TEXTURE_FORMAT_U8U8U8U8_ABGR;
+	}
 
 	for (Uint32 i = 0; i < m_textures.size(); ++i) {
 		auto& tex = m_textures[i];
@@ -634,13 +651,7 @@ Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 			if (tex.version != texture->m_version) {
 				void* textureData = sceGxmTextureGetData(&tex.gxmTexture);
 				if(!supportedFormat) {
-					SDL_ConvertPixels(
-						surface->m_surface->w, surface->m_surface->h,
-						surface->m_surface->format,
-						surface->m_surface->pixels,
-						surface->m_surface->pitch,
-						SDL_PIXELFORMAT_ABGR8888, textureData, surface->m_surface->pitch
-					);
+					copySurfaceTo(surface->m_surface, textureData, textureStride);
 				} else {
 					memcpy(textureData, surface->m_surface->pixels, textureSize);
 				}
@@ -650,32 +661,16 @@ Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 		}
 	}
 
-	int textureWidth = surface->m_surface->w;
-	int textureHeight = surface->m_surface->h;
-	int textureStride = surface->m_surface->pitch;
-
 	SDL_Log("Create Texture %s w=%d h=%d s=%d",
 		SDL_GetPixelFormatName(surface->m_surface->format), textureWidth, textureHeight, textureStride);
 
-	if(!supportedFormat) {
-		textureAlignment = SCE_GXM_TEXTURE_ALIGNMENT;
-		textureSize = textureHeight * textureStride * 4;
-		textureFormat = SCE_GXM_TEXTURE_FORMAT_U8U8U8U8_ABGR;
-	}
-	
 	// allocate gpu memory
 	void* textureData = sceClibMspaceMemalign(this->m_data.cdramPool, textureAlignment, textureSize);
 	uint8_t* paletteData = nullptr;
 
 	if(!supportedFormat) {
 		SDL_Log("unsupported SDL texture format %s, falling back on SDL_PIXELFORMAT_ABGR8888", SDL_GetPixelFormatName(surface->m_surface->format));
-		SDL_ConvertPixels(
-			surface->m_surface->w, surface->m_surface->h,
-			surface->m_surface->format,
-			surface->m_surface->pixels,
-			surface->m_surface->pitch,
-			SDL_PIXELFORMAT_ABGR8888, textureData, surface->m_surface->pitch
-		);
+		copySurfaceTo(surface->m_surface, textureData, textureStride);
 	}
 	else if(surface->m_surface->format == SDL_PIXELFORMAT_INDEX8)
 	{
@@ -685,6 +680,7 @@ Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 
 		int pixelsSize = surface->m_surface->w * surface->m_surface->h;
 		int alignBytes = ALIGNMENT(pixelsSize, SCE_GXM_PALETTE_ALIGNMENT);
+		SDL_Log("copying indexed texture data from=%p to=%p", surface->m_surface->pixels, textureData);
 		memcpy(textureData, surface->m_surface->pixels, pixelsSize);
 
 		paletteData = (uint8_t*)textureData + pixelsSize + alignBytes;
@@ -692,6 +688,7 @@ Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 	}
 	else
 	{
+		SDL_Log("copying texture data from=%p to=%p", surface->m_surface->pixels, textureData);
 		memcpy(textureData, surface->m_surface->pixels, textureSize);
 	}
 
@@ -709,13 +706,14 @@ Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 			tex.texture = texture;
 			tex.version = texture->m_version;
 			tex.gxmTexture = gxmTexture;
+			tex.textureSize = textureSize;
 			AddTextureDestroyCallback(i, texture);
 			return i;
 		}
 	}
 
-	Uint32 textureId = (Uint32) (m_textures.size() - 1);
 	m_textures.push_back({texture, texture->m_version, gxmTexture});
+	Uint32 textureId = (Uint32) (m_textures.size() - 1);
 	AddTextureDestroyCallback(textureId, texture);
 	return textureId;
 }
@@ -873,10 +871,12 @@ int frames = 0;
 HRESULT GXMRenderer::BeginFrame()
 {
 	frames++;
-	if(with_razor && !razor_triggered && frames == 10) {
-		SDL_Log("trigger razor in 10 frames");
-		sceRazorGpuCaptureSetTriggerNextFrame("ux0:/data/capture.sgx");
-		razor_triggered = true;
+	if(with_razor) {
+		if(!razor_triggered && frames == 10) {
+			SDL_Log("trigger razor");
+			sceRazorGpuCaptureSetTriggerNextFrame("ux0:/data/capture.sgx");
+			razor_triggered = true;
+		}	
 	}
 	this->transparencyEnabled = false;
 
@@ -916,11 +916,19 @@ void GXMRenderer::EnableTransparency() {
 	this->transparencyEnabled = true;
 }
 
-void transpose4x4(const float src[4][4], float dst[4][4]) {
+static void transpose4x4(const float src[4][4], float dst[4][4]) {
     for (int i = 0; i < 4; ++i)
         for (int j = 0; j < 4; ++j)
             dst[j][i] = src[i][j];
 }
+
+static const D3DRMMATRIX4D identity4x4 = {
+	{1.0, 0.0, 0.0, 0.0},
+	{0.0, 1.0, 0.0, 0.0},
+	{0.0, 0.0, 1.0, 0.0},
+	{0.0, 0.0, 0.0, 1.0},
+};
+
 
 void GXMRenderer::SubmitDraw(
 	DWORD meshId,
@@ -948,13 +956,15 @@ void GXMRenderer::SubmitDraw(
 	sceGxmReserveVertexDefaultUniformBuffer(this->m_data.context, &vertUniforms);
 	sceGxmReserveFragmentDefaultUniformBuffer(this->m_data.context, &fragUniforms);
 
+	/*
 	D3DRMMATRIX4D modelViewMatrixTrans;
 	D3DRMMATRIX4D projectionTrans;
 	transpose4x4(modelViewMatrix, modelViewMatrixTrans);
 	transpose4x4(m_projection, projectionTrans);
+	*/
 
-	SET_UNIFORM(vertUniforms, this->m_data.uModelViewMatrix, modelViewMatrixTrans);
-	SET_UNIFORM(vertUniforms, this->m_data.uProjectionMatrix, projectionTrans);
+	SET_UNIFORM(vertUniforms, this->m_data.uModelViewMatrix, modelViewMatrix);
+	SET_UNIFORM(vertUniforms, this->m_data.uProjectionMatrix, m_projection);
 	SET_UNIFORM(vertUniforms, this->m_data.uNormalMatrix, normalMatrix);
 	
 	float color[4] = {
@@ -1019,16 +1029,9 @@ void GXMRenderer::Clear(float r, float g, float b) {
 	D3DRMMATRIX4D projection;
 	CreateOrthoMatrix(0.0, 1.0, 1.0, 0.0, projection);
 
-	D3DRMMATRIX4D identity;
-	memset(identity, 0, sizeof(identity));
-	identity[0][0] = 1.0f;
-    identity[1][1] = 1.0f;
-    identity[2][2] = 1.0f;
-    identity[3][3] = 1.0f;
-
 	Matrix3x3 normal = {{1.f, 0.f, 0.f}, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}};
 
-	SET_UNIFORM(vertUniforms, this->m_data.uModelViewMatrix, identity); // float4x4
+	SET_UNIFORM(vertUniforms, this->m_data.uModelViewMatrix, identity4x4); // float4x4
 	SET_UNIFORM(vertUniforms, this->m_data.uNormalMatrix, normal); // float3x3
 	SET_UNIFORM(vertUniforms, this->m_data.uProjectionMatrix, projection); // float4x4
 
@@ -1041,10 +1044,10 @@ void GXMRenderer::Clear(float r, float g, float b) {
 	float y2 = y1 + 1.0;
 
 	Vertex* quadVertices = this->GetQuadVertices();
-	quadVertices[0] = Vertex{ .position = {x1, y1, 0}, .normal = {0,0,0}, .texCoord = {0,0}};
-	quadVertices[1] = Vertex{ .position = {x2, y1, 0}, .normal = {0,0,0}, .texCoord = {0,0}};
-	quadVertices[2] = Vertex{ .position = {x1, y2, 0}, .normal = {0,0,0}, .texCoord = {0,0}};
-	quadVertices[3] = Vertex{ .position = {x2, y2, 0}, .normal = {0,0,0}, .texCoord = {0,0}};
+	quadVertices[0] = Vertex{ .position = {x1, y1, -1.0}, .normal = {0,0,0}, .texCoord = {0,0}};
+	quadVertices[1] = Vertex{ .position = {x2, y1, -1.0}, .normal = {0,0,0}, .texCoord = {0,0}};
+	quadVertices[2] = Vertex{ .position = {x1, y2, -1.0}, .normal = {0,0,0}, .texCoord = {0,0}};
+	quadVertices[3] = Vertex{ .position = {x2, y2, -1.0}, .normal = {0,0,0}, .texCoord = {0,0}};
 
 	sceGxmSetVertexStream(this->m_data.context, 0, quadVertices);
 	sceGxmDraw(
@@ -1153,12 +1156,16 @@ void GXMRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const S
 	quadVertices[3] = Vertex{ .position = {x2, y2, 0}, .normal = {0,0,0}, .texCoord = {u2, v2}};
 
 	sceGxmSetVertexStream(this->m_data.context, 0, quadVertices);
+
+	sceGxmSetFrontDepthWriteEnable(this->m_data.context, SCE_GXM_DEPTH_WRITE_DISABLED);
 	sceGxmDraw(
 		this->m_data.context,
 		SCE_GXM_PRIMITIVE_TRIANGLE_STRIP,
 		SCE_GXM_INDEX_FORMAT_U16,
 		this->m_data.quadIndices, 4
 	);
+	sceGxmSetFrontDepthWriteEnable(this->m_data.context, SCE_GXM_DEPTH_WRITE_ENABLED);
+
 
 	sceGxmPopUserMarker(this->m_data.context);
 }
@@ -1173,7 +1180,7 @@ void GXMRenderer::Download(SDL_Surface* target) {
 	SDL_Surface* src = SDL_CreateSurfaceFrom(
 		this->m_width, this->m_height,
 		SDL_PIXELFORMAT_RGBA32,
-		this->m_data.displayBuffers[this->backBufferIndex], VITA_GXM_SCREEN_STRIDE
+		this->m_data.displayBuffers[this->frontBufferIndex], VITA_GXM_SCREEN_STRIDE
 	);
 	SDL_BlitSurfaceScaled(src, &srcRect, target, nullptr, SDL_SCALEMODE_NEAREST);
 	SDL_DestroySurface(src);

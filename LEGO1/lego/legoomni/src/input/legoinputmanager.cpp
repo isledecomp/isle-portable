@@ -152,12 +152,11 @@ MxResult LegoInputManager::GetJoystick()
 		return SUCCESS;
 	}
 
-	MxS32 numJoysticks = 0;
 	if (m_joyids == NULL) {
-		m_joyids = SDL_GetJoysticks(&numJoysticks);
+		m_joyids = SDL_GetJoysticks(&m_numJoysticks);
 	}
 
-	if (m_useJoystick != FALSE && numJoysticks != 0) {
+	if (m_useJoystick != FALSE && m_numJoysticks != 0) {
 		MxS32 joyid = m_joystickIndex;
 		if (joyid >= 0) {
 			m_joystick = SDL_OpenJoystick(m_joyids[joyid]);
@@ -166,7 +165,7 @@ MxResult LegoInputManager::GetJoystick()
 			}
 		}
 
-		for (joyid = 0; joyid < numJoysticks; joyid++) {
+		for (joyid = 0; joyid < m_numJoysticks; joyid++) {
 			m_joystick = SDL_OpenJoystick(m_joyids[joyid]);
 			if (m_joystick != NULL) {
 				return SUCCESS;

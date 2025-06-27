@@ -20,6 +20,7 @@ struct GXMTextureCacheEntry {
 	IDirect3DRMTexture* texture;
 	Uint32 version;
 	SceGxmTexture gxmTexture;
+	size_t textureSize;
 };
 
 struct GXMMeshCacheEntry {

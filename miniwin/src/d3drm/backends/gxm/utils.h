@@ -32,7 +32,7 @@
 		return ret; \
 	}
 
-static void printMatrix4x4(float mat[4][4]) {
+static void printMatrix4x4(const float mat[4][4]) {
     sceClibPrintf("mat4{\n");
     for(int i = 0; i < 4; i++) {
         sceClibPrintf("%f %f %f %f\n", mat[i][0], mat[i][1], mat[i][2], mat[i][3]);
