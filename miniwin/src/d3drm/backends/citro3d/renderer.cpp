@@ -287,10 +287,7 @@ C3DMeshCacheEntry C3DUploadMesh(const MeshGroup& meshGroup)
 		indexBuffer.assign(meshGroup.indices.begin(), meshGroup.indices.end());
 	}
 
-	MINIWIN_NOT_IMPLEMENTED();
-
-	// TODO use ibo instead of flattening verticies, see
-	// https://github.com/devkitPro/3ds-examples/blob/44faa81d79d5781c0e149e4a7005f2e005edb736/graphics/gpu/loop_subdivision/source/main.c#L104
+	// Flatten vertices as IBO is buggy on 3DS hardware
 	std::vector<D3DRMVERTEX> vertexUploadBuffer;
 	vertexUploadBuffer.reserve(indexBuffer.size());
 
@@ -450,8 +447,7 @@ void Citro3DRenderer::SubmitDraw(
 	const Appearance& appearance
 )
 {
-	C3D_Mtx projection, modelView;
-	ConvertPerspective(m_projection, &projection);
+	C3D_Mtx modelView;
 	ConvertMatrix(modelViewMatrix, &modelView);
 	C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER, uLoc_modelView, &modelView);
 
