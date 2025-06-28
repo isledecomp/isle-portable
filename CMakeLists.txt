@@ -652,7 +652,7 @@ if(NINTENDO_3DS)
     DESCRIPTION "LEGO Island for the Nintendo 3DS"
     AUTHOR "LEGO Island Decompilation and Porting Team"
     VERSION "${PROJECT_VERSION}"
-    ICON "isle/res/3ds/isle.png"
+    ICON "ISLE/res/3ds/isle.png"
   )
 
   ctr_create_3dsx(isle SMDH isle.smdh)

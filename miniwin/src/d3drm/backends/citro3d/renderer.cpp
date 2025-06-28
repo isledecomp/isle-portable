@@ -264,12 +264,6 @@ Uint32 Citro3DRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 	return (Uint32) (m_textures.size() - 1);
 }
 
-struct vertex {
-	float position[3];
-	float texcoord[2];
-	float normal[3];
-};
-
 C3DMeshCacheEntry C3DUploadMesh(const MeshGroup& meshGroup)
 {
 	C3DMeshCacheEntry cache{&meshGroup, meshGroup.version};
@@ -293,15 +287,21 @@ C3DMeshCacheEntry C3DUploadMesh(const MeshGroup& meshGroup)
 		indexBuffer.assign(meshGroup.indices.begin(), meshGroup.indices.end());
 	}
 
-	size_t vertexBufferSize = vertexBuffer.size() * sizeof(vertex);
-	size_t indexBufferSize = indexBuffer.size() * sizeof(uint16_t);
+	MINIWIN_NOT_IMPLEMENTED();
 
+	// TODO use ibo instead of flattening verticies, see
+	// https://github.com/devkitPro/3ds-examples/blob/44faa81d79d5781c0e149e4a7005f2e005edb736/graphics/gpu/loop_subdivision/source/main.c#L104
+	std::vector<D3DRMVERTEX> vertexUploadBuffer;
+	vertexUploadBuffer.reserve(indexBuffer.size());
+
+	for (size_t i = 0; i < indexBuffer.size(); ++i) {
+		vertexUploadBuffer.emplace_back(vertexBuffer[indexBuffer[i]]);
+	}
+
+	size_t vertexBufferSize = vertexUploadBuffer.size() * sizeof(D3DRMVERTEX);
 	cache.vbo = linearAlloc(vertexBufferSize);
-	memcpy(cache.vbo, vertexBuffer.data(), vertexBufferSize);
-	cache.ibo = linearAlloc(indexBufferSize);
-	memcpy(cache.ibo, indexBuffer.data(), indexBufferSize);
-
-	cache.indexCount = indexBuffer.size();
+	memcpy(cache.vbo, vertexUploadBuffer.data(), vertexBufferSize);
+	cache.vertexCount = vertexUploadBuffer.size();
 
 	return cache;
 }
@@ -316,7 +316,7 @@ void Citro3DRenderer::AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh)
 			if (cacheEntry.meshGroup) {
 				cacheEntry.meshGroup = nullptr;
 				linearFree(cacheEntry.vbo);
-				linearFree(cacheEntry.ibo);
+				cacheEntry.vertexCount = 0;
 			}
 			delete ctx;
 		},
@@ -450,7 +450,8 @@ void Citro3DRenderer::SubmitDraw(
 	const Appearance& appearance
 )
 {
-	C3D_Mtx modelView;
+	C3D_Mtx projection, modelView;
+	ConvertPerspective(m_projection, &projection);
 	ConvertMatrix(modelViewMatrix, &modelView);
 	C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER, uLoc_modelView, &modelView);
 
@@ -458,7 +459,7 @@ void Citro3DRenderer::SubmitDraw(
 
 	C3D_BufInfo* bufInfo = C3D_GetBufInfo();
 	BufInfo_Init(bufInfo);
-	BufInfo_Add(bufInfo, mesh.vbo, sizeof(vertex), 3, 0x210);
+	BufInfo_Add(bufInfo, mesh.vbo, sizeof(D3DRMVERTEX), 3, 0x210);
 
 	C3D_FVUnifSet(
 		GPU_VERTEX_SHADER,
@@ -486,7 +487,7 @@ void Citro3DRenderer::SubmitDraw(
 		C3D_TexEnvFunc(env, C3D_Both, GPU_REPLACE);
 	}
 
-	C3D_DrawElements(GPU_GEOMETRY_PRIM, mesh.indexCount, C3D_UNSIGNED_SHORT, mesh.ibo);
+	C3D_DrawArrays(GPU_TRIANGLES, 0, mesh.vertexCount);
 }
 
 HRESULT Citro3DRenderer::FinalizeFrame()
