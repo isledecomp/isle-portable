@@ -704,6 +704,7 @@ MxResult IsleApp::SetupWindow()
 		return FAILURE;
 	}
 
+	DetectGameVersion();
 	GameState()->SerializePlayersInfo(LegoStorage::c_read);
 	GameState()->SerializeScoreHistory(LegoStorage::c_read);
 
@@ -1097,6 +1098,34 @@ MxResult IsleApp::VerifyFilesystem()
 #endif
 
 	return SUCCESS;
+}
+
+void IsleApp::DetectGameVersion()
+{
+	const char* file = "/lego/scripts/infocntr/infomain.si";
+	SDL_PathInfo info;
+	bool success = false;
+
+	MxString path = MxString(m_hdPath) + file;
+	path.MapPathToFilesystem();
+	if (!(success = SDL_GetPathInfo(path.GetData(), &info))) {
+		path = MxString(m_cdPath) + file;
+		path.MapPathToFilesystem();
+		success = SDL_GetPathInfo(path.GetData(), &info);
+	}
+
+	assert(success);
+
+	// File sizes of INFOMAIN.SI in English 1.0 and Japanese 1.0
+	Lego()->SetVersion10(info.size == 58130432 || info.size == 57737216);
+
+	if (Lego()->IsVersion10()) {
+		SDL_Log("Detected game version 1.0");
+		SDL_SetWindowTitle(reinterpret_cast<SDL_Window*>(m_windowHandle), "Lego Island");
+	}
+	else {
+		SDL_Log("Detected game version 1.1");
+	}
 }
 
 IDirect3DRMMiniwinDevice* GetD3DRMMiniwinDevice()

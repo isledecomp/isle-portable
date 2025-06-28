@@ -306,29 +306,32 @@ MxLong Infocenter::HandleEndAction(MxEndActionNotificationParam& p_param)
 
 		if (!m_unk0x1d4) {
 			PlayMusic(JukeboxScript::c_InformationCenter_Music);
-			GameState()->SetActor(m_selectedCharacter);
 
-			switch (m_selectedCharacter) {
-			case e_pepper:
-				PlayAction(InfomainScript::c_avo901in_RunAnim);
-				break;
-			case e_mama:
-				PlayAction(InfomainScript::c_avo902in_RunAnim);
-				break;
-			case e_papa:
-				PlayAction(InfomainScript::c_avo903in_RunAnim);
-				break;
-			case e_nick:
-				PlayAction(InfomainScript::c_avo904in_RunAnim);
-				break;
-			case e_laura:
-				PlayAction(InfomainScript::c_avo905in_RunAnim);
-				break;
-			default:
-				break;
+			if (!Lego()->IsVersion10()) {
+				GameState()->SetActor(m_selectedCharacter);
+
+				switch (m_selectedCharacter) {
+				case e_pepper:
+					PlayAction(InfomainScript::c_avo901in_RunAnim);
+					break;
+				case e_mama:
+					PlayAction(InfomainScript::c_avo902in_RunAnim);
+					break;
+				case e_papa:
+					PlayAction(InfomainScript::c_avo903in_RunAnim);
+					break;
+				case e_nick:
+					PlayAction(InfomainScript::c_avo904in_RunAnim);
+					break;
+				case e_laura:
+					PlayAction(InfomainScript::c_avo905in_RunAnim);
+					break;
+				default:
+					break;
+				}
+
+				UpdateFrameHot(TRUE);
 			}
-
-			UpdateFrameHot(TRUE);
 		}
 	}
 
@@ -338,7 +341,7 @@ MxLong Infocenter::HandleEndAction(MxEndActionNotificationParam& p_param)
 		return result;
 	}
 
-	if (action->GetObjectId() == InfomainScript::c_iicx26in_RunAnim) {
+	if (action->GetObjectId() == InfomainScript::c_iicx26in_RunAnim - Lego()->IsVersion10()) {
 		ControlManager()->FUN_100293c0(InfomainScript::c_BigInfo_Ctl, action->GetAtomId().GetInternal(), 0);
 		m_unk0x1d6 = 0;
 	}
@@ -478,7 +481,7 @@ void Infocenter::ReadyWorld()
 			InfomainScript::Script script = m_infocenterState->GetNextReturnDialogue();
 			PlayAction(script);
 
-			if (script == InfomainScript::c_iicx26in_RunAnim) {
+			if (script == InfomainScript::c_iicx26in_RunAnim - Lego()->IsVersion10()) {
 				m_unk0x1d6 = 1;
 			}
 
@@ -1186,13 +1189,13 @@ MxLong Infocenter::HandleNotification0(MxNotificationParam& p_param)
 				m_currentInfomainScript == InfomainScript::c_Pepper_All_Movie ||
 				m_currentInfomainScript == InfomainScript::c_Nick_All_Movie ||
 				m_currentInfomainScript == InfomainScript::c_Laura_All_Movie ||
-				m_currentInfomainScript == InfomainScript::c_iic007ra_PlayWav ||
-				m_currentInfomainScript == InfomainScript::c_ijs002ra_PlayWav ||
-				m_currentInfomainScript == InfomainScript::c_irt001ra_PlayWav ||
-				m_currentInfomainScript == InfomainScript::c_ipz006ra_PlayWav ||
-				m_currentInfomainScript == InfomainScript::c_igs004ra_PlayWav ||
-				m_currentInfomainScript == InfomainScript::c_iho003ra_PlayWav ||
-				m_currentInfomainScript == InfomainScript::c_ips005ra_PlayWav) {
+				m_currentInfomainScript == InfomainScript::c_iic007ra_PlayWav - Lego()->IsVersion10() ||
+				m_currentInfomainScript == InfomainScript::c_ijs002ra_PlayWav - Lego()->IsVersion10() ||
+				m_currentInfomainScript == InfomainScript::c_irt001ra_PlayWav - Lego()->IsVersion10() ||
+				m_currentInfomainScript == InfomainScript::c_ipz006ra_PlayWav - Lego()->IsVersion10() ||
+				m_currentInfomainScript == InfomainScript::c_igs004ra_PlayWav - Lego()->IsVersion10() ||
+				m_currentInfomainScript == InfomainScript::c_iho003ra_PlayWav - Lego()->IsVersion10() ||
+				m_currentInfomainScript == InfomainScript::c_ips005ra_PlayWav - Lego()->IsVersion10()) {
 				StopCurrentAction();
 			}
 		}
@@ -1506,6 +1509,17 @@ void Infocenter::StopCredits()
 // FUNCTION: BETA10 0x1002ee8c
 void Infocenter::PlayAction(InfomainScript::Script p_script)
 {
+	if (Lego()->IsVersion10()) {
+		if (p_script == InfomainScript::c_iicx18in_RunAnim) {
+			// Alternative dialogue after signing in (1.0 version)
+			p_script = InfomainScript::c_iic016in_RunAnim;
+		}
+		else if (p_script > InfomainScript::c_iicx18in_RunAnim) {
+			// Shift all other actions by 1
+			p_script = (InfomainScript::Script)((int) p_script - 1);
+		}
+	}
+
 	MxDSAction action;
 	action.SetObjectId(p_script);
 	action.SetAtomId(*g_infomainScript);
