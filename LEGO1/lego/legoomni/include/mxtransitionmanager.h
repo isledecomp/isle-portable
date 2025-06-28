@@ -55,6 +55,8 @@ public:
 
 	TransitionType GetTransitionType() { return m_mode; }
 
+	LEGO1_EXPORT static void configureMxTransitionManager(TransitionType p_transitionManagerConfig);
+
 	// SYNTHETIC: LEGO1 0x1004b9e0
 	// MxTransitionManager::`scalar deleting destructor'
 
