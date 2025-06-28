@@ -145,7 +145,7 @@ jobs:
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
           bundle: ${{ env.APP_ID }}.${{ matrix.arch }}.flatpak
-          manifest-path: packaging/linux//flatpak${{ env.APP_ID }}.json
+          manifest-path: packaging/linux/flatpak/${{ env.APP_ID }}.json
           arch: ${{ matrix.arch }}
   
   release:
