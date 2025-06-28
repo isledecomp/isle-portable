@@ -2,16 +2,31 @@
 set -e
 
 export LD_LIBRARY_PATH="build/lib:$LD_LIBRARY_PATH"
-export QMAKE=/usr/lib/qt6/bin/qmake
+[ -z "$QMAKE" ] && export QMAKE=/usr/lib/qt6/bin/qmake
 
+# Sets a directory that has to have a following structure:
+# build
+# ├── bin
+# │   ├── isle
+# │   └── isle-config
+# └── lib
+#     ├── liblego1.so
+#     ├── libSDL3.so -> libSDL3.so.0        # Not important if available on the system
+#     ├── libSDL3.so.0 -> libSDL3.so.0.3.0  # Not important if available on the system
+#     └── libSDL3.so.0.3.0                  # Not important if available on the system
+# Can also be defined using --build=path
 BUILD_SOURCE=../../build
+
+# Sets where AppRun for AppImage is, can also be defined using --apprun=path
 APPRUN_SOURCE=AppRun
+
+# Sets where desktop file for AppImage is, can also be defined using --desktop-file=path
 DESKTOP_FILE_SOURCE=isle-portable.desktop
 
 cd $(dirname $0)
 
 clean(){
-    rm -rf assets tools build AppDir
+    rm -rf assets tools build AppDir "./LEGO_Island-$(uname -m).AppImage"
 }
 
 download(){
@@ -65,13 +80,19 @@ package(){
     tools/appimagetool.AppImage AppDir "LEGO_Island-$(uname -m).AppImage"
 }
 
-stop(){
+stop(){ # Can be used to do `Build clean stop` to just clean the directory
     exit
 }
 
-for func in "$@"; do
-    "$func"
+for arg in "$@"; do
+    case "$arg" in
+        --build=*)          BUILD_SOURCE="${arg#--build=}";;
+        --apprun=*)         APPRUN_SOURCE="${arg#--apprun=}";;
+        --desktop-file=*)   DESKTOP_FILE_SOURCE="${arg#--desktop-file=}";;
+        *)                  "$arg"
+    esac
 done
+
 prepare
 compile
 package
