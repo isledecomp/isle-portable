@@ -15,13 +15,13 @@ export LD_LIBRARY_PATH="build/source/lib:$LD_LIBRARY_PATH"
 #     ├── libSDL3.so.0 -> libSDL3.so.0.3.0  # Not important if available on the system
 #     └── libSDL3.so.0.3.0                  # Not important if available on the system
 # Can also be defined using --build=path
-BUILD_SOURCE=../../source
+BUILD_SOURCE=source
 
 # Sets where AppRun for AppImage is, can also be defined using --apprun=path
 APPRUN_SOURCE=AppRun
 
 # Sets where desktop file for AppImage is, can also be defined using --desktop-file=path
-DESKTOP_FILE_SOURCE=isle-portable.desktop
+DESKTOP_FILE_SOURCE=isledecomp.desktop
 
 # You know the drill
 ICON_SOURCE=../../icons/isle.svg
@@ -52,8 +52,8 @@ prepare(){
     download build/tools/linuxdeploy-plugin-qt.AppImage https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/latest/download/linuxdeploy-plugin-qt-$(uname -m).AppImage
     chmod u+x build/tools/linuxdeploy-plugin-qt.AppImage
 
-    if [ ! -f "build/assets/isle-portable.desktop" ]; then
-        cp $DESKTOP_FILE_SOURCE build/assets/isle-portable.desktop
+    if [ ! -f "build/assets/isledecomp.desktop" ]; then
+        cp $DESKTOP_FILE_SOURCE build/assets/isledecomp.desktop
         cp $APPRUN_SOURCE build/assets/AppRun
         cp ../../icons/isle.svg build/assets/isle.svg
     fi
@@ -68,7 +68,7 @@ compile(){
         --plugin qt \
         -e build/source/bin/isle \
         -e build/source/bin/isle-config \
-        -d build/assets/isle-portable.desktop \
+        -d build/assets/isledecomp.desktop \
         -i build/assets/isle.svg \
         --custom-apprun=AppRun \
         --appdir=build/AppDir
