@@ -91,9 +91,11 @@ jobs:
           git clone https://github.com/vitasdk/vdpm
           cd vdpm
           ./bootstrap-vitasdk.sh
-          ./install-all.sh
+          export VITASDK=/usr/local/vitasdk
+          export PATH=$VITASDK/bin:$PATH
           echo "VITASDK=/usr/local/vitasdk" >> $GITHUB_ENV
           echo "PATH=$VITASDK/bin:$PATH" >> $GITHUB_ENV
+          ./install-all.sh
 
       - uses: actions/checkout@v4
 
