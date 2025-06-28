@@ -30,7 +30,13 @@ struct GLES2MeshCacheEntry {
 	GLuint ibo;
 };
 
-class OpenGLES2Renderer : public Direct3DRMRenderer {
+class OpenGLES2Desc : public Direct3DRMDesc {
+public:
+	void GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc) override;
+	const char* GetName() override;
+};
+
+class OpenGLES2Renderer : public Direct3DRMRenderer, public OpenGLES2Desc {
 public:
 	static Direct3DRMRenderer* Create(DWORD width, DWORD height);
 	OpenGLES2Renderer(DWORD width, DWORD height, SDL_GLContext context, GLuint shaderProgram);
@@ -77,9 +83,14 @@ private:
 
 inline static void OpenGLES2Renderer_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
-	Direct3DRMRenderer* device = OpenGLES2Renderer::Create(640, 480);
-	if (device) {
-		EnumDevice(cb, ctx, device, OpenGLES2_GUID);
-		delete device;
+#ifdef __EMSCRIPTEN__
+	// We need a static description since creating test windows, context changes etc. are not allowed
+	Direct3DRMDesc* desc = new OpenGLES2Desc();
+#else
+	Direct3DRMDesc* desc = OpenGLES2Renderer::Create(640, 480);
+#endif
+	if (desc) {
+		EnumDevice(cb, ctx, desc, OpenGLES2_GUID);
+		delete desc;
 	}
 }

@@ -207,12 +207,12 @@ HRESULT DirectDrawImpl::GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELCaps)
 	return S_OK;
 }
 
-void EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx, Direct3DRMRenderer* device, GUID deviceGuid)
+void EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx, Direct3DRMDesc* desc, GUID deviceGuid)
 {
 	D3DDEVICEDESC halDesc = {};
 	D3DDEVICEDESC helDesc = {};
-	device->GetDesc(&halDesc, &helDesc);
-	char* deviceNameDup = SDL_strdup(device->GetName());
+	desc->GetDesc(&halDesc, &helDesc);
+	char* deviceNameDup = SDL_strdup(desc->GetName());
 	char* deviceDescDup = SDL_strdup("Miniwin driver");
 	cb(&deviceGuid, deviceNameDup, deviceDescDup, &halDesc, &helDesc, ctx);
 	SDL_free(deviceDescDup);

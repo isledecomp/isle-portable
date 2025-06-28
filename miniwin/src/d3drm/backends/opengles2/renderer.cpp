@@ -177,6 +177,24 @@ Direct3DRMRenderer* OpenGLES2Renderer::Create(DWORD width, DWORD height)
 	return new OpenGLES2Renderer(width, height, context, shaderProgram);
 }
 
+void OpenGLES2Desc::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc)
+{
+	halDesc->dcmColorModel = D3DCOLORMODEL::RGB;
+	halDesc->dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
+	halDesc->dwDeviceZBufferBitDepth = DDBD_16;
+	helDesc->dwDeviceRenderBitDepth = DDBD_32;
+	halDesc->dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
+	halDesc->dpcTriCaps.dwShadeCaps = D3DPSHADECAPS_ALPHAFLATBLEND;
+	halDesc->dpcTriCaps.dwTextureFilterCaps = D3DPTFILTERCAPS_LINEAR;
+
+	memset(helDesc, 0, sizeof(D3DDEVICEDESC));
+}
+
+const char* OpenGLES2Desc::GetName()
+{
+	return "OpenGL ES 2.0 HAL";
+}
+
 OpenGLES2Renderer::OpenGLES2Renderer(DWORD width, DWORD height, SDL_GLContext context, GLuint shaderProgram)
 	: m_context(context), m_shaderProgram(shaderProgram)
 {
@@ -409,9 +427,8 @@ Uint32 OpenGLES2Renderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* mesh
 
 void OpenGLES2Renderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc)
 {
-	halDesc->dcmColorModel = D3DCOLORMODEL::RGB;
-	halDesc->dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
-	halDesc->dwDeviceZBufferBitDepth = DDBD_16;
+	OpenGLES2Desc::GetDesc(halDesc, helDesc);
+
 	const char* extensions = (const char*) glGetString(GL_EXTENSIONS);
 	if (extensions) {
 		if (strstr(extensions, "GL_OES_depth24")) {
@@ -421,17 +438,11 @@ void OpenGLES2Renderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc)
 			halDesc->dwDeviceZBufferBitDepth |= DDBD_32;
 		}
 	}
-	helDesc->dwDeviceRenderBitDepth = DDBD_32;
-	halDesc->dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
-	halDesc->dpcTriCaps.dwShadeCaps = D3DPSHADECAPS_ALPHAFLATBLEND;
-	halDesc->dpcTriCaps.dwTextureFilterCaps = D3DPTFILTERCAPS_LINEAR;
-
-	memset(helDesc, 0, sizeof(D3DDEVICEDESC));
 }
 
 const char* OpenGLES2Renderer::GetName()
 {
-	return "OpenGL ES 2.0 HAL";
+	return OpenGLES2Desc::GetName();
 }
 
 HRESULT OpenGLES2Renderer::BeginFrame()
