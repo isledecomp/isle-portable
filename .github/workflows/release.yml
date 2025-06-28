@@ -11,6 +11,7 @@ env:
   APT_CACHE_DIRS: |
     /var/cache/apt/
     /var/lib/apt/lists/
+  BUILD_DIR: build
 
 jobs:
   build:
@@ -81,9 +82,15 @@ jobs:
 
       - uses: actions/checkout@v4
 
+      - name: Cache CMakeCache.txt
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.BUILD_DIR }}/CMakeCache.txt
+          key: ${{ matrix.name }}-${{ hashFiles('**/CMakeLists.txt,**/*.cmake') }}
+
       - name: Configure (CMake)
         run: |
-          ${{ matrix.cmake-wrapper || '' }} cmake -S . -B build -GNinja \
+          ${{ matrix.cmake-wrapper || '' }} cmake -S . -B ${{ env.BUILD_DIR }} -GNinja \
             -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
             -DISLE_USE_DX5=${{ !!matrix.dx5 }} \
             -DISLE_BUILD_CONFIG=${{ matrix.config }} \
@@ -93,11 +100,11 @@ jobs:
             -Werror=dev
 
       - name: Build (CMake)
-        run: cmake --build build --verbose
+        run: cmake --build ${{ env.BUILD_DIR }} --verbose
 
       - name: Package (CPack)
         run: |
-          cd build
+          cd ${{ env.BUILD_DIR }}
           cpack .
 
       - name: Upload Artifact
@@ -105,7 +112,7 @@ jobs:
         with:
           name: Release-${{ matrix.name }}
           path: |
-            build/dist/isle-*
+            ${{ env.BUILD_DIR }}/dist/isle-*
 
   flatpak:
     name: "Flatpak (${{ matrix.arch }})"
@@ -128,14 +135,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configure Package Scripts
-        run: cmake -S . -B build_config -GNinja -DCONFIGURE_FLATPAK=ON
+      - name: Cache .flatpak-builder
+        uses: actions/cache@v4
+        with:
+          path: .flatpak-builder
+          key: ${{ matrix.arch }}-${{ hashFiles('packaging/linux/flatpak/isledecomp.manifest.json.in') }}
 
       - name: Build Flatpak
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
           bundle: ${{ env.APP_ID }}.${{ matrix.arch }}.flatpak
-          manifest-path: build_config/packaging/linux/${{ env.APP_ID }}.json
+          manifest-path: packaging/linux//flatpak${{ env.APP_ID }}.json
           arch: ${{ matrix.arch }}
   
   release:

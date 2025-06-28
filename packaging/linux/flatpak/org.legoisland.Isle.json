@@ -1,9 +1,9 @@
 {
-    "id": "@APP_ID@",
+    "id": "org.legoisland.Isle",
 
     "runtime": "org.kde.Platform",
     "sdk": "org.kde.Sdk",
-    "runtime-version": "@QT_VERSION@",
+    "runtime-version": "6.8",
 
     "command": "isle",
 
@@ -16,7 +16,8 @@
         "--device=input",
         "--filesystem=/run/media/:ro",
         "--filesystem=/media/:ro",
-        "--filesystem=/mnt/:ro"
+        "--filesystem=/mnt/:ro",
+        "--filesystem=home:ro"
     ],
 
     "modules": [
@@ -30,47 +31,52 @@
             "sources": [
                 {
                     "type": "dir",
-                    "path": "@PROJECT_SOURCE_DIR@/3rdparty",
+                    "path": "../../../3rdparty",
                     "dest": "3rdparty/"
                 },
                 {
                     "type": "dir",
-                    "path": "@PROJECT_SOURCE_DIR@/cmake",
+                    "path": "../../../cmake",
                     "dest": "cmake/"
                 },
                 {
                     "type": "dir",
-                    "path": "@PROJECT_SOURCE_DIR@/CMake",
+                    "path": "../../../CMake",
                     "dest": "CMake/"
                 },
                 {
                     "type": "dir",
-                    "path": "@PROJECT_SOURCE_DIR@/CONFIG",
+                    "path": "../../../CONFIG",
                     "dest": "CONFIG/"
                 },
                 {
                     "type": "dir",
-                    "path": "@PROJECT_SOURCE_DIR@/ISLE",
+                    "path": "../../../ISLE",
                     "dest": "ISLE/"
                 },
                 {
                     "type": "dir",
-                    "path": "@PROJECT_SOURCE_DIR@/LEGO1",
+                    "path": "../../../LEGO1",
                     "dest": "LEGO1/"
                 },
                 {
                     "type": "dir",
-                    "path": "@PROJECT_SOURCE_DIR@/miniwin",
+                    "path": "../../../miniwin",
                     "dest": "miniwin/"
                 },
                 {
                     "type": "dir",
-                    "path": "@PROJECT_SOURCE_DIR@/util",
+                    "path": "../../../packaging",
+                    "dest": "packaging/"
+                },
+                {
+                    "type": "dir",
+                    "path": "../../../util",
                     "dest": "util/"
                 },
                 {
                     "type": "file",
-                    "path": "@PROJECT_SOURCE_DIR@/CMakeLists.txt"
+                    "path": "../../../CMakeLists.txt"
                 }
             ],
             "build-options": {
@@ -78,34 +84,6 @@
                     "--share=network"
                 ]
             }
-        },
-        {
-            "name": "desktop-assets",
-            "buildsystem": "simple",
-            "sources": [
-                {
-                    "type": "dir",
-                    "dest": "icons",
-                    "path": "@CMAKE_CURRENT_SOURCE_DIR@/../icons/"
-                },
-                {
-                    "type": "file",
-                    "path": "./@APP_ID@.desktop"
-                },
-                {
-                    "type": "file",
-                    "path": "./@APP_ID@.metainfo.xml"
-                },
-                {
-                    "type": "file",
-                    "path": "@CMAKE_CURRENT_SOURCE_DIR@/flatpak/install_desktop_assets.sh",
-                    "dest-filename": "fp_install.sh"
-                }
-            ],
-            "build-commands": [
-                "chmod +x ./fp_install.sh",
-                "./fp_install.sh @APP_ID@"
-            ]
         }
     ]
 }
