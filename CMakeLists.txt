@@ -48,8 +48,6 @@ if(VITA)
   set(BUILD_SHARED_LIBS OFF)
   set(ISLE_DEBUG OFF)
   set(CMAKE_POSITION_INDEPENDENT_CODE OFF)
-  list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/modules")
-  #set(VITA_USE_OPENGLES2 ON)
 endif()
 
 message(STATUS "Isle app:               ${ISLE_BUILD_APP}")
@@ -65,37 +63,20 @@ if (DOWNLOAD_DEPENDENCIES)
     # FetchContent downloads and configures dependencies
     message(STATUS "Fetching SDL3 and iniparser. This might take a while...")
     include(FetchContent)
-
-    if(VITA)
-      #set(SDL_PATCH "${CMAKE_CURRENT_LIST_DIR}/cmake/modules/sdl3_vita_shaders_fix.patch")
-    endif()
-
-    if(VITA_USE_OPENGLES2)
-      include(cmake/modules/pvr_psp2.cmake)
-    endif()
-
     FetchContent_Declare(
         SDL3
         GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
         GIT_TAG "main"
         UPDATE_DISCONNECTED TRUE
         EXCLUDE_FROM_ALL
-        PATCH_COMMAND ${SDL_PATCH}
     )
 
     block()
-      if(VITA_USE_OPENGLES2)
-        set(VIDEO_VITA_PVR ON)
-        get_target_property(PVR_INCLUDES GLESv2 INTERFACE_INCLUDE_DIRECTORIES)
-        list(APPEND CMAKE_REQUIRED_INCLUDES ${PVR_INCLUDES})
-      else()
+      if(VITA)
         set(SDL_RENDER OFF)
+        set(SDL_GPU OFF)
       endif()
-
       FetchContent_MakeAvailable(SDL3)
-      if(VITA_USE_OPENGLES2)
-        target_include_directories(SDL3-static PRIVATE ${PVR_INCLUDES})
-      endif()
     endblock()
 
     FetchContent_Declare(
@@ -532,12 +513,6 @@ if (ISLE_BUILD_APP)
   if (WIN32)
     target_link_libraries(isle PRIVATE winmm)
   endif()
-
-  if(VITA AND VITA_USE_OPENGLES2)
-    target_link_libraries(isle PRIVATE GLESv2)
-    target_compile_definitions(isle PRIVATE USE_OPENGLES2)
-  endif()
-
   # Link LEGO1
   target_link_libraries(isle PRIVATE lego1)
   if(ISLE_DEBUG)
@@ -686,15 +661,22 @@ if(EMSCRIPTEN)
     DESTINATION "${CMAKE_INSTALL_BINDIR}"
   )
 endif()
+if(VITA)
+  install(FILES "$<TARGET_FILE_DIR:isle>/isle.vpk" "$<TARGET_FILE_DIR:isle>/isle.self"
+    DESTINATION "${CMAKE_INSTALL_BINDIR}"
+  )
+endif()
 
 set(CPACK_PACKAGE_DIRECTORY "dist")
 set(CPACK_PACKAGE_FILE_NAME "isle-${PROJECT_VERSION}-${ISLE_PACKAGE_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+if(MSVC)
+  set(CPACK_GENERATOR ZIP)
+else()
+  set(CPACK_GENERATOR TGZ)
+endif()
+
 if(VITA)
   include("${VITASDK}/share/vita.cmake" REQUIRED)
-
-  if(VITA_USE_OPENGLES2)
-    target_link_libraries(lego1 PRIVATE GLESv2)
-  endif()
 
   set(ISLE_PACKAGE_NAME "vita-isle")
   set(VITA_APP_NAME "Lego Island")
@@ -717,10 +699,8 @@ if(VITA)
     NAME ${VITA_APP_NAME}
     ${VPK_FILE_ARGS}
   )
-endif()
-if(MSVC)
+  set(CPACK_PACKAGE_FILE_NAME "isle-${PROJECT_VERSION}-vita")
   set(CPACK_GENERATOR ZIP)
-else()
-  set(CPACK_GENERATOR TGZ)
 endif()
+
 include(CPack)

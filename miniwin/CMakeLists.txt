@@ -31,29 +31,30 @@ target_compile_definitions(miniwin PRIVATE
     $<$<CONFIG:Debug>:DEBUG>
 )
 
-find_package(OpenGL)
-find_package(GLEW)
-if(OpenGL_FOUND AND GLEW_FOUND)
-  message(STATUS "Found OpenGL and GLEW: enabling OpenGL 1.x renderer")
-  target_sources(miniwin PRIVATE src/d3drm/backends/opengl1/renderer.cpp)
-  target_compile_definitions(miniwin PRIVATE USE_OPENGL1)
-  target_link_libraries(miniwin PRIVATE OpenGL::GL GLEW::GLEW)
-else()
-  message(STATUS "🧩 OpenGL 1.x support not enabled — needs OpenGL and GLEW")
-endif()
+list(APPEND GRAPHICS_BACKENDS USE_SOFTWARE_RENDER)
+list(APPEND GRAPHICS_BACKENDS USE_SDL_GPU)
 
-if(TARGET GLESv2)
-  set(OPENGL_ES2_LIBRARY GLESv2)
-else()
+if(NOT VITA)
+  find_package(OpenGL)
+  find_package(GLEW)
+  if(OpenGL_FOUND AND GLEW_FOUND)
+    message(STATUS "Found OpenGL and GLEW: enabling OpenGL 1.x renderer")
+    target_sources(miniwin PRIVATE src/d3drm/backends/opengl1/renderer.cpp)
+    list(APPEND GRAPHICS_BACKENDS USE_OPENGL1)
+    target_link_libraries(miniwin PRIVATE OpenGL::GL GLEW::GLEW)
+  else()
+    message(STATUS "🧩 OpenGL 1.x support not enabled — needs OpenGL and GLEW")
+  endif()
+
   find_library(OPENGL_ES2_LIBRARY NAMES GLESv2)
-endif()
-if(OPENGL_ES2_LIBRARY)
-  message(STATUS "Found OpenGL: enabling OpenGL ES 2.x renderer")
-  target_sources(miniwin PRIVATE src/d3drm/backends/opengles2/renderer.cpp)
-  target_compile_definitions(miniwin PRIVATE USE_OPENGLES2)
-  target_link_libraries(miniwin PRIVATE ${OPENGL_ES2_LIBRARY})
-else()
-  message(STATUS "🧩 OpenGL ES 2.x support not enabled")
+  if(OPENGL_ES2_LIBRARY)
+    message(STATUS "Found OpenGL: enabling OpenGL ES 2.x renderer")
+    target_sources(miniwin PRIVATE src/d3drm/backends/opengles2/renderer.cpp)
+    list(APPEND GRAPHICS_BACKENDS USE_OPENGLES2)
+    target_link_libraries(miniwin PRIVATE ${OPENGL_ES2_LIBRARY})
+  else()
+    message(STATUS "🧩 OpenGL ES 2.x support not enabled")
+  endif()
 endif()
 
 if(VITA)
@@ -65,9 +66,11 @@ if(VITA)
     SceGxm_stub
     SceRazorCapture_stub
   )
+  list(APPEND GRAPHICS_BACKENDS USE_GXM)
+  list(REMOVE_ITEM GRAPHICS_BACKENDS USE_SOFTWARE_RENDER USE_SDL_GPU)
   # for shaders incbin
   target_include_directories(miniwin PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/d3drm/backends/gxm)
-  target_link_directories(miniwin PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/d3drm/backends/gxm)
+  #target_link_directories(miniwin PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/d3drm/backends/gxm)
 endif()
 
 if(WIN32)
@@ -88,6 +91,9 @@ target_include_directories(miniwin
 target_link_libraries(miniwin PUBLIC miniwin-headers)
 
 target_link_libraries(miniwin PRIVATE SDL3::SDL3)
+
+target_compile_definitions(miniwin PRIVATE ${GRAPHICS_BACKENDS})
+
 
 # Shader stuff
 

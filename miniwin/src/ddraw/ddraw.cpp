@@ -10,8 +10,12 @@
 #ifdef __vita__
 #include "d3drmrenderer_gxm.h"
 #endif
+#ifdef USE_SDL_GPU
 #include "d3drmrenderer_sdl3gpu.h"
+#endif
+#ifdef USE_SOFTWARE_RENDER
 #include "d3drmrenderer_software.h"
+#endif
 #include "ddpalette_impl.h"
 #include "ddraw_impl.h"
 #include "ddsurface_impl.h"
@@ -224,7 +228,7 @@ void EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx, Direct3DRMRenderer* devi
 
 HRESULT DirectDrawImpl::EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
-#ifndef __vita__
+#ifdef USE_SDL_GPU
 	Direct3DRMSDL3GPU_EnumDevice(cb, ctx);
 #endif
 #ifdef USE_OPENGLES2
@@ -239,8 +243,9 @@ HRESULT DirectDrawImpl::EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 #ifdef __vita__
 	GXMRenderer_EnumDevice(cb, ctx);
 #endif
-	//Direct3DRMSoftware_EnumDevice(cb, ctx);
-
+#ifdef USE_SOFTWARE_RENDER
+	Direct3DRMSoftware_EnumDevice(cb, ctx);
+#endif
 	return S_OK;
 }
 
@@ -309,12 +314,6 @@ HRESULT DirectDrawImpl::SetCooperativeLevel(HWND hWnd, DDSCLFlags dwFlags)
 			return DDERR_INVALIDPARAMS;
 		}
 
-#if defined(__vita__) && defined(USE_OPENGLES2)
-		const char* sdlRendererName = "opengles2";
-#else
-		const char* sdlRendererName = nullptr;
-#endif
-
 		if (!SDL_SetWindowFullscreen(sdlWindow, fullscreen)) {
 #ifndef __EMSCRIPTEN__
 			return DDERR_GENERIC;
@@ -344,7 +343,7 @@ HRESULT DirectDrawImpl::CreateDevice(
 	pBackBuffer->GetSurfaceDesc(&DDSDesc);
 
 	if(false) {}
-#ifndef __vita__
+#ifdef USE_SDL_GPU
 	else if (SDL_memcmp(&guid, &SDL3_GPU_GUID, sizeof(GUID)) == 0) {
 		DDRenderer = Direct3DRMSDL3GPURenderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
@@ -369,9 +368,11 @@ HRESULT DirectDrawImpl::CreateDevice(
 		DDRenderer = GXMRenderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
 #endif
+#ifdef USE_SOFTWARE_RENDER
 	else if (SDL_memcmp(&guid, &SOFTWARE_GUID, sizeof(GUID)) == 0) {
 		DDRenderer = new Direct3DRMSoftwareRenderer(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
+#endif
 	else {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Device GUID not recognized");
 		return E_NOINTERFACE;

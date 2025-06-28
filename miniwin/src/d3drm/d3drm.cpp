@@ -19,8 +19,12 @@
 #ifdef __vita__
 #include "d3drmrenderer_gxm.h"
 #endif
+#ifdef USE_SDL_GPU
 #include "d3drmrenderer_sdl3gpu.h"
+#endif
+#ifdef USE_SOFTWARE_RENDER
 #include "d3drmrenderer_software.h"
+#endif
 #include "d3drmtexture_impl.h"
 #include "d3drmviewport_impl.h"
 #include "ddraw_impl.h"
@@ -148,14 +152,16 @@ HRESULT Direct3DRMImpl::CreateDeviceFromSurface(
 
 
 	if(false) {}
-#ifndef __vita__
+#ifdef USE_SDL_GPU
 	else if (SDL_memcmp(&guid, &SDL3_GPU_GUID, sizeof(GUID)) == 0) {
 		DDRenderer = Direct3DRMSDL3GPURenderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
 #endif
+#ifdef USE_SOFTWARE_RENDER
 	else if (SDL_memcmp(&guid, &SOFTWARE_GUID, sizeof(GUID)) == 0) {
 		DDRenderer = new Direct3DRMSoftwareRenderer(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
+#endif
 #ifdef USE_OPENGLES2
 	else if (SDL_memcmp(&guid, &OpenGLES2_GUID, sizeof(GUID)) == 0) {
 		DDRenderer = OpenGLES2Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);

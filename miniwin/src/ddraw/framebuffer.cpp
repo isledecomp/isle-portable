@@ -37,8 +37,6 @@ HRESULT FrameBufferImpl::AddAttachedSurface(LPDIRECTDRAWSURFACE lpDDSAttachedSur
 	return DDERR_GENERIC;
 }
 
-#include <cstdio>
-
 HRESULT FrameBufferImpl::Blt(
 	LPRECT lpDestRect,
 	LPDIRECTDRAWSURFACE lpDDSrcSurface,

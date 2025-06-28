@@ -50,39 +50,6 @@
 #include "emscripten/messagebox.h"
 #endif
 
-#ifdef __vita__
-#define USE_GXM
-#endif
-
-#if defined(__vita__) && defined(USE_OPENGLES2)
-extern "C"{
-	#include <gpu_es4/psp2_pvr_hint.h>
-}
-#include <psp2/kernel/modulemgr.h>
-
-#define DO_HARDWARE_TRANSFERS 1
-
-#define NEWLIB_HEAP_SIZE 157286400
-#define LIBC_HEAP_SIZE 41943040
-#define GPU_MEM_SIZE 16777216
-
-
-#if (NEWLIB_HEAP_SIZE + LIBC_HEAP_SIZE) > 382730240
-#error Memory usage, exceeds maximum memory for userland applications.
-#endif
-
-#if (GPU_MEM_SIZE) > 134217728
-#error GPU Memory exceeds maximum memblck size
-#endif
-
-extern SDL_Window* DDWindow;
-
-int _newlib_heap_size_user = NEWLIB_HEAP_SIZE;
-unsigned int sceLibcHeapSize = LIBC_HEAP_SIZE;
-unsigned int sceLibcHeapExtendedAlloc = 1;
-
-#endif
-
 DECOMP_SIZE_ASSERT(IsleApp, 0x8c)
 
 // GLOBAL: ISLE 0x410030
@@ -294,30 +261,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 	SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
 	SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
 
-#if defined(__vita__) && defined(USE_OPENGLES2)
-	SDL_SetHint("VITA_PVR_SKIP_INIT", "enable");
-	PVRSRV_PSP2_APPHINT hint;
-	
-	sceKernelLoadStartModule("vs0:sys/external/libfios2.suprx", 0, NULL, 0, NULL, NULL);
-	sceKernelLoadStartModule("vs0:sys/external/libc.suprx", 0, NULL, 0, NULL, NULL);
-	sceKernelLoadStartModule("app0:/module/libgpu_es4_ext.suprx", 0, NULL, 0, NULL, NULL);
-	sceKernelLoadStartModule("app0:/module/libIMGEGL.suprx", 0, NULL, 0, NULL, NULL);
-	PVRSRVInitializeAppHint(&hint);
-	
-	#if DO_HARDWARE_TRANSFERS == 0
-	hint.bDisableHWTextureUpload = 1;
-	hint.bDisableHWTQBufferBlit = 1;
-	hint.bDisableHWTQMipGen = 1;
-	hint.bDisableHWTQNormalBlit = 1;
-	hint.bDisableHWTQTextureUpload = 1;
-	#endif
-	
-	#define GPU_MEM_SIZE 16777216
-	hint.ui32DriverMemorySize = GPU_MEM_SIZE;
-	PVRSRVCreateVirtualAppHint(&hint);
-#endif
-
-	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK | SDL_INIT_GAMEPAD)) {
+	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK)) {
 		char buffer[256];
 		SDL_snprintf(
 			buffer,
@@ -713,7 +657,7 @@ MxResult IsleApp::SetupWindow()
 	SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, g_targetHeight);
 	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_FULLSCREEN_BOOLEAN, m_fullScreen);
 	SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, WINDOW_TITLE);
-#if defined(MINIWIN) && !defined(USE_GXM)
+#if defined(MINIWIN) && !defined(__vita__)
 	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 #endif
@@ -726,14 +670,9 @@ MxResult IsleApp::SetupWindow()
 		(HWND) SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
 #endif
 
-#if defined(__vita__) && defined(USE_OPENGLES2)
-	DDWindow = window;
-#endif
-
 	SDL_DestroyProperties(props);
 
 	if (!m_windowHandle) {
-		SDL_Log("failed to create window: %s", SDL_GetError());
 		return FAILURE;
 	}
 
