@@ -23,6 +23,9 @@ APPRUN_SOURCE=AppRun
 # Sets where desktop file for AppImage is, can also be defined using --desktop-file=path
 DESKTOP_FILE_SOURCE=isle-portable.desktop
 
+# You know the drill
+ICON_SOURCE=../../icons/isle.svg
+
 cd $(dirname $0)
 
 clean(){
@@ -49,14 +52,10 @@ prepare(){
     download build/tools/linuxdeploy-plugin-qt.AppImage https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/latest/download/linuxdeploy-plugin-qt-$(uname -m).AppImage
     chmod u+x build/tools/linuxdeploy-plugin-qt.AppImage
 
-    download build/assets/isle.png https://github.com/isledecomp/isle/blob/master/assets/isle.png?raw=true
-    magick build/assets/isle.png -resize 256x256 build/assets/isle.png
-    download build/assets/isle-config.png https://github.com/isledecomp/isle/blob/master/assets/config.png?raw=true
-    magick build/assets/isle-config.png -resize 256x256 build/assets/isle-config.png
-
     if [ ! -f "build/assets/isle-portable.desktop" ]; then
         cp $DESKTOP_FILE_SOURCE build/assets/isle-portable.desktop
         cp $APPRUN_SOURCE build/assets/AppRun
+        cp ../../icons/isle.svg build/assets/isle.svg
     fi
 
     if [ ! -d "build/source" ]; then
@@ -70,8 +69,7 @@ compile(){
         -e build/source/bin/isle \
         -e build/source/bin/isle-config \
         -d build/assets/isle-portable.desktop \
-        -i build/assets/isle.png \
-        -i build/assets/isle-config.png \
+        -i build/assets/isle.svg \
         --custom-apprun=AppRun \
         --appdir=build/AppDir
 }
@@ -89,6 +87,7 @@ for arg in "$@"; do
         --build=*)          BUILD_SOURCE="${arg#--build=}";;
         --apprun=*)         APPRUN_SOURCE="${arg#--apprun=}";;
         --desktop-file=*)   DESKTOP_FILE_SOURCE="${arg#--desktop-file=}";;
+        --icon=*)           ICON_SOURCE="${arg#--icon=}";;
         *)                  "$arg"
     esac
 done
