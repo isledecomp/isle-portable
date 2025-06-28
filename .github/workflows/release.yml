@@ -8,9 +8,6 @@ on:
 
 env:
   APP_ID: org.legoisland.Isle
-  APT_CACHE_DIRS: |
-    /var/cache/apt/
-    /var/lib/apt/lists/
   BUILD_DIR: build
 
 jobs:
@@ -47,15 +44,6 @@ jobs:
             ${{ matrix.msys-env }}-clang-tools-extra
             ${{ (matrix.config && format('{0}-qt6-base', matrix.msys-env)) || '' }}
 
-        # Get a small speed up by caching APT repo data between runs
-        # `apt update` should now only run a full update if the cache is out of date
-      - name: Cache APT data
-        uses: actions/cache@v4
-        if: ${{ matrix.linux }}
-        with:
-          path: ${{ env.APT_CACHE_DIRS }}
-          key: apt-${{ runner.arch }}
-
       - name: Install Linux dependencies (apt-get)
         if: ${{ matrix.linux }}
         run: |
@@ -81,14 +69,6 @@ jobs:
         uses: ashutoshvarma/setup-ninja@master
 
       - uses: actions/checkout@v4
-
-      - name: Cache CMakeCache.txt
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.BUILD_DIR }}/CMakeCache.txt
-          key: ${{ matrix.name }}-${{ hashFiles('**/CMakeLists.txt','**/*.cmake') }}
-          restore-keys: |
-            ${{ matrix.name }}-
 
       - name: Configure (CMake)
         run: |
@@ -136,14 +116,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Cache .flatpak-builder
-        uses: actions/cache@v4
-        with:
-          path: .flatpak-builder
-          key: ${{ matrix.arch }}-${{ hashFiles('packaging/linux/flatpak/org.legoisland.Isle.json') }}
-          restore-keys: |
-            ${{ matrix.arch }}-
 
       - name: Build Flatpak
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6

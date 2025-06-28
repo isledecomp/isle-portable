@@ -14,15 +14,6 @@ else()
     set(SEMANTIC_VERSION "${PROJECT_VERSION}")
 endif()
 
-# Following block sourced from https://jonathanhamberg.com/post/cmake-embedding-git-hash/
-# Get the latest abbreviated commit hash of the working branch
-# execute_process(
-#     COMMAND git log -1 --format=%h
-#     WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-#     OUTPUT_VARIABLE GIT_HASH
-#     OUTPUT_STRIP_TRAILING_WHITESPACE
-# )
-
 if(LINUX)
     add_subdirectory(linux)
 endif()
