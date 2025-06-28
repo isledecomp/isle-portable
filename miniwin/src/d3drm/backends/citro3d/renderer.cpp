@@ -48,8 +48,8 @@ Citro3DRenderer::Citro3DRenderer(DWORD width, DWORD height)
 	C3D_AttrInfo* attrInfo = C3D_GetAttrInfo();
 	AttrInfo_Init(attrInfo);
 	AttrInfo_AddLoader(attrInfo, 0, GPU_FLOAT, 3); // v0=position
-	AttrInfo_AddLoader(attrInfo, 1, GPU_FLOAT, 2); // v1=texcoord
-	AttrInfo_AddLoader(attrInfo, 2, GPU_FLOAT, 3); // v2=normal
+	AttrInfo_AddLoader(attrInfo, 1, GPU_FLOAT, 3); // v2=normal
+	AttrInfo_AddLoader(attrInfo, 2, GPU_FLOAT, 2); // v1=texcoord
 }
 
 Citro3DRenderer::~Citro3DRenderer()
@@ -74,18 +74,18 @@ void Citro3DRenderer::SetFrustumPlanes(const Plane* frustumPlanes)
 {
 }
 
-struct TextureDestroyContextCitro {
+struct Citro3DCacheDestroyContext {
 	Citro3DRenderer* renderer;
-	Uint32 textureId;
+	Uint32 id;
 };
 
 void Citro3DRenderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture)
 {
-	auto* ctx = new TextureDestroyContextCitro{this, id};
+	auto* ctx = new Citro3DCacheDestroyContext{this, id};
 	texture->AddDestroyCallback(
 		[](IDirect3DRMObject* obj, void* arg) {
-			auto* ctx = static_cast<TextureDestroyContextCitro*>(arg);
-			auto& entry = ctx->renderer->m_textures[ctx->textureId];
+			auto* ctx = static_cast<Citro3DCacheDestroyContext*>(arg);
+			auto& entry = ctx->renderer->m_textures[ctx->id];
 			if (entry.texture) {
 				C3D_TexDelete(&entry.c3dTex);
 				entry.texture = nullptr;
@@ -115,7 +115,7 @@ static SDL_Surface* ConvertAndResizeSurface(SDL_Surface* original)
 	}
 
 	int newW = NearestPowerOfTwoClamp(converted->w);
-	int newH = NearestPowerOfTwoClamp(converted->h);
+	int newH = converted->h == 480 ? 256 : NearestPowerOfTwoClamp(converted->h);
 
 	if (converted->w == newW && converted->h == newH) {
 		return converted;
@@ -285,42 +285,35 @@ C3DMeshCacheEntry C3DUploadMesh(const MeshGroup& meshGroup)
 		indexBuffer.assign(meshGroup.indices.begin(), meshGroup.indices.end());
 	}
 
-	MINIWIN_NOT_IMPLEMENTED();
+	size_t vertexBufferSize = vertexBuffer.size() * sizeof(vertex);
+	size_t indexBufferSize = indexBuffer.size() * sizeof(uint16_t);
 
-	// TODO use ibo instead of flattening verticies, see
-	// https://github.com/devkitPro/3ds-examples/blob/44faa81d79d5781c0e149e4a7005f2e005edb736/graphics/gpu/loop_subdivision/source/main.c#L104
-	std::vector<vertex> vertexUploadBuffer;
-	vertexUploadBuffer.reserve(indexBuffer.size());
+	cache.vbo = linearAlloc(vertexBufferSize);
+	memcpy(cache.vbo, vertexBuffer.data(), vertexBufferSize);
+	cache.ibo = linearAlloc(indexBufferSize);
+	memcpy(cache.ibo, indexBuffer.data(), indexBufferSize);
 
-	for (size_t i = 0; i < indexBuffer.size(); ++i) {
-		const D3DRMVERTEX& src = vertexBuffer[indexBuffer[i]];
-		vertex dst;
-
-		dst.position[0] = src.position.x;
-		dst.position[1] = src.position.y;
-		dst.position[2] = src.position.z;
-
-		dst.texcoord[0] = src.tu;
-		dst.texcoord[1] = src.tv;
-
-		dst.normal[0] = src.normal.x;
-		dst.normal[1] = src.normal.y;
-		dst.normal[2] = src.normal.z;
-
-		vertexUploadBuffer.emplace_back(dst);
-	}
-
-	size_t bufferSize = vertexUploadBuffer.size() * sizeof(vertex);
-	cache.vbo = linearAlloc(bufferSize);
-	memcpy(cache.vbo, vertexUploadBuffer.data(), bufferSize);
-	cache.vertexCount = vertexUploadBuffer.size();
+	cache.indexCount = indexBuffer.size();
 
 	return cache;
 }
 
 void Citro3DRenderer::AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh)
 {
-	MINIWIN_NOT_IMPLEMENTED();
+	auto* ctx = new Citro3DCacheDestroyContext{this, id};
+	mesh->AddDestroyCallback(
+		[](IDirect3DRMObject* obj, void* arg) {
+			auto* ctx = static_cast<Citro3DCacheDestroyContext*>(arg);
+			auto& cacheEntry = ctx->renderer->m_meshs[ctx->id];
+			if (cacheEntry.meshGroup) {
+				cacheEntry.meshGroup = nullptr;
+				linearFree(cacheEntry.vbo);
+				linearFree(cacheEntry.ibo);
+			}
+			delete ctx;
+		},
+		ctx
+	);
 }
 
 Uint32 Citro3DRenderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup)
@@ -416,8 +409,6 @@ void Citro3DRenderer::SubmitDraw(
 {
 	C3D_Mtx projection, modelView;
 
-	MINIWIN_NOT_IMPLEMENTED();
-	// FIXME are we converting it right?
 	ConvertPerspective(m_projection, &projection);
 	ConvertMatrix(modelViewMatrix, &modelView);
 
@@ -454,7 +445,7 @@ void Citro3DRenderer::SubmitDraw(
 		C3D_TexEnvFunc(env, C3D_Both, GPU_REPLACE);
 	}
 
-	C3D_DrawArrays(GPU_TRIANGLES, 0, mesh.vertexCount);
+	C3D_DrawElements(GPU_GEOMETRY_PRIM, mesh.indexCount, C3D_UNSIGNED_SHORT, mesh.ibo);
 }
 
 HRESULT Citro3DRenderer::FinalizeFrame()
@@ -526,29 +517,29 @@ void Citro3DRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, con
 
 	// Triangle 1
 	C3D_ImmSendAttrib(x1, y1, 0.5f, 0.0f);
-	C3D_ImmSendAttrib(u0, v0, 0.0f, 0.0f);
 	C3D_ImmSendAttrib(0.0f, 0.0f, 1.0f, 0.0f);
+	C3D_ImmSendAttrib(u0, v0, 0.0f, 0.0f);
 
 	C3D_ImmSendAttrib(x2, y1, 0.5f, 0.0f);
-	C3D_ImmSendAttrib(u1, v0, 0.0f, 0.0f);
 	C3D_ImmSendAttrib(0.0f, 0.0f, 1.0f, 0.0f);
+	C3D_ImmSendAttrib(u1, v0, 0.0f, 0.0f);
 
 	C3D_ImmSendAttrib(x2, y2, 0.5f, 0.0f);
-	C3D_ImmSendAttrib(u1, v1, 0.0f, 0.0f);
 	C3D_ImmSendAttrib(0.0f, 0.0f, 1.0f, 0.0f);
+	C3D_ImmSendAttrib(u1, v1, 0.0f, 0.0f);
 
 	// Triangle 2
 	C3D_ImmSendAttrib(x2, y2, 0.5f, 0.0f);
-	C3D_ImmSendAttrib(u1, v1, 0.0f, 0.0f);
 	C3D_ImmSendAttrib(0.0f, 0.0f, 1.0f, 0.0f);
+	C3D_ImmSendAttrib(u1, v1, 0.0f, 0.0f);
 
 	C3D_ImmSendAttrib(x1, y2, 0.5f, 0.0f);
-	C3D_ImmSendAttrib(u0, v1, 0.0f, 0.0f);
 	C3D_ImmSendAttrib(0.0f, 0.0f, 1.0f, 0.0f);
+	C3D_ImmSendAttrib(u0, v1, 0.0f, 0.0f);
 
 	C3D_ImmSendAttrib(x1, y1, 0.5f, 0.0f);
-	C3D_ImmSendAttrib(u0, v0, 0.0f, 0.0f);
 	C3D_ImmSendAttrib(0.0f, 0.0f, 1.0f, 0.0f);
+	C3D_ImmSendAttrib(u0, v0, 0.0f, 0.0f);
 
 	C3D_ImmDrawEnd();
 }

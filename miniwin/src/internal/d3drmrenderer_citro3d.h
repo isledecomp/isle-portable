@@ -20,7 +20,8 @@ struct C3DMeshCacheEntry {
 	const MeshGroup* meshGroup = nullptr;
 	int version = 0;
 	void* vbo = nullptr;
-	int vertexCount = 0;
+	void* ibo = nullptr;
+	int indexCount = 0;
 };
 
 class Citro3DRenderer : public Direct3DRMRenderer {

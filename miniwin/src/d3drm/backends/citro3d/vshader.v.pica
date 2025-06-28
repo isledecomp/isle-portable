@@ -19,8 +19,8 @@
 
 ; Inputs (defined as aliases for convenience)
 .alias inpos v0
-.alias intex v1
-.alias innrm v2
+.alias innrm v1
+.alias intex v2
 
 .proc main
 	; Force the w component of inpos to be 1.0
