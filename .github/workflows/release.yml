@@ -86,7 +86,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.BUILD_DIR }}/CMakeCache.txt
-          key: ${{ matrix.name }}-${{ hashFiles('**/CMakeLists.txt,**/*.cmake') }}
+          key: ${{ matrix.name }}-${{ hashFiles('**/CMakeLists.txt','**/*.cmake') }}
+          restore-keys: |
+            ${{ matrix.name }}-
 
       - name: Configure (CMake)
         run: |
@@ -139,7 +141,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .flatpak-builder
-          key: ${{ matrix.arch }}-${{ hashFiles('packaging/linux/flatpak/isledecomp.manifest.json.in') }}
+          key: ${{ matrix.arch }}-${{ hashFiles('packaging/linux/flatpak/org.legoisland.Isle.json') }}
+          restore-keys: |
+            ${{ matrix.arch }}-
 
       - name: Build Flatpak
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
