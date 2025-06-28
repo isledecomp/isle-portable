@@ -525,7 +525,7 @@ endif()
 if (ISLE_BUILD_CONFIG)
   find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
   qt_standard_project_setup()
-  qt_add_executable(config WIN32
+  qt_add_executable(isle-config WIN32
     LEGO1/mxdirectx/mxdirectxinfo.cpp
     LEGO1/mxdirectx/legodxinfo.cpp
     CONFIG/config.cpp
@@ -535,22 +535,22 @@ if (ISLE_BUILD_CONFIG)
     CONFIG/res/config.rc
     CONFIG/res/config.qrc
   )
-  target_link_libraries(config PRIVATE Qt6::Core Qt6::Widgets)
-  set_property(TARGET config PROPERTY AUTOMOC ON)
-  set_property(TARGET config PROPERTY AUTORCC ON)
-  set_property(TARGET config PROPERTY AUTOUIC ON)
-  set_property(TARGET config PROPERTY AUTOUIC_SEARCH_PATHS "${CMAKE_CURRENT_SOURCE_DIR}/CONFIG/res")
-  list(APPEND isle_targets config)
-  target_compile_definitions(config PRIVATE _AFXDLL MXDIRECTX_FOR_CONFIG)
-  target_include_directories(config PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/LEGO1")
-  target_include_directories(config PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/util>")
+  target_link_libraries(isle-config PRIVATE Qt6::Core Qt6::Widgets)
+  set_property(TARGET isle-config PROPERTY AUTOMOC ON)
+  set_property(TARGET isle-config PROPERTY AUTORCC ON)
+  set_property(TARGET isle-config PROPERTY AUTOUIC ON)
+  set_property(TARGET isle-config PROPERTY AUTOUIC_SEARCH_PATHS "${CMAKE_CURRENT_SOURCE_DIR}/CONFIG/res")
+  list(APPEND isle_targets isle-config)
+  target_compile_definitions(isle-config PRIVATE _AFXDLL MXDIRECTX_FOR_CONFIG)
+  target_include_directories(isle-config PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/LEGO1")
+  target_include_directories(isle-config PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/util>")
   if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 14)
-    target_link_libraries(config PRIVATE DirectX5::DirectX5)
+    target_link_libraries(isle-config PRIVATE DirectX5::DirectX5)
   endif()
-  target_compile_definitions(config PRIVATE DIRECT3D_VERSION=0x500)
-  target_link_libraries(config PRIVATE SDL3::SDL3 Isle::iniparser)
+  target_compile_definitions(isle-config PRIVATE DIRECT3D_VERSION=0x500)
+  target_link_libraries(isle-config PRIVATE SDL3::SDL3 Isle::iniparser)
   if (NOT ISLE_MINIWIN)
-    target_link_libraries(config PRIVATE ddraw dxguid)
+    target_link_libraries(isle-config PRIVATE ddraw dxguid)
   endif()
 endif()
 
@@ -564,8 +564,8 @@ if (MSVC)
     if (TARGET isle)
       target_compile_definitions(isle PRIVATE "_CRT_SECURE_NO_WARNINGS")
     endif()
-    if (TARGET config)
-      target_compile_definitions(config PRIVATE "_CRT_SECURE_NO_WARNINGS")
+    if (TARGET isle-config)
+      target_compile_definitions(isle-config PRIVATE "_CRT_SECURE_NO_WARNINGS")
     endif()
   endif()
   # Visual Studio 2017 version 15.7 needs "/Zc:__cplusplus" for __cplusplus
@@ -574,8 +574,8 @@ if (MSVC)
     if (TARGET isle)
       target_compile_options(isle PRIVATE "-Zc:__cplusplus")
     endif()
-    if (TARGET config)
-      target_compile_options(config PRIVATE "-Zc:__cplusplus")
+    if (TARGET isle-config)
+      target_compile_options(isle-config PRIVATE "-Zc:__cplusplus")
     endif()
   endif()
 endif()
@@ -633,7 +633,7 @@ install(TARGETS isle ${install_extra_targets}
   LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
 )
 if (ISLE_BUILD_CONFIG)
-  install(TARGETS config
+  install(TARGETS isle-config
     RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
   )
 endif()
@@ -652,7 +652,7 @@ if(NINTENDO_3DS)
     DESCRIPTION "LEGO Island for the Nintendo 3DS"
     AUTHOR "LEGO Island Decompilation and Porting Team"
     VERSION "${PROJECT_VERSION}"
-    ICON "isle/res/3ds/isle.png"
+    ICON "ISLE/res/3ds/isle.png"
   )
 
   ctr_create_3dsx(isle SMDH isle.smdh)

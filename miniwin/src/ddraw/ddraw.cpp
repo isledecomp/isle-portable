@@ -21,6 +21,7 @@
 
 #include <SDL3/SDL.h>
 #include <assert.h>
+#include <cinttypes>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
@@ -78,7 +79,7 @@ HRESULT DirectDrawImpl::CreateSurface(
 			if ((lpDDSurfaceDesc->dwFlags & DDSD_ZBUFFERBITDEPTH) != DDSD_ZBUFFERBITDEPTH) {
 				return DDERR_INVALIDPARAMS;
 			}
-			SDL_Log("Todo: Set %dbit Z-Buffer", lpDDSurfaceDesc->dwZBufferBitDepth);
+			SDL_Log("Todo: Set %" PRIu32 "bit Z-Buffer", lpDDSurfaceDesc->dwZBufferBitDepth);
 			*lplpDDSurface = static_cast<IDirectDrawSurface*>(new DummySurfaceImpl);
 			return DD_OK;
 		}
@@ -349,7 +350,7 @@ HRESULT DirectDrawImpl::CreateDevice(
 #endif
 #ifdef USE_CITRO3D
 	else if (SDL_memcmp(&guid, &Citro3D_GUID, sizeof(GUID)) == 0) {
-		DDRenderer = Citro3DRenderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
+		DDRenderer = new Citro3DRenderer(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
 #endif
 #ifdef _WIN32

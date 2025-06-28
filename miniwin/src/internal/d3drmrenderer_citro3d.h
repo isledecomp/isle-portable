@@ -1,28 +1,30 @@
 #pragma once
 
-#include "SDL3/SDL_log.h"
 #include "d3drmrenderer.h"
-#include "d3drmtexture_impl.h"
-#include "ddraw_impl.h"
 
-#include <citro3d.h>
 #include <SDL3/SDL.h>
-#include <c3d/texture.h>
+#include <citro3d.h>
 #include <vector>
 
-DEFINE_GUID(Citro3D_GUID, 0x682656F3, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07);
+DEFINE_GUID(Citro3D_GUID, 0x682656F3, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3D, 0x53);
 
 struct C3DTextureCacheEntry {
 	IDirect3DRMTexture* texture;
 	Uint32 version;
-	C3D_Tex* c3dTex;
+	C3D_Tex c3dTex;
+	uint16_t width;
+	uint16_t height;
+};
+
+struct C3DMeshCacheEntry {
+	const MeshGroup* meshGroup = nullptr;
+	int version = 0;
+	void* vbo = nullptr;
+	int vertexCount = 0;
 };
 
 class Citro3DRenderer : public Direct3DRMRenderer {
 public:
-	static Direct3DRMRenderer* Create(DWORD width, DWORD height);
-
-	// constructor parameters not finalized
 	Citro3DRenderer(DWORD width, DWORD height);
 	~Citro3DRenderer() override;
 
@@ -49,31 +51,38 @@ public:
 	void Flip() override;
 	void Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect) override;
 	void Download(SDL_Surface* target) override;
+
 private:
 	void AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture);
+	void AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh);
+	void StartFrame();
+
 	D3DRMMATRIX4D m_projection;
-	C3D_Mtx m_projectionMatrix;
 	SDL_Surface* m_renderedImage;
 	C3D_RenderTarget* m_renderTarget;
-	int m_projectionShaderUniformLocation;
 	std::vector<C3DTextureCacheEntry> m_textures;
-
-	// TODO: All these flags can likely be cleaned up
-	bool m_flipVertFlag;
-	bool m_outTiledFlag;
-	bool m_rawCopyFlag;
-	GX_TRANSFER_FORMAT m_transferInputFormatFlag;
-	GX_TRANSFER_FORMAT m_transferOutputFormatFlag;
-	GX_TRANSFER_SCALE m_transferScaleFlag;
-	u32 m_transferFlags;
+	std::vector<C3DMeshCacheEntry> m_meshs;
+	ViewportTransform m_viewportTransform;
+	std::vector<SceneLight> m_lights;
 };
 
 inline static void Citro3DRenderer_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
-	SDL_Log("Hello, enuming device");
-	Direct3DRMRenderer* device = Citro3DRenderer::Create(400, 240);
-	if (device) {
-		EnumDevice(cb, ctx, device, Citro3D_GUID);
-		delete device;
-	}
+	GUID guid = Citro3D_GUID;
+	char* deviceNameDup = SDL_strdup("Citro3D");
+	char* deviceDescDup = SDL_strdup("Miniwin driver");
+	D3DDEVICEDESC halDesc = {};
+	halDesc.dcmColorModel = D3DCOLOR_RGB;
+	halDesc.dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
+	halDesc.dwDeviceZBufferBitDepth = DDBD_24;
+	halDesc.dwDeviceRenderBitDepth = DDBD_32;
+	halDesc.dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
+	halDesc.dpcTriCaps.dwShadeCaps = D3DPSHADECAPS_ALPHAFLATBLEND;
+	halDesc.dpcTriCaps.dwTextureFilterCaps = D3DPTFILTERCAPS_LINEAR;
+	D3DDEVICEDESC helDesc = {};
+
+	cb(&guid, deviceNameDup, deviceDescDup, &halDesc, &helDesc, ctx);
+
+	SDL_free(deviceDescDup);
+	SDL_free(deviceNameDup);
 }

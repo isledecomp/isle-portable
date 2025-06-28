@@ -1,5 +1,5 @@
 diff --git a/src/lib/libwasmfs_fetch.js b/src/lib/libwasmfs_fetch.js
-index e8c9f7e21..1c0eea957 100644
+index e8c9f7e21..caf1971d2 100644
 --- a/src/lib/libwasmfs_fetch.js
 +++ b/src/lib/libwasmfs_fetch.js
 @@ -38,36 +38,7 @@ addToLibrary({
@@ -89,7 +89,21 @@ index e8c9f7e21..1c0eea957 100644
        return Promise.resolve();
      }
  
-@@ -164,6 +156,21 @@ addToLibrary({
+@@ -156,14 +148,31 @@ addToLibrary({
+         return readLength;
+       },
+       getSize: async (file) => {
+-        try {
+-          await getFileRange(file, 0, 0);
+-        } catch (failedResponse) {
+-          return 0;
++        if (!(file in wasmFS$JSMemoryRanges)) {
++          try {
++            await getFileRange(file, undefined, undefined);
++          } catch (failedResponse) {
++            return 0;
++          }
+         }
          return wasmFS$JSMemoryRanges[file].size;
        },
      };

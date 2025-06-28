@@ -164,7 +164,7 @@ HRESULT Direct3DRMImpl::CreateDeviceFromSurface(
 #endif
 #ifdef USE_CITRO3D
 	else if (SDL_memcmp(&guid, &Citro3D_GUID, sizeof(GUID)) == 0) {
-		DDRenderer = Citro3DRenderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
+		DDRenderer = new Citro3DRenderer(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
 #endif
 #ifdef _WIN32

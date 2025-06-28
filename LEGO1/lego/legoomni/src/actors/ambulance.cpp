@@ -40,9 +40,9 @@ Ambulance::Ambulance()
 	m_state = NULL;
 	m_unk0x168 = 0;
 	m_actorId = -1;
-	m_unk0x16c = 0;
-	m_unk0x16e = 0;
-	m_unk0x170 = 0;
+	m_atPoliceTask = 0;
+	m_atBeachTask = 0;
+	m_taskState = Ambulance::e_none;
 	m_lastAction = IsleScript::c_noneIsle;
 	m_unk0x172 = 0;
 	m_lastAnimation = IsleScript::c_noneIsle;
@@ -73,7 +73,7 @@ MxResult Ambulance::Create(MxDSAction& p_dsAction)
 		m_state = (AmbulanceMissionState*) GameState()->GetState("AmbulanceMissionState");
 		if (!m_state) {
 			m_state = new AmbulanceMissionState();
-			m_state->m_unk0x08 = 0;
+			m_state->m_state = AmbulanceMissionState::e_ready;
 			GameState()->RegisterState(m_state);
 		}
 	}
@@ -173,25 +173,25 @@ MxLong Ambulance::HandleEndAction(MxEndActionNotificationParam& p_param)
 			m_lastAction = IsleScript::c_noneIsle;
 		}
 		else if (objectId == IsleScript::c_hho027en_RunAnim) {
-			m_state->m_unk0x08 = 1;
+			m_state->m_state = AmbulanceMissionState::e_enteredAmbulance;
 			CurrentWorld()->PlaceActor(UserActor());
 			HandleClick();
 			m_unk0x172 = 0;
 			TickleManager()->RegisterClient(this, 40000);
 		}
 		else if (objectId == IsleScript::c_hpz047pe_RunAnim || objectId == IsleScript::c_hpz048pe_RunAnim || objectId == IsleScript::c_hpz049bd_RunAnim || objectId == IsleScript::c_hpz053pa_RunAnim) {
-			if (m_unk0x170 == 3) {
+			if (m_taskState == Ambulance::e_finished) {
 				PlayAnimation(IsleScript::c_hpz055pa_RunAnim);
-				m_unk0x170 = 0;
+				m_taskState = Ambulance::e_none;
 			}
 			else {
 				PlayAnimation(IsleScript::c_hpz053pa_RunAnim);
 			}
 		}
 		else if (objectId == IsleScript::c_hpz050bd_RunAnim || objectId == IsleScript::c_hpz052ma_RunAnim) {
-			if (m_unk0x170 == 3) {
+			if (m_taskState == Ambulance::e_finished) {
 				PlayAnimation(IsleScript::c_hpz057ma_RunAnim);
-				m_unk0x170 = 0;
+				m_taskState = Ambulance::e_none;
 			}
 			else {
 				PlayAnimation(IsleScript::c_hpz052ma_RunAnim);
@@ -204,18 +204,18 @@ MxLong Ambulance::HandleEndAction(MxEndActionNotificationParam& p_param)
 			m_unk0x172 = 0;
 			TickleManager()->RegisterClient(this, 40000);
 
-			if (m_unk0x16c != 0) {
+			if (m_atPoliceTask != 0) {
 				StopActions();
 			}
 		}
 		else if (objectId == IsleScript::c_hps116bd_RunAnim || objectId == IsleScript::c_hps118re_RunAnim) {
-			if (objectId == IsleScript::c_hps116bd_RunAnim && m_unk0x170 != 3) {
+			if (objectId == IsleScript::c_hps116bd_RunAnim && m_taskState != Ambulance::e_finished) {
 				PlayAction(IsleScript::c_Avo923In_PlayWav);
 			}
 
-			if (m_unk0x170 == 3) {
+			if (m_taskState == Ambulance::e_finished) {
 				PlayAnimation(IsleScript::c_hps117bd_RunAnim);
-				m_unk0x170 = 0;
+				m_taskState = Ambulance::e_none;
 			}
 			else {
 				PlayAnimation(IsleScript::c_hps118re_RunAnim);
@@ -228,12 +228,12 @@ MxLong Ambulance::HandleEndAction(MxEndActionNotificationParam& p_param)
 			m_unk0x172 = 0;
 			TickleManager()->RegisterClient(this, 40000);
 
-			if (m_unk0x16e != 0) {
+			if (m_atBeachTask != 0) {
 				StopActions();
 			}
 		}
 		else if (objectId == IsleScript::c_hho142cl_RunAnim || objectId == IsleScript::c_hho143cl_RunAnim || objectId == IsleScript::c_hho144cl_RunAnim) {
-			FUN_10037250();
+			Reset();
 		}
 	}
 
@@ -244,18 +244,18 @@ MxLong Ambulance::HandleEndAction(MxEndActionNotificationParam& p_param)
 // FUNCTION: BETA10 0x100230bf
 MxLong Ambulance::HandleButtonDown(LegoControlManagerNotificationParam& p_param)
 {
-	if (m_unk0x170 == 1) {
+	if (m_taskState == Ambulance::e_waiting) {
 		LegoROI* roi = PickROI(p_param.GetX(), p_param.GetY());
 
 		if (roi != NULL && !SDL_strcasecmp(roi->GetName(), "ps-gate")) {
-			m_unk0x170 = 3;
+			m_taskState = Ambulance::e_finished;
 			return 1;
 		}
 
 		roi = PickRootROI(p_param.GetX(), p_param.GetY());
 
 		if (roi != NULL && !SDL_strcasecmp(roi->GetName(), "gd")) {
-			m_unk0x170 = 3;
+			m_taskState = Ambulance::e_finished;
 			return 1;
 		}
 	}
@@ -273,9 +273,9 @@ MxLong Ambulance::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 	}
 
 	if (p_param.GetTrigger() == LegoPathStruct::c_camAnim && p_param.GetData() == 0x0b) {
-		if (m_unk0x16e != 0) {
-			if (m_unk0x16c != 0) {
-				m_state->m_unk0x08 = 2;
+		if (m_atBeachTask != 0) {
+			if (m_atPoliceTask != 0) {
+				m_state->m_state = AmbulanceMissionState::e_prepareAmbulance;
 
 				if (m_lastAction != IsleScript::c_noneIsle) {
 					InvokeAction(Extra::e_stop, *g_isleScript, m_lastAction, NULL);
@@ -300,7 +300,7 @@ MxLong Ambulance::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 				return 0;
 			}
 
-			if (m_unk0x16e != 0) {
+			if (m_atBeachTask != 0) {
 				if (m_lastAction != IsleScript::c_noneIsle) {
 					InvokeAction(Extra::e_stop, *g_isleScript, m_lastAction, NULL);
 				}
@@ -310,7 +310,7 @@ MxLong Ambulance::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 			}
 		}
 
-		if (m_unk0x16c != 0) {
+		if (m_atPoliceTask != 0) {
 			if (m_lastAction != IsleScript::c_noneIsle) {
 				InvokeAction(Extra::e_stop, *g_isleScript, m_lastAction, NULL);
 			}
@@ -318,9 +318,9 @@ MxLong Ambulance::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 			PlayAction(IsleScript::c_Avo915In_PlayWav);
 		}
 	}
-	else if (p_param.GetTrigger() == LegoPathStruct::c_s && p_param.GetData() == 0x131 && m_unk0x16e == 0) {
-		m_unk0x16e = 1;
-		m_unk0x170 = 1;
+	else if (p_param.GetTrigger() == LegoPathStruct::c_s && p_param.GetData() == 0x131 && m_atBeachTask == 0) {
+		m_atBeachTask = 1;
+		m_taskState = Ambulance::e_waiting;
 
 		if (m_lastAction != IsleScript::c_noneIsle) {
 			InvokeAction(Extra::e_stop, *g_isleScript, m_lastAction, NULL);
@@ -348,9 +348,9 @@ MxLong Ambulance::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 			break;
 		}
 	}
-	else if (p_param.GetTrigger() == LegoPathStruct::c_camAnim && (p_param.GetData() == 0x22 || p_param.GetData() == 0x23 || p_param.GetData() == 0x24) && m_unk0x16c == 0) {
-		m_unk0x16c = 1;
-		m_unk0x170 = 1;
+	else if (p_param.GetTrigger() == LegoPathStruct::c_camAnim && (p_param.GetData() == 0x22 || p_param.GetData() == 0x23 || p_param.GetData() == 0x24) && m_atPoliceTask == 0) {
+		m_atPoliceTask = 1;
+		m_taskState = Ambulance::e_waiting;
 
 		if (m_lastAction != IsleScript::c_noneIsle) {
 			InvokeAction(Extra::e_stop, *g_isleScript, m_lastAction, NULL);
@@ -371,7 +371,7 @@ MxLong Ambulance::HandleClick()
 		return 1;
 	}
 
-	if (m_state->m_unk0x08 == 2) {
+	if (m_state->m_state == AmbulanceMissionState::e_prepareAmbulance) {
 		return 1;
 	}
 
@@ -390,7 +390,7 @@ MxLong Ambulance::HandleClick()
 	InvokeAction(Extra::e_start, *g_isleScript, IsleScript::c_AmbulanceDashboard, NULL);
 	ControlManager()->Register(this);
 
-	if (m_state->m_unk0x08 == 1) {
+	if (m_state->m_state == AmbulanceMissionState::e_enteredAmbulance) {
 		SpawnPlayer(LegoGameState::e_hospitalExited, TRUE, 0);
 		m_state->m_startTime = Timer()->GetTime();
 		InvokeAction(Extra::e_start, *g_isleScript, IsleScript::c_pns018rd_RunAnim, NULL);
@@ -401,9 +401,9 @@ MxLong Ambulance::HandleClick()
 
 // FUNCTION: LEGO1 0x10036e60
 // FUNCTION: BETA10 0x100236bb
-void Ambulance::FUN_10036e60()
+void Ambulance::Init()
 {
-	m_state->m_unk0x08 = 2;
+	m_state->m_state = AmbulanceMissionState::e_prepareAmbulance;
 	PlayAnimation(IsleScript::c_hho027en_RunAnim);
 	m_lastAction = IsleScript::c_noneIsle;
 	m_lastAnimation = IsleScript::c_noneIsle;
@@ -414,7 +414,7 @@ void Ambulance::Exit()
 {
 	GameState()->m_currentArea = LegoGameState::e_hospitalExterior;
 	StopActions();
-	FUN_10037250();
+	Reset();
 	Leave();
 }
 
@@ -470,11 +470,11 @@ void Ambulance::ActivateSceneActions()
 {
 	PlayMusic(JukeboxScript::c_Hospital_Music);
 
-	if (m_state->m_unk0x08 == 1) {
-		m_state->m_unk0x08 = 0;
+	if (m_state->m_state == AmbulanceMissionState::e_enteredAmbulance) {
+		m_state->m_state = AmbulanceMissionState::e_ready;
 		PlayAction(IsleScript::c_ham033cl_PlayWav);
 	}
-	else if (m_unk0x16c != 0 && m_unk0x16e != 0) {
+	else if (m_atPoliceTask != 0 && m_atBeachTask != 0) {
 		IsleScript::Script objectId;
 
 		switch (SDL_rand(2)) {
@@ -574,14 +574,14 @@ void Ambulance::StopActions()
 }
 
 // FUNCTION: LEGO1 0x10037250
-void Ambulance::FUN_10037250()
+void Ambulance::Reset()
 {
 	StopAction(m_lastAction);
 	BackgroundAudioManager()->RaiseVolume();
 	((Act1State*) GameState()->GetState("Act1State"))->m_unk0x018 = 0;
-	m_state->m_unk0x08 = 0;
-	m_unk0x16e = 0;
-	m_unk0x16c = 0;
+	m_state->m_state = AmbulanceMissionState::e_ready;
+	m_atBeachTask = 0;
+	m_atPoliceTask = 0;
 	g_isleFlags |= Isle::c_playMusic;
 	AnimationManager()->EnableCamAnims(TRUE);
 	AnimationManager()->FUN_1005f6d0(TRUE);
@@ -629,7 +629,7 @@ void Ambulance::PlayAction(IsleScript::Script p_objectId)
 // FUNCTION: LEGO1 0x100373a0
 AmbulanceMissionState::AmbulanceMissionState()
 {
-	m_unk0x08 = 0;
+	m_state = AmbulanceMissionState::e_ready;
 	m_startTime = 0;
 	m_peScore = 0;
 	m_maScore = 0;
