@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-export LD_LIBRARY_PATH="build/lib:$LD_LIBRARY_PATH"
+export LD_LIBRARY_PATH="build/source/lib:$LD_LIBRARY_PATH"
 [ -z "$QMAKE" ] && export QMAKE=/usr/lib/qt6/bin/qmake
 
 # Sets a directory that has to have a following structure:
@@ -15,7 +15,7 @@ export LD_LIBRARY_PATH="build/lib:$LD_LIBRARY_PATH"
 #     ├── libSDL3.so.0 -> libSDL3.so.0.3.0  # Not important if available on the system
 #     └── libSDL3.so.0.3.0                  # Not important if available on the system
 # Can also be defined using --build=path
-BUILD_SOURCE=../../build
+BUILD_SOURCE=../../source
 
 # Sets where AppRun for AppImage is, can also be defined using --apprun=path
 APPRUN_SOURCE=AppRun
@@ -26,7 +26,8 @@ DESKTOP_FILE_SOURCE=isle-portable.desktop
 cd $(dirname $0)
 
 clean(){
-    rm -rf assets tools build AppDir "LEGO_Island-$(uname -m).AppImage"
+    echo "Deleting build directory"
+    rm -rf build
 }
 
 download(){
@@ -36,47 +37,47 @@ download(){
 }
 
 prepare(){
-    mkdir -p tools
-    mkdir -p assets
+    mkdir -p build/tools
+    mkdir -p build/assets
 
-    download tools/appimagetool.AppImage https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-$(uname -m).AppImage
-    chmod u+x tools/appimagetool.AppImage
+    download build/tools/appimagetool.AppImage https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-$(uname -m).AppImage
+    chmod u+x build/tools/appimagetool.AppImage
 
-    download tools/linuxdeploy.AppImage https://github.com/linuxdeploy/linuxdeploy/releases/latest/download/linuxdeploy-$(uname -m).AppImage
-    chmod u+x tools/linuxdeploy.AppImage
+    download build/tools/linuxdeploy.AppImage https://github.com/linuxdeploy/linuxdeploy/releases/latest/download/linuxdeploy-$(uname -m).AppImage
+    chmod u+x build/tools/linuxdeploy.AppImage
 
-    download tools/linuxdeploy-plugin-qt.AppImage https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/latest/download/linuxdeploy-plugin-qt-$(uname -m).AppImage
-    chmod u+x tools/linuxdeploy-plugin-qt.AppImage
+    download build/tools/linuxdeploy-plugin-qt.AppImage https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/latest/download/linuxdeploy-plugin-qt-$(uname -m).AppImage
+    chmod u+x build/tools/linuxdeploy-plugin-qt.AppImage
 
-    download assets/isle.png https://github.com/isledecomp/isle/blob/master/assets/isle.png?raw=true
-    magick assets/isle.png -resize 256x256 assets/isle.png
-    download assets/isle-config.png https://github.com/isledecomp/isle/blob/master/assets/config.png?raw=true
-    magick assets/isle-config.png -resize 256x256 assets/isle-config.png
+    download build/assets/isle.png https://github.com/isledecomp/isle/blob/master/assets/isle.png?raw=true
+    magick build/assets/isle.png -resize 256x256 build/assets/isle.png
+    download build/assets/isle-config.png https://github.com/isledecomp/isle/blob/master/assets/config.png?raw=true
+    magick build/assets/isle-config.png -resize 256x256 build/assets/isle-config.png
 
-    if [ ! -f "assets/isle-portable.desktop" ]; then
-        cp $DESKTOP_FILE_SOURCE assets/isle-portable.desktop
-        cp $APPRUN_SOURCE assets/AppRun
+    if [ ! -f "build/assets/isle-portable.desktop" ]; then
+        cp $DESKTOP_FILE_SOURCE build/assets/isle-portable.desktop
+        cp $APPRUN_SOURCE build/assets/AppRun
     fi
 
-    if [ ! -d "build" ]; then
-        cp -r $BUILD_SOURCE build
+    if [ ! -d "build/source" ]; then
+        cp -r $BUILD_SOURCE build/source
     fi
 }
 
 compile(){
-    NO_STRIP=1 tools/linuxdeploy.AppImage \
+    NO_STRIP=1 build/tools/linuxdeploy.AppImage \
         --plugin qt \
-        -e build/bin/isle \
-        -e build/bin/isle-config \
-        -d assets/isle-portable.desktop \
-        -i assets/isle.png \
-        -i assets/isle-config.png \
+        -e build/source/bin/isle \
+        -e build/source/bin/isle-config \
+        -d build/assets/isle-portable.desktop \
+        -i build/assets/isle.png \
+        -i build/assets/isle-config.png \
         --custom-apprun=AppRun \
-        --appdir=AppDir
+        --appdir=build/AppDir
 }
 
 package(){
-    tools/appimagetool.AppImage AppDir "LEGO_Island-$(uname -m).AppImage"
+    build/tools/appimagetool.AppImage build/AppDir build/"LEGO_Island-$(uname -m).AppImage"
 }
 
 stop(){ # Can be used to do `Build clean stop` to just clean the directory
