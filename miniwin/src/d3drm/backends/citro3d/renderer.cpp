@@ -39,6 +39,8 @@ Citro3DRenderer::Citro3DRenderer(DWORD width, DWORD height)
 	shaderProgramSetVsh(&program, &vshader_dvlb->DVLE[0]);
 	C3D_BindProgram(&program);
 
+	C3D_CullFace(GPU_CULL_FRONT_CCW);
+
 	uLoc_projection = shaderInstanceGetUniformLocation(program.vertexShader, "projection");
 	uLoc_modelView = shaderInstanceGetUniformLocation(program.vertexShader, "modelView");
 	uLoc_meshColor = shaderInstanceGetUniformLocation(program.vertexShader, "meshColor");
@@ -66,14 +68,6 @@ void Citro3DRenderer::PushLights(const SceneLight* lightsArray, size_t count)
 void Citro3DRenderer::SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back)
 {
 	memcpy(&m_projection, projection, sizeof(D3DRMMATRIX4D));
-
-	MINIWIN_NOT_IMPLEMENTED();
-	// FIXME is this correct?
-	float depth = back - front;
-	m_projection[2][2] = 1.0f / depth;
-	m_projection[2][3] = 1.0f;
-	m_projection[3][2] = -front / depth;
-	m_projection[3][3] = 0.0f;
 }
 
 void Citro3DRenderer::SetFrustumPlanes(const Plane* frustumPlanes)
@@ -172,7 +166,7 @@ static void EncodeTextureLayout(const u8* src, u8* dst, int width, int height)
 
 					int mortonIndex = mortonInterleave(x, y);
 					int dstIndex = (tileIndex + mortonIndex) * bytesPerPixel;
-					int srcIndex = (srcY * width + srcX) * bytesPerPixel;
+					int srcIndex = ((height - 1 - srcY) * width + srcX) * bytesPerPixel;
 
 					std::memcpy(&dst[dstIndex], &src[srcIndex], bytesPerPixel);
 				}
@@ -262,6 +256,12 @@ Uint32 Citro3DRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 	return (Uint32) (m_textures.size() - 1);
 }
 
+struct vertex {
+	float position[3];
+	float texcoord[2];
+	float normal[3];
+};
+
 C3DMeshCacheEntry C3DUploadMesh(const MeshGroup& meshGroup)
 {
 	C3DMeshCacheEntry cache{&meshGroup, meshGroup.version};
@@ -285,6 +285,10 @@ C3DMeshCacheEntry C3DUploadMesh(const MeshGroup& meshGroup)
 		indexBuffer.assign(meshGroup.indices.begin(), meshGroup.indices.end());
 	}
 
+	MINIWIN_NOT_IMPLEMENTED();
+
+	// TODO use ibo instead of flattening verticies, see
+	// https://github.com/devkitPro/3ds-examples/blob/44faa81d79d5781c0e149e4a7005f2e005edb736/graphics/gpu/loop_subdivision/source/main.c#L104
 	std::vector<vertex> vertexUploadBuffer;
 	vertexUploadBuffer.reserve(indexBuffer.size());
 
@@ -306,21 +310,10 @@ C3DMeshCacheEntry C3DUploadMesh(const MeshGroup& meshGroup)
 		vertexUploadBuffer.emplace_back(dst);
 	}
 
-	MINIWIN_NOT_IMPLEMENTED();
-	// FIXME Render debug triangle untill meshes work
-	static const vertex position_list[] = {
-		{{200.0f, 200.0f, 0.5f}, {1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-		{{100.0f, 40.0f, 0.5f}, {0.0f, 1.0f}, {0.0f, 1.0f, 0.0f}},
-		{{300.0f, 40.0f, 0.5f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
-	};
-	cache.vbo = linearAlloc(sizeof(position_list));
-	memcpy(cache.vbo, position_list, sizeof(position_list));
-	cache.vertexCount = 3;
-
-	// size_t bufferSize = vertexUploadBuffer.size() * sizeof(vertex);
-	// cache.vbo = linearAlloc(bufferSize);
-	// memcpy(cache.vbo, vertexUploadBuffer.data(), bufferSize);
-	// cache.vertexCount = indexBuffer.size();
+	size_t bufferSize = vertexUploadBuffer.size() * sizeof(vertex);
+	cache.vbo = linearAlloc(bufferSize);
+	memcpy(cache.vbo, vertexUploadBuffer.data(), bufferSize);
+	cache.vertexCount = vertexUploadBuffer.size();
 
 	return cache;
 }
@@ -379,24 +372,37 @@ void Citro3DRenderer::StartFrame()
 HRESULT Citro3DRenderer::BeginFrame()
 {
 	StartFrame();
-	MINIWIN_NOT_IMPLEMENTED();
-	// TODO DepthTest should be true, but off while testing
-	C3D_DepthTest(false, GPU_GREATER, GPU_WRITE_COLOR);
+	C3D_DepthTest(true, GPU_GREATER, GPU_WRITE_ALL);
 	return S_OK;
 }
 
 void Citro3DRenderer::EnableTransparency()
 {
+	C3D_DepthTest(true, GPU_GREATER, GPU_WRITE_COLOR);
 }
 
 void ConvertMatrix(const D3DRMMATRIX4D in, C3D_Mtx* out)
 {
 	for (int i = 0; i < 4; i++) {
-		out->r[i].x = in[i][0];
-		out->r[i].y = in[i][1];
-		out->r[i].z = in[i][2];
-		out->r[i].w = in[i][3];
+		out->r[i].x = in[0][i];
+		out->r[i].y = in[1][i];
+		out->r[i].z = in[2][i];
+		out->r[i].w = in[3][i];
 	}
+}
+
+void ConvertPerspective(const D3DRMMATRIX4D in, C3D_Mtx* out)
+{
+	float f_h = in[0][0];
+	float f_v = in[1][1];
+
+	float aspect = f_v / f_h;
+	float fovY = 2.0f * atanf(1.0f / f_v);
+
+	float nearZ = -in[3][2] / in[2][2];
+	float farZ = nearZ * in[2][2] / (in[2][2] - 1.0f);
+
+	Mtx_PerspTilt(out, fovY, aspect, nearZ, farZ, true);
 }
 
 void Citro3DRenderer::SubmitDraw(
@@ -412,10 +418,8 @@ void Citro3DRenderer::SubmitDraw(
 
 	MINIWIN_NOT_IMPLEMENTED();
 	// FIXME are we converting it right?
-	// ConvertMatrix(m_projection, &projection);
-	// ConvertMatrix(modelViewMatrix, &modelView);
-	Mtx_OrthoTilt(&projection, 0, 400, 0, 272, 0.0f, 1.0f, true);
-	Mtx_Identity(&modelView);
+	ConvertPerspective(m_projection, &projection);
+	ConvertMatrix(modelViewMatrix, &modelView);
 
 	C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER, uLoc_projection, &projection);
 	C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER, uLoc_modelView, &modelView);
@@ -444,6 +448,10 @@ void Citro3DRenderer::SubmitDraw(
 	}
 	else {
 		C3D_TexBind(0, nullptr);
+		C3D_TexEnv* env = C3D_GetTexEnv(0);
+		C3D_TexEnvInit(env);
+		C3D_TexEnvSrc(env, C3D_Both, GPU_PRIMARY_COLOR, GPU_PRIMARY_COLOR, GPU_PRIMARY_COLOR);
+		C3D_TexEnvFunc(env, C3D_Both, GPU_REPLACE);
 	}
 
 	C3D_DrawArrays(GPU_TRIANGLES, 0, mesh.vertexCount);
@@ -511,8 +519,8 @@ void Citro3DRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, con
 
 	float u0 = static_cast<float>(srcRect.x) / texture.width;
 	float u1 = static_cast<float>(srcRect.x + srcRect.w) / texture.width;
-	float v1 = 1.0f - static_cast<float>(srcRect.y + srcRect.h) / texture.height;
-	float v0 = 1.0f - static_cast<float>(srcRect.y) / texture.height;
+	float v0 = static_cast<float>(srcRect.y) / texture.height;
+	float v1 = static_cast<float>(srcRect.y + srcRect.h) / texture.height;
 
 	C3D_ImmDrawBegin(GPU_TRIANGLES);
 
@@ -521,12 +529,12 @@ void Citro3DRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, con
 	C3D_ImmSendAttrib(u0, v0, 0.0f, 0.0f);
 	C3D_ImmSendAttrib(0.0f, 0.0f, 1.0f, 0.0f);
 
-	C3D_ImmSendAttrib(x2, y2, 0.5f, 0.0f);
-	C3D_ImmSendAttrib(u1, v1, 0.0f, 0.0f);
-	C3D_ImmSendAttrib(0.0f, 0.0f, 1.0f, 0.0f);
-
 	C3D_ImmSendAttrib(x2, y1, 0.5f, 0.0f);
 	C3D_ImmSendAttrib(u1, v0, 0.0f, 0.0f);
+	C3D_ImmSendAttrib(0.0f, 0.0f, 1.0f, 0.0f);
+
+	C3D_ImmSendAttrib(x2, y2, 0.5f, 0.0f);
+	C3D_ImmSendAttrib(u1, v1, 0.0f, 0.0f);
 	C3D_ImmSendAttrib(0.0f, 0.0f, 1.0f, 0.0f);
 
 	// Triangle 2
@@ -534,12 +542,12 @@ void Citro3DRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, con
 	C3D_ImmSendAttrib(u1, v1, 0.0f, 0.0f);
 	C3D_ImmSendAttrib(0.0f, 0.0f, 1.0f, 0.0f);
 
-	C3D_ImmSendAttrib(x1, y1, 0.5f, 0.0f);
-	C3D_ImmSendAttrib(u0, v0, 0.0f, 0.0f);
-	C3D_ImmSendAttrib(0.0f, 0.0f, 1.0f, 0.0f);
-
 	C3D_ImmSendAttrib(x1, y2, 0.5f, 0.0f);
 	C3D_ImmSendAttrib(u0, v1, 0.0f, 0.0f);
+	C3D_ImmSendAttrib(0.0f, 0.0f, 1.0f, 0.0f);
+
+	C3D_ImmSendAttrib(x1, y1, 0.5f, 0.0f);
+	C3D_ImmSendAttrib(u0, v0, 0.0f, 0.0f);
 	C3D_ImmSendAttrib(0.0f, 0.0f, 1.0f, 0.0f);
 
 	C3D_ImmDrawEnd();

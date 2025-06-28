@@ -23,12 +23,6 @@ struct C3DMeshCacheEntry {
 	int vertexCount = 0;
 };
 
-typedef struct {
-	float position[3];
-	float texcoord[2];
-	float normal[3];
-} vertex;
-
 class Citro3DRenderer : public Direct3DRMRenderer {
 public:
 	Citro3DRenderer(DWORD width, DWORD height);
