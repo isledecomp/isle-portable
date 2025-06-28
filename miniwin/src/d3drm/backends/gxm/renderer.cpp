@@ -20,7 +20,7 @@ bool with_razor = false;
 #define VITA_GXM_SCREEN_WIDTH  960
 #define VITA_GXM_SCREEN_HEIGHT 544
 #define VITA_GXM_SCREEN_STRIDE 960
-#define VITA_GXM_PENDING_SWAPS 3
+#define VITA_GXM_PENDING_SWAPS 2
 
 #define VITA_GXM_COLOR_FORMAT SCE_GXM_COLOR_FORMAT_A8B8G8R8
 #define VITA_GXM_PIXEL_FORMAT SCE_DISPLAY_PIXELFORMAT_A8B8G8R8
@@ -75,7 +75,7 @@ static void display_callback(const void *callback_data) {
     framebuf.width = VITA_GXM_SCREEN_WIDTH;
     framebuf.height = VITA_GXM_SCREEN_HEIGHT;
     sceDisplaySetFrameBuf(&framebuf, SCE_DISPLAY_SETBUF_NEXTFRAME);
-	sceDisplayWaitVblankStart();
+	sceDisplayWaitSetFrameBuf(); 
 }
 
 static void load_razor() {
@@ -293,13 +293,13 @@ Direct3DRMRenderer* GXMRenderer::Create(DWORD width, DWORD height)
 }
 
 GXMRenderer::GXMRenderer(DWORD width, DWORD height) {
-	m_width = width;
-	m_height = height;
+	m_width = VITA_GXM_SCREEN_WIDTH;
+	m_height = VITA_GXM_SCREEN_HEIGHT;
 	m_virtualWidth = width;
 	m_virtualHeight = height;
 
-	const unsigned int alignedWidth = ALIGN(VITA_GXM_SCREEN_WIDTH, SCE_GXM_TILE_SIZEX);
-    const unsigned int alignedHeight = ALIGN(VITA_GXM_SCREEN_HEIGHT, SCE_GXM_TILE_SIZEY);
+	const unsigned int alignedWidth = ALIGN(m_width, SCE_GXM_TILE_SIZEX);
+    const unsigned int alignedHeight = ALIGN(m_height, SCE_GXM_TILE_SIZEY);
 	const unsigned int sampleCount = alignedWidth * alignedHeight;
     const unsigned int depthStrideInSamples = alignedWidth;
 
@@ -309,8 +309,8 @@ GXMRenderer::GXMRenderer(DWORD width, DWORD height) {
 	SceGxmRenderTargetParams renderTargetParams;
     memset(&renderTargetParams, 0, sizeof(SceGxmRenderTargetParams));
     renderTargetParams.flags = 0;
-    renderTargetParams.width = VITA_GXM_SCREEN_WIDTH;
-    renderTargetParams.height = VITA_GXM_SCREEN_HEIGHT;
+    renderTargetParams.width = m_width;
+    renderTargetParams.height = m_height;
     renderTargetParams.scenesPerFrame = 1;
     renderTargetParams.multisampleMode = 0;
     renderTargetParams.multisampleLocations = 0;
@@ -332,8 +332,8 @@ GXMRenderer::GXMRenderer(DWORD width, DWORD height) {
 			SCE_GXM_COLOR_SURFACE_LINEAR,
 			SCE_GXM_COLOR_SURFACE_SCALE_NONE,
 			SCE_GXM_OUTPUT_REGISTER_SIZE_32BIT,
-			VITA_GXM_SCREEN_WIDTH, VITA_GXM_SCREEN_HEIGHT,
-			VITA_GXM_SCREEN_STRIDE,
+			m_width, m_height,
+			m_width,
 			this->displayBuffers[i]
 		)) return;
 
@@ -475,7 +475,7 @@ GXMRenderer::GXMRenderer(DWORD width, DWORD height) {
 	this->colorShader_uColor = sceGxmProgramFindParameterByName(colorFragmentProgramGxp, "uColor"); // vec4
 
 	this->lights = static_cast<decltype(this->lights)>(sceClibMspaceMalloc(this->cdramPool, sizeof(*this->lights)));
-	for(int i = 0; i < VITA_GXM_DISPLAY_BUFFER_COUNT; i++) {
+	for(int i = 0; i < VITA_GXM_UNIFORM_BUFFER_COUNT; i++) {
 		this->quadVertices[i] = (Vertex*)sceClibMspaceMalloc(this->cdramPool, sizeof(Vertex)*4*50);
 	}
 	this->quadIndices = (uint16_t*)sceClibMspaceMalloc(this->cdramPool, sizeof(uint16_t)*4);
@@ -483,6 +483,14 @@ GXMRenderer::GXMRenderer(DWORD width, DWORD height) {
 	this->quadIndices[1] = 1;
 	this->quadIndices[2] = 2;
 	this->quadIndices[3] = 3;
+
+	volatile uint32_t *const notificationMem = sceGxmGetNotificationRegion();
+	for (uint32_t i = 0; i < VITA_GXM_UNIFORM_BUFFER_COUNT; i++) {
+		this->fragmentNotifications[i].address = notificationMem + (i*2);
+		this->fragmentNotifications[i].value = 0;
+		this->vertexNotifications[i].address = notificationMem + (i*2)+1;
+		this->vertexNotifications[i].value = 0;
+	}
 
 	m_initialized = true;
 }
@@ -814,6 +822,12 @@ void GXMRenderer::StartScene() {
 	);
 	this->sceneStarted = true;
 	this->quadsUsed = 0;
+
+	// wait for this uniform buffer to become available
+	this->activeUniformBuffer = (this->activeUniformBuffer + 1) % VITA_GXM_UNIFORM_BUFFER_COUNT;
+	sceGxmNotificationWait(&this->fragmentNotifications[this->activeUniformBuffer]);
+
+	//sceClibPrintf("this->activeUniformBuffer: %d notification: %d\n", this->activeUniformBuffer, this->fragmentNotifications[this->activeUniformBuffer].value);
 }
 
 int frames = 0;
@@ -825,16 +839,14 @@ HRESULT GXMRenderer::BeginFrame()
 			SDL_Log("trigger razor");
 			sceRazorGpuCaptureSetTriggerNextFrame("ux0:/data/capture.sgx");
 			razor_triggered = true;
-		}	
+		}
 	}
 	this->transparencyEnabled = false;
-
 	this->StartScene();
 
-	// set light data
 	auto lightData = this->LightsBuffer();
 	int lightCount = std::min(static_cast<int>(m_lights.size()), 3);
-	for (int i = 0; false && i < lightCount; ++i) {
+	for (int i = 0; i < lightCount; ++i) {
 		const auto& src = m_lights[i];
 		lightData->lights[i].color[0] = src.color.r;
 		lightData->lights[i].color[1] = src.color.g;
@@ -851,8 +863,7 @@ HRESULT GXMRenderer::BeginFrame()
 		lightData->lights[i].direction[2] = src.direction.z;
 		lightData->lights[i].direction[3] = src.directional;
 	}
-	lightData->lightCount = 3; //lightCount;
-	memset(lightData->lights, 0, sizeof(lightData->lights));
+	lightData->lightCount = lightCount;
 	sceGxmSetFragmentUniformBuffer(this->context, 0, lightData);
 
 	return DD_OK;
@@ -873,6 +884,12 @@ static const D3DRMMATRIX4D identity4x4 = {
 	{0.0, 1.0, 0.0, 0.0},
 	{0.0, 0.0, 1.0, 0.0},
 	{0.0, 0.0, 0.0, 1.0},
+};
+
+static const Matrix3x3 identity3x3 = {
+	{1.0, 0.0, 0.0},
+	{0.0, 1.0, 0.0},
+	{0.0, 0.0, 1.0},
 };
 
 
@@ -904,8 +921,8 @@ void GXMRenderer::SubmitDraw(
 
 	SET_UNIFORM(vertUniforms, this->uModelViewMatrix, modelViewMatrix);
 	SET_UNIFORM(vertUniforms, this->uProjectionMatrix, m_projection);
-	SET_UNIFORM(vertUniforms, this->uNormalMatrix, normalMatrix);
-	
+	sceGxmSetUniformDataF(vertUniforms, this->uNormalMatrix, 0, 9, static_cast<const float*>(normalMatrix[0]));
+
 	float color[4] = {
 		appearance.color.r / 255.0f,
 		appearance.color.g / 255.0f,
@@ -1000,9 +1017,13 @@ void GXMRenderer::Flip() {
 	}
 
 	// end scene
+	++this->fragmentNotifications[this->activeUniformBuffer].value;
+	++this->vertexNotifications[this->activeUniformBuffer].value;
 	sceGxmEndScene(
 		this->context,
-		nullptr, nullptr
+		nullptr, //&this->vertexNotifications[this->activeUniformBuffer],
+		//nullptr
+		&this->fragmentNotifications[this->activeUniformBuffer] // wait for fragment processing to finish for this buffer, otherwise lighting corrupts
 	);
 	sceGxmPadHeartbeat(
 		&this->displayBuffersSurface[this->backBufferIndex],
