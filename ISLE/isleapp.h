@@ -56,6 +56,7 @@ public:
 
 	MxResult ParseArguments(int argc, char** argv);
 	MxResult VerifyFilesystem();
+	void DetectGameVersion();
 
 private:
 	char* m_hdPath;              // 0x00
