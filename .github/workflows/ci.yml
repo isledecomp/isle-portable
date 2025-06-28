@@ -102,9 +102,7 @@ jobs:
       - name: Configure (CMake)
         run: |
           if [ "${{ matrix.vita }}" = "true" ]; then
-            echo "PRESET=--preset vita-debug" >> $GITHUB_ENV
-          else
-            echo "PRESET=" >> $GITHUB_ENV
+            PRESET=--preset vita-debug
           fi
           ${{ matrix.cmake-wrapper || '' }} cmake $PRESET -S . -B build -GNinja \
             -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
