@@ -102,7 +102,7 @@ jobs:
       - name: Configure (CMake)
         run: |
           if [ "${{ matrix.vita }}" = "true" ]; then
-            PRESET=--preset vita-debug
+            PRESET="--preset vita-debug"
           fi
           ${{ matrix.cmake-wrapper || '' }} cmake $PRESET -S . -B build -GNinja \
             -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
