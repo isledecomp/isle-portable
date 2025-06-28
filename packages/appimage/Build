@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+set -e
+
+export LD_LIBRARY_PATH="build/lib:$LD_LIBRARY_PATH"
+export QMAKE=/usr/lib/qt6/bin/qmake
+
+BUILD_SOURCE=../../build
+APPRUN_SOURCE=AppRun
+DESKTOP_FILE_SOURCE=isle-portable.desktop
+
+cd $(dirname $0)
+
+clean(){
+    rm -rf assets tools build AppDir
+}
+
+download(){
+    if [ ! -e "$1" ]; then
+        curl -Lo "$1" "$2"
+    fi
+}
+
+prepare(){
+    mkdir -p tools
+    mkdir -p assets
+
+    download tools/appimagetool.AppImage https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-$(uname -m).AppImage
+    chmod u+x tools/appimagetool.AppImage
+
+    download tools/linuxdeploy.AppImage https://github.com/linuxdeploy/linuxdeploy/releases/latest/download/linuxdeploy-$(uname -m).AppImage
+    chmod u+x tools/linuxdeploy.AppImage
+
+    download tools/linuxdeploy-plugin-qt.AppImage https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/latest/download/linuxdeploy-plugin-qt-$(uname -m).AppImage
+    chmod u+x tools/linuxdeploy-plugin-qt.AppImage
+
+    download assets/isle.png https://github.com/isledecomp/isle/blob/master/assets/isle.png?raw=true
+    magick assets/isle.png -resize 256x256 assets/isle.png
+    download assets/isle-config.png https://github.com/isledecomp/isle/blob/master/assets/config.png?raw=true
+    magick assets/isle-config.png -resize 256x256 assets/isle-config.png
+
+    if [ ! -f "assets/isle-portable.desktop" ]; then
+        cp $DESKTOP_FILE_SOURCE assets/isle-portable.desktop
+        cp $APPRUN_SOURCE assets/AppRun
+    fi
+
+    if [ ! -d "build" ]; then
+        cp -r $BUILD_SOURCE build
+    fi
+}
+
+compile(){
+
+    NO_STRIP=1 tools/linuxdeploy.AppImage \
+        --plugin qt \
+        -e build/bin/isle \
+        -e build/bin/isle-config \
+        -d assets/isle-portable.desktop \
+        -i assets/isle.png \
+        -i assets/isle-config.png \
+        --custom-apprun=AppRun \
+        --appdir=AppDir
+}
+
+package(){
+    tools/appimagetool.AppImage AppDir "LEGO_Island-$(uname -m).AppImage"
+}
+
+stop(){
+    exit
+}
+
+for func in "$@"; do
+    "$func"
+done
+prepare
+compile
+package
+# Symlinks named as binaries in appimage can call these binaries specifically
+# ln -s "LEGO_Island-$(uname -m).AppImage" isle-config 
+# ln -s "LEGO_Island-$(uname -m).AppImage" isle
