@@ -9,13 +9,15 @@ Type=Application
 Categories=Game;KidsGame;AdventureGame;Qt
 
 Keywords=LEGO;lego;LEGO Island
-Keywords[da]=LEGO;lego;Titled Panik på LEGO Øen
+Keywords[da]=LEGO;lego;Panik på LEGO Øen
 Keywords[de]=LEGO;lego;Abenteuer auf der LEGO Insel
 Keywords[es]=LEGO;lego;La Isla LEGO
 Keywords[fr]=LEGO;lego;Aventures sur L'île LEGO
 Keywords[it]=LEGO;lego;Isola LEGO
-Keywords[jp]=LEGO;lego;レゴアイランドの大冒険
-Keywords[pt_BR]=LEGO;lego;A Ilha LEGO
+Keywords[ja]=LEGO;lego;レゴアイランドの大冒険
+Keywords[ko]=LEGO;lego;레고 아일랜드
+Keywords[pt]=LEGO;lego;A Ilha LEGO
+Keywords[ru]=LEGO;lego;Остров LEGO
 
 SingleMainWindow=true
 
