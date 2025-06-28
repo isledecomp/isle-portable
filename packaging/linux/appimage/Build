@@ -26,7 +26,7 @@ DESKTOP_FILE_SOURCE=isle-portable.desktop
 cd $(dirname $0)
 
 clean(){
-    rm -rf assets tools build AppDir "./LEGO_Island-$(uname -m).AppImage"
+    rm -rf assets tools build AppDir "LEGO_Island-$(uname -m).AppImage"
 }
 
 download(){
@@ -64,7 +64,6 @@ prepare(){
 }
 
 compile(){
-
     NO_STRIP=1 tools/linuxdeploy.AppImage \
         --plugin qt \
         -e build/bin/isle \
