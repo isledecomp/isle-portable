@@ -64,6 +64,7 @@ private:
 	std::vector<C3DTextureCacheEntry> m_textures;
 	std::vector<C3DMeshCacheEntry> m_meshs;
 	ViewportTransform m_viewportTransform;
+	std::vector<SceneLight> m_lights;
 };
 
 inline static void Citro3DRenderer_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx)

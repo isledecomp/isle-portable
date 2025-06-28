@@ -9,30 +9,35 @@
 
 bool g_rendering = false;
 
-#define DISPLAY_TRANSFER_FLAGS                                                                                         \
-	(GX_TRANSFER_FLIP_VERT(0) | GX_TRANSFER_OUT_TILED(0) | GX_TRANSFER_RAW_COPY(0) |                                   \
-	 GX_TRANSFER_IN_FORMAT(GX_TRANSFER_FMT_RGBA8) | GX_TRANSFER_OUT_FORMAT(GX_TRANSFER_FMT_RGB8) |                     \
-	 GX_TRANSFER_SCALING(GX_TRANSFER_SCALE_NO))
-
 static DVLB_s* vshader_dvlb;
 static shaderProgram_s program;
 static int uLoc_projection;
 static int uLoc_modelView;
 static int uLoc_meshColor;
+static int uLoc_lightVec;
+static int uLoc_lightClr;
+static int uLoc_shininess;
 
 Citro3DRenderer::Citro3DRenderer(DWORD width, DWORD height)
 {
-	m_width = 400;
+	m_width = 320;
 	m_height = 240;
 	m_virtualWidth = width;
 	m_virtualHeight = height;
 
 	gfxInitDefault();
-	consoleInit(GFX_BOTTOM, nullptr);
+	consoleInit(GFX_TOP, nullptr);
 	C3D_Init(C3D_DEFAULT_CMDBUF_SIZE);
 
 	m_renderTarget = C3D_RenderTargetCreate(m_height, m_width, GPU_RB_RGBA8, GPU_RB_DEPTH24_STENCIL8);
-	C3D_RenderTargetSetOutput(m_renderTarget, GFX_TOP, GFX_LEFT, DISPLAY_TRANSFER_FLAGS);
+	C3D_RenderTargetSetOutput(
+		m_renderTarget,
+		GFX_BOTTOM,
+		GFX_LEFT,
+		GX_TRANSFER_FLIP_VERT(0) | GX_TRANSFER_OUT_TILED(0) | GX_TRANSFER_RAW_COPY(0) |
+			GX_TRANSFER_IN_FORMAT(GX_TRANSFER_FMT_RGBA8) | GX_TRANSFER_OUT_FORMAT(GX_TRANSFER_FMT_RGB8) |
+			GX_TRANSFER_SCALING(GX_TRANSFER_SCALE_NO)
+	);
 
 	vshader_dvlb = DVLB_ParseFile((u32*) vshader_shbin, vshader_shbin_size);
 	shaderProgramInit(&program);
@@ -44,6 +49,9 @@ Citro3DRenderer::Citro3DRenderer(DWORD width, DWORD height)
 	uLoc_projection = shaderInstanceGetUniformLocation(program.vertexShader, "projection");
 	uLoc_modelView = shaderInstanceGetUniformLocation(program.vertexShader, "modelView");
 	uLoc_meshColor = shaderInstanceGetUniformLocation(program.vertexShader, "meshColor");
+	uLoc_lightVec = shaderInstanceGetUniformLocation(program.vertexShader, "lightVec");
+	uLoc_lightClr = shaderInstanceGetUniformLocation(program.vertexShader, "lightClr");
+	uLoc_shininess = shaderInstanceGetUniformLocation(program.vertexShader, "shininess");
 
 	C3D_AttrInfo* attrInfo = C3D_GetAttrInfo();
 	AttrInfo_Init(attrInfo);
@@ -60,9 +68,9 @@ Citro3DRenderer::~Citro3DRenderer()
 	gfxExit();
 }
 
-void Citro3DRenderer::PushLights(const SceneLight* lightsArray, size_t count)
+void Citro3DRenderer::PushLights(const SceneLight* lights, size_t count)
 {
-	MINIWIN_NOT_IMPLEMENTED();
+	m_lights.assign(lights, lights + count);
 }
 
 void Citro3DRenderer::SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back)
@@ -362,10 +370,59 @@ void Citro3DRenderer::StartFrame()
 	C3D_FrameDrawOn(m_renderTarget);
 }
 
+void ConvertPerspective(const D3DRMMATRIX4D in, C3D_Mtx* out)
+{
+	float f_h = in[0][0];
+	float f_v = in[1][1];
+
+	float aspect = f_v / f_h;
+	float fovY = 2.0f * atanf(1.0f / f_v);
+
+	float nearZ = -in[3][2] / in[2][2];
+	float farZ = nearZ * in[2][2] / (in[2][2] - 1.0f);
+
+	Mtx_PerspTilt(out, fovY, aspect, nearZ, farZ, true);
+}
+
 HRESULT Citro3DRenderer::BeginFrame()
 {
 	StartFrame();
 	C3D_DepthTest(true, GPU_GREATER, GPU_WRITE_ALL);
+
+	C3D_Mtx projection;
+	ConvertPerspective(m_projection, &projection);
+	C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER, uLoc_projection, &projection);
+
+	for (const auto& light : m_lights) {
+		FColor lightColor = light.color;
+		if (light.positional == 0.0f && light.directional == 0.0f) {
+			// Ambient light
+			C3D_FVUnifSet(GPU_VERTEX_SHADER, uLoc_lightClr + 2, lightColor.r, lightColor.g, lightColor.b, 1.0f);
+		}
+		else if (light.directional == 1.0f) {
+			C3D_FVUnifSet(
+				GPU_VERTEX_SHADER,
+				uLoc_lightVec + 1,
+				-light.direction.x,
+				-light.direction.y,
+				-light.direction.z,
+				0.0f
+			);
+			C3D_FVUnifSet(GPU_VERTEX_SHADER, uLoc_lightClr + 1, lightColor.r, lightColor.g, lightColor.b, 0.0f);
+		}
+		else if (light.positional == 1.0f) {
+			C3D_FVUnifSet(
+				GPU_VERTEX_SHADER,
+				uLoc_lightVec + 0,
+				light.position.x,
+				light.position.y,
+				light.position.z,
+				0.0f
+			);
+			C3D_FVUnifSet(GPU_VERTEX_SHADER, uLoc_lightClr + 0, lightColor.r, lightColor.g, lightColor.b, 0.0f);
+		}
+	}
+
 	return S_OK;
 }
 
@@ -384,20 +441,6 @@ void ConvertMatrix(const D3DRMMATRIX4D in, C3D_Mtx* out)
 	}
 }
 
-void ConvertPerspective(const D3DRMMATRIX4D in, C3D_Mtx* out)
-{
-	float f_h = in[0][0];
-	float f_v = in[1][1];
-
-	float aspect = f_v / f_h;
-	float fovY = 2.0f * atanf(1.0f / f_v);
-
-	float nearZ = -in[3][2] / in[2][2];
-	float farZ = nearZ * in[2][2] / (in[2][2] - 1.0f);
-
-	Mtx_PerspTilt(out, fovY, aspect, nearZ, farZ, true);
-}
-
 void Citro3DRenderer::SubmitDraw(
 	DWORD meshId,
 	const D3DRMMATRIX4D& modelViewMatrix,
@@ -407,12 +450,8 @@ void Citro3DRenderer::SubmitDraw(
 	const Appearance& appearance
 )
 {
-	C3D_Mtx projection, modelView;
-
-	ConvertPerspective(m_projection, &projection);
+	C3D_Mtx modelView;
 	ConvertMatrix(modelViewMatrix, &modelView);
-
-	C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER, uLoc_projection, &projection);
 	C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER, uLoc_modelView, &modelView);
 
 	auto& mesh = m_meshs[meshId];
@@ -429,6 +468,8 @@ void Citro3DRenderer::SubmitDraw(
 		appearance.color.b / 255.0f,
 		appearance.color.a / 255.0f
 	);
+
+	C3D_FVUnifSet(GPU_VERTEX_SHADER, uLoc_shininess, appearance.shininess / 255.0f, 0.0f, 0.0f, 0.0f);
 
 	if (appearance.textureId != NO_TEXTURE_ID) {
 		C3D_TexBind(0, &m_textures[appearance.textureId].c3dTex);
@@ -470,6 +511,8 @@ void Citro3DRenderer::Clear(float r, float g, float b)
 void Citro3DRenderer::Flip()
 {
 	C3D_FrameEnd(0);
+	gfxFlushBuffers();
+	gspWaitForVBlank();
 }
 
 void Citro3DRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect)
@@ -489,6 +532,16 @@ void Citro3DRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, con
 	Mtx_Identity(&modelView);
 	C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER, uLoc_modelView, &modelView);
 
+	// Set light directions
+	C3D_FVUnifSet(GPU_VERTEX_SHADER, uLoc_lightVec + 0, 0.0f, 0.0f, 0.0f, 0.0f);
+	C3D_FVUnifSet(GPU_VERTEX_SHADER, uLoc_lightVec + 1, 0.0f, 0.0f, 0.0f, 0.0f);
+
+	// Set light colors
+	C3D_FVUnifSet(GPU_VERTEX_SHADER, uLoc_lightClr + 0, 0.0f, 0.0f, 0.0f, 0.0f);
+	C3D_FVUnifSet(GPU_VERTEX_SHADER, uLoc_lightClr + 1, 0.0f, 0.0f, 0.0f, 0.0f);
+	C3D_FVUnifSet(GPU_VERTEX_SHADER, uLoc_lightClr + 2, 1.0f, 1.0f, 1.0f, 1.0f); // Ambient
+
+	C3D_FVUnifSet(GPU_VERTEX_SHADER, uLoc_shininess, 0.0f, 0.0f, 0.0f, 0.0f);
 	C3D_FVUnifSet(GPU_VERTEX_SHADER, uLoc_meshColor, 1.0f, 1.0f, 1.0f, 1.0f);
 
 	C3DTextureCacheEntry& texture = m_textures[textureId];
