@@ -106,39 +106,42 @@ void Citro3DRenderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* t
 
 static int NearestPowerOfTwoClamp(int val)
 {
-	static const int sizes[] = {512, 256, 128, 64, 32, 16, 8};
+	static const int sizes[] = {8, 16, 32, 64, 128, 256, 512};
 	for (int size : sizes) {
-		if (val >= size) {
+		if (val <= size) {
 			return size;
 		}
 	}
-	return 8;
+	return 512;
 }
 
-static SDL_Surface* ConvertAndResizeSurface(SDL_Surface* original)
+static SDL_Surface* ConvertAndResizeSurface(SDL_Surface* original, bool isUI, float scale)
 {
 	SDL_Surface* converted = SDL_ConvertSurface(original, SDL_PIXELFORMAT_RGBA8888);
 	if (!converted) {
 		return nullptr;
 	}
-
-	int newW = NearestPowerOfTwoClamp(converted->w);
-	int newH = converted->h == 480 ? 256 : NearestPowerOfTwoClamp(converted->h);
-
-	if (converted->w == newW && converted->h == newH) {
+	if (!isUI) {
 		return converted;
 	}
 
-	SDL_Surface* resized = SDL_CreateSurface(newW, newH, SDL_PIXELFORMAT_RGBA8888);
-	if (!resized) {
+	int scaledW = static_cast<int>(converted->w * scale);
+	int scaledH = static_cast<int>(converted->h * scale);
+
+	int paddedW = NearestPowerOfTwoClamp(scaledW);
+	int paddedH = NearestPowerOfTwoClamp(scaledH);
+
+	SDL_Surface* padded = SDL_CreateSurface(paddedW, paddedH, SDL_PIXELFORMAT_RGBA8888);
+	if (!padded) {
 		SDL_DestroySurface(converted);
 		return nullptr;
 	}
 
-	SDL_BlitSurfaceScaled(converted, nullptr, resized, nullptr, SDL_SCALEMODE_NEAREST);
-
+	SDL_Rect dstRect = {0, 0, scaledW, scaledH};
+	SDL_BlitSurfaceScaled(converted, nullptr, padded, &dstRect, SDL_SCALEMODE_LINEAR);
 	SDL_DestroySurface(converted);
-	return resized;
+
+	return padded;
 }
 
 inline int mortonInterleave(int x, int y)
@@ -183,9 +186,9 @@ static void EncodeTextureLayout(const u8* src, u8* dst, int width, int height)
 	}
 }
 
-static bool ConvertAndUploadTexture(C3D_Tex* tex, SDL_Surface* originalSurface)
+static bool ConvertAndUploadTexture(C3D_Tex* tex, SDL_Surface* originalSurface, bool isUI, float scale)
 {
-	SDL_Surface* resized = ConvertAndResizeSurface(originalSurface);
+	SDL_Surface* resized = ConvertAndResizeSurface(originalSurface, isUI, scale);
 	if (!resized) {
 		return false;
 	}
@@ -193,12 +196,17 @@ static bool ConvertAndUploadTexture(C3D_Tex* tex, SDL_Surface* originalSurface)
 	int width = resized->w;
 	int height = resized->h;
 
-	if (!C3D_TexInit(tex, width, height, GPU_RGBA8)) {
+	C3D_TexInitParams params = {};
+	params.width = width;
+	params.height = height;
+	params.format = GPU_RGBA8;
+	params.maxLevel = 4;
+	params.type = GPU_TEX_2D;
+	if (!C3D_TexInitWithParams(tex, nullptr, params)) {
 		SDL_DestroySurface(resized);
 		return false;
 	}
 
-	// Allocate buffer for tiled texture
 	uint8_t* tiledData = (uint8_t*) malloc(width * height * 4);
 	if (!tiledData) {
 		SDL_DestroySurface(resized);
@@ -206,16 +214,26 @@ static bool ConvertAndUploadTexture(C3D_Tex* tex, SDL_Surface* originalSurface)
 	}
 
 	EncodeTextureLayout((const u8*) resized->pixels, tiledData, width, height);
+	SDL_DestroySurface(resized);
 
 	C3D_TexUpload(tex, tiledData);
-	C3D_TexSetFilter(tex, GPU_LINEAR, GPU_NEAREST);
-
 	free(tiledData);
-	SDL_DestroySurface(resized);
+
+	if (isUI) {
+		C3D_TexSetFilter(tex, GPU_NEAREST, GPU_NEAREST);
+		C3D_TexSetWrap(tex, GPU_CLAMP_TO_EDGE, GPU_CLAMP_TO_EDGE);
+	}
+	else {
+		C3D_TexSetFilter(tex, GPU_LINEAR, GPU_LINEAR);
+		C3D_TexSetWrap(tex, GPU_REPEAT, GPU_REPEAT);
+		C3D_TexSetFilterMipmap(tex, GPU_LINEAR);
+		C3D_TexGenerateMipmap(tex, GPU_TEXFACE_2D);
+	}
+
 	return true;
 }
 
-Uint32 Citro3DRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
+Uint32 Citro3DRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi)
 {
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
 	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
@@ -229,13 +247,13 @@ Uint32 Citro3DRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 		if (tex.texture == texture) {
 			if (tex.version != texture->m_version) {
 				C3D_TexDelete(&tex.c3dTex);
-				if (!ConvertAndUploadTexture(&tex.c3dTex, originalSurface)) {
+				if (!ConvertAndUploadTexture(&tex.c3dTex, originalSurface, isUi, m_viewportTransform.scale)) {
 					return NO_TEXTURE_ID;
 				}
 
 				tex.version = texture->m_version;
-				tex.width = originalW;
-				tex.height = originalH;
+				tex.width = NearestPowerOfTwoClamp(originalW * m_viewportTransform.scale);
+				tex.height = NearestPowerOfTwoClamp(originalH * m_viewportTransform.scale);
 			}
 			return i;
 		}
@@ -244,10 +262,10 @@ Uint32 Citro3DRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 	C3DTextureCacheEntry entry;
 	entry.texture = texture;
 	entry.version = texture->m_version;
-	entry.width = originalW;
-	entry.height = originalH;
+	entry.width = NearestPowerOfTwoClamp(originalW * m_viewportTransform.scale);
+	entry.height = NearestPowerOfTwoClamp(originalH * m_viewportTransform.scale);
 
-	if (!ConvertAndUploadTexture(&entry.c3dTex, originalSurface)) {
+	if (!ConvertAndUploadTexture(&entry.c3dTex, originalSurface, isUi, m_viewportTransform.scale)) {
 		return NO_TEXTURE_ID;
 	}
 
@@ -550,19 +568,17 @@ void Citro3DRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, con
 	C3D_TexEnvSrc(env, C3D_Both, GPU_TEXTURE0, GPU_PRIMARY_COLOR, GPU_PRIMARY_COLOR);
 	C3D_TexEnvFunc(env, C3D_Both, GPU_MODULATE);
 
-	// Use dstRect size directly for quad size
-	float quadW = static_cast<float>(dstRect.w);
-	float quadH = static_cast<float>(dstRect.h);
+	float scale = m_viewportTransform.scale;
 
 	float x1 = static_cast<float>(dstRect.x);
 	float y1 = static_cast<float>(dstRect.y);
-	float x2 = x1 + quadW;
-	float y2 = y1 + quadH;
+	float x2 = x1 + static_cast<float>(dstRect.w);
+	float y2 = y1 + static_cast<float>(dstRect.h);
 
-	float u0 = static_cast<float>(srcRect.x) / texture.width;
-	float u1 = static_cast<float>(srcRect.x + srcRect.w) / texture.width;
-	float v0 = static_cast<float>(srcRect.y) / texture.height;
-	float v1 = static_cast<float>(srcRect.y + srcRect.h) / texture.height;
+	float u0 = (srcRect.x * scale) / texture.width;
+	float u1 = ((srcRect.x + srcRect.w) * scale) / texture.width;
+	float v0 = (srcRect.y * scale) / texture.height;
+	float v1 = ((srcRect.y + srcRect.h) * scale) / texture.height;
 
 	C3D_ImmDrawBegin(GPU_TRIANGLES);
 

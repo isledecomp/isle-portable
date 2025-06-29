@@ -76,7 +76,7 @@ void DirectX9Renderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* 
 	);
 }
 
-Uint32 DirectX9Renderer::GetTextureId(IDirect3DRMTexture* iTexture)
+Uint32 DirectX9Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi)
 {
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
 	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
