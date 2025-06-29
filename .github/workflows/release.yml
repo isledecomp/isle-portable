@@ -46,7 +46,7 @@ jobs:
           sudo apt-get install -y \
             libx11-dev libxext-dev libxrandr-dev libxrender-dev libxfixes-dev libxi-dev libxinerama-dev \
             libxcursor-dev libwayland-dev libxkbcommon-dev wayland-protocols libgl1-mesa-dev qt6-base-dev \
-            libasound2-dev
+            libasound2-dev qt6-xdgdesktopportal-platformtheme
 
       - name: Install macOS dependencies (brew)
         if: ${{ matrix.brew }}
@@ -84,12 +84,36 @@ jobs:
           cd build
           cpack .
 
+      - name: Install linuxdeploy
+        if: ${{ matrix.linux }}
+        id: install-linuxdeploy
+        uses: miurahr/install-linuxdeploy-action@v1.8.0
+        with:
+          plugins: qt appimage
+
+      - name: Package (AppImage)
+        if: ${{ matrix.linux }}
+        run: |
+          cd build && \
+          export LD_LIBRARY_PATH=".:$LD_LIBRARY_PATH" && \
+          NO_STRIP=1 ${{ steps.install-linuxdeploy.outputs.linuxdeploy }} \
+            -p qt \
+            -e isle \
+            -e isle-config \
+            -d packaging/linux/org.legoisland.Isle.desktop \
+            -i icons/org.legoisland.Isle.svg \
+            --custom-apprun=../packaging/linux/appimage/AppRun \
+            --appdir packaging/linux/appimage/AppDir \
+            --output appimage && \
+          mv *.AppImage dist/
+
       - name: Upload Artifact
         uses: actions/upload-artifact@main
         with:
           name: Release-${{ matrix.name }}
           path: |
             build/dist/isle-*
+            build/dist/*.AppImage
 
   flatpak:
     name: "Flatpak (${{ matrix.arch }})"
@@ -118,7 +142,7 @@ jobs:
           bundle: org.legoisland.Isle.${{ matrix.arch }}.flatpak
           manifest-path: packaging/linux/flatpak/org.legoisland.Isle.json
           arch: ${{ matrix.arch }}
-  
+
   release:
     name: 'Release'
     runs-on: ubuntu-latest
