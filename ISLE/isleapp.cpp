@@ -51,7 +51,10 @@
 #endif
 
 #ifdef __3DS__
+#include "3ds/apthooks.h"
 #include "3ds/filesystem.h"
+
+aptHookCookie g_aptCookie;
 #endif
 
 DECOMP_SIZE_ASSERT(IsleApp, 0x8c)
@@ -318,6 +321,11 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 		NULL
 	);
 #endif
+
+#ifdef __3DS__
+	aptHook(&g_aptCookie, N3DS_AptHookCallback, NULL);
+#endif
+
 	return SDL_APP_CONTINUE;
 }
 

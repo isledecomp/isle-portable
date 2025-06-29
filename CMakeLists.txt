@@ -647,6 +647,7 @@ set(CPACK_PACKAGE_DIRECTORY "dist")
 set(CPACK_PACKAGE_FILE_NAME "isle-${PROJECT_VERSION}-${ISLE_PACKAGE_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
 if(NINTENDO_3DS)
   target_sources(isle PRIVATE
+    ISLE/3ds/apthooks.cpp
     ISLE/3ds/filesystem.cpp
   )
   ctr_generate_smdh(isle.smdh
