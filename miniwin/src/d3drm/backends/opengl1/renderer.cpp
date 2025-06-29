@@ -13,6 +13,12 @@
 
 Direct3DRMRenderer* OpenGL1Renderer::Create(DWORD width, DWORD height)
 {
+	// We have to reset the attributes here after having enumerated the
+	// OpenGL ES 2.0 renderer, or else SDL gets very confused by SDL_GL_DEPTH_SIZE
+	// call below when on an EGL-based backend, and crashes with EGL_BAD_MATCH.
+	SDL_GL_ResetAttributes();
+	// But ResetAttributes resets it to 16.
+	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
@@ -27,8 +33,6 @@ Direct3DRMRenderer* OpenGL1Renderer::Create(DWORD width, DWORD height)
 		}
 		testWindow = true;
 	}
-
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
 	SDL_GLContext context = SDL_GL_CreateContext(window);
 	if (!context) {
