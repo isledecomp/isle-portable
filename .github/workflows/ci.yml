@@ -91,7 +91,7 @@ jobs:
           ${{ matrix.cmake-wrapper || '' }} cmake -S . -B build -GNinja \
             -DCMAKE_BUILD_TYPE=Release \
             -DISLE_USE_DX5=${{ !!matrix.dx5 }} \
-            -DISLE_BUILD_CONFIG=${{ matrix.config }} \
+            -DISLE_BUILD_CONFIG=${{ !!matrix.config }} \
             -DENABLE_CLANG_TIDY=${{ !!matrix.clang-tidy  }} \
             -DISLE_WERROR=${{ !!matrix.werror }} \
             -DISLE_DEBUG=OFF \
@@ -214,7 +214,7 @@ jobs:
       - name: Download All Artifacts
         uses: actions/download-artifact@main
         with:
-          pattern: "{Release-*,*.flatpak}"
+          pattern: "*"
           path: Release
           merge-multiple: true
 
