@@ -50,6 +50,10 @@
 #include "emscripten/messagebox.h"
 #endif
 
+#ifdef __3DS__
+#include "3ds/filesystem.h"
+#endif
+
 DECOMP_SIZE_ASSERT(IsleApp, 0x8c)
 
 // GLOBAL: ISLE 0x410030
@@ -824,6 +828,9 @@ bool IsleApp::LoadConfig()
 		iniparser_set(dict, "isle:Max Allowed Extras", SDL_itoa(m_maxAllowedExtras, buf, 10));
 		iniparser_set(dict, "isle:Transition Type", SDL_itoa(m_transitionType, buf, 10));
 
+#ifdef __3DS__
+		N3DS_SetupDefaultConfigOverrides(dict);
+#endif
 		iniparser_dump_ini(dict, iniFP);
 		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "New config written at '%s'", iniConfig);
 		fclose(iniFP);
