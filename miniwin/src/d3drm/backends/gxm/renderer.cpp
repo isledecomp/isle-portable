@@ -1,7 +1,9 @@
 #include "d3drmrenderer_gxm.h"
-#include "memory.h"
+#include "gxm_memory.h"
 #include "meshutils.h"
 #include "utils.h"
+#include "razor.h"
+#include "tlsf.h"
 
 #include <SDL3/SDL.h>
 #include <algorithm>
@@ -14,6 +16,7 @@
 #include "incbin.h"
 
 bool with_razor = false;
+bool with_razor_hud = false;
 
 #define VITA_GXM_SCREEN_WIDTH 960
 #define VITA_GXM_SCREEN_HEIGHT 544
@@ -22,6 +25,9 @@ bool with_razor = false;
 
 #define VITA_GXM_COLOR_FORMAT SCE_GXM_COLOR_FORMAT_A8B8G8R8
 #define VITA_GXM_PIXEL_FORMAT SCE_DISPLAY_PIXELFORMAT_A8B8G8R8
+
+#define CDRAM_POOL_SIZE 64*1024*1024
+
 
 INCBIN(main_vert_gxp, "shaders/main.vert.gxp");
 INCBIN(main_frag_gxp, "shaders/main.frag.gxp");
@@ -53,9 +59,6 @@ static const SceGxmBlendInfo blendInfoTransparent = {
 	.alphaDst = SCE_GXM_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
 };
 
-extern "C" int sceRazorGpuCaptureSetTrigger(int frames, const char* path);
-extern "C" int sceRazorGpuCaptureEnableSalvage(const char* path);
-extern "C" int sceRazorGpuCaptureSetTriggerNextFrame(const char* path);
 
 static GXMRendererContext gxm_renderer_context;
 
@@ -77,11 +80,18 @@ static void display_callback(const void* callback_data)
 
 static void load_razor()
 {
-	int mod_id = _sceKernelLoadModule("app0:librazorcapture_es4.suprx", 0, nullptr);
 	int status;
+	int mod_id = _sceKernelLoadModule("app0:librazorcapture_es4.suprx", 0, nullptr);
 	if (!SCE_ERR(sceKernelStartModule, mod_id, 0, nullptr, 0, nullptr, &status)) {
 		with_razor = true;
 	}
+
+	/*
+	int mod_id_hud = _sceKernelLoadModule("app0:librazorhud_es4.suprx", 0, nullptr);
+	if (!SCE_ERR(sceKernelStartModule, mod_id_hud, 0, nullptr, 0, nullptr, &status)) {
+		with_razor_hud = true;
+	}
+	*/
 
 	if (with_razor) {
 		sceRazorGpuCaptureEnableSalvage("ux0:data/gpu_crash.sgx");
@@ -111,8 +121,64 @@ bool gxm_init()
 		return err;
 	}
 	gxm_initialized = true;
+	return true;
+}
 
-	return cdramPool_init();
+static SceUID cdramAllocatorUID = -1;
+static tlsf_t cdramAllocator = nullptr;
+
+bool cdram_allocator_create() {
+	int ret;
+
+	ret = sceKernelAllocMemBlock(
+		"gpu_cdram_pool",
+		SCE_KERNEL_MEMBLOCK_TYPE_USER_CDRAM_RW,
+		CDRAM_POOL_SIZE,
+		NULL
+	);
+	if (ret < 0) {
+		sceClibPrintf("sceKernelAllocMemBlock failed: %08x\n", ret);
+		return false;
+	}
+	cdramAllocatorUID = ret;
+
+	void* mem;
+	ret = sceKernelGetMemBlockBase(cdramAllocatorUID, &mem);
+	if (ret < 0) {
+		sceClibPrintf("sceKernelGetMemBlockBase failed: %08x\n", ret);
+		return false;
+	}
+
+	ret = sceGxmMapMemory(
+		mem,
+		CDRAM_POOL_SIZE,
+		(SceGxmMemoryAttribFlags) (SCE_GXM_MEMORY_ATTRIB_READ | SCE_GXM_MEMORY_ATTRIB_WRITE)
+	);
+	if (ret < 0) {
+		sceClibPrintf("sceGxmMapMemory failed: %08x\n", ret);
+		return false;
+	}
+
+	cdramAllocator = SDL_malloc(tlsf_size());
+	tlsf_create(cdramAllocator);
+	tlsf_add_pool(cdramAllocator, mem, CDRAM_POOL_SIZE);
+	return true;
+}
+
+int inuse_mem = 0;
+
+inline void* cdram_alloc(size_t size, size_t align) {
+	sceClibPrintf("cdram_alloc(%d, %d) inuse=%d ", size, align, inuse_mem);
+	void* ptr = tlsf_memalign(cdramAllocator, align, size);
+	sceClibPrintf("ptr=%p\n", ptr);
+	inuse_mem += tlsf_block_size(ptr);
+	return ptr;
+}
+
+inline void cdram_free(void* ptr) {
+	inuse_mem -= tlsf_block_size(ptr);
+	sceClibPrintf("cdram_free(%p)\n", ptr);
+	tlsf_free(cdramAllocator, ptr);
 }
 
 static bool create_gxm_context()
@@ -129,12 +195,6 @@ static bool create_gxm_context()
 	const unsigned int patcherBufferSize = 64 * 1024;
 	const unsigned int patcherVertexUsseSize = 64 * 1024;
 	const unsigned int patcherFragmentUsseSize = 64 * 1024;
-
-	data->cdramPool = cdramPool_get();
-	if (!data->cdramPool) {
-		SDL_Log("failed to allocate cdramPool");
-		return false;
-	}
 
 	// allocate buffers
 	data->vdmRingBuffer = vita_mem_alloc(
@@ -242,14 +302,13 @@ static void destroy_gxm_context()
 	SDL_free(gxm_renderer_context.contextHostMem);
 }
 
-bool get_gxm_context(SceGxmContext** context, SceGxmShaderPatcher** shaderPatcher, SceClibMspace* cdramPool)
+bool get_gxm_context(SceGxmContext** context, SceGxmShaderPatcher** shaderPatcher)
 {
 	if (!create_gxm_context()) {
 		return false;
 	}
 	*context = gxm_renderer_context.context;
 	*shaderPatcher = gxm_renderer_context.shaderPatcher;
-	*cdramPool = gxm_renderer_context.cdramPool;
 	return true;
 }
 
@@ -284,8 +343,6 @@ static void CreateOrthoMatrix(float left, float right, float bottom, float top, 
 
 Direct3DRMRenderer* GXMRenderer::Create(DWORD width, DWORD height)
 {
-	SDL_Log("GXMRenderer::Create width=%d height=%d", width, height);
-
 	bool success = gxm_init();
 	if (!success) {
 		return nullptr;
@@ -306,7 +363,12 @@ GXMRenderer::GXMRenderer(DWORD width, DWORD height)
 	const unsigned int sampleCount = alignedWidth * alignedHeight;
 	const unsigned int depthStrideInSamples = alignedWidth;
 
-	if (!get_gxm_context(&this->context, &this->shaderPatcher, &this->cdramPool)) {
+	if (!get_gxm_context(&this->context, &this->shaderPatcher)) {
+		return;
+	}
+
+	if(!cdram_allocator_create()) {
+		sceClibPrintf("failed to create cdram allocator");
 		return;
 	}
 
@@ -533,11 +595,11 @@ GXMRenderer::GXMRenderer(DWORD width, DWORD height)
 	// clear uniforms
 	this->colorShader_uColor = sceGxmProgramFindParameterByName(colorFragmentProgramGxp, "uColor"); // vec4
 
-	this->lights = static_cast<decltype(this->lights)>(sceClibMspaceMalloc(this->cdramPool, sizeof(*this->lights)));
+	this->lights = static_cast<decltype(this->lights)>(cdram_alloc(sizeof(*this->lights), 4));
 	for (int i = 0; i < VITA_GXM_UNIFORM_BUFFER_COUNT; i++) {
-		this->quadVertices[i] = (Vertex*) sceClibMspaceMalloc(this->cdramPool, sizeof(Vertex) * 4 * 50);
+		this->quadVertices[i] = static_cast<Vertex*>(cdram_alloc(sizeof(Vertex) * 4 * 50, 4));
 	}
-	this->quadIndices = (uint16_t*) sceClibMspaceMalloc(this->cdramPool, sizeof(uint16_t) * 4);
+	this->quadIndices = static_cast<uint16_t*>(cdram_alloc(sizeof(uint16_t) * 4, 4));
 	this->quadIndices[0] = 0;
 	this->quadIndices[1] = 1;
 	this->quadIndices[2] = 2;
@@ -549,6 +611,21 @@ GXMRenderer::GXMRenderer(DWORD width, DWORD height)
 		this->fragmentNotifications[i].value = 0;
 		this->vertexNotifications[i].address = notificationMem + (i * 2) + 1;
 		this->vertexNotifications[i].value = 0;
+	}
+
+	int count;
+	auto ids = SDL_GetGamepads(&count);
+	for(int i = 0; i < count; i++) {
+		auto id = ids[i];
+		auto gamepad = SDL_OpenGamepad(id);
+		if(gamepad != nullptr) {
+			this->gamepad = gamepad;
+			break;
+		}
+	}
+
+	if(with_razor_hud) {
+		sceRazorGpuTraceSetFilename("ux0:data/gpu_trace", 3);
 	}
 
 	m_initialized = true;
@@ -600,7 +677,9 @@ void GXMRenderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* textu
 			auto* ctx = static_cast<TextureDestroyContextGXM*>(arg);
 			auto& cache = ctx->renderer->m_textures[ctx->textureId];
 			void* textureData = sceGxmTextureGetData(&cache.gxmTexture);
-			sceClibMspaceFree(ctx->renderer->cdramPool, textureData);
+			cdram_free(textureData);
+			cache.texture = nullptr;
+			memset(&cache.gxmTexture, 0, sizeof(cache.gxmTexture));
 			delete ctx;
 		},
 		ctx
@@ -610,72 +689,121 @@ void GXMRenderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* textu
 static void convertTextureMetadata(
 	SDL_Surface* surface,
 	bool* supportedFormat,
-	SceGxmTextureFormat* textureFormat,
-	size_t* textureSize,
-	size_t* textureAlignment,
-	size_t* textureStride
+	SceGxmTextureFormat* gxmTextureFormat,
+	size_t* textureSize, // size in bytes
+	size_t* textureAlignment, // alignment in bytes
+	size_t* textureStride, // stride in bytes
+	size_t* paletteOffset // offset from textureData in bytes
 )
 {
-	*supportedFormat = true;
-	*textureAlignment = SCE_GXM_TEXTURE_ALIGNMENT;
+	int bytesPerPixel;
+	size_t extraDataSize = 0;
 	switch (surface->format) {
-	case SDL_PIXELFORMAT_ABGR8888: {
-		*textureFormat = SCE_GXM_TEXTURE_FORMAT_U8U8U8U8_ABGR;
-		*textureSize = surface->h * surface->pitch;
-		*textureStride = surface->pitch;
-		break;
+		case SDL_PIXELFORMAT_INDEX8: {
+			*supportedFormat = true;
+			*gxmTextureFormat = SCE_GXM_TEXTURE_FORMAT_P8_ABGR;
+			int pixelsSize = surface->w * surface->h;
+			int alignBytes = ALIGNMENT(pixelsSize, SCE_GXM_PALETTE_ALIGNMENT);
+			extraDataSize = alignBytes + 256 * 4;
+			*textureAlignment = SCE_GXM_PALETTE_ALIGNMENT;
+			*paletteOffset = pixelsSize + alignBytes;
+			bytesPerPixel = 1;
+			break;
+		}
+		case SDL_PIXELFORMAT_ABGR8888: {
+			*supportedFormat = true;
+			*gxmTextureFormat = SCE_GXM_TEXTURE_FORMAT_U8U8U8U8_ABGR;
+			*textureAlignment = SCE_GXM_TEXTURE_ALIGNMENT;
+			bytesPerPixel = 4;
+			break;
+		}
+		default: {
+			*supportedFormat = false;
+			*gxmTextureFormat = SCE_GXM_TEXTURE_FORMAT_U8U8U8U8_ABGR;
+			*textureAlignment = SCE_GXM_TEXTURE_ALIGNMENT;
+			bytesPerPixel = 4;
+			break;
+		}
 	}
-	/*
-	case SDL_PIXELFORMAT_INDEX8: {
-		*textureFormat = SCE_GXM_TEXTURE_FORMAT_P8_ABGR;
-		int pixelsSize = surface->h * surface->pitch;
-		int alignBytes = ALIGNMENT(pixelsSize, SCE_GXM_PALETTE_ALIGNMENT);
-		*textureSize = pixelsSize + alignBytes + 0xff;
-		*textureAlignment = SCE_GXM_PALETTE_ALIGNMENT;
-		*textureStride = surface->pitch;
-		break;
-	}
-	*/
-	default: {
-		*supportedFormat = false;
-	}
-	}
+	*textureStride = ALIGN(surface->w, 8)*bytesPerPixel;
+	*textureSize = (*textureStride)*surface->h+extraDataSize;
 }
 
-void copySurfaceTo(SDL_Surface* src, void* dstData, size_t textureStride)
+void copySurfaceToGxm(DirectDrawSurfaceImpl* surface, uint8_t* textureData, size_t dstStride, size_t dstSize)
 {
-	SDL_Surface* dst = SDL_CreateSurfaceFrom(src->w, src->h, SDL_PIXELFORMAT_ABGR8888, dstData, textureStride);
-	SDL_BlitSurface(src, nullptr, dst, nullptr);
-	SDL_DestroySurface(dst);
+	SDL_Surface* src = surface->m_surface;
+	switch(src->format) {
+		case SDL_PIXELFORMAT_ABGR8888: {
+			for(int y = 0; y < src->h; y++) {
+				uint8_t* srcRow = (uint8_t*)src->pixels + (y*src->pitch);
+				uint8_t* dstRow = textureData + (y*dstStride);
+				size_t rowSize = src->w*4;
+				if((dstRow - textureData)+rowSize > dstSize) {
+					sceClibPrintf("buffer overrun!!! size=%d y=%d rowSize=%d\n", dstSize, y, rowSize);
+				}
+				memcpy(dstRow, srcRow, rowSize);
+			}
+			break;
+		}
+		case SDL_PIXELFORMAT_INDEX8: {
+			LPDIRECTDRAWPALETTE _palette;
+			surface->GetPalette(&_palette);
+			auto palette = static_cast<DirectDrawPaletteImpl*>(_palette);
+			
+			// copy pixels
+			for(int y = 0; y < src->h; y++) {
+				void* srcRow = static_cast<uint8_t*>(src->pixels) + (y*src->pitch);
+				void* dstRow = static_cast<uint8_t*>(textureData) + (y*dstStride);
+				memcpy(dstRow, srcRow, src->w);
+			}
+
+			int pixelsSize = src->w * src->h;
+			int alignBytes = ALIGNMENT(pixelsSize, SCE_GXM_PALETTE_ALIGNMENT);
+			uint8_t* paletteData = textureData + pixelsSize + alignBytes;
+			memcpy(paletteData, palette->m_palette->colors, 256 * 4);
+			if((paletteData-textureData) + 256*4 > dstSize) {
+				sceClibPrintf("buffer overrun!!! textureData=%p paletteData=%p size=%d\n", textureData, paletteData, dstSize);
+			}
+			palette->Release();
+			break;
+		}
+		default: {
+			sceClibPrintf("unsupported format %d\n", SDL_GetPixelFormatName(src->format));
+			SDL_Surface* dst = SDL_CreateSurfaceFrom(src->w, src->h, SDL_PIXELFORMAT_ABGR8888, textureData, src->w*4);
+			SDL_BlitSurface(src, nullptr, dst, nullptr);
+			SDL_DestroySurface(dst);
+			break;
+		}
+	}
 }
 
 Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 {
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
 	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
-
+	
 	bool supportedFormat;
+	SceGxmTextureFormat gxmTextureFormat;
 	size_t textureSize;
 	size_t textureAlignment;
 	size_t textureStride;
-	SceGxmTextureFormat textureFormat;
+	size_t paletteOffset;
+
 	int textureWidth = surface->m_surface->w;
 	int textureHeight = surface->m_surface->h;
 
 	convertTextureMetadata(
 		surface->m_surface,
 		&supportedFormat,
-		&textureFormat,
+		&gxmTextureFormat,
 		&textureSize,
 		&textureAlignment,
-		&textureStride
+		&textureStride,
+		&paletteOffset
 	);
 
-	if (!supportedFormat) {
-		textureAlignment = SCE_GXM_TEXTURE_ALIGNMENT;
-		textureStride = textureWidth * 4;
-		textureSize = textureHeight * textureStride;
-		textureFormat = SCE_GXM_TEXTURE_FORMAT_U8U8U8U8_ABGR;
+	if(!supportedFormat) {
+		return NO_TEXTURE_ID;
 	}
 
 	for (Uint32 i = 0; i < m_textures.size(); ++i) {
@@ -683,69 +811,42 @@ Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 		if (tex.texture == texture) {
 			if (tex.version != texture->m_version) {
 				void* textureData = sceGxmTextureGetData(&tex.gxmTexture);
-				if (!supportedFormat) {
-					copySurfaceTo(surface->m_surface, textureData, textureStride);
-				}
-				else {
-					memcpy(textureData, surface->m_surface->pixels, textureSize);
-				}
+				copySurfaceToGxm(surface, (uint8_t*)textureData, textureStride, textureSize);
 				tex.version = texture->m_version;
 			}
 			return i;
 		}
 	}
 
-	SDL_Log(
-		"Create Texture %s w=%d h=%d s=%d",
+	sceClibPrintf("Create Texture %s w=%d h=%d s=%d size=%d align=%d\n",
 		SDL_GetPixelFormatName(surface->m_surface->format),
 		textureWidth,
 		textureHeight,
-		textureStride
+		textureStride,
+		textureSize,
+		textureAlignment
 	);
 
 	// allocate gpu memory
-	void* textureData = sceClibMspaceMemalign(this->cdramPool, textureAlignment, textureSize);
-	uint8_t* paletteData = nullptr;
-
-	if (!supportedFormat) {
-		SDL_Log(
-			"unsupported SDL texture format %s, falling back on SDL_PIXELFORMAT_ABGR8888",
-			SDL_GetPixelFormatName(surface->m_surface->format)
-		);
-		copySurfaceTo(surface->m_surface, textureData, textureStride);
-	}
-	else if (surface->m_surface->format == SDL_PIXELFORMAT_INDEX8) {
-		LPDIRECTDRAWPALETTE _palette;
-		surface->GetPalette(&_palette);
-		auto palette = static_cast<DirectDrawPaletteImpl*>(_palette);
-
-		int pixelsSize = surface->m_surface->w * surface->m_surface->h;
-		int alignBytes = ALIGNMENT(pixelsSize, SCE_GXM_PALETTE_ALIGNMENT);
-		SDL_Log("copying indexed texture data from=%p to=%p", surface->m_surface->pixels, textureData);
-		memcpy(textureData, surface->m_surface->pixels, pixelsSize);
-
-		paletteData = (uint8_t*) textureData + pixelsSize + alignBytes;
-		memcpy(paletteData, palette->m_palette->colors, palette->m_palette->ncolors * sizeof(SDL_Color));
-	}
-	else {
-		SDL_Log("copying texture data from=%p to=%p", surface->m_surface->pixels, textureData);
-		memcpy(textureData, surface->m_surface->pixels, textureSize);
-	}
+	void* textureData = cdram_alloc(textureSize, textureAlignment);
+	copySurfaceToGxm(surface, (uint8_t*)textureData, textureStride, textureSize);
 
 	SceGxmTexture gxmTexture;
 	SCE_ERR(
-		sceGxmTextureInitLinearStrided,
+		sceGxmTextureInitLinear,
 		&gxmTexture,
 		textureData,
-		textureFormat,
+		gxmTextureFormat,
 		textureWidth,
 		textureHeight,
-		textureStride
+		0
 	);
-	// sceGxmTextureSetMinFilter(&gxmTexture, SCE_GXM_TEXTURE_FILTER_LINEAR);
+	sceGxmTextureSetMinFilter(&gxmTexture, SCE_GXM_TEXTURE_FILTER_LINEAR);
 	sceGxmTextureSetMagFilter(&gxmTexture, SCE_GXM_TEXTURE_FILTER_LINEAR);
-	if (paletteData) {
-		sceGxmTextureSetPalette(&gxmTexture, paletteData);
+	sceGxmTextureSetUAddrMode(&gxmTexture, SCE_GXM_TEXTURE_ADDR_REPEAT);
+	sceGxmTextureSetVAddrMode(&gxmTexture, SCE_GXM_TEXTURE_ADDR_REPEAT);
+	if (gxmTextureFormat == SCE_GXM_TEXTURE_FORMAT_P8_ABGR) {
+		sceGxmTextureSetPalette(&gxmTexture, (uint8_t*)textureData + paletteOffset);
 	}
 
 	for (Uint32 i = 0; i < m_textures.size(); ++i) {
@@ -754,7 +855,6 @@ Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
 			tex.texture = texture;
 			tex.version = texture->m_version;
 			tex.gxmTexture = gxmTexture;
-			tex.textureSize = textureSize;
 			AddTextureDestroyCallback(i, texture);
 			return i;
 		}
@@ -795,7 +895,7 @@ GXMMeshCacheEntry GXMRenderer::GXMUploadMesh(const MeshGroup& meshGroup)
 
 	size_t vertexBufferSize = sizeof(Vertex) * vertices.size();
 	size_t indexBufferSize = sizeof(uint16_t) * indices.size();
-	void* meshData = sceClibMspaceMemalign(this->cdramPool, 4, vertexBufferSize + indexBufferSize);
+	void* meshData = cdram_alloc(vertexBufferSize + indexBufferSize, 4);
 
 	Vertex* vertexBuffer = (Vertex*) meshData;
 	uint16_t* indexBuffer = (uint16_t*) ((uint8_t*) meshData + vertexBufferSize);
@@ -845,7 +945,11 @@ void GXMRenderer::AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh)
 			auto* ctx = static_cast<GXMMeshDestroyContext*>(arg);
 			auto& cache = ctx->renderer->m_meshes[ctx->id];
 			cache.meshGroup = nullptr;
-			sceClibMspaceFree(ctx->renderer->cdramPool, cache.meshData);
+			cdram_free(cache.meshData);
+			cache.meshData = nullptr;
+			cache.indexBuffer = nullptr;
+			cache.vertexBuffer = nullptr;
+			cache.indexCount = 0;
 			delete ctx;
 		},
 		ctx
@@ -900,12 +1004,59 @@ const char* GXMRenderer::GetName()
 }
 
 bool razor_triggered = false;
+bool razor_live_started = false;
+bool razor_display_enabled = true;
 
 void GXMRenderer::StartScene()
 {
 	if (sceneStarted) {
 		return;
 	}
+
+	bool dpad_up = SDL_GetGamepadButton(this->gamepad, SDL_GAMEPAD_BUTTON_DPAD_UP);
+	bool dpad_down = SDL_GetGamepadButton(this->gamepad, SDL_GAMEPAD_BUTTON_DPAD_DOWN);
+	bool dpad_left = SDL_GetGamepadButton(this->gamepad, SDL_GAMEPAD_BUTTON_DPAD_LEFT);
+	bool dpad_right = SDL_GetGamepadButton(this->gamepad, SDL_GAMEPAD_BUTTON_DPAD_RIGHT);
+
+	// hud display
+	if(with_razor_hud && dpad_up != this->button_dpad_up) {
+		this->button_dpad_up = dpad_up;
+		if(dpad_up) {
+			sceRazorHudSetDisplayEnabled(razor_display_enabled);
+		}
+	}
+
+	// capture frame
+	if(with_razor && dpad_down != this->button_dpad_down) {
+		this->button_dpad_down = dpad_down;
+		if(dpad_down) {
+			sceRazorGpuCaptureSetTriggerNextFrame("ux0:/data/capture.sgx");
+			SDL_Log("trigger razor");
+		}
+	}
+
+	// toggle live
+	if(with_razor_hud && dpad_left != this->button_dpad_left) {
+		this->button_dpad_left = dpad_left;
+		if(dpad_left) {
+			if(razor_live_started) {
+				sceRazorGpuLiveStop();
+				razor_live_started = false;
+			} else {
+				sceRazorGpuLiveStart();
+				razor_live_started = true;
+			}
+		}
+	}
+
+	// trigger trace
+	if(with_razor_hud && dpad_right != this->button_dpad_right) {
+		this->button_dpad_right = dpad_right;
+		if(dpad_right) {
+			sceRazorGpuTraceTrigger();
+		}
+	}
+
 	sceGxmBeginScene(
 		this->context,
 		0,
@@ -922,22 +1073,11 @@ void GXMRenderer::StartScene()
 	// wait for this uniform buffer to become available
 	this->activeUniformBuffer = (this->activeUniformBuffer + 1) % VITA_GXM_UNIFORM_BUFFER_COUNT;
 	sceGxmNotificationWait(&this->fragmentNotifications[this->activeUniformBuffer]);
-
-	// sceClibPrintf("this->activeUniformBuffer: %d notification: %d\n", this->activeUniformBuffer,
-	// this->fragmentNotifications[this->activeUniformBuffer].value);
 }
 
-int frames = 0;
+
 HRESULT GXMRenderer::BeginFrame()
 {
-	frames++;
-	if (with_razor) {
-		if (!razor_triggered && frames == 10) {
-			SDL_Log("trigger razor");
-			sceRazorGpuCaptureSetTriggerNextFrame("ux0:/data/capture.sgx");
-			razor_triggered = true;
-		}
-	}
 	this->transparencyEnabled = false;
 	this->StartScene();
 

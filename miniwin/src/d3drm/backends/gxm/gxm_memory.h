@@ -16,5 +16,3 @@ void vita_mem_vertex_usse_free(SceUID uid);
 void* vita_mem_fragment_usse_alloc(unsigned int size, SceUID* uid, unsigned int* usse_offset);
 void vita_mem_fragment_usse_free(SceUID uid);
 
-bool cdramPool_init();
-SceClibMspace cdramPool_get();

@@ -61,10 +61,12 @@ if(VITA)
   target_sources(miniwin PRIVATE
     src/d3drm/backends/gxm/renderer.cpp
     src/d3drm/backends/gxm/memory.cpp
+    src/d3drm/backends/gxm/tlsf.c
   )
   target_link_libraries(miniwin PRIVATE
     SceGxm_stub
     SceRazorCapture_stub
+    SceRazorHud_stub
   )
   list(APPEND GRAPHICS_BACKENDS USE_GXM)
   list(REMOVE_ITEM GRAPHICS_BACKENDS USE_SOFTWARE_RENDER USE_SDL_GPU)

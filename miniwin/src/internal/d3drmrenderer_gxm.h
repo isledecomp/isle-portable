@@ -12,6 +12,8 @@
 #include <psp2/types.h>
 #include <psp2/kernel/clib.h>
 
+#include "gxm_memory.h"
+
 DEFINE_GUID(GXM_GUID, 0x682656F3, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x47, 0x58, 0x4D);
 
 #define VITA_GXM_DISPLAY_BUFFER_COUNT 3
@@ -21,7 +23,6 @@ struct GXMTextureCacheEntry {
 	IDirect3DRMTexture* texture;
 	Uint32 version;
 	SceGxmTexture gxmTexture;
-	size_t textureSize;
 };
 
 struct GXMMeshCacheEntry {
@@ -72,8 +73,6 @@ typedef struct GXMRendererContext {
 	void* vertexRingBuffer;
 	void* fragmentRingBuffer;
 	void* fragmentUsseRingBuffer;
-	
-	SceClibMspace cdramPool;
 
 	void* contextHostMem;
 	SceGxmContext* context;
@@ -159,7 +158,6 @@ private:
 
 	SceGxmContext* context;
 	SceGxmShaderPatcher* shaderPatcher;
-	SceClibMspace cdramPool;
 
 	SceGxmRenderTarget* renderTarget;
 	void* displayBuffers[VITA_GXM_DISPLAY_BUFFER_COUNT];
@@ -211,6 +209,14 @@ private:
 	int activeUniformBuffer = 0;
 	SceGxmNotification vertexNotifications[VITA_GXM_UNIFORM_BUFFER_COUNT];
 	SceGxmNotification fragmentNotifications[VITA_GXM_UNIFORM_BUFFER_COUNT];
+
+	SDL_Gamepad* gamepad;
+
+	bool button_dpad_up;
+	bool button_dpad_down;
+	bool button_dpad_left;
+	bool button_dpad_right;
+
 
 	bool m_initialized = false;
 };
