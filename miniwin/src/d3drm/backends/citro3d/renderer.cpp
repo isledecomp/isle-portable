@@ -195,7 +195,7 @@ static bool ConvertAndUploadTexture(C3D_Tex* tex, SDL_Surface* originalSurface, 
 	params.width = width;
 	params.height = height;
 	params.format = GPU_RGBA8;
-	params.maxLevel = 4;
+	params.maxLevel = isUI ? 0 : 4;
 	params.type = GPU_TEX_2D;
 	if (!C3D_TexInitWithParams(tex, nullptr, params)) {
 		SDL_DestroySurface(resized);
