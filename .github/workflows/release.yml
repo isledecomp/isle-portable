@@ -45,8 +45,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             libx11-dev libxext-dev libxrandr-dev libxrender-dev libxfixes-dev libxi-dev libxinerama-dev \
-            libxcursor-dev libwayland-dev libxkbcommon-dev wayland-protocols libgl1-mesa-dev qt6-base-dev \
-            libasound2-dev
+            libxcursor-dev libwayland-dev libxkbcommon-dev wayland-protocols libgl1-mesa-dev libglew-dev qt6-base-dev \
+            libasound2-dev qt6-xdgdesktopportal-platformtheme
 
       - name: Install macOS dependencies (brew)
         if: ${{ matrix.brew }}
