@@ -5,7 +5,7 @@ set(APP_SPDX "LGPL-3.0-or-later")
 
 string(TIMESTAMP BUILD_DATE UTC)
 
-file(COPY icons/isle.svg DESTINATION ${CMAKE_BINARY_DIR}/icons/"${APP_ID}.svg")
+file(COPY_FILE icons/isle.svg "${CMAKE_BINARY_DIR}/icons/${APP_ID}.svg")
 
 # The following will need to be refined if we wish to post actual releases to a repo such as Flathub
 if(DEFINED ENV{GITHUB_ACTIONS} AND ENV{GITHUB_ACTIONS} EQUAL TRUE)

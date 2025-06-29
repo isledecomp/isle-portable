@@ -83,6 +83,24 @@ jobs:
         run: |
           cd build
           cpack .
+          
+      - name: Install linuxdeploy
+        uses: miurahr/install-linuxdeploy-action@v1.8.0
+        with:
+          plugins: qt
+
+      - name: Build AppImage
+        run: |
+          NO_STRIP=1 ${{ steps.install-linuxdeploy.outputs.linuxdeploy }} \
+            --plugin qt \
+            -e build/isle \
+            -e build/isle-config \
+            -l build/liblego1.so \
+            -d build/packaging/linux/org.legoisland.Isle.desktop \
+            -i build/icons/@APP_ID@.svg \
+            --custom-apprun=/packaging/linux/appimage/AppRun \
+            --appdir=build/packaging/linux/appimage/AppDir \
+            --output "dist/LEGO_Island-$(uname -m).AppImage"
 
       - name: Upload Artifact
         uses: actions/upload-artifact@main
@@ -94,6 +112,8 @@ jobs:
   flatpak:
     name: "Flatpak (${{ matrix.arch }})"
     runs-on: ${{ matrix.os }}
+    needs: 
+      - build
 
     strategy:
       fail-fast: false
@@ -118,7 +138,7 @@ jobs:
           bundle: org.legoisland.Isle.${{ matrix.arch }}.flatpak
           manifest-path: packaging/linux/flatpak/org.legoisland.Isle.json
           arch: ${{ matrix.arch }}
-  
+
   release:
     name: 'Release'
     runs-on: ubuntu-latest
