@@ -20,10 +20,10 @@ public:
 	void ToLowerCase();
 	void MapPathToFilesystem() { MapPathToFilesystem(m_data); }
 
-	MxString& operator=(const MxString& p_str);
-	const MxString& operator=(const char* p_str);
-	MxString operator+(const MxString& p_str) const;
-	MxString operator+(const char* p_str) const;
+	LEGO1_EXPORT MxString& operator=(const MxString& p_str);
+	LEGO1_EXPORT const MxString& operator=(const char* p_str);
+	LEGO1_EXPORT MxString operator+(const MxString& p_str) const;
+	LEGO1_EXPORT MxString operator+(const char* p_str) const;
 	LEGO1_EXPORT MxString& operator+=(const char* p_str);
 
 	static void CharSwap(char* p_a, char* p_b);
