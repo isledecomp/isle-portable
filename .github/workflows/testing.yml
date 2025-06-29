@@ -53,21 +53,22 @@ jobs:
         if: ${{ matrix.linux }}
         uses: miurahr/install-linuxdeploy-action@v1.8.0
         with:
-          plugins: qt
+          plugins: qt appimage
 
       - name: Package (AppImage)
         if: ${{ matrix.linux }}
         run: |
-          export LD_LIBRARY_PATH=".:$LD_LIBRARY_PATH" && NO_STRIP=1 ${{ steps.install-linuxdeploy.outputs.linuxdeploy }} \
-            --plugin qt \
-            -e build/isle \
-            -e build/isle-config \
-            -l build/liblego1.so \
-            -d build/packaging/linux/org.legoisland.Isle.desktop \
-            -i build/icons/@APP_ID@.svg \
-            --custom-apprun=/packaging/linux/appimage/AppRun \
-            --appdir build/packaging/linux/appimage/AppDir \
-            --output "dist/isle-$(uname -m).AppImage"
+          cd build && \
+          export LD_LIBRARY_PATH=".:$LD_LIBRARY_PATH" && \
+          NO_STRIP=1 ${{ steps.install-linuxdeploy.outputs.linuxdeploy }} \
+            -p qt \
+            -e isle \
+            -e isle-config \
+            -d packaging/linux/org.legoisland.Isle.desktop \
+            -i icons/@APP_ID@.svg \
+            --custom-apprun=../packaging/linux/appimage/AppRun \
+            --appdir packaging/linux/appimage/AppDir \
+            --output appimage
 
       - name: Upload Artifact
         uses: actions/upload-artifact@main
@@ -75,6 +76,7 @@ jobs:
           name: Release-${{ matrix.name }}
           path: |
             build/dist/isle-*
+            build/*.AppImage
 
   release:
     name: 'Release'
