@@ -116,13 +116,6 @@ jobs:
             build/dist/isle-*
             build/dist/*.AppImage
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@main
-        with:
-          name: Release-${{ matrix.name }}
-          path: |
-            build/dist/isle-*
-
   flatpak:
     name: "Flatpak (${{ matrix.arch }})"
     runs-on: ${{ matrix.os }}
