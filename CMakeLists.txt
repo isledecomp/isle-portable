@@ -654,7 +654,7 @@ if(NINTENDO_3DS)
     NAME "LEGO Island"
     TITLE "LEGO Island"
     DESCRIPTION "LEGO Island for the Nintendo 3DS"
-    AUTHOR "LEGO Island Decompilation and Porting Team"
+    AUTHOR "isledecomp/isle-portable"
     VERSION "${PROJECT_VERSION}"
     ICON "ISLE/res/3ds/isle.png"
   )
