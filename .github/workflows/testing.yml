@@ -51,6 +51,7 @@ jobs:
 
       - name: Install linuxdeploy
         if: ${{ matrix.linux }}
+        id: install-linuxdeploy
         uses: miurahr/install-linuxdeploy-action@v1.8.0
         with:
           plugins: qt appimage
