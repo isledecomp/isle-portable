@@ -394,6 +394,7 @@ MxResult LegoBuildingManager::Read(LegoStorage* p_storage)
 		m_nextVariant = 0;
 	}
 
+	// Bugfix: allow Pepper to change variant building after save game load
 	g_buildingInfo[HAUS1_INDEX].m_variant = g_buildingInfoVariants[m_nextVariant];
 
 	result = SUCCESS;
