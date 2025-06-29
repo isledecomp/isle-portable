@@ -182,7 +182,7 @@ void OpenGLES2Desc::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc)
 	halDesc->dcmColorModel = D3DCOLORMODEL::RGB;
 	halDesc->dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
 	halDesc->dwDeviceZBufferBitDepth = DDBD_16;
-	helDesc->dwDeviceRenderBitDepth = DDBD_32;
+	halDesc->dwDeviceRenderBitDepth = DDBD_32;
 	halDesc->dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
 	halDesc->dpcTriCaps.dwShadeCaps = D3DPSHADECAPS_ALPHAFLATBLEND;
 	halDesc->dpcTriCaps.dwTextureFilterCaps = D3DPTFILTERCAPS_LINEAR;
@@ -195,6 +195,72 @@ const char* OpenGLES2Desc::GetName()
 	return "OpenGL ES 2.0 HAL";
 }
 
+GLES2MeshCacheEntry GLES2UploadMesh(const MeshGroup& meshGroup, bool forceUV = false)
+{
+	GLES2MeshCacheEntry cache{&meshGroup, meshGroup.version};
+
+	cache.flat = meshGroup.quality == D3DRMRENDER_FLAT || meshGroup.quality == D3DRMRENDER_UNLITFLAT;
+
+	std::vector<D3DRMVERTEX> vertices;
+	if (cache.flat) {
+		FlattenSurfaces(
+			meshGroup.vertices.data(),
+			meshGroup.vertices.size(),
+			meshGroup.indices.data(),
+			meshGroup.indices.size(),
+			meshGroup.texture != nullptr || forceUV,
+			vertices,
+			cache.indices
+		);
+	}
+	else {
+		vertices = meshGroup.vertices;
+		cache.indices.resize(meshGroup.indices.size());
+		std::transform(meshGroup.indices.begin(), meshGroup.indices.end(), cache.indices.begin(), [](DWORD index) {
+			return static_cast<uint16_t>(index);
+		});
+	}
+
+	std::vector<TexCoord> texcoords;
+	if (meshGroup.texture || forceUV) {
+		texcoords.resize(vertices.size());
+		std::transform(vertices.begin(), vertices.end(), texcoords.begin(), [](const D3DRMVERTEX& v) {
+			return v.texCoord;
+		});
+	}
+	std::vector<D3DVECTOR> positions(vertices.size());
+	std::transform(vertices.begin(), vertices.end(), positions.begin(), [](const D3DRMVERTEX& v) {
+		return v.position;
+	});
+	std::vector<D3DVECTOR> normals(vertices.size());
+	std::transform(vertices.begin(), vertices.end(), normals.begin(), [](const D3DRMVERTEX& v) { return v.normal; });
+
+	glGenBuffers(1, &cache.vboPositions);
+	glBindBuffer(GL_ARRAY_BUFFER, cache.vboPositions);
+	glBufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(D3DVECTOR), positions.data(), GL_STATIC_DRAW);
+
+	glGenBuffers(1, &cache.vboNormals);
+	glBindBuffer(GL_ARRAY_BUFFER, cache.vboNormals);
+	glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(D3DVECTOR), normals.data(), GL_STATIC_DRAW);
+
+	if (meshGroup.texture || forceUV) {
+		glGenBuffers(1, &cache.vboTexcoords);
+		glBindBuffer(GL_ARRAY_BUFFER, cache.vboTexcoords);
+		glBufferData(GL_ARRAY_BUFFER, texcoords.size() * sizeof(TexCoord), texcoords.data(), GL_STATIC_DRAW);
+	}
+
+	glGenBuffers(1, &cache.ibo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cache.ibo);
+	glBufferData(
+		GL_ELEMENT_ARRAY_BUFFER,
+		cache.indices.size() * sizeof(cache.indices[0]),
+		cache.indices.data(),
+		GL_STATIC_DRAW
+	);
+
+	return cache;
+}
+
 OpenGLES2Renderer::OpenGLES2Renderer(DWORD width, DWORD height, SDL_GLContext context, GLuint shaderProgram)
 	: m_context(context), m_shaderProgram(shaderProgram)
 {
@@ -203,6 +269,15 @@ OpenGLES2Renderer::OpenGLES2Renderer(DWORD width, DWORD height, SDL_GLContext co
 	m_virtualWidth = width;
 	m_virtualHeight = height;
 	m_renderedImage = SDL_CreateSurface(m_width, m_height, SDL_PIXELFORMAT_RGBA32);
+
+	m_uiMesh.vertices = {
+		{{0.0f, 0.0f, 0.0f}, {0, 0, -1}, {0.0f, 0.0f}},
+		{{1.0f, 0.0f, 0.0f}, {0, 0, -1}, {1.0f, 0.0f}},
+		{{1.0f, 1.0f, 0.0f}, {0, 0, -1}, {1.0f, 1.0f}},
+		{{0.0f, 1.0f, 0.0f}, {0, 0, -1}, {0.0f, 1.0f}}
+	};
+	m_uiMesh.indices = {0, 1, 2, 0, 2, 3};
+	m_uiMeshCache = GLES2UploadMesh(m_uiMesh, true);
 }
 
 OpenGLES2Renderer::~OpenGLES2Renderer()
@@ -253,6 +328,46 @@ void OpenGLES2Renderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture*
 	);
 }
 
+bool isPowerOfTwo(int x)
+{
+	return (x & (x - 1)) == 0;
+}
+
+bool UploadTexture(SDL_Surface* source, GLuint& outTexId)
+{
+	SDL_Surface* surf = source;
+	if (source->format != SDL_PIXELFORMAT_RGBA32) {
+		surf = SDL_ConvertSurface(source, SDL_PIXELFORMAT_RGBA32);
+		if (!surf) {
+			return false;
+		}
+	}
+
+	glGenTextures(1, &outTexId);
+	glBindTexture(GL_TEXTURE_2D, outTexId);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
+
+	if (!isPowerOfTwo(surf->w) || !isPowerOfTwo(surf->h)) {
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	}
+	else {
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+
+	if (surf != source) {
+		SDL_DestroySurface(surf);
+	}
+
+	return true;
+}
+
 Uint32 OpenGLES2Renderer::GetTextureId(IDirect3DRMTexture* iTexture)
 {
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
@@ -263,31 +378,18 @@ Uint32 OpenGLES2Renderer::GetTextureId(IDirect3DRMTexture* iTexture)
 		if (tex.texture == texture) {
 			if (tex.version != texture->m_version) {
 				glDeleteTextures(1, &tex.glTextureId);
-				glGenTextures(1, &tex.glTextureId);
-				glBindTexture(GL_TEXTURE_2D, tex.glTextureId);
-
-				SDL_Surface* surf = SDL_ConvertSurface(surface->m_surface, SDL_PIXELFORMAT_RGBA32);
-				if (!surf) {
-					return NO_TEXTURE_ID;
+				if (UploadTexture(surface->m_surface, tex.glTextureId)) {
+					tex.version = texture->m_version;
 				}
-				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
-				SDL_DestroySurface(surf);
-
-				tex.version = texture->m_version;
 			}
 			return i;
 		}
 	}
 
 	GLuint texId;
-	glGenTextures(1, &texId);
-	glBindTexture(GL_TEXTURE_2D, texId);
-
-	SDL_Surface* surf = SDL_ConvertSurface(surface->m_surface, SDL_PIXELFORMAT_RGBA32);
-	if (!surf) {
+	if (!UploadTexture(surface->m_surface, texId)) {
 		return NO_TEXTURE_ID;
 	}
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
 
 	for (Uint32 i = 0; i < m_textures.size(); ++i) {
 		auto& tex = m_textures[i];
@@ -295,83 +397,18 @@ Uint32 OpenGLES2Renderer::GetTextureId(IDirect3DRMTexture* iTexture)
 			tex.texture = texture;
 			tex.version = texture->m_version;
 			tex.glTextureId = texId;
-			tex.width = surf->w;
-			tex.height = surf->h;
+			tex.width = surface->m_surface->w;
+			tex.height = surface->m_surface->h;
 			AddTextureDestroyCallback(i, texture);
 			return i;
 		}
 	}
 
-	m_textures.push_back({texture, texture->m_version, texId, (uint16_t) surf->w, (uint16_t) surf->h});
-	SDL_DestroySurface(surf);
+	m_textures.push_back(
+		{texture, texture->m_version, texId, (uint16_t) surface->m_surface->w, (uint16_t) surface->m_surface->h}
+	);
 	AddTextureDestroyCallback((Uint32) (m_textures.size() - 1), texture);
 	return (Uint32) (m_textures.size() - 1);
-}
-
-GLES2MeshCacheEntry GLES2UploadMesh(const MeshGroup& meshGroup)
-{
-	GLES2MeshCacheEntry cache{&meshGroup, meshGroup.version};
-
-	cache.flat = meshGroup.quality == D3DRMRENDER_FLAT || meshGroup.quality == D3DRMRENDER_UNLITFLAT;
-
-	std::vector<D3DRMVERTEX> vertices;
-	if (cache.flat) {
-		FlattenSurfaces(
-			meshGroup.vertices.data(),
-			meshGroup.vertices.size(),
-			meshGroup.indices.data(),
-			meshGroup.indices.size(),
-			meshGroup.texture != nullptr,
-			vertices,
-			cache.indices
-		);
-	}
-	else {
-		vertices = meshGroup.vertices;
-		cache.indices.resize(meshGroup.indices.size());
-		std::transform(meshGroup.indices.begin(), meshGroup.indices.end(), cache.indices.begin(), [](DWORD index) {
-			return static_cast<uint16_t>(index);
-		});
-	}
-
-	std::vector<TexCoord> texcoords;
-	if (meshGroup.texture) {
-		texcoords.resize(vertices.size());
-		std::transform(vertices.begin(), vertices.end(), texcoords.begin(), [](const D3DRMVERTEX& v) {
-			return v.texCoord;
-		});
-	}
-	std::vector<D3DVECTOR> positions(vertices.size());
-	std::transform(vertices.begin(), vertices.end(), positions.begin(), [](const D3DRMVERTEX& v) {
-		return v.position;
-	});
-	std::vector<D3DVECTOR> normals(vertices.size());
-	std::transform(vertices.begin(), vertices.end(), normals.begin(), [](const D3DRMVERTEX& v) { return v.normal; });
-
-	glGenBuffers(1, &cache.vboPositions);
-	glBindBuffer(GL_ARRAY_BUFFER, cache.vboPositions);
-	glBufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(D3DVECTOR), positions.data(), GL_STATIC_DRAW);
-
-	glGenBuffers(1, &cache.vboNormals);
-	glBindBuffer(GL_ARRAY_BUFFER, cache.vboNormals);
-	glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(D3DVECTOR), normals.data(), GL_STATIC_DRAW);
-
-	if (meshGroup.texture) {
-		glGenBuffers(1, &cache.vboTexcoords);
-		glBindBuffer(GL_ARRAY_BUFFER, cache.vboTexcoords);
-		glBufferData(GL_ARRAY_BUFFER, texcoords.size() * sizeof(TexCoord), texcoords.data(), GL_STATIC_DRAW);
-	}
-
-	glGenBuffers(1, &cache.ibo);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cache.ibo);
-	glBufferData(
-		GL_ELEMENT_ARRAY_BUFFER,
-		cache.indices.size() * sizeof(cache.indices[0]),
-		cache.indices.data(),
-		GL_STATIC_DRAW
-	);
-
-	return cache;
 }
 
 struct GLES2MeshDestroyContext {
@@ -523,8 +560,6 @@ void OpenGLES2Renderer::SubmitDraw(
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, m_textures[appearance.textureId].glTextureId);
 		glUniform1i(glGetUniformLocation(m_shaderProgram, "u_texture"), 0);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	}
 	else {
 		glUniform1i(glGetUniformLocation(m_shaderProgram, "u_useTexture"), 0);
@@ -550,7 +585,6 @@ void OpenGLES2Renderer::SubmitDraw(
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ibo);
 	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh.indices.size()), GL_UNSIGNED_SHORT, nullptr);
 
-	glDisableVertexAttribArray(posLoc);
 	glDisableVertexAttribArray(normLoc);
 	glDisableVertexAttribArray(texLoc);
 }
@@ -591,35 +625,6 @@ void OpenGLES2Renderer::Flip()
 	}
 }
 
-void CreateOrthoMatrix(float left, float right, float bottom, float top, D3DRMMATRIX4D& outMatrix)
-{
-	float near = -1.0f;
-	float far = 1.0f;
-	float rl = right - left;
-	float tb = top - bottom;
-	float fn = far - near;
-
-	outMatrix[0][0] = 2.0f / rl;
-	outMatrix[0][1] = 0.0f;
-	outMatrix[0][2] = 0.0f;
-	outMatrix[0][3] = 0.0f;
-
-	outMatrix[1][0] = 0.0f;
-	outMatrix[1][1] = 2.0f / tb;
-	outMatrix[1][2] = 0.0f;
-	outMatrix[1][3] = 0.0f;
-
-	outMatrix[2][0] = 0.0f;
-	outMatrix[2][1] = 0.0f;
-	outMatrix[2][2] = -2.0f / fn;
-	outMatrix[2][3] = 0.0f;
-
-	outMatrix[3][0] = -(right + left) / rl;
-	outMatrix[3][1] = -(top + bottom) / tb;
-	outMatrix[3][2] = -(far + near) / fn;
-	outMatrix[3][3] = 1.0f;
-}
-
 void OpenGLES2Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect)
 {
 	m_dirty = true;
@@ -639,60 +644,64 @@ void OpenGLES2Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, c
 	glUniform4f(glGetUniformLocation(m_shaderProgram, "u_color"), 1.0f, 1.0f, 1.0f, 1.0f);
 	glUniform1f(glGetUniformLocation(m_shaderProgram, "u_shininess"), 0.0f);
 
-	float left = -m_viewportTransform.offsetX / m_viewportTransform.scale;
-	float right = (m_width - m_viewportTransform.offsetX) / m_viewportTransform.scale;
-	float top = -m_viewportTransform.offsetY / m_viewportTransform.scale;
-	float bottom = (m_height - m_viewportTransform.offsetY) / m_viewportTransform.scale;
+	const GLES2TextureCacheEntry& texture = m_textures[textureId];
+	float scaleX = static_cast<float>(dstRect.w) / srcRect.w;
+	float scaleY = static_cast<float>(dstRect.h) / srcRect.h;
+	SDL_Rect expandedDstRect = {
+		static_cast<int>(std::round(dstRect.x - srcRect.x * scaleX)),
+		static_cast<int>(std::round(dstRect.y - srcRect.y * scaleY)),
+		static_cast<int>(std::round(texture.width * scaleX)),
+		static_cast<int>(std::round(texture.height * scaleY))
+	};
 
-	D3DRMMATRIX4D projection;
-	CreateOrthoMatrix(left, right, bottom, top, projection);
+	D3DRMMATRIX4D modelView, projection;
+	Create2DTransformMatrix(
+		expandedDstRect,
+		m_viewportTransform.scale,
+		m_viewportTransform.offsetX,
+		m_viewportTransform.offsetY,
+		modelView
+	);
 
-	D3DRMMATRIX4D identity = {{1.f, 0.f, 0.f, 0.f}, {0.f, 1.f, 0.f, 0.f}, {0.f, 0.f, 1.f, 0.f}, {0.f, 0.f, 0.f, 1.f}};
-	glUniformMatrix4fv(glGetUniformLocation(m_shaderProgram, "u_modelViewMatrix"), 1, GL_FALSE, &identity[0][0]);
+	glUniformMatrix4fv(glGetUniformLocation(m_shaderProgram, "u_modelViewMatrix"), 1, GL_FALSE, &modelView[0][0]);
+	Matrix3x3 identity = {{1.f, 0.f, 0.f}, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}};
 	glUniformMatrix3fv(glGetUniformLocation(m_shaderProgram, "u_normalMatrix"), 1, GL_FALSE, &identity[0][0]);
+	CreateOrthographicProjection((float) m_width, (float) m_height, projection);
 	glUniformMatrix4fv(glGetUniformLocation(m_shaderProgram, "u_projectionMatrix"), 1, GL_FALSE, &projection[0][0]);
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	glActiveTexture(GL_TEXTURE0);
 	glUniform1i(glGetUniformLocation(m_shaderProgram, "u_useTexture"), 1);
-	const GLES2TextureCacheEntry& texture = m_textures[textureId];
+	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture.glTextureId);
 	glUniform1i(glGetUniformLocation(m_shaderProgram, "u_texture"), 0);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	float texW = texture.width;
-	float texH = texture.height;
 
-	float u1 = srcRect.x / texW;
-	float v1 = srcRect.y / texH;
-	float u2 = (srcRect.x + srcRect.w) / texW;
-	float v2 = (srcRect.y + srcRect.h) / texH;
-
-	float x1 = static_cast<float>(dstRect.x);
-	float y1 = static_cast<float>(dstRect.y);
-	float x2 = x1 + dstRect.w;
-	float y2 = y1 + dstRect.h;
-
-	GLfloat vertices[] = {x1, y1, u1, v1, x2, y1, u2, v1, x1, y2, u1, v2, x2, y2, u2, v2};
+	glEnable(GL_SCISSOR_TEST);
+	glScissor(
+		static_cast<int>(std::round(dstRect.x * m_viewportTransform.scale + m_viewportTransform.offsetX)),
+		m_height - static_cast<int>(
+					   std::round((dstRect.y + dstRect.h) * m_viewportTransform.scale + m_viewportTransform.offsetY)
+				   ),
+		static_cast<int>(std::round(dstRect.w * m_viewportTransform.scale)),
+		static_cast<int>(std::round(dstRect.h * m_viewportTransform.scale))
+	);
 
 	GLint posLoc = glGetAttribLocation(m_shaderProgram, "a_position");
-	GLint texLoc = glGetAttribLocation(m_shaderProgram, "a_texCoord");
-
+	glBindBuffer(GL_ARRAY_BUFFER, m_uiMeshCache.vboPositions);
 	glEnableVertexAttribArray(posLoc);
+	glVertexAttribPointer(posLoc, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+
+	GLint texLoc = glGetAttribLocation(m_shaderProgram, "a_texCoord");
+	glBindBuffer(GL_ARRAY_BUFFER, m_uiMeshCache.vboTexcoords);
 	glEnableVertexAttribArray(texLoc);
+	glVertexAttribPointer(texLoc, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-	glVertexAttribPointer(posLoc, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), vertices);
-	glVertexAttribPointer(texLoc, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), vertices + 2);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_uiMeshCache.ibo);
+	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(m_uiMeshCache.indices.size()), GL_UNSIGNED_SHORT, nullptr);
 
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-	glDisableVertexAttribArray(posLoc);
 	glDisableVertexAttribArray(texLoc);
-
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glUseProgram(0);
+	glDisable(GL_SCISSOR_TEST);
 }
 
 void OpenGLES2Renderer::Download(SDL_Surface* target)

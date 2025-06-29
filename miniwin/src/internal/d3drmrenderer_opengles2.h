@@ -70,6 +70,8 @@ private:
 	void AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture);
 	void AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh);
 
+	MeshGroup m_uiMesh;
+	GLES2MeshCacheEntry m_uiMeshCache;
 	std::vector<GLES2TextureCacheEntry> m_textures;
 	std::vector<GLES2MeshCacheEntry> m_meshs;
 	D3DRMMATRIX4D m_projection;
