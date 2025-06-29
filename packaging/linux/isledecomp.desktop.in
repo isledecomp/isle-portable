@@ -28,8 +28,10 @@ Actions=play;configure
 
 [Desktop Action play]
 Name=Play Game
+Icon=currenttrack_play
 Exec=isle
 
 [Desktop Action configure]
 Name=Configure Settings
-Exec=config
+Icon=settings
+Exec=isle-config
