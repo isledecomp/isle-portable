@@ -129,7 +129,7 @@ jobs:
       - name: Download All Artifacts
         uses: actions/download-artifact@main
         with:
-          pattern: "{Release-*,*.flatpak}"
+          pattern: "{Release-*,*.flatpak,*.AppImage}"
           path: Release
           merge-multiple: true
 
