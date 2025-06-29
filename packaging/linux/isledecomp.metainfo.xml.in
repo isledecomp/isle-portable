@@ -74,13 +74,15 @@
 
     <keyword>LEGO Island</keyword>
     <!-- Translations sourced from https://www.pcgamingwiki.com/wiki/Lego_Island#Localizations  -->
-    <keyword xml:lang="fr">Aventures sur L'île LEGO</keyword>
+    <keyword xml:lang="da">Panik på LEGO Øen</keyword>
     <keyword xml:lang="de">Abenteuer auf der LEGO Insel</keyword>
-    <keyword xml:lang="da">Titled Panik på LEGO Øen</keyword>
-    <keyword xml:lang="it">Isola LEGO</keyword>
     <keyword xml:lang="es">La Isla LEGO</keyword>
-    <keyword xml:lang="jp">レゴアイランドの大冒険</keyword>
-    <keyword xml:lang="pt-BR">A Ilha LEGO</keyword>
+    <keyword xml:lang="fr">Aventures sur L'île LEGO</keyword>
+    <keyword xml:lang="it">Isola LEGO</keyword>
+    <keyword xml:lang="ja">レゴアイランドの大冒険</keyword>
+    <keyword xml:lang="ko">레고 아일랜드</keyword>
+    <keyword xml:lang="pt">A Ilha LEGO</keyword>
+    <keyword xml:lang="ru">Остров LEGO</keyword>
   </keywords>
 
   <releases>
