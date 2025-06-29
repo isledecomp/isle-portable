@@ -42,8 +42,8 @@ jobs:
       - name: Install Linux dependencies (apt-get)
         if: ${{ matrix.linux }}
         run: |
-          sudo apt update
-          sudo apt install -y \
+          sudo apt-get update
+          sudo apt-get install -y \
             libx11-dev libxext-dev libxrandr-dev libxrender-dev libxfixes-dev libxi-dev libxinerama-dev \
             libxcursor-dev libwayland-dev libxkbcommon-dev wayland-protocols libgl1-mesa-dev qt6-base-dev \
             libasound2-dev
