@@ -7,7 +7,7 @@
 
 #include <cstring>
 
-bool g_rendering = false;
+static bool g_rendering = false;
 
 static DVLB_s* vshader_dvlb;
 static shaderProgram_s program;
