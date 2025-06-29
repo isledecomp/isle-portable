@@ -5,6 +5,7 @@ set(APP_SPDX "LGPL-3.0-or-later")
 
 string(TIMESTAMP BUILD_DATE UTC)
 
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/icons)
 file(COPY_FILE icons/isle.svg ${CMAKE_BINARY_DIR}/icons/${APP_ID}.svg)
 
 # The following will need to be refined if we wish to post actual releases to a repo such as Flathub
