@@ -650,4 +650,11 @@ if(MSVC)
 else()
   set(CPACK_GENERATOR TGZ)
 endif()
+
+if (APPLE)
+    set(CMAKE_INSTALL_RPATH "@executable_path/../lib")
+else(UNIX)
+    set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib")
+endif()
+
 include(CPack)
