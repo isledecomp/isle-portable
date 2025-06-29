@@ -60,6 +60,8 @@ jobs:
         if: ${{ matrix.linux }}
         run: |
           cd build && \
+          export EXTRA_PLATFORM_PLUGINS=libqwayland-generic.so \
+          export EXTRA_QT_MODULES="waylandcompositor" \
           export LD_LIBRARY_PATH=".:$LD_LIBRARY_PATH" && \
           NO_STRIP=1 ${{ steps.install-linuxdeploy.outputs.linuxdeploy }} \
             -p qt \
