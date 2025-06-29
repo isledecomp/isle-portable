@@ -394,6 +394,8 @@ MxResult LegoBuildingManager::Read(LegoStorage* p_storage)
 		m_nextVariant = 0;
 	}
 
+	g_buildingInfo[HAUS1_INDEX].m_variant = g_buildingInfoVariants[m_nextVariant];
+
 	result = SUCCESS;
 
 done:
