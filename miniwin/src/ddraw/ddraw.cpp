@@ -18,6 +18,7 @@
 
 #include <SDL3/SDL.h>
 #include <assert.h>
+#include <cinttypes>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
@@ -75,7 +76,7 @@ HRESULT DirectDrawImpl::CreateSurface(
 			if ((lpDDSurfaceDesc->dwFlags & DDSD_ZBUFFERBITDEPTH) != DDSD_ZBUFFERBITDEPTH) {
 				return DDERR_INVALIDPARAMS;
 			}
-			SDL_Log("Todo: Set %dbit Z-Buffer", lpDDSurfaceDesc->dwZBufferBitDepth);
+			SDL_Log("Todo: Set %" PRIu32 "bit Z-Buffer", lpDDSurfaceDesc->dwZBufferBitDepth);
 			*lplpDDSurface = static_cast<IDirectDrawSurface*>(new DummySurfaceImpl);
 			return DD_OK;
 		}

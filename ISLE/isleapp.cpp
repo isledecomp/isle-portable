@@ -96,11 +96,7 @@ IsleApp::IsleApp()
 	m_cdPath = NULL;
 	m_deviceId = NULL;
 	m_savePath = NULL;
-#ifdef __EMSCRIPTEN__
-	m_fullScreen = FALSE;
-#else
 	m_fullScreen = TRUE;
-#endif
 	m_flipSurfaces = FALSE;
 	m_backBuffersInVram = TRUE;
 	m_using8bit = FALSE;
@@ -140,6 +136,7 @@ IsleApp::IsleApp()
 	m_iniPath = NULL;
 	m_maxLod = RealtimeView::GetUserMaxLOD();
 	m_maxAllowedExtras = m_islandQuality <= 1 ? 10 : 20;
+	m_transitionType = MxTransitionManager::e_mosaic;
 }
 
 // FUNCTION: ISLE 0x4011a0
@@ -703,6 +700,7 @@ MxResult IsleApp::SetupWindow()
 		return FAILURE;
 	}
 
+	DetectGameVersion();
 	GameState()->SerializePlayersInfo(LegoStorage::c_read);
 	GameState()->SerializeScoreHistory(LegoStorage::c_read);
 
@@ -725,6 +723,7 @@ MxResult IsleApp::SetupWindow()
 	LegoBuildingManager::configureLegoBuildingManager(m_islandQuality);
 	LegoROI::configureLegoROI(iVar10);
 	LegoAnimationManager::configureLegoAnimationManager(m_maxAllowedExtras);
+	MxTransitionManager::configureMxTransitionManager(m_transitionType);
 	RealtimeView::SetUserMaxLOD(m_maxLod);
 	if (LegoOmni::GetInstance()) {
 		if (LegoOmni::GetInstance()->GetInputManager()) {
@@ -823,6 +822,7 @@ bool IsleApp::LoadConfig()
 		SDL_snprintf(buf, sizeof(buf), "%f", m_maxLod);
 		iniparser_set(dict, "isle:Max LOD", buf);
 		iniparser_set(dict, "isle:Max Allowed Extras", SDL_itoa(m_maxAllowedExtras, buf, 10));
+		iniparser_set(dict, "isle:Transition Type", SDL_itoa(m_transitionType, buf, 10));
 
 		iniparser_dump_ini(dict, iniFP);
 		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "New config written at '%s'", iniConfig);
@@ -852,7 +852,13 @@ bool IsleApp::LoadConfig()
 	strcpy(m_mediaPath, mediaPath);
 
 	m_flipSurfaces = iniparser_getboolean(dict, "isle:Flip Surfaces", m_flipSurfaces);
+
+#ifdef __EMSCRIPTEN__
+	m_fullScreen = FALSE;
+#else
 	m_fullScreen = iniparser_getboolean(dict, "isle:Full Screen", m_fullScreen);
+#endif
+
 	m_wideViewAngle = iniparser_getboolean(dict, "isle:Wide View Angle", m_wideViewAngle);
 	m_use3dSound = iniparser_getboolean(dict, "isle:3DSound", m_use3dSound);
 	m_useMusic = iniparser_getboolean(dict, "isle:Music", m_useMusic);
@@ -879,6 +885,8 @@ bool IsleApp::LoadConfig()
 	m_islandTexture = iniparser_getint(dict, "isle:Island Texture", m_islandTexture);
 	m_maxLod = iniparser_getdouble(dict, "isle:Max LOD", m_maxLod);
 	m_maxAllowedExtras = iniparser_getint(dict, "isle:Max Allowed Extras", m_maxAllowedExtras);
+	m_transitionType =
+		(MxTransitionManager::TransitionType) iniparser_getint(dict, "isle:Transition Type", m_transitionType);
 
 	const char* deviceId = iniparser_getstring(dict, "isle:3D Device ID", NULL);
 	if (deviceId != NULL) {
@@ -1096,6 +1104,34 @@ MxResult IsleApp::VerifyFilesystem()
 #endif
 
 	return SUCCESS;
+}
+
+void IsleApp::DetectGameVersion()
+{
+	const char* file = "/lego/scripts/infocntr/infomain.si";
+	SDL_PathInfo info;
+	bool success = false;
+
+	MxString path = MxString(m_hdPath) + file;
+	path.MapPathToFilesystem();
+	if (!(success = SDL_GetPathInfo(path.GetData(), &info))) {
+		path = MxString(m_cdPath) + file;
+		path.MapPathToFilesystem();
+		success = SDL_GetPathInfo(path.GetData(), &info);
+	}
+
+	assert(success);
+
+	// File sizes of INFOMAIN.SI in English 1.0 and Japanese 1.0
+	Lego()->SetVersion10(info.size == 58130432 || info.size == 57737216);
+
+	if (Lego()->IsVersion10()) {
+		SDL_Log("Detected game version 1.0");
+		SDL_SetWindowTitle(reinterpret_cast<SDL_Window*>(m_windowHandle), "Lego Island");
+	}
+	else {
+		SDL_Log("Detected game version 1.1");
+	}
 }
 
 IDirect3DRMMiniwinDevice* GetD3DRMMiniwinDevice()
