@@ -657,10 +657,9 @@ MxResult IsleApp::SetupWindow()
 	SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, g_targetHeight);
 	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_FULLSCREEN_BOOLEAN, m_fullScreen);
 	SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, WINDOW_TITLE);
-#ifdef MINIWIN
-	// FIXME: 3ds hack
-	// SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
-	// SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+#if defined(MINIWIN) && !defined(__3DS__)
+	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
+	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 #endif
 
 	window = SDL_CreateWindowWithProperties(props);
