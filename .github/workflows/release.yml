@@ -4,11 +4,9 @@ on:
   push:
     branches:
       - master
-      - flatpak
 
 env:
   APP_ID: org.legoisland.Isle
-  BUILD_DIR: build
 
 jobs:
   build:
@@ -72,7 +70,7 @@ jobs:
 
       - name: Configure (CMake)
         run: |
-          ${{ matrix.cmake-wrapper || '' }} cmake -S . -B ${{ env.BUILD_DIR }} -GNinja \
+          ${{ matrix.cmake-wrapper || '' }} cmake -S . -B build -GNinja \
             -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
             -DISLE_USE_DX5=${{ !!matrix.dx5 }} \
             -DISLE_BUILD_CONFIG=${{ matrix.config }} \
@@ -82,11 +80,11 @@ jobs:
             -Werror=dev
 
       - name: Build (CMake)
-        run: cmake --build ${{ env.BUILD_DIR }} --verbose
+        run: cmake --build build --verbose
 
       - name: Package (CPack)
         run: |
-          cd ${{ env.BUILD_DIR }}
+          cd build
           cpack .
 
       - name: Upload Artifact
@@ -94,7 +92,7 @@ jobs:
         with:
           name: Release-${{ matrix.name }}
           path: |
-            ${{ env.BUILD_DIR }}/dist/isle-*
+            build/dist/isle-*
 
   flatpak:
     name: "Flatpak (${{ matrix.arch }})"

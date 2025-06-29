@@ -1,9 +1,3 @@
-if(DEFINED ENV{FLATPAK_DEST})
-    set(FLATPAK TRUE)
-else()
-    set(FLATPAK FALSE)
-endif()
-
 # Injects the required variables into the Desktop and MetaInfo files
 configure_file(isledecomp.desktop.in "${APP_ID}.desktop" @ONLY)
 configure_file(isledecomp.metainfo.xml.in "${APP_ID}.metainfo.xml" @ONLY)
