@@ -643,6 +643,8 @@ if(EMSCRIPTEN)
   )
 endif()
 
+add_subdirectory(packaging)
+
 set(CPACK_PACKAGE_DIRECTORY "dist")
 set(CPACK_PACKAGE_FILE_NAME "isle-${PROJECT_VERSION}-${ISLE_PACKAGE_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
 if(MSVC)

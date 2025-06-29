@@ -91,15 +91,45 @@ jobs:
           path: |
             build/dist/isle-*
 
+  flatpak:
+    name: "Flatpak (${{ matrix.arch }})"
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            os: ubuntu-latest
+          
+          - arch: aarch64
+            os: ubuntu-22.04-arm
+    
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:kde-6.8
+      options: --privileged
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Flatpak
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          bundle: org.legoisland.Isle.${{ matrix.arch }}.flatpak
+          manifest-path: packaging/linux/flatpak/org.legoisland.Isle.json
+          arch: ${{ matrix.arch }}
+  
   release:
     name: 'Release'
     runs-on: ubuntu-latest
-    needs: build
+    needs:
+      - build
+      - flatpak
     steps:
       - name: Download All Artifacts
         uses: actions/download-artifact@main
         with:
-          pattern: Release-*
+          pattern: "{Release-*,*.flatpak}"
           path: Release
           merge-multiple: true
 
