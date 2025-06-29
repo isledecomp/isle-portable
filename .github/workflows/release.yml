@@ -84,7 +84,6 @@ jobs:
           cd build
           cpack .
 
-          
       - name: Install linuxdeploy
         if: ${{ matrix.linux }}
         id: install-linuxdeploy
