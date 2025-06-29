@@ -520,6 +520,22 @@ if (ISLE_BUILD_APP)
     target_compile_definitions(isle PRIVATE "ISLE_EMSCRIPTEN_HOST=\"${ISLE_EMSCRIPTEN_HOST}\"")
     set_property(TARGET isle PROPERTY SUFFIX ".html")
   endif()
+  if(NINTENDO_3DS)
+    target_sources(isle PRIVATE
+      ISLE/3ds/apthooks.cpp
+      ISLE/3ds/filesystem.cpp
+    )
+    ctr_generate_smdh(isle.smdh
+      NAME "LEGO Island"
+      TITLE "LEGO Island"
+      DESCRIPTION "LEGO Island for the Nintendo 3DS"
+      AUTHOR "isledecomp/isle-portable"
+      VERSION "${PROJECT_VERSION}"
+      ICON "ISLE/res/3ds/isle.png"
+    )
+
+    ctr_create_3dsx(isle SMDH isle.smdh)
+  endif()
 endif()
 
 if (ISLE_BUILD_CONFIG)
@@ -645,22 +661,6 @@ endif()
 
 set(CPACK_PACKAGE_DIRECTORY "dist")
 set(CPACK_PACKAGE_FILE_NAME "isle-${PROJECT_VERSION}-${ISLE_PACKAGE_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
-if(NINTENDO_3DS)
-  target_sources(isle PRIVATE
-    ISLE/3ds/apthooks.cpp
-    ISLE/3ds/filesystem.cpp
-  )
-  ctr_generate_smdh(isle.smdh
-    NAME "LEGO Island"
-    TITLE "LEGO Island"
-    DESCRIPTION "LEGO Island for the Nintendo 3DS"
-    AUTHOR "isledecomp/isle-portable"
-    VERSION "${PROJECT_VERSION}"
-    ICON "ISLE/res/3ds/isle.png"
-  )
-
-  ctr_create_3dsx(isle SMDH isle.smdh)
-endif()
 if(MSVC)
   set(CPACK_GENERATOR ZIP)
 else()

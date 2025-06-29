@@ -3,6 +3,8 @@
 #include "legomain.h"
 #include "misc.h"
 
+aptHookCookie g_aptCookie;
+
 void N3DS_AptHookCallback(APT_HookType hookType, void* param)
 {
 	switch (hookType) {
@@ -20,4 +22,9 @@ void N3DS_AptHookCallback(APT_HookType hookType, void* param)
 	default:
 		break;
 	}
+}
+
+void N3DS_SetupAptHooks()
+{
+	aptHook(&g_aptCookie, N3DS_AptHookCallback, NULL);
 }
