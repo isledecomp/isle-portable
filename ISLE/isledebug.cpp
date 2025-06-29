@@ -309,7 +309,7 @@ void IsleDebug_Render()
 			if (ImGui::TreeNode("Sound Manager")) {
 				LegoSoundManager* soundManager = lego->GetSoundManager();
 				Sint32 oldVolume = soundManager->GetVolume();
-				Sint32 volume = oldVolume;
+				int volume = oldVolume;
 				ImGui::SliderInt("volume", &volume, 0, 100);
 				if (volume != oldVolume) {
 					soundManager->SetVolume(volume);

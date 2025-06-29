@@ -1,19 +1,32 @@
 #pragma once
-#include "../d3drm/backends/opengl1/actual.h"
+
 #include "d3drmrenderer.h"
-#include "d3drmtexture_impl.h"
-#include "ddraw_impl.h"
 
 #include <SDL3/SDL.h>
+#include <citro3d.h>
 #include <vector>
 
-DEFINE_GUID(OpenGL1_GUID, 0x682656F3, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03);
+DEFINE_GUID(Citro3D_GUID, 0x682656F3, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3D, 0x53);
 
-class OpenGL1Renderer : public Direct3DRMRenderer {
+struct C3DTextureCacheEntry {
+	IDirect3DRMTexture* texture;
+	Uint32 version;
+	C3D_Tex c3dTex;
+	uint16_t width;
+	uint16_t height;
+};
+
+struct C3DMeshCacheEntry {
+	const MeshGroup* meshGroup = nullptr;
+	int version = 0;
+	void* vbo = nullptr;
+	int vertexCount = 0;
+};
+
+class Citro3DRenderer : public Direct3DRMRenderer {
 public:
-	static Direct3DRMRenderer* Create(DWORD width, DWORD height);
-	OpenGL1Renderer(DWORD width, DWORD height, SDL_GLContext context);
-	~OpenGL1Renderer() override;
+	Citro3DRenderer(DWORD width, DWORD height);
+	~Citro3DRenderer() override;
 
 	void PushLights(const SceneLight* lightsArray, size_t count) override;
 	void SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back) override;
@@ -42,23 +55,34 @@ public:
 private:
 	void AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture);
 	void AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh);
+	void StartFrame();
 
-	std::vector<GLTextureCacheEntry> m_textures;
-	std::vector<GLMeshCacheEntry> m_meshs;
 	D3DRMMATRIX4D m_projection;
 	SDL_Surface* m_renderedImage;
-	bool m_useVBOs;
-	bool m_dirty = false;
-	std::vector<SceneLight> m_lights;
-	SDL_GLContext m_context;
+	C3D_RenderTarget* m_renderTarget;
+	std::vector<C3DTextureCacheEntry> m_textures;
+	std::vector<C3DMeshCacheEntry> m_meshs;
 	ViewportTransform m_viewportTransform;
+	std::vector<SceneLight> m_lights;
 };
 
-inline static void OpenGL1Renderer_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
+inline static void Citro3DRenderer_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
-	Direct3DRMRenderer* device = OpenGL1Renderer::Create(640, 480);
-	if (device) {
-		EnumDevice(cb, ctx, device, OpenGL1_GUID);
-		delete device;
-	}
+	GUID guid = Citro3D_GUID;
+	char* deviceNameDup = SDL_strdup("Citro3D");
+	char* deviceDescDup = SDL_strdup("Miniwin driver");
+	D3DDEVICEDESC halDesc = {};
+	halDesc.dcmColorModel = D3DCOLOR_RGB;
+	halDesc.dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
+	halDesc.dwDeviceZBufferBitDepth = DDBD_24;
+	halDesc.dwDeviceRenderBitDepth = DDBD_32;
+	halDesc.dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
+	halDesc.dpcTriCaps.dwShadeCaps = D3DPSHADECAPS_ALPHAFLATBLEND;
+	halDesc.dpcTriCaps.dwTextureFilterCaps = D3DPTFILTERCAPS_LINEAR;
+	D3DDEVICEDESC helDesc = {};
+
+	cb(&guid, deviceNameDup, deviceDescDup, &halDesc, &helDesc, ctx);
+
+	SDL_free(deviceDescDup);
+	SDL_free(deviceNameDup);
 }

@@ -926,7 +926,7 @@ LPDIRECTDRAWSURFACE MxDisplaySurface::VTable0x44(
 				transparentColor = RGB555_CREATE(0x1f, 0, 0x1f);
 				break;
 			default:
-				transparentColor = RGB8888_CREATE(0xff, 0, 0xff, 0);
+				transparentColor = RGB8888_CREATE(0, 0, 0, 0);
 				break;
 			}
 
@@ -971,25 +971,11 @@ LPDIRECTDRAWSURFACE MxDisplaySurface::VTable0x44(
 				surfacePtr += adjustedPitch;
 			}
 
-			if (p_transparent && surface) {
-				DDCOLORKEY key;
-				key.dwColorSpaceLowValue = key.dwColorSpaceHighValue = transparentColor;
-				surface->SetColorKey(DDCKEY_SRCBLT, &key);
-			}
-
 			surface->Unlock(ddsd.lpSurface);
 
-			if (p_transparent && surface) {
+			if (p_transparent && surface && bytesPerPixel != 4) {
 				DDCOLORKEY key;
-				if (bytesPerPixel == 1) {
-					key.dwColorSpaceLowValue = key.dwColorSpaceHighValue = 0;
-				}
-				else if (bytesPerPixel == 2) {
-					key.dwColorSpaceLowValue = key.dwColorSpaceHighValue = RGB555_CREATE(0x1f, 0, 0x1f);
-				}
-				else {
-					key.dwColorSpaceLowValue = key.dwColorSpaceHighValue = RGB8888_CREATE(0xff, 0, 0xff, 0);
-				}
+				key.dwColorSpaceLowValue = key.dwColorSpaceHighValue = transparentColor;
 				surface->SetColorKey(DDCKEY_SRCBLT, &key);
 			}
 		}

@@ -80,7 +80,7 @@ void Direct3DRMSoftwareRenderer::ClearZBuffer()
 		_mm_empty();
 	}
 #endif
-#elif defined(__arm__) || defined(__aarch64__)
+#elif (defined(__arm__) || defined(__aarch64__)) && !defined(__3DS__)
 	if (SDL_HasNEON()) {
 		float32x4_t inf4 = vdupq_n_f32(inf);
 		for (; i + 4 <= size; i += 4) {
@@ -554,7 +554,7 @@ void Direct3DRMSoftwareRenderer::AddTextureDestroyCallback(Uint32 id, IDirect3DR
 	);
 }
 
-Uint32 Direct3DRMSoftwareRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
+Uint32 Direct3DRMSoftwareRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi)
 {
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
 	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);

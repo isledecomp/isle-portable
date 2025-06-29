@@ -35,7 +35,7 @@ option(ISLE_WERROR "Treat warnings as errors" OFF)
 option(ISLE_DEBUG "Enable imgui debug" ON)
 cmake_dependent_option(ISLE_USE_DX5 "Build with internal DirectX 5 SDK" "${NOT_MINGW}" "WIN32;CMAKE_SIZEOF_VOID_P EQUAL 4" OFF)
 cmake_dependent_option(ISLE_MINIWIN "Use miniwin" ON "NOT ISLE_USE_DX5" OFF)
-cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "MSVC OR ISLE_MINIWIN" OFF)
+cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "MSVC OR ISLE_MINIWIN;NOT NINTENDO_3DS" OFF)
 cmake_dependent_option(ISLE_COMPILE_SHADERS "Compile shaders" ON "SDL_SHADERCROSS_BIN;TARGET Python3::Interpreter" OFF)
 option(CMAKE_POSITION_INDEPENDENT_CODE "Build with -fPIC" ON)
 option(ENABLE_CLANG_TIDY "Enable clang-tidy")
@@ -520,6 +520,12 @@ if (ISLE_BUILD_APP)
     target_compile_definitions(isle PRIVATE "ISLE_EMSCRIPTEN_HOST=\"${ISLE_EMSCRIPTEN_HOST}\"")
     set_property(TARGET isle PROPERTY SUFFIX ".html")
   endif()
+  if(NINTENDO_3DS)
+    target_sources(isle PRIVATE
+      ISLE/3ds/apthooks.cpp
+      ISLE/3ds/config.cpp
+    )
+  endif()
 endif()
 
 if (ISLE_BUILD_CONFIG)
@@ -647,6 +653,18 @@ add_subdirectory(packaging)
 
 set(CPACK_PACKAGE_DIRECTORY "dist")
 set(CPACK_PACKAGE_FILE_NAME "isle-${PROJECT_VERSION}-${ISLE_PACKAGE_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+if(NINTENDO_3DS)
+  ctr_generate_smdh(isle.smdh
+    NAME "LEGO Island"
+    TITLE "LEGO Island"
+    DESCRIPTION "LEGO Island for the Nintendo 3DS"
+    AUTHOR "isledecomp/isle-portable"
+    VERSION "${PROJECT_VERSION}"
+    ICON "ISLE/res/3ds/isle.png"
+  )
+
+  ctr_create_3dsx(isle SMDH isle.smdh)
+endif()
 if(MSVC)
   set(CPACK_GENERATOR ZIP)
 else()
