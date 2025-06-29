@@ -16,6 +16,8 @@
 
 DECOMP_SIZE_ASSERT(MxTransitionManager, 0x900)
 
+MxTransitionManager::TransitionType g_transitionManagerConfig = MxTransitionManager::e_mosaic;
+
 // GLOBAL: LEGO1 0x100f4378
 RECT g_fullScreenRect = {0, 0, 640, 480};
 
@@ -105,7 +107,7 @@ MxResult MxTransitionManager::StartTransition(
 			backgroundAudioManager->Stop();
 		}
 
-		m_mode = p_animationType;
+		m_mode = g_transitionManagerConfig;
 
 		m_copyFlags.m_bit0 = p_doCopy;
 
@@ -210,10 +212,10 @@ void MxTransitionManager::DissolveTransition()
 	memset(&ddsd, 0, sizeof(ddsd));
 	ddsd.dwSize = sizeof(ddsd);
 
-	HRESULT res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+	HRESULT res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
 	if (res == DDERR_SURFACELOST) {
 		m_ddSurface->Restore();
-		res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+		res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
 	}
 
 	if (res == DD_OK) {
@@ -402,10 +404,10 @@ void MxTransitionManager::WipeDownTransition()
 	memset(&ddsd, 0, sizeof(ddsd));
 	ddsd.dwSize = sizeof(ddsd);
 
-	HRESULT res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+	HRESULT res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
 	if (res == DDERR_SURFACELOST) {
 		m_ddSurface->Restore();
-		res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+		res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
 	}
 
 	if (res == DD_OK) {
@@ -439,10 +441,10 @@ void MxTransitionManager::WindowsTransition()
 	memset(&ddsd, 0, sizeof(ddsd));
 	ddsd.dwSize = sizeof(ddsd);
 
-	HRESULT res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+	HRESULT res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
 	if (res == DDERR_SURFACELOST) {
 		m_ddSurface->Restore();
-		res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+		res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
 	}
 
 	if (res == DD_OK) {
@@ -483,10 +485,10 @@ void MxTransitionManager::BrokenTransition()
 	memset(&ddsd, 0, sizeof(ddsd));
 	ddsd.dwSize = sizeof(ddsd);
 
-	HRESULT res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+	HRESULT res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
 	if (res == DDERR_SURFACELOST) {
 		m_ddSurface->Restore();
-		res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+		res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
 	}
 
 	if (res == DD_OK) {
@@ -631,4 +633,9 @@ void MxTransitionManager::SetupCopyRect(LPDDSURFACEDESC p_ddsc)
 			m_waitIndicator->GetHeight()
 		);
 	}
+}
+
+void MxTransitionManager::configureMxTransitionManager(TransitionType p_transitionManagerConfig)
+{
+	g_transitionManagerConfig = p_transitionManagerConfig;
 }

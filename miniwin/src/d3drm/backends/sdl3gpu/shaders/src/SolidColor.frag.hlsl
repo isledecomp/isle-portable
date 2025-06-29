@@ -72,8 +72,11 @@ FS_Output main(FS_Input input)
 	if (UseTexture != 0) {
 		float4 texel = Texture.Sample(Sampler, input.TexCoord);
 		finalColor = saturate(texel.rgb * finalColor);
+		output.Color = float4(finalColor, texel.a);
 	}
-	output.Color = float4(finalColor, Color.a);
+	else {
+		output.Color = float4(finalColor, Color.a);
+	}
 	output.Depth = input.Position.w;
 	return output;
 }

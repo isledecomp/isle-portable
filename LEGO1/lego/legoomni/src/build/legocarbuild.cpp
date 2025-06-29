@@ -488,7 +488,7 @@ void LegoCarBuild::FUN_100236d0()
 	m_unk0x110 = NULL;
 	m_unk0x100 = 0;
 
-	if (m_animPresenter->AllPartsPlaced()) {
+	if (m_animPresenter->AllPartsPlaced() && !Lego()->IsVersion10()) {
 		// Note the code duplication with LEGO1 0x10025ee0
 		switch (m_carId) {
 		case 1:

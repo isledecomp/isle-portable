@@ -9,6 +9,8 @@
 #include "mxticklethread.h"
 #include "mxwavepresenter.h"
 
+#include <SDL3/SDL_log.h>
+
 DECOMP_SIZE_ASSERT(MxSoundManager, 0x3c);
 
 // GLOBAL LEGO1 0x10101420
@@ -98,12 +100,17 @@ MxResult MxSoundManager::Create(MxU32 p_frequencyMS, MxBool p_createThread)
 	spec.format = SDL_AUDIO_F32;
 	spec.channels = ma_engine_get_channels(m_engine);
 
-	if ((m_stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, &AudioStreamCallback, this)) ==
+	if ((m_stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, &AudioStreamCallback, this)) !=
 		NULL) {
-		goto done;
+		SDL_ResumeAudioDevice(SDL_GetAudioStreamDevice(m_stream));
 	}
-
-	SDL_ResumeAudioDevice(SDL_GetAudioStreamDevice(m_stream));
+	else {
+		SDL_LogError(
+			SDL_LOG_CATEGORY_APPLICATION,
+			"Failed to open default audio device for playback: %s",
+			SDL_GetError()
+		);
+	}
 
 	if (p_createThread) {
 		m_thread = new MxTickleThread(this, p_frequencyMS);

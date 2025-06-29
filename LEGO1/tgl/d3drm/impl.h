@@ -252,8 +252,8 @@ public:
 	Result TransformWorldToScreen(const float world[3], float screen[4]) override;
 	Result TransformScreenToWorld(const float screen[4], float world[3]) override;
 	Result Pick(
-		unsigned int x,
-		unsigned int y,
+		int x,
+		int y,
 		const Group** ppGroupsToPickFrom,
 		int groupsToPickFromCount,
 		const Group**& rppPickedGroups,
@@ -277,8 +277,8 @@ public:
 	Result SetCamera(const CameraImpl& rCamera);
 	Result Render(const GroupImpl& rScene);
 	Result Pick(
-		unsigned int x,
-		unsigned int y,
+		int x,
+		int y,
 		const GroupImpl** ppGroupsToPickFrom,
 		int groupsToPickFromCount,
 		const Group**& rppPickedGroups,

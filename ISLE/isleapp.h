@@ -3,6 +3,7 @@
 
 #include "lego1_export.h"
 #include "legoutils.h"
+#include "mxtransitionmanager.h"
 #include "mxtypes.h"
 #include "mxvideoparam.h"
 
@@ -56,6 +57,7 @@ public:
 
 	MxResult ParseArguments(int argc, char** argv);
 	MxResult VerifyFilesystem();
+	void DetectGameVersion();
 
 private:
 	char* m_hdPath;              // 0x00
@@ -90,6 +92,7 @@ private:
 	char* m_iniPath;
 	MxFloat m_maxLod;
 	MxU32 m_maxAllowedExtras;
+	MxTransitionManager::TransitionType m_transitionType;
 };
 
 extern IsleApp* g_isle;
