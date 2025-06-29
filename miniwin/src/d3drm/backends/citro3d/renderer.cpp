@@ -144,22 +144,17 @@ static SDL_Surface* ConvertAndResizeSurface(SDL_Surface* original, bool isUI, fl
 	return padded;
 }
 
-inline int mortonInterleave(int x, int y)
-{
-	int answer = 0;
-	for (int i = 0; i < 3; ++i) {
-		answer |= ((y >> i) & 1) << (2 * i + 1);
-		answer |= ((x >> i) & 1) << (2 * i);
-	}
-	return answer;
-}
-
 static void EncodeTextureLayout(const u8* src, u8* dst, int width, int height)
 {
 	const int tileSize = 8;
 	const int bytesPerPixel = 4;
 
 	int tilesPerRow = (width + tileSize - 1) / tileSize;
+
+	static const uint8_t mortonLUT[64] = {0,  1,  4,  5,  16, 17, 20, 21, 2,  3,  6,  7,  18, 19, 22, 23,
+										  8,  9,  12, 13, 24, 25, 28, 29, 10, 11, 14, 15, 26, 27, 30, 31,
+										  32, 33, 36, 37, 48, 49, 52, 53, 34, 35, 38, 39, 50, 51, 54, 55,
+										  40, 41, 44, 45, 56, 57, 60, 61, 42, 43, 46, 47, 58, 59, 62, 63};
 
 	for (int tileY = 0; tileY < height; tileY += tileSize) {
 		for (int tileX = 0; tileX < width; tileX += tileSize) {
@@ -175,11 +170,11 @@ static void EncodeTextureLayout(const u8* src, u8* dst, int width, int height)
 						continue;
 					}
 
-					int mortonIndex = mortonInterleave(x, y);
-					int dstIndex = (tileIndex + mortonIndex) * bytesPerPixel;
-					int srcIndex = ((height - 1 - srcY) * width + srcX) * bytesPerPixel;
+					int morton = mortonLUT[y * tileSize + x];
+					int dstIndex = (tileIndex + morton) * bytesPerPixel;
+					int srcIndex = ((height - 1 - srcY) * width + srcX);
 
-					std::memcpy(&dst[dstIndex], &src[srcIndex], bytesPerPixel);
+					*(u32*) &dst[dstIndex] = ((u32*) src)[srcIndex];
 				}
 			}
 		}
@@ -383,6 +378,7 @@ void Citro3DRenderer::StartFrame()
 	}
 	C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
 	C3D_FrameDrawOn(m_renderTarget);
+	g_rendering = true;
 }
 
 void ConvertPerspective(const D3DRMMATRIX4D in, C3D_Mtx* out)
@@ -529,6 +525,7 @@ void Citro3DRenderer::Flip()
 	C3D_FrameEnd(0);
 	gfxFlushBuffers();
 	gspWaitForVBlank();
+	g_rendering = false;
 }
 
 void Citro3DRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect)
