@@ -155,7 +155,7 @@ void Direct3DRMDevice2Impl::Resize()
 {
 	int width, height;
 	SDL_GetWindowSizeInPixels(DDWindow, &width, &height);
-#ifdef USE_CITRO3D
+#ifdef __3DS__
 	width = 320; // We are on the lower screen
 	height = 240;
 #endif

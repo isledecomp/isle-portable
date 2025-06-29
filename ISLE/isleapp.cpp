@@ -52,7 +52,7 @@
 
 #ifdef __3DS__
 #include "3ds/apthooks.h"
-#include "3ds/filesystem.h"
+#include "3ds/config.h"
 #endif
 
 DECOMP_SIZE_ASSERT(IsleApp, 0x8c)

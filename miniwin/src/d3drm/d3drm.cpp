@@ -13,7 +13,7 @@
 #ifdef USE_OPENGLES2
 #include "d3drmrenderer_opengles2.h"
 #endif
-#ifdef USE_CITRO3D
+#ifdef __3DS__
 #include "d3drmrenderer_citro3d.h"
 #endif
 #ifdef _WIN32
@@ -162,7 +162,7 @@ HRESULT Direct3DRMImpl::CreateDeviceFromSurface(
 		DDRenderer = OpenGL1Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
 #endif
-#ifdef USE_CITRO3D
+#ifdef __3DS__
 	else if (SDL_memcmp(&guid, &Citro3D_GUID, sizeof(GUID)) == 0) {
 		DDRenderer = new Citro3DRenderer(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
