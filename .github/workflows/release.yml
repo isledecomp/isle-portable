@@ -83,13 +83,16 @@ jobs:
         run: |
           cd build
           cpack .
+
           
       - name: Install linuxdeploy
+        if: ${{ matrix.linux }}
         uses: miurahr/install-linuxdeploy-action@v1.8.0
         with:
           plugins: qt
 
-      - name: Build AppImage
+      - name: Package (AppImage)
+        if: ${{ matrix.linux }}
         run: |
           NO_STRIP=1 ${{ steps.install-linuxdeploy.outputs.linuxdeploy }} \
             --plugin qt \
@@ -100,7 +103,14 @@ jobs:
             -i build/icons/@APP_ID@.svg \
             --custom-apprun=/packaging/linux/appimage/AppRun \
             --appdir=build/packaging/linux/appimage/AppDir \
-            --output "dist/LEGO_Island-$(uname -m).AppImage"
+            --output "dist/isle-$(uname -m).AppImage"
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: Release-${{ matrix.name }}
+          path: |
+            build/dist/isle-*
 
       - name: Upload Artifact
         uses: actions/upload-artifact@main
@@ -149,7 +159,7 @@ jobs:
       - name: Download All Artifacts
         uses: actions/download-artifact@main
         with:
-          pattern: "{Release-*,*.flatpak,*.AppImage}"
+          pattern: "{Release-*,*.AppImage}"
           path: Release
           merge-multiple: true
 
