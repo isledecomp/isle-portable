@@ -94,15 +94,15 @@ jobs:
       - name: Package (AppImage)
         if: ${{ matrix.linux }}
         run: |
-          NO_STRIP=1 ${{ steps.install-linuxdeploy.outputs.linuxdeploy }} \
-            --plugin qt \
+          export LD_LIBRARY_PATH=".:$LD_LIBRARY_PATH" && NO_STRIP=1 ${{ steps.install-linuxdeploy.outputs.linuxdeploy }} \
+            --plugin=qt \
             -e build/isle \
             -e build/isle-config \
             -l build/liblego1.so \
             -d build/packaging/linux/org.legoisland.Isle.desktop \
             -i build/icons/@APP_ID@.svg \
             --custom-apprun=/packaging/linux/appimage/AppRun \
-            --appdir=build/packaging/linux/appimage/AppDir \
+            --appdir build/packaging/linux/appimage/AppDir \
             --output "dist/isle-$(uname -m).AppImage"
 
       - name: Upload Artifact
