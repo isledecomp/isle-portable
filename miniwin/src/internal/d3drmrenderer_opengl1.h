@@ -20,8 +20,6 @@ public:
 	void SetFrustumPlanes(const Plane* frustumPlanes) override;
 	Uint32 GetTextureId(IDirect3DRMTexture* texture, bool isUi) override;
 	Uint32 GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup) override;
-	void GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc) override;
-	const char* GetName() override;
 	HRESULT BeginFrame() override;
 	void EnableTransparency() override;
 	void SubmitDraw(
@@ -57,8 +55,21 @@ private:
 inline static void OpenGL1Renderer_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
 	Direct3DRMRenderer* device = OpenGL1Renderer::Create(640, 480);
-	if (device) {
-		EnumDevice(cb, ctx, device, OpenGL1_GUID);
-		delete device;
+	if (!device) {
+		return;
 	}
+	delete device;
+
+	D3DDEVICEDESC halDesc = {};
+	halDesc.dcmColorModel = D3DCOLORMODEL::RGB;
+	halDesc.dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
+	halDesc.dwDeviceZBufferBitDepth = DDBD_24;
+	halDesc.dwDeviceRenderBitDepth = DDBD_32;
+	halDesc.dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
+	halDesc.dpcTriCaps.dwShadeCaps = D3DPSHADECAPS_ALPHAFLATBLEND;
+	halDesc.dpcTriCaps.dwTextureFilterCaps = D3DPTFILTERCAPS_LINEAR;
+
+	D3DDEVICEDESC helDesc = {};
+
+	EnumDevice(cb, ctx, "OpenGL 1.1 HAL", &halDesc, &helDesc, OpenGL1_GUID);
 }

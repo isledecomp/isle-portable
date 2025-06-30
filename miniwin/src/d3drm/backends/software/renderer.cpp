@@ -664,24 +664,6 @@ Uint32 Direct3DRMSoftwareRenderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGr
 	return (Uint32) (m_meshs.size() - 1);
 }
 
-void Direct3DRMSoftwareRenderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc)
-{
-	memset(halDesc, 0, sizeof(D3DDEVICEDESC));
-
-	helDesc->dcmColorModel = D3DCOLORMODEL::RGB;
-	helDesc->dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
-	helDesc->dwDeviceZBufferBitDepth = DDBD_32;
-	helDesc->dwDeviceRenderBitDepth = DDBD_32;
-	helDesc->dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
-	helDesc->dpcTriCaps.dwShadeCaps = D3DPSHADECAPS_ALPHAFLATBLEND;
-	helDesc->dpcTriCaps.dwTextureFilterCaps = D3DPTFILTERCAPS_LINEAR;
-}
-
-const char* Direct3DRMSoftwareRenderer::GetName()
-{
-	return "Miniwin Emulation";
-}
-
 HRESULT Direct3DRMSoftwareRenderer::BeginFrame()
 {
 	if (!m_renderedImage || !SDL_LockSurface(m_renderedImage)) {
