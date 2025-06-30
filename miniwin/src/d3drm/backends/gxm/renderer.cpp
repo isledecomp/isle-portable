@@ -1,15 +1,16 @@
 #include "d3drmrenderer_gxm.h"
 #include "gxm_memory.h"
 #include "meshutils.h"
-#include "utils.h"
 #include "razor.h"
 #include "tlsf.h"
+#include "utils.h"
 
 #include <SDL3/SDL.h>
 #include <algorithm>
 #include <psp2/display.h>
 #include <psp2/gxm.h>
 #include <psp2/kernel/modulemgr.h>
+#include <psp2/kernel/sysmem.h>
 #include <psp2/types.h>
 #include <string>
 #define INCBIN_PREFIX _inc_
@@ -26,9 +27,6 @@ bool gxm_initialized = false;
 
 #define VITA_GXM_COLOR_FORMAT SCE_GXM_COLOR_FORMAT_A8B8G8R8
 #define VITA_GXM_PIXEL_FORMAT SCE_DISPLAY_PIXELFORMAT_A8B8G8R8
-
-#define CDRAM_POOL_SIZE 64*1024*1024
-
 
 INCBIN(main_vert_gxp, "shaders/main.vert.gxp");
 INCBIN(main_frag_gxp, "shaders/main.frag.gxp");
@@ -60,7 +58,6 @@ static const SceGxmBlendInfo blendInfoTransparent = {
 	.alphaDst = SCE_GXM_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
 };
 
-
 static GXMRendererContext gxm_renderer_context;
 
 static void display_callback(const void* callback_data)
@@ -84,13 +81,13 @@ static void display_callback(const void* callback_data)
 static int load_skprx(const char* name)
 {
 	int modid = taiLoadKernelModule(name, 0, nullptr);
-	if(modid < 0) {
+	if (modid < 0) {
 		sceClibPrintf("%s load: 0x%08x\n", name, modid);
 		return modid;
 	}
 	int status;
 	int ret = taiStartKernelModule(modid, 0, nullptr, 0, nullptr, &status);
-	if(ret < 0) {
+	if (ret < 0) {
 		sceClibPrintf("%s start: 0x%08x\n", name, ret);
 	}
 	return ret;
@@ -99,34 +96,34 @@ static int load_skprx(const char* name)
 static int load_suprx(const char* name)
 {
 	int modid = _sceKernelLoadModule(name, 0, nullptr);
-	if(modid < 0) {
+	if (modid < 0) {
 		sceClibPrintf("%s load: 0x%08x\n", name, modid);
 		return modid;
 	}
 	int status;
 	int ret = sceKernelStartModule(modid, 0, nullptr, 0, nullptr, &status);
-	if(ret < 0) {
+	if (ret < 0) {
 		sceClibPrintf("%s start: 0x%08x\n", name, ret);
 	}
 	return ret;
 }
 
-static const bool extra_debug = false; 
+static const bool extra_debug = false;
 
 static void load_razor()
 {
-	if(load_suprx("app0:librazorcapture_es4.suprx") >= 0) {
+	if (load_suprx("app0:librazorcapture_es4.suprx") >= 0) {
 		with_razor = true;
 	}
 
-	if(extra_debug) {
+	if (extra_debug) {
 		load_skprx("ux0:app/LEGO00001/syslibtrace.skprx");
 		load_skprx("ux0:app/LEGO00001/pamgr.skprx");
 
-		if(load_suprx("app0:libperf.suprx") >= 0) {
+		if (load_suprx("app0:libperf.suprx") >= 0) {
 		}
 
-		if(load_suprx("app0:librazorhud_es4.suprx") >= 0) {
+		if (load_suprx("app0:librazorhud_es4.suprx") >= 0) {
 			with_razor_hud = true;
 		}
 	}
@@ -135,7 +132,7 @@ static void load_razor()
 		sceRazorGpuCaptureEnableSalvage("ux0:data/gpu_crash.sgx");
 	}
 
-	if(with_razor_hud) {
+	if (with_razor_hud) {
 		sceRazorGpuTraceSetFilename("ux0:data/gpu_trace", 3);
 	}
 }
@@ -163,62 +160,6 @@ bool gxm_init()
 	}
 	gxm_initialized = true;
 	return true;
-}
-
-static SceUID cdramAllocatorUID = -1;
-static tlsf_t cdramAllocator = nullptr;
-
-bool cdram_allocator_create() {
-	int ret;
-
-	ret = sceKernelAllocMemBlock(
-		"gpu_cdram_pool",
-		SCE_KERNEL_MEMBLOCK_TYPE_USER_CDRAM_RW,
-		CDRAM_POOL_SIZE,
-		NULL
-	);
-	if (ret < 0) {
-		sceClibPrintf("sceKernelAllocMemBlock failed: %08x\n", ret);
-		return false;
-	}
-	cdramAllocatorUID = ret;
-
-	void* mem;
-	ret = sceKernelGetMemBlockBase(cdramAllocatorUID, &mem);
-	if (ret < 0) {
-		sceClibPrintf("sceKernelGetMemBlockBase failed: %08x\n", ret);
-		return false;
-	}
-
-	ret = sceGxmMapMemory(
-		mem,
-		CDRAM_POOL_SIZE,
-		(SceGxmMemoryAttribFlags) (SCE_GXM_MEMORY_ATTRIB_READ | SCE_GXM_MEMORY_ATTRIB_WRITE)
-	);
-	if (ret < 0) {
-		sceClibPrintf("sceGxmMapMemory failed: %08x\n", ret);
-		return false;
-	}
-
-	cdramAllocator = SDL_malloc(tlsf_size());
-	tlsf_create(cdramAllocator);
-	tlsf_add_pool(cdramAllocator, mem, CDRAM_POOL_SIZE);
-	return true;
-}
-
-int inuse_mem = 0;
-inline void* cdram_alloc(size_t size, size_t align) {
-	sceClibPrintf("cdram_alloc(%d, %d) inuse=%d ", size, align, inuse_mem);
-	void* ptr = tlsf_memalign(cdramAllocator, align, size);
-	sceClibPrintf("ptr=%p\n", ptr);
-	inuse_mem += tlsf_block_size(ptr);
-	return ptr;
-}
-
-inline void cdram_free(void* ptr) {
-	inuse_mem -= tlsf_block_size(ptr);
-	sceClibPrintf("cdram_free(%p)\n", ptr);
-	tlsf_free(cdramAllocator, ptr);
 }
 
 static bool create_gxm_context()
@@ -407,7 +348,7 @@ GXMRenderer::GXMRenderer(DWORD width, DWORD height)
 		return;
 	}
 
-	if(!cdram_allocator_create()) {
+	if (!cdram_allocator_create()) {
 		sceClibPrintf("failed to create cdram allocator");
 		return;
 	}
@@ -551,15 +492,15 @@ GXMRenderer::GXMRenderer(DWORD width, DWORD height)
 		vertexStreams[0].indexSource = SCE_GXM_INDEX_SOURCE_INDEX_16BIT;
 
 		if (SCE_ERR(
-			sceGxmShaderPatcherCreateVertexProgram,
-			this->shaderPatcher,
-			this->mainVertexProgramId,
-			vertexAttributes,
-			3,
-			vertexStreams,
-			1,
-			&this->mainVertexProgram
-		)) {
+				sceGxmShaderPatcherCreateVertexProgram,
+				this->shaderPatcher,
+				this->mainVertexProgramId,
+				vertexAttributes,
+				3,
+				vertexStreams,
+				1,
+				&this->mainVertexProgram
+			)) {
 			return;
 		}
 	}
@@ -635,7 +576,6 @@ GXMRenderer::GXMRenderer(DWORD width, DWORD height)
 	// clear uniforms
 	this->colorShader_uColor = sceGxmProgramFindParameterByName(colorFragmentProgramGxp, "uColor"); // vec4
 
-
 	for (int i = 0; i < GXM_FRAGMENT_BUFFER_COUNT; i++) {
 		this->lights[i] = static_cast<GXMSceneLightUniform*>(cdram_alloc(sizeof(GXMSceneLightUniform), 4));
 	}
@@ -649,13 +589,13 @@ GXMRenderer::GXMRenderer(DWORD width, DWORD height)
 	this->quadIndices[3] = 3;
 
 	volatile uint32_t* notificationMem = sceGxmGetNotificationRegion();
-	for(uint32_t i = 0; i < GXM_FRAGMENT_BUFFER_COUNT; i++) {
+	for (uint32_t i = 0; i < GXM_FRAGMENT_BUFFER_COUNT; i++) {
 		this->fragmentNotifications[i].address = notificationMem++;
 		this->fragmentNotifications[i].value = 0;
 	}
 	this->currentFragmentBufferIndex = 0;
 
-	for(uint32_t i = 0; i < GXM_VERTEX_BUFFER_COUNT; i++) {
+	for (uint32_t i = 0; i < GXM_VERTEX_BUFFER_COUNT; i++) {
 		this->vertexNotifications[i].address = notificationMem++;
 		this->vertexNotifications[i].value = 0;
 	}
@@ -663,10 +603,10 @@ GXMRenderer::GXMRenderer(DWORD width, DWORD height)
 
 	int count;
 	auto ids = SDL_GetGamepads(&count);
-	for(int i = 0; i < count; i++) {
+	for (int i = 0; i < count; i++) {
 		auto id = ids[i];
 		auto gamepad = SDL_OpenGamepad(id);
-		if(gamepad != nullptr) {
+		if (gamepad != nullptr) {
 			this->gamepad = gamepad;
 			break;
 		}
@@ -734,90 +674,84 @@ static void convertTextureMetadata(
 	SDL_Surface* surface,
 	bool* supportedFormat,
 	SceGxmTextureFormat* gxmTextureFormat,
-	size_t* textureSize, // size in bytes
+	size_t* textureSize,      // size in bytes
 	size_t* textureAlignment, // alignment in bytes
-	size_t* textureStride, // stride in bytes
-	size_t* paletteOffset // offset from textureData in bytes
+	size_t* textureStride,    // stride in bytes
+	size_t* paletteOffset     // offset from textureData in bytes
 )
 {
 	int bytesPerPixel;
 	size_t extraDataSize = 0;
 	switch (surface->format) {
-		case SDL_PIXELFORMAT_INDEX8: {
-			*supportedFormat = true;
-			*gxmTextureFormat = SCE_GXM_TEXTURE_FORMAT_P8_ABGR;
-			int pixelsSize = surface->w * surface->h;
-			int alignBytes = ALIGNMENT(pixelsSize, SCE_GXM_PALETTE_ALIGNMENT);
-			extraDataSize = alignBytes + 256 * 4;
-			*textureAlignment = SCE_GXM_PALETTE_ALIGNMENT;
-			*paletteOffset = pixelsSize + alignBytes;
-			bytesPerPixel = 1;
-			break;
-		}
-		case SDL_PIXELFORMAT_ABGR8888: {
-			*supportedFormat = true;
-			*gxmTextureFormat = SCE_GXM_TEXTURE_FORMAT_U8U8U8U8_ABGR;
-			*textureAlignment = SCE_GXM_TEXTURE_ALIGNMENT;
-			bytesPerPixel = 4;
-			break;
-		}
-		default: {
-			*supportedFormat = false;
-			*gxmTextureFormat = SCE_GXM_TEXTURE_FORMAT_U8U8U8U8_ABGR;
-			*textureAlignment = SCE_GXM_TEXTURE_ALIGNMENT;
-			bytesPerPixel = 4;
-			break;
-		}
+	case SDL_PIXELFORMAT_INDEX8: {
+		*supportedFormat = true;
+		*gxmTextureFormat = SCE_GXM_TEXTURE_FORMAT_P8_ABGR;
+		int pixelsSize = surface->w * surface->h;
+		int alignBytes = ALIGNMENT(pixelsSize, SCE_GXM_PALETTE_ALIGNMENT);
+		extraDataSize = alignBytes + 256 * 4;
+		*textureAlignment = SCE_GXM_PALETTE_ALIGNMENT;
+		*paletteOffset = pixelsSize + alignBytes;
+		bytesPerPixel = 1;
+		break;
 	}
-	*textureStride = ALIGN(surface->w, 8)*bytesPerPixel;
-	*textureSize = (*textureStride)*surface->h+extraDataSize;
+	case SDL_PIXELFORMAT_ABGR8888: {
+		*supportedFormat = true;
+		*gxmTextureFormat = SCE_GXM_TEXTURE_FORMAT_U8U8U8U8_ABGR;
+		*textureAlignment = SCE_GXM_TEXTURE_ALIGNMENT;
+		bytesPerPixel = 4;
+		break;
+	}
+	default: {
+		*supportedFormat = false;
+		*gxmTextureFormat = SCE_GXM_TEXTURE_FORMAT_U8U8U8U8_ABGR;
+		*textureAlignment = SCE_GXM_TEXTURE_ALIGNMENT;
+		bytesPerPixel = 4;
+		break;
+	}
+	}
+	*textureStride = ALIGN(surface->w, 8) * bytesPerPixel;
+	*textureSize = (*textureStride) * surface->h + extraDataSize;
 }
 
 void copySurfaceToGxm(DirectDrawSurfaceImpl* surface, uint8_t* textureData, size_t dstStride, size_t dstSize)
 {
 	SDL_Surface* src = surface->m_surface;
-	switch(src->format) {
-		case SDL_PIXELFORMAT_ABGR8888: {
-			for(int y = 0; y < src->h; y++) {
-				uint8_t* srcRow = (uint8_t*)src->pixels + (y*src->pitch);
-				uint8_t* dstRow = textureData + (y*dstStride);
-				size_t rowSize = src->w*4;
-				if((dstRow - textureData)+rowSize > dstSize) {
-					sceClibPrintf("buffer overrun!!! size=%d y=%d rowSize=%d\n", dstSize, y, rowSize);
-				}
-				memcpy(dstRow, srcRow, rowSize);
-			}
-			break;
+	switch (src->format) {
+	case SDL_PIXELFORMAT_ABGR8888: {
+		for (int y = 0; y < src->h; y++) {
+			uint8_t* srcRow = (uint8_t*) src->pixels + (y * src->pitch);
+			uint8_t* dstRow = textureData + (y * dstStride);
+			size_t rowSize = src->w * 4;
+			memcpy(dstRow, srcRow, rowSize);
 		}
-		case SDL_PIXELFORMAT_INDEX8: {
-			LPDIRECTDRAWPALETTE _palette;
-			surface->GetPalette(&_palette);
-			auto palette = static_cast<DirectDrawPaletteImpl*>(_palette);
-			
-			// copy pixels
-			for(int y = 0; y < src->h; y++) {
-				void* srcRow = static_cast<uint8_t*>(src->pixels) + (y*src->pitch);
-				void* dstRow = static_cast<uint8_t*>(textureData) + (y*dstStride);
-				memcpy(dstRow, srcRow, src->w);
-			}
+		break;
+	}
+	case SDL_PIXELFORMAT_INDEX8: {
+		LPDIRECTDRAWPALETTE _palette;
+		surface->GetPalette(&_palette);
+		auto palette = static_cast<DirectDrawPaletteImpl*>(_palette);
 
-			int pixelsSize = src->w * src->h;
-			int alignBytes = ALIGNMENT(pixelsSize, SCE_GXM_PALETTE_ALIGNMENT);
-			uint8_t* paletteData = textureData + pixelsSize + alignBytes;
-			memcpy(paletteData, palette->m_palette->colors, 256 * 4);
-			if((paletteData-textureData) + 256*4 > dstSize) {
-				sceClibPrintf("buffer overrun!!! textureData=%p paletteData=%p size=%d\n", textureData, paletteData, dstSize);
-			}
-			palette->Release();
-			break;
+		// copy pixels
+		for (int y = 0; y < src->h; y++) {
+			void* srcRow = static_cast<uint8_t*>(src->pixels) + (y * src->pitch);
+			void* dstRow = static_cast<uint8_t*>(textureData) + (y * dstStride);
+			memcpy(dstRow, srcRow, src->w);
 		}
-		default: {
-			sceClibPrintf("unsupported format %d\n", SDL_GetPixelFormatName(src->format));
-			SDL_Surface* dst = SDL_CreateSurfaceFrom(src->w, src->h, SDL_PIXELFORMAT_ABGR8888, textureData, src->w*4);
-			SDL_BlitSurface(src, nullptr, dst, nullptr);
-			SDL_DestroySurface(dst);
-			break;
-		}
+
+		int pixelsSize = src->w * src->h;
+		int alignBytes = ALIGNMENT(pixelsSize, SCE_GXM_PALETTE_ALIGNMENT);
+		uint8_t* paletteData = textureData + pixelsSize + alignBytes;
+		memcpy(paletteData, palette->m_palette->colors, 256 * 4);
+		palette->Release();
+		break;
+	}
+	default: {
+		DEBUG_ONLY_PRINTF("unsupported format %d\n", SDL_GetPixelFormatName(src->format));
+		SDL_Surface* dst = SDL_CreateSurfaceFrom(src->w, src->h, SDL_PIXELFORMAT_ABGR8888, textureData, src->w * 4);
+		SDL_BlitSurface(src, nullptr, dst, nullptr);
+		SDL_DestroySurface(dst);
+		break;
+	}
 	}
 }
 
@@ -825,7 +759,7 @@ Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi)
 {
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
 	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
-	
+
 	bool supportedFormat;
 	SceGxmTextureFormat gxmTextureFormat;
 	size_t textureSize;
@@ -846,7 +780,7 @@ Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi)
 		&paletteOffset
 	);
 
-	if(!supportedFormat) {
+	if (!supportedFormat) {
 		return NO_TEXTURE_ID;
 	}
 
@@ -855,14 +789,15 @@ Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi)
 		if (tex.texture == texture) {
 			if (tex.version != texture->m_version) {
 				void* textureData = sceGxmTextureGetData(&tex.gxmTexture);
-				copySurfaceToGxm(surface, (uint8_t*)textureData, textureStride, textureSize);
+				copySurfaceToGxm(surface, (uint8_t*) textureData, textureStride, textureSize);
 				tex.version = texture->m_version;
 			}
 			return i;
 		}
 	}
 
-	sceClibPrintf("Create Texture %s w=%d h=%d s=%d size=%d align=%d\n",
+	DEBUG_ONLY_PRINTF(
+		"Create Texture %s w=%d h=%d s=%d size=%d align=%d\n",
 		SDL_GetPixelFormatName(surface->m_surface->format),
 		textureWidth,
 		textureHeight,
@@ -873,24 +808,16 @@ Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi)
 
 	// allocate gpu memory
 	void* textureData = cdram_alloc(textureSize, textureAlignment);
-	copySurfaceToGxm(surface, (uint8_t*)textureData, textureStride, textureSize);
+	copySurfaceToGxm(surface, (uint8_t*) textureData, textureStride, textureSize);
 
 	SceGxmTexture gxmTexture;
-	SCE_ERR(
-		sceGxmTextureInitLinear,
-		&gxmTexture,
-		textureData,
-		gxmTextureFormat,
-		textureWidth,
-		textureHeight,
-		0
-	);
+	SCE_ERR(sceGxmTextureInitLinear, &gxmTexture, textureData, gxmTextureFormat, textureWidth, textureHeight, 0);
 	sceGxmTextureSetMinFilter(&gxmTexture, SCE_GXM_TEXTURE_FILTER_LINEAR);
 	sceGxmTextureSetMagFilter(&gxmTexture, SCE_GXM_TEXTURE_FILTER_LINEAR);
 	sceGxmTextureSetUAddrMode(&gxmTexture, SCE_GXM_TEXTURE_ADDR_REPEAT);
 	sceGxmTextureSetVAddrMode(&gxmTexture, SCE_GXM_TEXTURE_ADDR_REPEAT);
 	if (gxmTextureFormat == SCE_GXM_TEXTURE_FORMAT_P8_ABGR) {
-		sceGxmTextureSetPalette(&gxmTexture, (uint8_t*)textureData + paletteOffset);
+		sceGxmTextureSetPalette(&gxmTexture, (uint8_t*) textureData + paletteOffset);
 	}
 
 	for (Uint32 i = 0; i < m_textures.size(); ++i) {
@@ -1044,30 +971,31 @@ void GXMRenderer::StartScene()
 	bool dpad_right = SDL_GetGamepadButton(this->gamepad, SDL_GAMEPAD_BUTTON_DPAD_RIGHT);
 
 	// hud display
-	if(with_razor_hud && dpad_up != this->button_dpad_up) {
+	if (with_razor_hud && dpad_up != this->button_dpad_up) {
 		this->button_dpad_up = dpad_up;
-		if(dpad_up) {
+		if (dpad_up) {
 			sceRazorHudSetDisplayEnabled(razor_display_enabled);
 		}
 	}
 
 	// capture frame
-	if(with_razor && dpad_down != this->button_dpad_down) {
+	if (with_razor && dpad_down != this->button_dpad_down) {
 		this->button_dpad_down = dpad_down;
-		if(dpad_down) {
+		if (dpad_down) {
 			sceRazorGpuCaptureSetTriggerNextFrame("ux0:/data/capture.sgx");
 			SDL_Log("trigger razor");
 		}
 	}
 
 	// toggle live
-	if(with_razor_hud && dpad_left != this->button_dpad_left) {
+	if (with_razor_hud && dpad_left != this->button_dpad_left) {
 		this->button_dpad_left = dpad_left;
-		if(dpad_left) {
-			if(razor_live_started) {
+		if (dpad_left) {
+			if (razor_live_started) {
 				sceRazorGpuLiveStop();
 				razor_live_started = false;
-			} else {
+			}
+			else {
 				sceRazorGpuLiveStart();
 				razor_live_started = true;
 			}
@@ -1075,9 +1003,9 @@ void GXMRenderer::StartScene()
 	}
 
 	// trigger trace
-	if(with_razor_hud && dpad_right != this->button_dpad_right) {
+	if (with_razor_hud && dpad_right != this->button_dpad_right) {
 		this->button_dpad_right = dpad_right;
-		if(dpad_right) {
+		if (dpad_right) {
 			sceRazorGpuTraceTrigger();
 		}
 	}
@@ -1098,7 +1026,6 @@ void GXMRenderer::StartScene()
 	sceGxmNotificationWait(&this->vertexNotifications[this->currentVertexBufferIndex]);
 	sceGxmNotificationWait(&this->fragmentNotifications[this->currentFragmentBufferIndex]);
 }
-
 
 HRESULT GXMRenderer::BeginFrame()
 {
