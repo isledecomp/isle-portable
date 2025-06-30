@@ -76,7 +76,7 @@ void DirectX9Renderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* 
 	);
 }
 
-Uint32 DirectX9Renderer::GetTextureId(IDirect3DRMTexture* iTexture)
+Uint32 DirectX9Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi)
 {
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
 	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
@@ -221,7 +221,7 @@ void DirectX9Renderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc)
 	halDesc->dcmColorModel = D3DCOLORMODEL::RGB;
 	halDesc->dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
 	halDesc->dwDeviceZBufferBitDepth = DDBD_24;
-	helDesc->dwDeviceRenderBitDepth = DDBD_32;
+	halDesc->dwDeviceRenderBitDepth = DDBD_32;
 	halDesc->dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
 	halDesc->dpcTriCaps.dwShadeCaps = D3DPSHADECAPS_ALPHAFLATBLEND;
 	halDesc->dpcTriCaps.dwTextureFilterCaps = D3DPTFILTERCAPS_LINEAR;

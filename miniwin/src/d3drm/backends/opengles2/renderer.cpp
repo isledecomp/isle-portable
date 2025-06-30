@@ -239,7 +239,7 @@ void OpenGLES2Renderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture*
 	);
 }
 
-Uint32 OpenGLES2Renderer::GetTextureId(IDirect3DRMTexture* iTexture)
+Uint32 OpenGLES2Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi)
 {
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
 	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
@@ -425,7 +425,7 @@ void OpenGLES2Renderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc)
 			halDesc->dwDeviceZBufferBitDepth |= DDBD_32;
 		}
 	}
-	helDesc->dwDeviceRenderBitDepth = DDBD_32;
+	halDesc->dwDeviceRenderBitDepth = DDBD_32;
 	halDesc->dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
 	halDesc->dpcTriCaps.dwShadeCaps = D3DPSHADECAPS_ALPHAFLATBLEND;
 	halDesc->dpcTriCaps.dwTextureFilterCaps = D3DPTFILTERCAPS_LINEAR;
