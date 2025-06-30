@@ -33,6 +33,7 @@
 #include "roi/legoroi.h"
 #include "tgl/d3drm/impl.h"
 #include "viewmanager/viewmanager.h"
+#include "xbox_buttons.h"
 
 #include <miniwin/miniwindevice.h>
 
@@ -438,6 +439,21 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		else {
 			if (InputManager()) {
 				InputManager()->QueueEvent(c_notificationKeyPress, keyCode, 0, 0, keyCode);
+			}
+		}
+		break;
+	}
+	case SDL_EVENT_JOYSTICK_BUTTON_DOWN: {
+		{
+			if (event->gbutton.button == SDL_XBOX_BUTTON_A) {
+				if (InputManager()) {
+					InputManager()->QueueEvent(c_notificationKeyPress, SDLK_SPACE, 0, 0, SDLK_SPACE);
+				}
+			}
+			if (event->gbutton.button == SDL_XBOX_BUTTON_START) {
+				if (InputManager()) {
+					InputManager()->QueueEvent(c_notificationKeyPress, SDLK_ESCAPE, 0, 0, SDLK_ESCAPE);
+				}
 			}
 		}
 		break;
