@@ -104,6 +104,7 @@ jobs:
         run: cmake --build build --verbose
 
       - name: Package (CPack)
+        if: ${{ !matrix.n3ds }}
         run: |
           cd build
           cpack .
@@ -131,6 +132,13 @@ jobs:
             --output appimage && \
           mv *.AppImage dist/
 
+      - name: Package (3DS)
+        if: ${{ matrix.n3ds }}
+        run: |
+          cd build
+          mkdir dist
+          mv *.3dsx dist/
+
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -138,6 +146,7 @@ jobs:
           path: |
             build/dist/isle-*
             build/dist/*.AppImage
+            build/dist/*.3dsx
 
   flatpak:
     name: "Flatpak (${{ matrix.arch }})"

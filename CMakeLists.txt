@@ -676,4 +676,7 @@ if(MSVC)
 else()
   set(CPACK_GENERATOR TGZ)
 endif()
-include(CPack)
+
+if(NOT NINTENDO_3DS)
+  include(CPack)
+endif()
