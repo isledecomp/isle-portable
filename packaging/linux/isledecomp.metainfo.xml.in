@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Freedesktop AppStream metadata file (https://www.freedesktop.org/software/appstream/docs) -->
+
+<component type="desktop-application">
+  <id>@APP_ID@</id>
+
+  <name>@APP_NAME@</name>
+  <summary>@APP_SUMMARY@</summary>
+
+  <launchable type="desktop-id">@APP_ID@.desktop</launchable>
+
+  <branding>
+    <color type="primary">#e3000b</color>
+  </branding>
+
+  <developer id="io.github.isledecomp">
+    <name>Isle Decomp Team</name>
+  </developer>
+
+  <url type="homepage">https://github.com/isledecomp/isle-portable</url>
+  <url type="contribute">https://github.com/isledecomp/isle-portable/blob/master/CONTRIBUTING.md</url>
+  <url type="vcs-browser">https://github.com/isledecomp/isle-portable/tree/master</url>
+  <url type="bugtracker">https://github.com/isledecomp/isle-portable/issues</url>
+
+  <metadata_license>MIT</metadata_license>
+  <project_license>@APP_SPDX@</project_license>
+
+  <requires>
+    <display_length side="longest" compare="ge">640</display_length>
+    <internet>offline-only</internet>
+  </requires>
+
+  <recommends>
+    <memory>128</memory>
+  </recommends>
+
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+    <control>gamepad</control>
+  </supports>
+
+  <description>
+    <p> This initiative is a portable version of LEGO Island (Version 1.1, English)
+      based on the decompilation project. Our primary goal is to transform the codebase to achieve
+      platform independence, thereby enhancing compatibility across various systems while preserving
+      the original game's experience as faithfully as possible.
+    </p>
+
+    <p>
+      Please note: this project is dedicated to achieving platform independence without altering the
+      core gameplay, adding new features, enhancing visual quality, or rewriting code for
+      improvement's sake. While those are worthwhile objectives, they are not within the scope
+      of this project.
+    </p>
+
+  </description>
+
+  <content_rating type="oars-1.1">
+    <content_attribute id="violence-cartoon">mild</content_attribute>
+    <content_attribute id="language-humor">mild</content_attribute>
+  </content_rating>
+
+  <categories>
+    <category>Game</category>
+    <category>KidsGame</category>
+    <category>AdventureGame</category>
+    <category>Qt</category>
+  </categories>
+
+  <keywords>
+    <keyword translate="no">LEGO</keyword>
+    <keyword translate="no">lego</keyword>
+
+    <keyword>LEGO Island</keyword>
+    <!-- Translations sourced from https://www.pcgamingwiki.com/wiki/Lego_Island#Localizations  -->
+    <keyword xml:lang="da">Panik på LEGO Øen</keyword>
+    <keyword xml:lang="de">Abenteuer auf der LEGO Insel</keyword>
+    <keyword xml:lang="es">La Isla LEGO</keyword>
+    <keyword xml:lang="fr">Aventures sur L'île LEGO</keyword>
+    <keyword xml:lang="it">Isola LEGO</keyword>
+    <keyword xml:lang="ja">レゴアイランドの大冒険</keyword>
+    <keyword xml:lang="ko">레고 아일랜드</keyword>
+    <keyword xml:lang="pt">A Ilha LEGO</keyword>
+    <keyword xml:lang="ru">Остров LEGO</keyword>
+  </keywords>
+
+  <releases>
+    <release version="@SEMANTIC_VERSION@" type="development" date="@BUILD_DATE@" />
+  </releases>
+</component>

@@ -1,43 +1,13 @@
 #pragma once
-
+#include "../d3drm/backends/opengl1/actual.h"
 #include "d3drmrenderer.h"
 #include "d3drmtexture_impl.h"
 #include "ddraw_impl.h"
-
-#ifdef __APPLE__
-#include <OpenGL/gl.h>
-#else
-#include <GL/gl.h>
-#endif
 
 #include <SDL3/SDL.h>
 #include <vector>
 
 DEFINE_GUID(OpenGL1_GUID, 0x682656F3, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03);
-
-struct GLTextureCacheEntry {
-	IDirect3DRMTexture* texture;
-	Uint32 version;
-	GLuint glTextureId;
-};
-
-struct GLMeshCacheEntry {
-	const MeshGroup* meshGroup;
-	int version;
-	bool flat;
-
-	// non-VBO cache
-	std::vector<D3DVECTOR> positions;
-	std::vector<D3DVECTOR> normals;
-	std::vector<TexCoord> texcoords;
-	std::vector<uint16_t> indices;
-
-	// VBO cache
-	GLuint vboPositions;
-	GLuint vboNormals;
-	GLuint vboTexcoords;
-	GLuint ibo;
-};
 
 class OpenGL1Renderer : public Direct3DRMRenderer {
 public:

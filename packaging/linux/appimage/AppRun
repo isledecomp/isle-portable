@@ -1,0 +1,25 @@
+#!/bin/sh
+
+HERE="$(dirname "$(readlink -f "${0}")")"
+
+MAIN=$(grep -r "^Exec=.*" "$HERE"/*.desktop | head -n 1 | cut -d "=" -f 2 | cut -d " " -f 1)
+
+# MAIN_BIN=$(find "$HERE/usr/bin" -name "$MAIN" | head -n 1)
+MAIN_BIN="$HERE/usr/bin/isle-config"
+
+export PATH="${HERE}/usr/bin/":$PATH # Prefer bundled binaries
+
+export QT_QPA_PLATFORMTHEME=xdgdesktopportal # Use XDG filepicker for forward compatability
+[ -z "$QT_PLUGIN_PATH" ] && export QT_PLUGIN_PATH=/usr/lib/qt6/plugins:/usr/lib64/qt6/plugins # Use system Qt theme, will fallback to the default one if unavailable
+
+
+if [ ! -z $APPIMAGE ]; then
+  BINARY_NAME=$(basename "$ARGV0")
+  if [ -e "$HERE/usr/bin/$BINARY_NAME" ]; then
+    exec "$HERE/usr/bin/$BINARY_NAME" "$@"
+  else
+    exec "${MAIN_BIN}" "$@"
+  fi
+else
+  exec "${MAIN_BIN}" "$@"
+fi

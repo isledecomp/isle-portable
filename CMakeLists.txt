@@ -13,6 +13,9 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 include(CheckCXXSourceCompiles)
 include(CMakeDependentOption)
 include(CMakePushCheckState)
+include(cmake/detectcpu.cmake)
+
+DetectTargetCPUArchitectures(ISLE_CPUS)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -630,7 +633,9 @@ else()
   include(GNUInstallDirs)
 endif()
 
-set(ISLE_PACKAGE_NAME "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}" CACHE STRING "Platform name of the package")
+string(REPLACE ";" "-" ISLE_CPUS_STRING "${ISLE_CPUS}")
+string(TOLOWER "${ISLE_CPUS_STRING}" ISLE_CPUS_STRING)
+set(ISLE_PACKAGE_NAME "${CMAKE_SYSTEM_NAME}-${ISLE_CPUS_STRING}" CACHE STRING "Platform name of the package")
 if(BUILD_SHARED_LIBS)
   list(APPEND install_extra_targets lego1)
 endif()
@@ -649,8 +654,10 @@ if(EMSCRIPTEN)
   )
 endif()
 
+add_subdirectory(packaging)
+
 set(CPACK_PACKAGE_DIRECTORY "dist")
-set(CPACK_PACKAGE_FILE_NAME "isle-${PROJECT_VERSION}-${ISLE_PACKAGE_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+set(CPACK_PACKAGE_FILE_NAME "isle-${PROJECT_VERSION}-${ISLE_PACKAGE_NAME}")
 if(NINTENDO_3DS)
   ctr_generate_smdh(isle.smdh
     NAME "LEGO Island"
