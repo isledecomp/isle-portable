@@ -122,7 +122,7 @@ void OpenGL1Renderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* t
 	);
 }
 
-Uint32 OpenGL1Renderer::GetTextureId(IDirect3DRMTexture* iTexture)
+Uint32 OpenGL1Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi)
 {
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
 	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
@@ -263,24 +263,6 @@ Uint32 OpenGL1Renderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGr
 	m_meshs.push_back(std::move(newCache));
 	AddMeshDestroyCallback((Uint32) (m_meshs.size() - 1), mesh);
 	return (Uint32) (m_meshs.size() - 1);
-}
-
-void OpenGL1Renderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc)
-{
-	halDesc->dcmColorModel = D3DCOLORMODEL::RGB;
-	halDesc->dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
-	halDesc->dwDeviceZBufferBitDepth = DDBD_24;
-	helDesc->dwDeviceRenderBitDepth = DDBD_32;
-	halDesc->dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
-	halDesc->dpcTriCaps.dwShadeCaps = D3DPSHADECAPS_ALPHAFLATBLEND;
-	halDesc->dpcTriCaps.dwTextureFilterCaps = D3DPTFILTERCAPS_LINEAR;
-
-	memset(helDesc, 0, sizeof(D3DDEVICEDESC));
-}
-
-const char* OpenGL1Renderer::GetName()
-{
-	return "OpenGL 1.1 HAL";
 }
 
 HRESULT OpenGL1Renderer::BeginFrame()

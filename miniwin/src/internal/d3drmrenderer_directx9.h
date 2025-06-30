@@ -18,10 +18,8 @@ public:
 	void PushLights(const SceneLight* lightsArray, size_t count) override;
 	void SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back) override;
 	void SetFrustumPlanes(const Plane* frustumPlanes) override;
-	Uint32 GetTextureId(IDirect3DRMTexture* texture) override;
+	Uint32 GetTextureId(IDirect3DRMTexture* texture, bool isUi) override;
 	Uint32 GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup) override;
-	void GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc) override;
-	const char* GetName() override;
 	HRESULT BeginFrame() override;
 	void EnableTransparency() override;
 	void SubmitDraw(
@@ -52,8 +50,21 @@ private:
 inline static void DirectX9Renderer_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
 	Direct3DRMRenderer* device = DirectX9Renderer::Create(640, 480);
-	if (device) {
-		EnumDevice(cb, ctx, device, DirectX9_GUID);
-		delete device;
+	if (!device) {
+		return;
 	}
+	delete device;
+
+	D3DDEVICEDESC halDesc = {};
+	halDesc.dcmColorModel = D3DCOLOR_RGB;
+	halDesc.dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
+	halDesc.dwDeviceZBufferBitDepth = DDBD_24;
+	halDesc.dwDeviceRenderBitDepth = DDBD_32;
+	halDesc.dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
+	halDesc.dpcTriCaps.dwShadeCaps = D3DPSHADECAPS_ALPHAFLATBLEND;
+	halDesc.dpcTriCaps.dwTextureFilterCaps = D3DPTFILTERCAPS_LINEAR;
+
+	D3DDEVICEDESC helDesc = {};
+
+	EnumDevice(cb, ctx, "DirectX 9 HAL", &halDesc, &helDesc, DirectX9_GUID);
 }
