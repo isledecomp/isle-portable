@@ -42,7 +42,7 @@ jobs:
           - { name: 'msys2 mingw64',  os: 'windows-latest', dx5: false, config: true,  mingw: true, werror: true,   clang-tidy: true,   msystem: 'mingw64', msys-env: 'mingw-w64-x86_64', shell: 'msys2 {0}' }
           - { name: 'macOS',          os: 'macos-latest',   dx5: false, config: true,  brew: true,  werror: true,   clang-tidy: false }
           - { name: 'Emscripten',     os: 'ubuntu-latest',  dx5: false, config: false, emsdk: true, werror: true,   clang-tidy: false,  cmake-wrapper: 'emcmake' }
-          - { name: 'Nintendo 3DS',   os: 'ubuntu-latest',  dx5: false, config: false, n3ds: true,  werror: true,   clang-tidy: false,  container: 'devkitpro/devkitarm:latest', cmake-toolchain-file: '/opt/devkitpro/cmake/3DS.cmake' }
+          - { name: 'Nintendo 3DS',   os: 'ubuntu-latest',  dx5: false, config: false, n3ds: true,  werror: true,   clang-tidy: false,  container: 'devkitpro/devkitarm:latest', cmake-args '-DCMAKE_TOOLCHAIN_FILE="/opt/devkitpro/cmake/3DS.cmake"' }
     steps:
       - name: Setup vcvars
         if: ${{ !!matrix.msvc }}
@@ -91,7 +91,7 @@ jobs:
       - name: Configure (CMake)
         run: |
           ${{ matrix.cmake-wrapper || '' }} cmake -S . -B build -GNinja \
-            -DCMAKE_TOOLCHAIN_FILE=${{ matrix.cmake-toolchain-file || '' }} \
+            ${{ matrix.cmake-args || '' }} \
             -DCMAKE_BUILD_TYPE=Release \
             -DISLE_USE_DX5=${{ !!matrix.dx5 }} \
             -DISLE_BUILD_CONFIG=${{ !!matrix.config }} \
