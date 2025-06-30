@@ -609,8 +609,8 @@ GXMRenderer::GXMRenderer(DWORD width, DWORD height)
 	for (uint32_t i = 0; i < VITA_GXM_UNIFORM_BUFFER_COUNT; i++) {
 		this->fragmentNotifications[i].address = notificationMem + (i * 2);
 		this->fragmentNotifications[i].value = 0;
-		this->vertexNotifications[i].address = notificationMem + (i * 2) + 1;
-		this->vertexNotifications[i].value = 0;
+		//this->vertexNotifications[i].address = notificationMem + (i * 2) + 1;
+		//this->vertexNotifications[i].value = 0;
 	}
 
 	int count;
