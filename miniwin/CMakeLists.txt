@@ -52,7 +52,7 @@ else()
   message(STATUS "🧩 OpenGL ES 2.x support not enabled")
 endif()
 
-if(WIN32)
+if(WIN32 AND NOT WINDOWS_STORE)
   target_sources(miniwin PRIVATE
     src/d3drm/backends/directx9/actual.cpp
     src/d3drm/backends/directx9/renderer.cpp

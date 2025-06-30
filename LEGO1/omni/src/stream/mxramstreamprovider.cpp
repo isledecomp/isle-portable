@@ -7,6 +7,8 @@
 #include "mxstreamcontroller.h"
 #include "mxutilities.h"
 
+#pragma warning(disable : 4703)
+
 DECOMP_SIZE_ASSERT(MxStreamProvider, 0x10)
 DECOMP_SIZE_ASSERT(MxRAMStreamProvider, 0x24)
 

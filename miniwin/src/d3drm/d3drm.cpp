@@ -159,11 +159,6 @@ HRESULT Direct3DRMImpl::CreateDeviceFromSurface(
 		DDRenderer = OpenGL1Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
 #endif
-#ifdef _WIN32
-	else if (SDL_memcmp(&guid, &DirectX9_GUID, sizeof(GUID)) == 0) {
-		DDRenderer = DirectX9Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
-	}
-#endif
 	else {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Device GUID not recognized");
 		return E_NOINTERFACE;

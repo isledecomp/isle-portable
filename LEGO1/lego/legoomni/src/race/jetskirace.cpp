@@ -24,6 +24,8 @@
 
 #include <stdio.h>
 
+#pragma warning(disable : 4703)
+
 // Defined in legopathstruct.cpp
 extern MxBool g_unk0x100f119c;
 
