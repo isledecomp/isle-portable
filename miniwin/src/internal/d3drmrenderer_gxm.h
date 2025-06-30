@@ -17,7 +17,7 @@
 DEFINE_GUID(GXM_GUID, 0x682656F3, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x47, 0x58, 0x4D);
 
 #define VITA_GXM_DISPLAY_BUFFER_COUNT 3
-#define VITA_GXM_UNIFORM_BUFFER_COUNT 6 // hacky solution to corruption while drawing next frame, sync not working
+#define VITA_GXM_UNIFORM_BUFFER_COUNT 2
 
 struct GXMTextureCacheEntry {
 	IDirect3DRMTexture* texture;
@@ -207,7 +207,6 @@ private:
 	uint16_t* quadIndices;
 	int quadsUsed = 0;
 	int activeUniformBuffer = 0;
-	SceGxmNotification vertexNotifications[VITA_GXM_UNIFORM_BUFFER_COUNT];
 	SceGxmNotification fragmentNotifications[VITA_GXM_UNIFORM_BUFFER_COUNT];
 
 	SDL_Gamepad* gamepad;

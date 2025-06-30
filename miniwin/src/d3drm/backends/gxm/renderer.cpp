@@ -511,15 +511,15 @@ GXMRenderer::GXMRenderer(DWORD width, DWORD height)
 		vertexStreams[0].indexSource = SCE_GXM_INDEX_SOURCE_INDEX_16BIT;
 
 		if (SCE_ERR(
-				sceGxmShaderPatcherCreateVertexProgram,
-				this->shaderPatcher,
-				this->mainVertexProgramId,
-				vertexAttributes,
-				3,
-				vertexStreams,
-				1,
-				&this->mainVertexProgram
-			)) {
+			sceGxmShaderPatcherCreateVertexProgram,
+			this->shaderPatcher,
+			this->mainVertexProgramId,
+			vertexAttributes,
+			3,
+			vertexStreams,
+			1,
+			&this->mainVertexProgram
+		)) {
 			return;
 		}
 	}
@@ -1070,7 +1070,6 @@ void GXMRenderer::StartScene()
 	this->sceneStarted = true;
 	this->quadsUsed = 0;
 
-	// wait for this uniform buffer to become available
 	this->activeUniformBuffer = (this->activeUniformBuffer + 1) % VITA_GXM_UNIFORM_BUFFER_COUNT;
 	sceGxmNotificationWait(&this->fragmentNotifications[this->activeUniformBuffer]);
 }
@@ -1253,13 +1252,10 @@ void GXMRenderer::Flip()
 
 	// end scene
 	++this->fragmentNotifications[this->activeUniformBuffer].value;
-	++this->vertexNotifications[this->activeUniformBuffer].value;
 	sceGxmEndScene(
 		this->context,
-		nullptr, //&this->vertexNotifications[this->activeUniformBuffer],
-		// nullptr
-		&this->fragmentNotifications[this->activeUniformBuffer] // wait for fragment processing to finish for this
-																// buffer, otherwise lighting corrupts
+		nullptr,
+		&this->fragmentNotifications[this->activeUniformBuffer]
 	);
 	sceGxmPadHeartbeat(
 		&this->displayBuffersSurface[this->backBufferIndex],
