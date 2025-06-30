@@ -152,7 +152,7 @@ MxResult LegoInputManager::GetJoystick()
 		return SUCCESS;
 	}
 
-	MxS32 numJoysticks = 0;
+	MxS32 numJoysticks;
 	if (m_joyids == NULL) {
 		m_joyids = SDL_GetJoysticks(&numJoysticks);
 	}
