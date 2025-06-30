@@ -4,9 +4,15 @@
 #include <psp2/gxm.h>
 #include <psp2/kernel/clib.h>
 
+#ifdef DEBUG
+#define DEBUG_ONLY_PRINTF(...) sceClibPrintf(__VA_ARGS__)
+#else
+#define DEBUG_ONLY_PRINTF(...)
+#endif
+
 #define SCE_ERR(func, ...)                                                                                             \
 	({                                                                                                                 \
-		sceClibPrintf(#func "\n");                                                                                     \
+		DEBUG_ONLY_PRINTF("%s\n", func);                                                                               \
 		int __sce_err_ret_val = func(__VA_ARGS__);                                                                     \
 		if (__sce_err_ret_val < 0) {                                                                                   \
 			sceClibPrintf(#func " error: 0x%x\n", __sce_err_ret_val);                                                  \

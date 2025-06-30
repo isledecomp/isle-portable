@@ -17,6 +17,7 @@
 
 bool with_razor = false;
 bool with_razor_hud = false;
+bool gxm_initialized = false;
 
 #define VITA_GXM_SCREEN_WIDTH 960
 #define VITA_GXM_SCREEN_HEIGHT 544
@@ -133,9 +134,12 @@ static void load_razor()
 	if (with_razor) {
 		sceRazorGpuCaptureEnableSalvage("ux0:data/gpu_crash.sgx");
 	}
+
+	if(with_razor_hud) {
+		sceRazorGpuTraceSetFilename("ux0:data/gpu_trace", 3);
+	}
 }
 
-bool gxm_initialized = false;
 bool gxm_init()
 {
 	if (gxm_initialized) {
@@ -203,7 +207,6 @@ bool cdram_allocator_create() {
 }
 
 int inuse_mem = 0;
-
 inline void* cdram_alloc(size_t size, size_t align) {
 	sceClibPrintf("cdram_alloc(%d, %d) inuse=%d ", size, align, inuse_mem);
 	void* ptr = tlsf_memalign(cdramAllocator, align, size);
@@ -423,7 +426,7 @@ GXMRenderer::GXMRenderer(DWORD width, DWORD height)
 		return;
 	}
 
-	for (int i = 0; i < VITA_GXM_DISPLAY_BUFFER_COUNT; i++) {
+	for (int i = 0; i < GXM_DISPLAY_BUFFER_COUNT; i++) {
 		this->displayBuffers[i] = vita_mem_alloc(
 			SCE_KERNEL_MEMBLOCK_TYPE_USER_CDRAM_RW,
 			4 * VITA_GXM_SCREEN_STRIDE * VITA_GXM_SCREEN_HEIGHT,
@@ -632,8 +635,11 @@ GXMRenderer::GXMRenderer(DWORD width, DWORD height)
 	// clear uniforms
 	this->colorShader_uColor = sceGxmProgramFindParameterByName(colorFragmentProgramGxp, "uColor"); // vec4
 
-	this->lights = static_cast<decltype(this->lights)>(cdram_alloc(sizeof(*this->lights), 4));
-	for (int i = 0; i < VITA_GXM_UNIFORM_BUFFER_COUNT; i++) {
+
+	for (int i = 0; i < GXM_FRAGMENT_BUFFER_COUNT; i++) {
+		this->lights[i] = static_cast<GXMSceneLightUniform*>(cdram_alloc(sizeof(GXMSceneLightUniform), 4));
+	}
+	for (int i = 0; i < GXM_VERTEX_BUFFER_COUNT; i++) {
 		this->quadVertices[i] = static_cast<Vertex*>(cdram_alloc(sizeof(Vertex) * 4 * 50, 4));
 	}
 	this->quadIndices = static_cast<uint16_t*>(cdram_alloc(sizeof(uint16_t) * 4, 4));
@@ -642,13 +648,18 @@ GXMRenderer::GXMRenderer(DWORD width, DWORD height)
 	this->quadIndices[2] = 2;
 	this->quadIndices[3] = 3;
 
-	volatile uint32_t* const notificationMem = sceGxmGetNotificationRegion();
-	for (uint32_t i = 0; i < VITA_GXM_UNIFORM_BUFFER_COUNT; i++) {
-		this->fragmentNotifications[i].address = notificationMem + (i * 2);
+	volatile uint32_t* notificationMem = sceGxmGetNotificationRegion();
+	for(uint32_t i = 0; i < GXM_FRAGMENT_BUFFER_COUNT; i++) {
+		this->fragmentNotifications[i].address = notificationMem++;
 		this->fragmentNotifications[i].value = 0;
-		//this->vertexNotifications[i].address = notificationMem + (i * 2) + 1;
-		//this->vertexNotifications[i].value = 0;
 	}
+	this->currentFragmentBufferIndex = 0;
+
+	for(uint32_t i = 0; i < GXM_VERTEX_BUFFER_COUNT; i++) {
+		this->vertexNotifications[i].address = notificationMem++;
+		this->vertexNotifications[i].value = 0;
+	}
+	this->currentVertexBufferIndex = 0;
 
 	int count;
 	auto ids = SDL_GetGamepads(&count);
@@ -659,10 +670,6 @@ GXMRenderer::GXMRenderer(DWORD width, DWORD height)
 			this->gamepad = gamepad;
 			break;
 		}
-	}
-
-	if(with_razor_hud) {
-		sceRazorGpuTraceSetFilename("ux0:data/gpu_trace", 3);
 	}
 
 	m_initialized = true;
@@ -1088,8 +1095,8 @@ void GXMRenderer::StartScene()
 	this->sceneStarted = true;
 	this->quadsUsed = 0;
 
-	this->activeUniformBuffer = (this->activeUniformBuffer + 1) % VITA_GXM_UNIFORM_BUFFER_COUNT;
-	sceGxmNotificationWait(&this->fragmentNotifications[this->activeUniformBuffer]);
+	sceGxmNotificationWait(&this->vertexNotifications[this->currentVertexBufferIndex]);
+	sceGxmNotificationWait(&this->fragmentNotifications[this->currentFragmentBufferIndex]);
 }
 
 
@@ -1268,13 +1275,17 @@ void GXMRenderer::Flip()
 		this->Clear(0, 0, 0);
 	}
 
-	// end scene
-	++this->fragmentNotifications[this->activeUniformBuffer].value;
+	++this->vertexNotifications[this->currentVertexBufferIndex].value;
+	++this->fragmentNotifications[this->currentFragmentBufferIndex].value;
 	sceGxmEndScene(
 		this->context,
-		nullptr,
-		&this->fragmentNotifications[this->activeUniformBuffer]
+		&this->vertexNotifications[this->currentVertexBufferIndex],
+		&this->fragmentNotifications[this->currentFragmentBufferIndex]
 	);
+
+	this->currentVertexBufferIndex = (this->currentVertexBufferIndex + 1) % GXM_VERTEX_BUFFER_COUNT;
+	this->currentFragmentBufferIndex = (this->currentFragmentBufferIndex + 1) % GXM_FRAGMENT_BUFFER_COUNT;
+
 	sceGxmPadHeartbeat(
 		&this->displayBuffersSurface[this->backBufferIndex],
 		this->displayBuffersSync[this->backBufferIndex]
@@ -1284,7 +1295,6 @@ void GXMRenderer::Flip()
 	// display
 	GXMDisplayData displayData;
 	displayData.address = this->displayBuffers[this->backBufferIndex];
-
 	sceGxmDisplayQueueAddEntry(
 		this->displayBuffersSync[this->frontBufferIndex],
 		this->displayBuffersSync[this->backBufferIndex],
@@ -1292,7 +1302,7 @@ void GXMRenderer::Flip()
 	);
 
 	this->frontBufferIndex = this->backBufferIndex;
-	this->backBufferIndex = (this->backBufferIndex + 1) % VITA_GXM_DISPLAY_BUFFER_COUNT;
+	this->backBufferIndex = (this->backBufferIndex + 1) % GXM_DISPLAY_BUFFER_COUNT;
 }
 
 void GXMRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect)

@@ -5,12 +5,6 @@
 #include <SDL3/SDL_stdinc.h>
 #include <psp2/gxm.h>
 
-#include <assert.h>
-
-
-static SceUID cdramPoolUID = -1;
-static SceClibMspace cdramPool = NULL;
-
 void* patcher_host_alloc(void* user_data, unsigned int size)
 {
 	void* mem = SDL_malloc(size);

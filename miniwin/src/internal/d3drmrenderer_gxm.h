@@ -16,8 +16,9 @@
 
 DEFINE_GUID(GXM_GUID, 0x682656F3, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x47, 0x58, 0x4D);
 
-#define VITA_GXM_DISPLAY_BUFFER_COUNT 3
-#define VITA_GXM_UNIFORM_BUFFER_COUNT 2
+#define GXM_DISPLAY_BUFFER_COUNT 3
+#define GXM_VERTEX_BUFFER_COUNT 2
+#define GXM_FRAGMENT_BUFFER_COUNT 3
 
 struct GXMTextureCacheEntry {
 	IDirect3DRMTexture* texture;
@@ -133,7 +134,7 @@ private:
 	void StartScene();
 
 	inline Vertex* QuadVerticesBuffer() {
-		Vertex* verts = &this->quadVertices[this->activeUniformBuffer][this->quadsUsed*4];
+		Vertex* verts = &this->quadVertices[this->currentVertexBufferIndex][this->quadsUsed*4];
 		this->quadsUsed += 1;
 		if(this->quadsUsed >= 50) {
 			SDL_Log("QuadVerticesBuffer overflow");
@@ -143,7 +144,7 @@ private:
 	}
 
 	inline GXMSceneLightUniform* LightsBuffer() {
-		return this->lights[this->activeUniformBuffer];
+		return this->lights[this->currentFragmentBufferIndex];
 	}
 
 	std::vector<GXMTextureCacheEntry> m_textures;
@@ -158,10 +159,10 @@ private:
 	SceGxmShaderPatcher* shaderPatcher;
 
 	SceGxmRenderTarget* renderTarget;
-	void* displayBuffers[VITA_GXM_DISPLAY_BUFFER_COUNT];
-	SceUID displayBuffersUid[VITA_GXM_DISPLAY_BUFFER_COUNT];
-	SceGxmColorSurface displayBuffersSurface[VITA_GXM_DISPLAY_BUFFER_COUNT];
-	SceGxmSyncObject* displayBuffersSync[VITA_GXM_DISPLAY_BUFFER_COUNT];
+	void* displayBuffers[GXM_DISPLAY_BUFFER_COUNT];
+	SceUID displayBuffersUid[GXM_DISPLAY_BUFFER_COUNT];
+	SceGxmColorSurface displayBuffersSurface[GXM_DISPLAY_BUFFER_COUNT];
+	SceGxmSyncObject* displayBuffersSync[GXM_DISPLAY_BUFFER_COUNT];
 	int backBufferIndex = 0;
 	int frontBufferIndex = 1;
 
@@ -200,12 +201,15 @@ private:
 	const SceGxmProgramParameter* colorShader_uColor;
 
 	// uniforms / quad meshes
-	GXMSceneLightUniform (*lights)[VITA_GXM_UNIFORM_BUFFER_COUNT];
-	Vertex* quadVertices[VITA_GXM_UNIFORM_BUFFER_COUNT];
+	GXMSceneLightUniform* lights[GXM_FRAGMENT_BUFFER_COUNT];
+	Vertex* quadVertices[GXM_VERTEX_BUFFER_COUNT];
 	uint16_t* quadIndices;
 	int quadsUsed = 0;
-	int activeUniformBuffer = 0;
-	SceGxmNotification fragmentNotifications[VITA_GXM_UNIFORM_BUFFER_COUNT];
+
+	SceGxmNotification vertexNotifications[GXM_VERTEX_BUFFER_COUNT];
+	SceGxmNotification fragmentNotifications[GXM_FRAGMENT_BUFFER_COUNT];
+	int currentFragmentBufferIndex = 0;
+	int currentVertexBufferIndex = 0;
 
 	SDL_Gamepad* gamepad;
 
