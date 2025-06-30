@@ -216,24 +216,6 @@ Uint32 DirectX9Renderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshG
 	return static_cast<Uint32>(m_meshs.size() - 1);
 }
 
-void DirectX9Renderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc)
-{
-	halDesc->dcmColorModel = D3DCOLORMODEL::RGB;
-	halDesc->dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
-	halDesc->dwDeviceZBufferBitDepth = DDBD_24;
-	halDesc->dwDeviceRenderBitDepth = DDBD_32;
-	halDesc->dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
-	halDesc->dpcTriCaps.dwShadeCaps = D3DPSHADECAPS_ALPHAFLATBLEND;
-	halDesc->dpcTriCaps.dwTextureFilterCaps = D3DPTFILTERCAPS_LINEAR;
-
-	memset(helDesc, 0, sizeof(D3DDEVICEDESC));
-}
-
-const char* DirectX9Renderer::GetName()
-{
-	return "DirectX 9 HAL";
-}
-
 HRESULT DirectX9Renderer::BeginFrame()
 {
 	return Actual_BeginFrame();

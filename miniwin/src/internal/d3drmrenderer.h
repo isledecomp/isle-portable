@@ -37,8 +37,6 @@ public:
 	int GetHeight() { return m_height; }
 	int GetVirtualWidth() { return m_virtualWidth; }
 	int GetVirtualHeight() { return m_virtualHeight; }
-	virtual void GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc) = 0;
-	virtual const char* GetName() = 0;
 	virtual HRESULT BeginFrame() = 0;
 	virtual void EnableTransparency() = 0;
 	virtual void SubmitDraw(
