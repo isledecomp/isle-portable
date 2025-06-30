@@ -669,6 +669,7 @@ if(NINTENDO_3DS)
   )
 
   ctr_create_3dsx(isle SMDH isle.smdh)
+  install(FILES "$<TARGET_FILE_DIR:isle>/isle.3dsx" DESTINATION "${CMAKE_INSTALL_BINDIR}")
 endif()
 if(MSVC)
   set(CPACK_GENERATOR ZIP)
