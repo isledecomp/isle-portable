@@ -1,6 +1,7 @@
 #pragma once
 
 #include "d3drmrenderer.h"
+#include "ddraw_impl.h"
 
 #include <SDL3/SDL.h>
 #include <citro3d.h>
@@ -33,8 +34,6 @@ public:
 	void SetFrustumPlanes(const Plane* frustumPlanes) override;
 	Uint32 GetTextureId(IDirect3DRMTexture* texture, bool isUi) override;
 	Uint32 GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup) override;
-	void GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc) override;
-	const char* GetName() override;
 	HRESULT BeginFrame() override;
 	void EnableTransparency() override;
 	void SubmitDraw(
@@ -68,9 +67,6 @@ private:
 
 inline static void Citro3DRenderer_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
-	GUID guid = Citro3D_GUID;
-	char* deviceNameDup = SDL_strdup("Citro3D");
-	char* deviceDescDup = SDL_strdup("Miniwin driver");
 	D3DDEVICEDESC halDesc = {};
 	halDesc.dcmColorModel = D3DCOLOR_RGB;
 	halDesc.dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
@@ -79,10 +75,8 @@ inline static void Citro3DRenderer_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void*
 	halDesc.dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
 	halDesc.dpcTriCaps.dwShadeCaps = D3DPSHADECAPS_ALPHAFLATBLEND;
 	halDesc.dpcTriCaps.dwTextureFilterCaps = D3DPTFILTERCAPS_LINEAR;
+
 	D3DDEVICEDESC helDesc = {};
 
-	cb(&guid, deviceNameDup, deviceDescDup, &halDesc, &helDesc, ctx);
-
-	SDL_free(deviceDescDup);
-	SDL_free(deviceNameDup);
+	EnumDevice(cb, ctx, "Citro3D", &halDesc, &helDesc, Citro3D_GUID);
 }
