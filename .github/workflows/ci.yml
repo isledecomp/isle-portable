@@ -33,14 +33,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: 'Linux',          os: 'ubuntu-latest',  dx5: false, config: true,  build-type: 'Debug', linux: true, werror: true,   clang-tidy: true }
-          - { name: 'MSVC (x86)',     os: 'windows-latest', dx5: true,  config: false, build-type: 'Debug', msvc: true,  werror: false,  clang-tidy: false,  vc-arch: 'amd64_x86' }
-          - { name: 'MSVC (x64)',     os: 'windows-latest', dx5: false, config: false, build-type: 'Debug', msvc: true,  werror: false,  clang-tidy: false,  vc-arch: 'amd64' }
-          - { name: 'MSVC (arm64)',   os: 'windows-latest', dx5: false, config: false, build-type: 'Debug', msvc: true,  werror: false,  clang-tidy: false,  vc-arch: 'amd64_arm64' }
-          - { name: 'msys2 mingw32',  os: 'windows-latest', dx5: false, config: false, build-type: 'Debug', mingw: true, werror: true,   clang-tidy: true,   msystem: 'mingw32', msys-env: 'mingw-w64-i686',   shell: 'msys2 {0}' }
-          - { name: 'msys2 mingw64',  os: 'windows-latest', dx5: false, config: true,  build-type: 'Debug', mingw: true, werror: true,   clang-tidy: true,   msystem: 'mingw64', msys-env: 'mingw-w64-x86_64', shell: 'msys2 {0}' }
-          - { name: 'macOS',          os: 'macos-latest',   dx5: false, config: true,  build-type: 'Debug', brew: true,  werror: true,   clang-tidy: false }
-          - { name: 'Emscripten',     os: 'ubuntu-latest',  dx5: false, config: false, build-type: 'Debug', emsdk: true, werror: true,   clang-tidy: false,  cmake-wrapper: 'emcmake' }
+          - { name: 'Linux',          os: 'ubuntu-latest',  dx5: false, config: true,  linux: true, werror: true,   clang-tidy: true }
+          - { name: 'MSVC (x86)',     os: 'windows-latest', dx5: true,  config: false, msvc: true,  werror: false,  clang-tidy: false,  vc-arch: 'amd64_x86' }
+          - { name: 'MSVC (x64)',     os: 'windows-latest', dx5: false, config: false, msvc: true,  werror: false,  clang-tidy: false,  vc-arch: 'amd64' }
+          - { name: 'MSVC (arm64)',   os: 'windows-latest', dx5: false, config: false, msvc: true,  werror: false,  clang-tidy: false,  vc-arch: 'amd64_arm64' }
+          - { name: 'msys2 mingw32',  os: 'windows-latest', dx5: false, config: false, mingw: true, werror: true,   clang-tidy: true,   msystem: 'mingw32', msys-env: 'mingw-w64-i686',   shell: 'msys2 {0}' }
+          - { name: 'msys2 mingw64',  os: 'windows-latest', dx5: false, config: true,  mingw: true, werror: true,   clang-tidy: true,   msystem: 'mingw64', msys-env: 'mingw-w64-x86_64', shell: 'msys2 {0}' }
+          - { name: 'macOS',          os: 'macos-latest',   dx5: false, config: true,  brew: true,  werror: true,   clang-tidy: false }
+          - { name: 'Emscripten',     os: 'ubuntu-latest',  dx5: false, config: false, emsdk: true, werror: true,   clang-tidy: false,  cmake-wrapper: 'emcmake' }
     steps:
       - name: Setup vcvars
         if: ${{ !!matrix.msvc }}
@@ -66,8 +66,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             libx11-dev libxext-dev libxrandr-dev libxrender-dev libxfixes-dev libxi-dev libxinerama-dev \
-            libxcursor-dev libwayland-dev libxkbcommon-dev wayland-protocols libgl1-mesa-dev libglew-dev qt6-base-dev \
-            libasound2-dev
+            libxcursor-dev libwayland-dev libxkbcommon-dev wayland-protocols libgl1-mesa-dev qt6-base-dev \
+            libasound2-dev qt6-xdgdesktopportal-platformtheme
 
       - name: Install macOS dependencies (brew)
         if: ${{ matrix.brew }}
@@ -89,11 +89,12 @@ jobs:
       - name: Configure (CMake)
         run: |
           ${{ matrix.cmake-wrapper || '' }} cmake -S . -B build -GNinja \
-            -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
+            -DCMAKE_BUILD_TYPE=Release \
             -DISLE_USE_DX5=${{ !!matrix.dx5 }} \
-            -DISLE_BUILD_CONFIG=${{ matrix.config }} \
+            -DISLE_BUILD_CONFIG=${{ !!matrix.config }} \
             -DENABLE_CLANG_TIDY=${{ !!matrix.clang-tidy  }} \
             -DISLE_WERROR=${{ !!matrix.werror }} \
+            -DISLE_DEBUG=OFF \
             -Werror=dev
 
       - name: Build (CMake)
@@ -104,11 +105,64 @@ jobs:
           cd build
           cpack .
 
+      - name: Install linuxdeploy
+        if: ${{ matrix.linux }}
+        id: install-linuxdeploy
+        uses: miurahr/install-linuxdeploy-action@v1.8.0
+        with:
+          plugins: qt appimage
+
+      - name: Package (AppImage)
+        if: ${{ matrix.linux }}
+        run: |
+          cd build && \
+          export LD_LIBRARY_PATH=".:$LD_LIBRARY_PATH" && \
+          NO_STRIP=1 ${{ steps.install-linuxdeploy.outputs.linuxdeploy }} \
+            -p qt \
+            -e isle \
+            -e isle-config \
+            -d packaging/linux/org.legoisland.Isle.desktop \
+            -i icons/org.legoisland.Isle.svg \
+            --custom-apprun=../packaging/linux/appimage/AppRun \
+            --appdir packaging/linux/appimage/AppDir \
+            --output appimage && \
+          mv *.AppImage dist/
+
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: '${{ matrix.name }} ${{ matrix.build-type }}'
-          path: build/dist/isle-*
+          name: '${{ matrix.name }}'
+          path: |
+            build/dist/isle-*
+            build/dist/*.AppImage
+
+  flatpak:
+    name: "Flatpak (${{ matrix.arch }})"
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            os: ubuntu-latest
+
+          - arch: aarch64
+            os: ubuntu-22.04-arm
+
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:kde-6.8
+      options: --privileged
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Flatpak
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          bundle: org.legoisland.Isle.${{ matrix.arch }}.flatpak
+          manifest-path: packaging/linux/flatpak/org.legoisland.Isle.json
+          arch: ${{ matrix.arch }}
 
   ncc:
     name: 'C++'
@@ -148,3 +202,30 @@ jobs:
               LEGO1/omni/src/video/flic.cpp \
               $action_headers \
             --path LEGO1/omni LEGO1/lego/legoomni
+
+  release:
+    name: 'Release'
+    if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
+    runs-on: ubuntu-latest
+    needs:
+      - build
+      - flatpak
+    steps:
+      - name: Download All Artifacts
+        uses: actions/download-artifact@main
+        with:
+          pattern: "*"
+          path: Release
+          merge-multiple: true
+
+      - name: Checkout uploadtool
+        uses: actions/checkout@v4
+        with:
+          repository: 'probonopd/uploadtool'
+          path: 'uploadtool'
+
+      - name: Upload Continuous Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./uploadtool/upload.sh Release/*

@@ -1,0 +1,89 @@
+{
+    "id": "org.legoisland.Isle",
+
+    "runtime": "org.kde.Platform",
+    "sdk": "org.kde.Sdk",
+    "runtime-version": "6.8",
+
+    "command": "isle",
+
+    "finish-args": [
+        "--share=ipc",
+        "--socket=wayland",
+        "--socket=fallback-x11",
+        "--socket=pulseaudio",
+        "--device=dri",
+        "--device=input",
+        "--filesystem=/run/media/:ro",
+        "--filesystem=/media/:ro",
+        "--filesystem=/mnt/:ro",
+        "--filesystem=home:ro"
+    ],
+
+    "modules": [
+        {
+            "name": "isle",
+            "buildsystem": "cmake-ninja",
+            "config-opts": [
+                "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
+                "-DISLE_DEBUG=OFF"
+            ],
+            "sources": [
+                {
+                    "type": "dir",
+                    "path": "../../../3rdparty",
+                    "dest": "3rdparty/"
+                },
+                {
+                    "type": "dir",
+                    "path": "../../../cmake",
+                    "dest": "cmake/"
+                },
+                {
+                    "type": "dir",
+                    "path": "../../../CMake",
+                    "dest": "CMake/"
+                },
+                {
+                    "type": "dir",
+                    "path": "../../../CONFIG",
+                    "dest": "CONFIG/"
+                },
+                {
+                    "type": "dir",
+                    "path": "../../../ISLE",
+                    "dest": "ISLE/"
+                },
+                {
+                    "type": "dir",
+                    "path": "../../../LEGO1",
+                    "dest": "LEGO1/"
+                },
+                {
+                    "type": "dir",
+                    "path": "../../../miniwin",
+                    "dest": "miniwin/"
+                },
+                {
+                    "type": "dir",
+                    "path": "../../../packaging",
+                    "dest": "packaging/"
+                },
+                {
+                    "type": "dir",
+                    "path": "../../../util",
+                    "dest": "util/"
+                },
+                {
+                    "type": "file",
+                    "path": "../../../CMakeLists.txt"
+                }
+            ],
+            "build-options": {
+                "build-args": [
+                    "--share=network"
+                ]
+            }
+        }
+    ]
+}

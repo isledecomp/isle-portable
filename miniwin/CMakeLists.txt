@@ -32,14 +32,16 @@ target_compile_definitions(miniwin PRIVATE
 )
 
 find_package(OpenGL)
-find_package(GLEW)
-if(OpenGL_FOUND AND GLEW_FOUND)
-  message(STATUS "Found OpenGL and GLEW: enabling OpenGL 1.x renderer")
-  target_sources(miniwin PRIVATE src/d3drm/backends/opengl1/renderer.cpp)
+if(OpenGL_FOUND)
+  message(STATUS "Found OpenGL: enabling OpenGL 1.x renderer")
+  target_sources(miniwin PRIVATE
+    src/d3drm/backends/opengl1/actual.cpp
+    src/d3drm/backends/opengl1/renderer.cpp
+  )
   target_compile_definitions(miniwin PRIVATE USE_OPENGL1)
-  target_link_libraries(miniwin PRIVATE OpenGL::GL GLEW::GLEW)
+  target_link_libraries(miniwin PRIVATE OpenGL::GL)
 else()
-  message(STATUS "🧩 OpenGL 1.x support not enabled — needs OpenGL and GLEW")
+  message(STATUS "🧩 OpenGL 1.x support not enabled — needs OpenGL")
 endif()
 
 find_library(OPENGL_ES2_LIBRARY NAMES GLESv2)

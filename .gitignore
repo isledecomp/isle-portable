@@ -30,3 +30,9 @@ LEGO1.DLL
 
 # Kate - Text
 /.cache
+
+# Flatpak build cache
+**/.flatpak-builder/
+
+# Flatpak build dir
+**/flatpak-build/
