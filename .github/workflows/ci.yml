@@ -148,6 +148,13 @@ jobs:
             build/dist/*.AppImage
             build/dist/*.3dsx
 
+      - name: Upload 3dsx
+        if: ${{ matrix.n3ds }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: isle.3dsx
+          path: ./build/dist/isle.3dsx
+
   flatpak:
     name: "Flatpak (${{ matrix.arch }})"
     runs-on: ${{ matrix.os }}
