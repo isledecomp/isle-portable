@@ -78,20 +78,57 @@ static void display_callback(const void* callback_data)
 	sceDisplayWaitSetFrameBuf();
 }
 
+#include <taihen.h>
+
+static int load_skprx(const char* name)
+{
+	int modid = taiLoadKernelModule(name, 0, nullptr);
+	if(modid < 0) {
+		sceClibPrintf("%s load: 0x%08x\n", name, modid);
+		return modid;
+	}
+	int status;
+	int ret = taiStartKernelModule(modid, 0, nullptr, 0, nullptr, &status);
+	if(ret < 0) {
+		sceClibPrintf("%s start: 0x%08x\n", name, ret);
+	}
+	return ret;
+}
+
+static int load_suprx(const char* name)
+{
+	int modid = _sceKernelLoadModule(name, 0, nullptr);
+	if(modid < 0) {
+		sceClibPrintf("%s load: 0x%08x\n", name, modid);
+		return modid;
+	}
+	int status;
+	int ret = sceKernelStartModule(modid, 0, nullptr, 0, nullptr, &status);
+	if(ret < 0) {
+		sceClibPrintf("%s start: 0x%08x\n", name, ret);
+	}
+	return ret;
+}
+
+static const bool extra_debug = false; 
+
 static void load_razor()
 {
-	int status;
-	int mod_id = _sceKernelLoadModule("app0:librazorcapture_es4.suprx", 0, nullptr);
-	if (!SCE_ERR(sceKernelStartModule, mod_id, 0, nullptr, 0, nullptr, &status)) {
+	if(load_suprx("app0:librazorcapture_es4.suprx") >= 0) {
 		with_razor = true;
 	}
 
-	/*
-	int mod_id_hud = _sceKernelLoadModule("app0:librazorhud_es4.suprx", 0, nullptr);
-	if (!SCE_ERR(sceKernelStartModule, mod_id_hud, 0, nullptr, 0, nullptr, &status)) {
-		with_razor_hud = true;
+	if(extra_debug) {
+		load_skprx("ux0:app/LEGO00001/syslibtrace.skprx");
+		load_skprx("ux0:app/LEGO00001/pamgr.skprx");
+
+		if(load_suprx("app0:libperf.suprx") >= 0) {
+		}
+
+		if(load_suprx("app0:librazorhud_es4.suprx") >= 0) {
+			with_razor_hud = true;
+		}
 	}
-	*/
 
 	if (with_razor) {
 		sceRazorGpuCaptureEnableSalvage("ux0:data/gpu_crash.sgx");
@@ -777,7 +814,7 @@ void copySurfaceToGxm(DirectDrawSurfaceImpl* surface, uint8_t* textureData, size
 	}
 }
 
-Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
+Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi)
 {
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
 	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
@@ -982,25 +1019,6 @@ Uint32 GXMRenderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup)
 	m_meshes.push_back(std::move(newCache));
 	AddMeshDestroyCallback((Uint32) (m_meshes.size() - 1), mesh);
 	return (Uint32) (m_meshes.size() - 1);
-}
-
-void GXMRenderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc)
-{
-	halDesc->dcmColorModel = D3DCOLORMODEL::RGB;
-	halDesc->dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
-	halDesc->dwDeviceZBufferBitDepth = DDBD_16;
-	halDesc->dwDeviceZBufferBitDepth |= DDBD_32;
-	helDesc->dwDeviceRenderBitDepth = DDBD_32;
-	halDesc->dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
-	halDesc->dpcTriCaps.dwShadeCaps = D3DPSHADECAPS_ALPHAFLATBLEND;
-	halDesc->dpcTriCaps.dwTextureFilterCaps = D3DPTFILTERCAPS_LINEAR;
-
-	memset(helDesc, 0, sizeof(D3DDEVICEDESC));
-}
-
-const char* GXMRenderer::GetName()
-{
-	return "GXM";
 }
 
 bool razor_triggered = false;

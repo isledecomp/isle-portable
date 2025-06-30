@@ -69,6 +69,7 @@ if(VITA)
     SceGxm_stub
     SceRazorCapture_stub
     SceRazorHud_stub
+    taihen_stub
   )
   list(APPEND GRAPHICS_BACKENDS USE_GXM)
   list(REMOVE_ITEM GRAPHICS_BACKENDS USE_SOFTWARE_RENDER USE_SDL_GPU)
