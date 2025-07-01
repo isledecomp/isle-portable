@@ -12,7 +12,7 @@
 
 #define SCE_ERR(func, ...)                                                                                             \
 	({                                                                                                                 \
-		DEBUG_ONLY_PRINTF("%s\n", func);                                                                               \
+		DEBUG_ONLY_PRINTF("%s\n", #func);                                                                               \
 		int __sce_err_ret_val = func(__VA_ARGS__);                                                                     \
 		if (__sce_err_ret_val < 0) {                                                                                   \
 			sceClibPrintf(#func " error: 0x%x\n", __sce_err_ret_val);                                                  \
