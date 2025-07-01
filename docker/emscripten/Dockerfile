@@ -1,21 +1,17 @@
-FROM emscripten/emsdk:latest
+FROM emscripten/emsdk:latest AS builder
 
-ARG USE_ISLE_PIZZA=false
 ARG CMAKE_VERSION=3.29.3
 
 WORKDIR /src
+
 USER root
 
-RUN apt-get update && apt-get install -y git wget nginx && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y git wget && rm -rf /var/lib/apt/lists/*
 RUN wget https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-Linux-x86_64.sh -O /tmp/cmake.sh && \
     chmod +x /tmp/cmake.sh && \
     /tmp/cmake.sh --skip-license --prefix=/usr/local && \
     rm /tmp/cmake.sh
 
-COPY docker/emscripten/nginx.conf /etc/nginx/nginx.conf
-COPY docker/emscripten/entrypoint.sh /usr/local/bin/entrypoint.sh
-
-RUN chmod +x /usr/local/bin/entrypoint.sh
 RUN chown -R emscripten:emscripten /src
 
 USER emscripten
@@ -35,6 +31,8 @@ RUN echo "Fetching isle.pizza frontend..."; \
     cp -r /tmp/isle.pizza/* /src/build/ && \
     rm -rf /tmp/isle.pizza;
 
+FROM nginx:alpine
+
+COPY docker/emscripten/nginx.conf /etc/nginx/nginx.conf
+COPY --from=builder /src/build /usr/share/nginx/html
 EXPOSE 6931
-USER root
-ENTRYPOINT ["entrypoint.sh"]

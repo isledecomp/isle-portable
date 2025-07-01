@@ -1,14 +1,15 @@
-name: Publish web port Docker image
+name: Docker
 
 on:
   push:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: ${{ github.repository }}-emscripten
 
 jobs:
-  build-and-push-image:
+  publish-emscripten:
+    name: Publish web port
     runs-on: ubuntu-latest
     permissions:
       contents: read
