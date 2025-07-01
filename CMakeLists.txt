@@ -41,6 +41,7 @@ option(ISLE_WERROR "Treat warnings as errors" OFF)
 option(ISLE_DEBUG "Enable imgui debug" ON)
 cmake_dependent_option(ISLE_USE_DX5 "Build with internal DirectX 5 SDK" "${NOT_MINGW}" "WIN32;CMAKE_SIZEOF_VOID_P EQUAL 4" OFF)
 cmake_dependent_option(ISLE_MINIWIN "Use miniwin" ON "NOT ISLE_USE_DX5" OFF)
+cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "MSVC OR ISLE_MINIWIN;NOT NINTENDO_3DS;NOT WINDOWS_STORE" OFF)
 cmake_dependent_option(ISLE_COMPILE_SHADERS "Compile shaders" ON "SDL_SHADERCROSS_BIN;TARGET Python3::Interpreter" OFF)
 option(ISLE_XBOX_ONE "Build for Xbox One/Series X|S" ON)
 option(CMAKE_POSITION_INDEPENDENT_CODE "Build with -fPIC" ON)
@@ -540,6 +541,44 @@ if(ISLE_BUILD_APP)
     target_compile_definitions(isle PRIVATE "ISLE_EMSCRIPTEN_HOST=\"${ISLE_EMSCRIPTEN_HOST}\"")
     set_property(TARGET isle PROPERTY SUFFIX ".html")
   endif()
+  if(NINTENDO_3DS)
+    target_sources(isle PRIVATE
+      ISLE/3ds/apthooks.cpp
+      ISLE/3ds/config.cpp
+    )
+  endif()
+endif()
+
+if (ISLE_BUILD_CONFIG)
+  find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
+  qt_standard_project_setup()
+  qt_add_executable(isle-config WIN32
+    LEGO1/mxdirectx/mxdirectxinfo.cpp
+    LEGO1/mxdirectx/legodxinfo.cpp
+    CONFIG/config.cpp
+    CONFIG/AboutDlg.cpp
+    CONFIG/MainDlg.cpp
+    CONFIG/detectdx5.cpp
+    CONFIG/res/config.rc
+    CONFIG/res/config.qrc
+  )
+  target_link_libraries(isle-config PRIVATE Qt6::Core Qt6::Widgets)
+  set_property(TARGET isle-config PROPERTY AUTOMOC ON)
+  set_property(TARGET isle-config PROPERTY AUTORCC ON)
+  set_property(TARGET isle-config PROPERTY AUTOUIC ON)
+  set_property(TARGET isle-config PROPERTY AUTOUIC_SEARCH_PATHS "${CMAKE_CURRENT_SOURCE_DIR}/CONFIG/res")
+  list(APPEND isle_targets isle-config)
+  target_compile_definitions(isle-config PRIVATE _AFXDLL MXDIRECTX_FOR_CONFIG)
+  target_include_directories(isle-config PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/LEGO1")
+  target_include_directories(isle-config PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/util>")
+  if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 14)
+    target_link_libraries(isle-config PRIVATE DirectX5::DirectX5)
+  endif()
+  target_compile_definitions(isle-config PRIVATE DIRECT3D_VERSION=0x500)
+  target_link_libraries(isle-config PRIVATE SDL3::SDL3 Isle::iniparser)
+  if (NOT ISLE_MINIWIN)
+    target_link_libraries(isle-config PRIVATE ddraw dxguid)
+  endif()
 endif()
 
 if(ISLE_MINIWIN)
@@ -652,6 +691,19 @@ add_subdirectory(packaging)
 
 set(CPACK_PACKAGE_DIRECTORY "dist")
 set(CPACK_PACKAGE_FILE_NAME "isle-${PROJECT_VERSION}-${ISLE_PACKAGE_NAME}")
+if(NINTENDO_3DS)
+  ctr_generate_smdh(isle.smdh
+    NAME "LEGO Island"
+    TITLE "LEGO Island"
+    DESCRIPTION "LEGO Island for the Nintendo 3DS"
+    AUTHOR "isledecomp/isle-portable"
+    VERSION "${PROJECT_VERSION}"
+    ICON "ISLE/res/3ds/isle.png"
+  )
+
+  ctr_create_3dsx(isle SMDH isle.smdh)
+  install(FILES "$<TARGET_FILE_DIR:isle>/isle.3dsx" DESTINATION "${CMAKE_INSTALL_BINDIR}")
+endif()
 if(MSVC)
   set(CPACK_GENERATOR ZIP)
 else()

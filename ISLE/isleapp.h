@@ -96,6 +96,7 @@ private:
 };
 
 extern IsleApp* g_isle;
+extern MxS32 g_closed;
 
 extern IDirect3DRMMiniwinDevice* GetD3DRMMiniwinDevice();
 

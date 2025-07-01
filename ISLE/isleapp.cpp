@@ -51,6 +51,11 @@
 #include "emscripten/messagebox.h"
 #endif
 
+#ifdef __3DS__
+#include "3ds/apthooks.h"
+#include "3ds/config.h"
+#endif
+
 DECOMP_SIZE_ASSERT(IsleApp, 0x8c)
 
 // GLOBAL: ISLE 0x410030
@@ -314,6 +319,9 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 		},
 		NULL
 	);
+#endif
+#ifdef __3DS__
+	N3DS_SetupAptHooks();
 #endif
 	return SDL_APP_CONTINUE;
 }
@@ -670,6 +678,11 @@ MxResult IsleApp::SetupWindow()
 	SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, g_targetHeight);
 	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_FULLSCREEN_BOOLEAN, m_fullScreen);
 	SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, WINDOW_TITLE);
+#if defined(MINIWIN) && !defined(__3DS__)
+	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
+	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+#endif
 
 	window = SDL_CreateWindowWithProperties(props);
 #ifdef MINIWIN
@@ -836,6 +849,9 @@ bool IsleApp::LoadConfig()
 		iniparser_set(dict, "isle:Max Allowed Extras", SDL_itoa(m_maxAllowedExtras, buf, 10));
 		iniparser_set(dict, "isle:Transition Type", SDL_itoa(m_transitionType, buf, 10));
 
+#ifdef __3DS__
+		N3DS_SetupDefaultConfigOverrides(dict);
+#endif
 		iniparser_dump_ini(dict, iniFP);
 		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "New config written at '%s'", iniConfig);
 		fclose(iniFP);
