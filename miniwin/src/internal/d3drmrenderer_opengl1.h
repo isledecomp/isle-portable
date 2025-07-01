@@ -46,6 +46,7 @@ private:
 	D3DRMMATRIX4D m_projection;
 	SDL_Surface* m_renderedImage;
 	bool m_useVBOs;
+	bool m_useNPOT;
 	bool m_dirty = false;
 	std::vector<SceneLight> m_lights;
 	SDL_GLContext m_context;
@@ -54,11 +55,13 @@ private:
 
 inline static void OpenGL1Renderer_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
+#ifndef __PSP__
 	Direct3DRMRenderer* device = OpenGL1Renderer::Create(640, 480);
 	if (!device) {
 		return;
 	}
 	delete device;
+#endif
 
 	D3DDEVICEDESC halDesc = {};
 	halDesc.dcmColorModel = D3DCOLORMODEL::RGB;
