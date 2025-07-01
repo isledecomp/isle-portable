@@ -28,39 +28,24 @@ Direct3DRMRenderer* OpenGL1Renderer::Create(DWORD width, DWORD height)
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 
-	SDL_Window* window = DDWindow;
-	bool testWindow = false;
-	if (!window) {
-		window = SDL_CreateWindow("OpenGL 1.1 test", width, height, SDL_WINDOW_HIDDEN | SDL_WINDOW_OPENGL);
-		if (!window) {
-			SDL_Log("SDL_CreateWindow: %s", SDL_GetError());
-			return nullptr;
-		}
-		testWindow = true;
-	}
-
-	SDL_GLContext context = SDL_GL_CreateContext(window);
-	if (!context) {
-		SDL_Log("SDL_GL_CreateContext: %s", SDL_GetError());
-		if (testWindow) {
-			SDL_DestroyWindow(window);
-		}
+	if (!DDWindow) {
+		SDL_Log("No window handler");
 		return nullptr;
 	}
 
-	if (!SDL_GL_MakeCurrent(window, context)) {
+	SDL_GLContext context = SDL_GL_CreateContext(DDWindow);
+	if (!context) {
+		SDL_Log("SDL_GL_CreateContext: %s", SDL_GetError());
+		return nullptr;
+	}
+
+	if (!SDL_GL_MakeCurrent(DDWindow, context)) {
+		SDL_GL_DestroyContext(context);
 		SDL_Log("SDL_GL_MakeCurrent: %s", SDL_GetError());
-		if (testWindow) {
-			SDL_DestroyWindow(window);
-		}
 		return nullptr;
 	}
 
 	GL11_InitState();
-
-	if (testWindow) {
-		SDL_DestroyWindow(window);
-	}
 
 	return new OpenGL1Renderer(width, height, context);
 }
@@ -78,6 +63,7 @@ OpenGL1Renderer::OpenGL1Renderer(DWORD width, DWORD height, SDL_GLContext contex
 OpenGL1Renderer::~OpenGL1Renderer()
 {
 	SDL_DestroySurface(m_renderedImage);
+	SDL_GL_DestroyContext(m_context);
 }
 
 void OpenGL1Renderer::PushLights(const SceneLight* lightsArray, size_t count)
