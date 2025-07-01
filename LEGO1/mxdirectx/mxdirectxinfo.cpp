@@ -216,27 +216,33 @@ BOOL MxDeviceEnumerate::EnumDirectDrawCallback(LPGUID p_guid, LPSTR p_driverDesc
 		BuildErrorString("DirectDraw Create failed: %s\n", EnumerateErrorToString(result));
 	}
 	else {
-		newDevice.m_ddCaps.dwSize = sizeof(newDevice.m_ddCaps);
-		result = lpDD->GetCaps(&newDevice.m_ddCaps, NULL);
-
+		result = lpDD->SetCooperativeLevel(m_hWnd, DDSCL_NORMAL);
 		if (result != DD_OK) {
-			BuildErrorString("GetCaps failed: %s\n", EnumerateErrorToString(result));
+			BuildErrorString("SetCooperativeLevel failed: %s\n", EnumerateErrorToString(result));
 		}
 		else {
-			result = lpDD->QueryInterface(IID_IDirect3D2, (LPVOID*) &lpDirect3d2);
+			newDevice.m_ddCaps.dwSize = sizeof(newDevice.m_ddCaps);
+			result = lpDD->GetCaps(&newDevice.m_ddCaps, NULL);
 
 			if (result != DD_OK) {
-				BuildErrorString("D3D creation failed: %s\n", EnumerateErrorToString(result));
+				BuildErrorString("GetCaps failed: %s\n", EnumerateErrorToString(result));
 			}
 			else {
-				result = lpDirect3d2->EnumDevices(DevicesEnumerateCallback, this);
+				result = lpDD->QueryInterface(IID_IDirect3D2, (LPVOID*) &lpDirect3d2);
 
 				if (result != DD_OK) {
-					BuildErrorString("D3D enum devices failed: %s\n", EnumerateErrorToString(result));
+					BuildErrorString("D3D creation failed: %s\n", EnumerateErrorToString(result));
 				}
 				else {
-					if (!newDevice.m_devices.size()) {
-						m_list.pop_back();
+					result = lpDirect3d2->EnumDevices(DevicesEnumerateCallback, this);
+
+					if (result != DD_OK) {
+						BuildErrorString("D3D enum devices failed: %s\n", EnumerateErrorToString(result));
+					}
+					else {
+						if (!newDevice.m_devices.size()) {
+							m_list.pop_back();
+						}
 					}
 				}
 			}
@@ -306,11 +312,13 @@ HRESULT MxDeviceEnumerate::EnumDevicesCallback(
 // FUNCTION: CONFIG 0x00401dc0
 // FUNCTION: LEGO1 0x1009c6c0
 // FUNCTION: BETA10 0x1011e3fa
-int MxDeviceEnumerate::DoEnumerate()
+int MxDeviceEnumerate::DoEnumerate(HWND hWnd)
 {
 	if (IsInitialized()) {
 		return -1;
 	}
+
+	m_hWnd = hWnd;
 
 	HRESULT ret = DirectDrawEnumerate(DirectDrawEnumerateCallback, this);
 	if (ret != DD_OK) {

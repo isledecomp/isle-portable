@@ -56,9 +56,17 @@ bool CConfigApp::InitInstance()
 		return false;
 	}
 	m_device_enumerator = new LegoDeviceEnumerate;
-	if (m_device_enumerator->DoEnumerate()) {
+	SDL_Window* window = SDL_CreateWindow("Test window", 640, 480, SDL_WINDOW_HIDDEN | SDL_WINDOW_OPENGL);
+	HWND hWnd;
+#ifdef MINIWIN
+	hWnd = reinterpret_cast<HWND>(window);
+#else
+	hWnd = (HWND) SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
+#endif
+	if (m_device_enumerator->DoEnumerate(hWnd)) {
 		return FALSE;
 	}
+	SDL_DestroyWindow(window);
 	m_driver = NULL;
 	m_device = NULL;
 	m_full_screen = TRUE;
