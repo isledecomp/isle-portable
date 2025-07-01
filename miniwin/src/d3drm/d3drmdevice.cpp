@@ -155,6 +155,10 @@ void Direct3DRMDevice2Impl::Resize()
 {
 	int width, height;
 	SDL_GetWindowSizeInPixels(DDWindow, &width, &height);
+#ifdef __3DS__
+	width = 320; // We are on the lower screen
+	height = 240;
+#endif
 	m_viewportTransform = CalculateViewportTransform(m_virtualWidth, m_virtualHeight, width, height);
 	m_renderer->Resize(width, height, m_viewportTransform);
 	for (int i = 0; i < m_viewports->GetSize(); i++) {
