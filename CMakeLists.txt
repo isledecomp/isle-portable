@@ -677,6 +677,4 @@ else()
   set(CPACK_GENERATOR TGZ)
 endif()
 
-if(NOT NINTENDO_3DS)
-  include(CPack)
-endif()
+include(CPack)
