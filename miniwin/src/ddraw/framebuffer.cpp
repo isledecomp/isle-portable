@@ -62,7 +62,7 @@ HRESULT FrameBufferImpl::Blt(
 	if (!surface) {
 		return DDERR_GENERIC;
 	}
-	Uint32 textureId = DDRenderer->GetTextureId(surface->ToTexture());
+	Uint32 textureId = DDRenderer->GetTextureId(surface->ToTexture(), true);
 	SDL_Rect srcRect =
 		lpSrcRect ? ConvertRect(lpSrcRect) : SDL_Rect{0, 0, surface->m_surface->w, surface->m_surface->h};
 	SDL_Rect dstRect =
