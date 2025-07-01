@@ -1,43 +1,13 @@
 #pragma once
-
+#include "../d3drm/backends/opengl1/actual.h"
 #include "d3drmrenderer.h"
 #include "d3drmtexture_impl.h"
 #include "ddraw_impl.h"
-
-#ifdef __APPLE__
-#include <OpenGL/gl.h>
-#else
-#include <GL/gl.h>
-#endif
 
 #include <SDL3/SDL.h>
 #include <vector>
 
 DEFINE_GUID(OpenGL1_GUID, 0x682656F3, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03);
-
-struct GLTextureCacheEntry {
-	IDirect3DRMTexture* texture;
-	Uint32 version;
-	GLuint glTextureId;
-};
-
-struct GLMeshCacheEntry {
-	const MeshGroup* meshGroup;
-	int version;
-	bool flat;
-
-	// non-VBO cache
-	std::vector<D3DVECTOR> positions;
-	std::vector<D3DVECTOR> normals;
-	std::vector<TexCoord> texcoords;
-	std::vector<uint16_t> indices;
-
-	// VBO cache
-	GLuint vboPositions;
-	GLuint vboNormals;
-	GLuint vboTexcoords;
-	GLuint ibo;
-};
 
 class OpenGL1Renderer : public Direct3DRMRenderer {
 public:
@@ -48,10 +18,8 @@ public:
 	void PushLights(const SceneLight* lightsArray, size_t count) override;
 	void SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back) override;
 	void SetFrustumPlanes(const Plane* frustumPlanes) override;
-	Uint32 GetTextureId(IDirect3DRMTexture* texture) override;
+	Uint32 GetTextureId(IDirect3DRMTexture* texture, bool isUi) override;
 	Uint32 GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup) override;
-	void GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc) override;
-	const char* GetName() override;
 	HRESULT BeginFrame() override;
 	void EnableTransparency() override;
 	void SubmitDraw(
@@ -87,8 +55,21 @@ private:
 inline static void OpenGL1Renderer_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
 	Direct3DRMRenderer* device = OpenGL1Renderer::Create(640, 480);
-	if (device) {
-		EnumDevice(cb, ctx, device, OpenGL1_GUID);
-		delete device;
+	if (!device) {
+		return;
 	}
+	delete device;
+
+	D3DDEVICEDESC halDesc = {};
+	halDesc.dcmColorModel = D3DCOLORMODEL::RGB;
+	halDesc.dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
+	halDesc.dwDeviceZBufferBitDepth = DDBD_24;
+	halDesc.dwDeviceRenderBitDepth = DDBD_32;
+	halDesc.dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
+	halDesc.dpcTriCaps.dwShadeCaps = D3DPSHADECAPS_ALPHAFLATBLEND;
+	halDesc.dpcTriCaps.dwTextureFilterCaps = D3DPTFILTERCAPS_LINEAR;
+
+	D3DDEVICEDESC helDesc = {};
+
+	EnumDevice(cb, ctx, "OpenGL 1.1 HAL", &halDesc, &helDesc, OpenGL1_GUID);
 }

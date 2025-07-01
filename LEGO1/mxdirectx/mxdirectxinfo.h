@@ -194,7 +194,7 @@ public:
 	MxDeviceEnumerate();
 	~MxDeviceEnumerate();
 
-	virtual int DoEnumerate(); // vtable+0x00
+	virtual int DoEnumerate(HWND hWnd); // vtable+0x00
 
 	BOOL EnumDirectDrawCallback(LPGUID p_guid, LPSTR p_driverDesc, LPSTR p_driverName);
 	HRESULT EnumDevicesCallback(
@@ -242,6 +242,7 @@ public:
 protected:
 	list<MxDriver> m_list;       // 0x04
 	unsigned char m_initialized; // 0x10
+	HWND m_hWnd;
 };
 
 // TEMPLATE: BETA10 0x1011c1b0
