@@ -47,6 +47,7 @@ Direct3DRMRenderer* OpenGLES2Renderer::Create(DWORD width, DWORD height)
 
 	SDL_GLContext context = SDL_GL_CreateContext(DDWindow);
 	if (!context) {
+		SDL_Log("SDL_GL_CreateContext: %s", SDL_GetError());
 		return nullptr;
 	}
 
