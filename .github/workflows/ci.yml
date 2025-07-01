@@ -140,7 +140,6 @@ jobs:
           mv *.3dsx dist/
 
       - name: Upload Build Artifacts
-        if: ${{ !matrix.n3ds }}
         uses: actions/upload-artifact@v4
         with:
           name: '${{ matrix.name }}'
