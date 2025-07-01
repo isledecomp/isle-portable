@@ -72,6 +72,18 @@ private:
 	std::vector<SceneLight> m_lights;
 	SDL_GLContext m_context;
 	GLuint m_shaderProgram;
+	GLint m_posLoc;
+	GLint m_normLoc;
+	GLint m_texLoc;
+	GLint m_colorLoc;
+	GLint m_shinLoc;
+	GLint m_lightCountLoc;
+	GLint m_useTextureLoc;
+	GLint m_textureLoc;
+	GLint u_lightLocs[3][3];
+	GLint m_modelViewMatrixLoc;
+	GLint m_normalMatrixLoc;
+	GLint m_projectionMatrixLoc;
 	ViewportTransform m_viewportTransform;
 };
 

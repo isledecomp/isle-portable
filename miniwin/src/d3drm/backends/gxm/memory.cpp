@@ -26,7 +26,7 @@ void patcher_host_free(void* user_data, void* mem)
 	SDL_free(mem);
 }
 
-void* vita_mem_alloc(unsigned int type, size_t size, size_t alignment, int attribs, SceUID* uid)
+void* vita_mem_alloc(unsigned int type, size_t size, size_t alignment, int attribs, SceUID* uid, const char* name)
 {
 	void* mem;
 
@@ -40,7 +40,7 @@ void* vita_mem_alloc(unsigned int type, size_t size, size_t alignment, int attri
 		size = ALIGN(size, 4 * 1024);
 	}
 
-	*uid = sceKernelAllocMemBlock("gpu_mem", type, size, NULL);
+	*uid = sceKernelAllocMemBlock(name, type, size, NULL);
 
 	if (*uid < 0) {
 		SDL_Log("sceKernelAllocMemBlock: 0x%x", *uid);

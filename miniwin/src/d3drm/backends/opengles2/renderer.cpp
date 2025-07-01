@@ -40,25 +40,18 @@ Direct3DRMRenderer* OpenGLES2Renderer::Create(DWORD width, DWORD height)
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 
-	SDL_Window* window = DDWindow;
-	bool testWindow = false;
-	if (!window) {
-		window = SDL_CreateWindow("OpenGL ES 2.0 test", width, height, SDL_WINDOW_HIDDEN | SDL_WINDOW_OPENGL);
-		testWindow = true;
-	}
-
-	SDL_GLContext context = SDL_GL_CreateContext(window);
-	if (!context) {
-		if (testWindow) {
-			SDL_DestroyWindow(window);
-		}
+	if (!DDWindow) {
+		SDL_Log("No window handler");
 		return nullptr;
 	}
 
-	if (!SDL_GL_MakeCurrent(window, context)) {
-		if (testWindow) {
-			SDL_DestroyWindow(window);
-		}
+	SDL_GLContext context = SDL_GL_CreateContext(DDWindow);
+	if (!context) {
+		return nullptr;
+	}
+
+	if (!SDL_GL_MakeCurrent(DDWindow, context)) {
+		SDL_GL_DestroyContext(context);
 		return nullptr;
 	}
 
@@ -174,10 +167,6 @@ Direct3DRMRenderer* OpenGLES2Renderer::Create(DWORD width, DWORD height)
 	glDeleteShader(vs);
 	glDeleteShader(fs);
 
-	if (testWindow) {
-		SDL_DestroyWindow(window);
-	}
-
 	return new OpenGLES2Renderer(width, height, context, shaderProgram);
 }
 
@@ -263,11 +252,29 @@ OpenGLES2Renderer::OpenGLES2Renderer(DWORD width, DWORD height, SDL_GLContext co
 	};
 	m_uiMesh.indices = {0, 1, 2, 0, 2, 3};
 	m_uiMeshCache = GLES2UploadMesh(m_uiMesh, true);
+	m_posLoc = glGetAttribLocation(m_shaderProgram, "a_position");
+	m_normLoc = glGetAttribLocation(m_shaderProgram, "a_normal");
+	m_texLoc = glGetAttribLocation(m_shaderProgram, "a_texCoord");
+	m_colorLoc = glGetUniformLocation(m_shaderProgram, "u_color");
+	m_shinLoc = glGetUniformLocation(m_shaderProgram, "u_shininess");
+	m_lightCountLoc = glGetUniformLocation(m_shaderProgram, "u_lightCount");
+	m_useTextureLoc = glGetUniformLocation(m_shaderProgram, "u_useTexture");
+	m_textureLoc = glGetUniformLocation(m_shaderProgram, "u_texture");
+	for (int i = 0; i < 3; ++i) {
+		std::string base = "u_lights[" + std::to_string(i) + "]";
+		u_lightLocs[i][0] = glGetUniformLocation(m_shaderProgram, (base + ".color").c_str());
+		u_lightLocs[i][1] = glGetUniformLocation(m_shaderProgram, (base + ".position").c_str());
+		u_lightLocs[i][2] = glGetUniformLocation(m_shaderProgram, (base + ".direction").c_str());
+	}
+	m_modelViewMatrixLoc = glGetUniformLocation(m_shaderProgram, "u_modelViewMatrix");
+	m_normalMatrixLoc = glGetUniformLocation(m_shaderProgram, "u_normalMatrix");
+	m_projectionMatrixLoc = glGetUniformLocation(m_shaderProgram, "u_projectionMatrix");
 }
 
 OpenGLES2Renderer::~OpenGLES2Renderer()
 {
 	SDL_DestroySurface(m_renderedImage);
+	SDL_GL_DestroyContext(m_context);
 	glDeleteProgram(m_shaderProgram);
 }
 
@@ -481,12 +488,11 @@ HRESULT OpenGLES2Renderer::BeginFrame()
 	}
 
 	for (int i = 0; i < lightCount; ++i) {
-		std::string base = "u_lights[" + std::to_string(i) + "]";
-		glUniform4fv(glGetUniformLocation(m_shaderProgram, (base + ".color").c_str()), 1, lightData[i].color);
-		glUniform4fv(glGetUniformLocation(m_shaderProgram, (base + ".position").c_str()), 1, lightData[i].position);
-		glUniform4fv(glGetUniformLocation(m_shaderProgram, (base + ".direction").c_str()), 1, lightData[i].direction);
+		glUniform4fv(u_lightLocs[i][0], 1, lightData[i].color);
+		glUniform4fv(u_lightLocs[i][1], 1, lightData[i].position);
+		glUniform4fv(u_lightLocs[i][2], 1, lightData[i].direction);
 	}
-	glUniform1i(glGetUniformLocation(m_shaderProgram, "u_lightCount"), lightCount);
+	glUniform1i(m_lightCountLoc, lightCount);
 	return DD_OK;
 }
 
@@ -508,52 +514,49 @@ void OpenGLES2Renderer::SubmitDraw(
 {
 	auto& mesh = m_meshs[meshId];
 
-	glUniformMatrix4fv(glGetUniformLocation(m_shaderProgram, "u_modelViewMatrix"), 1, GL_FALSE, &modelViewMatrix[0][0]);
-	glUniformMatrix3fv(glGetUniformLocation(m_shaderProgram, "u_normalMatrix"), 1, GL_FALSE, &normalMatrix[0][0]);
-	glUniformMatrix4fv(glGetUniformLocation(m_shaderProgram, "u_projectionMatrix"), 1, GL_FALSE, &m_projection[0][0]);
+	glUniformMatrix4fv(m_modelViewMatrixLoc, 1, GL_FALSE, &modelViewMatrix[0][0]);
+	glUniformMatrix3fv(m_normalMatrixLoc, 1, GL_FALSE, &normalMatrix[0][0]);
+	glUniformMatrix4fv(m_projectionMatrixLoc, 1, GL_FALSE, &m_projection[0][0]);
 
 	glUniform4f(
-		glGetUniformLocation(m_shaderProgram, "u_color"),
+		m_colorLoc,
 		appearance.color.r / 255.0f,
 		appearance.color.g / 255.0f,
 		appearance.color.b / 255.0f,
 		appearance.color.a / 255.0f
 	);
 
-	glUniform1f(glGetUniformLocation(m_shaderProgram, "u_shininess"), appearance.shininess);
+	glUniform1f(m_shinLoc, appearance.shininess);
 
 	if (appearance.textureId != NO_TEXTURE_ID) {
-		glUniform1i(glGetUniformLocation(m_shaderProgram, "u_useTexture"), 1);
+		glUniform1i(m_useTextureLoc, 1);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, m_textures[appearance.textureId].glTextureId);
-		glUniform1i(glGetUniformLocation(m_shaderProgram, "u_texture"), 0);
+		glUniform1i(m_textureLoc, 0);
 	}
 	else {
-		glUniform1i(glGetUniformLocation(m_shaderProgram, "u_useTexture"), 0);
+		glUniform1i(m_useTextureLoc, 0);
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, mesh.vboPositions);
-	GLint posLoc = glGetAttribLocation(m_shaderProgram, "a_position");
-	glEnableVertexAttribArray(posLoc);
-	glVertexAttribPointer(posLoc, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+	glEnableVertexAttribArray(m_posLoc);
+	glVertexAttribPointer(m_posLoc, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
 	glBindBuffer(GL_ARRAY_BUFFER, mesh.vboNormals);
-	GLint normLoc = glGetAttribLocation(m_shaderProgram, "a_normal");
-	glEnableVertexAttribArray(normLoc);
-	glVertexAttribPointer(normLoc, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+	glEnableVertexAttribArray(m_normLoc);
+	glVertexAttribPointer(m_normLoc, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-	GLint texLoc = glGetAttribLocation(m_shaderProgram, "a_texCoord");
 	if (appearance.textureId != NO_TEXTURE_ID) {
 		glBindBuffer(GL_ARRAY_BUFFER, mesh.vboTexcoords);
-		glEnableVertexAttribArray(texLoc);
-		glVertexAttribPointer(texLoc, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
+		glEnableVertexAttribArray(m_texLoc);
+		glVertexAttribPointer(m_texLoc, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
 	}
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ibo);
 	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh.indices.size()), GL_UNSIGNED_SHORT, nullptr);
 
-	glDisableVertexAttribArray(normLoc);
-	glDisableVertexAttribArray(texLoc);
+	glDisableVertexAttribArray(m_normLoc);
+	glDisableVertexAttribArray(m_texLoc);
 }
 
 HRESULT OpenGLES2Renderer::FinalizeFrame()
@@ -605,13 +608,13 @@ void OpenGLES2Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, c
 
 	float color[] = {1.0f, 1.0f, 1.0f, 1.0f};
 	float blank[] = {0.0f, 0.0f, 0.0f, 0.0f};
-	glUniform4fv(glGetUniformLocation(m_shaderProgram, "u_lights[0].color"), 1, color);
-	glUniform4fv(glGetUniformLocation(m_shaderProgram, "u_lights[0].position"), 1, blank);
-	glUniform4fv(glGetUniformLocation(m_shaderProgram, "u_lights[0].direction"), 1, blank);
-	glUniform1i(glGetUniformLocation(m_shaderProgram, "u_lightCount"), 1);
+	glUniform4fv(u_lightLocs[0][0], 1, color);
+	glUniform4fv(u_lightLocs[0][1], 1, blank);
+	glUniform4fv(u_lightLocs[0][2], 1, blank);
+	glUniform1i(m_lightCountLoc, 1);
 
-	glUniform4f(glGetUniformLocation(m_shaderProgram, "u_color"), 1.0f, 1.0f, 1.0f, 1.0f);
-	glUniform1f(glGetUniformLocation(m_shaderProgram, "u_shininess"), 0.0f);
+	glUniform4f(m_colorLoc, 1.0f, 1.0f, 1.0f, 1.0f);
+	glUniform1f(m_shinLoc, 0.0f);
 
 	const GLES2TextureCacheEntry& texture = m_textures[textureId];
 	float scaleX = static_cast<float>(dstRect.w) / srcRect.w;
@@ -632,19 +635,19 @@ void OpenGLES2Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, c
 		modelView
 	);
 
-	glUniformMatrix4fv(glGetUniformLocation(m_shaderProgram, "u_modelViewMatrix"), 1, GL_FALSE, &modelView[0][0]);
+	glUniformMatrix4fv(m_modelViewMatrixLoc, 1, GL_FALSE, &modelView[0][0]);
 	Matrix3x3 identity = {{1.f, 0.f, 0.f}, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}};
-	glUniformMatrix3fv(glGetUniformLocation(m_shaderProgram, "u_normalMatrix"), 1, GL_FALSE, &identity[0][0]);
+	glUniformMatrix3fv(m_normalMatrixLoc, 1, GL_FALSE, &identity[0][0]);
 	CreateOrthographicProjection((float) m_width, (float) m_height, projection);
-	glUniformMatrix4fv(glGetUniformLocation(m_shaderProgram, "u_projectionMatrix"), 1, GL_FALSE, &projection[0][0]);
+	glUniformMatrix4fv(m_projectionMatrixLoc, 1, GL_FALSE, &projection[0][0]);
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glActiveTexture(GL_TEXTURE0);
-	glUniform1i(glGetUniformLocation(m_shaderProgram, "u_useTexture"), 1);
+	glUniform1i(m_useTextureLoc, 1);
 	glBindTexture(GL_TEXTURE_2D, texture.glTextureId);
-	glUniform1i(glGetUniformLocation(m_shaderProgram, "u_texture"), 0);
+	glUniform1i(m_textureLoc, 0);
 
 	glEnable(GL_SCISSOR_TEST);
 	glScissor(
@@ -656,20 +659,18 @@ void OpenGLES2Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, c
 		static_cast<int>(std::round(dstRect.h * m_viewportTransform.scale))
 	);
 
-	GLint posLoc = glGetAttribLocation(m_shaderProgram, "a_position");
 	glBindBuffer(GL_ARRAY_BUFFER, m_uiMeshCache.vboPositions);
-	glEnableVertexAttribArray(posLoc);
-	glVertexAttribPointer(posLoc, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+	glEnableVertexAttribArray(m_posLoc);
+	glVertexAttribPointer(m_posLoc, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-	GLint texLoc = glGetAttribLocation(m_shaderProgram, "a_texCoord");
 	glBindBuffer(GL_ARRAY_BUFFER, m_uiMeshCache.vboTexcoords);
-	glEnableVertexAttribArray(texLoc);
-	glVertexAttribPointer(texLoc, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
+	glEnableVertexAttribArray(m_texLoc);
+	glVertexAttribPointer(m_texLoc, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_uiMeshCache.ibo);
 	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(m_uiMeshCache.indices.size()), GL_UNSIGNED_SHORT, nullptr);
 
-	glDisableVertexAttribArray(texLoc);
+	glDisableVertexAttribArray(m_texLoc);
 	glDisable(GL_SCISSOR_TEST);
 }
 
