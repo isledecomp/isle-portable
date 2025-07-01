@@ -26,19 +26,12 @@ struct Plane {
 	float d;
 };
 
-class Direct3DRMDesc {
-public:
-	virtual ~Direct3DRMDesc() {}
-	virtual void GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc) = 0;
-	virtual const char* GetName() = 0;
-};
-
-class Direct3DRMRenderer : public IDirect3DDevice2, public Direct3DRMDesc {
+class Direct3DRMRenderer : public IDirect3DDevice2 {
 public:
 	virtual void PushLights(const SceneLight* vertices, size_t count) = 0;
 	virtual void SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back) = 0;
 	virtual void SetFrustumPlanes(const Plane* frustumPlanes) = 0;
-	virtual Uint32 GetTextureId(IDirect3DRMTexture* texture) = 0;
+	virtual Uint32 GetTextureId(IDirect3DRMTexture* texture, bool isUi = false) = 0;
 	virtual Uint32 GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup) = 0;
 	int GetWidth() { return m_width; }
 	int GetHeight() { return m_height; }

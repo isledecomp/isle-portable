@@ -108,7 +108,7 @@ MxResult LegoVideoManager::Create(MxVideoParam& p_videoParam, MxU32 p_frequencyM
 		goto done;
 	}
 
-	if (deviceEnumerate.DoEnumerate() != SUCCESS) {
+	if (deviceEnumerate.DoEnumerate(hwnd) != SUCCESS) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "LegoDeviceEnumerate::DoEnumerate failed");
 		goto done;
 	}

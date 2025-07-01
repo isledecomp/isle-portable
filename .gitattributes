@@ -5,3 +5,7 @@
 *.html  text eol=lf diff=html
 *.mdp   binary
 *.mak   text eol=crlf
+**/*.ico binary
+**/*.png binary
+**/*.svg text eol=lf
+**/*.desktop text eol=lf

@@ -56,4 +56,11 @@ HRESULT DirectDrawEnumerate(LPDDENUMCALLBACKA cb, void* context);
 
 HRESULT DirectDrawCreate(LPGUID lpGuid, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOuter);
 
-void EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx, Direct3DRMDesc* desc, GUID deviceGuid);
+void EnumDevice(
+	LPD3DENUMDEVICESCALLBACK cb,
+	void* ctx,
+	const char* name,
+	D3DDEVICEDESC* halDesc,
+	D3DDEVICEDESC* helDesc,
+	GUID deviceGuid
+);

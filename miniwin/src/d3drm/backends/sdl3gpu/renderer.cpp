@@ -203,49 +203,31 @@ Direct3DRMRenderer* Direct3DRMSDL3GPURenderer::Create(DWORD width, DWORD height)
 		return nullptr;
 	}
 
-	SDL_Window* window = DDWindow;
-	bool testWindow = false;
-	if (!window) {
-		window = SDL_CreateWindow("SDL_GPU test", width, height, SDL_WINDOW_HIDDEN);
-		if (!window) {
-			SDL_Log("SDL_CreateWindow: %s", SDL_GetError());
-			return nullptr;
-		}
-		testWindow = true;
-	}
-
-	if (!SDL_ClaimWindowForGPUDevice(device.ptr, window)) {
-		SDL_LogError(LOG_CATEGORY_MINIWIN, "SDL_ClaimWindowForGPUDevice: %s", SDL_GetError());
-		if (testWindow) {
-			SDL_DestroyWindow(window);
-		}
+	if (!DDWindow) {
+		SDL_Log("No window handler");
 		return nullptr;
 	}
 
-	ScopedPipeline opaquePipeline{device.ptr, InitializeGraphicsPipeline(device.ptr, window, true, true)};
+	if (!SDL_ClaimWindowForGPUDevice(device.ptr, DDWindow)) {
+		SDL_LogError(LOG_CATEGORY_MINIWIN, "SDL_ClaimWindowForGPUDevice: %s", SDL_GetError());
+		return nullptr;
+	}
+
+	ScopedPipeline opaquePipeline{device.ptr, InitializeGraphicsPipeline(device.ptr, DDWindow, true, true)};
 	if (!opaquePipeline.ptr) {
 		SDL_LogError(LOG_CATEGORY_MINIWIN, "InitializeGraphicsPipeline for opaquePipeline");
-		if (testWindow) {
-			SDL_DestroyWindow(window);
-		}
 		return nullptr;
 	}
 
-	ScopedPipeline transparentPipeline{device.ptr, InitializeGraphicsPipeline(device.ptr, window, true, false)};
+	ScopedPipeline transparentPipeline{device.ptr, InitializeGraphicsPipeline(device.ptr, DDWindow, true, false)};
 	if (!transparentPipeline.ptr) {
 		SDL_LogError(LOG_CATEGORY_MINIWIN, "InitializeGraphicsPipeline for transparentPipeline");
-		if (testWindow) {
-			SDL_DestroyWindow(window);
-		}
 		return nullptr;
 	}
 
-	ScopedPipeline uiPipeline{device.ptr, InitializeGraphicsPipeline(device.ptr, window, false, false)};
+	ScopedPipeline uiPipeline{device.ptr, InitializeGraphicsPipeline(device.ptr, DDWindow, false, false)};
 	if (!uiPipeline.ptr) {
 		SDL_LogError(LOG_CATEGORY_MINIWIN, "InitializeGraphicsPipeline for uiPipeline");
-		if (testWindow) {
-			SDL_DestroyWindow(window);
-		}
 		return nullptr;
 	}
 
@@ -257,9 +239,6 @@ Direct3DRMRenderer* Direct3DRMSDL3GPURenderer::Create(DWORD width, DWORD height)
 	ScopedTransferBuffer uploadBuffer{device.ptr, SDL_CreateGPUTransferBuffer(device.ptr, &uploadBufferInfo)};
 	if (!uploadBuffer.ptr) {
 		SDL_LogError(LOG_CATEGORY_MINIWIN, "SDL_CreateGPUTransferBuffer filed for upload buffer (%s)", SDL_GetError());
-		if (testWindow) {
-			SDL_DestroyWindow(window);
-		}
 		return nullptr;
 	}
 
@@ -273,9 +252,6 @@ Direct3DRMRenderer* Direct3DRMSDL3GPURenderer::Create(DWORD width, DWORD height)
 	ScopedSampler sampler{device.ptr, SDL_CreateGPUSampler(device.ptr, &samplerInfo)};
 	if (!sampler.ptr) {
 		SDL_LogError(LOG_CATEGORY_MINIWIN, "Failed to create sampler: %s", SDL_GetError());
-		if (testWindow) {
-			SDL_DestroyWindow(window);
-		}
 		return nullptr;
 	}
 
@@ -289,15 +265,7 @@ Direct3DRMRenderer* Direct3DRMSDL3GPURenderer::Create(DWORD width, DWORD height)
 	ScopedSampler uiSampler{device.ptr, SDL_CreateGPUSampler(device.ptr, &uiSamplerInfo)};
 	if (!uiSampler.ptr) {
 		SDL_LogError(LOG_CATEGORY_MINIWIN, "Failed to create sampler: %s", SDL_GetError());
-		if (testWindow) {
-			SDL_DestroyWindow(window);
-		}
 		return nullptr;
-	}
-
-	if (testWindow) {
-		SDL_ReleaseWindowFromGPUDevice(device.ptr, window);
-		SDL_DestroyWindow(window);
 	}
 
 	auto renderer = new Direct3DRMSDL3GPURenderer(
@@ -383,9 +351,7 @@ Direct3DRMSDL3GPURenderer::~Direct3DRMSDL3GPURenderer()
 {
 	SDL_ReleaseGPUBuffer(m_device, m_uiMeshCache.vertexBuffer);
 	SDL_ReleaseGPUBuffer(m_device, m_uiMeshCache.indexBuffer);
-	if (DDWindow) {
-		SDL_ReleaseWindowFromGPUDevice(m_device, DDWindow);
-	}
+	SDL_ReleaseWindowFromGPUDevice(m_device, DDWindow);
 	if (m_downloadBuffer) {
 		SDL_ReleaseGPUTransferBuffer(m_device, m_downloadBuffer);
 	}
@@ -533,7 +499,7 @@ SDL_GPUTexture* Direct3DRMSDL3GPURenderer::CreateTextureFromSurface(SDL_Surface*
 	return texptr;
 }
 
-Uint32 Direct3DRMSDL3GPURenderer::GetTextureId(IDirect3DRMTexture* iTexture)
+Uint32 Direct3DRMSDL3GPURenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi)
 {
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
 	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
@@ -585,7 +551,7 @@ SDL3MeshCache Direct3DRMSDL3GPURenderer::UploadMesh(const MeshGroup& meshGroup)
 			meshGroup.vertices.size(),
 			meshGroup.indices.data(),
 			meshGroup.indices.size(),
-			meshGroup.texture != nullptr,
+			true,
 			finalVertices,
 			newIndices
 		);
@@ -710,24 +676,6 @@ Uint32 Direct3DRMSDL3GPURenderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGro
 	m_meshs.push_back(std::move(newCache));
 	AddMeshDestroyCallback((Uint32) (m_meshs.size() - 1), mesh);
 	return (Uint32) (m_meshs.size() - 1);
-}
-
-void Direct3DRMSDL3GPURenderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc)
-{
-	halDesc->dcmColorModel = D3DCOLORMODEL::RGB;
-	halDesc->dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
-	halDesc->dwDeviceZBufferBitDepth = DDBD_32; // Todo add support for other depths
-	halDesc->dwDeviceRenderBitDepth = DDBD_32;
-	halDesc->dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
-	halDesc->dpcTriCaps.dwShadeCaps = D3DPSHADECAPS_ALPHAFLATBLEND;
-	halDesc->dpcTriCaps.dwTextureFilterCaps = D3DPTFILTERCAPS_LINEAR;
-
-	memset(helDesc, 0, sizeof(D3DDEVICEDESC));
-}
-
-const char* Direct3DRMSDL3GPURenderer::GetName()
-{
-	return "SDL3 GPU HAL";
 }
 
 void PackNormalMatrix(const Matrix3x3& normalMatrix3x3, D3DRMMATRIX4D& packedNormalMatrix4x4)
@@ -856,10 +804,6 @@ void Direct3DRMSDL3GPURenderer::Resize(int width, int height, const ViewportTran
 	m_width = width;
 	m_height = height;
 	m_viewportTransform = viewportTransform;
-
-	if (!DDWindow) {
-		return;
-	}
 
 	if (m_transferTexture) {
 		SDL_ReleaseGPUTexture(m_device, m_transferTexture);
