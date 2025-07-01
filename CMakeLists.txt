@@ -1,8 +1,5 @@
 cmake_minimum_required(VERSION 3.25...4.0 FATAL_ERROR)
 
-set(CMAKE_SYSTEM_NAME WindowsStore)
-set(CMAKE_SYSTEM_VERSION 10.0.26100.0)
-
 project(isle LANGUAGES CXX C VERSION 0.1)
 
 if(EMSCRIPTEN)
@@ -43,7 +40,6 @@ cmake_dependent_option(ISLE_USE_DX5 "Build with internal DirectX 5 SDK" "${NOT_M
 cmake_dependent_option(ISLE_MINIWIN "Use miniwin" ON "NOT ISLE_USE_DX5" OFF)
 cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "MSVC OR ISLE_MINIWIN;NOT NINTENDO_3DS;NOT WINDOWS_STORE" OFF)
 cmake_dependent_option(ISLE_COMPILE_SHADERS "Compile shaders" ON "SDL_SHADERCROSS_BIN;TARGET Python3::Interpreter" OFF)
-option(ISLE_XBOX_ONE "Build for Xbox One/Series X|S" ON)
 option(CMAKE_POSITION_INDEPENDENT_CODE "Build with -fPIC" ON)
 option(ENABLE_CLANG_TIDY "Enable clang-tidy")
 option(DOWNLOAD_DEPENDENCIES "Download dependencies" ON)
@@ -56,7 +52,6 @@ message(STATUS "Internal DirectX5 SDK:         ${ISLE_USE_DX5}")
 message(STATUS "Internal miniwin:              ${ISLE_MINIWIN}")
 message(STATUS "Isle debugging:                ${ISLE_DEBUG}")
 message(STATUS "Compile shaders:               ${ISLE_COMPILE_SHADERS}")
-message(STATUS "Build for Xbox One/Series X|S: ${ISLE_XBOX_ONE}")
 
 add_library(Isle::iniparser INTERFACE IMPORTED)
 
@@ -64,12 +59,21 @@ if(DOWNLOAD_DEPENDENCIES)
   # FetchContent downloads and configures dependencies
   message(STATUS "Fetching SDL3 and iniparser. This might take a while...")
   include(FetchContent)
+  if(WINDOWS_STORE)
   FetchContent_Declare(
     SDL3
     GIT_REPOSITORY "https://github.com/Helloyunho/SDL3-uwp.git"
     GIT_TAG "main"
     EXCLUDE_FROM_ALL
   )
+  else()
+  FetchContent_Declare(
+      SDL3
+      GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
+      GIT_TAG "main"
+      EXCLUDE_FROM_ALL
+  )
+  endif()
   FetchContent_MakeAvailable(SDL3)
 
   FetchContent_Declare(

@@ -96,6 +96,10 @@ if(WIN32 AND NOT WINDOWS_STORE)
   target_link_libraries(miniwin PRIVATE d3d9)
 endif()
 
+if(WINDOWS_STORE)
+  add_compile_definitions(WINDOWS_STORE)
+endif()
+
 target_compile_definitions(miniwin PUBLIC MINIWIN)
 
 target_include_directories(miniwin

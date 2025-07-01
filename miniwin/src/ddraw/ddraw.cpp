@@ -238,7 +238,7 @@ HRESULT DirectDrawImpl::EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 #ifdef __3DS__
 	Citro3DRenderer_EnumDevice(cb, ctx);
 #endif
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(WINDOWS_STORE)
 	DirectX9Renderer_EnumDevice(cb, ctx);
 #endif
 	Direct3DRMSoftware_EnumDevice(cb, ctx);
