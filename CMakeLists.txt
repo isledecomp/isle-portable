@@ -13,7 +13,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 include(CheckCXXSourceCompiles)
 include(CMakeDependentOption)
 include(CMakePushCheckState)
-include(cmake/detectcpu.cmake)
+include(CMake/detectcpu.cmake)
 
 DetectTargetCPUArchitectures(ISLE_CPUS)
 
