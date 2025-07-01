@@ -61,7 +61,7 @@ OpenGL1Renderer::OpenGL1Renderer(DWORD width, DWORD height, SDL_GLContext contex
 	m_renderedImage = SDL_CreateSurface(m_width, m_height, SDL_PIXELFORMAT_RGBA32);
 	GL11_LoadExtensions();
 	m_useVBOs = SDL_GL_ExtensionSupported("GL_ARB_vertex_buffer_object");
-	m_useNPOT = SDL_GL_ExtensionSupported("GL_ARB_vertex_buffer_object");
+	m_useNPOT = SDL_GL_ExtensionSupported("GL_OES_texture_npot");
 }
 
 OpenGL1Renderer::~OpenGL1Renderer()
