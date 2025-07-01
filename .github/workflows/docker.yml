@@ -10,6 +10,8 @@ env:
 jobs:
   publish-emscripten:
     name: Publish web port
+    env:
+        IMAGE_NAME: ${{ github.repository }}-emscripten
     runs-on: ubuntu-latest
     permissions:
       contents: read

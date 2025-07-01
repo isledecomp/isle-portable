@@ -27,12 +27,11 @@ RUN emcmake cmake -S . -B build -DISLE_BUILD_CONFIG=OFF -DISLE_DEBUG=OFF -DCMAKE
     emmake cmake --build build -j 32
 
 RUN echo "Fetching isle.pizza frontend..."; \
-    git clone --depth 1 https://github.com/isledecomp/isle.pizza /tmp/isle.pizza && \
-    cp -r /tmp/isle.pizza/* /src/build/ && \
-    rm -rf /tmp/isle.pizza;
+    git clone --depth 1 https://github.com/isledecomp/isle.pizza /tmp/isle.pizza;
 
 FROM nginx:alpine
 
 COPY docker/emscripten/nginx.conf /etc/nginx/nginx.conf
-COPY --from=builder /src/build /usr/share/nginx/html
+COPY --from=builder /tmp/isle.pizza /usr/share/nginx/html
+COPY --from=builder /src/build/isle.* /usr/share/nginx/html
 EXPOSE 6931
