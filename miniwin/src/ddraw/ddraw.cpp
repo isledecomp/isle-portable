@@ -4,6 +4,9 @@
 #ifdef USE_OPENGLES2
 #include "d3drmrenderer_opengles2.h"
 #endif
+#ifdef __3DS__
+#include "d3drmrenderer_citro3d.h"
+#endif
 #ifdef _WIN32
 #include "d3drmrenderer_directx9.h"
 #endif
@@ -241,6 +244,9 @@ HRESULT DirectDrawImpl::EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 #ifdef USE_OPENGL1
 	OpenGL1Renderer_EnumDevice(cb, ctx);
 #endif
+#ifdef __3DS__
+	Citro3DRenderer_EnumDevice(cb, ctx);
+#endif
 #ifdef _WIN32
 	DirectX9Renderer_EnumDevice(cb, ctx);
 #endif
@@ -360,6 +366,11 @@ HRESULT DirectDrawImpl::CreateDevice(
 #ifdef USE_OPENGL1
 	else if (SDL_memcmp(&guid, &OpenGL1_GUID, sizeof(GUID)) == 0) {
 		DDRenderer = OpenGL1Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
+	}
+#endif
+#ifdef __3DS__
+	else if (SDL_memcmp(&guid, &Citro3D_GUID, sizeof(GUID)) == 0) {
+		DDRenderer = new Citro3DRenderer(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
 #endif
 #ifdef _WIN32

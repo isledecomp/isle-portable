@@ -1,0 +1,130 @@
+; Uniforms
+.fvec projection[4], modelView[4], meshColor
+.fvec lightVec[2], lightClr[3], shininess
+
+; Constants
+.constf myconst(0.0, 1.0, -1.0, -0.5)
+
+; Outputs
+.out outpos position
+.out outtc0 texcoord0
+.out outclr color
+
+; Inputs
+.alias inpos v0
+.alias innrm v1
+.alias intex v2
+
+.proc main
+	; Prepare constants in usable temp regs
+	mov r15.x, myconst.x ; 0.0
+	mov r15.y, myconst.y ; 1.0
+	mov r15.z, myconst.z ; -1.0
+
+	; Force the w component of inpos to be 1.0
+	mov r0.xyz, inpos
+	mov r0.w,   r15.y
+
+	; r1 = modelView * inpos
+	dp4 r1.x, modelView[0], r0
+	dp4 r1.y, modelView[1], r0
+	dp4 r1.z, modelView[2], r0
+	dp4 r1.w, modelView[3], r0
+
+	; outpos = projection * r1
+	dp4 outpos.x, projection[0], r1
+	dp4 outpos.y, projection[1], r1
+	dp4 outpos.z, projection[2], r1
+	dp4 outpos.w, projection[3], r1
+
+	; outtex = intex
+	mov outtc0, intex
+	mov outtc0.zw, myconst.xy
+
+	; Transform normal
+	mov r2.xyz, innrm
+	mov r2.w,   r15.x
+	dp4 r3.x, modelView[0], r2
+	dp4 r3.y, modelView[1], r2
+	dp4 r3.z, modelView[2], r2
+	mov r3.w,   r15.x
+	dp3 r4.x, r3, r3
+	rsq r4.x, r4.x
+	mul r3, r4.xxxx, r3  ; r3 = normalized normal
+
+	; Normalize lightVec[0]
+	mov r5, lightVec[0]
+	dp3 r6.x, r5, r5
+	rsq r6.x, r6.x
+	mul r5, r6.xxxx, r5
+
+	; dot(normal, lightVec[0])
+	dp3 r6.x, r3, r5
+	max r6.x, r6.x, r15.xxxx
+
+	; Normalize lightVec[1]
+	mov r7, lightVec[1]
+	dp3 r8.x, r7, r7
+	rsq r8.x, r8.x
+	mul r7, r8.xxxx, r7
+
+	; dot(normal, lightVec[1])
+	dp3 r6.y, r3, r7
+	max r6.y, r6.y, r15.xxxx
+
+	; Load lightClr
+	mov r8, lightClr[2] ; ambient
+	mov r9, lightClr[0] ; point
+	mov r10, lightClr[1] ; directional
+
+	; diffuse = ambient + (lightClr[0] * dot0) + (lightClr[1] * dot1)
+	mul r11, r9, r6.xxxx
+	add r8, r8, r11
+	mul r11, r10, r6.yyyy
+	add r8, r8, r11 ; r8 = diffuse
+
+	; Check if shininess > 0
+	mov r12, shininess
+	slt r13.x, r15.x, r12.x
+
+	; viewVec = normalize(-position.xyz)
+	mov r14.xyz, r1.xyz
+	mul r14.xyz, r14.xyz, r15.zzz
+	dp3 r4.x, r14, r14
+	rsq r4.x, r4.x
+	mul r14, r4.xxxx, r14
+
+	; H = normalize(view + lightVec[1])
+	add r11, r14, r7
+	dp3 r4.x, r11, r11
+	rsq r4.x, r4.x
+	mul r11, r4.xxxx, r11
+
+	; dot(normal, H)
+	dp3 r4.x, r3, r11
+	max r4.x, r4.x, r15.x
+
+	; Approximate pow(dotNH, 10) by repeated multiplication
+	mul r5.x, r4.x, r4.x      ; dotNH^2
+	mul r5.x, r5.x, r5.x      ; dotNH^4
+	mul r5.x, r5.x, r5.x      ; dotNH^8
+	mul r4.x, r5.x, r4.x      ; dotNH^9
+	mul r4.x, r4.x, r4.x      ; dotNH^10
+
+	; Multiply by shininess > 0 flag
+	mul r4.x, r4.x, r13.x
+
+	; specular = lightClr[1] * spec
+	mul r5, r10, r4.xxxx
+
+	; final = diffuse * meshColor + specular * lightClr[1]
+	mov r9, meshColor
+	mul r6, r8, r9      ; diffuse * meshColor
+	add r7.xyz, r6.xyz, r5.xyz  ; add specular (already multiplied by lightClr)
+	min r7.xyz, r7.xyz, r15.yyyy
+
+	mov outclr.xyz, r7.xyz
+	mov outclr.w, meshColor.w
+
+	end
+.end

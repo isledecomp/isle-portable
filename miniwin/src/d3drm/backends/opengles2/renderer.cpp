@@ -47,6 +47,7 @@ Direct3DRMRenderer* OpenGLES2Renderer::Create(DWORD width, DWORD height)
 
 	SDL_GLContext context = SDL_GL_CreateContext(DDWindow);
 	if (!context) {
+		SDL_Log("SDL_GL_CreateContext: %s", SDL_GetError());
 		return nullptr;
 	}
 
@@ -274,8 +275,8 @@ OpenGLES2Renderer::OpenGLES2Renderer(DWORD width, DWORD height, SDL_GLContext co
 OpenGLES2Renderer::~OpenGLES2Renderer()
 {
 	SDL_DestroySurface(m_renderedImage);
-	SDL_GL_DestroyContext(m_context);
 	glDeleteProgram(m_shaderProgram);
+	SDL_GL_DestroyContext(m_context);
 }
 
 void OpenGLES2Renderer::PushLights(const SceneLight* lightsArray, size_t count)

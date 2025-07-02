@@ -1,12 +1,9 @@
 {
     "id": "org.legoisland.Isle",
-
     "runtime": "org.kde.Platform",
     "sdk": "org.kde.Sdk",
     "runtime-version": "6.8",
-
     "command": "isle",
-
     "finish-args": [
         "--share=ipc",
         "--socket=wayland",
@@ -19,7 +16,6 @@
         "--filesystem=/mnt/:ro",
         "--filesystem=home:ro"
     ],
-
     "modules": [
         {
             "name": "isle",
@@ -33,11 +29,6 @@
                     "type": "dir",
                     "path": "../../../3rdparty",
                     "dest": "3rdparty/"
-                },
-                {
-                    "type": "dir",
-                    "path": "../../../cmake",
-                    "dest": "cmake/"
                 },
                 {
                     "type": "dir",
