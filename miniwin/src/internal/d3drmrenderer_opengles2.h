@@ -39,10 +39,8 @@ public:
 	void PushLights(const SceneLight* lightsArray, size_t count) override;
 	void SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back) override;
 	void SetFrustumPlanes(const Plane* frustumPlanes) override;
-	Uint32 GetTextureId(IDirect3DRMTexture* texture) override;
+	Uint32 GetTextureId(IDirect3DRMTexture* texture, bool isUi) override;
 	Uint32 GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup) override;
-	void GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc) override;
-	const char* GetName() override;
 	HRESULT BeginFrame() override;
 	void EnableTransparency() override;
 	void SubmitDraw(
@@ -64,22 +62,60 @@ private:
 	void AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture);
 	void AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh);
 
+	MeshGroup m_uiMesh;
+	GLES2MeshCacheEntry m_uiMeshCache;
 	std::vector<GLES2TextureCacheEntry> m_textures;
 	std::vector<GLES2MeshCacheEntry> m_meshs;
 	D3DRMMATRIX4D m_projection;
-	SDL_Surface* m_renderedImage;
+	SDL_Surface* m_renderedImage = nullptr;
 	bool m_dirty = false;
 	std::vector<SceneLight> m_lights;
 	SDL_GLContext m_context;
 	GLuint m_shaderProgram;
+	GLint m_posLoc;
+	GLint m_normLoc;
+	GLint m_texLoc;
+	GLint m_colorLoc;
+	GLint m_shinLoc;
+	GLint m_lightCountLoc;
+	GLint m_useTextureLoc;
+	GLint m_textureLoc;
+	GLint u_lightLocs[3][3];
+	GLint m_modelViewMatrixLoc;
+	GLint m_normalMatrixLoc;
+	GLint m_projectionMatrixLoc;
 	ViewportTransform m_viewportTransform;
 };
 
 inline static void OpenGLES2Renderer_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
 	Direct3DRMRenderer* device = OpenGLES2Renderer::Create(640, 480);
-	if (device) {
-		EnumDevice(cb, ctx, device, OpenGLES2_GUID);
-		delete device;
+	if (!device) {
+		return;
 	}
+
+	D3DDEVICEDESC halDesc = {};
+	halDesc.dcmColorModel = D3DCOLOR_RGB;
+	halDesc.dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
+	halDesc.dwDeviceZBufferBitDepth = DDBD_16;
+	halDesc.dwDeviceRenderBitDepth = DDBD_32;
+	halDesc.dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
+	halDesc.dpcTriCaps.dwShadeCaps = D3DPSHADECAPS_ALPHAFLATBLEND;
+	halDesc.dpcTriCaps.dwTextureFilterCaps = D3DPTFILTERCAPS_LINEAR;
+
+	const char* extensions = (const char*) glGetString(GL_EXTENSIONS);
+	if (extensions) {
+		if (strstr(extensions, "GL_OES_depth24")) {
+			halDesc.dwDeviceZBufferBitDepth |= DDBD_24;
+		}
+		if (strstr(extensions, "GL_OES_depth32")) {
+			halDesc.dwDeviceZBufferBitDepth |= DDBD_32;
+		}
+	}
+
+	delete device;
+
+	D3DDEVICEDESC helDesc = {};
+
+	EnumDevice(cb, ctx, "OpenGL ES 2.0 HAL", &halDesc, &helDesc, OpenGLES2_GUID);
 }

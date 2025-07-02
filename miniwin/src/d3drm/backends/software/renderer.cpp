@@ -80,7 +80,7 @@ void Direct3DRMSoftwareRenderer::ClearZBuffer()
 		_mm_empty();
 	}
 #endif
-#elif defined(__arm__) || defined(__aarch64__)
+#elif (defined(__arm__) || defined(__aarch64__)) && !defined(__3DS__)
 	if (SDL_HasNEON()) {
 		float32x4_t inf4 = vdupq_n_f32(inf);
 		for (; i + 4 <= size; i += 4) {
@@ -554,7 +554,7 @@ void Direct3DRMSoftwareRenderer::AddTextureDestroyCallback(Uint32 id, IDirect3DR
 	);
 }
 
-Uint32 Direct3DRMSoftwareRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
+Uint32 Direct3DRMSoftwareRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi)
 {
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
 	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
@@ -662,24 +662,6 @@ Uint32 Direct3DRMSoftwareRenderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGr
 	m_meshs.push_back(std::move(newCache));
 	AddMeshDestroyCallback((Uint32) (m_meshs.size() - 1), mesh);
 	return (Uint32) (m_meshs.size() - 1);
-}
-
-void Direct3DRMSoftwareRenderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc)
-{
-	memset(halDesc, 0, sizeof(D3DDEVICEDESC));
-
-	helDesc->dcmColorModel = D3DCOLORMODEL::RGB;
-	helDesc->dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
-	helDesc->dwDeviceZBufferBitDepth = DDBD_32;
-	helDesc->dwDeviceRenderBitDepth = DDBD_32;
-	helDesc->dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
-	helDesc->dpcTriCaps.dwShadeCaps = D3DPSHADECAPS_ALPHAFLATBLEND;
-	helDesc->dpcTriCaps.dwTextureFilterCaps = D3DPTFILTERCAPS_LINEAR;
-}
-
-const char* Direct3DRMSoftwareRenderer::GetName()
-{
-	return "Miniwin Emulation";
 }
 
 HRESULT Direct3DRMSoftwareRenderer::BeginFrame()

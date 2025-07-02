@@ -75,3 +75,31 @@ void FlattenSurfaces(
 		}
 	}
 }
+
+void Create2DTransformMatrix(
+	const SDL_Rect& dstRect,
+	float scale,
+	float offsetX,
+	float offsetY,
+	D3DRMMATRIX4D& outMatrix
+)
+{
+	float x = static_cast<float>(dstRect.x) * scale + offsetX;
+	float y = static_cast<float>(dstRect.y) * scale + offsetY;
+	float w = static_cast<float>(dstRect.w) * scale;
+	float h = static_cast<float>(dstRect.h) * scale;
+
+	D3DVALUE tmp[4][4] = {{w, 0, 0, 0}, {0, h, 0, 0}, {0, 0, 1, 0}, {x, y, 0, 1}};
+	memcpy(outMatrix, tmp, sizeof(tmp));
+}
+
+void CreateOrthographicProjection(float width, float height, D3DRMMATRIX4D& outProj)
+{
+	D3DVALUE tmp[4][4] = {
+		{2.0f / width, 0.0f, 0.0f, 0.0f},
+		{0.0f, -2.0f / height, 0.0f, 0.0f},
+		{0.0f, 0.0f, 1.0f, 0.0f},
+		{-1.0f, 1.0f, 0.0f, 1.0f}
+	};
+	memcpy(outProj, tmp, sizeof(tmp));
+}

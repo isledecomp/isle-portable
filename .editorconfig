@@ -14,3 +14,8 @@ trim_trailing_whitespace = true
 
 [{CMakeLists.txt,*.cmake}]
 indent_size = 2
+insert_final_newline = true
+
+[*.{json,xml.in,desktop.in}]
+indent_size = 2
+insert_final_newline = true

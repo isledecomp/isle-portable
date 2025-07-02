@@ -1,5 +1,4 @@
-#include <GL/glew.h>
-// must come after GLEW
+#include "actual.h"
 #include "d3drmrenderer_opengl1.h"
 #include "ddraw_impl.h"
 #include "ddsurface_impl.h"
@@ -11,58 +10,42 @@
 #include <cstring>
 #include <vector>
 
+static_assert(sizeof(Matrix4x4) == sizeof(D3DRMMATRIX4D), "Matrix4x4 is wrong size");
+static_assert(sizeof(GL11_BridgeVector) == sizeof(D3DVECTOR), "GL11_BridgeVector is wrong size");
+static_assert(sizeof(GL11_BridgeTexCoord) == sizeof(TexCoord), "GL11_BridgeTexCoord is wrong size");
+static_assert(sizeof(GL11_BridgeSceneLight) == sizeof(SceneLight), "GL11_BridgeSceneLight is wrong size");
+static_assert(sizeof(GL11_BridgeSceneVertex) == sizeof(D3DRMVERTEX), "GL11_BridgeSceneVertex is wrong size");
+
 Direct3DRMRenderer* OpenGL1Renderer::Create(DWORD width, DWORD height)
 {
+	// We have to reset the attributes here after having enumerated the
+	// OpenGL ES 2.0 renderer, or else SDL gets very confused by SDL_GL_DEPTH_SIZE
+	// call below when on an EGL-based backend, and crashes with EGL_BAD_MATCH.
+	SDL_GL_ResetAttributes();
+	// But ResetAttributes resets it to 16.
+	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 
-	SDL_Window* window = DDWindow;
-	bool testWindow = false;
-	if (!window) {
-		window = SDL_CreateWindow("OpenGL 1.1 test", width, height, SDL_WINDOW_HIDDEN | SDL_WINDOW_OPENGL);
-		if (!window) {
-			SDL_Log("SDL_CreateWindow: %s", SDL_GetError());
-			return nullptr;
-		}
-		testWindow = true;
+	if (!DDWindow) {
+		SDL_Log("No window handler");
+		return nullptr;
 	}
 
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-
-	SDL_GLContext context = SDL_GL_CreateContext(window);
+	SDL_GLContext context = SDL_GL_CreateContext(DDWindow);
 	if (!context) {
 		SDL_Log("SDL_GL_CreateContext: %s", SDL_GetError());
-		if (testWindow) {
-			SDL_DestroyWindow(window);
-		}
 		return nullptr;
 	}
 
-	if (!SDL_GL_MakeCurrent(window, context)) {
+	if (!SDL_GL_MakeCurrent(DDWindow, context)) {
+		SDL_GL_DestroyContext(context);
 		SDL_Log("SDL_GL_MakeCurrent: %s", SDL_GetError());
-		if (testWindow) {
-			SDL_DestroyWindow(window);
-		}
 		return nullptr;
 	}
 
-	GLenum err = glewInit();
-	if (err != GLEW_OK) {
-		SDL_Log("glewInit: %s", glewGetErrorString(err));
-		if (testWindow) {
-			SDL_DestroyWindow(window);
-		}
-		return nullptr;
-	}
-
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
-	glFrontFace(GL_CW);
-
-	if (testWindow) {
-		SDL_DestroyWindow(window);
-	}
+	GL11_InitState();
 
 	return new OpenGL1Renderer(width, height, context);
 }
@@ -74,12 +57,15 @@ OpenGL1Renderer::OpenGL1Renderer(DWORD width, DWORD height, SDL_GLContext contex
 	m_virtualWidth = width;
 	m_virtualHeight = height;
 	m_renderedImage = SDL_CreateSurface(m_width, m_height, SDL_PIXELFORMAT_RGBA32);
-	m_useVBOs = GLEW_ARB_vertex_buffer_object;
+	GL11_LoadExtensions();
+	m_useVBOs = SDL_GL_ExtensionSupported("GL_ARB_vertex_buffer_object");
+	m_useNPOT = SDL_GL_ExtensionSupported("GL_OES_texture_npot");
 }
 
 OpenGL1Renderer::~OpenGL1Renderer()
 {
 	SDL_DestroySurface(m_renderedImage);
+	SDL_GL_DestroyContext(m_context);
 }
 
 void OpenGL1Renderer::PushLights(const SceneLight* lightsArray, size_t count)
@@ -114,7 +100,7 @@ void OpenGL1Renderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* t
 			auto* ctx = static_cast<TextureDestroyContextGL*>(arg);
 			auto& cache = ctx->renderer->m_textures[ctx->textureId];
 			if (cache.glTextureId != 0) {
-				glDeleteTextures(1, &cache.glTextureId);
+				GL11_DestroyTexture(cache.glTextureId);
 				cache.glTextureId = 0;
 				cache.texture = nullptr;
 			}
@@ -124,7 +110,59 @@ void OpenGL1Renderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* t
 	);
 }
 
-Uint32 OpenGL1Renderer::GetTextureId(IDirect3DRMTexture* iTexture)
+static int NextPowerOfTwo(int v)
+{
+	int power = 1;
+	while (power < v) {
+		power <<= 1;
+	}
+	return power;
+}
+
+static Uint32 UploadTextureData(SDL_Surface* src, bool useNPOT, bool isUi)
+{
+	SDL_Surface* working = src;
+	if (src->format != SDL_PIXELFORMAT_RGBA32) {
+		working = SDL_ConvertSurface(src, SDL_PIXELFORMAT_RGBA32);
+		if (!working) {
+			SDL_Log("SDL_ConvertSurface failed: %s", SDL_GetError());
+			return NO_TEXTURE_ID;
+		}
+	}
+
+	SDL_Surface* finalSurface = working;
+
+	int newW = NextPowerOfTwo(working->w);
+	int newH = NextPowerOfTwo(working->h);
+
+	if (!useNPOT && (newW != working->w || newH != working->h)) {
+		SDL_Surface* resized = SDL_CreateSurface(newW, newH, working->format);
+		if (!resized) {
+			SDL_Log("SDL_CreateSurface (resize) failed: %s", SDL_GetError());
+			if (working != src) {
+				SDL_DestroySurface(working);
+			}
+			return NO_TEXTURE_ID;
+		}
+
+		SDL_Rect srcRect = {0, 0, working->w, working->h};
+		SDL_Rect dstRect = {0, 0, newW, newH};
+		SDL_BlitSurfaceScaled(working, &srcRect, resized, &dstRect, SDL_SCALEMODE_NEAREST);
+
+		if (working != src) {
+			SDL_DestroySurface(working);
+		}
+		finalSurface = resized;
+	}
+
+	Uint32 texId = GL11_UploadTextureData(finalSurface->pixels, finalSurface->w, finalSurface->h, isUi);
+	if (finalSurface != src) {
+		SDL_DestroySurface(finalSurface);
+	}
+	return texId;
+}
+
+Uint32 OpenGL1Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi)
 {
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
 	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
@@ -133,33 +171,17 @@ Uint32 OpenGL1Renderer::GetTextureId(IDirect3DRMTexture* iTexture)
 		auto& tex = m_textures[i];
 		if (tex.texture == texture) {
 			if (tex.version != texture->m_version) {
-				glDeleteTextures(1, &tex.glTextureId);
-				glGenTextures(1, &tex.glTextureId);
-				glBindTexture(GL_TEXTURE_2D, tex.glTextureId);
-
-				SDL_Surface* surf = SDL_ConvertSurface(surface->m_surface, SDL_PIXELFORMAT_RGBA32);
-				if (!surf) {
-					return NO_TEXTURE_ID;
-				}
-				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
-				SDL_DestroySurface(surf);
-
+				GL11_DestroyTexture(tex.glTextureId);
+				tex.glTextureId = UploadTextureData(surface->m_surface, m_useNPOT, isUi);
 				tex.version = texture->m_version;
+				tex.width = surface->m_surface->w;
+				tex.height = surface->m_surface->h;
 			}
 			return i;
 		}
 	}
 
-	GLuint texId;
-	glGenTextures(1, &texId);
-	glBindTexture(GL_TEXTURE_2D, texId);
-
-	SDL_Surface* surf = SDL_ConvertSurface(surface->m_surface, SDL_PIXELFORMAT_RGBA32);
-	if (!surf) {
-		return NO_TEXTURE_ID;
-	}
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
-	SDL_DestroySurface(surf);
+	GLuint texId = UploadTextureData(surface->m_surface, m_useNPOT, isUi);
 
 	for (Uint32 i = 0; i < m_textures.size(); ++i) {
 		auto& tex = m_textures[i];
@@ -167,12 +189,20 @@ Uint32 OpenGL1Renderer::GetTextureId(IDirect3DRMTexture* iTexture)
 			tex.texture = texture;
 			tex.version = texture->m_version;
 			tex.glTextureId = texId;
+			tex.width = surface->m_surface->w;
+			tex.height = surface->m_surface->h;
 			AddTextureDestroyCallback(i, texture);
 			return i;
 		}
 	}
 
-	m_textures.push_back({texture, texture->m_version, texId});
+	m_textures.push_back(
+		{texture,
+		 texture->m_version,
+		 texId,
+		 static_cast<float>(surface->m_surface->w),
+		 static_cast<float>(surface->m_surface->h)}
+	);
 	AddTextureDestroyCallback((Uint32) (m_textures.size() - 1), texture);
 	return (Uint32) (m_textures.size() - 1);
 }
@@ -206,52 +236,19 @@ GLMeshCacheEntry GLUploadMesh(const MeshGroup& meshGroup, bool useVBOs)
 	if (meshGroup.texture) {
 		cache.texcoords.resize(vertices.size());
 		std::transform(vertices.begin(), vertices.end(), cache.texcoords.begin(), [](const D3DRMVERTEX& v) {
-			return v.texCoord;
+			return GL11_BridgeTexCoord{v.texCoord.u, v.texCoord.v};
 		});
 	}
 	cache.positions.resize(vertices.size());
 	std::transform(vertices.begin(), vertices.end(), cache.positions.begin(), [](const D3DRMVERTEX& v) {
-		return v.position;
+		return GL11_BridgeVector{v.position.x, v.position.y, v.position.z};
 	});
 	cache.normals.resize(vertices.size());
 	std::transform(vertices.begin(), vertices.end(), cache.normals.begin(), [](const D3DRMVERTEX& v) {
-		return v.normal;
+		return GL11_BridgeVector{v.normal.x, v.normal.y, v.normal.z};
 	});
 
-	if (useVBOs) {
-		glGenBuffers(1, &cache.vboPositions);
-		glBindBuffer(GL_ARRAY_BUFFER, cache.vboPositions);
-		glBufferData(
-			GL_ARRAY_BUFFER,
-			cache.positions.size() * sizeof(D3DVECTOR),
-			cache.positions.data(),
-			GL_STATIC_DRAW
-		);
-
-		glGenBuffers(1, &cache.vboNormals);
-		glBindBuffer(GL_ARRAY_BUFFER, cache.vboNormals);
-		glBufferData(GL_ARRAY_BUFFER, cache.normals.size() * sizeof(D3DVECTOR), cache.normals.data(), GL_STATIC_DRAW);
-
-		if (meshGroup.texture) {
-			glGenBuffers(1, &cache.vboTexcoords);
-			glBindBuffer(GL_ARRAY_BUFFER, cache.vboTexcoords);
-			glBufferData(
-				GL_ARRAY_BUFFER,
-				cache.texcoords.size() * sizeof(TexCoord),
-				cache.texcoords.data(),
-				GL_STATIC_DRAW
-			);
-		}
-
-		glGenBuffers(1, &cache.ibo);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cache.ibo);
-		glBufferData(
-			GL_ELEMENT_ARRAY_BUFFER,
-			cache.indices.size() * sizeof(cache.indices[0]),
-			cache.indices.data(),
-			GL_STATIC_DRAW
-		);
-	}
+	GL11_UploadMesh(cache, meshGroup.texture != nullptr);
 
 	return cache;
 }
@@ -269,12 +266,7 @@ void OpenGL1Renderer::AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh)
 			auto* ctx = static_cast<GLMeshDestroyContext*>(arg);
 			auto& cache = ctx->renderer->m_meshs[ctx->id];
 			cache.meshGroup = nullptr;
-			if (ctx->renderer->m_useVBOs) {
-				glDeleteBuffers(1, &cache.vboPositions);
-				glDeleteBuffers(1, &cache.vboNormals);
-				glDeleteBuffers(1, &cache.vboTexcoords);
-				glDeleteBuffers(1, &cache.ibo);
-			}
+			GL11_DestroyMesh(cache);
 			delete ctx;
 		},
 		ctx
@@ -309,110 +301,25 @@ Uint32 OpenGL1Renderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGr
 	return (Uint32) (m_meshs.size() - 1);
 }
 
-void OpenGL1Renderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc)
-{
-	halDesc->dcmColorModel = D3DCOLORMODEL::RGB;
-	halDesc->dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
-	halDesc->dwDeviceZBufferBitDepth = DDBD_24;
-	helDesc->dwDeviceRenderBitDepth = DDBD_32;
-	halDesc->dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
-	halDesc->dpcTriCaps.dwShadeCaps = D3DPSHADECAPS_ALPHAFLATBLEND;
-	halDesc->dpcTriCaps.dwTextureFilterCaps = D3DPTFILTERCAPS_LINEAR;
-
-	memset(helDesc, 0, sizeof(D3DDEVICEDESC));
-}
-
-const char* OpenGL1Renderer::GetName()
-{
-	return "OpenGL 1.1 HAL";
-}
-
 HRESULT OpenGL1Renderer::BeginFrame()
 {
-	m_dirty = true;
-
-	glDisable(GL_BLEND);
-	glEnable(GL_DEPTH_TEST);
-	glDepthMask(GL_TRUE);
-	glEnable(GL_LIGHTING);
-	glEnable(GL_COLOR_MATERIAL);
-	glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
-
-	// Disable all lights and reset global ambient
-	for (int i = 0; i < 8; ++i) {
-		glDisable(GL_LIGHT0 + i);
-	}
-	const GLfloat zeroAmbient[4] = {0.f, 0.f, 0.f, 1.f};
-	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, zeroAmbient);
-	glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE);
-
-	// Setup lights
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glLoadIdentity();
+	GL11_BeginFrame((Matrix4x4*) &m_projection[0][0]);
 
 	int lightIdx = 0;
 	for (const auto& l : m_lights) {
 		if (lightIdx > 7) {
 			break;
 		}
-		GLenum lightId = GL_LIGHT0 + lightIdx++;
-		const FColor& c = l.color;
-		GLfloat col[4] = {c.r, c.g, c.b, c.a};
+		GL11_UploadLight(lightIdx, (GL11_BridgeSceneLight*) &l);
 
-		if (l.positional == 0.f && l.directional == 0.f) {
-			// Ambient light only
-			glLightfv(lightId, GL_AMBIENT, col);
-			const GLfloat black[4] = {0.f, 0.f, 0.f, 1.f};
-			glLightfv(lightId, GL_DIFFUSE, black);
-			glLightfv(lightId, GL_SPECULAR, black);
-			const GLfloat dummyPos[4] = {0.f, 0.f, 1.f, 0.f};
-			glLightfv(lightId, GL_POSITION, dummyPos);
-		}
-		else {
-			glLightfv(lightId, GL_AMBIENT, zeroAmbient);
-			glLightfv(lightId, GL_DIFFUSE, col);
-			if (l.directional == 1.0f) {
-				glLightfv(lightId, GL_SPECULAR, col);
-			}
-			else {
-				const GLfloat black[4] = {0.f, 0.f, 0.f, 1.f};
-				glLightfv(lightId, GL_SPECULAR, black);
-			}
-
-			GLfloat pos[4];
-			if (l.directional == 1.f) {
-				pos[0] = -l.direction.x;
-				pos[1] = -l.direction.y;
-				pos[2] = -l.direction.z;
-				pos[3] = 0.f;
-			}
-			else {
-				pos[0] = l.position.x;
-				pos[1] = l.position.y;
-				pos[2] = l.position.z;
-				pos[3] = 1.f;
-			}
-			glLightfv(lightId, GL_POSITION, pos);
-		}
-		glEnable(lightId);
+		lightIdx++;
 	}
-	glPopMatrix();
-
-	// Projection and view
-	glMatrixMode(GL_PROJECTION);
-	glLoadMatrixf(&m_projection[0][0]);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-
 	return DD_OK;
 }
 
 void OpenGL1Renderer::EnableTransparency()
 {
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glDepthMask(GL_FALSE);
+	GL11_EnableTransparency();
 }
 
 void OpenGL1Renderer::SubmitDraw(
@@ -426,75 +333,14 @@ void OpenGL1Renderer::SubmitDraw(
 {
 	auto& mesh = m_meshs[meshId];
 
-	glLoadMatrixf(&modelViewMatrix[0][0]);
-	glEnable(GL_NORMALIZE);
-
-	glColor4ub(appearance.color.r, appearance.color.g, appearance.color.b, appearance.color.a);
-
-	if (appearance.shininess != 0.0f) {
-		GLfloat whiteSpec[] = {1.f, 1.f, 1.f, 1.f};
-		glMaterialfv(GL_FRONT, GL_SPECULAR, whiteSpec);
-		glMaterialf(GL_FRONT, GL_SHININESS, appearance.shininess);
-	}
-	else {
-		GLfloat noSpec[] = {0.0f, 0.0f, 0.0f, 0.0f};
-		glMaterialfv(GL_FRONT, GL_SPECULAR, noSpec);
-		glMaterialf(GL_FRONT, GL_SHININESS, 0.0f);
-	}
-
-	if (mesh.flat) {
-		glShadeModel(GL_FLAT);
-	}
-	else {
-		glShadeModel(GL_SMOOTH);
-	}
-
 	// Bind texture if present
 	if (appearance.textureId != NO_TEXTURE_ID) {
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		auto& tex = m_textures[appearance.textureId];
-		glEnable(GL_TEXTURE_2D);
-		glBindTexture(GL_TEXTURE_2D, tex.glTextureId);
-		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+		GL11_SubmitDraw(mesh, modelViewMatrix, appearance, tex.glTextureId);
 	}
 	else {
-		glDisable(GL_TEXTURE_2D);
-		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+		GL11_SubmitDraw(mesh, modelViewMatrix, appearance, 0);
 	}
-
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_NORMAL_ARRAY);
-
-	if (m_useVBOs) {
-		glBindBuffer(GL_ARRAY_BUFFER, mesh.vboPositions);
-		glVertexPointer(3, GL_FLOAT, 0, nullptr);
-
-		glBindBuffer(GL_ARRAY_BUFFER, mesh.vboNormals);
-		glNormalPointer(GL_FLOAT, 0, nullptr);
-
-		if (appearance.textureId != NO_TEXTURE_ID) {
-			glBindBuffer(GL_ARRAY_BUFFER, mesh.vboTexcoords);
-			glTexCoordPointer(2, GL_FLOAT, 0, nullptr);
-		}
-
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ibo);
-		glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh.indices.size()), GL_UNSIGNED_SHORT, nullptr);
-
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-	}
-	else {
-		glVertexPointer(3, GL_FLOAT, 0, mesh.positions.data());
-		glNormalPointer(GL_FLOAT, 0, mesh.normals.data());
-		if (appearance.textureId != NO_TEXTURE_ID) {
-			glTexCoordPointer(2, GL_FLOAT, 0, mesh.texcoords.data());
-		}
-
-		glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh.indices.size()), GL_UNSIGNED_SHORT, mesh.indices.data());
-	}
-
-	glPopMatrix();
 }
 
 HRESULT OpenGL1Renderer::FinalizeFrame()
@@ -509,16 +355,13 @@ void OpenGL1Renderer::Resize(int width, int height, const ViewportTransform& vie
 	m_viewportTransform = viewportTransform;
 	SDL_DestroySurface(m_renderedImage);
 	m_renderedImage = SDL_CreateSurface(m_width, m_height, SDL_PIXELFORMAT_RGBA32);
-	glViewport(0, 0, m_width, m_height);
+	GL11_Resize(width, height);
 }
 
 void OpenGL1Renderer::Clear(float r, float g, float b)
 {
 	m_dirty = true;
-	glEnable(GL_DEPTH_TEST);
-	glDepthMask(GL_TRUE);
-	glClearColor(r, g, b, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	GL11_Clear(r, g, b);
 }
 
 void OpenGL1Renderer::Flip()
@@ -532,73 +375,18 @@ void OpenGL1Renderer::Flip()
 void OpenGL1Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect)
 {
 	m_dirty = true;
-	glDisable(GL_DEPTH_TEST);
-	glDepthMask(GL_FALSE);
-
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glLoadIdentity();
 
 	float left = -m_viewportTransform.offsetX / m_viewportTransform.scale;
 	float right = (m_width - m_viewportTransform.offsetX) / m_viewportTransform.scale;
 	float top = -m_viewportTransform.offsetY / m_viewportTransform.scale;
 	float bottom = (m_height - m_viewportTransform.offsetY) / m_viewportTransform.scale;
-	glOrtho(left, right, bottom, top, -1, 1);
 
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glLoadIdentity();
-
-	glDisable(GL_LIGHTING);
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-
-	glEnable(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D, m_textures[textureId].glTextureId);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-	GLint boundTexture = 0;
-	glGetIntegerv(GL_TEXTURE_BINDING_2D, &boundTexture);
-
-	GLfloat texW, texH;
-	glGetTexLevelParameterfv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &texW);
-	glGetTexLevelParameterfv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &texH);
-
-	float u1 = srcRect.x / texW;
-	float v1 = srcRect.y / texH;
-	float u2 = (srcRect.x + srcRect.w) / texW;
-	float v2 = (srcRect.y + srcRect.h) / texH;
-
-	float x1 = (float) dstRect.x;
-	float y1 = (float) dstRect.y;
-	float x2 = x1 + dstRect.w;
-	float y2 = y1 + dstRect.h;
-
-	glBegin(GL_QUADS);
-	glTexCoord2f(u1, v1);
-	glVertex2f(x1, y1);
-	glTexCoord2f(u2, v1);
-	glVertex2f(x2, y1);
-	glTexCoord2f(u2, v2);
-	glVertex2f(x2, y2);
-	glTexCoord2f(u1, v2);
-	glVertex2f(x1, y2);
-	glEnd();
-
-	// Restore state
-	glMatrixMode(GL_MODELVIEW);
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
+	GL11_Draw2DImage(m_textures[textureId], srcRect, dstRect, left, right, bottom, top);
 }
 
 void OpenGL1Renderer::Download(SDL_Surface* target)
 {
-	glFinish();
-	glReadPixels(0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, m_renderedImage->pixels);
+	GL11_Download(m_renderedImage);
 
 	SDL_Rect srcRect = {
 		static_cast<int>(m_viewportTransform.offsetX),
