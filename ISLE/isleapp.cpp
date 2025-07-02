@@ -665,7 +665,7 @@ MxResult IsleApp::SetupWindow()
 	SDL_SetCursor(m_cursorCurrent);
 	if (g_isle->GetDrawCursor()) {
 		SDL_HideCursor();
-		SDL_IOStream* arrow_stream = SDL_IOFromMem(arrow_bmp, arrow_bmp_len);
+		SDL_IOStream* arrow_stream = SDL_IOFromConstMem(arrow_bmp, arrow_bmp_len);
 		if (!arrow_stream) {
 			SDL_LogError(
 				SDL_LOG_CATEGORY_APPLICATION,
@@ -674,7 +674,7 @@ MxResult IsleApp::SetupWindow()
 			);
 			return FAILURE;
 		}
-		SDL_IOStream* busy_stream = SDL_IOFromMem(busy_bmp, busy_bmp_len);
+		SDL_IOStream* busy_stream = SDL_IOFromConstMem(busy_bmp, busy_bmp_len);
 		if (!busy_stream) {
 			SDL_LogError(
 				SDL_LOG_CATEGORY_APPLICATION,
@@ -683,7 +683,7 @@ MxResult IsleApp::SetupWindow()
 			);
 			return FAILURE;
 		}
-		SDL_IOStream* no_stream = SDL_IOFromMem(no_bmp, no_bmp_len);
+		SDL_IOStream* no_stream = SDL_IOFromConstMem(no_bmp, no_bmp_len);
 		if (!no_stream) {
 			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to open SDL_IOStream for no cursor: %s", SDL_GetError());
 			return FAILURE;
