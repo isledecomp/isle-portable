@@ -272,15 +272,41 @@ void LegoVideoManager::MoveCursor(MxS32 p_cursorX, MxS32 p_cursorY)
 {
 	m_cursorX = p_cursorX;
 	m_cursorY = p_cursorY;
+
+	if (640 < p_cursorX) {
+		m_cursorX = 640;
+	}
+
+	if (480 < p_cursorY) {
+		m_cursorY = 480;
+	}
+}
+
+void LegoVideoManager::SetCursorBitmap(const MxU8* p_cursorBitmap, MxS32 p_x, MxS32 p_y, MxS32 p_channels)
+{
+	if (p_cursorBitmap == NULL) {
+		m_drawCursor = FALSE;
+		return;
+	}
+
+	if (m_cursorSurface != NULL) {
+		m_cursorSurface->Release();
+		m_cursorSurface = NULL;
+	}
+
+	m_cursorRect.top = 0;
+	m_cursorRect.left = 0;
+	m_cursorRect.bottom = p_x;
+	m_cursorRect.right = p_y;
+
+	m_cursorSurface = MxDisplaySurface::CreateCursorSurface(p_cursorBitmap, p_x, p_y, p_channels);
+
+	if (m_cursorSurface == NULL) {
+		m_drawCursor = FALSE;
+		return;
+	}
+
 	m_drawCursor = TRUE;
-
-	if (623 < p_cursorX) {
-		m_cursorX = 623;
-	}
-
-	if (463 < p_cursorY) {
-		m_cursorY = 463;
-	}
 }
 
 // FUNCTION: LEGO1 0x1007b6f0

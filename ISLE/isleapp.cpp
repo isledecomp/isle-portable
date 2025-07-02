@@ -28,11 +28,18 @@
 #include "mxtransitionmanager.h"
 #include "mxutilities.h"
 #include "mxvariabletable.h"
+#include "res/arrow_bmp.h"
+#include "res/busy_bmp.h"
 #include "res/isle_bmp.h"
+#include "res/no_bmp.h"
 #include "res/resource.h"
 #include "roi/legoroi.h"
 #include "tgl/d3drm/impl.h"
 #include "viewmanager/viewmanager.h"
+
+#define STB_IMAGE_IMPLEMENTATION
+#define STBI_ONLY_BMP
+#include "stb_image.h"
 
 #include <miniwin/miniwindevice.h>
 
@@ -135,6 +142,10 @@ IsleApp::IsleApp()
 	m_cursorBusy = NULL;
 	m_cursorNo = NULL;
 	m_cursorCurrent = NULL;
+	m_cursorArrowBitmap = NULL;
+	m_cursorBusyBitmap = NULL;
+	m_cursorNoBitmap = NULL;
+	m_cursorCurrentBitmap = NULL;
 
 	LegoOmni::CreateInstance();
 
@@ -656,6 +667,36 @@ MxResult IsleApp::SetupWindow()
 	m_cursorBusy = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_WAIT);
 	m_cursorNo = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_NOT_ALLOWED);
 	SDL_SetCursor(m_cursorCurrent);
+	if (g_isle->GetDrawCursor()) {
+		SDL_HideCursor();
+		m_cursorCurrentBitmap = m_cursorArrowBitmap = new CursorBitmap();
+		m_cursorArrowBitmap->bitmap = stbi_load_from_memory(
+			arrow_bmp,
+			arrow_bmp_len,
+			&m_cursorArrowBitmap->x,
+			&m_cursorArrowBitmap->y,
+			&m_cursorArrowBitmap->channels,
+			0
+		);
+		m_cursorBusyBitmap = new CursorBitmap();
+		m_cursorBusyBitmap->bitmap = stbi_load_from_memory(
+			busy_bmp,
+			busy_bmp_len,
+			&m_cursorBusyBitmap->x,
+			&m_cursorBusyBitmap->y,
+			&m_cursorBusyBitmap->channels,
+			0
+		);
+		m_cursorNoBitmap = new CursorBitmap();
+		m_cursorNoBitmap->bitmap = stbi_load_from_memory(
+			no_bmp,
+			no_bmp_len,
+			&m_cursorNoBitmap->x,
+			&m_cursorNoBitmap->y,
+			&m_cursorNoBitmap->channels,
+			0
+		);
+	}
 
 	SDL_PropertiesID props = SDL_CreateProperties();
 	SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, g_targetWidth);
@@ -738,6 +779,14 @@ MxResult IsleApp::SetupWindow()
 		if (LegoOmni::GetInstance()->GetInputManager()) {
 			LegoOmni::GetInstance()->GetInputManager()->SetUseJoystick(m_useJoystick);
 			LegoOmni::GetInstance()->GetInputManager()->SetJoystickIndex(m_joystickIndex);
+		}
+		if (LegoOmni::GetInstance()->GetVideoManager()) {
+			LegoOmni::GetInstance()->GetVideoManager()->SetCursorBitmap(
+				m_cursorCurrentBitmap->bitmap,
+				m_cursorCurrentBitmap->x,
+				m_cursorCurrentBitmap->y,
+				m_cursorCurrentBitmap->channels
+			);
 		}
 		MxDirect3D* d3d = LegoOmni::GetInstance()->GetVideoManager()->GetDirect3D();
 		if (d3d) {
@@ -1023,15 +1072,19 @@ void IsleApp::SetupCursor(Cursor p_cursor)
 	switch (p_cursor) {
 	case e_cursorArrow:
 		m_cursorCurrent = m_cursorArrow;
+		m_cursorCurrentBitmap = m_cursorArrowBitmap;
 		break;
 	case e_cursorBusy:
 		m_cursorCurrent = m_cursorBusy;
+		m_cursorCurrentBitmap = m_cursorBusyBitmap;
 		break;
 	case e_cursorNo:
 		m_cursorCurrent = m_cursorNo;
+		m_cursorCurrentBitmap = m_cursorNoBitmap;
 		break;
 	case e_cursorNone:
 		m_cursorCurrent = NULL;
+		m_cursorCurrentBitmap = NULL;
 	case e_cursorUnused3:
 	case e_cursorUnused4:
 	case e_cursorUnused5:
@@ -1043,12 +1096,27 @@ void IsleApp::SetupCursor(Cursor p_cursor)
 		break;
 	}
 
-	if (m_cursorCurrent != NULL) {
-		SDL_SetCursor(m_cursorCurrent);
-		SDL_ShowCursor();
+	if (g_isle->GetDrawCursor()) {
+		if (m_cursorCurrentBitmap == NULL) {
+			VideoManager()->SetCursorBitmap(0, 0, 0, 0);
+		}
+		else {
+			VideoManager()->SetCursorBitmap(
+				m_cursorCurrentBitmap->bitmap,
+				m_cursorCurrentBitmap->x,
+				m_cursorCurrentBitmap->y,
+				m_cursorCurrentBitmap->channels
+			);
+		}
 	}
 	else {
-		SDL_HideCursor();
+		if (m_cursorCurrent != NULL) {
+			SDL_SetCursor(m_cursorCurrent);
+			SDL_ShowCursor();
+		}
+		else {
+			SDL_HideCursor();
+		}
 	}
 }
 
