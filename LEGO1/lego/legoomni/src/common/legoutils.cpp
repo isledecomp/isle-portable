@@ -511,7 +511,7 @@ MxBool RemoveFromCurrentWorld(const MxAtomId& p_atomId, MxS32 p_id)
 			}
 			else {
 				if (((MxPresenter*) object)->GetAction()) {
-					FUN_100b7220(((MxPresenter*) object)->GetAction(), MxDSAction::c_world, FALSE);
+					ApplyMask(((MxPresenter*) object)->GetAction(), MxDSAction::c_world, FALSE);
 				}
 
 				((MxPresenter*) object)->EndAction();
@@ -540,7 +540,7 @@ MxBool RemoveFromWorld(MxAtomId& p_entityAtom, MxS32 p_entityId, MxAtomId& p_wor
 			}
 			else {
 				if (((MxPresenter*) object)->GetAction()) {
-					FUN_100b7220(((MxPresenter*) object)->GetAction(), MxDSAction::c_world, FALSE);
+					ApplyMask(((MxPresenter*) object)->GetAction(), MxDSAction::c_world, FALSE);
 				}
 
 				((MxPresenter*) object)->EndAction();
