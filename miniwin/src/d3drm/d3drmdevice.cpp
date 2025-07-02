@@ -116,7 +116,6 @@ D3DRMRENDERMODE Direct3DRMDevice2Impl::GetRenderMode()
 
 HRESULT Direct3DRMDevice2Impl::Update()
 {
-	MINIWIN_NOT_IMPLEMENTED();
 	return DD_OK;
 }
 

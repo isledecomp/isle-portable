@@ -130,8 +130,7 @@ void GL11_BeginFrame(const Matrix4x4* projection)
 	for (int i = 0; i < 8; ++i) {
 		glDisable(GL_LIGHT0 + i);
 	}
-	const GLfloat zeroAmbient[4] = {0.f, 0.f, 0.f, 1.f};
-	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, zeroAmbient);
+
 	glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE);
 
 	// Projection and view
@@ -145,7 +144,6 @@ void GL11_UploadLight(int lightIdx, GL11_BridgeSceneLight* l)
 {
 	// Setup light
 	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
 	glLoadIdentity();
 	GLenum lightId = GL_LIGHT0 + lightIdx++;
 	const FColor& c = l->color;
@@ -188,8 +186,6 @@ void GL11_UploadLight(int lightIdx, GL11_BridgeSceneLight* l)
 		glLightfv(lightId, GL_POSITION, pos);
 	}
 	glEnable(lightId);
-
-	glPopMatrix();
 }
 
 void GL11_EnableTransparency()
@@ -273,8 +269,6 @@ void GL11_SubmitDraw(
 
 		glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh.indices.size()), GL_UNSIGNED_SHORT, mesh.indices.data());
 	}
-
-	glPopMatrix();
 }
 
 void GL11_Resize(int width, int height)
@@ -304,13 +298,11 @@ void GL11_Draw2DImage(
 	glDepthMask(GL_FALSE);
 
 	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
 	glLoadIdentity();
 
 	glOrtho(left, right, bottom, top, -1, 1);
 
 	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
 	glLoadIdentity();
 
 	glDisable(GL_LIGHTING);
@@ -344,9 +336,7 @@ void GL11_Draw2DImage(
 
 	// Restore state
 	glMatrixMode(GL_MODELVIEW);
-	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
 }
 
 void GL11_Download(SDL_Surface* target)
