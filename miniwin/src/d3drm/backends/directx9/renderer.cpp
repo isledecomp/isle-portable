@@ -278,6 +278,10 @@ void DirectX9Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, co
 	Actual_Draw2DImage(m_textures[textureId].dxTexture, srcRect, dstRect);
 }
 
+void DirectX9Renderer::SetDither(bool dither)
+{
+}
+
 void DirectX9Renderer::Download(SDL_Surface* target)
 {
 	Actual_Download(target);

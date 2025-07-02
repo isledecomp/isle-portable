@@ -58,6 +58,8 @@ OpenGL1Renderer::OpenGL1Renderer(DWORD width, DWORD height, SDL_GLContext contex
 	m_virtualHeight = height;
 	m_renderedImage = SDL_CreateSurface(m_width, m_height, SDL_PIXELFORMAT_RGBA32);
 	GL11_LoadExtensions();
+	m_useVBOs = SDL_GL_ExtensionSupported("GL_ARB_vertex_buffer_object");
+	m_useNPOT = SDL_GL_ExtensionSupported("GL_OES_texture_npot");
 }
 
 OpenGL1Renderer::~OpenGL1Renderer()
@@ -108,6 +110,58 @@ void OpenGL1Renderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* t
 	);
 }
 
+static int NextPowerOfTwo(int v)
+{
+	int power = 1;
+	while (power < v) {
+		power <<= 1;
+	}
+	return power;
+}
+
+static Uint32 UploadTextureData(SDL_Surface* src, bool useNPOT, bool isUi)
+{
+	SDL_Surface* working = src;
+	if (src->format != SDL_PIXELFORMAT_RGBA32) {
+		working = SDL_ConvertSurface(src, SDL_PIXELFORMAT_RGBA32);
+		if (!working) {
+			SDL_Log("SDL_ConvertSurface failed: %s", SDL_GetError());
+			return NO_TEXTURE_ID;
+		}
+	}
+
+	SDL_Surface* finalSurface = working;
+
+	int newW = NextPowerOfTwo(working->w);
+	int newH = NextPowerOfTwo(working->h);
+
+	if (!useNPOT && (newW != working->w || newH != working->h)) {
+		SDL_Surface* resized = SDL_CreateSurface(newW, newH, working->format);
+		if (!resized) {
+			SDL_Log("SDL_CreateSurface (resize) failed: %s", SDL_GetError());
+			if (working != src) {
+				SDL_DestroySurface(working);
+			}
+			return NO_TEXTURE_ID;
+		}
+
+		SDL_Rect srcRect = {0, 0, working->w, working->h};
+		SDL_Rect dstRect = {0, 0, newW, newH};
+		SDL_BlitSurfaceScaled(working, &srcRect, resized, &dstRect, SDL_SCALEMODE_NEAREST);
+
+		if (working != src) {
+			SDL_DestroySurface(working);
+		}
+		finalSurface = resized;
+	}
+
+	Uint32 texId = GL11_UploadTextureData(finalSurface->pixels, finalSurface->w, finalSurface->h, isUi);
+	if (finalSurface != src) {
+		SDL_DestroySurface(finalSurface);
+	}
+	return texId;
+}
+
 Uint32 OpenGL1Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi)
 {
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
@@ -118,28 +172,16 @@ Uint32 OpenGL1Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi)
 		if (tex.texture == texture) {
 			if (tex.version != texture->m_version) {
 				GL11_DestroyTexture(tex.glTextureId);
-
-				SDL_Surface* surf = SDL_ConvertSurface(surface->m_surface, SDL_PIXELFORMAT_RGBA32);
-				if (!surf) {
-					return NO_TEXTURE_ID;
-				}
-				tex.glTextureId = GL11_UploadTextureData(surf->pixels, surf->w, surf->h);
-				SDL_DestroySurface(surf);
-
+				tex.glTextureId = UploadTextureData(surface->m_surface, m_useNPOT, isUi);
 				tex.version = texture->m_version;
+				tex.width = surface->m_surface->w;
+				tex.height = surface->m_surface->h;
 			}
 			return i;
 		}
 	}
 
-	GLuint texId;
-
-	SDL_Surface* surf = SDL_ConvertSurface(surface->m_surface, SDL_PIXELFORMAT_RGBA32);
-	if (!surf) {
-		return NO_TEXTURE_ID;
-	}
-	texId = GL11_UploadTextureData(surf->pixels, surf->w, surf->h);
-	SDL_DestroySurface(surf);
+	GLuint texId = UploadTextureData(surface->m_surface, m_useNPOT, isUi);
 
 	for (Uint32 i = 0; i < m_textures.size(); ++i) {
 		auto& tex = m_textures[i];
@@ -147,12 +189,20 @@ Uint32 OpenGL1Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi)
 			tex.texture = texture;
 			tex.version = texture->m_version;
 			tex.glTextureId = texId;
+			tex.width = surface->m_surface->w;
+			tex.height = surface->m_surface->h;
 			AddTextureDestroyCallback(i, texture);
 			return i;
 		}
 	}
 
-	m_textures.push_back({texture, texture->m_version, texId});
+	m_textures.push_back(
+		{texture,
+		 texture->m_version,
+		 texId,
+		 static_cast<float>(surface->m_surface->w),
+		 static_cast<float>(surface->m_surface->h)}
+	);
 	AddTextureDestroyCallback((Uint32) (m_textures.size() - 1), texture);
 	return (Uint32) (m_textures.size() - 1);
 }
@@ -331,7 +381,12 @@ void OpenGL1Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, con
 	float top = -m_viewportTransform.offsetY / m_viewportTransform.scale;
 	float bottom = (m_height - m_viewportTransform.offsetY) / m_viewportTransform.scale;
 
-	GL11_Draw2DImage(m_textures[textureId].glTextureId, srcRect, dstRect, left, right, bottom, top);
+	GL11_Draw2DImage(m_textures[textureId], srcRect, dstRect, left, right, bottom, top);
+}
+
+void OpenGL1Renderer::SetDither(bool dither)
+{
+	GL11_SetDither(dither);
 }
 
 void OpenGL1Renderer::Download(SDL_Surface* target)

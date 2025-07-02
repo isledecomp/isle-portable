@@ -36,6 +36,7 @@ public:
 	void Flip() override;
 	void Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect) override;
 	void Download(SDL_Surface* target) override;
+	void SetDither(bool dither) override;
 
 private:
 	void AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture);
@@ -46,6 +47,7 @@ private:
 	D3DRMMATRIX4D m_projection;
 	SDL_Surface* m_renderedImage;
 	bool m_useVBOs;
+	bool m_useNPOT;
 	bool m_dirty = false;
 	std::vector<SceneLight> m_lights;
 	SDL_GLContext m_context;

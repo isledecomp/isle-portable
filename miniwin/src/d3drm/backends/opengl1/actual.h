@@ -39,6 +39,8 @@ struct GLTextureCacheEntry {
 	IDirect3DRMTexture* texture;
 	Uint32 version;
 	GLuint glTextureId;
+	float width;
+	float height;
 };
 
 struct GLMeshCacheEntry {
@@ -62,7 +64,7 @@ struct GLMeshCacheEntry {
 void GL11_InitState();
 void GL11_LoadExtensions();
 void GL11_DestroyTexture(GLuint texId);
-GLuint GL11_UploadTextureData(void* pixels, int width, int height);
+GLuint GL11_UploadTextureData(void* pixels, int width, int height, bool isUI);
 void GL11_UploadMesh(GLMeshCacheEntry& cache, bool hasTexture);
 void GL11_DestroyMesh(GLMeshCacheEntry& cache);
 void GL11_BeginFrame(const Matrix4x4* projection);
@@ -77,7 +79,7 @@ void GL11_SubmitDraw(
 void GL11_Resize(int width, int height);
 void GL11_Clear(float r, float g, float b);
 void GL11_Draw2DImage(
-	GLuint texId,
+	GLTextureCacheEntry& cache,
 	const SDL_Rect& srcRect,
 	const SDL_Rect& dstRect,
 	float left,
@@ -85,4 +87,5 @@ void GL11_Draw2DImage(
 	float bottom,
 	float top
 );
+void GL11_SetDither(bool dither);
 void GL11_Download(SDL_Surface* target);

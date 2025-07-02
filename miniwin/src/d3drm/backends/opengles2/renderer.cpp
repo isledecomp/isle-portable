@@ -47,6 +47,7 @@ Direct3DRMRenderer* OpenGLES2Renderer::Create(DWORD width, DWORD height)
 
 	SDL_GLContext context = SDL_GL_CreateContext(DDWindow);
 	if (!context) {
+		SDL_Log("SDL_GL_CreateContext: %s", SDL_GetError());
 		return nullptr;
 	}
 
@@ -704,4 +705,14 @@ void OpenGLES2Renderer::Download(SDL_Surface* target)
 	}
 
 	SDL_DestroySurface(bufferClone);
+}
+
+void OpenGLES2Renderer::SetDither(bool dither)
+{
+	if (dither) {
+		glEnable(GL_DITHER);
+	}
+	else {
+		glDisable(GL_DITHER);
+	}
 }
