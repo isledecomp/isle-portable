@@ -4,7 +4,7 @@ project(isle LANGUAGES CXX C VERSION 0.1)
 
 if (EMSCRIPTEN)
   add_compile_options(-pthread)
-  add_link_options(-sALLOW_MEMORY_GROWTH=1 -sMAXIMUM_MEMORY=2gb -sUSE_PTHREADS=1 -sPROXY_TO_PTHREAD=1 -sPTHREAD_POOL_SIZE_STRICT=0 -sFORCE_FILESYSTEM=1 -sWASMFS=1 -sEXIT_RUNTIME=1)
+  add_link_options(-sALLOW_MEMORY_GROWTH=1 -sMAXIMUM_MEMORY=2gb -sUSE_PTHREADS=1 -sPROXY_TO_PTHREAD=1 -sOFFSCREENCANVAS_SUPPORT=1 -sPTHREAD_POOL_SIZE_STRICT=0 -sFORCE_FILESYSTEM=1 -sWASMFS=1 -sEXIT_RUNTIME=1)
   set(SDL_PTHREADS ON CACHE BOOL "Enable SDL pthreads" FORCE)
 endif()
 
@@ -38,14 +38,14 @@ option(ISLE_WERROR "Treat warnings as errors" OFF)
 option(ISLE_DEBUG "Enable imgui debug" ON)
 cmake_dependent_option(ISLE_USE_DX5 "Build with internal DirectX 5 SDK" "${NOT_MINGW}" "WIN32;CMAKE_SIZEOF_VOID_P EQUAL 4" OFF)
 cmake_dependent_option(ISLE_MINIWIN "Use miniwin" ON "NOT ISLE_USE_DX5" OFF)
-cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "MSVC OR ISLE_MINIWIN;NOT NINTENDO_3DS" OFF)
+cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "(MSVC OR ISLE_MINIWIN) AND (NOT PSP) AND (NOT NINTENDO_3DS)" OFF)
 cmake_dependent_option(ISLE_COMPILE_SHADERS "Compile shaders" ON "SDL_SHADERCROSS_BIN;TARGET Python3::Interpreter" OFF)
-option(CMAKE_POSITION_INDEPENDENT_CODE "Build with -fPIC" ON)
+cmake_dependent_option(CMAKE_POSITION_INDEPENDENT_CODE "Build with -fPIC" ON "NOT PSP" OFF)
 option(ENABLE_CLANG_TIDY "Enable clang-tidy")
 option(DOWNLOAD_DEPENDENCIES "Download dependencies" ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}" CACHE PATH "Directory where to put executables and dll")
 set(ISLE_EMSCRIPTEN_HOST "" CACHE STRING "Host URL for Emscripten streaming (e.g., https://test.com)")
-cmake_dependent_option(BUILD_SHARED_LIBS "Build lego1 as a shared library" ON "NOT EMSCRIPTEN" OFF)
+cmake_dependent_option(BUILD_SHARED_LIBS "Build lego1 as a shared library" ON "NOT EMSCRIPTEN AND NOT PSP" OFF)
 
 message(STATUS "Isle app:               ${ISLE_BUILD_APP}")
 message(STATUS "Config app:             ${ISLE_BUILD_CONFIG}")
@@ -58,15 +58,19 @@ add_library(Isle::iniparser INTERFACE IMPORTED)
 
 if (DOWNLOAD_DEPENDENCIES)
     # FetchContent downloads and configures dependencies
-    message(STATUS "Fetching SDL3 and iniparser. This might take a while...")
     include(FetchContent)
-    FetchContent_Declare(
-        SDL3
-        GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
-        GIT_TAG "main"
-        EXCLUDE_FROM_ALL
-    )
-    FetchContent_MakeAvailable(SDL3)
+    if (NOT PSP)
+      message(STATUS "Fetching SDL3 and iniparser. This might take a while...")
+      FetchContent_Declare(
+          SDL3
+          GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
+          GIT_TAG "main"
+          EXCLUDE_FROM_ALL
+      )
+      FetchContent_MakeAvailable(SDL3)
+    else()
+      find_package(SDL3 CONFIG REQUIRED)
+    endif()
 
     FetchContent_Declare(
         iniparser
@@ -348,6 +352,11 @@ if (WIN32)
   target_link_libraries(lego1 INTERFACE winmm)
 endif()
 target_link_libraries(lego1 PRIVATE libsmacker miniaudio)
+
+if (PSP)
+  target_link_libraries(lego1 PRIVATE atomic)
+endif()
+
 target_include_directories(lego1 PUBLIC $<BUILD_INTERFACE:$<TARGET_PROPERTY:miniaudio,INTERFACE_INCLUDE_DIRECTORIES>>)
 
 # lego1_impl sources
@@ -505,6 +514,9 @@ if (ISLE_BUILD_APP)
     )
     target_compile_definitions(isle PRIVATE ISLE_DEBUG)
     target_link_libraries(isle PRIVATE imgui)
+    if(PSP)
+      target_compile_definitions(imgui PRIVATE IMGUI_DISABLE_DEFAULT_SHELL_FUNCTIONS)
+    endif()
     find_path(valgrind_INCLUDE_PATH NAMES valgrind/callgrind.h)
     if(valgrind_INCLUDE_PATH)
       # Run isle under valgrind to create a profile. Use e.g. kcachegrind to view the profile.
@@ -673,6 +685,18 @@ if(NINTENDO_3DS)
 endif()
 if(MSVC)
   set(CPACK_GENERATOR ZIP)
+elseif(PSP)
+    # Create an EBOOT.PBP file
+    create_pbp_file(
+        TARGET ${PROJECT_NAME}
+        ICON_PATH "${CMAKE_SOURCE_DIR}/XMB/Game/ICON0.png"
+        ANIM_PATH "${CMAKE_SOURCE_DIR}/XMB/Game/ICON1.pmf"
+        BACKGROUND_PATH "${CMAKE_SOURCE_DIR}/XMB/Game/PIC1.png"
+        PREVIEW_PATH NULL
+        MUSIC_PATH "${CMAKE_SOURCE_DIR}/XMB/Game/SND0.at3"
+        TITLE ${PROJECT_NAME}
+        VERSION 01.00
+    )
 else()
   set(CPACK_GENERATOR TGZ)
 endif()

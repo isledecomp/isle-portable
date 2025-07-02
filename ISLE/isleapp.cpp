@@ -665,7 +665,9 @@ MxResult IsleApp::SetupWindow()
 #if defined(MINIWIN) && !defined(__3DS__)
 	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+#ifndef __PSP__
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+#endif
 #endif
 
 	window = SDL_CreateWindowWithProperties(props);
