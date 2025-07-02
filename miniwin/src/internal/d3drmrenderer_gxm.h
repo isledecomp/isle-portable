@@ -20,6 +20,8 @@ DEFINE_GUID(GXM_GUID, 0x682656F3, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 
 #define GXM_VERTEX_BUFFER_COUNT 2
 #define GXM_FRAGMENT_BUFFER_COUNT 3
 
+//#define GXM_PRECOMPUTE
+
 struct GXMTextureCacheEntry {
 	IDirect3DRMTexture* texture;
 	Uint32 version;
@@ -35,6 +37,14 @@ struct GXMMeshCacheEntry {
 	void* vertexBuffer;
 	void* indexBuffer;
 	uint16_t indexCount;
+
+#ifdef GXM_PRECOMPUTE
+	void* precomputeData;
+	void* uniformBuffers;
+	SceGxmPrecomputedVertexState vertexState[GXM_VERTEX_BUFFER_COUNT];
+	SceGxmPrecomputedFragmentState fragmentState[GXM_FRAGMENT_BUFFER_COUNT];
+	SceGxmPrecomputedDraw drawState;
+#endif
 };
 
 typedef struct GXMDisplayData {
@@ -50,8 +60,8 @@ struct SceneLightGXM {
 static_assert(sizeof(SceneLightGXM) == 4*4*3);
 
 struct GXMSceneLightUniform {
-	SceneLightGXM lights[3];
-	int lightCount;
+	SceneLightGXM lights[2];
+	float ambientLight[3];
 };
 
 
@@ -175,15 +185,20 @@ private:
 
 	// shader
 	SceGxmShaderPatcherId mainVertexProgramId;
-	SceGxmShaderPatcherId mainFragmentProgramId;
+	SceGxmShaderPatcherId mainColorFragmentProgramId;
+	SceGxmShaderPatcherId mainTextureFragmentProgramId;
 	SceGxmShaderPatcherId imageFragmentProgramId;
 	SceGxmShaderPatcherId colorFragmentProgramId;
 
-	SceGxmVertexProgram* mainVertexProgram; // 3d vert
-	SceGxmFragmentProgram* opaqueFragmentProgram; // 3d with no transparency
-	SceGxmFragmentProgram* transparentFragmentProgram; // 3d with transparency
-	SceGxmFragmentProgram* imageFragmentProgram; // 2d images, no lighting
-	SceGxmFragmentProgram* colorFragmentProgram; // 2d color, no lighting
+	SceGxmVertexProgram* mainVertexProgram;
+	// with lighting
+	SceGxmFragmentProgram* opaqueColorFragmentProgram;
+	SceGxmFragmentProgram* blendedColorFragmentProgram;
+	SceGxmFragmentProgram* opaqueTextureFragmentProgram;
+	SceGxmFragmentProgram* blendedTextureFragmentProgram;
+	// no lighting
+	SceGxmFragmentProgram* imageFragmentProgram;
+	SceGxmFragmentProgram* colorFragmentProgram;
 
 	// main shader vertex uniforms
 	const SceGxmProgramParameter* uModelViewMatrix;
@@ -191,11 +206,14 @@ private:
 	const SceGxmProgramParameter* uProjectionMatrix;
 
 	// main shader fragment uniforms
-	const SceGxmProgramParameter* uLights;
-	const SceGxmProgramParameter* uLightCount;
-	const SceGxmProgramParameter* uShininess;
-	const SceGxmProgramParameter* uColor;
-	const SceGxmProgramParameter* uUseTexture;
+	const SceGxmProgramParameter* color_uLights;
+	const SceGxmProgramParameter* color_uAmbientLight;
+	const SceGxmProgramParameter* color_uShininess;
+	const SceGxmProgramParameter* color_uColor;
+	const SceGxmProgramParameter* texture_uLights;
+	const SceGxmProgramParameter* texture_uAmbientLight;
+	const SceGxmProgramParameter* texture_uShininess;
+	const SceGxmProgramParameter* texture_uColor;
 
 	// color shader frament uniforms
 	const SceGxmProgramParameter* colorShader_uColor;

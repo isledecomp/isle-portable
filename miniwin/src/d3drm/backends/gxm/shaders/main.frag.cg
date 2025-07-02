@@ -10,11 +10,10 @@ void main(
     float3 vNormal : TEXCOORD2,
     float2 vTexCoord : TEXCOORD3,
 
-    uniform __nostrip SceneLight uLights[3] : BUFFER[0],
-    uniform __nostrip int uLightCount : BUFFER[0],
+    uniform __nostrip SceneLight uLights[2] : BUFFER[0],
+    uniform __nostrip float3 uAmbientLight : BUFFER[0],
     uniform __nostrip float uShininess,
     uniform __nostrip float4 uColor,
-    uniform __nostrip int uUseTexture,
     uniform __nostrip sampler2D uTexture,
 
     out float4 outColor : COLOR
@@ -22,46 +21,38 @@ void main(
     float3 diffuse = float3(0.0, 0.0, 0.0);
     float3 specular = float3(0.0, 0.0, 0.0);
 
-    for (int i = 0; i < uLightCount; ++i) {
-        float3 lightColor = uLights[i].color.rgb;
+    float3 viewVec = normalize(-vViewPos); // Assuming camera at origin
 
-        // ambient
-        if (uLights[i].position.w == 0.0 && uLights[i].direction.w == 0.0) {
-            diffuse += lightColor;
-            continue;
-        }
+    diffuse += uAmbientLight;
+
+    for (int i = 0; i < 2; ++i) {
+        float3 lightColor = uLights[i].color.rgb;
+        float isDirectional = uLights[i].direction.w;
+        float isPositional = uLights[i].position.w;
 
         // directional
-        float3 lightVec;
-        if (uLights[i].direction.w == 1.0) {
-            lightVec = -normalize(uLights[i].direction.xyz);
-        } else { // point
-            lightVec = normalize(uLights[i].position.xyz - vViewPos);
-        }
+        float3 pointLightVec = uLights[i].position.xyz - vViewPos;
+        float3 directionalLightVec = -uLights[i].direction.xyz;
+        float3 lightVec = normalize(lerp(pointLightVec, directionalLightVec, isDirectional));
 
+        // Diffuse contribution
         float dotNL = max(dot(vNormal, lightVec), 0.0);
-        if (dotNL > 0.0) {
-            // Diffuse contribution
-            diffuse += dotNL * lightColor;
+        diffuse += dotNL * lightColor;
 
-            // Specular
-            if (uShininess > 0.0) {
-                float3 viewVec = normalize(-vViewPos); // Assuming camera at origin
-                float3 halfVec = normalize(lightVec + viewVec);
-                float dotNH = max(dot(vNormal, halfVec), 0.0);
-                float spec = pow(dotNH, uShininess);
-                specular += spec * lightColor;
-            }
+        // Specular
+        //float enableSpec = (dotNL > 0.0) * (uShininess > 0.0);
+        if (dotNL > 0.0 && uShininess > 0.0) {
+            float3 halfVec = normalize(lightVec + viewVec);
+            float dotNH = max(dot(vNormal, halfVec), 0.0);
+            float spec = pow(dotNH, uShininess);
+            specular += spec * lightColor;
         }
     }
 
-    outColor = uColor;
     outColor.rgb = clamp(diffuse * uColor.rgb + specular, 0.0, 1.0);
-    if (uUseTexture != 0) {
-        float4 texel = tex2D(uTexture, vTexCoord);
-        outColor.rgb *= texel.rgb;
-        outColor.rgb = clamp(outColor.rgb, 0.0, 1.0);
-    }
-
-    //outColor = float4(vNormal, 1.0);
+    outColor.a = uColor.a;
+#if TEXTURED
+    float4 texel = tex2D(uTexture, vTexCoord);
+    outColor.rgb *= texel.rgb;
+#endif
 }
