@@ -600,6 +600,10 @@ void Citro3DRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, con
 	C3D_ImmDrawEnd();
 }
 
+void Citro3DRenderer::SetDither(bool dither)
+{
+}
+
 void Citro3DRenderer::Download(SDL_Surface* target)
 {
 	MINIWIN_NOT_IMPLEMENTED();

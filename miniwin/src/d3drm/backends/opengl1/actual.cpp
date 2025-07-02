@@ -357,3 +357,13 @@ void GL11_Download(SDL_Surface* target)
 	glFinish();
 	glReadPixels(0, 0, target->w, target->h, GL_RGBA, GL_UNSIGNED_BYTE, target->pixels);
 }
+
+void GL11_SetDither(bool dither)
+{
+	if (dither) {
+		glEnable(GL_DITHER);
+	}
+	else {
+		glDisable(GL_DITHER);
+	}
+}

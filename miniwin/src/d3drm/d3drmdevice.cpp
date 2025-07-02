@@ -84,9 +84,7 @@ D3DRMRENDERQUALITY Direct3DRMDevice2Impl::GetQuality()
 
 HRESULT Direct3DRMDevice2Impl::SetDither(BOOL dither)
 {
-	if (dither) {
-		MINIWIN_NOT_IMPLEMENTED();
-	}
+	m_renderer->SetDither(dither);
 	return DD_OK;
 }
 
