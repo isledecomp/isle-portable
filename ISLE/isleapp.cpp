@@ -780,7 +780,7 @@ MxResult IsleApp::SetupWindow()
 			LegoOmni::GetInstance()->GetInputManager()->SetUseJoystick(m_useJoystick);
 			LegoOmni::GetInstance()->GetInputManager()->SetJoystickIndex(m_joystickIndex);
 		}
-		if (LegoOmni::GetInstance()->GetVideoManager()) {
+		if (LegoOmni::GetInstance()->GetVideoManager() && g_isle->GetDrawCursor()) {
 			LegoOmni::GetInstance()->GetVideoManager()->SetCursorBitmap(
 				m_cursorCurrentBitmap->bitmap,
 				m_cursorCurrentBitmap->x,
