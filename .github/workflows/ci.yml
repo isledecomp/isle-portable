@@ -151,6 +151,13 @@ jobs:
           cd build
           mkdir dist
           mv *.3dsx dist/
+      
+      - name: Package (Vita)
+        if: ${{ matrix.vita }}
+        run: |
+          cd build
+          mkdir dist
+          mv *.vpk dist/
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4

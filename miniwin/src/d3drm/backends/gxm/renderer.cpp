@@ -1330,7 +1330,6 @@ void GXMRenderer::Resize(int width, int height, const ViewportTransform& viewpor
 	m_width = width;
 	m_height = height;
 	m_viewportTransform = viewportTransform;
-	SDL_Log("GXMRenderer::Resize TODO");
 }
 
 void GXMRenderer::Clear(float r, float g, float b)

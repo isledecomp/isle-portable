@@ -548,6 +548,11 @@ if (ISLE_BUILD_APP)
       ISLE/3ds/config.cpp
     )
   endif()
+  if(VITA)
+    target_sources(isle PRIVATE
+      ISLE/vita/config.cpp
+    )
+  endif()
 endif()
 
 if (ISLE_BUILD_CONFIG)
@@ -672,11 +677,6 @@ if(EMSCRIPTEN)
     DESTINATION "${CMAKE_INSTALL_BINDIR}"
   )
 endif()
-if(VITA)
-  install(FILES "$<TARGET_FILE_DIR:isle>/isle.vpk" "$<TARGET_FILE_DIR:isle>/isle.self"
-    DESTINATION "${CMAKE_INSTALL_BINDIR}"
-  )
-endif()
 
 add_subdirectory(packaging)
 
@@ -704,6 +704,8 @@ if(VITA)
   set(VITA_VERSION  "01.00")
   
   vita_create_self(isle.self isle UNSAFE)
+
+  #add_subdirectory(CONFIG_vita)
 
   if(VITA_USE_OPENGLES2)
     set(VPK_FILE_ARGS)
