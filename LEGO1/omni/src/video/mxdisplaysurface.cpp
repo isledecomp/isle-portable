@@ -10,6 +10,7 @@
 
 #include <SDL3/SDL_log.h>
 #include <assert.h>
+#include <string.h>
 #ifdef MINIWIN
 #include "miniwin/windows.h"
 #else
@@ -1143,7 +1144,7 @@ LPDIRECTDRAWSURFACE MxDisplaySurface::CreateCursorSurface(
 	else {
 		MxU32* surface = (MxU32*) ddsd.lpSurface;
 
-		std::memcpy(surface, p_cursorBitmap, p_x * p_y * sizeof(MxU32));
+		memcpy(surface, p_cursorBitmap, p_x * p_y * sizeof(MxU32));
 
 		newSurface->Unlock(ddsd.lpSurface);
 
