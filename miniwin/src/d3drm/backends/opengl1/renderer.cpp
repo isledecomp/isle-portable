@@ -134,7 +134,6 @@ static Uint32 UploadTextureData(SDL_Surface* src, bool useNPOT, bool isUi)
 
 	SDL_Surface* finalSurface = working;
 
-	// Resize to next power-of-two if needed and NPOT isn't supported
 	int newW = NextPowerOfTwo(working->w);
 	int newH = NextPowerOfTwo(working->h);
 
@@ -199,7 +198,13 @@ Uint32 OpenGL1Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi)
 		}
 	}
 
-	m_textures.push_back({texture, texture->m_version, texId, surface->m_surface->w, surface->m_surface->h});
+	m_textures.push_back(
+		{texture,
+		 texture->m_version,
+		 texId,
+		 static_cast<float>(surface->m_surface->w),
+		 static_cast<float>(surface->m_surface->h)}
+	);
 	AddTextureDestroyCallback((Uint32) (m_textures.size() - 1), texture);
 	return (Uint32) (m_textures.size() - 1);
 }

@@ -260,7 +260,7 @@ LegoResult LegoROI::Read(
 						}
 
 						if (j == 0) {
-							if (surplusLODs != 0 && lod->GetUnknown0x08Test8()) {
+							if (surplusLODs != 0 && lod->IsExtraLOD()) {
 								numLODs++;
 							}
 						}
@@ -277,7 +277,7 @@ LegoResult LegoROI::Read(
 					}
 
 					if (i == 0) {
-						if (surplusLODs != 0 && lod->GetUnknown0x08Test8()) {
+						if (surplusLODs != 0 && lod->IsExtraLOD()) {
 							numLODs++;
 						}
 					}
