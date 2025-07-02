@@ -58,9 +58,6 @@ public:
 	int Pause(BOOL);
 	BOOL RestoreSurfaces();
 
-	BOOL TextToTextSurface1(const char* text);
-	BOOL TextToTextSurface2(const char* lpString);
-
 	virtual const char* ErrorToString(HRESULT p_error); // vtable+0x10
 	int FlipToGDISurface();
 
@@ -76,9 +73,6 @@ protected:
 	HRESULT CreateDDSurface(LPDDSURFACEDESC a2, LPDIRECTDRAWSURFACE* a3, IUnknown* a4);
 	BOOL GetDDSurfaceDesc(LPDDSURFACEDESC lpDDSurfDesc, LPDIRECTDRAWSURFACE lpDDSurf);
 	BOOL CreateZBuffer(DDSCapsFlags memorytype, DWORD depth);
-
-	BOOL CreateTextSurfaces();
-	BOOL TextToTextSurface(const char* text, IDirectDrawSurface* pSurface, SIZE& textSizeOnSurface);
 
 	void Error(const char* p_message, int p_error);
 
@@ -97,8 +91,6 @@ protected:
 	IDirectDrawSurface* m_pFrontBuffer;         // 0x10
 	IDirectDrawSurface* m_pBackBuffer;          // 0x14
 	IDirectDrawSurface* m_pZBuffer;             // 0x18
-	IDirectDrawSurface* m_pText1Surface;        // 0x1c
-	IDirectDrawSurface* m_pText2Surface;        // 0x20
 	IDirectDrawClipper* m_pClipper;             // 0x24
 	IDirectDrawPalette* m_pPalette;             // 0x28
 	PALETTEENTRY m_paletteEntries[256];         // 0x2c
