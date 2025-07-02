@@ -57,6 +57,8 @@
 
 #ifdef __vita__
 #include "vita/config.h"
+#include <psp2/appmgr.h>
+#include <psp2/kernel/clib.h>
 #endif
 
 DECOMP_SIZE_ASSERT(IsleApp, 0x8c)
@@ -262,6 +264,21 @@ void IsleApp::SetupVideoFlags(
 
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 {
+#ifdef __vita__
+	SceAppUtilInitParam appUtilInitParam = {0};
+	SceAppUtilBootParam appUtilBootParam = {0};
+	sceAppUtilInit(&appUtilInitParam, &appUtilBootParam);
+	SceAppUtilAppEventParam eventParam = {0};
+	sceAppUtilReceiveAppEvent(&eventParam);
+	if (eventParam.type == 0x05) {
+		char buffer[2048];
+		sceAppUtilAppEventParseLiveArea(&eventParam, buffer);
+		if (strstr(buffer, "-config")) {
+			sceAppMgrLoadExec("app0:/isle-config.self", NULL, NULL);
+		}
+	}
+#endif
+
 	*appstate = NULL;
 
 	SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
@@ -407,6 +424,9 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 	case SDL_EVENT_MOUSE_MOTION:
 	case SDL_EVENT_MOUSE_BUTTON_DOWN:
 	case SDL_EVENT_MOUSE_BUTTON_UP:
+	case SDL_EVENT_FINGER_MOTION:
+	case SDL_EVENT_FINGER_DOWN:
+	case SDL_EVENT_FINGER_UP:
 		IDirect3DRMMiniwinDevice* device = GetD3DRMMiniwinDevice();
 		if (device && !device->ConvertEventToRenderCoordinates(event)) {
 			SDL_Log("Failed to convert event coordinates: %s", SDL_GetError());

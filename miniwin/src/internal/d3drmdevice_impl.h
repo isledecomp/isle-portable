@@ -40,6 +40,8 @@ struct Direct3DRMDevice2Impl : public Direct3DRMObjectBaseImpl<IDirect3DRMDevice
 private:
 	void Resize();
 
+	int32_t m_windowWidth;
+	int32_t m_windowHeight;
 	uint32_t m_virtualWidth;
 	uint32_t m_virtualHeight;
 	ViewportTransform m_viewportTransform;
