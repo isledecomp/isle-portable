@@ -87,4 +87,5 @@ void GL11_Draw2DImage(
 	float bottom,
 	float top
 );
+void GL11_SetDither(bool dither);
 void GL11_Download(SDL_Surface* target);

@@ -1487,6 +1487,10 @@ void GXMRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const S
 	sceGxmPopUserMarker(this->context);
 }
 
+void GXMRenderer::SetDither(bool dither)
+{
+}
+
 void GXMRenderer::Download(SDL_Surface* target)
 {
 	SDL_Rect srcRect = {
