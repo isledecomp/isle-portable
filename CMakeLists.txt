@@ -705,7 +705,7 @@ if(VITA)
   
   vita_create_self(isle.self isle UNSAFE)
 
-  #add_subdirectory(CONFIG_vita)
+  add_subdirectory(CONFIG_vita)
 
   if(VITA_USE_OPENGLES2)
     set(VPK_FILE_ARGS)

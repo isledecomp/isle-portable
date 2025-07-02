@@ -1,0 +1,846 @@
+diff -u -r ./ScePaf-RE/include/paf/autotest/tty.h ./include/paf/autotest/tty.h
+--- ./ScePaf-RE/include/paf/autotest/tty.h	2025-05-19 23:50:58.286731500 +0900
++++ ./include/paf/autotest/tty.h	2025-05-19 23:51:02.277580600 +0900
+@@ -7,7 +7,7 @@
+ 
+ #include <stdint.h>
+ #include <stddef.h>
+-#include <kernel.h>
++#include <psp2/kernel/processmgr.h>
+ 
+ namespace paf {
+ 	namespace autotest
+diff -u -r ./ScePaf-RE/include/paf/common/array_func.h ./include/paf/common/array_func.h
+--- ./ScePaf-RE/include/paf/common/array_func.h	2025-05-19 23:50:58.329477700 +0900
++++ ./include/paf/common/array_func.h	2025-05-19 23:51:02.384806600 +0900
+@@ -25,7 +25,7 @@
+ 
+ 			}
+ 
+-			assign(T* a_data, size_t a_capacity, size_t a_size)
++			void assign(T* a_data, size_t a_capacity, size_t a_size)
+ 			{
+ 				m_buffer = a_data;
+ 				m_size = a_size;
+diff -u -r ./ScePaf-RE/include/paf/common/averaged_value.h ./include/paf/common/averaged_value.h
+--- ./ScePaf-RE/include/paf/common/averaged_value.h	2025-05-19 23:50:58.334478500 +0900
++++ ./include/paf/common/averaged_value.h	2025-05-19 23:51:02.433758400 +0900
+@@ -60,6 +60,7 @@
+ 					_last_avg = _sum / _avg;
+ 					_count = 0;
+ 				}
++				return *this;
+ 			}
+ 
+ 			operator float() const
+diff -u -r ./ScePaf-RE/include/paf/common/call_list.h ./include/paf/common/call_list.h
+--- ./ScePaf-RE/include/paf/common/call_list.h	2025-05-19 23:50:58.337522100 +0900
++++ ./include/paf/common/call_list.h	2025-05-19 23:51:02.446775200 +0900
+@@ -5,7 +5,7 @@
+ #ifndef _VDSUITE_USER_PAF_COMMON_CALL_LIST_H
+ #define _VDSUITE_USER_PAF_COMMON_CALL_LIST_H
+ 
+-#include <scetypes.h>
++#include <psp2/types.h>
+ #include <paf/thread/rmutex.h>
+ 
+ namespace paf {
+diff -u -r ./ScePaf-RE/include/paf/common/halt_assert.h ./include/paf/common/halt_assert.h
+--- ./ScePaf-RE/include/paf/common/halt_assert.h	2025-05-19 23:50:58.351876400 +0900
++++ ./include/paf/common/halt_assert.h	2025-05-19 23:51:02.451774900 +0900
+@@ -5,7 +5,7 @@
+ #ifndef _VDSUITE_USER_PAF_COMMON_HALT_ASSERT_H
+ #define _VDSUITE_USER_PAF_COMMON_HALT_ASSERT_H
+ 
+-#include <scetypes.h>
++#include <psp2/types.h>
+ 
+ namespace paf {
+ 	namespace common_internal {
+@@ -19,7 +19,7 @@
+ 
+ 	namespace common {
+ 
+-		__declspec (dllimport) void* _error_callback;
++		__declspec (dllimport) extern void* _error_callback;
+ 	}
+ }
+ 
+diff -u -r ./ScePaf-RE/include/paf/common/shared_ptr.h ./include/paf/common/shared_ptr.h
+--- ./ScePaf-RE/include/paf/common/shared_ptr.h	2025-05-19 23:50:58.375962800 +0900
++++ ./include/paf/common/shared_ptr.h	2025-05-19 23:51:02.377806000 +0900
+@@ -19,7 +19,7 @@
+ 			class RefCounter
+ 			{
+ 
+-				template <typename T> friend class SharedPtr;
++				// template <typename T> friend class SharedPtr;
+ 
+ 			public:
+ 
+diff -u -r ./ScePaf-RE/include/paf/common/small_string.h ./include/paf/common/small_string.h
+--- ./ScePaf-RE/include/paf/common/small_string.h	2025-05-19 23:50:58.378966900 +0900
++++ ./include/paf/common/small_string.h	2025-05-19 23:51:02.408946400 +0900
+@@ -49,7 +49,7 @@
+ 					do {
+ 						*(char *)((int)_data + i) = src[i];
+ 						i++;
+-					} while (i < minlen);
++					} while (i < (int32_t)minlen);
+ 				}
+ 				*(char *)((int)_data + i) = 0;
+ 				return;
+diff -u -r ./ScePaf-RE/include/paf/common/tokenizer.h ./include/paf/common/tokenizer.h
+--- ./ScePaf-RE/include/paf/common/tokenizer.h	2025-05-19 23:50:58.399000600 +0900
++++ ./include/paf/common/tokenizer.h	2025-05-19 23:51:02.316900500 +0900
+@@ -50,7 +50,7 @@
+ 
+ 			void addSeparatorChars(string const& value)
+ 			{
+-				for (int32_t i = 0; i != value.size(); i++)
++				for (int32_t i = 0; i != (int32_t)value.size(); i++)
+ 				{
+ 					string sep(value, i, 1);
+ 					addSeparator(sep);
+@@ -75,7 +75,7 @@
+ 				}
+ 				else
+ 				{
+-					for (int32_t i = 0; i != _tokens.size(); i++)
++					for (int32_t i = 0; i != (int32_t)_tokens.size(); i++)
+ 					{
+ 						if (match(_loc._next_pos, _tokens[i].c_str()))
+ 						{
+@@ -87,7 +87,7 @@
+ 						}
+ 					}
+ 
+-					for (int32_t i = 0; i != _separators.size(); i++)
++					for (int32_t i = 0; i != (int32_t)_separators.size(); i++)
+ 					{
+ 						if (match(_loc._next_pos, _separators[i].c_str()))
+ 						{
+@@ -176,7 +176,7 @@
+ 			bool match(size_t pos, const char *str) const
+ 			{
+ 				const char *spos = str;
+-				for (int32_t i = pos; (*spos != '\0' && (i < _src_size)); i++)
++				for (int32_t i = pos; (*spos != '\0' && (i < (int32_t)_src_size)); i++)
+ 				{
+ 					if (*spos != _src[i])
+ 					{
+diff -u -r ./ScePaf-RE/include/paf/file/bufferedfile.h ./include/paf/file/bufferedfile.h
+--- ./ScePaf-RE/include/paf/file/bufferedfile.h	2025-05-19 23:50:58.445551300 +0900
++++ ./include/paf/file/bufferedfile.h	2025-05-19 23:51:02.210581400 +0900
+@@ -7,7 +7,6 @@
+ 
+ #include <stdint.h>
+ #include <stddef.h>
+-#include <kernel.h>
+ #include <paf/paf_types.h>
+ #include <paf/common/shared_ptr.h>
+ #include <paf/thread/rmutex.h>
+diff -u -r ./ScePaf-RE/include/paf/file/file.h ./include/paf/file/file.h
+--- ./ScePaf-RE/include/paf/file/file.h	2025-05-19 23:50:58.451551200 +0900
++++ ./include/paf/file/file.h	2025-05-19 23:51:02.215731000 +0900
+@@ -7,7 +7,7 @@
+ 
+ #include <stdint.h>
+ #include <stddef.h>
+-#include <kernel.h>
++#include <psp2/io/stat.h>
+ #include <paf/paf_types.h>
+ 
+ namespace paf {
+diff -u -r ./ScePaf-RE/include/paf/file/httpfile.h ./include/paf/file/httpfile.h
+--- ./ScePaf-RE/include/paf/file/httpfile.h	2025-05-19 23:50:58.453552300 +0900
++++ ./include/paf/file/httpfile.h	2025-05-19 23:51:02.221734700 +0900
+@@ -7,7 +7,6 @@
+ 
+ #include <stdint.h>
+ #include <stddef.h>
+-#include <kernel.h>
+ #include <paf/std/string>
+ #include <paf/thread/rmutex.h>
+ #include <paf/thread/rwlock.h>
+diff -u -r ./ScePaf-RE/include/paf/file/localfile.h ./include/paf/file/localfile.h
+--- ./ScePaf-RE/include/paf/file/localfile.h	2025-05-19 23:50:58.463600400 +0900
++++ ./include/paf/file/localfile.h	2025-05-19 23:51:02.233069200 +0900
+@@ -7,7 +7,6 @@
+ 
+ #include <stdint.h>
+ #include <stddef.h>
+-#include <kernel.h>
+ #include <paf/thread/rmutex.h>
+ #include <paf/common/shared_ptr.h>
+ #include <paf/file/file.h>
+diff -u -r ./ScePaf-RE/include/paf/file/localfile_psp2.h ./include/paf/file/localfile_psp2.h
+--- ./ScePaf-RE/include/paf/file/localfile_psp2.h	2025-05-19 23:50:58.482127800 +0900
++++ ./include/paf/file/localfile_psp2.h	2025-05-19 23:51:02.238576400 +0900
+@@ -7,7 +7,6 @@
+ 
+ #include <stdint.h>
+ #include <stddef.h>
+-#include <kernel.h>
+ #include <paf/paf_types.h>
+ #include <paf/file/file.h>
+ #include <paf/file/localfile_types.h>
+diff -u -r ./ScePaf-RE/include/paf/file/memfile.h ./include/paf/file/memfile.h
+--- ./ScePaf-RE/include/paf/file/memfile.h	2025-05-19 23:50:58.491636300 +0900
++++ ./include/paf/file/memfile.h	2025-05-19 23:51:02.253603500 +0900
+@@ -7,7 +7,6 @@
+ 
+ #include <stdint.h>
+ #include <stddef.h>
+-#include <kernel.h>
+ #include <paf/paf_types.h>
+ #include <paf/common/shared_ptr.h>
+ #include <paf/thread/rmutex.h>
+diff -u -r ./ScePaf-RE/include/paf/framework.h ./include/paf/framework.h
+--- ./ScePaf-RE/include/paf/framework.h	2025-05-19 23:50:58.494635700 +0900
++++ ./include/paf/framework.h	2025-05-19 23:51:00.114615600 +0900
+@@ -7,7 +7,7 @@
+ 
+ #include <stdint.h>
+ #include <stddef.h>
+-#include <scetypes.h>
++#include <psp2/types.h>
+ #include <paf/paf_types.h>
+ #include <paf/std/vector>
+ #include <paf/std/string>
+@@ -221,7 +221,7 @@
+ 
+ 		Locale GetCommonResourceLocale() const;
+ 
+-		Locale paf::Framework::GetLocale() const
++		Locale GetLocale() const
+ 		{
+ 			return m_locale;
+ 		}
+diff -u -r ./ScePaf-RE/include/paf/graphics/arl/gxm/gxm_arl_frontend.h ./include/paf/graphics/arl/gxm/gxm_arl_frontend.h
+--- ./ScePaf-RE/include/paf/graphics/arl/gxm/gxm_arl_frontend.h	2025-05-19 23:50:58.521754900 +0900
++++ ./include/paf/graphics/arl/gxm/gxm_arl_frontend.h	2025-05-19 23:51:00.149011200 +0900
+@@ -6,7 +6,7 @@
+ #define _VDSUITE_USER_PAF_GRAPHICS_ARL_GXM_GXM_ARL_FRONTEND_H
+ 
+ #include <stdint.h>
+-#include <gxm.h>
++#include <psp2/gxm.h>
+ #include <paf/graphics/arl/arl_defines.h>
+ #include <paf/common/shared_ptr.h>
+ #include <paf/math/math.h>
+diff -u -r ./ScePaf-RE/include/paf/graphics/drawobj/plane_obj.h ./include/paf/graphics/drawobj/plane_obj.h
+--- ./ScePaf-RE/include/paf/graphics/drawobj/plane_obj.h	2025-05-19 23:50:58.542778600 +0900
++++ ./include/paf/graphics/drawobj/plane_obj.h	2025-05-19 23:51:00.183589500 +0900
+@@ -18,7 +18,7 @@
+ 		{
+ 		public:
+ 
+-			enum AlignMode
++			enum AlignMode : int
+ 			{
+ 				ALIGN_CENTER = 0,
+ 				ALIGN_NONE = 0,
+@@ -30,7 +30,7 @@
+ 				ALIGN_TOP = 2
+ 			};
+ 
+-			enum ScaleMode
++			enum ScaleMode : int
+ 			{
+ 				SCALE_SIZE = 0,
+ 				SCALE_SURFACE = 1,
+diff -u -r ./ScePaf-RE/include/paf/graphics/surface/surface.h ./include/paf/graphics/surface/surface.h
+--- ./ScePaf-RE/include/paf/graphics/surface/surface.h	2025-05-19 23:50:58.575951800 +0900
++++ ./include/paf/graphics/surface/surface.h	2025-05-19 23:51:00.237074500 +0900
+@@ -7,7 +7,8 @@
+ 
+ #include <stddef.h>
+ #include <stdint.h>
+-#include <gxm.h>
++#include <psp2/gxm.h>
++#include <psp2/kernel/cpu.h>
+ #include <paf/paf_types.h>
+ #include <paf/std/memory>
+ #include <paf/thread/mutex.h>
+@@ -53,7 +54,7 @@
+ 
+ 			int32_t UnsafeRelease()
+ 			{
+-				sceAtomicDecrement32AcqRel(&m_ref_count);
++				sceKernelAtomicAddAndGet32((SceInt32 *)&m_ref_count, ~0);
+ 				return m_ref_count;
+ 			};
+ 
+@@ -232,7 +233,7 @@
+ 
+ 			static intrusive_ptr<Surface> Load(SurfacePool *pool, common::SharedPtr<File> src, LoadOption *option = NULL);
+ 
+-			static intrusive_ptr<Surface> Load(SurfacePool *pool, void *buf, off_t size, LoadOption *option);
++			static intrusive_ptr<Surface> Load(SurfacePool *pool, void *buf, SceInt64 size, LoadOption *option);
+ 
+ 			//static intrusive_ptr<Surface> Load(SurfacePool *pool, void *buf, off_t size, uint32_t ununsed = 0, LoadOption *option = NULL);
+ 
+@@ -352,7 +353,7 @@
+ 
+ 			int32_t UnsafeRelease()
+ 			{
+-				sceAtomicDecrement32AcqRel(&m_ref_count);
++				sceKernelAtomicAddAndGet32((SceInt32 *)&m_ref_count, ~0);
+ 				return m_ref_count;
+ 			};
+ 
+diff -u -r ./ScePaf-RE/include/paf/graphics/surface/surface_display.h ./include/paf/graphics/surface/surface_display.h
+--- ./ScePaf-RE/include/paf/graphics/surface/surface_display.h	2025-05-19 23:50:58.586014200 +0900
++++ ./include/paf/graphics/surface/surface_display.h	2025-05-19 23:51:00.251583800 +0900
+@@ -7,7 +7,7 @@
+ 
+ #include <stddef.h>
+ #include <stdint.h>
+-#include <scetypes.h>
++#include <psp2/types.h>
+ #include <paf/paf_types.h>
+ #include <paf/graphics/surface/surface_base.h>
+ #include <paf/graphics/surface/surface_screen.h>
+diff -u -r ./ScePaf-RE/include/paf/graphics/surface/surface_screen.h ./include/paf/graphics/surface/surface_screen.h
+--- ./ScePaf-RE/include/paf/graphics/surface/surface_screen.h	2025-05-19 23:50:58.599521900 +0900
++++ ./include/paf/graphics/surface/surface_screen.h	2025-05-19 23:51:00.264905700 +0900
+@@ -7,7 +7,7 @@
+ 
+ #include <stddef.h>
+ #include <stdint.h>
+-#include <gxm.h>
++#include <psp2/gxm.h>
+ #include <paf/paf_types.h>
+ #include <paf/graphics/surface/surface_base.h>
+ #include <paf/graphics/surface/surface.h>
+diff -u -r ./ScePaf-RE/include/paf/inputdevice/keyboard/keyboard.h ./include/paf/inputdevice/keyboard/keyboard.h
+--- ./ScePaf-RE/include/paf/inputdevice/keyboard/keyboard.h	2025-05-19 23:50:58.680824500 +0900
++++ ./include/paf/inputdevice/keyboard/keyboard.h	2025-05-19 23:51:00.540807400 +0900
+@@ -6,7 +6,7 @@
+ #define _VDSUITE_USER_PAF_INPUTDEVICE_KEYBOARD_KEYBOARD_H
+ 
+ #include <stdint.h>
+-#include <ctrl.h>
++#include <psp2/ctrl.h>
+ 
+ namespace paf {
+ 	namespace inputdevice {
+diff -u -r ./ScePaf-RE/include/paf/inputdevice/pad/pad.h ./include/paf/inputdevice/pad/pad.h
+--- ./ScePaf-RE/include/paf/inputdevice/pad/pad.h	2025-05-19 23:50:58.697843700 +0900
++++ ./include/paf/inputdevice/pad/pad.h	2025-05-19 23:51:00.565996500 +0900
+@@ -6,7 +6,7 @@
+ #define _VDSUITE_USER_PAF_INPUTDEVICE_PAD_PAD_H
+ 
+ #include <stdint.h>
+-#include <ctrl.h>
++#include <psp2/ctrl.h>
+ 
+ namespace paf {
+ 	namespace inputdevice {
+diff -u -r ./ScePaf-RE/include/paf/job/job.h ./include/paf/job/job.h
+--- ./ScePaf-RE/include/paf/job/job.h	2025-05-19 23:50:58.723490800 +0900
++++ ./include/paf/job/job.h	2025-05-19 23:51:00.589683600 +0900
+@@ -6,7 +6,7 @@
+ #define _VDSUITE_USER_PAF_JOB_JOB_H
+ 
+ #include <stdint.h>
+-#include <scetypes.h>
++#include <psp2/types.h>
+ #include <paf/std/string>
+ #include <paf/std/list>
+ #include <paf/common/shared_ptr.h>
+diff -u -r ./ScePaf-RE/include/paf/math/ngp/misc.h ./include/paf/math/ngp/misc.h
+--- ./ScePaf-RE/include/paf/math/ngp/misc.h	2025-05-19 23:50:58.758738000 +0900
++++ ./include/paf/math/ngp/misc.h	2025-05-19 23:51:00.626774100 +0900
+@@ -58,7 +58,7 @@
+ 
+ 		static inline bool is_pow2(int i)
+ 		{
+-			return ((i | 0x80000000U) & i - 1U) == 0;
++			return ((i | 0x80000000U) & (i - 1U)) == 0;
+ 		}
+ 
+ 		static float rand1(uint32_t *seed)
+diff -u -r ./ScePaf-RE/include/paf/module/module.h ./include/paf/module/module.h
+--- ./ScePaf-RE/include/paf/module/module.h	2025-05-19 23:50:58.865358300 +0900
++++ ./include/paf/module/module.h	2025-05-19 23:51:00.751858300 +0900
+@@ -6,7 +6,7 @@
+ #define _VDSUITE_USER_PAF_MODULE_MODULE_H
+ 
+ #include <stdint.h>
+-#include <scetypes.h>
++#include <psp2/types.h>
+ #include <paf/std/string>
+ #include <paf/std/map>
+ 
+diff -u -r ./ScePaf-RE/include/paf/paf_cdlg.h ./include/paf/paf_cdlg.h
+--- ./ScePaf-RE/include/paf/paf_cdlg.h	2025-05-19 23:50:58.869362600 +0900
++++ ./include/paf/paf_cdlg.h	2025-05-19 23:51:00.757920800 +0900
+@@ -7,7 +7,7 @@
+ 
+ #include <stdint.h>
+ #include <stddef.h>
+-#include <gxm.h>
++#include <psp2/gxm.h>
+ 
+ namespace paf {
+ 	namespace cdlg {
+diff -u -r ./ScePaf-RE/include/paf/paf_types.h ./include/paf/paf_types.h
+--- ./ScePaf-RE/include/paf/paf_types.h	2025-05-19 23:50:58.873424000 +0900
++++ ./include/paf/paf_types.h	2025-05-19 23:51:00.761922300 +0900
+@@ -11,7 +11,7 @@
+ extern "C" {
+ #endif
+ 
+-typedef int64_t off_t;
++// typedef int64_t off_t;
+ 
+ typedef enum ImageMode {
+ 	ImageMode_NONE = -1,
+diff -u -r ./ScePaf-RE/include/paf/std/list ./include/paf/std/list
+--- ./ScePaf-RE/include/paf/std/list	2025-05-19 23:50:58.994744200 +0900
++++ ./include/paf/std/list	2025-05-19 23:51:00.879902300 +0900
+@@ -159,9 +159,9 @@
+ 			_list_node<_Type, _Alloc> *cnode = root_node->next;
+ 			if (cnode != root_node)
+ 			{
++				_list_node<_Type, _Alloc> *nnode = cnode->next;
+ 				do
+ 				{
+-					_list_node<_Type, _Alloc> *nnode = cnode->next;
+ 					_release_node(cnode);
+ 					cnode = nnode;
+ 				} while (nnode != root_node);
+diff -u -r ./ScePaf-RE/include/paf/std/stdc ./include/paf/std/stdc
+--- ./ScePaf-RE/include/paf/std/stdc	2025-05-19 23:50:59.043927500 +0900
++++ ./include/paf/std/stdc	2025-05-19 23:51:00.926642800 +0900
+@@ -1,7 +1,7 @@
+ ﻿#ifndef _VDSUITE_USER_PAF_STD_STDC_H
+ #define _VDSUITE_USER_PAF_STD_STDC_H
+ 
+-#include <scetypes.h>
++#include <psp2/types.h>
+ 
+ namespace paf {
+ 	class TTY
+diff -u -r ./ScePaf-RE/include/paf/std/stdlib.h ./include/paf/std/stdlib.h
+--- ./ScePaf-RE/include/paf/std/stdlib.h	2025-05-19 23:50:59.062661400 +0900
++++ ./include/paf/std/stdlib.h	2025-05-19 23:51:00.937155300 +0900
+@@ -5,7 +5,7 @@
+ #ifndef _VDSUITE_USER_PAF_STD_STDLIB_H
+ #define _VDSUITE_USER_PAF_STD_STDLIB_H
+ 
+-#include <../../stddef.h>
++#include <stddef.h>
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff -u -r ./ScePaf-RE/include/paf/std/string.h ./include/paf/std/string.h
+--- ./ScePaf-RE/include/paf/std/string.h	2025-05-19 23:50:59.069416000 +0900
++++ ./include/paf/std/string.h	2025-05-19 23:51:00.953662800 +0900
+@@ -5,7 +5,7 @@
+ #ifndef _VDSUITE_USER_PAF_STD_STRING_H
+ #define _VDSUITE_USER_PAF_STD_STRING_H
+ 
+-#include <../../stddef.h>
++#include <stddef.h>
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff -u -r ./ScePaf-RE/include/paf/std/vector ./include/paf/std/vector
+--- ./ScePaf-RE/include/paf/std/vector	2025-05-19 23:50:59.075931800 +0900
++++ ./include/paf/std/vector	2025-05-19 23:51:00.985950100 +0900
+@@ -1,7 +1,6 @@
+ ﻿#ifndef _VDSUITE_USER_PAF_STD_VECTOR_H
+ #define _VDSUITE_USER_PAF_STD_VECTOR_H
+ 
+-#include <xutility>
+ #include <paf/std/memory>
+ #include <paf/common/halt_assert.h>
+ 
+diff -u -r ./ScePaf-RE/include/paf/thread/atomic.h ./include/paf/thread/atomic.h
+--- ./ScePaf-RE/include/paf/thread/atomic.h	2025-05-19 23:50:59.103955800 +0900
++++ ./include/paf/thread/atomic.h	2025-05-19 23:51:01.046617400 +0900
+@@ -6,7 +6,7 @@
+ #define _VDSUITE_USER_PAF_THREAD_ATOMIC_H
+ 
+ #include <stdint.h>
+-#include <sce_atomic.h>
++#include <psp2/kernel/cpu.h>
+ 
+ namespace paf {
+ 	namespace thread {
+@@ -14,12 +14,12 @@
+ 
+ 			static inline int32_t dec32(volatile int32_t* ptr)
+ 			{
+-				return sceAtomicDecrement32(ptr);
++				return sceKernelAtomicGetAndAdd32((SceInt32 *)ptr, ~0);
+ 			}
+ 
+ 			static inline int32_t inc32(volatile int32_t* ptr)
+ 			{
+-				return sceAtomicIncrement32(ptr);
++				return sceKernelAtomicGetAndAdd32((SceInt32 *)ptr, 1);
+ 			}
+ 		}
+ 	}
+diff -u -r ./ScePaf-RE/include/paf/thread/callqueue.h ./include/paf/thread/callqueue.h
+--- ./ScePaf-RE/include/paf/thread/callqueue.h	2025-05-19 23:50:59.113108700 +0900
++++ ./include/paf/thread/callqueue.h	2025-05-19 23:51:01.051616900 +0900
+@@ -6,7 +6,7 @@
+ #define _VDSUITE_USER_PAF_THREAD_CALLQUEUE_H
+ 
+ #include <stdint.h>
+-#include <scetypes.h>
++#include <psp2/types.h>
+ #include <paf/thread/mutex.h>
+ 
+ namespace paf {
+diff -u -r ./ScePaf-RE/include/paf/thread/cond.h ./include/paf/thread/cond.h
+--- ./ScePaf-RE/include/paf/thread/cond.h	2025-05-19 23:50:59.119617300 +0900
++++ ./include/paf/thread/cond.h	2025-05-19 23:51:01.056788500 +0900
+@@ -6,7 +6,7 @@
+ #define _VDSUITE_USER_PAF_THREAD_COND_H
+ 
+ #include <stdint.h>
+-#include <kernel/threadmgr.h>
++#include <psp2/kernel/threadmgr.h>
+ 
+ namespace paf {
+ 	namespace thread {
+diff -u -r ./ScePaf-RE/include/paf/thread/mutex.h ./include/paf/thread/mutex.h
+--- ./ScePaf-RE/include/paf/thread/mutex.h	2025-05-19 23:50:59.124616900 +0900
++++ ./include/paf/thread/mutex.h	2025-05-19 23:51:01.062790400 +0900
+@@ -5,7 +5,7 @@
+ #ifndef _VDSUITE_USER_PAF_THREAD_MUTEX_H
+ #define _VDSUITE_USER_PAF_THREAD_MUTEX_H
+ 
+-#include <kernel/threadmgr.h>
++#include <psp2/kernel/threadmgr.h>
+ 
+ namespace paf {
+ 	namespace thread {
+diff -u -r ./ScePaf-RE/include/paf/thread/rmutex.h ./include/paf/thread/rmutex.h
+--- ./ScePaf-RE/include/paf/thread/rmutex.h	2025-05-19 23:50:59.138038400 +0900
++++ ./include/paf/thread/rmutex.h	2025-05-19 23:51:01.073384300 +0900
+@@ -5,7 +5,7 @@
+ #ifndef _VDSUITE_USER_PAF_THREAD_RMUTEX_H
+ #define _VDSUITE_USER_PAF_THREAD_RMUTEX_H
+ 
+-#include <kernel/threadmgr.h>
++#include <psp2/kernel/threadmgr.h>
+ 
+ namespace paf {
+ 	namespace thread {
+diff -u -r ./ScePaf-RE/include/paf/thread/rwlock.h ./include/paf/thread/rwlock.h
+--- ./ScePaf-RE/include/paf/thread/rwlock.h	2025-05-19 23:50:59.147548200 +0900
++++ ./include/paf/thread/rwlock.h	2025-05-19 23:51:01.078893000 +0900
+@@ -6,7 +6,7 @@
+ #define _VDSUITE_USER_PAF_THREAD_RWLOCK_H
+ 
+ #include <stdint.h>
+-#include <scetypes.h>
++#include <psp2/types.h>
+ 
+ namespace paf {
+ 	namespace thread {
+diff -u -r ./ScePaf-RE/include/paf/thread/semaphore.h ./include/paf/thread/semaphore.h
+--- ./ScePaf-RE/include/paf/thread/semaphore.h	2025-05-19 23:50:59.154547900 +0900
++++ ./include/paf/thread/semaphore.h	2025-05-19 23:51:01.083893200 +0900
+@@ -6,7 +6,7 @@
+ #define _VDSUITE_USER_PAF_THREAD_SEMAPHORE_H
+ 
+ #include <stdint.h>
+-#include <scetypes.h>
++#include <psp2/types.h>
+ 
+ namespace paf {
+ 	namespace thread {
+diff -u -r ./ScePaf-RE/include/paf/thread/synccall.h ./include/paf/thread/synccall.h
+--- ./ScePaf-RE/include/paf/thread/synccall.h	2025-05-19 23:50:59.162064000 +0900
++++ ./include/paf/thread/synccall.h	2025-05-19 23:51:01.088966200 +0900
+@@ -6,7 +6,7 @@
+ #define _VDSUITE_USER_PAF_THREAD_SYNCCALL_H
+ 
+ #include <stdint.h>
+-#include <scetypes.h>
++#include <psp2/types.h>
+ 
+ namespace paf {
+ 	namespace thread {
+diff -u -r ./ScePaf-RE/include/paf/thread/thread.h ./include/paf/thread/thread.h
+--- ./ScePaf-RE/include/paf/thread/thread.h	2025-05-19 23:50:59.170076900 +0900
++++ ./include/paf/thread/thread.h	2025-05-19 23:51:01.094967600 +0900
+@@ -6,8 +6,8 @@
+ #define _VDSUITE_USER_PAF_THREAD_THREAD_H
+ 
+ #include <stdint.h>
+-#include <scetypes.h>
+-#include <kernel/types.h>
++#include <psp2/types.h>
++#include <psp2/kernel/sysmem.h>
+ #include <paf/thread/threadid.h>
+ 
+ namespace paf {
+diff -u -r ./ScePaf-RE/include/paf/thread/threadid.h ./include/paf/thread/threadid.h
+--- ./ScePaf-RE/include/paf/thread/threadid.h	2025-05-19 23:50:59.179590700 +0900
++++ ./include/paf/thread/threadid.h	2025-05-19 23:51:01.100477500 +0900
+@@ -6,7 +6,7 @@
+ #define _VDSUITE_USER_PAF_THREAD_THREADID_H
+ 
+ #include <stdint.h>
+-#include <scetypes.h>
++#include <psp2/types.h>
+ 
+ typedef SceUID ThreadID;
+ 
+diff -u -r ./ScePaf-RE/include/paf/url/url.h ./include/paf/url/url.h
+--- ./ScePaf-RE/include/paf/url/url.h	2025-05-19 23:50:59.229043600 +0900
++++ ./include/paf/url/url.h	2025-05-19 23:51:01.217508800 +0900
+@@ -6,7 +6,7 @@
+ #define _VDSUITE_USER_PAF_URL_URL_H
+ 
+ #include <stdint.h>
+-#include <libhttp.h>
++#include <psp2/net/http.h>
+ #include <paf/common/string_util.h>
+ 
+ namespace paf {
+diff -u -r ./ScePaf-RE/include/paf/widget/core/event.h ./include/paf/widget/core/event.h
+--- ./ScePaf-RE/include/paf/widget/core/event.h	2025-05-19 23:50:59.276212800 +0900
++++ ./include/paf/widget/core/event.h	2025-05-19 23:51:01.288126400 +0900
+@@ -50,27 +50,27 @@
+ 
+ 			void Forward()
+ 			{
+-				type = type & 0xfff0ffff | ROUTE_FORWARD;
++				type = (type & 0xfff0ffff) | ROUTE_FORWARD;
+ 			}
+ 
+ 			void Back()
+ 			{
+-				type = type & 0xfff0ffff | ROUTE_BACK;
++				type = (type & 0xfff0ffff) | ROUTE_BACK;
+ 			}
+ 
+ 			void Consume()
+ 			{
+-				type = type & 0xf0ffffff | STATE_CONSUME;
++				type = (type & 0xf0ffffff) | STATE_CONSUME;
+ 			}
+ 
+ 			void Direct()
+ 			{
+-				type = type & 0xff0fffff | MODE_DIRECT;
++				type = (type & 0xff0fffff) | MODE_DIRECT;
+ 			}
+ 
+ 			void Do(uint32_t _type, Handler *w)
+ 			{
+-				type = type & 0xff0fffff | MODE_DO;
++				type = (type & 0xff0fffff) | MODE_DO;
+ 				dotype = _type;
+ 				target = w;
+ 			}
+@@ -92,7 +92,7 @@
+ 
+ 			void Grabbed()
+ 			{
+-				type = type & 0xfffffff | 0x10000000;
++				type = (type & 0xfffffff) | 0x10000000;
+ 			}
+ 
+ 			void SetDetail(uint32_t _detail)
+@@ -102,7 +102,7 @@
+ 
+ 			void SetRoute(int32_t route)
+ 			{
+-				type = type & 0xfff0ffff | route;
++				type = (type & 0xfff0ffff) | route;
+ 			}
+ 
+ 			void SetTarget(Handler *w)
+@@ -116,7 +116,7 @@
+ 
+ 			void SetType(uint32_t _type)
+ 			{
+-				type = type & 0xffff0000 | _type & 0xffff;
++				type = (type & 0xffff0000) | (_type & 0xffff);
+ 			}
+ 
+ 			int32_t SetValue4(int32_t val, int32_t num)
+@@ -136,7 +136,7 @@
+ 
+ 			void Term()
+ 			{
+-				type = type & 0xfff0ffff | 0x40000;
++				type = (type & 0xfff0ffff) | 0x40000;
+ 			}
+ 
+ 			Event& operator=(Event const& rhs)
+diff -u -r ./ScePaf-RE/include/paf/widget/core/handler.h ./include/paf/widget/core/handler.h
+--- ./ScePaf-RE/include/paf/widget/core/handler.h	2025-05-19 23:50:59.280212600 +0900
++++ ./include/paf/widget/core/handler.h	2025-05-19 23:51:01.294629200 +0900
+@@ -19,9 +19,10 @@
+ 		{
+ 		public:
+ 
+-			EventCBListener(HandlerCB func, void *data) : m_func(func), m_data(data)
++			EventCBListener(HandlerCB func, void *data)
+ 			{
+-
++				m_func = func;
++				m_data = data;
+ 			}
+ 
+ 			virtual ~EventCBListener()
+diff -u -r ./ScePaf-RE/include/paf/widget/core/widget.h ./include/paf/widget/core/widget.h
+--- ./ScePaf-RE/include/paf/widget/core/widget.h	2025-05-19 23:50:59.306036900 +0900
++++ ./include/paf/widget/core/widget.h	2025-05-19 23:51:01.314653200 +0900
+@@ -903,7 +903,7 @@
+ 
+ 			int32_t SetAnimDelay(int32_t id, float time, int32_t option)
+ 			{
+-				Timer *timer = new Timer(time, Timer::FUNC_LINEAR, 0, -1, NULL, NULL);
++				Timer *timer = new Timer(time, Timer::FUNC_LINEAR, 0, -1, NULL, 0);
+ 				AnimListener *listener = new AnimListener(timer, this, NULL, NULL, NULL);
+ 				return  SetAnimListener(id, listener, option);
+ 			}
+diff -u -r ./ScePaf-RE/include/paf/widget/w_button.h ./include/paf/widget/w_button.h
+--- ./ScePaf-RE/include/paf/widget/w_button.h	2025-05-19 23:50:59.341569100 +0900
++++ ./include/paf/widget/w_button.h	2025-05-19 23:51:02.092657700 +0900
+@@ -88,7 +88,7 @@
+ 
+ 			math::v4 GetLayoutSize(math::v4 const& fit_size, math::v4 const& offs);
+ 
+-			StyleType paf::ui::Button::GetStyleType() const
++			StyleType GetStyleType() const
+ 			{
+ 				return m_style_type;
+ 			}
+diff -u -r ./ScePaf-RE/include/paf/widget/w_image_slidebar.h ./include/paf/widget/w_image_slidebar.h
+--- ./ScePaf-RE/include/paf/widget/w_image_slidebar.h	2025-05-19 23:50:59.454962400 +0900
++++ ./include/paf/widget/w_image_slidebar.h	2025-05-19 23:51:01.598622800 +0900
+@@ -40,13 +40,13 @@
+ 				PARTS_IMAGE_SLIDEBAR_END = 2
+ 			};
+ 
+-			enum BaseMode
++			enum BaseMode : int
+ 			{
+ 				BASE_MODE_ZERO_BASED = 0,
+ 				BASE_MODE_ONE_BASED = 1
+ 			};
+ 
+-			enum TextureMode
++			enum TextureMode : int
+ 			{
+ 				TEXTURE_MODE_WHOLE = 0,
+ 				TEXTURE_MODE_STEP = 1
+diff -u -r ./ScePaf-RE/include/paf/widget/w_progressbar.h ./include/paf/widget/w_progressbar.h
+--- ./ScePaf-RE/include/paf/widget/w_progressbar.h	2025-05-19 23:50:59.521830200 +0900
++++ ./include/paf/widget/w_progressbar.h	2025-05-19 23:51:01.772481100 +0900
+@@ -38,26 +38,26 @@
+ 				CB_PROGRESSBAR_IMMEDIATE_END = 0x20000001
+ 			};
+ 
+-			enum BarMode
++			enum BarMode : int
+ 			{
+ 				BAR_MODE_SINGLE = 0,
+ 				BAR_MODE_DOUBLE = 1
+ 			};
+ 
+-			enum BarId
++			enum BarId : int
+ 			{
+ 				BAR_FORE = 0,
+ 				BAR_BACK = 1
+ 			};
+ 
+-			enum LabelMode
++			enum LabelMode : int
+ 			{
+ 				LABEL_MODE_PERCENTAGE = 0,
+ 				LABEL_MODE_VALUE = 1,
+ 				LABEL_MODE_MANUAL = 2
+ 			};
+ 
+-			enum LabelPosMode
++			enum LabelPosMode : int
+ 			{
+ 				LABEL_POS_MODE_CENTER = 0,
+ 				LABEL_POS_MODE_LEFT = 1,
+diff -u -r ./ScePaf-RE/include/paf/widget/w_progressbar_touch.h ./include/paf/widget/w_progressbar_touch.h
+--- ./ScePaf-RE/include/paf/widget/w_progressbar_touch.h	2025-05-19 23:50:59.526341500 +0900
++++ ./include/paf/widget/w_progressbar_touch.h	2025-05-19 23:51:01.796744000 +0900
+@@ -33,7 +33,7 @@
+ 				CB_PROGRESSBAR_TOUCH_END = 0x10000004
+ 			};
+ 
+-			enum SliderMode
++			enum SliderMode : int
+ 			{
+ 				SLIDER_MODE_NORMAL = 0,
+ 				SLIDER_MODE_LIMITED_BY_BACK = 1
+diff -u -r ./ScePaf-RE/include/paf/widget/w_scrollbar.h ./include/paf/widget/w_scrollbar.h
+--- ./ScePaf-RE/include/paf/widget/w_scrollbar.h	2025-05-19 23:50:59.613615100 +0900
++++ ./include/paf/widget/w_scrollbar.h	2025-05-19 23:51:01.913030100 +0900
+@@ -43,7 +43,7 @@
+ 				OBJ_SCROLLBAR_END = 2
+ 			};
+ 
+-			enum ScrollType
++			enum ScrollType : int
+ 			{
+ 				SCROLL_TYPE_VERTICAL = 0,
+ 				SCROLL_TYPE_HORIZONTAL = 1
+diff -u -r ./ScePaf-RE/include/paf/widget/w_scrollbar_touch.h ./include/paf/widget/w_scrollbar_touch.h
+--- ./ScePaf-RE/include/paf/widget/w_scrollbar_touch.h	2025-05-19 23:50:59.634569800 +0900
++++ ./include/paf/widget/w_scrollbar_touch.h	2025-05-19 23:51:01.953676000 +0900
+@@ -26,7 +26,7 @@
+ 				CB_SCROLLBAR_TOUCH_END = 0x10000003
+ 			};
+ 
+-			enum PageScrollMode
++			enum PageScrollMode : int
+ 			{
+ 				PAGE_SCROLL_MODE_OFF = 0,
+ 				PAGE_SCROLL_MODE_AUTO = 1,
+diff -u -r ./ScePaf-RE/include/paf.h ./include/paf.h
+--- ./ScePaf-RE/include/paf.h	2025-05-19 23:50:58.278648400 +0900
++++ ./include/paf.h	2025-05-19 23:51:02.507131800 +0900
+@@ -28,7 +28,6 @@
+ #include <paf/std/memory>
+ #include <paf/std/list>
+ #include <paf/std/utility>
+-#include <paf/std/xtree>
+ #include <paf/std/map>
+ #include <paf/std/vector>
+ #include <paf/std/string>
+diff -u -r ./ScePaf-RE/include/paf_web_map_view.h ./include/paf_web_map_view.h
+--- ./ScePaf-RE/include/paf_web_map_view.h	2025-05-19 23:50:59.689015300 +0900
++++ ./include/paf_web_map_view.h	2025-05-19 23:51:00.091019200 +0900
+@@ -5,8 +5,7 @@
+ #ifndef _VDSUITE_USER_PAF_WEB_MAP_VIEW_H
+ #define _VDSUITE_USER_PAF_WEB_MAP_VIEW_H
+ 
+-#include <kernel.h>
+-#include <gxm.h>
++#include <psp2/gxm.h>
+ #include <paf/widget/factory.h>
+ #include <paf/widget/w_scroll_view.h>
+ 
+diff -u -r ./ScePaf-RE/include/paf_web_ui.h ./include/paf_web_ui.h
+--- ./ScePaf-RE/include/paf_web_ui.h	2025-05-19 23:50:59.693016200 +0900
++++ ./include/paf_web_ui.h	2025-05-19 23:51:00.097530100 +0900
+@@ -5,7 +5,6 @@
+ #ifndef _VDSUITE_USER_PAF_WEB_UI_H
+ #define _VDSUITE_USER_PAF_WEB_UI_H
+ 
+-#include <kernel.h>
+ #include <paf.h>
+ 
+ namespace paf {

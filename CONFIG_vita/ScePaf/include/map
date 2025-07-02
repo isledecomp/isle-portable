@@ -1,0 +1,166 @@
+#ifndef _VDSUITE_USER_PAF_STD_MAP_H
+#define _VDSUITE_USER_PAF_STD_MAP_H
+
+// #include <paf/std/xtree>
+// gcc map broke paf widget layout
+// #include <map>
+#include <paf/std/utility>
+#include <paf/std/memory>
+#include <paf/std/string>
+#include <paf/std/std_bridge>
+
+namespace paf {
+
+	template<class _Key, class _Store, class _Ax = paf::allocator<paf::pair<_Key, _Store>>>
+	class _tree;
+
+	template<class _Key, class _Store>
+	class __tree_node;
+
+	template<class _Key, class _Store>
+	class __tree_node {
+	public:
+		__tree_node(){
+			m_root = this;
+			m_lower = this;
+			m_upper = this;
+			m_unk_0x14 = 0;
+			m_is_end = 0;
+		}
+
+		__tree_node(char is_end){
+			m_root = this;
+			m_lower = this;
+			m_upper = this;
+			m_unk_0x14 = 0;
+			m_is_end = is_end;
+		}
+
+		bool operator==(__tree_node& rhs){
+			return m_pair.first == rhs.m_pair.first;
+		}
+
+		bool operator!=(__tree_node& rhs){
+			return !(m_pair.first == rhs.m_pair.first);
+		}
+
+		__tree_node *m_root;
+		__tree_node *m_lower;
+		__tree_node *m_upper;
+		paf::pair<_Key, _Store> m_pair;
+		char m_unk_0x14;
+		char m_is_end;
+		char m_unk_0x16;
+		char m_unk_0x17;
+	};
+
+	template<class _Key, class _Store, class _Alloc>
+	class _tree {
+	public:
+		typedef _tree<_Key, _Store> _Myt;
+
+		_tree(){
+			head = new __tree_node<_Key, _Store>(1);
+			count = 0;
+		}
+
+/*
+		~_tree(){
+		}
+*/
+
+		class iterator {
+		public:
+			iterator(){
+				m_ref = NULL;
+			}
+
+			iterator(__tree_node<_Key, _Store> *_ref){
+				m_ref = _ref;
+			}
+
+			~iterator(){
+			}
+
+			iterator& operator=(iterator& rhs){
+				m_ref = rhs.m_ref;
+				return *this;
+			}
+
+			bool operator==(iterator rhs){
+				return m_ref == rhs.m_ref;
+			}
+
+			bool operator!=(iterator rhs){
+				return !(m_ref == rhs.m_ref);
+			}
+
+			iterator operator++(int){
+
+				__tree_node<_Key, _Store> *ref = m_ref;
+
+				if(ref == ref->m_upper->m_upper){ // already end
+
+					if(ref == ref->m_root->m_upper){
+						ref = ref->m_upper;
+					}
+
+				}else if(ref != ref->m_upper->m_root){ // current is haven't right
+					ref = ref->m_root;
+				}else{
+					ref = ref->m_upper;
+					while(ref == ref->m_lower->m_root){
+						ref = ref->m_lower;
+					}
+				}
+
+				m_ref = ref;
+
+				return *this;
+			}
+
+			paf::pair<_Key, _Store>& operator*(){
+				return m_ref->m_pair;
+			};
+
+		private:
+			__tree_node<_Key, _Store> *m_ref;
+		};
+
+		iterator begin(void){
+			return iterator(head->m_lower);
+		}
+
+		iterator end(void){
+			return iterator(head);
+		}
+
+	private:
+		__tree_node<_Key, _Store> *head;
+		size_t count;
+		_Alloc alloc;
+	};
+
+	template<class _Key, class _Store, class _Ax = paf::allocator<paf::pair<_Key, _Store>>>
+	class map;
+
+	template<class _Key, class _Store, class _Alloc>
+	class map : public _tree<_Key, _Store, _Alloc> {
+	public:
+		typedef map<_Key, _Store> _Myt;
+
+		map(){
+		}
+
+/*
+		~map(){
+		}
+*/
+
+	private:
+	};
+
+	typedef class map<string, string> token_map_t;
+}
+
+#endif
