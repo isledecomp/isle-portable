@@ -580,7 +580,7 @@ void Act3Brickster::Animate(float p_time)
 	}
 
 	if (m_unk0x54 < p_time) {
-		((Act3*) m_world)->FUN_10072ad0(5);
+		((Act3*) m_world)->TriggerHitSound(5);
 		m_unk0x54 = p_time + 15000.0f;
 	}
 
@@ -596,7 +596,7 @@ void Act3Brickster::Animate(float p_time)
 		assert(SoundManager()->GetCacheSoundManager());
 
 		if (m_unk0x58 >= 8) {
-			((Act3*) m_world)->FUN_10072ad0(6);
+			((Act3*) m_world)->TriggerHitSound(6);
 		}
 		else {
 			SoundManager()->GetCacheSoundManager()->Play("eatpz", NULL, FALSE);

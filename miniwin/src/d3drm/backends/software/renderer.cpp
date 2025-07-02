@@ -80,7 +80,7 @@ void Direct3DRMSoftwareRenderer::ClearZBuffer()
 		_mm_empty();
 	}
 #endif
-#elif defined(__arm__) || defined(__aarch64__)
+#elif (defined(__arm__) || defined(__aarch64__)) && !defined(__3DS__)
 	if (SDL_HasNEON()) {
 		float32x4_t inf4 = vdupq_n_f32(inf);
 		for (; i + 4 <= size; i += 4) {

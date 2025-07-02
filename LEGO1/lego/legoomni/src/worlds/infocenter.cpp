@@ -1457,7 +1457,7 @@ void Infocenter::StartCredits()
 			MxDSAction* action = presenter->GetAction();
 
 			if (action) {
-				FUN_100b7220(action, MxDSAction::c_world, FALSE);
+				ApplyMask(action, MxDSAction::c_world, FALSE);
 				presenter->EndAction();
 			}
 		}
@@ -1473,7 +1473,7 @@ void Infocenter::StartCredits()
 
 		MxDSAction* action = presenter->GetAction();
 		if (action) {
-			FUN_100b7220(action, MxDSAction::c_world, FALSE);
+			ApplyMask(action, MxDSAction::c_world, FALSE);
 			presenter->EndAction();
 		}
 	}
