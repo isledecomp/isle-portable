@@ -149,6 +149,7 @@ jobs:
             build/dist/*.AppImage
             build/dist/*.3dsx
             build/AppPackages/isle/*/*.msixbundle
+            build/AppPackages/isle/*/*.msix
             build/AppPackages/isle/*/Dependencies/x64/Microsoft.VCLibs.x64.Debug.14.00.appx
 
   flatpak:
