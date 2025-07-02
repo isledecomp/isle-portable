@@ -31,14 +31,12 @@ public:
 	virtual void PushLights(const SceneLight* vertices, size_t count) = 0;
 	virtual void SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back) = 0;
 	virtual void SetFrustumPlanes(const Plane* frustumPlanes) = 0;
-	virtual Uint32 GetTextureId(IDirect3DRMTexture* texture) = 0;
+	virtual Uint32 GetTextureId(IDirect3DRMTexture* texture, bool isUi = false) = 0;
 	virtual Uint32 GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup) = 0;
 	int GetWidth() { return m_width; }
 	int GetHeight() { return m_height; }
 	int GetVirtualWidth() { return m_virtualWidth; }
 	int GetVirtualHeight() { return m_virtualHeight; }
-	virtual void GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc) = 0;
-	virtual const char* GetName() = 0;
 	virtual HRESULT BeginFrame() = 0;
 	virtual void EnableTransparency() = 0;
 	virtual void SubmitDraw(

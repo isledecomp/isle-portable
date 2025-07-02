@@ -13,6 +13,9 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 include(CheckCXXSourceCompiles)
 include(CMakeDependentOption)
 include(CMakePushCheckState)
+include(cmake/detectcpu.cmake)
+
+DetectTargetCPUArchitectures(ISLE_CPUS)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -35,14 +38,14 @@ option(ISLE_WERROR "Treat warnings as errors" OFF)
 option(ISLE_DEBUG "Enable imgui debug" ON)
 cmake_dependent_option(ISLE_USE_DX5 "Build with internal DirectX 5 SDK" "${NOT_MINGW}" "WIN32;CMAKE_SIZEOF_VOID_P EQUAL 4" OFF)
 cmake_dependent_option(ISLE_MINIWIN "Use miniwin" ON "NOT ISLE_USE_DX5" OFF)
-cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "MSVC OR ISLE_MINIWIN" OFF)
+cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "(MSVC OR ISLE_MINIWIN) AND (NOT PSP) AND (NOT NINTENDO_3DS)" OFF)
 cmake_dependent_option(ISLE_COMPILE_SHADERS "Compile shaders" ON "SDL_SHADERCROSS_BIN;TARGET Python3::Interpreter" OFF)
-option(CMAKE_POSITION_INDEPENDENT_CODE "Build with -fPIC" ON)
+cmake_dependent_option(CMAKE_POSITION_INDEPENDENT_CODE "Build with -fPIC" ON "NOT PSP" OFF)
 option(ENABLE_CLANG_TIDY "Enable clang-tidy")
 option(DOWNLOAD_DEPENDENCIES "Download dependencies" ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}" CACHE PATH "Directory where to put executables and dll")
 set(ISLE_EMSCRIPTEN_HOST "" CACHE STRING "Host URL for Emscripten streaming (e.g., https://test.com)")
-cmake_dependent_option(BUILD_SHARED_LIBS "Build lego1 as a shared library" ON "NOT EMSCRIPTEN" OFF)
+cmake_dependent_option(BUILD_SHARED_LIBS "Build lego1 as a shared library" ON "NOT EMSCRIPTEN AND NOT PSP" OFF)
 
 message(STATUS "Isle app:               ${ISLE_BUILD_APP}")
 message(STATUS "Config app:             ${ISLE_BUILD_CONFIG}")
@@ -55,15 +58,19 @@ add_library(Isle::iniparser INTERFACE IMPORTED)
 
 if (DOWNLOAD_DEPENDENCIES)
     # FetchContent downloads and configures dependencies
-    message(STATUS "Fetching SDL3 and iniparser. This might take a while...")
     include(FetchContent)
-    FetchContent_Declare(
-        SDL3
-        GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
-        GIT_TAG "main"
-        EXCLUDE_FROM_ALL
-    )
-    FetchContent_MakeAvailable(SDL3)
+    if (NOT PSP)
+      message(STATUS "Fetching SDL3 and iniparser. This might take a while...")
+      FetchContent_Declare(
+          SDL3
+          GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
+          GIT_TAG "main"
+          EXCLUDE_FROM_ALL
+      )
+      FetchContent_MakeAvailable(SDL3)
+    else()
+      find_package(SDL3 CONFIG REQUIRED)
+    endif()
 
     FetchContent_Declare(
         iniparser
@@ -345,6 +352,11 @@ if (WIN32)
   target_link_libraries(lego1 INTERFACE winmm)
 endif()
 target_link_libraries(lego1 PRIVATE libsmacker miniaudio)
+
+if (PSP)
+  target_link_libraries(lego1 PRIVATE atomic)
+endif()
+
 target_include_directories(lego1 PUBLIC $<BUILD_INTERFACE:$<TARGET_PROPERTY:miniaudio,INTERFACE_INCLUDE_DIRECTORIES>>)
 
 # lego1_impl sources
@@ -502,6 +514,9 @@ if (ISLE_BUILD_APP)
     )
     target_compile_definitions(isle PRIVATE ISLE_DEBUG)
     target_link_libraries(isle PRIVATE imgui)
+    if(PSP)
+      target_compile_definitions(imgui PRIVATE IMGUI_DISABLE_DEFAULT_SHELL_FUNCTIONS)
+    endif()
     find_path(valgrind_INCLUDE_PATH NAMES valgrind/callgrind.h)
     if(valgrind_INCLUDE_PATH)
       # Run isle under valgrind to create a profile. Use e.g. kcachegrind to view the profile.
@@ -520,12 +535,18 @@ if (ISLE_BUILD_APP)
     target_compile_definitions(isle PRIVATE "ISLE_EMSCRIPTEN_HOST=\"${ISLE_EMSCRIPTEN_HOST}\"")
     set_property(TARGET isle PROPERTY SUFFIX ".html")
   endif()
+  if(NINTENDO_3DS)
+    target_sources(isle PRIVATE
+      ISLE/3ds/apthooks.cpp
+      ISLE/3ds/config.cpp
+    )
+  endif()
 endif()
 
 if (ISLE_BUILD_CONFIG)
   find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
   qt_standard_project_setup()
-  qt_add_executable(config WIN32
+  qt_add_executable(isle-config WIN32
     LEGO1/mxdirectx/mxdirectxinfo.cpp
     LEGO1/mxdirectx/legodxinfo.cpp
     CONFIG/config.cpp
@@ -535,22 +556,22 @@ if (ISLE_BUILD_CONFIG)
     CONFIG/res/config.rc
     CONFIG/res/config.qrc
   )
-  target_link_libraries(config PRIVATE Qt6::Core Qt6::Widgets)
-  set_property(TARGET config PROPERTY AUTOMOC ON)
-  set_property(TARGET config PROPERTY AUTORCC ON)
-  set_property(TARGET config PROPERTY AUTOUIC ON)
-  set_property(TARGET config PROPERTY AUTOUIC_SEARCH_PATHS "${CMAKE_CURRENT_SOURCE_DIR}/CONFIG/res")
-  list(APPEND isle_targets config)
-  target_compile_definitions(config PRIVATE _AFXDLL MXDIRECTX_FOR_CONFIG)
-  target_include_directories(config PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/LEGO1")
-  target_include_directories(config PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/util>")
+  target_link_libraries(isle-config PRIVATE Qt6::Core Qt6::Widgets)
+  set_property(TARGET isle-config PROPERTY AUTOMOC ON)
+  set_property(TARGET isle-config PROPERTY AUTORCC ON)
+  set_property(TARGET isle-config PROPERTY AUTOUIC ON)
+  set_property(TARGET isle-config PROPERTY AUTOUIC_SEARCH_PATHS "${CMAKE_CURRENT_SOURCE_DIR}/CONFIG/res")
+  list(APPEND isle_targets isle-config)
+  target_compile_definitions(isle-config PRIVATE _AFXDLL MXDIRECTX_FOR_CONFIG)
+  target_include_directories(isle-config PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/LEGO1")
+  target_include_directories(isle-config PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/util>")
   if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 14)
-    target_link_libraries(config PRIVATE DirectX5::DirectX5)
+    target_link_libraries(isle-config PRIVATE DirectX5::DirectX5)
   endif()
-  target_compile_definitions(config PRIVATE DIRECT3D_VERSION=0x500)
-  target_link_libraries(config PRIVATE SDL3::SDL3 Isle::iniparser)
+  target_compile_definitions(isle-config PRIVATE DIRECT3D_VERSION=0x500)
+  target_link_libraries(isle-config PRIVATE SDL3::SDL3 Isle::iniparser)
   if (NOT ISLE_MINIWIN)
-    target_link_libraries(config PRIVATE ddraw dxguid)
+    target_link_libraries(isle-config PRIVATE ddraw dxguid)
   endif()
 endif()
 
@@ -564,8 +585,8 @@ if (MSVC)
     if (TARGET isle)
       target_compile_definitions(isle PRIVATE "_CRT_SECURE_NO_WARNINGS")
     endif()
-    if (TARGET config)
-      target_compile_definitions(config PRIVATE "_CRT_SECURE_NO_WARNINGS")
+    if (TARGET isle-config)
+      target_compile_definitions(isle-config PRIVATE "_CRT_SECURE_NO_WARNINGS")
     endif()
   endif()
   # Visual Studio 2017 version 15.7 needs "/Zc:__cplusplus" for __cplusplus
@@ -574,8 +595,8 @@ if (MSVC)
     if (TARGET isle)
       target_compile_options(isle PRIVATE "-Zc:__cplusplus")
     endif()
-    if (TARGET config)
-      target_compile_options(config PRIVATE "-Zc:__cplusplus")
+    if (TARGET isle-config)
+      target_compile_options(isle-config PRIVATE "-Zc:__cplusplus")
     endif()
   endif()
 endif()
@@ -624,7 +645,9 @@ else()
   include(GNUInstallDirs)
 endif()
 
-set(ISLE_PACKAGE_NAME "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}" CACHE STRING "Platform name of the package")
+string(REPLACE ";" "-" ISLE_CPUS_STRING "${ISLE_CPUS}")
+string(TOLOWER "${ISLE_CPUS_STRING}" ISLE_CPUS_STRING)
+set(ISLE_PACKAGE_NAME "${CMAKE_SYSTEM_NAME}-${ISLE_CPUS_STRING}" CACHE STRING "Platform name of the package")
 if(BUILD_SHARED_LIBS)
   list(APPEND install_extra_targets lego1)
 endif()
@@ -633,7 +656,7 @@ install(TARGETS isle ${install_extra_targets}
   LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
 )
 if (ISLE_BUILD_CONFIG)
-  install(TARGETS config
+  install(TARGETS isle-config
     RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
   )
 endif()
@@ -643,11 +666,39 @@ if(EMSCRIPTEN)
   )
 endif()
 
+add_subdirectory(packaging)
+
 set(CPACK_PACKAGE_DIRECTORY "dist")
-set(CPACK_PACKAGE_FILE_NAME "isle-${PROJECT_VERSION}-${ISLE_PACKAGE_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+set(CPACK_PACKAGE_FILE_NAME "isle-${PROJECT_VERSION}-${ISLE_PACKAGE_NAME}")
+if(NINTENDO_3DS)
+  ctr_generate_smdh(isle.smdh
+    NAME "LEGO Island"
+    TITLE "LEGO Island"
+    DESCRIPTION "LEGO Island for the Nintendo 3DS"
+    AUTHOR "isledecomp/isle-portable"
+    VERSION "${PROJECT_VERSION}"
+    ICON "ISLE/res/3ds/isle.png"
+  )
+
+  ctr_create_3dsx(isle SMDH isle.smdh)
+  install(FILES "$<TARGET_FILE_DIR:isle>/isle.3dsx" DESTINATION "${CMAKE_INSTALL_BINDIR}")
+endif()
 if(MSVC)
   set(CPACK_GENERATOR ZIP)
+elseif(PSP)
+    # Create an EBOOT.PBP file
+    create_pbp_file(
+        TARGET ${PROJECT_NAME}
+        ICON_PATH "${CMAKE_SOURCE_DIR}/XMB/Game/ICON0.png"
+        ANIM_PATH "${CMAKE_SOURCE_DIR}/XMB/Game/ICON1.pmf"
+        BACKGROUND_PATH "${CMAKE_SOURCE_DIR}/XMB/Game/PIC1.png"
+        PREVIEW_PATH NULL
+        MUSIC_PATH "${CMAKE_SOURCE_DIR}/XMB/Game/SND0.at3"
+        TITLE ${PROJECT_NAME}
+        VERSION 01.00
+    )
 else()
   set(CPACK_GENERATOR TGZ)
 endif()
+
 include(CPack)

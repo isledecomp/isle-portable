@@ -1,0 +1,10 @@
+Explanation of where the assets in these folders are used
+ICON0.PNG - Icon used in various scenarios depending on if it's used for a save or a game. This includes when:
+> The game/save isn't selected in the XMB 
+> There is no ICON1.PMF present (XMB only)
+> The "Group Content" mode is enabled in the XMB game selection menu
+> The game is on a save management screen with UI elements shared with the XMB (note the font)
+ICON1.PMF - Seen when the game/save is selected in the XMB (NOT IN-GAME)
+PIC1.PNG - Seen as a background when the game/save is selected in the XMB
+SND0.AT3 - Plays when the game/save is selected in the XMB (NOT IN-GAME)
+EMPTY.PNG - Used as an icon for empty saves when selecting a save to write to.

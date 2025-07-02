@@ -29,12 +29,10 @@ public:
 	Direct3DRMSoftwareRenderer(DWORD width, DWORD height);
 	~Direct3DRMSoftwareRenderer() override;
 	void PushLights(const SceneLight* vertices, size_t count) override;
-	Uint32 GetTextureId(IDirect3DRMTexture* texture) override;
+	Uint32 GetTextureId(IDirect3DRMTexture* texture, bool isUi) override;
 	Uint32 GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup) override;
 	void SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back) override;
 	void SetFrustumPlanes(const Plane* frustumPlanes) override;
-	void GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc) override;
-	const char* GetName() override;
 	HRESULT BeginFrame() override;
 	void EnableTransparency() override;
 	void SubmitDraw(
@@ -87,8 +85,16 @@ private:
 
 inline static void Direct3DRMSoftware_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
-	Direct3DRMRenderer* device = nullptr;
-	device = new Direct3DRMSoftwareRenderer(640, 480);
-	EnumDevice(cb, ctx, device, SOFTWARE_GUID);
-	delete device;
+	D3DDEVICEDESC halDesc = {};
+
+	D3DDEVICEDESC helDesc = {};
+	helDesc.dcmColorModel = D3DCOLOR_RGB;
+	helDesc.dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
+	helDesc.dwDeviceZBufferBitDepth = DDBD_32;
+	helDesc.dwDeviceRenderBitDepth = DDBD_32;
+	helDesc.dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
+	helDesc.dpcTriCaps.dwShadeCaps = D3DPSHADECAPS_ALPHAFLATBLEND;
+	helDesc.dpcTriCaps.dwTextureFilterCaps = D3DPTFILTERCAPS_LINEAR;
+
+	EnumDevice(cb, ctx, "Miniwin Emulation", &halDesc, &helDesc, SOFTWARE_GUID);
 }

@@ -40,10 +40,10 @@ MxU8 g_counters[] = {1, 2, 2, 3};
 MxU32 LegoPlantManager::g_maxSound = 8;
 
 // GLOBAL: LEGO1 0x100f3160
-MxU32 g_unk0x100f3160 = 56;
+MxU32 g_plantSoundIdOffset = 56;
 
 // GLOBAL: LEGO1 0x100f3164
-MxU32 g_unk0x100f3164 = 66;
+MxU32 g_plantSoundIdMoodOffset = 66;
 
 // GLOBAL: LEGO1 0x100f3168
 MxS32 LegoPlantManager::g_maxMove[4] = {3, 3, 3, 3};
@@ -83,7 +83,7 @@ void LegoPlantManager::Init()
 	}
 
 	m_worldId = LegoOmni::e_undefined;
-	m_unk0x0c = 0;
+	m_boundariesDetermined = FALSE;
 	m_numEntries = 0;
 }
 
@@ -98,7 +98,7 @@ void LegoPlantManager::LoadWorldInfo(LegoOmni::World p_worldId)
 		CreatePlant(i, world, p_worldId);
 	}
 
-	m_unk0x0c = 0;
+	m_boundariesDetermined = FALSE;
 }
 
 // FUNCTION: LEGO1 0x100263a0
@@ -119,12 +119,12 @@ void LegoPlantManager::Reset(LegoOmni::World p_worldId)
 	}
 
 	m_worldId = LegoOmni::e_undefined;
-	m_unk0x0c = 0;
+	m_boundariesDetermined = FALSE;
 }
 
 // FUNCTION: LEGO1 0x10026410
 // FUNCTION: BETA10 0x100c50e9
-MxResult LegoPlantManager::FUN_10026410()
+MxResult LegoPlantManager::DetermineBoundaries()
 {
 	// similar to LegoBuildingManager::FUN_10030630()
 
@@ -192,7 +192,7 @@ MxResult LegoPlantManager::FUN_10026410()
 		}
 	}
 
-	m_unk0x0c = TRUE;
+	m_boundariesDetermined = TRUE;
 	return SUCCESS;
 }
 
@@ -200,8 +200,8 @@ MxResult LegoPlantManager::FUN_10026410()
 // FUNCTION: BETA10 0x100c55e0
 LegoPlantInfo* LegoPlantManager::GetInfoArray(MxS32& p_length)
 {
-	if (!m_unk0x0c) {
-		FUN_10026410();
+	if (!m_boundariesDetermined) {
+		DetermineBoundaries();
 	}
 
 	p_length = sizeOfArray(g_plantInfo);
@@ -514,16 +514,16 @@ MxU32 LegoPlantManager::GetAnimationId(LegoEntity* p_entity)
 
 // FUNCTION: LEGO1 0x10026ba0
 // FUNCTION: BETA10 0x100c61ba
-MxU32 LegoPlantManager::GetSoundId(LegoEntity* p_entity, MxBool p_state)
+MxU32 LegoPlantManager::GetSoundId(LegoEntity* p_entity, MxBool p_basedOnMood)
 {
 	LegoPlantInfo* info = GetInfo(p_entity);
 
-	if (p_state) {
-		return (info->m_mood & 1) + g_unk0x100f3164;
+	if (p_basedOnMood) {
+		return (info->m_mood & 1) + g_plantSoundIdMoodOffset;
 	}
 
 	if (info != NULL) {
-		return info->m_sound + g_unk0x100f3160;
+		return info->m_sound + g_plantSoundIdOffset;
 	}
 
 	return 0;
