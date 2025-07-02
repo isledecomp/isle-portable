@@ -500,7 +500,6 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 			g_lastJoystickMouseY = -((float) event->gaxis.value) / SDL_JOYSTICK_AXIS_MAX * 4;
 		}
 		else if (event->gaxis.axis == SDL_XBOX_AXIS_RIGHT_TRIGGER) {
-			SDL_Log("Right trigger axis motion: %d", event->gaxis.value);
 			if (event->gaxis.value != SDL_JOYSTICK_AXIS_MIN) {
 				g_mousedown = TRUE;
 

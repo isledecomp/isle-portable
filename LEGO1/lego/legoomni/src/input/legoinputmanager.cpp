@@ -189,8 +189,13 @@ MxResult LegoInputManager::GetJoystickState(MxU32* p_joystickX, MxU32* p_joystic
 			return FAILURE;
 		}
 
+#ifdef WINDOWS_STORE
+		MxS16 xPos = SDL_GetJoystickAxis(m_joystick, 1);
+		MxS16 yPos = -SDL_GetJoystickAxis(m_joystick, 0);
+#else
 		MxS16 xPos = SDL_GetJoystickAxis(m_joystick, 0);
 		MxS16 yPos = SDL_GetJoystickAxis(m_joystick, 1);
+#endif
 		MxU8 hatPos = SDL_GetJoystickHat(m_joystick, 0);
 
 		// normalize values acquired from joystick axes
