@@ -124,8 +124,9 @@ void GL11_BeginFrame(const Matrix4x4* projection)
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
 	glEnable(GL_LIGHTING);
-
 #ifndef __PSP__
+	glEnable(GL_COLOR_MATERIAL);
+
 	// Disable all lights and reset global ambient
 	for (int i = 0; i < 8; ++i) {
 		glDisable(GL_LIGHT0 + i);
@@ -209,7 +210,6 @@ void GL11_SubmitDraw(
 	glEnable(GL_NORMALIZE);
 
 #ifndef __PSP__
-	glEnable(GL_COLOR_MATERIAL);
 	glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
 	glColor4ub(appearance.color.r, appearance.color.g, appearance.color.b, appearance.color.a);
 #else
