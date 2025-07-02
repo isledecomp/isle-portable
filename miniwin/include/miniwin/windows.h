@@ -169,37 +169,6 @@ int WINAPI GetDeviceCaps(HDC hdc, int index);
 
 BOOL RedrawWindow(void* hWnd, const void* lprcUpdate, void* hrgnUpdate, unsigned int flags);
 
-int SetBkColor(void*, int);
-
-int SetBkMode(void*, int);
-
-int SetTextColor(HDC hdc, int color);
-
-BOOL GetTextExtentPoint(HDC hdc, LPCSTR lpString, int c, SIZE* psizl);
-
-int ExtTextOut(HDC, int, int, unsigned int, const RECT*, LPCSTR, unsigned int, void*);
-
-HFONT CreateFont(
-	int,
-	int,
-	int,
-	int,
-	int,
-	unsigned int,
-	unsigned int,
-	unsigned int,
-	unsigned int,
-	unsigned int,
-	unsigned int,
-	unsigned int,
-	unsigned int,
-	LPCSTR
-);
-
-void* SelectObject(HDC, HFONT);
-
-int GetTextExtentPoint32(HDC hdc, LPCSTR str, int len, SIZE* out);
-
 HMENU GetMenu(HWND hWnd);
 
 int DrawMenuBar(void* hWnd);
