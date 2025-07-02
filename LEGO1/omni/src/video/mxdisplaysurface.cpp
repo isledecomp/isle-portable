@@ -1032,10 +1032,6 @@ LPDIRECTDRAWSURFACE MxDisplaySurface::CreateCursorSurface()
 		return NULL;
 	}
 
-	if (ddsd.ddpfPixelFormat.dwRGBBitCount != 16) {
-		return NULL;
-	}
-
 	ddsd.dwWidth = 16;
 	ddsd.dwHeight = 16;
 	ddsd.dwFlags = DDSD_PIXELFORMAT | DDSD_WIDTH | DDSD_HEIGHT | DDSD_CAPS;

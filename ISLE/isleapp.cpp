@@ -88,6 +88,11 @@ MxS32 g_targetDepth = 16;
 // GLOBAL: ISLE 0x410064
 MxS32 g_reqEnableRMDevice = FALSE;
 
+float g_lastJoystickMouseX = 0;
+float g_lastJoystickMouseY = 0;
+float g_lastMouseX = 0;
+float g_lastMouseY = 0;
+
 // STRING: ISLE 0x4101dc
 #define WINDOW_TITLE "LEGO®"
 
@@ -373,6 +378,27 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 		if (g_mousemoved) {
 			g_mousemoved = FALSE;
 		}
+
+		if (g_lastJoystickMouseX != 0 || g_lastJoystickMouseY != 0) {
+			g_mousemoved = TRUE;
+
+			g_lastMouseX = SDL_clamp(g_lastMouseX + g_lastJoystickMouseX, 0, 640);
+			g_lastMouseY = SDL_clamp(g_lastMouseY + g_lastJoystickMouseY, 0, 480);
+
+			if (InputManager()) {
+				InputManager()->QueueEvent(
+					c_notificationMouseMove,
+					g_mousedown ? LegoEventNotificationParam::c_lButtonState : 0,
+					g_lastMouseX,
+					g_lastMouseY,
+					0
+				);
+			}
+
+			if (g_isle->GetDrawCursor()) {
+				VideoManager()->MoveCursor(Min((MxS32) g_lastMouseX, 639), Min((MxS32) g_lastMouseY, 479));
+			}
+		}
 	}
 
 	return SDL_APP_CONTINUE;
@@ -461,6 +487,44 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 			if (event->gbutton.button == SDL_XBOX_BUTTON_START) {
 				if (InputManager()) {
 					InputManager()->QueueEvent(c_notificationKeyPress, SDLK_ESCAPE, 0, 0, SDLK_ESCAPE);
+				}
+			}
+		}
+		break;
+	}
+	case SDL_EVENT_JOYSTICK_AXIS_MOTION: {
+		if (event->gaxis.axis == SDL_XBOX_AXIS_RIGHT_X) {
+			g_lastJoystickMouseX = ((float) event->gaxis.value) / SDL_JOYSTICK_AXIS_MAX * 4;
+		}
+		else if (event->gaxis.axis == SDL_XBOX_AXIS_RIGHT_Y) {
+			g_lastJoystickMouseY = -((float) event->gaxis.value) / SDL_JOYSTICK_AXIS_MAX * 4;
+		}
+		else if (event->gaxis.axis == SDL_XBOX_AXIS_RIGHT_TRIGGER) {
+			SDL_Log("Right trigger axis motion: %d", event->gaxis.value);
+			if (event->gaxis.value != SDL_JOYSTICK_AXIS_MIN) {
+				g_mousedown = TRUE;
+
+				if (InputManager()) {
+					InputManager()->QueueEvent(
+						c_notificationButtonDown,
+						LegoEventNotificationParam::c_lButtonState,
+						g_lastMouseX,
+						g_lastMouseY,
+						0
+					);
+				}
+			}
+			else {
+				g_mousedown = FALSE;
+
+				if (InputManager()) {
+					InputManager()->QueueEvent(
+						c_notificationButtonUp,
+						LegoEventNotificationParam::c_lButtonState,
+						g_lastMouseX,
+						g_lastMouseY,
+						0
+					);
 				}
 			}
 		}
