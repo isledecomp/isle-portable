@@ -698,6 +698,47 @@ endif()
 if(VITA)
   include("${VITASDK}/share/vita.cmake" REQUIRED)
 
+  # config app
+  include(FetchContent)
+  FetchContent_Declare(
+    ScePaf_External
+    URL https://github.com/olebeck/ScePaf/releases/download/continuous/ScePaf-1.0.0.zip
+  )
+  FetchContent_MakeAvailable(ScePaf_External)
+
+  add_executable(isle-config
+    CONFIG_vita/src/app.cpp
+    CONFIG_vita/src/main.cpp
+  )
+
+  target_compile_options(isle-config PRIVATE
+    -fno-rtti -fno-exceptions -Wl,-q -Wall -fno-builtin -fshort-wchar -Wno-unused-function -Wno-sign-compare
+  )
+
+  # todo _start symbol warning
+  target_link_options(isle-config PRIVATE
+    -nostartfiles -nostdlib
+  )
+
+  target_link_libraries(isle-config PRIVATE
+    SceAppMgr_stub
+    SceLibKernel_stub
+    SceSysmodule_stub
+
+    ScePafToplevel_stub
+    ScePafResource_stub
+    ScePafWidget_stub
+    ScePafCommon_stub
+    ScePafStdc_stub
+  )
+
+  set(VITA_MAKE_FSELF_FLAGS "${VITA_MAKE_FSELF_FLAGS} -a 0x2F00000000000101")
+  vita_create_self(isle-config.self isle-config
+    UNSAFE
+    STRIPPED
+    REL_OPTIMIZE
+  )
+
   set(ISLE_PACKAGE_NAME "vita-isle")
   set(VITA_APP_NAME "Lego Island")
   set(VITA_TITLEID  "LEGO00001")
@@ -705,22 +746,13 @@ if(VITA)
   
   vita_create_self(isle.self isle UNSAFE)
 
-  add_subdirectory(CONFIG_vita)
-
-  if(VITA_USE_OPENGLES2)
-    set(VPK_FILE_ARGS)
-    get_target_property(gles_modules GLESv2 MODULES)
-    foreach(file IN LISTS gles_modules)
-      get_filename_component(fname ${file} NAME)
-      list(APPEND VPK_FILE_ARGS FILE ${file} module/${fname})
-    endforeach()
-  endif()
-
+  list(APPEND VPK_FILE_ARGS FILE ${CMAKE_CURRENT_BINARY_DIR}/isle-config.self isle-config.self)
   vita_create_vpk(isle.vpk ${VITA_TITLEID} isle.self
     VERSION ${VITA_VERSION}
     NAME ${VITA_APP_NAME}
     ${VPK_FILE_ARGS}
   )
+  add_dependencies(isle.vpk-vpk isle-config.self-self)
   install(FILES "$<TARGET_FILE_DIR:isle>/isle.vpk" DESTINATION "${CMAKE_INSTALL_BINDIR}")
 endif()
 if(MSVC)

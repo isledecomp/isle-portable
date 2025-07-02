@@ -117,7 +117,7 @@ jobs:
         run: cmake --build build --verbose
 
       - name: Package (CPack)
-        if: ${{ !matrix.n3ds }}
+        if: ${{ !matrix.n3ds && !matrix.vita }}
         run: |
           cd build
           cpack .
@@ -156,7 +156,7 @@ jobs:
         if: ${{ matrix.vita }}
         run: |
           cd build
-          mkdir -p dist
+          mkdir dist
           mv *.vpk dist/
 
       - name: Upload Build Artifacts
@@ -167,6 +167,7 @@ jobs:
             build/dist/isle-*
             build/dist/*.AppImage
             build/dist/*.3dsx
+            build/dist/*.vpk
 
   flatpak:
     name: "Flatpak (${{ matrix.arch }})"
