@@ -115,31 +115,30 @@ static int NearestPowerOfTwoClamp(int val)
 	return 512;
 }
 
-static SDL_Surface* ConvertAndResizeSurface(SDL_Surface* original, bool isUI, float scale)
+static SDL_Surface* ConvertAndResizeSurface(SDL_Surface* original, bool isUI, float scaleX, float scaleY)
 {
-	SDL_Surface* converted = SDL_ConvertSurface(original, SDL_PIXELFORMAT_RGBA8888);
-	if (!converted) {
-		return nullptr;
-	}
 	if (!isUI) {
-		return converted;
+		return SDL_ConvertSurface(original, SDL_PIXELFORMAT_RGBA8888);
 	}
 
-	int scaledW = static_cast<int>(converted->w * scale);
-	int scaledH = static_cast<int>(converted->h * scale);
+	int scaledW = static_cast<int>(original->w * scaleX);
+	int scaledH = static_cast<int>(original->h * scaleY);
 
 	int paddedW = NearestPowerOfTwoClamp(scaledW);
 	int paddedH = NearestPowerOfTwoClamp(scaledH);
 
 	SDL_Surface* padded = SDL_CreateSurface(paddedW, paddedH, SDL_PIXELFORMAT_RGBA8888);
 	if (!padded) {
-		SDL_DestroySurface(converted);
 		return nullptr;
 	}
 
-	SDL_Rect dstRect = {0, 0, scaledW, scaledH};
-	SDL_BlitSurfaceScaled(converted, nullptr, padded, &dstRect, SDL_SCALEMODE_LINEAR);
-	SDL_DestroySurface(converted);
+	if (scaleX == 1.0f && scaleY == 1.0f) {
+		SDL_BlitSurface(original, nullptr, padded, nullptr);
+	}
+	else {
+		SDL_Rect dstRect = {0, 0, scaledW, scaledH};
+		SDL_BlitSurfaceScaled(original, nullptr, padded, &dstRect, SDL_SCALEMODE_LINEAR);
+	}
 
 	return padded;
 }
@@ -181,9 +180,9 @@ static void EncodeTextureLayout(const u8* src, u8* dst, int width, int height)
 	}
 }
 
-static bool ConvertAndUploadTexture(C3D_Tex* tex, SDL_Surface* originalSurface, bool isUI, float scale)
+static bool ConvertAndUploadTexture(C3D_Tex* tex, SDL_Surface* originalSurface, bool isUI, float scaleX, float scaleY)
 {
-	SDL_Surface* resized = ConvertAndResizeSurface(originalSurface, isUI, scale);
+	SDL_Surface* resized = ConvertAndResizeSurface(originalSurface, isUI, scaleX, scaleY);
 	if (!resized) {
 		return false;
 	}
@@ -198,18 +197,24 @@ static bool ConvertAndUploadTexture(C3D_Tex* tex, SDL_Surface* originalSurface, 
 	params.maxLevel = isUI ? 0 : 4;
 	params.type = GPU_TEX_2D;
 	if (!C3D_TexInitWithParams(tex, nullptr, params)) {
-		SDL_DestroySurface(resized);
+		if (resized != originalSurface) {
+			SDL_DestroySurface(resized);
+		}
 		return false;
 	}
 
 	uint8_t* tiledData = (uint8_t*) malloc(width * height * 4);
 	if (!tiledData) {
-		SDL_DestroySurface(resized);
+		if (resized != originalSurface) {
+			SDL_DestroySurface(resized);
+		}
 		return false;
 	}
 
 	EncodeTextureLayout((const u8*) resized->pixels, tiledData, width, height);
-	SDL_DestroySurface(resized);
+	if (resized != originalSurface) {
+		SDL_DestroySurface(resized);
+	}
 
 	C3D_TexUpload(tex, tiledData);
 	free(tiledData);
@@ -228,7 +233,7 @@ static bool ConvertAndUploadTexture(C3D_Tex* tex, SDL_Surface* originalSurface, 
 	return true;
 }
 
-Uint32 Citro3DRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi)
+Uint32 Citro3DRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUI, float scaleX, float scaleY)
 {
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
 	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
@@ -242,7 +247,13 @@ Uint32 Citro3DRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi)
 		if (tex.texture == texture) {
 			if (tex.version != texture->m_version) {
 				C3D_TexDelete(&tex.c3dTex);
-				if (!ConvertAndUploadTexture(&tex.c3dTex, originalSurface, isUi, m_viewportTransform.scale)) {
+				if (!ConvertAndUploadTexture(
+						&tex.c3dTex,
+						originalSurface,
+						isUI,
+						scaleX * m_viewportTransform.scale,
+						scaleY * m_viewportTransform.scale
+					)) {
 					return NO_TEXTURE_ID;
 				}
 
@@ -260,7 +271,13 @@ Uint32 Citro3DRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi)
 	entry.width = NearestPowerOfTwoClamp(originalW * m_viewportTransform.scale);
 	entry.height = NearestPowerOfTwoClamp(originalH * m_viewportTransform.scale);
 
-	if (!ConvertAndUploadTexture(&entry.c3dTex, originalSurface, isUi, m_viewportTransform.scale)) {
+	if (!ConvertAndUploadTexture(
+			&entry.c3dTex,
+			originalSurface,
+			isUI,
+			scaleX * m_viewportTransform.scale,
+			scaleY * m_viewportTransform.scale
+		)) {
 		return NO_TEXTURE_ID;
 	}
 
