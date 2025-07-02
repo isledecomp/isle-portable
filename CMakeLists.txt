@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.25...4.0 FATAL_ERROR)
 
 project(isle LANGUAGES CXX C VERSION 0.1)
 
+if(WINDOWS_STORE)
+  add_compile_definitions(WINDOWS_STORE)
+endif()
+
 if(EMSCRIPTEN)
   add_compile_options(-pthread)
   add_link_options(-sALLOW_MEMORY_GROWTH=1 -sMAXIMUM_MEMORY=2gb -sUSE_PTHREADS=1 -sPROXY_TO_PTHREAD=1 -sPTHREAD_POOL_SIZE_STRICT=0 -sFORCE_FILESYSTEM=1 -sWASMFS=1 -sEXIT_RUNTIME=1)
@@ -550,6 +554,18 @@ if(ISLE_BUILD_APP)
       ISLE/3ds/apthooks.cpp
       ISLE/3ds/config.cpp
     )
+  endif()
+  if(WINDOWS_STORE)
+    set(ISLE_CURSORS
+      ISLE/res/arrow.bmp
+      ISLE/res/busy.bmp
+      ISLE/res/no.bmp
+    )
+    set_source_files_properties(${ISLE_CURSORS} PROPERTIES
+        VS_DEPLOYMENT_CONTENT 1
+    )
+
+    target_sources(isle PRIVATE ${ISLE_CURSORS})
   endif()
 endif()
 
