@@ -384,6 +384,11 @@ void OpenGL1Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, con
 	GL11_Draw2DImage(m_textures[textureId], srcRect, dstRect, left, right, bottom, top);
 }
 
+void OpenGL1Renderer::SetDither(bool dither)
+{
+	GL11_SetDither(dither);
+}
+
 void OpenGL1Renderer::Download(SDL_Surface* target)
 {
 	GL11_Download(m_renderedImage);

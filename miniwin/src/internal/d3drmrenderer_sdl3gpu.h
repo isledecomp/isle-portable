@@ -67,6 +67,7 @@ public:
 	void Flip() override;
 	void Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect) override;
 	void Download(SDL_Surface* target) override;
+	void SetDither(bool dither) override;
 
 private:
 	Direct3DRMSDL3GPURenderer(

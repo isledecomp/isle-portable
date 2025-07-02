@@ -706,3 +706,13 @@ void OpenGLES2Renderer::Download(SDL_Surface* target)
 
 	SDL_DestroySurface(bufferClone);
 }
+
+void OpenGLES2Renderer::SetDither(bool dither)
+{
+	if (dither) {
+		glEnable(GL_DITHER);
+	}
+	else {
+		glDisable(GL_DITHER);
+	}
+}

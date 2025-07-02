@@ -942,6 +942,10 @@ void Direct3DRMSDL3GPURenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& sr
 	SDL_SetGPUScissor(m_renderPass, &fullViewport);
 }
 
+void Direct3DRMSDL3GPURenderer::SetDither(bool dither)
+{
+}
+
 void Direct3DRMSDL3GPURenderer::Download(SDL_Surface* target)
 {
 	if (!m_cmdbuf) {

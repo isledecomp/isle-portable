@@ -788,6 +788,10 @@ void Direct3DRMSoftwareRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& s
 	SDL_LockSurface(surface);
 }
 
+void Direct3DRMSoftwareRenderer::SetDither(bool dither)
+{
+}
+
 void Direct3DRMSoftwareRenderer::Download(SDL_Surface* target)
 {
 	SDL_Rect srcRect = {
