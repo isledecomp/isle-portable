@@ -409,9 +409,16 @@ void MxDisplaySurface::VTable0x28(
 		return;
 	}
 
-	DDCOLORKEY colorKey;
-	colorKey.dwColorSpaceLowValue = colorKey.dwColorSpaceHighValue = RGB555_CREATE(0x1f, 0, 0x1f);
-	tempSurface->SetColorKey(DDCKEY_SRCBLT, &colorKey);
+	if (m_surfaceDesc.ddpfPixelFormat.dwRGBBitCount != 32) {
+		DDCOLORKEY colorKey;
+		if (m_surfaceDesc.ddpfPixelFormat.dwRGBBitCount == 8) {
+			colorKey.dwColorSpaceLowValue = colorKey.dwColorSpaceHighValue = 0x10;
+		}
+		else {
+			colorKey.dwColorSpaceLowValue = colorKey.dwColorSpaceHighValue = RGB555_CREATE(0x1f, 0, 0x1f);
+		}
+		tempSurface->SetColorKey(DDCKEY_SRCBLT, &colorKey);
+	}
 
 	DDSURFACEDESC tempDesc;
 	memset(&tempDesc, 0, sizeof(tempDesc));
@@ -503,29 +510,43 @@ void MxDisplaySurface::VTable0x30(
 	DDSURFACEDESC ddsd;
 	memset(&ddsd, 0, sizeof(ddsd));
 	ddsd.dwSize = sizeof(ddsd);
+	ddsd.dwFlags = DDSD_WIDTH | DDSD_HEIGHT | DDSD_PIXELFORMAT | DDSD_CAPS;
+	ddsd.dwWidth = p_width;
+	ddsd.dwHeight = p_height;
+	ddsd.ddpfPixelFormat = m_surfaceDesc.ddpfPixelFormat;
+	ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
 
-	HRESULT hr = m_ddSurface2->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
-	if (hr == DDERR_SURFACELOST) {
-		m_ddSurface2->Restore();
-		hr = m_ddSurface2->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
+	LPDIRECTDRAW draw = MVideoManager()->GetDirectDraw();
+	LPDIRECTDRAWSURFACE tempSurface = nullptr;
+	if (draw->CreateSurface(&ddsd, &tempSurface, nullptr) != DD_OK || !tempSurface) {
+		return;
 	}
 
-	if (hr != DD_OK) {
+	DDCOLORKEY colorKey;
+	colorKey.dwColorSpaceLowValue = colorKey.dwColorSpaceHighValue = 0;
+	tempSurface->SetColorKey(DDCKEY_SRCBLT, &colorKey);
+
+	DDSURFACEDESC tempDesc;
+	memset(&tempDesc, 0, sizeof(tempDesc));
+	tempDesc.dwSize = sizeof(tempDesc);
+
+	if (tempSurface->Lock(NULL, &tempDesc, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL) != DD_OK) {
+		tempSurface->Release();
 		return;
 	}
 
 	MxU8* data = p_bitmap->GetStart(p_left, p_top);
 
 	MxS32 bytesPerPixel = m_surfaceDesc.ddpfPixelFormat.dwRGBBitCount / 8;
-	MxU8* surface = (MxU8*) ddsd.lpSurface + (bytesPerPixel * p_right) + (p_bottom * ddsd.lPitch);
+	MxU8* surface = (MxU8*) tempDesc.lpSurface;
 
 	if (p_RLE) {
 		MxS32 size = p_bitmap->GetBmiHeader()->biSizeImage;
-		DrawTransparentRLE(data, surface, size, p_width, p_height, ddsd.lPitch, bytesPerPixel * 8);
+		DrawTransparentRLE(data, surface, size, p_width, p_height, tempDesc.lPitch, bytesPerPixel * 8);
 	}
 	else {
 		MxLong stride = -p_width + GetAdjustedStride(p_bitmap);
-		MxLong length = -bytesPerPixel * p_width + ddsd.lPitch;
+		MxLong length = -bytesPerPixel * p_width + tempDesc.lPitch;
 
 		for (MxS32 i = 0; i < p_height; i++) {
 			for (MxS32 j = 0; j < p_width; j++) {
@@ -550,7 +571,11 @@ void MxDisplaySurface::VTable0x30(
 		}
 	}
 
-	m_ddSurface2->Unlock(ddsd.lpSurface);
+	tempSurface->Unlock(NULL);
+
+	m_ddSurface2->BltFast(p_right, p_bottom, tempSurface, NULL, DDBLTFAST_WAIT | DDBLTFAST_SRCCOLORKEY);
+
+	tempSurface->Release();
 }
 
 // FUNCTION: LEGO1 0x100bb500
