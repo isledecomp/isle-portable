@@ -91,7 +91,7 @@ jobs:
 
       - name: Configure (CMake)
         run: |
-          ${{ matrix.cmake-wrapper || '' }} cmake -S . -B build -G ${{ matrix.generator }} \
+          ${{ matrix.cmake-wrapper || '' }} cmake -S . -B build -G "${{ matrix.generator }}" \
             ${{ matrix.cmake-args || '' }} \
             -DCMAKE_BUILD_TYPE=Release \
             -DISLE_USE_DX5=${{ !!matrix.dx5 }} \
