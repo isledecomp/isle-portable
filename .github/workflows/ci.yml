@@ -43,7 +43,7 @@ jobs:
           - { name: 'macOS',               os: 'macos-latest',   dx5: false, config: true,  brew: true,  werror: true,   clang-tidy: false }
           - { name: 'Emscripten',          os: 'ubuntu-latest',  dx5: false, config: false, emsdk: true, werror: true,   clang-tidy: false,  cmake-wrapper: 'emcmake' }
           - { name: 'Nintendo 3DS',        os: 'ubuntu-latest',  dx5: false, config: false, n3ds: true,  werror: true,   clang-tidy: false,  container: 'devkitpro/devkitarm:latest', cmake-args: '-DCMAKE_TOOLCHAIN_FILE=/opt/devkitpro/cmake/3DS.cmake' }
-          - { name: 'Xbox One', os: 'windows-latest', dx5: false, config: false, msvc: true,  werror: false,  clang-tidy: false,  vc-arch: 'amd64', cmake-args: '-DCMAKE_SYSTEM_NAME=WindowsStore -DCMAKE_SYSTEM_VERSION=10.0.26100.0'}
+          - { name: 'Xbox One',            os: 'windows-latest', dx5: false, config: false, msvc: true,  werror: false,  clang-tidy: false,  vc-arch: 'amd64', cmake-args: '-DCMAKE_SYSTEM_NAME=WindowsStore -DCMAKE_SYSTEM_VERSION=10.0.26100.0', xbox-one: true}
     steps:
       - name: Setup vcvars
         if: ${{ !!matrix.msvc }}
@@ -105,7 +105,7 @@ jobs:
         run: cmake --build build --verbose
 
       - name: Package (CPack)
-        if: ${{ !matrix.n3ds }}
+        if: ${{ !matrix.n3ds && !matrix.xbox-one }}
         run: |
           cd build
           cpack .
@@ -148,8 +148,8 @@ jobs:
             build/dist/isle-*
             build/dist/*.AppImage
             build/dist/*.3dsx
-            build/AppPackages/*/*.msixbundle
-            build/AppPackages/*/Dependencies/x64/Microsoft.VCLibs.x64.Debug.14.00.appx
+            build/AppPackages/isle/*/*.msixbundle
+            build/AppPackages/isle/*/Dependencies/x64/Microsoft.VCLibs.x64.Debug.14.00.appx
 
   flatpak:
     name: "Flatpak (${{ matrix.arch }})"
