@@ -321,9 +321,6 @@ void GL11_Draw2DImage(
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	GLint boundTexture = 0;
-	glGetIntegerv(GL_TEXTURE_BINDING_2D, &boundTexture);
-
 	float u1 = srcRect.x / cache.width;
 	float v1 = srcRect.y / cache.height;
 	float u2 = (srcRect.x + srcRect.w) / cache.width;
