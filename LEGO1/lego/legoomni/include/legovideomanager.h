@@ -6,6 +6,8 @@
 #include "legophonemelist.h"
 #include "mxvideomanager.h"
 
+#include <SDL3/SDL.h>
+
 #ifdef MINIWIN
 #include "miniwin/d3drm.h"
 #include "miniwin/ddraw.h"
@@ -37,7 +39,7 @@ public:
 	void EnableFullScreenMovie(MxBool p_enable);
 	LEGO1_EXPORT void EnableFullScreenMovie(MxBool p_enable, MxBool p_scale);
 	LEGO1_EXPORT void MoveCursor(MxS32 p_cursorX, MxS32 p_cursorY);
-	LEGO1_EXPORT void SetCursorBitmap(const MxU8* p_cursorBitmap, MxS32 p_x, MxS32 p_y, MxS32 p_channels);
+	LEGO1_EXPORT void SetCursorBitmap(const SDL_Surface* p_cursorBitmap);
 	void ToggleFPS(MxBool p_visible);
 
 	MxResult Tickle() override;                                                                       // vtable+0x08

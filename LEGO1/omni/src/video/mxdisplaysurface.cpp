@@ -1098,67 +1098,6 @@ done:
 	return NULL;
 }
 
-LPDIRECTDRAWSURFACE MxDisplaySurface::CreateCursorSurface(
-	const MxU8* p_cursorBitmap,
-	MxS32 p_x,
-	MxS32 p_y,
-	MxS32 p_channels
-)
-{
-	if (p_channels != 4) {
-		MxTrace("MxDisplaySurface::CreateCursorSurface: unsupported channel count %d", p_channels);
-		return NULL;
-	}
-	LPDIRECTDRAWSURFACE newSurface = NULL;
-	IDirectDraw* draw = MVideoManager()->GetDirectDraw();
-	MVideoManager();
-
-	DDSURFACEDESC ddsd;
-	memset(&ddsd, 0, sizeof(ddsd));
-	ddsd.dwSize = sizeof(ddsd);
-
-	if (draw->GetDisplayMode(&ddsd) != DD_OK) {
-		return NULL;
-	}
-
-	ddsd.dwWidth = p_x;
-	ddsd.dwHeight = p_y;
-	ddsd.dwFlags = DDSD_PIXELFORMAT | DDSD_WIDTH | DDSD_HEIGHT | DDSD_CAPS;
-	ddsd.ddsCaps.dwCaps = DDSCAPS_VIDEOMEMORY | DDSCAPS_OFFSCREENPLAIN;
-
-	if (draw->CreateSurface(&ddsd, &newSurface, NULL) != DD_OK) {
-		ddsd.ddsCaps.dwCaps &= ~DDSCAPS_VIDEOMEMORY;
-		ddsd.ddsCaps.dwCaps |= DDSCAPS_SYSTEMMEMORY;
-
-		if (draw->CreateSurface(&ddsd, &newSurface, NULL) != DD_OK) {
-			goto done;
-		}
-	}
-
-	memset(&ddsd, 0, sizeof(ddsd));
-	ddsd.dwSize = sizeof(ddsd);
-
-	if (newSurface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL) != DD_OK) {
-		goto done;
-	}
-	else {
-		MxU32* surface = (MxU32*) ddsd.lpSurface;
-
-		memcpy(surface, p_cursorBitmap, p_x * p_y * sizeof(MxU32));
-
-		newSurface->Unlock(ddsd.lpSurface);
-
-		return newSurface;
-	}
-
-done:
-	if (newSurface) {
-		newSurface->Release();
-	}
-
-	return NULL;
-}
-
 // FUNCTION: LEGO1 0x100bc200
 void MxDisplaySurface::VTable0x24(
 	LPDDSURFACEDESC p_desc,
@@ -1359,4 +1298,60 @@ LPDIRECTDRAWSURFACE MxDisplaySurface::FUN_100bc8b0(MxS32 p_width, MxS32 p_height
 	}
 
 	return surface;
+}
+
+LPDIRECTDRAWSURFACE MxDisplaySurface::CreateCursorSurface(const SDL_Surface* p_cursorBitmap)
+{
+	if (p_cursorBitmap->format != SDL_PIXELFORMAT_ARGB8888) {
+		MxTrace("MxDisplaySurface::CreateCursorSurface: unsupported channel count %d", p_channels);
+		return NULL;
+	}
+	LPDIRECTDRAWSURFACE newSurface = NULL;
+	IDirectDraw* draw = MVideoManager()->GetDirectDraw();
+	MVideoManager();
+
+	DDSURFACEDESC ddsd;
+	memset(&ddsd, 0, sizeof(ddsd));
+	ddsd.dwSize = sizeof(ddsd);
+
+	if (draw->GetDisplayMode(&ddsd) != DD_OK) {
+		return NULL;
+	}
+
+	ddsd.dwWidth = p_cursorBitmap->w;
+	ddsd.dwHeight = p_cursorBitmap->h;
+	ddsd.dwFlags = DDSD_PIXELFORMAT | DDSD_WIDTH | DDSD_HEIGHT | DDSD_CAPS;
+	ddsd.ddsCaps.dwCaps = DDSCAPS_VIDEOMEMORY | DDSCAPS_OFFSCREENPLAIN;
+
+	if (draw->CreateSurface(&ddsd, &newSurface, NULL) != DD_OK) {
+		ddsd.ddsCaps.dwCaps &= ~DDSCAPS_VIDEOMEMORY;
+		ddsd.ddsCaps.dwCaps |= DDSCAPS_SYSTEMMEMORY;
+
+		if (draw->CreateSurface(&ddsd, &newSurface, NULL) != DD_OK) {
+			goto done;
+		}
+	}
+
+	memset(&ddsd, 0, sizeof(ddsd));
+	ddsd.dwSize = sizeof(ddsd);
+
+	if (newSurface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL) != DD_OK) {
+		goto done;
+	}
+	else {
+		MxU32* surface = (MxU32*) ddsd.lpSurface;
+
+		memcpy(surface, p_cursorBitmap->pixels, p_cursorBitmap->w * p_cursorBitmap->h * sizeof(MxU32));
+
+		newSurface->Unlock(ddsd.lpSurface);
+
+		return newSurface;
+	}
+
+done:
+	if (newSurface) {
+		newSurface->Release();
+	}
+
+	return NULL;
 }

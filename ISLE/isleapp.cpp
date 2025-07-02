@@ -37,10 +37,6 @@
 #include "tgl/d3drm/impl.h"
 #include "viewmanager/viewmanager.h"
 
-#define STB_IMAGE_IMPLEMENTATION
-#define STBI_ONLY_BMP
-#include "stb_image.h"
-
 #include <miniwin/miniwindevice.h>
 
 #define SDL_MAIN_USE_CALLBACKS
@@ -669,33 +665,44 @@ MxResult IsleApp::SetupWindow()
 	SDL_SetCursor(m_cursorCurrent);
 	if (g_isle->GetDrawCursor()) {
 		SDL_HideCursor();
-		m_cursorCurrentBitmap = m_cursorArrowBitmap = new CursorBitmap();
-		m_cursorArrowBitmap->bitmap = stbi_load_from_memory(
-			arrow_bmp,
-			arrow_bmp_len,
-			&m_cursorArrowBitmap->x,
-			&m_cursorArrowBitmap->y,
-			&m_cursorArrowBitmap->channels,
-			0
-		);
-		m_cursorBusyBitmap = new CursorBitmap();
-		m_cursorBusyBitmap->bitmap = stbi_load_from_memory(
-			busy_bmp,
-			busy_bmp_len,
-			&m_cursorBusyBitmap->x,
-			&m_cursorBusyBitmap->y,
-			&m_cursorBusyBitmap->channels,
-			0
-		);
-		m_cursorNoBitmap = new CursorBitmap();
-		m_cursorNoBitmap->bitmap = stbi_load_from_memory(
-			no_bmp,
-			no_bmp_len,
-			&m_cursorNoBitmap->x,
-			&m_cursorNoBitmap->y,
-			&m_cursorNoBitmap->channels,
-			0
-		);
+		SDL_IOStream* arrow_stream = SDL_IOFromMem(arrow_bmp, arrow_bmp_len);
+		if (!arrow_stream) {
+			SDL_LogError(
+				SDL_LOG_CATEGORY_APPLICATION,
+				"Failed to open SDL_IOStream for arrow cursor: %s",
+				SDL_GetError()
+			);
+			return FAILURE;
+		}
+		SDL_IOStream* busy_stream = SDL_IOFromMem(busy_bmp, busy_bmp_len);
+		if (!busy_stream) {
+			SDL_LogError(
+				SDL_LOG_CATEGORY_APPLICATION,
+				"Failed to open SDL_IOStream for busy cursor: %s",
+				SDL_GetError()
+			);
+			return FAILURE;
+		}
+		SDL_IOStream* no_stream = SDL_IOFromMem(no_bmp, no_bmp_len);
+		if (!no_stream) {
+			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to open SDL_IOStream for no cursor: %s", SDL_GetError());
+			return FAILURE;
+		}
+		m_cursorCurrentBitmap = m_cursorArrowBitmap = SDL_LoadBMP_IO(arrow_stream, true);
+		if (!m_cursorCurrentBitmap) {
+			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load arrow cursor bitmap: %s", SDL_GetError());
+			return FAILURE;
+		}
+		m_cursorBusyBitmap = SDL_LoadBMP_IO(busy_stream, true);
+		if (!m_cursorBusyBitmap) {
+			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load busy cursor bitmap: %s", SDL_GetError());
+			return FAILURE;
+		}
+		m_cursorNoBitmap = SDL_LoadBMP_IO(no_stream, true);
+		if (!m_cursorNoBitmap) {
+			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load no cursor bitmap: %s", SDL_GetError());
+			return FAILURE;
+		}
 	}
 
 	SDL_PropertiesID props = SDL_CreateProperties();
@@ -781,12 +788,7 @@ MxResult IsleApp::SetupWindow()
 			LegoOmni::GetInstance()->GetInputManager()->SetJoystickIndex(m_joystickIndex);
 		}
 		if (LegoOmni::GetInstance()->GetVideoManager() && g_isle->GetDrawCursor()) {
-			LegoOmni::GetInstance()->GetVideoManager()->SetCursorBitmap(
-				m_cursorCurrentBitmap->bitmap,
-				m_cursorCurrentBitmap->x,
-				m_cursorCurrentBitmap->y,
-				m_cursorCurrentBitmap->channels
-			);
+			LegoOmni::GetInstance()->GetVideoManager()->SetCursorBitmap(m_cursorCurrentBitmap);
 		}
 		MxDirect3D* d3d = LegoOmni::GetInstance()->GetVideoManager()->GetDirect3D();
 		if (d3d) {
@@ -1098,15 +1100,10 @@ void IsleApp::SetupCursor(Cursor p_cursor)
 
 	if (g_isle->GetDrawCursor()) {
 		if (m_cursorCurrentBitmap == NULL) {
-			VideoManager()->SetCursorBitmap(0, 0, 0, 0);
+			VideoManager()->SetCursorBitmap(0);
 		}
 		else {
-			VideoManager()->SetCursorBitmap(
-				m_cursorCurrentBitmap->bitmap,
-				m_cursorCurrentBitmap->x,
-				m_cursorCurrentBitmap->y,
-				m_cursorCurrentBitmap->channels
-			);
+			VideoManager()->SetCursorBitmap(m_cursorCurrentBitmap);
 		}
 	}
 	else {

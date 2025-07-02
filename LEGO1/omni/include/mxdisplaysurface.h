@@ -5,6 +5,8 @@
 #include "mxcore.h"
 #include "mxvideoparam.h"
 
+#include <SDL3/SDL.h>
+
 #ifdef MINIWIN
 #include "miniwin/ddraw.h"
 #else
@@ -97,7 +99,7 @@ public:
 
 	void ClearScreen();
 	static LPDIRECTDRAWSURFACE CreateCursorSurface();
-	static LPDIRECTDRAWSURFACE CreateCursorSurface(const MxU8* p_cursorBitmap, MxS32 p_x, MxS32 p_y, MxS32 p_channels);
+	static LPDIRECTDRAWSURFACE CreateCursorSurface(const SDL_Surface* p_cursorBitmap);
 	static LPDIRECTDRAWSURFACE CopySurface(LPDIRECTDRAWSURFACE p_src);
 
 	LPDIRECTDRAWSURFACE GetDirectDrawSurface1() { return m_ddSurface1; }

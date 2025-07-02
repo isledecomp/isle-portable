@@ -282,33 +282,6 @@ void LegoVideoManager::MoveCursor(MxS32 p_cursorX, MxS32 p_cursorY)
 	}
 }
 
-void LegoVideoManager::SetCursorBitmap(const MxU8* p_cursorBitmap, MxS32 p_x, MxS32 p_y, MxS32 p_channels)
-{
-	if (p_cursorBitmap == NULL) {
-		m_drawCursor = FALSE;
-		return;
-	}
-
-	if (m_cursorSurface != NULL) {
-		m_cursorSurface->Release();
-		m_cursorSurface = NULL;
-	}
-
-	m_cursorRect.top = 0;
-	m_cursorRect.left = 0;
-	m_cursorRect.bottom = p_x;
-	m_cursorRect.right = p_y;
-
-	m_cursorSurface = MxDisplaySurface::CreateCursorSurface(p_cursorBitmap, p_x, p_y, p_channels);
-
-	if (m_cursorSurface == NULL) {
-		m_drawCursor = FALSE;
-		return;
-	}
-
-	m_drawCursor = TRUE;
-}
-
 // FUNCTION: LEGO1 0x1007b6f0
 void LegoVideoManager::ToggleFPS(MxBool p_visible)
 {
@@ -861,4 +834,31 @@ void LegoVideoManager::DrawTextToSurface32(
 		}
 		++p_text;
 	}
+}
+
+void LegoVideoManager::SetCursorBitmap(const SDL_Surface* p_cursorBitmap)
+{
+	if (p_cursorBitmap == NULL) {
+		m_drawCursor = FALSE;
+		return;
+	}
+
+	if (m_cursorSurface != NULL) {
+		m_cursorSurface->Release();
+		m_cursorSurface = NULL;
+	}
+
+	m_cursorRect.top = 0;
+	m_cursorRect.left = 0;
+	m_cursorRect.bottom = p_cursorBitmap->h;
+	m_cursorRect.right = p_cursorBitmap->w;
+
+	m_cursorSurface = MxDisplaySurface::CreateCursorSurface(p_cursorBitmap);
+
+	if (m_cursorSurface == NULL) {
+		m_drawCursor = FALSE;
+		return;
+	}
+
+	m_drawCursor = TRUE;
 }
