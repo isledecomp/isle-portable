@@ -650,7 +650,7 @@ if (ISLE_BUILD_CONFIG)
       COMMAND "${WINDEPLOYQT_EXECUTABLE}"
               "$<TARGET_FILE:isle-config>"
               "--dir"
-              "build/QTLibs"
+              "QTLibs"
               "--no-compiler-runtime"
               "--no-opengl-sw"
               "--no-system-d3d-compiler"
@@ -658,7 +658,7 @@ if (ISLE_BUILD_CONFIG)
               "--no-quick-import"
       COMMENT "Running windeployqt with minimal dependencies"
     )
-    install(DIRECTORY QTLibs DESTINATION "${CMAKE_INSTALL_BINDIR}")
+    install(DIRECTORY Build/QTLibs DESTINATION "${CMAKE_INSTALL_BINDIR}")
   else()
     message(WARNING "windeployqt not found.")
   endif()
