@@ -542,9 +542,10 @@ if (ISLE_BUILD_APP)
         OUTPUT_STRIP_TRAILING_WHITESPACE
       )
       if(PIL_RESULT EQUAL 0 AND PIL_OUTPUT STREQUAL "pil")
-        set(PYTHON_PIL_AVAILABLE TRUE BOOL "Is Python PIL available?")
+        set(PYTHON_PIL_AVAILABLE TRUE)
       else()
-        set(PYTHON_PIL_AVAILABLE FALSE BOOL "Is Python PIL available?")
+        message(STATUS "Python PIL not found, using pre-generated headers.")
+        set(PYTHON_PIL_AVAILABLE FALSE)
       endif()
     endif()
     if(PYTHON_PIL_AVAILABLE)
@@ -553,9 +554,10 @@ if (ISLE_BUILD_APP)
           ${CMAKE_SOURCE_DIR}/ISLE/res/arrow_bmp.h
           ${CMAKE_SOURCE_DIR}/ISLE/res/busy_bmp.h
           ${CMAKE_SOURCE_DIR}/ISLE/res/no_bmp.h
-        COMMAND ${Python3_EXECUTABLE} tools/png2h.py ISLE/res/arrow.png ISLE/res/busy.png ISLE/res/no.png
+        COMMAND ${Python3_EXECUTABLE} tools/curpng2h.py ISLE/res/arrow.png ISLE/res/busy.png ISLE/res/no.png
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         DEPENDS
+          ${CMAKE_SOURCE_DIR}/tools/curpng2h.py
           ${CMAKE_SOURCE_DIR}/ISLE/res/arrow.png
           ${CMAKE_SOURCE_DIR}/ISLE/res/busy.png
           ${CMAKE_SOURCE_DIR}/ISLE/res/no.png
