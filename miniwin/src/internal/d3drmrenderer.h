@@ -51,7 +51,7 @@ public:
 	virtual void Resize(int width, int height, const ViewportTransform& viewportTransform) = 0;
 	virtual void Clear(float r, float g, float b) = 0;
 	virtual void Flip() = 0;
-	virtual void Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect) = 0;
+	virtual void Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect, FColor color) = 0;
 	virtual void Download(SDL_Surface* target) = 0;
 	virtual void SetDither(bool dither) = 0;
 

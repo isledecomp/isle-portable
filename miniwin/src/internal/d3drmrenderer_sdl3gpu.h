@@ -65,7 +65,7 @@ public:
 	void Resize(int width, int height, const ViewportTransform& viewportTransform) override;
 	void Clear(float r, float g, float b) override;
 	void Flip() override;
-	void Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect) override;
+	void Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect, FColor color) override;
 	void Download(SDL_Surface* target) override;
 	void SetDither(bool dither) override;
 

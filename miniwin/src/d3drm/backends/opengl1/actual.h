@@ -79,9 +79,10 @@ void GL11_SubmitDraw(
 void GL11_Resize(int width, int height);
 void GL11_Clear(float r, float g, float b);
 void GL11_Draw2DImage(
-	GLTextureCacheEntry& cache,
+	const GLTextureCacheEntry* cache,
 	const SDL_Rect& srcRect,
 	const SDL_Rect& dstRect,
+	const FColor& color,
 	float left,
 	float right,
 	float bottom,

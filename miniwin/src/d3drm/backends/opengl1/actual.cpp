@@ -285,9 +285,10 @@ void GL11_Clear(float r, float g, float b)
 }
 
 void GL11_Draw2DImage(
-	GLTextureCacheEntry& cache,
+	const GLTextureCacheEntry* cache,
 	const SDL_Rect& srcRect,
 	const SDL_Rect& dstRect,
+	const FColor& color,
 	float left,
 	float right,
 	float bottom,
@@ -296,6 +297,7 @@ void GL11_Draw2DImage(
 {
 	glDisable(GL_DEPTH_TEST);
 	glDepthMask(GL_FALSE);
+	glShadeModel(GL_FLAT);
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
@@ -306,17 +308,28 @@ void GL11_Draw2DImage(
 	glLoadIdentity();
 
 	glDisable(GL_LIGHTING);
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+	glColor4f(color.r, color.g, color.b, color.a);
 
-	glEnable(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D, cache.glTextureId);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	float u1 = 0;
+	float v1 = 0;
+	float u2 = 0;
+	float v2 = 0;
 
-	float u1 = srcRect.x / cache.width;
-	float v1 = srcRect.y / cache.height;
-	float u2 = (srcRect.x + srcRect.w) / cache.width;
-	float v2 = (srcRect.y + srcRect.h) / cache.height;
+	if (cache) {
+		glEnable(GL_TEXTURE_2D);
+		glBindTexture(GL_TEXTURE_2D, cache->glTextureId);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+		u1 = srcRect.x / cache->width;
+		v1 = srcRect.y / cache->height;
+		u2 = (srcRect.x + srcRect.w) / cache->width;
+		v2 = (srcRect.y + srcRect.h) / cache->height;
+	}
+	else {
+		glDisable(GL_TEXTURE_2D);
+		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	}
 
 	float x1 = (float) dstRect.x;
 	float y1 = (float) dstRect.y;

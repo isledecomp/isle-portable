@@ -400,47 +400,18 @@ void MxTransitionManager::WipeDownTransition()
 		return;
 	}
 
-	DDSURFACEDESC ddsd;
-	memset(&ddsd, 0, sizeof(ddsd));
-	ddsd.dwSize = sizeof(ddsd);
+	RECT fillRect = g_fullScreenRect;
+	// For each of the 240 animation ticks, blank out two scanlines
+	// starting at the top of the screen.
+	fillRect.bottom = 2 * (m_animationTimer + 1);
 
-	HRESULT res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
-	if (res == DDERR_SURFACELOST) {
-		m_ddSurface->Restore();
-		res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
-	}
+	DDBLTFX bltFx = {};
+	bltFx.dwSize = sizeof(bltFx);
+	bltFx.dwFillColor = 0xFF000000;
 
-	if (res == DD_OK) {
-		SubmitCopyRect(&ddsd);
+	m_ddSurface->Blt(&fillRect, NULL, NULL, DDBLT_COLORFILL | DDBLT_WAIT, &bltFx);
 
-		// For each of the 240 animation ticks, blank out two scanlines
-		// starting at the top of the screen.
-		MxU8* line = (MxU8*) ddsd.lpSurface + 2 * ddsd.lPitch * m_animationTimer;
-
-		if (ddsd.ddpfPixelFormat.dwRGBBitCount == 32) {
-			MxU32* pixels = (MxU32*) line;
-			int pixelsPerLine = ddsd.lPitch / 4;
-			for (int i = 0; i < pixelsPerLine; i++) {
-				pixels[i] = 0xFF000000;
-			}
-			line += ddsd.lPitch;
-			pixels = (MxU32*) line;
-			for (int i = 0; i < pixelsPerLine; i++) {
-				pixels[i] = 0xFF000000;
-			}
-		}
-		else {
-			memset(line, 0, ddsd.lPitch);
-
-			line += ddsd.lPitch;
-			memset(line, 0, ddsd.lPitch);
-		}
-
-		SetupCopyRect(&ddsd);
-		m_ddSurface->Unlock(ddsd.lpSurface);
-
-		m_animationTimer++;
-	}
+	m_animationTimer++;
 }
 
 // FUNCTION: LEGO1 0x1004c270
@@ -452,65 +423,28 @@ void MxTransitionManager::WindowsTransition()
 		return;
 	}
 
-	DDSURFACEDESC ddsd;
-	memset(&ddsd, 0, sizeof(ddsd));
-	ddsd.dwSize = sizeof(ddsd);
+	DDBLTFX bltFx = {};
+	bltFx.dwSize = sizeof(bltFx);
+	bltFx.dwFillColor = 0xFF000000;
 
-	HRESULT res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
-	if (res == DDERR_SURFACELOST) {
-		m_ddSurface->Restore();
-		res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
-	}
+	int top = m_animationTimer;
+	int bottom = 480 - m_animationTimer - 1;
+	int left = m_animationTimer;
+	int right = 639 - m_animationTimer;
 
-	if (res == DD_OK) {
-		SubmitCopyRect(&ddsd);
+	RECT topRect = {0, top, 640, top + 1};
+	m_ddSurface->Blt(&topRect, NULL, NULL, DDBLT_COLORFILL | DDBLT_WAIT, &bltFx);
 
-		MxU8* line = (MxU8*) ddsd.lpSurface + m_animationTimer * ddsd.lPitch;
+	RECT bottomRect = {0, bottom, 640, bottom + 1};
+	m_ddSurface->Blt(&bottomRect, NULL, NULL, DDBLT_COLORFILL | DDBLT_WAIT, &bltFx);
 
-		MxS32 bytesPerPixel = ddsd.ddpfPixelFormat.dwRGBBitCount / 8;
+	RECT leftRect = {left, top + 1, left + 1, bottom};
+	m_ddSurface->Blt(&leftRect, NULL, NULL, DDBLT_COLORFILL | DDBLT_WAIT, &bltFx);
 
-		if (bytesPerPixel == 4) {
-			MxU32* pixels = (MxU32*) line;
-			for (int i = 0; i < 640; i++) {
-				pixels[i] = 0xFF000000;
-			}
+	RECT rightRect = {right, top + 1, right + 1, bottom};
+	m_ddSurface->Blt(&rightRect, NULL, NULL, DDBLT_COLORFILL | DDBLT_WAIT, &bltFx);
 
-			for (MxS32 i = m_animationTimer + 1; i < 480 - m_animationTimer - 1; i++) {
-				line += ddsd.lPitch;
-				pixels = (MxU32*) line;
-				pixels[m_animationTimer] = 0xFF000000;
-				pixels[639 - m_animationTimer] = 0xFF000000;
-			}
-
-			if (m_animationTimer < 240 - 1) {
-				line += ddsd.lPitch;
-				pixels = (MxU32*) line;
-				for (int i = 0; i < 640; i++) {
-					pixels[i] = 0xFF000000;
-				}
-			}
-		}
-		else {
-			memset(line, 0, 640 * bytesPerPixel);
-
-			for (MxS32 i = m_animationTimer + 1; i < 480 - m_animationTimer - 1; i++) {
-				line += ddsd.lPitch;
-
-				memset(line + m_animationTimer * bytesPerPixel, 0, bytesPerPixel);
-				memset(line + (639 - m_animationTimer) * bytesPerPixel, 0, bytesPerPixel);
-			}
-
-			if (m_animationTimer < 240 - 1) {
-				line += ddsd.lPitch;
-				memset(line, 0, 640 * bytesPerPixel);
-			}
-		}
-
-		SetupCopyRect(&ddsd);
-		m_ddSurface->Unlock(ddsd.lpSurface);
-
-		m_animationTimer++;
-	}
+	m_animationTimer++;
 }
 
 // FUNCTION: LEGO1 0x1004c3e0

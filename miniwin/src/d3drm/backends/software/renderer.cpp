@@ -774,16 +774,35 @@ void Direct3DRMSoftwareRenderer::Flip()
 	SDL_RenderPresent(m_renderer);
 }
 
-void Direct3DRMSoftwareRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect)
+void Direct3DRMSoftwareRenderer::Draw2DImage(
+	Uint32 textureId,
+	const SDL_Rect& srcRect,
+	const SDL_Rect& dstRect,
+	FColor color
+)
 {
-	SDL_Surface* surface = m_textures[textureId].cached;
-	SDL_UnlockSurface(surface);
 	SDL_Rect centeredRect = {
 		static_cast<int>(dstRect.x * m_viewportTransform.scale + m_viewportTransform.offsetX),
 		static_cast<int>(dstRect.y * m_viewportTransform.scale + m_viewportTransform.offsetY),
 		static_cast<int>(dstRect.w * m_viewportTransform.scale),
 		static_cast<int>(dstRect.h * m_viewportTransform.scale),
 	};
+
+	if (textureId == NO_TEXTURE_ID) {
+		Uint32 sdlColor = SDL_MapRGBA(
+			m_format,
+			m_palette,
+			static_cast<Uint8>(color.r * 255),
+			static_cast<Uint8>(color.g * 255),
+			static_cast<Uint8>(color.b * 255),
+			static_cast<Uint8>(color.a * 255)
+		);
+		SDL_FillSurfaceRect(m_renderedImage, &centeredRect, sdlColor);
+		return;
+	}
+
+	SDL_Surface* surface = m_textures[textureId].cached;
+	SDL_UnlockSurface(surface);
 	SDL_BlitSurfaceScaled(surface, &srcRect, m_renderedImage, &centeredRect, SDL_SCALEMODE_LINEAR);
 	SDL_LockSurface(surface);
 }
