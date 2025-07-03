@@ -535,11 +535,17 @@ if (ISLE_BUILD_APP)
   if(Python3_FOUND)
     if(NOT DEFINED PYTHON_PIL_AVAILABLE)
       execute_process(
-        COMMAND ${Python3_EXECUTABLE} -c "import PIL"
+        COMMAND ${Python3_EXECUTABLE} -c "import PIL; print('pil')"
         RESULT_VARIABLE PIL_RESULT
+        OUTPUT_VARIABLE PIL_OUTPUT
         ERROR_QUIET
+        OUTPUT_STRIP_TRAILING_WHITESPACE
       )
-      set(PYTHON_PIL_AVAILABLE ${PIL_RESULT} EQUAL 0 CACHE BOOL "Is Python PIL available?")
+      if(PIL_RESULT EQUAL 0 AND PIL_OUTPUT STREQUAL "pil")
+        set(PYTHON_PIL_AVAILABLE TRUE BOOL "Is Python PIL available?")
+      else()
+        set(PYTHON_PIL_AVAILABLE FALSE BOOL "Is Python PIL available?")
+      endif()
     endif()
     if(PYTHON_PIL_AVAILABLE)
       add_custom_command(
