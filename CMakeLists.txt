@@ -649,7 +649,8 @@ if (ISLE_BUILD_CONFIG)
     add_custom_command(TARGET isle-config POST_BUILD
       COMMAND "${WINDEPLOYQT_EXECUTABLE}"
               "$<TARGET_FILE:isle-config>"
-              "--dir QTLibs"
+              "--dir"
+              "QTLibs"
               "--no-compiler-runtime"
               "--no-opengl-sw"
               "--no-system-d3d-compiler"
