@@ -530,13 +530,13 @@ if (ISLE_BUILD_APP)
     )
   endif()
   if(Python3_FOUND)
-    add_custom_command(
-      OUTPUT ${CMAKE_SOURCE_DIR}/ISLE/res/arrow_bmp.h ${CMAKE_SOURCE_DIR}/ISLE/res/busy_bmp.h ${CMAKE_SOURCE_DIR}/ISLE/res/no_bmp.h
+    execute_process(
       COMMAND ${Python3_EXECUTABLE} tools/png2h.py ISLE/res/arrow.png ISLE/res/busy.png ISLE/res/no.png
-      DEPENDS ISLE/res/arrow.png ISLE/res/busy.png ISLE/res/no.png
       WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+      RESULT_VARIABLE PNG2H_RESULT
+      OUTPUT_QUIET
+      ERROR_QUIET
     )
-    add_custom_target(generate_header ALL DEPENDS ${CMAKE_SOURCE_DIR}/ISLE/res/arrow_bmp.h ${CMAKE_SOURCE_DIR}/ISLE/res/busy_bmp.h ${CMAKE_SOURCE_DIR}/ISLE/res/no_bmp.h)
   endif()
 endif()
 
