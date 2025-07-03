@@ -35,10 +35,10 @@ jobs:
       matrix:
         include:
           - { name: 'Linux',          os: 'ubuntu-latest',  dx5: false, config: true,  linux: true, werror: true,   clang-tidy: true }
-          - { name: 'MSVC (x86)',     os: 'windows-latest', dx5: true,  config: false, msvc: true,  werror: false,  clang-tidy: false,  vc-arch: 'amd64_x86' }
+          - { name: 'MSVC (x86)',     os: 'windows-latest', dx5: true,  config: true, msvc: true,  werror: false,  clang-tidy: false,  vc-arch: 'amd64_x86' }
           - { name: 'MSVC (x64)',     os: 'windows-latest', dx5: false, config: true, msvc: true,  werror: false,  clang-tidy: false,  vc-arch: 'amd64' }
-          - { name: 'MSVC (arm64)',   os: 'windows-latest', dx5: false, config: false, msvc: true,  werror: false,  clang-tidy: false,  vc-arch: 'amd64_arm64' }
-          - { name: 'msys2 mingw32',  os: 'windows-latest', dx5: false, config: false, mingw: true, werror: true,   clang-tidy: true,   msystem: 'mingw32', msys-env: 'mingw-w64-i686',   shell: 'msys2 {0}' }
+          - { name: 'MSVC (arm64)',   os: 'windows-latest', dx5: false, config: true, msvc: true,  werror: false,  clang-tidy: false,  vc-arch: 'amd64_arm64' }
+          - { name: 'msys2 mingw32',  os: 'windows-latest', dx5: false, config: true, mingw: true, werror: true,   clang-tidy: true,   msystem: 'mingw32', msys-env: 'mingw-w64-i686',   shell: 'msys2 {0}' }
           - { name: 'msys2 mingw64',  os: 'windows-latest', dx5: false, config: true,  mingw: true, werror: true,   clang-tidy: true,   msystem: 'mingw64', msys-env: 'mingw-w64-x86_64', shell: 'msys2 {0}' }
           - { name: 'macOS',          os: 'macos-latest',   dx5: false, config: true,  brew: true,  werror: true,   clang-tidy: false }
           - { name: 'Emscripten',     os: 'ubuntu-latest',  dx5: false, config: false, emsdk: true, werror: true,   clang-tidy: false,  cmake-wrapper: 'emcmake' }
@@ -78,6 +78,7 @@ jobs:
           brew install cmake ninja llvm qt6
           echo "LLVM_ROOT=$(brew --prefix llvm)/bin" >> $GITHUB_ENV
       - name: Install Qt
+        if: ${{ !matrix.n3ds }}
         uses: jurplel/install-qt-action@v4
          
 
