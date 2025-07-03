@@ -97,7 +97,6 @@ public:
 	); // vtable+0x44
 
 	void ClearScreen();
-	static LPDIRECTDRAWSURFACE CreateCursorSurface();
 	static LPDIRECTDRAWSURFACE CreateCursorSurface(const CursorBitmap* p_cursorBitmap);
 	static LPDIRECTDRAWSURFACE CopySurface(LPDIRECTDRAWSURFACE p_src);
 
