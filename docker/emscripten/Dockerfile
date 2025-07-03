@@ -16,10 +16,10 @@ RUN chown -R emscripten:emscripten /src
 
 USER emscripten
 
-COPY ISLE/emscripten/libwasmfs_fetch.js.patch /tmp/
+COPY ISLE/emscripten/emscripten.patch /tmp/
 RUN cd /emsdk/upstream/emscripten && \
-    git apply --check /tmp/libwasmfs_fetch.js.patch && \
-    git apply /tmp/libwasmfs_fetch.js.patch
+    git apply --check /tmp/emscripten.patch && \
+    git apply /tmp/emscripten.patch
 
 COPY --chown=emscripten:emscripten 3rdparty/ ./3rdparty/
 COPY --chown=emscripten:emscripten LEGO1/ ./LEGO1/
