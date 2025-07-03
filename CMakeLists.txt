@@ -739,6 +739,9 @@ if(VITA)
     REL_OPTIMIZE
   )
 
+  include(${scepaf_external_SOURCE_DIR}/rco.cmake)
+  make_rco(CONFIG_vita/cxml/config_plugin.xml config_plugin.rco)
+
   set(ISLE_PACKAGE_NAME "vita-isle")
   set(VITA_APP_NAME "Lego Island")
   set(VITA_TITLEID  "LEGO00001")
@@ -747,6 +750,8 @@ if(VITA)
   vita_create_self(isle.self isle UNSAFE)
 
   list(APPEND VPK_FILE_ARGS FILE ${CMAKE_CURRENT_BINARY_DIR}/isle-config.self isle-config.self)
+  list(APPEND VPK_FILE_ARGS FILE ${CMAKE_CURRENT_BINARY_DIR}/config_plugin.rco config_plugin.rco)
+
   list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/icon0.png sce_sys/icon0.png)
   list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/pic0.png sce_sys/pic0.png)
 
@@ -791,7 +796,11 @@ if(VITA)
     NAME ${VITA_APP_NAME}
     ${VPK_FILE_ARGS}
   )
-  add_dependencies(isle.vpk-vpk isle-config.self-self)
+  add_dependencies(isle.vpk-vpk
+    isle-config.self-self
+    config_plugin.rco_target
+  )
+
   install(FILES "$<TARGET_FILE_DIR:isle>/isle.vpk" DESTINATION "${CMAKE_INSTALL_BINDIR}")
 endif()
 if(MSVC)
