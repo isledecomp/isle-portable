@@ -469,17 +469,42 @@ void MxTransitionManager::WindowsTransition()
 
 		MxS32 bytesPerPixel = ddsd.ddpfPixelFormat.dwRGBBitCount / 8;
 
-		memset(line, 0, ddsd.lPitch);
+		if (bytesPerPixel == 4) {
+			MxU32* pixels = (MxU32*) line;
+			for (int i = 0; i < 640; i++) {
+				pixels[i] = 0xFF000000;
+			}
 
-		for (MxS32 i = m_animationTimer + 1; i < 480 - m_animationTimer; i++) {
-			line += ddsd.lPitch;
+			for (MxS32 i = m_animationTimer + 1; i < 480 - m_animationTimer - 1; i++) {
+				line += ddsd.lPitch;
+				pixels = (MxU32*) line;
+				pixels[m_animationTimer] = 0xFF000000;
+				pixels[639 - m_animationTimer] = 0xFF000000;
+			}
 
-			memset(line + m_animationTimer * bytesPerPixel, 0, bytesPerPixel);
-			memset(line + 640 + (-1 - m_animationTimer) * bytesPerPixel, 0, bytesPerPixel);
+			if (m_animationTimer < 240 - 1) {
+				line += ddsd.lPitch;
+				pixels = (MxU32*) line;
+				for (int i = 0; i < 640; i++) {
+					pixels[i] = 0xFF000000;
+				}
+			}
 		}
+		else {
+			memset(line, 0, 640 * bytesPerPixel);
 
-		line += ddsd.lPitch;
-		memset(line, 0, ddsd.lPitch);
+			for (MxS32 i = m_animationTimer + 1; i < 480 - m_animationTimer - 1; i++) {
+				line += ddsd.lPitch;
+
+				memset(line + m_animationTimer * bytesPerPixel, 0, bytesPerPixel);
+				memset(line + (639 - m_animationTimer) * bytesPerPixel, 0, bytesPerPixel);
+			}
+
+			if (m_animationTimer < 240 - 1) {
+				line += ddsd.lPitch;
+				memset(line, 0, 640 * bytesPerPixel);
+			}
+		}
 
 		SetupCopyRect(&ddsd);
 		m_ddSurface->Unlock(ddsd.lpSurface);
