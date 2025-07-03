@@ -78,5 +78,5 @@ void Actual_SubmitDraw(
 void Actual_Resize(int width, int height, const ViewportTransform& viewportTransform);
 void Actual_Clear(float r, float g, float b);
 uint32_t Actual_Flip();
-void Actual_Draw2DImage(IDirect3DTexture9* texture, const SDL_Rect& srcRect, const SDL_Rect& dstRect);
+void Actual_Draw2DImage(IDirect3DTexture9* texture, const SDL_Rect& srcRect, const SDL_Rect& dstRect, FColor color);
 uint32_t Actual_Download(SDL_Surface* target);

@@ -443,6 +443,32 @@ void ConvertMatrix(const D3DRMMATRIX4D in, C3D_Mtx* out)
 	}
 }
 
+void SetMaterialAppearance(
+	const FColor& color,
+	float shininess,
+	int uLoc_meshColor,
+	int uLoc_shininess,
+	C3D_Tex* textures
+)
+{
+	C3D_FVUnifSet(GPU_VERTEX_SHADER, uLoc_meshColor, color.r, color.g, color.b, color.a);
+	C3D_FVUnifSet(GPU_VERTEX_SHADER, uLoc_shininess, shininess, 0.0f, 0.0f, 0.0f);
+
+	C3D_TexEnv* env = C3D_GetTexEnv(0);
+	C3D_TexEnvInit(env);
+
+	if (textures) {
+		C3D_TexBind(0, textures);
+		C3D_TexEnvSrc(env, C3D_Both, GPU_TEXTURE0, GPU_PRIMARY_COLOR, GPU_PRIMARY_COLOR);
+		C3D_TexEnvFunc(env, C3D_Both, GPU_MODULATE);
+	}
+	else {
+		C3D_TexBind(0, nullptr);
+		C3D_TexEnvSrc(env, C3D_Both, GPU_PRIMARY_COLOR, GPU_PRIMARY_COLOR, GPU_PRIMARY_COLOR);
+		C3D_TexEnvFunc(env, C3D_Both, GPU_REPLACE);
+	}
+}
+
 void Citro3DRenderer::SubmitDraw(
 	DWORD meshId,
 	const D3DRMMATRIX4D& modelViewMatrix,
@@ -462,31 +488,16 @@ void Citro3DRenderer::SubmitDraw(
 	BufInfo_Init(bufInfo);
 	BufInfo_Add(bufInfo, mesh.vbo, sizeof(D3DRMVERTEX), 3, 0x210);
 
-	C3D_FVUnifSet(
-		GPU_VERTEX_SHADER,
+	SetMaterialAppearance(
+		{appearance.color.r / 255.0f,
+		 appearance.color.g / 255.0f,
+		 appearance.color.b / 255.0f,
+		 appearance.color.a / 255.0f},
+		appearance.shininess,
 		uLoc_meshColor,
-		appearance.color.r / 255.0f,
-		appearance.color.g / 255.0f,
-		appearance.color.b / 255.0f,
-		appearance.color.a / 255.0f
+		uLoc_shininess,
+		appearance.textureId != NO_TEXTURE_ID ? &m_textures[appearance.textureId].c3dTex : nullptr
 	);
-
-	C3D_FVUnifSet(GPU_VERTEX_SHADER, uLoc_shininess, appearance.shininess / 255.0f, 0.0f, 0.0f, 0.0f);
-
-	if (appearance.textureId != NO_TEXTURE_ID) {
-		C3D_TexBind(0, &m_textures[appearance.textureId].c3dTex);
-		C3D_TexEnv* env = C3D_GetTexEnv(0);
-		C3D_TexEnvInit(env);
-		C3D_TexEnvSrc(env, C3D_Both, GPU_TEXTURE0, GPU_PRIMARY_COLOR, GPU_PRIMARY_COLOR);
-		C3D_TexEnvFunc(env, C3D_Both, GPU_MODULATE);
-	}
-	else {
-		C3D_TexBind(0, nullptr);
-		C3D_TexEnv* env = C3D_GetTexEnv(0);
-		C3D_TexEnvInit(env);
-		C3D_TexEnvSrc(env, C3D_Both, GPU_PRIMARY_COLOR, GPU_PRIMARY_COLOR, GPU_PRIMARY_COLOR);
-		C3D_TexEnvFunc(env, C3D_Both, GPU_REPLACE);
-	}
 
 	C3D_DrawArrays(GPU_TRIANGLES, 0, mesh.vertexCount);
 }
@@ -519,7 +530,7 @@ void Citro3DRenderer::Flip()
 	g_rendering = false;
 }
 
-void Citro3DRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect)
+void Citro3DRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect, FColor color)
 {
 	C3D_AlphaBlend(GPU_BLEND_ADD, GPU_BLEND_ADD, GPU_ONE, GPU_ONE_MINUS_SRC_ALPHA, GPU_ONE, GPU_ONE_MINUS_SRC_ALPHA);
 	StartFrame();
@@ -545,16 +556,9 @@ void Citro3DRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, con
 	C3D_FVUnifSet(GPU_VERTEX_SHADER, uLoc_lightClr + 1, 0.0f, 0.0f, 0.0f, 0.0f);
 	C3D_FVUnifSet(GPU_VERTEX_SHADER, uLoc_lightClr + 2, 1.0f, 1.0f, 1.0f, 1.0f); // Ambient
 
-	C3D_FVUnifSet(GPU_VERTEX_SHADER, uLoc_shininess, 0.0f, 0.0f, 0.0f, 0.0f);
-	C3D_FVUnifSet(GPU_VERTEX_SHADER, uLoc_meshColor, 1.0f, 1.0f, 1.0f, 1.0f);
+	C3DTextureCacheEntry* texture = (textureId != NO_TEXTURE_ID) ? &m_textures[textureId] : nullptr;
 
-	C3DTextureCacheEntry& texture = m_textures[textureId];
-
-	C3D_TexBind(0, &texture.c3dTex);
-	C3D_TexEnv* env = C3D_GetTexEnv(0);
-	C3D_TexEnvInit(env);
-	C3D_TexEnvSrc(env, C3D_Both, GPU_TEXTURE0, GPU_PRIMARY_COLOR, GPU_PRIMARY_COLOR);
-	C3D_TexEnvFunc(env, C3D_Both, GPU_MODULATE);
+	SetMaterialAppearance(color, 0.0f, uLoc_meshColor, uLoc_shininess, texture ? &texture->c3dTex : nullptr);
 
 	float scale = m_viewportTransform.scale;
 
@@ -563,10 +567,17 @@ void Citro3DRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, con
 	float x2 = x1 + static_cast<float>(dstRect.w);
 	float y2 = y1 + static_cast<float>(dstRect.h);
 
-	float u0 = (srcRect.x * scale) / texture.width;
-	float u1 = ((srcRect.x + srcRect.w) * scale) / texture.width;
-	float v0 = (srcRect.y * scale) / texture.height;
-	float v1 = ((srcRect.y + srcRect.h) * scale) / texture.height;
+	float u0 = 0.0f;
+	float u1 = 0.0f;
+	float v0 = 0.0f;
+	float v1 = 0.0f;
+
+	if (texture) {
+		u0 = (srcRect.x * scale) / texture->width;
+		u1 = ((srcRect.x + srcRect.w) * scale) / texture->width;
+		v0 = (srcRect.y * scale) / texture->height;
+		v1 = ((srcRect.y + srcRect.h) * scale) / texture->height;
+	}
 
 	C3D_ImmDrawBegin(GPU_TRIANGLES);
 
