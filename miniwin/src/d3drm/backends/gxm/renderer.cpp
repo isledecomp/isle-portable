@@ -880,10 +880,15 @@ void GXMRenderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* textu
 		[](IDirect3DRMObject* obj, void* arg) {
 			auto* ctx = static_cast<TextureDestroyContextGXM*>(arg);
 			auto& cache = ctx->renderer->m_textures[ctx->textureId];
-			void* textureData = sceGxmTextureGetData(&cache.gxmTexture);
-			gxm->free(textureData);
+			for(int i = 0; i < cache.bufferCount; i++) {
+				if(cache.notifications[i]) {
+					sceGxmNotificationWait(cache.notifications[i]);
+				}
+				void* textureData = sceGxmTextureGetData(&cache.gxmTexture[i]);
+				gxm->free(textureData);
+				memset(&cache.gxmTexture[i], 0, sizeof(SceGxmTexture));
+			}
 			cache.texture = nullptr;
-			memset(&cache.gxmTexture, 0, sizeof(cache.gxmTexture));
 			delete ctx;
 		},
 		ctx
@@ -1008,8 +1013,23 @@ Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi)
 		auto& tex = m_textures[i];
 		if (tex.texture == texture) {
 			if (tex.version != texture->m_version) {
-				void* textureData = sceGxmTextureGetData(&tex.gxmTexture);
-				copySurfaceToGxm(surface, (uint8_t*) textureData, textureStride, textureSize);
+				if(tex.bufferCount != GXM_TEXTURE_BUFFER_COUNT) {
+					for(int i = 1; i < GXM_TEXTURE_BUFFER_COUNT; i++) {
+						tex.gxmTexture[i] = tex.gxmTexture[0];
+						uint8_t* textureData = (uint8_t*)gxm->alloc(textureSize, textureAlignment);
+						sceGxmTextureSetData(&tex.gxmTexture[i], textureData);
+					}
+					tex.bufferCount = GXM_TEXTURE_BUFFER_COUNT;
+				}
+				if(tex.bufferCount > 1) {
+					tex.currentIndex = (tex.currentIndex + 1) % GXM_TEXTURE_BUFFER_COUNT;
+				}
+				if(tex.notifications[tex.currentIndex]) {
+					sceGxmNotificationWait(tex.notifications[tex.currentIndex]);
+				}
+				tex.notifications[tex.currentIndex] = &this->fragmentNotifications[this->currentFragmentBufferIndex];
+				uint8_t* textureData = (uint8_t*)sceGxmTextureGetData(&tex.gxmTexture[tex.currentIndex]);
+				copySurfaceToGxm(surface, textureData, textureStride, textureSize);
 				tex.version = texture->m_version;
 			}
 			return i;
@@ -1043,15 +1063,27 @@ Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi)
 	for (Uint32 i = 0; i < m_textures.size(); ++i) {
 		auto& tex = m_textures[i];
 		if (!tex.texture) {
+			memset(&tex, 0, sizeof(tex));
 			tex.texture = texture;
 			tex.version = texture->m_version;
-			tex.gxmTexture = gxmTexture;
+			tex.bufferCount = 1;
+			tex.currentIndex = 0;
+			tex.gxmTexture[0] = gxmTexture;
+			tex.notifications[0] = &this->fragmentNotifications[this->currentFragmentBufferIndex];
 			AddTextureDestroyCallback(i, texture);
 			return i;
 		}
 	}
 
-	m_textures.push_back({texture, texture->m_version, gxmTexture});
+	GXMTextureCacheEntry tex;
+	memset(&tex, 0, sizeof(tex));
+	tex.texture = texture;
+	tex.version = texture->m_version;
+	tex.bufferCount = 1;
+	tex.currentIndex = 0;
+	tex.gxmTexture[0] = gxmTexture;
+	tex.notifications[0] = &this->fragmentNotifications[this->currentFragmentBufferIndex];
+	m_textures.push_back(tex);
 	Uint32 textureId = (Uint32) (m_textures.size() - 1);
 	AddTextureDestroyCallback(textureId, texture);
 	return textureId;
@@ -1474,7 +1506,7 @@ void GXMRenderer::SubmitDraw(
 
 	if (textured) {
 		auto& texture = m_textures[appearance.textureId];
-		sceGxmSetFragmentTexture(gxm->context, 0, &texture.gxmTexture);
+		this->UseTexture(texture);
 	}
 
 #ifdef GXM_PRECOMPUTE
@@ -1575,11 +1607,10 @@ void GXMRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const S
 	SET_UNIFORM(vertUniforms, this->uNormalMatrix, normal);         // float3x3
 	SET_UNIFORM(vertUniforms, this->uProjectionMatrix, projection); // float4x4
 
-	const GXMTextureCacheEntry& texture = m_textures[textureId];
-	sceGxmSetFragmentTexture(gxm->context, 0, &texture.gxmTexture);
-
-	float texW = sceGxmTextureGetWidth(&texture.gxmTexture);
-	float texH = sceGxmTextureGetHeight(&texture.gxmTexture);
+	GXMTextureCacheEntry& texture = m_textures[textureId];
+	const SceGxmTexture* gxmTexture = this->UseTexture(texture);
+	float texW = sceGxmTextureGetWidth(gxmTexture);
+	float texH = sceGxmTextureGetHeight(gxmTexture);
 
 	float u1 = static_cast<float>(srcRect.x) / texW;
 	float v1 = static_cast<float>(srcRect.y) / texH;
@@ -1613,11 +1644,11 @@ void GXMRenderer::Download(SDL_Surface* target)
 		static_cast<int>(target->h * m_viewportTransform.scale),
 	};
 	SDL_Surface* src = SDL_CreateSurfaceFrom(
-		this->m_width,
-		this->m_height,
-		SDL_PIXELFORMAT_RGBA32,
+		VITA_GXM_SCREEN_WIDTH,
+		VITA_GXM_SCREEN_HEIGHT,
+		SDL_PIXELFORMAT_RGBA8888,
 		gxm->displayBuffers[gxm->frontBufferIndex],
-		VITA_GXM_SCREEN_STRIDE
+		VITA_GXM_SCREEN_STRIDE*4
 	);
 	SDL_BlitSurfaceScaled(src, &srcRect, target, nullptr, SDL_SCALEMODE_NEAREST);
 	SDL_DestroySurface(src);

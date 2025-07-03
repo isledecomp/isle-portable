@@ -192,7 +192,8 @@ MxResult LegoInputManager::GetJoystickState(MxU32* p_joystickX, MxU32* p_joystic
 
 		MxS16 xPos = SDL_GetJoystickAxis(m_joystick, 0);
 		MxS16 yPos = SDL_GetJoystickAxis(m_joystick, 1);
-		MxU8 hatPos = SDL_GetJoystickHat(m_joystick, 0);
+		SDL_GetNumJoystickHats(m_joystick);
+		MxU8 hatPos = SDL_GetNumJoystickHats(m_joystick) > 0 ? SDL_GetJoystickHat(m_joystick, 0) : SDL_HAT_CENTERED;
 
 		// normalize values acquired from joystick axes
 		*p_joystickX = ((xPos + 32768) * 100) / 65535;

@@ -12,17 +12,23 @@
 #include <psp2/types.h>
 #include <psp2/kernel/clib.h>
 
+#include "gxm_context.h"
+
 DEFINE_GUID(GXM_GUID, 0x682656F3, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x47, 0x58, 0x4D);
 
 #define GXM_VERTEX_BUFFER_COUNT 2
 #define GXM_FRAGMENT_BUFFER_COUNT 3
+#define GXM_TEXTURE_BUFFER_COUNT 2
 
 //#define GXM_PRECOMPUTE
 
 struct GXMTextureCacheEntry {
 	IDirect3DRMTexture* texture;
 	Uint32 version;
-	SceGxmTexture gxmTexture;
+	int bufferCount;
+	int currentIndex;
+	SceGxmTexture gxmTexture[GXM_TEXTURE_BUFFER_COUNT];
+	SceGxmNotification* notifications[GXM_TEXTURE_BUFFER_COUNT];
 };
 
 struct GXMMeshCacheEntry {
@@ -108,6 +114,12 @@ private:
 	GXMMeshCacheEntry GXMUploadMesh(const MeshGroup& meshGroup);
 
 	void StartScene();
+	inline const SceGxmTexture* UseTexture(GXMTextureCacheEntry& texture) {
+		texture.notifications[texture.currentIndex] = &this->fragmentNotifications[this->currentFragmentBufferIndex];
+		const SceGxmTexture* gxmTexture = &texture.gxmTexture[texture.currentIndex];
+		sceGxmSetFragmentTexture(gxm->context, 0, gxmTexture);
+		return gxmTexture;
+	}
 
 	inline Vertex* QuadVerticesBuffer() {
 		Vertex* verts = &this->quadVertices[this->currentVertexBufferIndex][this->quadsUsed*4];
