@@ -107,7 +107,12 @@ jobs:
       - name: Build (CMake)
         run: cmake --build build --verbose
 
-
+      - name: Pack QT Libs(windows)
+        if: ${{ matrix.os == 'windows-latest'  }}
+        run: |
+          cd build
+          mkdir QTLibs
+          windeployqt isle-config.exe --dir QTLibs
 
       - name: Package (CPack)
         if: ${{ !matrix.n3ds }}
@@ -144,11 +149,6 @@ jobs:
           cd build
           mkdir dist
           mv *.3dsx dist/
-      - name: Pack stuff(windows)
-        if: ${{ matrix.os == 'windows-latest'  }}
-        run: |
-          cd build/dist
-          windeployqt isle-config.exe 
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
