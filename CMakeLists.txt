@@ -626,6 +626,10 @@ set(ISLE_PACKAGE_NAME "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}" CACHE STR
 if(BUILD_SHARED_LIBS)
   list(APPEND install_extra_targets lego1)
 endif()
+install(TARGETS isle ${install_extra_targets}
+  RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+)
 if (ISLE_BUILD_CONFIG)
   find_program(WINDEPLOYQT_EXECUTABLE windeployqt)
   if(WINDEPLOYQT_EXECUTABLE)
@@ -641,6 +645,8 @@ if (ISLE_BUILD_CONFIG)
               "--no-quick-import"
       COMMENT "Running windeployqt with minimal dependencies"
     )
+    install(DIRECTORY "${CMAKE_INSTALL_LIBDIR}" DESTINATION "${CMAKE_INSTALL_BINDIR}"
+    )
   else()
     message(WARNING "windeployqt not found.")
   endif()
@@ -653,10 +659,7 @@ if(EMSCRIPTEN)
     DESTINATION "${CMAKE_INSTALL_BINDIR}"
   )
 endif()
-install(TARGETS isle ${install_extra_targets}
-  RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
-  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-)
+
 set(CPACK_PACKAGE_DIRECTORY "dist")
 set(CPACK_PACKAGE_FILE_NAME "isle-${PROJECT_VERSION}-${ISLE_PACKAGE_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
 if(MSVC)
