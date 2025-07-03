@@ -1,5 +1,6 @@
 #include "d3drmrenderer_gxm.h"
 #include "gxm_memory.h"
+#include "gxm_context.h"
 #include "meshutils.h"
 #include "razor.h"
 #include "tlsf.h"
@@ -12,6 +13,7 @@
 #include <psp2/kernel/modulemgr.h>
 #include <psp2/kernel/sysmem.h>
 #include <psp2/types.h>
+#include <psp2/common_dialog.h>
 #include <string>
 #define INCBIN_PREFIX _inc_
 #include "incbin.h"
@@ -24,25 +26,29 @@ bool gxm_initialized = false;
 
 #define VITA_GXM_SCREEN_WIDTH 960
 #define VITA_GXM_SCREEN_HEIGHT 544
-#define VITA_GXM_SCREEN_STRIDE 960
+#define VITA_GXM_SCREEN_STRIDE 1024
 #define VITA_GXM_PENDING_SWAPS 2
+#define CDRAM_POOL_SIZE 64*1024*1024
 
 #define VITA_GXM_COLOR_FORMAT SCE_GXM_COLOR_FORMAT_A8B8G8R8
 #define VITA_GXM_PIXEL_FORMAT SCE_DISPLAY_PIXELFORMAT_A8B8G8R8
+const SceGxmMultisampleMode msaaMode = SCE_GXM_MULTISAMPLE_NONE;
 
 #define SCE_GXM_PRECOMPUTED_ALIGNMENT 16
 
 INCBIN(main_vert_gxp, "shaders/main.vert.gxp");
 INCBIN(main_color_frag_gxp, "shaders/main.color.frag.gxp");
 INCBIN(main_texture_frag_gxp, "shaders/main.texture.frag.gxp");
-INCBIN(color_frag_gxp, "shaders/color.frag.gxp");
 INCBIN(image_frag_gxp, "shaders/image.frag.gxp");
+INCBIN(clear_vert_gxp, "shaders/clear.vert.gxp");
+INCBIN(clear_frag_gxp, "shaders/clear.frag.gxp");
 
 const SceGxmProgram* mainVertexProgramGxp = (const SceGxmProgram*) _inc_main_vert_gxpData;
 const SceGxmProgram* mainColorFragmentProgramGxp = (const SceGxmProgram*) _inc_main_color_frag_gxpData;
 const SceGxmProgram* mainTextureFragmentProgramGxp = (const SceGxmProgram*) _inc_main_texture_frag_gxpData;
-const SceGxmProgram* colorFragmentProgramGxp = (const SceGxmProgram*) _inc_color_frag_gxpData;
 const SceGxmProgram* imageFragmentProgramGxp = (const SceGxmProgram*) _inc_image_frag_gxpData;
+const SceGxmProgram* clearVertexProgramGxp = (const SceGxmProgram*) _inc_clear_vert_gxpData;
+const SceGxmProgram* clearFragmentProgramGxp = (const SceGxmProgram*) _inc_clear_frag_gxpData;
 
 static const SceGxmBlendInfo blendInfoOpaque = {
 	.colorMask = SCE_GXM_COLOR_MASK_ALL,
@@ -64,8 +70,6 @@ static const SceGxmBlendInfo blendInfoTransparent = {
 	.alphaDst = SCE_GXM_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
 };
 
-static GXMRendererContext gxm_renderer_context;
-
 static void display_callback(const void* callback_data)
 {
 	const GXMDisplayData* display_data = (const GXMDisplayData*) callback_data;
@@ -82,6 +86,7 @@ static void display_callback(const void* callback_data)
 	sceDisplayWaitSetFrameBuf();
 }
 
+#ifdef DEBUG
 #include <taihen.h>
 
 static int load_skprx(const char* name)
@@ -142,11 +147,14 @@ static void load_razor()
 		sceRazorGpuTraceSetFilename("ux0:data/gpu_trace", 3);
 	}
 }
+#else
+bool load_razor() {}
+#endif
 
-bool gxm_init()
+int gxm_library_init()
 {
 	if (gxm_initialized) {
-		return true;
+		return 0;
 	}
 
 	load_razor();
@@ -165,56 +173,71 @@ bool gxm_init()
 		return err;
 	}
 	gxm_initialized = true;
-	return true;
+	return 0;
 }
 
-static bool create_gxm_context()
+GXMContext* gxm;
+
+int GXMContext::init()
 {
-	GXMRendererContext* data = &gxm_renderer_context;
-	if (data->context) {
-		return true;
+	if(this->context) {
+		return 0;
 	}
 
-	if (!gxm_init()) {
-		return false;
+	int ret = gxm_library_init();
+	if(ret < 0) {
+		return ret;
 	}
 
 	const unsigned int patcherBufferSize = 64 * 1024;
 	const unsigned int patcherVertexUsseSize = 64 * 1024;
 	const unsigned int patcherFragmentUsseSize = 64 * 1024;
 
+	const uint32_t alignedWidth = ALIGN(VITA_GXM_SCREEN_WIDTH, SCE_GXM_TILE_SIZEX);
+	const uint32_t alignedHeight = ALIGN(VITA_GXM_SCREEN_HEIGHT, SCE_GXM_TILE_SIZEY);
+	uint32_t sampleCount = alignedWidth * alignedHeight;
+	uint32_t depthStrideInSamples = alignedWidth;
+
+	if(msaaMode == SCE_GXM_MULTISAMPLE_4X){
+		sampleCount *= 4;
+		depthStrideInSamples *= 2;
+	}
+	else if(msaaMode == SCE_GXM_MULTISAMPLE_2X){
+		sampleCount *= 2;
+	}
+
 	// allocate buffers
-	data->vdmRingBuffer = vita_mem_alloc(
+	this->vdmRingBuffer = vita_mem_alloc(
 		SCE_KERNEL_MEMBLOCK_TYPE_USER_RW_UNCACHE,
 		SCE_GXM_DEFAULT_VDM_RING_BUFFER_SIZE,
 		4,
 		SCE_GXM_MEMORY_ATTRIB_READ,
-		&data->vdmRingBufferUid,
+		&this->vdmRingBufferUid,
 		"vdmRingBuffer"
 	);
 
-	data->vertexRingBuffer = vita_mem_alloc(
+	this->vertexRingBuffer = vita_mem_alloc(
 		SCE_KERNEL_MEMBLOCK_TYPE_USER_RW_UNCACHE,
 		SCE_GXM_DEFAULT_VERTEX_RING_BUFFER_SIZE,
 		4,
 		SCE_GXM_MEMORY_ATTRIB_READ,
-		&data->vertexRingBufferUid,
+		&this->vertexRingBufferUid,
 		"vertexRingBuffer"
 	);
 
-	data->fragmentRingBuffer = vita_mem_alloc(
+	this->fragmentRingBuffer = vita_mem_alloc(
 		SCE_KERNEL_MEMBLOCK_TYPE_USER_RW_UNCACHE,
 		SCE_GXM_DEFAULT_FRAGMENT_RING_BUFFER_SIZE,
 		4,
 		SCE_GXM_MEMORY_ATTRIB_READ,
-		&data->fragmentRingBufferUid,
+		&this->fragmentRingBufferUid,
 		"fragmentRingBuffer"
 	);
 
-	data->fragmentUsseRingBuffer = vita_mem_fragment_usse_alloc(
+	this->fragmentUsseRingBuffer = vita_mem_fragment_usse_alloc(
 		SCE_GXM_DEFAULT_FRAGMENT_USSE_RING_BUFFER_SIZE,
-		&data->fragmentUsseRingBufferUid,
-		&data->fragmentUsseRingBufferOffset
+		&this->fragmentUsseRingBufferUid,
+		&this->fragmentUsseRingBufferOffset
 	);
 
 	// create context
@@ -222,38 +245,38 @@ static bool create_gxm_context()
 	memset(&contextParams, 0, sizeof(SceGxmContextParams));
 	contextParams.hostMem = SDL_malloc(SCE_GXM_MINIMUM_CONTEXT_HOST_MEM_SIZE);
 	contextParams.hostMemSize = SCE_GXM_MINIMUM_CONTEXT_HOST_MEM_SIZE;
-	contextParams.vdmRingBufferMem = data->vdmRingBuffer;
+	contextParams.vdmRingBufferMem = this->vdmRingBuffer;
 	contextParams.vdmRingBufferMemSize = SCE_GXM_DEFAULT_VDM_RING_BUFFER_SIZE;
-	contextParams.vertexRingBufferMem = data->vertexRingBuffer;
+	contextParams.vertexRingBufferMem = this->vertexRingBuffer;
 	contextParams.vertexRingBufferMemSize = SCE_GXM_DEFAULT_VERTEX_RING_BUFFER_SIZE;
-	contextParams.fragmentRingBufferMem = data->fragmentRingBuffer;
+	contextParams.fragmentRingBufferMem = this->fragmentRingBuffer;
 	contextParams.fragmentRingBufferMemSize = SCE_GXM_DEFAULT_FRAGMENT_RING_BUFFER_SIZE;
-	contextParams.fragmentUsseRingBufferMem = data->fragmentUsseRingBuffer;
+	contextParams.fragmentUsseRingBufferMem = this->fragmentUsseRingBuffer;
 	contextParams.fragmentUsseRingBufferMemSize = SCE_GXM_DEFAULT_FRAGMENT_USSE_RING_BUFFER_SIZE;
-	contextParams.fragmentUsseRingBufferOffset = data->fragmentUsseRingBufferOffset;
+	contextParams.fragmentUsseRingBufferOffset = this->fragmentUsseRingBufferOffset;
 
-	if (SCE_ERR(sceGxmCreateContext, &contextParams, &data->context)) {
-		return false;
+	if (ret = SCE_ERR(sceGxmCreateContext, &contextParams, &this->context); ret < 0) {
+		return ret;
 	}
-	data->contextHostMem = contextParams.hostMem;
+	this->contextHostMem = contextParams.hostMem;
 
 	// shader patcher
-	data->patcherBuffer = vita_mem_alloc(
+	this->patcherBuffer = vita_mem_alloc(
 		SCE_KERNEL_MEMBLOCK_TYPE_USER_RW_UNCACHE,
 		patcherBufferSize,
 		4,
 		SCE_GXM_MEMORY_ATTRIB_READ | SCE_GXM_MEMORY_ATTRIB_WRITE,
-		&data->patcherBufferUid,
+		&this->patcherBufferUid,
 		"patcherBuffer"
 	);
 
-	data->patcherVertexUsse =
-		vita_mem_vertex_usse_alloc(patcherVertexUsseSize, &data->patcherVertexUsseUid, &data->patcherVertexUsseOffset);
+	this->patcherVertexUsse =
+		vita_mem_vertex_usse_alloc(patcherVertexUsseSize, &this->patcherVertexUsseUid, &this->patcherVertexUsseOffset);
 
-	data->patcherFragmentUsse = vita_mem_fragment_usse_alloc(
+	this->patcherFragmentUsse = vita_mem_fragment_usse_alloc(
 		patcherFragmentUsseSize,
-		&data->patcherFragmentUsseUid,
-		&data->patcherFragmentUsseOffset
+		&this->patcherFragmentUsseUid,
+		&this->patcherFragmentUsseOffset
 	);
 
 	SceGxmShaderPatcherParams patcherParams;
@@ -263,44 +286,297 @@ static bool create_gxm_context()
 	patcherParams.hostFreeCallback = &patcher_host_free;
 	patcherParams.bufferAllocCallback = NULL;
 	patcherParams.bufferFreeCallback = NULL;
-	patcherParams.bufferMem = data->patcherBuffer;
+	patcherParams.bufferMem = this->patcherBuffer;
 	patcherParams.bufferMemSize = patcherBufferSize;
 	patcherParams.vertexUsseAllocCallback = NULL;
 	patcherParams.vertexUsseFreeCallback = NULL;
-	patcherParams.vertexUsseMem = data->patcherVertexUsse;
+	patcherParams.vertexUsseMem = this->patcherVertexUsse;
 	patcherParams.vertexUsseMemSize = patcherVertexUsseSize;
-	patcherParams.vertexUsseOffset = data->patcherVertexUsseOffset;
+	patcherParams.vertexUsseOffset = this->patcherVertexUsseOffset;
 	patcherParams.fragmentUsseAllocCallback = NULL;
 	patcherParams.fragmentUsseFreeCallback = NULL;
-	patcherParams.fragmentUsseMem = data->patcherFragmentUsse;
+	patcherParams.fragmentUsseMem = this->patcherFragmentUsse;
 	patcherParams.fragmentUsseMemSize = patcherFragmentUsseSize;
-	patcherParams.fragmentUsseOffset = data->patcherFragmentUsseOffset;
+	patcherParams.fragmentUsseOffset = this->patcherFragmentUsseOffset;
 
-	if (SCE_ERR(sceGxmShaderPatcherCreate, &patcherParams, &data->shaderPatcher)) {
-		return false;
+	if (ret = SCE_ERR(sceGxmShaderPatcherCreate, &patcherParams, &this->shaderPatcher); ret < 0) {
+		return ret;
 	}
-	return true;
+
+	// render target
+	SceGxmRenderTargetParams renderTargetParams;
+	memset(&renderTargetParams, 0, sizeof(SceGxmRenderTargetParams));
+	renderTargetParams.flags = 0;
+	renderTargetParams.width = VITA_GXM_SCREEN_WIDTH;
+	renderTargetParams.height = VITA_GXM_SCREEN_HEIGHT;
+	renderTargetParams.scenesPerFrame = 1;
+	renderTargetParams.multisampleMode = msaaMode;
+	renderTargetParams.multisampleLocations = 0;
+	renderTargetParams.driverMemBlock = -1; // Invalid UID
+	if (ret = SCE_ERR(sceGxmCreateRenderTarget, &renderTargetParams, &this->renderTarget); ret < 0) {
+		return ret;
+	}
+
+	for (int i = 0; i < GXM_DISPLAY_BUFFER_COUNT; i++) {
+		this->displayBuffers[i] = vita_mem_alloc(
+			SCE_KERNEL_MEMBLOCK_TYPE_USER_CDRAM_RW,
+			4 * VITA_GXM_SCREEN_STRIDE * VITA_GXM_SCREEN_HEIGHT,
+			SCE_GXM_COLOR_SURFACE_ALIGNMENT,
+			SCE_GXM_MEMORY_ATTRIB_READ | SCE_GXM_MEMORY_ATTRIB_WRITE,
+			&this->displayBuffersUid[i],
+			"displayBuffers"
+		);
+
+		if (ret = SCE_ERR(
+				sceGxmColorSurfaceInit,
+				&this->displayBuffersSurface[i],
+				SCE_GXM_COLOR_FORMAT_A8B8G8R8,
+				SCE_GXM_COLOR_SURFACE_LINEAR,
+				(msaaMode == SCE_GXM_MULTISAMPLE_NONE) ? SCE_GXM_COLOR_SURFACE_SCALE_NONE : SCE_GXM_COLOR_SURFACE_SCALE_MSAA_DOWNSCALE,
+				SCE_GXM_OUTPUT_REGISTER_SIZE_32BIT,
+				VITA_GXM_SCREEN_WIDTH,
+				VITA_GXM_SCREEN_HEIGHT,
+				VITA_GXM_SCREEN_STRIDE,
+				this->displayBuffers[i]
+			); ret < 0) {
+			return ret;
+		}
+
+		if (ret = SCE_ERR(sceGxmSyncObjectCreate, &this->displayBuffersSync[i]); ret < 0) {
+			return ret;
+		}
+	}
+
+	// depth & stencil
+	this->depthBufferData = vita_mem_alloc(
+		SCE_KERNEL_MEMBLOCK_TYPE_USER_RW_UNCACHE,
+		4 * sampleCount,
+		SCE_GXM_DEPTHSTENCIL_SURFACE_ALIGNMENT,
+		SCE_GXM_MEMORY_ATTRIB_READ | SCE_GXM_MEMORY_ATTRIB_WRITE,
+		&this->depthBufferUid,
+		"depthBufferData"
+	);
+
+	this->stencilBufferData = vita_mem_alloc(
+		SCE_KERNEL_MEMBLOCK_TYPE_USER_RW_UNCACHE,
+		4 * sampleCount,
+		SCE_GXM_DEPTHSTENCIL_SURFACE_ALIGNMENT,
+		SCE_GXM_MEMORY_ATTRIB_READ | SCE_GXM_MEMORY_ATTRIB_WRITE,
+		&this->stencilBufferUid,
+		"stencilBufferData"
+	);
+
+	if (ret = SCE_ERR(
+			sceGxmDepthStencilSurfaceInit,
+			&this->depthSurface,
+			SCE_GXM_DEPTH_STENCIL_FORMAT_S8D24,
+			SCE_GXM_DEPTH_STENCIL_SURFACE_TILED,
+			depthStrideInSamples,
+			this->depthBufferData,
+			this->stencilBufferData
+		); ret < 0) {
+		return ret;
+	}
+
+	// allocator
+	this->cdramMem = vita_mem_alloc(
+		SCE_KERNEL_MEMBLOCK_TYPE_USER_CDRAM_RW,
+		CDRAM_POOL_SIZE,
+		16,
+		SCE_GXM_MEMORY_ATTRIB_READ | SCE_GXM_MEMORY_ATTRIB_WRITE,
+		&this->cdramUID, "cdram_pool"
+	);
+	this->cdramPool = SDL_malloc(tlsf_size());
+	tlsf_create(this->cdramPool);
+	tlsf_add_pool(this->cdramPool, this->cdramMem, CDRAM_POOL_SIZE);
+
+	// clear shader
+
+	if (ret = SCE_ERR( sceGxmShaderPatcherRegisterProgram, this->shaderPatcher, clearVertexProgramGxp, &this->clearVertexProgramId); ret < 0) {
+		return ret;
+	}
+	if (ret = SCE_ERR( sceGxmShaderPatcherRegisterProgram, this->shaderPatcher, clearFragmentProgramGxp, &this->clearFragmentProgramId); ret < 0) {
+		return ret;
+	}
+	{
+		GET_SHADER_PARAM(positionAttribute, clearVertexProgramGxp, "aPosition", -1);
+
+		SceGxmVertexAttribute vertexAttributes[1];
+		SceGxmVertexStream vertexStreams[1];
+
+		// position
+		vertexAttributes[0].streamIndex = 0;
+		vertexAttributes[0].offset = 0;
+		vertexAttributes[0].format = SCE_GXM_ATTRIBUTE_FORMAT_F32;
+		vertexAttributes[0].componentCount = 2;
+		vertexAttributes[0].regIndex = sceGxmProgramParameterGetResourceIndex(positionAttribute);
+
+		vertexStreams[0].stride = 4 * 2;
+		vertexStreams[0].indexSource = SCE_GXM_INDEX_SOURCE_INDEX_16BIT;
+
+		if (ret = SCE_ERR(
+				sceGxmShaderPatcherCreateVertexProgram,
+				this->shaderPatcher,
+				this->clearVertexProgramId,
+				vertexAttributes,
+				1,
+				vertexStreams,
+				1,
+				&this->clearVertexProgram
+			); ret < 0) {
+			return ret;
+		}
+
+		if (ret = SCE_ERR(
+				sceGxmShaderPatcherCreateFragmentProgram,
+				this->shaderPatcher,
+				this->clearFragmentProgramId,
+				SCE_GXM_OUTPUT_REGISTER_FORMAT_UCHAR4,
+				SCE_GXM_MULTISAMPLE_NONE,
+				NULL,
+				clearVertexProgramGxp,
+				&this->clearFragmentProgram
+			); ret < 0) {
+			return ret;
+		}
+	}
+
+	// clear uniforms
+	this->clear_uColor = sceGxmProgramFindParameterByName(clearFragmentProgramGxp, "uColor"); // vec4
+
+	this->clearVertices = static_cast<float*>(this->alloc(sizeof(float)*4*2, 4));
+	this->clearVertices[0] = -1.0; this->clearVertices[1] = 1.0;
+	this->clearVertices[2] = 1.0; this->clearVertices[3] = 1.0;
+	this->clearVertices[4] = -1.0; this->clearVertices[5] = -1.0;
+	this->clearVertices[6] = 1.0; this->clearVertices[7] = -1.0;
+	this->clearIndices = static_cast<uint16_t*>(this->alloc(sizeof(uint16_t) * 4, 4));
+	this->clearIndices[0] = 0;
+	this->clearIndices[1] = 1;
+	this->clearIndices[2] = 2;
+	this->clearIndices[3] = 3;
+
+	return 0;
 }
 
-static void destroy_gxm_context()
+static int inuse_mem = 0;
+void* GXMContext::alloc(size_t size, size_t align)
 {
-	sceGxmShaderPatcherDestroy(gxm_renderer_context.shaderPatcher);
-	sceGxmDestroyContext(gxm_renderer_context.context);
-	vita_mem_fragment_usse_free(gxm_renderer_context.fragmentUsseRingBufferUid);
-	vita_mem_free(gxm_renderer_context.fragmentRingBufferUid);
-	vita_mem_free(gxm_renderer_context.vertexRingBufferUid);
-	vita_mem_free(gxm_renderer_context.vdmRingBufferUid);
-	SDL_free(gxm_renderer_context.contextHostMem);
+	DEBUG_ONLY_PRINTF("cdram_alloc(%d, %d) inuse=%d ", size, align, inuse_mem);
+	void* ptr = tlsf_memalign(this->cdramPool, align, size);
+	DEBUG_ONLY_PRINTF("ptr=%p\n", ptr);
+	inuse_mem += tlsf_block_size(ptr);
+	return ptr;
 }
 
-bool get_gxm_context(SceGxmContext** context, SceGxmShaderPatcher** shaderPatcher)
+void GXMContext::free(void* ptr)
 {
-	if (!create_gxm_context()) {
-		return false;
+	inuse_mem -= tlsf_block_size(ptr);
+	DEBUG_ONLY_PRINTF("cdram_free(%p)\n", ptr);
+	tlsf_free(this->cdramPool, ptr);
+}
+
+void GXMContext::clear(float r, float g, float b, bool new_scene) {
+	new_scene = new_scene && !this->sceneStarted;
+	if(new_scene) {
+		sceGxmBeginScene(
+			this->context,
+			0,
+			this->renderTarget,
+			nullptr,
+			nullptr,
+			this->displayBuffersSync[this->backBufferIndex],
+			&this->displayBuffersSurface[this->backBufferIndex],
+			&this->depthSurface
+		);
+		this->sceneStarted = true;
 	}
-	*context = gxm_renderer_context.context;
-	*shaderPatcher = gxm_renderer_context.shaderPatcher;
-	return true;
+
+	float color[] = {r, g, b, 1};
+
+	sceGxmSetVertexProgram(this->context, this->clearVertexProgram);
+	sceGxmSetFragmentProgram(this->context, this->clearFragmentProgram);
+
+	void* vertUniforms;
+	void* fragUniforms;
+	sceGxmReserveVertexDefaultUniformBuffer(gxm->context, &vertUniforms);
+	sceGxmReserveFragmentDefaultUniformBuffer(gxm->context, &fragUniforms);
+
+	if(!fragUniforms) {
+		SDL_Log("failed to reserve fragment uniform buffer!!");
+	}
+
+	sceGxmSetVertexStream(gxm->context, 0, this->clearVertices);
+	sceGxmSetUniformDataF(fragUniforms, this->clear_uColor, 0, 4, color);
+
+	sceGxmDraw(gxm->context, SCE_GXM_PRIMITIVE_TRIANGLE_STRIP, SCE_GXM_INDEX_FORMAT_U16, this->clearIndices, 4);
+	if(new_scene) {
+		sceGxmEndScene(this->context, nullptr, nullptr);
+		this->sceneStarted = false;
+	}
+}
+
+void GXMContext::destroy() {
+	sceGxmDisplayQueueFinish();
+	if(gxm->context) sceGxmFinish(gxm->context);
+	if(this->renderTarget) sceGxmDestroyRenderTarget(this->renderTarget);
+	for (int i = 0; i < GXM_DISPLAY_BUFFER_COUNT; i++) {
+		if(this->displayBuffersUid[i]) {
+			vita_mem_free(this->displayBuffersUid[i]);
+			this->displayBuffers[i] = nullptr;
+			sceGxmSyncObjectDestroy(this->displayBuffersSync[i]);
+		}
+	}
+
+	if(this->depthBufferUid) vita_mem_free(this->depthBufferUid);
+	if(this->stencilBufferUid) vita_mem_free(this->stencilBufferUid);
+	this->stencilBufferData = nullptr;
+	this->depthBufferData = nullptr;
+
+	sceGxmShaderPatcherDestroy(this->shaderPatcher);
+	sceGxmDestroyContext(this->context);
+	vita_mem_fragment_usse_free(this->fragmentUsseRingBufferUid);
+	vita_mem_free(this->fragmentRingBufferUid);
+	vita_mem_free(this->vertexRingBufferUid);
+	vita_mem_free(this->vdmRingBufferUid);
+	SDL_free(this->contextHostMem);
+}
+
+void GXMContext::swap_display() {
+	if(this->sceneStarted) {
+		SCE_ERR(sceGxmEndScene, 
+			gxm->context,
+			nullptr,
+			nullptr
+		);
+		this->sceneStarted = false;
+	}
+	SceCommonDialogUpdateParam updateParam;
+    SDL_zero(updateParam);
+    updateParam.renderTarget.colorFormat = VITA_GXM_COLOR_FORMAT;
+    updateParam.renderTarget.surfaceType = SCE_GXM_COLOR_SURFACE_LINEAR;
+    updateParam.renderTarget.width = VITA_GXM_SCREEN_WIDTH;
+    updateParam.renderTarget.height = VITA_GXM_SCREEN_HEIGHT;
+    updateParam.renderTarget.strideInPixels = VITA_GXM_SCREEN_STRIDE;
+	updateParam.renderTarget.colorSurfaceData = this->displayBuffers[this->backBufferIndex];
+	updateParam.displaySyncObject = this->displayBuffersSync[this->backBufferIndex];
+	sceCommonDialogUpdate(&updateParam);
+
+	sceGxmPadHeartbeat(
+		&this->displayBuffersSurface[this->backBufferIndex],
+		this->displayBuffersSync[this->backBufferIndex]
+	);
+
+	// display
+	GXMDisplayData displayData;
+	displayData.address = this->displayBuffers[this->backBufferIndex];
+	sceGxmDisplayQueueAddEntry(
+		this->displayBuffersSync[this->frontBufferIndex],
+		this->displayBuffersSync[this->backBufferIndex],
+		&displayData
+	);
+
+	this->frontBufferIndex = this->backBufferIndex;
+	this->backBufferIndex = (this->backBufferIndex + 1) % GXM_DISPLAY_BUFFER_COUNT;
 }
 
 static void CreateOrthoMatrix(float left, float right, float bottom, float top, D3DRMMATRIX4D& outMatrix)
@@ -334,11 +610,10 @@ static void CreateOrthoMatrix(float left, float right, float bottom, float top, 
 
 Direct3DRMRenderer* GXMRenderer::Create(DWORD width, DWORD height)
 {
-	bool success = gxm_init();
-	if (!success) {
+	int ret = gxm_library_init();
+	if(ret < 0) {
 		return nullptr;
 	}
-
 	return new GXMRenderer(width, height);
 }
 
@@ -349,134 +624,45 @@ GXMRenderer::GXMRenderer(DWORD width, DWORD height)
 	m_virtualWidth = width;
 	m_virtualHeight = height;
 
-	const unsigned int alignedWidth = ALIGN(m_width, SCE_GXM_TILE_SIZEX);
-	const unsigned int alignedHeight = ALIGN(m_height, SCE_GXM_TILE_SIZEY);
-	const unsigned int sampleCount = alignedWidth * alignedHeight;
-	const unsigned int depthStrideInSamples = alignedWidth;
-
-	if (!get_gxm_context(&this->context, &this->shaderPatcher)) {
-		return;
+	int ret;
+	if(!gxm) {
+		gxm = (GXMContext*)SDL_malloc(sizeof(GXMContext));
 	}
-
-	if (!cdram_allocator_create()) {
-		sceClibPrintf("failed to create cdram allocator");
-		return;
-	}
-
-	// render target
-	SceGxmRenderTargetParams renderTargetParams;
-	memset(&renderTargetParams, 0, sizeof(SceGxmRenderTargetParams));
-	renderTargetParams.flags = 0;
-	renderTargetParams.width = m_width;
-	renderTargetParams.height = m_height;
-	renderTargetParams.scenesPerFrame = 1;
-	renderTargetParams.multisampleMode = 0;
-	renderTargetParams.multisampleLocations = 0;
-	renderTargetParams.driverMemBlock = -1; // Invalid UID
-	if (SCE_ERR(sceGxmCreateRenderTarget, &renderTargetParams, &this->renderTarget)) {
-		return;
-	}
-
-	for (int i = 0; i < GXM_DISPLAY_BUFFER_COUNT; i++) {
-		this->displayBuffers[i] = vita_mem_alloc(
-			SCE_KERNEL_MEMBLOCK_TYPE_USER_CDRAM_RW,
-			4 * VITA_GXM_SCREEN_STRIDE * VITA_GXM_SCREEN_HEIGHT,
-			SCE_GXM_COLOR_SURFACE_ALIGNMENT,
-			SCE_GXM_MEMORY_ATTRIB_READ | SCE_GXM_MEMORY_ATTRIB_WRITE,
-			&this->displayBuffersUid[i],
-			"displayBuffers"
-		);
-
-		if (SCE_ERR(
-				sceGxmColorSurfaceInit,
-				&this->displayBuffersSurface[i],
-				SCE_GXM_COLOR_FORMAT_A8B8G8R8,
-				SCE_GXM_COLOR_SURFACE_LINEAR,
-				SCE_GXM_COLOR_SURFACE_SCALE_NONE,
-				SCE_GXM_OUTPUT_REGISTER_SIZE_32BIT,
-				m_width,
-				m_height,
-				m_width,
-				this->displayBuffers[i]
-			)) {
-			return;
-		}
-
-		if (SCE_ERR(sceGxmSyncObjectCreate, &this->displayBuffersSync[i])) {
-			return;
-		}
-	}
-
-	// depth & stencil
-	this->depthBufferData = vita_mem_alloc(
-		SCE_KERNEL_MEMBLOCK_TYPE_USER_RW_UNCACHE,
-		4 * sampleCount,
-		SCE_GXM_DEPTHSTENCIL_SURFACE_ALIGNMENT,
-		SCE_GXM_MEMORY_ATTRIB_READ | SCE_GXM_MEMORY_ATTRIB_WRITE,
-		&this->depthBufferUid,
-		"depthBufferData"
-	);
-
-	this->stencilBufferData = vita_mem_alloc(
-		SCE_KERNEL_MEMBLOCK_TYPE_USER_RW_UNCACHE,
-		4 * sampleCount,
-		SCE_GXM_DEPTHSTENCIL_SURFACE_ALIGNMENT,
-		SCE_GXM_MEMORY_ATTRIB_READ | SCE_GXM_MEMORY_ATTRIB_WRITE,
-		&this->stencilBufferUid,
-		"stencilBufferData"
-	);
-
-	if (SCE_ERR(
-			sceGxmDepthStencilSurfaceInit,
-			&this->depthSurface,
-			SCE_GXM_DEPTH_STENCIL_FORMAT_S8D24,
-			SCE_GXM_DEPTH_STENCIL_SURFACE_TILED,
-			depthStrideInSamples,
-			this->depthBufferData,
-			this->stencilBufferData
-		)) {
+	if(ret = SCE_ERR(gxm->init); ret < 0) {
 		return;
 	}
 
 	// register shader programs
-	if (SCE_ERR(
+	if (ret = SCE_ERR(
 			sceGxmShaderPatcherRegisterProgram,
-			this->shaderPatcher,
-			colorFragmentProgramGxp,
-			&this->colorFragmentProgramId
-		)) {
-		return;
-	}
-	if (SCE_ERR(
-			sceGxmShaderPatcherRegisterProgram,
-			this->shaderPatcher,
+			gxm->shaderPatcher,
 			mainVertexProgramGxp,
 			&this->mainVertexProgramId
-		)) {
+		); ret < 0) {
 		return;
 	}
-	if (SCE_ERR(
+	if (ret = SCE_ERR(
 			sceGxmShaderPatcherRegisterProgram,
-			this->shaderPatcher,
+			gxm->shaderPatcher,
 			mainColorFragmentProgramGxp,
 			&this->mainColorFragmentProgramId
-		)) {
+		); ret < 0) {
 		return;
 	}
-	if (SCE_ERR(
+	if (ret = SCE_ERR(
 			sceGxmShaderPatcherRegisterProgram,
-			this->shaderPatcher,
+			gxm->shaderPatcher,
 			mainTextureFragmentProgramGxp,
 			&this->mainTextureFragmentProgramId
-		)) {
+		); ret < 0) {
 		return;
 	}
-	if (SCE_ERR(
+	if (ret = SCE_ERR(
 			sceGxmShaderPatcherRegisterProgram,
-			this->shaderPatcher,
+			gxm->shaderPatcher,
 			imageFragmentProgramGxp,
 			&this->imageFragmentProgramId
-		)) {
+		); ret < 0) {
 		return;
 	}
 
@@ -512,101 +698,87 @@ GXMRenderer::GXMRenderer(DWORD width, DWORD height)
 		vertexStreams[0].stride = sizeof(Vertex);
 		vertexStreams[0].indexSource = SCE_GXM_INDEX_SOURCE_INDEX_16BIT;
 
-		if (SCE_ERR(
+		if (ret = SCE_ERR(
 				sceGxmShaderPatcherCreateVertexProgram,
-				this->shaderPatcher,
+				gxm->shaderPatcher,
 				this->mainVertexProgramId,
 				vertexAttributes,
 				3,
 				vertexStreams,
 				1,
 				&this->mainVertexProgram
-			)) {
+			); ret < 0) {
 			return;
 		}
 	}
 
 	// main color opaque
-	if (SCE_ERR(
+	if (ret = SCE_ERR(
 			sceGxmShaderPatcherCreateFragmentProgram,
-			this->shaderPatcher,
+			gxm->shaderPatcher,
 			this->mainColorFragmentProgramId,
 			SCE_GXM_OUTPUT_REGISTER_FORMAT_UCHAR4,
-			SCE_GXM_MULTISAMPLE_NONE,
+			msaaMode,
 			&blendInfoOpaque,
 			mainVertexProgramGxp,
 			&this->opaqueColorFragmentProgram
-		)) {
+		); ret < 0) {
 		return;
 	}
 
 	// main color blended
-	if (SCE_ERR(
+	if (ret = SCE_ERR(
 			sceGxmShaderPatcherCreateFragmentProgram,
-			this->shaderPatcher,
+			gxm->shaderPatcher,
 			this->mainColorFragmentProgramId,
 			SCE_GXM_OUTPUT_REGISTER_FORMAT_UCHAR4,
-			SCE_GXM_MULTISAMPLE_NONE,
+			msaaMode,
 			&blendInfoTransparent,
 			mainVertexProgramGxp,
 			&this->blendedColorFragmentProgram
-		)) {
+		); ret < 0) {
 		return;
 	}
 
 	// main texture opaque
-	if (SCE_ERR(
+	if (ret = SCE_ERR(
 			sceGxmShaderPatcherCreateFragmentProgram,
-			this->shaderPatcher,
+			gxm->shaderPatcher,
 			this->mainTextureFragmentProgramId,
 			SCE_GXM_OUTPUT_REGISTER_FORMAT_UCHAR4,
-			SCE_GXM_MULTISAMPLE_NONE,
+			msaaMode,
 			&blendInfoOpaque,
 			mainVertexProgramGxp,
 			&this->opaqueTextureFragmentProgram
-		)) {
+		); ret < 0) {
 		return;
 	}
 
 	// main texture transparent
-	if (SCE_ERR(
+	if (ret = SCE_ERR(
 			sceGxmShaderPatcherCreateFragmentProgram,
-			this->shaderPatcher,
+			gxm->shaderPatcher,
 			this->mainTextureFragmentProgramId,
 			SCE_GXM_OUTPUT_REGISTER_FORMAT_UCHAR4,
-			SCE_GXM_MULTISAMPLE_NONE,
+			msaaMode,
 			&blendInfoTransparent,
 			mainVertexProgramGxp,
 			&this->blendedTextureFragmentProgram
-		)) {
+		); ret < 0) {
 		return;
 	}
 
 	// image
-	if (SCE_ERR(
+	if (ret = SCE_ERR(
 			sceGxmShaderPatcherCreateFragmentProgram,
-			this->shaderPatcher,
+			gxm->shaderPatcher,
 			this->imageFragmentProgramId,
 			SCE_GXM_OUTPUT_REGISTER_FORMAT_UCHAR4,
-			SCE_GXM_MULTISAMPLE_NONE,
+			msaaMode,
 			&blendInfoTransparent,
 			mainVertexProgramGxp,
 			&this->imageFragmentProgram
-		)) {
-		return;
-	}
-
-	// color
-	if (SCE_ERR(
-			sceGxmShaderPatcherCreateFragmentProgram,
-			this->shaderPatcher,
-			this->colorFragmentProgramId,
-			SCE_GXM_OUTPUT_REGISTER_FORMAT_UCHAR4,
-			SCE_GXM_MULTISAMPLE_NONE,
-			NULL,
-			mainVertexProgramGxp,
-			&this->colorFragmentProgram
-		)) {
+		); ret < 0) {
 		return;
 	}
 
@@ -625,16 +797,13 @@ GXMRenderer::GXMRenderer(DWORD width, DWORD height)
 	this->texture_uShininess = sceGxmProgramFindParameterByName(mainTextureFragmentProgramGxp, "uShininess");   // float
 	this->texture_uColor = sceGxmProgramFindParameterByName(mainTextureFragmentProgramGxp, "uColor");           // vec4
 
-	// clear uniforms
-	this->colorShader_uColor = sceGxmProgramFindParameterByName(colorFragmentProgramGxp, "uColor"); // vec4
-
 	for (int i = 0; i < GXM_FRAGMENT_BUFFER_COUNT; i++) {
-		this->lights[i] = static_cast<GXMSceneLightUniform*>(cdram_alloc(sizeof(GXMSceneLightUniform), 4));
+		this->lights[i] = static_cast<GXMSceneLightUniform*>(gxm->alloc(sizeof(GXMSceneLightUniform), 4));
 	}
 	for (int i = 0; i < GXM_VERTEX_BUFFER_COUNT; i++) {
-		this->quadVertices[i] = static_cast<Vertex*>(cdram_alloc(sizeof(Vertex) * 4 * 50, 4));
+		this->quadVertices[i] = static_cast<Vertex*>(gxm->alloc(sizeof(Vertex) * 4 * 50, 4));
 	}
-	this->quadIndices = static_cast<uint16_t*>(cdram_alloc(sizeof(uint16_t) * 4, 4));
+	this->quadIndices = static_cast<uint16_t*>(gxm->alloc(sizeof(uint16_t) * 4, 4));
 	this->quadIndices[0] = 0;
 	this->quadIndices[1] = 1;
 	this->quadIndices[2] = 2;
@@ -663,22 +832,21 @@ GXMRenderer::GXMRenderer(DWORD width, DWORD height)
 			break;
 		}
 	}
-
+	if(ids) SDL_free(ids);
 	m_initialized = true;
 }
 
 GXMRenderer::~GXMRenderer()
 {
-	if (!m_initialized) {
-		return;
+	for (int i = 0; i < GXM_FRAGMENT_BUFFER_COUNT; i++) {
+		if(this->lights[i]) gxm->free(this->lights[i]);
 	}
+	for (int i = 0; i < GXM_VERTEX_BUFFER_COUNT; i++) {
+		if(this->quadVertices[i]) gxm->free(this->quadVertices[i]);
+	}
+	if(this->quadIndices) gxm->free(this->quadIndices);
 
-	// todo free stuff
-
-	vita_mem_free(this->depthBufferUid);
-	this->depthBufferData = nullptr;
-	vita_mem_free(this->stencilBufferUid);
-	this->stencilBufferData = nullptr;
+	if(this->gamepad) SDL_CloseGamepad(this->gamepad);
 }
 
 void GXMRenderer::PushLights(const SceneLight* lightsArray, size_t count)
@@ -713,7 +881,7 @@ void GXMRenderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* textu
 			auto* ctx = static_cast<TextureDestroyContextGXM*>(arg);
 			auto& cache = ctx->renderer->m_textures[ctx->textureId];
 			void* textureData = sceGxmTextureGetData(&cache.gxmTexture);
-			cdram_free(textureData);
+			gxm->free(textureData);
 			cache.texture = nullptr;
 			memset(&cache.gxmTexture, 0, sizeof(cache.gxmTexture));
 			delete ctx;
@@ -859,7 +1027,7 @@ Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi)
 	);
 
 	// allocate gpu memory
-	void* textureData = cdram_alloc(textureSize, textureAlignment);
+	void* textureData = gxm->alloc(textureSize, textureAlignment);
 	copySurfaceToGxm(surface, (uint8_t*) textureData, textureStride, textureSize);
 
 	SceGxmTexture gxmTexture;
@@ -918,7 +1086,7 @@ GXMMeshCacheEntry GXMRenderer::GXMUploadMesh(const MeshGroup& meshGroup)
 
 	size_t vertexBufferSize = sizeof(Vertex) * vertices.size();
 	size_t indexBufferSize = sizeof(uint16_t) * indices.size();
-	void* meshData = cdram_alloc(vertexBufferSize + indexBufferSize, 4);
+	void* meshData = gxm->alloc(vertexBufferSize + indexBufferSize, 4);
 
 	Vertex* vertexBuffer = (Vertex*) meshData;
 	uint16_t* indexBuffer = (uint16_t*) ((uint8_t*) meshData + vertexBufferSize);
@@ -1070,7 +1238,7 @@ void GXMRenderer::AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh)
 			auto* ctx = static_cast<GXMMeshDestroyContext*>(arg);
 			auto& cache = ctx->renderer->m_meshes[ctx->id];
 			cache.meshGroup = nullptr;
-			cdram_free(cache.meshData);
+			gxm->free(cache.meshData);
 			cache.meshData = nullptr;
 			cache.indexBuffer = nullptr;
 			cache.vertexBuffer = nullptr;
@@ -1115,7 +1283,7 @@ bool razor_display_enabled = true;
 
 void GXMRenderer::StartScene()
 {
-	if (sceneStarted) {
+	if (gxm->sceneStarted) {
 		return;
 	}
 
@@ -1165,16 +1333,16 @@ void GXMRenderer::StartScene()
 	}
 
 	sceGxmBeginScene(
-		this->context,
+		gxm->context,
 		0,
-		this->renderTarget,
+		gxm->renderTarget,
 		nullptr,
 		nullptr,
-		this->displayBuffersSync[this->backBufferIndex],
-		&this->displayBuffersSurface[this->backBufferIndex],
-		&this->depthSurface
+		gxm->displayBuffersSync[gxm->backBufferIndex],
+		&gxm->displayBuffersSurface[gxm->backBufferIndex],
+		&gxm->depthSurface
 	);
-	this->sceneStarted = true;
+	gxm->sceneStarted = true;
 	this->quadsUsed = 0;
 
 	sceGxmNotificationWait(&this->vertexNotifications[this->currentVertexBufferIndex]);
@@ -1216,7 +1384,7 @@ HRESULT GXMRenderer::BeginFrame()
 		lightData->lights[i].direction[3] = light.directional;
 		i++;
 	}
-	sceGxmSetFragmentUniformBuffer(this->context, 0, lightData);
+	sceGxmSetFragmentUniformBuffer(gxm->context, 0, lightData);
 
 	return DD_OK;
 }
@@ -1261,9 +1429,9 @@ void GXMRenderer::SubmitDraw(
 
 	char marker[256];
 	snprintf(marker, sizeof(marker), "SubmitDraw: %d", meshId);
-	sceGxmPushUserMarker(this->context, marker);
+	sceGxmPushUserMarker(gxm->context, marker);
 
-	sceGxmSetVertexProgram(this->context, this->mainVertexProgram);
+	sceGxmSetVertexProgram(gxm->context, this->mainVertexProgram);
 
 	bool textured = appearance.textureId != NO_TEXTURE_ID;
 
@@ -1273,7 +1441,7 @@ void GXMRenderer::SubmitDraw(
 	} else {
 		fragmentProgram = textured ? this->opaqueTextureFragmentProgram : this->opaqueColorFragmentProgram;
 	}
-	sceGxmSetFragmentProgram(this->context, fragmentProgram);
+	sceGxmSetFragmentProgram(gxm->context, fragmentProgram);
 
 	const SceGxmProgramParameter* uColor = textured ? this->texture_uColor : this->color_uColor;
 	const SceGxmProgramParameter* uShininess = textured ? this->texture_uShininess : this->color_uShininess;
@@ -1288,13 +1456,13 @@ void GXMRenderer::SubmitDraw(
 	void* vertUniforms;
 	void* fragUniforms;
 #ifdef GXM_PRECOMPUTE
-	sceGxmSetPrecomputedVertexState(this->context, &mesh.vertexState[this->currentVertexBufferIndex]);
-	sceGxmSetPrecomputedFragmentState(this->context, &mesh.fragmentState[this->currentFragmentBufferIndex]);
+	sceGxmSetPrecomputedVertexState(gxm->context, &mesh.vertexState[this->currentVertexBufferIndex]);
+	sceGxmSetPrecomputedFragmentState(gxm->context, &mesh.fragmentState[this->currentFragmentBufferIndex]);
 	vertUniforms = sceGxmPrecomputedVertexStateGetDefaultUniformBuffer(&mesh.vertexState[this->currentVertexBufferIndex]);
 	fragUniforms = sceGxmPrecomputedFragmentStateGetDefaultUniformBuffer(&mesh.fragmentState[this->currentFragmentBufferIndex]);
 #else
-	sceGxmReserveVertexDefaultUniformBuffer(this->context, &vertUniforms);
-	sceGxmReserveFragmentDefaultUniformBuffer(this->context, &fragUniforms);
+	sceGxmReserveVertexDefaultUniformBuffer(gxm->context, &vertUniforms);
+	sceGxmReserveFragmentDefaultUniformBuffer(gxm->context, &fragUniforms);
 #endif
 
 	SET_UNIFORM(vertUniforms, this->uModelViewMatrix, modelViewMatrix);
@@ -1306,18 +1474,18 @@ void GXMRenderer::SubmitDraw(
 
 	if (textured) {
 		auto& texture = m_textures[appearance.textureId];
-		sceGxmSetFragmentTexture(this->context, 0, &texture.gxmTexture);
+		sceGxmSetFragmentTexture(gxm->context, 0, &texture.gxmTexture);
 	}
 
 #ifdef GXM_PRECOMPUTE
-	sceGxmDrawPrecomputed(this->context, &mesh.drawState);
-	sceGxmSetPrecomputedVertexState(this->context, NULL);
-	sceGxmSetPrecomputedFragmentState(this->context, NULL);
+	sceGxmDrawPrecomputed(gxm->context, &mesh.drawState);
+	sceGxmSetPrecomputedVertexState(gxm->gxm->context, NULL);
+	sceGxmSetPrecomputedFragmentState(gxm->context, NULL);
 #else
-	sceGxmSetVertexStream(this->context, 0, mesh.vertexBuffer);
-	sceGxmDraw(this->context, SCE_GXM_PRIMITIVE_TRIANGLES, SCE_GXM_INDEX_FORMAT_U16, mesh.indexBuffer, mesh.indexCount);
+	sceGxmSetVertexStream(gxm->context, 0, mesh.vertexBuffer);
+	sceGxmDraw(gxm->context, SCE_GXM_PRIMITIVE_TRIANGLES, SCE_GXM_INDEX_FORMAT_U16, mesh.indexBuffer, mesh.indexCount);
 #endif
-	sceGxmPopUserMarker(this->context);
+	sceGxmPopUserMarker(gxm->context);
 }
 
 HRESULT GXMRenderer::FinalizeFrame()
@@ -1335,82 +1503,27 @@ void GXMRenderer::Resize(int width, int height, const ViewportTransform& viewpor
 void GXMRenderer::Clear(float r, float g, float b)
 {
 	this->StartScene();
-
-	char marker[256];
-	snprintf(marker, sizeof(marker), "Clear");
-	sceGxmPushUserMarker(this->context, marker);
-
-	sceGxmSetVertexProgram(this->context, this->mainVertexProgram);
-	sceGxmSetFragmentProgram(this->context, this->colorFragmentProgram);
-
-	void* vertUniforms;
-	void* fragUniforms;
-	sceGxmReserveVertexDefaultUniformBuffer(this->context, &vertUniforms);
-	sceGxmReserveFragmentDefaultUniformBuffer(this->context, &fragUniforms);
-
-	D3DRMMATRIX4D projection;
-	CreateOrthoMatrix(0.0, 1.0, 1.0, 0.0, projection);
-
-	Matrix3x3 normal = {{1.f, 0.f, 0.f}, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}};
-
-	SET_UNIFORM(vertUniforms, this->uModelViewMatrix, identity4x4); // float4x4
-	SET_UNIFORM(vertUniforms, this->uNormalMatrix, normal);         // float3x3
-	SET_UNIFORM(vertUniforms, this->uProjectionMatrix, projection); // float4x4
-
-	float color[] = {r, g, b, 1};
-	SET_UNIFORM(fragUniforms, this->colorShader_uColor, color);
-
-	float x1 = 0;
-	float y1 = 0;
-	float x2 = x1 + 1.0;
-	float y2 = y1 + 1.0;
-
-	Vertex* quadVertices = this->QuadVerticesBuffer();
-	quadVertices[0] = Vertex{.position = {x1, y1, -1.0}, .normal = {0, 0, 0}, .texCoord = {0, 0}};
-	quadVertices[1] = Vertex{.position = {x2, y1, -1.0}, .normal = {0, 0, 0}, .texCoord = {0, 0}};
-	quadVertices[2] = Vertex{.position = {x1, y2, -1.0}, .normal = {0, 0, 0}, .texCoord = {0, 0}};
-	quadVertices[3] = Vertex{.position = {x2, y2, -1.0}, .normal = {0, 0, 0}, .texCoord = {0, 0}};
-
-	sceGxmSetVertexStream(this->context, 0, quadVertices);
-	sceGxmDraw(this->context, SCE_GXM_PRIMITIVE_TRIANGLE_STRIP, SCE_GXM_INDEX_FORMAT_U16, this->quadIndices, 4);
-
-	sceGxmPopUserMarker(this->context);
+	gxm->clear(r, g, b, false);
 }
 
 void GXMRenderer::Flip()
 {
-	if (!this->sceneStarted) {
+	if (!gxm->sceneStarted) {
 		this->Clear(0, 0, 0);
 	}
 
 	++this->vertexNotifications[this->currentVertexBufferIndex].value;
 	++this->fragmentNotifications[this->currentFragmentBufferIndex].value;
-	sceGxmEndScene(
-		this->context,
+	sceGxmEndScene( 
+		gxm->context,
 		&this->vertexNotifications[this->currentVertexBufferIndex],
 		&this->fragmentNotifications[this->currentFragmentBufferIndex]
 	);
+	gxm->sceneStarted = false;
 
 	this->currentVertexBufferIndex = (this->currentVertexBufferIndex + 1) % GXM_VERTEX_BUFFER_COUNT;
 	this->currentFragmentBufferIndex = (this->currentFragmentBufferIndex + 1) % GXM_FRAGMENT_BUFFER_COUNT;
-
-	sceGxmPadHeartbeat(
-		&this->displayBuffersSurface[this->backBufferIndex],
-		this->displayBuffersSync[this->backBufferIndex]
-	);
-	this->sceneStarted = false;
-
-	// display
-	GXMDisplayData displayData;
-	displayData.address = this->displayBuffers[this->backBufferIndex];
-	sceGxmDisplayQueueAddEntry(
-		this->displayBuffersSync[this->frontBufferIndex],
-		this->displayBuffersSync[this->backBufferIndex],
-		&displayData
-	);
-
-	this->frontBufferIndex = this->backBufferIndex;
-	this->backBufferIndex = (this->backBufferIndex + 1) % GXM_DISPLAY_BUFFER_COUNT;
+	gxm->swap_display();
 }
 
 void GXMRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect)
@@ -1419,15 +1532,15 @@ void GXMRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const S
 
 	char marker[256];
 	snprintf(marker, sizeof(marker), "Draw2DImage: %d", textureId);
-	sceGxmPushUserMarker(this->context, marker);
+	sceGxmPushUserMarker(gxm->context, marker);
 
-	sceGxmSetVertexProgram(this->context, this->mainVertexProgram);
-	sceGxmSetFragmentProgram(this->context, this->imageFragmentProgram);
+	sceGxmSetVertexProgram(gxm->context, this->mainVertexProgram);
+	sceGxmSetFragmentProgram(gxm->context, this->imageFragmentProgram);
 
 	void* vertUniforms;
 	void* fragUniforms;
-	sceGxmReserveVertexDefaultUniformBuffer(this->context, &vertUniforms);
-	sceGxmReserveFragmentDefaultUniformBuffer(this->context, &fragUniforms);
+	sceGxmReserveVertexDefaultUniformBuffer(gxm->context, &vertUniforms);
+	sceGxmReserveFragmentDefaultUniformBuffer(gxm->context, &fragUniforms);
 
 	float left = -this->m_viewportTransform.offsetX / this->m_viewportTransform.scale;
 	float right = (this->m_width - this->m_viewportTransform.offsetX) / this->m_viewportTransform.scale;
@@ -1463,7 +1576,7 @@ void GXMRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const S
 	SET_UNIFORM(vertUniforms, this->uProjectionMatrix, projection); // float4x4
 
 	const GXMTextureCacheEntry& texture = m_textures[textureId];
-	sceGxmSetFragmentTexture(this->context, 0, &texture.gxmTexture);
+	sceGxmSetFragmentTexture(gxm->context, 0, &texture.gxmTexture);
 
 	float texW = sceGxmTextureGetWidth(&texture.gxmTexture);
 	float texH = sceGxmTextureGetHeight(&texture.gxmTexture);
@@ -1479,12 +1592,12 @@ void GXMRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const S
 	quadVertices[2] = Vertex{.position = {x1, y2, 0}, .normal = {0, 0, 0}, .texCoord = {u1, v2}};
 	quadVertices[3] = Vertex{.position = {x2, y2, 0}, .normal = {0, 0, 0}, .texCoord = {u2, v2}};
 
-	sceGxmSetVertexStream(this->context, 0, quadVertices);
+	sceGxmSetVertexStream(gxm->context, 0, quadVertices);
 
-	sceGxmSetFrontDepthWriteEnable(this->context, SCE_GXM_DEPTH_WRITE_DISABLED);
-	sceGxmDraw(this->context, SCE_GXM_PRIMITIVE_TRIANGLE_STRIP, SCE_GXM_INDEX_FORMAT_U16, this->quadIndices, 4);
-	sceGxmSetFrontDepthWriteEnable(this->context, SCE_GXM_DEPTH_WRITE_ENABLED);
-	sceGxmPopUserMarker(this->context);
+	sceGxmSetFrontDepthWriteEnable(gxm->context, SCE_GXM_DEPTH_WRITE_DISABLED);
+	sceGxmDraw(gxm->context, SCE_GXM_PRIMITIVE_TRIANGLE_STRIP, SCE_GXM_INDEX_FORMAT_U16, this->quadIndices, 4);
+	sceGxmSetFrontDepthWriteEnable(gxm->context, SCE_GXM_DEPTH_WRITE_ENABLED);
+	sceGxmPopUserMarker(gxm->context);
 }
 
 void GXMRenderer::SetDither(bool dither)
@@ -1503,7 +1616,7 @@ void GXMRenderer::Download(SDL_Surface* target)
 		this->m_width,
 		this->m_height,
 		SDL_PIXELFORMAT_RGBA32,
-		this->displayBuffers[this->frontBufferIndex],
+		gxm->displayBuffers[gxm->frontBufferIndex],
 		VITA_GXM_SCREEN_STRIDE
 	);
 	SDL_BlitSurfaceScaled(src, &srcRect, target, nullptr, SDL_SCALEMODE_NEAREST);

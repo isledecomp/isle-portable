@@ -551,6 +551,7 @@ if (ISLE_BUILD_APP)
   if(VITA)
     target_sources(isle PRIVATE
       ISLE/vita/config.cpp
+      ISLE/vita/messagebox.cpp
     )
   endif()
 endif()

@@ -17,7 +17,7 @@
 		if (__sce_err_ret_val < 0) {                                                                                   \
 			sceClibPrintf(#func " error: 0x%x\n", __sce_err_ret_val);                                                  \
 		}                                                                                                              \
-		__sce_err_ret_val < 0;                                                                                         \
+		__sce_err_ret_val;                                                                                         \
 	})
 
 #define ALIGN(x, a) (((x) + ((a) - 1)) & ~((a) - 1))

@@ -1,6 +1,5 @@
-shaders += main.vert.gxp
-shaders += color.frag.gxp image.frag.gxp
-shaders += main.color.frag.gxp main.texture.frag.gxp
+shaders += clear.vert.gxp clear.frag.gxp image.frag.gxp
+shaders += main.vert.gxp main.color.frag.gxp main.texture.frag.gxp
 
 PERFS = $(shaders:.gxp=.perf.txt)
 

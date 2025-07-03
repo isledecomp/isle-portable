@@ -12,11 +12,8 @@
 #include <psp2/types.h>
 #include <psp2/kernel/clib.h>
 
-#include "gxm_memory.h"
-
 DEFINE_GUID(GXM_GUID, 0x682656F3, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x47, 0x58, 0x4D);
 
-#define GXM_DISPLAY_BUFFER_COUNT 3
 #define GXM_VERTEX_BUFFER_COUNT 2
 #define GXM_FRAGMENT_BUFFER_COUNT 3
 
@@ -70,38 +67,6 @@ typedef struct Vertex {
     float normal[3];
     float texCoord[2];
 } Vertex;
-
-
-typedef struct GXMRendererContext {
-	// context
-	SceUID vdmRingBufferUid;
-	SceUID vertexRingBufferUid;
-	SceUID fragmentRingBufferUid;
-	SceUID fragmentUsseRingBufferUid;
-	size_t fragmentUsseRingBufferOffset;
-
-	void* vdmRingBuffer;
-	void* vertexRingBuffer;
-	void* fragmentRingBuffer;
-	void* fragmentUsseRingBuffer;
-
-	void* contextHostMem;
-	SceGxmContext* context;
-
-	// shader patcher
-	SceUID patcherBufferUid;
-	void* patcherBuffer;
-
-	SceUID patcherVertexUsseUid;
-	size_t patcherVertexUsseOffset;
-	void* patcherVertexUsse;
-	
-	SceUID patcherFragmentUsseUid;
-	size_t patcherFragmentUsseOffset;
-    void* patcherFragmentUsse;
-
-	SceGxmShaderPatcher* shaderPatcher;
-} GXMRendererContext;
 
 class GXMRenderer : public Direct3DRMRenderer {
 public:
@@ -164,32 +129,12 @@ private:
 	std::vector<SceneLight> m_lights;
 
 	bool transparencyEnabled = false;
-	bool sceneStarted = false;
-
-	SceGxmContext* context;
-	SceGxmShaderPatcher* shaderPatcher;
-
-	SceGxmRenderTarget* renderTarget;
-	void* displayBuffers[GXM_DISPLAY_BUFFER_COUNT];
-	SceUID displayBuffersUid[GXM_DISPLAY_BUFFER_COUNT];
-	SceGxmColorSurface displayBuffersSurface[GXM_DISPLAY_BUFFER_COUNT];
-	SceGxmSyncObject* displayBuffersSync[GXM_DISPLAY_BUFFER_COUNT];
-	int backBufferIndex = 0;
-	int frontBufferIndex = 1;
-
-	// depth buffer
-	SceUID depthBufferUid;
-	void* depthBufferData;
-	SceUID stencilBufferUid;
-	void* stencilBufferData;
-	SceGxmDepthStencilSurface depthSurface;
 
 	// shader
 	SceGxmShaderPatcherId mainVertexProgramId;
 	SceGxmShaderPatcherId mainColorFragmentProgramId;
 	SceGxmShaderPatcherId mainTextureFragmentProgramId;
 	SceGxmShaderPatcherId imageFragmentProgramId;
-	SceGxmShaderPatcherId colorFragmentProgramId;
 
 	SceGxmVertexProgram* mainVertexProgram;
 	// with lighting
@@ -199,7 +144,6 @@ private:
 	SceGxmFragmentProgram* blendedTextureFragmentProgram;
 	// no lighting
 	SceGxmFragmentProgram* imageFragmentProgram;
-	SceGxmFragmentProgram* colorFragmentProgram;
 
 	// main shader vertex uniforms
 	const SceGxmProgramParameter* uModelViewMatrix;
@@ -216,9 +160,6 @@ private:
 	const SceGxmProgramParameter* texture_uShininess;
 	const SceGxmProgramParameter* texture_uColor;
 
-	// color shader frament uniforms
-	const SceGxmProgramParameter* colorShader_uColor;
-
 	// uniforms / quad meshes
 	GXMSceneLightUniform* lights[GXM_FRAGMENT_BUFFER_COUNT];
 	Vertex* quadVertices[GXM_VERTEX_BUFFER_COUNT];
@@ -231,15 +172,15 @@ private:
 	int currentVertexBufferIndex = 0;
 
 	SDL_Gamepad* gamepad;
-
 	bool button_dpad_up;
 	bool button_dpad_down;
 	bool button_dpad_left;
 	bool button_dpad_right;
 
-
 	bool m_initialized = false;
 };
+
+int gxm_library_init();
 
 inline static void GXMRenderer_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
@@ -254,6 +195,12 @@ inline static void GXMRenderer_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx
 
 	D3DDEVICEDESC helDesc = {};
 	helDesc.dwDeviceRenderBitDepth = DDBD_32;
+
+	int ret = gxm_library_init();
+	if(ret < 0) {
+		SDL_Log("gxm_library_init failed: %08x", ret);
+		return;
+	}
 
 	EnumDevice(cb, ctx, "GXM HAL", &halDesc, &helDesc, GXM_GUID);
 }
