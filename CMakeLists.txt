@@ -668,17 +668,14 @@ if(NINTENDO_3DS)
     ICON "ISLE/res/3ds/isle.png"
   )
 
-if(WIN32){
-  install(DIRECTORY "$<TARGET_FILE_DIR:isle>/QTLibs" DESTINATION "${CMAKE_INSTALL_BINDIR}")
-}
-
   ctr_create_3dsx(isle SMDH isle.smdh)
   install(FILES "$<TARGET_FILE_DIR:isle>/isle.3dsx" DESTINATION "${CMAKE_INSTALL_BINDIR}")
+endif()
+if(WIN32)
+  install(DIRECTORY "$<TARGET_FILE_DIR:isle>/QTLibs" DESTINATION "${CMAKE_INSTALL_BINDIR}")
 endif()
 if(MSVC)
   set(CPACK_GENERATOR ZIP)
 else()
   set(CPACK_GENERATOR TGZ)
 endif()
-
-include(CPack)
