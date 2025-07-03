@@ -139,6 +139,15 @@ jobs:
           cd build
           mkdir dist
           mv *.3dsx dist/
+      
+      - name: Package (Xbox One)
+        if: ${{ matrix.xbox-one }}
+        run: |
+          cd build
+          mkdir dist
+          mv AppPackages/isle/*/Dependencies/x64/Microsoft.VCLibs.x64.*.14.00.appx dist/
+          mv AppPackages/isle/*/*.msix dist/
+          mv AppPackages/isle/*/*.msixbundle dist/
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
@@ -148,9 +157,9 @@ jobs:
             build/dist/isle-*
             build/dist/*.AppImage
             build/dist/*.3dsx
-            build/AppPackages/isle/*/*.msixbundle
-            build/AppPackages/isle/*/*.msix
-            build/AppPackages/isle/*/Dependencies/x64/Microsoft.VCLibs.x64.Debug.14.00.appx
+            build/dist/*.msix
+            build/dist/*.msixbundle
+            build/dist/Microsoft.VCLibs.x64.*.14.00.appx
 
   flatpak:
     name: "Flatpak (${{ matrix.arch }})"
@@ -244,4 +253,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ./uploadtool/upload.sh Release/**/*
+          ./uploadtool/upload.sh Release/*
