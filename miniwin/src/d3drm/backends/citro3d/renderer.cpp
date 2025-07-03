@@ -26,7 +26,7 @@ Citro3DRenderer::Citro3DRenderer(DWORD width, DWORD height)
 	m_virtualWidth = width;
 	m_virtualHeight = height;
 
-	gfxInitDefault();
+	gfxSetScreenFormat(GFX_BOTTOM, GSP_BGR8_OES);
 	consoleInit(GFX_TOP, nullptr);
 	C3D_Init(C3D_DEFAULT_CMDBUF_SIZE);
 
@@ -66,7 +66,6 @@ Citro3DRenderer::~Citro3DRenderer()
 	shaderProgramFree(&program);
 	DVLB_Free(vshader_dvlb);
 	C3D_Fini();
-	gfxExit();
 }
 
 void Citro3DRenderer::PushLights(const SceneLight* lights, size_t count)
