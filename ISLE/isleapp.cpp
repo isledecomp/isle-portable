@@ -28,7 +28,10 @@
 #include "mxtransitionmanager.h"
 #include "mxutilities.h"
 #include "mxvariabletable.h"
+#include "res/arrow_bmp.h"
+#include "res/busy_bmp.h"
 #include "res/isle_bmp.h"
+#include "res/no_bmp.h"
 #include "res/resource.h"
 #include "roi/legoroi.h"
 #include "tgl/d3drm/impl.h"
@@ -135,6 +138,10 @@ IsleApp::IsleApp()
 	m_cursorBusy = NULL;
 	m_cursorNo = NULL;
 	m_cursorCurrent = NULL;
+	m_cursorArrowBitmap = NULL;
+	m_cursorBusyBitmap = NULL;
+	m_cursorNoBitmap = NULL;
+	m_cursorCurrentBitmap = NULL;
 
 	LegoOmni::CreateInstance();
 
@@ -656,6 +663,12 @@ MxResult IsleApp::SetupWindow()
 	m_cursorBusy = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_WAIT);
 	m_cursorNo = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_NOT_ALLOWED);
 	SDL_SetCursor(m_cursorCurrent);
+	if (g_isle->GetDrawCursor()) {
+		SDL_HideCursor();
+		m_cursorCurrentBitmap = m_cursorArrowBitmap = &arrow_cursor;
+		m_cursorBusyBitmap = &busy_cursor;
+		m_cursorNoBitmap = &no_cursor;
+	}
 
 	SDL_PropertiesID props = SDL_CreateProperties();
 	SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, g_targetWidth);
@@ -738,6 +751,9 @@ MxResult IsleApp::SetupWindow()
 		if (LegoOmni::GetInstance()->GetInputManager()) {
 			LegoOmni::GetInstance()->GetInputManager()->SetUseJoystick(m_useJoystick);
 			LegoOmni::GetInstance()->GetInputManager()->SetJoystickIndex(m_joystickIndex);
+		}
+		if (LegoOmni::GetInstance()->GetVideoManager() && g_isle->GetDrawCursor()) {
+			LegoOmni::GetInstance()->GetVideoManager()->SetCursorBitmap(m_cursorCurrentBitmap);
 		}
 		MxDirect3D* d3d = LegoOmni::GetInstance()->GetVideoManager()->GetDirect3D();
 		if (d3d) {
@@ -1023,15 +1039,19 @@ void IsleApp::SetupCursor(Cursor p_cursor)
 	switch (p_cursor) {
 	case e_cursorArrow:
 		m_cursorCurrent = m_cursorArrow;
+		m_cursorCurrentBitmap = m_cursorArrowBitmap;
 		break;
 	case e_cursorBusy:
 		m_cursorCurrent = m_cursorBusy;
+		m_cursorCurrentBitmap = m_cursorBusyBitmap;
 		break;
 	case e_cursorNo:
 		m_cursorCurrent = m_cursorNo;
+		m_cursorCurrentBitmap = m_cursorNoBitmap;
 		break;
 	case e_cursorNone:
 		m_cursorCurrent = NULL;
+		m_cursorCurrentBitmap = NULL;
 	case e_cursorUnused3:
 	case e_cursorUnused4:
 	case e_cursorUnused5:
@@ -1043,12 +1063,22 @@ void IsleApp::SetupCursor(Cursor p_cursor)
 		break;
 	}
 
-	if (m_cursorCurrent != NULL) {
-		SDL_SetCursor(m_cursorCurrent);
-		SDL_ShowCursor();
+	if (g_isle->GetDrawCursor()) {
+		if (m_cursorCurrentBitmap == NULL) {
+			VideoManager()->SetCursorBitmap(NULL);
+		}
+		else {
+			VideoManager()->SetCursorBitmap(m_cursorCurrentBitmap);
+		}
 	}
 	else {
-		SDL_HideCursor();
+		if (m_cursorCurrent != NULL) {
+			SDL_SetCursor(m_cursorCurrent);
+			SDL_ShowCursor();
+		}
+		else {
+			SDL_HideCursor();
+		}
 	}
 }
 

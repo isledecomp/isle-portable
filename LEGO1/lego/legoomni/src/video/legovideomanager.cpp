@@ -272,14 +272,13 @@ void LegoVideoManager::MoveCursor(MxS32 p_cursorX, MxS32 p_cursorY)
 {
 	m_cursorX = p_cursorX;
 	m_cursorY = p_cursorY;
-	m_drawCursor = TRUE;
 
-	if (623 < p_cursorX) {
-		m_cursorX = 623;
+	if (640 < p_cursorX) {
+		m_cursorX = 640;
 	}
 
-	if (463 < p_cursorY) {
-		m_cursorY = 463;
+	if (480 < p_cursorY) {
+		m_cursorY = 480;
 	}
 }
 
@@ -835,4 +834,31 @@ void LegoVideoManager::DrawTextToSurface32(
 		}
 		++p_text;
 	}
+}
+
+void LegoVideoManager::SetCursorBitmap(const CursorBitmap* p_cursorBitmap)
+{
+	if (p_cursorBitmap == NULL) {
+		m_drawCursor = FALSE;
+		return;
+	}
+
+	if (m_cursorSurface != NULL) {
+		m_cursorSurface->Release();
+		m_cursorSurface = NULL;
+	}
+
+	m_cursorRect.top = 0;
+	m_cursorRect.left = 0;
+	m_cursorRect.bottom = p_cursorBitmap->height;
+	m_cursorRect.right = p_cursorBitmap->width;
+
+	m_cursorSurface = MxDisplaySurface::CreateCursorSurface(p_cursorBitmap);
+
+	if (m_cursorSurface == NULL) {
+		m_drawCursor = FALSE;
+		return;
+	}
+
+	m_drawCursor = TRUE;
 }
