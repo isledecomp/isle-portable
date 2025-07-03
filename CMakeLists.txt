@@ -473,6 +473,9 @@ if (ISLE_BUILD_APP)
     ISLE/res/isle.rc
     ISLE/isleapp.cpp
     ISLE/islefiles.cpp
+    ${CMAKE_SOURCE_DIR}/ISLE/res/arrow_bmp.h
+    ${CMAKE_SOURCE_DIR}/ISLE/res/busy_bmp.h
+    ${CMAKE_SOURCE_DIR}/ISLE/res/no_bmp.h
   )
   list(APPEND isle_targets isle)
   if (WIN32)
@@ -530,13 +533,28 @@ if (ISLE_BUILD_APP)
     )
   endif()
   if(Python3_FOUND)
-    execute_process(
-      COMMAND ${Python3_EXECUTABLE} tools/png2h.py ISLE/res/arrow.png ISLE/res/busy.png ISLE/res/no.png
-      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-      RESULT_VARIABLE PNG2H_RESULT
-      OUTPUT_QUIET
-      ERROR_QUIET
-    )
+    if(NOT DEFINED PYTHON_PIL_AVAILABLE)
+      execute_process(
+        COMMAND ${Python3_EXECUTABLE} -c "import PIL"
+        RESULT_VARIABLE PIL_RESULT
+        ERROR_QUIET
+      )
+      set(PYTHON_PIL_AVAILABLE ${PIL_RESULT} EQUAL 0 CACHE BOOL "Is Python PIL available?")
+    endif()
+    if(PYTHON_PIL_AVAILABLE)
+      add_custom_command(
+        OUTPUT
+          ${CMAKE_SOURCE_DIR}/ISLE/res/arrow_bmp.h
+          ${CMAKE_SOURCE_DIR}/ISLE/res/busy_bmp.h
+          ${CMAKE_SOURCE_DIR}/ISLE/res/no_bmp.h
+        COMMAND ${Python3_EXECUTABLE} tools/png2h.py ISLE/res/arrow.png ISLE/res/busy.png ISLE/res/no.png
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        DEPENDS
+          ${CMAKE_SOURCE_DIR}/ISLE/res/arrow.png
+          ${CMAKE_SOURCE_DIR}/ISLE/res/busy.png
+          ${CMAKE_SOURCE_DIR}/ISLE/res/no.png
+      )
+    endif()
   endif()
 endif()
 

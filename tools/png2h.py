@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-import sys
+import argparse
 from PIL import Image
 from pathlib import Path
 
 
-def encode_cursor(image_path):
+def encode_cursor(image_path: Path):
     img = Image.open(image_path).convert("RGBA")
     width, height = img.size
     pixels = img.load()
@@ -47,20 +47,19 @@ def to_c_array(name, data):
 
 
 def main():
-    if len(sys.argv) == 1:
-        print(f"Usage: {sys.argv[0]} [...input.png]")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(allow_abbrev=False)
+    parser.add_argument("inputs", nargs="+", help="PNG images", type=Path)
+    args = parser.parse_args()
 
-    input_files = sys.argv[1:]
+    input_files: list[Path] = args.inputs
 
     for input_file in input_files:
         data, mask, width, height = encode_cursor(input_file)
 
-        input_file_path = Path(input_file)
-        input_file_name = input_file_path.stem
-        output_file = input_file_path.with_name(f"{input_file_name}_bmp.h")
+        input_file_name = input_file.stem
+        output_file = input_file.with_name(f"{input_file_name}_bmp.h")
 
-        with open(output_file, "w") as f:
+        with output_file.open("w") as f:
             f.write(f"// Generated from {input_file}\n")
             f.write(f"// Dimensions: {width}x{height}\n\n")
             f.write(f"#pragma once\n")
@@ -77,4 +76,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
