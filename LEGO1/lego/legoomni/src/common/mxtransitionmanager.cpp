@@ -248,7 +248,7 @@ void MxTransitionManager::DissolveTransition()
 				}
 				else {
 					MxU8* surf = (MxU8*) ddsd.lpSurface + ddsd.lPitch * row + xShift * 4;
-					*(MxU32*) surf = 0;
+					*(MxU32*) surf = 0xFF000000;
 				}
 			}
 		}
@@ -416,10 +416,25 @@ void MxTransitionManager::WipeDownTransition()
 		// For each of the 240 animation ticks, blank out two scanlines
 		// starting at the top of the screen.
 		MxU8* line = (MxU8*) ddsd.lpSurface + 2 * ddsd.lPitch * m_animationTimer;
-		memset(line, 0, ddsd.lPitch);
 
-		line += ddsd.lPitch;
-		memset(line, 0, ddsd.lPitch);
+		if (ddsd.ddpfPixelFormat.dwRGBBitCount == 32) {
+			MxU32* pixels = (MxU32*) line;
+			int pixelsPerLine = ddsd.lPitch / 4;
+			for (int i = 0; i < pixelsPerLine; i++) {
+				pixels[i] = 0xFF000000;
+			}
+			line += ddsd.lPitch;
+			pixels = (MxU32*) line;
+			for (int i = 0; i < pixelsPerLine; i++) {
+				pixels[i] = 0xFF000000;
+			}
+		}
+		else {
+			memset(line, 0, ddsd.lPitch);
+
+			line += ddsd.lPitch;
+			memset(line, 0, ddsd.lPitch);
+		}
 
 		SetupCopyRect(&ddsd);
 		m_ddSurface->Unlock(ddsd.lpSurface);
