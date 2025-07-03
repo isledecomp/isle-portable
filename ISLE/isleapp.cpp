@@ -665,44 +665,9 @@ MxResult IsleApp::SetupWindow()
 	SDL_SetCursor(m_cursorCurrent);
 	if (g_isle->GetDrawCursor()) {
 		SDL_HideCursor();
-		SDL_IOStream* arrow_stream = SDL_IOFromConstMem(arrow_bmp, arrow_bmp_len);
-		if (!arrow_stream) {
-			SDL_LogError(
-				SDL_LOG_CATEGORY_APPLICATION,
-				"Failed to open SDL_IOStream for arrow cursor: %s",
-				SDL_GetError()
-			);
-			return FAILURE;
-		}
-		SDL_IOStream* busy_stream = SDL_IOFromConstMem(busy_bmp, busy_bmp_len);
-		if (!busy_stream) {
-			SDL_LogError(
-				SDL_LOG_CATEGORY_APPLICATION,
-				"Failed to open SDL_IOStream for busy cursor: %s",
-				SDL_GetError()
-			);
-			return FAILURE;
-		}
-		SDL_IOStream* no_stream = SDL_IOFromConstMem(no_bmp, no_bmp_len);
-		if (!no_stream) {
-			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to open SDL_IOStream for no cursor: %s", SDL_GetError());
-			return FAILURE;
-		}
-		m_cursorCurrentBitmap = m_cursorArrowBitmap = SDL_LoadBMP_IO(arrow_stream, true);
-		if (!m_cursorCurrentBitmap) {
-			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load arrow cursor bitmap: %s", SDL_GetError());
-			return FAILURE;
-		}
-		m_cursorBusyBitmap = SDL_LoadBMP_IO(busy_stream, true);
-		if (!m_cursorBusyBitmap) {
-			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load busy cursor bitmap: %s", SDL_GetError());
-			return FAILURE;
-		}
-		m_cursorNoBitmap = SDL_LoadBMP_IO(no_stream, true);
-		if (!m_cursorNoBitmap) {
-			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load no cursor bitmap: %s", SDL_GetError());
-			return FAILURE;
-		}
+		m_cursorCurrentBitmap = m_cursorArrowBitmap = &arrow_cursor;
+		m_cursorBusyBitmap = &busy_cursor;
+		m_cursorNoBitmap = &no_cursor;
 	}
 
 	SDL_PropertiesID props = SDL_CreateProperties();
@@ -788,7 +753,12 @@ MxResult IsleApp::SetupWindow()
 			LegoOmni::GetInstance()->GetInputManager()->SetJoystickIndex(m_joystickIndex);
 		}
 		if (LegoOmni::GetInstance()->GetVideoManager() && g_isle->GetDrawCursor()) {
-			LegoOmni::GetInstance()->GetVideoManager()->SetCursorBitmap(m_cursorCurrentBitmap);
+			LegoOmni::GetInstance()->GetVideoManager()->SetCursorBitmap(
+				m_cursorCurrentBitmap->width,
+				m_cursorCurrentBitmap->height,
+				m_cursorCurrentBitmap->data,
+				m_cursorCurrentBitmap->mask
+			);
 		}
 		MxDirect3D* d3d = LegoOmni::GetInstance()->GetVideoManager()->GetDirect3D();
 		if (d3d) {
@@ -1100,10 +1070,15 @@ void IsleApp::SetupCursor(Cursor p_cursor)
 
 	if (g_isle->GetDrawCursor()) {
 		if (m_cursorCurrentBitmap == NULL) {
-			VideoManager()->SetCursorBitmap(0);
+			VideoManager()->SetCursorBitmap(0, 0, NULL, NULL);
 		}
 		else {
-			VideoManager()->SetCursorBitmap(m_cursorCurrentBitmap);
+			VideoManager()->SetCursorBitmap(
+				m_cursorCurrentBitmap->width,
+				m_cursorCurrentBitmap->height,
+				m_cursorCurrentBitmap->data,
+				m_cursorCurrentBitmap->mask
+			);
 		}
 	}
 	else {

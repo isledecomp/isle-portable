@@ -10,7 +10,6 @@
 
 #include <SDL3/SDL_log.h>
 #include <assert.h>
-#include <string.h>
 #ifdef MINIWIN
 #include "miniwin/windows.h"
 #else
@@ -1298,12 +1297,13 @@ LPDIRECTDRAWSURFACE MxDisplaySurface::FUN_100bc8b0(MxS32 p_width, MxS32 p_height
 	return surface;
 }
 
-LPDIRECTDRAWSURFACE MxDisplaySurface::CreateCursorSurface(const SDL_Surface* p_cursorBitmap)
+LPDIRECTDRAWSURFACE MxDisplaySurface::CreateCursorSurface(
+	MxS32 p_width,
+	MxS32 p_height,
+	const MxU8* p_cursorBitmap,
+	const MxU8* p_cursorMask
+)
 {
-	if (p_cursorBitmap->format != SDL_PIXELFORMAT_ARGB8888) {
-		MxTrace("MxDisplaySurface::CreateCursorSurface: unsupported channel count %d", p_channels);
-		return NULL;
-	}
 	LPDIRECTDRAWSURFACE newSurface = NULL;
 	IDirectDraw* draw = MVideoManager()->GetDirectDraw();
 	MVideoManager();
@@ -1316,8 +1316,12 @@ LPDIRECTDRAWSURFACE MxDisplaySurface::CreateCursorSurface(const SDL_Surface* p_c
 		return NULL;
 	}
 
-	ddsd.dwWidth = p_cursorBitmap->w;
-	ddsd.dwHeight = p_cursorBitmap->h;
+	MxU32 whitePixel = RGB8888_CREATE(0xff, 0xff, 0xff, 0xff);
+	MxU32 blackPixel = RGB8888_CREATE(0, 0, 0, 0xff);
+	MxU32 transparentPixel = RGB8888_CREATE(0, 0, 0, 0);
+
+	ddsd.dwWidth = p_width;
+	ddsd.dwHeight = p_height;
 	ddsd.dwFlags = DDSD_PIXELFORMAT | DDSD_WIDTH | DDSD_HEIGHT | DDSD_CAPS;
 	ddsd.ddsCaps.dwCaps = DDSCAPS_VIDEOMEMORY | DDSCAPS_OFFSCREENPLAIN;
 
@@ -1339,7 +1343,26 @@ LPDIRECTDRAWSURFACE MxDisplaySurface::CreateCursorSurface(const SDL_Surface* p_c
 	else {
 		MxU32* surface = (MxU32*) ddsd.lpSurface;
 
-		memcpy(surface, p_cursorBitmap->pixels, p_cursorBitmap->w * p_cursorBitmap->h * sizeof(MxU32));
+		for (int y = 0; y < p_height; y++) {
+			for (int x = 0; x < p_width; x++) {
+				MxS32 bitIndex = y * p_width + x;
+				MxS32 byteIndex = bitIndex / 8;
+				MxS32 bitOffset = 7 - (bitIndex % 8);
+
+				MxBool isOpaque = (p_cursorMask[byteIndex] >> bitOffset) & 1;
+				MxBool isBlack = (p_cursorBitmap[byteIndex] >> bitOffset) & 1;
+
+				MxS32 pixel;
+				if (!isOpaque) {
+					pixel = transparentPixel;
+				}
+				else {
+					pixel = isBlack ? blackPixel : whitePixel;
+				}
+
+				surface[x + y * p_width] = pixel;
+			}
+		}
 
 		newSurface->Unlock(ddsd.lpSurface);
 

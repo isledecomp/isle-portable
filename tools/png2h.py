@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+import sys
+from PIL import Image
+from pathlib import Path
+
+
+def encode_cursor(image_path):
+    img = Image.open(image_path).convert("RGBA")
+    width, height = img.size
+    pixels = img.load()
+
+    num_pixels = width * height
+    num_bytes = (num_pixels + 7) // 8
+
+    data = bytearray(num_bytes)
+    mask = bytearray(num_bytes)
+
+    for y in range(height):
+        for x in range(width):
+            i = y * width + x
+            byte_index = i // 8
+            bit_offset = 7 - (i % 8)
+
+            r, g, b, a = pixels[x, y]
+
+            if a >= 128:
+                mask[byte_index] |= 1 << bit_offset  # opaque
+                lum = int(0.299 * r + 0.587 * g + 0.114 * b)
+                if lum < 128:
+                    data[byte_index] |= 1 << bit_offset  # black pixel
+
+    return data, mask, width, height
+
+
+def to_c_array(name, data):
+    lines = []
+    line = ""
+    for i, b in enumerate(data):
+        line += f"0x{b:02X}, "
+        if (i + 1) % 12 == 0:
+            lines.append(line)
+            line = ""
+    if line:
+        lines.append(line)
+    array_str = "\n    ".join(lines)
+    return f"static const unsigned char {name}[] = {{\n    {array_str}\n}};\n"
+
+
+def main():
+    if len(sys.argv) == 1:
+        print(f"Usage: {sys.argv[0]} [...input.png]")
+        sys.exit(1)
+
+    input_files = sys.argv[1:]
+
+    for input_file in input_files:
+        data, mask, width, height = encode_cursor(input_file)
+
+        input_file_path = Path(input_file)
+        input_file_name = input_file_path.stem
+        output_file = input_file_path.with_name(f"{input_file_name}_bmp.h")
+
+        with open(output_file, "w") as f:
+            f.write(f"// Generated from {input_file}\n")
+            f.write(f"// Dimensions: {width}x{height}\n\n")
+            f.write(f"#pragma once\n")
+            f.write(f'#include "cursor.h"\n\n')
+            f.write(to_c_array(f"{input_file_name}_data", data))
+            f.write("\n")
+            f.write(to_c_array(f"{input_file_name}_mask", mask))
+            f.write("\n")
+            f.write(
+                f"static const CursorBitmap {input_file_name}_cursor = {'{'} {width}, {height}, {input_file_name}_data, {input_file_name}_mask {'}'};\n"
+            )
+
+        print(f"Written {output_file} with cursor data.")
+
+
+if __name__ == "__main__":
+    main()

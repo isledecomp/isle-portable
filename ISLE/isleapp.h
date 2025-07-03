@@ -6,6 +6,7 @@
 #include "mxtransitionmanager.h"
 #include "mxtypes.h"
 #include "mxvideoparam.h"
+#include "res/cursor.h"
 
 #include <SDL3/SDL.h>
 #ifdef MINIWIN
@@ -87,10 +88,10 @@ private:
 	SDL_Cursor* m_cursorBusy;    // 0x80
 	SDL_Cursor* m_cursorNo;      // 0x84
 	SDL_Cursor* m_cursorCurrent; // 0x88
-	SDL_Surface* m_cursorArrowBitmap;
-	SDL_Surface* m_cursorBusyBitmap;
-	SDL_Surface* m_cursorNoBitmap;
-	SDL_Surface* m_cursorCurrentBitmap;
+	const CursorBitmap* m_cursorArrowBitmap;
+	const CursorBitmap* m_cursorBusyBitmap;
+	const CursorBitmap* m_cursorNoBitmap;
+	const CursorBitmap* m_cursorCurrentBitmap;
 	char* m_mediaPath;
 
 	char* m_iniPath;
