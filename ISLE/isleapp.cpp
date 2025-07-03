@@ -753,12 +753,7 @@ MxResult IsleApp::SetupWindow()
 			LegoOmni::GetInstance()->GetInputManager()->SetJoystickIndex(m_joystickIndex);
 		}
 		if (LegoOmni::GetInstance()->GetVideoManager() && g_isle->GetDrawCursor()) {
-			LegoOmni::GetInstance()->GetVideoManager()->SetCursorBitmap(
-				m_cursorCurrentBitmap->width,
-				m_cursorCurrentBitmap->height,
-				m_cursorCurrentBitmap->data,
-				m_cursorCurrentBitmap->mask
-			);
+			LegoOmni::GetInstance()->GetVideoManager()->SetCursorBitmap(m_cursorCurrentBitmap);
 		}
 		MxDirect3D* d3d = LegoOmni::GetInstance()->GetVideoManager()->GetDirect3D();
 		if (d3d) {
@@ -1070,15 +1065,10 @@ void IsleApp::SetupCursor(Cursor p_cursor)
 
 	if (g_isle->GetDrawCursor()) {
 		if (m_cursorCurrentBitmap == NULL) {
-			VideoManager()->SetCursorBitmap(0, 0, NULL, NULL);
+			VideoManager()->SetCursorBitmap(NULL);
 		}
 		else {
-			VideoManager()->SetCursorBitmap(
-				m_cursorCurrentBitmap->width,
-				m_cursorCurrentBitmap->height,
-				m_cursorCurrentBitmap->data,
-				m_cursorCurrentBitmap->mask
-			);
+			VideoManager()->SetCursorBitmap(m_cursorCurrentBitmap);
 		}
 	}
 	else {

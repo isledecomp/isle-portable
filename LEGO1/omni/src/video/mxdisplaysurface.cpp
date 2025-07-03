@@ -1297,12 +1297,7 @@ LPDIRECTDRAWSURFACE MxDisplaySurface::FUN_100bc8b0(MxS32 p_width, MxS32 p_height
 	return surface;
 }
 
-LPDIRECTDRAWSURFACE MxDisplaySurface::CreateCursorSurface(
-	MxS32 p_width,
-	MxS32 p_height,
-	const MxU8* p_cursorBitmap,
-	const MxU8* p_cursorMask
-)
+LPDIRECTDRAWSURFACE MxDisplaySurface::CreateCursorSurface(const CursorBitmap* p_cursorBitmap)
 {
 	LPDIRECTDRAWSURFACE newSurface = NULL;
 	IDirectDraw* draw = MVideoManager()->GetDirectDraw();
@@ -1316,12 +1311,10 @@ LPDIRECTDRAWSURFACE MxDisplaySurface::CreateCursorSurface(
 		return NULL;
 	}
 
-	MxU32 whitePixel = RGB8888_CREATE(0xff, 0xff, 0xff, 0xff);
-	MxU32 blackPixel = RGB8888_CREATE(0, 0, 0, 0xff);
-	MxU32 transparentPixel = RGB8888_CREATE(0, 0, 0, 0);
+	MxS32 bytesPerPixel = ddsd.ddpfPixelFormat.dwRGBBitCount / 8;
 
-	ddsd.dwWidth = p_width;
-	ddsd.dwHeight = p_height;
+	ddsd.dwWidth = p_cursorBitmap->width;
+	ddsd.dwHeight = p_cursorBitmap->height;
 	ddsd.dwFlags = DDSD_PIXELFORMAT | DDSD_WIDTH | DDSD_HEIGHT | DDSD_CAPS;
 	ddsd.ddsCaps.dwCaps = DDSCAPS_VIDEOMEMORY | DDSCAPS_OFFSCREENPLAIN;
 
@@ -1341,30 +1334,79 @@ LPDIRECTDRAWSURFACE MxDisplaySurface::CreateCursorSurface(
 		goto done;
 	}
 	else {
-		MxU32* surface = (MxU32*) ddsd.lpSurface;
-
-		for (int y = 0; y < p_height; y++) {
-			for (int x = 0; x < p_width; x++) {
-				MxS32 bitIndex = y * p_width + x;
+		for (int y = 0; y < p_cursorBitmap->height; y++) {
+			for (int x = 0; x < p_cursorBitmap->width; x++) {
+				MxS32 bitIndex = y * p_cursorBitmap->width + x;
 				MxS32 byteIndex = bitIndex / 8;
 				MxS32 bitOffset = 7 - (bitIndex % 8);
 
-				MxBool isOpaque = (p_cursorMask[byteIndex] >> bitOffset) & 1;
-				MxBool isBlack = (p_cursorBitmap[byteIndex] >> bitOffset) & 1;
+				MxBool isOpaque = (p_cursorBitmap->mask[byteIndex] >> bitOffset) & 1;
+				MxBool isBlack = (p_cursorBitmap->data[byteIndex] >> bitOffset) & 1;
 
-				MxS32 pixel;
-				if (!isOpaque) {
-					pixel = transparentPixel;
-				}
-				else {
-					pixel = isBlack ? blackPixel : whitePixel;
-				}
+				switch (bytesPerPixel) {
+				case 1: {
+					MxU8* surface = (MxU8*) ddsd.lpSurface;
 
-				surface[x + y * p_width] = pixel;
+					MxU8 pixel;
+					if (!isOpaque) {
+						pixel = 0x10;
+					}
+					else {
+						pixel = isBlack ? 0 : 0xff;
+					}
+				}
+				case 2: {
+					MxU16* surface = (MxU16*) ddsd.lpSurface;
+
+					MxU16 pixel;
+					if (!isOpaque) {
+						pixel = RGB555_CREATE(0x1f, 0, 0x1f);
+					}
+					else {
+						pixel = isBlack ? RGB555_CREATE(0, 0, 0) : RGB555_CREATE(0x1f, 0x1f, 0x1f);
+					}
+
+					surface[x + y * p_cursorBitmap->width] = pixel;
+					break;
+				}
+				default: {
+					MxU32* surface = (MxU32*) ddsd.lpSurface;
+
+					MxS32 pixel;
+					if (!isOpaque) {
+						pixel = RGB8888_CREATE(0, 0, 0, 0); // Transparent pixel
+					}
+					else {
+						pixel = isBlack ? RGB8888_CREATE(0, 0, 0, 0xff) : RGB8888_CREATE(0xff, 0xff, 0xff, 0xff);
+					}
+
+					surface[x + y * p_cursorBitmap->width] = pixel;
+					break;
+				}
+				}
 			}
 		}
 
 		newSurface->Unlock(ddsd.lpSurface);
+		switch (bytesPerPixel) {
+		case 1: {
+			DDCOLORKEY colorkey;
+			colorkey.dwColorSpaceHighValue = 0x10;
+			colorkey.dwColorSpaceLowValue = 0x10;
+			newSurface->SetColorKey(DDCKEY_SRCBLT, &colorkey);
+			break;
+		}
+		case 2: {
+			DDCOLORKEY colorkey;
+			colorkey.dwColorSpaceHighValue = RGB555_CREATE(0x1f, 0, 0x1f);
+			colorkey.dwColorSpaceLowValue = RGB555_CREATE(0x1f, 0, 0x1f);
+			newSurface->SetColorKey(DDCKEY_SRCBLT, &colorkey);
+			break;
+		}
+		default: {
+			break;
+		}
+		}
 
 		return newSurface;
 	}

@@ -1,6 +1,7 @@
 #ifndef MXDISPLAYSURFACE_H
 #define MXDISPLAYSURFACE_H
 
+#include "cursor.h"
 #include "decomp.h"
 #include "mxcore.h"
 #include "mxvideoparam.h"
@@ -97,12 +98,7 @@ public:
 
 	void ClearScreen();
 	static LPDIRECTDRAWSURFACE CreateCursorSurface();
-	static LPDIRECTDRAWSURFACE CreateCursorSurface(
-		MxS32 p_width,
-		MxS32 p_height,
-		const MxU8* p_cursorBitmap,
-		const MxU8* p_cursorMask
-	);
+	static LPDIRECTDRAWSURFACE CreateCursorSurface(const CursorBitmap* p_cursorBitmap);
 	static LPDIRECTDRAWSURFACE CopySurface(LPDIRECTDRAWSURFACE p_src);
 
 	LPDIRECTDRAWSURFACE GetDirectDrawSurface1() { return m_ddSurface1; }

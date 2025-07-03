@@ -1,6 +1,7 @@
 #ifndef LEGOVIDEOMANAGER_H
 #define LEGOVIDEOMANAGER_H
 
+#include "cursor.h"
 #include "decomp.h"
 #include "lego1_export.h"
 #include "legophonemelist.h"
@@ -37,12 +38,7 @@ public:
 	void EnableFullScreenMovie(MxBool p_enable);
 	LEGO1_EXPORT void EnableFullScreenMovie(MxBool p_enable, MxBool p_scale);
 	LEGO1_EXPORT void MoveCursor(MxS32 p_cursorX, MxS32 p_cursorY);
-	LEGO1_EXPORT void SetCursorBitmap(
-		MxS32 p_width,
-		MxS32 p_height,
-		const MxU8* p_cursorBitmap,
-		const MxU8* p_cursorMask
-	);
+	LEGO1_EXPORT void SetCursorBitmap(const CursorBitmap* p_cursorBitmap);
 	void ToggleFPS(MxBool p_visible);
 
 	MxResult Tickle() override;                                                                       // vtable+0x08

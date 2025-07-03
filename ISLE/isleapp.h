@@ -1,12 +1,12 @@
 #ifndef ISLEAPP_H
 #define ISLEAPP_H
 
+#include "cursor.h"
 #include "lego1_export.h"
 #include "legoutils.h"
 #include "mxtransitionmanager.h"
 #include "mxtypes.h"
 #include "mxvideoparam.h"
-#include "res/cursor.h"
 
 #include <SDL3/SDL.h>
 #ifdef MINIWIN
