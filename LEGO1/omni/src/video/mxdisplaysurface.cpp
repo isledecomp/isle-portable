@@ -64,8 +64,6 @@ void MxDisplaySurface::ClearScreen()
 	MxS32 width = m_videoParam.GetRect().GetWidth();
 	MxS32 height = m_videoParam.GetRect().GetHeight();
 
-	RECT rc = {0, 0, width, height};
-
 	memset(&desc, 0, sizeof(desc));
 	desc.dwSize = sizeof(desc);
 	if (m_ddSurface2->GetSurfaceDesc(&desc) != DD_OK) {
@@ -77,9 +75,9 @@ void MxDisplaySurface::ClearScreen()
 	ddBltFx.dwFillColor = 0;
 
 	for (MxS32 i = 0; i < backBuffers; i++) {
-		if (m_ddSurface2->Blt(&rc, NULL, NULL, DDBLT_COLORFILL | DDBLT_WAIT, &ddBltFx) == DDERR_SURFACELOST) {
+		if (m_ddSurface2->Blt(NULL, NULL, NULL, DDBLT_COLORFILL | DDBLT_WAIT, &ddBltFx) == DDERR_SURFACELOST) {
 			m_ddSurface2->Restore();
-			m_ddSurface2->Blt(&rc, NULL, NULL, DDBLT_COLORFILL | DDBLT_WAIT, &ddBltFx);
+			m_ddSurface2->Blt(NULL, NULL, NULL, DDBLT_COLORFILL | DDBLT_WAIT, &ddBltFx);
 		}
 
 		if (m_videoParam.Flags().GetFlipSurfaces()) {
