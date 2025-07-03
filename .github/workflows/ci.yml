@@ -77,6 +77,9 @@ jobs:
           brew update
           brew install cmake ninja llvm qt6
           echo "LLVM_ROOT=$(brew --prefix llvm)/bin" >> $GITHUB_ENV
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+         
 
       - name: Setup Emscripten
         uses: mymindstorm/setup-emsdk@master
@@ -102,6 +105,12 @@ jobs:
 
       - name: Build (CMake)
         run: cmake --build build --verbose
+
+      - name: Pack stuff(windows)
+        if: ${{ matrix.os == 'windows-latest'  }}
+        run: |
+          cd bin
+          windeployqt isle-config.exe 
 
       - name: Package (CPack)
         if: ${{ !matrix.n3ds }}
