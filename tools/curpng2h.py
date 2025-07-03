@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import itertools
 from PIL import Image
 from pathlib import Path
 
@@ -34,14 +35,8 @@ def encode_cursor(image_path: Path):
 
 def to_c_array(name, data):
     lines = []
-    line = ""
-    for i, b in enumerate(data):
-        line += f"0x{b:02X}, "
-        if (i + 1) % 12 == 0:
-            lines.append(line)
-            line = ""
-    if line:
-        lines.append(line)
+    for rowdata in itertools.batched(data, 12):
+        lines.append(", ".join(f"0x{byte:02X}" for byte in rowdata) + ",")
     array_str = "\n    ".join(lines)
     return f"static const unsigned char {name}[] = {{\n    {array_str}\n}};\n"
 
@@ -59,10 +54,11 @@ def main():
         input_file_name = input_file.stem
         output_file = input_file.with_name(f"{input_file_name}_bmp.h")
 
-        with output_file.open("w") as f:
+        with output_file.open("w", newline="\n") as f:
+            f.write(f"#pragma once\n\n")
             f.write(f"// Generated from {input_file}\n")
-            f.write(f"// Dimensions: {width}x{height}\n\n")
-            f.write(f"#pragma once\n")
+            f.write(f"// Dimensions: {width}x{height}\n")
+            f.write("// This file is auto-generated, do not edit it.\n\n")
             f.write(f'#include "cursor.h"\n\n')
             f.write(to_c_array(f"{input_file_name}_data", data))
             f.write("\n")
