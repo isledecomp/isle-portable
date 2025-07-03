@@ -650,7 +650,7 @@ if (ISLE_BUILD_CONFIG)
       COMMAND "${WINDEPLOYQT_EXECUTABLE}"
               "$<TARGET_FILE:isle-config>"
               "--dir"
-              "QTLibs"
+              "build/QTLibs"
               "--no-compiler-runtime"
               "--no-opengl-sw"
               "--no-system-d3d-compiler"
