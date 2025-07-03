@@ -72,7 +72,7 @@ void MxDisplaySurface::ClearScreen()
 
 	DDBLTFX ddBltFx = {};
 	ddBltFx.dwSize = sizeof(DDBLTFX);
-	ddBltFx.dwFillColor = 0;
+	ddBltFx.dwFillColor = 0xFF000000;
 
 	for (MxS32 i = 0; i < backBuffers; i++) {
 		if (m_ddSurface2->Blt(NULL, NULL, NULL, DDBLT_COLORFILL | DDBLT_WAIT, &ddBltFx) == DDERR_SURFACELOST) {
@@ -779,21 +779,11 @@ void MxDisplaySurface::Display(MxS32 p_left, MxS32 p_top, MxS32 p_left2, MxS32 p
 			if (g_unk0x1010215c < 2) {
 				g_unk0x1010215c++;
 
-				DDSURFACEDESC ddsd;
-				memset(&ddsd, 0, sizeof(ddsd));
-				ddsd.dwSize = sizeof(ddsd);
-				if (m_ddSurface2->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL) == DD_OK) {
-					MxU8* surface = (MxU8*) ddsd.lpSurface;
-					MxS32 height = m_videoParam.GetRect().GetHeight();
+				DDBLTFX ddbltfx = {};
+				ddbltfx.dwSize = sizeof(ddbltfx);
+				ddbltfx.dwFillColor = 0xFF000000;
 
-					for (MxU32 i = 0; i < ddsd.dwHeight; i++) {
-						memset(surface, 0, ddsd.lPitch);
-						surface += ddsd.lPitch;
-					}
-
-					m_ddSurface2->Unlock(ddsd.lpSurface);
-				}
-				else {
+				if (m_ddSurface2->Blt(NULL, NULL, NULL, DDBLT_COLORFILL | DDBLT_WAIT, &ddbltfx) != DD_OK) {
 					SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "MxDisplaySurface::Display error\n");
 				}
 			}
@@ -812,7 +802,7 @@ void MxDisplaySurface::Display(MxS32 p_left, MxS32 p_top, MxS32 p_left2, MxS32 p
 			DDBLTFX data;
 			memset(&data, 0, sizeof(data));
 			data.dwSize = sizeof(data);
-			data.dwDDFX = 8;
+			data.dwDDFX = DDBLTFX_NOTEARING;
 
 			if (m_ddSurface1->Blt((LPRECT) &b, m_ddSurface2, (LPRECT) &a, DDBLT_NONE, &data) == DDERR_SURFACELOST) {
 				m_ddSurface1->Restore();
