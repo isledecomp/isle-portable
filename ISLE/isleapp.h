@@ -1,6 +1,7 @@
 #ifndef ISLEAPP_H
 #define ISLEAPP_H
 
+#include "cursor.h"
 #include "lego1_export.h"
 #include "legoutils.h"
 #include "mxtransitionmanager.h"
@@ -88,6 +89,10 @@ private:
 	SDL_Cursor* m_cursorBusy;    // 0x80
 	SDL_Cursor* m_cursorNo;      // 0x84
 	SDL_Cursor* m_cursorCurrent; // 0x88
+	const CursorBitmap* m_cursorArrowBitmap;
+	const CursorBitmap* m_cursorBusyBitmap;
+	const CursorBitmap* m_cursorNoBitmap;
+	const CursorBitmap* m_cursorCurrentBitmap;
 	char* m_mediaPath;
 	MxFloat m_mouseSensitivity;
 
