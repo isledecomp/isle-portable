@@ -148,7 +148,9 @@ static void load_razor()
 	}
 }
 #else
-bool load_razor() {}
+bool load_razor() {
+	return true;
+}
 #endif
 
 int gxm_library_init()

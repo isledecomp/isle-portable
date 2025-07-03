@@ -30,10 +30,15 @@ void main(
         float isDirectional = uLights[i].direction.w;
         float isPositional = uLights[i].position.w;
 
+        // TODO: make faster by removing the if statements
         // directional
-        float3 pointLightVec = uLights[i].position.xyz - vViewPos;
-        float3 directionalLightVec = -uLights[i].direction.xyz;
-        float3 lightVec = normalize(lerp(pointLightVec, directionalLightVec, isDirectional));
+        float3 lightVec;
+        if (isDirectional) {
+            lightVec = -normalize(uLights[i].direction.xyz);
+        } else {
+            lightVec = uLights[i].position.xyz - vViewPos;
+        }
+        lightVec = normalize(lightVec);
 
         // Diffuse contribution
         float dotNL = max(dot(vNormal, lightVec), 0.0);

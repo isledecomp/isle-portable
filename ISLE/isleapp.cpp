@@ -275,6 +275,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 		char buffer[2048];
 		sceAppUtilAppEventParseLiveArea(&eventParam, buffer);
 		if (strstr(buffer, "-config")) {
+			sceClibPrintf("Loading Config App.\n");
 			sceAppMgrLoadExec("app0:/isle-config.self", NULL, NULL);
 		}
 	}

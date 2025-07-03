@@ -2,92 +2,23 @@
 <resource version="0.1" type="normal" id="sample_plugin">
 
   <pagetable>
-    <page id="page_main_bg">
-      <plane style="_sample_style_bg_image" id="_sample_widget_plane_bg_image">
+    <page id="page_main">
+      <plane style="style_plane_sample_black" id="plane_sample_black">
         <layout_hint size="960, 544" />
+        <text style="_common_default_style_text" id="test_strings_id" label="msg_test_text">
+          <layout_hint adjust="2, 2" anchor="0, 0" align="0, 0" size="0, 0" pos="0, 0" />
+        </text>
       </plane>
-      <plane style="_common_style_plane_transparent" id="_sample_widget_plane_main">
-        <layout_hint size="960, 544" />
-
-        <plane style="_common_style_plane_transparent" id="_sample_widget_plane_root">
-          <layout_hint size="960, 544" />
-          <list_view style="style_list_view" id="list_view">
-            <layout_hint align="0, 2, 0" size="960, 544, 0" pos="0, 0, 0" anchor="0, 2, 0" id="landscape" />
-          </list_view>
-        </plane>
-
-        <plane style="_common_style_plane_transparent" id="plane_sample_black_sub">
-          <layout_hint size="960, 544" />
-          <button sound="_common_sound_button_enter" style="_common_default_style_button" label="msg_test_button" id="_sample_widget_button">
-            <layout_hint pos="0, 0" size="200, 100" />
-          </button>
-        </plane>
-
-        <plane style="_common_style_plane_transparent" id="plane_sample_black_sub_2">
-          <!-- TODO: maybe create other page for this -->
-          <layout_hint size="960, 544" />
-
-          <box id="box">
-            <layout_box space="8" pos="0, 8" space_adjust="0" adjust="0, 0, 0" layout_type="2" children_align_x="2" size="780, 64, 0" />
-            <busyindicator style="_common_style_busyindicator_8" id="busyindicator" texture="_common_texture_busy">
-              <layout_hint size="32, 32, 0" />
-            </busyindicator>
-            <text style="_common_default_style_text" id="text" label="msg_wait">
-              <layout_hint align="1, 0, 0" adjust="2, 2, 0" size="780, 80" />
-            </text>
-          </box>
-        </plane>
-
-        <plane style="_common_style_plane_transparent" id="_sample_widget_system_update">
-          <!-- TODO: maybe create other page for this -->
-          <layout_hint size="960, 544" />
-
-          <progressbar style="_common_default_style_progressbar" label_pos_mode="4" id="progressbar" w_label="percentage_text" signal_anim="1">
-            <layout_hint pos="0, -35, 0" size="780, 44, 0" />
-            <text style="_common_style_text_progressbar_label" id="percentage_text">
-              <layout_hint adjust="2, 2" pos="0, 0" />
-            </text>
-          </progressbar>
-        </plane>
-      </plane>
-      <corner_button style="_common_style_corner_bottom_left" id="_sample_widget_corner_button_bottom_left" />
     </page>
   </pagetable>
 
   <templatetable>
-    <template fast_open="1" id="_sample_template_list_item">
-      <list_item style="_common_style_list_item_transparent" id="list_item">
-        <layout_hint adjust="0, 2, 0" size="960, 70, 0" />
-        <button sound="_common_sound_button_enter" style="_style_button" id="button">
-          <layout_hint size="960, 70" />
-          <focus_hint focus_shape="3" />
-        </button>
-      </list_item>
-    </template>
   </templatetable>
 
   <styletable>
-    <style_plane planeobj="plane_obj1" id="_sample_style_bg_image">
-      <planeobj texture0="_sample_texture_bg_wave" id="plane_obj1" />
-    </style_plane>
-
-    <style_plane color="0, 0, 0, 0" planeobj="plane_obj1" id="style_plane_sample_black">
+    <style_plane color="0, 0, 0, 1" planeobj="plane_obj1" id="style_plane_sample_black">
       <planeobj id="plane_obj1" />
     </style_plane>
-
-    <style_list_view color="0, 0, 0, 0" id="style_list_view" sbar_v_margin="6, 6, 9" />
-
-    <style_button bg_obj="obj1" glow_obj="obj2" label_obj="txtobj" id="_style_button">
-        <planeobj texture0="_common_texture_list_70px" id="obj1" />
-        <planeobj texture0="_common_texture_list_glow_70px" id="obj2" />
-        <textobj font_size="24" bold="1" color="1, 1, 1, 1" word_wrap="1" align_x="1" align_y="1" ellipsis="0" emboss="0" id="txtobj" />
-    </style_button>
-
-    <style_text_box bottom_margin="8" color="1,1,1,1" glowobj="glowobj1" sound="_common_sound_text_box"  right_margin="8" top_margin="8" left_margin="8" textobj="text_obj1" planeobj="plane_obj1" id="style_text_box_sample">
-        <textobj font_size="24" align_y="1" align_x="0" text_align="1" line_pitch="40" ellipsis="1" id="text_obj1" />
-        <planeobj texture0="_common_texture_text_box" id="plane_obj1" />
-        <planeobj texture0="_common_texture_checkbox_textbox_glow" blend="2" id="glowobj1" />
-    </style_text_box>
   </styletable>
 
   <!-- If the system language is set to a language not listed here, no text will be displayed on the button. -->

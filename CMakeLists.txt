@@ -733,12 +733,15 @@ if(VITA)
     ScePafStdc_stub
   )
 
-  set(VITA_MAKE_FSELF_FLAGS "${VITA_MAKE_FSELF_FLAGS} -a 0x2F00000000000101")
-  vita_create_self(isle-config.self isle-config
-    UNSAFE
-    STRIPPED
-    REL_OPTIMIZE
-  )
+  block()
+    set(VITA_MAKE_FSELF_FLAGS "${VITA_MAKE_FSELF_FLAGS} -a 0x2F00000000000101")
+    vita_create_self(isle-config.self isle-config
+      CONFIG CONFIG_vita/exports.yml
+      UNSAFE
+      STRIPPED
+      REL_OPTIMIZE
+    )
+  endblock()
 
   include(${scepaf_external_SOURCE_DIR}/rco.cmake)
   make_rco(CONFIG_vita/cxml/config_plugin.xml config_plugin.rco)
