@@ -172,7 +172,7 @@ BOOL MxDirect3D::D3DSetMode()
 
 	DDBLTFX ddBltFx = {};
 	ddBltFx.dwSize = sizeof(DDBLTFX);
-	ddBltFx.dwFillColor = 0;
+	ddBltFx.dwFillColor = 0xFF000000;
 
 	if (backBuffer->Blt(NULL, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &ddBltFx) != DD_OK) {
 		SDL_Log("MxDirect3D::D3DSetMode() color fill failed\n");

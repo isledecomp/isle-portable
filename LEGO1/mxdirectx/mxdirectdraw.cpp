@@ -519,14 +519,12 @@ BOOL MxDirectDraw::DDCreateSurfaces()
 void MxDirectDraw::ClearBackBuffers()
 {
 	HRESULT result;
-	DDBLTFX ddbltfx;
+	DDBLTFX ddbltfx = {};
+	ddbltfx.dwSize = sizeof(DDBLTFX);
+	ddbltfx.dwFillColor = 0xFF000000;
 	int count = m_bFlipSurfaces ? 2 : 1;
 
 	for (int i = 0; i < count; i++) {
-		memset(&ddbltfx, 0, sizeof(ddbltfx));
-		ddbltfx.dwSize = sizeof(ddbltfx);
-		ddbltfx.dwFillColor = 0;
-
 		result = m_pBackBuffer->Blt(NULL, NULL, NULL, DDBLT_COLORFILL | DDBLT_WAIT, &ddbltfx);
 		if (result == DDERR_SURFACELOST) {
 			m_pBackBuffer->Restore();
