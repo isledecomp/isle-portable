@@ -701,6 +701,13 @@ if(NINTENDO_3DS)
   ctr_create_3dsx(isle SMDH isle.smdh)
   install(FILES "$<TARGET_FILE_DIR:isle>/isle.3dsx" DESTINATION "${CMAKE_INSTALL_BINDIR}")
 endif()
+if(WINDOWS_STORE)
+  file(GLOB MSIX_FILES "${CMAKE_BINARY_DIR}/AppPackages/isle/*/Dependencies/x64/Microsoft.VCLibs.x64.Debug.14.00.appx"
+    "${CMAKE_BINARY_DIR}/AppPackages/isle/*/*.msix"
+    "${CMAKE_BINARY_DIR}/AppPackages/isle/*/*.msixbundle"
+  )
+  install(FILES ${MSIX_FILES} DESTINATION "${CMAKE_INSTALL_BINDIR}")
+endif()
 if(MSVC)
   set(CPACK_GENERATOR ZIP)
 else()
