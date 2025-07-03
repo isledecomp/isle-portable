@@ -778,6 +778,13 @@ bool IsleApp::LoadConfig()
 {
 	char* prefPath = SDL_GetPrefPath("isledecomp", "isle");
 	char* iniConfig;
+
+#ifdef __EMSCRIPTEN__
+	if (m_iniPath && !Emscripten_SetupConfig(m_iniPath)) {
+		m_iniPath = NULL;
+	}
+#endif
+
 	if (m_iniPath) {
 		iniConfig = new char[strlen(m_iniPath) + 1];
 		strcpy(iniConfig, m_iniPath);
@@ -792,10 +799,6 @@ bool IsleApp::LoadConfig()
 		strcpy(iniConfig, "isle.ini");
 	}
 	SDL_Log("Reading configuration from \"%s\"", iniConfig);
-
-#ifdef __EMSCRIPTEN__
-	Emscripten_SetupConfig(iniConfig);
-#endif
 
 	dictionary* dict = iniparser_load(iniConfig);
 
