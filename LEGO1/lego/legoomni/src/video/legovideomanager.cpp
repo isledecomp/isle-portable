@@ -387,15 +387,7 @@ inline void LegoVideoManager::DrawCursor()
 	LPDIRECTDRAWSURFACE ddSurface2 = m_displaySurface->GetDirectDrawSurface2();
 
 	if (!m_cursorSurface) {
-		m_cursorRect.top = 0;
-		m_cursorRect.left = 0;
-		m_cursorRect.bottom = 16;
-		m_cursorRect.right = 16;
-		m_cursorSurface = MxDisplaySurface::CreateCursorSurface();
-
-		if (!m_cursorSurface) {
-			m_drawCursor = FALSE;
-		}
+		return;
 	}
 
 	ddSurface2

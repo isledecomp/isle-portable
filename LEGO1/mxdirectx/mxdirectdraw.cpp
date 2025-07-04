@@ -519,34 +519,22 @@ BOOL MxDirectDraw::DDCreateSurfaces()
 void MxDirectDraw::ClearBackBuffers()
 {
 	HRESULT result;
-	byte* line;
-	DDSURFACEDESC ddsd;
+	DDBLTFX ddbltfx = {};
+	ddbltfx.dwSize = sizeof(DDBLTFX);
+	ddbltfx.dwFillColor = 0xFF000000;
 	int count = m_bFlipSurfaces ? 2 : 1;
-	int value = 0;
 
 	for (int i = 0; i < count; i++) {
-		memset(&ddsd, 0, sizeof(ddsd));
-		ddsd.dwSize = sizeof(ddsd);
-
-		result = m_pBackBuffer->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
+		result = m_pBackBuffer->Blt(NULL, NULL, NULL, DDBLT_COLORFILL | DDBLT_WAIT, &ddbltfx);
 		if (result == DDERR_SURFACELOST) {
 			m_pBackBuffer->Restore();
-			result = m_pBackBuffer->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
+			result = m_pBackBuffer->Blt(NULL, NULL, NULL, DDBLT_COLORFILL | DDBLT_WAIT, &ddbltfx);
 		}
 
 		if (result != DD_OK) {
-			// lock failed
+			// blt failed
 			return;
 		}
-
-		// clear backBuffer
-		line = (byte*) ddsd.lpSurface;
-		for (int j = ddsd.dwHeight; j--;) {
-			memset(line, value, ddsd.dwWidth);
-			line += ddsd.lPitch;
-		}
-
-		m_pBackBuffer->Unlock(ddsd.lpSurface);
 
 		if (m_bFlipSurfaces) {
 			m_pFrontBuffer->Flip(NULL, DDFLIP_WAIT);

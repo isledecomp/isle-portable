@@ -57,7 +57,7 @@
       <bool>false</bool>
      </property>
      <property name="alignment">
-      <set>Qt::AlignCenter</set>
+      <set>Qt::AlignmentFlag::AlignCenter</set>
      </property>
     </widget>
    </item>
@@ -129,10 +129,10 @@
             <string>Save Path:</string>
            </property>
            <property name="textFormat">
-            <enum>Qt::PlainText</enum>
+            <enum>Qt::TextFormat::PlainText</enum>
            </property>
            <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
            </property>
           </widget>
          </item>
@@ -162,10 +162,10 @@
             <string>Data Path:</string>
            </property>
            <property name="textFormat">
-            <enum>Qt::PlainText</enum>
+            <enum>Qt::TextFormat::PlainText</enum>
            </property>
            <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
            </property>
           </widget>
          </item>
@@ -241,7 +241,7 @@
             <string>Maximum LOD</string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignCenter</set>
+            <set>Qt::AlignmentFlag::AlignCenter</set>
            </property>
            <layout class="QHBoxLayout" name="horizontalLayout_7">
             <item>
@@ -262,10 +262,10 @@
                <bool>false</bool>
               </property>
               <property name="orientation">
-               <enum>Qt::Horizontal</enum>
+               <enum>Qt::Orientation::Horizontal</enum>
               </property>
               <property name="tickPosition">
-               <enum>QSlider::TicksBothSides</enum>
+               <enum>QSlider::TickPosition::TicksBothSides</enum>
               </property>
               <property name="tickInterval">
                <number>10</number>
@@ -316,7 +316,7 @@
             <string>Maximum Actors (5..40)</string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignCenter</set>
+            <set>Qt::AlignmentFlag::AlignCenter</set>
            </property>
            <layout class="QHBoxLayout" name="horizontalLayout_8">
             <item>
@@ -340,10 +340,10 @@
                <bool>false</bool>
               </property>
               <property name="orientation">
-               <enum>Qt::Horizontal</enum>
+               <enum>Qt::Orientation::Horizontal</enum>
               </property>
               <property name="tickPosition">
-               <enum>QSlider::TicksBothSides</enum>
+               <enum>QSlider::TickPosition::TicksBothSides</enum>
               </property>
               <property name="tickInterval">
                <number>5</number>
@@ -403,6 +403,61 @@
        </widget>
       </item>
       <item>
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Transition Type</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QComboBox" name="transitionTypeComboBox">
+        <property name="toolTip">
+         <string>Sets the transition effect to be used in game.</string>
+        </property>
+        <property name="currentText">
+         <string>Idle - Broken</string>
+        </property>
+        <property name="placeholderText">
+         <string/>
+        </property>
+        <item>
+         <property name="text">
+          <string>Idle - Broken</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>No Animation</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Dissolve</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Mosaic</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Wipe Down</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Windows</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Unknown - Broken</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item>
        <widget class="QGroupBox" name="advancedGroup">
         <property name="maximumSize">
          <size>
@@ -417,7 +472,7 @@
          <string/>
         </property>
         <property name="alignment">
-         <set>Qt::AlignCenter</set>
+         <set>Qt::AlignmentFlag::AlignCenter</set>
         </property>
         <property name="flat">
          <bool>false</bool>
@@ -453,7 +508,7 @@
             <string>Direct 3D Devices</string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignCenter</set>
+            <set>Qt::AlignmentFlag::AlignCenter</set>
            </property>
           </widget>
          </item>
@@ -475,13 +530,13 @@
             </size>
            </property>
            <property name="editTriggers">
-            <set>QAbstractItemView::NoEditTriggers</set>
+            <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
            </property>
            <property name="alternatingRowColors">
             <bool>true</bool>
            </property>
            <property name="selectionBehavior">
-            <enum>QAbstractItemView::SelectRows</enum>
+            <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
            </property>
           </widget>
          </item>

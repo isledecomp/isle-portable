@@ -43,6 +43,7 @@ private slots:
 	void OnCheckboxJoystick(bool checked);
 	void OnCheckboxMusic(bool checked);
 	void OnCheckboxFullscreen(bool checked);
+	void TransitionTypeChanged(int index);
 	void accept() override;
 	void reject() override;
 	void launch();

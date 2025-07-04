@@ -297,44 +297,23 @@ D3DMATRIX ToD3DMATRIX(const Matrix4x4& in)
 	return out;
 }
 
-void Actual_SubmitDraw(
-	const D3D9MeshCacheEntry* mesh,
-	const Matrix4x4* modelViewMatrix,
-	const Matrix4x4* worldMatrix,
-	const Matrix4x4* viewMatrix,
-	const Matrix3x3* normalMatrix,
-	const Appearance* appearance,
-	IDirect3DTexture9* texture
-)
+void SetMaterialAndTexture(const FColor& color, float shininess, IDirect3DTexture9* texture)
 {
-	D3DMATRIX proj = ToD3DMATRIX(g_projection);
-	g_device->SetTransform(D3DTS_PROJECTION, &proj);
-	D3DMATRIX view = ToD3DMATRIX(*viewMatrix);
-	g_device->SetTransform(D3DTS_VIEW, &view);
-	D3DMATRIX world = ToD3DMATRIX(*worldMatrix);
-	g_device->SetTransform(D3DTS_WORLD, &world);
-
 	D3DMATERIAL9 mat = {};
-	mat.Diffuse.r = appearance->color.r / 255.0f;
-	mat.Diffuse.g = appearance->color.g / 255.0f;
-	mat.Diffuse.b = appearance->color.b / 255.0f;
-	mat.Diffuse.a = appearance->color.a / 255.0f;
+	mat.Diffuse.r = color.r / 255.0f;
+	mat.Diffuse.g = color.g / 255.0f;
+	mat.Diffuse.b = color.b / 255.0f;
+	mat.Diffuse.a = color.a / 255.0f;
 	mat.Ambient = mat.Diffuse;
 
-	if (appearance->shininess != 0) {
+	if (shininess != 0) {
 		g_device->SetRenderState(D3DRS_SPECULARENABLE, TRUE);
-		mat.Specular.r = 1.0f;
-		mat.Specular.g = 1.0f;
-		mat.Specular.b = 1.0f;
-		mat.Specular.a = 1.0f;
-		mat.Power = appearance->shininess;
+		mat.Specular = {1.0f, 1.0f, 1.0f, 1.0f};
+		mat.Power = shininess;
 	}
 	else {
 		g_device->SetRenderState(D3DRS_SPECULARENABLE, FALSE);
-		mat.Specular.r = 0.0f;
-		mat.Specular.g = 0.0f;
-		mat.Specular.b = 0.0f;
-		mat.Specular.a = 0.0f;
+		mat.Specular = {0.0f, 0.0f, 0.0f, 0.0f};
 		mat.Power = 0.0f;
 	}
 
@@ -352,6 +331,33 @@ void Actual_SubmitDraw(
 	else {
 		g_device->SetTexture(0, nullptr);
 	}
+}
+
+void Actual_SubmitDraw(
+	const D3D9MeshCacheEntry* mesh,
+	const Matrix4x4* modelViewMatrix,
+	const Matrix4x4* worldMatrix,
+	const Matrix4x4* viewMatrix,
+	const Matrix3x3* normalMatrix,
+	const Appearance* appearance,
+	IDirect3DTexture9* texture
+)
+{
+	D3DMATRIX proj = ToD3DMATRIX(g_projection);
+	g_device->SetTransform(D3DTS_PROJECTION, &proj);
+	D3DMATRIX view = ToD3DMATRIX(*viewMatrix);
+	g_device->SetTransform(D3DTS_VIEW, &view);
+	D3DMATRIX world = ToD3DMATRIX(*worldMatrix);
+	g_device->SetTransform(D3DTS_WORLD, &world);
+
+	SetMaterialAndTexture(
+		{appearance->color.r / 255.0f,
+		 appearance->color.g / 255.0f,
+		 appearance->color.b / 255.0f,
+		 appearance->color.a / 255.0f},
+		appearance->shininess,
+		texture
+	);
 
 	g_device->SetRenderState(D3DRS_SHADEMODE, mesh->flat ? D3DSHADE_FLAT : D3DSHADE_GOURAUD);
 
@@ -367,7 +373,7 @@ uint32_t Actual_Flip()
 	return g_device->Present(nullptr, nullptr, nullptr, nullptr);
 }
 
-void Actual_Draw2DImage(IDirect3DTexture9* texture, const SDL_Rect& srcRect, const SDL_Rect& dstRect)
+void Actual_Draw2DImage(IDirect3DTexture9* texture, const SDL_Rect& srcRect, const SDL_Rect& dstRect, FColor color)
 {
 	StartScene();
 
@@ -405,10 +411,7 @@ void Actual_Draw2DImage(IDirect3DTexture9* texture, const SDL_Rect& srcRect, con
 	g_device->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
 	g_device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
 
-	g_device->SetTexture(0, texture);
-	g_device->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
-	g_device->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
-	g_device->SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+	SetMaterialAndTexture(color, 0, texture);
 
 	D3DSURFACE_DESC texDesc;
 	texture->GetLevelDesc(0, &texDesc);

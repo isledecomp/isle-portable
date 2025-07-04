@@ -6,6 +6,7 @@
 
 #include <SDL3/SDL_filesystem.h>
 #include <SDL3/SDL_log.h>
+#include <emscripten.h>
 #include <emscripten/wasmfs.h>
 
 static backend_t opfs = nullptr;
@@ -13,10 +14,16 @@ static backend_t fetchfs = nullptr;
 
 extern const char* g_files[46];
 
-void Emscripten_SetupConfig(const char* p_iniConfig)
+bool Emscripten_OPFSDisabled()
 {
-	if (!p_iniConfig || !*p_iniConfig) {
-		return;
+	return MAIN_THREAD_EM_ASM_INT({return !!Module["disableOpfs"]});
+}
+
+bool Emscripten_SetupConfig(const char* p_iniConfig)
+{
+	if (Emscripten_OPFSDisabled()) {
+		SDL_Log("OPFS is disabled; ignoring .ini path");
+		return false;
 	}
 
 	opfs = wasmfs_create_opfs_backend();
@@ -28,6 +35,8 @@ void Emscripten_SetupConfig(const char* p_iniConfig)
 		wasmfs_create_directory(iniConfig.GetData(), 0644, opfs);
 		*parse = '/';
 	}
+
+	return true;
 }
 
 void Emscripten_SetupFilesystem()
@@ -66,7 +75,7 @@ void Emscripten_SetupFilesystem()
 		registerFile(file);
 	}
 
-	if (GameState()->GetSavePath() && *GameState()->GetSavePath()) {
+	if (GameState()->GetSavePath() && *GameState()->GetSavePath() && !Emscripten_OPFSDisabled()) {
 		if (!opfs) {
 			opfs = wasmfs_create_opfs_backend();
 		}

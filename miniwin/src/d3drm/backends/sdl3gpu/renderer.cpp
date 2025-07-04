@@ -884,24 +884,37 @@ void Direct3DRMSDL3GPURenderer::Flip()
 	m_cmdbuf = nullptr;
 }
 
-void Direct3DRMSDL3GPURenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect)
+void Direct3DRMSDL3GPURenderer::Draw2DImage(
+	Uint32 textureId,
+	const SDL_Rect& srcRect,
+	const SDL_Rect& dstRect,
+	FColor color
+)
 {
 	if (!m_renderPass) {
 		StartRenderPass(0, 0, 0, false);
 	}
 	SDL_BindGPUGraphicsPipeline(m_renderPass, m_uiPipeline);
 
-	const SDL3TextureCache& tex = m_textures[textureId];
-
-	auto surface = static_cast<DirectDrawSurfaceImpl*>(tex.texture->m_surface);
-	float scaleX = static_cast<float>(dstRect.w) / srcRect.w;
-	float scaleY = static_cast<float>(dstRect.h) / srcRect.h;
-	SDL_Rect expandedDstRect = {
-		static_cast<int>(std::round(dstRect.x - srcRect.x * scaleX)),
-		static_cast<int>(std::round(dstRect.y - srcRect.y * scaleY)),
-		static_cast<int>(std::round(static_cast<float>(surface->m_surface->w) * scaleX)),
-		static_cast<int>(std::round(static_cast<float>(surface->m_surface->h) * scaleY)),
-	};
+	SDL_GPUTexture* tex;
+	SDL_Rect expandedDstRect;
+	if (textureId == NO_TEXTURE_ID) {
+		expandedDstRect = dstRect;
+		tex = m_dummyTexture;
+	}
+	else {
+		SDL3TextureCache& cache = m_textures[textureId];
+		tex = cache.gpuTexture;
+		auto surface = static_cast<DirectDrawSurfaceImpl*>(cache.texture->m_surface);
+		float scaleX = static_cast<float>(dstRect.w) / srcRect.w;
+		float scaleY = static_cast<float>(dstRect.h) / srcRect.h;
+		expandedDstRect = {
+			static_cast<int>(std::round(dstRect.x - srcRect.x * scaleX)),
+			static_cast<int>(std::round(dstRect.y - srcRect.y * scaleY)),
+			static_cast<int>(std::round(static_cast<float>(surface->m_surface->w) * scaleX)),
+			static_cast<int>(std::round(static_cast<float>(surface->m_surface->h) * scaleY)),
+		};
+	}
 
 	Create2DTransformMatrix(
 		expandedDstRect,
@@ -916,11 +929,14 @@ void Direct3DRMSDL3GPURenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& sr
 	SceneLight fullBright = {{1, 1, 1, 1}, {0, 0, 0}, 0, {0, 0, 0}, 0};
 	memcpy(&m_fragmentShadingData.lights, &fullBright, sizeof(SceneLight));
 	m_fragmentShadingData.lightCount = 1;
-	m_fragmentShadingData.color = {0xff, 0xff, 0xff, 0xff};
+	m_fragmentShadingData.color.r = static_cast<Uint8>(color.r * 255);
+	m_fragmentShadingData.color.g = static_cast<Uint8>(color.g * 255);
+	m_fragmentShadingData.color.b = static_cast<Uint8>(color.b * 255);
+	m_fragmentShadingData.color.a = static_cast<Uint8>(color.a * 255);
 	m_fragmentShadingData.shininess = 0.0f;
 	m_fragmentShadingData.useTexture = 1;
 
-	SDL_GPUTextureSamplerBinding samplerBinding = {tex.gpuTexture, m_uiSampler};
+	SDL_GPUTextureSamplerBinding samplerBinding = {tex, m_uiSampler};
 	SDL_BindGPUFragmentSamplers(m_renderPass, 0, &samplerBinding, 1);
 	SDL_PushGPUVertexUniformData(m_cmdbuf, 0, &m_uniforms, sizeof(m_uniforms));
 	SDL_PushGPUFragmentUniformData(m_cmdbuf, 0, &m_fragmentShadingData, sizeof(m_fragmentShadingData));

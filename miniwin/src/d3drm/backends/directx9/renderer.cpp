@@ -273,9 +273,9 @@ void DirectX9Renderer::Flip()
 	Actual_Flip();
 }
 
-void DirectX9Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect)
+void DirectX9Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect, FColor color)
 {
-	Actual_Draw2DImage(m_textures[textureId].dxTexture, srcRect, dstRect);
+	Actual_Draw2DImage(m_textures[textureId].dxTexture, srcRect, dstRect, color);
 }
 
 void DirectX9Renderer::SetDither(bool dither)
