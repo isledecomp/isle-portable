@@ -66,6 +66,8 @@ jobs:
         uses: jurplel/install-qt-action@v4
         with:
           cache: 'true'
+          arch: ${{ matrix.vc-arch }}
+          
 
       - name: Install Linux dependencies (apt-get)
         if: ${{ matrix.linux }}
