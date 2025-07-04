@@ -1560,7 +1560,7 @@ void GXMRenderer::Flip()
 	gxm->swap_display();
 }
 
-void GXMRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect)
+void GXMRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect, FColor color)
 {
 	this->StartScene();
 
@@ -1569,7 +1569,11 @@ void GXMRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const S
 	sceGxmPushUserMarker(gxm->context, marker);
 
 	sceGxmSetVertexProgram(gxm->context, this->mainVertexProgram);
-	sceGxmSetFragmentProgram(gxm->context, this->imageFragmentProgram);
+	if(textureId != NO_TEXTURE_ID) {
+		sceGxmSetFragmentProgram(gxm->context, this->imageFragmentProgram);
+	} else {
+		sceGxmSetFragmentProgram(gxm->context, gxm->clearFragmentProgram);
+	}
 
 	void* vertUniforms;
 	void* fragUniforms;
@@ -1596,7 +1600,11 @@ void GXMRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const S
 
 	D3DRMMATRIX4D projection;
 	CreateOrthoMatrix(0.0, 1.0, 1.0, 0.0, projection);
-	static const Matrix3x3 normal = {{1.f, 0.f, 0.f}, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}};
+	static const Matrix3x3 normal = {
+		{1.f, 0.f, 0.f},
+		{0.f, 1.f, 0.f},
+		{0.f, 0.f, 1.f}
+	};
 
 	D3DRMMATRIX4D identity;
 	memset(identity, 0, sizeof(identity));
@@ -1609,15 +1617,24 @@ void GXMRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const S
 	SET_UNIFORM(vertUniforms, this->uNormalMatrix, normal);         // float3x3
 	SET_UNIFORM(vertUniforms, this->uProjectionMatrix, projection); // float4x4
 
-	GXMTextureCacheEntry& texture = m_textures[textureId];
-	const SceGxmTexture* gxmTexture = this->UseTexture(texture);
-	float texW = sceGxmTextureGetWidth(gxmTexture);
-	float texH = sceGxmTextureGetHeight(gxmTexture);
+	float u1 = 0.0;
+	float v1 = 0.0;
+	float u2 = 0.0;
+	float v2 = 0.0;
 
-	float u1 = static_cast<float>(srcRect.x) / texW;
-	float v1 = static_cast<float>(srcRect.y) / texH;
-	float u2 = static_cast<float>(srcRect.x + srcRect.w) / texW;
-	float v2 = static_cast<float>(srcRect.y + srcRect.h) / texH;
+	if(textureId != NO_TEXTURE_ID) {
+		GXMTextureCacheEntry& texture = m_textures[textureId];
+		const SceGxmTexture* gxmTexture = this->UseTexture(texture);
+		float texW = sceGxmTextureGetWidth(gxmTexture);
+		float texH = sceGxmTextureGetHeight(gxmTexture);
+
+		u1 = static_cast<float>(srcRect.x) / texW;
+		v1 = static_cast<float>(srcRect.y) / texH;
+		u2 = static_cast<float>(srcRect.x + srcRect.w) / texW;
+		v2 = static_cast<float>(srcRect.y + srcRect.h) / texH;
+	} else {
+		SET_UNIFORM(fragUniforms, gxm->clear_uColor, color);
+	}
 
 	Vertex* quadVertices = this->QuadVerticesBuffer();
 	quadVertices[0] = Vertex{.position = {x1, y1, 0}, .normal = {0, 0, 0}, .texCoord = {u1, v1}};
