@@ -18,9 +18,6 @@
 
 DECOMP_SIZE_ASSERT(MxDisplaySurface, 0xac);
 
-#define RGB555_CREATE(R, G, B) (((R) << 10) | (G) << 5 | (B) << 0)
-#define RGB8888_CREATE(R, G, B, A) (((A) << 24) | ((R) << 16) | ((G) << 8) | (B))
-
 // GLOBAL: LEGO1 0x1010215c
 MxU32 g_unk0x1010215c = 0;
 
@@ -399,86 +396,81 @@ void MxDisplaySurface::VTable0x28(
 	DDSURFACEDESC ddsd;
 	memset(&ddsd, 0, sizeof(ddsd));
 	ddsd.dwSize = sizeof(ddsd);
+	ddsd.dwFlags = DDSD_WIDTH | DDSD_HEIGHT | DDSD_PIXELFORMAT | DDSD_CAPS;
+	ddsd.dwWidth = p_width;
+	ddsd.dwHeight = p_height;
+	ddsd.ddpfPixelFormat = m_surfaceDesc.ddpfPixelFormat;
+	ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
 
-	HRESULT hr = m_ddSurface2->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
+	LPDIRECTDRAWSURFACE tempSurface = nullptr;
+	LPDIRECTDRAW draw = MVideoManager()->GetDirectDraw();
+	HRESULT hr = draw->CreateSurface(&ddsd, &tempSurface, nullptr);
+	if (hr != DD_OK || !tempSurface) {
+		return;
+	}
+
+	DDCOLORKEY colorKey;
+	colorKey.dwColorSpaceLowValue = colorKey.dwColorSpaceHighValue = RGB555_CREATE(0x1f, 0, 0x1f);
+	tempSurface->SetColorKey(DDCKEY_SRCBLT, &colorKey);
+
+	DDSURFACEDESC tempDesc;
+	memset(&tempDesc, 0, sizeof(tempDesc));
+	tempDesc.dwSize = sizeof(tempDesc);
+
+	hr = tempSurface->Lock(NULL, &tempDesc, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
 	if (hr == DDERR_SURFACELOST) {
-		m_ddSurface2->Restore();
-		hr = m_ddSurface2->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
+		tempSurface->Restore();
+		hr = tempSurface->Lock(NULL, &tempDesc, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
 	}
 
 	if (hr != DD_OK) {
+		tempSurface->Release();
 		return;
 	}
 
 	MxU8* data = p_bitmap->GetStart(p_left, p_top);
 
 	MxS32 bytesPerPixel = m_surfaceDesc.ddpfPixelFormat.dwRGBBitCount / 8;
-	if (m_videoParam.Flags().GetF1bit3()) {
-		p_bottom *= 2;
-		p_right *= 2;
+	MxU8* surface = (MxU8*) tempDesc.lpSurface;
 
-		MxU8* surface = (MxU8*) ddsd.lpSurface + (bytesPerPixel * p_right) + (p_bottom * ddsd.lPitch);
-		MxLong stride = -p_width + GetAdjustedStride(p_bitmap);
-		MxS32 copyWidth = p_width * bytesPerPixel * 2;
-		MxLong length = -(copyWidth) + ddsd.lPitch;
+	MxLong stride = (bytesPerPixel == 1) ? GetAdjustedStride(p_bitmap) : -p_width + GetAdjustedStride(p_bitmap);
+	MxLong length = tempDesc.lPitch - (p_width * bytesPerPixel);
 
-		while (p_height--) {
-			MxU8* surfaceBefore = surface;
-
-			for (MxS32 i = 0; i < p_width; i++) {
-				if (bytesPerPixel == 1) {
-					surface[0] = surface[1] = *data;
-				}
-				else if (bytesPerPixel == 2) {
-					((MxU16*) surface)[0] = ((MxU16*) surface)[1] = m_16bitPal[*data];
-				}
-				else {
-					((MxU32*) surface)[0] = ((MxU32*) surface)[1] = m_32bitPal[*data];
-				}
-				surface += bytesPerPixel * 2;
-				data++;
-			}
-
-			if (stride || length != ddsd.lPitch - copyWidth) {
-				data += stride;
-				surface += length;
-			}
-
-			memcpy(surface, surfaceBefore, copyWidth);
-			surface += ddsd.lPitch;
+	for (MxS32 i = 0; i < p_height; i++) {
+		if (bytesPerPixel == 1) {
+			memcpy(surface, data, p_width);
+			surface += length + p_width;
 		}
+		else if (bytesPerPixel == 2) {
+			for (MxS32 j = 0; j < p_width; j++) {
+				*(MxU16*) surface = m_16bitPal[*data++];
+				surface += bytesPerPixel;
+			}
+
+			surface += length;
+		}
+		else {
+			for (MxS32 j = 0; j < p_width; j++) {
+				*(MxU32*) surface = m_32bitPal[*data++];
+				surface += bytesPerPixel;
+			}
+			surface += length;
+		}
+
+		data += stride;
+	}
+
+	tempSurface->Unlock(NULL);
+
+	if (m_videoParam.Flags().GetF1bit3()) {
+		RECT destRect = {p_right, p_bottom, p_right + p_width * 2, p_bottom + p_height * 2};
+		m_ddSurface2->Blt(&destRect, tempSurface, NULL, DDBLT_WAIT | DDBLT_KEYSRC, NULL);
 	}
 	else {
-		MxU8* surface = (MxU8*) ddsd.lpSurface + (bytesPerPixel * p_right) + (p_bottom * ddsd.lPitch);
-		MxLong stride = (bytesPerPixel == 1) ? GetAdjustedStride(p_bitmap) : -p_width + GetAdjustedStride(p_bitmap);
-		MxLong length = ddsd.lPitch - (p_width * bytesPerPixel);
-
-		for (MxS32 i = 0; i < p_height; i++) {
-			if (bytesPerPixel == 1) {
-				memcpy(surface, data, p_width);
-				surface += length + p_width;
-			}
-			else if (bytesPerPixel == 2) {
-				for (MxS32 j = 0; j < p_width; j++) {
-					*(MxU16*) surface = m_16bitPal[*data++];
-					surface += bytesPerPixel;
-				}
-
-				surface += length;
-			}
-			else {
-				for (MxS32 j = 0; j < p_width; j++) {
-					*(MxU32*) surface = m_32bitPal[*data++];
-					surface += bytesPerPixel;
-				}
-				surface += length;
-			}
-
-			data += stride;
-		}
+		m_ddSurface2->BltFast(p_right, p_bottom, tempSurface, NULL, DDBLTFAST_WAIT | DDBLTFAST_SRCCOLORKEY);
 	}
 
-	m_ddSurface2->Unlock(ddsd.lpSurface);
+	tempSurface->Release();
 }
 
 // FUNCTION: LEGO1 0x100bb1d0

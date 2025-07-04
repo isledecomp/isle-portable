@@ -42,6 +42,13 @@ void GL11_DestroyTexture(GLuint texId)
 	glDeleteTextures(1, &texId);
 }
 
+int GL11_GetMaxTextureSize()
+{
+	GLint maxTextureSize = 0;
+	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
+	return maxTextureSize;
+}
+
 GLuint GL11_UploadTextureData(void* pixels, int width, int height, bool isUi)
 {
 	GLuint texId;
