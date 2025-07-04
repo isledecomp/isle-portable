@@ -18,9 +18,6 @@
 
 DECOMP_SIZE_ASSERT(MxDisplaySurface, 0xac);
 
-#define RGB555_CREATE(R, G, B) (((R) << 10) | (G) << 5 | (B) << 0)
-#define RGB8888_CREATE(R, G, B, A) (((A) << 24) | ((R) << 16) | ((G) << 8) | (B))
-
 // GLOBAL: LEGO1 0x1010215c
 MxU32 g_unk0x1010215c = 0;
 
