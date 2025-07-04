@@ -637,7 +637,7 @@ int GetColorIndexWithLocality(int p_col, int p_row)
 	int scrambled = (hash >> 16) % 32;
 
 	int finalIndex = scrambled + SDL_rand(3) - 1;
-	return finalIndex % 32;
+	return abs(finalIndex) % 32;
 }
 
 void MxTransitionManager::FakeMosaicTransition()
