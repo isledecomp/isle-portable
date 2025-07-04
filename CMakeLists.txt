@@ -644,7 +644,6 @@ install(TARGETS isle ${install_extra_targets}
   LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
 )
 if (ISLE_BUILD_CONFIG)
-  file(GLOB_RECURSE QT_LIBRARIES "${CMAKE_INSTALL_BINDIR}/QTLibs/*")
   find_program(WINDEPLOYQT_EXECUTABLE windeployqt)
   if(WINDEPLOYQT_EXECUTABLE)
     add_custom_command(TARGET isle-config POST_BUILD
@@ -659,6 +658,7 @@ if (ISLE_BUILD_CONFIG)
               "--no-quick-import"
       COMMENT "Running windeployqt with minimal dependencies"
     )
+    file(GLOB_RECURSE QT_LIBRARIES "${CMAKE_INSTALL_BINDIR}/QTLibs/*")
     install(FILES "${QT_LIBRARIES}" DESTINATION "${CMAKE_INSTALL_BINDIR}")
   else()
     message(WARNING "windeployqt not found.")
