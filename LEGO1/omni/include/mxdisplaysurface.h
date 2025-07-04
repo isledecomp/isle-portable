@@ -12,6 +12,9 @@
 #include <ddraw.h>
 #endif
 
+#define RGB555_CREATE(R, G, B) (((R) << 10) | (G) << 5 | (B) << 0)
+#define RGB8888_CREATE(R, G, B, A) (((A) << 24) | ((R) << 16) | ((G) << 8) | (B))
+
 class MxBitmap;
 class MxPalette;
 
