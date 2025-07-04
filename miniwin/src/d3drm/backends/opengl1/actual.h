@@ -64,6 +64,7 @@ struct GLMeshCacheEntry {
 void GL11_InitState();
 void GL11_LoadExtensions();
 void GL11_DestroyTexture(GLuint texId);
+int GL11_GetMaxTextureSize();
 GLuint GL11_UploadTextureData(void* pixels, int width, int height, bool isUI);
 void GL11_UploadMesh(GLMeshCacheEntry& cache, bool hasTexture);
 void GL11_DestroyMesh(GLMeshCacheEntry& cache);
