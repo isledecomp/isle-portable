@@ -598,7 +598,7 @@ void OpenGLES2Renderer::Flip()
 	}
 }
 
-void OpenGLES2Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect)
+void OpenGLES2Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect, FColor color)
 {
 	m_dirty = true;
 
@@ -607,25 +607,37 @@ void OpenGLES2Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, c
 
 	glUseProgram(m_shaderProgram);
 
-	float color[] = {1.0f, 1.0f, 1.0f, 1.0f};
+	float ambient[] = {1.0f, 1.0f, 1.0f, 1.0f};
 	float blank[] = {0.0f, 0.0f, 0.0f, 0.0f};
-	glUniform4fv(u_lightLocs[0][0], 1, color);
+	glUniform4fv(u_lightLocs[0][0], 1, ambient);
 	glUniform4fv(u_lightLocs[0][1], 1, blank);
 	glUniform4fv(u_lightLocs[0][2], 1, blank);
 	glUniform1i(m_lightCountLoc, 1);
 
-	glUniform4f(m_colorLoc, 1.0f, 1.0f, 1.0f, 1.0f);
+	glUniform4f(m_colorLoc, color.r, color.g, color.b, color.a);
 	glUniform1f(m_shinLoc, 0.0f);
 
-	const GLES2TextureCacheEntry& texture = m_textures[textureId];
-	float scaleX = static_cast<float>(dstRect.w) / srcRect.w;
-	float scaleY = static_cast<float>(dstRect.h) / srcRect.h;
-	SDL_Rect expandedDstRect = {
-		static_cast<int>(std::round(dstRect.x - srcRect.x * scaleX)),
-		static_cast<int>(std::round(dstRect.y - srcRect.y * scaleY)),
-		static_cast<int>(std::round(texture.width * scaleX)),
-		static_cast<int>(std::round(texture.height * scaleY))
-	};
+	SDL_Rect expandedDstRect;
+	if (textureId != NO_TEXTURE_ID) {
+		const GLES2TextureCacheEntry& texture = m_textures[textureId];
+		float scaleX = static_cast<float>(dstRect.w) / srcRect.w;
+		float scaleY = static_cast<float>(dstRect.h) / srcRect.h;
+		expandedDstRect = {
+			static_cast<int>(std::round(dstRect.x - srcRect.x * scaleX)),
+			static_cast<int>(std::round(dstRect.y - srcRect.y * scaleY)),
+			static_cast<int>(std::round(texture.width * scaleX)),
+			static_cast<int>(std::round(texture.height * scaleY))
+		};
+
+		glActiveTexture(GL_TEXTURE0);
+		glUniform1i(m_useTextureLoc, 1);
+		glBindTexture(GL_TEXTURE_2D, texture.glTextureId);
+		glUniform1i(m_textureLoc, 0);
+	}
+	else {
+		expandedDstRect = dstRect;
+		glUniform1i(m_useTextureLoc, 0);
+	}
 
 	D3DRMMATRIX4D modelView, projection;
 	Create2DTransformMatrix(
@@ -644,11 +656,6 @@ void OpenGLES2Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, c
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	glActiveTexture(GL_TEXTURE0);
-	glUniform1i(m_useTextureLoc, 1);
-	glBindTexture(GL_TEXTURE_2D, texture.glTextureId);
-	glUniform1i(m_textureLoc, 0);
 
 	glEnable(GL_SCISSOR_TEST);
 	glScissor(

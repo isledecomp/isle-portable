@@ -374,7 +374,7 @@ void OpenGL1Renderer::Flip()
 	}
 }
 
-void OpenGL1Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect)
+void OpenGL1Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect, FColor color)
 {
 	m_dirty = true;
 
@@ -383,7 +383,12 @@ void OpenGL1Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, con
 	float top = -m_viewportTransform.offsetY / m_viewportTransform.scale;
 	float bottom = (m_height - m_viewportTransform.offsetY) / m_viewportTransform.scale;
 
-	GL11_Draw2DImage(m_textures[textureId], srcRect, dstRect, left, right, bottom, top);
+	const GLTextureCacheEntry* texture = nullptr;
+	if (textureId != NO_TEXTURE_ID) {
+		texture = &m_textures[textureId];
+	}
+
+	GL11_Draw2DImage(texture, srcRect, dstRect, color, left, right, bottom, top);
 }
 
 void OpenGL1Renderer::SetDither(bool dither)

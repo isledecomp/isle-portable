@@ -246,9 +246,13 @@ struct DDSCAPS {
 };
 typedef struct DDSCAPS* LPDDSCAPS;
 
+#define DDBLTFX_NOTEARING DDBLTFXFlags::NOTEARING
+enum class DDBLTFXFlags : uint8_t {
+	NOTEARING = 1 << 3,
+};
 struct DDBLTFX {
 	DWORD dwSize;
-	DWORD dwDDFX;
+	DDBLTFXFlags dwDDFX;
 	DWORD dwROP;
 	DWORD dwFillColor;
 };

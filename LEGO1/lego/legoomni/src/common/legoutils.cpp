@@ -708,19 +708,19 @@ void WriteDefaultTexture(LegoStorage* p_storage, const char* p_name)
 		memset(&desc, 0, sizeof(desc));
 		desc.dwSize = sizeof(desc);
 
-		if (surface->Lock(NULL, &desc, DDLOCK_SURFACEMEMORYPTR | DDLOCK_WRITEONLY, NULL) == DD_OK) {
+		if (surface->Lock(NULL, &desc, DDLOCK_SURFACEMEMORYPTR, NULL) == DD_OK) {
 			LegoImage* image = new LegoImage(desc.dwWidth, desc.dwHeight);
 
 			if (image != NULL) {
 				if (desc.dwWidth == desc.lPitch) {
-					memcpy(desc.lpSurface, image->GetBits(), desc.dwWidth * desc.dwHeight);
+					memcpy(image->GetBits(), desc.lpSurface, desc.dwWidth * desc.dwHeight);
 				}
 				else {
 					MxU8* surface = (MxU8*) desc.lpSurface;
-					const LegoU8* bits = image->GetBits();
+					LegoU8* bits = image->GetBits();
 
 					for (MxS32 i = 0; i < desc.dwHeight; i++) {
-						memcpy(surface, bits, desc.dwWidth);
+						memcpy(bits, surface, desc.dwWidth);
 						surface += desc.lPitch;
 						bits += desc.dwWidth;
 					}

@@ -46,7 +46,7 @@ public:
 	{
 		m_palette->colors[p_i] = p_paletteEntry.GetColor();
 	}
-	const LegoU8* GetBits() const { return (LegoU8*) m_surface->pixels; }
+	LegoU8* GetBits() const { return (LegoU8*) m_surface->pixels; }
 	LegoResult Read(LegoStorage* p_storage, LegoU32 p_square);
 	LegoResult Write(LegoStorage* p_storage);
 

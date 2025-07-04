@@ -170,39 +170,16 @@ BOOL MxDirect3D::D3DSetMode()
 	LPDIRECTDRAWSURFACE frontBuffer = FrontBuffer();
 	LPDIRECTDRAWSURFACE backBuffer = BackBuffer();
 
-	DDSURFACEDESC desc;
-	memset(&desc, 0, sizeof(desc));
-	desc.dwSize = sizeof(desc);
+	DDBLTFX ddBltFx = {};
+	ddBltFx.dwSize = sizeof(DDBLTFX);
+	ddBltFx.dwFillColor = 0xFF000000;
 
-	if (backBuffer->Lock(NULL, &desc, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL) == DD_OK) {
-		unsigned char* surface = (unsigned char*) desc.lpSurface;
-
-		for (int i = 0; i < mode.height; i++) {
-			memset(surface, 0, desc.lPitch);
-			surface += desc.lPitch;
-		}
-
-		backBuffer->Unlock(desc.lpSurface);
-	}
-	else {
-		SDL_Log("MxDirect3D::D3DSetMode() back lock failed\n");
+	if (backBuffer->Blt(NULL, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &ddBltFx) != DD_OK) {
+		SDL_Log("MxDirect3D::D3DSetMode() color fill failed\n");
 	}
 
 	if (IsFullScreen()) {
-		memset(&desc, 0, sizeof(desc));
-		desc.dwSize = sizeof(desc);
-
-		if (frontBuffer->Lock(NULL, &desc, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL) == DD_OK) {
-			unsigned char* surface = (unsigned char*) desc.lpSurface;
-
-			for (int i = 0; i < mode.height; i++) {
-				memset(surface, 0, desc.lPitch);
-				surface += desc.lPitch;
-			}
-
-			frontBuffer->Unlock(desc.lpSurface);
-		}
-		else {
+		if (frontBuffer->Blt(NULL, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &ddBltFx) != DD_OK) {
 			SDL_Log("MxDirect3D::D3DSetMode() front lock failed\n");
 		}
 	}

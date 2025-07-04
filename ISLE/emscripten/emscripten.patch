@@ -1,3 +1,16 @@
+diff --git a/src/lib/libpthread.js b/src/lib/libpthread.js
+index 6d979627e..97e3f8684 100644
+--- a/src/lib/libpthread.js
++++ b/src/lib/libpthread.js
+@@ -697,7 +697,7 @@ var LibraryPThread = {
+     {
+       transferredCanvasNames = UTF8ToString(transferredCanvasNames).trim();
+     }
+-    transferredCanvasNames = transferredCanvasNames ? transferredCanvasNames.split(',') : [];
++    transferredCanvasNames = transferredCanvasNames && !Module['disableOffscreenCanvases'] ? transferredCanvasNames.split(',') : [];
+ #if GL_DEBUG
+     dbg(`pthread_create: transferredCanvasNames="${transferredCanvasNames}"`);
+ #endif
 diff --git a/src/lib/libwasmfs_fetch.js b/src/lib/libwasmfs_fetch.js
 index e8c9f7e21..caf1971d2 100644
 --- a/src/lib/libwasmfs_fetch.js
@@ -126,3 +139,21 @@ index e8c9f7e21..caf1971d2 100644
    },
 -
  });
+diff --git a/src/preamble.js b/src/preamble.js
+index 572694517..0d2f4421b 100644
+--- a/src/preamble.js
++++ b/src/preamble.js
+@@ -1062,3 +1062,13 @@ function getCompilerSetting(name) {
+ // dynamic linker as symbols are loaded.
+ var asyncifyStubs = {};
+ #endif
++
++(async () => {
++  try {
++    await navigator.storage.getDirectory();
++    Module["disableOpfs"] = false;
++  } catch (e) {
++    Module["disableOpfs"] = true;
++  }
++})();
++
