@@ -682,17 +682,16 @@ install(TARGETS isle ${install_extra_targets}
 if (ISLE_BUILD_CONFIG)
   find_program(WINDEPLOYQT_EXECUTABLE windeployqt)
   if(WINDEPLOYQT_EXECUTABLE)
-    add_custom_command(TARGET isle-config POST_BUILD
-      COMMAND "${WINDEPLOYQT_EXECUTABLE}"
-              "$<TARGET_FILE:isle-config>"
-              "--dir"
-              "QTLibs"
-              "--no-compiler-runtime"
-              "--no-opengl-sw"
-              "--no-system-d3d-compiler"
-              "--no-translations"
-              "--no-quick-import"
-      COMMENT "Running windeployqt with minimal dependencies"
+    install(CODE "message(STATUS \"Running windeployqt with minimal dependencies\")
+      execute_process(COMMAND \"${WINDEPLOYQT_EXECUTABLE}\"
+        \"$<TARGET_FILE:isle-config>\"
+        --dir QTLibs
+        --no-compiler-runtime
+        --no-opengl-sw
+        --no-system-d3d-compiler
+        --no-translations
+        --no-quick-import
+      )"
     )
     install(DIRECTORY "Build/QTLibs/" DESTINATION "${CMAKE_INSTALL_BINDIR}")
   else()
