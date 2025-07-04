@@ -132,10 +132,21 @@ static Uint32 UploadTextureData(SDL_Surface* src, bool useNPOT, bool isUi)
 
 	SDL_Surface* finalSurface = working;
 
-	int newW = NextPowerOfTwo(working->w);
-	int newH = NextPowerOfTwo(working->h);
+	int newW = working->w;
+	int newH = working->h;
+	if (!useNPOT) {
+		newW = NextPowerOfTwo(newW);
+		newH = NextPowerOfTwo(newH);
+	}
+	int max = GL11_GetMaxTextureSize();
+	if (newW > max) {
+		newW = max;
+	}
+	if (newH > max) {
+		newH = max;
+	}
 
-	if (!useNPOT && (newW != working->w || newH != working->h)) {
+	if (newW != working->w || newH != working->h) {
 		SDL_Surface* resized = SDL_CreateSurface(newW, newH, working->format);
 		if (!resized) {
 			SDL_Log("SDL_CreateSurface (resize) failed: %s", SDL_GetError());
