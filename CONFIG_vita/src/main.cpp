@@ -14,7 +14,7 @@ void loadPluginCB(paf::Plugin *plugin){
 	paf::ui::Scene *pScene = plugin->PageOpen("page_main", pageOpenParam);
 	g_rootPage = pScene;
 
-	paf::ui::Widget *pText = pScene->FindChild("test_strings_id");
+	paf::ui::Widget *pText = (paf::ui::Text*)pScene->FindChild("test_strings_id");
 	pText->SetString(L"Test Text");
 }
 
