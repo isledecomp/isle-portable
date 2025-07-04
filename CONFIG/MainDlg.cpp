@@ -13,6 +13,7 @@
 #include <QKeyEvent>
 #include <QMessageBox>
 #include <QProcess>
+#include <QComboBox>
 #include <mxdirectx/legodxinfo.h>
 #include <ui_maindialog.h>
 
@@ -59,6 +60,7 @@ CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 	connect(m_ui->sound3DCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckbox3DSound);
 	connect(m_ui->joystickCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxJoystick);
 	connect(m_ui->fullscreenCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxFullscreen);
+	connect(m_ui->modernControlsCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxModernControls);
 	connect(m_ui->transitionTypeComboBox, &QComboBox::currentIndexChanged, this, &CMainDialog::TransitionTypeChanged);
 	connect(m_ui->okButton, &QPushButton::clicked, this, &CMainDialog::accept);
 	connect(m_ui->cancelButton, &QPushButton::clicked, this, &CMainDialog::reject);
@@ -214,6 +216,7 @@ void CMainDialog::UpdateInterface()
 	m_ui->musicCheckBox->setChecked(currentConfigApp->m_music);
 	m_ui->fullscreenCheckBox->setChecked(currentConfigApp->m_full_screen);
 	m_ui->transitionTypeComboBox->setCurrentIndex(currentConfigApp->m_transition_type);
+	m_ui->modernControlsCheckBox->setChecked(currentConfigApp->m_modern_controls_enabled);
 	m_ui->dataPath->setText(QString::fromStdString(currentConfigApp->m_cd_path));
 	m_ui->savePath->setText(QString::fromStdString(currentConfigApp->m_save_path));
 }
@@ -225,6 +228,7 @@ void CMainDialog::OnCheckbox3DSound(bool checked)
 	m_modified = true;
 	UpdateInterface();
 }
+
 
 // FUNCTION: CONFIG 0x004046d0
 void CMainDialog::OnRadiobuttonModelLowQuality(bool checked)
@@ -294,6 +298,13 @@ void CMainDialog::OnCheckboxMusic(bool checked)
 void CMainDialog::OnCheckboxFullscreen(bool checked)
 {
 	currentConfigApp->m_full_screen = checked;
+	m_modified = true;
+	UpdateInterface();
+}
+
+void CMainDialog::OnCheckboxModernControls(bool checked)
+{
+	currentConfigApp->m_modern_controls_enabled = checked;
 	m_modified = true;
 	UpdateInterface();
 }

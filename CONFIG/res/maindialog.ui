@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>575</width>
-    <height>600</height>
+    <height>618</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -23,7 +23,7 @@
    <iconset resource="config.qrc">
     <normaloff>:/lego1.png</normaloff>:/lego1.png</iconset>
   </property>
-  <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,1">
+  <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0">
    <item>
     <widget class="QLabel" name="sharkImageLabel">
      <property name="sizePolicy">
@@ -187,6 +187,38 @@
          <property name="rightMargin">
           <number>0</number>
          </property>
+         <item row="0" column="2">
+          <widget class="QGroupBox" name="textureQualityGroup">
+           <property name="toolTip">
+            <string>Set texture detail level.</string>
+           </property>
+           <property name="title">
+            <string>Island Texture Quality</string>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_5">
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QRadioButton" name="textureQualityFastRadioButton">
+              <property name="text">
+               <string>Fast</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QRadioButton" name="textureQualityHighRadioButton">
+              <property name="text">
+               <string>High</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
          <item row="0" column="3">
           <widget class="QGroupBox" name="modelQualityGroup">
            <property name="maximumSize">
@@ -275,38 +307,6 @@
            </layout>
           </widget>
          </item>
-         <item row="0" column="2">
-          <widget class="QGroupBox" name="textureQualityGroup">
-           <property name="toolTip">
-            <string>Set texture detail level.</string>
-           </property>
-           <property name="title">
-            <string>Island Texture Quality</string>
-           </property>
-           <layout class="QVBoxLayout" name="verticalLayout_5">
-            <property name="topMargin">
-             <number>0</number>
-            </property>
-            <property name="bottomMargin">
-             <number>0</number>
-            </property>
-            <item>
-             <widget class="QRadioButton" name="textureQualityFastRadioButton">
-              <property name="text">
-               <string>Fast</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QRadioButton" name="textureQualityHighRadioButton">
-              <property name="text">
-               <string>High</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </item>
          <item row="1" column="3">
           <widget class="QGroupBox" name="maxActorsGroup">
            <property name="toolTip">
@@ -358,28 +358,17 @@
       </item>
       <item>
        <widget class="QWidget" name="checkboxWidget" native="true">
-        <layout class="QHBoxLayout" name="horizontalLayout_2">
-         <item>
-          <widget class="QCheckBox" name="sound3DCheckBox">
-           <property name="toolTip">
-            <string>Enable 3D positional audio effects.</string>
-           </property>
-           <property name="text">
-            <string>3D Sound</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="musicCheckBox">
-           <property name="toolTip">
-            <string>Enable in-game background music.</string>
-           </property>
-           <property name="text">
-            <string>Music</string>
-           </property>
-          </widget>
-         </item>
-         <item>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="layoutDirection">
+         <enum>Qt::LayoutDirection::LeftToRight</enum>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_3">
+         <item row="0" column="3">
           <widget class="QCheckBox" name="joystickCheckBox">
            <property name="toolTip">
             <string>Enable joystick and gamepad support for LEGO Island.</string>
@@ -389,13 +378,40 @@
            </property>
           </widget>
          </item>
-         <item>
+         <item row="0" column="4">
           <widget class="QCheckBox" name="fullscreenCheckBox">
            <property name="toolTip">
             <string>Toggle fullscreen display mode.</string>
            </property>
            <property name="text">
             <string>Fullscreen</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QCheckBox" name="sound3DCheckBox">
+           <property name="toolTip">
+            <string>Enable 3D positional audio effects.</string>
+           </property>
+           <property name="text">
+            <string>3D Sound</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="2">
+          <widget class="QCheckBox" name="musicCheckBox">
+           <property name="toolTip">
+            <string>Enable in-game background music.</string>
+           </property>
+           <property name="text">
+            <string>Music</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1" colspan="2">
+          <widget class="QCheckBox" name="modernControlsCheckBox">
+           <property name="text">
+            <string>Enable Modern Controls</string>
            </property>
           </widget>
          </item>
@@ -612,7 +628,6 @@
   <tabstop>modelQualityLowRadioButton</tabstop>
   <tabstop>modelQualityMediumRadioButton</tabstop>
   <tabstop>modelQualityHighRadioButton</tabstop>
-  <tabstop>maxLoDSlider</tabstop>
   <tabstop>maxActorsSlider</tabstop>
   <tabstop>sound3DCheckBox</tabstop>
   <tabstop>musicCheckBox</tabstop>

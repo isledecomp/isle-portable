@@ -159,6 +159,7 @@ bool CConfigApp::ReadRegisterSettings()
 	m_wide_view_angle = iniparser_getboolean(dict, "isle:Wide View Angle", m_wide_view_angle);
 	m_3d_sound = iniparser_getboolean(dict, "isle:3DSound", m_3d_sound);
 	m_draw_cursor = iniparser_getboolean(dict, "isle:Draw Cursor", m_draw_cursor);
+	m_modern_controls_enabled = iniparser_getboolean(dict, "isle:ModernControls", m_modern_controls_enabled);
 	m_model_quality = iniparser_getint(dict, "isle:Island Quality", m_model_quality);
 	m_texture_quality = iniparser_getint(dict, "isle:Island Texture", m_texture_quality);
 	m_use_joystick = iniparser_getboolean(dict, "isle:UseJoystick", m_use_joystick);
@@ -309,6 +310,7 @@ void CConfigApp::WriteRegisterSettings() const
 	SetIniBool(dict, "isle:Flip Surfaces", m_flip_surfaces);
 	SetIniBool(dict, "isle:Full Screen", m_full_screen);
 	SetIniBool(dict, "isle:Wide View Angle", m_wide_view_angle);
+	SetIniBool(dict, "isle:isle:ModernControls", m_modern_controls_enabled);
 
 	SetIniInt(dict, "isle:Transition Type", m_transition_type);
 
