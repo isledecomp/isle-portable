@@ -10,7 +10,7 @@ inline static const char* Emscripten_savePath = "/save";
 inline static const char* Emscripten_streamPath = "/";
 inline static const char* Emscripten_streamHost = ISLE_EMSCRIPTEN_HOST;
 
-void Emscripten_SetupConfig(const char* p_iniConfig);
+bool Emscripten_SetupConfig(const char* p_iniConfig);
 void Emscripten_SetupFilesystem();
 
 #endif // EMSCRIPTEN_FILESYSTEM_H

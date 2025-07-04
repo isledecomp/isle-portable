@@ -473,6 +473,9 @@ if (ISLE_BUILD_APP)
     ISLE/res/isle.rc
     ISLE/isleapp.cpp
     ISLE/islefiles.cpp
+    ${CMAKE_SOURCE_DIR}/ISLE/res/arrow_bmp.h
+    ${CMAKE_SOURCE_DIR}/ISLE/res/busy_bmp.h
+    ${CMAKE_SOURCE_DIR}/ISLE/res/no_bmp.h
   )
   list(APPEND isle_targets isle)
   if (WIN32)
@@ -528,6 +531,39 @@ if (ISLE_BUILD_APP)
       ISLE/3ds/apthooks.cpp
       ISLE/3ds/config.cpp
     )
+  endif()
+  if(Python3_FOUND)
+    if(NOT DEFINED PYTHON_PIL_AVAILABLE)
+      execute_process(
+        COMMAND ${Python3_EXECUTABLE} -c "import PIL; print('pil')"
+        RESULT_VARIABLE PIL_RESULT
+        OUTPUT_VARIABLE PIL_OUTPUT
+        ERROR_QUIET
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+      )
+      if(PIL_RESULT EQUAL 0 AND PIL_OUTPUT STREQUAL "pil")
+        set(PIL_AVAILABLE 1)
+      else()
+        message(STATUS "Python PIL not found, using pre-generated headers.")
+        set(PIL_AVAILABLE 0)
+      endif()
+      set(PYTHON_PIL_AVAILABLE ${PIL_AVAILABLE} CACHE BOOL "Is Python3 Pillow available?")
+    endif()
+    if(PYTHON_PIL_AVAILABLE)
+      add_custom_command(
+        OUTPUT
+          ${CMAKE_SOURCE_DIR}/ISLE/res/arrow_bmp.h
+          ${CMAKE_SOURCE_DIR}/ISLE/res/busy_bmp.h
+          ${CMAKE_SOURCE_DIR}/ISLE/res/no_bmp.h
+        COMMAND ${Python3_EXECUTABLE} tools/curpng2h.py ISLE/res/arrow.png ISLE/res/busy.png ISLE/res/no.png
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        DEPENDS
+          ${CMAKE_SOURCE_DIR}/tools/curpng2h.py
+          ${CMAKE_SOURCE_DIR}/ISLE/res/arrow.png
+          ${CMAKE_SOURCE_DIR}/ISLE/res/busy.png
+          ${CMAKE_SOURCE_DIR}/ISLE/res/no.png
+      )
+    endif()
   endif()
 endif()
 
