@@ -716,61 +716,6 @@ sixteen_bit:
 	}
 }
 
-// FUNCTION: LEGO1 0x100bb850
-// FUNCTION: BETA10 0x10141191
-void MxDisplaySurface::VTable0x34(MxU8* p_pixels, MxS32 p_bpp, MxS32 p_width, MxS32 p_height, MxS32 p_x, MxS32 p_y)
-{
-	DDSURFACEDESC surfaceDesc;
-	memset(&surfaceDesc, 0, sizeof(surfaceDesc));
-	surfaceDesc.dwSize = sizeof(surfaceDesc);
-
-	HRESULT result = m_ddSurface2->Lock(NULL, &surfaceDesc, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
-
-	if (result == DDERR_SURFACELOST) {
-		m_ddSurface2->Restore();
-		result = m_ddSurface2->Lock(NULL, &surfaceDesc, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
-	}
-
-	if (result == DD_OK) {
-		MxU8* pixels = p_pixels;
-		MxS32 bytesPerPixel = m_surfaceDesc.ddpfPixelFormat.dwRGBBitCount / 8;
-		if (p_bpp != 8 && bytesPerPixel != p_bpp) {
-			MxTrace("Source format to display format NOT_IMPLEMENTED");
-			assert(0);
-			return;
-		}
-
-		MxU8* dst = (MxU8*) surfaceDesc.lpSurface + p_y * surfaceDesc.lPitch + bytesPerPixel * p_x;
-		MxLong stride = p_width * bytesPerPixel;
-		MxLong length = -bytesPerPixel * p_width + surfaceDesc.lPitch;
-
-		if (bytesPerPixel == p_bpp) {
-			while (p_height--) {
-				memcpy(dst, pixels, p_width * bytesPerPixel);
-				pixels += stride;
-				dst += length;
-			}
-		}
-		else {
-			for (MxS32 i = 0; i < p_height; i++) {
-				for (MxS32 j = 0; j < p_width; j++) {
-					if (bytesPerPixel == 2) {
-						*(MxU16*) dst = m_16bitPal[*pixels++];
-					}
-					else {
-						*(MxU32*) dst = m_32bitPal[*pixels++];
-					}
-					dst += bytesPerPixel;
-				}
-				pixels += stride;
-				dst += length;
-			}
-		}
-
-		m_ddSurface2->Unlock(surfaceDesc.lpSurface);
-	}
-}
-
 // FUNCTION: LEGO1 0x100bba50
 void MxDisplaySurface::Display(MxS32 p_left, MxS32 p_top, MxS32 p_left2, MxS32 p_top2, MxS32 p_width, MxS32 p_height)
 {
