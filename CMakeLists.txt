@@ -658,7 +658,7 @@ if (ISLE_BUILD_CONFIG)
               "--no-quick-import"
       COMMENT "Running windeployqt with minimal dependencies"
     )
-    install(DIRECTORY "${CMAKE_INSTALL_BINDIR}/QTLibs/" DESTINATION "${CMAKE_INSTALL_BINDIR}")
+    install(DIRECTORY "Build/QTLibs/" DESTINATION "${CMAKE_INSTALL_BINDIR}")
   else()
     message(WARNING "windeployqt not found.")
   endif()
