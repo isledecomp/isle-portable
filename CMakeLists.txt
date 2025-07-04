@@ -659,7 +659,7 @@ if (ISLE_BUILD_CONFIG)
       COMMENT "Running windeployqt with minimal dependencies"
     )
     file(GLOB_RECURSE QT_LIBRARIES "${CMAKE_INSTALL_BINDIR}/QTLibs/*")
-    install(FILES "${QT_LIBRARIES}" DESTINATION "${CMAKE_INSTALL_BINDIR}")
+    install(DIRECTORY "${QT_LIBRARIES}" DESTINATION "${CMAKE_INSTALL_BINDIR}")
   else()
     message(WARNING "windeployqt not found.")
   endif()
