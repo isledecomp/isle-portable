@@ -132,10 +132,21 @@ static Uint32 UploadTextureData(SDL_Surface* src, bool useNPOT, bool isUi)
 
 	SDL_Surface* finalSurface = working;
 
-	int newW = NextPowerOfTwo(working->w);
-	int newH = NextPowerOfTwo(working->h);
+	int newW = working->w;
+	int newH = working->h;
+	if (!useNPOT) {
+		newW = NextPowerOfTwo(newW);
+		newH = NextPowerOfTwo(newH);
+	}
+	int max = GL11_GetMaxTextureSize();
+	if (newW > max) {
+		newW = max;
+	}
+	if (newH > max) {
+		newH = max;
+	}
 
-	if (!useNPOT && (newW != working->w || newH != working->h)) {
+	if (newW != working->w || newH != working->h) {
 		SDL_Surface* resized = SDL_CreateSurface(newW, newH, working->format);
 		if (!resized) {
 			SDL_Log("SDL_CreateSurface (resize) failed: %s", SDL_GetError());
@@ -372,7 +383,7 @@ void OpenGL1Renderer::Flip()
 	}
 }
 
-void OpenGL1Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect)
+void OpenGL1Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect, FColor color)
 {
 	m_dirty = true;
 
@@ -381,7 +392,12 @@ void OpenGL1Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, con
 	float top = -m_viewportTransform.offsetY / m_viewportTransform.scale;
 	float bottom = (m_height - m_viewportTransform.offsetY) / m_viewportTransform.scale;
 
-	GL11_Draw2DImage(m_textures[textureId], srcRect, dstRect, left, right, bottom, top);
+	const GLTextureCacheEntry* texture = nullptr;
+	if (textureId != NO_TEXTURE_ID) {
+		texture = &m_textures[textureId];
+	}
+
+	GL11_Draw2DImage(texture, srcRect, dstRect, color, left, right, bottom, top);
 }
 
 void OpenGL1Renderer::SetDither(bool dither)

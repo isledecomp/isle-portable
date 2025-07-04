@@ -64,6 +64,7 @@ struct GLMeshCacheEntry {
 void GL11_InitState();
 void GL11_LoadExtensions();
 void GL11_DestroyTexture(GLuint texId);
+int GL11_GetMaxTextureSize();
 GLuint GL11_UploadTextureData(void* pixels, int width, int height, bool isUI);
 void GL11_UploadMesh(GLMeshCacheEntry& cache, bool hasTexture);
 void GL11_DestroyMesh(GLMeshCacheEntry& cache);
@@ -79,9 +80,10 @@ void GL11_SubmitDraw(
 void GL11_Resize(int width, int height);
 void GL11_Clear(float r, float g, float b);
 void GL11_Draw2DImage(
-	GLTextureCacheEntry& cache,
+	const GLTextureCacheEntry* cache,
 	const SDL_Rect& srcRect,
 	const SDL_Rect& dstRect,
+	const FColor& color,
 	float left,
 	float right,
 	float bottom,

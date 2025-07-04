@@ -275,61 +275,37 @@ void MxVideoPresenter::PutFrame()
 		}
 	}
 	else {
-		MxRegionCursor cursor(region);
-		MxRect32* regionRect;
+		RECT src, dest;
 
-		while ((regionRect = cursor.Next(rect))) {
-			if (regionRect->GetWidth() >= 1 && regionRect->GetHeight() >= 1) {
-				RECT src, dest;
+		if (m_unk0x58) {
+			src.left = 0;
+			src.top = 0;
+			src.right = GetWidth();
+			src.bottom = GetHeight();
 
-				if (m_unk0x58) {
-					src.left = regionRect->GetLeft() - GetX();
-					src.top = regionRect->GetTop() - GetY();
-					src.right = src.left + regionRect->GetWidth();
-					src.bottom = src.top + regionRect->GetHeight();
+			dest.left = GetX();
+			dest.top = GetY();
+			dest.right = dest.left + GetWidth();
+			dest.bottom = dest.top + GetHeight();
+		}
 
-					dest.left = regionRect->GetLeft();
-					dest.top = regionRect->GetTop();
-					dest.right = dest.left + regionRect->GetWidth();
-					dest.bottom = dest.top + regionRect->GetHeight();
-				}
-
-				if (m_action->GetFlags() & MxDSAction::c_bit4) {
-					if (m_unk0x58) {
-						if (PrepareRects(src, dest) >= 0) {
-							ddSurface->Blt(&dest, m_unk0x58, &src, DDBLT_KEYSRC, NULL);
-						}
-					}
-					else {
-						displaySurface->VTable0x30(
-							m_frameBitmap,
-							regionRect->GetLeft() - GetX(),
-							regionRect->GetTop() - GetY(),
-							regionRect->GetLeft(),
-							regionRect->GetTop(),
-							regionRect->GetWidth(),
-							regionRect->GetHeight(),
-							FALSE
-						);
-					}
-				}
-				else if (m_unk0x58) {
-					if (PrepareRects(src, dest) >= 0) {
-						ddSurface->Blt(&dest, m_unk0x58, &src, DDBLT_NONE, NULL);
-					}
-				}
-				else {
-					displaySurface->VTable0x28(
-						m_frameBitmap,
-						regionRect->GetLeft() - GetX(),
-						regionRect->GetTop() - GetY(),
-						regionRect->GetLeft(),
-						regionRect->GetTop(),
-						regionRect->GetWidth(),
-						regionRect->GetHeight()
-					);
+		if (m_action->GetFlags() & MxDSAction::c_bit4) {
+			if (m_unk0x58) {
+				if (PrepareRects(src, dest) >= 0) {
+					ddSurface->Blt(&dest, m_unk0x58, &src, DDBLT_KEYSRC, NULL);
 				}
 			}
+			else {
+				displaySurface->VTable0x30(m_frameBitmap, 0, 0, GetX(), GetY(), GetWidth(), GetHeight(), FALSE);
+			}
+		}
+		else if (m_unk0x58) {
+			if (PrepareRects(src, dest) >= 0) {
+				ddSurface->Blt(&dest, m_unk0x58, &src, DDBLT_NONE, NULL);
+			}
+		}
+		else {
+			displaySurface->VTable0x28(m_frameBitmap, 0, 0, GetX(), GetY(), GetWidth(), GetHeight());
 		}
 	}
 }

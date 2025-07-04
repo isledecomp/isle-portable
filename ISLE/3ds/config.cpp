@@ -18,5 +18,5 @@ void N3DS_SetupDefaultConfigOverrides(dictionary* p_dictionary)
 	iniparser_set(p_dictionary, "isle:savepath", "sdmc:/3ds/isle");
 
 	// Use e_noAnimation/cut transition
-	iniparser_set(p_dictionary, "isle:Transition Type", "1");
+	iniparser_set(p_dictionary, "isle:Transition Type", "7");
 }

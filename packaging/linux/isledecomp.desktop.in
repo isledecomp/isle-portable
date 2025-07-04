@@ -21,6 +21,7 @@ Keywords[ru]=LEGO;lego;Остров LEGO
 Keywords[uk_UA]=LEGO;lego;LEGO острів
 
 SingleMainWindow=true
+StartupWMClass=isle
 
 TryExec=isle
 Exec=isle
