@@ -24,6 +24,7 @@ class ShaderMetadata:
 class ShaderFormat(enum.StrEnum):
     SPIRV = "SDL_GPU_SHADERFORMAT_SPIRV"
     DXIL = "SDL_GPU_SHADERFORMAT_DXIL"
+    DXBC = "SDL_GPU_SHADERFORMAT_DXBC"
     MSL = "SDL_GPU_SHADERFORMAT_MSL"
 
 class ShaderStage(enum.StrEnum):
@@ -82,6 +83,7 @@ def main() -> None:
     header_parser = subparsers.add_parser("header")
     header_parser.add_argument("--stage", choices=("vertex", "fragment"), required=True)
     header_parser.add_argument("--variable", required=True)
+    header_parser.add_argument("--dxbc", type=Path, required=True)
     header_parser.add_argument("--dxil", type=Path, required=True)
     header_parser.add_argument("--msl", type=Path, required=True)
     header_parser.add_argument("--spirv", type=Path, required=True)
@@ -112,9 +114,10 @@ def main() -> None:
             write_generated_warning(f)
             f.write("#include <SDL3/SDL.h>\n")
             f.write("\n")
-            f.write("// DXIL only makes sense on Windows platforms\n")
+            f.write("// DX only makes sense on Windows platforms\n")
             f.write("#if defined(SDL_PLATFORM_WINDOWS)\n")
             write_uint8_array(f=f, data=args.dxil.read_bytes(), variable=variable + "_dxil")
+            write_uint8_array(f=f, data=args.dxbc.read_bytes(), variable=variable + "_dxbc")
             f.write("#endif\n")
             f.write("\n")
             f.write("// MSL only makes sense on Apple platforms\n")
@@ -178,6 +181,11 @@ def main() -> None:
                 for shader_metadata in shader_metadatas:
                     write_gpushadercreateinfo(f, shader_metadata, entrypoint="main", suffix="_dxil", format=ShaderFormat.DXIL, stage=stage)
                 f.write(f"}};\n")
+                f.write(f"static const SDL_GPUShaderCreateInfo {capitalized_stage}ShaderDXBCCodes[] = {{\n")
+                f.write(f"  // {capitalized_stage}ShaderId::{shader_metadata.name}\n")
+                for shader_metadata in shader_metadatas:
+                    write_gpushadercreateinfo(f, shader_metadata, entrypoint="main", suffix="_dxbc", format=ShaderFormat.DXBC, stage=stage)
+                f.write(f"}};\n")
                 f.write("#endif\n")
                 f.write("\n")
                 f.write("#if defined(SDL_PLATFORM_APPLE)\n")
@@ -201,6 +209,10 @@ def main() -> None:
                 f.write(f"  if (formats & SDL_GPU_SHADERFORMAT_DXIL) {{\n")
                 f.write(f"    SDL_assert(id < SDL_arraysize({capitalized_stage}ShaderDXILCodes));\n")
                 f.write(f"    return &{capitalized_stage}ShaderDXILCodes[id];\n")
+                f.write(f"  }}\n")
+                f.write(f"  if (formats & SDL_GPU_SHADERFORMAT_DXBC) {{\n")
+                f.write(f"    SDL_assert(id < SDL_arraysize({capitalized_stage}ShaderDXBCCodes));\n")
+                f.write(f"    return &{capitalized_stage}ShaderDXBCCodes[id];\n")
                 f.write(f"  }}\n")
                 f.write(f"#endif\n")
                 f.write(f"#if defined(SDL_PLATFORM_APPLE)\n")
