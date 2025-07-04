@@ -78,11 +78,13 @@ HRESULT FrameBufferImpl::Blt(
 	if (!surface) {
 		return DDERR_GENERIC;
 	}
-	Uint32 textureId = DDRenderer->GetTextureId(surface->ToTexture(), true);
 	SDL_Rect srcRect =
 		lpSrcRect ? ConvertRect(lpSrcRect) : SDL_Rect{0, 0, surface->m_surface->w, surface->m_surface->h};
 	SDL_Rect dstRect =
 		lpDestRect ? ConvertRect(lpDestRect) : SDL_Rect{0, 0, (int) m_virtualWidth, (int) m_virtualHeight};
+	float scaleX = (float) dstRect.w / (float) srcRect.w;
+	float scaleY = (float) dstRect.h / (float) srcRect.h;
+	Uint32 textureId = DDRenderer->GetTextureId(surface->ToTexture(), true, scaleX, scaleY);
 	DDRenderer->Draw2DImage(textureId, srcRect, dstRect, {1.0f, 1.0f, 1.0f, 1.0f});
 
 	return DD_OK;
