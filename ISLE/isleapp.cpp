@@ -447,7 +447,7 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 
 		SDL_Keycode keyCode = event->key.key;
 
-		if (event->key.mod == SDL_KMOD_LALT && keyCode == SDLK_RETURN) {
+		if ((event->key.mod & SDL_KMOD_LALT) && keyCode == SDLK_RETURN) {
 			SDL_SetWindowFullscreen(window, !(SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN));
 		}
 		else {
