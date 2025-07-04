@@ -121,6 +121,9 @@ static SDL_Surface* ConvertAndResizeSurface(SDL_Surface* original, bool isUI, fl
 		return SDL_ConvertSurface(original, SDL_PIXELFORMAT_RGBA8888);
 	}
 
+	scaleX = std::min(scaleX, 1.0f);
+	scaleY = std::min(scaleY, 1.0f);
+
 	int scaledW = static_cast<int>(original->w * scaleX);
 	int scaledH = static_cast<int>(original->h * scaleY);
 
@@ -136,8 +139,9 @@ static SDL_Surface* ConvertAndResizeSurface(SDL_Surface* original, bool isUI, fl
 		SDL_BlitSurface(original, nullptr, padded, nullptr);
 	}
 	else {
+		SDL_ScaleMode scaleMode = (scaleX >= 1.0f && scaleY >= 1.0f) ? SDL_SCALEMODE_NEAREST : SDL_SCALEMODE_LINEAR;
 		SDL_Rect dstRect = {0, 0, scaledW, scaledH};
-		SDL_BlitSurfaceScaled(original, nullptr, padded, &dstRect, SDL_SCALEMODE_LINEAR);
+		SDL_BlitSurfaceScaled(original, nullptr, padded, &dstRect, scaleMode);
 	}
 
 	return padded;
