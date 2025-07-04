@@ -70,6 +70,7 @@ bool CConfigApp::InitInstance()
 	m_driver = NULL;
 	m_device = NULL;
 	m_full_screen = TRUE;
+	m_transition_type = 3; // 3: Mosaic
 	m_wide_view_angle = TRUE;
 	m_use_joystick = TRUE;
 	m_music = TRUE;
@@ -153,6 +154,7 @@ bool CConfigApp::ReadRegisterSettings()
 	m_display_bit_depth = iniparser_getint(dict, "isle:Display Bit Depth", -1);
 	m_flip_surfaces = iniparser_getboolean(dict, "isle:Flip Surfaces", m_flip_surfaces);
 	m_full_screen = iniparser_getboolean(dict, "isle:Full Screen", m_full_screen);
+	m_transition_type = iniparser_getint(dict, "isle:Transition Type", m_transition_type);
 	m_3d_video_ram = iniparser_getboolean(dict, "isle:Back Buffers in Video RAM", m_3d_video_ram);
 	m_wide_view_angle = iniparser_getboolean(dict, "isle:Wide View Angle", m_wide_view_angle);
 	m_3d_sound = iniparser_getboolean(dict, "isle:3DSound", m_3d_sound);
@@ -307,6 +309,8 @@ void CConfigApp::WriteRegisterSettings() const
 	SetIniBool(dict, "isle:Flip Surfaces", m_flip_surfaces);
 	SetIniBool(dict, "isle:Full Screen", m_full_screen);
 	SetIniBool(dict, "isle:Wide View Angle", m_wide_view_angle);
+
+	SetIniInt(dict, "isle:Transition Type", m_transition_type);
 
 	SetIniBool(dict, "isle:3DSound", m_3d_sound);
 	SetIniBool(dict, "isle:Music", m_music);
