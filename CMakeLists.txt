@@ -696,7 +696,7 @@ if (ISLE_BUILD_CONFIG)
     )
     install(DIRECTORY "Build/QTLibs/" DESTINATION "${CMAKE_INSTALL_BINDIR}")
   else()
-    message(WARNING "windeployqt not found.")
+    message(STATUS "windeployqt not found: Qt binaries will not be installed")
   endif()
   install(TARGETS isle-config
     RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
