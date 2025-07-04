@@ -62,7 +62,7 @@ jobs:
             ${{ matrix.msys-env }}-clang-tools-extra
             ${{ (matrix.config && format('{0}-qt6-base', matrix.msys-env)) || '' }}
       - name: Install Qt
-        if: ${{ !!matrix.msvc && matrix.config }}
+        if: ${{ matrix.os == 'windows-latest' && matrix.config }}
         uses: jurplel/install-qt-action@v4
         with:
           cache: 'true'
