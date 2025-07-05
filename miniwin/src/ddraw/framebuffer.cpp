@@ -78,11 +78,13 @@ HRESULT FrameBufferImpl::Blt(
 	if (!surface) {
 		return DDERR_GENERIC;
 	}
-	Uint32 textureId = DDRenderer->GetTextureId(surface->ToTexture(), true);
 	SDL_Rect srcRect =
 		lpSrcRect ? ConvertRect(lpSrcRect) : SDL_Rect{0, 0, surface->m_surface->w, surface->m_surface->h};
 	SDL_Rect dstRect =
 		lpDestRect ? ConvertRect(lpDestRect) : SDL_Rect{0, 0, (int) m_virtualWidth, (int) m_virtualHeight};
+	float scaleX = (float) dstRect.w / (float) srcRect.w;
+	float scaleY = (float) dstRect.h / (float) srcRect.h;
+	Uint32 textureId = DDRenderer->GetTextureId(surface->ToTexture(), true, scaleX, scaleY);
 	DDRenderer->Draw2DImage(textureId, srcRect, dstRect, {1.0f, 1.0f, 1.0f, 1.0f});
 
 	return DD_OK;
@@ -170,11 +172,10 @@ HRESULT FrameBufferImpl::Lock(LPRECT lpDestRect, DDSURFACEDESC* lpDDSurfaceDesc,
 		return DDERR_GENERIC;
 	}
 	if ((dwFlags & DDLOCK_WRITEONLY) == DDLOCK_WRITEONLY) {
-		SDL_Rect rect = {0, 0, m_transferBuffer->m_surface->w, m_transferBuffer->m_surface->h};
 		const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(m_transferBuffer->m_surface->format);
 		SDL_Palette* palette = m_palette ? static_cast<DirectDrawPaletteImpl*>(m_palette)->m_palette : nullptr;
 		Uint32 color = SDL_MapRGBA(details, palette, 0, 0, 0, 0);
-		SDL_FillSurfaceRect(m_transferBuffer->m_surface, &rect, color);
+		SDL_FillSurfaceRect(m_transferBuffer->m_surface, nullptr, color);
 	}
 	else {
 		DDRenderer->Download(m_transferBuffer->m_surface);

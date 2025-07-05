@@ -671,14 +671,14 @@ MxLong RegistrationBook::HandlePathStruct(LegoPathStructNotificationParam& p_par
 MxBool RegistrationBook::CreateSurface()
 {
 	MxCompositePresenterList* presenters = m_checkmark[0]->GetList();
-	MxStillPresenter *presenter, *uninitialized;
+	MxStillPresenter* presenter;
 
 	if (presenters) {
 		if (presenters->begin() != presenters->end()) {
 			presenter = (MxStillPresenter*) presenters->front();
 		}
 		else {
-			presenter = uninitialized; // intentionally uninitialized variable
+			presenter = NULL;
 		}
 
 		if (presenter) {

@@ -642,8 +642,14 @@ int GetColorIndexWithLocality(int p_col, int p_row)
 
 void MxTransitionManager::FakeMosaicTransition()
 {
+	static LPDIRECTDRAWSURFACE g_fakeTranstionSurface = nullptr;
+
 	if (m_animationTimer == 16) {
 		m_animationTimer = 0;
+		if (g_fakeTranstionSurface) {
+			g_fakeTranstionSurface->Release();
+			g_fakeTranstionSurface = nullptr;
+		}
 		EndTransition(TRUE);
 		return;
 	}
@@ -662,12 +668,33 @@ void MxTransitionManager::FakeMosaicTransition()
 		}
 	}
 
+	if (!g_fakeTranstionSurface) {
+		DDSURFACEDESC mainDesc = {};
+		mainDesc.dwSize = sizeof(mainDesc);
+		if (m_ddSurface->GetSurfaceDesc(&mainDesc) != DD_OK) {
+			return;
+		}
+
+		DDSURFACEDESC tempDesc = {};
+		tempDesc.dwSize = sizeof(tempDesc);
+		tempDesc.dwFlags = DDSD_WIDTH | DDSD_HEIGHT | DDSD_PIXELFORMAT | DDSD_CAPS;
+		tempDesc.dwWidth = 64;
+		tempDesc.dwHeight = 48;
+		tempDesc.ddpfPixelFormat = mainDesc.ddpfPixelFormat;
+		tempDesc.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
+
+		HRESULT hr = MVideoManager()->GetDirectDraw()->CreateSurface(&tempDesc, &g_fakeTranstionSurface, nullptr);
+		if (hr != DD_OK || !g_fakeTranstionSurface) {
+			return;
+		}
+	}
+
 	DDSURFACEDESC ddsd = {};
 	ddsd.dwSize = sizeof(ddsd);
-	HRESULT res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
+	HRESULT res = g_fakeTranstionSurface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
 	if (res == DDERR_SURFACELOST) {
-		m_ddSurface->Restore();
-		res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
+		g_fakeTranstionSurface->Restore();
+		res = g_fakeTranstionSurface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
 	}
 
 	if (res == DD_OK) {
@@ -694,50 +721,33 @@ void MxTransitionManager::FakeMosaicTransition()
 			}
 
 			for (MxS32 row = 0; row < 48; row++) {
-				MxS32 xShift = 10 * ((m_randomShift[row] + col) % 64);
-				MxS32 yStart = 10 * row;
-
-				int paletteIndex = GetColorIndexWithLocality(xShift / 10, row);
+				int paletteIndex = GetColorIndexWithLocality(col, row);
 
 				const MxU8* color = g_palette[paletteIndex];
 
-				for (MxS32 y = 0; y < 10; y++) {
-					MxU8* dest = (MxU8*) ddsd.lpSurface + (yStart + y) * ddsd.lPitch + xShift * bytesPerPixel;
-					switch (bytesPerPixel) {
-					case 1:
-						memset(dest, paletteIndex, 10);
-						break;
-					case 2: {
-						MxU32 pixel = RGB555_CREATE(color[2], color[1], color[0]);
-						MxU16* p = (MxU16*) dest;
-						for (MxS32 i = 0; i < 10; i++) {
-							p[i] = pixel;
-						}
-						break;
-					}
-					default: {
-						MxU32 pixel = RGB8888_CREATE(color[2], color[1], color[0], 255);
-						MxU32* p = (MxU32*) dest;
-						for (MxS32 i = 0; i < 10; i++) {
-							p[i] = pixel;
-						}
-						break;
-					}
-					}
+				MxS32 xShift = (m_randomShift[row] + col) % 64;
+				MxU8* dest = (MxU8*) ddsd.lpSurface + row * ddsd.lPitch + xShift * bytesPerPixel;
+
+				switch (bytesPerPixel) {
+				case 1:
+					*dest = paletteIndex;
+					break;
+				case 2:
+					*((MxU16*) dest) = RGB555_CREATE(color[2], color[1], color[0]);
+					break;
+				default:
+					*((MxU32*) dest) = RGB8888_CREATE(color[2], color[1], color[0], 255);
+					break;
 				}
 			}
 		}
 
 		SetupCopyRect(&ddsd);
-		m_ddSurface->Unlock(ddsd.lpSurface);
+		g_fakeTranstionSurface->Unlock(ddsd.lpSurface);
 
-		if (VideoManager()->GetVideoParam().Flags().GetFlipSurfaces()) {
-			VideoManager()
-				->GetDisplaySurface()
-				->GetDirectDrawSurface1()
-				->BltFast(0, 0, m_ddSurface, &g_fullScreenRect, DDBLTFAST_WAIT);
-		}
-
-		m_animationTimer++;
+		RECT srcRect = {0, 0, 64, 48};
+		m_ddSurface->Blt(&g_fullScreenRect, g_fakeTranstionSurface, &srcRect, DDBLT_WAIT, NULL);
 	}
+
+	m_animationTimer++;
 }
