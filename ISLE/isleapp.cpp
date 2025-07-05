@@ -276,7 +276,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 	SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
 	SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
 
-	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK)) {
+	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD)) {
 		char buffer[256];
 		SDL_snprintf(
 			buffer,
@@ -500,14 +500,19 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		break;
 	}
 	case SDL_EVENT_GAMEPAD_AXIS_MOTION: {
+		MxS16 axisValue = 0;
+		if (event->gaxis.value < -8000 || event->gaxis.value > 8000) {
+			// Ignore small axis values
+			axisValue = event->gaxis.value;
+		}
 		if (event->gaxis.axis == SDL_GAMEPAD_AXIS_RIGHTX) {
-			g_lastJoystickMouseX = ((float) event->gaxis.value) / SDL_JOYSTICK_AXIS_MAX * g_isle->GetMouseSensitivity();
+			g_lastJoystickMouseX = ((float) axisValue) / SDL_JOYSTICK_AXIS_MAX * g_isle->GetMouseSensitivity();
 		}
 		else if (event->gaxis.axis == SDL_GAMEPAD_AXIS_RIGHTY) {
-			g_lastJoystickMouseY = ((float) event->gaxis.value) / SDL_JOYSTICK_AXIS_MAX * g_isle->GetMouseSensitivity();
+			g_lastJoystickMouseY = ((float) axisValue) / SDL_JOYSTICK_AXIS_MAX * g_isle->GetMouseSensitivity();
 		}
 		else if (event->gaxis.axis == SDL_GAMEPAD_AXIS_RIGHT_TRIGGER) {
-			if (event->gaxis.value != 0) {
+			if (axisValue != 0) {
 				g_mousedown = TRUE;
 
 				if (InputManager()) {
