@@ -154,7 +154,7 @@ IsleApp::IsleApp()
 	m_maxLod = RealtimeView::GetUserMaxLOD();
 	m_maxAllowedExtras = m_islandQuality <= 1 ? 10 : 20;
 	m_transitionType = MxTransitionManager::e_mosaic;
-	m_mouseSensitivity = 4;
+	m_cursorSensitivity = 4;
 }
 
 // FUNCTION: ISLE 0x4011a0
@@ -506,10 +506,10 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 			axisValue = event->gaxis.value;
 		}
 		if (event->gaxis.axis == SDL_GAMEPAD_AXIS_RIGHTX) {
-			g_lastJoystickMouseX = ((float) axisValue) / SDL_JOYSTICK_AXIS_MAX * g_isle->GetMouseSensitivity();
+			g_lastJoystickMouseX = ((float) axisValue) / SDL_JOYSTICK_AXIS_MAX * g_isle->GetCursorSensitivity();
 		}
 		else if (event->gaxis.axis == SDL_GAMEPAD_AXIS_RIGHTY) {
-			g_lastJoystickMouseY = ((float) axisValue) / SDL_JOYSTICK_AXIS_MAX * g_isle->GetMouseSensitivity();
+			g_lastJoystickMouseY = ((float) axisValue) / SDL_JOYSTICK_AXIS_MAX * g_isle->GetCursorSensitivity();
 		}
 		else if (event->gaxis.axis == SDL_GAMEPAD_AXIS_RIGHT_TRIGGER) {
 			if (axisValue != 0) {
@@ -926,6 +926,8 @@ bool IsleApp::LoadConfig()
 		iniparser_set(dict, "isle:UseJoystick", m_useGamepad ? "true" : "false");
 		iniparser_set(dict, "isle:JoystickIndex", SDL_itoa(m_gamepadIndex, buf, 10));
 		iniparser_set(dict, "isle:Draw Cursor", m_drawCursor ? "true" : "false");
+		SDL_snprintf(buf, sizeof(buf), "%f", m_cursorSensitivity);
+		iniparser_set(dict, "isle:Cursor Sensitivity", buf);
 
 		iniparser_set(dict, "isle:Back Buffers in Video RAM", "-1");
 
@@ -980,6 +982,7 @@ bool IsleApp::LoadConfig()
 	m_useGamepad = iniparser_getboolean(dict, "isle:UseJoystick", m_useGamepad);
 	m_gamepadIndex = iniparser_getint(dict, "isle:JoystickIndex", m_gamepadIndex);
 	m_drawCursor = iniparser_getboolean(dict, "isle:Draw Cursor", m_drawCursor);
+	m_cursorSensitivity = iniparser_getdouble(dict, "isle:Cursor Sensitivity", m_cursorSensitivity);
 
 	MxS32 backBuffersInVRAM = iniparser_getboolean(dict, "isle:Back Buffers in Video RAM", -1);
 	if (backBuffersInVRAM != -1) {
