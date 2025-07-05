@@ -1,0 +1,8 @@
+#pragma once
+
+#define ISLE_BUTTON_SPACE 0
+#define ISLE_BUTTON_ESCAPE 0
+
+#define ISLE_MOUSE_JOYSTICK_X 0
+#define ISLE_MOUSE_JOYSTICK_Y 0
+#define ISLE_MOUSE_CLICK_AXIS 0

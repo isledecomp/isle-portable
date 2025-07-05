@@ -52,6 +52,7 @@ public:
 	SDL_Cursor* GetCursorNo() { return m_cursorNo; }
 	MxS32 GetDrawCursor() { return m_drawCursor; }
 	MxS32 GetGameStarted() { return m_gameStarted; }
+	MxFloat GetMouseSensitivity() { return m_mouseSensitivity; }
 
 	void SetWindowActive(MxS32 p_windowActive) { m_windowActive = p_windowActive; }
 	void SetGameStarted(MxS32 p_gameStarted) { m_gameStarted = p_gameStarted; }
@@ -93,6 +94,7 @@ private:
 	const CursorBitmap* m_cursorNoBitmap;
 	const CursorBitmap* m_cursorCurrentBitmap;
 	char* m_mediaPath;
+	MxFloat m_mouseSensitivity;
 
 	char* m_iniPath;
 	MxFloat m_maxLod;

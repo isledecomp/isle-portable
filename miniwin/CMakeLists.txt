@@ -32,7 +32,7 @@ target_compile_definitions(miniwin PRIVATE
 )
 
 find_package(OpenGL)
-if(OpenGL_FOUND)
+if(OpenGL_FOUND AND NOT WINDOWS_STORE)
   message(STATUS "Found OpenGL: enabling OpenGL 1.x renderer")
   target_sources(miniwin PRIVATE
     src/d3drm/backends/opengl1/actual.cpp
@@ -45,7 +45,7 @@ else()
 endif()
 
 find_library(OPENGL_ES2_LIBRARY NAMES GLESv2)
-if(EMSCRIPTEN OR OPENGL_ES2_LIBRARY)
+if(EMSCRIPTEN OR OPENGL_ES2_LIBRARY AND NOT WINDOWS_STORE)
   message(STATUS "Found OpenGL: enabling OpenGL ES 2.x renderer")
   target_sources(miniwin PRIVATE src/d3drm/backends/opengles2/renderer.cpp)
   target_compile_definitions(miniwin PRIVATE USE_OPENGLES2)
@@ -73,12 +73,16 @@ if(NINTENDO_3DS)
   endif()
 endif()
 
-if(WIN32)
+if(WIN32 AND NOT WINDOWS_STORE)
   target_sources(miniwin PRIVATE
     src/d3drm/backends/directx9/actual.cpp
     src/d3drm/backends/directx9/renderer.cpp
   )
   target_link_libraries(miniwin PRIVATE d3d9)
+endif()
+
+if(WINDOWS_STORE)
+  add_compile_definitions(WINDOWS_STORE)
 endif()
 
 target_compile_definitions(miniwin PUBLIC MINIWIN)

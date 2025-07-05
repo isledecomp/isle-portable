@@ -1,6 +1,6 @@
 #include "Common.hlsl"
 
-cbuffer ViewportUniforms : register(b0, space1)
+cbuffer ViewportUniforms : REGISTER_SPACE(b0, space1)
 {
 	float4x4 projection;
 	float4x4 worldViewMatrix;

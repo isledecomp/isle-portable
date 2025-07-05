@@ -18,3 +18,9 @@ struct SceneLight {
     float4 position;
     float4 direction;
 };
+
+#ifdef NO_REGISTER_SPACE
+    #define REGISTER_SPACE(REG, SPACE) register(REG)
+#else
+    #define REGISTER_SPACE(REG, SPACE) register(REG, SPACE)
+#endif

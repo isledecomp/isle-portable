@@ -53,9 +53,16 @@
 #include "emscripten/messagebox.h"
 #endif
 
+#include "dummy_controller_map.h"
+
 #ifdef __3DS__
 #include "3ds/apthooks.h"
 #include "3ds/config.h"
+#endif
+
+#ifdef WINDOWS_STORE
+#include "xbox_one_series/config.h"
+#include "xbox_one_series/xbox_controller_map.h"
 #endif
 
 DECOMP_SIZE_ASSERT(IsleApp, 0x8c)
@@ -89,6 +96,11 @@ MxS32 g_targetDepth = 16;
 
 // GLOBAL: ISLE 0x410064
 MxS32 g_reqEnableRMDevice = FALSE;
+
+float g_lastJoystickMouseX = 0;
+float g_lastJoystickMouseY = 0;
+float g_lastMouseX = 0;
+float g_lastMouseY = 0;
 
 // STRING: ISLE 0x4101dc
 #define WINDOW_TITLE "LEGO®"
@@ -149,6 +161,7 @@ IsleApp::IsleApp()
 	m_maxLod = RealtimeView::GetUserMaxLOD();
 	m_maxAllowedExtras = m_islandQuality <= 1 ? 10 : 20;
 	m_transitionType = MxTransitionManager::e_mosaic;
+	m_mouseSensitivity = 4;
 }
 
 // FUNCTION: ISLE 0x4011a0
@@ -379,6 +392,27 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 		if (g_mousemoved) {
 			g_mousemoved = FALSE;
 		}
+
+		if (g_lastJoystickMouseX != 0 || g_lastJoystickMouseY != 0) {
+			g_mousemoved = TRUE;
+
+			g_lastMouseX = SDL_clamp(g_lastMouseX + g_lastJoystickMouseX, 0, 640);
+			g_lastMouseY = SDL_clamp(g_lastMouseY + g_lastJoystickMouseY, 0, 480);
+
+			if (InputManager()) {
+				InputManager()->QueueEvent(
+					c_notificationMouseMove,
+					g_mousedown ? LegoEventNotificationParam::c_lButtonState : 0,
+					g_lastMouseX,
+					g_lastMouseY,
+					0
+				);
+			}
+
+			if (g_isle->GetDrawCursor()) {
+				VideoManager()->MoveCursor(Min((MxS32) g_lastMouseX, 639), Min((MxS32) g_lastMouseY, 479));
+			}
+		}
 	}
 
 	return SDL_APP_CONTINUE;
@@ -453,6 +487,63 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		else {
 			if (InputManager()) {
 				InputManager()->QueueEvent(c_notificationKeyPress, keyCode, 0, 0, keyCode);
+			}
+		}
+		break;
+	}
+	case SDL_EVENT_JOYSTICK_BUTTON_DOWN: {
+		{
+			if (event->gbutton.button == ISLE_BUTTON_SPACE) {
+				if (InputManager()) {
+					InputManager()->QueueEvent(c_notificationKeyPress, SDLK_SPACE, 0, 0, SDLK_SPACE);
+				}
+			}
+			if (event->gbutton.button == ISLE_BUTTON_ESCAPE) {
+				if (InputManager()) {
+					InputManager()->QueueEvent(c_notificationKeyPress, SDLK_ESCAPE, 0, 0, SDLK_ESCAPE);
+				}
+			}
+		}
+		break;
+	}
+	case SDL_EVENT_JOYSTICK_AXIS_MOTION: {
+		if (event->gaxis.axis == ISLE_MOUSE_JOYSTICK_X) {
+			g_lastJoystickMouseX = ((float) event->gaxis.value) / SDL_JOYSTICK_AXIS_MAX * g_isle->GetMouseSensitivity();
+		}
+		else if (event->gaxis.axis == ISLE_MOUSE_JOYSTICK_Y) {
+#ifdef WINDOWS_STORE
+			g_lastJoystickMouseY =
+				-((float) event->gaxis.value) / SDL_JOYSTICK_AXIS_MAX * g_isle->GetMouseSensitivity();
+#else
+			g_lastJoystickMouseY = ((float) event->gaxis.value) / SDL_JOYSTICK_AXIS_MAX * g_isle->GetMouseSensitivity();
+#endif
+		}
+		else if (event->gaxis.axis == ISLE_MOUSE_CLICK_AXIS) {
+			if (event->gaxis.value != SDL_JOYSTICK_AXIS_MIN) {
+				g_mousedown = TRUE;
+
+				if (InputManager()) {
+					InputManager()->QueueEvent(
+						c_notificationButtonDown,
+						LegoEventNotificationParam::c_lButtonState,
+						g_lastMouseX,
+						g_lastMouseY,
+						0
+					);
+				}
+			}
+			else {
+				g_mousedown = FALSE;
+
+				if (InputManager()) {
+					InputManager()->QueueEvent(
+						c_notificationButtonUp,
+						LegoEventNotificationParam::c_lButtonState,
+						g_lastMouseX,
+						g_lastMouseY,
+						0
+					);
+				}
 			}
 		}
 		break;
@@ -675,7 +766,7 @@ MxResult IsleApp::SetupWindow()
 	SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, g_targetHeight);
 	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_FULLSCREEN_BOOLEAN, m_fullScreen);
 	SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, WINDOW_TITLE);
-#if defined(MINIWIN) && !defined(__3DS__)
+#if defined(MINIWIN) && !defined(__3DS__) && !defined(WINDOWS_STORE)
 	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
@@ -842,6 +933,8 @@ bool IsleApp::LoadConfig()
 		iniparser_set(dict, "isle:UseJoystick", m_useJoystick ? "true" : "false");
 		iniparser_set(dict, "isle:JoystickIndex", SDL_itoa(m_joystickIndex, buf, 10));
 		iniparser_set(dict, "isle:Draw Cursor", m_drawCursor ? "true" : "false");
+		SDL_snprintf(buf, sizeof(buf), "%f", m_mouseSensitivity);
+		iniparser_set(dict, "isle:Mouse Sensitivity", buf);
 
 		iniparser_set(dict, "isle:Back Buffers in Video RAM", "-1");
 
@@ -854,6 +947,9 @@ bool IsleApp::LoadConfig()
 
 #ifdef __3DS__
 		N3DS_SetupDefaultConfigOverrides(dict);
+#endif
+#ifdef WINDOWS_STORE
+		XBONE_SetupDefaultConfigOverrides(dict);
 #endif
 		iniparser_dump_ini(dict, iniFP);
 		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "New config written at '%s'", iniConfig);
@@ -896,6 +992,7 @@ bool IsleApp::LoadConfig()
 	m_useJoystick = iniparser_getboolean(dict, "isle:UseJoystick", m_useJoystick);
 	m_joystickIndex = iniparser_getint(dict, "isle:JoystickIndex", m_joystickIndex);
 	m_drawCursor = iniparser_getboolean(dict, "isle:Draw Cursor", m_drawCursor);
+	m_mouseSensitivity = iniparser_getdouble(dict, "isle:Mouse Sensitivity", m_mouseSensitivity);
 
 	MxS32 backBuffersInVRAM = iniparser_getboolean(dict, "isle:Back Buffers in Video RAM", -1);
 	if (backBuffersInVRAM != -1) {
