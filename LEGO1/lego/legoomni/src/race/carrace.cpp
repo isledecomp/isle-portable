@@ -24,8 +24,6 @@
 
 #include <stdio.h>
 
-#pragma warning(disable : 4703)
-
 DECOMP_SIZE_ASSERT(CarRace, 0x154)
 
 // GLOBAL: LEGO1 0x100d5d10
