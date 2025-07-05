@@ -59,6 +59,10 @@
 #include "3ds/config.h"
 #endif
 
+#ifdef WINDOWS_STORE
+#include "xbox_one_series/config.h"
+#endif
+
 DECOMP_SIZE_ASSERT(IsleApp, 0x8c)
 
 // GLOBAL: ISLE 0x410030
@@ -937,6 +941,9 @@ bool IsleApp::LoadConfig()
 
 #ifdef __3DS__
 		N3DS_SetupDefaultConfigOverrides(dict);
+#endif
+#ifdef WINDOWS_STORE
+		XBONE_SetupDefaultConfigOverrides(dict);
 #endif
 		iniparser_dump_ini(dict, iniFP);
 		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "New config written at '%s'", iniConfig);
