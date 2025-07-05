@@ -52,6 +52,7 @@ public:
 	SDL_Cursor* GetCursorNo() { return m_cursorNo; }
 	MxS32 GetDrawCursor() { return m_drawCursor; }
 	MxS32 GetGameStarted() { return m_gameStarted; }
+	MxFloat GetMouseSensitivity() { return m_mouseSensitivity; }
 
 	void SetWindowActive(MxS32 p_windowActive) { m_windowActive = p_windowActive; }
 	void SetGameStarted(MxS32 p_gameStarted) { m_gameStarted = p_gameStarted; }
@@ -73,8 +74,8 @@ private:
 	MxS32 m_hasLightSupport;     // 0x24
 	MxS32 m_use3dSound;          // 0x28
 	MxS32 m_useMusic;            // 0x2c
-	MxS32 m_useJoystick;         // 0x30
-	MxS32 m_joystickIndex;       // 0x34
+	MxS32 m_useGamepad;          // 0x30
+	MxS32 m_gamepadIndex;        // 0x34
 	MxS32 m_wideViewAngle;       // 0x38
 	MxS32 m_islandQuality;       // 0x3c
 	MxS32 m_islandTexture;       // 0x40
@@ -93,6 +94,7 @@ private:
 	const CursorBitmap* m_cursorNoBitmap;
 	const CursorBitmap* m_cursorCurrentBitmap;
 	char* m_mediaPath;
+	MxFloat m_mouseSensitivity;
 
 	char* m_iniPath;
 	MxFloat m_maxLod;

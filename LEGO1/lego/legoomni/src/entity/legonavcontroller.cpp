@@ -533,7 +533,7 @@ MxResult LegoNavController::ProcessJoystickInput(MxBool& p_und)
 		MxS32 povPosition;
 
 		if (instance->GetInputManager()
-				->GetJoystickState((MxU32*) &joystickX, (MxU32*) &joystickY, (MxU32*) &povPosition) != FAILURE) {
+				->GetGamepadState((MxU32*) &joystickX, (MxU32*) &joystickY, (MxU32*) &povPosition) != FAILURE) {
 			MxU32 yVal = (joystickY * m_vMax) / 100;
 			MxU32 xVal = (joystickX * m_hMax) / 100;
 

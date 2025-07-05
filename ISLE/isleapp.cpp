@@ -90,6 +90,11 @@ MxS32 g_targetDepth = 16;
 // GLOBAL: ISLE 0x410064
 MxS32 g_reqEnableRMDevice = FALSE;
 
+float g_lastJoystickMouseX = 0;
+float g_lastJoystickMouseY = 0;
+float g_lastMouseX = 0;
+float g_lastMouseY = 0;
+
 // STRING: ISLE 0x4101dc
 #define WINDOW_TITLE "LEGO®"
 
@@ -113,8 +118,8 @@ IsleApp::IsleApp()
 	m_drawCursor = FALSE;
 	m_use3dSound = TRUE;
 	m_useMusic = TRUE;
-	m_useJoystick = TRUE;
-	m_joystickIndex = 0;
+	m_useGamepad = TRUE;
+	m_gamepadIndex = 0;
 	m_wideViewAngle = TRUE;
 	m_islandQuality = 2;
 	m_islandTexture = 1;
@@ -149,6 +154,7 @@ IsleApp::IsleApp()
 	m_maxLod = RealtimeView::GetUserMaxLOD();
 	m_maxAllowedExtras = m_islandQuality <= 1 ? 10 : 20;
 	m_transitionType = MxTransitionManager::e_mosaic;
+	m_mouseSensitivity = 4;
 }
 
 // FUNCTION: ISLE 0x4011a0
@@ -379,6 +385,27 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 		if (g_mousemoved) {
 			g_mousemoved = FALSE;
 		}
+
+		if (g_lastJoystickMouseX != 0 || g_lastJoystickMouseY != 0) {
+			g_mousemoved = TRUE;
+
+			g_lastMouseX = SDL_clamp(g_lastMouseX + g_lastJoystickMouseX, 0, 640);
+			g_lastMouseY = SDL_clamp(g_lastMouseY + g_lastJoystickMouseY, 0, 480);
+
+			if (InputManager()) {
+				InputManager()->QueueEvent(
+					c_notificationMouseMove,
+					g_mousedown ? LegoEventNotificationParam::c_lButtonState : 0,
+					g_lastMouseX,
+					g_lastMouseY,
+					0
+				);
+			}
+
+			if (g_isle->GetDrawCursor()) {
+				VideoManager()->MoveCursor(Min((MxS32) g_lastMouseX, 639), Min((MxS32) g_lastMouseY, 479));
+			}
+		}
 	}
 
 	return SDL_APP_CONTINUE;
@@ -453,6 +480,58 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		else {
 			if (InputManager()) {
 				InputManager()->QueueEvent(c_notificationKeyPress, keyCode, 0, 0, keyCode);
+			}
+		}
+		break;
+	}
+	case SDL_EVENT_GAMEPAD_BUTTON_DOWN: {
+		{
+			if (event->gbutton.button == SDL_GAMEPAD_BUTTON_SOUTH) {
+				if (InputManager()) {
+					InputManager()->QueueEvent(c_notificationKeyPress, SDLK_SPACE, 0, 0, SDLK_SPACE);
+				}
+			}
+			if (event->gbutton.button == SDL_GAMEPAD_BUTTON_START) {
+				if (InputManager()) {
+					InputManager()->QueueEvent(c_notificationKeyPress, SDLK_ESCAPE, 0, 0, SDLK_ESCAPE);
+				}
+			}
+		}
+		break;
+	}
+	case SDL_EVENT_GAMEPAD_AXIS_MOTION: {
+		if (event->gaxis.axis == SDL_GAMEPAD_AXIS_RIGHTX) {
+			g_lastJoystickMouseX = ((float) event->gaxis.value) / SDL_JOYSTICK_AXIS_MAX * g_isle->GetMouseSensitivity();
+		}
+		else if (event->gaxis.axis == SDL_GAMEPAD_AXIS_RIGHTY) {
+			g_lastJoystickMouseY = ((float) event->gaxis.value) / SDL_JOYSTICK_AXIS_MAX * g_isle->GetMouseSensitivity();
+		}
+		else if (event->gaxis.axis == SDL_GAMEPAD_AXIS_RIGHT_TRIGGER) {
+			if (event->gaxis.value != 0) {
+				g_mousedown = TRUE;
+
+				if (InputManager()) {
+					InputManager()->QueueEvent(
+						c_notificationButtonDown,
+						LegoEventNotificationParam::c_lButtonState,
+						g_lastMouseX,
+						g_lastMouseY,
+						0
+					);
+				}
+			}
+			else {
+				g_mousedown = FALSE;
+
+				if (InputManager()) {
+					InputManager()->QueueEvent(
+						c_notificationButtonUp,
+						LegoEventNotificationParam::c_lButtonState,
+						g_lastMouseX,
+						g_lastMouseY,
+						0
+					);
+				}
 			}
 		}
 		break;
@@ -749,8 +828,8 @@ MxResult IsleApp::SetupWindow()
 	RealtimeView::SetUserMaxLOD(m_maxLod);
 	if (LegoOmni::GetInstance()) {
 		if (LegoOmni::GetInstance()->GetInputManager()) {
-			LegoOmni::GetInstance()->GetInputManager()->SetUseJoystick(m_useJoystick);
-			LegoOmni::GetInstance()->GetInputManager()->SetJoystickIndex(m_joystickIndex);
+			LegoOmni::GetInstance()->GetInputManager()->SetUseGamepad(m_useGamepad);
+			LegoOmni::GetInstance()->GetInputManager()->SetGamepadIndex(m_gamepadIndex);
 		}
 		if (LegoOmni::GetInstance()->GetVideoManager() && g_isle->GetDrawCursor()) {
 			LegoOmni::GetInstance()->GetVideoManager()->SetCursorBitmap(m_cursorCurrentBitmap);
@@ -839,8 +918,8 @@ bool IsleApp::LoadConfig()
 		iniparser_set(dict, "isle:3DSound", m_use3dSound ? "true" : "false");
 		iniparser_set(dict, "isle:Music", m_useMusic ? "true" : "false");
 
-		iniparser_set(dict, "isle:UseJoystick", m_useJoystick ? "true" : "false");
-		iniparser_set(dict, "isle:JoystickIndex", SDL_itoa(m_joystickIndex, buf, 10));
+		iniparser_set(dict, "isle:UseJoystick", m_useGamepad ? "true" : "false");
+		iniparser_set(dict, "isle:JoystickIndex", SDL_itoa(m_gamepadIndex, buf, 10));
 		iniparser_set(dict, "isle:Draw Cursor", m_drawCursor ? "true" : "false");
 
 		iniparser_set(dict, "isle:Back Buffers in Video RAM", "-1");
@@ -893,8 +972,8 @@ bool IsleApp::LoadConfig()
 	m_wideViewAngle = iniparser_getboolean(dict, "isle:Wide View Angle", m_wideViewAngle);
 	m_use3dSound = iniparser_getboolean(dict, "isle:3DSound", m_use3dSound);
 	m_useMusic = iniparser_getboolean(dict, "isle:Music", m_useMusic);
-	m_useJoystick = iniparser_getboolean(dict, "isle:UseJoystick", m_useJoystick);
-	m_joystickIndex = iniparser_getint(dict, "isle:JoystickIndex", m_joystickIndex);
+	m_useGamepad = iniparser_getboolean(dict, "isle:UseJoystick", m_useGamepad);
+	m_gamepadIndex = iniparser_getint(dict, "isle:JoystickIndex", m_gamepadIndex);
 	m_drawCursor = iniparser_getboolean(dict, "isle:Draw Cursor", m_drawCursor);
 
 	MxS32 backBuffersInVRAM = iniparser_getboolean(dict, "isle:Back Buffers in Video RAM", -1);

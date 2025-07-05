@@ -40,10 +40,10 @@ LegoInputManager::LegoInputManager()
 	m_unk0x81 = FALSE;
 	m_unk0x88 = FALSE;
 	m_unk0x195 = 0;
-	m_joyids = NULL;
-	m_joystickIndex = -1;
-	m_joystick = NULL;
-	m_useJoystick = FALSE;
+	m_gamepadids = NULL;
+	m_gamepadIndex = -1;
+	m_gamepad = NULL;
+	m_useGamepad = FALSE;
 	m_unk0x335 = FALSE;
 	m_unk0x336 = FALSE;
 	m_unk0x74 = 0x19;
@@ -71,7 +71,7 @@ MxResult LegoInputManager::Create(HWND p_hwnd)
 		m_eventQueue = new LegoEventQueue;
 	}
 
-	GetJoystick();
+	GetGamepad();
 
 	if (!m_keyboardNotifyList || !m_eventQueue) {
 		Destroy();
@@ -98,7 +98,7 @@ void LegoInputManager::Destroy()
 		delete m_controlManager;
 	}
 
-	SDL_free(m_joyids);
+	SDL_free(m_gamepadids);
 }
 
 // FUNCTION: LEGO1 0x1005c0f0
@@ -146,29 +146,31 @@ MxResult LegoInputManager::GetNavigationKeyStates(MxU32& p_keyFlags)
 }
 
 // FUNCTION: LEGO1 0x1005c240
-MxResult LegoInputManager::GetJoystick()
+MxResult LegoInputManager::GetGamepad()
 {
-	if (m_joystick != NULL && SDL_JoystickConnected(m_joystick) == TRUE) {
+	if (m_gamepad != NULL && SDL_GamepadConnected(m_gamepad) == TRUE) {
 		return SUCCESS;
 	}
 
-	MxS32 numJoysticks = 0;
-	if (m_joyids == NULL) {
-		m_joyids = SDL_GetJoysticks(&numJoysticks);
+	MxS32 numGamepads = 0;
+	if (m_gamepadids != NULL) {
+		SDL_free(m_gamepadids);
+		m_gamepadids = NULL;
 	}
+	m_gamepadids = SDL_GetGamepads(&numGamepads);
 
-	if (m_useJoystick != FALSE && numJoysticks != 0) {
-		MxS32 joyid = m_joystickIndex;
-		if (joyid >= 0) {
-			m_joystick = SDL_OpenJoystick(m_joyids[joyid]);
-			if (m_joystick != NULL) {
+	if (m_useGamepad != FALSE && numGamepads != 0) {
+		MxS32 gamepadid = m_gamepadIndex;
+		if (gamepadid >= 0) {
+			m_gamepad = SDL_OpenGamepad(m_gamepadids[gamepadid]);
+			if (m_gamepad != NULL) {
 				return SUCCESS;
 			}
 		}
 
-		for (joyid = 0; joyid < numJoysticks; joyid++) {
-			m_joystick = SDL_OpenJoystick(m_joyids[joyid]);
-			if (m_joystick != NULL) {
+		for (gamepadid = 0; gamepadid < numGamepads; gamepadid++) {
+			m_gamepad = SDL_OpenGamepad(m_gamepadids[gamepadid]);
+			if (m_gamepad != NULL) {
 				return SUCCESS;
 			}
 		}
@@ -178,59 +180,25 @@ MxResult LegoInputManager::GetJoystick()
 }
 
 // FUNCTION: LEGO1 0x1005c320
-MxResult LegoInputManager::GetJoystickState(MxU32* p_joystickX, MxU32* p_joystickY, MxU32* p_povPosition)
+MxResult LegoInputManager::GetGamepadState(MxU32* p_gamepadX, MxU32* p_gamepadY, MxU32* p_povPosition)
 {
-	if (m_useJoystick != FALSE) {
-		if (GetJoystick() == -1) {
-			if (m_joystick != NULL) {
-				// GetJoystick() failed but handle to joystick is still open, close it
-				SDL_CloseJoystick(m_joystick);
-				m_joystick = NULL;
+	if (m_useGamepad != FALSE) {
+		if (GetGamepad() == -1) {
+			if (m_gamepad != NULL) {
+				// GetGamepad() failed but handle to joystick is still open, close it
+				SDL_CloseGamepad(m_gamepad);
+				m_gamepad = NULL;
 			}
 
 			return FAILURE;
 		}
 
-		MxS16 xPos = SDL_GetJoystickAxis(m_joystick, 0);
-		MxS16 yPos = SDL_GetJoystickAxis(m_joystick, 1);
-		MxU8 hatPos = SDL_GetJoystickHat(m_joystick, 0);
+		MxS16 xPos = SDL_GetGamepadAxis(m_gamepad, SDL_GAMEPAD_AXIS_LEFTX);
+		MxS16 yPos = SDL_GetGamepadAxis(m_gamepad, SDL_GAMEPAD_AXIS_LEFTY);
 
 		// normalize values acquired from joystick axes
-		*p_joystickX = ((xPos + 32768) * 100) / 65535;
-		*p_joystickY = ((yPos + 32768) * 100) / 65535;
-
-		switch (hatPos) {
-		case SDL_HAT_CENTERED:
-			*p_povPosition = (MxU32) -1;
-			break;
-		case SDL_HAT_UP:
-			*p_povPosition = (MxU32) 0;
-			break;
-		case SDL_HAT_RIGHT:
-			*p_povPosition = (MxU32) 9000 / 100;
-			break;
-		case SDL_HAT_DOWN:
-			*p_povPosition = (MxU32) 18000 / 100;
-			break;
-		case SDL_HAT_LEFT:
-			*p_povPosition = (MxU32) 27000 / 100;
-			break;
-		case SDL_HAT_RIGHTUP:
-			*p_povPosition = (MxU32) 4500 / 100;
-			break;
-		case SDL_HAT_RIGHTDOWN:
-			*p_povPosition = (MxU32) 13500 / 100;
-			break;
-		case SDL_HAT_LEFTUP:
-			*p_povPosition = (MxU32) 31500 / 100;
-			break;
-		case SDL_HAT_LEFTDOWN:
-			*p_povPosition = (MxU32) 22500 / 100;
-			break;
-		default:
-			*p_povPosition = (MxU32) -1;
-			break;
-		}
+		*p_gamepadX = ((xPos + 32768) * 100) / 65535;
+		*p_gamepadY = ((yPos + 32768) * 100) / 65535;
 
 		return SUCCESS;
 	}
