@@ -36,7 +36,6 @@
 #include "roi/legoroi.h"
 #include "tgl/d3drm/impl.h"
 #include "viewmanager/viewmanager.h"
-#include "xbox_buttons.h"
 
 #include <miniwin/miniwindevice.h>
 
@@ -54,6 +53,8 @@
 #include "emscripten/messagebox.h"
 #endif
 
+#include "dummy_controller_map.h"
+
 #ifdef __3DS__
 #include "3ds/apthooks.h"
 #include "3ds/config.h"
@@ -61,6 +62,7 @@
 
 #ifdef WINDOWS_STORE
 #include "xbox_one_series/config.h"
+#include "xbox_one_series/xbox_controller_map.h"
 #endif
 
 DECOMP_SIZE_ASSERT(IsleApp, 0x8c)
@@ -491,12 +493,12 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 	}
 	case SDL_EVENT_JOYSTICK_BUTTON_DOWN: {
 		{
-			if (event->gbutton.button == SDL_XBOX_BUTTON_A) {
+			if (event->gbutton.button == ISLE_BUTTON_SPACE) {
 				if (InputManager()) {
 					InputManager()->QueueEvent(c_notificationKeyPress, SDLK_SPACE, 0, 0, SDLK_SPACE);
 				}
 			}
-			if (event->gbutton.button == SDL_XBOX_BUTTON_START) {
+			if (event->gbutton.button == ISLE_BUTTON_ESCAPE) {
 				if (InputManager()) {
 					InputManager()->QueueEvent(c_notificationKeyPress, SDLK_ESCAPE, 0, 0, SDLK_ESCAPE);
 				}
@@ -505,14 +507,18 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		break;
 	}
 	case SDL_EVENT_JOYSTICK_AXIS_MOTION: {
-		if (event->gaxis.axis == SDL_XBOX_AXIS_RIGHT_X) {
+		if (event->gaxis.axis == ISLE_MOUSE_JOYSTICK_X) {
 			g_lastJoystickMouseX = ((float) event->gaxis.value) / SDL_JOYSTICK_AXIS_MAX * g_isle->GetMouseSensitivity();
 		}
-		else if (event->gaxis.axis == SDL_XBOX_AXIS_RIGHT_Y) {
+		else if (event->gaxis.axis == ISLE_MOUSE_JOYSTICK_Y) {
+#ifdef WINDOWS_STORE
 			g_lastJoystickMouseY =
 				-((float) event->gaxis.value) / SDL_JOYSTICK_AXIS_MAX * g_isle->GetMouseSensitivity();
+#else
+			g_lastJoystickMouseY = ((float) event->gaxis.value) / SDL_JOYSTICK_AXIS_MAX * g_isle->GetMouseSensitivity();
+#endif
 		}
-		else if (event->gaxis.axis == SDL_XBOX_AXIS_RIGHT_TRIGGER) {
+		else if (event->gaxis.axis == ISLE_MOUSE_CLICK_AXIS) {
 			if (event->gaxis.value != SDL_JOYSTICK_AXIS_MIN) {
 				g_mousedown = TRUE;
 

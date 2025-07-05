@@ -545,6 +545,11 @@ if (ISLE_BUILD_APP)
       ISLE/3ds/config.cpp
     )
   endif()
+  if(WINDOWS_STORE)
+    target_sources(isle PRIVATE
+      ISLE/xbox_one_series/config.cpp
+    )
+  endif()
   if(Python3_FOUND)
     if(NOT DEFINED PYTHON_PIL_AVAILABLE)
       execute_process(
