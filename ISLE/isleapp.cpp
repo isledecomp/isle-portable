@@ -386,26 +386,7 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 			g_mousemoved = FALSE;
 		}
 
-		if (g_lastJoystickMouseX != 0 || g_lastJoystickMouseY != 0) {
-			g_mousemoved = TRUE;
-
-			g_lastMouseX = SDL_clamp(g_lastMouseX + g_lastJoystickMouseX, 0, 640);
-			g_lastMouseY = SDL_clamp(g_lastMouseY + g_lastJoystickMouseY, 0, 480);
-
-			if (InputManager()) {
-				InputManager()->QueueEvent(
-					c_notificationMouseMove,
-					g_mousedown ? LegoEventNotificationParam::c_lButtonState : 0,
-					g_lastMouseX,
-					g_lastMouseY,
-					0
-				);
-			}
-
-			if (g_isle->GetDrawCursor()) {
-				VideoManager()->MoveCursor(Min((MxS32) g_lastMouseX, 639), Min((MxS32) g_lastMouseY, 479));
-			}
-		}
+		MoveVirtualCursorViaJoystick();
 	}
 
 	return SDL_APP_CONTINUE;
@@ -1293,4 +1274,28 @@ IDirect3DRMMiniwinDevice* GetD3DRMMiniwinDevice()
 		return nullptr;
 	}
 	return d3drmMiniwinDev;
+}
+
+void MoveVirtualCursorViaJoystick()
+{
+	if (g_lastJoystickMouseX != 0 || g_lastJoystickMouseY != 0) {
+		g_mousemoved = TRUE;
+
+		g_lastMouseX = SDL_clamp(g_lastMouseX + g_lastJoystickMouseX, 0, 640);
+		g_lastMouseY = SDL_clamp(g_lastMouseY + g_lastJoystickMouseY, 0, 480);
+
+		if (InputManager()) {
+			InputManager()->QueueEvent(
+				c_notificationMouseMove,
+				g_mousedown ? LegoEventNotificationParam::c_lButtonState : 0,
+				g_lastMouseX,
+				g_lastMouseY,
+				0
+			);
+		}
+
+		if (g_isle->GetDrawCursor()) {
+			VideoManager()->MoveCursor(Min((MxS32) g_lastMouseX, 639), Min((MxS32) g_lastMouseY, 479));
+		}
+	}
 }

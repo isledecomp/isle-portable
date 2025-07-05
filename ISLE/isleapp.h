@@ -107,4 +107,6 @@ extern MxS32 g_closed;
 
 extern IDirect3DRMMiniwinDevice* GetD3DRMMiniwinDevice();
 
+void MoveVirtualCursorViaJoystick();
+
 #endif // ISLEAPP_H
