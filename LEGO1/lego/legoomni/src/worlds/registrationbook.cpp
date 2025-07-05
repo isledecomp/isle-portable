@@ -31,8 +31,6 @@
 
 #include <SDL3/SDL_log.h>
 
-#pragma warning(disable : 4700)
-
 DECOMP_SIZE_ASSERT(RegistrationBook, 0x2d0)
 
 // GLOBAL: LEGO1 0x100d9924
