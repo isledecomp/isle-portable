@@ -12,4 +12,7 @@ void XBONE_SetupDefaultConfigOverrides(dictionary* p_dictionary)
 	// connect through SMB and copy the files
 	iniparser_set(p_dictionary, "isle:diskpath", "D:\\DevelopmentFiles\\isle\\");
 	iniparser_set(p_dictionary, "isle:cdpath", "D:\\DevelopmentFiles\\isle\\");
+
+	// Enable cursor by default
+	iniparser_set(p_dictionary, "isle:Draw Cursor", "true");
 }
