@@ -386,7 +386,7 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 			g_mousemoved = FALSE;
 		}
 
-		MoveVirtualCursorViaJoystick();
+		g_isle->MoveVirtualMouseViaJoystick();
 	}
 
 	return SDL_APP_CONTINUE;
@@ -1276,7 +1276,7 @@ IDirect3DRMMiniwinDevice* GetD3DRMMiniwinDevice()
 	return d3drmMiniwinDev;
 }
 
-void MoveVirtualCursorViaJoystick()
+void IsleApp::MoveVirtualMouseViaJoystick()
 {
 	if (g_lastJoystickMouseX != 0 || g_lastJoystickMouseY != 0) {
 		g_mousemoved = TRUE;

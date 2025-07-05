@@ -60,6 +60,7 @@ public:
 	MxResult ParseArguments(int argc, char** argv);
 	MxResult VerifyFilesystem();
 	void DetectGameVersion();
+	void MoveVirtualMouseViaJoystick();
 
 private:
 	char* m_hdPath;              // 0x00
@@ -106,7 +107,5 @@ extern IsleApp* g_isle;
 extern MxS32 g_closed;
 
 extern IDirect3DRMMiniwinDevice* GetD3DRMMiniwinDevice();
-
-void MoveVirtualCursorViaJoystick();
 
 #endif // ISLEAPP_H
