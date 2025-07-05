@@ -7,8 +7,6 @@
 #include "mxstreamcontroller.h"
 #include "mxutilities.h"
 
-#pragma warning(disable : 4703)
-
 DECOMP_SIZE_ASSERT(MxStreamProvider, 0x10)
 DECOMP_SIZE_ASSERT(MxRAMStreamProvider, 0x24)
 
@@ -110,7 +108,7 @@ MxU32 ReadData(MxU8* p_buffer, MxU32 p_size)
 {
 	MxU32 id;
 	MxU8* data = p_buffer;
-	MxU8* data2;
+	MxU8* data2 = NULL;
 
 	while (data < p_buffer + p_size) {
 		if (data + sizeof(MxU32) <= p_buffer + p_size && UnalignedRead<MxU32>(data) == FOURCC('M', 'x', 'O', 'b')) {
