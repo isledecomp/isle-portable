@@ -195,6 +195,14 @@ MxResult LegoInputManager::GetGamepadState(MxU32* p_gamepadX, MxU32* p_gamepadY,
 
 		MxS16 xPos = SDL_GetGamepadAxis(m_gamepad, SDL_GAMEPAD_AXIS_LEFTX);
 		MxS16 yPos = SDL_GetGamepadAxis(m_gamepad, SDL_GAMEPAD_AXIS_LEFTY);
+		if (xPos > -8000 && xPos < 8000) {
+			// Ignore small axis values
+			xPos = 0;
+		}
+		if (yPos > -8000 && yPos < 8000) {
+			// Ignore small axis values
+			yPos = 0;
+		}
 
 		// normalize values acquired from joystick axes
 		*p_gamepadX = ((xPos + 32768) * 100) / 65535;
