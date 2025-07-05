@@ -90,10 +90,10 @@ MxS32 g_targetDepth = 16;
 // GLOBAL: ISLE 0x410064
 MxS32 g_reqEnableRMDevice = FALSE;
 
-float g_lastJoystickMouseX = 0;
-float g_lastJoystickMouseY = 0;
-float g_lastMouseX = 0;
-float g_lastMouseY = 0;
+MxFloat g_lastJoystickMouseX = 0;
+MxFloat g_lastJoystickMouseY = 0;
+MxFloat g_lastMouseX = 0;
+MxFloat g_lastMouseY = 0;
 
 // STRING: ISLE 0x4101dc
 #define WINDOW_TITLE "LEGO®"
@@ -506,10 +506,10 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 			axisValue = event->gaxis.value;
 		}
 		if (event->gaxis.axis == SDL_GAMEPAD_AXIS_RIGHTX) {
-			g_lastJoystickMouseX = ((float) axisValue) / SDL_JOYSTICK_AXIS_MAX * g_isle->GetCursorSensitivity();
+			g_lastJoystickMouseX = ((MxFloat) axisValue) / SDL_JOYSTICK_AXIS_MAX * g_isle->GetCursorSensitivity();
 		}
 		else if (event->gaxis.axis == SDL_GAMEPAD_AXIS_RIGHTY) {
-			g_lastJoystickMouseY = ((float) axisValue) / SDL_JOYSTICK_AXIS_MAX * g_isle->GetCursorSensitivity();
+			g_lastJoystickMouseY = ((MxFloat) axisValue) / SDL_JOYSTICK_AXIS_MAX * g_isle->GetCursorSensitivity();
 		}
 		else if (event->gaxis.axis == SDL_GAMEPAD_AXIS_RIGHT_TRIGGER) {
 			if (axisValue != 0) {
