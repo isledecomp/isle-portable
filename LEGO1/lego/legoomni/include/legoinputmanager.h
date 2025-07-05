@@ -108,8 +108,8 @@ public:
 
 	MxResult Create(HWND p_hwnd);
 	void Destroy() override;
-	MxResult GetGamepad();
-	MxResult GetGamepadState(MxU32* p_gamepadX, MxU32* p_gamepadY, MxU32* p_povPosition);
+	MxResult GetJoystick();
+	MxResult GetJoystickState(MxU32* p_joystickX, MxU32* p_joystickY, MxU32* p_povPosition);
 	void StartAutoDragTimer();
 	void StopAutoDragTimer();
 	void EnableInputProcessing();
@@ -121,8 +121,8 @@ public:
 	void SetUnknown88(MxBool p_unk0x88) { m_unk0x88 = p_unk0x88; }
 	void SetUnknown335(MxBool p_unk0x335) { m_unk0x335 = p_unk0x335; }
 	void SetUnknown336(MxBool p_unk0x336) { m_unk0x336 = p_unk0x336; }
-	void SetUseGamepad(MxBool p_useGamepad) { m_useGamepad = p_useGamepad; }
-	void SetGamepadIndex(MxS32 p_gamepadIndex) { m_gamepadIndex = p_gamepadIndex; }
+	void SetUseJoystick(MxBool p_useJoystick) { m_useJoystick = p_useJoystick; }
+	void SetJoystickIndex(MxS32 p_joystickIndex) { m_joystickIndex = p_joystickIndex; }
 
 	void DisableInputProcessing()
 	{
@@ -165,12 +165,12 @@ private:
 	MxBool m_unk0x88;                     // 0x88
 	const bool* m_keyboardState;
 	MxBool m_unk0x195; // 0x195
-	SDL_JoystickID* m_gamepadids;
-	SDL_Gamepad* m_gamepad;
-	MxS32 m_gamepadIndex; // 0x19c
-	MxBool m_useGamepad;  // 0x334
-	MxBool m_unk0x335;    // 0x335
-	MxBool m_unk0x336;    // 0x336
+	SDL_JoystickID* m_joyids;
+	SDL_Gamepad* m_joystick;
+	MxS32 m_joystickIndex; // 0x19c
+	MxBool m_useJoystick;  // 0x334
+	MxBool m_unk0x335;     // 0x335
+	MxBool m_unk0x336;     // 0x336
 };
 
 // TEMPLATE: LEGO1 0x10028850

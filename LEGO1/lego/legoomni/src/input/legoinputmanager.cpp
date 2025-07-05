@@ -40,10 +40,10 @@ LegoInputManager::LegoInputManager()
 	m_unk0x81 = FALSE;
 	m_unk0x88 = FALSE;
 	m_unk0x195 = 0;
-	m_gamepadids = NULL;
-	m_gamepadIndex = -1;
-	m_gamepad = NULL;
-	m_useGamepad = FALSE;
+	m_joyids = NULL;
+	m_joystickIndex = -1;
+	m_joystick = NULL;
+	m_useJoystick = FALSE;
 	m_unk0x335 = FALSE;
 	m_unk0x336 = FALSE;
 	m_unk0x74 = 0x19;
@@ -71,7 +71,7 @@ MxResult LegoInputManager::Create(HWND p_hwnd)
 		m_eventQueue = new LegoEventQueue;
 	}
 
-	GetGamepad();
+	GetJoystick();
 
 	if (!m_keyboardNotifyList || !m_eventQueue) {
 		Destroy();
@@ -98,7 +98,7 @@ void LegoInputManager::Destroy()
 		delete m_controlManager;
 	}
 
-	SDL_free(m_gamepadids);
+	SDL_free(m_joyids);
 }
 
 // FUNCTION: LEGO1 0x1005c0f0
@@ -146,31 +146,31 @@ MxResult LegoInputManager::GetNavigationKeyStates(MxU32& p_keyFlags)
 }
 
 // FUNCTION: LEGO1 0x1005c240
-MxResult LegoInputManager::GetGamepad()
+MxResult LegoInputManager::GetJoystick()
 {
-	if (m_gamepad != NULL && SDL_GamepadConnected(m_gamepad) == TRUE) {
+	if (m_joystick != NULL && SDL_GamepadConnected(m_joystick) == TRUE) {
 		return SUCCESS;
 	}
 
-	MxS32 numGamepads = 0;
-	if (m_gamepadids != NULL) {
-		SDL_free(m_gamepadids);
-		m_gamepadids = NULL;
+	MxS32 numJoysticks = 0;
+	if (m_joyids != NULL) {
+		SDL_free(m_joyids);
+		m_joyids = NULL;
 	}
-	m_gamepadids = SDL_GetGamepads(&numGamepads);
+	m_joyids = SDL_GetGamepads(&numJoysticks);
 
-	if (m_useGamepad != FALSE && numGamepads != 0) {
-		MxS32 gamepadid = m_gamepadIndex;
-		if (gamepadid >= 0) {
-			m_gamepad = SDL_OpenGamepad(m_gamepadids[gamepadid]);
-			if (m_gamepad != NULL) {
+	if (m_useJoystick != FALSE && numJoysticks != 0) {
+		MxS32 joyid = m_joystickIndex;
+		if (joyid >= 0) {
+			m_joystick = SDL_OpenGamepad(m_joyids[joyid]);
+			if (m_joystick != NULL) {
 				return SUCCESS;
 			}
 		}
 
-		for (gamepadid = 0; gamepadid < numGamepads; gamepadid++) {
-			m_gamepad = SDL_OpenGamepad(m_gamepadids[gamepadid]);
-			if (m_gamepad != NULL) {
+		for (joyid = 0; joyid < numJoysticks; joyid++) {
+			m_joystick = SDL_OpenGamepad(m_joyids[joyid]);
+			if (m_joystick != NULL) {
 				return SUCCESS;
 			}
 		}
@@ -180,21 +180,21 @@ MxResult LegoInputManager::GetGamepad()
 }
 
 // FUNCTION: LEGO1 0x1005c320
-MxResult LegoInputManager::GetGamepadState(MxU32* p_gamepadX, MxU32* p_gamepadY, MxU32* p_povPosition)
+MxResult LegoInputManager::GetJoystickState(MxU32* p_joystickX, MxU32* p_joystickY, MxU32* p_povPosition)
 {
-	if (m_useGamepad != FALSE) {
-		if (GetGamepad() == -1) {
-			if (m_gamepad != NULL) {
-				// GetGamepad() failed but handle to joystick is still open, close it
-				SDL_CloseGamepad(m_gamepad);
-				m_gamepad = NULL;
+	if (m_useJoystick != FALSE) {
+		if (GetJoystick() == -1) {
+			if (m_joystick != NULL) {
+				// GetJoystick() failed but handle to joystick is still open, close it
+				SDL_CloseGamepad(m_joystick);
+				m_joystick = NULL;
 			}
 
 			return FAILURE;
 		}
 
-		MxS16 xPos = SDL_GetGamepadAxis(m_gamepad, SDL_GAMEPAD_AXIS_LEFTX);
-		MxS16 yPos = SDL_GetGamepadAxis(m_gamepad, SDL_GAMEPAD_AXIS_LEFTY);
+		MxS16 xPos = SDL_GetGamepadAxis(m_joystick, SDL_GAMEPAD_AXIS_LEFTX);
+		MxS16 yPos = SDL_GetGamepadAxis(m_joystick, SDL_GAMEPAD_AXIS_LEFTY);
 		if (xPos > -8000 && xPos < 8000) {
 			// Ignore small axis values
 			xPos = 0;
@@ -205,8 +205,8 @@ MxResult LegoInputManager::GetGamepadState(MxU32* p_gamepadX, MxU32* p_gamepadY,
 		}
 
 		// normalize values acquired from joystick axes
-		*p_gamepadX = ((xPos + 32768) * 100) / 65535;
-		*p_gamepadY = ((yPos + 32768) * 100) / 65535;
+		*p_joystickX = ((xPos + 32768) * 100) / 65535;
+		*p_joystickY = ((yPos + 32768) * 100) / 65535;
 
 		return SUCCESS;
 	}

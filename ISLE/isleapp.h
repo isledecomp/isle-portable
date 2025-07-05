@@ -74,8 +74,8 @@ private:
 	MxS32 m_hasLightSupport;     // 0x24
 	MxS32 m_use3dSound;          // 0x28
 	MxS32 m_useMusic;            // 0x2c
-	MxS32 m_useGamepad;          // 0x30
-	MxS32 m_gamepadIndex;        // 0x34
+	MxS32 m_useJoystick;         // 0x30
+	MxS32 m_joystickIndex;       // 0x34
 	MxS32 m_wideViewAngle;       // 0x38
 	MxS32 m_islandQuality;       // 0x3c
 	MxS32 m_islandTexture;       // 0x40

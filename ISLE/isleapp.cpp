@@ -118,8 +118,8 @@ IsleApp::IsleApp()
 	m_drawCursor = FALSE;
 	m_use3dSound = TRUE;
 	m_useMusic = TRUE;
-	m_useGamepad = TRUE;
-	m_gamepadIndex = 0;
+	m_useJoystick = TRUE;
+	m_joystickIndex = 0;
 	m_wideViewAngle = TRUE;
 	m_islandQuality = 2;
 	m_islandTexture = 1;
@@ -833,8 +833,8 @@ MxResult IsleApp::SetupWindow()
 	RealtimeView::SetUserMaxLOD(m_maxLod);
 	if (LegoOmni::GetInstance()) {
 		if (LegoOmni::GetInstance()->GetInputManager()) {
-			LegoOmni::GetInstance()->GetInputManager()->SetUseGamepad(m_useGamepad);
-			LegoOmni::GetInstance()->GetInputManager()->SetGamepadIndex(m_gamepadIndex);
+			LegoOmni::GetInstance()->GetInputManager()->SetUseJoystick(m_useJoystick);
+			LegoOmni::GetInstance()->GetInputManager()->SetJoystickIndex(m_joystickIndex);
 		}
 		if (LegoOmni::GetInstance()->GetVideoManager() && g_isle->GetDrawCursor()) {
 			LegoOmni::GetInstance()->GetVideoManager()->SetCursorBitmap(m_cursorCurrentBitmap);
@@ -923,8 +923,8 @@ bool IsleApp::LoadConfig()
 		iniparser_set(dict, "isle:3DSound", m_use3dSound ? "true" : "false");
 		iniparser_set(dict, "isle:Music", m_useMusic ? "true" : "false");
 
-		iniparser_set(dict, "isle:UseJoystick", m_useGamepad ? "true" : "false");
-		iniparser_set(dict, "isle:JoystickIndex", SDL_itoa(m_gamepadIndex, buf, 10));
+		iniparser_set(dict, "isle:UseJoystick", m_useJoystick ? "true" : "false");
+		iniparser_set(dict, "isle:JoystickIndex", SDL_itoa(m_joystickIndex, buf, 10));
 		iniparser_set(dict, "isle:Draw Cursor", m_drawCursor ? "true" : "false");
 		SDL_snprintf(buf, sizeof(buf), "%f", m_cursorSensitivity);
 		iniparser_set(dict, "isle:Cursor Sensitivity", buf);
@@ -979,8 +979,8 @@ bool IsleApp::LoadConfig()
 	m_wideViewAngle = iniparser_getboolean(dict, "isle:Wide View Angle", m_wideViewAngle);
 	m_use3dSound = iniparser_getboolean(dict, "isle:3DSound", m_use3dSound);
 	m_useMusic = iniparser_getboolean(dict, "isle:Music", m_useMusic);
-	m_useGamepad = iniparser_getboolean(dict, "isle:UseJoystick", m_useGamepad);
-	m_gamepadIndex = iniparser_getint(dict, "isle:JoystickIndex", m_gamepadIndex);
+	m_useJoystick = iniparser_getboolean(dict, "isle:UseJoystick", m_useJoystick);
+	m_joystickIndex = iniparser_getint(dict, "isle:JoystickIndex", m_joystickIndex);
 	m_drawCursor = iniparser_getboolean(dict, "isle:Draw Cursor", m_drawCursor);
 	m_cursorSensitivity = iniparser_getdouble(dict, "isle:Cursor Sensitivity", m_cursorSensitivity);
 
