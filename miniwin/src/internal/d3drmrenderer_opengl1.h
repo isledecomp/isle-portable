@@ -18,7 +18,7 @@ public:
 	void PushLights(const SceneLight* lightsArray, size_t count) override;
 	void SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back) override;
 	void SetFrustumPlanes(const Plane* frustumPlanes) override;
-	Uint32 GetTextureId(IDirect3DRMTexture* texture, bool isUi) override;
+	Uint32 GetTextureId(IDirect3DRMTexture* texture, bool isUI, float scaleX, float scaleY) override;
 	Uint32 GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup) override;
 	HRESULT BeginFrame() override;
 	void EnableTransparency() override;
