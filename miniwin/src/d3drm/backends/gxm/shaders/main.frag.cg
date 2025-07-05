@@ -1,7 +1,7 @@
 struct SceneLight {
     float4 color;
-    float4 position;
-    float4 direction;
+    float4 vec;
+    float isDirectional;
 };
 
 void main(
@@ -27,30 +27,21 @@ void main(
 
     for (int i = 0; i < 2; ++i) {
         float3 lightColor = uLights[i].color.rgb;
-        float isDirectional = uLights[i].direction.w;
-        float isPositional = uLights[i].position.w;
+        float isDirectional = uLights[i].isDirectional;
 
-        // TODO: make faster by removing the if statements
-        // directional
-        float3 lightVec;
-        if (isDirectional) {
-            lightVec = -normalize(uLights[i].direction.xyz);
-        } else {
-            lightVec = uLights[i].position.xyz - vViewPos;
-        }
-        lightVec = normalize(lightVec);
+        float3 lightVec = normalize(lerp(uLights[i].vec.xyz - vViewPos, -uLights[i].vec.xyz, isDirectional));
+
+        float3 halfVec = normalize(viewVec + lightVec);
+        float dotNL = max(dot(vNormal, lightVec), 0.0);
+        float dotNH = max(dot(vNormal, halfVec), 0.0);
 
         // Diffuse contribution
-        float dotNL = max(dot(vNormal, lightVec), 0.0);
         diffuse += dotNL * lightColor;
 
         // Specular
-        //float enableSpec = (dotNL > 0.0) * (uShininess > 0.0);
-        if (dotNL > 0.0 && uShininess > 0.0) {
-            float3 halfVec = normalize(lightVec + viewVec);
-            float dotNH = max(dot(vNormal, halfVec), 0.0);
-            float spec = pow(dotNH, uShininess);
-            specular += spec * lightColor;
+        float spec = pow(dotNH, uShininess);
+        if(uShininess > 0.0) {
+            specular += spec * lightColor * sign(dotNL);
         }
     }
 

@@ -5,6 +5,11 @@
 
 #define GXM_DISPLAY_BUFFER_COUNT 3
 
+typedef struct Vertex2D {
+	float position[2];
+    float texCoord[2];
+} Vertex2D;
+
 typedef struct GXMContext {
 	// context
 	SceUID vdmRingBufferUid;
@@ -36,12 +41,14 @@ typedef struct GXMContext {
 	SceGxmShaderPatcher* shaderPatcher;
 
 	// clear
-	SceGxmShaderPatcherId clearVertexProgramId;
-	SceGxmShaderPatcherId clearFragmentProgramId;	
-	SceGxmVertexProgram* clearVertexProgram;
-	SceGxmFragmentProgram* clearFragmentProgram;
-	const SceGxmProgramParameter* clear_uColor;
-	float* clearVertices;
+	SceGxmShaderPatcherId planeVertexProgramId;
+	SceGxmShaderPatcherId colorFragmentProgramId;
+	SceGxmShaderPatcherId imageFragmentProgramId;
+	SceGxmVertexProgram* planeVertexProgram;
+	SceGxmFragmentProgram* colorFragmentProgram;
+	SceGxmFragmentProgram* imageFragmentProgram;
+	const SceGxmProgramParameter* color_uColor;
+	Vertex2D* clearVertices;
 	uint16_t* clearIndices;
 
 	// display

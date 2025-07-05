@@ -20,6 +20,7 @@
 
 #include <assert.h>
 
+#define WITH_RAZOR
 bool with_razor = false;
 bool with_razor_hud = false;
 bool gxm_initialized = false;
@@ -36,19 +37,16 @@ const SceGxmMultisampleMode msaaMode = SCE_GXM_MULTISAMPLE_NONE;
 
 #define SCE_GXM_PRECOMPUTED_ALIGNMENT 16
 
-INCBIN(main_vert_gxp, "shaders/main.vert.gxp");
-INCBIN(main_color_frag_gxp, "shaders/main.color.frag.gxp");
-INCBIN(main_texture_frag_gxp, "shaders/main.texture.frag.gxp");
-INCBIN(image_frag_gxp, "shaders/image.frag.gxp");
-INCBIN(clear_vert_gxp, "shaders/clear.vert.gxp");
-INCBIN(clear_frag_gxp, "shaders/clear.frag.gxp");
+#define INCSHADER(filename, name) INCBIN(name, filename); const SceGxmProgram* name = (const SceGxmProgram*) _inc_##name##Data;
 
-const SceGxmProgram* mainVertexProgramGxp = (const SceGxmProgram*) _inc_main_vert_gxpData;
-const SceGxmProgram* mainColorFragmentProgramGxp = (const SceGxmProgram*) _inc_main_color_frag_gxpData;
-const SceGxmProgram* mainTextureFragmentProgramGxp = (const SceGxmProgram*) _inc_main_texture_frag_gxpData;
-const SceGxmProgram* imageFragmentProgramGxp = (const SceGxmProgram*) _inc_image_frag_gxpData;
-const SceGxmProgram* clearVertexProgramGxp = (const SceGxmProgram*) _inc_clear_vert_gxpData;
-const SceGxmProgram* clearFragmentProgramGxp = (const SceGxmProgram*) _inc_clear_frag_gxpData;
+INCSHADER("shaders/main.vert.gxp", mainVertexProgramGxp);
+INCSHADER("shaders/main.color.frag.gxp", mainColorFragmentProgramGxp);
+INCSHADER("shaders/main.texture.frag.gxp", mainTextureFragmentProgramGxp);
+
+INCSHADER("shaders/plane.vert.gxp", planeVertexProgramGxp);
+INCSHADER("shaders/image.frag.gxp", imageFragmentProgramGxp);
+INCSHADER("shaders/color.frag.gxp", colorFragmentProgramGxp);
+
 
 static const SceGxmBlendInfo blendInfoOpaque = {
 	.colorMask = SCE_GXM_COLOR_MASK_ALL,
@@ -86,71 +84,72 @@ static void display_callback(const void* callback_data)
 	sceDisplayWaitSetFrameBuf();
 }
 
-#ifdef DEBUG
-#include <taihen.h>
+#ifdef WITH_RAZOR
+	#include <taihen.h>
 
-static int load_skprx(const char* name)
-{
-	int modid = taiLoadKernelModule(name, 0, nullptr);
-	if (modid < 0) {
-		sceClibPrintf("%s load: 0x%08x\n", name, modid);
-		return modid;
-	}
-	int status;
-	int ret = taiStartKernelModule(modid, 0, nullptr, 0, nullptr, &status);
-	if (ret < 0) {
-		sceClibPrintf("%s start: 0x%08x\n", name, ret);
-	}
-	return ret;
-}
-
-static int load_suprx(const char* name)
-{
-	int modid = _sceKernelLoadModule(name, 0, nullptr);
-	if (modid < 0) {
-		sceClibPrintf("%s load: 0x%08x\n", name, modid);
-		return modid;
-	}
-	int status;
-	int ret = sceKernelStartModule(modid, 0, nullptr, 0, nullptr, &status);
-	if (ret < 0) {
-		sceClibPrintf("%s start: 0x%08x\n", name, ret);
-	}
-	return ret;
-}
-
-static const bool extra_debug = false;
-
-static void load_razor()
-{
-	if (load_suprx("app0:librazorcapture_es4.suprx") >= 0) {
-		with_razor = true;
+	static int load_skprx(const char* name)
+	{
+		int modid = taiLoadKernelModule(name, 0, nullptr);
+		if (modid < 0) {
+			sceClibPrintf("%s load: 0x%08x\n", name, modid);
+			return modid;
+		}
+		int status;
+		int ret = taiStartKernelModule(modid, 0, nullptr, 0, nullptr, &status);
+		if (ret < 0) {
+			sceClibPrintf("%s start: 0x%08x\n", name, ret);
+		}
+		return ret;
 	}
 
-	if (extra_debug) {
-		load_skprx("ux0:app/LEGO00001/syslibtrace.skprx");
-		load_skprx("ux0:app/LEGO00001/pamgr.skprx");
+	static int load_suprx(const char* name)
+	{
+		sceClibPrintf("loading %s\n", name);
+		int modid = _sceKernelLoadModule(name, 0, nullptr);
+		if (modid < 0) {
+			sceClibPrintf("%s load: 0x%08x\n", name, modid);
+			return modid;
+		}
+		int status;
+		int ret = sceKernelStartModule(modid, 0, nullptr, 0, nullptr, &status);
+		if (ret < 0) {
+			sceClibPrintf("%s start: 0x%08x\n", name, ret);
+		}
+		return ret;
+	}
 
-		if (load_suprx("app0:libperf.suprx") >= 0) {
+	static const bool extra_debug = false;
+
+	static void load_razor()
+	{
+		if (load_suprx("app0:librazorcapture_es4.suprx") >= 0) {
+			with_razor = true;
 		}
 
-		if (load_suprx("app0:librazorhud_es4.suprx") >= 0) {
-			with_razor_hud = true;
+		if (extra_debug) {
+			load_skprx("ux0:app/LEGO00001/syslibtrace.skprx");
+			load_skprx("ux0:app/LEGO00001/pamgr.skprx");
+
+			if (load_suprx("app0:libperf.suprx") >= 0) {
+			}
+
+			if (load_suprx("app0:librazorhud_es4.suprx") >= 0) {
+				with_razor_hud = true;
+			}
+		}
+
+		if (with_razor) {
+			//sceRazorGpuCaptureEnableSalvage("ux0:data/gpu_crash.sgx");
+		}
+
+		if (with_razor_hud) {
+			sceRazorGpuTraceSetFilename("ux0:data/gpu_trace", 3);
 		}
 	}
-
-	if (with_razor) {
-		//sceRazorGpuCaptureEnableSalvage("ux0:data/gpu_crash.sgx");
-	}
-
-	if (with_razor_hud) {
-		sceRazorGpuTraceSetFilename("ux0:data/gpu_trace", 3);
-	}
-}
 #else
-bool load_razor() {
-	return true;
-}
+	bool load_razor() {
+		return true;
+	}
 #endif
 
 int gxm_library_init()
@@ -392,18 +391,34 @@ int GXMContext::init()
 	tlsf_create(this->cdramPool);
 	tlsf_add_pool(this->cdramPool, this->cdramMem, CDRAM_POOL_SIZE);
 
-	// clear shader
+	// register plane, color, image shaders
+	if (ret = SCE_ERR( sceGxmShaderPatcherRegisterProgram,
+		this->shaderPatcher,
+		planeVertexProgramGxp,
+		&this->planeVertexProgramId
+	); ret < 0) {
+		return ret;
+	}
+	if (ret = SCE_ERR(sceGxmShaderPatcherRegisterProgram,
+		this->shaderPatcher,
+		colorFragmentProgramGxp,
+		&this->colorFragmentProgramId
+	); ret < 0) {
+		return ret;
+	}
+	if (ret = SCE_ERR(sceGxmShaderPatcherRegisterProgram,
+		this->shaderPatcher,
+		imageFragmentProgramGxp,
+		&this->imageFragmentProgramId
+	); ret < 0) {
+		return ret;
+	}
 
-	if (ret = SCE_ERR( sceGxmShaderPatcherRegisterProgram, this->shaderPatcher, clearVertexProgramGxp, &this->clearVertexProgramId); ret < 0) {
-		return ret;
-	}
-	if (ret = SCE_ERR( sceGxmShaderPatcherRegisterProgram, this->shaderPatcher, clearFragmentProgramGxp, &this->clearFragmentProgramId); ret < 0) {
-		return ret;
-	}
 	{
-		GET_SHADER_PARAM(positionAttribute, clearVertexProgramGxp, "aPosition", -1);
+		GET_SHADER_PARAM(positionAttribute, planeVertexProgramGxp, "aPosition", -1);
+		GET_SHADER_PARAM(texCoordAttribute, planeVertexProgramGxp, "aTexCoord", -1);
 
-		SceGxmVertexAttribute vertexAttributes[1];
+		SceGxmVertexAttribute vertexAttributes[2];
 		SceGxmVertexStream vertexStreams[1];
 
 		// position
@@ -413,18 +428,25 @@ int GXMContext::init()
 		vertexAttributes[0].componentCount = 2;
 		vertexAttributes[0].regIndex = sceGxmProgramParameterGetResourceIndex(positionAttribute);
 
-		vertexStreams[0].stride = 4 * 2;
+		// uv
+		vertexAttributes[1].streamIndex = 0;
+		vertexAttributes[1].offset = 8;
+		vertexAttributes[1].format = SCE_GXM_ATTRIBUTE_FORMAT_F32;
+		vertexAttributes[1].componentCount = 2;
+		vertexAttributes[1].regIndex = sceGxmProgramParameterGetResourceIndex(texCoordAttribute);
+
+		vertexStreams[0].stride = sizeof(float) * 4;
 		vertexStreams[0].indexSource = SCE_GXM_INDEX_SOURCE_INDEX_16BIT;
 
 		if (ret = SCE_ERR(
 				sceGxmShaderPatcherCreateVertexProgram,
 				this->shaderPatcher,
-				this->clearVertexProgramId,
+				this->planeVertexProgramId,
 				vertexAttributes,
-				1,
+				2,
 				vertexStreams,
 				1,
-				&this->clearVertexProgram
+				&this->planeVertexProgram
 			); ret < 0) {
 			return ret;
 		}
@@ -432,25 +454,38 @@ int GXMContext::init()
 		if (ret = SCE_ERR(
 				sceGxmShaderPatcherCreateFragmentProgram,
 				this->shaderPatcher,
-				this->clearFragmentProgramId,
+				this->colorFragmentProgramId,
 				SCE_GXM_OUTPUT_REGISTER_FORMAT_UCHAR4,
 				SCE_GXM_MULTISAMPLE_NONE,
 				NULL,
-				clearVertexProgramGxp,
-				&this->clearFragmentProgram
+				planeVertexProgramGxp,
+				&this->colorFragmentProgram
+			); ret < 0) {
+			return ret;
+		}
+
+		if (ret = SCE_ERR(
+				sceGxmShaderPatcherCreateFragmentProgram,
+				this->shaderPatcher,
+				this->imageFragmentProgramId,
+				SCE_GXM_OUTPUT_REGISTER_FORMAT_UCHAR4,
+				SCE_GXM_MULTISAMPLE_NONE,
+				&blendInfoTransparent,
+				planeVertexProgramGxp,
+				&this->imageFragmentProgram
 			); ret < 0) {
 			return ret;
 		}
 	}
 
-	// clear uniforms
-	this->clear_uColor = sceGxmProgramFindParameterByName(clearFragmentProgramGxp, "uColor"); // vec4
+	this->color_uColor = sceGxmProgramFindParameterByName(colorFragmentProgramGxp, "uColor"); // vec4
 
-	this->clearVertices = static_cast<float*>(this->alloc(sizeof(float)*4*2, 4));
-	this->clearVertices[0] = -1.0; this->clearVertices[1] = 1.0;
-	this->clearVertices[2] = 1.0; this->clearVertices[3] = 1.0;
-	this->clearVertices[4] = -1.0; this->clearVertices[5] = -1.0;
-	this->clearVertices[6] = 1.0; this->clearVertices[7] = -1.0;
+	this->clearVertices = static_cast<Vertex2D*>(this->alloc(sizeof(Vertex2D)*4, 4));
+	this->clearVertices[0] = Vertex2D{ .position = {-1.0, 1.0}, .texCoord = {0, 0} };
+	this->clearVertices[1] = Vertex2D{ .position = {1.0, 1.0}, .texCoord = {0, 0} };
+	this->clearVertices[2] = Vertex2D{ .position = {-1.0, -1.0}, .texCoord = {0, 0} };
+	this->clearVertices[3] = Vertex2D{ .position = {1.0,-1.0}, .texCoord = {0, 0} };
+
 	this->clearIndices = static_cast<uint16_t*>(this->alloc(sizeof(uint16_t) * 4, 4));
 	this->clearIndices[0] = 0;
 	this->clearIndices[1] = 1;
@@ -495,21 +530,18 @@ void GXMContext::clear(float r, float g, float b, bool new_scene) {
 
 	float color[] = {r, g, b, 1};
 
-	sceGxmSetVertexProgram(this->context, this->clearVertexProgram);
-	sceGxmSetFragmentProgram(this->context, this->clearFragmentProgram);
+	sceGxmSetVertexProgram(this->context, this->planeVertexProgram);
+	sceGxmSetFragmentProgram(this->context, this->colorFragmentProgram);
 
 	void* vertUniforms;
 	void* fragUniforms;
 	sceGxmReserveVertexDefaultUniformBuffer(gxm->context, &vertUniforms);
 	sceGxmReserveFragmentDefaultUniformBuffer(gxm->context, &fragUniforms);
 
-	if(!fragUniforms) {
-		SDL_Log("failed to reserve fragment uniform buffer!!");
-	}
-
 	sceGxmSetVertexStream(gxm->context, 0, this->clearVertices);
-	sceGxmSetUniformDataF(fragUniforms, this->clear_uColor, 0, 4, color);
+	sceGxmSetUniformDataF(fragUniforms, this->color_uColor, 0, 4, color);
 
+	sceGxmSetFrontDepthFunc(gxm->context, SCE_GXM_DEPTH_FUNC_ALWAYS);
 	sceGxmDraw(gxm->context, SCE_GXM_PRIMITIVE_TRIANGLE_STRIP, SCE_GXM_INDEX_FORMAT_U16, this->clearIndices, 4);
 	if(new_scene) {
 		sceGxmEndScene(this->context, nullptr, nullptr);
@@ -659,14 +691,6 @@ GXMRenderer::GXMRenderer(DWORD width, DWORD height)
 		); ret < 0) {
 		return;
 	}
-	if (ret = SCE_ERR(
-			sceGxmShaderPatcherRegisterProgram,
-			gxm->shaderPatcher,
-			imageFragmentProgramGxp,
-			&this->imageFragmentProgramId
-		); ret < 0) {
-		return;
-	}
 
 	// main shader
 	{
@@ -770,40 +794,27 @@ GXMRenderer::GXMRenderer(DWORD width, DWORD height)
 		return;
 	}
 
-	// image
-	if (ret = SCE_ERR(
-			sceGxmShaderPatcherCreateFragmentProgram,
-			gxm->shaderPatcher,
-			this->imageFragmentProgramId,
-			SCE_GXM_OUTPUT_REGISTER_FORMAT_UCHAR4,
-			msaaMode,
-			&blendInfoTransparent,
-			mainVertexProgramGxp,
-			&this->imageFragmentProgram
-		); ret < 0) {
-		return;
-	}
-
 	// vertex uniforms
+	//this->uNormalMatrix = sceGxmProgramFindParameterByName(mainVertexProgramGxp, "uNormalMatrix");
+	//this->uWorldViewProjection = sceGxmProgramFindParameterByName(mainVertexProgramGxp, "uWorldViewProjection");
+	//this->uWorld = sceGxmProgramFindParameterByName(mainVertexProgramGxp, "uWorld");
+	//this->uViewInverse = sceGxmProgramFindParameterByName(mainVertexProgramGxp, "uViewInverse");
+
 	this->uModelViewMatrix = sceGxmProgramFindParameterByName(mainVertexProgramGxp, "uModelViewMatrix");
 	this->uNormalMatrix = sceGxmProgramFindParameterByName(mainVertexProgramGxp, "uNormalMatrix");
 	this->uProjectionMatrix = sceGxmProgramFindParameterByName(mainVertexProgramGxp, "uProjectionMatrix");
 
 	// fragment uniforms
-	this->color_uLights = sceGxmProgramFindParameterByName(mainColorFragmentProgramGxp, "uLights");         // SceneLight[3]
-	this->color_uAmbientLight = sceGxmProgramFindParameterByName(mainColorFragmentProgramGxp, "uAmbientLight"); // vec3
-	this->color_uShininess = sceGxmProgramFindParameterByName(mainColorFragmentProgramGxp, "uShininess");   // float
-	this->color_uColor = sceGxmProgramFindParameterByName(mainColorFragmentProgramGxp, "uColor");           // vec4
-	this->texture_uLights = sceGxmProgramFindParameterByName(mainTextureFragmentProgramGxp, "uLights");         // SceneLight[3]
-	this->texture_uAmbientLight = sceGxmProgramFindParameterByName(mainTextureFragmentProgramGxp, "uAmbientLight"); // vec3
-	this->texture_uShininess = sceGxmProgramFindParameterByName(mainTextureFragmentProgramGxp, "uShininess");   // float
-	this->texture_uColor = sceGxmProgramFindParameterByName(mainTextureFragmentProgramGxp, "uColor");           // vec4
+	this->uLights = sceGxmProgramFindParameterByName(mainColorFragmentProgramGxp, "uLights");         // SceneLight[2]
+	this->uAmbientLight = sceGxmProgramFindParameterByName(mainColorFragmentProgramGxp, "uAmbientLight"); // vec3
+	this->uShininess = sceGxmProgramFindParameterByName(mainColorFragmentProgramGxp, "uShininess");   // float
+	this->uColor = sceGxmProgramFindParameterByName(mainColorFragmentProgramGxp, "uColor");           // vec4
 
 	for (int i = 0; i < GXM_FRAGMENT_BUFFER_COUNT; i++) {
 		this->lights[i] = static_cast<GXMSceneLightUniform*>(gxm->alloc(sizeof(GXMSceneLightUniform), 4));
 	}
 	for (int i = 0; i < GXM_VERTEX_BUFFER_COUNT; i++) {
-		this->quadVertices[i] = static_cast<Vertex*>(gxm->alloc(sizeof(Vertex) * 4 * 50, 4));
+		this->quadVertices[i] = static_cast<Vertex2D*>(gxm->alloc(sizeof(Vertex2D) * 4 * 50, 4));
 	}
 	this->quadIndices = static_cast<uint16_t*>(gxm->alloc(sizeof(uint16_t) * 4, 4));
 	this->quadIndices[0] = 0;
@@ -1407,15 +1418,17 @@ HRESULT GXMRenderer::BeginFrame()
 		lightData->lights[i].color[2] = light.color.b;
 		lightData->lights[i].color[3] = light.color.a;
 
-		lightData->lights[i].position[0] = light.position.x;
-		lightData->lights[i].position[1] = light.position.y;
-		lightData->lights[i].position[2] = light.position.z;
-		lightData->lights[i].position[3] = light.positional;
-
-		lightData->lights[i].direction[0] = light.direction.x;
-		lightData->lights[i].direction[1] = light.direction.y;
-		lightData->lights[i].direction[2] = light.direction.z;
-		lightData->lights[i].direction[3] = light.directional;
+		bool isDirectional = light.directional == 1.0;
+		if(isDirectional) {
+			lightData->lights[i].vec[0] = light.direction.x;
+			lightData->lights[i].vec[1] = light.direction.y;
+			lightData->lights[i].vec[2] = light.direction.z;
+		} else {
+			lightData->lights[i].vec[0] = light.position.x;
+			lightData->lights[i].vec[1] = light.position.y;
+			lightData->lights[i].vec[2] = light.position.z;
+		}
+		lightData->lights[i].isDirectional = isDirectional;
 		i++;
 	}
 	sceGxmSetFragmentUniformBuffer(gxm->context, 0, lightData);
@@ -1432,6 +1445,15 @@ static void transpose4x4(const float src[4][4], float dst[4][4])
 {
 	for (int i = 0; i < 4; ++i) {
 		for (int j = 0; j < 4; ++j) {
+			dst[j][i] = src[i][j];
+		}
+	}
+}
+
+static void transpose3x3(const float src[3][3], float dst[3][3])
+{
+	for (int i = 0; i < 3; ++i) {
+		for (int j = 0; j < 3; ++j) {
 			dst[j][i] = src[i][j];
 		}
 	}
@@ -1461,65 +1483,54 @@ void GXMRenderer::SubmitDraw(
 {
 	auto& mesh = m_meshes[meshId];
 
+#ifdef DEBUG
 	char marker[256];
 	snprintf(marker, sizeof(marker), "SubmitDraw: %d", meshId);
 	sceGxmPushUserMarker(gxm->context, marker);
+#endif
 
-	sceGxmSetVertexProgram(gxm->context, this->mainVertexProgram);
 
 	bool textured = appearance.textureId != NO_TEXTURE_ID;
-
 	const SceGxmFragmentProgram *fragmentProgram;
 	if(this->transparencyEnabled) {
 		fragmentProgram = textured ? this->blendedTextureFragmentProgram : this->blendedColorFragmentProgram;
 	} else {
 		fragmentProgram = textured ? this->opaqueTextureFragmentProgram : this->opaqueColorFragmentProgram;
 	}
+	sceGxmSetVertexProgram(gxm->context, this->mainVertexProgram);
 	sceGxmSetFragmentProgram(gxm->context, fragmentProgram);
 
-	const SceGxmProgramParameter* uColor = textured ? this->texture_uColor : this->color_uColor;
-	const SceGxmProgramParameter* uShininess = textured ? this->texture_uShininess : this->color_uShininess;
+	void* vertUniforms;
+	void* fragUniforms;
+	sceGxmReserveVertexDefaultUniformBuffer(gxm->context, &vertUniforms);
+	sceGxmReserveFragmentDefaultUniformBuffer(gxm->context, &fragUniforms);
 
+	// vertex uniforms
+	sceGxmSetUniformDataF(vertUniforms, this->uModelViewMatrix, 0, 4*4, &modelViewMatrix[0][0]);
+	sceGxmSetUniformDataF(vertUniforms, this->uNormalMatrix, 0, 3*3, &normalMatrix[0][0]);
+	sceGxmSetUniformDataF(vertUniforms, this->uProjectionMatrix, 0, 4*4, &this->m_projection[0][0]);
+
+	// fragment uniforms
 	float color[4] = {
 		appearance.color.r / 255.0f,
 		appearance.color.g / 255.0f,
 		appearance.color.b / 255.0f,
 		appearance.color.a / 255.0f
 	};
-
-	void* vertUniforms;
-	void* fragUniforms;
-#ifdef GXM_PRECOMPUTE
-	sceGxmSetPrecomputedVertexState(gxm->context, &mesh.vertexState[this->currentVertexBufferIndex]);
-	sceGxmSetPrecomputedFragmentState(gxm->context, &mesh.fragmentState[this->currentFragmentBufferIndex]);
-	vertUniforms = sceGxmPrecomputedVertexStateGetDefaultUniformBuffer(&mesh.vertexState[this->currentVertexBufferIndex]);
-	fragUniforms = sceGxmPrecomputedFragmentStateGetDefaultUniformBuffer(&mesh.fragmentState[this->currentFragmentBufferIndex]);
-#else
-	sceGxmReserveVertexDefaultUniformBuffer(gxm->context, &vertUniforms);
-	sceGxmReserveFragmentDefaultUniformBuffer(gxm->context, &fragUniforms);
-#endif
-
-	SET_UNIFORM(vertUniforms, this->uModelViewMatrix, modelViewMatrix);
-	SET_UNIFORM(vertUniforms, this->uProjectionMatrix, m_projection);
-	sceGxmSetUniformDataF(vertUniforms, this->uNormalMatrix, 0, 9, static_cast<const float*>(normalMatrix[0]));
-
-	SET_UNIFORM(fragUniforms, uColor, color);
-	SET_UNIFORM(fragUniforms, uShininess, appearance.shininess);
+	sceGxmSetUniformDataF(fragUniforms, this->uColor, 0, 4, color);
+	sceGxmSetUniformDataF(fragUniforms, this->uShininess, 0, 1, &appearance.shininess);
 
 	if (textured) {
 		auto& texture = m_textures[appearance.textureId];
 		this->UseTexture(texture);
 	}
-
-#ifdef GXM_PRECOMPUTE
-	sceGxmDrawPrecomputed(gxm->context, &mesh.drawState);
-	sceGxmSetPrecomputedVertexState(gxm->gxm->context, NULL);
-	sceGxmSetPrecomputedFragmentState(gxm->context, NULL);
-#else
 	sceGxmSetVertexStream(gxm->context, 0, mesh.vertexBuffer);
+	sceGxmSetFrontDepthFunc(gxm->context, SCE_GXM_DEPTH_FUNC_LESS);
 	sceGxmDraw(gxm->context, SCE_GXM_PRIMITIVE_TRIANGLES, SCE_GXM_INDEX_FORMAT_U16, mesh.indexBuffer, mesh.indexCount);
-#endif
+
+#ifdef DEBUG
 	sceGxmPopUserMarker(gxm->context);
+#endif
 }
 
 HRESULT GXMRenderer::FinalizeFrame()
@@ -1564,15 +1575,17 @@ void GXMRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const S
 {
 	this->StartScene();
 
+#ifdef DEBUG
 	char marker[256];
 	snprintf(marker, sizeof(marker), "Draw2DImage: %d", textureId);
 	sceGxmPushUserMarker(gxm->context, marker);
+#endif
 
-	sceGxmSetVertexProgram(gxm->context, this->mainVertexProgram);
+	sceGxmSetVertexProgram(gxm->context, gxm->planeVertexProgram);
 	if(textureId != NO_TEXTURE_ID) {
-		sceGxmSetFragmentProgram(gxm->context, this->imageFragmentProgram);
+		sceGxmSetFragmentProgram(gxm->context, gxm->imageFragmentProgram);
 	} else {
-		sceGxmSetFragmentProgram(gxm->context, gxm->clearFragmentProgram);
+		sceGxmSetFragmentProgram(gxm->context, gxm->colorFragmentProgram);
 	}
 
 	void* vertUniforms;
@@ -1585,8 +1598,8 @@ void GXMRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const S
 	float top = -this->m_viewportTransform.offsetY / this->m_viewportTransform.scale;
 	float bottom = (this->m_height - this->m_viewportTransform.offsetY) / this->m_viewportTransform.scale;
 
-#define virtualToNDCX(x) (((x - left) / (right - left)));
-#define virtualToNDCY(y) (((y - top) / (bottom - top)));
+#define virtualToNDCX(x) (((x - left) / (right - left)) * 2 - 1);
+#define virtualToNDCY(y) -(((y - top) / (bottom - top)) * 2 - 1);
 
 	float x1_virtual = static_cast<float>(dstRect.x);
 	float y1_virtual = static_cast<float>(dstRect.y);
@@ -1597,25 +1610,6 @@ void GXMRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const S
 	float y1 = virtualToNDCY(y1_virtual);
 	float x2 = virtualToNDCX(x2_virtual);
 	float y2 = virtualToNDCY(y2_virtual);
-
-	D3DRMMATRIX4D projection;
-	CreateOrthoMatrix(0.0, 1.0, 1.0, 0.0, projection);
-	static const Matrix3x3 normal = {
-		{1.f, 0.f, 0.f},
-		{0.f, 1.f, 0.f},
-		{0.f, 0.f, 1.f}
-	};
-
-	D3DRMMATRIX4D identity;
-	memset(identity, 0, sizeof(identity));
-	identity[0][0] = 1.0f;
-	identity[1][1] = 1.0f;
-	identity[2][2] = 1.0f;
-	identity[3][3] = 1.0f;
-
-	SET_UNIFORM(vertUniforms, this->uModelViewMatrix, identity);    // float4x4
-	SET_UNIFORM(vertUniforms, this->uNormalMatrix, normal);         // float3x3
-	SET_UNIFORM(vertUniforms, this->uProjectionMatrix, projection); // float4x4
 
 	float u1 = 0.0;
 	float v1 = 0.0;
@@ -1633,21 +1627,25 @@ void GXMRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const S
 		u2 = static_cast<float>(srcRect.x + srcRect.w) / texW;
 		v2 = static_cast<float>(srcRect.y + srcRect.h) / texH;
 	} else {
-		SET_UNIFORM(fragUniforms, gxm->clear_uColor, color);
+		SET_UNIFORM(fragUniforms, gxm->color_uColor, color);
 	}
 
-	Vertex* quadVertices = this->QuadVerticesBuffer();
-	quadVertices[0] = Vertex{.position = {x1, y1, 0}, .normal = {0, 0, 0}, .texCoord = {u1, v1}};
-	quadVertices[1] = Vertex{.position = {x2, y1, 0}, .normal = {0, 0, 0}, .texCoord = {u2, v1}};
-	quadVertices[2] = Vertex{.position = {x1, y2, 0}, .normal = {0, 0, 0}, .texCoord = {u1, v2}};
-	quadVertices[3] = Vertex{.position = {x2, y2, 0}, .normal = {0, 0, 0}, .texCoord = {u2, v2}};
+	Vertex2D* quadVertices = this->QuadVerticesBuffer();
+	quadVertices[0] = Vertex2D{.position = {x1, y1}, .texCoord = {u1, v1}};
+	quadVertices[1] = Vertex2D{.position = {x2, y1}, .texCoord = {u2, v1}};
+	quadVertices[2] = Vertex2D{.position = {x1, y2}, .texCoord = {u1, v2}};
+	quadVertices[3] = Vertex2D{.position = {x2, y2}, .texCoord = {u2, v2}};
 
 	sceGxmSetVertexStream(gxm->context, 0, quadVertices);
 
 	sceGxmSetFrontDepthWriteEnable(gxm->context, SCE_GXM_DEPTH_WRITE_DISABLED);
+	sceGxmSetFrontDepthFunc(gxm->context, SCE_GXM_DEPTH_FUNC_ALWAYS);
 	sceGxmDraw(gxm->context, SCE_GXM_PRIMITIVE_TRIANGLE_STRIP, SCE_GXM_INDEX_FORMAT_U16, this->quadIndices, 4);
 	sceGxmSetFrontDepthWriteEnable(gxm->context, SCE_GXM_DEPTH_WRITE_ENABLED);
+
+#ifdef DEBUG
 	sceGxmPopUserMarker(gxm->context);
+#endif
 }
 
 void GXMRenderer::SetDither(bool dither)
@@ -1665,8 +1663,8 @@ void GXMRenderer::Download(SDL_Surface* target)
 	SDL_Surface* src = SDL_CreateSurfaceFrom(
 		VITA_GXM_SCREEN_WIDTH,
 		VITA_GXM_SCREEN_HEIGHT,
-		SDL_PIXELFORMAT_RGBA8888,
-		gxm->displayBuffers[gxm->frontBufferIndex],
+		SDL_PIXELFORMAT_BGRA8888,
+		gxm->displayBuffers[gxm->backBufferIndex],
 		VITA_GXM_SCREEN_STRIDE*4
 	);
 	SDL_BlitSurfaceScaled(src, &srcRect, target, nullptr, SDL_SCALEMODE_NEAREST);

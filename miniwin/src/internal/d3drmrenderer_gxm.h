@@ -56,11 +56,10 @@ typedef struct GXMDisplayData {
 
 struct SceneLightGXM {
 	float color[4];
-	float position[4];
-	float direction[4];
+	float vec[4];
+	float isDirectional;
+	float _align;
 };
-
-static_assert(sizeof(SceneLightGXM) == 4*4*3);
 
 struct GXMSceneLightUniform {
 	SceneLightGXM lights[2];
@@ -121,8 +120,8 @@ private:
 		return gxmTexture;
 	}
 
-	inline Vertex* QuadVerticesBuffer() {
-		Vertex* verts = &this->quadVertices[this->currentVertexBufferIndex][this->quadsUsed*4];
+	inline Vertex2D* QuadVerticesBuffer() {
+		Vertex2D* verts = &this->quadVertices[this->currentVertexBufferIndex][this->quadsUsed*4];
 		this->quadsUsed += 1;
 		if(this->quadsUsed >= 50) {
 			SDL_Log("QuadVerticesBuffer overflow");
@@ -146,35 +145,32 @@ private:
 	SceGxmShaderPatcherId mainVertexProgramId;
 	SceGxmShaderPatcherId mainColorFragmentProgramId;
 	SceGxmShaderPatcherId mainTextureFragmentProgramId;
-	SceGxmShaderPatcherId imageFragmentProgramId;
 
 	SceGxmVertexProgram* mainVertexProgram;
-	// with lighting
 	SceGxmFragmentProgram* opaqueColorFragmentProgram;
 	SceGxmFragmentProgram* blendedColorFragmentProgram;
 	SceGxmFragmentProgram* opaqueTextureFragmentProgram;
 	SceGxmFragmentProgram* blendedTextureFragmentProgram;
-	// no lighting
-	SceGxmFragmentProgram* imageFragmentProgram;
 
 	// main shader vertex uniforms
+	//const SceGxmProgramParameter* uNormalMatrix;
+	//const SceGxmProgramParameter* uWorldViewProjection;
+	//const SceGxmProgramParameter* uWorld;
+	//const SceGxmProgramParameter* uViewInverse;
 	const SceGxmProgramParameter* uModelViewMatrix;
 	const SceGxmProgramParameter* uNormalMatrix;
 	const SceGxmProgramParameter* uProjectionMatrix;
 
+
 	// main shader fragment uniforms
-	const SceGxmProgramParameter* color_uLights;
-	const SceGxmProgramParameter* color_uAmbientLight;
-	const SceGxmProgramParameter* color_uShininess;
-	const SceGxmProgramParameter* color_uColor;
-	const SceGxmProgramParameter* texture_uLights;
-	const SceGxmProgramParameter* texture_uAmbientLight;
-	const SceGxmProgramParameter* texture_uShininess;
-	const SceGxmProgramParameter* texture_uColor;
+	const SceGxmProgramParameter* uShininess;
+	const SceGxmProgramParameter* uColor;
+	const SceGxmProgramParameter* uLights;
+	const SceGxmProgramParameter* uAmbientLight;
 
 	// uniforms / quad meshes
 	GXMSceneLightUniform* lights[GXM_FRAGMENT_BUFFER_COUNT];
-	Vertex* quadVertices[GXM_VERTEX_BUFFER_COUNT];
+	Vertex2D* quadVertices[GXM_VERTEX_BUFFER_COUNT];
 	uint16_t* quadIndices;
 	int quadsUsed = 0;
 

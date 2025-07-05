@@ -1,4 +1,4 @@
-shaders += clear.vert.gxp clear.frag.gxp image.frag.gxp
+shaders += plane.vert.gxp color.frag.gxp image.frag.gxp
 shaders += main.vert.gxp main.color.frag.gxp main.texture.frag.gxp
 
 PERFS = $(shaders:.gxp=.perf.txt)
@@ -24,4 +24,4 @@ main.texture.frag.gxp: main.frag.cg | cache
 	./psp2cgc.exe $(CGCFLAGS) -DTEXTURED=1 -profile sce_fp_psp2 $< -o $@
 
 %.perf.txt: %.gxp
-	./psp2shaderperf.exe -disasm $< > $@
+	./psp2shaderperf.exe -stats -symbols -disasm $< > $@
