@@ -692,6 +692,25 @@ install(TARGETS isle ${install_extra_targets}
   LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
 )
 if (ISLE_BUILD_CONFIG)
+  if(WIN32)
+    find_program(WINDEPLOYQT_EXECUTABLE windeployqt)
+    if(WINDEPLOYQT_EXECUTABLE)
+      install(CODE "message(STATUS \"Running windeployqt with minimal dependencies\")
+        execute_process(COMMAND \"${WINDEPLOYQT_EXECUTABLE}\"
+          \"$<TARGET_FILE:isle-config>\"
+          --dir QTLibs
+          --no-compiler-runtime
+          --no-opengl-sw
+          --no-system-d3d-compiler
+          --no-translations
+          --no-quick-import
+        )"
+      )
+      install(DIRECTORY "Build/QTLibs/" DESTINATION "${CMAKE_INSTALL_BINDIR}")
+    else()
+      message(STATUS "windeployqt not found: Qt binaries will not be installed")
+    endif()
+  endif()
   install(TARGETS isle-config
     RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
   )
