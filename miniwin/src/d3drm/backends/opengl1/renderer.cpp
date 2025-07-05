@@ -121,7 +121,7 @@ static int NextPowerOfTwo(int v)
 	return power;
 }
 
-static Uint32 UploadTextureData(SDL_Surface* src, bool useNPOT, bool isUi)
+static Uint32 UploadTextureData(SDL_Surface* src, bool useNPOT, bool isUI, float scaleX, float scaleY)
 {
 	SDL_Surface* working = src;
 	if (src->format != SDL_PIXELFORMAT_RGBA32) {
@@ -168,14 +168,14 @@ static Uint32 UploadTextureData(SDL_Surface* src, bool useNPOT, bool isUi)
 		finalSurface = resized;
 	}
 
-	Uint32 texId = GL11_UploadTextureData(finalSurface->pixels, finalSurface->w, finalSurface->h, isUi);
+	Uint32 texId = GL11_UploadTextureData(finalSurface->pixels, finalSurface->w, finalSurface->h, isUI, scaleX, scaleY);
 	if (finalSurface != src) {
 		SDL_DestroySurface(finalSurface);
 	}
 	return texId;
 }
 
-Uint32 OpenGL1Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi)
+Uint32 OpenGL1Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUI, float scaleX, float scaleY)
 {
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
 	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
@@ -185,7 +185,7 @@ Uint32 OpenGL1Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi)
 		if (tex.texture == texture) {
 			if (tex.version != texture->m_version) {
 				GL11_DestroyTexture(tex.glTextureId);
-				tex.glTextureId = UploadTextureData(surface->m_surface, m_useNPOT, isUi);
+				tex.glTextureId = UploadTextureData(surface->m_surface, m_useNPOT, isUI, scaleX, scaleY);
 				tex.version = texture->m_version;
 				tex.width = surface->m_surface->w;
 				tex.height = surface->m_surface->h;
@@ -194,7 +194,7 @@ Uint32 OpenGL1Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi)
 		}
 	}
 
-	GLuint texId = UploadTextureData(surface->m_surface, m_useNPOT, isUi);
+	GLuint texId = UploadTextureData(surface->m_surface, m_useNPOT, isUI, scaleX, scaleY);
 
 	for (Uint32 i = 0; i < m_textures.size(); ++i) {
 		auto& tex = m_textures[i];

@@ -84,6 +84,9 @@ MxResult MxTransitionManager::Tickle()
 	case e_broken:
 		BrokenTransition();
 		break;
+	case e_fakeMosaic:
+		FakeMosaicTransition();
+		break;
 	}
 	return SUCCESS;
 }
@@ -612,4 +615,139 @@ void MxTransitionManager::SetupCopyRect(LPDDSURFACEDESC p_ddsc)
 void MxTransitionManager::configureMxTransitionManager(TransitionType p_transitionManagerConfig)
 {
 	g_transitionManagerConfig = p_transitionManagerConfig;
+}
+
+int g_colorOffset;
+int GetColorIndexWithLocality(int p_col, int p_row)
+{
+	int islandX = p_col / 8;
+	int islandY = p_row / 8; // Dvide screen in 8x6 tiles
+
+	int island = islandY * 8 + islandX; // tile id
+
+	if (SDL_rand(3) > island / 8) {
+		return 6 + SDL_rand(2); // emulate sky
+	}
+
+	if (SDL_rand(16) > 2) {
+		island += SDL_rand(3) - 1 + (SDL_rand(3) - 1) * 8; // blure tiles
+	}
+
+	int hash = (island + g_colorOffset) * 2654435761u;
+	int scrambled = (hash >> 16) % 32;
+
+	int finalIndex = scrambled + SDL_rand(3) - 1;
+	return abs(finalIndex) % 32;
+}
+
+void MxTransitionManager::FakeMosaicTransition()
+{
+	static LPDIRECTDRAWSURFACE g_fakeTranstionSurface = nullptr;
+
+	if (m_animationTimer == 16) {
+		m_animationTimer = 0;
+		if (g_fakeTranstionSurface) {
+			g_fakeTranstionSurface->Release();
+			g_fakeTranstionSurface = nullptr;
+		}
+		EndTransition(TRUE);
+		return;
+	}
+
+	if (m_animationTimer == 0) {
+		g_colorOffset = SDL_rand(32);
+		for (MxS32 i = 0; i < 64; i++) {
+			m_columnOrder[i] = i;
+		}
+		for (MxS32 i = 0; i < 64; i++) {
+			MxS32 swap = SDL_rand(64);
+			std::swap(m_columnOrder[i], m_columnOrder[swap]);
+		}
+		for (MxS32 i = 0; i < 48; i++) {
+			m_randomShift[i] = SDL_rand(64);
+		}
+	}
+
+	if (!g_fakeTranstionSurface) {
+		DDSURFACEDESC mainDesc = {};
+		mainDesc.dwSize = sizeof(mainDesc);
+		if (m_ddSurface->GetSurfaceDesc(&mainDesc) != DD_OK) {
+			return;
+		}
+
+		DDSURFACEDESC tempDesc = {};
+		tempDesc.dwSize = sizeof(tempDesc);
+		tempDesc.dwFlags = DDSD_WIDTH | DDSD_HEIGHT | DDSD_PIXELFORMAT | DDSD_CAPS;
+		tempDesc.dwWidth = 64;
+		tempDesc.dwHeight = 48;
+		tempDesc.ddpfPixelFormat = mainDesc.ddpfPixelFormat;
+		tempDesc.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
+
+		HRESULT hr = MVideoManager()->GetDirectDraw()->CreateSurface(&tempDesc, &g_fakeTranstionSurface, nullptr);
+		if (hr != DD_OK || !g_fakeTranstionSurface) {
+			return;
+		}
+	}
+
+	DDSURFACEDESC ddsd = {};
+	ddsd.dwSize = sizeof(ddsd);
+	HRESULT res = g_fakeTranstionSurface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
+	if (res == DDERR_SURFACELOST) {
+		g_fakeTranstionSurface->Restore();
+		res = g_fakeTranstionSurface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
+	}
+
+	if (res == DD_OK) {
+		SubmitCopyRect(&ddsd);
+
+		static const MxU8 g_palette[32][3] = {
+			{0x00, 0x00, 0x00}, {0x12, 0x1e, 0x50}, {0x00, 0x22, 0x6c}, {0x14, 0x2d, 0x9f}, {0x0e, 0x36, 0xb0},
+			{0x0e, 0x39, 0xd0}, {0x47, 0x96, 0xe2}, {0x79, 0xaa, 0xca}, {0xff, 0xff, 0xff}, {0xc9, 0xcd, 0xcb},
+			{0xad, 0xad, 0xab}, {0xa6, 0x91, 0x8e}, {0xaf, 0x59, 0x49}, {0xc0, 0x00, 0x00}, {0xab, 0x18, 0x18},
+			{0x61, 0x0c, 0x0c}, {0x04, 0x38, 0x12}, {0x2c, 0x67, 0x28}, {0x4a, 0xb4, 0x6b}, {0x94, 0xb7, 0x7c},
+			{0xb6, 0xb9, 0x87}, {0x52, 0x4a, 0x67}, {0x87, 0x8d, 0x8a}, {0xa6, 0x91, 0x8e}, {0xf8, 0xee, 0xdc},
+			{0xf4, 0xe2, 0xc3}, {0x87, 0x8d, 0x8a}, {0xba, 0x9f, 0x12}, {0xb5, 0x83, 0x00}, {0x6a, 0x44, 0x27},
+			{0x36, 0x37, 0x34}, {0x2b, 0x23, 0x0f}
+		};
+
+		MxS32 bytesPerPixel = ddsd.ddpfPixelFormat.dwRGBBitCount / 8;
+
+		for (MxS32 col = 0; col < 64; col++) {
+			if (m_animationTimer * 4 > m_columnOrder[col]) {
+				continue;
+			}
+			if (m_animationTimer * 4 + 3 < m_columnOrder[col]) {
+				continue;
+			}
+
+			for (MxS32 row = 0; row < 48; row++) {
+				int paletteIndex = GetColorIndexWithLocality(col, row);
+
+				const MxU8* color = g_palette[paletteIndex];
+
+				MxS32 xShift = (m_randomShift[row] + col) % 64;
+				MxU8* dest = (MxU8*) ddsd.lpSurface + row * ddsd.lPitch + xShift * bytesPerPixel;
+
+				switch (bytesPerPixel) {
+				case 1:
+					*dest = paletteIndex;
+					break;
+				case 2:
+					*((MxU16*) dest) = RGB555_CREATE(color[2], color[1], color[0]);
+					break;
+				default:
+					*((MxU32*) dest) = RGB8888_CREATE(color[2], color[1], color[0], 255);
+					break;
+				}
+			}
+		}
+
+		SetupCopyRect(&ddsd);
+		g_fakeTranstionSurface->Unlock(ddsd.lpSurface);
+
+		RECT srcRect = {0, 0, 64, 48};
+		m_ddSurface->Blt(&g_fullScreenRect, g_fakeTranstionSurface, &srcRect, DDBLT_WAIT, NULL);
+	}
+
+	m_animationTimer++;
 }

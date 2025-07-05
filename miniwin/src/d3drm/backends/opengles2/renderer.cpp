@@ -321,7 +321,7 @@ void OpenGLES2Renderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture*
 	);
 }
 
-bool UploadTexture(SDL_Surface* source, GLuint& outTexId, bool isUi)
+bool UploadTexture(SDL_Surface* source, GLuint& outTexId, bool isUI)
 {
 	SDL_Surface* surf = source;
 	if (source->format != SDL_PIXELFORMAT_RGBA32) {
@@ -335,7 +335,7 @@ bool UploadTexture(SDL_Surface* source, GLuint& outTexId, bool isUi)
 	glBindTexture(GL_TEXTURE_2D, outTexId);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
 
-	if (isUi) {
+	if (isUI) {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -362,7 +362,7 @@ bool UploadTexture(SDL_Surface* source, GLuint& outTexId, bool isUi)
 	return true;
 }
 
-Uint32 OpenGLES2Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi)
+Uint32 OpenGLES2Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUI, float scaleX, float scaleY)
 {
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
 	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
@@ -372,7 +372,7 @@ Uint32 OpenGLES2Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi)
 		if (tex.texture == texture) {
 			if (tex.version != texture->m_version) {
 				glDeleteTextures(1, &tex.glTextureId);
-				if (UploadTexture(surface->m_surface, tex.glTextureId, isUi)) {
+				if (UploadTexture(surface->m_surface, tex.glTextureId, isUI)) {
 					tex.version = texture->m_version;
 				}
 			}
@@ -381,7 +381,7 @@ Uint32 OpenGLES2Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi)
 	}
 
 	GLuint texId;
-	if (!UploadTexture(surface->m_surface, texId, isUi)) {
+	if (!UploadTexture(surface->m_surface, texId, isUI)) {
 		return NO_TEXTURE_ID;
 	}
 
