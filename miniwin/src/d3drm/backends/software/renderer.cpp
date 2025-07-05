@@ -761,10 +761,9 @@ void Direct3DRMSoftwareRenderer::Resize(int width, int height, const ViewportTra
 
 void Direct3DRMSoftwareRenderer::Clear(float r, float g, float b)
 {
-	SDL_Rect rect = {0, 0, m_renderedImage->w, m_renderedImage->h};
 	const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(m_renderedImage->format);
 	Uint32 color = SDL_MapRGB(details, m_palette, r * 255, g * 255, b * 255);
-	SDL_FillSurfaceRect(m_renderedImage, &rect, color);
+	SDL_FillSurfaceRect(m_renderedImage, nullptr, color);
 }
 
 void Direct3DRMSoftwareRenderer::Flip()

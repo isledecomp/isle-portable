@@ -172,11 +172,10 @@ HRESULT FrameBufferImpl::Lock(LPRECT lpDestRect, DDSURFACEDESC* lpDDSurfaceDesc,
 		return DDERR_GENERIC;
 	}
 	if ((dwFlags & DDLOCK_WRITEONLY) == DDLOCK_WRITEONLY) {
-		SDL_Rect rect = {0, 0, m_transferBuffer->m_surface->w, m_transferBuffer->m_surface->h};
 		const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(m_transferBuffer->m_surface->format);
 		SDL_Palette* palette = m_palette ? static_cast<DirectDrawPaletteImpl*>(m_palette)->m_palette : nullptr;
 		Uint32 color = SDL_MapRGBA(details, palette, 0, 0, 0, 0);
-		SDL_FillSurfaceRect(m_transferBuffer->m_surface, &rect, color);
+		SDL_FillSurfaceRect(m_transferBuffer->m_surface, nullptr, color);
 	}
 	else {
 		DDRenderer->Download(m_transferBuffer->m_surface);
