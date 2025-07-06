@@ -20,3 +20,7 @@ endif()
 if(LINUX)
     add_subdirectory(linux)
 endif()
+
+if(WINDOWS_STORE)
+    add_subdirectory(UWP)
+endif()
