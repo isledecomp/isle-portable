@@ -281,10 +281,8 @@
 #define INCBIN_EXTERN_2(TYPE, NAME)                                                                                    \
 	INCBIN_EXTERNAL const INCBIN_ALIGN TYPE                                                                            \
 		INCBIN_CONCATENATE(INCBIN_CONCATENATE(INCBIN_PREFIX, NAME), INCBIN_STYLE_IDENT(DATA))[];                       \
-	INCBIN_EXTERNAL const INCBIN_ALIGN TYPE* const INCBIN_CONCATENATE(                                                 \
-		INCBIN_CONCATENATE(INCBIN_PREFIX, NAME),                                                                       \
-		INCBIN_STYLE_IDENT(END)                                                                                        \
-	);                                                                                                                 \
+	INCBIN_EXTERNAL const INCBIN_ALIGN                                                                                 \
+		TYPE* const INCBIN_CONCATENATE(INCBIN_CONCATENATE(INCBIN_PREFIX, NAME), INCBIN_STYLE_IDENT(END));              \
 	INCBIN_EXTERNAL const unsigned int INCBIN_CONCATENATE(                                                             \
 		INCBIN_CONCATENATE(INCBIN_PREFIX, NAME),                                                                       \
 		INCBIN_STYLE_IDENT(SIZE)                                                                                       \

@@ -2,17 +2,15 @@
 
 #include "d3drmrenderer.h"
 #include "d3drmtexture_impl.h"
-#include "ddraw_impl.h"
 #include "ddpalette_impl.h"
+#include "ddraw_impl.h"
+#include "gxm_context.h"
 
 #include <SDL3/SDL.h>
-#include <vector>
-
 #include <psp2/gxm.h>
-#include <psp2/types.h>
 #include <psp2/kernel/clib.h>
-
-#include "gxm_context.h"
+#include <psp2/types.h>
+#include <vector>
 
 DEFINE_GUID(GXM_GUID, 0x682656F3, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x47, 0x58, 0x4D);
 
@@ -20,7 +18,7 @@ DEFINE_GUID(GXM_GUID, 0x682656F3, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 
 #define GXM_FRAGMENT_BUFFER_COUNT 3
 #define GXM_TEXTURE_BUFFER_COUNT 2
 
-//#define GXM_PRECOMPUTE
+// #define GXM_PRECOMPUTE
 
 struct GXMTextureCacheEntry {
 	IDirect3DRMTexture* texture;
@@ -66,21 +64,16 @@ struct GXMSceneLightUniform {
 	float ambientLight[3];
 };
 
-
 typedef struct Vertex {
 	float position[3];
-    float normal[3];
-    float texCoord[2];
+	float normal[3];
+	float texCoord[2];
 } Vertex;
 
 class GXMRenderer : public Direct3DRMRenderer {
 public:
 	static Direct3DRMRenderer* Create(DWORD width, DWORD height);
-	GXMRenderer(
-		DWORD width,
-		DWORD height
-	);
-	GXMRenderer(int forEnum) {};
+	GXMRenderer(DWORD width, DWORD height);
 	~GXMRenderer() override;
 
 	void PushLights(const SceneLight* lightsArray, size_t count) override;
@@ -113,26 +106,26 @@ private:
 	GXMMeshCacheEntry GXMUploadMesh(const MeshGroup& meshGroup);
 
 	void StartScene();
-	inline const SceGxmTexture* UseTexture(GXMTextureCacheEntry& texture) {
+	inline const SceGxmTexture* UseTexture(GXMTextureCacheEntry& texture)
+	{
 		texture.notifications[texture.currentIndex] = &this->fragmentNotifications[this->currentFragmentBufferIndex];
 		const SceGxmTexture* gxmTexture = &texture.gxmTexture[texture.currentIndex];
 		sceGxmSetFragmentTexture(gxm->context, 0, gxmTexture);
 		return gxmTexture;
 	}
 
-	inline Vertex2D* QuadVerticesBuffer() {
-		Vertex2D* verts = &this->quadVertices[this->currentVertexBufferIndex][this->quadsUsed*4];
+	inline Vertex2D* QuadVerticesBuffer()
+	{
+		Vertex2D* verts = &this->quadVertices[this->currentVertexBufferIndex][this->quadsUsed * 4];
 		this->quadsUsed += 1;
-		if(this->quadsUsed >= 50) {
+		if (this->quadsUsed >= 50) {
 			SDL_Log("QuadVerticesBuffer overflow");
 			this->quadsUsed = 0; // declare bankruptcy
 		}
 		return verts;
 	}
 
-	inline GXMSceneLightUniform* LightsBuffer() {
-		return this->lights[this->currentFragmentBufferIndex];
-	}
+	inline GXMSceneLightUniform* LightsBuffer() { return this->lights[this->currentFragmentBufferIndex]; }
 
 	std::vector<GXMTextureCacheEntry> m_textures;
 	std::vector<GXMMeshCacheEntry> m_meshes;
@@ -153,14 +146,9 @@ private:
 	SceGxmFragmentProgram* blendedTextureFragmentProgram;
 
 	// main shader vertex uniforms
-	//const SceGxmProgramParameter* uNormalMatrix;
-	//const SceGxmProgramParameter* uWorldViewProjection;
-	//const SceGxmProgramParameter* uWorld;
-	//const SceGxmProgramParameter* uViewInverse;
 	const SceGxmProgramParameter* uModelViewMatrix;
 	const SceGxmProgramParameter* uNormalMatrix;
 	const SceGxmProgramParameter* uProjectionMatrix;
-
 
 	// main shader fragment uniforms
 	const SceGxmProgramParameter* uShininess;
@@ -205,11 +193,10 @@ inline static void GXMRenderer_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx
 	helDesc.dwDeviceRenderBitDepth = DDBD_32;
 
 	int ret = gxm_library_init();
-	if(ret < 0) {
+	if (ret < 0) {
 		SDL_Log("gxm_library_init failed: %08x", ret);
 		return;
 	}
 
 	EnumDevice(cb, ctx, "GXM HAL", &halDesc, &helDesc, GXM_GUID);
 }
-

@@ -1,6 +1,6 @@
 #include "d3drmrenderer_gxm.h"
-#include "gxm_memory.h"
 #include "gxm_context.h"
+#include "gxm_memory.h"
 #include "meshutils.h"
 #include "razor.h"
 #include "tlsf.h"
@@ -8,12 +8,12 @@
 
 #include <SDL3/SDL.h>
 #include <algorithm>
+#include <psp2/common_dialog.h>
 #include <psp2/display.h>
 #include <psp2/gxm.h>
 #include <psp2/kernel/modulemgr.h>
 #include <psp2/kernel/sysmem.h>
 #include <psp2/types.h>
-#include <psp2/common_dialog.h>
 #include <string>
 #define INCBIN_PREFIX _inc_
 #include "incbin.h"
@@ -29,7 +29,7 @@ bool gxm_initialized = false;
 #define VITA_GXM_SCREEN_HEIGHT 544
 #define VITA_GXM_SCREEN_STRIDE 1024
 #define VITA_GXM_PENDING_SWAPS 2
-#define CDRAM_POOL_SIZE 64*1024*1024
+#define CDRAM_POOL_SIZE 64 * 1024 * 1024
 
 #define VITA_GXM_COLOR_FORMAT SCE_GXM_COLOR_FORMAT_A8B8G8R8
 #define VITA_GXM_PIXEL_FORMAT SCE_DISPLAY_PIXELFORMAT_A8B8G8R8
@@ -37,7 +37,9 @@ const SceGxmMultisampleMode msaaMode = SCE_GXM_MULTISAMPLE_NONE;
 
 #define SCE_GXM_PRECOMPUTED_ALIGNMENT 16
 
-#define INCSHADER(filename, name) INCBIN(name, filename); const SceGxmProgram* name = (const SceGxmProgram*) _inc_##name##Data;
+#define INCSHADER(filename, name)                                                                                      \
+	INCBIN(name, filename);                                                                                            \
+	const SceGxmProgram* name = (const SceGxmProgram*) _inc_##name##Data;
 
 INCSHADER("shaders/main.vert.gxp", mainVertexProgramGxp);
 INCSHADER("shaders/main.color.frag.gxp", mainColorFragmentProgramGxp);
@@ -46,7 +48,6 @@ INCSHADER("shaders/main.texture.frag.gxp", mainTextureFragmentProgramGxp);
 INCSHADER("shaders/plane.vert.gxp", planeVertexProgramGxp);
 INCSHADER("shaders/image.frag.gxp", imageFragmentProgramGxp);
 INCSHADER("shaders/color.frag.gxp", colorFragmentProgramGxp);
-
 
 static const SceGxmBlendInfo blendInfoOpaque = {
 	.colorMask = SCE_GXM_COLOR_MASK_ALL,
@@ -85,71 +86,72 @@ static void display_callback(const void* callback_data)
 }
 
 #ifdef WITH_RAZOR
-	#include <taihen.h>
+#include <taihen.h>
 
-	static int load_skprx(const char* name)
-	{
-		int modid = taiLoadKernelModule(name, 0, nullptr);
-		if (modid < 0) {
-			sceClibPrintf("%s load: 0x%08x\n", name, modid);
-			return modid;
-		}
-		int status;
-		int ret = taiStartKernelModule(modid, 0, nullptr, 0, nullptr, &status);
-		if (ret < 0) {
-			sceClibPrintf("%s start: 0x%08x\n", name, ret);
-		}
-		return ret;
+static int load_skprx(const char* name)
+{
+	int modid = taiLoadKernelModule(name, 0, nullptr);
+	if (modid < 0) {
+		sceClibPrintf("%s load: 0x%08x\n", name, modid);
+		return modid;
+	}
+	int status;
+	int ret = taiStartKernelModule(modid, 0, nullptr, 0, nullptr, &status);
+	if (ret < 0) {
+		sceClibPrintf("%s start: 0x%08x\n", name, ret);
+	}
+	return ret;
+}
+
+static int load_suprx(const char* name)
+{
+	sceClibPrintf("loading %s\n", name);
+	int modid = _sceKernelLoadModule(name, 0, nullptr);
+	if (modid < 0) {
+		sceClibPrintf("%s load: 0x%08x\n", name, modid);
+		return modid;
+	}
+	int status;
+	int ret = sceKernelStartModule(modid, 0, nullptr, 0, nullptr, &status);
+	if (ret < 0) {
+		sceClibPrintf("%s start: 0x%08x\n", name, ret);
+	}
+	return ret;
+}
+
+static const bool extra_debug = false;
+
+static void load_razor()
+{
+	if (load_suprx("app0:librazorcapture_es4.suprx") >= 0) {
+		with_razor = true;
 	}
 
-	static int load_suprx(const char* name)
-	{
-		sceClibPrintf("loading %s\n", name);
-		int modid = _sceKernelLoadModule(name, 0, nullptr);
-		if (modid < 0) {
-			sceClibPrintf("%s load: 0x%08x\n", name, modid);
-			return modid;
-		}
-		int status;
-		int ret = sceKernelStartModule(modid, 0, nullptr, 0, nullptr, &status);
-		if (ret < 0) {
-			sceClibPrintf("%s start: 0x%08x\n", name, ret);
-		}
-		return ret;
-	}
+	if (extra_debug) {
+		load_skprx("ux0:app/LEGO00001/syslibtrace.skprx");
+		load_skprx("ux0:app/LEGO00001/pamgr.skprx");
 
-	static const bool extra_debug = false;
-
-	static void load_razor()
-	{
-		if (load_suprx("app0:librazorcapture_es4.suprx") >= 0) {
-			with_razor = true;
+		if (load_suprx("app0:libperf.suprx") >= 0) {
 		}
 
-		if (extra_debug) {
-			load_skprx("ux0:app/LEGO00001/syslibtrace.skprx");
-			load_skprx("ux0:app/LEGO00001/pamgr.skprx");
-
-			if (load_suprx("app0:libperf.suprx") >= 0) {
-			}
-
-			if (load_suprx("app0:librazorhud_es4.suprx") >= 0) {
-				with_razor_hud = true;
-			}
-		}
-
-		if (with_razor) {
-			//sceRazorGpuCaptureEnableSalvage("ux0:data/gpu_crash.sgx");
-		}
-
-		if (with_razor_hud) {
-			sceRazorGpuTraceSetFilename("ux0:data/gpu_trace", 3);
+		if (load_suprx("app0:librazorhud_es4.suprx") >= 0) {
+			with_razor_hud = true;
 		}
 	}
+
+	if (with_razor) {
+		// sceRazorGpuCaptureEnableSalvage("ux0:data/gpu_crash.sgx");
+	}
+
+	if (with_razor_hud) {
+		sceRazorGpuTraceSetFilename("ux0:data/gpu_trace", 3);
+	}
+}
 #else
-	bool load_razor() {
-		return true;
-	}
+bool load_razor()
+{
+	return true;
+}
 #endif
 
 int gxm_library_init()
@@ -181,12 +183,12 @@ GXMContext* gxm;
 
 int GXMContext::init()
 {
-	if(this->context) {
+	if (this->context) {
 		return 0;
 	}
 
 	int ret = gxm_library_init();
-	if(ret < 0) {
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -199,11 +201,11 @@ int GXMContext::init()
 	uint32_t sampleCount = alignedWidth * alignedHeight;
 	uint32_t depthStrideInSamples = alignedWidth;
 
-	if(msaaMode == SCE_GXM_MULTISAMPLE_4X){
+	if (msaaMode == SCE_GXM_MULTISAMPLE_4X) {
 		sampleCount *= 4;
 		depthStrideInSamples *= 2;
 	}
-	else if(msaaMode == SCE_GXM_MULTISAMPLE_2X){
+	else if (msaaMode == SCE_GXM_MULTISAMPLE_2X) {
 		sampleCount *= 2;
 	}
 
@@ -256,7 +258,8 @@ int GXMContext::init()
 	contextParams.fragmentUsseRingBufferMemSize = SCE_GXM_DEFAULT_FRAGMENT_USSE_RING_BUFFER_SIZE;
 	contextParams.fragmentUsseRingBufferOffset = this->fragmentUsseRingBufferOffset;
 
-	if (ret = SCE_ERR(sceGxmCreateContext, &contextParams, &this->context); ret < 0) {
+	ret = SCE_ERR(sceGxmCreateContext, &contextParams, &this->context);
+	if (ret < 0) {
 		return ret;
 	}
 	this->contextHostMem = contextParams.hostMem;
@@ -300,7 +303,8 @@ int GXMContext::init()
 	patcherParams.fragmentUsseMemSize = patcherFragmentUsseSize;
 	patcherParams.fragmentUsseOffset = this->patcherFragmentUsseOffset;
 
-	if (ret = SCE_ERR(sceGxmShaderPatcherCreate, &patcherParams, &this->shaderPatcher); ret < 0) {
+	ret = SCE_ERR(sceGxmShaderPatcherCreate, &patcherParams, &this->shaderPatcher);
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -314,7 +318,8 @@ int GXMContext::init()
 	renderTargetParams.multisampleMode = msaaMode;
 	renderTargetParams.multisampleLocations = 0;
 	renderTargetParams.driverMemBlock = -1; // Invalid UID
-	if (ret = SCE_ERR(sceGxmCreateRenderTarget, &renderTargetParams, &this->renderTarget); ret < 0) {
+	ret = SCE_ERR(sceGxmCreateRenderTarget, &renderTargetParams, &this->renderTarget);
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -328,22 +333,25 @@ int GXMContext::init()
 			"displayBuffers"
 		);
 
-		if (ret = SCE_ERR(
-				sceGxmColorSurfaceInit,
-				&this->displayBuffersSurface[i],
-				SCE_GXM_COLOR_FORMAT_A8B8G8R8,
-				SCE_GXM_COLOR_SURFACE_LINEAR,
-				(msaaMode == SCE_GXM_MULTISAMPLE_NONE) ? SCE_GXM_COLOR_SURFACE_SCALE_NONE : SCE_GXM_COLOR_SURFACE_SCALE_MSAA_DOWNSCALE,
-				SCE_GXM_OUTPUT_REGISTER_SIZE_32BIT,
-				VITA_GXM_SCREEN_WIDTH,
-				VITA_GXM_SCREEN_HEIGHT,
-				VITA_GXM_SCREEN_STRIDE,
-				this->displayBuffers[i]
-			); ret < 0) {
+		ret = SCE_ERR(
+			sceGxmColorSurfaceInit,
+			&this->displayBuffersSurface[i],
+			SCE_GXM_COLOR_FORMAT_A8B8G8R8,
+			SCE_GXM_COLOR_SURFACE_LINEAR,
+			(msaaMode == SCE_GXM_MULTISAMPLE_NONE) ? SCE_GXM_COLOR_SURFACE_SCALE_NONE
+												   : SCE_GXM_COLOR_SURFACE_SCALE_MSAA_DOWNSCALE,
+			SCE_GXM_OUTPUT_REGISTER_SIZE_32BIT,
+			VITA_GXM_SCREEN_WIDTH,
+			VITA_GXM_SCREEN_HEIGHT,
+			VITA_GXM_SCREEN_STRIDE,
+			this->displayBuffers[i]
+		);
+		if (ret < 0) {
 			return ret;
 		}
 
-		if (ret = SCE_ERR(sceGxmSyncObjectCreate, &this->displayBuffersSync[i]); ret < 0) {
+		ret = SCE_ERR(sceGxmSyncObjectCreate, &this->displayBuffersSync[i]);
+		if (ret < 0) {
 			return ret;
 		}
 	}
@@ -360,22 +368,23 @@ int GXMContext::init()
 
 	this->stencilBufferData = vita_mem_alloc(
 		SCE_KERNEL_MEMBLOCK_TYPE_USER_RW_UNCACHE,
-		4 * sampleCount,
+		1 * sampleCount,
 		SCE_GXM_DEPTHSTENCIL_SURFACE_ALIGNMENT,
 		SCE_GXM_MEMORY_ATTRIB_READ | SCE_GXM_MEMORY_ATTRIB_WRITE,
 		&this->stencilBufferUid,
 		"stencilBufferData"
 	);
 
-	if (ret = SCE_ERR(
-			sceGxmDepthStencilSurfaceInit,
-			&this->depthSurface,
-			SCE_GXM_DEPTH_STENCIL_FORMAT_S8D24,
-			SCE_GXM_DEPTH_STENCIL_SURFACE_TILED,
-			depthStrideInSamples,
-			this->depthBufferData,
-			this->stencilBufferData
-		); ret < 0) {
+	ret = SCE_ERR(
+		sceGxmDepthStencilSurfaceInit,
+		&this->depthSurface,
+		SCE_GXM_DEPTH_STENCIL_FORMAT_DF32_S8,
+		SCE_GXM_DEPTH_STENCIL_SURFACE_TILED,
+		depthStrideInSamples,
+		this->depthBufferData,
+		this->stencilBufferData
+	);
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -385,32 +394,41 @@ int GXMContext::init()
 		CDRAM_POOL_SIZE,
 		16,
 		SCE_GXM_MEMORY_ATTRIB_READ | SCE_GXM_MEMORY_ATTRIB_WRITE,
-		&this->cdramUID, "cdram_pool"
+		&this->cdramUID,
+		"cdram_pool"
 	);
 	this->cdramPool = SDL_malloc(tlsf_size());
 	tlsf_create(this->cdramPool);
 	tlsf_add_pool(this->cdramPool, this->cdramMem, CDRAM_POOL_SIZE);
 
 	// register plane, color, image shaders
-	if (ret = SCE_ERR( sceGxmShaderPatcherRegisterProgram,
+	ret = SCE_ERR(
+		sceGxmShaderPatcherRegisterProgram,
 		this->shaderPatcher,
 		planeVertexProgramGxp,
 		&this->planeVertexProgramId
-	); ret < 0) {
+	);
+	if (ret < 0) {
 		return ret;
 	}
-	if (ret = SCE_ERR(sceGxmShaderPatcherRegisterProgram,
+
+	ret = SCE_ERR(
+		sceGxmShaderPatcherRegisterProgram,
 		this->shaderPatcher,
 		colorFragmentProgramGxp,
 		&this->colorFragmentProgramId
-	); ret < 0) {
+	);
+	if (ret < 0) {
 		return ret;
 	}
-	if (ret = SCE_ERR(sceGxmShaderPatcherRegisterProgram,
+
+	ret = SCE_ERR(
+		sceGxmShaderPatcherRegisterProgram,
 		this->shaderPatcher,
 		imageFragmentProgramGxp,
 		&this->imageFragmentProgramId
-	); ret < 0) {
+	);
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -438,53 +456,56 @@ int GXMContext::init()
 		vertexStreams[0].stride = sizeof(float) * 4;
 		vertexStreams[0].indexSource = SCE_GXM_INDEX_SOURCE_INDEX_16BIT;
 
-		if (ret = SCE_ERR(
-				sceGxmShaderPatcherCreateVertexProgram,
-				this->shaderPatcher,
-				this->planeVertexProgramId,
-				vertexAttributes,
-				2,
-				vertexStreams,
-				1,
-				&this->planeVertexProgram
-			); ret < 0) {
+		ret = SCE_ERR(
+			sceGxmShaderPatcherCreateVertexProgram,
+			this->shaderPatcher,
+			this->planeVertexProgramId,
+			vertexAttributes,
+			2,
+			vertexStreams,
+			1,
+			&this->planeVertexProgram
+		);
+		if (ret < 0) {
 			return ret;
 		}
 
-		if (ret = SCE_ERR(
-				sceGxmShaderPatcherCreateFragmentProgram,
-				this->shaderPatcher,
-				this->colorFragmentProgramId,
-				SCE_GXM_OUTPUT_REGISTER_FORMAT_UCHAR4,
-				SCE_GXM_MULTISAMPLE_NONE,
-				NULL,
-				planeVertexProgramGxp,
-				&this->colorFragmentProgram
-			); ret < 0) {
+		ret = SCE_ERR(
+			sceGxmShaderPatcherCreateFragmentProgram,
+			this->shaderPatcher,
+			this->colorFragmentProgramId,
+			SCE_GXM_OUTPUT_REGISTER_FORMAT_UCHAR4,
+			SCE_GXM_MULTISAMPLE_NONE,
+			NULL,
+			planeVertexProgramGxp,
+			&this->colorFragmentProgram
+		);
+		if (ret < 0) {
 			return ret;
 		}
 
-		if (ret = SCE_ERR(
-				sceGxmShaderPatcherCreateFragmentProgram,
-				this->shaderPatcher,
-				this->imageFragmentProgramId,
-				SCE_GXM_OUTPUT_REGISTER_FORMAT_UCHAR4,
-				SCE_GXM_MULTISAMPLE_NONE,
-				&blendInfoTransparent,
-				planeVertexProgramGxp,
-				&this->imageFragmentProgram
-			); ret < 0) {
+		ret = SCE_ERR(
+			sceGxmShaderPatcherCreateFragmentProgram,
+			this->shaderPatcher,
+			this->imageFragmentProgramId,
+			SCE_GXM_OUTPUT_REGISTER_FORMAT_UCHAR4,
+			SCE_GXM_MULTISAMPLE_NONE,
+			&blendInfoTransparent,
+			planeVertexProgramGxp,
+			&this->imageFragmentProgram
+		);
+		if (ret < 0) {
 			return ret;
 		}
 	}
 
 	this->color_uColor = sceGxmProgramFindParameterByName(colorFragmentProgramGxp, "uColor"); // vec4
 
-	this->clearVertices = static_cast<Vertex2D*>(this->alloc(sizeof(Vertex2D)*4, 4));
-	this->clearVertices[0] = Vertex2D{ .position = {-1.0, 1.0}, .texCoord = {0, 0} };
-	this->clearVertices[1] = Vertex2D{ .position = {1.0, 1.0}, .texCoord = {0, 0} };
-	this->clearVertices[2] = Vertex2D{ .position = {-1.0, -1.0}, .texCoord = {0, 0} };
-	this->clearVertices[3] = Vertex2D{ .position = {1.0,-1.0}, .texCoord = {0, 0} };
+	this->clearVertices = static_cast<Vertex2D*>(this->alloc(sizeof(Vertex2D) * 4, 4));
+	this->clearVertices[0] = Vertex2D{.position = {-1.0, 1.0}, .texCoord = {0, 0}};
+	this->clearVertices[1] = Vertex2D{.position = {1.0, 1.0}, .texCoord = {0, 0}};
+	this->clearVertices[2] = Vertex2D{.position = {-1.0, -1.0}, .texCoord = {0, 0}};
+	this->clearVertices[3] = Vertex2D{.position = {1.0, -1.0}, .texCoord = {0, 0}};
 
 	this->clearIndices = static_cast<uint16_t*>(this->alloc(sizeof(uint16_t) * 4, 4));
 	this->clearIndices[0] = 0;
@@ -512,9 +533,10 @@ void GXMContext::free(void* ptr)
 	tlsf_free(this->cdramPool, ptr);
 }
 
-void GXMContext::clear(float r, float g, float b, bool new_scene) {
+void GXMContext::clear(float r, float g, float b, bool new_scene)
+{
 	new_scene = new_scene && !this->sceneStarted;
-	if(new_scene) {
+	if (new_scene) {
 		sceGxmBeginScene(
 			this->context,
 			0,
@@ -543,20 +565,22 @@ void GXMContext::clear(float r, float g, float b, bool new_scene) {
 
 	sceGxmSetFrontDepthFunc(gxm->context, SCE_GXM_DEPTH_FUNC_ALWAYS);
 	sceGxmDraw(gxm->context, SCE_GXM_PRIMITIVE_TRIANGLE_STRIP, SCE_GXM_INDEX_FORMAT_U16, this->clearIndices, 4);
-	if(new_scene) {
+	if (new_scene) {
 		sceGxmEndScene(this->context, nullptr, nullptr);
 		this->sceneStarted = false;
 	}
 }
 
-void GXMContext::copy_frontbuffer() {
+void GXMContext::copy_frontbuffer()
+{
 	SceGxmTexture texture;
-	sceGxmTextureInitLinearStrided(&texture,
+	sceGxmTextureInitLinearStrided(
+		&texture,
 		this->displayBuffers[this->frontBufferIndex],
 		SCE_GXM_TEXTURE_FORMAT_U8U8U8U8_ABGR,
 		VITA_GXM_SCREEN_WIDTH,
 		VITA_GXM_SCREEN_HEIGHT,
-		VITA_GXM_SCREEN_STRIDE*4
+		VITA_GXM_SCREEN_STRIDE * 4
 	);
 	sceGxmSetVertexProgram(this->context, this->planeVertexProgram);
 	sceGxmSetFragmentProgram(this->context, this->imageFragmentProgram);
@@ -573,20 +597,29 @@ void GXMContext::copy_frontbuffer() {
 	sceGxmDraw(this->context, SCE_GXM_PRIMITIVE_TRIANGLE_STRIP, SCE_GXM_INDEX_FORMAT_U16, this->clearIndices, 4);
 }
 
-void GXMContext::destroy() {
+void GXMContext::destroy()
+{
 	sceGxmDisplayQueueFinish();
-	if(gxm->context) sceGxmFinish(gxm->context);
-	if(this->renderTarget) sceGxmDestroyRenderTarget(this->renderTarget);
+	if (gxm->context) {
+		sceGxmFinish(gxm->context);
+	}
+	if (this->renderTarget) {
+		sceGxmDestroyRenderTarget(this->renderTarget);
+	}
 	for (int i = 0; i < GXM_DISPLAY_BUFFER_COUNT; i++) {
-		if(this->displayBuffersUid[i]) {
+		if (this->displayBuffersUid[i]) {
 			vita_mem_free(this->displayBuffersUid[i]);
 			this->displayBuffers[i] = nullptr;
 			sceGxmSyncObjectDestroy(this->displayBuffersSync[i]);
 		}
 	}
 
-	if(this->depthBufferUid) vita_mem_free(this->depthBufferUid);
-	if(this->stencilBufferUid) vita_mem_free(this->stencilBufferUid);
+	if (this->depthBufferUid) {
+		vita_mem_free(this->depthBufferUid);
+	}
+	if (this->stencilBufferUid) {
+		vita_mem_free(this->stencilBufferUid);
+	}
 	this->stencilBufferData = nullptr;
 	this->depthBufferData = nullptr;
 
@@ -599,22 +632,20 @@ void GXMContext::destroy() {
 	SDL_free(this->contextHostMem);
 }
 
-void GXMContext::swap_display() {
-	if(this->sceneStarted) {
-		SCE_ERR(sceGxmEndScene, 
-			gxm->context,
-			nullptr,
-			nullptr
-		);
+void GXMContext::swap_display()
+{
+	if (this->sceneStarted) {
+		sceGxmEndScene(gxm->context, nullptr, nullptr);
 		this->sceneStarted = false;
 	}
+
 	SceCommonDialogUpdateParam updateParam;
-    SDL_zero(updateParam);
-    updateParam.renderTarget.colorFormat = VITA_GXM_COLOR_FORMAT;
-    updateParam.renderTarget.surfaceType = SCE_GXM_COLOR_SURFACE_LINEAR;
-    updateParam.renderTarget.width = VITA_GXM_SCREEN_WIDTH;
-    updateParam.renderTarget.height = VITA_GXM_SCREEN_HEIGHT;
-    updateParam.renderTarget.strideInPixels = VITA_GXM_SCREEN_STRIDE;
+	SDL_zero(updateParam);
+	updateParam.renderTarget.colorFormat = VITA_GXM_COLOR_FORMAT;
+	updateParam.renderTarget.surfaceType = SCE_GXM_COLOR_SURFACE_LINEAR;
+	updateParam.renderTarget.width = VITA_GXM_SCREEN_WIDTH;
+	updateParam.renderTarget.height = VITA_GXM_SCREEN_HEIGHT;
+	updateParam.renderTarget.strideInPixels = VITA_GXM_SCREEN_STRIDE;
 	updateParam.renderTarget.colorSurfaceData = this->displayBuffers[this->backBufferIndex];
 	updateParam.displaySyncObject = this->displayBuffersSync[this->backBufferIndex];
 	sceCommonDialogUpdate(&updateParam);
@@ -637,39 +668,10 @@ void GXMContext::swap_display() {
 	this->backBufferIndex = (this->backBufferIndex + 1) % GXM_DISPLAY_BUFFER_COUNT;
 }
 
-static void CreateOrthoMatrix(float left, float right, float bottom, float top, D3DRMMATRIX4D& outMatrix)
-{
-	float near = -1.0f;
-	float far = 1.0f;
-	float rl = right - left;
-	float tb = top - bottom;
-	float fn = far - near;
-
-	outMatrix[0][0] = 2.0f / rl;
-	outMatrix[0][1] = 0.0f;
-	outMatrix[0][2] = 0.0f;
-	outMatrix[0][3] = 0.0f;
-
-	outMatrix[1][0] = 0.0f;
-	outMatrix[1][1] = 2.0f / tb;
-	outMatrix[1][2] = 0.0f;
-	outMatrix[1][3] = 0.0f;
-
-	outMatrix[2][0] = 0.0f;
-	outMatrix[2][1] = 0.0f;
-	outMatrix[2][2] = -2.0f / fn;
-	outMatrix[2][3] = 0.0f;
-
-	outMatrix[3][0] = -(right + left) / rl;
-	outMatrix[3][1] = -(top + bottom) / tb;
-	outMatrix[3][2] = -(far + near) / fn;
-	outMatrix[3][3] = 1.0f;
-}
-
 Direct3DRMRenderer* GXMRenderer::Create(DWORD width, DWORD height)
 {
 	int ret = gxm_library_init();
-	if(ret < 0) {
+	if (ret < 0) {
 		return nullptr;
 	}
 	return new GXMRenderer(width, height);
@@ -683,36 +685,42 @@ GXMRenderer::GXMRenderer(DWORD width, DWORD height)
 	m_virtualHeight = height;
 
 	int ret;
-	if(!gxm) {
-		gxm = (GXMContext*)SDL_malloc(sizeof(GXMContext));
+	if (!gxm) {
+		gxm = (GXMContext*) SDL_malloc(sizeof(GXMContext));
 	}
-	if(ret = SCE_ERR(gxm->init); ret < 0) {
+	ret = SCE_ERR(gxm->init);
+	if (ret < 0) {
 		return;
 	}
 
 	// register shader programs
-	if (ret = SCE_ERR(
-			sceGxmShaderPatcherRegisterProgram,
-			gxm->shaderPatcher,
-			mainVertexProgramGxp,
-			&this->mainVertexProgramId
-		); ret < 0) {
+	ret = SCE_ERR(
+		sceGxmShaderPatcherRegisterProgram,
+		gxm->shaderPatcher,
+		mainVertexProgramGxp,
+		&this->mainVertexProgramId
+	);
+	if (ret < 0) {
 		return;
 	}
-	if (ret = SCE_ERR(
-			sceGxmShaderPatcherRegisterProgram,
-			gxm->shaderPatcher,
-			mainColorFragmentProgramGxp,
-			&this->mainColorFragmentProgramId
-		); ret < 0) {
+
+	ret = SCE_ERR(
+		sceGxmShaderPatcherRegisterProgram,
+		gxm->shaderPatcher,
+		mainColorFragmentProgramGxp,
+		&this->mainColorFragmentProgramId
+	);
+	if (ret < 0) {
 		return;
 	}
-	if (ret = SCE_ERR(
-			sceGxmShaderPatcherRegisterProgram,
-			gxm->shaderPatcher,
-			mainTextureFragmentProgramGxp,
-			&this->mainTextureFragmentProgramId
-		); ret < 0) {
+
+	ret = SCE_ERR(
+		sceGxmShaderPatcherRegisterProgram,
+		gxm->shaderPatcher,
+		mainTextureFragmentProgramGxp,
+		&this->mainTextureFragmentProgramId
+	);
+	if (ret < 0) {
 		return;
 	}
 
@@ -748,91 +756,91 @@ GXMRenderer::GXMRenderer(DWORD width, DWORD height)
 		vertexStreams[0].stride = sizeof(Vertex);
 		vertexStreams[0].indexSource = SCE_GXM_INDEX_SOURCE_INDEX_16BIT;
 
-		if (ret = SCE_ERR(
-				sceGxmShaderPatcherCreateVertexProgram,
-				gxm->shaderPatcher,
-				this->mainVertexProgramId,
-				vertexAttributes,
-				3,
-				vertexStreams,
-				1,
-				&this->mainVertexProgram
-			); ret < 0) {
+		ret = SCE_ERR(
+			sceGxmShaderPatcherCreateVertexProgram,
+			gxm->shaderPatcher,
+			this->mainVertexProgramId,
+			vertexAttributes,
+			3,
+			vertexStreams,
+			1,
+			&this->mainVertexProgram
+		);
+		if (ret < 0) {
 			return;
 		}
 	}
 
 	// main color opaque
-	if (ret = SCE_ERR(
-			sceGxmShaderPatcherCreateFragmentProgram,
-			gxm->shaderPatcher,
-			this->mainColorFragmentProgramId,
-			SCE_GXM_OUTPUT_REGISTER_FORMAT_UCHAR4,
-			msaaMode,
-			&blendInfoOpaque,
-			mainVertexProgramGxp,
-			&this->opaqueColorFragmentProgram
-		); ret < 0) {
+	ret = SCE_ERR(
+		sceGxmShaderPatcherCreateFragmentProgram,
+		gxm->shaderPatcher,
+		this->mainColorFragmentProgramId,
+		SCE_GXM_OUTPUT_REGISTER_FORMAT_UCHAR4,
+		msaaMode,
+		&blendInfoOpaque,
+		mainVertexProgramGxp,
+		&this->opaqueColorFragmentProgram
+	);
+	if (ret < 0) {
 		return;
 	}
 
 	// main color blended
-	if (ret = SCE_ERR(
-			sceGxmShaderPatcherCreateFragmentProgram,
-			gxm->shaderPatcher,
-			this->mainColorFragmentProgramId,
-			SCE_GXM_OUTPUT_REGISTER_FORMAT_UCHAR4,
-			msaaMode,
-			&blendInfoTransparent,
-			mainVertexProgramGxp,
-			&this->blendedColorFragmentProgram
-		); ret < 0) {
+	ret = SCE_ERR(
+		sceGxmShaderPatcherCreateFragmentProgram,
+		gxm->shaderPatcher,
+		this->mainColorFragmentProgramId,
+		SCE_GXM_OUTPUT_REGISTER_FORMAT_UCHAR4,
+		msaaMode,
+		&blendInfoTransparent,
+		mainVertexProgramGxp,
+		&this->blendedColorFragmentProgram
+	);
+	if (ret < 0) {
 		return;
 	}
 
 	// main texture opaque
-	if (ret = SCE_ERR(
-			sceGxmShaderPatcherCreateFragmentProgram,
-			gxm->shaderPatcher,
-			this->mainTextureFragmentProgramId,
-			SCE_GXM_OUTPUT_REGISTER_FORMAT_UCHAR4,
-			msaaMode,
-			&blendInfoOpaque,
-			mainVertexProgramGxp,
-			&this->opaqueTextureFragmentProgram
-		); ret < 0) {
+	ret = SCE_ERR(
+		sceGxmShaderPatcherCreateFragmentProgram,
+		gxm->shaderPatcher,
+		this->mainTextureFragmentProgramId,
+		SCE_GXM_OUTPUT_REGISTER_FORMAT_UCHAR4,
+		msaaMode,
+		&blendInfoOpaque,
+		mainVertexProgramGxp,
+		&this->opaqueTextureFragmentProgram
+	);
+	if (ret < 0) {
 		return;
 	}
 
 	// main texture transparent
-	if (ret = SCE_ERR(
-			sceGxmShaderPatcherCreateFragmentProgram,
-			gxm->shaderPatcher,
-			this->mainTextureFragmentProgramId,
-			SCE_GXM_OUTPUT_REGISTER_FORMAT_UCHAR4,
-			msaaMode,
-			&blendInfoTransparent,
-			mainVertexProgramGxp,
-			&this->blendedTextureFragmentProgram
-		); ret < 0) {
+	ret = SCE_ERR(
+		sceGxmShaderPatcherCreateFragmentProgram,
+		gxm->shaderPatcher,
+		this->mainTextureFragmentProgramId,
+		SCE_GXM_OUTPUT_REGISTER_FORMAT_UCHAR4,
+		msaaMode,
+		&blendInfoTransparent,
+		mainVertexProgramGxp,
+		&this->blendedTextureFragmentProgram
+	);
+	if (ret < 0) {
 		return;
 	}
 
 	// vertex uniforms
-	//this->uNormalMatrix = sceGxmProgramFindParameterByName(mainVertexProgramGxp, "uNormalMatrix");
-	//this->uWorldViewProjection = sceGxmProgramFindParameterByName(mainVertexProgramGxp, "uWorldViewProjection");
-	//this->uWorld = sceGxmProgramFindParameterByName(mainVertexProgramGxp, "uWorld");
-	//this->uViewInverse = sceGxmProgramFindParameterByName(mainVertexProgramGxp, "uViewInverse");
-
 	this->uModelViewMatrix = sceGxmProgramFindParameterByName(mainVertexProgramGxp, "uModelViewMatrix");
 	this->uNormalMatrix = sceGxmProgramFindParameterByName(mainVertexProgramGxp, "uNormalMatrix");
 	this->uProjectionMatrix = sceGxmProgramFindParameterByName(mainVertexProgramGxp, "uProjectionMatrix");
 
 	// fragment uniforms
-	this->uLights = sceGxmProgramFindParameterByName(mainColorFragmentProgramGxp, "uLights");         // SceneLight[2]
+	this->uLights = sceGxmProgramFindParameterByName(mainColorFragmentProgramGxp, "uLights"); // SceneLight[2]
 	this->uAmbientLight = sceGxmProgramFindParameterByName(mainColorFragmentProgramGxp, "uAmbientLight"); // vec3
-	this->uShininess = sceGxmProgramFindParameterByName(mainColorFragmentProgramGxp, "uShininess");   // float
-	this->uColor = sceGxmProgramFindParameterByName(mainColorFragmentProgramGxp, "uColor");           // vec4
+	this->uShininess = sceGxmProgramFindParameterByName(mainColorFragmentProgramGxp, "uShininess");       // float
+	this->uColor = sceGxmProgramFindParameterByName(mainColorFragmentProgramGxp, "uColor");               // vec4
 
 	for (int i = 0; i < GXM_FRAGMENT_BUFFER_COUNT; i++) {
 		this->lights[i] = static_cast<GXMSceneLightUniform*>(gxm->alloc(sizeof(GXMSceneLightUniform), 4));
@@ -869,21 +877,31 @@ GXMRenderer::GXMRenderer(DWORD width, DWORD height)
 			break;
 		}
 	}
-	if(ids) SDL_free(ids);
+	if (ids) {
+		SDL_free(ids);
+	}
 	m_initialized = true;
 }
 
 GXMRenderer::~GXMRenderer()
 {
 	for (int i = 0; i < GXM_FRAGMENT_BUFFER_COUNT; i++) {
-		if(this->lights[i]) gxm->free(this->lights[i]);
+		if (this->lights[i]) {
+			gxm->free(this->lights[i]);
+		}
 	}
 	for (int i = 0; i < GXM_VERTEX_BUFFER_COUNT; i++) {
-		if(this->quadVertices[i]) gxm->free(this->quadVertices[i]);
+		if (this->quadVertices[i]) {
+			gxm->free(this->quadVertices[i]);
+		}
 	}
-	if(this->quadIndices) gxm->free(this->quadIndices);
+	if (this->quadIndices) {
+		gxm->free(this->quadIndices);
+	}
 
-	if(this->gamepad) SDL_CloseGamepad(this->gamepad);
+	if (this->gamepad) {
+		SDL_CloseGamepad(this->gamepad);
+	}
 }
 
 void GXMRenderer::PushLights(const SceneLight* lightsArray, size_t count)
@@ -917,8 +935,8 @@ void GXMRenderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* textu
 		[](IDirect3DRMObject* obj, void* arg) {
 			auto* ctx = static_cast<TextureDestroyContextGXM*>(arg);
 			auto& cache = ctx->renderer->m_textures[ctx->textureId];
-			for(int i = 0; i < cache.bufferCount; i++) {
-				if(cache.notifications[i]) {
+			for (int i = 0; i < cache.bufferCount; i++) {
+				if (cache.notifications[i]) {
 					sceGxmNotificationWait(cache.notifications[i]);
 				}
 				void* textureData = sceGxmTextureGetData(&cache.gxmTexture[i]);
@@ -1050,22 +1068,22 @@ Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi, float 
 		auto& tex = m_textures[i];
 		if (tex.texture == texture) {
 			if (tex.version != texture->m_version) {
-				if(tex.bufferCount != GXM_TEXTURE_BUFFER_COUNT) {
-					for(int i = 1; i < GXM_TEXTURE_BUFFER_COUNT; i++) {
+				if (tex.bufferCount != GXM_TEXTURE_BUFFER_COUNT) {
+					for (int i = 1; i < GXM_TEXTURE_BUFFER_COUNT; i++) {
 						tex.gxmTexture[i] = tex.gxmTexture[0];
-						uint8_t* textureData = (uint8_t*)gxm->alloc(textureSize, textureAlignment);
+						uint8_t* textureData = (uint8_t*) gxm->alloc(textureSize, textureAlignment);
 						sceGxmTextureSetData(&tex.gxmTexture[i], textureData);
 					}
 					tex.bufferCount = GXM_TEXTURE_BUFFER_COUNT;
 				}
-				if(tex.bufferCount > 1) {
+				if (tex.bufferCount > 1) {
 					tex.currentIndex = (tex.currentIndex + 1) % GXM_TEXTURE_BUFFER_COUNT;
 				}
-				if(tex.notifications[tex.currentIndex]) {
+				if (tex.notifications[tex.currentIndex]) {
 					sceGxmNotificationWait(tex.notifications[tex.currentIndex]);
 				}
 				tex.notifications[tex.currentIndex] = &this->fragmentNotifications[this->currentFragmentBufferIndex];
-				uint8_t* textureData = (uint8_t*)sceGxmTextureGetData(&tex.gxmTexture[tex.currentIndex]);
+				uint8_t* textureData = (uint8_t*) sceGxmTextureGetData(&tex.gxmTexture[tex.currentIndex]);
 				copySurfaceToGxm(surface, textureData, textureStride, textureSize);
 				tex.version = texture->m_version;
 			}
@@ -1089,12 +1107,13 @@ Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi, float 
 
 	SceGxmTexture gxmTexture;
 	SCE_ERR(sceGxmTextureInitLinear, &gxmTexture, textureData, gxmTextureFormat, textureWidth, textureHeight, 0);
-	if(isUi) {
+	if (isUi) {
 		sceGxmTextureSetMinFilter(&gxmTexture, SCE_GXM_TEXTURE_FILTER_POINT);
 		sceGxmTextureSetMagFilter(&gxmTexture, SCE_GXM_TEXTURE_FILTER_POINT);
 		sceGxmTextureSetUAddrMode(&gxmTexture, SCE_GXM_TEXTURE_ADDR_CLAMP);
 		sceGxmTextureSetVAddrMode(&gxmTexture, SCE_GXM_TEXTURE_ADDR_CLAMP);
-	} else {
+	}
+	else {
 		sceGxmTextureSetMinFilter(&gxmTexture, SCE_GXM_TEXTURE_FILTER_LINEAR);
 		sceGxmTextureSetMagFilter(&gxmTexture, SCE_GXM_TEXTURE_FILTER_LINEAR);
 		sceGxmTextureSetUAddrMode(&gxmTexture, SCE_GXM_TEXTURE_ADDR_REPEAT);
@@ -1199,35 +1218,35 @@ GXMMeshCacheEntry GXMRenderer::GXMUploadMesh(const MeshGroup& meshGroup)
 #ifdef GXM_PRECOMPUTE
 	bool isOpaque = meshGroup.color.a == 0xff;
 	const SceGxmTexture* texture = nullptr;
-	if(meshGroup.texture) {
+	if (meshGroup.texture) {
 		Uint32 textureId = GetTextureId(meshGroup.texture, false);
 		texture = &this->m_textures[textureId].gxmTexture;
 	}
 
 	const SceGxmProgram* fragmentProgramGxp;
-	const SceGxmFragmentProgram *fragmentProgram;
-	if(texture) {
+	const SceGxmFragmentProgram* fragmentProgram;
+	if (texture) {
 		fragmentProgramGxp = mainTextureFragmentProgramGxp;
 		fragmentProgram = isOpaque ? this->opaqueTextureFragmentProgram : this->blendedTextureFragmentProgram;
-	} else {
+	}
+	else {
 		fragmentProgramGxp = mainColorFragmentProgramGxp;
 		fragmentProgram = isOpaque ? this->opaqueColorFragmentProgram : this->blendedColorFragmentProgram;
 	}
 
 	// get sizes
 	const size_t drawSize = ALIGN(sceGxmGetPrecomputedDrawSize(this->mainVertexProgram), SCE_GXM_PRECOMPUTED_ALIGNMENT);
-	const size_t vertexStateSize = ALIGN(sceGxmGetPrecomputedVertexStateSize(this->mainVertexProgram), SCE_GXM_PRECOMPUTED_ALIGNMENT);
-	const size_t fragmentStateSize = ALIGN(sceGxmGetPrecomputedFragmentStateSize(fragmentProgram), SCE_GXM_PRECOMPUTED_ALIGNMENT);
+	const size_t vertexStateSize =
+		ALIGN(sceGxmGetPrecomputedVertexStateSize(this->mainVertexProgram), SCE_GXM_PRECOMPUTED_ALIGNMENT);
+	const size_t fragmentStateSize =
+		ALIGN(sceGxmGetPrecomputedFragmentStateSize(fragmentProgram), SCE_GXM_PRECOMPUTED_ALIGNMENT);
 	const size_t precomputeDataSize =
-		drawSize +
-		vertexStateSize * GXM_VERTEX_BUFFER_COUNT +
-		fragmentStateSize * GXM_FRAGMENT_BUFFER_COUNT;
+		drawSize + vertexStateSize * GXM_VERTEX_BUFFER_COUNT + fragmentStateSize * GXM_FRAGMENT_BUFFER_COUNT;
 
 	const size_t vertexDefaultBufferSize = sceGxmProgramGetDefaultUniformBufferSize(mainVertexProgramGxp);
 	const size_t fragmentDefaultBufferSize = sceGxmProgramGetDefaultUniformBufferSize(fragmentProgramGxp);
-	const size_t uniformBuffersSize =
-		vertexDefaultBufferSize * GXM_VERTEX_BUFFER_COUNT;
-		fragmentStateSize * GXM_FRAGMENT_BUFFER_COUNT;
+	const size_t uniformBuffersSize = vertexDefaultBufferSize * GXM_VERTEX_BUFFER_COUNT;
+	fragmentStateSize* GXM_FRAGMENT_BUFFER_COUNT;
 
 	sceClibPrintf("drawSize: %d\n", drawSize);
 	sceClibPrintf("vertexStateSize: %d\n", vertexStateSize);
@@ -1238,19 +1257,15 @@ GXMMeshCacheEntry GXMRenderer::GXMUploadMesh(const MeshGroup& meshGroup)
 	sceClibPrintf("uniformBuffersSize: %d\n", uniformBuffersSize);
 
 	// allocate the precompute buffer, combined for all
-	uint8_t* precomputeData = (uint8_t*)cdram_alloc(precomputeDataSize, SCE_GXM_PRECOMPUTED_ALIGNMENT);
+	uint8_t* precomputeData = (uint8_t*) cdram_alloc(precomputeDataSize, SCE_GXM_PRECOMPUTED_ALIGNMENT);
 	cache.precomputeData = precomputeData;
 
-	uint8_t* uniformBuffers = (uint8_t*)cdram_alloc(uniformBuffersSize, 4);
+	uint8_t* uniformBuffers = (uint8_t*) cdram_alloc(uniformBuffersSize, 4);
 	cache.uniformBuffers = uniformBuffers;
 
 	// init precomputed draw
-	SCE_ERR(sceGxmPrecomputedDrawInit,
-		&cache.drawState,
-		this->mainVertexProgram,
-		precomputeData
-	);
-	void* vertexStreams[] = { vertexBuffer };
+	SCE_ERR(sceGxmPrecomputedDrawInit, &cache.drawState, this->mainVertexProgram, precomputeData);
+	void* vertexStreams[] = {vertexBuffer};
 	sceGxmPrecomputedDrawSetAllVertexStreams(&cache.drawState, vertexStreams);
 	sceGxmPrecomputedDrawSetParams(
 		&cache.drawState,
@@ -1262,41 +1277,29 @@ GXMMeshCacheEntry GXMRenderer::GXMUploadMesh(const MeshGroup& meshGroup)
 	precomputeData += drawSize;
 
 	// init precomputed vertex state
-	for(int bufferIndex = 0; bufferIndex < GXM_VERTEX_BUFFER_COUNT; bufferIndex++) {
-		SCE_ERR(sceGxmPrecomputedVertexStateInit,
+	for (int bufferIndex = 0; bufferIndex < GXM_VERTEX_BUFFER_COUNT; bufferIndex++) {
+		SCE_ERR(
+			sceGxmPrecomputedVertexStateInit,
 			&cache.vertexState[bufferIndex],
 			this->mainVertexProgram,
 			precomputeData
 		);
-		sceGxmPrecomputedVertexStateSetDefaultUniformBuffer(
-			&cache.vertexState[bufferIndex],
-			uniformBuffers
-		);
+		sceGxmPrecomputedVertexStateSetDefaultUniformBuffer(&cache.vertexState[bufferIndex], uniformBuffers);
 		precomputeData += vertexStateSize;
 		uniformBuffers += vertexDefaultBufferSize;
 	}
 
 	// init precomputed fragment state
-	for(int bufferIndex = 0; bufferIndex < GXM_FRAGMENT_BUFFER_COUNT; bufferIndex++) {
-		SCE_ERR(sceGxmPrecomputedFragmentStateInit,
-			&cache.fragmentState[bufferIndex],
-			fragmentProgram,
-			precomputeData
-		);
-		if(texture) {
-			sceGxmPrecomputedFragmentStateSetTexture(
-				&cache.fragmentState[bufferIndex],
-				0, texture
-			);
+	for (int bufferIndex = 0; bufferIndex < GXM_FRAGMENT_BUFFER_COUNT; bufferIndex++) {
+		SCE_ERR(sceGxmPrecomputedFragmentStateInit, &cache.fragmentState[bufferIndex], fragmentProgram, precomputeData);
+		if (texture) {
+			sceGxmPrecomputedFragmentStateSetTexture(&cache.fragmentState[bufferIndex], 0, texture);
 		}
-		sceGxmPrecomputedFragmentStateSetDefaultUniformBuffer(
-			&cache.fragmentState[bufferIndex],
-			uniformBuffers
-		);
+		sceGxmPrecomputedFragmentStateSetDefaultUniformBuffer(&cache.fragmentState[bufferIndex], uniformBuffers);
 		precomputeData += fragmentStateSize;
 		uniformBuffers += fragmentDefaultBufferSize;
 	}
-	assert(precomputeData - (uint8_t*)cache.precomputeData <= precomputeDataSize);
+	assert(precomputeData - (uint8_t*) cache.precomputeData <= precomputeDataSize);
 #endif
 	return cache;
 }
@@ -1432,14 +1435,14 @@ HRESULT GXMRenderer::BeginFrame()
 
 	auto lightData = this->LightsBuffer();
 	int i = 0;
-	for(const auto& light : m_lights) {
-		if(!light.directional && !light.positional) {
+	for (const auto& light : m_lights) {
+		if (!light.directional && !light.positional) {
 			lightData->ambientLight[0] = light.color.r;
 			lightData->ambientLight[1] = light.color.g;
 			lightData->ambientLight[2] = light.color.b;
 			continue;
 		}
-		if(i == 2) {
+		if (i == 2) {
 			sceClibPrintf("light overflow\n");
 			continue;
 		}
@@ -1450,11 +1453,12 @@ HRESULT GXMRenderer::BeginFrame()
 		lightData->lights[i].color[3] = light.color.a;
 
 		bool isDirectional = light.directional == 1.0;
-		if(isDirectional) {
+		if (isDirectional) {
 			lightData->lights[i].vec[0] = light.direction.x;
 			lightData->lights[i].vec[1] = light.direction.y;
 			lightData->lights[i].vec[2] = light.direction.z;
-		} else {
+		}
+		else {
 			lightData->lights[i].vec[0] = light.position.x;
 			lightData->lights[i].vec[1] = light.position.y;
 			lightData->lights[i].vec[2] = light.position.z;
@@ -1520,12 +1524,12 @@ void GXMRenderer::SubmitDraw(
 	sceGxmPushUserMarker(gxm->context, marker);
 #endif
 
-
 	bool textured = appearance.textureId != NO_TEXTURE_ID;
-	const SceGxmFragmentProgram *fragmentProgram;
-	if(this->transparencyEnabled) {
+	const SceGxmFragmentProgram* fragmentProgram;
+	if (this->transparencyEnabled) {
 		fragmentProgram = textured ? this->blendedTextureFragmentProgram : this->blendedColorFragmentProgram;
-	} else {
+	}
+	else {
 		fragmentProgram = textured ? this->opaqueTextureFragmentProgram : this->opaqueColorFragmentProgram;
 	}
 	sceGxmSetVertexProgram(gxm->context, this->mainVertexProgram);
@@ -1537,9 +1541,9 @@ void GXMRenderer::SubmitDraw(
 	sceGxmReserveFragmentDefaultUniformBuffer(gxm->context, &fragUniforms);
 
 	// vertex uniforms
-	sceGxmSetUniformDataF(vertUniforms, this->uModelViewMatrix, 0, 4*4, &modelViewMatrix[0][0]);
-	sceGxmSetUniformDataF(vertUniforms, this->uNormalMatrix, 0, 3*3, &normalMatrix[0][0]);
-	sceGxmSetUniformDataF(vertUniforms, this->uProjectionMatrix, 0, 4*4, &this->m_projection[0][0]);
+	sceGxmSetUniformDataF(vertUniforms, this->uModelViewMatrix, 0, 4 * 4, &modelViewMatrix[0][0]);
+	sceGxmSetUniformDataF(vertUniforms, this->uNormalMatrix, 0, 3 * 3, &normalMatrix[0][0]);
+	sceGxmSetUniformDataF(vertUniforms, this->uProjectionMatrix, 0, 4 * 4, &this->m_projection[0][0]);
 
 	// fragment uniforms
 	float color[4] = {
@@ -1590,7 +1594,7 @@ void GXMRenderer::Flip()
 
 	++this->vertexNotifications[this->currentVertexBufferIndex].value;
 	++this->fragmentNotifications[this->currentFragmentBufferIndex].value;
-	sceGxmEndScene( 
+	sceGxmEndScene(
 		gxm->context,
 		&this->vertexNotifications[this->currentVertexBufferIndex],
 		&this->fragmentNotifications[this->currentFragmentBufferIndex]
@@ -1613,9 +1617,10 @@ void GXMRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const S
 #endif
 
 	sceGxmSetVertexProgram(gxm->context, gxm->planeVertexProgram);
-	if(textureId != NO_TEXTURE_ID) {
+	if (textureId != NO_TEXTURE_ID) {
 		sceGxmSetFragmentProgram(gxm->context, gxm->imageFragmentProgram);
-	} else {
+	}
+	else {
 		sceGxmSetFragmentProgram(gxm->context, gxm->colorFragmentProgram);
 	}
 
@@ -1647,7 +1652,7 @@ void GXMRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const S
 	float u2 = 0.0;
 	float v2 = 0.0;
 
-	if(textureId != NO_TEXTURE_ID) {
+	if (textureId != NO_TEXTURE_ID) {
 		GXMTextureCacheEntry& texture = m_textures[textureId];
 		const SceGxmTexture* gxmTexture = this->UseTexture(texture);
 		float texW = sceGxmTextureGetWidth(gxmTexture);
@@ -1657,7 +1662,8 @@ void GXMRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const S
 		v1 = static_cast<float>(srcRect.y) / texH;
 		u2 = static_cast<float>(srcRect.x + srcRect.w) / texW;
 		v2 = static_cast<float>(srcRect.y + srcRect.h) / texH;
-	} else {
+	}
+	else {
 		SET_UNIFORM(fragUniforms, gxm->color_uColor, color);
 	}
 
@@ -1696,7 +1702,7 @@ void GXMRenderer::Download(SDL_Surface* target)
 		VITA_GXM_SCREEN_HEIGHT,
 		SDL_PIXELFORMAT_ABGR8888,
 		gxm->displayBuffers[gxm->frontBufferIndex],
-		VITA_GXM_SCREEN_STRIDE*4
+		VITA_GXM_SCREEN_STRIDE * 4
 	);
 	SDL_BlitSurfaceScaled(src, &srcRect, target, nullptr, SDL_SCALEMODE_NEAREST);
 	SDL_DestroySurface(src);

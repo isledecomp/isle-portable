@@ -61,6 +61,7 @@
 #ifdef __vita__
 #include "vita/config.h"
 #include "vita/messagebox.h"
+
 #include <psp2/appmgr.h>
 #include <psp2/kernel/clib.h>
 #endif

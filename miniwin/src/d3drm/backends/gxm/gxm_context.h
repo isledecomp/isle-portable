@@ -1,13 +1,14 @@
 #pragma once
 
-#include <psp2/gxm.h>
 #include "tlsf.h"
+
+#include <psp2/gxm.h>
 
 #define GXM_DISPLAY_BUFFER_COUNT 3
 
 typedef struct Vertex2D {
 	float position[2];
-    float texCoord[2];
+	float texCoord[2];
 } Vertex2D;
 
 typedef struct GXMContext {
@@ -33,10 +34,9 @@ typedef struct GXMContext {
 	SceUID patcherVertexUsseUid;
 	size_t patcherVertexUsseOffset;
 	void* patcherVertexUsse;
-	
 	SceUID patcherFragmentUsseUid;
 	size_t patcherFragmentUsseOffset;
-    void* patcherFragmentUsse;
+	void* patcherFragmentUsse;
 
 	SceGxmShaderPatcher* shaderPatcher;
 
