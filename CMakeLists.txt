@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.25...4.0 FATAL_ERROR)
 
 project(isle LANGUAGES CXX C VERSION 0.1)
 
+if (WINDOWS_STORE)
+  add_compile_definitions(WINDOWS_STORE)
+endif()
+
 if (EMSCRIPTEN)
   add_compile_options(-pthread)
   add_link_options(-sALLOW_MEMORY_GROWTH=1 -sMAXIMUM_MEMORY=2gb -sUSE_PTHREADS=1 -sPROXY_TO_PTHREAD=1 -sOFFSCREENCANVAS_SUPPORT=1 -sPTHREAD_POOL_SIZE_STRICT=0 -sFORCE_FILESYSTEM=1 -sWASMFS=1 -sEXIT_RUNTIME=1)
@@ -38,7 +42,7 @@ option(ISLE_WERROR "Treat warnings as errors" OFF)
 option(ISLE_DEBUG "Enable imgui debug" ON)
 cmake_dependent_option(ISLE_USE_DX5 "Build with internal DirectX 5 SDK" "${NOT_MINGW}" "WIN32;CMAKE_SIZEOF_VOID_P EQUAL 4" OFF)
 cmake_dependent_option(ISLE_MINIWIN "Use miniwin" ON "NOT ISLE_USE_DX5" OFF)
-cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "MSVC OR ISLE_MINIWIN;NOT NINTENDO_3DS;NOT VITA" OFF)
+cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "MSVC OR ISLE_MINIWIN;NOT NINTENDO_3DS;NOT WINDOWS_STORE;NOT VITA" OFF)
 cmake_dependent_option(ISLE_COMPILE_SHADERS "Compile shaders" ON "SDL_SHADERCROSS_BIN;TARGET Python3::Interpreter" OFF)
 option(CMAKE_POSITION_INDEPENDENT_CODE "Build with -fPIC" ON)
 option(ENABLE_CLANG_TIDY "Enable clang-tidy")
@@ -63,9 +67,17 @@ message(STATUS "Compile shaders:        ${ISLE_COMPILE_SHADERS}")
 add_library(Isle::iniparser INTERFACE IMPORTED)
 
 if (DOWNLOAD_DEPENDENCIES)
-    # FetchContent downloads and configures dependencies
-    message(STATUS "Fetching SDL3 and iniparser. This might take a while...")
-    include(FetchContent)
+  # FetchContent downloads and configures dependencies
+  message(STATUS "Fetching SDL3 and iniparser. This might take a while...")
+  include(FetchContent)
+  if (WINDOWS_STORE)
+    FetchContent_Declare(
+      SDL3
+      GIT_REPOSITORY "https://github.com/Helloyunho/SDL3-uwp.git"
+      GIT_TAG "main"
+      EXCLUDE_FROM_ALL
+    )
+  else()
     FetchContent_Declare(
         SDL3
         GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
@@ -73,42 +85,43 @@ if (DOWNLOAD_DEPENDENCIES)
         UPDATE_DISCONNECTED TRUE
         EXCLUDE_FROM_ALL
     )
+  endif()
 
-    block()
-      if(VITA)
-        set(SDL_RENDER OFF)
-        set(SDL_GPU OFF)
-      endif()
-      FetchContent_MakeAvailable(SDL3)
-    endblock()
+  block()
+    if(VITA)
+      set(SDL_RENDER OFF)
+      set(SDL_GPU OFF)
+    endif()
+    FetchContent_MakeAvailable(SDL3)
+  endblock()
 
-    FetchContent_Declare(
-        iniparser
-        GIT_REPOSITORY "https://gitlab.com/iniparser/iniparser.git"
-        GIT_TAG "main"
-        EXCLUDE_FROM_ALL
-    )
-    block()
-      set(BUILD_DOCS off)
-      set(BUILD_SHARED_LIBS off)
-      FetchContent_MakeAvailable(iniparser)
-      target_link_libraries(Isle::iniparser INTERFACE iniparser-static)
-    endblock()
+  FetchContent_Declare(
+    iniparser
+    GIT_REPOSITORY "https://gitlab.com/iniparser/iniparser.git"
+    GIT_TAG "main"
+    EXCLUDE_FROM_ALL
+  )
+  block()
+    set(BUILD_DOCS off)
+    set(BUILD_SHARED_LIBS off)
+    FetchContent_MakeAvailable(iniparser)
+    target_link_libraries(Isle::iniparser INTERFACE iniparser-static)
+  endblock()
 else()
-    # find_package looks for already-installed system packages.
-    # Configure with `-DCMAKE_PREFIX_PATH="/path/to/package1;/path/to/package2"`
-    # to add search paths.
-    find_package(SDL3 CONFIG REQUIRED)
+  # find_package looks for already-installed system packages.
+  # Configure with `-DCMAKE_PREFIX_PATH="/path/to/package1;/path/to/package2"`
+  # to add search paths.
+  find_package(SDL3 CONFIG REQUIRED)
 
-    find_package(iniparser REQUIRED CONFIG COMPONENTS shared)
-    target_link_libraries(Isle::iniparser INTERFACE iniparser-shared)
+  find_package(iniparser REQUIRED CONFIG COMPONENTS shared)
+  target_link_libraries(Isle::iniparser INTERFACE iniparser-shared)
 endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 if (ENABLE_CLANG_TIDY)
-    find_program(CLANG_TIDY_BIN NAMES "clang-tidy" ENV "LLVM_ROOT" REQUIRED)
-    set(CMAKE_C_CLANG_TIDY "${CLANG_TIDY_BIN}")
-    set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_BIN}")
+  find_program(CLANG_TIDY_BIN NAMES "clang-tidy" ENV "LLVM_ROOT" REQUIRED)
+  set(CMAKE_C_CLANG_TIDY "${CLANG_TIDY_BIN}")
+  set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_BIN}")
 endif()
 
 if (ISLE_ASAN)
@@ -126,26 +139,26 @@ add_subdirectory(miniwin EXCLUDE_FROM_ALL)
 set(isle_targets)
 
 function(add_cxx_warning WARNING)
-    if (ISLE_WERROR)
-        set(compiler_option "-Werror=${WARNING}")
-    else()
-        set(compiler_option "-W${WARNING}")
-    endif()
-    string(MAKE_C_IDENTIFIER "COMPILER_SUPPORTS${compiler_option}" varname)
+  if (ISLE_WERROR)
+    set(compiler_option "-Werror=${WARNING}")
+  else()
+    set(compiler_option "-W${WARNING}")
+  endif()
+  string(MAKE_C_IDENTIFIER "COMPILER_SUPPORTS${compiler_option}" varname)
 
-    cmake_push_check_state(RESET)
-    set(CMAKE_REQUIRED_FLAGS "${compiler_option} ")
-    if (MSVC)
-        string(APPEND CMAKE_REQUIRED_FLAGS "/WX")
-    else()
-        string(APPEND CMAKE_REQUIRED_FLAGS "-Werror")
-    endif()
-    check_cxx_source_compiles("int main() { return 0; }" ${varname})
-    cmake_pop_check_state()
+  cmake_push_check_state(RESET)
+  set(CMAKE_REQUIRED_FLAGS "${compiler_option} ")
+  if (MSVC)
+    string(APPEND CMAKE_REQUIRED_FLAGS "/WX")
+  else()
+    string(APPEND CMAKE_REQUIRED_FLAGS "-Werror")
+  endif()
+  check_cxx_source_compiles("int main() { return 0; }" ${varname})
+  cmake_pop_check_state()
 
-    if (${varname})
-        add_compile_options(${compiler_option})
-    endif()
+  if (${varname})
+    add_compile_options(${compiler_option})
+  endif()
 endfunction()
 
 add_subdirectory(3rdparty EXCLUDE_FROM_ALL SYSTEM)
@@ -551,6 +564,11 @@ if (ISLE_BUILD_APP)
       ISLE/3ds/config.cpp
     )
   endif()
+  if(WINDOWS_STORE)
+    target_sources(isle PRIVATE
+      ISLE/xbox_one_series/config.cpp
+    )
+  endif()
   if(VITA)
     target_sources(isle PRIVATE
       ISLE/vita/config.cpp
@@ -637,6 +655,12 @@ if (MSVC)
     if (TARGET isle-config)
       target_compile_definitions(isle-config PRIVATE "_CRT_SECURE_NO_WARNINGS")
     endif()
+    if (TARGET iniparser-static)
+      target_compile_definitions(iniparser-static PRIVATE "_CRT_SECURE_NO_WARNINGS")
+    endif()
+    if (TARGET libsmacker)
+      target_compile_definitions(libsmacker PRIVATE "_CRT_SECURE_NO_WARNINGS")
+    endif()
   endif()
   # Visual Studio 2017 version 15.7 needs "/Zc:__cplusplus" for __cplusplus
   if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "19.14.26428")
@@ -696,14 +720,20 @@ endif()
 
 string(REPLACE ";" "-" ISLE_CPUS_STRING "${ISLE_CPUS}")
 string(TOLOWER "${ISLE_CPUS_STRING}" ISLE_CPUS_STRING)
-set(ISLE_PACKAGE_NAME "${CMAKE_SYSTEM_NAME}-${ISLE_CPUS_STRING}" CACHE STRING "Platform name of the package")
+if (WINDOWS_STORE)
+  set(ISLE_PACKAGE_NAME "Xbox_One_Series_XS-${ISLE_CPUS_STRING}" CACHE STRING "Platform name of the package")
+else()
+  set(ISLE_PACKAGE_NAME "${CMAKE_SYSTEM_NAME}-${ISLE_CPUS_STRING}" CACHE STRING "Platform name of the package")
+endif()
 if(BUILD_SHARED_LIBS)
   list(APPEND install_extra_targets lego1)
 endif()
-install(TARGETS isle ${install_extra_targets}
-  RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
-  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-)
+if (NOT (NINTENDO_3DS OR WINDOWS_STORE))
+  install(TARGETS isle ${install_extra_targets}
+    RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+    LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+  )
+endif()
 if (ISLE_BUILD_CONFIG)
   if(WIN32)
     find_program(WINDEPLOYQT_EXECUTABLE windeployqt)
@@ -750,6 +780,15 @@ if(NINTENDO_3DS)
 
   ctr_create_3dsx(isle SMDH isle.smdh)
   install(FILES "$<TARGET_FILE_DIR:isle>/isle.3dsx" DESTINATION "${CMAKE_INSTALL_BINDIR}")
+endif()
+if(WINDOWS_STORE)
+  install(
+    DIRECTORY
+      "${CMAKE_BINARY_DIR}/AppPackages/isle/"
+    DESTINATION "${CMAKE_INSTALL_BINDIR}"
+    FILES_MATCHING PATTERN "*/Dependencies/x64/Microsoft.VCLibs.x64*.14.00.appx"
+      PATTERN "*/*.msix"
+      PATTERN "*/*.msixbundle")
 endif()
 if(VITA)
   include("${VITASDK}/share/vita.cmake" REQUIRED)

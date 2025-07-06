@@ -58,6 +58,10 @@
 #include "3ds/config.h"
 #endif
 
+#ifdef WINDOWS_STORE
+#include "xbox_one_series/config.h"
+#endif
+
 #ifdef __vita__
 #include "vita/config.h"
 #include "vita/messagebox.h"
@@ -581,7 +585,7 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 			g_lastJoystickMouseY = ((MxFloat) axisValue) / SDL_JOYSTICK_AXIS_MAX * g_isle->GetCursorSensitivity();
 		}
 		else if (event->gaxis.axis == SDL_GAMEPAD_AXIS_RIGHT_TRIGGER) {
-			if (axisValue != 0) {
+			if (axisValue != 0 && !g_mousedown) {
 				g_mousedown = TRUE;
 
 				if (InputManager()) {
@@ -594,7 +598,7 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 					);
 				}
 			}
-			else {
+			else if (axisValue == 0 && g_mousedown) {
 				g_mousedown = FALSE;
 
 				if (InputManager()) {
@@ -828,7 +832,7 @@ MxResult IsleApp::SetupWindow()
 	SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, g_targetHeight);
 	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_FULLSCREEN_BOOLEAN, m_fullScreen);
 	SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, WINDOW_TITLE);
-#if defined(MINIWIN) && !defined(__3DS__) && !defined(__vita__)
+#if defined(MINIWIN) && !defined(__3DS__) && !defined(WINDOWS_STORE) && !defined(__vita__)
 	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
@@ -1009,6 +1013,9 @@ bool IsleApp::LoadConfig()
 
 #ifdef __3DS__
 		N3DS_SetupDefaultConfigOverrides(dict);
+#endif
+#ifdef WINDOWS_STORE
+		XBONE_SetupDefaultConfigOverrides(dict);
 #endif
 #ifdef __vita__
 		VITA_SetupDefaultConfigOverrides(dict);

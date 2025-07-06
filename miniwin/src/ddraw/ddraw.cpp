@@ -7,7 +7,7 @@
 #ifdef __3DS__
 #include "d3drmrenderer_citro3d.h"
 #endif
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(WINDOWS_STORE)
 #include "d3drmrenderer_directx9.h"
 #endif
 #ifdef __vita__
@@ -247,7 +247,7 @@ HRESULT DirectDrawImpl::EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 #ifdef __3DS__
 	Citro3DRenderer_EnumDevice(cb, ctx);
 #endif
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(WINDOWS_STORE)
 	DirectX9Renderer_EnumDevice(cb, ctx);
 #endif
 #ifdef __vita__
@@ -374,7 +374,7 @@ HRESULT DirectDrawImpl::CreateDevice(
 		DDRenderer = new Citro3DRenderer(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
 #endif
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(WINDOWS_STORE)
 	else if (SDL_memcmp(&guid, &DirectX9_GUID, sizeof(GUID)) == 0) {
 		DDRenderer = DirectX9Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}

@@ -263,7 +263,7 @@ MxLong JetskiRace::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 void JetskiRace::FUN_10016930(MxS32 p_param1, MxS16 p_param2)
 {
 	MxS32 local4;
-	MxStillPresenter* presenter;
+	MxStillPresenter* presenter = NULL;
 	MxS32 x, y;
 
 	if (p_param1 == 11) {

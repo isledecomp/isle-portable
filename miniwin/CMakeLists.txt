@@ -34,7 +34,7 @@ target_compile_definitions(miniwin PRIVATE
 list(APPEND GRAPHICS_BACKENDS USE_SOFTWARE_RENDER)
 list(APPEND GRAPHICS_BACKENDS USE_SDL_GPU)
 
-if(NOT VITA)
+if(NOT VITA AND NOT WINDOWS_STORE)
   find_package(OpenGL)
     if(OpenGL_FOUND)
       message(STATUS "Found OpenGL: enabling OpenGL 1.x renderer")
@@ -56,7 +56,7 @@ if(NOT VITA)
     if(OPENGL_ES2_LIBRARY)
     target_link_libraries(miniwin PRIVATE ${OPENGL_ES2_LIBRARY})
     endif()
-else()
+  else()
     message(STATUS "🧩 OpenGL ES 2.x support not enabled")
   endif()
 endif()
@@ -77,7 +77,6 @@ if(VITA)
   list(REMOVE_ITEM GRAPHICS_BACKENDS USE_SOFTWARE_RENDER USE_SDL_GPU)
   # for shaders incbin
   target_include_directories(miniwin PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/d3drm/backends/gxm)
-  #target_link_directories(miniwin PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/d3drm/backends/gxm)
 endif()
 
 if(NINTENDO_3DS)
@@ -97,12 +96,16 @@ if(NINTENDO_3DS)
   endif()
 endif()
 
-if(WIN32)
+if(WIN32 AND NOT WINDOWS_STORE)
   target_sources(miniwin PRIVATE
     src/d3drm/backends/directx9/actual.cpp
     src/d3drm/backends/directx9/renderer.cpp
   )
   target_link_libraries(miniwin PRIVATE d3d9)
+endif()
+
+if(WINDOWS_STORE)
+  add_compile_definitions(WINDOWS_STORE)
 endif()
 
 target_compile_definitions(miniwin PUBLIC MINIWIN)

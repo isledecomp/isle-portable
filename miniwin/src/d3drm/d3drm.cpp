@@ -180,7 +180,7 @@ HRESULT Direct3DRMImpl::CreateDeviceFromSurface(
 		DDRenderer = new Citro3DRenderer(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
 #endif
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(WINDOWS_STORE)
 	else if (SDL_memcmp(&guid, &DirectX9_GUID, sizeof(GUID)) == 0) {
 		DDRenderer = DirectX9Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
