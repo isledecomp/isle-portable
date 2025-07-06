@@ -68,6 +68,14 @@ jobs:
         with:
           cache: 'true'          
 
+      - name: Install 3DS dependencies
+        run: |
+          wget https://github.com/diasurgical/bannertool/releases/download/1.2.0/bannertool.zip
+          unzip -j "bannertool.zip" "linux-x86_64/bannertool" -d "/opt/devkitpro/tools/bin"
+          wget https://github.com/3DSGuy/Project_CTR/releases/download/makerom-v0.18/makerom-v0.18-ubuntu_x86_64.zip
+          unzip "makerom-v0.18-ubuntu_x86_64.zip" "makerom" -d "/opt/devkitpro/tools/bin"
+          chmod a+x /opt/devkitpro/tools/bin/makerom
+
       - name: Install Linux dependencies (apt-get)
         if: ${{ matrix.linux }}
         run: |
