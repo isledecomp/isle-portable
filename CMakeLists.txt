@@ -757,7 +757,7 @@ if(NINTENDO_3DS)
   install(FILES "$<TARGET_FILE_DIR:isle>/isle.3dsx" DESTINATION "${CMAKE_INSTALL_BINDIR}")
 endif()
 if(WINDOWS_STORE)
-  file(GLOB MSIX_FILES "${CMAKE_BINARY_DIR}/AppPackages/isle/*/Dependencies/x64/Microsoft.VCLibs.x64.Debug.14.00.appx"
+  file(GLOB MSIX_FILES "${CMAKE_BINARY_DIR}/AppPackages/isle/*/Dependencies/x64/Microsoft.VCLibs.x64*.14.00.appx"
     "${CMAKE_BINARY_DIR}/AppPackages/isle/*/*.msix"
     "${CMAKE_BINARY_DIR}/AppPackages/isle/*/*.msixbundle"
   )
