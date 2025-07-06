@@ -6,11 +6,11 @@
   xmlns:uap5="http://schemas.microsoft.com/appx/manifest/uap/windows10/5"
   xmlns:desktop4="http://schemas.microsoft.com/appx/manifest/desktop/windows10/4" 
   IgnorableNamespaces="uap mp">
-  <Identity Name="org.legoisland.Isle" Publisher="CN=Helloyunho" Version="0.1.0.0" />
+  <Identity Name="org.legoisland.Isle" Publisher="CN=Isle Portable" Version="0.1.0.0" />
   <mp:PhoneIdentity PhoneProductId="077047DC-73D0-4EE7-9359-EDFF0ED96127" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
   <Properties>
     <DisplayName>LEGO® Island</DisplayName>
-    <PublisherDisplayName>Helloyunho</PublisherDisplayName>
+    <PublisherDisplayName>isledecomp/isle-portable</PublisherDisplayName>
     <Logo>StoreLogo.png</Logo>
   </Properties>
   <Dependencies>
