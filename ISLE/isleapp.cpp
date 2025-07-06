@@ -558,7 +558,7 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 			g_lastJoystickMouseY = ((MxFloat) axisValue) / SDL_JOYSTICK_AXIS_MAX * g_isle->GetCursorSensitivity();
 		}
 		else if (event->gaxis.axis == SDL_GAMEPAD_AXIS_RIGHT_TRIGGER) {
-			if (axisValue != 0) {
+			if (axisValue != 0 && !g_mousedown) {
 				g_mousedown = TRUE;
 
 				if (InputManager()) {
@@ -571,7 +571,7 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 					);
 				}
 			}
-			else {
+			else if (axisValue == 0 && g_mousedown) {
 				g_mousedown = FALSE;
 
 				if (InputManager()) {
