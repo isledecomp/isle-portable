@@ -53,8 +53,6 @@
 #include "emscripten/messagebox.h"
 #endif
 
-#include "dummy_controller_map.h"
-
 #ifdef __3DS__
 #include "3ds/apthooks.h"
 #include "3ds/config.h"
@@ -62,7 +60,6 @@
 
 #ifdef WINDOWS_STORE
 #include "xbox_one_series/config.h"
-#include "xbox_one_series/xbox_controller_map.h"
 #endif
 
 DECOMP_SIZE_ASSERT(IsleApp, 0x8c)
