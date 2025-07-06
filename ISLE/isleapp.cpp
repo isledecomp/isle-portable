@@ -400,6 +400,11 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 	return SDL_APP_CONTINUE;
 }
 
+static bool dpadUp = false;
+static bool dpadDown = false;
+static bool dpadLeft = false;
+static bool dpadRight = false;
+
 SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 {
 	if (!g_isle) {
@@ -474,17 +479,73 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		break;
 	}
 	case SDL_EVENT_GAMEPAD_BUTTON_DOWN: {
-		{
-			if (event->gbutton.button == SDL_GAMEPAD_BUTTON_SOUTH) {
-				if (InputManager()) {
-					InputManager()->QueueEvent(c_notificationKeyPress, SDLK_SPACE, 0, 0, SDLK_SPACE);
-				}
+		switch (event->gbutton.button) {
+		case SDL_GAMEPAD_BUTTON_DPAD_UP:
+			dpadUp = true;
+			break;
+		case SDL_GAMEPAD_BUTTON_DPAD_DOWN:
+			dpadDown = true;
+			break;
+		case SDL_GAMEPAD_BUTTON_DPAD_LEFT:
+			dpadLeft = true;
+			break;
+		case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
+			dpadRight = true;
+			break;
+		case SDL_GAMEPAD_BUTTON_EAST:
+			g_mousedown = TRUE;
+			if (InputManager()) {
+				InputManager()->QueueEvent(
+					c_notificationButtonDown,
+					LegoEventNotificationParam::c_lButtonState,
+					g_lastMouseX,
+					g_lastMouseY,
+					0
+				);
 			}
-			if (event->gbutton.button == SDL_GAMEPAD_BUTTON_START) {
-				if (InputManager()) {
-					InputManager()->QueueEvent(c_notificationKeyPress, SDLK_ESCAPE, 0, 0, SDLK_ESCAPE);
-				}
+			break;
+
+		case SDL_GAMEPAD_BUTTON_SOUTH:
+			if (InputManager()) {
+				InputManager()->QueueEvent(c_notificationKeyPress, SDLK_SPACE, 0, 0, SDLK_SPACE);
 			}
+			break;
+
+		case SDL_GAMEPAD_BUTTON_START:
+			if (InputManager()) {
+				InputManager()->QueueEvent(c_notificationKeyPress, SDLK_ESCAPE, 0, 0, SDLK_ESCAPE);
+			}
+			break;
+		}
+		break;
+	}
+
+	case SDL_EVENT_GAMEPAD_BUTTON_UP: {
+		switch (event->gbutton.button) {
+		case SDL_GAMEPAD_BUTTON_DPAD_UP:
+			dpadUp = false;
+			break;
+		case SDL_GAMEPAD_BUTTON_DPAD_DOWN:
+			dpadDown = false;
+			break;
+		case SDL_GAMEPAD_BUTTON_DPAD_LEFT:
+			dpadLeft = false;
+			break;
+		case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
+			dpadRight = false;
+			break;
+		case SDL_GAMEPAD_BUTTON_EAST:
+			g_mousedown = FALSE;
+			if (InputManager()) {
+				InputManager()->QueueEvent(
+					c_notificationButtonUp,
+					LegoEventNotificationParam::c_lButtonState,
+					g_lastMouseX,
+					g_lastMouseY,
+					0
+				);
+			}
+			break;
 		}
 		break;
 	}
@@ -1286,13 +1347,35 @@ IDirect3DRMMiniwinDevice* GetD3DRMMiniwinDevice()
 	return d3drmMiniwinDev;
 }
 
+const float DPAD_MOUSE_SPEED = 3.0f;
+
 void IsleApp::MoveVirtualMouseViaJoystick()
 {
-	if (g_lastJoystickMouseX != 0 || g_lastJoystickMouseY != 0) {
+	float dpadX = 0.0f;
+	float dpadY = 0.0f;
+
+	if (dpadLeft) {
+		dpadX -= DPAD_MOUSE_SPEED;
+	}
+	if (dpadRight) {
+		dpadX += DPAD_MOUSE_SPEED;
+	}
+	if (dpadUp) {
+		dpadY -= DPAD_MOUSE_SPEED;
+	}
+	if (dpadDown) {
+		dpadY += DPAD_MOUSE_SPEED;
+	}
+
+	// Use joystick axis if non-zero, else fall back to dpad
+	float moveX = (g_lastJoystickMouseX != 0) ? g_lastJoystickMouseX : dpadX;
+	float moveY = (g_lastJoystickMouseY != 0) ? g_lastJoystickMouseY : dpadY;
+
+	if (moveX != 0 || moveY != 0) {
 		g_mousemoved = TRUE;
 
-		g_lastMouseX = SDL_clamp(g_lastMouseX + g_lastJoystickMouseX, 0, 640);
-		g_lastMouseY = SDL_clamp(g_lastMouseY + g_lastJoystickMouseY, 0, 480);
+		g_lastMouseX = SDL_clamp(g_lastMouseX + moveX, 0, 640);
+		g_lastMouseY = SDL_clamp(g_lastMouseY + moveY, 0, 480);
 
 		if (InputManager()) {
 			InputManager()->QueueEvent(
