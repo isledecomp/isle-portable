@@ -695,14 +695,20 @@ endif()
 
 string(REPLACE ";" "-" ISLE_CPUS_STRING "${ISLE_CPUS}")
 string(TOLOWER "${ISLE_CPUS_STRING}" ISLE_CPUS_STRING)
-set(ISLE_PACKAGE_NAME "${CMAKE_SYSTEM_NAME}-${ISLE_CPUS_STRING}" CACHE STRING "Platform name of the package")
+if (WINDOWS_STORE)
+  set(ISLE_PACKAGE_NAME "Xbox_One_Series_XS-${ISLE_CPUS_STRING}" CACHE STRING "Platform name of the package")
+else()
+  set(ISLE_PACKAGE_NAME "${CMAKE_SYSTEM_NAME}-${ISLE_CPUS_STRING}" CACHE STRING "Platform name of the package")
+endif()
 if(BUILD_SHARED_LIBS)
   list(APPEND install_extra_targets lego1)
 endif()
-install(TARGETS isle ${install_extra_targets}
-  RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
-  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-)
+if (NOT (NINTENDO_3DS OR WINDOWS_STORE))
+  install(TARGETS isle ${install_extra_targets}
+    RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+    LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+  )
+endif()
 if (ISLE_BUILD_CONFIG)
   if(WIN32)
     find_program(WINDEPLOYQT_EXECUTABLE windeployqt)
