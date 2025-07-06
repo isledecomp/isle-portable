@@ -69,6 +69,7 @@ jobs:
           cache: 'true'          
 
       - name: Install 3DS dependencies
+        if: ${{ matrix.n3ds }}
         run: |
           wget https://github.com/diasurgical/bannertool/releases/download/1.2.0/bannertool.zip
           unzip -j "bannertool.zip" "linux-x86_64/bannertool" -d "/opt/devkitpro/tools/bin"
