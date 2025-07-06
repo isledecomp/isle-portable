@@ -207,6 +207,7 @@ MxResult LegoInputManager::GetJoystickState(MxU32* p_joystickX, MxU32* p_joystic
 		// normalize values acquired from joystick axes
 		*p_joystickX = ((xPos + 32768) * 100) / 65535;
 		*p_joystickY = ((yPos + 32768) * 100) / 65535;
+		*p_povPosition = -1;
 
 		return SUCCESS;
 	}
