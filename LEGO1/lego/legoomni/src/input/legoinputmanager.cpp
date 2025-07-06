@@ -159,7 +159,7 @@ MxResult LegoInputManager::GetJoystick()
 	}
 	m_joyids = SDL_GetGamepads(&numJoysticks);
 
-	if (m_useJoystick != FALSE && m_numJoysticks != 0) {
+	if (m_useJoystick != FALSE) {
 		MxS32 joyid = m_joystickIndex;
 		if (joyid >= 0) {
 			m_joystick = SDL_OpenGamepad(m_joyids[joyid]);

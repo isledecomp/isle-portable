@@ -993,7 +993,7 @@ void copySurfaceToGxm(DirectDrawSurfaceImpl* surface, uint8_t* textureData, size
 	}
 }
 
-Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi)
+Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi, float scaleX, float scaleY)
 {
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
 	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
