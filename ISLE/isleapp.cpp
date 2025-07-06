@@ -92,8 +92,8 @@ MxS32 g_reqEnableRMDevice = FALSE;
 
 MxFloat g_lastJoystickMouseX = 0;
 MxFloat g_lastJoystickMouseY = 0;
-MxFloat g_lastMouseX = 0;
-MxFloat g_lastMouseY = 0;
+MxFloat g_lastMouseX = 320;
+MxFloat g_lastMouseY = 240;
 
 // STRING: ISLE 0x4101dc
 #define WINDOW_TITLE "LEGO®"
