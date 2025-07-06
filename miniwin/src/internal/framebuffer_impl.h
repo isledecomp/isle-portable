@@ -39,6 +39,7 @@ struct FrameBufferImpl : public IDirectDrawSurface3 {
 private:
 	uint32_t m_virtualWidth;
 	uint32_t m_virtualHeight;
+	bool m_readOnlyLock;
 	DirectDrawSurfaceImpl* m_transferBuffer;
 	IDirectDrawPalette* m_palette = nullptr;
 };
