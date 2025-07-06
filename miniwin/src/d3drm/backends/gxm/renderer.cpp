@@ -1421,6 +1421,7 @@ void GXMRenderer::StartScene()
 		&gxm->displayBuffersSurface[gxm->backBufferIndex],
 		&gxm->depthSurface
 	);
+	sceGxmSetCullMode(gxm->context, SCE_GXM_CULL_CCW);
 	gxm->sceneStarted = true;
 	this->quadsUsed = 0;
 
@@ -1476,37 +1477,6 @@ void GXMRenderer::EnableTransparency()
 	this->transparencyEnabled = true;
 }
 
-static void transpose4x4(const float src[4][4], float dst[4][4])
-{
-	for (int i = 0; i < 4; ++i) {
-		for (int j = 0; j < 4; ++j) {
-			dst[j][i] = src[i][j];
-		}
-	}
-}
-
-static void transpose3x3(const float src[3][3], float dst[3][3])
-{
-	for (int i = 0; i < 3; ++i) {
-		for (int j = 0; j < 3; ++j) {
-			dst[j][i] = src[i][j];
-		}
-	}
-}
-
-static const D3DRMMATRIX4D identity4x4 = {
-	{1.0, 0.0, 0.0, 0.0},
-	{0.0, 1.0, 0.0, 0.0},
-	{0.0, 0.0, 1.0, 0.0},
-	{0.0, 0.0, 0.0, 1.0},
-};
-
-static const Matrix3x3 identity3x3 = {
-	{1.0, 0.0, 0.0},
-	{0.0, 1.0, 0.0},
-	{0.0, 0.0, 1.0},
-};
-
 void GXMRenderer::SubmitDraw(
 	DWORD meshId,
 	const D3DRMMATRIX4D& modelViewMatrix,
@@ -1560,7 +1530,7 @@ void GXMRenderer::SubmitDraw(
 		this->UseTexture(texture);
 	}
 	sceGxmSetVertexStream(gxm->context, 0, mesh.vertexBuffer);
-	sceGxmSetFrontDepthFunc(gxm->context, SCE_GXM_DEPTH_FUNC_LESS);
+	sceGxmSetFrontDepthFunc(gxm->context, SCE_GXM_DEPTH_FUNC_LESS_EQUAL);
 	sceGxmDraw(gxm->context, SCE_GXM_PRIMITIVE_TRIANGLES, SCE_GXM_INDEX_FORMAT_U16, mesh.indexBuffer, mesh.indexCount);
 
 #ifdef DEBUG

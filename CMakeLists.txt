@@ -754,52 +754,7 @@ endif()
 if(VITA)
   include("${VITASDK}/share/vita.cmake" REQUIRED)
 
-  # config app
-  include(FetchContent)
-  FetchContent_Declare(
-    ScePaf_External
-    URL https://github.com/olebeck/ScePaf/releases/download/continuous/ScePaf-1.0.0.zip
-  )
-  FetchContent_MakeAvailable(ScePaf_External)
-
-  add_executable(isle-config
-    CONFIG_vita/src/app.cpp
-    CONFIG_vita/src/main.cpp
-  )
-
-  target_compile_options(isle-config PRIVATE
-    -fno-rtti -fno-exceptions -Wl,-q -Wall -fno-builtin -fshort-wchar -Wno-unused-function -Wno-sign-compare
-  )
-
-  # todo _start symbol warning
-  target_link_options(isle-config PRIVATE
-    -nostartfiles -nostdlib
-  )
-
-  target_link_libraries(isle-config PRIVATE
-    SceAppMgr_stub
-    SceLibKernel_stub
-    SceSysmodule_stub
-
-    ScePafToplevel_stub
-    ScePafResource_stub
-    ScePafWidget_stub
-    ScePafCommon_stub
-    ScePafStdc_stub
-  )
-
-  block()
-    set(VITA_MAKE_FSELF_FLAGS "${VITA_MAKE_FSELF_FLAGS} -a 0x2F00000000000101")
-    vita_create_self(isle-config.self isle-config
-      CONFIG CONFIG_vita/exports.yml
-      UNSAFE
-      STRIPPED
-      REL_OPTIMIZE
-    )
-  endblock()
-
-  include(${scepaf_external_SOURCE_DIR}/rco.cmake)
-  make_rco(CONFIG_vita/cxml/config_plugin.xml config_plugin.rco)
+  include(CONFIG_vita/CONFIG_vita.cmake)
 
   set(ISLE_PACKAGE_NAME "vita-isle")
   set(VITA_APP_NAME "Lego Island")
