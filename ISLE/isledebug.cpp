@@ -183,7 +183,7 @@ void IsleDebug_Init()
 		}
 		g_videoPalette =
 			SDL_CreateTexture(g_debugRenderer, SDL_PIXELFORMAT_RGBX32, SDL_TEXTUREACCESS_STREAMING, 16, 16);
-#if SDL_VERSION_ATLEAST(3, 3, 0) && !defined(WINDOWS_STORE)
+#if SDL_VERSION_ATLEAST(3, 3, 0)
 		SDL_SetTextureScaleMode(g_videoPalette, SDL_SCALEMODE_PIXELART);
 #else
 		SDL_SetTextureScaleMode(g_videoPalette, SDL_SCALEMODE_NEAREST);
