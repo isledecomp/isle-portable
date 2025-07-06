@@ -15,6 +15,7 @@ Please note: this project is dedicated to achieving platform independence withou
 | macOS | [![CI](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml/badge.svg)](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml) |
 | [Web](https://isle.pizza) | [![CI](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml/badge.svg)](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml) |
 | Nintendo 3DS | [![CI](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml/badge.svg)](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml) |
+| Xbox One | [![CI](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml/badge.svg)](https://github.com/isledecomp/isle-portable/actions/workflows/ci.yml) |
 
 We are actively working to support more platforms. If you have experience with a particular platform, we encourage you to contribute to `isle-portable`. You can find a [list of ongoing efforts](https://github.com/isledecomp/isle-portable/wiki/Work%E2%80%90in%E2%80%90progress-ports) in our Wiki.
 
