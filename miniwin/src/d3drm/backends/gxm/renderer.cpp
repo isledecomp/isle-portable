@@ -549,6 +549,30 @@ void GXMContext::clear(float r, float g, float b, bool new_scene) {
 	}
 }
 
+void GXMContext::copy_frontbuffer() {
+	SceGxmTexture texture;
+	sceGxmTextureInitLinearStrided(&texture,
+		this->displayBuffers[this->frontBufferIndex],
+		SCE_GXM_TEXTURE_FORMAT_U8U8U8U8_ABGR,
+		VITA_GXM_SCREEN_WIDTH,
+		VITA_GXM_SCREEN_HEIGHT,
+		VITA_GXM_SCREEN_STRIDE*4
+	);
+	sceGxmSetVertexProgram(this->context, this->planeVertexProgram);
+	sceGxmSetFragmentProgram(this->context, this->imageFragmentProgram);
+
+	void* vertUniforms;
+	void* fragUniforms;
+	sceGxmReserveVertexDefaultUniformBuffer(this->context, &vertUniforms);
+	sceGxmReserveFragmentDefaultUniformBuffer(this->context, &fragUniforms);
+
+	sceGxmSetVertexStream(this->context, 0, this->clearVertices);
+	sceGxmSetFragmentTexture(this->context, 0, &texture);
+
+	sceGxmSetFrontDepthFunc(this->context, SCE_GXM_DEPTH_FUNC_ALWAYS);
+	sceGxmDraw(this->context, SCE_GXM_PRIMITIVE_TRIANGLE_STRIP, SCE_GXM_INDEX_FORMAT_U16, this->clearIndices, 4);
+}
+
 void GXMContext::destroy() {
 	sceGxmDisplayQueueFinish();
 	if(gxm->context) sceGxmFinish(gxm->context);
@@ -1065,10 +1089,17 @@ Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi, float 
 
 	SceGxmTexture gxmTexture;
 	SCE_ERR(sceGxmTextureInitLinear, &gxmTexture, textureData, gxmTextureFormat, textureWidth, textureHeight, 0);
-	sceGxmTextureSetMinFilter(&gxmTexture, SCE_GXM_TEXTURE_FILTER_LINEAR);
-	sceGxmTextureSetMagFilter(&gxmTexture, SCE_GXM_TEXTURE_FILTER_LINEAR);
-	sceGxmTextureSetUAddrMode(&gxmTexture, SCE_GXM_TEXTURE_ADDR_REPEAT);
-	sceGxmTextureSetVAddrMode(&gxmTexture, SCE_GXM_TEXTURE_ADDR_REPEAT);
+	if(isUi) {
+		sceGxmTextureSetMinFilter(&gxmTexture, SCE_GXM_TEXTURE_FILTER_POINT);
+		sceGxmTextureSetMagFilter(&gxmTexture, SCE_GXM_TEXTURE_FILTER_POINT);
+		sceGxmTextureSetUAddrMode(&gxmTexture, SCE_GXM_TEXTURE_ADDR_CLAMP);
+		sceGxmTextureSetVAddrMode(&gxmTexture, SCE_GXM_TEXTURE_ADDR_CLAMP);
+	} else {
+		sceGxmTextureSetMinFilter(&gxmTexture, SCE_GXM_TEXTURE_FILTER_LINEAR);
+		sceGxmTextureSetMagFilter(&gxmTexture, SCE_GXM_TEXTURE_FILTER_LINEAR);
+		sceGxmTextureSetUAddrMode(&gxmTexture, SCE_GXM_TEXTURE_ADDR_REPEAT);
+		sceGxmTextureSetVAddrMode(&gxmTexture, SCE_GXM_TEXTURE_ADDR_REPEAT);
+	}
 	if (gxmTextureFormat == SCE_GXM_TEXTURE_FORMAT_P8_ABGR) {
 		sceGxmTextureSetPalette(&gxmTexture, (uint8_t*) textureData + paletteOffset);
 	}
@@ -1554,7 +1585,7 @@ void GXMRenderer::Clear(float r, float g, float b)
 void GXMRenderer::Flip()
 {
 	if (!gxm->sceneStarted) {
-		this->Clear(0, 0, 0);
+		return;
 	}
 
 	++this->vertexNotifications[this->currentVertexBufferIndex].value;
@@ -1663,8 +1694,8 @@ void GXMRenderer::Download(SDL_Surface* target)
 	SDL_Surface* src = SDL_CreateSurfaceFrom(
 		VITA_GXM_SCREEN_WIDTH,
 		VITA_GXM_SCREEN_HEIGHT,
-		SDL_PIXELFORMAT_BGRA8888,
-		gxm->displayBuffers[gxm->backBufferIndex],
+		SDL_PIXELFORMAT_ABGR8888,
+		gxm->displayBuffers[gxm->frontBufferIndex],
 		VITA_GXM_SCREEN_STRIDE*4
 	);
 	SDL_BlitSurfaceScaled(src, &srcRect, target, nullptr, SDL_SCALEMODE_NEAREST);

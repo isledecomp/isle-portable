@@ -13,5 +13,5 @@ void VITA_SetupDefaultConfigOverrides(dictionary* p_dictionary)
 	iniparser_set(p_dictionary, "isle:Draw Cursor", "true");
 
 	// Use e_noAnimation/cut transition
-	iniparser_set(p_dictionary, "isle:Transition Type", "1");
+	//iniparser_set(p_dictionary, "isle:Transition Type", "1");
 }

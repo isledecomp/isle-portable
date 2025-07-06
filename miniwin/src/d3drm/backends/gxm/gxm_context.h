@@ -75,6 +75,7 @@ typedef struct GXMContext {
 	bool sceneStarted;
 
 	void swap_display();
+	void copy_frontbuffer();
 	int init();
 	void destroy();
 	void clear(float r, float g, float b, bool new_scene);
