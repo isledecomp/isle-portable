@@ -760,8 +760,8 @@ if(NINTENDO_3DS)
 
   add_custom_command(
     OUTPUT "isle.bnr"
-    COMMAND "${BANNERTOOL}" makebanner -i "ISLE/res/3ds/banner.png" -a "ISLE/res/3ds/banner.wav" -o "isle.bnr"
-    DEPENDS "ISLE/res/3ds/banner.png" "ISLE/res/3ds/banner.wav"
+    COMMAND "${BANNERTOOL}" makebanner -i "../ISLE/res/3ds/banner.png" -a "../ISLE/res/3ds/banner.wav" -o "isle.bnr"
+    DEPENDS "../ISLE/res/3ds/banner.png" "../ISLE/res/3ds/banner.wav"
     VERBATIM
   )
 
