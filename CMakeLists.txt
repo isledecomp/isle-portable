@@ -519,6 +519,7 @@ if (ISLE_BUILD_APP)
     target_link_libraries(isle PRIVATE imgui)
     if(PSP)
       target_compile_definitions(imgui PRIVATE IMGUI_DISABLE_DEFAULT_SHELL_FUNCTIONS)
+      target_link_libraries(isle PRIVATE pspfpu)
     endif()
     find_path(valgrind_INCLUDE_PATH NAMES valgrind/callgrind.h)
     if(valgrind_INCLUDE_PATH)
@@ -742,6 +743,7 @@ if(MSVC)
   set(CPACK_GENERATOR ZIP)
 elseif(PSP)
     # Create an EBOOT.PBP file
+    set(BUILD_PRX 1)
     create_pbp_file(
         TARGET ${PROJECT_NAME}
         ICON_PATH "${CMAKE_SOURCE_DIR}/XMB/Game/ICON0.png"

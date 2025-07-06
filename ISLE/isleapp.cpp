@@ -58,6 +58,10 @@
 #include "3ds/config.h"
 #endif
 
+#ifdef PSP
+#include <pspfpu.h>
+#endif
+
 DECOMP_SIZE_ASSERT(IsleApp, 0x8c)
 
 // GLOBAL: ISLE 0x410030
@@ -126,6 +130,10 @@ IsleApp::IsleApp()
 	m_gameStarted = FALSE;
 	m_frameDelta = 10;
 	m_windowActive = TRUE;
+
+#ifdef PSP
+	pspFpuSetEnable(0);
+#endif
 
 #ifdef COMPAT_MODE
 	{
