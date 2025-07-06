@@ -52,7 +52,7 @@ public:
 	SDL_Cursor* GetCursorNo() { return m_cursorNo; }
 	MxS32 GetDrawCursor() { return m_drawCursor; }
 	MxS32 GetGameStarted() { return m_gameStarted; }
-	MxFloat GetMouseSensitivity() { return m_mouseSensitivity; }
+	MxFloat GetCursorSensitivity() { return m_cursorSensitivity; }
 
 	void SetWindowActive(MxS32 p_windowActive) { m_windowActive = p_windowActive; }
 	void SetGameStarted(MxS32 p_gameStarted) { m_gameStarted = p_gameStarted; }
@@ -60,6 +60,7 @@ public:
 	MxResult ParseArguments(int argc, char** argv);
 	MxResult VerifyFilesystem();
 	void DetectGameVersion();
+	void MoveVirtualMouseViaJoystick();
 
 private:
 	char* m_hdPath;              // 0x00
@@ -94,7 +95,7 @@ private:
 	const CursorBitmap* m_cursorNoBitmap;
 	const CursorBitmap* m_cursorCurrentBitmap;
 	char* m_mediaPath;
-	MxFloat m_mouseSensitivity;
+	MxFloat m_cursorSensitivity;
 
 	char* m_iniPath;
 	MxFloat m_maxLod;

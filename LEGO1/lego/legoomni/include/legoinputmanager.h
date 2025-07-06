@@ -166,7 +166,7 @@ private:
 	const bool* m_keyboardState;
 	MxBool m_unk0x195; // 0x195
 	SDL_JoystickID* m_joyids;
-	SDL_Joystick* m_joystick;
+	SDL_Gamepad* m_joystick;
 	MxS32 m_joystickIndex; // 0x19c
 	MxBool m_useJoystick;  // 0x334
 	MxBool m_unk0x335;     // 0x335

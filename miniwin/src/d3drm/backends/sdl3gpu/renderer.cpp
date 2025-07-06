@@ -1009,7 +1009,7 @@ void Direct3DRMSDL3GPURenderer::Download(SDL_Surface* target)
 	}
 
 	SDL_Surface* renderedImage =
-		SDL_CreateSurfaceFrom(width, height, SDL_PIXELFORMAT_ARGB8888, downloadedData, width * 4);
+		SDL_CreateSurfaceFrom(width, height, SDL_PIXELFORMAT_XRGB8888, downloadedData, width * 4);
 
 	SDL_BlitSurfaceScaled(renderedImage, nullptr, target, nullptr, SDL_SCALEMODE_NEAREST);
 	SDL_DestroySurface(renderedImage);

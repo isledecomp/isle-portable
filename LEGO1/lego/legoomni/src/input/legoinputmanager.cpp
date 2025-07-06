@@ -148,24 +148,28 @@ MxResult LegoInputManager::GetNavigationKeyStates(MxU32& p_keyFlags)
 // FUNCTION: LEGO1 0x1005c240
 MxResult LegoInputManager::GetJoystick()
 {
-	if (m_joystick != NULL && SDL_JoystickConnected(m_joystick) == TRUE) {
+	if (m_joystick != NULL && SDL_GamepadConnected(m_joystick) == TRUE) {
 		return SUCCESS;
 	}
 
 	MxS32 numJoysticks = 0;
-	m_joyids = SDL_GetJoysticks(&numJoysticks);
+	if (m_joyids != NULL) {
+		SDL_free(m_joyids);
+		m_joyids = NULL;
+	}
+	m_joyids = SDL_GetGamepads(&numJoysticks);
 
 	if (m_useJoystick != FALSE && numJoysticks != 0) {
 		MxS32 joyid = m_joystickIndex;
 		if (joyid >= 0) {
-			m_joystick = SDL_OpenJoystick(m_joyids[joyid]);
+			m_joystick = SDL_OpenGamepad(m_joyids[joyid]);
 			if (m_joystick != NULL) {
 				return SUCCESS;
 			}
 		}
 
 		for (joyid = 0; joyid < numJoysticks; joyid++) {
-			m_joystick = SDL_OpenJoystick(m_joyids[joyid]);
+			m_joystick = SDL_OpenGamepad(m_joyids[joyid]);
 			if (m_joystick != NULL) {
 				return SUCCESS;
 			}
@@ -182,58 +186,27 @@ MxResult LegoInputManager::GetJoystickState(MxU32* p_joystickX, MxU32* p_joystic
 		if (GetJoystick() == -1) {
 			if (m_joystick != NULL) {
 				// GetJoystick() failed but handle to joystick is still open, close it
-				SDL_CloseJoystick(m_joystick);
+				SDL_CloseGamepad(m_joystick);
 				m_joystick = NULL;
 			}
 
 			return FAILURE;
 		}
 
-#ifdef WINDOWS_STORE
-		MxS16 xPos = SDL_GetJoystickAxis(m_joystick, 1);
-		MxS16 yPos = -SDL_GetJoystickAxis(m_joystick, 0);
-#else
-		MxS16 xPos = SDL_GetJoystickAxis(m_joystick, 0);
-		MxS16 yPos = SDL_GetJoystickAxis(m_joystick, 1);
-#endif
-		MxU8 hatPos = SDL_GetJoystickHat(m_joystick, 0);
+		MxS16 xPos = SDL_GetGamepadAxis(m_joystick, SDL_GAMEPAD_AXIS_LEFTX);
+		MxS16 yPos = SDL_GetGamepadAxis(m_joystick, SDL_GAMEPAD_AXIS_LEFTY);
+		if (xPos > -8000 && xPos < 8000) {
+			// Ignore small axis values
+			xPos = 0;
+		}
+		if (yPos > -8000 && yPos < 8000) {
+			// Ignore small axis values
+			yPos = 0;
+		}
 
 		// normalize values acquired from joystick axes
 		*p_joystickX = ((xPos + 32768) * 100) / 65535;
 		*p_joystickY = ((yPos + 32768) * 100) / 65535;
-
-		switch (hatPos) {
-		case SDL_HAT_CENTERED:
-			*p_povPosition = (MxU32) -1;
-			break;
-		case SDL_HAT_UP:
-			*p_povPosition = (MxU32) 0;
-			break;
-		case SDL_HAT_RIGHT:
-			*p_povPosition = (MxU32) 9000 / 100;
-			break;
-		case SDL_HAT_DOWN:
-			*p_povPosition = (MxU32) 18000 / 100;
-			break;
-		case SDL_HAT_LEFT:
-			*p_povPosition = (MxU32) 27000 / 100;
-			break;
-		case SDL_HAT_RIGHTUP:
-			*p_povPosition = (MxU32) 4500 / 100;
-			break;
-		case SDL_HAT_RIGHTDOWN:
-			*p_povPosition = (MxU32) 13500 / 100;
-			break;
-		case SDL_HAT_LEFTUP:
-			*p_povPosition = (MxU32) 31500 / 100;
-			break;
-		case SDL_HAT_LEFTDOWN:
-			*p_povPosition = (MxU32) 22500 / 100;
-			break;
-		default:
-			*p_povPosition = (MxU32) -1;
-			break;
-		}
 
 		return SUCCESS;
 	}
