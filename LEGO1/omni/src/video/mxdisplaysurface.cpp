@@ -52,7 +52,7 @@ void MxDisplaySurface::ClearScreen()
 	DDSURFACEDESC desc;
 
 	if (!m_videoParam.Flags().GetFlipSurfaces()) {
-		backBuffers = 1;
+		backBuffers = 2;
 	}
 	else {
 		backBuffers = m_videoParam.GetBackBuffers() + 1;
@@ -79,6 +79,17 @@ void MxDisplaySurface::ClearScreen()
 
 		if (m_videoParam.Flags().GetFlipSurfaces()) {
 			m_ddSurface1->Flip(NULL, DDFLIP_WAIT);
+		}
+		else {
+			DDBLTFX data;
+			memset(&data, 0, sizeof(data));
+			data.dwSize = sizeof(data);
+			data.dwDDFX = DDBLTFX_NOTEARING;
+
+			if (m_ddSurface1->Blt(NULL, m_ddSurface2, NULL, DDBLT_NONE, &data) == DDERR_SURFACELOST) {
+				m_ddSurface1->Restore();
+				m_ddSurface1->Blt(NULL, m_ddSurface2, NULL, DDBLT_NONE, &data);
+			}
 		}
 	}
 }
