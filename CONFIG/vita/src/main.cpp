@@ -1,3 +1,5 @@
+#define stdarg_before_paf 1
+#include <stdarg.h>
 #include <paf.h>
 #include <psp2/kernel/clib.h>
 
