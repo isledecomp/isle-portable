@@ -161,6 +161,7 @@ private:
 	Vertex2D* quadVertices[GXM_VERTEX_BUFFER_COUNT];
 	uint16_t* quadIndices;
 	int quadsUsed = 0;
+	bool cleared = false;
 
 	SceGxmNotification vertexNotifications[GXM_VERTEX_BUFFER_COUNT];
 	SceGxmNotification fragmentNotifications[GXM_FRAGMENT_BUFFER_COUNT];

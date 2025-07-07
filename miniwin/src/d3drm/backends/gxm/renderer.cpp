@@ -1424,6 +1424,7 @@ void GXMRenderer::StartScene()
 	sceGxmSetCullMode(gxm->context, SCE_GXM_CULL_CCW);
 	gxm->sceneStarted = true;
 	this->quadsUsed = 0;
+	this->cleared = false;
 
 	sceGxmNotificationWait(&this->vertexNotifications[this->currentVertexBufferIndex]);
 	sceGxmNotificationWait(&this->fragmentNotifications[this->currentFragmentBufferIndex]);
@@ -1554,6 +1555,7 @@ void GXMRenderer::Clear(float r, float g, float b)
 {
 	this->StartScene();
 	gxm->clear(r, g, b, false);
+	this->cleared = true;
 }
 
 void GXMRenderer::Flip()
@@ -1579,6 +1581,10 @@ void GXMRenderer::Flip()
 void GXMRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect, FColor color)
 {
 	this->StartScene();
+	if(!this->cleared) {
+		gxm->clear(0,0,0, false);
+		this->cleared = true;
+	}
 
 #ifdef DEBUG
 	char marker[256];
