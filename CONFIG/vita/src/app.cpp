@@ -1,6 +1,7 @@
-#define stdarg_before_paf 1
+// clang-format off
 #include <stdarg.h>
 #include <paf.h>
+// clang-format on
 #include <psp2/kernel/clib.h>
 #include <psp2/kernel/modulemgr.h>
 #include <psp2/kernel/processmgr.h>
