@@ -455,11 +455,6 @@
           <string>Unknown - Broken</string>
          </property>
         </item>
-        <item>
-         <property name="text">
-          <string>Fake Mosaic</string>
-         </property>
-        </item>
        </widget>
       </item>
       <item>
