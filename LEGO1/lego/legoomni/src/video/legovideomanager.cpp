@@ -353,6 +353,11 @@ MxResult LegoVideoManager::Tickle()
 		}
 	}
 	else if (m_fullScreenMovie) {
+		DDBLTFX ddbltfx = {};
+		ddbltfx.dwSize = sizeof(DDBLTFX);
+		ddbltfx.dwFillColor = 0xFF000000;
+		m_displaySurface->GetDirectDrawSurface2()->Blt(NULL, NULL, NULL, DDBLT_COLORFILL | DDBLT_WAIT, &ddbltfx);
+
 		MxPresenter* presenter;
 		MxPresenterListCursor cursor(m_presenters);
 
