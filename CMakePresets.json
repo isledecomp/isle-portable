@@ -26,12 +26,21 @@
                 "CMAKE_BUILD_TYPE": "Debug"
             }
         },
+
+        {
+            "name": "mingw64",
+            "inherits": ["release"],
+            "toolchainFile": "CMake/cmake-toolchain-mingw64-x86_64.cmake"
+        },
+        {
+            "name": "mingw64-debug",
+            "inherits": ["mingw64", "debug"]
+        },
+
         {
             "name": "vita",
             "inherits": ["release"],
-            "cacheVariables": {
-                "CMAKE_TOOLCHAIN_FILE": "$env{VITASDK}/share/vita.toolchain.cmake"
-            }
+            "toolchainFile": "$env{VITASDK}/share/vita.toolchain.cmake"
         },
         {
             "name": "vita-debug",

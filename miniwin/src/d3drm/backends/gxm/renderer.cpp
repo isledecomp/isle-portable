@@ -1581,8 +1581,8 @@ void GXMRenderer::Flip()
 void GXMRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect, FColor color)
 {
 	this->StartScene();
-	if(!this->cleared) {
-		gxm->clear(0,0,0, false);
+	if (!this->cleared) {
+		gxm->clear(0, 0, 0, false);
 		this->cleared = true;
 	}
 

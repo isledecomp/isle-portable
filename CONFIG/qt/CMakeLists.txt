@@ -37,7 +37,7 @@ if(WIN32)
     install(CODE "message(STATUS \"Running windeployqt with minimal dependencies\")
       execute_process(COMMAND \"${WINDEPLOYQT_EXECUTABLE}\"
         \"$<TARGET_FILE:isle-config>\"
-        --dir QTLibs
+        --dir ${CMAKE_CURRENT_BINARY_DIR}/QTLibs
         --no-compiler-runtime
         --no-opengl-sw
         --no-system-d3d-compiler
@@ -45,7 +45,7 @@ if(WIN32)
         --no-quick-import
       )"
     )
-    install(DIRECTORY "Build/QTLibs/" DESTINATION "${CMAKE_INSTALL_BINDIR}")
+    install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/QTLibs/" DESTINATION "${CMAKE_INSTALL_BINDIR}")
   else()
     message(STATUS "windeployqt not found: Qt binaries will not be installed")
   endif()
