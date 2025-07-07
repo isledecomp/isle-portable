@@ -83,7 +83,7 @@ MxResult LegoWorld::Create(MxDSAction& p_dsAction)
 		}
 
 		SetCurrentWorld(this);
-		ControlManager()->FUN_10028df0(&m_controlPresenters);
+		ControlManager()->SetPresenterList(&m_controlPresenters);
 	}
 
 	SetIsWorldActive(TRUE);
@@ -98,7 +98,7 @@ void LegoWorld::Destroy(MxBool p_fromDestructor)
 	m_destroyed = TRUE;
 
 	if (CurrentWorld() == this) {
-		ControlManager()->FUN_10028df0(NULL);
+		ControlManager()->SetPresenterList(NULL);
 		SetCurrentWorld(NULL);
 	}
 
@@ -724,7 +724,7 @@ void LegoWorld::Enable(MxBool p_enable)
 		}
 
 		SetCurrentWorld(this);
-		ControlManager()->FUN_10028df0(&m_controlPresenters);
+		ControlManager()->SetPresenterList(&m_controlPresenters);
 		InputManager()->SetCamera(m_cameraController);
 
 		if (m_cameraController) {
@@ -781,7 +781,7 @@ void LegoWorld::Enable(MxBool p_enable)
 		}
 
 		if (CurrentWorld() && CurrentWorld() == this) {
-			ControlManager()->FUN_10028df0(NULL);
+			ControlManager()->SetPresenterList(NULL);
 			Lego()->SetCurrentWorld(NULL);
 		}
 

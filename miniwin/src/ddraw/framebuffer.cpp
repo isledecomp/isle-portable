@@ -171,12 +171,14 @@ HRESULT FrameBufferImpl::Lock(LPRECT lpDestRect, DDSURFACEDESC* lpDDSurfaceDesc,
 	if (!DDRenderer) {
 		return DDERR_GENERIC;
 	}
+
+	m_readOnlyLock = (dwFlags & DDLOCK_READONLY) == DDLOCK_READONLY;
+
 	if ((dwFlags & DDLOCK_WRITEONLY) == DDLOCK_WRITEONLY) {
-		SDL_Rect rect = {0, 0, m_transferBuffer->m_surface->w, m_transferBuffer->m_surface->h};
 		const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(m_transferBuffer->m_surface->format);
 		SDL_Palette* palette = m_palette ? static_cast<DirectDrawPaletteImpl*>(m_palette)->m_palette : nullptr;
 		Uint32 color = SDL_MapRGBA(details, palette, 0, 0, 0, 0);
-		SDL_FillSurfaceRect(m_transferBuffer->m_surface, &rect, color);
+		SDL_FillSurfaceRect(m_transferBuffer->m_surface, nullptr, color);
 	}
 	else {
 		DDRenderer->Download(m_transferBuffer->m_surface);
@@ -224,7 +226,9 @@ HRESULT FrameBufferImpl::SetPalette(LPDIRECTDRAWPALETTE lpDDPalette)
 HRESULT FrameBufferImpl::Unlock(LPVOID lpSurfaceData)
 {
 	m_transferBuffer->Unlock(lpSurfaceData);
-	BltFast(0, 0, m_transferBuffer, nullptr, DDBLTFAST_WAIT);
+	if (!m_readOnlyLock) {
+		BltFast(0, 0, m_transferBuffer, nullptr, DDBLTFAST_WAIT);
+	}
 
 	return DD_OK;
 }

@@ -17,10 +17,10 @@ DECOMP_SIZE_ASSERT(LegoNotifyListCursor, 0x10)
 DECOMP_SIZE_ASSERT(LegoEventQueue, 0x18)
 
 // GLOBAL: LEGO1 0x100f31b0
-MxS32 g_unk0x100f31b0 = -1;
+MxS32 g_clickedObjectId = -1;
 
 // GLOBAL: LEGO1 0x100f31b4
-const char* g_unk0x100f31b4 = NULL;
+const char* g_clickedAtom = NULL;
 
 // GLOBAL: LEGO1 0x100f67b8
 MxBool g_unk0x100f67b8 = TRUE;
@@ -207,6 +207,7 @@ MxResult LegoInputManager::GetJoystickState(MxU32* p_joystickX, MxU32* p_joystic
 		// normalize values acquired from joystick axes
 		*p_joystickX = ((xPos + 32768) * 100) / 65535;
 		*p_joystickY = ((yPos + 32768) * 100) / 65535;
+		*p_povPosition = -1;
 
 		return SUCCESS;
 	}
@@ -353,23 +354,23 @@ MxBool LegoInputManager::ProcessOneEvent(LegoEventNotificationParam& p_param)
 					if (presenter->GetDisplayZ() < 0) {
 						processRoi = FALSE;
 
-						if (m_controlManager->FUN_10029210(p_param, presenter)) {
+						if (m_controlManager->HandleButtonDown(p_param, presenter)) {
 							return TRUE;
 						}
 					}
 					else {
 						LegoROI* roi = PickROI(p_param.GetX(), p_param.GetY());
 
-						if (roi == NULL && m_controlManager->FUN_10029210(p_param, presenter)) {
+						if (roi == NULL && m_controlManager->HandleButtonDown(p_param, presenter)) {
 							return TRUE;
 						}
 					}
 				}
 			}
 			else if (p_param.GetNotification() == c_notificationButtonUp) {
-				if (g_unk0x100f31b0 != -1 || m_controlManager->GetUnknown0x10() ||
-					m_controlManager->GetUnknown0x0c() == 1) {
-					MxBool result = m_controlManager->FUN_10029210(p_param, NULL);
+				if (g_clickedObjectId != -1 || m_controlManager->IsSecondButtonDown() ||
+					m_controlManager->HandleUpNextTickle() == 1) {
+					MxBool result = m_controlManager->HandleButtonDown(p_param, NULL);
 					StopAutoDragTimer();
 
 					m_unk0x80 = FALSE;
@@ -521,8 +522,8 @@ void LegoInputManager::StopAutoDragTimer()
 void LegoInputManager::EnableInputProcessing()
 {
 	m_unk0x88 = FALSE;
-	g_unk0x100f31b0 = -1;
-	g_unk0x100f31b4 = NULL;
+	g_clickedObjectId = -1;
+	g_clickedAtom = NULL;
 }
 
 MxResult LegoInputManager::GetNavigationTouchStates(MxU32& p_keyStates)

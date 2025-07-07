@@ -637,5 +637,51 @@ void Citro3DRenderer::SetDither(bool dither)
 
 void Citro3DRenderer::Download(SDL_Surface* target)
 {
-	MINIWIN_NOT_IMPLEMENTED();
+	u16 width, height;
+	u8* fb = gfxGetFramebuffer(GFX_BOTTOM, GFX_LEFT, &width, &height);
+	if (!fb) {
+		SDL_Log("Failed to get framebuffer");
+		return;
+	}
+
+	SDL_Surface* srcSurface = SDL_CreateSurfaceFrom(width, height, SDL_PIXELFORMAT_BGR24, fb, width * 3);
+	if (!srcSurface) {
+		SDL_Log("SDL_CreateSurfaceFrom failed: %s", SDL_GetError());
+		return;
+	}
+
+	SDL_Surface* convertedSurface = SDL_ConvertSurface(srcSurface, target->format);
+	SDL_DestroySurface(srcSurface);
+	if (!convertedSurface) {
+		SDL_Log("SDL_ConvertSurface failed: %s", SDL_GetError());
+		return;
+	}
+
+	int rotatedWidth = height;
+	int rotatedHeight = width;
+	SDL_Surface* rotatedSurface = SDL_CreateSurface(rotatedWidth, rotatedHeight, target->format);
+	if (!rotatedSurface) {
+		SDL_Log("SDL_CreateSurface failed: %s", SDL_GetError());
+		SDL_DestroySurface(convertedSurface);
+		return;
+	}
+
+	Uint32* srcPixels = (Uint32*) convertedSurface->pixels;
+	Uint32* dstPixels = (Uint32*) rotatedSurface->pixels;
+	for (int y = 0; y < height; ++y) {
+		for (int x = 0; x < width; ++x) {
+			Uint32 pixel = srcPixels[y * width + x];
+			int newX = y;
+			int newY = width - 1 - x;
+			dstPixels[newY * rotatedWidth + newX] = pixel;
+		}
+	}
+
+	SDL_DestroySurface(convertedSurface);
+
+	SDL_Rect srcRect = {0, 0, rotatedSurface->w, rotatedSurface->h};
+	SDL_Rect dstRect = {0, 0, target->w, target->h};
+	SDL_BlitSurfaceScaled(rotatedSurface, &srcRect, target, &dstRect, SDL_SCALEMODE_NEAREST);
+
+	SDL_DestroySurface(rotatedSurface);
 }

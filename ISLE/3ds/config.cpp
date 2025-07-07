@@ -16,7 +16,4 @@ void N3DS_SetupDefaultConfigOverrides(dictionary* p_dictionary)
 	// TODO: Save path: can we use libctru FS save data functions? Would be neat, especially for CIA install
 	// Extra / at the end causes some issues
 	iniparser_set(p_dictionary, "isle:savepath", "sdmc:/3ds/isle");
-
-	// Use e_noAnimation/cut transition
-	iniparser_set(p_dictionary, "isle:Transition Type", "7");
 }

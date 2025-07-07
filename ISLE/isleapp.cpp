@@ -58,6 +58,10 @@
 #include "3ds/config.h"
 #endif
 
+#ifdef WINDOWS_STORE
+#include "xbox_one_series/config.h"
+#endif
+
 #ifdef PSP
 #include <pspfpu.h>
 #endif
@@ -96,8 +100,13 @@ MxS32 g_reqEnableRMDevice = FALSE;
 
 MxFloat g_lastJoystickMouseX = 0;
 MxFloat g_lastJoystickMouseY = 0;
-MxFloat g_lastMouseX = 0;
-MxFloat g_lastMouseY = 0;
+MxFloat g_lastMouseX = 320;
+MxFloat g_lastMouseY = 240;
+
+bool g_dpadUp = false;
+bool g_dpadDown = false;
+bool g_dpadLeft = false;
+bool g_dpadRight = false;
 
 // STRING: ISLE 0x4101dc
 #define WINDOW_TITLE "LEGO®"
@@ -400,11 +409,6 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 	return SDL_APP_CONTINUE;
 }
 
-static bool dpadUp = false;
-static bool dpadDown = false;
-static bool dpadLeft = false;
-static bool dpadRight = false;
-
 SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 {
 	if (!g_isle) {
@@ -481,16 +485,16 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 	case SDL_EVENT_GAMEPAD_BUTTON_DOWN: {
 		switch (event->gbutton.button) {
 		case SDL_GAMEPAD_BUTTON_DPAD_UP:
-			dpadUp = true;
+			g_dpadUp = true;
 			break;
 		case SDL_GAMEPAD_BUTTON_DPAD_DOWN:
-			dpadDown = true;
+			g_dpadDown = true;
 			break;
 		case SDL_GAMEPAD_BUTTON_DPAD_LEFT:
-			dpadLeft = true;
+			g_dpadLeft = true;
 			break;
 		case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
-			dpadRight = true;
+			g_dpadRight = true;
 			break;
 		case SDL_GAMEPAD_BUTTON_EAST:
 			g_mousedown = TRUE;
@@ -523,16 +527,16 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 	case SDL_EVENT_GAMEPAD_BUTTON_UP: {
 		switch (event->gbutton.button) {
 		case SDL_GAMEPAD_BUTTON_DPAD_UP:
-			dpadUp = false;
+			g_dpadUp = false;
 			break;
 		case SDL_GAMEPAD_BUTTON_DPAD_DOWN:
-			dpadDown = false;
+			g_dpadDown = false;
 			break;
 		case SDL_GAMEPAD_BUTTON_DPAD_LEFT:
-			dpadLeft = false;
+			g_dpadLeft = false;
 			break;
 		case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
-			dpadRight = false;
+			g_dpadRight = false;
 			break;
 		case SDL_GAMEPAD_BUTTON_EAST:
 			g_mousedown = FALSE;
@@ -562,7 +566,7 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 			g_lastJoystickMouseY = ((MxFloat) axisValue) / SDL_JOYSTICK_AXIS_MAX * g_isle->GetCursorSensitivity();
 		}
 		else if (event->gaxis.axis == SDL_GAMEPAD_AXIS_RIGHT_TRIGGER) {
-			if (axisValue != 0) {
+			if (axisValue != 0 && !g_mousedown) {
 				g_mousedown = TRUE;
 
 				if (InputManager()) {
@@ -575,7 +579,7 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 					);
 				}
 			}
-			else {
+			else if (axisValue == 0 && g_mousedown) {
 				g_mousedown = FALSE;
 
 				if (InputManager()) {
@@ -809,7 +813,7 @@ MxResult IsleApp::SetupWindow()
 	SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, g_targetHeight);
 	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_FULLSCREEN_BOOLEAN, m_fullScreen);
 	SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, WINDOW_TITLE);
-#if defined(MINIWIN) && !defined(__3DS__)
+#if defined(MINIWIN) && !defined(__3DS__) && !defined(WINDOWS_STORE)
 	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 #ifndef __PSP__
@@ -992,6 +996,9 @@ bool IsleApp::LoadConfig()
 
 #ifdef __3DS__
 		N3DS_SetupDefaultConfigOverrides(dict);
+#endif
+#ifdef WINDOWS_STORE
+		XBONE_SetupDefaultConfigOverrides(dict);
 #endif
 		iniparser_dump_ini(dict, iniFP);
 		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "New config written at '%s'", iniConfig);
@@ -1347,24 +1354,22 @@ IDirect3DRMMiniwinDevice* GetD3DRMMiniwinDevice()
 	return d3drmMiniwinDev;
 }
 
-const float DPAD_MOUSE_SPEED = 3.0f;
-
 void IsleApp::MoveVirtualMouseViaJoystick()
 {
 	float dpadX = 0.0f;
 	float dpadY = 0.0f;
 
-	if (dpadLeft) {
-		dpadX -= DPAD_MOUSE_SPEED;
+	if (g_dpadLeft) {
+		dpadX -= m_cursorSensitivity;
 	}
-	if (dpadRight) {
-		dpadX += DPAD_MOUSE_SPEED;
+	if (g_dpadRight) {
+		dpadX += m_cursorSensitivity;
 	}
-	if (dpadUp) {
-		dpadY -= DPAD_MOUSE_SPEED;
+	if (g_dpadUp) {
+		dpadY -= m_cursorSensitivity;
 	}
-	if (dpadDown) {
-		dpadY += DPAD_MOUSE_SPEED;
+	if (g_dpadDown) {
+		dpadY += m_cursorSensitivity;
 	}
 
 	// Use joystick axis if non-zero, else fall back to dpad
