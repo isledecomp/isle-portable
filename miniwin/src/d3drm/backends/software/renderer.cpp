@@ -800,9 +800,17 @@ void Direct3DRMSoftwareRenderer::Draw2DImage(
 		return;
 	}
 
+	bool isUpscaling = centeredRect.w > srcRect.w || centeredRect.h > srcRect.h;
+
 	SDL_Surface* surface = m_textures[textureId].cached;
 	SDL_UnlockSurface(surface);
-	SDL_BlitSurfaceScaled(surface, &srcRect, m_renderedImage, &centeredRect, SDL_SCALEMODE_LINEAR);
+	SDL_BlitSurfaceScaled(
+		surface,
+		&srcRect,
+		m_renderedImage,
+		&centeredRect,
+		isUpscaling ? SDL_SCALEMODE_NEAREST : SDL_SCALEMODE_LINEAR
+	);
 	SDL_LockSurface(surface);
 }
 
