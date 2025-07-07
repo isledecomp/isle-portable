@@ -39,23 +39,17 @@ option(ISLE_BUILD_APP "Build isle application" ON)
 option(ISLE_ASAN "Enable Address Sanitizer" OFF)
 option(ISLE_UBSAN "Enable Undefined Behavior Sanitizer" OFF)
 option(ISLE_WERROR "Treat warnings as errors" OFF)
-option(ISLE_DEBUG "Enable imgui debug" ON)
+cmake_dependent_option(ISLE_DEBUG "Enable imgui debug" ON "NOT VITA" OFF)
 cmake_dependent_option(ISLE_USE_DX5 "Build with internal DirectX 5 SDK" "${NOT_MINGW}" "WIN32;CMAKE_SIZEOF_VOID_P EQUAL 4" OFF)
 cmake_dependent_option(ISLE_MINIWIN "Use miniwin" ON "NOT ISLE_USE_DX5" OFF)
 cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "MSVC OR ISLE_MINIWIN;NOT NINTENDO_3DS;NOT WINDOWS_STORE;NOT VITA" OFF)
 cmake_dependent_option(ISLE_COMPILE_SHADERS "Compile shaders" ON "SDL_SHADERCROSS_BIN;TARGET Python3::Interpreter" OFF)
-option(CMAKE_POSITION_INDEPENDENT_CODE "Build with -fPIC" ON)
+cmake_dependent_option(CMAKE_POSITION_INDEPENDENT_CODE "Build with -fPIC" ON "NOT VITA" OFF)
 option(ENABLE_CLANG_TIDY "Enable clang-tidy")
 option(DOWNLOAD_DEPENDENCIES "Download dependencies" ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}" CACHE PATH "Directory where to put executables and dll")
 set(ISLE_EMSCRIPTEN_HOST "" CACHE STRING "Host URL for Emscripten streaming (e.g., https://test.com)")
-cmake_dependent_option(BUILD_SHARED_LIBS "Build lego1 as a shared library" ON "NOT EMSCRIPTEN" OFF)
-
-if(VITA)
-  set(BUILD_SHARED_LIBS OFF)
-  set(ISLE_DEBUG OFF)
-  set(CMAKE_POSITION_INDEPENDENT_CODE OFF)
-endif()
+cmake_dependent_option(BUILD_SHARED_LIBS "Build lego1 as a shared library" ON "NOT EMSCRIPTEN;NOT VITA" OFF)
 
 message(STATUS "Isle app:               ${ISLE_BUILD_APP}")
 message(STATUS "Config app:             ${ISLE_BUILD_CONFIG}")
@@ -86,14 +80,7 @@ if (DOWNLOAD_DEPENDENCIES)
         EXCLUDE_FROM_ALL
     )
   endif()
-
-  block()
-    if(VITA)
-      set(SDL_RENDER OFF)
-      set(SDL_GPU OFF)
-    endif()
-    FetchContent_MakeAvailable(SDL3)
-  endblock()
+  FetchContent_MakeAvailable(SDL3)
 
   FetchContent_Declare(
     iniparser
@@ -172,12 +159,7 @@ target_link_directories(DirectX5::DirectX5 INTERFACE "${CMAKE_SOURCE_DIR}/3rdpar
 add_library(Vec::Vec INTERFACE IMPORTED)
 target_include_directories(Vec::Vec INTERFACE "${CMAKE_SOURCE_DIR}/3rdparty/vec")
 
-set(LIBRARY_TYPE "STATIC")
-if(BUILD_SHARED_LIBS)
-  set(LIBRARY_TYPE "SHARED")
-endif()
-
-add_library(lego1 ${LIBRARY_TYPE}
+add_library(lego1
   LEGO1/main.cpp
 )
 target_precompile_headers(lego1 PRIVATE "LEGO1/lego1_pch.h")
@@ -611,35 +593,7 @@ if (ISLE_BUILD_APP)
 endif()
 
 if (ISLE_BUILD_CONFIG)
-  find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
-  qt_standard_project_setup()
-  qt_add_executable(isle-config WIN32
-    LEGO1/mxdirectx/mxdirectxinfo.cpp
-    LEGO1/mxdirectx/legodxinfo.cpp
-    CONFIG/config.cpp
-    CONFIG/AboutDlg.cpp
-    CONFIG/MainDlg.cpp
-    CONFIG/detectdx5.cpp
-    CONFIG/res/config.rc
-    CONFIG/res/config.qrc
-  )
-  target_link_libraries(isle-config PRIVATE Qt6::Core Qt6::Widgets)
-  set_property(TARGET isle-config PROPERTY AUTOMOC ON)
-  set_property(TARGET isle-config PROPERTY AUTORCC ON)
-  set_property(TARGET isle-config PROPERTY AUTOUIC ON)
-  set_property(TARGET isle-config PROPERTY AUTOUIC_SEARCH_PATHS "${CMAKE_CURRENT_SOURCE_DIR}/CONFIG/res")
-  list(APPEND isle_targets isle-config)
-  target_compile_definitions(isle-config PRIVATE _AFXDLL MXDIRECTX_FOR_CONFIG)
-  target_include_directories(isle-config PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/LEGO1")
-  target_include_directories(isle-config PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/util>")
-  if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 14)
-    target_link_libraries(isle-config PRIVATE DirectX5::DirectX5)
-  endif()
-  target_compile_definitions(isle-config PRIVATE DIRECT3D_VERSION=0x500)
-  target_link_libraries(isle-config PRIVATE SDL3::SDL3 Isle::iniparser)
-  if (NOT ISLE_MINIWIN)
-    target_link_libraries(isle-config PRIVATE ddraw dxguid)
-  endif()
+  add_subdirectory(CONFIG/qt)
 endif()
 
 if (ISLE_MINIWIN)
@@ -734,30 +688,6 @@ if (NOT (NINTENDO_3DS OR WINDOWS_STORE))
     LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
   )
 endif()
-if (ISLE_BUILD_CONFIG)
-  if(WIN32)
-    find_program(WINDEPLOYQT_EXECUTABLE windeployqt)
-    if(WINDEPLOYQT_EXECUTABLE)
-      install(CODE "message(STATUS \"Running windeployqt with minimal dependencies\")
-        execute_process(COMMAND \"${WINDEPLOYQT_EXECUTABLE}\"
-          \"$<TARGET_FILE:isle-config>\"
-          --dir QTLibs
-          --no-compiler-runtime
-          --no-opengl-sw
-          --no-system-d3d-compiler
-          --no-translations
-          --no-quick-import
-        )"
-      )
-      install(DIRECTORY "Build/QTLibs/" DESTINATION "${CMAKE_INSTALL_BINDIR}")
-    else()
-      message(STATUS "windeployqt not found: Qt binaries will not be installed")
-    endif()
-  endif()
-  install(TARGETS isle-config
-    RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
-  )
-endif()
 if(EMSCRIPTEN)
   install(FILES "$<TARGET_FILE_DIR:isle>/isle.js" "$<TARGET_FILE_DIR:isle>/isle.wasm"
     DESTINATION "${CMAKE_INSTALL_BINDIR}"
@@ -793,17 +723,17 @@ endif()
 if(VITA)
   include("${VITASDK}/share/vita.cmake" REQUIRED)
 
-  include(CONFIG_vita/CONFIG_vita.cmake)
+  add_subdirectory(CONFIG/vita)
 
   set(ISLE_PACKAGE_NAME "vita-isle")
   set(VITA_APP_NAME "Lego Island")
   set(VITA_TITLEID  "LEGO00001")
   set(VITA_VERSION  "01.00")
-  
+
   vita_create_self(isle.self isle UNSAFE)
 
-  list(APPEND VPK_FILE_ARGS FILE ${CMAKE_CURRENT_BINARY_DIR}/isle-config.self isle-config.self)
-  list(APPEND VPK_FILE_ARGS FILE ${CMAKE_CURRENT_BINARY_DIR}/config_plugin.rco config_plugin.rco)
+  list(APPEND VPK_FILE_ARGS FILE ${ISLE_CONFIG_SELF} isle-config.self)
+  list(APPEND VPK_FILE_ARGS FILE ${ISLE_CONFIG_RCO} config_plugin.rco)
 
   list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/icon0.png sce_sys/icon0.png)
   list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/pic0.png sce_sys/pic0.png)
@@ -842,7 +772,6 @@ if(VITA)
   list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/manual/026.png sce_sys/manual/026.png)
   list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/manual/027.png sce_sys/manual/027.png)
   list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/manual/028.png sce_sys/manual/028.png)
-
 
   vita_create_vpk(isle.vpk ${VITA_TITLEID} isle.self
     VERSION ${VITA_VERSION}

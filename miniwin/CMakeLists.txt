@@ -34,7 +34,7 @@ target_compile_definitions(miniwin PRIVATE
 list(APPEND GRAPHICS_BACKENDS USE_SOFTWARE_RENDER)
 list(APPEND GRAPHICS_BACKENDS USE_SDL_GPU)
 
-if(NOT VITA AND NOT WINDOWS_STORE)
+if(NOT (VITA OR WINDOWS_STORE))
   find_package(OpenGL)
     if(OpenGL_FOUND)
       message(STATUS "Found OpenGL: enabling OpenGL 1.x renderer")

@@ -1,4 +1,9 @@
-# config app
+cmake_minimum_required(VERSION 3.25...4.0 FATAL_ERROR)
+
+project(isle-config LANGUAGES CXX C VERSION 0.1)
+
+include("${VITASDK}/share/vita.cmake" REQUIRED)
+
 include(FetchContent)
 FetchContent_Declare(
   ScePaf_External
@@ -7,8 +12,12 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(ScePaf_External)
 
 add_executable(isle-config
-  ${CMAKE_CURRENT_LIST_DIR}/src/app.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/src/main.cpp
+  src/app.cpp
+  src/main.cpp
+)
+
+set_target_properties(isle-config PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
 
 target_compile_options(isle-config PRIVATE
@@ -34,7 +43,7 @@ target_link_libraries(isle-config PRIVATE
 block()
   set(VITA_MAKE_FSELF_FLAGS "${VITA_MAKE_FSELF_FLAGS} -a 0x2F00000000000101")
   vita_create_self(isle-config.self isle-config
-    CONFIG CONFIG_vita/exports.yml
+    CONFIG exports.yml
     UNSAFE
     STRIPPED
     REL_OPTIMIZE
@@ -42,4 +51,7 @@ block()
 endblock()
 
 include(${scepaf_external_SOURCE_DIR}/rco.cmake)
-make_rco(${CMAKE_CURRENT_LIST_DIR}/cxml/config_plugin.xml config_plugin.rco)
+make_rco(cxml/config_plugin.xml config_plugin.rco)
+
+set(ISLE_CONFIG_SELF ${CMAKE_CURRENT_BINARY_DIR}/isle-config.self PARENT_SCOPE)
+set(ISLE_CONFIG_RCO ${CMAKE_CURRENT_BINARY_DIR}/config_plugin.rco PARENT_SCOPE)
