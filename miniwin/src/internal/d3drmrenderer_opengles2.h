@@ -72,7 +72,11 @@ private:
 	bool m_dirty = false;
 	std::vector<SceneLight> m_lights;
 	SDL_GLContext m_context;
+	GLuint m_fbo;
+	GLuint m_colorTarget;
+	GLuint m_depthTarget;
 	GLuint m_shaderProgram;
+	GLuint m_dummyTexture;
 	GLint m_posLoc;
 	GLint m_normLoc;
 	GLint m_texLoc;
