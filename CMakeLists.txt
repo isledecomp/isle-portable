@@ -707,6 +707,7 @@ if (NOT (NINTENDO_3DS OR WINDOWS_STORE))
   install(TARGETS isle ${install_extra_targets}
     RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
     LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+    BUNDLE DESTINATION "."
   )
 endif()
 if (ISLE_BUILD_CONFIG)
@@ -731,6 +732,7 @@ if (ISLE_BUILD_CONFIG)
   endif()
   install(TARGETS isle-config
     RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+    BUNDLE DESTINATION "."
   )
 endif()
 if(EMSCRIPTEN)
@@ -767,6 +769,8 @@ if(WINDOWS_STORE)
 endif()
 if(MSVC)
   set(CPACK_GENERATOR ZIP)
+elseif(APPLE)
+  set(CPACK_GENERATOR DragNDrop)
 else()
   set(CPACK_GENERATOR TGZ)
 endif()
