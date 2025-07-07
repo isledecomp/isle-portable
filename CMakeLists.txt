@@ -744,16 +744,51 @@ add_subdirectory(packaging)
 set(CPACK_PACKAGE_DIRECTORY "dist")
 set(CPACK_PACKAGE_FILE_NAME "isle-${PROJECT_VERSION}-${ISLE_PACKAGE_NAME}")
 if(NINTENDO_3DS)
+  find_program(BANNERTOOL bannertool)
+  find_program(MAKEROM makerom)
+
   ctr_generate_smdh(isle.smdh
     NAME "LEGO Island"
     TITLE "LEGO Island"
     DESCRIPTION "LEGO Island for the Nintendo 3DS"
     AUTHOR "isledecomp/isle-portable"
     VERSION "${PROJECT_VERSION}"
-    ICON "ISLE/res/3ds/isle.png"
+    ICON "ISLE/res/3ds/icon.png"
   )
 
   ctr_create_3dsx(isle SMDH isle.smdh)
+  if(BANNERTOOL AND MAKEROM)
+    add_custom_command(
+      OUTPUT "isle.bnr"
+      COMMAND "${BANNERTOOL}" makebanner
+        -i "${CMAKE_SOURCE_DIR}/ISLE/res/3ds/banner.png"
+        -a "${CMAKE_SOURCE_DIR}/ISLE/res/3ds/banner.wav"
+        -o "isle.bnr"
+      DEPENDS "${CMAKE_SOURCE_DIR}/ISLE/res/3ds/banner.png" "${CMAKE_SOURCE_DIR}/ISLE/res/3ds/banner.wav"
+      VERBATIM
+    )
+
+    add_custom_command(
+      OUTPUT "isle.cia"
+      COMMAND "${MAKEROM}"
+        -f cia
+        -exefslogo
+        -o "isle.cia"
+        -rsf "${CMAKE_SOURCE_DIR}/ISLE/res/3ds/template.rsf"
+        -major "${CMAKE_PROJECT_VERSION_MAJOR}"
+        -minor "${CMAKE_PROJECT_VERSION_MINOR}"
+        -micro 0
+        -icon "isle.smdh"
+        -banner "isle.bnr"
+        -elf "isle.elf"
+      DEPENDS "${CMAKE_SOURCE_DIR}/ISLE/res/3ds/template.rsf" "isle.smdh" "isle.bnr"
+      COMMENT "Building CIA executable target isle.cia"
+      VERBATIM
+    )
+
+    add_custom_target("isle_cia" ALL DEPENDS "isle.cia" isle)
+    install(FILES "$<TARGET_FILE_DIR:isle>/isle.cia" DESTINATION "${CMAKE_INSTALL_BINDIR}")
+  endif()
   install(FILES "$<TARGET_FILE_DIR:isle>/isle.3dsx" DESTINATION "${CMAKE_INSTALL_BINDIR}")
 endif()
 if(WINDOWS_STORE)
