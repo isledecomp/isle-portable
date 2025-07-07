@@ -24,6 +24,7 @@ DetectTargetCPUArchitectures(ISLE_CPUS)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_DISABLE_PRECOMPILE_HEADERS ON)
 
 if (NOT MINGW)
   set(NOT_MINGW ON)
@@ -482,8 +483,13 @@ if (NOT ISLE_MINIWIN)
 endif()
 
 if (ISLE_BUILD_APP)
-  add_executable(isle WIN32
-    ISLE/res/isle.rc
+  if(ANDROID)
+    add_library(isle SHARED)
+  else()
+    add_executable(isle WIN32)
+    target_sources(isle PRIVATE ISLE/res/isle.rc)
+  endif()
+  target_sources(isle PRIVATE
     ISLE/isleapp.cpp
     ISLE/islefiles.cpp
     ${CMAKE_SOURCE_DIR}/ISLE/res/arrow_bmp.h
@@ -544,6 +550,9 @@ if (ISLE_BUILD_APP)
       ISLE/3ds/apthooks.cpp
       ISLE/3ds/config.cpp
     )
+  endif()
+  if(ANDROID)
+    target_sources(isle PRIVATE ISLE/android/config.cpp)
   endif()
   if(WINDOWS_STORE)
     target_sources(isle PRIVATE

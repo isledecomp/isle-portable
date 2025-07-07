@@ -10,23 +10,23 @@
     <!-- Touchscreen support -->
     <uses-feature
         android:name="android.hardware.touchscreen"
-        android:required="false" />
+        android:required="true" />
 
     <!-- Game controller support -->
     <uses-feature
         android:name="android.hardware.bluetooth"
-        android:required="false" />
+        android:required="true" />
     <uses-feature
         android:name="android.hardware.gamepad"
-        android:required="false" />
+        android:required="true" />
     <uses-feature
         android:name="android.hardware.usb.host"
-        android:required="false" />
+        android:required="true" />
 
     <!-- External mouse input events -->
     <uses-feature
         android:name="android.hardware.type.pc"
-        android:required="false" />
+        android:required="true" />
 
     <!-- Audio recording support -->
     <!-- if you want to record audio, uncomment this. -->
@@ -77,11 +77,12 @@
         <meta-data android:name="SDL_ENV.SDL_ANDROID_TRAP_BACK_BUTTON" android:value="0"/>
          -->
 
-        <activity android:name="SDLActivity"
+        <activity android:name="org.legoisland.Isle.IsleSDLActivity"
             android:label="@string/app_name"
             android:alwaysRetainTaskState="true"
             android:launchMode="singleInstance"
             android:configChanges="layoutDirection|locale|grammaticalGender|fontScale|fontWeightAdjustment|orientation|uiMode|screenLayout|screenSize|smallestScreenSize|keyboard|keyboardHidden|navigation"
+            android:screenOrientation="landscape"
             android:preferMinimalPostProcessing="true"
             android:exported="true"
             >
