@@ -474,6 +474,13 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		}
 		break;
 	}
+	case SDL_EVENT_GAMEPAD_ADDED:
+	case SDL_EVENT_GAMEPAD_REMOVED: {
+		if (InputManager()) {
+			InputManager()->GetJoystick();
+		}
+		break;
+	}
 	case SDL_EVENT_GAMEPAD_BUTTON_DOWN: {
 		switch (event->gbutton.button) {
 		case SDL_GAMEPAD_BUTTON_DPAD_UP:
