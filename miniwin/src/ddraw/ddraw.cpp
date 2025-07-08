@@ -311,11 +311,11 @@ HRESULT DirectDrawImpl::SetCooperativeLevel(HWND hWnd, DDSCLFlags dwFlags)
 			return DDERR_INVALIDPARAMS;
 		}
 
-		if (!SDL_SetWindowFullscreen(sdlWindow, fullscreen)) {
 #ifndef __EMSCRIPTEN__
+		if (!SDL_SetWindowFullscreen(sdlWindow, fullscreen)) {
 			return DDERR_GENERIC;
-#endif
 		}
+#endif
 		DDWindow = sdlWindow;
 	}
 	return DD_OK;
