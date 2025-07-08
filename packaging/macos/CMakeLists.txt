@@ -47,6 +47,11 @@ if(ISLE_BUILD_CONFIG)
     MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_BINARY_DIR}/config/Info.plist"
     RESOURCE ${RESOURCE_FILES})
   install(TARGETS isle-config DESTINATION ./)
+  install(CODE "
+    include(BundleUtilities)
+    fixup_bundle(${CMAKE_BINARY_DIR}/${MACOSX_CONFIG_BUNDLE_NAME}.app \"\" \"\")
+    "
+    COMPONENT Runtime)
   qt_generate_deploy_app_script(
     TARGET isle-config
     OUTPUT_SCRIPT deploy_script
@@ -54,4 +59,14 @@ if(ISLE_BUILD_CONFIG)
     NO_TRANSLATIONS
   )
   install(SCRIPT "${deploy_script}")
+  install(CODE "
+    execute_process(COMMAND /usr/bin/install_name_tool
+      -add_rpath \"@executable_path/../Frameworks\"
+      \"\$\{CMAKE_INSTALL_PREFIX\}/isle-config.app/Contents/MacOS/isle-config\")
+  ")
+  install(CODE "
+    execute_process(COMMAND /usr/bin/codesign
+      --force --deep --sign - --timestamp
+      \"\$\{CMAKE_INSTALL_PREFIX\}/isle-config.app/Contents/MacOS/isle-config\")
+  ")
 endif()
