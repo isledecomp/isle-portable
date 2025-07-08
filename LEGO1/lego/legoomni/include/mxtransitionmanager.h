@@ -48,8 +48,7 @@ public:
 		e_mosaic,
 		e_wipeDown,
 		e_windows,
-		e_broken, // Unknown what this is supposed to be, it locks the game up
-		e_fakeMosaic
+		e_broken // Unknown what this is supposed to be, it locks the game up
 	};
 
 	MxResult StartTransition(TransitionType p_animationType, MxS32 p_speed, MxBool p_doCopy, MxBool p_playMusicInAnim);
@@ -69,7 +68,6 @@ private:
 	void WipeDownTransition();
 	void WindowsTransition();
 	void BrokenTransition();
-	void FakeMosaicTransition();
 
 	void SubmitCopyRect(LPDDSURFACEDESC p_ddsc);
 	void SetupCopyRect(LPDDSURFACEDESC p_ddsc);
