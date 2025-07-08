@@ -819,11 +819,11 @@ elseif(PSP)
     set(BUILD_PRX 1)
     create_pbp_file(
         TARGET ${PROJECT_NAME}
-        ICON_PATH "${CMAKE_SOURCE_DIR}/XMB/Game/ICON0.png"
-        ANIM_PATH "${CMAKE_SOURCE_DIR}/XMB/Game/ICON1.pmf"
-        BACKGROUND_PATH "${CMAKE_SOURCE_DIR}/XMB/Game/PIC1.png"
+        ICON_PATH "${CMAKE_SOURCE_DIR}/ISLE/res/psp/Game/ICON0.png"
+        ANIM_PATH "${CMAKE_SOURCE_DIR}/ISLE/res/psp/Game/ICON1.pmf"
+        BACKGROUND_PATH "${CMAKE_SOURCE_DIR}/ISLE/res/psp/Game/PIC1.png"
         PREVIEW_PATH NULL
-        MUSIC_PATH "${CMAKE_SOURCE_DIR}/XMB/Game/SND0.at3"
+        MUSIC_PATH "${CMAKE_SOURCE_DIR}/ISLE/res/psp/Game/SND0.at3"
         TITLE ${PROJECT_NAME}
         VERSION 01.00
     )
