@@ -532,6 +532,7 @@ if (ISLE_BUILD_APP)
   endif()
   if(EMSCRIPTEN)
     target_sources(isle PRIVATE
+      ISLE/emscripten/config.cpp
       ISLE/emscripten/events.cpp
       ISLE/emscripten/filesystem.cpp
       ISLE/emscripten/messagebox.cpp
