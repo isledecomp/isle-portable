@@ -2,9 +2,11 @@ set(_icon_file AppIcon)
 set(MACOSX_BUNDLE_GUI_IDENTIFIER ${APP_ID})
 set(MACOSX_BUNDLE_COPYRIGHT ${APP_SPDX})
 set(ISLE_TARGET_NAME isle)
+set(MACOSX_ISLE_BUNDLE_NAME ${APP_NAME}) # Do note that it can be up to 15 characters long
 set(MACOSX_ISLE_BUNDLE_DISPLAY_NAME ${APP_NAME})
 set(CONFIG_TARGET_NAME isle-config)
-set(MACOSX_CONFIG_BUNDLE_DISPLAY_NAME "Configure LEGO Island")
+set(MACOSX_CONFIG_BUNDLE_NAME "Config Isle") # Do note that it can be up to 15 characters long
+set(MACOSX_CONFIG_BUNDLE_DISPLAY_NAME "Configure ${APP_NAME}")
 set(MACOSX_BUNDLE_INFO_STRING ${PROJECT_VERSION})
 set(MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION})
 set(MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION})
@@ -38,6 +40,11 @@ if(ISLE_BUILD_APP)
     execute_process(COMMAND /usr/bin/codesign
       --force --deep --sign - --timestamp
       \"\$\{CMAKE_INSTALL_PREFIX\}/${ISLE_TARGET_NAME}.app/Contents/MacOS/${ISLE_TARGET_NAME}\")
+  ")
+  install(CODE "
+    file(RENAME
+      \"\$\{CMAKE_INSTALL_PREFIX\}/${ISLE_TARGET_NAME}.app\"
+      \"\$\{CMAKE_INSTALL_PREFIX\}/${MACOSX_ISLE_BUNDLE_DISPLAY_NAME}.app\")
   ")
 endif()
 if(ISLE_BUILD_CONFIG)
@@ -75,6 +82,11 @@ if(ISLE_BUILD_CONFIG)
     execute_process(COMMAND /usr/bin/codesign
       --force --deep --sign - --timestamp
       \"\$\{CMAKE_INSTALL_PREFIX\}/${CONFIG_TARGET_NAME}.app/Contents/MacOS/${CONFIG_TARGET_NAME}\")
+  ")
+  install(CODE "
+    file(RENAME
+      \"\$\{CMAKE_INSTALL_PREFIX\}/${CONFIG_TARGET_NAME}.app\"
+      \"\$\{CMAKE_INSTALL_PREFIX\}/${MACOSX_CONFIG_BUNDLE_DISPLAY_NAME}.app\")
   ")
 endif()
 
