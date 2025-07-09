@@ -48,6 +48,7 @@
 #include <time.h>
 
 #ifdef __EMSCRIPTEN__
+#include "emscripten/config.h"
 #include "emscripten/events.h"
 #include "emscripten/filesystem.h"
 #include "emscripten/messagebox.h"
@@ -1033,19 +1034,15 @@ bool IsleApp::LoadConfig()
 	}
 
 #ifdef __EMSCRIPTEN__
-	const char* hdPath = Emscripten_bundledPath;
-#else
-	const char* hdPath = iniparser_getstring(dict, "isle:diskpath", SDL_GetBasePath());
+	Emscripten_SetupDefaultConfigOverrides(dict);
 #endif
+
+	const char* hdPath = iniparser_getstring(dict, "isle:diskpath", SDL_GetBasePath());
 	m_hdPath = new char[strlen(hdPath) + 1];
 	strcpy(m_hdPath, hdPath);
 	MxOmni::SetHD(m_hdPath);
 
-#ifdef __EMSCRIPTEN__
-	const char* cdPath = Emscripten_streamPath;
-#else
 	const char* cdPath = iniparser_getstring(dict, "isle:cdpath", MxOmni::GetCD());
-#endif
 	m_cdPath = new char[strlen(cdPath) + 1];
 	strcpy(m_cdPath, cdPath);
 	MxOmni::SetCD(m_cdPath);
@@ -1055,13 +1052,7 @@ bool IsleApp::LoadConfig()
 	strcpy(m_mediaPath, mediaPath);
 
 	m_flipSurfaces = iniparser_getboolean(dict, "isle:Flip Surfaces", m_flipSurfaces);
-
-#ifdef __EMSCRIPTEN__
-	m_fullScreen = FALSE;
-#else
 	m_fullScreen = iniparser_getboolean(dict, "isle:Full Screen", m_fullScreen);
-#endif
-
 	m_wideViewAngle = iniparser_getboolean(dict, "isle:Wide View Angle", m_wideViewAngle);
 	m_use3dSound = iniparser_getboolean(dict, "isle:3DSound", m_use3dSound);
 	m_useMusic = iniparser_getboolean(dict, "isle:Music", m_useMusic);
@@ -1101,11 +1092,7 @@ bool IsleApp::LoadConfig()
 	// [library:config]
 	// The original game does not save any data if no savepath is given.
 	// Instead, we use SDLs prefPath as a default fallback and always save data.
-#ifdef __EMSCRIPTEN__
-	const char* savePath = Emscripten_savePath;
-#else
 	const char* savePath = iniparser_getstring(dict, "isle:savepath", prefPath);
-#endif
 	m_savePath = new char[strlen(savePath) + 1];
 	strcpy(m_savePath, savePath);
 

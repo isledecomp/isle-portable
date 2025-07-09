@@ -24,3 +24,8 @@ endif()
 if(WINDOWS_STORE)
     add_subdirectory(UWP)
 endif()
+
+if(APPLE AND NOT IOS)
+    add_subdirectory(macos)
+endif()
+

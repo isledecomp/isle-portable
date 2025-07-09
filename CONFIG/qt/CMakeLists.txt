@@ -52,6 +52,7 @@ if(WIN32)
 endif()
 install(TARGETS isle-config
   RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+  BUNDLE DESTINATION "."
 )
 
 set(isle_targets ${isle_targets};isle-config PARENT_SCOPE)

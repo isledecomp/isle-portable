@@ -157,6 +157,7 @@ void Direct3DRMDevice2Impl::Resize()
 #endif
 	m_viewportTransform = CalculateViewportTransform(m_virtualWidth, m_virtualHeight, m_windowWidth, m_windowHeight);
 	m_renderer->Resize(m_windowWidth, m_windowHeight, m_viewportTransform);
+	m_renderer->Clear(0, 0, 0);
 	for (int i = 0; i < m_viewports->GetSize(); i++) {
 		IDirect3DRMViewport* viewport;
 		m_viewports->GetElement(i, &viewport);
