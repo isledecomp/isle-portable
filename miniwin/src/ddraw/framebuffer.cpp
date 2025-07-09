@@ -143,7 +143,7 @@ HRESULT FrameBufferImpl::GetPalette(LPDIRECTDRAWPALETTE* lplpDDPalette)
 HRESULT FrameBufferImpl::GetPixelFormat(LPDDPIXELFORMAT lpDDPixelFormat)
 {
 	memset(lpDDPixelFormat, 0, sizeof(*lpDDPixelFormat));
-	lpDDPixelFormat->dwFlags = DDPF_RGB;
+	lpDDPixelFormat->dwFlags = DDPF_RGB | DDPF_ALPHAPIXELS;
 	const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(m_transferBuffer->m_surface->format);
 	if (details->bits_per_pixel == 8) {
 		lpDDPixelFormat->dwFlags |= DDPF_PALETTEINDEXED8;

@@ -106,13 +106,27 @@ HRESULT DirectDrawImpl::CreateSurface(
 #endif
 	if ((lpDDSurfaceDesc->dwFlags & DDSD_PIXELFORMAT) == DDSD_PIXELFORMAT) {
 		if ((lpDDSurfaceDesc->ddpfPixelFormat.dwFlags & DDPF_RGB) == DDPF_RGB) {
-			switch (lpDDSurfaceDesc->ddpfPixelFormat.dwRGBBitCount) {
-			case 8:
-				format = SDL_PIXELFORMAT_INDEX8;
-				break;
-			case 16:
-				format = SDL_PIXELFORMAT_RGB565;
-				break;
+			int bpp = lpDDSurfaceDesc->ddpfPixelFormat.dwRGBBitCount;
+			Uint32 rMask = lpDDSurfaceDesc->ddpfPixelFormat.dwRBitMask;
+			Uint32 gMask = lpDDSurfaceDesc->ddpfPixelFormat.dwGBitMask;
+			Uint32 bMask = lpDDSurfaceDesc->ddpfPixelFormat.dwBBitMask;
+			Uint32 aMask = (lpDDSurfaceDesc->ddpfPixelFormat.dwFlags & DDPF_ALPHAPIXELS) == DDPF_ALPHAPIXELS
+							   ? lpDDSurfaceDesc->ddpfPixelFormat.dwRGBAlphaBitMask
+							   : 0;
+
+			if (rMask == 0 && gMask == 0 && bMask == 0) {
+				if (bpp == 16) {
+					format = SDL_PIXELFORMAT_RGB565;
+				}
+				else if (bpp == 8) {
+					format = SDL_PIXELFORMAT_INDEX8;
+				}
+			}
+			else {
+				format = SDL_GetPixelFormatForMasks(bpp, rMask, gMask, bMask, aMask);
+				if (format == SDL_PIXELFORMAT_UNKNOWN) {
+					return DDERR_INVALIDPIXELFORMAT;
+				}
 			}
 		}
 	}
@@ -168,7 +182,7 @@ HRESULT DirectDrawImpl::EnumDisplayModes(
 		ddsd.dwWidth = modes[i]->w;
 		ddsd.dwHeight = modes[i]->h;
 		ddsd.ddpfPixelFormat.dwSize = sizeof(DDPIXELFORMAT);
-		ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB;
+		ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB | DDPF_ALPHAPIXELS;
 		ddsd.ddpfPixelFormat.dwRGBBitCount = details->bits_per_pixel;
 		if (details->bits_per_pixel == 8) {
 			ddsd.ddpfPixelFormat.dwFlags |= DDPF_PALETTEINDEXED8;
@@ -271,7 +285,7 @@ HRESULT DirectDrawImpl::GetDisplayMode(LPDDSURFACEDESC lpDDSurfaceDesc)
 	lpDDSurfaceDesc->dwWidth = mode->w;
 	lpDDSurfaceDesc->dwHeight = mode->h;
 	lpDDSurfaceDesc->ddpfPixelFormat.dwRGBBitCount = details->bits_per_pixel;
-	lpDDSurfaceDesc->ddpfPixelFormat.dwFlags = DDPF_RGB;
+	lpDDSurfaceDesc->ddpfPixelFormat.dwFlags = DDPF_RGB | DDPF_ALPHAPIXELS;
 	if (details->bits_per_pixel == 8) {
 		lpDDSurfaceDesc->ddpfPixelFormat.dwFlags |= DDPF_PALETTEINDEXED8;
 	}

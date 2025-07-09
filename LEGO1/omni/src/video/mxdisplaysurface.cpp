@@ -827,6 +827,7 @@ LPDIRECTDRAWSURFACE MxDisplaySurface::VTable0x44(
 	ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH | DDSD_PIXELFORMAT;
 	ddsd.dwWidth = p_bitmap->GetBmiWidth();
 	ddsd.dwHeight = p_bitmap->GetBmiHeightAbs();
+	ddsd.ddpfPixelFormat = m_surfaceDesc.ddpfPixelFormat;
 	ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
 	*p_ret = 0;
 	ddsd.ddsCaps.dwCaps |= DDSCAPS_SYSTEMMEMORY;

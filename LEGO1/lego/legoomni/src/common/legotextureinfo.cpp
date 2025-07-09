@@ -56,16 +56,87 @@ LegoTextureInfo* LegoTextureInfo::Create(const char* p_name, LegoTexture* p_text
 		strcpy(textureInfo->m_name, p_name);
 	}
 
-	LPDIRECTDRAW pDirectDraw = VideoManager()->GetDirect3D()->DirectDraw();
-	LegoImage* image = p_texture->GetImage();
-
 	DDSURFACEDESC desc;
 	memset(&desc, 0, sizeof(desc));
 	desc.dwSize = sizeof(desc);
 	desc.dwFlags = DDSD_PIXELFORMAT | DDSD_WIDTH | DDSD_HEIGHT | DDSD_CAPS;
+	desc.ddsCaps.dwCaps = DDSCAPS_TEXTURE | DDSCAPS_SYSTEMMEMORY;
+	desc.ddpfPixelFormat.dwSize = sizeof(desc.ddpfPixelFormat);
+
+	LPDIRECTDRAW pDirectDraw = VideoManager()->GetDirect3D()->DirectDraw();
+
+	// Attempt to load HD texture
+	std::string hdPath = std::string(MxOmni::GetHD()) + "/textures/" + std::string(p_name) + ".bmp";
+	SDL_Surface* hdSurface = SDL_LoadBMP(hdPath.c_str());
+	if (hdSurface) {
+		const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(hdSurface->format);
+		desc.dwWidth = hdSurface->w;
+		desc.dwHeight = hdSurface->h;
+		desc.ddpfPixelFormat.dwFlags = DDPF_RGB | DDPF_ALPHAPIXELS;
+		desc.ddpfPixelFormat.dwRGBBitCount = details->bits_per_pixel == 8 ? 24 : details->bits_per_pixel;
+		desc.ddpfPixelFormat.dwRBitMask = details->Rmask;
+		desc.ddpfPixelFormat.dwGBitMask = details->Gmask;
+		desc.ddpfPixelFormat.dwBBitMask = details->Bmask;
+		desc.ddpfPixelFormat.dwRGBAlphaBitMask = details->Amask;
+
+		if (pDirectDraw->CreateSurface(&desc, &textureInfo->m_surface, NULL) != DD_OK) {
+			SDL_DestroySurface(hdSurface);
+			return NULL;
+		}
+
+		memset(&desc, 0, sizeof(desc));
+		desc.dwSize = sizeof(desc);
+
+		if (textureInfo->m_surface->Lock(NULL, &desc, DDLOCK_SURFACEMEMORYPTR | DDLOCK_WRITEONLY, NULL) != DD_OK) {
+			SDL_DestroySurface(hdSurface);
+			return NULL;
+		}
+
+		MxU8* dst = (MxU8*) desc.lpSurface;
+		Uint8* srcPixels = (Uint8*) hdSurface->pixels;
+
+		if (details->bits_per_pixel == 8) {
+			SDL_Palette* palette = SDL_GetSurfacePalette(hdSurface);
+			if (palette) {
+				for (int y = 0; y < hdSurface->h; ++y) {
+					Uint8* srcRow = srcPixels + y * hdSurface->pitch;
+					Uint8* dstRow = dst + y * desc.lPitch;
+					for (int x = 0; x < hdSurface->w; ++x) {
+						SDL_Color color = palette->colors[srcRow[x]];
+						dstRow[x * 3 + 0] = color.r;
+						dstRow[x * 3 + 1] = color.g;
+						dstRow[x * 3 + 2] = color.b;
+					}
+				}
+			}
+			else {
+				textureInfo->m_surface->Unlock(desc.lpSurface);
+				SDL_DestroySurface(hdSurface);
+				return NULL;
+			}
+		}
+		else {
+			memcpy(dst, srcPixels, hdSurface->pitch * hdSurface->h);
+		}
+
+		textureInfo->m_surface->Unlock(desc.lpSurface);
+		textureInfo->m_palette = NULL;
+
+		if (((TglImpl::RendererImpl*) VideoManager()->GetRenderer())
+				->CreateTextureFromSurface(textureInfo->m_surface, &textureInfo->m_texture) != D3DRM_OK) {
+			SDL_DestroySurface(hdSurface);
+			return NULL;
+		}
+
+		textureInfo->m_texture->SetAppData((LPD3DRM_APPDATA) textureInfo);
+		SDL_DestroySurface(hdSurface);
+		return textureInfo;
+	}
+
+	LegoImage* image = p_texture->GetImage();
+
 	desc.dwWidth = image->GetWidth();
 	desc.dwHeight = image->GetHeight();
-	desc.ddsCaps.dwCaps = DDSCAPS_TEXTURE | DDSCAPS_SYSTEMMEMORY;
 	desc.ddpfPixelFormat.dwSize = sizeof(desc.ddpfPixelFormat);
 	desc.ddpfPixelFormat.dwFlags = DDPF_RGB | DDPF_PALETTEINDEXED8;
 	desc.ddpfPixelFormat.dwRGBBitCount = 8;
