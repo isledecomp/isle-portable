@@ -826,7 +826,7 @@ if(VITA)
 
   add_custom_command(
     OUTPUT param.sfo
-    COMMAND ${VITA_MKSFOEX} -s APP_VER=${VITA_VERSION} -s TITLE_ID=${VITA_TITLEID} \"${VITA_APP_NAME}\" param.sfo
+    COMMAND ${VITA_MKSFOEX} -s APP_VER=${VITA_VERSION} -s TITLE_ID=${VITA_TITLEID} "${VITA_APP_NAME}" param.sfo
   )
   add_custom_target(param_sfo ALL DEPENDS param.sfo)
   add_dependencies(isle param_sfo)
