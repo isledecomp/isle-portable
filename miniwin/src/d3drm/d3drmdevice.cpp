@@ -150,14 +150,13 @@ ViewportTransform CalculateViewportTransform(int virtualW, int virtualH, int win
 
 void Direct3DRMDevice2Impl::Resize()
 {
-	int width, height;
-	SDL_GetWindowSizeInPixels(DDWindow, &width, &height);
+	SDL_GetWindowSizeInPixels(DDWindow, &m_windowWidth, &m_windowHeight);
 #ifdef __3DS__
-	width = 320; // We are on the lower screen
-	height = 240;
+	m_windowWidth = 320; // We are on the lower screen
+	m_windowHeight = 240;
 #endif
-	m_viewportTransform = CalculateViewportTransform(m_virtualWidth, m_virtualHeight, width, height);
-	m_renderer->Resize(width, height, m_viewportTransform);
+	m_viewportTransform = CalculateViewportTransform(m_virtualWidth, m_virtualHeight, m_windowWidth, m_windowHeight);
+	m_renderer->Resize(m_windowWidth, m_windowHeight, m_viewportTransform);
 	m_renderer->Clear(0, 0, 0);
 	for (int i = 0; i < m_viewports->GetSize(); i++) {
 		IDirect3DRMViewport* viewport;
@@ -183,7 +182,18 @@ bool Direct3DRMDevice2Impl::ConvertEventToRenderCoordinates(SDL_Event* event)
 		event->motion.x = static_cast<Sint32>(x);
 		event->motion.y = static_cast<Sint32>(y);
 		break;
-	} break;
+	}
+	case SDL_EVENT_FINGER_MOTION:
+	case SDL_EVENT_FINGER_DOWN:
+	case SDL_EVENT_FINGER_UP: {
+		int rawX = event->tfinger.x * m_windowWidth;
+		int rawY = event->tfinger.y * m_windowHeight;
+		float x = (rawX - m_viewportTransform.offsetX) / m_viewportTransform.scale;
+		float y = (rawY - m_viewportTransform.offsetY) / m_viewportTransform.scale;
+		event->tfinger.x = x / m_virtualWidth;
+		event->tfinger.y = y / m_virtualHeight;
+		break;
+	}
 	}
 
 	return true;

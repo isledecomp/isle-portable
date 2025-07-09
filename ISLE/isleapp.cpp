@@ -432,6 +432,9 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 	case SDL_EVENT_MOUSE_MOTION:
 	case SDL_EVENT_MOUSE_BUTTON_DOWN:
 	case SDL_EVENT_MOUSE_BUTTON_UP:
+	case SDL_EVENT_FINGER_MOTION:
+	case SDL_EVENT_FINGER_DOWN:
+	case SDL_EVENT_FINGER_UP:
 		IDirect3DRMMiniwinDevice* device = GetD3DRMMiniwinDevice();
 		if (device && !device->ConvertEventToRenderCoordinates(event)) {
 			SDL_Log("Failed to convert event coordinates: %s", SDL_GetError());
