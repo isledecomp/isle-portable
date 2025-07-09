@@ -198,3 +198,11 @@ bool Direct3DRMDevice2Impl::ConvertEventToRenderCoordinates(SDL_Event* event)
 
 	return true;
 }
+
+bool Direct3DRMDevice2Impl::ConvertRenderToWindowCoordinates(Sint32 inX, Sint32 inY, Sint32& outX, Sint32& outY)
+{
+	outX = static_cast<Sint32>(inX * m_viewportTransform.scale + m_viewportTransform.offsetX);
+	outY = static_cast<Sint32>(inY * m_viewportTransform.scale + m_viewportTransform.offsetY);
+
+	return true;
+}
