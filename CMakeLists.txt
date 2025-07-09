@@ -4,7 +4,7 @@ project(isle LANGUAGES CXX C VERSION 0.1)
 
 if (IOS)
   set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED NO)
-  set(CMAKE_OSX_DEPLOYMENT_TARGET "13.0")
+  set(CMAKE_OSX_DEPLOYMENT_TARGET "12.0")
   add_compile_definitions(IOS)
 endif()
 
