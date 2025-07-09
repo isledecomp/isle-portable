@@ -8,6 +8,7 @@ include(FetchContent)
 FetchContent_Declare(
   ScePaf_External
   URL https://github.com/olebeck/ScePaf/releases/download/continuous/ScePaf-1.0.0.zip
+  UPDATE_DISCONNECTED TRUE
 )
 FetchContent_MakeAvailable(ScePaf_External)
 
@@ -52,6 +53,3 @@ endblock()
 
 include(${scepaf_external_SOURCE_DIR}/rco.cmake)
 make_rco(cxml/config_plugin.xml config_plugin.rco)
-
-set(ISLE_CONFIG_SELF ${CMAKE_CURRENT_BINARY_DIR}/isle-config.self PARENT_SCOPE)
-set(ISLE_CONFIG_RCO ${CMAKE_CURRENT_BINARY_DIR}/config_plugin.rco PARENT_SCOPE)

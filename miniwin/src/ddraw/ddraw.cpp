@@ -4,13 +4,13 @@
 #ifdef USE_OPENGLES2
 #include "d3drmrenderer_opengles2.h"
 #endif
-#ifdef __3DS__
+#ifdef USE_CITRO3D
 #include "d3drmrenderer_citro3d.h"
 #endif
-#if defined(_WIN32) && !defined(WINDOWS_STORE)
+#if USE_DIRECTX9
 #include "d3drmrenderer_directx9.h"
 #endif
-#ifdef __vita__
+#ifdef USE_GXM
 #include "d3drmrenderer_gxm.h"
 #endif
 #ifdef USE_SDL_GPU
@@ -248,13 +248,13 @@ HRESULT DirectDrawImpl::EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 #ifdef USE_OPENGL1
 	OpenGL1Renderer_EnumDevice(cb, ctx);
 #endif
-#ifdef __3DS__
+#ifdef USE_CITRO3D
 	Citro3DRenderer_EnumDevice(cb, ctx);
 #endif
-#if defined(_WIN32) && !defined(WINDOWS_STORE)
+#ifdef USE_DIRECTX9
 	DirectX9Renderer_EnumDevice(cb, ctx);
 #endif
-#ifdef __vita__
+#ifdef USE_GXM
 	GXMRenderer_EnumDevice(cb, ctx);
 #endif
 #ifdef USE_SOFTWARE_RENDER
@@ -378,12 +378,12 @@ HRESULT DirectDrawImpl::CreateDevice(
 		DDRenderer = new Citro3DRenderer(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
 #endif
-#if defined(_WIN32) && !defined(WINDOWS_STORE)
+#ifdef USE_DIRECTX9
 	else if (SDL_memcmp(&guid, &DirectX9_GUID, sizeof(GUID)) == 0) {
 		DDRenderer = DirectX9Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
 #endif
-#ifdef __vita__
+#ifdef USE_GXM
 	else if (SDL_memcmp(&guid, &GXM_GUID, sizeof(GUID)) == 0) {
 		DDRenderer = GXMRenderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}

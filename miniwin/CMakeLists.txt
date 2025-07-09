@@ -20,11 +20,6 @@ add_library(miniwin STATIC EXCLUDE_FROM_ALL
   src/d3drm/d3drmtexture.cpp
   src/d3drm/d3drmviewport.cpp
   src/internal/meshutils.cpp
-
-  # D3DRM backends
-  src/d3drm/backends/sdl3gpu/renderer.cpp
-  src/d3drm/backends/sdl3gpu/shaders/generated/ShaderIndex.cpp
-  src/d3drm/backends/software/renderer.cpp
 )
 
 target_compile_definitions(miniwin PRIVATE
@@ -91,6 +86,7 @@ if(NINTENDO_3DS)
     ctr_add_shader_library(vshader src/d3drm/backends/citro3d/vshader.v.pica)
     dkp_add_embedded_binary_library(3ds_shaders vshader)
     target_link_libraries(miniwin PRIVATE ${CITRO3D_LIBRARY} 3ds_shaders)
+    list(APPEND GRAPHICS_BACKENDS USE_CITRO3D)
   else()
     message(STATUS "🧩 Citro3D support not enabled")
   endif()
@@ -102,10 +98,24 @@ if(WIN32 AND NOT WINDOWS_STORE)
     src/d3drm/backends/directx9/renderer.cpp
   )
   target_link_libraries(miniwin PRIVATE d3d9)
+  list(APPEND GRAPHICS_BACKENDS USE_DIRECTX9)
 endif()
 
 if(WINDOWS_STORE)
   add_compile_definitions(WINDOWS_STORE)
+endif()
+
+if(USE_SDL_GPU IN_LIST GRAPHICS_BACKENDS)
+  target_sources(miniwin PRIVATE
+    src/d3drm/backends/sdl3gpu/renderer.cpp
+    src/d3drm/backends/sdl3gpu/shaders/generated/ShaderIndex.cpp
+  )
+endif()
+
+if(USE_SOFTWARE_RENDER IN_LIST GRAPHICS_BACKENDS)
+  target_sources(miniwin PRIVATE
+    src/d3drm/backends/software/renderer.cpp
+  )
 endif()
 
 target_compile_definitions(miniwin PUBLIC MINIWIN)
@@ -119,7 +129,7 @@ target_link_libraries(miniwin PUBLIC miniwin-headers)
 
 target_link_libraries(miniwin PRIVATE SDL3::SDL3)
 
-target_compile_definitions(miniwin PRIVATE ${GRAPHICS_BACKENDS})
+target_compile_definitions(miniwin PUBLIC ${GRAPHICS_BACKENDS})
 
 
 # Shader stuff

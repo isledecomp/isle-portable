@@ -13,13 +13,13 @@
 #ifdef USE_OPENGLES2
 #include "d3drmrenderer_opengles2.h"
 #endif
-#ifdef __3DS__
+#ifdef USE_CITRO3D
 #include "d3drmrenderer_citro3d.h"
 #endif
-#ifdef _WIN32
+#ifdef USE_DIRECTX9
 #include "d3drmrenderer_directx9.h"
 #endif
-#ifdef __vita__
+#ifdef USE_GXM
 #include "d3drmrenderer_gxm.h"
 #endif
 #ifdef USE_SDL_GPU
@@ -175,17 +175,17 @@ HRESULT Direct3DRMImpl::CreateDeviceFromSurface(
 		DDRenderer = OpenGL1Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
 #endif
-#ifdef __3DS__
+#ifdef USE_CITRO3D
 	else if (SDL_memcmp(&guid, &Citro3D_GUID, sizeof(GUID)) == 0) {
 		DDRenderer = new Citro3DRenderer(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
 #endif
-#if defined(_WIN32) && !defined(WINDOWS_STORE)
+#ifdef USE_DIRECTX9
 	else if (SDL_memcmp(&guid, &DirectX9_GUID, sizeof(GUID)) == 0) {
 		DDRenderer = DirectX9Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
 #endif
-#ifdef __vita__
+#ifdef USE_GXM
 	else if (SDL_memcmp(&guid, &GXM_GUID, sizeof(GUID)) == 0) {
 		DDRenderer = GXMRenderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}

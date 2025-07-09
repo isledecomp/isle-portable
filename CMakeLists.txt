@@ -69,6 +69,7 @@ if (DOWNLOAD_DEPENDENCIES)
       SDL3
       GIT_REPOSITORY "https://github.com/Helloyunho/SDL3-uwp.git"
       GIT_TAG "main"
+      UPDATE_DISCONNECTED TRUE
       EXCLUDE_FROM_ALL
     )
   else()
@@ -86,6 +87,7 @@ if (DOWNLOAD_DEPENDENCIES)
     iniparser
     GIT_REPOSITORY "https://gitlab.com/iniparser/iniparser.git"
     GIT_TAG "main"
+    UPDATE_DISCONNECTED TRUE
     EXCLUDE_FROM_ALL
   )
   block()
@@ -711,7 +713,7 @@ endif()
 if(BUILD_SHARED_LIBS)
   list(APPEND install_extra_targets lego1)
 endif()
-if (NOT (NINTENDO_3DS OR WINDOWS_STORE))
+if (NOT (NINTENDO_3DS OR WINDOWS_STORE OR VITA))
   install(TARGETS isle ${install_extra_targets}
     RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
     LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
@@ -822,63 +824,31 @@ if(VITA)
 
   vita_create_self(isle.self isle UNSAFE)
 
-  list(APPEND VPK_FILE_ARGS FILE ${ISLE_CONFIG_SELF} isle-config.self)
-  list(APPEND VPK_FILE_ARGS FILE ${ISLE_CONFIG_RCO} config_plugin.rco)
-
-  list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/icon0.png sce_sys/icon0.png)
-  list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/pic0.png sce_sys/pic0.png)
-
-  list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/livearea/contents/bg.png sce_sys/livearea/contents/bg.png)
-  list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/livearea/contents/configure.png sce_sys/livearea/contents/configure.png)
-  list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/livearea/contents/gate.png sce_sys/livearea/contents/gate.png)
-  list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/livearea/contents/logo.png sce_sys/livearea/contents/logo.png)
-  list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/livearea/contents/template.xml sce_sys/livearea/contents/template.xml)
-
-  list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/manual/001.png sce_sys/manual/001.png)
-  list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/manual/002.png sce_sys/manual/002.png)
-  list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/manual/003.png sce_sys/manual/003.png)
-  list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/manual/004.png sce_sys/manual/004.png)
-  list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/manual/005.png sce_sys/manual/005.png)
-  list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/manual/006.png sce_sys/manual/006.png)
-  list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/manual/007.png sce_sys/manual/007.png)
-  list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/manual/008.png sce_sys/manual/008.png)
-  list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/manual/009.png sce_sys/manual/009.png)
-  list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/manual/010.png sce_sys/manual/010.png)
-  list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/manual/011.png sce_sys/manual/011.png)
-  list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/manual/012.png sce_sys/manual/012.png)
-  list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/manual/013.png sce_sys/manual/013.png)
-  list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/manual/014.png sce_sys/manual/014.png)
-  list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/manual/015.png sce_sys/manual/015.png)
-  list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/manual/016.png sce_sys/manual/016.png)
-  list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/manual/017.png sce_sys/manual/017.png)
-  list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/manual/018.png sce_sys/manual/018.png)
-  list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/manual/019.png sce_sys/manual/019.png)
-  list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/manual/020.png sce_sys/manual/020.png)
-  list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/manual/021.png sce_sys/manual/021.png)
-  list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/manual/022.png sce_sys/manual/022.png)
-  list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/manual/023.png sce_sys/manual/023.png)
-  list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/manual/024.png sce_sys/manual/024.png)
-  list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/manual/025.png sce_sys/manual/025.png)
-  list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/manual/026.png sce_sys/manual/026.png)
-  list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/manual/027.png sce_sys/manual/027.png)
-  list(APPEND VPK_FILE_ARGS FILE packaging/vita/sce_sys/manual/028.png sce_sys/manual/028.png)
-
-  vita_create_vpk(isle.vpk ${VITA_TITLEID} isle.self
-    VERSION ${VITA_VERSION}
-    NAME ${VITA_APP_NAME}
-    ${VPK_FILE_ARGS}
+  add_custom_command(
+    OUTPUT param.sfo
+    COMMAND ${VITA_MKSFOEX} -s APP_VER=${VITA_VERSION} -s TITLE_ID=${VITA_TITLEID} \"${VITA_APP_NAME}\" param.sfo
   )
-  add_dependencies(isle.vpk-vpk
-    isle-config.self-self
-    config_plugin.rco_target
-  )
+  add_custom_target(param_sfo ALL DEPENDS param.sfo)
+  add_dependencies(isle param_sfo)
+  add_dependencies(isle config_plugin.rco_target)
 
-  install(FILES "$<TARGET_FILE_DIR:isle>/isle.vpk" DESTINATION "${CMAKE_INSTALL_BINDIR}")
+  set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY OFF)
+  set(CPACK_ARCHIVE_FILE_EXTENSION "vpk")
+  set(CPACK_PACKAGE_FILE_NAME "lego-island-${PROJECT_VERSION}")
+
+  install(FILES "$<TARGET_FILE_DIR:isle>/isle.self" DESTINATION . RENAME "eboot.bin")
+  install(FILES "$<TARGET_FILE_DIR:isle-config>/isle-config.self" DESTINATION .)
+  install(FILES "$<TARGET_FILE_DIR:isle-config>/config_plugin.rco" DESTINATION .)
+  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/param.sfo" DESTINATION .)
+  install(DIRECTORY packaging/vita/sce_sys DESTINATION .)
 endif()
+
 if(MSVC)
   set(CPACK_GENERATOR ZIP)
 elseif(APPLE AND NOT IOS)
   set(CPACK_GENERATOR DragNDrop)
+elseif(VITA)
+  set(CPACK_GENERATOR ZIP)
 else()
   set(CPACK_GENERATOR TGZ)
 endif()
