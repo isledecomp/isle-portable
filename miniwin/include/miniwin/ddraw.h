@@ -143,9 +143,12 @@ enum class DDBltFlags : uint32_t {
 };
 ENABLE_BITMASK_OPERATORS(DDBltFlags)
 
+#define DDPF_ALPHAPIXELS DDPixelFormatFlags::ALPHAPIXELS
 #define DDPF_PALETTEINDEXED8 DDPixelFormatFlags::PALETTEINDEXED8
 #define DDPF_RGB DDPixelFormatFlags::RGB
+#define DDPF_ALPHAPIXELS DDPixelFormatFlags::ALPHAPIXELS
 enum class DDPixelFormatFlags : uint32_t {
+	ALPHAPIXELS = 1 << 0,     // dwRGBAlphaBitMask is valid
 	PALETTEINDEXED8 = 1 << 5, // The texture uses an 8 bit palette
 	RGB = 1 << 6,             // dwRGBBitCount, dwRBitMask, dwGBitMask, and dwBBitMask is valid
 };
