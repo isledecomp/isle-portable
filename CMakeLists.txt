@@ -2,6 +2,12 @@ cmake_minimum_required(VERSION 3.25...4.0 FATAL_ERROR)
 
 project(isle LANGUAGES CXX C VERSION 0.1)
 
+if (IOS)
+  set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED NO)
+  set(CMAKE_OSX_DEPLOYMENT_TARGET "13.0")
+  add_compile_definitions(IOS)
+endif()
+
 if (WINDOWS_STORE)
   add_compile_definitions(WINDOWS_STORE)
 endif()
@@ -551,6 +557,11 @@ if (ISLE_BUILD_APP)
       ISLE/xbox_one_series/config.cpp
     )
   endif()
+  if (IOS)
+    target_sources(isle PRIVATE
+      ISLE/ios/config.cpp
+    )
+  endif()
   if(Python3_FOUND)
     if(NOT DEFINED PYTHON_PIL_AVAILABLE)
       execute_process(
@@ -803,8 +814,12 @@ if(WINDOWS_STORE)
       PATTERN "*/*.msix"
       PATTERN "*/*.msixbundle")
 endif()
-if(MSVC)
+if(MSVC OR IOS)
   set(CPACK_GENERATOR ZIP)
+  if(IOS)
+    set(CPACK_ARCHIVE_FILE_EXTENSION ".ipa")
+    set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY OFF)
+  endif()
 elseif(APPLE AND NOT IOS)
   set(CPACK_GENERATOR DragNDrop)
 else()
