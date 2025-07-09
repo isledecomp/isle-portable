@@ -150,7 +150,8 @@ HRESULT Direct3DRMImpl::CreateDeviceFromSurface(
 	DDSDesc.dwSize = sizeof(DDSURFACEDESC);
 	surface->GetSurfaceDesc(&DDSDesc);
 
-	if (false);
+	if (false) {
+	}
 #ifdef USE_SDL_GPU
 	else if (SDL_memcmp(&guid, &SDL3_GPU_GUID, sizeof(GUID)) == 0) {
 		DDRenderer = Direct3DRMSDL3GPURenderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
