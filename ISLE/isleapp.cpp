@@ -1391,7 +1391,7 @@ void IsleApp::MoveVirtualMouseViaJoystick()
 		}
 		IDirect3DRMMiniwinDevice* device = GetD3DRMMiniwinDevice();
 		if (device) {
-			int x, y;
+			Sint32 x, y;
 			device->ConvertRenderToWindowCoordinates(g_lastMouseX, g_lastMouseY, x, y);
 			g_mouseWarped = TRUE;
 			SDL_WarpMouseInWindow(window, x, y);
