@@ -11,6 +11,8 @@ namespace Extensions
 {
 extern std::vector<std::string> enabledExtensions;
 
+constexpr const char* availableExtensions[] = {"extensions:texture loader"};
+
 LEGO1_EXPORT void Enable(const char* p_key);
 
 template <typename T>

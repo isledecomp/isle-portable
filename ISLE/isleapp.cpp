@@ -996,6 +996,13 @@ bool IsleApp::LoadConfig()
 		iniparser_set(dict, "isle:Max Allowed Extras", SDL_itoa(m_maxAllowedExtras, buf, 10));
 		iniparser_set(dict, "isle:Transition Type", SDL_itoa(m_transitionType, buf, 10));
 
+#ifdef EXTENSIONS
+		iniparser_set(dict, "extensions", NULL);
+		for (const char* key : Extensions::availableExtensions) {
+			iniparser_set(dict, key, "false");
+		}
+#endif
+
 #ifdef __3DS__
 		N3DS_SetupDefaultConfigOverrides(dict);
 #endif
