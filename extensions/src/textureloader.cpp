@@ -22,13 +22,14 @@ bool TextureLoader::PatchTexture(LegoTextureInfo* p_textureInfo)
 	desc.dwWidth = surface->w;
 	desc.dwHeight = surface->h;
 	desc.ddpfPixelFormat.dwFlags = DDPF_RGB | DDPF_ALPHAPIXELS;
-	desc.ddpfPixelFormat.dwRGBBitCount = details->bits_per_pixel == 8 ? 24 : details->bits_per_pixel;
+	desc.ddpfPixelFormat.dwRGBBitCount = details->bits_per_pixel;
 	desc.ddpfPixelFormat.dwRBitMask = details->Rmask;
 	desc.ddpfPixelFormat.dwGBitMask = details->Gmask;
 	desc.ddpfPixelFormat.dwBBitMask = details->Bmask;
 	desc.ddpfPixelFormat.dwRGBAlphaBitMask = details->Amask;
 
-	if (VideoManager()->GetDirect3D()->DirectDraw()->CreateSurface(&desc, &p_textureInfo->m_surface, NULL) != DD_OK) {
+	LPDIRECTDRAW pDirectDraw = VideoManager()->GetDirect3D()->DirectDraw();
+	if (pDirectDraw->CreateSurface(&desc, &p_textureInfo->m_surface, NULL) != DD_OK) {
 		SDL_DestroySurface(surface);
 		return false;
 	}
@@ -45,29 +46,31 @@ bool TextureLoader::PatchTexture(LegoTextureInfo* p_textureInfo)
 	Uint8* srcPixels = (Uint8*) surface->pixels;
 
 	if (details->bits_per_pixel == 8) {
-		SDL_Palette* palette = SDL_GetSurfacePalette(surface);
-		if (palette) {
-			for (int y = 0; y < surface->h; ++y) {
-				Uint8* srcRow = srcPixels + y * surface->pitch;
-				Uint8* dstRow = dst + y * desc.lPitch;
-				for (int x = 0; x < surface->w; ++x) {
-					SDL_Color color = palette->colors[srcRow[x]];
-					dstRow[x * 3 + 0] = color.r;
-					dstRow[x * 3 + 1] = color.g;
-					dstRow[x * 3 + 2] = color.b;
-				}
-			}
-		}
-		else {
-			p_textureInfo->m_surface->Unlock(desc.lpSurface);
+		SDL_Palette* sdlPalette = SDL_GetSurfacePalette(surface);
+		if (!sdlPalette) {
 			SDL_DestroySurface(surface);
 			return false;
 		}
-	}
-	else {
-		memcpy(dst, srcPixels, surface->pitch * surface->h);
+
+		PALETTEENTRY entries[256];
+		for (int i = 0; i < sdlPalette->ncolors; ++i) {
+			entries[i].peRed = sdlPalette->colors[i].r;
+			entries[i].peGreen = sdlPalette->colors[i].g;
+			entries[i].peBlue = sdlPalette->colors[i].b;
+			entries[i].peFlags = PC_NONE;
+		}
+
+		LPDIRECTDRAWPALETTE ddPalette = nullptr;
+		if (pDirectDraw->CreatePalette(DDPCAPS_8BIT | DDPCAPS_ALLOW256, entries, &ddPalette, NULL) != DD_OK) {
+			SDL_DestroySurface(surface);
+			return false;
+		}
+
+		p_textureInfo->m_surface->SetPalette(ddPalette);
+		ddPalette->Release();
 	}
 
+	memcpy(dst, srcPixels, surface->pitch * surface->h);
 	p_textureInfo->m_surface->Unlock(desc.lpSurface);
 	p_textureInfo->m_palette = NULL;
 
