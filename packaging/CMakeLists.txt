@@ -28,3 +28,7 @@ endif()
 if(APPLE AND NOT IOS)
     add_subdirectory(macos)
 endif()
+
+if(IOS)
+    add_subdirectory(ios)
+endif()
