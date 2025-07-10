@@ -625,6 +625,7 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 				0
 			);
 		}
+
 		g_lastMouseX = event->motion.x;
 		g_lastMouseY = event->motion.y;
 
@@ -643,12 +644,12 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		float x = SDL_clamp(event->tfinger.x, 0, 1) * 640;
 		float y = SDL_clamp(event->tfinger.y, 0, 1) * 480;
 
-		g_lastMouseX = x;
-		g_lastMouseY = y;
-
 		if (InputManager()) {
 			InputManager()->QueueEvent(c_notificationMouseMove, LegoEventNotificationParam::c_lButtonState, x, y, 0);
 		}
+
+		g_lastMouseX = x;
+		g_lastMouseY = y;
 
 		SDL_HideCursor();
 		g_isle->SetDrawCursor(FALSE);
@@ -686,6 +687,15 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 
 		if (InputManager()) {
 			InputManager()->QueueEvent(c_notificationButtonDown, LegoEventNotificationParam::c_lButtonState, x, y, 0);
+		}
+
+		g_lastMouseX = x;
+		g_lastMouseY = y;
+
+		SDL_HideCursor();
+		g_isle->SetDrawCursor(FALSE);
+		if (VideoManager()) {
+			VideoManager()->SetCursorBitmap(NULL);
 		}
 		break;
 	}
