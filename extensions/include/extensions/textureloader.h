@@ -7,9 +7,8 @@ namespace Extensions
 {
 class TextureLoader {
 public:
-	static constexpr const char* key = "extensions:texture loader";
-
 	static bool PatchTexture(LegoTextureInfo* p_textureInfo);
+	static bool enabled;
 
 private:
 	static constexpr const char* texturePath = "/textures/";

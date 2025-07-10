@@ -5,12 +5,9 @@
 #include <functional>
 #include <optional>
 #include <string>
-#include <vector>
 
 namespace Extensions
 {
-extern std::vector<std::string> enabledExtensions;
-
 constexpr const char* availableExtensions[] = {"extensions:texture loader"};
 
 LEGO1_EXPORT void Enable(const char* p_key);
@@ -21,7 +18,7 @@ struct Extension {
 	static auto Call(Function&& function, Args&&... args) -> std::optional<std::invoke_result_t<Function, Args...>>
 	{
 #ifdef EXTENSIONS
-		if (std::find(enabledExtensions.begin(), enabledExtensions.end(), T::key) != enabledExtensions.end()) {
+		if (T::enabled) {
 			return std::invoke(std::forward<Function>(function), std::forward<Args>(args)...);
 		}
 #endif

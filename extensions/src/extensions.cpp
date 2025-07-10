@@ -1,12 +1,19 @@
 #include "extensions/extensions.h"
 
-#include <SDL3/SDL_log.h>
+#include "extensions/textureloader.h"
 
-std::vector<std::string> Extensions::enabledExtensions;
+#include <SDL3/SDL_log.h>
 
 void Extensions::Enable(const char* p_key)
 {
-	enabledExtensions.emplace_back(p_key);
+	for (const char* key : availableExtensions) {
+		if (!SDL_strcasecmp(p_key, key)) {
+			if (!SDL_strcasecmp(p_key, "extensions:texture loader")) {
+				TextureLoader::enabled = true;
+			}
 
-	SDL_Log("Enabled extension: %s", p_key);
+			SDL_Log("Enabled extension: %s", p_key);
+			break;
+		}
+	}
 }

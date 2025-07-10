@@ -2,6 +2,8 @@
 
 using namespace Extensions;
 
+bool TextureLoader::enabled = false;
+
 bool TextureLoader::PatchTexture(LegoTextureInfo* p_textureInfo)
 {
 	SDL_Surface* surface = FindTexture(p_textureInfo->m_name);
