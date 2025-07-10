@@ -63,6 +63,10 @@
 #include "xbox_one_series/config.h"
 #endif
 
+#ifdef IOS
+#include "ios/config.h"
+#endif
+
 DECOMP_SIZE_ASSERT(IsleApp, 0x8c)
 
 // GLOBAL: ISLE 0x410030
@@ -917,7 +921,11 @@ MxResult IsleApp::SetupWindow()
 // FUNCTION: ISLE 0x4028d0
 bool IsleApp::LoadConfig()
 {
+#ifdef IOS
+	const char* prefPath = SDL_GetUserFolder(SDL_FOLDER_DOCUMENTS);
+#else
 	char* prefPath = SDL_GetPrefPath("isledecomp", "isle");
+#endif
 	char* iniConfig;
 
 #ifdef __EMSCRIPTEN__
@@ -1001,6 +1009,9 @@ bool IsleApp::LoadConfig()
 #ifdef WINDOWS_STORE
 		XBONE_SetupDefaultConfigOverrides(dict);
 #endif
+#ifdef IOS
+		IOS_SetupDefaultConfigOverrides(dict);
+#endif
 		iniparser_dump_ini(dict, iniFP);
 		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "New config written at '%s'", iniConfig);
 		fclose(iniFP);
@@ -1071,7 +1082,9 @@ bool IsleApp::LoadConfig()
 
 	iniparser_freedict(dict);
 	delete[] iniConfig;
+#ifndef IOS
 	SDL_free(prefPath);
+#endif
 
 	return true;
 }
