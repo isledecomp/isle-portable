@@ -28,6 +28,7 @@ COPY --chown=emscripten:emscripten miniwin/ ./miniwin/
 COPY --chown=emscripten:emscripten util/ ./util/
 COPY --chown=emscripten:emscripten CMake/ ./CMake/
 COPY --chown=emscripten:emscripten packaging/ ./packaging/
+COPY --chown=emscripten:emscripten extensions/ ./extensions/
 COPY --chown=emscripten:emscripten CMakeLists.txt .
 
 RUN emcmake cmake -S . -B build -DISLE_BUILD_CONFIG=OFF -DISLE_DEBUG=OFF -DCMAKE_BUILD_TYPE=Release -DISLE_EMSCRIPTEN_HOST=/assets && \
