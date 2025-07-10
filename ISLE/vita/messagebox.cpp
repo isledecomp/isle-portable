@@ -37,7 +37,7 @@ bool Vita_ShowSimpleMessageBox(SDL_MessageBoxFlags flags, const char* title, con
 	init_result = (SceCommonDialogErrorCode) sceMsgDialogInit(&param);
 	if (init_result >= 0) {
 		while (sceMsgDialogGetStatus() == SCE_COMMON_DIALOG_STATUS_RUNNING) {
-			gxm->clear(0, 0, 1, true);
+			gxm->clear(0, 0, 0, true);
 			gxm->swap_display();
 		}
 		SDL_zero(dialog_result);

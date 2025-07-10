@@ -19,6 +19,7 @@ add_library(miniwin STATIC EXCLUDE_FROM_ALL
   src/d3drm/d3drmmesh.cpp
   src/d3drm/d3drmtexture.cpp
   src/d3drm/d3drmviewport.cpp
+  src/d3drm/d3drmrenderer.cpp
   src/internal/meshutils.cpp
 )
 
@@ -49,7 +50,7 @@ if(NOT (VITA OR WINDOWS_STORE))
     target_sources(miniwin PRIVATE src/d3drm/backends/opengles2/renderer.cpp)
     list(APPEND GRAPHICS_BACKENDS USE_OPENGLES2)
     if(OPENGL_ES2_LIBRARY)
-    target_link_libraries(miniwin PRIVATE ${OPENGL_ES2_LIBRARY})
+      target_link_libraries(miniwin PRIVATE ${OPENGL_ES2_LIBRARY})
     endif()
   else()
     message(STATUS "🧩 OpenGL ES 2.x support not enabled")

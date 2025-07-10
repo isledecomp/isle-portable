@@ -60,3 +60,6 @@ protected:
 	int m_virtualWidth, m_virtualHeight;
 	ViewportTransform m_viewportTransform;
 };
+
+Direct3DRMRenderer* CreateDirect3DRMRenderer(const DDSURFACEDESC& DDSDesc, const GUID* guid);
+void Direct3DRMRenderer_EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx);
