@@ -91,7 +91,7 @@ void DuneBuggy::Exit()
 // FUNCTION: LEGO1 0x10068060
 MxLong DuneBuggy::HandleClick()
 {
-	if (!FUN_1003ef60()) {
+	if (!CanExit()) {
 		return 1;
 	}
 
