@@ -4,7 +4,7 @@
   
 This initiative is a portable version of LEGO Island (Version 1.1, English) based on the [decompilation project](https://github.com/isledecomp/isle). Our primary goal is to transform the codebase to achieve platform independence, thereby enhancing compatibility across various systems while preserving the original game's experience as faithfully as possible.
 
-Please note: this project is dedicated to achieving platform independence without altering the core gameplay, adding new features, enhancing visual quality, or rewriting code for improvement's sake. While those are worthwhile objectives, they are not within the scope of this project.
+Please note: this project is primarily dedicated to achieving platform independence without altering the core gameplay or rewriting code for improvement's sake. While those are worthwhile objectives, they are not within the scope of this project. `isle-portable` offers support for light modding using [`extensions`](/extensions). 
 
 ## Status
 

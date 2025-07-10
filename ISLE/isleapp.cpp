@@ -37,6 +37,7 @@
 #include "tgl/d3drm/impl.h"
 #include "viewmanager/viewmanager.h"
 
+#include <extensions/extensions.h>
 #include <miniwin/miniwindevice.h>
 
 #define SDL_MAIN_USE_CALLBACKS
@@ -1013,6 +1014,13 @@ bool IsleApp::LoadConfig()
 		iniparser_set(dict, "isle:Max Allowed Extras", SDL_itoa(m_maxAllowedExtras, buf, 10));
 		iniparser_set(dict, "isle:Transition Type", SDL_itoa(m_transitionType, buf, 10));
 
+#ifdef EXTENSIONS
+		iniparser_set(dict, "extensions", NULL);
+		for (const char* key : Extensions::availableExtensions) {
+			iniparser_set(dict, key, "false");
+		}
+#endif
+
 #ifdef __3DS__
 		N3DS_SetupDefaultConfigOverrides(dict);
 #endif
@@ -1088,6 +1096,18 @@ bool IsleApp::LoadConfig()
 	const char* savePath = iniparser_getstring(dict, "isle:savepath", prefPath);
 	m_savePath = new char[strlen(savePath) + 1];
 	strcpy(m_savePath, savePath);
+
+#ifdef EXTENSIONS
+	std::vector<const char*> keys;
+	keys.resize(iniparser_getsecnkeys(dict, "extensions"));
+	iniparser_getseckeys(dict, "extensions", keys.data());
+
+	for (const char* key : keys) {
+		if (iniparser_getboolean(dict, key, 0)) {
+			Extensions::Enable(key);
+		}
+	}
+#endif
 
 	iniparser_freedict(dict);
 	delete[] iniConfig;
