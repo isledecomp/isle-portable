@@ -1,17 +1,5 @@
-#ifdef USE_OPENGL1
-#include "d3drmrenderer_opengl1.h"
-#endif
-#ifdef USE_OPENGLES2
-#include "d3drmrenderer_opengles2.h"
-#endif
-#ifdef __3DS__
-#include "d3drmrenderer_citro3d.h"
-#endif
-#if defined(_WIN32) && !defined(WINDOWS_STORE)
-#include "d3drmrenderer_directx9.h"
-#endif
-#include "d3drmrenderer_sdl3gpu.h"
-#include "d3drmrenderer_software.h"
+
+#include "d3drmrenderer.h"
 #include "ddpalette_impl.h"
 #include "ddraw_impl.h"
 #include "ddsurface_impl.h"
@@ -232,21 +220,7 @@ void EnumDevice(
 
 HRESULT DirectDrawImpl::EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
-	Direct3DRMSDL3GPU_EnumDevice(cb, ctx);
-#ifdef USE_OPENGLES2
-	OpenGLES2Renderer_EnumDevice(cb, ctx);
-#endif
-#ifdef USE_OPENGL1
-	OpenGL1Renderer_EnumDevice(cb, ctx);
-#endif
-#ifdef __3DS__
-	Citro3DRenderer_EnumDevice(cb, ctx);
-#endif
-#if defined(_WIN32) && !defined(WINDOWS_STORE)
-	DirectX9Renderer_EnumDevice(cb, ctx);
-#endif
-	Direct3DRMSoftware_EnumDevice(cb, ctx);
-
+	Direct3DRMRenderer_EnumDevices(cb, ctx);
 	return S_OK;
 }
 
@@ -343,33 +317,8 @@ HRESULT DirectDrawImpl::CreateDevice(
 	DDSDesc.dwSize = sizeof(DDSURFACEDESC);
 	pBackBuffer->GetSurfaceDesc(&DDSDesc);
 
-	if (SDL_memcmp(&guid, &SDL3_GPU_GUID, sizeof(GUID)) == 0) {
-		DDRenderer = Direct3DRMSDL3GPURenderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
-	}
-#ifdef USE_OPENGLES2
-	else if (SDL_memcmp(&guid, &OpenGLES2_GUID, sizeof(GUID)) == 0) {
-		DDRenderer = OpenGLES2Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
-	}
-#endif
-#ifdef USE_OPENGL1
-	else if (SDL_memcmp(&guid, &OpenGL1_GUID, sizeof(GUID)) == 0) {
-		DDRenderer = OpenGL1Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
-	}
-#endif
-#ifdef __3DS__
-	else if (SDL_memcmp(&guid, &Citro3D_GUID, sizeof(GUID)) == 0) {
-		DDRenderer = new Citro3DRenderer(DDSDesc.dwWidth, DDSDesc.dwHeight);
-	}
-#endif
-#if defined(_WIN32) && !defined(WINDOWS_STORE)
-	else if (SDL_memcmp(&guid, &DirectX9_GUID, sizeof(GUID)) == 0) {
-		DDRenderer = DirectX9Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
-	}
-#endif
-	else if (SDL_memcmp(&guid, &SOFTWARE_GUID, sizeof(GUID)) == 0) {
-		DDRenderer = new Direct3DRMSoftwareRenderer(DDSDesc.dwWidth, DDSDesc.dwHeight);
-	}
-	else {
+	DDRenderer = CreateDirect3DRMRenderer(DDSDesc, &guid);
+	if (!DDRenderer) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Device GUID not recognized");
 		return E_NOINTERFACE;
 	}
