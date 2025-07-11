@@ -172,15 +172,23 @@ bool Direct3DRMDevice2Impl::ConvertEventToRenderCoordinates(SDL_Event* event)
 		Resize();
 		break;
 	}
-	case SDL_EVENT_MOUSE_MOTION:
-	case SDL_EVENT_MOUSE_BUTTON_DOWN:
-	case SDL_EVENT_MOUSE_BUTTON_UP: {
+	case SDL_EVENT_MOUSE_MOTION: {
 		int rawX = event->motion.x;
 		int rawY = event->motion.y;
 		float x = (rawX - m_viewportTransform.offsetX) / m_viewportTransform.scale;
 		float y = (rawY - m_viewportTransform.offsetY) / m_viewportTransform.scale;
 		event->motion.x = static_cast<Sint32>(x);
 		event->motion.y = static_cast<Sint32>(y);
+		break;
+	}
+	case SDL_EVENT_MOUSE_BUTTON_DOWN:
+	case SDL_EVENT_MOUSE_BUTTON_UP: {
+		int rawX = event->button.x;
+		int rawY = event->button.y;
+		float x = (rawX - m_viewportTransform.offsetX) / m_viewportTransform.scale;
+		float y = (rawY - m_viewportTransform.offsetY) / m_viewportTransform.scale;
+		event->button.x = static_cast<Sint32>(x);
+		event->button.y = static_cast<Sint32>(y);
 		break;
 	}
 	case SDL_EVENT_FINGER_MOTION:
