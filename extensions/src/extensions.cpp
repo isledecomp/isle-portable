@@ -1,6 +1,7 @@
 #include "extensions/extensions.h"
 
 #include "extensions/textureloader.h"
+#include "extensions/discordrpc.h"
 
 #include <SDL3/SDL_log.h>
 
@@ -10,6 +11,9 @@ void Extensions::Enable(const char* p_key)
 		if (!SDL_strcasecmp(p_key, key)) {
 			if (!SDL_strcasecmp(p_key, "extensions:texture loader")) {
 				TextureLoader::enabled = true;
+			}
+			else if (!SDL_strcasecmp(p_key, "extensions:discord rpc")) {
+				DiscordRPC::enabled = true;
 			}
 
 			SDL_Log("Enabled extension: %s", p_key);

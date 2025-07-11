@@ -166,6 +166,8 @@ bool CConfigApp::ReadRegisterSettings()
 	m_joystick_index = iniparser_getint(dict, "isle:JoystickIndex", m_joystick_index);
 	m_max_lod = iniparser_getdouble(dict, "isle:Max LOD", m_max_lod);
 	m_max_actors = iniparser_getint(dict, "isle:Max Allowed Extras", m_max_actors);
+	m_enable_discord_rpc = iniparser_getboolean(dict, "extensions:discord rpc", 0);
+	m_enable_texture_loader = iniparser_getboolean(dict, "extensions:texture loader", 0);
 	iniparser_freedict(dict);
 	return true;
 }
@@ -326,6 +328,11 @@ void CConfigApp::WriteRegisterSettings() const
 
 	iniparser_set(dict, "isle:Max LOD", std::to_string(m_max_lod).c_str());
 	SetIniInt(dict, "isle:Max Allowed Extras", m_max_actors);
+
+	// Extension toggles
+	iniparser_set(dict, "extensions", NULL);
+	iniparser_set(dict, "extensions:discord rpc", m_enable_discord_rpc ? "true" : "false");
+	iniparser_set(dict, "extensions:texture loader", m_enable_texture_loader ? "true" : "false");
 
 #undef SetIniBool
 #undef SetIniInt

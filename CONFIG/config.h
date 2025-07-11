@@ -81,6 +81,10 @@ public:
 	std::string m_save_path;
 	float m_max_lod;
 	int m_max_actors;
+
+	// Extension toggles
+	bool m_enable_discord_rpc = false;
+	bool m_enable_texture_loader = false;
 };
 
 extern CConfigApp g_theApp;

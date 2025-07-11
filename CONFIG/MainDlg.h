@@ -53,6 +53,8 @@ private slots:
 	void SavePathEdited();
 	void MaxLoDChanged(int value);
 	void MaxActorsChanged(int value);
+	void OnCheckboxDiscordRPC(bool checked);
+	void OnCheckboxTextureLoader(bool checked);
 };
 
 // SYNTHETIC: CONFIG 0x00403de0

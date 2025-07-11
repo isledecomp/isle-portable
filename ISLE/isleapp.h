@@ -62,6 +62,11 @@ public:
 	MxResult VerifyFilesystem();
 	void DetectGameVersion();
 	void MoveVirtualMouseViaJoystick();
+	
+	// Discord RPC integration
+	void InitializeDiscordRPC();
+	void UpdateDiscordRPC();
+	void ShutdownDiscordRPC();
 
 private:
 	char* m_hdPath;              // 0x00

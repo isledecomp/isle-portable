@@ -403,6 +403,35 @@
        </widget>
       </item>
       <item>
+       <widget class="QGroupBox" name="extensionsGroupBox">
+        <property name="title">
+         <string>Extensions</string>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_extensions">
+         <item>
+          <widget class="QCheckBox" name="discordRPCCheckBox">
+           <property name="toolTip">
+            <string>Enable Discord Rich Presence integration.</string>
+           </property>
+           <property name="text">
+            <string>Enable Discord RPC</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="textureLoaderCheckBox">
+           <property name="toolTip">
+            <string>Enable the custom texture loader extension.</string>
+           </property>
+           <property name="text">
+            <string>Enable Texture Loader</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
        <widget class="QLabel" name="label">
         <property name="text">
          <string>Transition Type</string>
@@ -618,6 +647,8 @@
   <tabstop>musicCheckBox</tabstop>
   <tabstop>joystickCheckBox</tabstop>
   <tabstop>fullscreenCheckBox</tabstop>
+  <tabstop>discordRPCCheckBox</tabstop>
+  <tabstop>textureLoaderCheckBox</tabstop>
   <tabstop>devicesList</tabstop>
   <tabstop>okButton</tabstop>
   <tabstop>launchButton</tabstop>

@@ -38,6 +38,7 @@
 #include "viewmanager/viewmanager.h"
 
 #include <extensions/extensions.h>
+#include <extensions/discordrpc.h>
 #include <miniwin/miniwindevice.h>
 
 #define SDL_MAIN_USE_CALLBACKS
@@ -47,6 +48,7 @@
 #include <iniparser.h>
 #include <stdlib.h>
 #include <time.h>
+#include <ctime>
 
 #ifdef __EMSCRIPTEN__
 #include "emscripten/config.h"
@@ -229,6 +231,9 @@ void IsleApp::Close()
 			TickleManager()->Tickle();
 		}
 	}
+
+	// Shutdown Discord RPC
+	ShutdownDiscordRPC();
 }
 
 // FUNCTION: ISLE 0x4013b0
@@ -781,6 +786,11 @@ void SDL_AppQuit(void* appstate, SDL_AppResult result)
 {
 	IsleDebug_Quit();
 
+	// Shutdown Discord RPC
+	if (g_isle) {
+		g_isle->ShutdownDiscordRPC();
+	}
+
 	if (appstate != NULL) {
 		SDL_DestroyWindow((SDL_Window*) appstate);
 	}
@@ -936,6 +946,9 @@ MxResult IsleApp::SetupWindow()
 	}
 
 	IsleDebug_Init();
+
+	// Initialize Discord RPC
+	InitializeDiscordRPC();
 
 	return SUCCESS;
 }
@@ -1170,6 +1183,9 @@ inline bool IsleApp::Tick()
 		TickleManager()->Tickle();
 	}
 	g_lastFrameTime = currentTime;
+
+	// Update Discord RPC
+	UpdateDiscordRPC();
 
 	if (IsleDebug_StepModeEnabled()) {
 		IsleDebug_SetPaused(true);
@@ -1440,4 +1456,43 @@ void IsleApp::MoveVirtualMouseViaJoystick()
 			SDL_WarpMouseInWindow(window, x, y);
 		}
 	}
+}
+
+void IsleApp::InitializeDiscordRPC()
+{
+	DiscordRPC::Initialize();
+}
+
+void IsleApp::UpdateDiscordRPC()
+{
+	if (!DiscordRPC::enabled) {
+		return;
+	}
+
+	DiscordRPC::GameStateInfo gameState;
+	
+	// Get current game state
+	if (Lego() && GameState()) {
+		gameState.currentAct = DiscordRPC::GetActName(GameState()->GetCurrentAct());
+		gameState.currentArea = DiscordRPC::GetAreaName(GameState()->m_currentArea);
+		gameState.currentActor = DiscordRPC::GetActorName(GameState()->GetActorId());
+		gameState.isPlaying = m_gameStarted;
+		gameState.startTime = time(NULL);
+		gameState.activity = DiscordRPC::GetActivityDescription(gameState);
+	} else {
+		gameState.currentAct = "In Menu";
+		gameState.currentArea = "";
+		gameState.currentActor = "";
+		gameState.isPlaying = false;
+		gameState.startTime = time(NULL);
+		gameState.activity = "In Menu";
+	}
+
+	DiscordRPC::UpdatePresence(gameState);
+	DiscordRPC::RunCallbacks();
+}
+
+void IsleApp::ShutdownDiscordRPC()
+{
+	DiscordRPC::Shutdown();
 }

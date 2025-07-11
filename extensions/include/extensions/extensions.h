@@ -8,7 +8,7 @@
 
 namespace Extensions
 {
-constexpr const char* availableExtensions[] = {"extensions:texture loader"};
+constexpr const char* availableExtensions[] = {"extensions:texture loader", "extensions:discord rpc"};
 
 LEGO1_EXPORT void Enable(const char* p_key);
 
