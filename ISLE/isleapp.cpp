@@ -946,6 +946,7 @@ MxResult IsleApp::SetupWindow()
 	}
 
 	IsleDebug_Init();
+
 	return SUCCESS;
 }
 
