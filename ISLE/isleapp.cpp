@@ -53,6 +53,7 @@
 #include "emscripten/events.h"
 #include "emscripten/filesystem.h"
 #include "emscripten/messagebox.h"
+#include "emscripten/window.h"
 #endif
 
 #ifdef __3DS__
@@ -441,6 +442,10 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		if (device && !device->ConvertEventToRenderCoordinates(event)) {
 			SDL_Log("Failed to convert event coordinates: %s", SDL_GetError());
 		}
+
+#ifdef __EMSCRIPTEN__
+		Emscripten_ConvertEventToRenderCoordinates(event);
+#endif
 		break;
 	}
 
@@ -641,8 +646,8 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 #endif
 		g_mousemoved = TRUE;
 
-		float x = SDL_clamp(event->tfinger.x, 0, 1) * 640;
-		float y = SDL_clamp(event->tfinger.y, 0, 1) * 480;
+		float x = SDL_clamp(event->tfinger.x, 0, 1) * g_targetWidth;
+		float y = SDL_clamp(event->tfinger.y, 0, 1) * g_targetHeight;
 
 		if (InputManager()) {
 			InputManager()->QueueEvent(c_notificationMouseMove, LegoEventNotificationParam::c_lButtonState, x, y, 0);
@@ -682,8 +687,8 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 #endif
 		g_mousedown = TRUE;
 
-		float x = SDL_clamp(event->tfinger.x, 0, 1) * 640;
-		float y = SDL_clamp(event->tfinger.y, 0, 1) * 480;
+		float x = SDL_clamp(event->tfinger.x, 0, 1) * g_targetWidth;
+		float y = SDL_clamp(event->tfinger.y, 0, 1) * g_targetHeight;
 
 		if (InputManager()) {
 			InputManager()->QueueEvent(c_notificationButtonDown, LegoEventNotificationParam::c_lButtonState, x, y, 0);
@@ -729,8 +734,8 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 #endif
 		g_mousedown = FALSE;
 
-		float x = SDL_clamp(event->tfinger.x, 0, 1) * 640;
-		float y = SDL_clamp(event->tfinger.y, 0, 1) * 480;
+		float x = SDL_clamp(event->tfinger.x, 0, 1) * g_targetWidth;
+		float y = SDL_clamp(event->tfinger.y, 0, 1) * g_targetHeight;
 
 		if (InputManager()) {
 			InputManager()->QueueEvent(c_notificationButtonUp, 0, x, y, 0);
@@ -770,6 +775,11 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		if (!g_isle->GetGameStarted() && action && state == MxPresenter::e_ready &&
 			!SDL_strncmp(action->GetObjectName(), "Lego_Smk", 8)) {
 			g_isle->SetGameStarted(TRUE);
+
+#ifdef __EMSCRIPTEN__
+			Emscripten_SetupWindow((SDL_Window*) g_isle->GetWindowHandle());
+#endif
+
 			SDL_Log("Game started");
 		}
 	}
@@ -936,7 +946,6 @@ MxResult IsleApp::SetupWindow()
 	}
 
 	IsleDebug_Init();
-
 	return SUCCESS;
 }
 
@@ -1413,8 +1422,8 @@ void IsleApp::MoveVirtualMouseViaJoystick()
 	if (moveX != 0 || moveY != 0) {
 		g_mousemoved = TRUE;
 
-		g_lastMouseX = SDL_clamp(g_lastMouseX + moveX, 0, 640);
-		g_lastMouseY = SDL_clamp(g_lastMouseY + moveY, 0, 480);
+		g_lastMouseX = SDL_clamp(g_lastMouseX + moveX, 0, g_targetWidth);
+		g_lastMouseY = SDL_clamp(g_lastMouseY + moveY, 0, g_targetHeight);
 
 		if (InputManager()) {
 			InputManager()->QueueEvent(

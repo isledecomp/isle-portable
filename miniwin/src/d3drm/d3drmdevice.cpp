@@ -173,31 +173,21 @@ bool Direct3DRMDevice2Impl::ConvertEventToRenderCoordinates(SDL_Event* event)
 		break;
 	}
 	case SDL_EVENT_MOUSE_MOTION: {
-		int rawX = event->motion.x;
-		int rawY = event->motion.y;
-		float x = (rawX - m_viewportTransform.offsetX) / m_viewportTransform.scale;
-		float y = (rawY - m_viewportTransform.offsetY) / m_viewportTransform.scale;
-		event->motion.x = static_cast<Sint32>(x);
-		event->motion.y = static_cast<Sint32>(y);
+		event->motion.x = (event->motion.x - m_viewportTransform.offsetX) / m_viewportTransform.scale;
+		event->motion.y = (event->motion.y - m_viewportTransform.offsetY) / m_viewportTransform.scale;
 		break;
 	}
 	case SDL_EVENT_MOUSE_BUTTON_DOWN:
 	case SDL_EVENT_MOUSE_BUTTON_UP: {
-		int rawX = event->button.x;
-		int rawY = event->button.y;
-		float x = (rawX - m_viewportTransform.offsetX) / m_viewportTransform.scale;
-		float y = (rawY - m_viewportTransform.offsetY) / m_viewportTransform.scale;
-		event->button.x = static_cast<Sint32>(x);
-		event->button.y = static_cast<Sint32>(y);
+		event->button.x = (event->button.x - m_viewportTransform.offsetX) / m_viewportTransform.scale;
+		event->button.y = (event->button.y - m_viewportTransform.offsetY) / m_viewportTransform.scale;
 		break;
 	}
 	case SDL_EVENT_FINGER_MOTION:
 	case SDL_EVENT_FINGER_DOWN:
 	case SDL_EVENT_FINGER_UP: {
-		int rawX = event->tfinger.x * m_windowWidth;
-		int rawY = event->tfinger.y * m_windowHeight;
-		float x = (rawX - m_viewportTransform.offsetX) / m_viewportTransform.scale;
-		float y = (rawY - m_viewportTransform.offsetY) / m_viewportTransform.scale;
+		float x = (event->tfinger.x * m_windowWidth - m_viewportTransform.offsetX) / m_viewportTransform.scale;
+		float y = (event->tfinger.y * m_windowHeight - m_viewportTransform.offsetY) / m_viewportTransform.scale;
 		event->tfinger.x = x / m_virtualWidth;
 		event->tfinger.y = y / m_virtualHeight;
 		break;
