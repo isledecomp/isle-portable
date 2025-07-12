@@ -70,7 +70,7 @@ add_library(Isle::iniparser INTERFACE IMPORTED)
 
 if (DOWNLOAD_DEPENDENCIES)
   # FetchContent downloads and configures dependencies
-  message(STATUS "Fetching SDL3 and iniparser. This might take a while...")
+  message(STATUS "Fetching SDL3, iniparser and discord-rpc (on desktop platforms). This might take a while...")
   include(FetchContent)
   if (WINDOWS_STORE)
     FetchContent_Declare(
@@ -89,6 +89,10 @@ if (DOWNLOAD_DEPENDENCIES)
   endif()
   FetchContent_MakeAvailable(SDL3)
 
+  # Disable iniparser tests before fetching it
+  set(INIPARSER_BUILD_TESTS OFF CACHE BOOL "Disable iniparser tests" FORCE)
+
+  # iniparser dependency
   FetchContent_Declare(
     iniparser
     GIT_REPOSITORY "https://gitlab.com/iniparser/iniparser.git"
@@ -101,12 +105,64 @@ if (DOWNLOAD_DEPENDENCIES)
     FetchContent_MakeAvailable(iniparser)
     target_link_libraries(Isle::iniparser INTERFACE iniparser-static)
   endblock()
+
+  set(HAVE_DISCORD_RPC OFF)
+  if(WIN32 OR APPLE OR UNIX AND NOT (EMSCRIPTEN OR IOS))
+    # Add rapidjson dependency for Discord RPC
+    FetchContent_Declare(
+      rapidjson
+      GIT_REPOSITORY "https://github.com/Tencent/rapidjson.git"
+      GIT_TAG "master"
+      EXCLUDE_FROM_ALL
+    )
+    FetchContent_MakeAvailable(rapidjson)
+
+    # Discord RPC library
+    FetchContent_Declare(
+      discord-rpc
+      GIT_REPOSITORY "https://github.com/discord/discord-rpc.git"
+      GIT_TAG "master"
+      EXCLUDE_FROM_ALL
+    )
+    FetchContent_GetProperties(discord-rpc)
+    if(NOT discord-rpc_POPULATED)
+      FetchContent_Populate(discord-rpc)
+    endif()
+
+    set(DISCORD_RPC_SOURCES
+      ${discord-rpc_SOURCE_DIR}/src/discord_rpc.cpp
+      ${discord-rpc_SOURCE_DIR}/src/rpc_connection.cpp
+      ${discord-rpc_SOURCE_DIR}/src/serialization.cpp
+    )
+    if (WIN32)
+      list(APPEND DISCORD_RPC_SOURCES
+        ${discord-rpc_SOURCE_DIR}/src/connection_win.cpp
+        ${discord-rpc_SOURCE_DIR}/src/discord_register_win.cpp
+      )
+    elseif(APPLE OR UNIX)
+      list(APPEND DISCORD_RPC_SOURCES
+        ${discord-rpc_SOURCE_DIR}/src/connection_unix.cpp
+        ${discord-rpc_SOURCE_DIR}/src/discord_register_linux.cpp
+      )
+    endif()
+    add_library(discord-rpc STATIC ${DISCORD_RPC_SOURCES})
+    target_include_directories(discord-rpc PUBLIC ${discord-rpc_SOURCE_DIR}/include ${rapidjson_SOURCE_DIR}/include)
+    target_compile_definitions(discord-rpc PRIVATE
+      $<$<BOOL:${WIN32}>:WIN32_LEAN_AND_MEAN>
+      $<$<BOOL:${WIN32}>:_WIN32_WINNT=0x0601>
+    )
+    if(WIN32)
+      target_link_libraries(discord-rpc PRIVATE ws2_32 iphlpapi)
+    else()
+      target_link_libraries(discord-rpc PRIVATE pthread)
+    endif()
+    set(HAVE_DISCORD_RPC ON)
+  endif()
 else()
   # find_package looks for already-installed system packages.
   # Configure with `-DCMAKE_PREFIX_PATH="/path/to/package1;/path/to/package2"`
   # to add search paths.
   find_package(SDL3 CONFIG REQUIRED)
-
   find_package(iniparser REQUIRED CONFIG COMPONENTS shared)
   target_link_libraries(Isle::iniparser INTERFACE iniparser-shared)
 endif()
@@ -184,9 +240,12 @@ target_link_libraries(lego1 PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5
 if(WIN32)
   set_property(TARGET lego1 PROPERTY PREFIX "")
 endif()
-
 target_compile_definitions(lego1 PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DIRECTX5_SDK>)
 list(APPEND isle_targets lego1)
+
+if(HAVE_DISCORD_RPC)
+  target_link_libraries(lego1 PRIVATE discord-rpc)
+endif()
 
 # tglrl sources
 target_sources(lego1 PRIVATE
@@ -495,6 +554,7 @@ if (ISLE_EXTENSIONS)
   target_sources(lego1 PRIVATE
     extensions/src/extensions.cpp
     extensions/src/textureloader.cpp
+    extensions/src/discordrpc.cpp
   )
 endif()
 
