@@ -93,7 +93,7 @@ public:
 
 	enum TouchScheme {
 		e_mouse = 0,
-		e_arrow_keys,
+		e_arrowKeys,
 		e_gamepad,
 	};
 

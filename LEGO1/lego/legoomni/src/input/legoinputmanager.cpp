@@ -549,7 +549,7 @@ MxBool LegoInputManager::HandleTouchEvent(SDL_Event* p_event, TouchScheme p_touc
 	case e_mouse:
 		// Handled in LegoCameraController
 		return FALSE;
-	case e_arrow_keys:
+	case e_arrowKeys:
 		switch (p_event->type) {
 		case SDL_EVENT_FINGER_UP:
 			m_touchFlags.erase(event.fingerID);
