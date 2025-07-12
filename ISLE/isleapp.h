@@ -3,6 +3,7 @@
 
 #include "cursor.h"
 #include "lego1_export.h"
+#include "legoinputmanager.h"
 #include "legoutils.h"
 #include "mxtransitionmanager.h"
 #include "mxtypes.h"
@@ -53,6 +54,7 @@ public:
 	MxS32 GetDrawCursor() { return m_drawCursor; }
 	MxS32 GetGameStarted() { return m_gameStarted; }
 	MxFloat GetCursorSensitivity() { return m_cursorSensitivity; }
+	LegoInputManager::TouchScheme GetTouchScheme() { return m_touchScheme; }
 
 	void SetWindowActive(MxS32 p_windowActive) { m_windowActive = p_windowActive; }
 	void SetGameStarted(MxS32 p_gameStarted) { m_gameStarted = p_gameStarted; }
@@ -102,6 +104,7 @@ private:
 	MxFloat m_maxLod;
 	MxU32 m_maxAllowedExtras;
 	MxTransitionManager::TransitionType m_transitionType;
+	LegoInputManager::TouchScheme m_touchScheme;
 };
 
 extern IsleApp* g_isle;

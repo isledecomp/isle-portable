@@ -172,6 +172,7 @@ IsleApp::IsleApp()
 	m_maxAllowedExtras = m_islandQuality <= 1 ? 10 : 20;
 	m_transitionType = MxTransitionManager::e_mosaic;
 	m_cursorSensitivity = 4;
+	m_touchScheme = LegoInputManager::e_gamepad;
 }
 
 // FUNCTION: ISLE 0x4011a0
@@ -650,7 +651,12 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		float y = SDL_clamp(event->tfinger.y, 0, 1) * g_targetHeight;
 
 		if (InputManager()) {
-			InputManager()->QueueEvent(c_notificationMouseMove, LegoEventNotificationParam::c_lButtonState, x, y, 0);
+			MxU8 modifier = LegoEventNotificationParam::c_lButtonState;
+			if (InputManager()->HandleTouchEvent(event, g_isle->GetTouchScheme())) {
+				modifier |= LegoEventNotificationParam::c_motionHandled;
+			}
+
+			InputManager()->QueueEvent(c_notificationMouseMove, modifier, x, y, 0);
 		}
 
 		g_lastMouseX = x;
@@ -691,6 +697,7 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		float y = SDL_clamp(event->tfinger.y, 0, 1) * g_targetHeight;
 
 		if (InputManager()) {
+			InputManager()->HandleTouchEvent(event, g_isle->GetTouchScheme());
 			InputManager()->QueueEvent(c_notificationButtonDown, LegoEventNotificationParam::c_lButtonState, x, y, 0);
 		}
 
@@ -738,6 +745,7 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		float y = SDL_clamp(event->tfinger.y, 0, 1) * g_targetHeight;
 
 		if (InputManager()) {
+			InputManager()->HandleTouchEvent(event, g_isle->GetTouchScheme());
 			InputManager()->QueueEvent(c_notificationButtonUp, 0, x, y, 0);
 		}
 		break;
@@ -1033,6 +1041,7 @@ bool IsleApp::LoadConfig()
 		iniparser_set(dict, "isle:Max LOD", buf);
 		iniparser_set(dict, "isle:Max Allowed Extras", SDL_itoa(m_maxAllowedExtras, buf, 10));
 		iniparser_set(dict, "isle:Transition Type", SDL_itoa(m_transitionType, buf, 10));
+		iniparser_set(dict, "isle:Touch Scheme", SDL_itoa(m_touchScheme, buf, 10));
 
 #ifdef EXTENSIONS
 		iniparser_set(dict, "extensions", NULL);
@@ -1103,6 +1112,7 @@ bool IsleApp::LoadConfig()
 	m_maxAllowedExtras = iniparser_getint(dict, "isle:Max Allowed Extras", m_maxAllowedExtras);
 	m_transitionType =
 		(MxTransitionManager::TransitionType) iniparser_getint(dict, "isle:Transition Type", m_transitionType);
+	m_touchScheme = (LegoInputManager::TouchScheme) iniparser_getint(dict, "isle:Touch Scheme", m_touchScheme);
 
 	const char* deviceId = iniparser_getstring(dict, "isle:3D Device ID", NULL);
 	if (deviceId != NULL) {

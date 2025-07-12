@@ -528,42 +528,91 @@ void LegoInputManager::EnableInputProcessing()
 
 MxResult LegoInputManager::GetNavigationTouchStates(MxU32& p_keyStates)
 {
-	int count;
-	SDL_TouchID* touchDevices = SDL_GetTouchDevices(&count);
+	for (auto& [fingerID, touchFlags] : m_touchFlags) {
+		p_keyStates |= touchFlags;
 
-	if (touchDevices) {
-		auto applyFingerNavigation = [&p_keyStates](SDL_TouchID p_touchId) {
-			int count;
-			SDL_Finger** fingers = SDL_GetTouchFingers(p_touchId, &count);
-
-			if (fingers) {
-				for (int i = 0; i < count; i++) {
-					if (fingers[i]->y > 3.0 / 4.0) {
-						if (fingers[i]->x < 1.0 / 3.0) {
-							p_keyStates |= c_left;
-						}
-						else if (fingers[i]->x > 2.0 / 3.0) {
-							p_keyStates |= c_right;
-						}
-						else {
-							p_keyStates |= c_down;
-						}
-					}
-					else {
-						p_keyStates |= c_up;
-					}
-				}
-
-				SDL_free(fingers);
-			}
-		};
-
-		for (int i = 0; i < count; i++) {
-			applyFingerNavigation(touchDevices[i]);
+		// We need to clear these as they are not meant to be persistent in e_gamepad mode.
+		if (m_touchOrigins.count(fingerID) && SDL_GetTicks() - m_touchLastMotion[fingerID] > 5) {
+			touchFlags &= ~c_left;
+			touchFlags &= ~c_right;
 		}
-
-		SDL_free(touchDevices);
 	}
 
 	return SUCCESS;
+}
+
+MxBool LegoInputManager::HandleTouchEvent(SDL_Event* p_event, TouchScheme p_touchScheme)
+{
+	const SDL_TouchFingerEvent& event = p_event->tfinger;
+
+	switch (p_touchScheme) {
+	case e_mouse:
+		// Handled in LegoCameraController
+		return FALSE;
+	case e_arrow_keys:
+		switch (p_event->type) {
+		case SDL_EVENT_FINGER_UP:
+			m_touchFlags.erase(event.fingerID);
+			break;
+		case SDL_EVENT_FINGER_DOWN:
+		case SDL_EVENT_FINGER_MOTION:
+			m_touchFlags[event.fingerID] = 0;
+
+			if (event.y > 3.0 / 4.0) {
+				if (event.x < 1.0 / 3.0) {
+					m_touchFlags[event.fingerID] |= c_left;
+				}
+				else if (event.x > 2.0 / 3.0) {
+					m_touchFlags[event.fingerID] |= c_right;
+				}
+				else {
+					m_touchFlags[event.fingerID] |= c_down;
+				}
+			}
+			else {
+				m_touchFlags[event.fingerID] |= c_up;
+			}
+			break;
+		}
+		break;
+	case e_gamepad:
+		switch (p_event->type) {
+		case SDL_EVENT_FINGER_DOWN:
+			m_touchOrigins[event.fingerID] = {event.x, event.y};
+			break;
+		case SDL_EVENT_FINGER_UP:
+			m_touchOrigins.erase(event.fingerID);
+			m_touchFlags.erase(event.fingerID);
+			break;
+		case SDL_EVENT_FINGER_MOTION:
+			if (m_touchOrigins.count(event.fingerID)) {
+				m_touchFlags[event.fingerID] = 0;
+				m_touchLastMotion[event.fingerID] = SDL_GetTicks();
+
+				const float deltaY = event.y - m_touchOrigins[event.fingerID].y;
+				const float activationThreshold = 0.05f;
+
+				if (SDL_fabsf(deltaY) > activationThreshold) {
+					if (deltaY > 0) {
+						m_touchFlags[event.fingerID] |= c_down;
+					}
+					else if (deltaY < 0) {
+						m_touchFlags[event.fingerID] |= c_up;
+					}
+				}
+
+				const float deltaX = event.dx;
+				if (deltaX > 0) {
+					m_touchFlags[event.fingerID] |= c_right;
+				}
+				else if (deltaX < 0) {
+					m_touchFlags[event.fingerID] |= c_left;
+				}
+			}
+			break;
+		}
+		break;
+	}
+
+	return TRUE;
 }
