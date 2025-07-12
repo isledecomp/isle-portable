@@ -6,10 +6,10 @@
 
 #define GXM_DISPLAY_BUFFER_COUNT 3
 
-typedef struct Vertex2D {
+typedef struct GXMVertex2D {
 	float position[2];
 	float texCoord[2];
-} Vertex2D;
+} GXMVertex2D;
 
 typedef struct GXMContext {
 	// context
@@ -48,7 +48,7 @@ typedef struct GXMContext {
 	SceGxmFragmentProgram* colorFragmentProgram;
 	SceGxmFragmentProgram* imageFragmentProgram;
 	const SceGxmProgramParameter* color_uColor;
-	Vertex2D* clearVertices;
+	GXMVertex2D* clearVertices;
 	uint16_t* clearIndices;
 
 	// display

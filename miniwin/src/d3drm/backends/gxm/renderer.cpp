@@ -18,12 +18,15 @@
 #define INCBIN_PREFIX _inc_
 #include "incbin.h"
 
-#include <assert.h>
+static bool with_razor_capture = false;
+static bool with_razor_hud = false;
+static bool gxm_initialized = false;
 
-#define WITH_RAZOR
-bool with_razor = false;
-bool with_razor_hud = false;
-bool gxm_initialized = false;
+// from isleapp
+extern bool g_dpadUp;
+extern bool g_dpadDown;
+extern bool g_dpadLeft;
+extern bool g_dpadRight;
 
 #define VITA_GXM_SCREEN_WIDTH 960
 #define VITA_GXM_SCREEN_HEIGHT 544
@@ -69,6 +72,16 @@ static const SceGxmBlendInfo blendInfoTransparent = {
 	.alphaDst = SCE_GXM_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
 };
 
+typedef struct GXMVertex {
+	float position[3];
+	float normal[3];
+	float texCoord[2];
+} GXMVertex;
+
+typedef struct GXMDisplayData {
+	void* address;
+} GXMDisplayData;
+
 static void display_callback(const void* callback_data)
 {
 	const GXMDisplayData* display_data = (const GXMDisplayData*) callback_data;
@@ -85,7 +98,7 @@ static void display_callback(const void* callback_data)
 	sceDisplayWaitSetFrameBuf();
 }
 
-#ifdef WITH_RAZOR
+#ifdef GXM_WITH_RAZOR
 #include <taihen.h>
 
 static int load_skprx(const char* name)
@@ -119,38 +132,19 @@ static int load_suprx(const char* name)
 	return ret;
 }
 
-static const bool extra_debug = false;
-
 static void load_razor()
 {
 	if (load_suprx("app0:librazorcapture_es4.suprx") >= 0) {
-		with_razor = true;
+		with_razor_capture = true;
 	}
 
-	if (extra_debug) {
-		load_skprx("ux0:app/LEGO00001/syslibtrace.skprx");
-		load_skprx("ux0:app/LEGO00001/pamgr.skprx");
-
-		if (load_suprx("app0:libperf.suprx") >= 0) {
-		}
-
-		if (load_suprx("app0:librazorhud_es4.suprx") >= 0) {
-			with_razor_hud = true;
-		}
-	}
-
-	if (with_razor) {
+	if (with_razor_capture) {
 		// sceRazorGpuCaptureEnableSalvage("ux0:data/gpu_crash.sgx");
 	}
 
 	if (with_razor_hud) {
 		sceRazorGpuTraceSetFilename("ux0:data/gpu_trace", 3);
 	}
-}
-#else
-bool load_razor()
-{
-	return true;
 }
 #endif
 
@@ -160,7 +154,9 @@ int gxm_library_init()
 		return 0;
 	}
 
+#ifdef WITH_RAZOR
 	load_razor();
+#endif
 
 	SceGxmInitializeParams initializeParams;
 	SDL_memset(&initializeParams, 0, sizeof(SceGxmInitializeParams));
@@ -453,7 +449,7 @@ int GXMContext::init()
 		vertexAttributes[1].componentCount = 2;
 		vertexAttributes[1].regIndex = sceGxmProgramParameterGetResourceIndex(texCoordAttribute);
 
-		vertexStreams[0].stride = sizeof(float) * 4;
+		vertexStreams[0].stride = sizeof(GXMVertex2D);
 		vertexStreams[0].indexSource = SCE_GXM_INDEX_SOURCE_INDEX_16BIT;
 
 		ret = SCE_ERR(
@@ -501,11 +497,11 @@ int GXMContext::init()
 
 	this->color_uColor = sceGxmProgramFindParameterByName(colorFragmentProgramGxp, "uColor"); // vec4
 
-	this->clearVertices = static_cast<Vertex2D*>(this->alloc(sizeof(Vertex2D) * 4, 4));
-	this->clearVertices[0] = Vertex2D{.position = {-1.0, 1.0}, .texCoord = {0, 0}};
-	this->clearVertices[1] = Vertex2D{.position = {1.0, 1.0}, .texCoord = {0, 0}};
-	this->clearVertices[2] = Vertex2D{.position = {-1.0, -1.0}, .texCoord = {0, 0}};
-	this->clearVertices[3] = Vertex2D{.position = {1.0, -1.0}, .texCoord = {0, 0}};
+	this->clearVertices = static_cast<GXMVertex2D*>(this->alloc(sizeof(GXMVertex2D) * 4, 4));
+	this->clearVertices[0] = {.position = {-1.0, 1.0}, .texCoord = {0, 0}};
+	this->clearVertices[1] = {.position = {1.0, 1.0}, .texCoord = {0, 0}};
+	this->clearVertices[2] = {.position = {-1.0, -1.0}, .texCoord = {0, 0}};
+	this->clearVertices[3] = {.position = {1.0, -1.0}, .texCoord = {0, 0}};
 
 	this->clearIndices = static_cast<uint16_t*>(this->alloc(sizeof(uint16_t) * 4, 4));
 	this->clearIndices[0] = 0;
@@ -753,7 +749,7 @@ GXMRenderer::GXMRenderer(DWORD width, DWORD height)
 		vertexAttributes[2].componentCount = 2;
 		vertexAttributes[2].regIndex = sceGxmProgramParameterGetResourceIndex(texCoordAttribute);
 
-		vertexStreams[0].stride = sizeof(Vertex);
+		vertexStreams[0].stride = sizeof(GXMVertex);
 		vertexStreams[0].indexSource = SCE_GXM_INDEX_SOURCE_INDEX_16BIT;
 
 		ret = SCE_ERR(
@@ -846,7 +842,7 @@ GXMRenderer::GXMRenderer(DWORD width, DWORD height)
 		this->lights[i] = static_cast<GXMSceneLightUniform*>(gxm->alloc(sizeof(GXMSceneLightUniform), 4));
 	}
 	for (int i = 0; i < GXM_VERTEX_BUFFER_COUNT; i++) {
-		this->quadVertices[i] = static_cast<Vertex2D*>(gxm->alloc(sizeof(Vertex2D) * 4 * 50, 4));
+		this->quadVertices[i] = static_cast<GXMVertex2D*>(gxm->alloc(sizeof(GXMVertex2D) * 4 * 50, 4));
 	}
 	this->quadIndices = static_cast<uint16_t*>(gxm->alloc(sizeof(uint16_t) * 4, 4));
 	this->quadIndices[0] = 0;
@@ -866,20 +862,6 @@ GXMRenderer::GXMRenderer(DWORD width, DWORD height)
 		this->vertexNotifications[i].value = 0;
 	}
 	this->currentVertexBufferIndex = 0;
-
-	int count;
-	auto ids = SDL_GetGamepads(&count);
-	for (int i = 0; i < count; i++) {
-		auto id = ids[i];
-		auto gamepad = SDL_OpenGamepad(id);
-		if (gamepad != nullptr) {
-			this->gamepad = gamepad;
-			break;
-		}
-	}
-	if (ids) {
-		SDL_free(ids);
-	}
 	m_initialized = true;
 }
 
@@ -897,10 +879,6 @@ GXMRenderer::~GXMRenderer()
 	}
 	if (this->quadIndices) {
 		gxm->free(this->quadIndices);
-	}
-
-	if (this->gamepad) {
-		SDL_CloseGamepad(this->gamepad);
 	}
 }
 
@@ -1179,16 +1157,16 @@ GXMMeshCacheEntry GXMRenderer::GXMUploadMesh(const MeshGroup& meshGroup)
 		});
 	}
 
-	size_t vertexBufferSize = sizeof(Vertex) * vertices.size();
+	size_t vertexBufferSize = sizeof(GXMVertex) * vertices.size();
 	size_t indexBufferSize = sizeof(uint16_t) * indices.size();
 	void* meshData = gxm->alloc(vertexBufferSize + indexBufferSize, 4);
 
-	Vertex* vertexBuffer = (Vertex*) meshData;
+	GXMVertex* vertexBuffer = (GXMVertex*) meshData;
 	uint16_t* indexBuffer = (uint16_t*) ((uint8_t*) meshData + vertexBufferSize);
 
 	for (int i = 0; i < vertices.size(); i++) {
 		D3DRMVERTEX vertex = vertices.data()[i];
-		vertexBuffer[i] = Vertex{
+		vertexBuffer[i] = GXMVertex{
 			.position =
 				{
 					vertex.position.x,
@@ -1214,93 +1192,6 @@ GXMMeshCacheEntry GXMRenderer::GXMUploadMesh(const MeshGroup& meshGroup)
 	cache.vertexBuffer = vertexBuffer;
 	cache.indexBuffer = indexBuffer;
 	cache.indexCount = indices.size();
-
-#ifdef GXM_PRECOMPUTE
-	bool isOpaque = meshGroup.color.a == 0xff;
-	const SceGxmTexture* texture = nullptr;
-	if (meshGroup.texture) {
-		Uint32 textureId = GetTextureId(meshGroup.texture, false);
-		texture = &this->m_textures[textureId].gxmTexture;
-	}
-
-	const SceGxmProgram* fragmentProgramGxp;
-	const SceGxmFragmentProgram* fragmentProgram;
-	if (texture) {
-		fragmentProgramGxp = mainTextureFragmentProgramGxp;
-		fragmentProgram = isOpaque ? this->opaqueTextureFragmentProgram : this->blendedTextureFragmentProgram;
-	}
-	else {
-		fragmentProgramGxp = mainColorFragmentProgramGxp;
-		fragmentProgram = isOpaque ? this->opaqueColorFragmentProgram : this->blendedColorFragmentProgram;
-	}
-
-	// get sizes
-	const size_t drawSize = ALIGN(sceGxmGetPrecomputedDrawSize(this->mainVertexProgram), SCE_GXM_PRECOMPUTED_ALIGNMENT);
-	const size_t vertexStateSize =
-		ALIGN(sceGxmGetPrecomputedVertexStateSize(this->mainVertexProgram), SCE_GXM_PRECOMPUTED_ALIGNMENT);
-	const size_t fragmentStateSize =
-		ALIGN(sceGxmGetPrecomputedFragmentStateSize(fragmentProgram), SCE_GXM_PRECOMPUTED_ALIGNMENT);
-	const size_t precomputeDataSize =
-		drawSize + vertexStateSize * GXM_VERTEX_BUFFER_COUNT + fragmentStateSize * GXM_FRAGMENT_BUFFER_COUNT;
-
-	const size_t vertexDefaultBufferSize = sceGxmProgramGetDefaultUniformBufferSize(mainVertexProgramGxp);
-	const size_t fragmentDefaultBufferSize = sceGxmProgramGetDefaultUniformBufferSize(fragmentProgramGxp);
-	const size_t uniformBuffersSize = vertexDefaultBufferSize * GXM_VERTEX_BUFFER_COUNT;
-	fragmentStateSize* GXM_FRAGMENT_BUFFER_COUNT;
-
-	sceClibPrintf("drawSize: %d\n", drawSize);
-	sceClibPrintf("vertexStateSize: %d\n", vertexStateSize);
-	sceClibPrintf("fragmentStateSize: %d\n", fragmentStateSize);
-	sceClibPrintf("precomputeDataSize: %d\n", precomputeDataSize);
-	sceClibPrintf("vertexDefaultBufferSize: %d\n", vertexDefaultBufferSize);
-	sceClibPrintf("fragmentDefaultBufferSize: %d\n", fragmentDefaultBufferSize);
-	sceClibPrintf("uniformBuffersSize: %d\n", uniformBuffersSize);
-
-	// allocate the precompute buffer, combined for all
-	uint8_t* precomputeData = (uint8_t*) cdram_alloc(precomputeDataSize, SCE_GXM_PRECOMPUTED_ALIGNMENT);
-	cache.precomputeData = precomputeData;
-
-	uint8_t* uniformBuffers = (uint8_t*) cdram_alloc(uniformBuffersSize, 4);
-	cache.uniformBuffers = uniformBuffers;
-
-	// init precomputed draw
-	SCE_ERR(sceGxmPrecomputedDrawInit, &cache.drawState, this->mainVertexProgram, precomputeData);
-	void* vertexStreams[] = {vertexBuffer};
-	sceGxmPrecomputedDrawSetAllVertexStreams(&cache.drawState, vertexStreams);
-	sceGxmPrecomputedDrawSetParams(
-		&cache.drawState,
-		SCE_GXM_PRIMITIVE_TRIANGLES,
-		SCE_GXM_INDEX_FORMAT_U16,
-		indexBuffer,
-		indices.size()
-	);
-	precomputeData += drawSize;
-
-	// init precomputed vertex state
-	for (int bufferIndex = 0; bufferIndex < GXM_VERTEX_BUFFER_COUNT; bufferIndex++) {
-		SCE_ERR(
-			sceGxmPrecomputedVertexStateInit,
-			&cache.vertexState[bufferIndex],
-			this->mainVertexProgram,
-			precomputeData
-		);
-		sceGxmPrecomputedVertexStateSetDefaultUniformBuffer(&cache.vertexState[bufferIndex], uniformBuffers);
-		precomputeData += vertexStateSize;
-		uniformBuffers += vertexDefaultBufferSize;
-	}
-
-	// init precomputed fragment state
-	for (int bufferIndex = 0; bufferIndex < GXM_FRAGMENT_BUFFER_COUNT; bufferIndex++) {
-		SCE_ERR(sceGxmPrecomputedFragmentStateInit, &cache.fragmentState[bufferIndex], fragmentProgram, precomputeData);
-		if (texture) {
-			sceGxmPrecomputedFragmentStateSetTexture(&cache.fragmentState[bufferIndex], 0, texture);
-		}
-		sceGxmPrecomputedFragmentStateSetDefaultUniformBuffer(&cache.fragmentState[bufferIndex], uniformBuffers);
-		precomputeData += fragmentStateSize;
-		uniformBuffers += fragmentDefaultBufferSize;
-	}
-	assert(precomputeData - (uint8_t*) cache.precomputeData <= precomputeDataSize);
-#endif
 	return cache;
 }
 
@@ -1356,9 +1247,8 @@ Uint32 GXMRenderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup)
 	return (Uint32) (m_meshes.size() - 1);
 }
 
-bool razor_triggered = false;
 bool razor_live_started = false;
-bool razor_display_enabled = true;
+bool razor_display_enabled = false;
 
 void GXMRenderer::StartScene()
 {
@@ -1366,50 +1256,40 @@ void GXMRenderer::StartScene()
 		return;
 	}
 
-	bool dpad_up = SDL_GetGamepadButton(this->gamepad, SDL_GAMEPAD_BUTTON_DPAD_UP);
-	bool dpad_down = SDL_GetGamepadButton(this->gamepad, SDL_GAMEPAD_BUTTON_DPAD_DOWN);
-	bool dpad_left = SDL_GetGamepadButton(this->gamepad, SDL_GAMEPAD_BUTTON_DPAD_LEFT);
-	bool dpad_right = SDL_GetGamepadButton(this->gamepad, SDL_GAMEPAD_BUTTON_DPAD_RIGHT);
+#ifdef GXM_WITH_RAZOR
+	bool dpad_up_clicked = !this->last_dpad_up && g_dpadUp;
+	bool dpad_down_clicked = !this->last_dpad_down && g_dpadDown;
+	bool dpad_left_clicked = !this->last_dpad_left && g_dpadLeft;
+	bool dpad_right_clicked = !this->last_dpad_right && g_dpadRight;
+	this->last_dpad_up = g_dpadUp;
+	this->last_dpad_down = g_dpadDown;
+	this->last_dpad_left = g_dpadLeft;
+	this->last_dpad_right = g_dpadRight;
 
-	// hud display
-	if (with_razor_hud && dpad_up != this->button_dpad_up) {
-		this->button_dpad_up = dpad_up;
-		if (dpad_up) {
+	if (with_razor_hud) {
+		if (dpad_up_clicked) {
+			razor_display_enabled = !razor_display_enabled;
 			sceRazorHudSetDisplayEnabled(razor_display_enabled);
 		}
-	}
-
-	// capture frame
-	if (with_razor && dpad_down != this->button_dpad_down) {
-		this->button_dpad_down = dpad_down;
-		if (dpad_down) {
-			sceRazorGpuCaptureSetTriggerNextFrame("ux0:/data/capture.sgx");
-			SDL_Log("trigger razor");
-		}
-	}
-
-	// toggle live
-	if (with_razor_hud && dpad_left != this->button_dpad_left) {
-		this->button_dpad_left = dpad_left;
-		if (dpad_left) {
+		if (dpad_left_clicked) {
 			if (razor_live_started) {
 				sceRazorGpuLiveStop();
-				razor_live_started = false;
 			}
 			else {
 				sceRazorGpuLiveStart();
-				razor_live_started = true;
 			}
+			razor_live_started = !razor_live_started;
 		}
-	}
-
-	// trigger trace
-	if (with_razor_hud && dpad_right != this->button_dpad_right) {
-		this->button_dpad_right = dpad_right;
-		if (dpad_right) {
+		if (dpad_right_clicked) {
 			sceRazorGpuTraceTrigger();
 		}
 	}
+	if (with_razor_capture) {
+		if (dpad_down_clicked) {
+			sceRazorGpuCaptureSetTriggerNextFrame("ux0:/data/capture.sgx");
+		}
+	}
+#endif
 
 	sceGxmBeginScene(
 		gxm->context,
@@ -1643,11 +1523,11 @@ void GXMRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const S
 		SET_UNIFORM(fragUniforms, gxm->color_uColor, color);
 	}
 
-	Vertex2D* quadVertices = this->QuadVerticesBuffer();
-	quadVertices[0] = Vertex2D{.position = {x1, y1}, .texCoord = {u1, v1}};
-	quadVertices[1] = Vertex2D{.position = {x2, y1}, .texCoord = {u2, v1}};
-	quadVertices[2] = Vertex2D{.position = {x1, y2}, .texCoord = {u1, v2}};
-	quadVertices[3] = Vertex2D{.position = {x2, y2}, .texCoord = {u2, v2}};
+	GXMVertex2D* quadVertices = this->QuadVerticesBuffer();
+	quadVertices[0] = GXMVertex2D{.position = {x1, y1}, .texCoord = {u1, v1}};
+	quadVertices[1] = GXMVertex2D{.position = {x2, y1}, .texCoord = {u2, v1}};
+	quadVertices[2] = GXMVertex2D{.position = {x1, y2}, .texCoord = {u1, v2}};
+	quadVertices[3] = GXMVertex2D{.position = {x2, y2}, .texCoord = {u2, v2}};
 
 	sceGxmSetVertexStream(gxm->context, 0, quadVertices);
 

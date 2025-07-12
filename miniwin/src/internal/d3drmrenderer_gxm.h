@@ -18,7 +18,7 @@ DEFINE_GUID(GXM_GUID, 0x682656F3, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 
 #define GXM_FRAGMENT_BUFFER_COUNT 3
 #define GXM_TEXTURE_BUFFER_COUNT 2
 
-// #define GXM_PRECOMPUTE
+#define GXM_WITH_RAZOR DEBUG
 
 struct GXMTextureCacheEntry {
 	IDirect3DRMTexture* texture;
@@ -38,19 +38,7 @@ struct GXMMeshCacheEntry {
 	void* vertexBuffer;
 	void* indexBuffer;
 	uint16_t indexCount;
-
-#ifdef GXM_PRECOMPUTE
-	void* precomputeData;
-	void* uniformBuffers;
-	SceGxmPrecomputedVertexState vertexState[GXM_VERTEX_BUFFER_COUNT];
-	SceGxmPrecomputedFragmentState fragmentState[GXM_FRAGMENT_BUFFER_COUNT];
-	SceGxmPrecomputedDraw drawState;
-#endif
 };
-
-typedef struct GXMDisplayData {
-	void* address;
-} GXMDisplayData;
 
 struct SceneLightGXM {
 	float color[4];
@@ -63,12 +51,6 @@ struct GXMSceneLightUniform {
 	SceneLightGXM lights[2];
 	float ambientLight[3];
 };
-
-typedef struct Vertex {
-	float position[3];
-	float normal[3];
-	float texCoord[2];
-} Vertex;
 
 class GXMRenderer : public Direct3DRMRenderer {
 public:
@@ -114,9 +96,9 @@ private:
 		return gxmTexture;
 	}
 
-	inline Vertex2D* QuadVerticesBuffer()
+	inline GXMVertex2D* QuadVerticesBuffer()
 	{
-		Vertex2D* verts = &this->quadVertices[this->currentVertexBufferIndex][this->quadsUsed * 4];
+		GXMVertex2D* verts = &this->quadVertices[this->currentVertexBufferIndex][this->quadsUsed * 4];
 		this->quadsUsed += 1;
 		if (this->quadsUsed >= 50) {
 			SDL_Log("QuadVerticesBuffer overflow");
@@ -158,7 +140,7 @@ private:
 
 	// uniforms / quad meshes
 	GXMSceneLightUniform* lights[GXM_FRAGMENT_BUFFER_COUNT];
-	Vertex2D* quadVertices[GXM_VERTEX_BUFFER_COUNT];
+	GXMVertex2D* quadVertices[GXM_VERTEX_BUFFER_COUNT];
 	uint16_t* quadIndices;
 	int quadsUsed = 0;
 	bool cleared = false;
@@ -168,11 +150,12 @@ private:
 	int currentFragmentBufferIndex = 0;
 	int currentVertexBufferIndex = 0;
 
-	SDL_Gamepad* gamepad;
-	bool button_dpad_up;
-	bool button_dpad_down;
-	bool button_dpad_left;
-	bool button_dpad_right;
+#ifdef GXM_WITH_RAZOR
+	bool last_dpad_up;
+	bool last_dpad_down;
+	bool last_dpad_left;
+	bool last_dpad_right;
+#endif
 
 	bool m_initialized = false;
 };

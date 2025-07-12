@@ -9,6 +9,4 @@ void VITA_SetupDefaultConfigOverrides(dictionary* p_dictionary)
 
 	iniparser_set(p_dictionary, "isle:diskpath", "ux0:data/isledecompile/isle/disk");
 	iniparser_set(p_dictionary, "isle:cdpath", "ux0:data/isledecompile/isle/cd");
-	iniparser_set(p_dictionary, "isle:UseJoystick", "true");
-	iniparser_set(p_dictionary, "isle:Draw Cursor", "true");
 }
