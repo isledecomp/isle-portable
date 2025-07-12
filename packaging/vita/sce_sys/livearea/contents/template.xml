@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<livearea style="a1" format-ver="01.00" content-rev="1">
+  <livearea-background>
+    <image>bg.png</image>
+  </livearea-background>
+  <gate>
+    <startup-image>gate.png</startup-image>
+  </gate>
+  <frame id="frame3">
+    <liveitem>
+      <image align="center" valign="top" x="0" y="0" height="0" origin="background">logo.png</image>
+    </liveitem>
+  </frame>
+  <frame id="frame2">
+    <liveitem>
+      <target>psla:-config</target>
+      <image>configure.png</image>
+      <text align="center" valign="center" x="0" y="-64" origin="background" text-align="center" text-valign="center">
+        <str color="#ff4500" bold="on" oblique="off" shadow="on" emboss="off">Configure</str>
+      </text>
+    </liveitem>
+  </frame>
+</livearea>

@@ -21,6 +21,8 @@
 // See: https://github.com/libsdl-org/SDL/issues/12943
 #ifdef __EMSCRIPTEN__
 #define Any_ShowSimpleMessageBox Emscripten_ShowSimpleMessageBox
+#elif defined(__vita__)
+#define Any_ShowSimpleMessageBox Vita_ShowSimpleMessageBox
 #else
 #define Any_ShowSimpleMessageBox SDL_ShowSimpleMessageBox
 #endif
