@@ -556,6 +556,7 @@ if (ISLE_BUILD_APP)
       ISLE/emscripten/events.cpp
       ISLE/emscripten/filesystem.cpp
       ISLE/emscripten/messagebox.cpp
+      ISLE/emscripten/window.cpp
     )
     target_compile_definitions(isle PRIVATE "ISLE_EMSCRIPTEN_HOST=\"${ISLE_EMSCRIPTEN_HOST}\"")
     set_property(TARGET isle PROPERTY SUFFIX ".html")
