@@ -152,7 +152,7 @@ public:
 	void GetKeyboardState();
 	MxResult GetNavigationKeyStates(MxU32& p_keyFlags);
 	MxResult GetNavigationTouchStates(MxU32& p_keyFlags);
-	MxBool HandleTouchEvent(SDL_Event* p_event, TouchScheme p_touchScheme);
+	LEGO1_EXPORT MxBool HandleTouchEvent(SDL_Event* p_event, TouchScheme p_touchScheme);
 
 	// SYNTHETIC: LEGO1 0x1005b8d0
 	// LegoInputManager::`scalar deleting destructor'
