@@ -532,9 +532,14 @@ MxResult LegoInputManager::GetNavigationTouchStates(MxU32& p_keyStates)
 		p_keyStates |= touchFlags;
 
 		// We need to clear these as they are not meant to be persistent in e_gamepad mode.
-		if (m_touchOrigins.count(fingerID) && SDL_GetTicks() - m_touchLastMotion[fingerID] > 5) {
-			touchFlags &= ~c_left;
-			touchFlags &= ~c_right;
+		if (m_touchOrigins.count(fingerID) && m_touchLastMotion.count(fingerID)) {
+			const MxU32 inactivityThreshold = 3;
+
+			if (m_touchLastMotion[fingerID].first++ > inactivityThreshold) {
+				touchFlags &= ~c_left;
+				touchFlags &= ~c_right;
+				m_touchOrigins[fingerID].x = m_touchLastMotion[fingerID].second.x;
+			}
 		}
 	}
 
@@ -586,12 +591,11 @@ MxBool LegoInputManager::HandleTouchEvent(SDL_Event* p_event, TouchScheme p_touc
 			break;
 		case SDL_EVENT_FINGER_MOTION:
 			if (m_touchOrigins.count(event.fingerID)) {
-				m_touchFlags[event.fingerID] = 0;
-				m_touchLastMotion[event.fingerID] = SDL_GetTicks();
+				const float activationThreshold = 0.03f;
+				m_touchFlags[event.fingerID] &= ~c_down;
+				m_touchFlags[event.fingerID] &= ~c_up;
 
 				const float deltaY = event.y - m_touchOrigins[event.fingerID].y;
-				const float activationThreshold = 0.05f;
-
 				if (SDL_fabsf(deltaY) > activationThreshold) {
 					if (deltaY > 0) {
 						m_touchFlags[event.fingerID] |= c_down;
@@ -601,12 +605,18 @@ MxBool LegoInputManager::HandleTouchEvent(SDL_Event* p_event, TouchScheme p_touc
 					}
 				}
 
-				const float deltaX = event.dx;
-				if (deltaX > 0) {
-					m_touchFlags[event.fingerID] |= c_right;
-				}
-				else if (deltaX < 0) {
-					m_touchFlags[event.fingerID] |= c_left;
+				const float deltaX = event.x - m_touchOrigins[event.fingerID].x;
+				if (SDL_fabsf(deltaX) > activationThreshold && event.dx) {
+					if (event.dx > 0) {
+						m_touchFlags[event.fingerID] |= c_right;
+						m_touchFlags[event.fingerID] &= ~c_left;
+					}
+					else if (event.dx < 0) {
+						m_touchFlags[event.fingerID] |= c_left;
+						m_touchFlags[event.fingerID] &= ~c_right;
+					}
+
+					m_touchLastMotion[event.fingerID] = {0, {event.x, event.y}};
 				}
 			}
 			break;
