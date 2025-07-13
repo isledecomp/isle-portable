@@ -18,6 +18,8 @@
 #include <windows.h>
 #endif
 
+#include <map>
+
 class LegoCameraController;
 class LegoControlManager;
 class LegoWorld;
@@ -89,6 +91,12 @@ public:
 		c_upOrDown = c_up | c_down
 	};
 
+	enum TouchScheme {
+		e_mouse = 0,
+		e_arrowKeys,
+		e_gamepad,
+	};
+
 	LegoInputManager();
 	~LegoInputManager() override;
 
@@ -144,6 +152,7 @@ public:
 	void GetKeyboardState();
 	MxResult GetNavigationKeyStates(MxU32& p_keyFlags);
 	MxResult GetNavigationTouchStates(MxU32& p_keyFlags);
+	LEGO1_EXPORT MxBool HandleTouchEvent(SDL_Event* p_event, TouchScheme p_touchScheme);
 
 	// SYNTHETIC: LEGO1 0x1005b8d0
 	// LegoInputManager::`scalar deleting destructor'
@@ -171,6 +180,10 @@ private:
 	MxBool m_useJoystick;  // 0x334
 	MxBool m_unk0x335;     // 0x335
 	MxBool m_unk0x336;     // 0x336
+
+	std::map<SDL_FingerID, SDL_FPoint> m_touchOrigins;
+	std::map<SDL_FingerID, MxU32> m_touchFlags;
+	std::map<SDL_FingerID, Uint64> m_touchLastMotion;
 };
 
 // TEMPLATE: LEGO1 0x10028850

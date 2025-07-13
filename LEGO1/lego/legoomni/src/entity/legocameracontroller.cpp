@@ -41,6 +41,10 @@ MxResult LegoCameraController::Create()
 // FUNCTION: BETA10 0x10067852
 MxLong LegoCameraController::Notify(MxParam& p_param)
 {
+	if (((LegoEventNotificationParam&) p_param).GetModifier() & LegoEventNotificationParam::c_motionHandled) {
+		return SUCCESS;
+	}
+
 	switch (((MxNotificationParam&) p_param).GetNotification()) {
 	case c_notificationDragEnd: {
 		if (((((LegoEventNotificationParam&) p_param).GetModifier()) & LegoEventNotificationParam::c_lButtonState) ==

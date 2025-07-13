@@ -2,7 +2,17 @@
 
 using namespace Extensions;
 
+std::map<std::string, std::string> TextureLoader::options;
 bool TextureLoader::enabled = false;
+
+void TextureLoader::Initialize()
+{
+	for (const auto& option : defaults) {
+		if (!options.count(option.first.data())) {
+			options[option.first.data()] = option.second;
+		}
+	}
+}
 
 bool TextureLoader::PatchTexture(LegoTextureInfo* p_textureInfo)
 {
@@ -88,6 +98,7 @@ bool TextureLoader::PatchTexture(LegoTextureInfo* p_textureInfo)
 SDL_Surface* TextureLoader::FindTexture(const char* p_name)
 {
 	SDL_Surface* surface;
+	const char* texturePath = options["texture loader:texture path"].c_str();
 	MxString path = MxString(MxOmni::GetHD()) + texturePath + p_name + ".bmp";
 
 	path.MapPathToFilesystem();
