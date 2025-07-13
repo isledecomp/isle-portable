@@ -3,16 +3,23 @@
 #include "extensions/extensions.h"
 #include "legotextureinfo.h"
 
+#include <map>
+
 namespace Extensions
 {
 class TextureLoader {
 public:
+	static void Initialize();
 	static bool PatchTexture(LegoTextureInfo* p_textureInfo);
+
+	static std::map<std::string, std::string> options;
 	static bool enabled;
 
-private:
-	static constexpr const char* texturePath = "/textures/";
+	static constexpr std::array<std::pair<std::string_view, std::string_view>, 1> defaults = {
+		{{"texture loader:texture path", "/textures/"}}
+	};
 
+private:
 	static SDL_Surface* FindTexture(const char* p_name);
 };
 
