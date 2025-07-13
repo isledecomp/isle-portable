@@ -3,6 +3,7 @@
 #include "lego1_export.h"
 
 #include <functional>
+#include <map>
 #include <optional>
 #include <string>
 
@@ -10,7 +11,7 @@ namespace Extensions
 {
 constexpr const char* availableExtensions[] = {"extensions:texture loader"};
 
-LEGO1_EXPORT void Enable(const char* p_key);
+LEGO1_EXPORT void Enable(const char* p_key, std::map<std::string, std::string> p_options);
 
 template <typename T>
 struct Extension {
