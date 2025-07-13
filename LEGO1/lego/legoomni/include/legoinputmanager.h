@@ -183,7 +183,7 @@ private:
 
 	std::map<SDL_FingerID, SDL_FPoint> m_touchOrigins;
 	std::map<SDL_FingerID, MxU32> m_touchFlags;
-	std::map<SDL_FingerID, Uint64> m_touchLastMotion;
+	std::map<SDL_FingerID, std::pair<MxU32, SDL_FPoint>> m_touchLastMotion;
 };
 
 // TEMPLATE: LEGO1 0x10028850
