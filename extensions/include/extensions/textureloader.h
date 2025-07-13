@@ -3,6 +3,7 @@
 #include "extensions/extensions.h"
 #include "legotextureinfo.h"
 
+#include <array>
 #include <map>
 
 namespace Extensions

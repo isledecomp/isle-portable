@@ -4,13 +4,18 @@ using namespace Extensions;
 
 std::map<std::string, std::string> TextureLoader::options;
 bool TextureLoader::enabled = false;
-
+#include <SDL3/SDL_log.h>
 void TextureLoader::Initialize()
 {
 	for (const auto& option : defaults) {
 		if (!options.count(option.first.data())) {
 			options[option.first.data()] = option.second;
 		}
+	}
+
+	for (const auto& x : options) {
+		SDL_Log(x.first.c_str());
+		SDL_Log(x.second.c_str());
 	}
 }
 

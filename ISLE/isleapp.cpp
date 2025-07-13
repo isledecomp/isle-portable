@@ -1121,8 +1121,9 @@ bool IsleApp::LoadConfig()
 	for (const char* key : Extensions::availableExtensions) {
 		if (iniparser_getboolean(dict, key, 0)) {
 			std::vector<const char*> extensionKeys;
-			extensionKeys.resize(iniparser_getsecnkeys(dict, key));
-			iniparser_getseckeys(dict, key, extensionKeys.data());
+			const char* section = SDL_strchr(key, ':') + 1;
+			extensionKeys.resize(iniparser_getsecnkeys(dict, section));
+			iniparser_getseckeys(dict, section, extensionKeys.data());
 
 			std::map<std::string, std::string> extensionDict;
 			for (const char* key : extensionKeys) {
