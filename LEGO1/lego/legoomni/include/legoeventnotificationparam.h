@@ -18,6 +18,7 @@ public:
 		c_rButtonState = 2,
 		c_modKey1 = 4,
 		c_modKey2 = 8,
+		c_motionHandled = 16,
 	};
 
 	// FUNCTION: LEGO1 0x10028690
