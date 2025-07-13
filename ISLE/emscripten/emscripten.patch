@@ -1,3 +1,28 @@
+diff --git a/src/lib/libhtml5.js b/src/lib/libhtml5.js
+index da08765e7..24e5da22e 100644
+--- a/src/lib/libhtml5.js
++++ b/src/lib/libhtml5.js
+@@ -1182,6 +1182,7 @@ var LibraryHTML5 = {
+ 
+   $registerRestoreOldStyle__deps: ['$getCanvasElementSize', '$setCanvasElementSize', '$currentFullscreenStrategy'],
+   $registerRestoreOldStyle: (canvas) => {
++    return;
+     var canvasSize = getCanvasElementSize(canvas);
+     var oldWidth = canvasSize[0];
+     var oldHeight = canvasSize[1];
+@@ -1326,9 +1327,9 @@ var LibraryHTML5 = {
+     var topMargin;
+ 
+     if (inAspectRatioFixedFullscreenMode) {
+-      if (w*y < x*h) h = (w * y / x) | 0;
+-      else if (w*y > x*h) w = (h * x / y) | 0;
+-      topMargin = ((screenHeight - h) / 2) | 0;
++      if (w*y < x*h) h = Math.round(w * y / x) | 0;
++      else if (w*y > x*h) w = Math.round(h * x / y) | 0;
++      topMargin = Math.round((screenHeight - h) / 2) | 0;
+     }
+ 
+     if (inPixelPerfectFullscreenMode) {
 diff --git a/src/lib/libpthread.js b/src/lib/libpthread.js
 index 6d979627e..97e3f8684 100644
 --- a/src/lib/libpthread.js
@@ -140,20 +165,26 @@ index e8c9f7e21..caf1971d2 100644
 -
  });
 diff --git a/src/preamble.js b/src/preamble.js
-index 572694517..0d2f4421b 100644
+index 572694517..44e65c823 100644
 --- a/src/preamble.js
 +++ b/src/preamble.js
-@@ -1062,3 +1062,13 @@ function getCompilerSetting(name) {
+@@ -1062,3 +1062,19 @@ function getCompilerSetting(name) {
  // dynamic linker as symbols are loaded.
  var asyncifyStubs = {};
  #endif
 +
-+(async () => {
-+  try {
-+    await navigator.storage.getDirectory();
-+    Module["disableOpfs"] = false;
-+  } catch (e) {
-+    Module["disableOpfs"] = true;
-+  }
-+})();
++if (typeof document !== "undefined") {
++  (async () => {
++    try {
++      await navigator.storage.getDirectory();
++      Module["disableOpfs"] = false;
++    } catch (e) {
++      Module["disableOpfs"] = true;
++    }
++    console.log("disableOpfs: " + Module["disableOpfs"]);
++  })();
++
++  Module["disableOffscreenCanvases"] ||= !document.createElement('canvas').getContext('webgl');
++  console.log("disableOffscreenCanvases: " + Module["disableOffscreenCanvases"]);
++}
 +

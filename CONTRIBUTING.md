@@ -6,12 +6,7 @@ If you feel fit to contribute, feel free to create a pull request! Someone will 
 
 Please keep your pull requests small and understandable; you may be able to shoot ahead and make a lot of progress in a short amount of time, but this is a collaborative project, so you must allow others to catch up and follow along. Large pull requests become significantly more unwieldy to review, and as such make it exponentially more likely for a mistake or error to go undetected. They also make it harder to merge other pull requests because the more files you modify, the more likely it is for a merge conflict to occur. A general guideline is to keep submissions limited to one class at a time. Sometimes two or more classes may be too interlinked for this to be feasible, so this is not a hard rule, however if your PR is starting to modify more than 10 or so files, it's probably getting too big.
 
-This repository has a single goal: achieving platform independence. Consequently, contributions that do not support this goal cannot be accepted. Examples of out-of-scope contributions include:
-
-* Improving code efficiency or performance without addressing platform compatibility
-* Replacing `MxString` with `std::string`
-* Fixing gameplay bugs
-* Enhancing audio or video quality
+This repository has achieving platform independence as its primary goal, with limited support for light modding (using [`extensions`](/extensions)). Any changes that modify code in `LEGO1` are unlikely to be accepted, unless they directly serve to increase platform compatibility.
 
 If in doubt, please contact us in the [Matrix chatroom](https://matrix.to/#/#isledecomp:matrix.org).
 

@@ -19,42 +19,44 @@ add_library(miniwin STATIC EXCLUDE_FROM_ALL
   src/d3drm/d3drmmesh.cpp
   src/d3drm/d3drmtexture.cpp
   src/d3drm/d3drmviewport.cpp
+  src/d3drm/d3drmrenderer.cpp
   src/internal/meshutils.cpp
-
-  # D3DRM backends
-  src/d3drm/backends/sdl3gpu/renderer.cpp
-  src/d3drm/backends/sdl3gpu/shaders/generated/ShaderIndex.cpp
-  src/d3drm/backends/software/renderer.cpp
 )
 
 target_compile_definitions(miniwin PRIVATE
     $<$<CONFIG:Debug>:DEBUG>
 )
 
-find_package(OpenGL)
-if(OpenGL_FOUND AND NOT WINDOWS_STORE)
-  message(STATUS "Found OpenGL: enabling OpenGL 1.x renderer")
-  target_sources(miniwin PRIVATE
-    src/d3drm/backends/opengl1/actual.cpp
-    src/d3drm/backends/opengl1/renderer.cpp
-  )
-  target_compile_definitions(miniwin PRIVATE USE_OPENGL1)
-  target_link_libraries(miniwin PRIVATE OpenGL::GL)
-else()
-  message(STATUS "🧩 OpenGL 1.x support not enabled — needs OpenGL")
+list(APPEND GRAPHICS_BACKENDS USE_SOFTWARE_RENDER)
+list(APPEND GRAPHICS_BACKENDS USE_SDL_GPU)
+
+if(NOT WINDOWS_STORE)
+  find_package(OpenGL)
+    if(OpenGL_FOUND)
+      message(STATUS "Found OpenGL: enabling OpenGL 1.x renderer")
+      target_sources(miniwin PRIVATE
+      src/d3drm/backends/opengl1/actual.cpp
+      src/d3drm/backends/opengl1/renderer.cpp
+    )
+    list(APPEND GRAPHICS_BACKENDS USE_OPENGL1)
+    target_link_libraries(miniwin PRIVATE OpenGL::GL)
+  else()
+    message(STATUS "🧩 OpenGL 1.x support not enabled — needs OpenGL")
+  endif()
+
+  find_library(OPENGL_ES2_LIBRARY NAMES GLESv2)
+  if(EMSCRIPTEN OR OPENGL_ES2_LIBRARY)
+    message(STATUS "Found OpenGL: enabling OpenGL ES 2.x renderer")
+    target_sources(miniwin PRIVATE src/d3drm/backends/opengles2/renderer.cpp)
+    list(APPEND GRAPHICS_BACKENDS USE_OPENGLES2)
+    if(OPENGL_ES2_LIBRARY)
+      target_link_libraries(miniwin PRIVATE ${OPENGL_ES2_LIBRARY})
+    endif()
+  else()
+    message(STATUS "🧩 OpenGL ES 2.x support not enabled")
+  endif()
 endif()
 
-find_library(OPENGL_ES2_LIBRARY NAMES GLESv2)
-if(EMSCRIPTEN OR OPENGL_ES2_LIBRARY AND NOT WINDOWS_STORE)
-  message(STATUS "Found OpenGL: enabling OpenGL ES 2.x renderer")
-  target_sources(miniwin PRIVATE src/d3drm/backends/opengles2/renderer.cpp)
-  target_compile_definitions(miniwin PRIVATE USE_OPENGLES2)
-  if(OPENGL_ES2_LIBRARY)
-    target_link_libraries(miniwin PRIVATE OpenGL::GL)
-  endif()
-else()
-  message(STATUS "🧩 OpenGL ES 2.x support not enabled")
-endif()
 
 if(NINTENDO_3DS)
   if(ISLE_DEBUG)
@@ -68,6 +70,7 @@ if(NINTENDO_3DS)
     ctr_add_shader_library(vshader src/d3drm/backends/citro3d/vshader.v.pica)
     dkp_add_embedded_binary_library(3ds_shaders vshader)
     target_link_libraries(miniwin PRIVATE ${CITRO3D_LIBRARY} 3ds_shaders)
+    list(APPEND GRAPHICS_BACKENDS USE_CITRO3D)
   else()
     message(STATUS "🧩 Citro3D support not enabled")
   endif()
@@ -79,10 +82,24 @@ if(WIN32 AND NOT WINDOWS_STORE)
     src/d3drm/backends/directx9/renderer.cpp
   )
   target_link_libraries(miniwin PRIVATE d3d9)
+  list(APPEND GRAPHICS_BACKENDS USE_DIRECTX9)
 endif()
 
 if(WINDOWS_STORE)
   add_compile_definitions(WINDOWS_STORE)
+endif()
+
+if(USE_SDL_GPU IN_LIST GRAPHICS_BACKENDS)
+  target_sources(miniwin PRIVATE
+    src/d3drm/backends/sdl3gpu/renderer.cpp
+    src/d3drm/backends/sdl3gpu/shaders/generated/ShaderIndex.cpp
+  )
+endif()
+
+if(USE_SOFTWARE_RENDER IN_LIST GRAPHICS_BACKENDS)
+  target_sources(miniwin PRIVATE
+    src/d3drm/backends/software/renderer.cpp
+  )
 endif()
 
 target_compile_definitions(miniwin PUBLIC MINIWIN)
@@ -95,6 +112,9 @@ target_include_directories(miniwin
 target_link_libraries(miniwin PUBLIC miniwin-headers)
 
 target_link_libraries(miniwin PRIVATE SDL3::SDL3)
+
+target_compile_definitions(miniwin PUBLIC ${GRAPHICS_BACKENDS})
+
 
 # Shader stuff
 

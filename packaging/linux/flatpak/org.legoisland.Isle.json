@@ -57,6 +57,11 @@
                 },
                 {
                     "type": "dir",
+                    "path": "../../../extensions",
+                    "dest": "extensions/"
+                },
+                {
+                    "type": "dir",
                     "path": "../../../packaging",
                     "dest": "packaging/"
                 },
