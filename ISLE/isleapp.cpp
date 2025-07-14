@@ -706,8 +706,9 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		float x = SDL_clamp(event->tfinger.x, 0, 1) * g_targetWidth;
 		float y = SDL_clamp(event->tfinger.y, 0, 1) * g_targetHeight;
 
+		g_isle->DetectDoubleTap(event->tfinger);
+
 		if (InputManager()) {
-			g_isle->DetectDoubleTap(event->tfinger);
 			InputManager()->HandleTouchEvent(event, g_isle->GetTouchScheme());
 			InputManager()->QueueEvent(c_notificationButtonUp, 0, x, y, 0);
 		}
@@ -1449,7 +1450,11 @@ void IsleApp::DetectDoubleTap(const SDL_TouchFingerEvent& p_event)
 	LastTap currentTap = {p_event.timestamp, {p_event.x, p_event.y}};
 	if (SDL_NS_TO_MS(currentTap.first - lastTap.first) < doubleTapMs &&
 		DISTSQRD2(currentTap.second, lastTap.second) < doubleTapDist) {
-		InputManager()->QueueEvent(c_notificationKeyPress, SDLK_SPACE, 0, 0, SDLK_SPACE);
+
+		if (InputManager()) {
+			InputManager()->QueueEvent(c_notificationKeyPress, SDLK_SPACE, 0, 0, SDLK_SPACE);
+		}
+
 		lastTap = {0, {0, 0}};
 	}
 	else {
