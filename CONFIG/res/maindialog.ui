@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>575</width>
-    <height>600</height>
+    <width>550</width>
+    <height>610</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -56,13 +56,16 @@
      <property name="scaledContents">
       <bool>false</bool>
      </property>
-     <property name="alignment">
-      <set>Qt::AlignmentFlag::AlignCenter</set>
-     </property>
     </widget>
    </item>
    <item>
     <widget class="QWidget" name="settingsWidget" native="true">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
        <widget class="QWidget" name="dataPaths" native="true">
@@ -89,7 +92,7 @@
            </property>
            <property name="maximumSize">
             <size>
-             <width>55</width>
+             <width>50</width>
              <height>16777215</height>
             </size>
            </property>
@@ -108,7 +111,7 @@
            </property>
            <property name="maximumSize">
             <size>
-             <width>55</width>
+             <width>50</width>
              <height>16777215</height>
             </size>
            </property>
@@ -129,10 +132,7 @@
             <string>Save Path:</string>
            </property>
            <property name="textFormat">
-            <enum>Qt::TextFormat::PlainText</enum>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+            <enum>Qt::PlainText</enum>
            </property>
           </widget>
          </item>
@@ -162,10 +162,7 @@
             <string>Data Path:</string>
            </property>
            <property name="textFormat">
-            <enum>Qt::TextFormat::PlainText</enum>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+            <enum>Qt::PlainText</enum>
            </property>
           </widget>
          </item>
@@ -189,11 +186,11 @@
          </property>
          <item row="0" column="3">
           <widget class="QGroupBox" name="modelQualityGroup">
-           <property name="maximumSize">
-            <size>
-             <width>16777215</width>
-             <height>120</height>
-            </size>
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
            </property>
            <property name="toolTip">
             <string>Set 3D model detail level.</string>
@@ -204,8 +201,14 @@
            <layout class="QVBoxLayout" name="verticalLayout_6">
             <item>
              <widget class="QRadioButton" name="modelQualityLowRadioButton">
+              <property name="toolTip">
+               <string>Broken, not recommended.</string>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">color: rgb(255, 0, 0);</string>
+              </property>
               <property name="text">
-               <string>Low</string>
+               <string>Low - BROKEN!</string>
               </property>
              </widget>
             </item>
@@ -228,6 +231,12 @@
          </item>
          <item row="1" column="2">
           <widget class="QGroupBox" name="maxLoDGroup">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
            <property name="minimumSize">
             <size>
              <width>0</width>
@@ -240,12 +249,15 @@
            <property name="title">
             <string>Maximum LOD</string>
            </property>
-           <property name="alignment">
-            <set>Qt::AlignmentFlag::AlignCenter</set>
-           </property>
            <layout class="QHBoxLayout" name="horizontalLayout_7">
             <item>
              <widget class="QSlider" name="maxLoDSlider">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="maximum">
                <number>50</number>
               </property>
@@ -262,10 +274,10 @@
                <bool>false</bool>
               </property>
               <property name="orientation">
-               <enum>Qt::Orientation::Horizontal</enum>
+               <enum>Qt::Horizontal</enum>
               </property>
               <property name="tickPosition">
-               <enum>QSlider::TickPosition::TicksBothSides</enum>
+               <enum>QSlider::NoTicks</enum>
               </property>
               <property name="tickInterval">
                <number>10</number>
@@ -277,6 +289,12 @@
          </item>
          <item row="0" column="2">
           <widget class="QGroupBox" name="textureQualityGroup">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
            <property name="toolTip">
             <string>Set texture detail level.</string>
            </property>
@@ -309,18 +327,27 @@
          </item>
          <item row="1" column="3">
           <widget class="QGroupBox" name="maxActorsGroup">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
            <property name="toolTip">
             <string>Maximum number of LEGO actors to exist in the world at a time. The game will gradually increase the number of actors until this maximum is reached and while performance is acceptable.</string>
            </property>
            <property name="title">
             <string>Maximum Actors (5..40)</string>
            </property>
-           <property name="alignment">
-            <set>Qt::AlignmentFlag::AlignCenter</set>
-           </property>
            <layout class="QHBoxLayout" name="horizontalLayout_8">
             <item>
              <widget class="QSlider" name="maxActorsSlider">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="minimum">
                <number>5</number>
               </property>
@@ -340,10 +367,10 @@
                <bool>false</bool>
               </property>
               <property name="orientation">
-               <enum>Qt::Orientation::Horizontal</enum>
+               <enum>Qt::Horizontal</enum>
               </property>
               <property name="tickPosition">
-               <enum>QSlider::TickPosition::TicksBothSides</enum>
+               <enum>QSlider::NoTicks</enum>
               </property>
               <property name="tickInterval">
                <number>5</number>
@@ -358,7 +385,22 @@
       </item>
       <item>
        <widget class="QWidget" name="checkboxWidget" native="true">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <property name="spacing">
+          <number>10</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
          <item>
           <widget class="QCheckBox" name="sound3DCheckBox">
            <property name="toolTip">
@@ -403,76 +445,81 @@
        </widget>
       </item>
       <item>
-       <widget class="QLabel" name="label">
-        <property name="text">
-         <string>Transition Type</string>
+       <widget class="QGroupBox" name="transitionBox">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
         </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QComboBox" name="transitionTypeComboBox">
         <property name="toolTip">
          <string>Sets the transition effect to be used in game.</string>
         </property>
-        <property name="currentText">
-         <string>Idle - Broken</string>
+        <property name="title">
+         <string>Transition Type</string>
         </property>
-        <property name="placeholderText">
-         <string/>
-        </property>
-        <item>
-         <property name="text">
-          <string>Idle - Broken</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>No Animation</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Dissolve</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Mosaic</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Wipe Down</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Windows</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Unknown - Broken</string>
-         </property>
-        </item>
+        <layout class="QVBoxLayout" name="verticalLayout_3">
+         <item>
+          <widget class="QComboBox" name="transitionTypeComboBox">
+           <property name="currentText">
+            <string>Mosaic</string>
+           </property>
+           <property name="currentIndex">
+            <number>3</number>
+           </property>
+           <item>
+            <property name="text">
+             <string>Idle - Broken</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>No Animation</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Dissolve</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Mosaic</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Wipe Down</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Windows</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Unknown - Broken</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+        </layout>
        </widget>
       </item>
       <item>
        <widget class="QGroupBox" name="advancedGroup">
-        <property name="maximumSize">
-         <size>
-          <width>16777215</width>
-          <height>225</height>
-         </size>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
         </property>
         <property name="toolTip">
          <string>3D graphics device used to render the game.</string>
         </property>
         <property name="title">
-         <string/>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignmentFlag::AlignCenter</set>
+         <string>Graphics Devices</string>
         </property>
         <property name="flat">
          <bool>false</bool>
@@ -491,28 +538,6 @@
           <number>6</number>
          </property>
          <item>
-          <widget class="QLabel" name="direct3DDevicesLabel">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>0</width>
-             <height>25</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>Direct 3D Devices</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignmentFlag::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item>
           <widget class="QListWidget" name="devicesList">
            <property name="enabled">
             <bool>true</bool>
@@ -526,17 +551,17 @@
            <property name="maximumSize">
             <size>
              <width>16777215</width>
-             <height>125</height>
+             <height>100</height>
             </size>
            </property>
            <property name="editTriggers">
-            <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
+            <set>QAbstractItemView::NoEditTriggers</set>
            </property>
            <property name="alternatingRowColors">
             <bool>true</bool>
            </property>
            <property name="selectionBehavior">
-            <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
+            <enum>QAbstractItemView::SelectItems</enum>
            </property>
           </widget>
          </item>
@@ -545,9 +570,15 @@
       </item>
       <item>
        <widget class="QWidget" name="buttonWidgets" native="true">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <layout class="QHBoxLayout" name="horizontalLayout_6">
          <property name="spacing">
-          <number>30</number>
+          <number>10</number>
          </property>
          <property name="leftMargin">
           <number>0</number>
