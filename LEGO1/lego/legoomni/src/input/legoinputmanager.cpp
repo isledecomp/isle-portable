@@ -101,6 +101,16 @@ void LegoInputManager::Destroy()
 
 		SDL_CloseGamepad(joystick.first);
 	}
+
+	for (const auto& [id, mouse] : m_mice) {
+		if (mouse.second) {
+			SDL_CloseHaptic(mouse.second);
+		}
+	}
+
+	for (const auto& [id, haptic] : m_otherHaptics) {
+		SDL_CloseHaptic(haptic);
+	}
 }
 
 // FUNCTION: LEGO1 0x1005c0f0
