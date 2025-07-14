@@ -526,6 +526,9 @@ if (ISLE_BUILD_APP)
   # Allow unconditional include of miniwin/miniwindevice.h
   target_link_libraries(isle PRIVATE miniwin-headers)
 
+  # Vector math
+  target_link_libraries(isle PRIVATE Vec::Vec)
+
   # Link DSOUND and WINMM
   if (WIN32)
     target_link_libraries(isle PRIVATE winmm)
