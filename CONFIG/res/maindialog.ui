@@ -139,7 +139,8 @@
          <item row="0" column="1">
           <widget class="QLineEdit" name="dataPath">
            <property name="toolTip">
-            <string>Path to the game data files. Set this to the CD image root.</string>
+            <string>Path to the game data files.
+Set this to the CD image root.</string>
            </property>
           </widget>
          </item>
@@ -193,7 +194,8 @@
             </sizepolicy>
            </property>
            <property name="toolTip">
-            <string>Maximum number of LEGO actors to exist in the world at a time. The game will gradually increase the number of actors until this maximum is reached and while performance is acceptable.</string>
+            <string>Maximum number of LEGO actors to exist in the world at a time.
+The game will gradually increase the number of actors until this maximum is reached and while performance is acceptable.</string>
            </property>
            <property name="title">
             <string>Maximum Actors (5..40)</string>
@@ -273,7 +275,8 @@
             </size>
            </property>
            <property name="toolTip">
-            <string>Maximum Level of Detail (LOD). A higher setting will cause higher quality textures to be drawn regardless of distance.</string>
+            <string>Maximum Level of Detail (LOD).
+A higher setting will cause higher quality textures to be drawn regardless of distance.</string>
            </property>
            <property name="title">
             <string>Maximum LOD</string>
