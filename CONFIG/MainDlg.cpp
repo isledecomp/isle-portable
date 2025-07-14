@@ -59,6 +59,7 @@ CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 	connect(m_ui->sound3DCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckbox3DSound);
 	connect(m_ui->fullscreenCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxFullscreen);
 	connect(m_ui->rumbleCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxRumble);
+	connect(m_ui->textureCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxTexture);
 	connect(m_ui->touchComboBox, &QComboBox::currentIndexChanged, this, &CMainDialog::TouchControlsChanged);
 	connect(m_ui->transitionTypeComboBox, &QComboBox::currentIndexChanged, this, &CMainDialog::TransitionTypeChanged);
 	connect(m_ui->okButton, &QPushButton::clicked, this, &CMainDialog::accept);
@@ -70,6 +71,9 @@ CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 
 	connect(m_ui->dataPath, &QLineEdit::editingFinished, this, &CMainDialog::DataPathEdited);
 	connect(m_ui->savePath, &QLineEdit::editingFinished, this, &CMainDialog::SavePathEdited);
+
+	connect(m_ui->texturePathOpen, &QPushButton::clicked, this, &CMainDialog::SelectTexturePathDialog);
+	connect(m_ui->texturePath, &QLineEdit::editingFinished, this, &CMainDialog::TexturePathEdited);
 
 	connect(m_ui->maxLoDSlider, &QSlider::valueChanged, this, &CMainDialog::MaxLoDChanged);
 	connect(m_ui->maxActorsSlider, &QSlider::valueChanged, this, &CMainDialog::MaxActorsChanged);
@@ -214,9 +218,15 @@ void CMainDialog::UpdateInterface()
 	m_ui->musicCheckBox->setChecked(currentConfigApp->m_music);
 	m_ui->fullscreenCheckBox->setChecked(currentConfigApp->m_full_screen);
 	m_ui->rumbleCheckBox->setChecked(currentConfigApp->m_haptic);
+	m_ui->touchComboBox->setCurrentIndex(currentConfigApp->m_touch_scheme);
 	m_ui->transitionTypeComboBox->setCurrentIndex(currentConfigApp->m_transition_type);
 	m_ui->dataPath->setText(QString::fromStdString(currentConfigApp->m_cd_path));
 	m_ui->savePath->setText(QString::fromStdString(currentConfigApp->m_save_path));
+	m_ui->textureCheckBox->setChecked(currentConfigApp->m_texture_load);
+	m_ui->texturePath->setText(QString::fromStdString(currentConfigApp->m_texture_path));
+
+	m_ui->texturePath->setEnabled(currentConfigApp->m_texture_load);
+	m_ui->texturePathOpen->setEnabled(currentConfigApp->m_texture_load);
 }
 
 // FUNCTION: CONFIG 0x004045e0
@@ -298,9 +308,16 @@ void CMainDialog::OnCheckboxRumble(bool checked)
 	UpdateInterface();
 }
 
+void CMainDialog::OnCheckboxTexture(bool checked)
+{
+	currentConfigApp->m_texture_load = checked;
+	m_modified = true;
+	UpdateInterface();
+}
+
 void CMainDialog::TouchControlsChanged(int index)
 {
-	currentConfigApp->m_touchScheme = index;
+	currentConfigApp->m_touch_scheme = index;
 	m_modified = true;
 	UpdateInterface();
 }
@@ -390,4 +407,34 @@ void CMainDialog::MaxActorsChanged(int value)
 {
 	currentConfigApp->m_max_actors = value;
 	m_modified = true;
+}
+
+void CMainDialog::SelectTexturePathDialog()
+{
+	QString texture_path = QString::fromStdString(currentConfigApp->m_texture_path);
+	texture_path = QFileDialog::getExistingDirectory(
+		this,
+		tr("Open Directory"),
+		texture_path,
+		QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
+	);
+
+	QDir texture_dir = QDir(texture_path);
+
+	if (texture_dir.exists()) {
+		currentConfigApp->m_texture_path = texture_dir.absolutePath().toStdString();
+		m_modified = true;
+	}
+	UpdateInterface();
+}
+
+void CMainDialog::TexturePathEdited()
+{
+	QDir texture_dir = QDir(m_ui->texturePath->text());
+
+	if (texture_dir.exists()) {
+		currentConfigApp->m_texture_path = texture_dir.absolutePath().toStdString();
+		m_modified = true;
+	}
+	UpdateInterface();
 }

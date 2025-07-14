@@ -43,6 +43,7 @@ private slots:
 	void OnCheckboxMusic(bool checked);
 	void OnCheckboxFullscreen(bool checked);
 	void OnCheckboxRumble(bool checked);
+	void OnCheckboxTexture(bool checked);
 	void TouchControlsChanged(int index);
 	void TransitionTypeChanged(int index);
 	void accept() override;
@@ -54,6 +55,8 @@ private slots:
 	void SavePathEdited();
 	void MaxLoDChanged(int value);
 	void MaxActorsChanged(int value);
+	void SelectTexturePathDialog();
+	void TexturePathEdited();
 };
 
 // SYNTHETIC: CONFIG 0x00403de0
