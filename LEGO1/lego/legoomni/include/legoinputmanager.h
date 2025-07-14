@@ -8,6 +8,7 @@
 #include "mxpresenter.h"
 #include "mxqueue.h"
 
+#include <SDL3/SDL_haptic.h>
 #include <SDL3/SDL_joystick.h>
 #include <SDL3/SDL_keyboard.h>
 #include <SDL3/SDL_keycode.h>
@@ -19,6 +20,7 @@
 #endif
 
 #include <map>
+#include <variant>
 
 class LegoCameraController;
 class LegoControlManager;
@@ -129,8 +131,6 @@ public:
 	void SetUnknown88(MxBool p_unk0x88) { m_unk0x88 = p_unk0x88; }
 	void SetUnknown335(MxBool p_unk0x335) { m_unk0x335 = p_unk0x335; }
 	void SetUnknown336(MxBool p_unk0x336) { m_unk0x336 = p_unk0x336; }
-	void SetUseJoystick(MxBool p_useJoystick) { m_useJoystick = p_useJoystick; }
-	void SetJoystickIndex(MxS32 p_joystickIndex) { m_joystickIndex = p_joystickIndex; }
 
 	void DisableInputProcessing()
 	{
@@ -152,13 +152,26 @@ public:
 	void GetKeyboardState();
 	MxResult GetNavigationKeyStates(MxU32& p_keyFlags);
 	MxResult GetNavigationTouchStates(MxU32& p_keyFlags);
+	LEGO1_EXPORT void AddMouse(SDL_MouseID p_mouseID);
+	LEGO1_EXPORT void RemoveMouse(SDL_MouseID p_mouseID);
+	LEGO1_EXPORT void AddJoystick(SDL_JoystickID p_joystickID);
+	LEGO1_EXPORT void RemoveJoystick(SDL_JoystickID p_joystickID);
 	LEGO1_EXPORT MxBool HandleTouchEvent(SDL_Event* p_event, TouchScheme p_touchScheme);
 	LEGO1_EXPORT MxBool HandleRumbleEvent();
+	LEGO1_EXPORT void UpdateLastInputMethod(SDL_Event* p_event);
 
 	// SYNTHETIC: LEGO1 0x1005b8d0
 	// LegoInputManager::`scalar deleting destructor'
 
 private:
+	// clang-format off
+	enum class SDL_MouseID_v : SDL_MouseID {};
+	enum class SDL_JoystickID_v : SDL_JoystickID {};
+	enum class SDL_TouchID_v : SDL_TouchID {};
+	// clang-format on
+
+	void InitializeHaptics();
+
 	MxCriticalSection m_criticalSection;  // 0x58
 	LegoNotifyList* m_keyboardNotifyList; // 0x5c
 	LegoCameraController* m_camera;       // 0x60
@@ -175,16 +188,16 @@ private:
 	MxBool m_unk0x88;                     // 0x88
 	const bool* m_keyboardState;
 	MxBool m_unk0x195; // 0x195
-	SDL_JoystickID* m_joyids;
-	SDL_Gamepad* m_joystick;
-	MxS32 m_joystickIndex; // 0x19c
-	MxBool m_useJoystick;  // 0x334
-	MxBool m_unk0x335;     // 0x335
-	MxBool m_unk0x336;     // 0x336
+	MxBool m_unk0x335; // 0x335
+	MxBool m_unk0x336; // 0x336
 
 	std::map<SDL_FingerID, SDL_FPoint> m_touchOrigins;
 	std::map<SDL_FingerID, MxU32> m_touchFlags;
 	std::map<SDL_FingerID, std::pair<MxU32, SDL_FPoint>> m_touchLastMotion;
+	std::map<SDL_MouseID, std::pair<void*, SDL_Haptic*>> m_mice;
+	std::map<SDL_JoystickID, std::pair<SDL_Gamepad*, SDL_Haptic*>> m_joysticks;
+	std::map<SDL_HapticID, SDL_Haptic*> m_otherHaptics;
+	std::variant<SDL_MouseID_v, SDL_JoystickID_v, SDL_TouchID_v> m_lastInputMethod;
 };
 
 // TEMPLATE: LEGO1 0x10028850
