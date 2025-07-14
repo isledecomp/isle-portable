@@ -65,6 +65,7 @@ public:
 	MxResult VerifyFilesystem();
 	void DetectGameVersion();
 	void MoveVirtualMouseViaJoystick();
+	void DetectDoubleTap(const SDL_TouchFingerEvent& p_event);
 
 private:
 	char* m_hdPath;              // 0x00

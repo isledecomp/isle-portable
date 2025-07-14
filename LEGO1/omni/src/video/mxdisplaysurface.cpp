@@ -1258,7 +1258,7 @@ LPDIRECTDRAWSURFACE MxDisplaySurface::CreateCursorSurface(const CursorBitmap* p_
 
 					MxS32 pixel;
 					if (!isOpaque) {
-						pixel = RGB8888_CREATE(0, 0, 0, 0); // Transparent pixel
+						pixel = RGB8888_CREATE(0xff, 0, 0xff, 0); // Transparent pixel
 					}
 					else {
 						pixel = isBlack ? RGB8888_CREATE(0, 0, 0, 0xff) : RGB8888_CREATE(0xff, 0xff, 0xff, 0xff);
@@ -1289,8 +1289,8 @@ LPDIRECTDRAWSURFACE MxDisplaySurface::CreateCursorSurface(const CursorBitmap* p_
 		}
 		default: {
 			DDCOLORKEY colorkey;
-			colorkey.dwColorSpaceHighValue = RGB8888_CREATE(0, 0, 0, 0);
-			colorkey.dwColorSpaceLowValue = RGB8888_CREATE(0, 0, 0, 0);
+			colorkey.dwColorSpaceHighValue = RGB8888_CREATE(0xff, 0, 0xff, 0);
+			colorkey.dwColorSpaceLowValue = RGB8888_CREATE(0xff, 0, 0xff, 0);
 			newSurface->SetColorKey(DDCKEY_SRCBLT, &colorkey);
 			break;
 		}
