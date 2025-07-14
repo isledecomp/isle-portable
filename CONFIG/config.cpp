@@ -78,6 +78,10 @@ bool CConfigApp::InitInstance()
 	m_3d_video_ram = FALSE;
 	m_joystick_index = -1;
 	m_display_bit_depth = 16;
+	m_haptic = TRUE;
+	m_touch_scheme = 2;
+	m_texture_load = TRUE;
+	m_texture_path = "/textures/";
 	int totalRamMiB = SDL_GetSystemRAM();
 	if (totalRamMiB < 12) {
 		m_3d_sound = FALSE;
@@ -155,6 +159,7 @@ bool CConfigApp::ReadRegisterSettings()
 	m_flip_surfaces = iniparser_getboolean(dict, "isle:Flip Surfaces", m_flip_surfaces);
 	m_full_screen = iniparser_getboolean(dict, "isle:Full Screen", m_full_screen);
 	m_transition_type = iniparser_getint(dict, "isle:Transition Type", m_transition_type);
+	m_touch_scheme = iniparser_getint(dict, "isle:Touch Scheme", m_touch_scheme);
 	m_3d_video_ram = iniparser_getboolean(dict, "isle:Back Buffers in Video RAM", m_3d_video_ram);
 	m_wide_view_angle = iniparser_getboolean(dict, "isle:Wide View Angle", m_wide_view_angle);
 	m_3d_sound = iniparser_getboolean(dict, "isle:3DSound", m_3d_sound);
@@ -162,10 +167,13 @@ bool CConfigApp::ReadRegisterSettings()
 	m_model_quality = iniparser_getint(dict, "isle:Island Quality", m_model_quality);
 	m_texture_quality = iniparser_getint(dict, "isle:Island Texture", m_texture_quality);
 	m_use_joystick = iniparser_getboolean(dict, "isle:UseJoystick", m_use_joystick);
+	m_haptic = iniparser_getboolean(dict, "isle:Haptic", m_haptic);
 	m_music = iniparser_getboolean(dict, "isle:Music", m_music);
 	m_joystick_index = iniparser_getint(dict, "isle:JoystickIndex", m_joystick_index);
 	m_max_lod = iniparser_getdouble(dict, "isle:Max LOD", m_max_lod);
 	m_max_actors = iniparser_getint(dict, "isle:Max Allowed Extras", m_max_actors);
+	m_texture_load = iniparser_getboolean(dict, "extensions:texture loader", m_texture_load);
+	m_texture_path = iniparser_getstring(dict, "texture loader:texture path", m_texture_path.c_str());
 	iniparser_freedict(dict);
 	return true;
 }
@@ -228,6 +236,14 @@ bool CConfigApp::ValidateSettings()
 	}
 	if (m_max_actors < 5 || m_max_actors > 40) {
 		m_max_actors = 20;
+		is_modified = TRUE;
+	}
+	if (!m_use_joystick) {
+		m_use_joystick = true;
+		is_modified = TRUE;
+	}
+	if (m_touch_scheme < 0 || m_touch_scheme > 2) {
+		m_touch_scheme = 2;
 		is_modified = TRUE;
 	}
 
@@ -298,6 +314,8 @@ void CConfigApp::WriteRegisterSettings() const
 
 	dictionary* dict = dictionary_new(0);
 	iniparser_set(dict, "isle", NULL);
+	iniparser_set(dict, "extensions", NULL);
+	iniparser_set(dict, "texture loader", NULL);
 	if (m_device_enumerator->FormatDeviceName(buffer, m_driver, m_device) >= 0) {
 		iniparser_set(dict, "isle:3D Device ID", buffer);
 	}
@@ -311,13 +329,18 @@ void CConfigApp::WriteRegisterSettings() const
 	SetIniBool(dict, "isle:Wide View Angle", m_wide_view_angle);
 
 	SetIniInt(dict, "isle:Transition Type", m_transition_type);
+	SetIniInt(dict, "isle:Touch Scheme", m_touch_scheme);
 
 	SetIniBool(dict, "isle:3DSound", m_3d_sound);
 	SetIniBool(dict, "isle:Music", m_music);
+	SetIniBool(dict, "isle:Haptic", m_haptic);
 
 	SetIniBool(dict, "isle:UseJoystick", m_use_joystick);
 	SetIniInt(dict, "isle:JoystickIndex", m_joystick_index);
 	SetIniBool(dict, "isle:Draw Cursor", m_draw_cursor);
+
+	SetIniBool(dict, "extensions:texture loader", m_texture_load);
+	iniparser_set(dict, "texture loader:texture path", m_texture_path.c_str());
 
 	SetIniBool(dict, "isle:Back Buffers in Video RAM", m_3d_video_ram);
 
