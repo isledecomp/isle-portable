@@ -239,7 +239,7 @@ The game will gradually increase the number of actors until this maximum is reac
              </widget>
             </item>
             <item>
-             <widget class="QLabel" name="label">
+             <widget class="QLabel" name="maxActorsNum">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
                 <horstretch>0</horstretch>
@@ -805,70 +805,5 @@ A higher setting will cause higher quality textures to be drawn regardless of di
  <resources>
   <include location="config.qrc"/>
  </resources>
- <connections>
-  <connection>
-   <sender>maxActorsSlider</sender>
-   <signal>sliderMoved(int)</signal>
-   <receiver>label</receiver>
-   <slot>setNum(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>436</x>
-     <y>269</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>525</x>
-     <y>274</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>maxActorsSlider</sender>
-   <signal>valueChanged(int)</signal>
-   <receiver>label</receiver>
-   <slot>setNum(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>387</x>
-     <y>274</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>518</x>
-     <y>276</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>maxLoDSlider</sender>
-   <signal>valueChanged(int)</signal>
-   <receiver>LoDNum</receiver>
-   <slot>setNum(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>269</x>
-     <y>270</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>327</x>
-     <y>274</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>maxLoDSlider</sender>
-   <signal>sliderMoved(int)</signal>
-   <receiver>LoDNum</receiver>
-   <slot>setNum(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>260</x>
-     <y>277</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>328</x>
-     <y>262</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
 </ui>

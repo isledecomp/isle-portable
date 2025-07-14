@@ -76,7 +76,9 @@ CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 	connect(m_ui->texturePath, &QLineEdit::editingFinished, this, &CMainDialog::TexturePathEdited);
 
 	connect(m_ui->maxLoDSlider, &QSlider::valueChanged, this, &CMainDialog::MaxLoDChanged);
+	connect(m_ui->maxLoDSlider, &QSlider::sliderMoved, this, &CMainDialog::MaxLoDChanged);
 	connect(m_ui->maxActorsSlider, &QSlider::valueChanged, this, &CMainDialog::MaxActorsChanged);
+	connect(m_ui->maxActorsSlider, &QSlider::sliderMoved, this, &CMainDialog::MaxActorsChanged);
 
 	layout()->setSizeConstraint(QLayout::SetFixedSize);
 }
@@ -120,7 +122,9 @@ bool CMainDialog::OnInitDialog()
 	m_ui->devicesList->setCurrentRow(selected);
 
 	m_ui->maxLoDSlider->setValue((int) currentConfigApp->m_max_lod * 10);
+	m_ui->LoDNum->setNum((int) currentConfigApp->m_max_lod * 10);
 	m_ui->maxActorsSlider->setValue(currentConfigApp->m_max_actors);
+	m_ui->maxActorsNum->setNum(currentConfigApp->m_max_actors);
 	UpdateInterface();
 	return true;
 }
@@ -400,12 +404,14 @@ void CMainDialog::SavePathEdited()
 void CMainDialog::MaxLoDChanged(int value)
 {
 	currentConfigApp->m_max_lod = static_cast<float>(value) / 10.0f;
+	m_ui->LoDNum->setNum(value);
 	m_modified = true;
 }
 
 void CMainDialog::MaxActorsChanged(int value)
 {
 	currentConfigApp->m_max_actors = value;
+	m_ui->maxActorsNum->setNum(value);
 	m_modified = true;
 }
 
