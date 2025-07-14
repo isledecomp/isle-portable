@@ -779,7 +779,7 @@ if(NINTENDO_3DS)
     DESCRIPTION "LEGO Island for the Nintendo 3DS"
     AUTHOR "isledecomp/isle-portable"
     VERSION "${PROJECT_VERSION}"
-    ICON "ISLE/res/3ds/icon.png"
+    ICON "${CMAKE_SOURCE_DIR}/packaging/3ds/icon.png"
   )
 
   ctr_create_3dsx(isle SMDH isle.smdh)
@@ -787,10 +787,10 @@ if(NINTENDO_3DS)
     add_custom_command(
       OUTPUT "isle.bnr"
       COMMAND "${BANNERTOOL}" makebanner
-        -i "${CMAKE_SOURCE_DIR}/ISLE/res/3ds/banner.png"
-        -a "${CMAKE_SOURCE_DIR}/ISLE/res/3ds/banner.wav"
+        -i "${CMAKE_SOURCE_DIR}/packaging/3ds/banner.png"
+        -a "${CMAKE_SOURCE_DIR}/packaging/3ds/banner.wav"
         -o "isle.bnr"
-      DEPENDS "${CMAKE_SOURCE_DIR}/ISLE/res/3ds/banner.png" "${CMAKE_SOURCE_DIR}/ISLE/res/3ds/banner.wav"
+      DEPENDS "${CMAKE_SOURCE_DIR}/packaging/3ds/banner.png" "${CMAKE_SOURCE_DIR}/packaging/3ds/banner.wav"
       VERBATIM
     )
 
@@ -800,14 +800,14 @@ if(NINTENDO_3DS)
         -f cia
         -exefslogo
         -o "isle.cia"
-        -rsf "${CMAKE_SOURCE_DIR}/ISLE/res/3ds/template.rsf"
+        -rsf "${CMAKE_SOURCE_DIR}/packaging/3ds/template.rsf"
         -major "${CMAKE_PROJECT_VERSION_MAJOR}"
         -minor "${CMAKE_PROJECT_VERSION_MINOR}"
         -micro 0
         -icon "isle.smdh"
         -banner "isle.bnr"
         -elf "isle.elf"
-      DEPENDS "${CMAKE_SOURCE_DIR}/ISLE/res/3ds/template.rsf" "isle.smdh" "isle.bnr"
+      DEPENDS "${CMAKE_SOURCE_DIR}/packaging/3ds/template.rsf" "isle.smdh" "isle.bnr"
       COMMENT "Building CIA executable target isle.cia"
       VERBATIM
     )
