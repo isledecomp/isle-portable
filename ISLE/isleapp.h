@@ -55,6 +55,7 @@ public:
 	MxS32 GetGameStarted() { return m_gameStarted; }
 	MxFloat GetCursorSensitivity() { return m_cursorSensitivity; }
 	LegoInputManager::TouchScheme GetTouchScheme() { return m_touchScheme; }
+	MxBool GetHaptic() { return m_haptic; }
 
 	void SetWindowActive(MxS32 p_windowActive) { m_windowActive = p_windowActive; }
 	void SetGameStarted(MxS32 p_gameStarted) { m_gameStarted = p_gameStarted; }
@@ -105,6 +106,7 @@ private:
 	MxU32 m_maxAllowedExtras;
 	MxTransitionManager::TransitionType m_transitionType;
 	LegoInputManager::TouchScheme m_touchScheme;
+	MxBool m_haptic;
 };
 
 extern IsleApp* g_isle;
