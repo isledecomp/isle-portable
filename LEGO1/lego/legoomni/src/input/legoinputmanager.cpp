@@ -626,3 +626,18 @@ MxBool LegoInputManager::HandleTouchEvent(SDL_Event* p_event, TouchScheme p_touc
 
 	return TRUE;
 }
+
+MxBool LegoInputManager::HandleRumbleEvent()
+{
+	if (m_joystick != NULL && SDL_GamepadConnected(m_joystick) == TRUE) {
+		const Uint16 frequency = 65535 / 2;
+		const Uint32 durationMs = 700;
+		SDL_RumbleGamepad(m_joystick, frequency, frequency, durationMs);
+	}
+	else {
+		return FALSE;
+	}
+
+	// Add support for SDL Haptic API
+	return TRUE;
+}
