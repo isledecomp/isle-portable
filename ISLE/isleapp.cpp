@@ -39,6 +39,7 @@
 
 #include <extensions/extensions.h>
 #include <miniwin/miniwindevice.h>
+#include <vec.h>
 
 #define SDL_MAIN_USE_CALLBACKS
 #include <SDL3/SDL.h>
@@ -421,17 +422,6 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		return SDL_APP_CONTINUE;
 	}
 
-	// [library:window]
-	// Remaining functionality to be implemented:
-	// WM_TIMER - use SDL_Timer functionality instead
-
-#ifdef __EMSCRIPTEN__
-	// Workaround for the fact we are getting both mouse & touch events on mobile devices running Emscripten.
-	// On desktops, we are only getting mouse events, but a touch device (pen_input) may also be present...
-	// See: https://github.com/libsdl-org/SDL/issues/13161
-	static bool detectedTouchEvents = false;
-#endif
-
 	switch (event->type) {
 	case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
 	case SDL_EVENT_MOUSE_MOTION:
@@ -616,11 +606,7 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 			g_mouseWarped = FALSE;
 			break;
 		}
-#ifdef __EMSCRIPTEN__
-		if (detectedTouchEvents) {
-			break;
-		}
-#endif
+
 		g_mousemoved = TRUE;
 
 		if (InputManager()) {
@@ -643,9 +629,6 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		}
 		break;
 	case SDL_EVENT_FINGER_MOTION: {
-#ifdef __EMSCRIPTEN__
-		detectedTouchEvents = true;
-#endif
 		g_mousemoved = TRUE;
 
 		float x = SDL_clamp(event->tfinger.x, 0, 1) * g_targetWidth;
@@ -671,11 +654,6 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		break;
 	}
 	case SDL_EVENT_MOUSE_BUTTON_DOWN:
-#ifdef __EMSCRIPTEN__
-		if (detectedTouchEvents) {
-			break;
-		}
-#endif
 		g_mousedown = TRUE;
 
 		if (InputManager()) {
@@ -689,9 +667,6 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		}
 		break;
 	case SDL_EVENT_FINGER_DOWN: {
-#ifdef __EMSCRIPTEN__
-		detectedTouchEvents = true;
-#endif
 		g_mousedown = TRUE;
 
 		float x = SDL_clamp(event->tfinger.x, 0, 1) * g_targetWidth;
@@ -713,17 +688,6 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		break;
 	}
 	case SDL_EVENT_MOUSE_BUTTON_UP:
-#ifdef __EMSCRIPTEN__
-		if (detectedTouchEvents) {
-			// Abusing the fact (bug?) that we are always getting mouse events on Emscripten.
-			// This functionality should be enabled in a more general way with touch events,
-			// but SDL touch event's don't have a "double tap" indicator right now.
-			if (event->button.clicks == 2) {
-				InputManager()->QueueEvent(c_notificationKeyPress, SDLK_SPACE, 0, 0, SDLK_SPACE);
-			}
-			break;
-		}
-#endif
 		g_mousedown = FALSE;
 
 		if (InputManager()) {
@@ -737,15 +701,13 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		}
 		break;
 	case SDL_EVENT_FINGER_UP: {
-#ifdef __EMSCRIPTEN__
-		detectedTouchEvents = true;
-#endif
 		g_mousedown = FALSE;
 
 		float x = SDL_clamp(event->tfinger.x, 0, 1) * g_targetWidth;
 		float y = SDL_clamp(event->tfinger.y, 0, 1) * g_targetHeight;
 
 		if (InputManager()) {
+			g_isle->DetectDoubleTap(event->tfinger);
 			InputManager()->HandleTouchEvent(event, g_isle->GetTouchScheme());
 			InputManager()->QueueEvent(c_notificationButtonUp, 0, x, y, 0);
 		}
@@ -1473,5 +1435,24 @@ void IsleApp::MoveVirtualMouseViaJoystick()
 			g_mouseWarped = TRUE;
 			SDL_WarpMouseInWindow(window, x, y);
 		}
+	}
+}
+
+void IsleApp::DetectDoubleTap(const SDL_TouchFingerEvent& p_event)
+{
+	typedef std::pair<Uint64, std::array<float, 2>> LastTap;
+
+	const MxU32 doubleTapMs = 500;
+	const float doubleTapDist = 0.001;
+	static LastTap lastTap = {0, {0, 0}};
+
+	LastTap currentTap = {p_event.timestamp, {p_event.x, p_event.y}};
+	if (SDL_NS_TO_MS(currentTap.first - lastTap.first) < doubleTapMs &&
+		DISTSQRD2(currentTap.second, lastTap.second) < doubleTapDist) {
+		InputManager()->QueueEvent(c_notificationKeyPress, SDLK_SPACE, 0, 0, SDLK_SPACE);
+		lastTap = {0, {0, 0}};
+	}
+	else {
+		lastTap = currentTap;
 	}
 }
