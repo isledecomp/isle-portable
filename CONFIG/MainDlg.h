@@ -40,9 +40,10 @@ private slots:
 	void OnRadiobuttonModelHighQuality(bool checked);
 	void OnRadiobuttonTextureLowQuality(bool checked);
 	void OnRadiobuttonTextureHighQuality(bool checked);
-	void OnCheckboxJoystick(bool checked);
 	void OnCheckboxMusic(bool checked);
 	void OnCheckboxFullscreen(bool checked);
+	void OnCheckboxRumble(bool checked);
+	void TouchControlsChanged(int index);
 	void TransitionTypeChanged(int index);
 	void accept() override;
 	void reject() override;

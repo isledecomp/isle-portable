@@ -57,8 +57,9 @@ CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 	connect(m_ui->devicesList, &QListWidget::currentRowChanged, this, &CMainDialog::OnList3DevicesSelectionChanged);
 	connect(m_ui->musicCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxMusic);
 	connect(m_ui->sound3DCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckbox3DSound);
-	connect(m_ui->joystickCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxJoystick);
 	connect(m_ui->fullscreenCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxFullscreen);
+	connect(m_ui->rumbleCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxRumble);
+	connect(m_ui->touchComboBox, &QComboBox::currentIndexChanged, this, &CMainDialog::TouchControlsChanged);
 	connect(m_ui->transitionTypeComboBox, &QComboBox::currentIndexChanged, this, &CMainDialog::TransitionTypeChanged);
 	connect(m_ui->okButton, &QPushButton::clicked, this, &CMainDialog::accept);
 	connect(m_ui->cancelButton, &QPushButton::clicked, this, &CMainDialog::reject);
@@ -210,9 +211,9 @@ void CMainDialog::UpdateInterface()
 	else {
 		m_ui->textureQualityHighRadioButton->setChecked(true);
 	}
-	m_ui->joystickCheckBox->setChecked(currentConfigApp->m_use_joystick);
 	m_ui->musicCheckBox->setChecked(currentConfigApp->m_music);
 	m_ui->fullscreenCheckBox->setChecked(currentConfigApp->m_full_screen);
+	m_ui->rumbleCheckBox->setChecked(currentConfigApp->m_haptic);
 	m_ui->transitionTypeComboBox->setCurrentIndex(currentConfigApp->m_transition_type);
 	m_ui->dataPath->setText(QString::fromStdString(currentConfigApp->m_cd_path));
 	m_ui->savePath->setText(QString::fromStdString(currentConfigApp->m_save_path));
@@ -275,14 +276,6 @@ void CMainDialog::OnRadiobuttonTextureHighQuality(bool checked)
 	}
 }
 
-// FUNCTION: CONFIG 0x00404790
-void CMainDialog::OnCheckboxJoystick(bool checked)
-{
-	currentConfigApp->m_use_joystick = checked;
-	m_modified = true;
-	UpdateInterface();
-}
-
 // FUNCTION: CONFIG 0x004048c0
 void CMainDialog::OnCheckboxMusic(bool checked)
 {
@@ -294,6 +287,20 @@ void CMainDialog::OnCheckboxMusic(bool checked)
 void CMainDialog::OnCheckboxFullscreen(bool checked)
 {
 	currentConfigApp->m_full_screen = checked;
+	m_modified = true;
+	UpdateInterface();
+}
+
+void CMainDialog::OnCheckboxRumble(bool checked)
+{
+	currentConfigApp->m_haptic = checked;
+	m_modified = true;
+	UpdateInterface();
+}
+
+void CMainDialog::TouchControlsChanged(int index)
+{
+	currentConfigApp->m_touchScheme = index;
 	m_modified = true;
 	UpdateInterface();
 }

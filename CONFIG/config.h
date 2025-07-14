@@ -71,6 +71,7 @@ public:
 	bool m_3d_sound;
 	bool m_draw_cursor;
 	bool m_use_joystick;
+	bool m_haptic;
 	int m_joystick_index;
 	int m_model_quality;
 	int m_texture_quality;
@@ -81,6 +82,7 @@ public:
 	std::string m_save_path;
 	float m_max_lod;
 	int m_max_actors;
+	int m_touchScheme;
 };
 
 extern CConfigApp g_theApp;
