@@ -37,6 +37,7 @@
 #include "tgl/d3drm/impl.h"
 #include "viewmanager/viewmanager.h"
 
+#include <array>
 #include <extensions/extensions.h>
 #include <miniwin/miniwindevice.h>
 #include <vec.h>
