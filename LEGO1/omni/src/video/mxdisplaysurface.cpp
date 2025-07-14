@@ -1288,6 +1288,10 @@ LPDIRECTDRAWSURFACE MxDisplaySurface::CreateCursorSurface(const CursorBitmap* p_
 			break;
 		}
 		default: {
+			DDCOLORKEY colorkey;
+			colorkey.dwColorSpaceHighValue = RGB8888_CREATE(0, 0, 0, 0);
+			colorkey.dwColorSpaceLowValue = RGB8888_CREATE(0, 0, 0, 0);
+			newSurface->SetColorKey(DDCKEY_SRCBLT, &colorkey);
 			break;
 		}
 		}
