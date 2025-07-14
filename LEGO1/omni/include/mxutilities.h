@@ -10,6 +10,7 @@
 struct LegoSdlEvents {
 	Uint32 m_windowsMessage;
 	Uint32 m_presenterProgress;
+	Uint32 m_hitActor;
 };
 
 LEGO1_EXPORT extern LegoSdlEvents g_legoSdlEvents;
