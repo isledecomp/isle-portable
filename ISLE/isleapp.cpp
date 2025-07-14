@@ -791,6 +791,11 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 			SDL_Log("Game started");
 		}
 	}
+	else if (event->user.type == g_legoSdlEvents.m_hitActor) {
+		if (InputManager()) {
+			InputManager()->HandleRumbleEvent();
+		}
+	}
 
 	return SDL_APP_CONTINUE;
 }
