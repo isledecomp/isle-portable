@@ -163,9 +163,10 @@ MxResult MxOmni::Create(MxOmniCreateParam& p_param)
 	}
 
 	{
-		Uint32 event = SDL_RegisterEvents(2);
+		Uint32 event = SDL_RegisterEvents(3);
 		g_legoSdlEvents.m_windowsMessage = event + 0;
 		g_legoSdlEvents.m_presenterProgress = event + 1;
+		g_legoSdlEvents.m_hitActor = event + 2;
 	}
 
 	result = SUCCESS;

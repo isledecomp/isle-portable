@@ -181,6 +181,7 @@ IsleApp::IsleApp()
 	m_transitionType = MxTransitionManager::e_mosaic;
 	m_cursorSensitivity = 4;
 	m_touchScheme = LegoInputManager::e_gamepad;
+	m_haptic = TRUE;
 }
 
 // FUNCTION: ISLE 0x4011a0
@@ -799,6 +800,11 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 			SDL_Log("Game started");
 		}
 	}
+	else if (event->user.type == g_legoSdlEvents.m_hitActor && g_isle->GetHaptic()) {
+		if (InputManager()) {
+			InputManager()->HandleRumbleEvent();
+		}
+	}
 
 	return SDL_APP_CONTINUE;
 }
@@ -1052,6 +1058,7 @@ bool IsleApp::LoadConfig()
 		iniparser_set(dict, "isle:Max Allowed Extras", SDL_itoa(m_maxAllowedExtras, buf, 10));
 		iniparser_set(dict, "isle:Transition Type", SDL_itoa(m_transitionType, buf, 10));
 		iniparser_set(dict, "isle:Touch Scheme", SDL_itoa(m_touchScheme, buf, 10));
+		iniparser_set(dict, "isle:Haptic", m_haptic ? "true" : "false");
 
 #ifdef EXTENSIONS
 		iniparser_set(dict, "extensions", NULL);
@@ -1123,6 +1130,7 @@ bool IsleApp::LoadConfig()
 	m_transitionType =
 		(MxTransitionManager::TransitionType) iniparser_getint(dict, "isle:Transition Type", m_transitionType);
 	m_touchScheme = (LegoInputManager::TouchScheme) iniparser_getint(dict, "isle:Touch Scheme", m_touchScheme);
+	m_haptic = iniparser_getboolean(dict, "isle:Haptic", m_haptic);
 
 	const char* deviceId = iniparser_getstring(dict, "isle:3D Device ID", NULL);
 	if (deviceId != NULL) {
