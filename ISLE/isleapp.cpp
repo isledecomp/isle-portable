@@ -137,8 +137,6 @@ IsleApp::IsleApp()
 	m_drawCursor = FALSE;
 	m_use3dSound = TRUE;
 	m_useMusic = TRUE;
-	m_useJoystick = TRUE;
-	m_joystickIndex = 0;
 	m_wideViewAngle = TRUE;
 	m_islandQuality = 2;
 	m_islandTexture = 1;
@@ -297,7 +295,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 	SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
 	SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
 
-	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD)) {
+	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD | SDL_INIT_HAPTIC)) {
 		char buffer[256];
 		SDL_snprintf(
 			buffer,
@@ -339,6 +337,23 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 
 	// Get reference to window
 	*appstate = g_isle->GetWindowHandle();
+
+	// Currently, SDL doesn't send SDL_EVENT_MOUSE_ADDED at startup (unlike for gamepads)
+	// This will probably be fixed in the future: https://github.com/libsdl-org/SDL/issues/12815
+	{
+		int count;
+		SDL_MouseID* mice = SDL_GetMice(&count);
+
+		if (mice) {
+			for (int i = 0; i < count; i++) {
+				if (InputManager()) {
+					InputManager()->AddMouse(mice[i]);
+				}
+			}
+
+			SDL_free(mice);
+		}
+	}
 
 #ifdef __EMSCRIPTEN__
 	SDL_AddEventWatch(
@@ -423,6 +438,10 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		return SDL_APP_CONTINUE;
 	}
 
+	if (InputManager()) {
+		InputManager()->UpdateLastInputMethod(event);
+	}
+
 	switch (event->type) {
 	case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
 	case SDL_EVENT_MOUSE_MOTION:
@@ -482,13 +501,26 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		}
 		break;
 	}
-	case SDL_EVENT_GAMEPAD_ADDED:
-	case SDL_EVENT_GAMEPAD_REMOVED: {
+	case SDL_EVENT_MOUSE_ADDED:
 		if (InputManager()) {
-			InputManager()->GetJoystick();
+			InputManager()->AddMouse(event->mdevice.which);
 		}
 		break;
-	}
+	case SDL_EVENT_MOUSE_REMOVED:
+		if (InputManager()) {
+			InputManager()->RemoveMouse(event->mdevice.which);
+		}
+		break;
+	case SDL_EVENT_GAMEPAD_ADDED:
+		if (InputManager()) {
+			InputManager()->AddJoystick(event->jdevice.which);
+		}
+		break;
+	case SDL_EVENT_GAMEPAD_REMOVED:
+		if (InputManager()) {
+			InputManager()->RemoveJoystick(event->jdevice.which);
+		}
+		break;
 	case SDL_EVENT_GAMEPAD_BUTTON_DOWN: {
 		switch (event->gbutton.button) {
 		case SDL_GAMEPAD_BUTTON_DPAD_UP:
@@ -903,10 +935,6 @@ MxResult IsleApp::SetupWindow()
 	MxTransitionManager::configureMxTransitionManager(m_transitionType);
 	RealtimeView::SetUserMaxLOD(m_maxLod);
 	if (LegoOmni::GetInstance()) {
-		if (LegoOmni::GetInstance()->GetInputManager()) {
-			LegoOmni::GetInstance()->GetInputManager()->SetUseJoystick(m_useJoystick);
-			LegoOmni::GetInstance()->GetInputManager()->SetJoystickIndex(m_joystickIndex);
-		}
 		if (LegoOmni::GetInstance()->GetVideoManager()) {
 			LegoOmni::GetInstance()->GetVideoManager()->SetCursorBitmap(m_cursorCurrentBitmap);
 		}
@@ -998,8 +1026,6 @@ bool IsleApp::LoadConfig()
 		iniparser_set(dict, "isle:3DSound", m_use3dSound ? "true" : "false");
 		iniparser_set(dict, "isle:Music", m_useMusic ? "true" : "false");
 
-		iniparser_set(dict, "isle:UseJoystick", m_useJoystick ? "true" : "false");
-		iniparser_set(dict, "isle:JoystickIndex", SDL_itoa(m_joystickIndex, buf, 10));
 		SDL_snprintf(buf, sizeof(buf), "%f", m_cursorSensitivity);
 		iniparser_set(dict, "isle:Cursor Sensitivity", buf);
 
@@ -1058,8 +1084,6 @@ bool IsleApp::LoadConfig()
 	m_wideViewAngle = iniparser_getboolean(dict, "isle:Wide View Angle", m_wideViewAngle);
 	m_use3dSound = iniparser_getboolean(dict, "isle:3DSound", m_use3dSound);
 	m_useMusic = iniparser_getboolean(dict, "isle:Music", m_useMusic);
-	m_useJoystick = iniparser_getboolean(dict, "isle:UseJoystick", m_useJoystick);
-	m_joystickIndex = iniparser_getint(dict, "isle:JoystickIndex", m_joystickIndex);
 	m_cursorSensitivity = iniparser_getdouble(dict, "isle:Cursor Sensitivity", m_cursorSensitivity);
 
 	MxS32 backBuffersInVRAM = iniparser_getboolean(dict, "isle:Back Buffers in Video RAM", -1);
