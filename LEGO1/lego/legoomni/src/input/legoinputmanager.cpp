@@ -668,11 +668,11 @@ MxBool LegoInputManager::HandleTouchEvent(SDL_Event* p_event, TouchScheme p_touc
 
 MxBool LegoInputManager::HandleRumbleEvent()
 {
-	static bool hapticsInitialized = false;
+	static bool g_hapticsInitialized = false;
 
-	if (!hapticsInitialized) {
+	if (!g_hapticsInitialized) {
 		InitializeHaptics();
-		hapticsInitialized = true;
+		g_hapticsInitialized = true;
 	}
 
 	SDL_Haptic* haptic = nullptr;
