@@ -94,6 +94,7 @@ public:
 	};
 
 	enum TouchScheme {
+		e_none = -1,
 		e_mouse = 0,
 		e_arrowKeys,
 		e_gamepad,
@@ -191,9 +192,10 @@ private:
 	MxBool m_unk0x335; // 0x335
 	MxBool m_unk0x336; // 0x336
 
-	std::map<SDL_FingerID, SDL_FPoint> m_touchOrigins;
+	TouchScheme m_touchScheme = e_none;
+	SDL_Point m_touchVirtualThumb = {0, 0};
+	SDL_FPoint m_touchVirtualThumbOrigin;
 	std::map<SDL_FingerID, MxU32> m_touchFlags;
-	std::map<SDL_FingerID, std::pair<MxU32, SDL_FPoint>> m_touchLastMotion;
 	std::map<SDL_MouseID, std::pair<void*, SDL_Haptic*>> m_mice;
 	std::map<SDL_JoystickID, std::pair<SDL_Gamepad*, SDL_Haptic*>> m_joysticks;
 	std::map<SDL_HapticID, SDL_Haptic*> m_otherHaptics;

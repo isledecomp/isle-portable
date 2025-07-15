@@ -160,7 +160,7 @@ MxResult LegoInputManager::GetNavigationKeyStates(MxU32& p_keyFlags)
 // FUNCTION: LEGO1 0x1005c320
 MxResult LegoInputManager::GetJoystickState(MxU32* p_joystickX, MxU32* p_joystickY, MxU32* p_povPosition)
 {
-	if (m_joysticks.empty()) {
+	if (m_joysticks.empty() && m_touchScheme != e_gamepad) {
 		return FAILURE;
 	}
 
@@ -178,6 +178,11 @@ MxResult LegoInputManager::GetJoystickState(MxU32* p_joystickX, MxU32* p_joystic
 		if (xPos || yPos) {
 			break;
 		}
+	}
+
+	if (!xPos && !yPos) {
+		xPos = m_touchVirtualThumb.x;
+		yPos = m_touchVirtualThumb.y;
 	}
 
 	*p_joystickX = ((xPos + 32768) * 100) / 65535;
@@ -499,18 +504,9 @@ void LegoInputManager::EnableInputProcessing()
 
 MxResult LegoInputManager::GetNavigationTouchStates(MxU32& p_keyStates)
 {
-	for (auto& [fingerID, touchFlags] : m_touchFlags) {
-		p_keyStates |= touchFlags;
-
-		// We need to clear these as they are not meant to be persistent in e_gamepad mode.
-		if (m_touchOrigins.count(fingerID) && m_touchLastMotion.count(fingerID)) {
-			const MxU32 inactivityThreshold = 3;
-
-			if (m_touchLastMotion[fingerID].first++ > inactivityThreshold) {
-				touchFlags &= ~c_left;
-				touchFlags &= ~c_right;
-				m_touchOrigins[fingerID].x = m_touchLastMotion[fingerID].second.x;
-			}
+	if (m_touchScheme == e_arrowKeys) {
+		for (auto& [fingerID, touchFlags] : m_touchFlags) {
+			p_keyStates |= touchFlags;
 		}
 	}
 
@@ -588,6 +584,7 @@ void LegoInputManager::RemoveJoystick(SDL_JoystickID p_joystickID)
 MxBool LegoInputManager::HandleTouchEvent(SDL_Event* p_event, TouchScheme p_touchScheme)
 {
 	const SDL_TouchFingerEvent& event = p_event->tfinger;
+	m_touchScheme = p_touchScheme;
 
 	switch (p_touchScheme) {
 	case e_mouse:
@@ -619,48 +616,41 @@ MxBool LegoInputManager::HandleTouchEvent(SDL_Event* p_event, TouchScheme p_touc
 			break;
 		}
 		break;
-	case e_gamepad:
+	case e_gamepad: {
+		static SDL_FingerID finger = (SDL_FingerID) 0;
+
 		switch (p_event->type) {
 		case SDL_EVENT_FINGER_DOWN:
-			m_touchOrigins[event.fingerID] = {event.x, event.y};
+			if (!finger) {
+				finger = event.fingerID;
+				m_touchVirtualThumb = {0, 0};
+				m_touchVirtualThumbOrigin = {event.x, event.y};
+			}
 			break;
 		case SDL_EVENT_FINGER_UP:
-			m_touchOrigins.erase(event.fingerID);
-			m_touchFlags.erase(event.fingerID);
+			if (event.fingerID == finger) {
+				finger = 0;
+				m_touchVirtualThumb = {0, 0};
+				m_touchVirtualThumbOrigin = {0, 0};
+			}
 			break;
 		case SDL_EVENT_FINGER_MOTION:
-			if (m_touchOrigins.count(event.fingerID)) {
-				const float activationThreshold = 0.03f;
-				m_touchFlags[event.fingerID] &= ~c_down;
-				m_touchFlags[event.fingerID] &= ~c_up;
+			if (event.fingerID == finger) {
+				const float thumbstickRadius = 0.05f;
+				const float deltaX =
+					SDL_clamp(event.x - m_touchVirtualThumbOrigin.x, -thumbstickRadius, thumbstickRadius);
+				const float deltaY =
+					SDL_clamp(event.y - m_touchVirtualThumbOrigin.y, -thumbstickRadius, thumbstickRadius);
 
-				const float deltaY = event.y - m_touchOrigins[event.fingerID].y;
-				if (SDL_fabsf(deltaY) > activationThreshold) {
-					if (deltaY > 0) {
-						m_touchFlags[event.fingerID] |= c_down;
-					}
-					else if (deltaY < 0) {
-						m_touchFlags[event.fingerID] |= c_up;
-					}
-				}
-
-				const float deltaX = event.x - m_touchOrigins[event.fingerID].x;
-				if (SDL_fabsf(deltaX) > activationThreshold && event.dx) {
-					if (event.dx > 0) {
-						m_touchFlags[event.fingerID] |= c_right;
-						m_touchFlags[event.fingerID] &= ~c_left;
-					}
-					else if (event.dx < 0) {
-						m_touchFlags[event.fingerID] |= c_left;
-						m_touchFlags[event.fingerID] &= ~c_right;
-					}
-
-					m_touchLastMotion[event.fingerID] = {0, {event.x, event.y}};
-				}
+				m_touchVirtualThumb = {
+					(int) (deltaX / thumbstickRadius * 32767.0f),
+					(int) (deltaY / thumbstickRadius * 32767.0f),
+				};
 			}
 			break;
 		}
 		break;
+	}
 	}
 
 	return TRUE;
