@@ -80,11 +80,15 @@ typedef struct GXMVertex {
 
 typedef struct GXMDisplayData {
 	void* address;
+	int index;
 } GXMDisplayData;
 
 static void display_callback(const void* callback_data)
 {
 	const GXMDisplayData* display_data = (const GXMDisplayData*) callback_data;
+
+	GXMRenderer* renderer = static_cast<GXMRenderer*>(DDRenderer);
+	renderer->DeleteTextures(display_data->index);
 
 	SceDisplayFrameBuf framebuf;
 	SDL_memset(&framebuf, 0x00, sizeof(SceDisplayFrameBuf));
@@ -154,7 +158,7 @@ int gxm_library_init()
 		return 0;
 	}
 
-#ifdef WITH_RAZOR
+#ifdef GXM_WITH_RAZOR
 	load_razor();
 #endif
 
@@ -654,6 +658,7 @@ void GXMContext::swap_display()
 	// display
 	GXMDisplayData displayData;
 	displayData.address = this->displayBuffers[this->backBufferIndex];
+	displayData.index = this->backBufferIndex;
 	sceGxmDisplayQueueAddEntry(
 		this->displayBuffersSync[this->frontBufferIndex],
 		this->displayBuffersSync[this->backBufferIndex],
@@ -913,19 +918,22 @@ void GXMRenderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* textu
 		[](IDirect3DRMObject* obj, void* arg) {
 			auto* ctx = static_cast<TextureDestroyContextGXM*>(arg);
 			auto& cache = ctx->renderer->m_textures[ctx->textureId];
-			for (int i = 0; i < cache.bufferCount; i++) {
-				if (cache.notifications[i]) {
-					sceGxmNotificationWait(cache.notifications[i]);
-				}
-				void* textureData = sceGxmTextureGetData(&cache.gxmTexture[i]);
-				gxm->free(textureData);
-				memset(&cache.gxmTexture[i], 0, sizeof(SceGxmTexture));
-			}
+			ctx->renderer->m_textures_delete[gxm->backBufferIndex].push_back(cache.gxmTexture);
 			cache.texture = nullptr;
+			memset(&cache.gxmTexture, 0, sizeof(SceGxmTexture));
 			delete ctx;
 		},
 		ctx
 	);
+}
+
+void GXMRenderer::DeleteTextures(int index)
+{
+	for(auto& del : this->m_textures_delete[index]) {
+		void* textureData = sceGxmTextureGetData(&del);
+		gxm->free(textureData);
+	}
+	this->m_textures_delete[index].clear();
 }
 
 static void convertTextureMetadata(
@@ -1046,22 +1054,9 @@ Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi, float 
 		auto& tex = m_textures[i];
 		if (tex.texture == texture) {
 			if (tex.version != texture->m_version) {
-				if (tex.bufferCount != GXM_TEXTURE_BUFFER_COUNT) {
-					for (int i = 1; i < GXM_TEXTURE_BUFFER_COUNT; i++) {
-						tex.gxmTexture[i] = tex.gxmTexture[0];
-						uint8_t* textureData = (uint8_t*) gxm->alloc(textureSize, textureAlignment);
-						sceGxmTextureSetData(&tex.gxmTexture[i], textureData);
-					}
-					tex.bufferCount = GXM_TEXTURE_BUFFER_COUNT;
-				}
-				if (tex.bufferCount > 1) {
-					tex.currentIndex = (tex.currentIndex + 1) % GXM_TEXTURE_BUFFER_COUNT;
-				}
-				if (tex.notifications[tex.currentIndex]) {
-					sceGxmNotificationWait(tex.notifications[tex.currentIndex]);
-				}
-				tex.notifications[tex.currentIndex] = &this->fragmentNotifications[this->currentFragmentBufferIndex];
-				uint8_t* textureData = (uint8_t*) sceGxmTextureGetData(&tex.gxmTexture[tex.currentIndex]);
+				sceGxmNotificationWait(tex.notification);
+				tex.notification = &this->fragmentNotifications[this->currentFragmentBufferIndex];
+				uint8_t* textureData = (uint8_t*) sceGxmTextureGetData(&tex.gxmTexture);
 				copySurfaceToGxm(surface, textureData, textureStride, textureSize);
 				tex.version = texture->m_version;
 			}
@@ -1107,10 +1102,8 @@ Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi, float 
 			memset(&tex, 0, sizeof(tex));
 			tex.texture = texture;
 			tex.version = texture->m_version;
-			tex.bufferCount = 1;
-			tex.currentIndex = 0;
-			tex.gxmTexture[0] = gxmTexture;
-			tex.notifications[0] = &this->fragmentNotifications[this->currentFragmentBufferIndex];
+			tex.gxmTexture = gxmTexture;
+			tex.notification = &this->fragmentNotifications[this->currentFragmentBufferIndex];
 			AddTextureDestroyCallback(i, texture);
 			return i;
 		}
@@ -1120,14 +1113,18 @@ Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi, float 
 	memset(&tex, 0, sizeof(tex));
 	tex.texture = texture;
 	tex.version = texture->m_version;
-	tex.bufferCount = 1;
-	tex.currentIndex = 0;
-	tex.gxmTexture[0] = gxmTexture;
-	tex.notifications[0] = &this->fragmentNotifications[this->currentFragmentBufferIndex];
+	tex.gxmTexture = gxmTexture;
+	tex.notification = &this->fragmentNotifications[this->currentFragmentBufferIndex];
 	m_textures.push_back(tex);
 	Uint32 textureId = (Uint32) (m_textures.size() - 1);
 	AddTextureDestroyCallback(textureId, texture);
 	return textureId;
+}
+
+const SceGxmTexture* GXMRenderer::UseTexture(GXMTextureCacheEntry& texture) {
+	texture.notification = &this->fragmentNotifications[this->currentFragmentBufferIndex];
+	sceGxmSetFragmentTexture(gxm->context, 0, &texture.gxmTexture);
+	return &texture.gxmTexture;
 }
 
 GXMMeshCacheEntry GXMRenderer::GXMUploadMesh(const MeshGroup& meshGroup)

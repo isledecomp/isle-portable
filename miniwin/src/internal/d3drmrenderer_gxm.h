@@ -16,17 +16,14 @@ DEFINE_GUID(GXM_GUID, 0x682656F3, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 
 
 #define GXM_VERTEX_BUFFER_COUNT 2
 #define GXM_FRAGMENT_BUFFER_COUNT 3
-#define GXM_TEXTURE_BUFFER_COUNT 2
 
 #define GXM_WITH_RAZOR DEBUG
 
 struct GXMTextureCacheEntry {
 	IDirect3DRMTexture* texture;
 	Uint32 version;
-	int bufferCount;
-	int currentIndex;
-	SceGxmTexture gxmTexture[GXM_TEXTURE_BUFFER_COUNT];
-	SceGxmNotification* notifications[GXM_TEXTURE_BUFFER_COUNT];
+	SceGxmTexture gxmTexture;
+	SceGxmNotification* notification; // latest frame it was used in
 };
 
 struct GXMMeshCacheEntry {
@@ -81,6 +78,7 @@ public:
 	void Download(SDL_Surface* target) override;
 	void SetDither(bool dither) override;
 
+	void DeleteTextures(int index);
 private:
 	void AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture);
 	void AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh);
@@ -88,13 +86,7 @@ private:
 	GXMMeshCacheEntry GXMUploadMesh(const MeshGroup& meshGroup);
 
 	void StartScene();
-	inline const SceGxmTexture* UseTexture(GXMTextureCacheEntry& texture)
-	{
-		texture.notifications[texture.currentIndex] = &this->fragmentNotifications[this->currentFragmentBufferIndex];
-		const SceGxmTexture* gxmTexture = &texture.gxmTexture[texture.currentIndex];
-		sceGxmSetFragmentTexture(gxm->context, 0, gxmTexture);
-		return gxmTexture;
-	}
+	const SceGxmTexture* UseTexture(GXMTextureCacheEntry& texture);
 
 	inline GXMVertex2D* QuadVerticesBuffer()
 	{
@@ -113,6 +105,7 @@ private:
 	std::vector<GXMMeshCacheEntry> m_meshes;
 	D3DRMMATRIX4D m_projection;
 	std::vector<SceneLight> m_lights;
+	std::vector<SceGxmTexture> m_textures_delete[GXM_FRAGMENT_BUFFER_COUNT];
 
 	bool transparencyEnabled = false;
 
