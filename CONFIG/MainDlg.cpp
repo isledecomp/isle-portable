@@ -488,44 +488,48 @@ void CMainDialog::TexturePathEdited()
 	UpdateInterface();
 }
 
-void CMainDialog::AspectRatioChanged(int index) {
+void CMainDialog::AspectRatioChanged(int index)
+{
 	currentConfigApp->m_aspect_ratio = index;
 	EnsureAspectRatio();
 	m_modified = true;
 	UpdateInterface();
 }
 
-void CMainDialog::XResChanged(int i) {
+void CMainDialog::XResChanged(int i)
+{
 	currentConfigApp->m_x_res = i;
 	m_modified = true;
 	UpdateInterface();
 }
 
-void CMainDialog::YResChanged(int i) {
+void CMainDialog::YResChanged(int i)
+{
 	currentConfigApp->m_y_res = i;
 	EnsureAspectRatio();
 	m_modified = true;
 	UpdateInterface();
 }
 
-void CMainDialog::EnsureAspectRatio() {
+void CMainDialog::EnsureAspectRatio()
+{
 	if (currentConfigApp->m_aspect_ratio != 3) {
 		m_ui->xResSpinBox->setReadOnly(true);
 		switch (currentConfigApp->m_aspect_ratio) {
-			case 0: {
-				float standardAspect = 4.0f / 3.0f;
-				currentConfigApp->m_x_res = static_cast<int>(std::round((currentConfigApp->m_y_res) * standardAspect));
-				break;
-			}
-			case 1: {
-				float wideAspect = 16.0f / 9.0f;
-				currentConfigApp->m_x_res = static_cast<int>(std::round((currentConfigApp->m_y_res) * wideAspect));
-				break;
-			}
-			case 2: {
-				currentConfigApp->m_x_res = currentConfigApp->m_y_res;
-				break;
-			}
+		case 0: {
+			float standardAspect = 4.0f / 3.0f;
+			currentConfigApp->m_x_res = static_cast<int>(std::round((currentConfigApp->m_y_res) * standardAspect));
+			break;
+		}
+		case 1: {
+			float wideAspect = 16.0f / 9.0f;
+			currentConfigApp->m_x_res = static_cast<int>(std::round((currentConfigApp->m_y_res) * wideAspect));
+			break;
+		}
+		case 2: {
+			currentConfigApp->m_x_res = currentConfigApp->m_y_res;
+			break;
+		}
 		}
 	}
 	else {
@@ -533,7 +537,8 @@ void CMainDialog::EnsureAspectRatio() {
 	}
 }
 
-void CMainDialog::FramerateChanged(int i) {
+void CMainDialog::FramerateChanged(int i)
+{
 	currentConfigApp->m_frame_delta = (1000.0f / static_cast<float>(i));
 	m_modified = true;
 	UpdateInterface();
