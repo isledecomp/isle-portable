@@ -154,24 +154,29 @@ public:
 	void GetKeyboardState();
 	MxResult GetNavigationKeyStates(MxU32& p_keyFlags);
 	MxResult GetNavigationTouchStates(MxU32& p_keyFlags);
+	LEGO1_EXPORT void AddKeyboard(SDL_KeyboardID p_keyboardID);
+	LEGO1_EXPORT void RemoveKeyboard(SDL_KeyboardID p_keyboardID);
 	LEGO1_EXPORT void AddMouse(SDL_MouseID p_mouseID);
 	LEGO1_EXPORT void RemoveMouse(SDL_MouseID p_mouseID);
 	LEGO1_EXPORT void AddJoystick(SDL_JoystickID p_joystickID);
 	LEGO1_EXPORT void RemoveJoystick(SDL_JoystickID p_joystickID);
 	LEGO1_EXPORT MxBool HandleTouchEvent(SDL_Event* p_event, TouchScheme p_touchScheme);
-	LEGO1_EXPORT MxBool HandleRumbleEvent();
+	LEGO1_EXPORT MxBool
+	HandleRumbleEvent(float p_strength, float p_lowFrequencyRumble, float p_highFrequencyRumble, MxU32 p_milliseconds);
 	LEGO1_EXPORT void UpdateLastInputMethod(SDL_Event* p_event);
+	const auto& GetLastInputMethod() { return m_lastInputMethod; }
 
-	// SYNTHETIC: LEGO1 0x1005b8d0
-	// LegoInputManager::`scalar deleting destructor'
-
-private:
 	// clang-format off
+	enum class SDL_KeyboardID_v : SDL_KeyboardID {};
 	enum class SDL_MouseID_v : SDL_MouseID {};
 	enum class SDL_JoystickID_v : SDL_JoystickID {};
 	enum class SDL_TouchID_v : SDL_TouchID {};
 	// clang-format on
 
+	// SYNTHETIC: LEGO1 0x1005b8d0
+	// LegoInputManager::`scalar deleting destructor'
+
+private:
 	void InitializeHaptics();
 
 	MxCriticalSection m_criticalSection;  // 0x58
@@ -197,10 +202,11 @@ private:
 	SDL_Point m_touchVirtualThumb = {0, 0};
 	SDL_FPoint m_touchVirtualThumbOrigin;
 	std::map<SDL_FingerID, MxU32> m_touchFlags;
+	std::map<SDL_KeyboardID, std::pair<void*, void*>> m_keyboards;
 	std::map<SDL_MouseID, std::pair<void*, SDL_Haptic*>> m_mice;
 	std::map<SDL_JoystickID, std::pair<SDL_Gamepad*, SDL_Haptic*>> m_joysticks;
 	std::map<SDL_HapticID, SDL_Haptic*> m_otherHaptics;
-	std::variant<SDL_MouseID_v, SDL_JoystickID_v, SDL_TouchID_v> m_lastInputMethod;
+	std::variant<SDL_KeyboardID_v, SDL_MouseID_v, SDL_JoystickID_v, SDL_TouchID_v> m_lastInputMethod;
 };
 
 // TEMPLATE: LEGO1 0x10028850

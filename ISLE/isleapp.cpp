@@ -54,6 +54,7 @@
 #include "emscripten/config.h"
 #include "emscripten/events.h"
 #include "emscripten/filesystem.h"
+#include "emscripten/haptic.h"
 #include "emscripten/messagebox.h"
 #include "emscripten/window.h"
 #endif
@@ -501,6 +502,16 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		}
 		break;
 	}
+	case SDL_EVENT_KEYBOARD_ADDED:
+		if (InputManager()) {
+			InputManager()->AddKeyboard(event->kdevice.which);
+		}
+		break;
+	case SDL_EVENT_KEYBOARD_REMOVED:
+		if (InputManager()) {
+			InputManager()->RemoveKeyboard(event->kdevice.which);
+		}
+		break;
 	case SDL_EVENT_MOUSE_ADDED:
 		if (InputManager()) {
 			InputManager()->AddMouse(event->mdevice.which);
@@ -789,8 +800,11 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		}
 	}
 	else if (event->user.type == g_legoSdlEvents.m_hitActor && g_isle->GetHaptic()) {
-		if (InputManager()) {
-			InputManager()->HandleRumbleEvent();
+		if (!InputManager()->HandleRumbleEvent(0.5f, 0.5f, 0.5f, 700)) {
+// Platform-specific handling
+#ifdef __EMSCRIPTEN__
+			Emscripten_HandleRumbleEvent(0.5f, 0.5f, 700);
+#endif
 		}
 	}
 

@@ -555,6 +555,7 @@ if (ISLE_BUILD_APP)
       ISLE/emscripten/config.cpp
       ISLE/emscripten/events.cpp
       ISLE/emscripten/filesystem.cpp
+      ISLE/emscripten/haptic.cpp
       ISLE/emscripten/messagebox.cpp
       ISLE/emscripten/window.cpp
     )
