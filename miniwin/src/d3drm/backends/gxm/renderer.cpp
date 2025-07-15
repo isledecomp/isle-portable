@@ -929,7 +929,7 @@ void GXMRenderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* textu
 
 void GXMRenderer::DeleteTextures(int index)
 {
-	for(auto& del : this->m_textures_delete[index]) {
+	for (auto& del : this->m_textures_delete[index]) {
 		void* textureData = sceGxmTextureGetData(&del);
 		gxm->free(textureData);
 	}
@@ -1121,7 +1121,8 @@ Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi, float 
 	return textureId;
 }
 
-const SceGxmTexture* GXMRenderer::UseTexture(GXMTextureCacheEntry& texture) {
+const SceGxmTexture* GXMRenderer::UseTexture(GXMTextureCacheEntry& texture)
+{
 	texture.notification = &this->fragmentNotifications[this->currentFragmentBufferIndex];
 	sceGxmSetFragmentTexture(gxm->context, 0, &texture.gxmTexture);
 	return &texture.gxmTexture;

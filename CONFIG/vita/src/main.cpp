@@ -13,14 +13,14 @@ void loadPluginCB(paf::Plugin* plugin)
 	pageOpenParam.option = paf::Plugin::PageOption_None;
 
 	plugin->SetLocale(Locale_EN);
-	
+
 	paf::ui::Scene* pScene = plugin->PageOpen("page_main", pageOpenParam);
 	g_rootPage = pScene;
 
 	pScene->SetDebugMode(paf::ui::Scene::DEBUG_AUTH_LAYOUT_RULER);
 
-	//paf::ui::Widget* pText = (paf::ui::Text*) pScene->FindChild("title_text");
-	//pText->SetString(L"Test Text");
+	// paf::ui::Widget* pText = (paf::ui::Text*) pScene->FindChild("title_text");
+	// pText->SetString(L"Test Text");
 }
 
 int paf_main(void)

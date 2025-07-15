@@ -79,6 +79,7 @@ public:
 	void SetDither(bool dither) override;
 
 	void DeleteTextures(int index);
+
 private:
 	void AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture);
 	void AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh);
