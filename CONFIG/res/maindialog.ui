@@ -291,7 +291,7 @@ A higher setting will cause higher quality textures to be drawn regardless of di
                </sizepolicy>
               </property>
               <property name="maximum">
-               <number>50</number>
+               <number>60</number>
               </property>
               <property name="singleStep">
                <number>5</number>
