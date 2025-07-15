@@ -153,7 +153,7 @@ IsleApp::IsleApp()
 		m_videoParam = MxVideoParam(r, NULL, 1, flags);
 	}
 #else
-	m_videoParam = MxVideoParam(MxRect32(0, 0, (m_xRes - 1), (m_yRes - 1)), NULL, 1, MxVideoParamFlags());
+	m_videoParam = MxVideoParam(MxRect32(0, 0, 639, 479), NULL, 1, MxVideoParamFlags());
 #endif
 	m_videoParam.Flags().Set16Bit(MxDirectDraw::GetPrimaryBitDepth() == 16);
 
@@ -178,6 +178,7 @@ IsleApp::IsleApp()
 	m_haptic = TRUE;
 	m_xRes = 640;
 	m_yRes = 480;
+	m_frameRate = 100.0f;
 }
 
 // FUNCTION: ISLE 0x4011a0
@@ -839,6 +840,17 @@ MxResult IsleApp::SetupWindow()
 #endif
 
 	window = SDL_CreateWindowWithProperties(props);
+
+	if (m_fullScreen) {
+		SDL_DisplayMode closestMode;
+		SDL_DisplayID displayID = SDL_GetDisplayForWindow(window);
+		bool findModeSuccess =
+			SDL_GetClosestFullscreenDisplayMode(displayID, m_xRes, m_yRes, m_frameRate, true, &closestMode);
+		if (findModeSuccess) {
+			bool setModeSuccess = SDL_SetWindowFullscreenMode(window, &closestMode);
+		}
+	}
+
 #ifdef MINIWIN
 	m_windowHandle = reinterpret_cast<HWND>(window);
 #else
@@ -1092,7 +1104,10 @@ bool IsleApp::LoadConfig()
 	m_haptic = iniparser_getboolean(dict, "isle:Haptic", m_haptic);
 	m_xRes = iniparser_getint(dict, "isle:Horizontal Resolution", m_xRes);
 	m_yRes = iniparser_getint(dict, "isle:Vertical Resolution", m_yRes);
-	m_videoParam.GetRect() = MxRect32(0, 0, (m_xRes - 1), (m_yRes - 1));
+	if (!m_fullScreen) { // 2D elements break otherwise, not sure why
+		m_videoParam.GetRect() = MxRect32(0, 0, (m_xRes - 1), (m_yRes - 1));
+	}
+	m_frameRate = (1000.0f / iniparser_getdouble(dict, "isle:Frame Delta", m_frameDelta));
 	m_frameDelta = static_cast<int>(std::round(iniparser_getdouble(dict, "isle:Frame Delta", m_frameDelta)));
 
 	const char* deviceId = iniparser_getstring(dict, "isle:3D Device ID", NULL);

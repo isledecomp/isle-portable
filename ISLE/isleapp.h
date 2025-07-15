@@ -110,6 +110,7 @@ private:
 	MxBool m_haptic;
 	MxS32 m_xRes;
 	MxS32 m_yRes;
+	MxFloat m_frameRate;
 };
 
 extern IsleApp* g_isle;
