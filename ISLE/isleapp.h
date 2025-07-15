@@ -72,7 +72,7 @@ private:
 	char* m_cdPath;              // 0x04
 	char* m_deviceId;            // 0x08
 	char* m_savePath;            // 0x0c
-	MxS32 m_fullScreen;          // 0x10
+	MxBool m_fullScreen;         // 0x10
 	MxS32 m_flipSurfaces;        // 0x14
 	MxS32 m_backBuffersInVram;   // 0x18
 	MxS32 m_using8bit;           // 0x1c
@@ -111,6 +111,7 @@ private:
 	MxS32 m_xRes;
 	MxS32 m_yRes;
 	MxFloat m_frameRate;
+	MxBool m_exclusiveFullScreen;
 };
 
 extern IsleApp* g_isle;

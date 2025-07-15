@@ -179,6 +179,7 @@ IsleApp::IsleApp()
 	m_xRes = 640;
 	m_yRes = 480;
 	m_frameRate = 100.0f;
+	m_exclusiveFullScreen = FALSE;
 }
 
 // FUNCTION: ISLE 0x4011a0
@@ -841,7 +842,7 @@ MxResult IsleApp::SetupWindow()
 
 	window = SDL_CreateWindowWithProperties(props);
 
-	if (m_fullScreen) {
+	if (m_exclusiveFullScreen && m_fullScreen) {
 		SDL_DisplayMode closestMode;
 		SDL_DisplayID displayID = SDL_GetDisplayForWindow(window);
 		bool findModeSuccess =
@@ -1007,6 +1008,7 @@ bool IsleApp::LoadConfig()
 
 		iniparser_set(dict, "isle:Flip Surfaces", m_flipSurfaces ? "true" : "false");
 		iniparser_set(dict, "isle:Full Screen", m_fullScreen ? "true" : "false");
+		iniparser_set(dict, "isle:Exclusive Full Screen", m_exclusiveFullScreen ? "true" : "false");
 		iniparser_set(dict, "isle:Wide View Angle", m_wideViewAngle ? "true" : "false");
 
 		iniparser_set(dict, "isle:3DSound", m_use3dSound ? "true" : "false");
@@ -1072,6 +1074,7 @@ bool IsleApp::LoadConfig()
 
 	m_flipSurfaces = iniparser_getboolean(dict, "isle:Flip Surfaces", m_flipSurfaces);
 	m_fullScreen = iniparser_getboolean(dict, "isle:Full Screen", m_fullScreen);
+	m_exclusiveFullScreen = iniparser_getboolean(dict, "isle:Exclusive Full Screen", m_exclusiveFullScreen);
 	m_wideViewAngle = iniparser_getboolean(dict, "isle:Wide View Angle", m_wideViewAngle);
 	m_use3dSound = iniparser_getboolean(dict, "isle:3DSound", m_use3dSound);
 	m_useMusic = iniparser_getboolean(dict, "isle:Music", m_useMusic);

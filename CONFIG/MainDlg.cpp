@@ -58,6 +58,7 @@ CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 	connect(m_ui->musicCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxMusic);
 	connect(m_ui->sound3DCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckbox3DSound);
 	connect(m_ui->fullscreenCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxFullscreen);
+	connect(m_ui->exclusiveFullscreenCheckbox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxExclusiveFullscreen);
 	connect(m_ui->rumbleCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxRumble);
 	connect(m_ui->textureCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxTexture);
 	connect(m_ui->touchComboBox, &QComboBox::currentIndexChanged, this, &CMainDialog::TouchControlsChanged);
@@ -259,6 +260,8 @@ void CMainDialog::UpdateInterface()
 	}
 	m_ui->musicCheckBox->setChecked(currentConfigApp->m_music);
 	m_ui->fullscreenCheckBox->setChecked(currentConfigApp->m_full_screen);
+	m_ui->exclusiveFullscreenCheckbox->setEnabled(currentConfigApp->m_full_screen);
+	m_ui->exclusiveFullscreenCheckbox->setChecked(currentConfigApp->m_exclusive_full_screen);
 	m_ui->rumbleCheckBox->setChecked(currentConfigApp->m_haptic);
 	m_ui->touchComboBox->setCurrentIndex(currentConfigApp->m_touch_scheme);
 	m_ui->transitionTypeComboBox->setCurrentIndex(currentConfigApp->m_transition_type);
@@ -344,6 +347,14 @@ void CMainDialog::OnCheckboxMusic(bool checked)
 void CMainDialog::OnCheckboxFullscreen(bool checked)
 {
 	currentConfigApp->m_full_screen = checked;
+	m_ui->exclusiveFullscreenCheckbox->setEnabled(checked);
+	m_modified = true;
+	UpdateInterface();
+}
+
+void CMainDialog::OnCheckboxExclusiveFullscreen(bool checked)
+{
+	currentConfigApp->m_exclusive_full_screen = checked;
 	m_modified = true;
 	UpdateInterface();
 }

@@ -69,6 +69,7 @@ public:
 	int m_display_bit_depth;
 	bool m_flip_surfaces;
 	bool m_full_screen;
+	bool m_exclusive_full_screen;
 	int m_transition_type;
 	bool m_3d_video_ram;
 	bool m_wide_view_angle;

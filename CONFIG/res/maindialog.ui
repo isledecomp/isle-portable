@@ -605,6 +605,9 @@ The game will gradually increase the number of actors until this maximum is reac
             <layout class="QGridLayout" name="gridLayout_3">
              <item row="0" column="1">
               <widget class="QSpinBox" name="framerateSpinBox">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Maximum framerate. Values above 100fps are untested.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
                <property name="suffix">
                 <string>fps</string>
                </property>
@@ -620,14 +623,31 @@ The game will gradually increase the number of actors until this maximum is reac
               </widget>
              </item>
              <item row="0" column="0">
-              <widget class="QCheckBox" name="fullscreenCheckBox">
-               <property name="toolTip">
-                <string>Toggle fullscreen display mode.</string>
-               </property>
-               <property name="text">
-                <string>Fullscreen</string>
-               </property>
-              </widget>
+              <layout class="QVBoxLayout" name="fullscreenCheckboxContainer">
+               <item>
+                <widget class="QCheckBox" name="fullscreenCheckBox">
+                 <property name="toolTip">
+                  <string>Toggle fullscreen display mode.</string>
+                 </property>
+                 <property name="text">
+                  <string>Fullscreen</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QCheckBox" name="exclusiveFullscreenCheckbox">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <property name="toolTip">
+                  <string>Grants the app full control of the display for better performance and lower input lag. May cause slower alt-tabbing.</string>
+                 </property>
+                 <property name="text">
+                  <string>Exclusive Fullscreen</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
              </item>
             </layout>
            </widget>
@@ -640,6 +660,9 @@ The game will gradually increase the number of actors until this maximum is reac
             <layout class="QHBoxLayout" name="horizontalLayout_5">
              <item>
               <widget class="QComboBox" name="aspectRatioComboBox">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The aspect ratio you intend to use.&lt;br/&gt;Select &lt;span style=&quot; font-weight:700;&quot;&gt;Custom&lt;/span&gt; to define your own width and height.&lt;br/&gt;Has no effect on the game itself.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
                <property name="currentIndex">
                 <number>0</number>
                </property>
@@ -674,6 +697,9 @@ The game will gradually increase the number of actors until this maximum is reac
                    <horstretch>0</horstretch>
                    <verstretch>0</verstretch>
                   </sizepolicy>
+                 </property>
+                 <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Horizontal resolution. &lt;/p&gt;&lt;p&gt;Locked to aspect ratio, unless &lt;span style=&quot; font-weight:700;&quot;&gt;Custom&lt;/span&gt; is select as the aspect ratio.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                  <property name="alignment">
                   <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -718,6 +744,9 @@ The game will gradually increase the number of actors until this maximum is reac
                    <horstretch>0</horstretch>
                    <verstretch>0</verstretch>
                   </sizepolicy>
+                 </property>
+                 <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Vertical resolution. &lt;/p&gt;&lt;p&gt;If an aspect ratio other than &lt;span style=&quot; font-weight:700;&quot;&gt;Custom&lt;/span&gt; is selected, this directly affects the horizontal resolution.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                  <property name="alignment">
                   <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -827,6 +856,9 @@ The game will gradually increase the number of actors until this maximum is reac
          <layout class="QVBoxLayout" name="verticalLayout_8">
           <item>
            <widget class="QGroupBox" name="textureLoader">
+            <property name="toolTip">
+             <string>Settings for Texture Loader extension.</string>
+            </property>
             <property name="title">
              <string>Texture Loader Extension</string>
             </property>
