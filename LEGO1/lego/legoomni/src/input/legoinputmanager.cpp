@@ -581,6 +581,74 @@ void LegoInputManager::RemoveJoystick(SDL_JoystickID p_joystickID)
 	m_joysticks.erase(p_joystickID);
 }
 
+void LegoInputManager::AddMouse(SDL_MouseID p_mouseID)
+{
+	if (m_mice.count(p_mouseID)) {
+		return;
+	}
+
+	// Currently no way to get an individual haptic device for a mouse.
+	SDL_Haptic* haptic = SDL_OpenHapticFromMouse();
+	if (haptic) {
+		if (!SDL_InitHapticRumble(haptic)) {
+			SDL_CloseHaptic(haptic);
+			haptic = nullptr;
+		}
+	}
+
+	m_mice[p_mouseID] = {nullptr, haptic};
+}
+
+void LegoInputManager::RemoveMouse(SDL_MouseID p_mouseID)
+{
+	if (!m_mice.count(p_mouseID)) {
+		return;
+	}
+
+	if (m_mice[p_mouseID].second) {
+		SDL_CloseHaptic(m_mice[p_mouseID].second);
+	}
+
+	m_mice.erase(p_mouseID);
+}
+
+void LegoInputManager::AddJoystick(SDL_JoystickID p_joystickID)
+{
+	if (m_joysticks.count(p_joystickID)) {
+		return;
+	}
+
+	SDL_Gamepad* joystick = SDL_OpenGamepad(p_joystickID);
+	if (joystick) {
+		SDL_Haptic* haptic = SDL_OpenHapticFromJoystick(SDL_GetGamepadJoystick(joystick));
+		if (haptic) {
+			if (!SDL_InitHapticRumble(haptic)) {
+				SDL_CloseHaptic(haptic);
+				haptic = nullptr;
+			}
+		}
+
+		m_joysticks[p_joystickID] = {joystick, haptic};
+	}
+	else {
+		SDL_Log("Failed to open gamepad: %s", SDL_GetError());
+	}
+}
+
+void LegoInputManager::RemoveJoystick(SDL_JoystickID p_joystickID)
+{
+	if (!m_joysticks.count(p_joystickID)) {
+		return;
+	}
+
+	if (m_joysticks[p_joystickID].second) {
+		SDL_CloseHaptic(m_joysticks[p_joystickID].second);
+	}
+
+	SDL_CloseGamepad(m_joysticks[p_joystickID].first);
+	m_joysticks.erase(p_joystickID);
+}
+
 MxBool LegoInputManager::HandleTouchEvent(SDL_Event* p_event, TouchScheme p_touchScheme)
 {
 	const SDL_TouchFingerEvent& event = p_event->tfinger;
