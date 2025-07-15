@@ -636,7 +636,7 @@ MxBool LegoInputManager::HandleTouchEvent(SDL_Event* p_event, TouchScheme p_touc
 			break;
 		case SDL_EVENT_FINGER_MOTION:
 			if (event.fingerID == finger) {
-				const float thumbstickRadius = 0.05f;
+				const float thumbstickRadius = 0.25f;
 				const float deltaX =
 					SDL_clamp(event.x - m_touchVirtualThumbOrigin.x, -thumbstickRadius, thumbstickRadius);
 				const float deltaY =
