@@ -1107,7 +1107,7 @@ bool IsleApp::LoadConfig()
 	m_haptic = iniparser_getboolean(dict, "isle:Haptic", m_haptic);
 	m_xRes = iniparser_getint(dict, "isle:Horizontal Resolution", m_xRes);
 	m_yRes = iniparser_getint(dict, "isle:Vertical Resolution", m_yRes);
-	if (!m_fullScreen) { // 2D elements break otherwise, not sure why
+	if (!m_fullScreen) {
 		m_videoParam.GetRect() = MxRect32(0, 0, (m_xRes - 1), (m_yRes - 1));
 	}
 	m_frameRate = (1000.0f / iniparser_getdouble(dict, "isle:Frame Delta", m_frameDelta));
