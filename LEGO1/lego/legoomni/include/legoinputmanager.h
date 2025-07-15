@@ -164,7 +164,7 @@ public:
 	LEGO1_EXPORT MxBool
 	HandleRumbleEvent(float p_strength, float p_lowFrequencyRumble, float p_highFrequencyRumble, MxU32 p_milliseconds);
 	LEGO1_EXPORT void UpdateLastInputMethod(SDL_Event* p_event);
-	LEGO1_EXPORT const auto& GetLastInputMethod() { return m_lastInputMethod; }
+	const auto& GetLastInputMethod() { return m_lastInputMethod; }
 
 	// clang-format off
 	enum class SDL_KeyboardID_v : SDL_KeyboardID {};
