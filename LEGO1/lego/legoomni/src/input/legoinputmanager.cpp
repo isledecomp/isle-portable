@@ -160,7 +160,8 @@ MxResult LegoInputManager::GetNavigationKeyStates(MxU32& p_keyFlags)
 // FUNCTION: LEGO1 0x1005c320
 MxResult LegoInputManager::GetJoystickState(MxU32* p_joystickX, MxU32* p_joystickY, MxU32* p_povPosition)
 {
-	if (m_joysticks.empty() && m_touchScheme != e_gamepad) {
+	if (!std::holds_alternative<SDL_JoystickID_v>(m_lastInputMethod) &&
+		!(std::holds_alternative<SDL_TouchID_v>(m_lastInputMethod) && m_touchScheme == e_gamepad)) {
 		return FAILURE;
 	}
 
@@ -513,6 +514,24 @@ MxResult LegoInputManager::GetNavigationTouchStates(MxU32& p_keyStates)
 	return SUCCESS;
 }
 
+void LegoInputManager::AddKeyboard(SDL_KeyboardID p_keyboardID)
+{
+	if (m_keyboards.count(p_keyboardID)) {
+		return;
+	}
+
+	m_keyboards[p_keyboardID] = {nullptr, nullptr};
+}
+
+void LegoInputManager::RemoveKeyboard(SDL_KeyboardID p_keyboardID)
+{
+	if (!m_keyboards.count(p_keyboardID)) {
+		return;
+	}
+
+	m_keyboards.erase(p_keyboardID);
+}
+
 void LegoInputManager::AddMouse(SDL_MouseID p_mouseID)
 {
 	if (m_mice.count(p_mouseID)) {
@@ -656,7 +675,12 @@ MxBool LegoInputManager::HandleTouchEvent(SDL_Event* p_event, TouchScheme p_touc
 	return TRUE;
 }
 
-MxBool LegoInputManager::HandleRumbleEvent()
+MxBool LegoInputManager::HandleRumbleEvent(
+	float p_strength,
+	float p_lowFrequencyRumble,
+	float p_highFrequencyRumble,
+	MxU32 p_milliseconds
+)
 {
 	static bool g_hapticsInitialized = false;
 
@@ -668,6 +692,7 @@ MxBool LegoInputManager::HandleRumbleEvent()
 	SDL_Haptic* haptic = nullptr;
 	std::visit(
 		overloaded{
+			[](SDL_KeyboardID_v p_id) {},
 			[&haptic, this](SDL_MouseID_v p_id) {
 				if (m_mice.count((SDL_MouseID) p_id)) {
 					haptic = m_mice[(SDL_MouseID) p_id].second;
@@ -688,11 +713,8 @@ MxBool LegoInputManager::HandleRumbleEvent()
 		m_lastInputMethod
 	);
 
-	const float strength = 0.5f;
-	const Uint32 durationMs = 700;
-
 	if (haptic) {
-		return SDL_PlayHapticRumble(haptic, strength, durationMs);
+		return SDL_PlayHapticRumble(haptic, p_strength, p_milliseconds);
 	}
 
 	// A joystick isn't necessarily a haptic device; try basic rumble instead
@@ -700,9 +722,9 @@ MxBool LegoInputManager::HandleRumbleEvent()
 		if (m_joysticks.count((SDL_JoystickID) *joystick)) {
 			return SDL_RumbleGamepad(
 				m_joysticks[(SDL_JoystickID) *joystick].first,
-				strength * 65535,
-				strength * 65535,
-				durationMs
+				SDL_clamp(p_lowFrequencyRumble, 0, 1) * USHRT_MAX,
+				SDL_clamp(p_highFrequencyRumble, 0, 1) * USHRT_MAX,
+				p_milliseconds
 			);
 		}
 	}
@@ -752,6 +774,10 @@ void LegoInputManager::InitializeHaptics()
 void LegoInputManager::UpdateLastInputMethod(SDL_Event* p_event)
 {
 	switch (p_event->type) {
+	case SDL_EVENT_KEY_DOWN:
+	case SDL_EVENT_KEY_UP:
+		m_lastInputMethod = SDL_KeyboardID_v{p_event->key.which};
+		break;
 	case SDL_EVENT_MOUSE_BUTTON_DOWN:
 	case SDL_EVENT_MOUSE_BUTTON_UP:
 		m_lastInputMethod = SDL_MouseID_v{p_event->button.which};
