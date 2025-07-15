@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<stringset>
+  <string id="msg_lego_island_config" src="Lego Island Config"/>
+  <string id="msg_diskpath" src="isle:diskpath" />
+  <string id="msg_cdpath" src="isle:cdpath" />
+  <string id="msg_savepath" src="isle:savepath" />
+
+  <string id="msg_wide_view_angle" src="Wide View Angle" />
+  <string id="msg_3d_sound" src="3D Sound" />
+  <string id="msg_music" src="Music" />
+
+  <string id="msg_cursor_sensitivity" src="Cursor Sensitivity" />
+
+  <string id="msg_island_quality" src="Island Quality" />
+  <string id="msg_quality_low" src="low" />
+  <string id="msg_quality_medium" src="medium" />
+  <string id="msg_quality_high" src="high" />
+
+  <string id="msg_island_texture" src="Island Texture Quality" />
+  <string id="msg_texture_fast" src="fast" />
+  <string id="msg_texture_high" src="high" />
+
+  <string id="msg_max_lod" src="Max LOD" />
+  <string id="msg_max_allowed_extras" src="Max Allowed Extras" />
+
+  <string id="msg_transition_type" src="isle:Transition Type" />
+  <string id="msg_transition_none" src="none" />
+  <string id="msg_transition_dissolve" src="dissolve" />
+  <string id="msg_transition_mosaic" src="mosaic" />
+  <string id="msg_transition_wipe_down" src="wipe down" />
+  <string id="msg_transition_windows" src="windows" />
+
+  <string id="msg_texture_loader" src="Texture Loader Extension" />
+
+  <string id="msg_save_exit" src="Save &amp; Exit" />
+  <string id="msg_save_launch" src="Save &amp; Launch" />
+  <string id="msg_exit" src="Exit" />
+</stringset>

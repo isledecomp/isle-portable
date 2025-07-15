@@ -17,6 +17,9 @@
 #ifdef USE_SOFTWARE_RENDER
 #include "d3drmrenderer_software.h"
 #endif
+#ifdef USE_GXM
+#include "d3drmrenderer_gxm.h"
+#endif
 
 Direct3DRMRenderer* CreateDirect3DRMRenderer(const DDSURFACEDESC& DDSDesc, const GUID* guid)
 {
@@ -50,6 +53,11 @@ Direct3DRMRenderer* CreateDirect3DRMRenderer(const DDSURFACEDESC& DDSDesc, const
 		return DirectX9Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
 #endif
+#ifdef USE_GXM
+	if (SDL_memcmp(guid, &GXM_GUID, sizeof(GUID)) == 0) {
+		return GXMRenderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
+	}
+#endif
 	return nullptr;
 }
 
@@ -72,5 +80,8 @@ void Direct3DRMRenderer_EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 #endif
 #ifdef USE_SOFTWARE_RENDER
 	Direct3DRMSoftware_EnumDevice(cb, ctx);
+#endif
+#ifdef USE_GXM
+	GXMRenderer_EnumDevice(cb, ctx);
 #endif
 }

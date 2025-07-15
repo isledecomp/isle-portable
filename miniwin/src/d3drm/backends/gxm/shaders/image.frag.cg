@@ -1,0 +1,10 @@
+void main(
+    float4 vPosition : POSITION,
+    float2 vTexCoord : TEXCOORD0,
+
+    uniform sampler2D uTexture,
+
+    out float4 outColor : COLOR
+) {
+    outColor = tex2D(uTexture, vTexCoord);
+}

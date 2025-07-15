@@ -1,0 +1,8 @@
+isle-config:
+  attributes: 0
+  process_image: true
+  version:
+    major: 1
+    minor: 1
+  main:
+    start: module_start
