@@ -617,25 +617,25 @@ MxBool LegoInputManager::HandleTouchEvent(SDL_Event* p_event, TouchScheme p_touc
 		}
 		break;
 	case e_gamepad: {
-		static SDL_FingerID finger = (SDL_FingerID) 0;
+		static SDL_FingerID g_finger = (SDL_FingerID) 0;
 
 		switch (p_event->type) {
 		case SDL_EVENT_FINGER_DOWN:
-			if (!finger) {
-				finger = event.fingerID;
+			if (!g_finger) {
+				g_finger = event.fingerID;
 				m_touchVirtualThumb = {0, 0};
 				m_touchVirtualThumbOrigin = {event.x, event.y};
 			}
 			break;
 		case SDL_EVENT_FINGER_UP:
-			if (event.fingerID == finger) {
-				finger = 0;
+			if (event.fingerID == g_finger) {
+				g_finger = 0;
 				m_touchVirtualThumb = {0, 0};
 				m_touchVirtualThumbOrigin = {0, 0};
 			}
 			break;
 		case SDL_EVENT_FINGER_MOTION:
-			if (event.fingerID == finger) {
+			if (event.fingerID == g_finger) {
 				const float thumbstickRadius = 0.25f;
 				const float deltaX =
 					SDL_clamp(event.x - m_touchVirtualThumbOrigin.x, -thumbstickRadius, thumbstickRadius);
