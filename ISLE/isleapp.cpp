@@ -124,8 +124,6 @@ extern const char* g_files[46];
 // FUNCTION: ISLE 0x401000
 IsleApp::IsleApp()
 {
-	m_xRes = 640;
-	m_yRes = 480;
 	m_hdPath = NULL;
 	m_cdPath = NULL;
 	m_deviceId = NULL;
@@ -178,6 +176,8 @@ IsleApp::IsleApp()
 	m_cursorSensitivity = 4;
 	m_touchScheme = LegoInputManager::e_gamepad;
 	m_haptic = TRUE;
+	m_xRes = 640;
+	m_yRes = 480;
 }
 
 // FUNCTION: ISLE 0x4011a0

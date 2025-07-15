@@ -108,8 +108,8 @@ private:
 	MxTransitionManager::TransitionType m_transitionType;
 	LegoInputManager::TouchScheme m_touchScheme;
 	MxBool m_haptic;
-	int m_xRes;
-	int m_yRes;
+	MxS32 m_xRes;
+	MxS32 m_yRes;
 };
 
 extern IsleApp* g_isle;
