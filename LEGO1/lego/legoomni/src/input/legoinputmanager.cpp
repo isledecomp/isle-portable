@@ -528,42 +528,116 @@ void LegoInputManager::EnableInputProcessing()
 
 MxResult LegoInputManager::GetNavigationTouchStates(MxU32& p_keyStates)
 {
-	int count;
-	SDL_TouchID* touchDevices = SDL_GetTouchDevices(&count);
+	for (auto& [fingerID, touchFlags] : m_touchFlags) {
+		p_keyStates |= touchFlags;
 
-	if (touchDevices) {
-		auto applyFingerNavigation = [&p_keyStates](SDL_TouchID p_touchId) {
-			int count;
-			SDL_Finger** fingers = SDL_GetTouchFingers(p_touchId, &count);
+		// We need to clear these as they are not meant to be persistent in e_gamepad mode.
+		if (m_touchOrigins.count(fingerID) && m_touchLastMotion.count(fingerID)) {
+			const MxU32 inactivityThreshold = 3;
 
-			if (fingers) {
-				for (int i = 0; i < count; i++) {
-					if (fingers[i]->y > 3.0 / 4.0) {
-						if (fingers[i]->x < 1.0 / 3.0) {
-							p_keyStates |= c_left;
-						}
-						else if (fingers[i]->x > 2.0 / 3.0) {
-							p_keyStates |= c_right;
-						}
-						else {
-							p_keyStates |= c_down;
-						}
-					}
-					else {
-						p_keyStates |= c_up;
-					}
-				}
-
-				SDL_free(fingers);
+			if (m_touchLastMotion[fingerID].first++ > inactivityThreshold) {
+				touchFlags &= ~c_left;
+				touchFlags &= ~c_right;
+				m_touchOrigins[fingerID].x = m_touchLastMotion[fingerID].second.x;
 			}
-		};
-
-		for (int i = 0; i < count; i++) {
-			applyFingerNavigation(touchDevices[i]);
 		}
-
-		SDL_free(touchDevices);
 	}
 
 	return SUCCESS;
+}
+
+MxBool LegoInputManager::HandleTouchEvent(SDL_Event* p_event, TouchScheme p_touchScheme)
+{
+	const SDL_TouchFingerEvent& event = p_event->tfinger;
+
+	switch (p_touchScheme) {
+	case e_mouse:
+		// Handled in LegoCameraController
+		return FALSE;
+	case e_arrowKeys:
+		switch (p_event->type) {
+		case SDL_EVENT_FINGER_UP:
+			m_touchFlags.erase(event.fingerID);
+			break;
+		case SDL_EVENT_FINGER_DOWN:
+		case SDL_EVENT_FINGER_MOTION:
+			m_touchFlags[event.fingerID] = 0;
+
+			if (event.y > 3.0 / 4.0) {
+				if (event.x < 1.0 / 3.0) {
+					m_touchFlags[event.fingerID] |= c_left;
+				}
+				else if (event.x > 2.0 / 3.0) {
+					m_touchFlags[event.fingerID] |= c_right;
+				}
+				else {
+					m_touchFlags[event.fingerID] |= c_down;
+				}
+			}
+			else {
+				m_touchFlags[event.fingerID] |= c_up;
+			}
+			break;
+		}
+		break;
+	case e_gamepad:
+		switch (p_event->type) {
+		case SDL_EVENT_FINGER_DOWN:
+			m_touchOrigins[event.fingerID] = {event.x, event.y};
+			break;
+		case SDL_EVENT_FINGER_UP:
+			m_touchOrigins.erase(event.fingerID);
+			m_touchFlags.erase(event.fingerID);
+			break;
+		case SDL_EVENT_FINGER_MOTION:
+			if (m_touchOrigins.count(event.fingerID)) {
+				const float activationThreshold = 0.03f;
+				m_touchFlags[event.fingerID] &= ~c_down;
+				m_touchFlags[event.fingerID] &= ~c_up;
+
+				const float deltaY = event.y - m_touchOrigins[event.fingerID].y;
+				if (SDL_fabsf(deltaY) > activationThreshold) {
+					if (deltaY > 0) {
+						m_touchFlags[event.fingerID] |= c_down;
+					}
+					else if (deltaY < 0) {
+						m_touchFlags[event.fingerID] |= c_up;
+					}
+				}
+
+				const float deltaX = event.x - m_touchOrigins[event.fingerID].x;
+				if (SDL_fabsf(deltaX) > activationThreshold && event.dx) {
+					if (event.dx > 0) {
+						m_touchFlags[event.fingerID] |= c_right;
+						m_touchFlags[event.fingerID] &= ~c_left;
+					}
+					else if (event.dx < 0) {
+						m_touchFlags[event.fingerID] |= c_left;
+						m_touchFlags[event.fingerID] &= ~c_right;
+					}
+
+					m_touchLastMotion[event.fingerID] = {0, {event.x, event.y}};
+				}
+			}
+			break;
+		}
+		break;
+	}
+
+	return TRUE;
+}
+
+MxBool LegoInputManager::HandleRumbleEvent()
+{
+	if (m_joystick != NULL && SDL_GamepadConnected(m_joystick) == TRUE) {
+		const Uint16 frequency = 65535 / 2;
+		const Uint32 durationMs = 700;
+		SDL_RumbleGamepad(m_joystick, frequency, frequency, durationMs);
+	}
+	else {
+		return FALSE;
+	}
+
+	// Add support for SDL Haptic API
+	return TRUE;
 }

@@ -37,8 +37,10 @@
 #include "tgl/d3drm/impl.h"
 #include "viewmanager/viewmanager.h"
 
+#include <array>
 #include <extensions/extensions.h>
 #include <miniwin/miniwindevice.h>
+#include <vec.h>
 
 #define SDL_MAIN_USE_CALLBACKS
 #include <SDL3/SDL.h>
@@ -180,6 +182,8 @@ IsleApp::IsleApp()
 	m_maxAllowedExtras = m_islandQuality <= 1 ? 10 : 20;
 	m_transitionType = MxTransitionManager::e_mosaic;
 	m_cursorSensitivity = 4;
+	m_touchScheme = LegoInputManager::e_gamepad;
+	m_haptic = TRUE;
 }
 
 // FUNCTION: ISLE 0x4011a0
@@ -443,17 +447,6 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		return SDL_APP_CONTINUE;
 	}
 
-	// [library:window]
-	// Remaining functionality to be implemented:
-	// WM_TIMER - use SDL_Timer functionality instead
-
-#ifdef __EMSCRIPTEN__
-	// Workaround for the fact we are getting both mouse & touch events on mobile devices running Emscripten.
-	// On desktops, we are only getting mouse events, but a touch device (pen_input) may also be present...
-	// See: https://github.com/libsdl-org/SDL/issues/13161
-	static bool detectedTouchEvents = false;
-#endif
-
 	switch (event->type) {
 	case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
 	case SDL_EVENT_MOUSE_MOTION:
@@ -638,11 +631,7 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 			g_mouseWarped = FALSE;
 			break;
 		}
-#ifdef __EMSCRIPTEN__
-		if (detectedTouchEvents) {
-			break;
-		}
-#endif
+
 		g_mousemoved = TRUE;
 
 		if (InputManager()) {
@@ -665,16 +654,18 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		}
 		break;
 	case SDL_EVENT_FINGER_MOTION: {
-#ifdef __EMSCRIPTEN__
-		detectedTouchEvents = true;
-#endif
 		g_mousemoved = TRUE;
 
 		float x = SDL_clamp(event->tfinger.x, 0, 1) * g_targetWidth;
 		float y = SDL_clamp(event->tfinger.y, 0, 1) * g_targetHeight;
 
 		if (InputManager()) {
-			InputManager()->QueueEvent(c_notificationMouseMove, LegoEventNotificationParam::c_lButtonState, x, y, 0);
+			MxU8 modifier = LegoEventNotificationParam::c_lButtonState;
+			if (InputManager()->HandleTouchEvent(event, g_isle->GetTouchScheme())) {
+				modifier |= LegoEventNotificationParam::c_motionHandled;
+			}
+
+			InputManager()->QueueEvent(c_notificationMouseMove, modifier, x, y, 0);
 		}
 
 		g_lastMouseX = x;
@@ -688,11 +679,6 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		break;
 	}
 	case SDL_EVENT_MOUSE_BUTTON_DOWN:
-#ifdef __EMSCRIPTEN__
-		if (detectedTouchEvents) {
-			break;
-		}
-#endif
 		g_mousedown = TRUE;
 
 		if (InputManager()) {
@@ -706,15 +692,13 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		}
 		break;
 	case SDL_EVENT_FINGER_DOWN: {
-#ifdef __EMSCRIPTEN__
-		detectedTouchEvents = true;
-#endif
 		g_mousedown = TRUE;
 
 		float x = SDL_clamp(event->tfinger.x, 0, 1) * g_targetWidth;
 		float y = SDL_clamp(event->tfinger.y, 0, 1) * g_targetHeight;
 
 		if (InputManager()) {
+			InputManager()->HandleTouchEvent(event, g_isle->GetTouchScheme());
 			InputManager()->QueueEvent(c_notificationButtonDown, LegoEventNotificationParam::c_lButtonState, x, y, 0);
 		}
 
@@ -729,17 +713,6 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		break;
 	}
 	case SDL_EVENT_MOUSE_BUTTON_UP:
-#ifdef __EMSCRIPTEN__
-		if (detectedTouchEvents) {
-			// Abusing the fact (bug?) that we are always getting mouse events on Emscripten.
-			// This functionality should be enabled in a more general way with touch events,
-			// but SDL touch event's don't have a "double tap" indicator right now.
-			if (event->button.clicks == 2) {
-				InputManager()->QueueEvent(c_notificationKeyPress, SDLK_SPACE, 0, 0, SDLK_SPACE);
-			}
-			break;
-		}
-#endif
 		g_mousedown = FALSE;
 
 		if (InputManager()) {
@@ -753,15 +726,15 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		}
 		break;
 	case SDL_EVENT_FINGER_UP: {
-#ifdef __EMSCRIPTEN__
-		detectedTouchEvents = true;
-#endif
 		g_mousedown = FALSE;
 
 		float x = SDL_clamp(event->tfinger.x, 0, 1) * g_targetWidth;
 		float y = SDL_clamp(event->tfinger.y, 0, 1) * g_targetHeight;
 
+		g_isle->DetectDoubleTap(event->tfinger);
+
 		if (InputManager()) {
+			InputManager()->HandleTouchEvent(event, g_isle->GetTouchScheme());
 			InputManager()->QueueEvent(c_notificationButtonUp, 0, x, y, 0);
 		}
 		break;
@@ -805,6 +778,11 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 #endif
 
 			SDL_Log("Game started");
+		}
+	}
+	else if (event->user.type == g_legoSdlEvents.m_hitActor && g_isle->GetHaptic()) {
+		if (InputManager()) {
+			InputManager()->HandleRumbleEvent();
 		}
 	}
 
@@ -1057,6 +1035,8 @@ bool IsleApp::LoadConfig()
 		iniparser_set(dict, "isle:Max LOD", buf);
 		iniparser_set(dict, "isle:Max Allowed Extras", SDL_itoa(m_maxAllowedExtras, buf, 10));
 		iniparser_set(dict, "isle:Transition Type", SDL_itoa(m_transitionType, buf, 10));
+		iniparser_set(dict, "isle:Touch Scheme", SDL_itoa(m_touchScheme, buf, 10));
+		iniparser_set(dict, "isle:Haptic", m_haptic ? "true" : "false");
 
 #ifdef EXTENSIONS
 		iniparser_set(dict, "extensions", NULL);
@@ -1130,6 +1110,8 @@ bool IsleApp::LoadConfig()
 	m_maxAllowedExtras = iniparser_getint(dict, "isle:Max Allowed Extras", m_maxAllowedExtras);
 	m_transitionType =
 		(MxTransitionManager::TransitionType) iniparser_getint(dict, "isle:Transition Type", m_transitionType);
+	m_touchScheme = (LegoInputManager::TouchScheme) iniparser_getint(dict, "isle:Touch Scheme", m_touchScheme);
+	m_haptic = iniparser_getboolean(dict, "isle:Haptic", m_haptic);
 
 	const char* deviceId = iniparser_getstring(dict, "isle:3D Device ID", NULL);
 	if (deviceId != NULL) {
@@ -1145,13 +1127,19 @@ bool IsleApp::LoadConfig()
 	strcpy(m_savePath, savePath);
 
 #ifdef EXTENSIONS
-	std::vector<const char*> keys;
-	keys.resize(iniparser_getsecnkeys(dict, "extensions"));
-	iniparser_getseckeys(dict, "extensions", keys.data());
-
-	for (const char* key : keys) {
+	for (const char* key : Extensions::availableExtensions) {
 		if (iniparser_getboolean(dict, key, 0)) {
-			Extensions::Enable(key);
+			std::vector<const char*> extensionKeys;
+			const char* section = SDL_strchr(key, ':') + 1;
+			extensionKeys.resize(iniparser_getsecnkeys(dict, section));
+			iniparser_getseckeys(dict, section, extensionKeys.data());
+
+			std::map<std::string, std::string> extensionDict;
+			for (const char* key : extensionKeys) {
+				extensionDict[key] = iniparser_getstring(dict, key, NULL);
+			}
+
+			Extensions::Enable(key, std::move(extensionDict));
 		}
 	}
 #endif
@@ -1476,5 +1464,28 @@ void IsleApp::MoveVirtualMouseViaJoystick()
 			g_mouseWarped = TRUE;
 			SDL_WarpMouseInWindow(window, x, y);
 		}
+	}
+}
+
+void IsleApp::DetectDoubleTap(const SDL_TouchFingerEvent& p_event)
+{
+	typedef std::pair<Uint64, std::array<float, 2>> LastTap;
+
+	const MxU32 doubleTapMs = 500;
+	const float doubleTapDist = 0.001;
+	static LastTap lastTap = {0, {0, 0}};
+
+	LastTap currentTap = {p_event.timestamp, {p_event.x, p_event.y}};
+	if (SDL_NS_TO_MS(currentTap.first - lastTap.first) < doubleTapMs &&
+		DISTSQRD2(currentTap.second, lastTap.second) < doubleTapDist) {
+
+		if (InputManager()) {
+			InputManager()->QueueEvent(c_notificationKeyPress, SDLK_SPACE, 0, 0, SDLK_SPACE);
+		}
+
+		lastTap = {0, {0, 0}};
+	}
+	else {
+		lastTap = currentTap;
 	}
 }

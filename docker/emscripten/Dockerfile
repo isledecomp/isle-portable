@@ -1,4 +1,4 @@
-FROM emscripten/emsdk:latest AS builder
+FROM emscripten/emsdk:4.0.10 AS builder
 
 ARG CMAKE_VERSION=3.29.3
 

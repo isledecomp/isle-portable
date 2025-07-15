@@ -782,3 +782,10 @@ void LoadFromNamedTexture(LegoNamedTexture* p_namedTexture)
 		textureInfo->LoadBits(p_namedTexture->GetTexture()->GetImage()->GetBits());
 	}
 }
+
+void HitActorEvent()
+{
+	SDL_Event event;
+	event.user.type = g_legoSdlEvents.m_hitActor;
+	SDL_PushEvent(&event);
+}
