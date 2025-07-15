@@ -59,6 +59,10 @@ public:
 	//	DECLARE_MESSAGE_MAP()
 
 public:
+	int m_aspect_ratio;
+	int m_x_res;
+	int m_y_res;
+	float m_frame_delta;
 	LegoDeviceEnumerate* m_device_enumerator;
 	MxDriver* m_driver;
 	Direct3DDeviceInfo* m_device;
@@ -85,6 +89,7 @@ public:
 	float m_max_lod;
 	int m_max_actors;
 	int m_touch_scheme;
+	int m_ram_quality_limit;
 };
 
 extern CConfigApp g_theApp;

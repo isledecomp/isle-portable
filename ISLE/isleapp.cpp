@@ -124,6 +124,8 @@ extern const char* g_files[46];
 // FUNCTION: ISLE 0x401000
 IsleApp::IsleApp()
 {
+	m_xRes = 640;
+	m_yRes = 480;
 	m_hdPath = NULL;
 	m_cdPath = NULL;
 	m_deviceId = NULL;
@@ -153,7 +155,7 @@ IsleApp::IsleApp()
 		m_videoParam = MxVideoParam(r, NULL, 1, flags);
 	}
 #else
-	m_videoParam = MxVideoParam(MxRect32(0, 0, 639, 479), NULL, 1, MxVideoParamFlags());
+	m_videoParam = MxVideoParam(MxRect32(0, 0, (m_xRes - 1), (m_yRes - 1)), NULL, 1, MxVideoParamFlags());
 #endif
 	m_videoParam.Flags().Set16Bit(MxDirectDraw::GetPrimaryBitDepth() == 16);
 
@@ -1013,6 +1015,9 @@ bool IsleApp::LoadConfig()
 		iniparser_set(dict, "isle:Transition Type", SDL_itoa(m_transitionType, buf, 10));
 		iniparser_set(dict, "isle:Touch Scheme", SDL_itoa(m_touchScheme, buf, 10));
 		iniparser_set(dict, "isle:Haptic", m_haptic ? "true" : "false");
+		iniparser_set(dict, "isle:Horizontal Resolution", SDL_itoa(m_xRes, buf, 10));
+		iniparser_set(dict, "isle:Vertical Resolution", SDL_itoa(m_yRes, buf, 10));
+		iniparser_set(dict, "isle:Frame Delta", SDL_itoa(m_frameDelta, buf, 10));
 
 #ifdef EXTENSIONS
 		iniparser_set(dict, "extensions", NULL);
@@ -1085,6 +1090,11 @@ bool IsleApp::LoadConfig()
 		(MxTransitionManager::TransitionType) iniparser_getint(dict, "isle:Transition Type", m_transitionType);
 	m_touchScheme = (LegoInputManager::TouchScheme) iniparser_getint(dict, "isle:Touch Scheme", m_touchScheme);
 	m_haptic = iniparser_getboolean(dict, "isle:Haptic", m_haptic);
+	m_xRes = iniparser_getint(dict, "isle:Horizontal Resolution", m_xRes);
+	m_yRes = iniparser_getint(dict, "isle:Vertical Resolution", m_yRes);
+	m_videoParam.GetRect() = MxRect32(0, 0, (m_xRes - 1), (m_yRes - 1));
+	m_frameDelta = static_cast<int>(std::round(iniparser_getdouble(dict, "isle:Frame Delta", m_frameDelta)));
+
 
 	const char* deviceId = iniparser_getstring(dict, "isle:3D Device ID", NULL);
 	if (deviceId != NULL) {

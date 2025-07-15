@@ -80,7 +80,44 @@ CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 	connect(m_ui->maxActorsSlider, &QSlider::valueChanged, this, &CMainDialog::MaxActorsChanged);
 	connect(m_ui->maxActorsSlider, &QSlider::sliderMoved, this, &CMainDialog::MaxActorsChanged);
 
+	connect(m_ui->aspectRatioComboBox, &QComboBox::currentIndexChanged, this, &CMainDialog::AspectRatioChanged);
+	connect(m_ui->xResSpinBox, &QSpinBox::valueChanged, this, &CMainDialog::XResChanged);
+	connect(m_ui->yResSpinBox, &QSpinBox::valueChanged, this, &CMainDialog::YResChanged);
+	connect(m_ui->framerateSpinBox, &QSpinBox::valueChanged, this, &CMainDialog::FramerateChanged);
+
 	layout()->setSizeConstraint(QLayout::SetFixedSize);
+
+	if (currentConfigApp->m_ram_quality_limit != 0) {
+		m_modified = true;
+		const QString ramError = QString("Insufficient RAM!");
+		m_ui->sound3DCheckBox->setChecked(false);
+		m_ui->sound3DCheckBox->setEnabled(false);
+		m_ui->sound3DCheckBox->setToolTip(ramError);
+		m_ui->modelQualityHighRadioButton->setEnabled(false);
+		m_ui->modelQualityHighRadioButton->setToolTip(ramError);
+		m_ui->modelQualityLowRadioButton->setEnabled(true);
+		if (currentConfigApp->m_ram_quality_limit == 2) {
+			m_ui->modelQualityLowRadioButton->setChecked(true);
+			m_ui->modelQualityMediumRadioButton->setEnabled(false);
+			m_ui->modelQualityMediumRadioButton->setToolTip(ramError);
+			m_ui->maxLoDSlider->setMaximum(30);
+			m_ui->maxActorsSlider->setMaximum(15);
+		}
+		else {
+			m_ui->modelQualityMediumRadioButton->setChecked(true);
+			m_ui->modelQualityMediumRadioButton->setEnabled(true);
+			m_ui->maxLoDSlider->setMaximum(40);
+			m_ui->maxActorsSlider->setMaximum(30);
+		}
+	}
+	else {
+		m_ui->sound3DCheckBox->setEnabled(true);
+		m_ui->modelQualityLowRadioButton->setEnabled(true);
+		m_ui->modelQualityMediumRadioButton->setEnabled(true);
+		m_ui->modelQualityHighRadioButton->setEnabled(true);
+		m_ui->maxLoDSlider->setMaximum(50);
+		m_ui->maxActorsSlider->setMaximum(40);
+	}
 }
 
 CMainDialog::~CMainDialog()
@@ -125,6 +162,7 @@ bool CMainDialog::OnInitDialog()
 	m_ui->LoDNum->setNum((int) currentConfigApp->m_max_lod * 10);
 	m_ui->maxActorsSlider->setValue(currentConfigApp->m_max_actors);
 	m_ui->maxActorsNum->setNum(currentConfigApp->m_max_actors);
+
 	UpdateInterface();
 	return true;
 }
@@ -231,6 +269,11 @@ void CMainDialog::UpdateInterface()
 
 	m_ui->texturePath->setEnabled(currentConfigApp->m_texture_load);
 	m_ui->texturePathOpen->setEnabled(currentConfigApp->m_texture_load);
+
+	m_ui->aspectRatioComboBox->setCurrentIndex(currentConfigApp->m_aspect_ratio);
+	m_ui->xResSpinBox->setValue(currentConfigApp->m_x_res);
+	m_ui->yResSpinBox->setValue(currentConfigApp->m_y_res);
+	m_ui->framerateSpinBox->setValue(static_cast<int>(std::round(1000.0f / currentConfigApp->m_frame_delta)));
 }
 
 // FUNCTION: CONFIG 0x004045e0
@@ -442,5 +485,56 @@ void CMainDialog::TexturePathEdited()
 		currentConfigApp->m_texture_path = texture_dir.absolutePath().toStdString();
 		m_modified = true;
 	}
+	UpdateInterface();
+}
+
+void CMainDialog::AspectRatioChanged(int index) {
+	currentConfigApp->m_aspect_ratio = index;
+	EnsureAspectRatio();
+	m_modified = true;
+	UpdateInterface();
+}
+
+void CMainDialog::XResChanged(int i) {
+	currentConfigApp->m_x_res = i;
+	m_modified = true;
+	UpdateInterface();
+}
+
+void CMainDialog::YResChanged(int i) {
+	currentConfigApp->m_y_res = i;
+	EnsureAspectRatio();
+	m_modified = true;
+	UpdateInterface();
+}
+
+void CMainDialog::EnsureAspectRatio() {
+	if (currentConfigApp->m_aspect_ratio != 3) {
+		m_ui->xResSpinBox->setReadOnly(true);
+		switch (currentConfigApp->m_aspect_ratio) {
+			case 0: {
+				float standardAspect = 4.0f / 3.0f;
+				currentConfigApp->m_x_res = static_cast<int>(std::round((currentConfigApp->m_y_res) * standardAspect));
+				break;
+			}
+			case 1: {
+				float wideAspect = 16.0f / 9.0f;
+				currentConfigApp->m_x_res = static_cast<int>(std::round((currentConfigApp->m_y_res) * wideAspect));
+				break;
+			}
+			case 2: {
+				currentConfigApp->m_x_res = currentConfigApp->m_y_res;
+				break;
+			}
+		}
+	}
+	else {
+		m_ui->xResSpinBox->setReadOnly(false);
+	}
+}
+
+void CMainDialog::FramerateChanged(int i) {
+	currentConfigApp->m_frame_delta = (1000.0f / static_cast<float>(i));
+	m_modified = true;
 	UpdateInterface();
 }

@@ -57,6 +57,11 @@ private slots:
 	void MaxActorsChanged(int value);
 	void SelectTexturePathDialog();
 	void TexturePathEdited();
+	void XResChanged(int i);
+	void YResChanged(int i);
+	void AspectRatioChanged(int index);
+	void EnsureAspectRatio();
+	void FramerateChanged(int i);
 };
 
 // SYNTHETIC: CONFIG 0x00403de0

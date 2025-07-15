@@ -67,6 +67,10 @@ bool CConfigApp::InitInstance()
 		return FALSE;
 	}
 	SDL_DestroyWindow(window);
+	m_aspect_ratio = 0;
+	m_x_res = 640;
+	m_y_res = 480;
+	m_frame_delta = 10.0f;
 	m_driver = NULL;
 	m_device = NULL;
 	m_full_screen = TRUE;
@@ -84,6 +88,7 @@ bool CConfigApp::InitInstance()
 	m_texture_path = "/textures/";
 	int totalRamMiB = SDL_GetSystemRAM();
 	if (totalRamMiB < 12) {
+		m_ram_quality_limit = 2;
 		m_3d_sound = FALSE;
 		m_model_quality = 0;
 		m_texture_quality = 1;
@@ -91,6 +96,7 @@ bool CConfigApp::InitInstance()
 		m_max_actors = 5;
 	}
 	else if (totalRamMiB < 20) {
+		m_ram_quality_limit = 1;
 		m_3d_sound = FALSE;
 		m_model_quality = 1;
 		m_texture_quality = 1;
@@ -98,6 +104,7 @@ bool CConfigApp::InitInstance()
 		m_max_actors = 10;
 	}
 	else {
+		m_ram_quality_limit = 0;
 		m_model_quality = 2;
 		m_3d_sound = TRUE;
 		m_texture_quality = 1;
@@ -174,6 +181,10 @@ bool CConfigApp::ReadRegisterSettings()
 	m_max_actors = iniparser_getint(dict, "isle:Max Allowed Extras", m_max_actors);
 	m_texture_load = iniparser_getboolean(dict, "extensions:texture loader", m_texture_load);
 	m_texture_path = iniparser_getstring(dict, "texture loader:texture path", m_texture_path.c_str());
+	m_aspect_ratio = iniparser_getint(dict, "isle:Aspect Ratio", m_aspect_ratio);
+	m_x_res = iniparser_getint(dict, "isle:Horizontal Resolution", m_x_res);
+	m_y_res = iniparser_getint(dict, "isle:Vertical Resolution", m_y_res);
+	m_frame_delta = iniparser_getdouble(dict, "isle:Frame Delta", m_frame_delta);
 	iniparser_freedict(dict);
 	return true;
 }
@@ -349,6 +360,11 @@ void CConfigApp::WriteRegisterSettings() const
 
 	iniparser_set(dict, "isle:Max LOD", std::to_string(m_max_lod).c_str());
 	SetIniInt(dict, "isle:Max Allowed Extras", m_max_actors);
+
+	SetIniInt(dict, "isle:Aspect Ratio", m_aspect_ratio);
+	SetIniInt(dict, "isle:Horizontal Resolution", m_x_res);
+	SetIniInt(dict, "isle:Vertical Resolution", m_y_res);
+	iniparser_set(dict, "isle:Frame Delta", std::to_string(m_frame_delta).c_str());
 
 #undef SetIniBool
 #undef SetIniInt
