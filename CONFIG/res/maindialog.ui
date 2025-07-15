@@ -634,6 +634,12 @@ The game will gradually increase the number of actors until this maximum is reac
               <layout class="QHBoxLayout" name="resolution">
                <item>
                 <widget class="QSpinBox" name="xResSpinBox">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
                  <property name="alignment">
                   <set>Qt::AlignmentFlag::AlignCenter</set>
                  </property>
@@ -671,6 +677,12 @@ The game will gradually increase the number of actors until this maximum is reac
                 <widget class="QSpinBox" name="yResSpinBox">
                  <property name="enabled">
                   <bool>true</bool>
+                 </property>
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
                  </property>
                  <property name="alignment">
                   <set>Qt::AlignmentFlag::AlignCenter</set>
