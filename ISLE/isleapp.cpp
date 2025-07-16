@@ -324,7 +324,6 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 			window
 			);
 			return SDL_APP_FAILURE;
-			break;
 		case SDL_APP_SUCCESS:
 			return SDL_APP_SUCCESS;
 			break;
