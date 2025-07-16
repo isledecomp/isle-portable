@@ -315,6 +315,7 @@ Uint32 OpenGL1Renderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGr
 
 HRESULT OpenGL1Renderer::BeginFrame()
 {
+	SDL_GL_MakeCurrent(DDWindow, m_context);
 	GL11_BeginFrame((Matrix4x4*) &m_projection[0][0]);
 
 	int lightIdx = 0;
