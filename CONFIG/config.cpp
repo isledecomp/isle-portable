@@ -243,7 +243,7 @@ bool CConfigApp::ValidateSettings()
 		is_modified = TRUE;
 	}
 
-	if (m_max_lod < 0.0f || m_max_lod > 5.0f) {
+	if (m_max_lod < 0.0f || m_max_lod > 6.0f) {
 		m_max_lod = 3.5f;
 		is_modified = TRUE;
 	}

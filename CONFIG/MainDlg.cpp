@@ -116,7 +116,7 @@ CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 		m_ui->modelQualityLowRadioButton->setEnabled(true);
 		m_ui->modelQualityMediumRadioButton->setEnabled(true);
 		m_ui->modelQualityHighRadioButton->setEnabled(true);
-		m_ui->maxLoDSlider->setMaximum(50);
+		m_ui->maxLoDSlider->setMaximum(60);
 		m_ui->maxActorsSlider->setMaximum(40);
 	}
 }
