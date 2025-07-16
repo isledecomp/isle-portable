@@ -390,6 +390,7 @@ void OpenGLES2Renderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture*
 
 Uint32 OpenGLES2Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUI, float scaleX, float scaleY)
 {
+	SDL_GL_MakeCurrent(DDWindow, m_context);
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
 	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
 
@@ -639,6 +640,7 @@ void OpenGLES2Renderer::Resize(int width, int height, const ViewportTransform& v
 
 void OpenGLES2Renderer::Clear(float r, float g, float b)
 {
+	SDL_GL_MakeCurrent(DDWindow, m_context);
 	m_dirty = true;
 
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
