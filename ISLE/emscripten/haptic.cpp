@@ -39,12 +39,15 @@ void Emscripten_HandleRumbleEvent(float p_lowFrequencyRumble, float p_highFreque
 					);
 				}
 			},
-			[](LegoInputManager::SDL_TouchID_v p_id) {
-				MAIN_THREAD_EM_ASM({
-					if (navigator.vibrate) {
-						navigator.vibrate(700);
-					}
-				});
+			[p_milliseconds](LegoInputManager::SDL_TouchID_v p_id) {
+				MAIN_THREAD_EM_ASM(
+					{
+						if (navigator.vibrate) {
+							navigator.vibrate($0);
+						}
+					},
+					p_milliseconds
+				);
 			}
 		},
 		InputManager()->GetLastInputMethod()
