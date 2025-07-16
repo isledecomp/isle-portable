@@ -362,6 +362,7 @@ HRESULT OpenGL1Renderer::FinalizeFrame()
 
 void OpenGL1Renderer::Resize(int width, int height, const ViewportTransform& viewportTransform)
 {
+	SDL_GL_MakeCurrent(DDWindow, m_context);
 	m_width = width;
 	m_height = height;
 	m_viewportTransform = viewportTransform;
