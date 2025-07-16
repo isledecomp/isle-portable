@@ -175,6 +175,7 @@ static Uint32 UploadTextureData(SDL_Surface* src, bool useNPOT, bool isUI, float
 
 Uint32 OpenGL1Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUI, float scaleX, float scaleY)
 {
+	SDL_GL_MakeCurrent(DDWindow, m_context);
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
 	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
 
@@ -371,6 +372,7 @@ void OpenGL1Renderer::Resize(int width, int height, const ViewportTransform& vie
 
 void OpenGL1Renderer::Clear(float r, float g, float b)
 {
+	SDL_GL_MakeCurrent(DDWindow, m_context);
 	m_dirty = true;
 	GL11_Clear(r, g, b);
 }
