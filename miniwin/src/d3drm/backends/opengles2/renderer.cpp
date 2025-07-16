@@ -718,6 +718,7 @@ void OpenGLES2Renderer::Flip()
 
 void OpenGLES2Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect, FColor color)
 {
+	SDL_GL_MakeCurrent(DDWindow, m_context);
 	m_dirty = true;
 
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
