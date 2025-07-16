@@ -600,6 +600,7 @@ HRESULT OpenGLES2Renderer::FinalizeFrame()
 
 void OpenGLES2Renderer::Resize(int width, int height, const ViewportTransform& viewportTransform)
 {
+	SDL_GL_MakeCurrent(DDWindow, m_context);
 	m_width = width;
 	m_height = height;
 	m_viewportTransform = viewportTransform;
@@ -653,6 +654,7 @@ void OpenGLES2Renderer::Clear(float r, float g, float b)
 
 void OpenGLES2Renderer::Flip()
 {
+	SDL_GL_MakeCurrent(DDWindow, m_context);
 	if (!m_dirty) {
 		return;
 	}
