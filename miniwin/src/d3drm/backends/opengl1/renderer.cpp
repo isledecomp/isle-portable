@@ -380,6 +380,7 @@ void OpenGL1Renderer::Clear(float r, float g, float b)
 
 void OpenGL1Renderer::Flip()
 {
+	SDL_GL_MakeCurrent(DDWindow, m_context);
 	if (m_dirty) {
 		SDL_GL_SwapWindow(DDWindow);
 		m_dirty = false;
@@ -388,6 +389,7 @@ void OpenGL1Renderer::Flip()
 
 void OpenGL1Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect, FColor color)
 {
+	SDL_GL_MakeCurrent(DDWindow, m_context);
 	m_dirty = true;
 
 	float left = -m_viewportTransform.offsetX / m_viewportTransform.scale;
