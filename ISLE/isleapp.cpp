@@ -315,18 +315,21 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 	// Create global app instance
 	g_isle = new IsleApp();
 
-	SDL_AppResult argParseSuccess = g_isle->ParseArguments(argc, argv);
-	if (argParseSuccess == SDL_APP_FAILURE) {
-		Any_ShowSimpleMessageBox(
+	switch (g_isle->ParseArguments(argc, argv)) {
+		case SDL_APP_FAILURE:
+			Any_ShowSimpleMessageBox(
 			SDL_MESSAGEBOX_ERROR,
 			"LEGO® Island Error",
 			"\"LEGO® Island\" failed to start.  Invalid CLI arguments.",
 			window
-		);
-		return SDL_APP_FAILURE;
-	}
-	else if (argParseSuccess == SDL_APP_SUCCESS) {
-		return SDL_APP_SUCCESS;
+			);
+			return SDL_APP_FAILURE;
+			break;
+		case SDL_APP_SUCCESS:
+			return SDL_APP_SUCCESS;
+			break;
+		case SDL_APP_CONTINUE:
+			break;
 	}
 
 	// Create window
