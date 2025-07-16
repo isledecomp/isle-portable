@@ -175,6 +175,10 @@ IsleApp::IsleApp()
 	m_cursorSensitivity = 4;
 	m_touchScheme = LegoInputManager::e_gamepad;
 	m_haptic = TRUE;
+	m_xRes = 640;
+	m_yRes = 480;
+	m_frameRate = 100.0f;
+	m_exclusiveFullScreen = FALSE;
 }
 
 // FUNCTION: ISLE 0x4011a0
@@ -888,6 +892,15 @@ MxResult IsleApp::SetupWindow()
 #endif
 
 	window = SDL_CreateWindowWithProperties(props);
+
+	if (m_exclusiveFullScreen && m_fullScreen) {
+		SDL_DisplayMode closestMode;
+		SDL_DisplayID displayID = SDL_GetDisplayForWindow(window);
+		if (SDL_GetClosestFullscreenDisplayMode(displayID, m_xRes, m_yRes, m_frameRate, true, &closestMode)) {
+			SDL_SetWindowFullscreenMode(window, &closestMode);
+		}
+	}
+
 #ifdef MINIWIN
 	m_windowHandle = reinterpret_cast<HWND>(window);
 #else
@@ -1040,6 +1053,7 @@ bool IsleApp::LoadConfig()
 
 		iniparser_set(dict, "isle:Flip Surfaces", m_flipSurfaces ? "true" : "false");
 		iniparser_set(dict, "isle:Full Screen", m_fullScreen ? "true" : "false");
+		iniparser_set(dict, "isle:Exclusive Full Screen", m_exclusiveFullScreen ? "true" : "false");
 		iniparser_set(dict, "isle:Wide View Angle", m_wideViewAngle ? "true" : "false");
 
 		iniparser_set(dict, "isle:3DSound", m_use3dSound ? "true" : "false");
@@ -1058,6 +1072,9 @@ bool IsleApp::LoadConfig()
 		iniparser_set(dict, "isle:Transition Type", SDL_itoa(m_transitionType, buf, 10));
 		iniparser_set(dict, "isle:Touch Scheme", SDL_itoa(m_touchScheme, buf, 10));
 		iniparser_set(dict, "isle:Haptic", m_haptic ? "true" : "false");
+		iniparser_set(dict, "isle:Horizontal Resolution", SDL_itoa(m_xRes, buf, 10));
+		iniparser_set(dict, "isle:Vertical Resolution", SDL_itoa(m_yRes, buf, 10));
+		iniparser_set(dict, "isle:Frame Delta", SDL_itoa(m_frameDelta, buf, 10));
 
 #ifdef EXTENSIONS
 		iniparser_set(dict, "extensions", NULL);
@@ -1100,6 +1117,7 @@ bool IsleApp::LoadConfig()
 
 	m_flipSurfaces = iniparser_getboolean(dict, "isle:Flip Surfaces", m_flipSurfaces);
 	m_fullScreen = iniparser_getboolean(dict, "isle:Full Screen", m_fullScreen);
+	m_exclusiveFullScreen = iniparser_getboolean(dict, "isle:Exclusive Full Screen", m_exclusiveFullScreen);
 	m_wideViewAngle = iniparser_getboolean(dict, "isle:Wide View Angle", m_wideViewAngle);
 	m_use3dSound = iniparser_getboolean(dict, "isle:3DSound", m_use3dSound);
 	m_useMusic = iniparser_getboolean(dict, "isle:Music", m_useMusic);
@@ -1128,6 +1146,13 @@ bool IsleApp::LoadConfig()
 		(MxTransitionManager::TransitionType) iniparser_getint(dict, "isle:Transition Type", m_transitionType);
 	m_touchScheme = (LegoInputManager::TouchScheme) iniparser_getint(dict, "isle:Touch Scheme", m_touchScheme);
 	m_haptic = iniparser_getboolean(dict, "isle:Haptic", m_haptic);
+	m_xRes = iniparser_getint(dict, "isle:Horizontal Resolution", m_xRes);
+	m_yRes = iniparser_getint(dict, "isle:Vertical Resolution", m_yRes);
+	if (!m_fullScreen) {
+		m_videoParam.GetRect() = MxRect32(0, 0, (m_xRes - 1), (m_yRes - 1));
+	}
+	m_frameRate = (1000.0f / iniparser_getdouble(dict, "isle:Frame Delta", m_frameDelta));
+	m_frameDelta = static_cast<int>(std::round(iniparser_getdouble(dict, "isle:Frame Delta", m_frameDelta)));
 
 	const char* deviceId = iniparser_getstring(dict, "isle:3D Device ID", NULL);
 	if (deviceId != NULL) {
