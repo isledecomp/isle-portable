@@ -134,7 +134,7 @@ D3DCOLORMODEL CConfigApp::GetHardwareDeviceColorModel() const
 // FUNCTION: CONFIG 0x00403410
 bool CConfigApp::IsPrimaryDriver() const
 {
-	return m_driver == &m_device_enumerator->GetDriverList().front();
+	return m_driver == &m_device_enumerator->m_ddInfo.front();
 }
 
 // FUNCTION: CONFIG 0x00403430

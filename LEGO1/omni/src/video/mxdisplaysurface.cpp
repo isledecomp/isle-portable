@@ -46,16 +46,18 @@ void MxDisplaySurface::Init()
 }
 
 // FUNCTION: LEGO1 0x100ba640
+// FUNCTION: BETA10 0x1013f506
 void MxDisplaySurface::ClearScreen()
 {
+	MxS32 i;
 	MxS32 backBuffers;
 	DDSURFACEDESC desc;
 
-	if (!m_videoParam.Flags().GetFlipSurfaces()) {
-		backBuffers = 2;
+	if (m_videoParam.Flags().GetFlipSurfaces()) {
+		backBuffers = m_videoParam.GetBackBuffers() + 1;
 	}
 	else {
-		backBuffers = m_videoParam.GetBackBuffers() + 1;
+		backBuffers = 2;
 	}
 
 	MxS32 width = m_videoParam.GetRect().GetWidth();

@@ -110,16 +110,16 @@ Act3Script::Script g_unk0x100d95e8[] =
 	{Act3Script::c_tlp053in_RunAnim, Act3Script::c_tlp064la_RunAnim, Act3Script::c_tlp068in_RunAnim};
 
 // FUNCTION: LEGO1 0x10071d40
-void Act3List::Insert(MxS32 p_objectId, MxS32 p_option)
+void Act3List::Insert(MxS32 p_objectId, InsertMode p_option)
 {
 	if (m_unk0x0c) {
 		return;
 	}
 
 	switch (p_option) {
-	case 1:
+	case InsertMode::e_replaceAction:
 		if (!empty()) {
-			FUN_10071fa0();
+			DeleteActionWrapper();
 			push_back(Act3ListElement(p_objectId, p_option, FALSE));
 		}
 		else {
@@ -127,7 +127,7 @@ void Act3List::Insert(MxS32 p_objectId, MxS32 p_option)
 			push_back(Act3ListElement(p_objectId, p_option, TRUE));
 		}
 		break;
-	case 2:
+	case InsertMode::e_queueAction:
 		if (empty()) {
 			push_back(Act3ListElement(p_objectId, p_option, TRUE));
 			InvokeAction(Extra::e_start, *g_act3Script, p_objectId, NULL);
@@ -136,7 +136,7 @@ void Act3List::Insert(MxS32 p_objectId, MxS32 p_option)
 			push_back(Act3ListElement(p_objectId, p_option, FALSE));
 		}
 		break;
-	case 3:
+	case InsertMode::e_onlyIfEmpty:
 		if (empty()) {
 			push_back(Act3ListElement(p_objectId, p_option, TRUE));
 			InvokeAction(Extra::e_start, *g_act3Script, p_objectId, NULL);
@@ -146,7 +146,7 @@ void Act3List::Insert(MxS32 p_objectId, MxS32 p_option)
 }
 
 // FUNCTION: LEGO1 0x10071fa0
-void Act3List::FUN_10071fa0()
+void Act3List::DeleteActionWrapper()
 {
 	DeleteAction();
 }
@@ -162,7 +162,7 @@ void Act3List::Clear()
 	}
 
 	for (Act3List::iterator it = begin(); it != end();) {
-		if ((*it).m_unk0x08) {
+		if ((*it).m_hasStarted) {
 			MxDSAction ds;
 			ds.SetAtomId(*g_act3Script);
 			ds.SetObjectId((*it).m_objectId);
@@ -173,50 +173,64 @@ void Act3List::Clear()
 	}
 }
 
+// Removes the element with the given objectId from the list, or the first if `p_objectId` is zero.
 // FUNCTION: LEGO1 0x100720d0
-void Act3List::FUN_100720d0(MxU32 p_objectId)
+void Act3List::RemoveByObjectIdOrFirst(MxU32 p_objectId)
 {
-	if (m_unk0x0c == 0) {
-		MxU32 removed = FALSE;
+	if (m_unk0x0c) {
+		return;
+	}
 
-		if (!empty()) {
-			if (p_objectId != 0) {
-				for (Act3List::iterator it = begin(); it != end(); it++) {
-					if ((*it).m_unk0x08 && (*it).m_objectId == p_objectId) {
-						erase(it);
-						removed = TRUE;
-						break;
-					}
-				}
-			}
-			else {
-				pop_front();
+	MxU32 removed = FALSE;
+	Act3List::iterator it;
+	// This iterator appears to be unnecessary - maybe left in by accident, or it was used for assertions.
+	// Removing it decreases the match percentage.
+	Act3List::iterator unusedIterator;
+
+	if (empty()) {
+		return;
+	}
+
+	if (!p_objectId) {
+		pop_front();
+		removed = TRUE;
+	}
+	else {
+		for (it = begin(); it != end(); it++) {
+			// Removing this variable decreases the match, but replacing `*it` by `unused` below also does.
+			Act3ListElement& unused = *it;
+
+			if ((*it).m_hasStarted && (*it).m_objectId == p_objectId) {
+				erase(it);
 				removed = TRUE;
+				break;
 			}
+		}
+	}
 
-			if (removed && size() > 0) {
-				// TODO: Match
-				Act3List::iterator it = begin();
-				Act3ListElement& item = *(it++);
+	if (removed && size() > 0) {
+		it = begin();
+		unusedIterator = it;
+		Act3ListElement& firstItem = front();
+		it++;
 
-				for (; it != end(); it++) {
-					if ((*it).m_unk0x04 == 1) {
-						for (Act3List::iterator it2 = begin(); it2 != it;) {
-							if ((*it2).m_unk0x08) {
-								FUN_10071fa0();
-								return;
-							}
-
-							it2 = erase(it2);
-						}
+		while (it != end()) {
+			if ((*it).m_unk0x04 == 1) {
+				for (Act3List::iterator it2 = begin(); it2 != it; erase(it2++)) {
+					if ((*it2).m_hasStarted) {
+						DeleteActionWrapper();
+						return;
 					}
 				}
-
-				if (!item.m_unk0x08) {
-					item.m_unk0x08 = TRUE;
-					InvokeAction(Extra::e_start, *g_act3Script, item.m_objectId, NULL);
-				}
 			}
+
+			it++;
+			unusedIterator++;
+		}
+
+		if (!firstItem.m_hasStarted) {
+			firstItem.m_hasStarted = TRUE;
+			InvokeAction(Extra::e_start, *g_act3Script, firstItem.m_objectId, NULL);
 		}
 	}
 }
@@ -455,14 +469,14 @@ void Act3::TriggerHitSound(undefined4 p_param1)
 			m_bricksterDonutSound = 0;
 		}
 
-		m_unk0x4220.Insert(g_bricksterDonutSounds[m_bricksterDonutSound++], 1);
+		m_unk0x4220.Insert(g_bricksterDonutSounds[m_bricksterDonutSound++], Act3List::e_replaceAction);
 		return;
 	}
 	default:
 		return;
 	}
 
-	m_unk0x4220.Insert(objectId, 3);
+	m_unk0x4220.Insert(objectId, Act3List::e_onlyIfEmpty);
 }
 
 // FUNCTION: LEGO1 0x10072c30
@@ -553,7 +567,7 @@ MxLong Act3::Notify(MxParam& p_param)
 			if (param.GetAction() != NULL && param.GetAction()->GetAtomId() == *g_act3Script) {
 				if (param.GetAction()->GetObjectId() == Act3Script::c_HelicopterDashboard) {
 					MxDSAction action;
-					FUN_10015820(FALSE, LegoOmni::c_disableInput | LegoOmni::c_disable3d | LegoOmni::c_clearScreen);
+					Disable(FALSE, LegoOmni::c_disableInput | LegoOmni::c_disable3d | LegoOmni::c_clearScreen);
 					SetAppCursor(e_cursorArrow);
 					VideoManager()->Get3DManager()->SetFrustrum(45.0f, 0.1f, 125.0f);
 
@@ -613,7 +627,7 @@ MxLong Act3::Notify(MxParam& p_param)
 					} while (length < (MxS32) sizeOfArray(m_helicopterDots));
 				}
 				else {
-					m_unk0x4220.FUN_100720d0(param.GetAction()->GetObjectId());
+					m_unk0x4220.RemoveByObjectIdOrFirst(param.GetAction()->GetObjectId());
 				}
 			}
 			break;
@@ -633,9 +647,9 @@ MxLong Act3::Notify(MxParam& p_param)
 		case c_notificationEndAnim:
 			if (m_state->m_unk0x08 == 1) {
 				assert(m_copter && m_brickster && m_cop1 && m_cop2);
-				m_unk0x4220.FUN_100720d0(0);
+				m_unk0x4220.RemoveByObjectIdOrFirst(0);
 				m_state->m_unk0x08 = 0;
-				FUN_10015820(TRUE, LegoOmni::c_disableInput | LegoOmni::c_disable3d | LegoOmni::c_clearScreen);
+				Disable(TRUE, LegoOmni::c_disableInput | LegoOmni::c_disable3d | LegoOmni::c_clearScreen);
 				m_copter->HandleClick();
 				m_copter->m_state->m_unk0x08 = 1;
 				m_copter->HandleEndAnim((LegoEndAnimNotificationParam&) param);
@@ -686,7 +700,7 @@ MxResult Act3::Tickle()
 
 	if (m_unk0x426c != (Act3Script::Script) 0) {
 		if (AnimationManager()->FUN_10064ee0(m_unk0x426c)) {
-			FUN_10015820(FALSE, LegoOmni::c_disableInput | LegoOmni::c_disable3d | LegoOmni::c_clearScreen);
+			Disable(FALSE, LegoOmni::c_disableInput | LegoOmni::c_disable3d | LegoOmni::c_clearScreen);
 			TickleManager()->UnregisterClient(this);
 			m_unk0x426c = (Act3Script::Script) 0;
 		}
@@ -881,7 +895,7 @@ void Act3::Enable(MxBool p_enable)
 			GameState()->StopArea(LegoGameState::e_infomain);
 		}
 
-		FUN_10015820(FALSE, LegoOmni::c_disableInput | LegoOmni::c_disable3d | LegoOmni::c_clearScreen);
+		Disable(FALSE, LegoOmni::c_disableInput | LegoOmni::c_disable3d | LegoOmni::c_clearScreen);
 		PlayMusic(JukeboxScript::c_Act3Music);
 		GameState()->m_isDirty = TRUE;
 

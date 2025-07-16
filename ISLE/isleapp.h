@@ -61,7 +61,7 @@ public:
 	void SetGameStarted(MxS32 p_gameStarted) { m_gameStarted = p_gameStarted; }
 	void SetDrawCursor(MxS32 p_drawCursor) { m_drawCursor = p_drawCursor; }
 
-	MxResult ParseArguments(int argc, char** argv);
+	SDL_AppResult ParseArguments(int argc, char** argv);
 	MxResult VerifyFilesystem();
 	void DetectGameVersion();
 	void MoveVirtualMouseViaJoystick();
@@ -80,8 +80,6 @@ private:
 	MxS32 m_hasLightSupport;     // 0x24
 	MxS32 m_use3dSound;          // 0x28
 	MxS32 m_useMusic;            // 0x2c
-	MxS32 m_useJoystick;         // 0x30
-	MxS32 m_joystickIndex;       // 0x34
 	MxS32 m_wideViewAngle;       // 0x38
 	MxS32 m_islandQuality;       // 0x3c
 	MxS32 m_islandTexture;       // 0x40
@@ -101,6 +99,7 @@ private:
 	const CursorBitmap* m_cursorCurrentBitmap;
 	char* m_mediaPath;
 	MxFloat m_cursorSensitivity;
+	void DisplayArgumentHelp();
 
 	char* m_iniPath;
 	MxFloat m_maxLod;
