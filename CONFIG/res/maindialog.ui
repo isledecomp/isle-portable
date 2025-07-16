@@ -991,10 +991,14 @@ The game will gradually increase the number of actors until this maximum is reac
   </layout>
  </widget>
  <tabstops>
+  <tabstop>tabWidget</tabstop>
   <tabstop>dataPath</tabstop>
   <tabstop>dataPathOpen</tabstop>
   <tabstop>savePath</tabstop>
   <tabstop>savePathOpen</tabstop>
+  <tabstop>transitionTypeComboBox</tabstop>
+  <tabstop>sound3DCheckBox</tabstop>
+  <tabstop>musicCheckBox</tabstop>
   <tabstop>textureQualityFastRadioButton</tabstop>
   <tabstop>textureQualityHighRadioButton</tabstop>
   <tabstop>modelQualityLowRadioButton</tabstop>
@@ -1003,6 +1007,17 @@ The game will gradually increase the number of actors until this maximum is reac
   <tabstop>maxLoDSlider</tabstop>
   <tabstop>maxActorsSlider</tabstop>
   <tabstop>devicesList</tabstop>
+  <tabstop>fullscreenCheckBox</tabstop>
+  <tabstop>exclusiveFullscreenCheckbox</tabstop>
+  <tabstop>framerateSpinBox</tabstop>
+  <tabstop>aspectRatioComboBox</tabstop>
+  <tabstop>xResSpinBox</tabstop>
+  <tabstop>yResSpinBox</tabstop>
+  <tabstop>touchComboBox</tabstop>
+  <tabstop>rumbleCheckBox</tabstop>
+  <tabstop>textureCheckBox</tabstop>
+  <tabstop>texturePath</tabstop>
+  <tabstop>texturePathOpen</tabstop>
   <tabstop>okButton</tabstop>
   <tabstop>launchButton</tabstop>
   <tabstop>cancelButton</tabstop>
