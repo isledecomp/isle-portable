@@ -61,7 +61,7 @@ public:
 	void SetGameStarted(MxS32 p_gameStarted) { m_gameStarted = p_gameStarted; }
 	void SetDrawCursor(MxS32 p_drawCursor) { m_drawCursor = p_drawCursor; }
 
-	MxResult ParseArguments(int argc, char** argv);
+	SDL_AppResult ParseArguments(int argc, char** argv);
 	MxResult VerifyFilesystem();
 	void DetectGameVersion();
 	void MoveVirtualMouseViaJoystick();
@@ -99,6 +99,7 @@ private:
 	const CursorBitmap* m_cursorCurrentBitmap;
 	char* m_mediaPath;
 	MxFloat m_cursorSensitivity;
+	void DisplayArgumentHelp();
 
 	char* m_iniPath;
 	MxFloat m_maxLod;

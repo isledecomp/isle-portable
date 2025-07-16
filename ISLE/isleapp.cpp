@@ -315,7 +315,8 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 	// Create global app instance
 	g_isle = new IsleApp();
 
-	if (g_isle->ParseArguments(argc, argv) != SUCCESS) {
+	switch (g_isle->ParseArguments(argc, argv)) {
+	case SDL_APP_FAILURE:
 		Any_ShowSimpleMessageBox(
 			SDL_MESSAGEBOX_ERROR,
 			"LEGO® Island Error",
@@ -323,6 +324,10 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 			window
 		);
 		return SDL_APP_FAILURE;
+	case SDL_APP_SUCCESS:
+		return SDL_APP_SUCCESS;
+	case SDL_APP_CONTINUE:
+		break;
 	}
 
 	// Create window
@@ -1301,7 +1306,7 @@ void IsleApp::SetupCursor(Cursor p_cursor)
 	}
 }
 
-MxResult IsleApp::ParseArguments(int argc, char** argv)
+SDL_AppResult IsleApp::ParseArguments(int argc, char** argv)
 {
 	for (int i = 1, consumed; i < argc; i += consumed) {
 		consumed = -1;
@@ -1318,13 +1323,29 @@ MxResult IsleApp::ParseArguments(int argc, char** argv)
 #endif
 			consumed = 1;
 		}
+		else if (strcmp(argv[i], "--help") == 0) {
+			DisplayArgumentHelp();
+			return SDL_APP_SUCCESS;
+		}
 		if (consumed <= 0) {
 			SDL_Log("Invalid argument(s): %s", argv[i]);
-			return FAILURE;
+			DisplayArgumentHelp();
+			return SDL_APP_FAILURE;
 		}
 	}
 
-	return SUCCESS;
+	return SDL_APP_CONTINUE;
+}
+
+void IsleApp::DisplayArgumentHelp()
+{
+	SDL_Log("Usage: isle [options]");
+	SDL_Log("Options:");
+	SDL_Log("	--ini <path>		Set custom path to .ini config");
+#ifdef ISLE_DEBUG
+	SDL_Log("	--debug			Launch in debug mode");
+#endif
+	SDL_Log("	--help			Show this help message");
 }
 
 MxResult IsleApp::VerifyFilesystem()
