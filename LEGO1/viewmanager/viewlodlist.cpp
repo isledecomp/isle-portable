@@ -50,14 +50,10 @@ ViewLODListManager::~ViewLODListManager()
 			delete const_cast<ViewLOD*>(pLODList->PopBack());
 		}
 
-		delete pLODList;
-		// ??? for now
-		delete[] const_cast<char*>(rROIName);
+		pLODList->Release();
 	}
 
-	// ??? correct way of "emptying" map
-	m_map.erase(m_map.begin(), m_map.end());
-
+	m_map.clear();
 	assert(m_map.begin() == m_map.end());
 }
 
