@@ -5,7 +5,7 @@
 
   <pagetable>
     <page id="page_main">
-      <plane style="_common_style_plane_transparent" id="main_plane">
+      <plane style="_common_style_plane_transparent">
         <layout_hint size="960, 544" />
 
         <box> <!-- horizontal -->
@@ -19,28 +19,6 @@
             <layout_hint adjust="1, 1" />
 
             <template_ref id="config_page_main" template="config_main"/>
-
-            <plane id="top_buttons" style="_common_style_plane_transparent"> <!-- top buttons -->
-              <layout_hint adjust="1, 0" size="0, 75" anchor="0, 2" align="0, 2" />
-
-              <box style="_common_default_style_box">
-                <layout_box space="20" layout_type="2" />
-
-                <button style="style_save_and_exit_button" id="save_exit_button"
-                  label="msg_save_exit">
-                  <layout_hint adjust="2, 2" />
-                </button>
-
-                <button style="style_save_and_launch_button" id="start_game_button"
-                  label="msg_save_launch">
-                  <layout_hint adjust="2, 2" />
-                </button>
-
-                <button style="style_exit_button" id="exit_button" label="msg_exit">
-                  <layout_hint adjust="2, 2" />
-                </button>
-              </box>
-            </plane>
 
             <plane id="bottom_buttons" style="_common_style_plane_transparent"> <!-- bottom buttons -->
               <layout_hint adjust="1, 0" size="0, 75" anchor="0, 1" align="0, 1" />
@@ -79,7 +57,7 @@
           <layout_box layout_type="1" space="40" adjust="1, 2" left_margin="20" right_margin="20"/>
 
           <plane style="_common_style_plane_transparent"> <!-- spacing for tabs on top -->
-            <layout_hint size="0, 60" adjust="1, 0" />
+            <layout_hint size="0, 0" adjust="1, 0" />
           </plane>
 
           <box> <!-- Island Texture Quality -->

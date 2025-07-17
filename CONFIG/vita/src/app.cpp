@@ -6,18 +6,21 @@
 
 paf::Framework* g_fw;
 paf::ui::Scene* g_rootPage;
+paf::Plugin* g_plugin;
 
 void loadPluginCB(paf::Plugin* plugin)
 {
-	paf::Plugin::PageOpenParam pageOpenParam;
-	pageOpenParam.option = paf::Plugin::PageOption_None;
-
+	g_plugin = plugin;
 	plugin->SetLocale(Locale_EN);
 
+	paf::Plugin::PageOpenParam pageOpenParam;
+	pageOpenParam.option = paf::Plugin::PageOption_None;
 	paf::ui::Scene* pScene = plugin->PageOpen("page_main", pageOpenParam);
 	g_rootPage = pScene;
 
-	pScene->FindChild("top_buttons")->Hide();
+	const auto saveAndExitButton = static_cast<paf::ui::Button*>(pScene->FindChild("save_exit_button"));
+	const auto startAndExitButton = static_cast<paf::ui::Button*>(pScene->FindChild("start_game_button"));
+	const auto exitButton = static_cast<paf::ui::Button*>(pScene->FindChild("exit_button"));
 }
 
 int paf_main(void)
