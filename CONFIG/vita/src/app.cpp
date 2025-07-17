@@ -3,68 +3,50 @@
 #include <paf.h>
 // clang-format on
 #include <psp2/kernel/clib.h>
-#include <psp2/kernel/modulemgr.h>
-#include <psp2/kernel/processmgr.h>
-#include <psp2/sysmodule.h>
 
-char sceUserMainThreadName[] = "paf_sample";
-int sceUserMainThreadPriority = 0x10000100;
-int sceUserMainThreadCpuAffinityMask = 0x70000;
-SceSize sceUserMainThreadStackSize = 0x4000;
+paf::Framework* g_fw;
+paf::ui::Scene* g_rootPage;
 
-void operator delete(void* ptr, unsigned int n)
+void loadPluginCB(paf::Plugin* plugin)
 {
-	return sce_paf_free(ptr);
+	paf::Plugin::PageOpenParam pageOpenParam;
+	pageOpenParam.option = paf::Plugin::PageOption_None;
+
+	plugin->SetLocale(Locale_EN);
+
+	paf::ui::Scene* pScene = plugin->PageOpen("page_main", pageOpenParam);
+	g_rootPage = pScene;
+
+	pScene->FindChild("top_buttons")->Hide();
 }
 
-int paf_main(void);
-
-typedef struct _ScePafInit { // size is 0x18
-	SceSize global_heap_size;
-	int a2;
-	int a3;
-	int cdlg_mode;
-	int heap_opt_param1;
-	int heap_opt_param2;
-} ScePafInit;
-
-extern "C" int module_start(SceSize args, void* argp)
+int paf_main(void)
 {
-	int load_res;
-	ScePafInit init_param;
-	SceSysmoduleOpt sysmodule_opt;
+	paf::Framework::InitParam fwParam;
+	fwParam.mode = paf::Framework::Mode_Normal;
 
-	init_param.global_heap_size = 0x1000000;
-	init_param.a2 = 0xEA60;
-	init_param.a3 = 0x40000;
-	init_param.cdlg_mode = 0;
-	init_param.heap_opt_param1 = 0;
-	init_param.heap_opt_param2 = 0;
+	paf::Framework* paf_fw = new paf::Framework(fwParam);
+	if (paf_fw != NULL) {
+		g_fw = paf_fw;
 
-	load_res = 0xDEADBEEF;
-	sysmodule_opt.flags = 0;
-	sysmodule_opt.result = &load_res;
+		paf_fw->LoadCommonResourceSync();
 
-	int res = sceSysmoduleLoadModuleInternalWithArg(
-		SCE_SYSMODULE_INTERNAL_PAF,
-		sizeof(init_param),
-		&init_param,
-		&sysmodule_opt
-	);
-	if ((res | load_res) != 0) {
-		sceClibPrintf(
-			"[PAF PRX Loader] Failed to load the PAF prx. (return value 0x%x, result code 0x%x )\n",
-			res,
-			load_res
-		);
+		paf::Plugin::InitParam pluginParam;
+
+		pluginParam.name = "config_plugin";
+		pluginParam.caller_name = "__main__";
+		pluginParam.resource_file = "app0:/config_plugin.rco";
+		pluginParam.init_func = NULL;
+		pluginParam.start_func = loadPluginCB;
+		pluginParam.stop_func = NULL;
+		pluginParam.exit_func = NULL;
+
+		paf::Plugin::LoadSync(pluginParam);
+		paf_fw->Run();
 	}
 
-	paf_main();
+	sceClibPrintf("[SAMPLE] Failed to run PAF instance\n");
 
-	return SCE_KERNEL_START_SUCCESS;
-}
-
-extern "C" void _start()
-{
-	module_start(0, nullptr);
+	exit(0);
+	return 0;
 }

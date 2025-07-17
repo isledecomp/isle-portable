@@ -42,7 +42,6 @@ target_link_libraries(isle-config PRIVATE
 )
 
 block()
-  set(VITA_MAKE_FSELF_FLAGS "${VITA_MAKE_FSELF_FLAGS} -a 0x2F00000000000101")
   vita_create_self(isle-config.self isle-config
     CONFIG exports.yml
     UNSAFE
