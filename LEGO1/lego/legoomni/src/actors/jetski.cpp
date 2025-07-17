@@ -87,7 +87,7 @@ MxLong Jetski::HandleClick()
 		return 1;
 	}
 
-	FUN_10015820(TRUE, 0);
+	Disable(TRUE, 0);
 
 	((Isle*) CurrentWorld())->SetDestLocation(LegoGameState::Area::e_jetski);
 	TransitionManager()->StartTransition(MxTransitionManager::e_mosaic, 50, FALSE, TRUE);
@@ -164,7 +164,7 @@ void Jetski::ActivateSceneActions()
 	PlayMusic(JukeboxScript::c_JetskiRace_Music);
 
 	Act1State* act1state = (Act1State*) GameState()->GetState("Act1State");
-	if (!act1state->m_unk0x018) {
+	if (!act1state->m_state) {
 		if (act1state->m_unk0x022) {
 			PlayCamAnim(this, FALSE, 68, TRUE);
 		}

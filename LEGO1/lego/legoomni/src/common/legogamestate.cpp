@@ -866,7 +866,7 @@ void LegoGameState::SwitchArea(Area p_area)
 	m_previousArea = m_currentArea;
 	m_currentArea = p_area;
 
-	FUN_10015820(TRUE, LegoOmni::c_disableInput | LegoOmni::c_disable3d);
+	Disable(TRUE, LegoOmni::c_disableInput | LegoOmni::c_disable3d);
 	BackgroundAudioManager()->Stop();
 	AnimationManager()->Suspend();
 	VideoManager()->SetUnk0x554(FALSE);
@@ -967,7 +967,7 @@ void LegoGameState::SwitchArea(Area p_area)
 		Act1State* state = (Act1State*) GameState()->GetState("Act1State");
 		LoadIsle();
 
-		if (state->GetUnknown18() == 7) {
+		if (state->GetState() == Act1State::e_transitionToTowtrack) {
 			VideoManager()->Get3DManager()->SetFrustrum(90, 0.1f, 250.0f);
 		}
 		else {

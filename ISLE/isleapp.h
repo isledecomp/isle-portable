@@ -61,7 +61,7 @@ public:
 	void SetGameStarted(MxS32 p_gameStarted) { m_gameStarted = p_gameStarted; }
 	void SetDrawCursor(MxS32 p_drawCursor) { m_drawCursor = p_drawCursor; }
 
-	MxResult ParseArguments(int argc, char** argv);
+	SDL_AppResult ParseArguments(int argc, char** argv);
 	MxResult VerifyFilesystem();
 	void DetectGameVersion();
 	void MoveVirtualMouseViaJoystick();
@@ -72,7 +72,7 @@ private:
 	char* m_cdPath;              // 0x04
 	char* m_deviceId;            // 0x08
 	char* m_savePath;            // 0x0c
-	MxS32 m_fullScreen;          // 0x10
+	MxBool m_fullScreen;         // 0x10
 	MxS32 m_flipSurfaces;        // 0x14
 	MxS32 m_backBuffersInVram;   // 0x18
 	MxS32 m_using8bit;           // 0x1c
@@ -80,8 +80,6 @@ private:
 	MxS32 m_hasLightSupport;     // 0x24
 	MxS32 m_use3dSound;          // 0x28
 	MxS32 m_useMusic;            // 0x2c
-	MxS32 m_useJoystick;         // 0x30
-	MxS32 m_joystickIndex;       // 0x34
 	MxS32 m_wideViewAngle;       // 0x38
 	MxS32 m_islandQuality;       // 0x3c
 	MxS32 m_islandTexture;       // 0x40
@@ -101,6 +99,7 @@ private:
 	const CursorBitmap* m_cursorCurrentBitmap;
 	char* m_mediaPath;
 	MxFloat m_cursorSensitivity;
+	void DisplayArgumentHelp();
 
 	char* m_iniPath;
 	MxFloat m_maxLod;
@@ -108,6 +107,10 @@ private:
 	MxTransitionManager::TransitionType m_transitionType;
 	LegoInputManager::TouchScheme m_touchScheme;
 	MxBool m_haptic;
+	MxS32 m_xRes;
+	MxS32 m_yRes;
+	MxFloat m_frameRate;
+	MxBool m_exclusiveFullScreen;
 };
 
 extern IsleApp* g_isle;

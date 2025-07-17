@@ -235,7 +235,7 @@ inline void ViewManager::ManageVisibilityAndDetailRecursively(ViewROI* p_from, i
 			if (p_from->GetWorldBoundingSphere().Radius() > 0.001F) {
 				float projectedSize = ProjectedSize(p_from->GetWorldBoundingSphere());
 
-				if (projectedSize < seconds_allowed * g_viewDistance) {
+				if (RealtimeView::GetUserMaxLOD() <= 5.0f && projectedSize < seconds_allowed * g_viewDistance) {
 					if (p_from->GetLodLevel() != ViewROI::c_lodLevelInvisible) {
 						ManageVisibilityAndDetailRecursively(p_from, ViewROI::c_lodLevelInvisible);
 					}
@@ -361,7 +361,7 @@ inline int ViewManager::CalculateLODLevel(float p_maximumScale, float p_initialS
 	assert(from);
 
 	if (GetFirstLODIndex(from) != 0) {
-		if (p_maximumScale < g_minLODThreshold) {
+		if (RealtimeView::GetUserMaxLOD() <= 5.0f && p_maximumScale < g_minLODThreshold) {
 			return 0;
 		}
 		else {
