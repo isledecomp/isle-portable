@@ -53,11 +53,11 @@ public:
 
 	static void Release()
 	{
-		for (auto* lodList : lodLists) {
+		for (auto* lodList : g_lodLists) {
 			lodList->Release();
 		}
 
-		lodLists.clear();
+		g_lodLists.clear();
 	}
 
 private:
@@ -65,7 +65,7 @@ private:
 
 	LegoNamedPartList* m_parts; // 0x50
 
-	static vector<ViewLODList*> lodLists;
+	static vector<ViewLODList*> g_lodLists;
 };
 
 #endif // LEGOPARTPRESENTER_H

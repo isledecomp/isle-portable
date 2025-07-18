@@ -22,7 +22,7 @@ MxS32 g_partPresenterConfig1 = 1;
 // GLOBAL: LEGO1 0x100f7aa4
 MxS32 g_partPresenterConfig2 = 100;
 
-vector<ViewLODList*> LegoPartPresenter::lodLists;
+vector<ViewLODList*> LegoPartPresenter::g_lodLists;
 
 // FUNCTION: LEGO1 0x1007c990
 void LegoPartPresenter::configureLegoPartPresenter(MxS32 p_partPresenterConfig1, MxS32 p_partPresenterConfig2)
@@ -264,7 +264,7 @@ void LegoPartPresenter::Store()
 				lodList->PushBack(lod);
 			}
 
-			lodLists.push_back(lodList);
+			g_lodLists.push_back(lodList);
 		}
 		else {
 			lodList->Release();
