@@ -488,6 +488,7 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		}
 		break;
 	case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+	case SDL_EVENT_QUIT:
 		if (!g_closed) {
 			delete g_isle;
 			g_isle = NULL;
@@ -767,9 +768,6 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		}
 		break;
 	}
-	case SDL_EVENT_QUIT:
-		return SDL_APP_SUCCESS;
-		break;
 	}
 
 	if (event->user.type == g_legoSdlEvents.m_windowsMessage) {
