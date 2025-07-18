@@ -267,6 +267,8 @@ MxLong CarRace::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 						FALSE,
 						TRUE
 					);
+
+					EmitGameEvent(e_raceFinished);
 				}
 
 				result = 1;

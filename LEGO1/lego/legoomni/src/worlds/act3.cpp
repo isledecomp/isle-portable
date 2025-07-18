@@ -793,6 +793,8 @@ void Act3::GoodEnding(const Matrix4& p_destination)
 		m_copter->m_unk0x1a8,
 		m_copter->m_unk0x1f4
 	);
+
+	EmitGameEvent(e_goodEnding);
 }
 
 // FUNCTION: LEGO1 0x10073500
@@ -872,6 +874,8 @@ void Act3::BadEnding(const Matrix4& p_destination)
 		m_copter->m_unk0x1a8,
 		m_copter->m_unk0x1f4
 	);
+
+	EmitGameEvent(e_badEnding);
 }
 
 // FUNCTION: LEGO1 0x10073a60
