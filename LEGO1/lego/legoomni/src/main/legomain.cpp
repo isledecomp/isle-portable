@@ -122,6 +122,8 @@ void LegoOmni::Destroy()
 		m_textureContainer = NULL;
 	}
 
+	LegoPartPresenter::Release();
+
 	if (m_viewLODListManager) {
 		delete m_viewLODListManager;
 		m_viewLODListManager = NULL;
