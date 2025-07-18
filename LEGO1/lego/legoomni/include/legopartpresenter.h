@@ -56,6 +56,8 @@ public:
 		for (auto* lodList : lodLists) {
 			lodList->Release();
 		}
+
+		lodLists.clear();
 	}
 
 private:
