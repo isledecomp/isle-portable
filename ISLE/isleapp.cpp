@@ -809,7 +809,8 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 	else if (event->user.type == g_legoSdlEvents.m_gameEvent) {
 		auto rumble = [](float p_strength, float p_lowFrequencyRumble, float p_highFrequencyRumble, MxU32 p_milliseconds
 					  ) {
-			if (!InputManager()
+			if (g_isle->GetHaptic() &&
+				!InputManager()
 					 ->HandleRumbleEvent(p_strength, p_lowFrequencyRumble, p_highFrequencyRumble, p_milliseconds)) {
 // Platform-specific handling
 #ifdef __EMSCRIPTEN__
