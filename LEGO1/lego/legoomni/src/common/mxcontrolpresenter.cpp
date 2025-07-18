@@ -80,10 +80,7 @@ MxBool MxControlPresenter::CheckButtonDown(MxS32 p_x, MxS32 p_y, MxPresenter* p_
 {
 	assert(p_presenter);
 	MxVideoPresenter* presenter = dynamic_cast<MxVideoPresenter*>(p_presenter);
-	if (!presenter) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Invalid presenter");
-		return FALSE;
-	}
+	assert(presenter);
 
 	if (m_style == e_map) {
 		MxStillPresenter* map = (MxStillPresenter*) m_list.front();
