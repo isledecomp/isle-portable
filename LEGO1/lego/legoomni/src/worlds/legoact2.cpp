@@ -939,6 +939,7 @@ MxResult LegoAct2::BadEnding()
 
 	MxTrace("Bad End of Act2\n");
 	m_unk0x10c4 = 14;
+	EmitGameEvent(e_badEnding);
 	return SUCCESS;
 }
 

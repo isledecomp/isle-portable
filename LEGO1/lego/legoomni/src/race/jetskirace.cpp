@@ -206,6 +206,7 @@ MxLong JetskiRace::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 					m_destLocation = LegoGameState::e_jetrace2;
 
 					TransitionManager()->StartTransition(MxTransitionManager::e_mosaic, 50, FALSE, FALSE);
+					EmitGameEvent(e_raceFinished);
 				}
 
 				result = 1;

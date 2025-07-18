@@ -235,7 +235,9 @@ MxResult LegoExtraActor::HitActor(LegoPathActor* p_actor, MxBool p_bool)
 				assert(m_roi);
 				assert(SoundManager()->GetCacheSoundManager());
 				SoundManager()->GetCacheSoundManager()->Play("crash5", m_roi->GetName(), FALSE);
-				HitActorEvent();
+				if (p_actor->GetUserNavFlag()) {
+					EmitGameEvent(e_hitActor);
+				}
 				m_scheduledTime = Timer()->GetTime() + m_disAnim->GetDuration();
 				m_prevWorldSpeed = GetWorldSpeed();
 				VTable0xc4();
@@ -249,7 +251,9 @@ MxResult LegoExtraActor::HitActor(LegoPathActor* p_actor, MxBool p_bool)
 			LegoROI* roi = GetROI();
 			assert(roi);
 			SoundManager()->GetCacheSoundManager()->Play("crash5", m_roi->GetName(), FALSE);
-			HitActorEvent();
+			if (p_actor->GetUserNavFlag()) {
+				EmitGameEvent(e_hitActor);
+			}
 			VTable0xc4();
 			SetActorState(c_two | c_noCollide);
 			Mx3DPointFloat dir = p_actor->GetWorldDirection();

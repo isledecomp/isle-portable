@@ -806,12 +806,30 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 			SDL_Log("Game started");
 		}
 	}
-	else if (event->user.type == g_legoSdlEvents.m_hitActor && g_isle->GetHaptic()) {
-		if (!InputManager()->HandleRumbleEvent(0.5f, 0.5f, 0.5f, 700)) {
+	else if (event->user.type == g_legoSdlEvents.m_gameEvent) {
+		auto rumble = [](float p_strength, float p_lowFrequencyRumble, float p_highFrequencyRumble, MxU32 p_milliseconds
+					  ) {
+			if (!InputManager()
+					 ->HandleRumbleEvent(p_strength, p_lowFrequencyRumble, p_highFrequencyRumble, p_milliseconds)) {
 // Platform-specific handling
 #ifdef __EMSCRIPTEN__
-			Emscripten_HandleRumbleEvent(0.5f, 0.5f, 700);
+				Emscripten_HandleRumbleEvent(p_lowFrequencyRumble, p_highFrequencyRumble, p_milliseconds);
 #endif
+			}
+		};
+
+		switch (event->user.code) {
+		case e_hitActor:
+			rumble(0.5f, 0.5f, 0.5f, 700);
+			break;
+		case e_skeletonKick:
+			rumble(0.8f, 0.8f, 0.8f, 2500);
+			break;
+		case e_raceFinished:
+		case e_goodEnding:
+		case e_badEnding:
+			rumble(1.0f, 1.0f, 1.0f, 3000);
+			break;
 		}
 	}
 
