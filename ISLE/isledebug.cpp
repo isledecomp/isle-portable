@@ -92,7 +92,7 @@ public:
 					ImGui::TableNextColumn();
 					ImGui::Text("%d", entry->m_time);
 					ImGui::TableNextColumn();
-					ImGui::Text("%d", entry->m_y);
+					ImGui::Text("%f", entry->m_y);
 					ImGui::TableNextColumn();
 					ImGui::Text("%d", entry->m_muted);
 				}
@@ -135,7 +135,7 @@ public:
 		ImGui::Text("unk0x70: %u", videoManager->m_unk0x70);
 		ImGui::Text("Dither: %d", videoManager->m_dither);
 		ImGui::Text("BufferCount: %u", videoManager->m_bufferCount);
-		ImGui::Text("Paused: %f", videoManager->m_paused);
+		ImGui::Text("Paused: %d", videoManager->m_paused);
 		ImGui::Text("back: %g", videoManager->m_back);
 		ImGui::Text("front: %g", videoManager->m_front);
 		ImGui::Text("cameraWidth: %g", videoManager->m_cameraWidth);
