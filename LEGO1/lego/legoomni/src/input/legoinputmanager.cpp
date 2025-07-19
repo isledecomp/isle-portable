@@ -11,6 +11,8 @@
 #include "mxdebug.h"
 #include "roi/legoroi.h"
 
+#include <SDL3/SDL_log.h>
+
 DECOMP_SIZE_ASSERT(LegoInputManager, 0x338)
 DECOMP_SIZE_ASSERT(LegoNotifyList, 0x18)
 DECOMP_SIZE_ASSERT(LegoNotifyListCursor, 0x10)
@@ -40,10 +42,6 @@ LegoInputManager::LegoInputManager()
 	m_unk0x81 = FALSE;
 	m_unk0x88 = FALSE;
 	m_unk0x195 = 0;
-	m_joyids = NULL;
-	m_joystickIndex = -1;
-	m_joystick = NULL;
-	m_useJoystick = FALSE;
 	m_unk0x335 = FALSE;
 	m_unk0x336 = FALSE;
 	m_unk0x74 = 0x19;
@@ -71,8 +69,6 @@ MxResult LegoInputManager::Create(HWND p_hwnd)
 		m_eventQueue = new LegoEventQueue;
 	}
 
-	GetJoystick();
-
 	if (!m_keyboardNotifyList || !m_eventQueue) {
 		Destroy();
 		result = FAILURE;
@@ -98,7 +94,23 @@ void LegoInputManager::Destroy()
 		delete m_controlManager;
 	}
 
-	SDL_free(m_joyids);
+	for (const auto& [id, joystick] : m_joysticks) {
+		if (joystick.second) {
+			SDL_CloseHaptic(joystick.second);
+		}
+
+		SDL_CloseGamepad(joystick.first);
+	}
+
+	for (const auto& [id, mouse] : m_mice) {
+		if (mouse.second) {
+			SDL_CloseHaptic(mouse.second);
+		}
+	}
+
+	for (const auto& [id, haptic] : m_otherHaptics) {
+		SDL_CloseHaptic(haptic);
+	}
 }
 
 // FUNCTION: LEGO1 0x1005c0f0
@@ -145,74 +157,39 @@ MxResult LegoInputManager::GetNavigationKeyStates(MxU32& p_keyFlags)
 	return SUCCESS;
 }
 
-// FUNCTION: LEGO1 0x1005c240
-MxResult LegoInputManager::GetJoystick()
-{
-	if (m_joystick != NULL && SDL_GamepadConnected(m_joystick) == TRUE) {
-		return SUCCESS;
-	}
-
-	MxS32 numJoysticks = 0;
-	if (m_joyids != NULL) {
-		SDL_free(m_joyids);
-		m_joyids = NULL;
-	}
-	m_joyids = SDL_GetGamepads(&numJoysticks);
-
-	if (m_useJoystick != FALSE && numJoysticks != 0) {
-		MxS32 joyid = m_joystickIndex;
-		if (joyid >= 0) {
-			m_joystick = SDL_OpenGamepad(m_joyids[joyid]);
-			if (m_joystick != NULL) {
-				return SUCCESS;
-			}
-		}
-
-		for (joyid = 0; joyid < numJoysticks; joyid++) {
-			m_joystick = SDL_OpenGamepad(m_joyids[joyid]);
-			if (m_joystick != NULL) {
-				return SUCCESS;
-			}
-		}
-	}
-
-	return FAILURE;
-}
-
 // FUNCTION: LEGO1 0x1005c320
 MxResult LegoInputManager::GetJoystickState(MxU32* p_joystickX, MxU32* p_joystickY, MxU32* p_povPosition)
 {
-	if (m_useJoystick != FALSE) {
-		if (GetJoystick() == -1) {
-			if (m_joystick != NULL) {
-				// GetJoystick() failed but handle to joystick is still open, close it
-				SDL_CloseGamepad(m_joystick);
-				m_joystick = NULL;
-			}
+	if (!std::holds_alternative<SDL_JoystickID_v>(m_lastInputMethod) &&
+		!(std::holds_alternative<SDL_TouchID_v>(m_lastInputMethod) && m_touchScheme == e_gamepad)) {
+		return FAILURE;
+	}
 
-			return FAILURE;
-		}
-
-		MxS16 xPos = SDL_GetGamepadAxis(m_joystick, SDL_GAMEPAD_AXIS_LEFTX);
-		MxS16 yPos = SDL_GetGamepadAxis(m_joystick, SDL_GAMEPAD_AXIS_LEFTY);
+	MxS16 xPos, yPos = 0;
+	for (const auto& [id, joystick] : m_joysticks) {
+		xPos = SDL_GetGamepadAxis(joystick.first, SDL_GAMEPAD_AXIS_LEFTX);
+		yPos = SDL_GetGamepadAxis(joystick.first, SDL_GAMEPAD_AXIS_LEFTY);
 		if (xPos > -8000 && xPos < 8000) {
-			// Ignore small axis values
 			xPos = 0;
 		}
 		if (yPos > -8000 && yPos < 8000) {
-			// Ignore small axis values
 			yPos = 0;
 		}
 
-		// normalize values acquired from joystick axes
-		*p_joystickX = ((xPos + 32768) * 100) / 65535;
-		*p_joystickY = ((yPos + 32768) * 100) / 65535;
-		*p_povPosition = -1;
-
-		return SUCCESS;
+		if (xPos || yPos) {
+			break;
+		}
 	}
 
-	return FAILURE;
+	if (!xPos && !yPos) {
+		xPos = m_touchVirtualThumb.x;
+		yPos = m_touchVirtualThumb.y;
+	}
+
+	*p_joystickX = ((xPos + 32768) * 100) / 65535;
+	*p_joystickY = ((yPos + 32768) * 100) / 65535;
+	*p_povPosition = -1;
+	return SUCCESS;
 }
 
 // FUNCTION: LEGO1 0x1005c470
@@ -528,27 +505,105 @@ void LegoInputManager::EnableInputProcessing()
 
 MxResult LegoInputManager::GetNavigationTouchStates(MxU32& p_keyStates)
 {
-	for (auto& [fingerID, touchFlags] : m_touchFlags) {
-		p_keyStates |= touchFlags;
-
-		// We need to clear these as they are not meant to be persistent in e_gamepad mode.
-		if (m_touchOrigins.count(fingerID) && m_touchLastMotion.count(fingerID)) {
-			const MxU32 inactivityThreshold = 3;
-
-			if (m_touchLastMotion[fingerID].first++ > inactivityThreshold) {
-				touchFlags &= ~c_left;
-				touchFlags &= ~c_right;
-				m_touchOrigins[fingerID].x = m_touchLastMotion[fingerID].second.x;
-			}
+	if (m_touchScheme == e_arrowKeys) {
+		for (auto& [fingerID, touchFlags] : m_touchFlags) {
+			p_keyStates |= touchFlags;
 		}
 	}
 
 	return SUCCESS;
 }
 
+void LegoInputManager::AddKeyboard(SDL_KeyboardID p_keyboardID)
+{
+	if (m_keyboards.count(p_keyboardID)) {
+		return;
+	}
+
+	m_keyboards[p_keyboardID] = {nullptr, nullptr};
+}
+
+void LegoInputManager::RemoveKeyboard(SDL_KeyboardID p_keyboardID)
+{
+	if (!m_keyboards.count(p_keyboardID)) {
+		return;
+	}
+
+	m_keyboards.erase(p_keyboardID);
+}
+
+void LegoInputManager::AddMouse(SDL_MouseID p_mouseID)
+{
+	if (m_mice.count(p_mouseID)) {
+		return;
+	}
+
+	// Currently no way to get an individual haptic device for a mouse.
+	SDL_Haptic* haptic = SDL_OpenHapticFromMouse();
+	if (haptic) {
+		if (!SDL_InitHapticRumble(haptic)) {
+			SDL_CloseHaptic(haptic);
+			haptic = nullptr;
+		}
+	}
+
+	m_mice[p_mouseID] = {nullptr, haptic};
+}
+
+void LegoInputManager::RemoveMouse(SDL_MouseID p_mouseID)
+{
+	if (!m_mice.count(p_mouseID)) {
+		return;
+	}
+
+	if (m_mice[p_mouseID].second) {
+		SDL_CloseHaptic(m_mice[p_mouseID].second);
+	}
+
+	m_mice.erase(p_mouseID);
+}
+
+void LegoInputManager::AddJoystick(SDL_JoystickID p_joystickID)
+{
+	if (m_joysticks.count(p_joystickID)) {
+		return;
+	}
+
+	SDL_Gamepad* joystick = SDL_OpenGamepad(p_joystickID);
+	if (joystick) {
+		SDL_Haptic* haptic = SDL_OpenHapticFromJoystick(SDL_GetGamepadJoystick(joystick));
+		if (haptic) {
+			if (!SDL_InitHapticRumble(haptic)) {
+				SDL_CloseHaptic(haptic);
+				haptic = nullptr;
+			}
+		}
+
+		m_joysticks[p_joystickID] = {joystick, haptic};
+	}
+	else {
+		SDL_Log("Failed to open gamepad: %s", SDL_GetError());
+	}
+}
+
+void LegoInputManager::RemoveJoystick(SDL_JoystickID p_joystickID)
+{
+	if (!m_joysticks.count(p_joystickID)) {
+		return;
+	}
+
+	if (m_joysticks[p_joystickID].second) {
+		SDL_CloseHaptic(m_joysticks[p_joystickID].second);
+	}
+
+	SDL_CloseGamepad(m_joysticks[p_joystickID].first);
+	m_joysticks.erase(p_joystickID);
+}
+
 MxBool LegoInputManager::HandleTouchEvent(SDL_Event* p_event, TouchScheme p_touchScheme)
 {
 	const SDL_TouchFingerEvent& event = p_event->tfinger;
+	m_touchScheme = p_touchScheme;
 
 	switch (p_touchScheme) {
 	case e_mouse:
@@ -580,64 +635,167 @@ MxBool LegoInputManager::HandleTouchEvent(SDL_Event* p_event, TouchScheme p_touc
 			break;
 		}
 		break;
-	case e_gamepad:
+	case e_gamepad: {
+		static SDL_FingerID g_finger = (SDL_FingerID) 0;
+
 		switch (p_event->type) {
 		case SDL_EVENT_FINGER_DOWN:
-			m_touchOrigins[event.fingerID] = {event.x, event.y};
+			if (!g_finger) {
+				g_finger = event.fingerID;
+				m_touchVirtualThumb = {0, 0};
+				m_touchVirtualThumbOrigin = {event.x, event.y};
+			}
 			break;
 		case SDL_EVENT_FINGER_UP:
-			m_touchOrigins.erase(event.fingerID);
-			m_touchFlags.erase(event.fingerID);
+			if (event.fingerID == g_finger) {
+				g_finger = 0;
+				m_touchVirtualThumb = {0, 0};
+				m_touchVirtualThumbOrigin = {0, 0};
+			}
 			break;
 		case SDL_EVENT_FINGER_MOTION:
-			if (m_touchOrigins.count(event.fingerID)) {
-				const float activationThreshold = 0.03f;
-				m_touchFlags[event.fingerID] &= ~c_down;
-				m_touchFlags[event.fingerID] &= ~c_up;
+			if (event.fingerID == g_finger) {
+				const float thumbstickRadius = 0.25f;
+				const float deltaX =
+					SDL_clamp(event.x - m_touchVirtualThumbOrigin.x, -thumbstickRadius, thumbstickRadius);
+				const float deltaY =
+					SDL_clamp(event.y - m_touchVirtualThumbOrigin.y, -thumbstickRadius, thumbstickRadius);
 
-				const float deltaY = event.y - m_touchOrigins[event.fingerID].y;
-				if (SDL_fabsf(deltaY) > activationThreshold) {
-					if (deltaY > 0) {
-						m_touchFlags[event.fingerID] |= c_down;
-					}
-					else if (deltaY < 0) {
-						m_touchFlags[event.fingerID] |= c_up;
-					}
-				}
-
-				const float deltaX = event.x - m_touchOrigins[event.fingerID].x;
-				if (SDL_fabsf(deltaX) > activationThreshold && event.dx) {
-					if (event.dx > 0) {
-						m_touchFlags[event.fingerID] |= c_right;
-						m_touchFlags[event.fingerID] &= ~c_left;
-					}
-					else if (event.dx < 0) {
-						m_touchFlags[event.fingerID] |= c_left;
-						m_touchFlags[event.fingerID] &= ~c_right;
-					}
-
-					m_touchLastMotion[event.fingerID] = {0, {event.x, event.y}};
-				}
+				m_touchVirtualThumb = {
+					(int) (deltaX / thumbstickRadius * 32767.0f),
+					(int) (deltaY / thumbstickRadius * 32767.0f),
+				};
 			}
 			break;
 		}
 		break;
 	}
+	}
 
 	return TRUE;
 }
 
-MxBool LegoInputManager::HandleRumbleEvent()
+MxBool LegoInputManager::HandleRumbleEvent(
+	float p_strength,
+	float p_lowFrequencyRumble,
+	float p_highFrequencyRumble,
+	MxU32 p_milliseconds
+)
 {
-	if (m_joystick != NULL && SDL_GamepadConnected(m_joystick) == TRUE) {
-		const Uint16 frequency = 65535 / 2;
-		const Uint32 durationMs = 700;
-		SDL_RumbleGamepad(m_joystick, frequency, frequency, durationMs);
-	}
-	else {
-		return FALSE;
+	static bool g_hapticsInitialized = false;
+
+	if (!g_hapticsInitialized) {
+		InitializeHaptics();
+		g_hapticsInitialized = true;
 	}
 
-	// Add support for SDL Haptic API
-	return TRUE;
+	SDL_Haptic* haptic = nullptr;
+	std::visit(
+		overloaded{
+			[](SDL_KeyboardID_v p_id) {},
+			[&haptic, this](SDL_MouseID_v p_id) {
+				if (m_mice.count((SDL_MouseID) p_id)) {
+					haptic = m_mice[(SDL_MouseID) p_id].second;
+				}
+			},
+			[&haptic, this](SDL_JoystickID_v p_id) {
+				if (m_joysticks.count((SDL_JoystickID) p_id)) {
+					haptic = m_joysticks[(SDL_JoystickID) p_id].second;
+				}
+			},
+			[&haptic, this](SDL_TouchID_v p_id) {
+				// We can't currently correlate Touch devices with Haptic devices
+				if (!m_otherHaptics.empty()) {
+					haptic = m_otherHaptics.begin()->second;
+				}
+			}
+		},
+		m_lastInputMethod
+	);
+
+	if (haptic) {
+		return SDL_PlayHapticRumble(haptic, p_strength, p_milliseconds);
+	}
+
+	// A joystick isn't necessarily a haptic device; try basic rumble instead
+	if (const SDL_JoystickID_v* joystick = std::get_if<SDL_JoystickID_v>(&m_lastInputMethod)) {
+		if (m_joysticks.count((SDL_JoystickID) *joystick)) {
+			return SDL_RumbleGamepad(
+				m_joysticks[(SDL_JoystickID) *joystick].first,
+				SDL_clamp(p_lowFrequencyRumble, 0, 1) * USHRT_MAX,
+				SDL_clamp(p_highFrequencyRumble, 0, 1) * USHRT_MAX,
+				p_milliseconds
+			);
+		}
+	}
+
+	return FALSE;
+}
+
+void LegoInputManager::InitializeHaptics()
+{
+	// We don't get added/removed events for haptic devices that are not joysticks or mice,
+	// so we initialize "otherHaptics" once at this point.
+	std::vector<SDL_HapticID> existingHaptics;
+
+	for (const auto& [id, mouse] : m_mice) {
+		if (mouse.second) {
+			existingHaptics.push_back(SDL_GetHapticID(mouse.second));
+		}
+	}
+
+	for (const auto& [id, joystick] : m_joysticks) {
+		if (joystick.second) {
+			existingHaptics.push_back(SDL_GetHapticID(joystick.second));
+		}
+	}
+
+	int count;
+	SDL_HapticID* haptics = SDL_GetHaptics(&count);
+	if (haptics) {
+		for (int i = 0; i < count; i++) {
+			if (std::find(existingHaptics.begin(), existingHaptics.end(), haptics[i]) == existingHaptics.end()) {
+				SDL_Haptic* haptic = SDL_OpenHaptic(haptics[i]);
+				if (haptic) {
+					if (SDL_InitHapticRumble(haptic)) {
+						m_otherHaptics[haptics[i]] = haptic;
+					}
+					else {
+						SDL_CloseHaptic(haptic);
+					}
+				}
+			}
+		}
+
+		SDL_free(haptics);
+	}
+}
+
+void LegoInputManager::UpdateLastInputMethod(SDL_Event* p_event)
+{
+	switch (p_event->type) {
+	case SDL_EVENT_KEY_DOWN:
+	case SDL_EVENT_KEY_UP:
+		m_lastInputMethod = SDL_KeyboardID_v{p_event->key.which};
+		break;
+	case SDL_EVENT_MOUSE_BUTTON_DOWN:
+	case SDL_EVENT_MOUSE_BUTTON_UP:
+		m_lastInputMethod = SDL_MouseID_v{p_event->button.which};
+		break;
+	case SDL_EVENT_MOUSE_MOTION:
+		m_lastInputMethod = SDL_MouseID_v{p_event->motion.which};
+		break;
+	case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
+	case SDL_EVENT_GAMEPAD_BUTTON_UP:
+		m_lastInputMethod = SDL_JoystickID_v{p_event->gbutton.which};
+		break;
+	case SDL_EVENT_GAMEPAD_AXIS_MOTION:
+		m_lastInputMethod = SDL_JoystickID_v{p_event->gaxis.which};
+		break;
+	case SDL_EVENT_FINGER_MOTION:
+	case SDL_EVENT_FINGER_DOWN:
+	case SDL_EVENT_FINGER_UP:
+		m_lastInputMethod = SDL_TouchID_v{p_event->tfinger.touchID};
+		break;
+	}
 }

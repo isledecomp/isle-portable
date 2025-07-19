@@ -97,7 +97,7 @@ MxResult CarRace::Create(MxDSAction& p_dsAction)
 
 	m_raceState = raceState;
 
-	m_act1State->m_unk0x018 = 6;
+	m_act1State->m_state = Act1State::e_transitionToRacecar;
 	m_unk0x144 = -1;
 	m_unk0x148 = -1;
 	m_unk0x14c = -1;
@@ -126,7 +126,7 @@ void CarRace::ReadyWorld()
 
 	BackgroundAudioManager()->PlayMusic(action, 5, MxPresenter::e_repeating);
 	AnimationManager()->Resume();
-	FUN_10015820(FALSE, LegoOmni::c_disableInput | LegoOmni::c_disable3d | LegoOmni::c_clearScreen);
+	Disable(FALSE, LegoOmni::c_disableInput | LegoOmni::c_disable3d | LegoOmni::c_clearScreen);
 
 	m_unk0x144 = g_unk0x100d5d10[SDL_rand(8)];
 
@@ -181,7 +181,7 @@ MxLong CarRace::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 {
 	MxLong result = 0;
 
-	if (p_param.GetTrigger() == 68) {
+	if (p_param.GetTrigger() == LegoPathStruct::c_d) {
 		MxEntity* sender = (MxEntity*) p_param.GetSender();
 		MxS32 paramData = p_param.GetData();
 
@@ -267,6 +267,8 @@ MxLong CarRace::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 						FALSE,
 						TRUE
 					);
+
+					EmitGameEvent(e_raceFinished);
 				}
 
 				result = 1;
@@ -341,7 +343,7 @@ MxLong CarRace::HandleControl(LegoControlManagerNotificationParam& p_param)
 		switch (p_param.m_clickedObjectId) {
 		case 3:
 			InvokeAction(Extra::e_stop, *g_carraceScript, CarraceScript::c_irtx08ra_PlayWav, NULL);
-			m_act1State->m_unk0x018 = 0;
+			m_act1State->m_state = Act1State::e_none;
 			VariableTable()->SetVariable(g_raceState, "");
 			VariableTable()->SetVariable(g_strHIT_WALL_SOUND, "");
 			NavController()->SetDeadZone(NavController()->GetDefaultDeadZone());
@@ -353,7 +355,7 @@ MxLong CarRace::HandleControl(LegoControlManagerNotificationParam& p_param)
 			break;
 		case 98:
 			InvokeAction(Extra::e_stop, *g_carraceScript, CarraceScript::c_irtx08ra_PlayWav, NULL);
-			m_act1State->m_unk0x018 = 0;
+			m_act1State->m_state = Act1State::e_none;
 			VariableTable()->SetVariable(g_raceState, "");
 			VariableTable()->SetVariable(g_strHIT_WALL_SOUND, "");
 			NavController()->SetDeadZone(NavController()->GetDefaultDeadZone());
@@ -415,7 +417,7 @@ MxBool CarRace::Escape()
 
 	AnimationManager()->FUN_10061010(FALSE);
 	DeleteObjects(&m_atomId, 500, 999);
-	m_act1State->m_unk0x018 = 0;
+	m_act1State->m_state = Act1State::e_none;
 	VariableTable()->SetVariable(g_strHIT_WALL_SOUND, "");
 
 	VariableTable()->SetVariable(g_raceState, "");

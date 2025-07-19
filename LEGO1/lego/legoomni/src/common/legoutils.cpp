@@ -591,9 +591,10 @@ MxBool CanExit()
 		GameState()->m_currentArea != LegoGameState::e_polidoor) {
 		if (UserActor() == NULL || !UserActor()->IsA("TowTrack")) {
 			if (UserActor() == NULL || !UserActor()->IsA("Ambulance")) {
-				MxU32 unk0x18 = act1State->GetUnknown18();
+				MxU32 mission = act1State->GetState();
 
-				if (unk0x18 != 10 && unk0x18 != 8 && unk0x18 != 3) {
+				if (mission != Act1State::e_ambulance && mission != Act1State::e_towtrack &&
+					mission != Act1State::e_pizza) {
 					return TRUE;
 				}
 			}
@@ -783,9 +784,10 @@ void LoadFromNamedTexture(LegoNamedTexture* p_namedTexture)
 	}
 }
 
-void HitActorEvent()
+void EmitGameEvent(GameEvent p_event)
 {
 	SDL_Event event;
-	event.user.type = g_legoSdlEvents.m_hitActor;
+	event.user.type = g_legoSdlEvents.m_gameEvent;
+	event.user.code = p_event;
 	SDL_PushEvent(&event);
 }

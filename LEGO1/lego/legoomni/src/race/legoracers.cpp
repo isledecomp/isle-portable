@@ -392,6 +392,7 @@ MxU32 LegoRaceCar::HandleSkeletonKicks(float p_param1)
 
 	m_kickStart = p_param1;
 	SoundManager()->GetCacheSoundManager()->Play(g_soundSkel3, NULL, FALSE);
+	EmitGameEvent(e_skeletonKick);
 
 	return TRUE;
 }
@@ -527,6 +528,9 @@ MxResult LegoRaceCar::HitActor(LegoPathActor* p_actor, MxBool p_bool)
 				return FAILURE;
 			}
 		}
+	}
+	else {
+		EmitGameEvent(e_hitActor);
 	}
 
 	return SUCCESS;
@@ -725,6 +729,9 @@ MxResult LegoJetski::HitActor(LegoPathActor* p_actor, MxBool p_bool)
 				return FAILURE;
 			}
 		}
+	}
+	else {
+		EmitGameEvent(e_hitActor);
 	}
 
 	return SUCCESS;

@@ -32,6 +32,14 @@ enum Cursor {
 	e_cursorNone
 };
 
+enum GameEvent {
+	e_hitActor,
+	e_skeletonKick,
+	e_raceFinished,
+	e_badEnding,
+	e_goodEnding
+};
+
 class BoundingSphere;
 class MxAtomId;
 class LegoEntity;
@@ -71,7 +79,7 @@ LegoNamedTexture* ReadNamedTexture(LegoStorage* p_storage);
 void WriteDefaultTexture(LegoStorage* p_storage, const char* p_name);
 void WriteNamedTexture(LegoStorage* p_storage, LegoNamedTexture* p_namedTexture);
 void LoadFromNamedTexture(LegoNamedTexture* p_namedTexture);
-void HitActorEvent();
+void EmitGameEvent(GameEvent p_event);
 
 // FUNCTION: BETA10 0x100260a0
 inline void StartIsleAction(IsleScript::Script p_objectId)

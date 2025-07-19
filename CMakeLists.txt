@@ -39,7 +39,7 @@ else()
 endif()
 
 find_program(SDL_SHADERCROSS_BIN NAMES "shadercross")
-find_package(Python3 3.11 COMPONENTS Interpreter)
+find_package(Python3 3.12 COMPONENTS Interpreter)
 
 option(ISLE_BUILD_APP "Build isle application" ON)
 option(ISLE_ASAN "Enable Address Sanitizer" OFF)
@@ -569,6 +569,7 @@ if (ISLE_BUILD_APP)
       ISLE/emscripten/config.cpp
       ISLE/emscripten/events.cpp
       ISLE/emscripten/filesystem.cpp
+      ISLE/emscripten/haptic.cpp
       ISLE/emscripten/messagebox.cpp
       ISLE/emscripten/window.cpp
     )

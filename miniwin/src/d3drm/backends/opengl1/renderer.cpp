@@ -177,6 +177,7 @@ static Uint32 UploadTextureData(SDL_Surface* src, bool useNPOT, bool isUI, float
 
 Uint32 OpenGL1Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUI, float scaleX, float scaleY)
 {
+	SDL_GL_MakeCurrent(DDWindow, m_context);
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
 	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
 
@@ -316,6 +317,7 @@ Uint32 OpenGL1Renderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGr
 
 HRESULT OpenGL1Renderer::BeginFrame()
 {
+	SDL_GL_MakeCurrent(DDWindow, m_context);
 	GL11_BeginFrame((Matrix4x4*) &m_projection[0][0]);
 
 	int lightIdx = 0;
@@ -363,6 +365,7 @@ HRESULT OpenGL1Renderer::FinalizeFrame()
 
 void OpenGL1Renderer::Resize(int width, int height, const ViewportTransform& viewportTransform)
 {
+	SDL_GL_MakeCurrent(DDWindow, m_context);
 	m_width = width;
 	m_height = height;
 	m_viewportTransform = viewportTransform;
@@ -373,12 +376,14 @@ void OpenGL1Renderer::Resize(int width, int height, const ViewportTransform& vie
 
 void OpenGL1Renderer::Clear(float r, float g, float b)
 {
+	SDL_GL_MakeCurrent(DDWindow, m_context);
 	m_dirty = true;
 	GL11_Clear(r, g, b);
 }
 
 void OpenGL1Renderer::Flip()
 {
+	SDL_GL_MakeCurrent(DDWindow, m_context);
 	if (m_dirty) {
 		SDL_GL_SwapWindow(DDWindow);
 		m_dirty = false;
@@ -387,6 +392,7 @@ void OpenGL1Renderer::Flip()
 
 void OpenGL1Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect, FColor color)
 {
+	SDL_GL_MakeCurrent(DDWindow, m_context);
 	m_dirty = true;
 
 	float left = -m_viewportTransform.offsetX / m_viewportTransform.scale;

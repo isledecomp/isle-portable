@@ -390,6 +390,7 @@ void OpenGLES2Renderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture*
 
 Uint32 OpenGLES2Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUI, float scaleX, float scaleY)
 {
+	SDL_GL_MakeCurrent(DDWindow, m_context);
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
 	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
 
@@ -484,6 +485,7 @@ Uint32 OpenGLES2Renderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* mesh
 
 HRESULT OpenGLES2Renderer::BeginFrame()
 {
+	SDL_GL_MakeCurrent(DDWindow, m_context);
 	m_dirty = true;
 
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
@@ -599,6 +601,7 @@ HRESULT OpenGLES2Renderer::FinalizeFrame()
 
 void OpenGLES2Renderer::Resize(int width, int height, const ViewportTransform& viewportTransform)
 {
+	SDL_GL_MakeCurrent(DDWindow, m_context);
 	m_width = width;
 	m_height = height;
 	m_viewportTransform = viewportTransform;
@@ -639,6 +642,7 @@ void OpenGLES2Renderer::Resize(int width, int height, const ViewportTransform& v
 
 void OpenGLES2Renderer::Clear(float r, float g, float b)
 {
+	SDL_GL_MakeCurrent(DDWindow, m_context);
 	m_dirty = true;
 
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
@@ -651,6 +655,7 @@ void OpenGLES2Renderer::Clear(float r, float g, float b)
 
 void OpenGLES2Renderer::Flip()
 {
+	SDL_GL_MakeCurrent(DDWindow, m_context);
 	if (!m_dirty) {
 		return;
 	}
@@ -714,6 +719,7 @@ void OpenGLES2Renderer::Flip()
 
 void OpenGLES2Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect, FColor color)
 {
+	SDL_GL_MakeCurrent(DDWindow, m_context);
 	m_dirty = true;
 
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);

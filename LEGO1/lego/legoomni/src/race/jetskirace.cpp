@@ -97,7 +97,7 @@ void JetskiRace::ReadyWorld()
 	m_unk0x12c = (MxStillPresenter*) Find("MxPresenter", "JetskiLocator3");
 	m_unk0x12c->SetPosition(m_unk0x130.GetLeft(), m_unk0x130.GetTop());
 
-	FUN_10015820(FALSE, LegoOmni::c_disableInput | LegoOmni::c_disable3d | LegoOmni::c_clearScreen);
+	Disable(FALSE, LegoOmni::c_disableInput | LegoOmni::c_disable3d | LegoOmni::c_clearScreen);
 
 	VariableTable()->SetVariable("DISTANCE", "0.036");
 
@@ -129,7 +129,7 @@ MxLong JetskiRace::HandleControl(LegoControlManagerNotificationParam& p_param)
 	if (p_param.m_unk0x28 == 1) {
 		switch (p_param.m_clickedObjectId) {
 		case JetraceScript::c_JetskiArms_Ctl:
-			m_act1State->m_unk0x018 = 0;
+			m_act1State->m_state = Act1State::e_none;
 			VariableTable()->SetVariable(g_raceState, "");
 			VariableTable()->SetVariable(g_strHIT_WALL_SOUND, "");
 			LegoRaceCar::InitYouCantStopSound();
@@ -137,7 +137,7 @@ MxLong JetskiRace::HandleControl(LegoControlManagerNotificationParam& p_param)
 			TransitionManager()->StartTransition(MxTransitionManager::e_mosaic, 50, FALSE, FALSE);
 			break;
 		case JetraceScript::c_JetskiInfo_Ctl:
-			m_act1State->m_unk0x018 = 0;
+			m_act1State->m_state = Act1State::e_none;
 			VariableTable()->SetVariable(g_raceState, "");
 			VariableTable()->SetVariable(g_strHIT_WALL_SOUND, "");
 			LegoRaceCar::InitYouCantStopSound();
@@ -160,7 +160,7 @@ MxLong JetskiRace::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 	MxLong result = 0;
 	MxEntity* sender = (MxEntity*) p_param.GetSender();
 
-	if (p_param.GetTrigger() == 68) {
+	if (p_param.GetTrigger() == LegoPathStruct::c_d) {
 		MxS32 paramData = p_param.GetData();
 
 		switch (sender->GetEntityId()) {
@@ -206,6 +206,7 @@ MxLong JetskiRace::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 					m_destLocation = LegoGameState::e_jetrace2;
 
 					TransitionManager()->StartTransition(MxTransitionManager::e_mosaic, 50, FALSE, FALSE);
+					EmitGameEvent(e_raceFinished);
 				}
 
 				result = 1;
@@ -290,7 +291,7 @@ MxBool JetskiRace::Escape()
 {
 	AnimationManager()->FUN_10061010(FALSE);
 	DeleteObjects(&m_atomId, 500, 999);
-	m_act1State->m_unk0x018 = 0;
+	m_act1State->m_state = Act1State::e_none;
 	VariableTable()->SetVariable(g_raceState, "");
 	VariableTable()->SetVariable(g_strHIT_WALL_SOUND, "");
 	m_destLocation = LegoGameState::e_infomain;
