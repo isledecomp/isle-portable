@@ -46,7 +46,7 @@ public:
 		if (plantManager->m_numEntries) {
 			if (ImGui::BeginTable("Animated Entries", 4, ImGuiTableFlags_Borders)) {
 				ImGui::TableSetupColumn("ROI Name");
-				ImGui::TableSetupColumn("ROI m_unk0x100");
+				ImGui::TableSetupColumn("ROI m_sharedLodList");
 				ImGui::TableSetupColumn("Entity Name");
 				ImGui::TableSetupColumn("Time");
 				ImGui::TableHeadersRow();
@@ -55,7 +55,7 @@ public:
 					ImGui::TableNextRow();
 					ImGui::Text("%s", entry->m_roi->m_name);
 					ImGui::TableNextColumn();
-					ImGui::Text("%d", entry->m_roi->m_unk0x100);
+					ImGui::Text("%d", entry->m_roi->m_sharedLodList);
 					ImGui::TableNextColumn();
 					ImGui::Text("%s", entry->m_roi->m_entity->ClassName());
 					ImGui::TableNextColumn();
@@ -75,7 +75,7 @@ public:
 		if (buildingManager->m_numEntries) {
 			if (ImGui::BeginTable("Animated Entries", 6, ImGuiTableFlags_Borders)) {
 				ImGui::TableSetupColumn("ROI Name");
-				ImGui::TableSetupColumn("ROI m_unk0x100");
+				ImGui::TableSetupColumn("ROI m_sharedLodList");
 				ImGui::TableSetupColumn("Entity Name");
 				ImGui::TableSetupColumn("Time");
 				ImGui::TableSetupColumn("Y");
@@ -86,7 +86,7 @@ public:
 					ImGui::TableNextRow();
 					ImGui::Text("%s", entry->m_roi->m_name);
 					ImGui::TableNextColumn();
-					ImGui::Text("%d", entry->m_roi->m_unk0x100);
+					ImGui::Text("%d", entry->m_roi->m_sharedLodList);
 					ImGui::TableNextColumn();
 					ImGui::Text("%s", entry->m_roi->m_entity->ClassName());
 					ImGui::TableNextColumn();
