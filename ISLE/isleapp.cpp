@@ -460,6 +460,7 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 	case SDL_EVENT_FINGER_MOTION:
 	case SDL_EVENT_FINGER_DOWN:
 	case SDL_EVENT_FINGER_UP:
+	case SDL_EVENT_FINGER_CANCELED:
 		IDirect3DRMMiniwinDevice* device = GetD3DRMMiniwinDevice();
 		if (device && !device->ConvertEventToRenderCoordinates(event)) {
 			SDL_Log("Failed to convert event coordinates: %s", SDL_GetError());
@@ -754,7 +755,8 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 			);
 		}
 		break;
-	case SDL_EVENT_FINGER_UP: {
+	case SDL_EVENT_FINGER_UP:
+	case SDL_EVENT_FINGER_CANCELED: {
 		g_mousedown = FALSE;
 
 		float x = SDL_clamp(event->tfinger.x, 0, 1) * g_targetWidth;
