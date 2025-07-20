@@ -54,7 +54,7 @@ void MxVideoManager::Destroy(MxBool p_fromDestructor)
 		TickleManager()->UnregisterClient(this);
 	}
 
-	m_criticalSection.Enter();
+	ENTER(m_criticalSection);
 
 	if (m_displaySurface) {
 		delete m_displaySurface;
@@ -154,7 +154,7 @@ MxResult MxVideoManager::VTable0x28(
 		goto done;
 	}
 
-	m_criticalSection.Enter();
+	ENTER(m_criticalSection);
 	locked = TRUE;
 
 	m_videoParam = p_videoParam;
@@ -229,7 +229,7 @@ MxResult MxVideoManager::Create(MxVideoParam& p_videoParam, MxU32 p_frequencyMS,
 		goto done;
 	}
 
-	m_criticalSection.Enter();
+	ENTER(m_criticalSection);
 	locked = TRUE;
 
 	m_videoParam = p_videoParam;
@@ -316,7 +316,7 @@ void MxVideoManager::Destroy()
 // FUNCTION: LEGO1 0x100bea60
 void MxVideoManager::InvalidateRect(MxRect32& p_rect)
 {
-	m_criticalSection.Enter();
+	ENTER(m_criticalSection);
 
 	if (m_region) {
 		m_region->AddRect(p_rect);
@@ -356,7 +356,7 @@ MxResult MxVideoManager::RealizePalette(MxPalette* p_palette)
 {
 	PALETTEENTRY paletteEntries[256];
 
-	m_criticalSection.Enter();
+	ENTER(m_criticalSection);
 
 	if (p_palette && m_videoParam.GetPalette()) {
 		p_palette->GetEntries(paletteEntries);

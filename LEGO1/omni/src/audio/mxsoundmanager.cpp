@@ -54,7 +54,7 @@ void MxSoundManager::Destroy(MxBool p_fromDestructor)
 		TickleManager()->UnregisterClient(this);
 	}
 
-	m_criticalSection.Enter();
+	ENTER(m_criticalSection);
 
 	if (m_stream) {
 		SDL_DestroyAudioStream(m_stream);
@@ -82,7 +82,7 @@ MxResult MxSoundManager::Create(MxU32 p_frequencyMS, MxBool p_createThread)
 		goto done;
 	}
 
-	m_criticalSection.Enter();
+	ENTER(m_criticalSection);
 	locked = TRUE;
 
 	engineConfig = ma_engine_config_init();
@@ -167,7 +167,7 @@ void MxSoundManager::SetVolume(MxS32 p_volume)
 {
 	MxAudioManager::SetVolume(p_volume);
 
-	m_criticalSection.Enter();
+	ENTER(m_criticalSection);
 
 	MxPresenter* presenter;
 	MxPresenterListCursor cursor(m_presenters);
@@ -180,7 +180,7 @@ void MxSoundManager::SetVolume(MxS32 p_volume)
 }
 
 // FUNCTION: LEGO1 0x100aebd0
-MxPresenter* MxSoundManager::FUN_100aebd0(const MxAtomId& p_atomId, MxU32 p_objectId)
+MxPresenter* MxSoundManager::FindPresenter(const MxAtomId& p_atomId, MxU32 p_objectId)
 {
 	AUTOLOCK(m_criticalSection);
 

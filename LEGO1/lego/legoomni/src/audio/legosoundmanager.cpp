@@ -45,7 +45,7 @@ MxResult LegoSoundManager::Create(MxU32 p_frequencyMS, MxBool p_createThread)
 	MxResult result = FAILURE;
 
 	if (MxSoundManager::Create(10, FALSE) == SUCCESS) {
-		m_criticalSection.Enter();
+		ENTER(m_criticalSection);
 		locked = TRUE;
 		m_cacheSoundManager = new LegoCacheSoundManager;
 		assert(m_cacheSoundManager);

@@ -82,7 +82,7 @@ void Helicopter::Exit()
 
 	if (GameState()->GetCurrentAct() == LegoGameState::e_act1) {
 		SpawnPlayer(
-			LegoGameState::e_unk40,
+			LegoGameState::e_helicopterSpawn,
 			TRUE,
 			IslePathActor::c_spawnBit1 | IslePathActor::c_playMusic | IslePathActor::c_spawnBit3
 		);
@@ -189,7 +189,7 @@ MxLong Helicopter::HandleControl(LegoControlManagerNotificationParam& p_param)
 		break;
 	}
 
-	if (p_param.m_unk0x28 == 1) {
+	if (p_param.m_enabledChild == 1) {
 		MxU32 isPizza = FALSE;
 
 		switch (p_param.m_clickedObjectId) {

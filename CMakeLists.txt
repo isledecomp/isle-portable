@@ -460,9 +460,6 @@ target_sources(lego1 PRIVATE
   LEGO1/lego/legoomni/src/race/raceskel.cpp
   LEGO1/lego/legoomni/src/video/legoanimpresenter.cpp
   LEGO1/lego/legoomni/src/video/legoflctexturepresenter.cpp
-  LEGO1/lego/legoomni/src/video/legohideanimpresenter.cpp
-  LEGO1/lego/legoomni/src/video/legolocomotionanimpresenter.cpp
-  LEGO1/lego/legoomni/src/video/legoloopinganimpresenter.cpp
   LEGO1/lego/legoomni/src/video/legomodelpresenter.cpp
   LEGO1/lego/legoomni/src/video/legopalettepresenter.cpp
   LEGO1/lego/legoomni/src/video/legopartpresenter.cpp
