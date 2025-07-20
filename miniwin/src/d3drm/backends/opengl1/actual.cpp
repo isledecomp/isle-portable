@@ -131,6 +131,7 @@ void GL11_BeginFrame(const Matrix4x4* projection)
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
 	glEnable(GL_LIGHTING);
+#ifndef __PSP__
 	glEnable(GL_COLOR_MATERIAL);
 
 	// Disable all lights and reset global ambient
@@ -139,6 +140,7 @@ void GL11_BeginFrame(const Matrix4x4* projection)
 	}
 
 	glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE);
+#endif
 
 	// Projection and view
 	glMatrixMode(GL_PROJECTION);
@@ -214,8 +216,18 @@ void GL11_SubmitDraw(
 	glLoadMatrixf(&modelViewMatrix[0][0]);
 	glEnable(GL_NORMALIZE);
 
+#ifndef __PSP__
 	glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
 	glColor4ub(appearance.color.r, appearance.color.g, appearance.color.b, appearance.color.a);
+#else
+	GLfloat color[4] = {
+		appearance.color.r / 255.0f,
+		appearance.color.g / 255.0f,
+		appearance.color.b / 255.0f,
+		appearance.color.a / 255.0f
+	};
+	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, color);
+#endif
 
 	if (appearance.shininess != 0.0f) {
 		GLfloat whiteSpec[] = {1.f, 1.f, 1.f, 1.f};
