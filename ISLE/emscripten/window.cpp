@@ -84,7 +84,8 @@ void Emscripten_ConvertEventToRenderCoordinates(SDL_Event* event)
 	}
 	case SDL_EVENT_FINGER_MOTION:
 	case SDL_EVENT_FINGER_DOWN:
-	case SDL_EVENT_FINGER_UP: {
+	case SDL_EVENT_FINGER_UP:
+	case SDL_EVENT_FINGER_CANCELED: {
 		const float scale = std::min(g_fullWidth / g_targetWidth, g_fullHeight / g_targetHeight);
 		const float widthRatio = (g_targetWidth * scale) / g_fullWidth;
 		const float heightRatio = (g_targetHeight * scale) / g_fullHeight;

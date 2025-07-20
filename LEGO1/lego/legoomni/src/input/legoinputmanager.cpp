@@ -612,6 +612,7 @@ MxBool LegoInputManager::HandleTouchEvent(SDL_Event* p_event, TouchScheme p_touc
 	case e_arrowKeys:
 		switch (p_event->type) {
 		case SDL_EVENT_FINGER_UP:
+		case SDL_EVENT_FINGER_CANCELED:
 			m_touchFlags.erase(event.fingerID);
 			break;
 		case SDL_EVENT_FINGER_DOWN:
@@ -647,6 +648,7 @@ MxBool LegoInputManager::HandleTouchEvent(SDL_Event* p_event, TouchScheme p_touc
 			}
 			break;
 		case SDL_EVENT_FINGER_UP:
+		case SDL_EVENT_FINGER_CANCELED:
 			if (event.fingerID == g_finger) {
 				g_finger = 0;
 				m_touchVirtualThumb = {0, 0};
@@ -795,6 +797,7 @@ void LegoInputManager::UpdateLastInputMethod(SDL_Event* p_event)
 	case SDL_EVENT_FINGER_MOTION:
 	case SDL_EVENT_FINGER_DOWN:
 	case SDL_EVENT_FINGER_UP:
+	case SDL_EVENT_FINGER_CANCELED:
 		m_lastInputMethod = SDL_TouchID_v{p_event->tfinger.touchID};
 		break;
 	}
