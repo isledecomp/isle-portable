@@ -179,6 +179,7 @@ IsleApp::IsleApp()
 	m_yRes = 480;
 	m_frameRate = 100.0f;
 	m_exclusiveFullScreen = FALSE;
+	m_msaaSamples = 0;
 }
 
 // FUNCTION: ISLE 0x4011a0
@@ -912,6 +913,11 @@ MxResult IsleApp::SetupWindow()
 
 	window = SDL_CreateWindowWithProperties(props);
 
+	SDL_SetPointerProperty(SDL_GetWindowProperties(window), ISLE_PROP_WINDOW_CREATE_VIDEO_PARAM, &m_videoParam);
+	MxVideoParam* p = (MxVideoParam*)
+		SDL_GetPointerProperty(SDL_GetWindowProperties(window), ISLE_PROP_WINDOW_CREATE_VIDEO_PARAM, nullptr);
+	SDL_Log("MSAA WINDOW: %p %d", p, (p)->GetMSAASamples());
+
 	if (m_exclusiveFullScreen && m_fullScreen) {
 		SDL_DisplayMode closestMode;
 		SDL_DisplayID displayID = SDL_GetDisplayForWindow(window);
@@ -1172,6 +1178,7 @@ bool IsleApp::LoadConfig()
 	}
 	m_frameRate = (1000.0f / iniparser_getdouble(dict, "isle:Frame Delta", m_frameDelta));
 	m_frameDelta = static_cast<int>(std::round(iniparser_getdouble(dict, "isle:Frame Delta", m_frameDelta)));
+	m_videoParam.SetMSAASamples(iniparser_getint(dict, "isle:MSAA", m_msaaSamples));
 
 	const char* deviceId = iniparser_getstring(dict, "isle:3D Device ID", NULL);
 	if (deviceId != NULL) {

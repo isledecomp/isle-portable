@@ -32,8 +32,8 @@ struct GLES2MeshCacheEntry {
 
 class OpenGLES2Renderer : public Direct3DRMRenderer {
 public:
-	static Direct3DRMRenderer* Create(DWORD width, DWORD height);
-	OpenGLES2Renderer(DWORD width, DWORD height, SDL_GLContext context, GLuint shaderProgram);
+	static Direct3DRMRenderer* Create(DWORD width, DWORD height, DWORD msaaSamples);
+	OpenGLES2Renderer(DWORD width, DWORD height, DWORD msaaSamples, SDL_GLContext context, GLuint shaderProgram);
 	~OpenGLES2Renderer() override;
 
 	void PushLights(const SceneLight* lightsArray, size_t count) override;
@@ -72,7 +72,12 @@ private:
 	bool m_dirty = false;
 	std::vector<SceneLight> m_lights;
 	SDL_GLContext m_context;
+	uint32_t m_requestedMsaaSamples;
+	bool m_useMsaa;
 	GLuint m_fbo;
+	GLuint m_msaaFbo;
+	GLuint m_msaaColorRbo;
+	GLuint m_msaaDepthRbo;
 	GLuint m_colorTarget;
 	GLuint m_depthTarget;
 	GLuint m_shaderProgram;
@@ -94,7 +99,10 @@ private:
 
 inline static void OpenGLES2Renderer_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
-	Direct3DRMRenderer* device = OpenGLES2Renderer::Create(640, 480);
+	IDirect3DMiniwin* miniwind3d = reinterpret_cast<IDirect3DMiniwin*>(ctx);
+	SDL_assert(miniwind3d);
+
+	Direct3DRMRenderer* device = OpenGLES2Renderer::Create(640, 480, miniwind3d->GetMSAASamples());
 	if (!device) {
 		return;
 	}

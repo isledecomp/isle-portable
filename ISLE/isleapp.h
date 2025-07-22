@@ -111,6 +111,7 @@ private:
 	MxS32 m_yRes;
 	MxFloat m_frameRate;
 	MxBool m_exclusiveFullScreen;
+	MxU32 m_msaaSamples;
 };
 
 extern IsleApp* g_isle;

@@ -1,7 +1,10 @@
 #include "mxdirectxinfo.h"
 
+#include "mxvideoparam.h"
+
 #include <SDL3/SDL_log.h>
 #include <assert.h>
+#include <miniwin/miniwind3d.h>
 #include <stdio.h> // for vsprintf
 
 DECOMP_SIZE_ASSERT(MxAssignedDevice, 0xe4)
@@ -216,10 +219,22 @@ BOOL MxDeviceEnumerate::EnumDirectDrawCallback(LPGUID p_guid, LPSTR p_driverDesc
 	LPDIRECTDRAW lpDD = NULL;
 	MxDriver& newDevice = m_ddInfo.back();
 	HRESULT result = DirectDrawCreate(newDevice.m_guid, &lpDD, NULL);
+	IDirect3DMiniwin* miniwind3d = nullptr;
 
 	if (result != DD_OK) {
 		BuildErrorString("DirectDraw Create failed: %s\n", EnumerateErrorToString(result));
 		goto done;
+	}
+
+	result = lpDD->QueryInterface(IID_IDirect3DMiniwin, (void**) &miniwind3d);
+	if (result == DD_OK) {
+		MxVideoParam* videoParam = (MxVideoParam*) SDL_GetPointerProperty(
+			SDL_GetWindowProperties(reinterpret_cast<SDL_Window*>(m_hWnd)),
+			ISLE_PROP_WINDOW_CREATE_VIDEO_PARAM,
+			nullptr
+		);
+		assert(videoParam);
+		miniwind3d->RequestMSAA(videoParam->GetMSAASamples());
 	}
 
 	result = lpDD->SetCooperativeLevel(m_hWnd, DDSCL_NORMAL);
@@ -243,7 +258,7 @@ BOOL MxDeviceEnumerate::EnumDirectDrawCallback(LPGUID p_guid, LPSTR p_driverDesc
 		goto done;
 	}
 
-	result = lpDirect3d2->EnumDevices(DevicesEnumerateCallback, this);
+	result = lpDirect3d2->EnumDevices(DevicesEnumerateCallback, miniwind3d);
 
 	if (result != DD_OK) {
 		BuildErrorString("D3D enum devices failed: %s\n", EnumerateErrorToString(result));

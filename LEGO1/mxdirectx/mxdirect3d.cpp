@@ -2,6 +2,7 @@
 
 #include <SDL3/SDL.h> // for SDL_Log
 #include <assert.h>
+#include <miniwin/miniwind3d.h>
 
 DECOMP_SIZE_ASSERT(MxDirect3D, 0x894)
 
@@ -40,10 +41,12 @@ BOOL MxDirect3D::Create(
 	int height,
 	int bpp,
 	const PALETTEENTRY* pPaletteEntries,
-	int paletteEntryCount
+	int paletteEntryCount,
+	DWORD msaaSamples
 )
 {
 	BOOL success = FALSE;
+	IDirect3DMiniwin* miniwind3d = nullptr;
 	assert(m_currentDeviceInfo);
 
 	if (!MxDirectDraw::Create(
@@ -55,13 +58,18 @@ BOOL MxDirect3D::Create(
 			height,
 			bpp,
 			pPaletteEntries,
-			paletteEntryCount
+			paletteEntryCount,
+			msaaSamples
 		)) {
 		goto done;
 	}
 
 	if (!D3DCreate()) {
 		goto done;
+	}
+
+	if (msaaSamples && m_pDirect3d->QueryInterface(IID_IDirect3DMiniwin, (void**) &miniwind3d) == S_OK) {
+		miniwind3d->RequestMSAA(msaaSamples);
 	}
 
 	if (!D3DSetMode()) {

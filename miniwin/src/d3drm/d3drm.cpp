@@ -132,7 +132,11 @@ HRESULT Direct3DRMImpl::CreateDeviceFromSurface(
 	DDSDesc.dwSize = sizeof(DDSURFACEDESC);
 	surface->GetSurfaceDesc(&DDSDesc);
 
-	DDRenderer = CreateDirect3DRMRenderer(DDSDesc, guid);
+	IDirect3DMiniwin* miniwind3d = nullptr;
+	miniwind3d->QueryInterface(IID_IDirect3DMiniwin, (void**) &miniwind3d);
+	SDL_assert(miniwind3d);
+
+	DDRenderer = CreateDirect3DRMRenderer(miniwind3d, DDSDesc, guid);
 	if (!DDRenderer) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Device GUID not recognized");
 		return E_NOINTERFACE;

@@ -91,7 +91,8 @@ BOOL MxDirectDraw::Create(
 	int height,
 	int bpp,
 	const PALETTEENTRY* pPaletteEntries,
-	int paletteEntryCount
+	int paletteEntryCount,
+	DWORD msaaSamples
 )
 {
 	assert(m_currentDevInfo);

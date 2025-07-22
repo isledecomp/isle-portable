@@ -1,8 +1,8 @@
 #include "d3drmrenderer_opengles2.h"
 #include "meshutils.h"
 
-#include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
+#include <GLES3/gl3.h>
 #include <SDL3/SDL.h>
 #include <algorithm>
 #include <string>
@@ -28,7 +28,7 @@ struct SceneLightGLES2 {
 	float direction[4];
 };
 
-Direct3DRMRenderer* OpenGLES2Renderer::Create(DWORD width, DWORD height)
+Direct3DRMRenderer* OpenGLES2Renderer::Create(DWORD width, DWORD height, DWORD msaaSamples)
 {
 	// We have to reset the attributes here after having enumerated the
 	// OpenGL ES 2.0 renderer, or else SDL gets very confused by SDL_GL_DEPTH_SIZE
@@ -37,8 +37,13 @@ Direct3DRMRenderer* OpenGLES2Renderer::Create(DWORD width, DWORD height)
 	// But ResetAttributes resets it to 16.
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+
+	if (msaaSamples > 1) {
+		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, msaaSamples);
+	}
 
 	if (!DDWindow) {
 		SDL_Log("No window handler");
@@ -168,7 +173,7 @@ Direct3DRMRenderer* OpenGLES2Renderer::Create(DWORD width, DWORD height)
 	glDeleteShader(vs);
 	glDeleteShader(fs);
 
-	return new OpenGLES2Renderer(width, height, context, shaderProgram);
+	return new OpenGLES2Renderer(width, height, msaaSamples, context, shaderProgram);
 }
 
 GLES2MeshCacheEntry GLES2UploadMesh(const MeshGroup& meshGroup, bool forceUV = false)
@@ -278,14 +283,25 @@ bool UploadTexture(SDL_Surface* source, GLuint& outTexId, bool isUI)
 	return true;
 }
 
-OpenGLES2Renderer::OpenGLES2Renderer(DWORD width, DWORD height, SDL_GLContext context, GLuint shaderProgram)
+OpenGLES2Renderer::OpenGLES2Renderer(
+	DWORD width,
+	DWORD height,
+	DWORD msaaSamples,
+	SDL_GLContext context,
+	GLuint shaderProgram
+)
 	: m_context(context), m_shaderProgram(shaderProgram)
 {
 	glGenFramebuffers(1, &m_fbo);
-	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+
+	if (msaaSamples > 1) {
+		glGenFramebuffers(1, &m_msaaFbo);
+	}
 
 	m_virtualWidth = width;
 	m_virtualHeight = height;
+	m_requestedMsaaSamples = msaaSamples;
+	SDL_Log("Requested MSAA %d", m_requestedMsaaSamples);
 	ViewportTransform viewportTransform = {1.0f, 0.0f, 0.0f};
 	Resize(width, height, viewportTransform);
 
@@ -488,7 +504,7 @@ HRESULT OpenGLES2Renderer::BeginFrame()
 	SDL_GL_MakeCurrent(DDWindow, m_context);
 	m_dirty = true;
 
-	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_useMsaa ? m_msaaFbo : m_fbo);
 
 	glEnable(GL_CULL_FACE);
 	glDisable(GL_BLEND);
@@ -610,6 +626,52 @@ void OpenGLES2Renderer::Resize(int width, int height, const ViewportTransform& v
 	}
 	m_renderedImage = SDL_CreateSurface(m_width, m_height, SDL_PIXELFORMAT_RGBA32);
 
+	if (m_colorTarget) {
+		glDeleteTextures(1, &m_colorTarget);
+	}
+	if (m_depthTarget) {
+		glDeleteRenderbuffers(1, &m_depthTarget);
+	}
+	if (m_msaaColorRbo) {
+		glDeleteRenderbuffers(1, &m_msaaColorRbo);
+	}
+	if (m_msaaDepthRbo) {
+		glDeleteRenderbuffers(1, &m_msaaDepthRbo);
+	}
+	m_colorTarget = m_depthTarget = m_msaaColorRbo = m_msaaDepthRbo = 0;
+
+	GLint samples;
+	glGetIntegerv(GL_SAMPLES, &samples);
+	m_useMsaa = samples > 1;
+
+	if (m_useMsaa) {
+		glBindFramebuffer(GL_FRAMEBUFFER, m_msaaFbo);
+
+		glGenRenderbuffers(1, &m_msaaColorRbo);
+		glBindRenderbuffer(GL_RENDERBUFFER, m_msaaColorRbo);
+		glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_RGBA8, width, height);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, m_msaaColorRbo);
+
+		glGenRenderbuffers(1, &m_msaaDepthRbo);
+		glBindRenderbuffer(GL_RENDERBUFFER, m_msaaDepthRbo);
+		glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH24_STENCIL8, width, height);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_msaaDepthRbo);
+
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+			SDL_Log("MSAA Framebuffer is not complete! Disabling MSAA.");
+			m_useMsaa = false;
+		}
+	}
+
+	if (m_useMsaa) {
+		GLint max_samples;
+		glGetIntegerv(GL_MAX_SAMPLES, &max_samples);
+		SDL_Log("MSAA: ON! samples %d max samples %d", samples, max_samples);
+	}
+	else {
+		SDL_Log("MSAA: OFF! %d %d", samples, m_requestedMsaaSamples);
+	}
+
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 
 	// Create color texture
@@ -625,16 +687,7 @@ void OpenGLES2Renderer::Resize(int width, int height, const ViewportTransform& v
 	// Create depth renderbuffer
 	glGenRenderbuffers(1, &m_depthTarget);
 	glBindRenderbuffer(GL_RENDERBUFFER, m_depthTarget);
-
-	if (SDL_GL_ExtensionSupported("GL_OES_depth24")) {
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24_OES, width, height);
-	}
-	else if (SDL_GL_ExtensionSupported("GL_OES_depth32")) {
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32_OES, width, height);
-	}
-	else {
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, width, height);
-	}
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_depthTarget);
 
 	glViewport(0, 0, m_width, m_height);
@@ -645,7 +698,7 @@ void OpenGLES2Renderer::Clear(float r, float g, float b)
 	SDL_GL_MakeCurrent(DDWindow, m_context);
 	m_dirty = true;
 
-	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_useMsaa ? m_msaaFbo : m_fbo);
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
@@ -658,6 +711,12 @@ void OpenGLES2Renderer::Flip()
 	SDL_GL_MakeCurrent(DDWindow, m_context);
 	if (!m_dirty) {
 		return;
+	}
+
+	if (m_useMsaa) {
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, m_msaaFbo);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_fbo);
+		glBlitFramebuffer(0, 0, m_width, m_height, 0, 0, m_width, m_height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -722,7 +781,7 @@ void OpenGLES2Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, c
 	SDL_GL_MakeCurrent(DDWindow, m_context);
 	m_dirty = true;
 
-	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_useMsaa ? m_msaaFbo : m_fbo);
 
 	glDisable(GL_DEPTH_TEST);
 	glDepthMask(GL_FALSE);
@@ -808,6 +867,12 @@ void OpenGLES2Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, c
 void OpenGLES2Renderer::Download(SDL_Surface* target)
 {
 	glFinish();
+
+	if (m_useMsaa) {
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, m_msaaFbo);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_fbo);
+		glBlitFramebuffer(0, 0, m_width, m_height, 0, 0, m_width, m_height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 	glReadPixels(0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, m_renderedImage->pixels);

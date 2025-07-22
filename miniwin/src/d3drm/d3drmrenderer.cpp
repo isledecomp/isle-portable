@@ -18,7 +18,11 @@
 #include "d3drmrenderer_software.h"
 #endif
 
-Direct3DRMRenderer* CreateDirect3DRMRenderer(const DDSURFACEDESC& DDSDesc, const GUID* guid)
+Direct3DRMRenderer* CreateDirect3DRMRenderer(
+	const IDirect3DMiniwin* d3d,
+	const DDSURFACEDESC& DDSDesc,
+	const GUID* guid
+)
 {
 #ifdef USE_SDL_GPU
 	if (SDL_memcmp(guid, &SDL3_GPU_GUID, sizeof(GUID)) == 0) {
@@ -32,7 +36,7 @@ Direct3DRMRenderer* CreateDirect3DRMRenderer(const DDSURFACEDESC& DDSDesc, const
 #endif
 #ifdef USE_OPENGLES2
 	if (SDL_memcmp(guid, &OpenGLES2_GUID, sizeof(GUID)) == 0) {
-		return OpenGLES2Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
+		return OpenGLES2Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight, d3d->GetMSAASamples());
 	}
 #endif
 #ifdef USE_OPENGL1
