@@ -133,7 +133,7 @@ HRESULT Direct3DRMImpl::CreateDeviceFromSurface(
 	surface->GetSurfaceDesc(&DDSDesc);
 
 	IDirect3DMiniwin* miniwind3d = nullptr;
-	miniwind3d->QueryInterface(IID_IDirect3DMiniwin, (void**) &miniwind3d);
+	dd->QueryInterface(IID_IDirect3DMiniwin, (void**) &miniwind3d);
 	SDL_assert(miniwind3d);
 
 	DDRenderer = CreateDirect3DRMRenderer(miniwind3d, DDSDesc, guid);
