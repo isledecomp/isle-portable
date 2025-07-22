@@ -4,13 +4,13 @@
 #include "d3drmtexture_impl.h"
 #include "ddraw_impl.h"
 
-#include <GLES2/gl2.h>
+#include <GLES3/gl3.h>
 #include <SDL3/SDL.h>
 #include <vector>
 
-DEFINE_GUID(OpenGLES2_GUID, 0x682656F3, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04);
+DEFINE_GUID(OpenGLES3_GUID, 0x682656F3, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04);
 
-struct GLES2TextureCacheEntry {
+struct GLES3TextureCacheEntry {
 	IDirect3DRMTexture* texture;
 	Uint32 version;
 	GLuint glTextureId;
@@ -18,7 +18,7 @@ struct GLES2TextureCacheEntry {
 	uint16_t height;
 };
 
-struct GLES2MeshCacheEntry {
+struct GLES3MeshCacheEntry {
 	const MeshGroup* meshGroup;
 	int version;
 	bool flat;
@@ -30,11 +30,11 @@ struct GLES2MeshCacheEntry {
 	GLuint ibo;
 };
 
-class OpenGLES2Renderer : public Direct3DRMRenderer {
+class OpenGLES3Renderer : public Direct3DRMRenderer {
 public:
 	static Direct3DRMRenderer* Create(DWORD width, DWORD height, DWORD msaaSamples);
-	OpenGLES2Renderer(DWORD width, DWORD height, DWORD msaaSamples, SDL_GLContext context, GLuint shaderProgram);
-	~OpenGLES2Renderer() override;
+	OpenGLES3Renderer(DWORD width, DWORD height, DWORD msaaSamples, SDL_GLContext context, GLuint shaderProgram);
+	~OpenGLES3Renderer() override;
 
 	void PushLights(const SceneLight* lightsArray, size_t count) override;
 	void SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back) override;
@@ -64,9 +64,9 @@ private:
 	void AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh);
 
 	MeshGroup m_uiMesh;
-	GLES2MeshCacheEntry m_uiMeshCache;
-	std::vector<GLES2TextureCacheEntry> m_textures;
-	std::vector<GLES2MeshCacheEntry> m_meshs;
+	GLES3MeshCacheEntry m_uiMeshCache;
+	std::vector<GLES3TextureCacheEntry> m_textures;
+	std::vector<GLES3MeshCacheEntry> m_meshs;
 	D3DRMMATRIX4D m_projection;
 	SDL_Surface* m_renderedImage = nullptr;
 	bool m_dirty = false;
@@ -97,9 +97,9 @@ private:
 	ViewportTransform m_viewportTransform;
 };
 
-inline static void OpenGLES2Renderer_EnumDevice(const IDirect3DMiniwin* d3d, LPD3DENUMDEVICESCALLBACK cb, void* ctx)
+inline static void OpenGLES3Renderer_EnumDevice(const IDirect3DMiniwin* d3d, LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
-	Direct3DRMRenderer* device = OpenGLES2Renderer::Create(640, 480, d3d->GetMSAASamples());
+	Direct3DRMRenderer* device = OpenGLES3Renderer::Create(640, 480, d3d->GetMSAASamples());
 	if (!device) {
 		return;
 	}
@@ -127,5 +127,5 @@ inline static void OpenGLES2Renderer_EnumDevice(const IDirect3DMiniwin* d3d, LPD
 
 	D3DDEVICEDESC helDesc = {};
 
-	EnumDevice(cb, ctx, "OpenGL ES 2.0 HAL", &halDesc, &helDesc, OpenGLES2_GUID);
+	EnumDevice(cb, ctx, "OpenGL ES 2.0 HAL", &halDesc, &helDesc, OpenGLES3_GUID);
 }

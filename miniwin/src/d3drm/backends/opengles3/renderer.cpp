@@ -1,4 +1,4 @@
-#include "d3drmrenderer_opengles2.h"
+#include "d3drmrenderer_opengles3.h"
 #include "meshutils.h"
 
 #include <GLES2/gl2ext.h>
@@ -22,13 +22,13 @@ static GLuint CompileShader(GLenum type, const char* source)
 	return shader;
 }
 
-struct SceneLightGLES2 {
+struct SceneLightGLES3 {
 	float color[4];
 	float position[4];
 	float direction[4];
 };
 
-Direct3DRMRenderer* OpenGLES2Renderer::Create(DWORD width, DWORD height, DWORD msaaSamples)
+Direct3DRMRenderer* OpenGLES3Renderer::Create(DWORD width, DWORD height, DWORD msaaSamples)
 {
 	// We have to reset the attributes here after having enumerated the
 	// OpenGL ES 2.0 renderer, or else SDL gets very confused by SDL_GL_DEPTH_SIZE
@@ -173,12 +173,12 @@ Direct3DRMRenderer* OpenGLES2Renderer::Create(DWORD width, DWORD height, DWORD m
 	glDeleteShader(vs);
 	glDeleteShader(fs);
 
-	return new OpenGLES2Renderer(width, height, msaaSamples, context, shaderProgram);
+	return new OpenGLES3Renderer(width, height, msaaSamples, context, shaderProgram);
 }
 
-GLES2MeshCacheEntry GLES2UploadMesh(const MeshGroup& meshGroup, bool forceUV = false)
+GLES3MeshCacheEntry GLES3UploadMesh(const MeshGroup& meshGroup, bool forceUV = false)
 {
-	GLES2MeshCacheEntry cache{&meshGroup, meshGroup.version};
+	GLES3MeshCacheEntry cache{&meshGroup, meshGroup.version};
 
 	cache.flat = meshGroup.quality == D3DRMRENDER_FLAT || meshGroup.quality == D3DRMRENDER_UNLITFLAT;
 
@@ -283,7 +283,7 @@ bool UploadTexture(SDL_Surface* source, GLuint& outTexId, bool isUI)
 	return true;
 }
 
-OpenGLES2Renderer::OpenGLES2Renderer(
+OpenGLES3Renderer::OpenGLES3Renderer(
 	DWORD width,
 	DWORD height,
 	DWORD msaaSamples,
@@ -332,7 +332,7 @@ OpenGLES2Renderer::OpenGLES2Renderer(
 		{{0.0f, 1.0f, 0.0f}, {0, 0, -1}, {0.0f, 1.0f}}
 	};
 	m_uiMesh.indices = {0, 1, 2, 0, 2, 3};
-	m_uiMeshCache = GLES2UploadMesh(m_uiMesh, true);
+	m_uiMeshCache = GLES3UploadMesh(m_uiMesh, true);
 	m_posLoc = glGetAttribLocation(m_shaderProgram, "a_position");
 	m_normLoc = glGetAttribLocation(m_shaderProgram, "a_normal");
 	m_texLoc = glGetAttribLocation(m_shaderProgram, "a_texCoord");
@@ -354,14 +354,14 @@ OpenGLES2Renderer::OpenGLES2Renderer(
 	glUseProgram(m_shaderProgram);
 }
 
-OpenGLES2Renderer::~OpenGLES2Renderer()
+OpenGLES3Renderer::~OpenGLES3Renderer()
 {
 	SDL_DestroySurface(m_renderedImage);
 	glDeleteProgram(m_shaderProgram);
 	SDL_GL_DestroyContext(m_context);
 }
 
-void OpenGLES2Renderer::PushLights(const SceneLight* lightsArray, size_t count)
+void OpenGLES3Renderer::PushLights(const SceneLight* lightsArray, size_t count)
 {
 	if (count > 3) {
 		SDL_Log("Unsupported number of lights (%d)", static_cast<int>(count));
@@ -371,21 +371,21 @@ void OpenGLES2Renderer::PushLights(const SceneLight* lightsArray, size_t count)
 	m_lights.assign(lightsArray, lightsArray + count);
 }
 
-void OpenGLES2Renderer::SetFrustumPlanes(const Plane* frustumPlanes)
+void OpenGLES3Renderer::SetFrustumPlanes(const Plane* frustumPlanes)
 {
 }
 
-void OpenGLES2Renderer::SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back)
+void OpenGLES3Renderer::SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back)
 {
 	memcpy(&m_projection, projection, sizeof(D3DRMMATRIX4D));
 }
 
 struct TextureDestroyContextGLS2 {
-	OpenGLES2Renderer* renderer;
+	OpenGLES3Renderer* renderer;
 	Uint32 textureId;
 };
 
-void OpenGLES2Renderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture)
+void OpenGLES3Renderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture)
 {
 	auto* ctx = new TextureDestroyContextGLS2{this, id};
 	texture->AddDestroyCallback(
@@ -403,7 +403,7 @@ void OpenGLES2Renderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture*
 	);
 }
 
-Uint32 OpenGLES2Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUI, float scaleX, float scaleY)
+Uint32 OpenGLES3Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUI, float scaleX, float scaleY)
 {
 	SDL_GL_MakeCurrent(DDWindow, m_context);
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
@@ -447,17 +447,17 @@ Uint32 OpenGLES2Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUI, 
 	return (Uint32) (m_textures.size() - 1);
 }
 
-struct GLES2MeshDestroyContext {
-	OpenGLES2Renderer* renderer;
+struct GLES3MeshDestroyContext {
+	OpenGLES3Renderer* renderer;
 	Uint32 id;
 };
 
-void OpenGLES2Renderer::AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh)
+void OpenGLES3Renderer::AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh)
 {
-	auto* ctx = new GLES2MeshDestroyContext{this, id};
+	auto* ctx = new GLES3MeshDestroyContext{this, id};
 	mesh->AddDestroyCallback(
 		[](IDirect3DRMObject*, void* arg) {
-			auto* ctx = static_cast<GLES2MeshDestroyContext*>(arg);
+			auto* ctx = static_cast<GLES3MeshDestroyContext*>(arg);
 			auto& cache = ctx->renderer->m_meshs[ctx->id];
 			cache.meshGroup = nullptr;
 			glDeleteBuffers(1, &cache.vboPositions);
@@ -470,19 +470,19 @@ void OpenGLES2Renderer::AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh)
 	);
 }
 
-Uint32 OpenGLES2Renderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup)
+Uint32 OpenGLES3Renderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup)
 {
 	for (Uint32 i = 0; i < m_meshs.size(); ++i) {
 		auto& cache = m_meshs[i];
 		if (cache.meshGroup == meshGroup) {
 			if (cache.version != meshGroup->version) {
-				cache = std::move(GLES2UploadMesh(*meshGroup));
+				cache = std::move(GLES3UploadMesh(*meshGroup));
 			}
 			return i;
 		}
 	}
 
-	auto newCache = GLES2UploadMesh(*meshGroup);
+	auto newCache = GLES3UploadMesh(*meshGroup);
 
 	for (Uint32 i = 0; i < m_meshs.size(); ++i) {
 		auto& cache = m_meshs[i];
@@ -498,7 +498,7 @@ Uint32 OpenGLES2Renderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* mesh
 	return (Uint32) (m_meshs.size() - 1);
 }
 
-HRESULT OpenGLES2Renderer::BeginFrame()
+HRESULT OpenGLES3Renderer::BeginFrame()
 {
 	SDL_GL_MakeCurrent(DDWindow, m_context);
 	m_dirty = true;
@@ -510,7 +510,7 @@ HRESULT OpenGLES2Renderer::BeginFrame()
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
 
-	SceneLightGLES2 lightData[3];
+	SceneLightGLES3 lightData[3];
 	int lightCount = std::min(static_cast<int>(m_lights.size()), 3);
 
 	for (int i = 0; i < lightCount; ++i) {
@@ -540,14 +540,14 @@ HRESULT OpenGLES2Renderer::BeginFrame()
 	return DD_OK;
 }
 
-void OpenGLES2Renderer::EnableTransparency()
+void OpenGLES3Renderer::EnableTransparency()
 {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDepthMask(GL_FALSE);
 }
 
-void OpenGLES2Renderer::SubmitDraw(
+void OpenGLES3Renderer::SubmitDraw(
 	DWORD meshId,
 	const D3DRMMATRIX4D& modelViewMatrix,
 	const D3DRMMATRIX4D& worldMatrix,
@@ -606,7 +606,7 @@ void OpenGLES2Renderer::SubmitDraw(
 	glDisableVertexAttribArray(m_texLoc);
 }
 
-HRESULT OpenGLES2Renderer::FinalizeFrame()
+HRESULT OpenGLES3Renderer::FinalizeFrame()
 {
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -614,7 +614,7 @@ HRESULT OpenGLES2Renderer::FinalizeFrame()
 	return DD_OK;
 }
 
-void OpenGLES2Renderer::Resize(int width, int height, const ViewportTransform& viewportTransform)
+void OpenGLES3Renderer::Resize(int width, int height, const ViewportTransform& viewportTransform)
 {
 	SDL_GL_MakeCurrent(DDWindow, m_context);
 	m_width = width;
@@ -692,7 +692,7 @@ void OpenGLES2Renderer::Resize(int width, int height, const ViewportTransform& v
 	glViewport(0, 0, m_width, m_height);
 }
 
-void OpenGLES2Renderer::Clear(float r, float g, float b)
+void OpenGLES3Renderer::Clear(float r, float g, float b)
 {
 	SDL_GL_MakeCurrent(DDWindow, m_context);
 	m_dirty = true;
@@ -705,7 +705,7 @@ void OpenGLES2Renderer::Clear(float r, float g, float b)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void OpenGLES2Renderer::Flip()
+void OpenGLES3Renderer::Flip()
 {
 	SDL_GL_MakeCurrent(DDWindow, m_context);
 	if (!m_dirty) {
@@ -775,7 +775,7 @@ void OpenGLES2Renderer::Flip()
 	m_dirty = false;
 }
 
-void OpenGLES2Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect, FColor color)
+void OpenGLES3Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect, FColor color)
 {
 	SDL_GL_MakeCurrent(DDWindow, m_context);
 	m_dirty = true;
@@ -797,7 +797,7 @@ void OpenGLES2Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, c
 
 	SDL_Rect expandedDstRect;
 	if (textureId != NO_TEXTURE_ID) {
-		const GLES2TextureCacheEntry& texture = m_textures[textureId];
+		const GLES3TextureCacheEntry& texture = m_textures[textureId];
 		float scaleX = static_cast<float>(dstRect.w) / srcRect.w;
 		float scaleY = static_cast<float>(dstRect.h) / srcRect.h;
 		expandedDstRect = {
@@ -863,7 +863,7 @@ void OpenGLES2Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, c
 	glDisable(GL_SCISSOR_TEST);
 }
 
-void OpenGLES2Renderer::Download(SDL_Surface* target)
+void OpenGLES3Renderer::Download(SDL_Surface* target)
 {
 	glFinish();
 
@@ -903,7 +903,7 @@ void OpenGLES2Renderer::Download(SDL_Surface* target)
 	SDL_DestroySurface(bufferClone);
 }
 
-void OpenGLES2Renderer::SetDither(bool dither)
+void OpenGLES3Renderer::SetDither(bool dither)
 {
 	if (dither) {
 		glEnable(GL_DITHER);

@@ -2,8 +2,8 @@
 #ifdef USE_OPENGL1
 #include "d3drmrenderer_opengl1.h"
 #endif
-#ifdef USE_OPENGLES2
-#include "d3drmrenderer_opengles2.h"
+#ifdef USE_OPENGLES3
+#include "d3drmrenderer_opengles3.h"
 #endif
 #ifdef USE_CITRO3D
 #include "d3drmrenderer_citro3d.h"
@@ -34,9 +34,9 @@ Direct3DRMRenderer* CreateDirect3DRMRenderer(
 		return new Direct3DRMSoftwareRenderer(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
 #endif
-#ifdef USE_OPENGLES2
-	if (SDL_memcmp(guid, &OpenGLES2_GUID, sizeof(GUID)) == 0) {
-		return OpenGLES2Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight, d3d->GetMSAASamples());
+#ifdef USE_OPENGLES3
+	if (SDL_memcmp(guid, &OpenGLES3_GUID, sizeof(GUID)) == 0) {
+		return OpenGLES3Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight, d3d->GetMSAASamples());
 	}
 #endif
 #ifdef USE_OPENGL1
@@ -62,8 +62,8 @@ void Direct3DRMRenderer_EnumDevices(const IDirect3DMiniwin* d3d, LPD3DENUMDEVICE
 #ifdef USE_SDL_GPU
 	Direct3DRMSDL3GPU_EnumDevice(cb, ctx);
 #endif
-#ifdef USE_OPENGLES2
-	OpenGLES2Renderer_EnumDevice(d3d, cb, ctx);
+#ifdef USE_OPENGLES3
+	OpenGLES3Renderer_EnumDevice(d3d, cb, ctx);
 #endif
 #ifdef USE_OPENGL1
 	OpenGL1Renderer_EnumDevice(cb, ctx);
