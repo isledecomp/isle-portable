@@ -301,7 +301,6 @@ OpenGLES2Renderer::OpenGLES2Renderer(
 	m_virtualWidth = width;
 	m_virtualHeight = height;
 	m_requestedMsaaSamples = msaaSamples;
-	SDL_Log("Requested MSAA %d", m_requestedMsaaSamples);
 	ViewportTransform viewportTransform = {1.0f, 0.0f, 0.0f};
 	Resize(width, height, viewportTransform);
 
@@ -640,8 +639,9 @@ void OpenGLES2Renderer::Resize(int width, int height, const ViewportTransform& v
 	}
 	m_colorTarget = m_depthTarget = m_msaaColorRbo = m_msaaDepthRbo = 0;
 
-	GLint samples;
+	GLint samples, maxSamples;
 	glGetIntegerv(GL_SAMPLES, &samples);
+	glGetIntegerv(GL_MAX_SAMPLES, &maxSamples);
 	m_useMsaa = samples > 1;
 
 	if (m_useMsaa) {
@@ -663,14 +663,13 @@ void OpenGLES2Renderer::Resize(int width, int height, const ViewportTransform& v
 		}
 	}
 
-	if (m_useMsaa) {
-		GLint max_samples;
-		glGetIntegerv(GL_MAX_SAMPLES, &max_samples);
-		SDL_Log("MSAA: ON! samples %d max samples %d", samples, max_samples);
-	}
-	else {
-		SDL_Log("MSAA: OFF! %d %d", samples, m_requestedMsaaSamples);
-	}
+	SDL_Log(
+		"MSAA is %s. Requested samples: %d, active samples: %d, max samples: %d",
+		m_useMsaa ? "on" : "off",
+		m_requestedMsaaSamples,
+		samples,
+		maxSamples
+	);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 

@@ -67,4 +67,4 @@ Direct3DRMRenderer* CreateDirect3DRMRenderer(
 	const DDSURFACEDESC& DDSDesc,
 	const GUID* guid
 );
-void Direct3DRMRenderer_EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx);
+void Direct3DRMRenderer_EnumDevices(const IDirect3DMiniwin* d3d, LPD3DENUMDEVICESCALLBACK cb, void* ctx);

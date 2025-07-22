@@ -258,7 +258,7 @@ BOOL MxDeviceEnumerate::EnumDirectDrawCallback(LPGUID p_guid, LPSTR p_driverDesc
 		goto done;
 	}
 
-	result = lpDirect3d2->EnumDevices(DevicesEnumerateCallback, miniwind3d);
+	result = lpDirect3d2->EnumDevices(DevicesEnumerateCallback, this);
 
 	if (result != DD_OK) {
 		BuildErrorString("D3D enum devices failed: %s\n", EnumerateErrorToString(result));

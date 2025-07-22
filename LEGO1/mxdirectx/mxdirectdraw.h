@@ -33,8 +33,7 @@ public:
 		int height,
 		int bpp,
 		const PALETTEENTRY* pPaletteEntries,
-		int paletteEntryCount,
-		DWORD msaaSamples
+		int paletteEntryCount
 	);                                      // vtable+0x04
 	virtual void Destroy();                 // vtable+0x08
 	virtual void DestroyButNotDirectDraw(); // vtable+0x0c

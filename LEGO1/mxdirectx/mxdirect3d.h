@@ -31,8 +31,7 @@ public:
 		int height,
 		int bpp,
 		const PALETTEENTRY* pPaletteEntries,
-		int paletteEntryCount,
-		DWORD msaaSamples
+		int paletteEntryCount
 	) override;                              // vtable+0x04
 	void Destroy() override;                 // vtable+0x08
 	void DestroyButNotDirectDraw() override; // vtable+0x0c

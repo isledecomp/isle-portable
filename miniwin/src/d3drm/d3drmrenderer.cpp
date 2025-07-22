@@ -57,13 +57,13 @@ Direct3DRMRenderer* CreateDirect3DRMRenderer(
 	return nullptr;
 }
 
-void Direct3DRMRenderer_EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
+void Direct3DRMRenderer_EnumDevices(const IDirect3DMiniwin* d3d, LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
 #ifdef USE_SDL_GPU
 	Direct3DRMSDL3GPU_EnumDevice(cb, ctx);
 #endif
 #ifdef USE_OPENGLES2
-	OpenGLES2Renderer_EnumDevice(cb, ctx);
+	OpenGLES2Renderer_EnumDevice(d3d, cb, ctx);
 #endif
 #ifdef USE_OPENGL1
 	OpenGL1Renderer_EnumDevice(cb, ctx);

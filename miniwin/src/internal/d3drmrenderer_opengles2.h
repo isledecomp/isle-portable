@@ -97,12 +97,9 @@ private:
 	ViewportTransform m_viewportTransform;
 };
 
-inline static void OpenGLES2Renderer_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
+inline static void OpenGLES2Renderer_EnumDevice(const IDirect3DMiniwin* d3d, LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
-	IDirect3DMiniwin* miniwind3d = reinterpret_cast<IDirect3DMiniwin*>(ctx);
-	SDL_assert(miniwind3d);
-
-	Direct3DRMRenderer* device = OpenGLES2Renderer::Create(640, 480, miniwind3d->GetMSAASamples());
+	Direct3DRMRenderer* device = OpenGLES2Renderer::Create(640, 480, d3d->GetMSAASamples());
 	if (!device) {
 		return;
 	}

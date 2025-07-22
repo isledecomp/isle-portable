@@ -225,7 +225,7 @@ void EnumDevice(
 
 HRESULT DirectDrawImpl::EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
-	Direct3DRMRenderer_EnumDevices(cb, ctx);
+	Direct3DRMRenderer_EnumDevices(this, cb, ctx);
 	return S_OK;
 }
 

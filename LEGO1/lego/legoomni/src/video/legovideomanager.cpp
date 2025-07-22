@@ -148,8 +148,7 @@ MxResult LegoVideoManager::Create(MxVideoParam& p_videoParam, MxU32 p_frequencyM
 			p_videoParam.GetRect().GetHeight(),
 			bits,
 			paletteEntries,
-			sizeof(paletteEntries) / sizeof(paletteEntries[0]),
-			p_videoParam.GetMSAASamples()
+			sizeof(paletteEntries) / sizeof(paletteEntries[0])
 		)) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "MxDirect3D::Create failed");
 		goto done;

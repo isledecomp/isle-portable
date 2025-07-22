@@ -912,11 +912,7 @@ MxResult IsleApp::SetupWindow()
 #endif
 
 	window = SDL_CreateWindowWithProperties(props);
-
 	SDL_SetPointerProperty(SDL_GetWindowProperties(window), ISLE_PROP_WINDOW_CREATE_VIDEO_PARAM, &m_videoParam);
-	MxVideoParam* p = (MxVideoParam*)
-		SDL_GetPointerProperty(SDL_GetWindowProperties(window), ISLE_PROP_WINDOW_CREATE_VIDEO_PARAM, nullptr);
-	SDL_Log("MSAA WINDOW: %p %d", p, (p)->GetMSAASamples());
 
 	if (m_exclusiveFullScreen && m_fullScreen) {
 		SDL_DisplayMode closestMode;

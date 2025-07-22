@@ -1,5 +1,7 @@
 #include "mxdirect3d.h"
 
+#include "mxvideoparam.h"
+
 #include <SDL3/SDL.h> // for SDL_Log
 #include <assert.h>
 #include <miniwin/miniwind3d.h>
@@ -41,8 +43,7 @@ BOOL MxDirect3D::Create(
 	int height,
 	int bpp,
 	const PALETTEENTRY* pPaletteEntries,
-	int paletteEntryCount,
-	DWORD msaaSamples
+	int paletteEntryCount
 )
 {
 	BOOL success = FALSE;
@@ -58,8 +59,7 @@ BOOL MxDirect3D::Create(
 			height,
 			bpp,
 			pPaletteEntries,
-			paletteEntryCount,
-			msaaSamples
+			paletteEntryCount
 		)) {
 		goto done;
 	}
@@ -68,8 +68,14 @@ BOOL MxDirect3D::Create(
 		goto done;
 	}
 
-	if (msaaSamples && m_pDirect3d->QueryInterface(IID_IDirect3DMiniwin, (void**) &miniwind3d) == S_OK) {
-		miniwind3d->RequestMSAA(msaaSamples);
+	if (m_pDirect3d->QueryInterface(IID_IDirect3DMiniwin, (void**) &miniwind3d) == DD_OK) {
+		MxVideoParam* videoParam = (MxVideoParam*) SDL_GetPointerProperty(
+			SDL_GetWindowProperties(reinterpret_cast<SDL_Window*>(hWnd)),
+			ISLE_PROP_WINDOW_CREATE_VIDEO_PARAM,
+			nullptr
+		);
+		assert(videoParam);
+		miniwind3d->RequestMSAA(videoParam->GetMSAASamples());
 	}
 
 	if (!D3DSetMode()) {
