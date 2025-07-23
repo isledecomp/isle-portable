@@ -62,17 +62,20 @@ Direct3DRMRenderer* OpenGLES3Renderer::Create(DWORD width, DWORD height, DWORD m
 	glFrontFace(GL_CW);
 
 	const char* vertexShaderSource = R"(
-		attribute vec3 a_position;
-		attribute vec3 a_normal;
-		attribute vec2 a_texCoord;
+		#version 300 es
+		precision mediump float;
+
+		in vec3 a_position;
+		in vec3 a_normal;
+		in vec2 a_texCoord;
 
 		uniform mat4 u_modelViewMatrix;
 		uniform mat3 u_normalMatrix;
 		uniform mat4 u_projectionMatrix;
 
-		varying vec3 v_viewPos;
-		varying vec3 v_normal;
-		varying vec2 v_texCoord;
+		out vec3 v_viewPos;
+		out vec3 v_normal;
+		out vec2 v_texCoord;
 
 		void main() {
 			vec4 viewPos = u_modelViewMatrix * vec4(a_position, 1.0);
@@ -84,6 +87,7 @@ Direct3DRMRenderer* OpenGLES3Renderer::Create(DWORD width, DWORD height, DWORD m
 	)";
 
 	const char* fragmentShaderSource = R"(
+		#version 300 es
 		precision mediump float;
 
 		struct SceneLight {
@@ -95,22 +99,22 @@ Direct3DRMRenderer* OpenGLES3Renderer::Create(DWORD width, DWORD height, DWORD m
 		uniform SceneLight u_lights[3];
 		uniform int u_lightCount;
 
-		varying vec3 v_viewPos;
-		varying vec3 v_normal;
-		varying vec2 v_texCoord;
+		in vec3 v_viewPos;
+		in vec3 v_normal;
+		in vec2 v_texCoord;
 
 		uniform float u_shininess;
 		uniform vec4 u_color;
-		uniform int u_useTexture;
+		uniform bool u_useTexture;
 		uniform sampler2D u_texture;
+
+		out vec4 fragColor;
 
 		void main() {
 			vec3 diffuse = vec3(0.0);
 			vec3 specular = vec3(0.0);
 
-			for (int i = 0; i < 3; ++i) {
-				if (i >= u_lightCount) break;
-
+			for (int i = 0; i < u_lightCount; ++i) {
 				vec3 lightColor = u_lights[i].color.rgb;
 
 				if (u_lights[i].position.w == 0.0 && u_lights[i].direction.w == 0.0) {
@@ -134,7 +138,7 @@ Direct3DRMRenderer* OpenGLES3Renderer::Create(DWORD width, DWORD height, DWORD m
 
 					// Specular
 					if (u_shininess > 0.0 && u_lights[i].direction.w == 1.0) {
-						vec3 viewVec = normalize(-v_viewPos); // Assuming camera at origin
+						vec3 viewVec = normalize(-v_viewPos);
 						vec3 H = normalize(lightVec + viewVec);
 						float dotNH = max(dot(v_normal, H), 0.0);
 						float spec = pow(dotNH, u_shininess);
@@ -145,13 +149,13 @@ Direct3DRMRenderer* OpenGLES3Renderer::Create(DWORD width, DWORD height, DWORD m
 
 			vec4 finalColor = u_color;
 			finalColor.rgb = clamp(diffuse * u_color.rgb + specular, 0.0, 1.0);
-			if (u_useTexture != 0) {
-				vec4 texel = texture2D(u_texture, v_texCoord);
+			if (u_useTexture) {
+				vec4 texel = texture(u_texture, v_texCoord);
 				finalColor.rgb = clamp(texel.rgb * finalColor.rgb, 0.0, 1.0);
 				finalColor.a = texel.a;
 			}
 
-			gl_FragColor = finalColor;
+			fragColor = finalColor;
 		}
 	)";
 
@@ -273,7 +277,7 @@ bool UploadTexture(SDL_Surface* source, GLuint& outTexId, bool isUI)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		if (strstr((const char*) glGetString(GL_EXTENSIONS), "GL_EXT_texture_filter_anisotropic")) {
+		if (SDL_GL_ExtensionSupported("GL_EXT_texture_filter_anisotropic")) {
 			GLfloat maxAniso = 0.0f;
 			glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAniso);
 			GLfloat desiredAniso = fminf(8.0f, maxAniso);
@@ -493,6 +497,7 @@ void OpenGLES3Renderer::AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh)
 			glDeleteBuffers(1, &cache.vboNormals);
 			glDeleteBuffers(1, &cache.vboTexcoords);
 			glDeleteBuffers(1, &cache.ibo);
+			glDeleteVertexArrays(1, &cache.vao);
 			delete ctx;
 		},
 		ctx
@@ -640,7 +645,7 @@ void OpenGLES3Renderer::Resize(int width, int height, const ViewportTransform& v
 
 	if (m_colorTarget) {
 		glDeleteRenderbuffers(1, &m_colorTarget);
-		m_depthTarget = 0;
+		m_colorTarget = 0;
 	}
 	if (m_resolveColor) {
 		glDeleteRenderbuffers(1, &m_resolveColor);
@@ -648,7 +653,7 @@ void OpenGLES3Renderer::Resize(int width, int height, const ViewportTransform& v
 	}
 	if (m_depthTarget) {
 		glDeleteRenderbuffers(1, &m_depthTarget);
-		m_colorTarget = 0;
+		m_depthTarget = 0;
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
@@ -668,14 +673,15 @@ void OpenGLES3Renderer::Resize(int width, int height, const ViewportTransform& v
 	glGenRenderbuffers(1, &m_depthTarget);
 	glBindRenderbuffer(GL_RENDERBUFFER, m_depthTarget);
 	if (m_msaa > 1) {
-		glRenderbufferStorageMultisample(GL_RENDERBUFFER, m_msaa, GL_DEPTH24_STENCIL8, width, height);
+		glRenderbufferStorageMultisample(GL_RENDERBUFFER, m_msaa, GL_DEPTH_COMPONENT24, width, height);
 	}
 	else {
 		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
 	}
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_depthTarget);
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-		SDL_Log("FBO is not complete!");
+	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if (status != GL_FRAMEBUFFER_COMPLETE) {
+		SDL_Log("FBO incomplete: 0x%X", status);
 	}
 
 	if (m_msaa > 1) {
@@ -684,8 +690,9 @@ void OpenGLES3Renderer::Resize(int width, int height, const ViewportTransform& v
 		glBindRenderbuffer(GL_RENDERBUFFER, m_resolveColor);
 		glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, width, height);
 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, m_resolveColor);
-		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-			SDL_Log("Resolve FBO is not complete!");
+		GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		if (status != GL_FRAMEBUFFER_COMPLETE) {
+			SDL_Log("Resolve FBO incomplete: 0x%X", status);
 		}
 	}
 
