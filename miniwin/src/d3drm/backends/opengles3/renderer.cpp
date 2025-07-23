@@ -303,6 +303,10 @@ OpenGLES3Renderer::OpenGLES3Renderer(
 		maxSamples
 	);
 
+	if (m_msaa > 1) {
+		glGenFramebuffers(1, &m_resolveFBO);
+	}
+
 	m_virtualWidth = width;
 	m_virtualHeight = height;
 	ViewportTransform viewportTransform = {1.0f, 0.0f, 0.0f};
@@ -362,6 +366,21 @@ OpenGLES3Renderer::~OpenGLES3Renderer()
 {
 	SDL_DestroySurface(m_renderedImage);
 	glDeleteProgram(m_shaderProgram);
+
+	if (m_colorTarget) {
+		glDeleteRenderbuffers(1, &m_colorTarget);
+	}
+	if (m_resolveColor) {
+		glDeleteRenderbuffers(1, &m_resolveColor);
+	}
+	if (m_depthTarget) {
+		glDeleteRenderbuffers(1, &m_depthTarget);
+	}
+	if (m_depthTarget) {
+		glDeleteFramebuffers(1, &m_resolveFBO);
+	}
+	glDeleteFramebuffers(1, &m_fbo);
+
 	SDL_GL_DestroyContext(m_context);
 }
 
@@ -633,6 +652,10 @@ void OpenGLES3Renderer::Resize(int width, int height, const ViewportTransform& v
 		glDeleteRenderbuffers(1, &m_colorTarget);
 		m_depthTarget = 0;
 	}
+	if (m_resolveColor) {
+		glDeleteRenderbuffers(1, &m_resolveColor);
+		m_resolveColor = 0;
+	}
 	if (m_depthTarget) {
 		glDeleteRenderbuffers(1, &m_depthTarget);
 		m_colorTarget = 0;
@@ -661,6 +684,22 @@ void OpenGLES3Renderer::Resize(int width, int height, const ViewportTransform& v
 		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
 	}
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_depthTarget);
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+		SDL_Log("FBO is not complete!");
+	}
+
+	if (m_msaa > 1) {
+		glBindFramebuffer(GL_FRAMEBUFFER, m_resolveFBO);
+		glGenRenderbuffers(1, &m_resolveColor);
+		glBindRenderbuffer(GL_RENDERBUFFER, m_resolveColor);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, width, height);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, m_resolveColor);
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+			SDL_Log("Resolve FBO is not complete!");
+		}
+	}
+
+	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 
 	glViewport(0, 0, m_width, m_height);
 }
@@ -688,6 +727,7 @@ void OpenGLES3Renderer::Flip()
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, m_fbo);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	glBlitFramebuffer(0, 0, m_width, m_height, 0, 0, m_width, m_height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	SDL_GL_SwapWindow(DDWindow);
 	glFrontFace(GL_CW);
@@ -786,7 +826,16 @@ void OpenGLES3Renderer::Download(SDL_Surface* target)
 {
 	glFinish();
 
-	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+	if (m_msaa > 1) {
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, m_fbo);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_resolveFBO);
+		glBlitFramebuffer(0, 0, m_width, m_height, 0, 0, m_width, m_height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		glBindFramebuffer(GL_FRAMEBUFFER, m_resolveFBO);
+	}
+	else {
+		glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+	}
+
 	glReadPixels(0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, m_renderedImage->pixels);
 
 	SDL_Rect srcRect = {
