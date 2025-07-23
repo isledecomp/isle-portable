@@ -288,12 +288,20 @@ OpenGLES3Renderer::OpenGLES3Renderer(
 	: m_context(context), m_shaderProgram(shaderProgram), m_msaa(msaaSamples)
 {
 	glGenFramebuffers(1, &m_fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 
 	GLint maxSamples;
 	glGetIntegerv(GL_MAX_SAMPLES, &maxSamples);
 	if (m_msaa > maxSamples) {
 		m_msaa = maxSamples;
 	}
+	SDL_Log(
+		"MSAA is %s. Requested samples: %d, active samples: %d, max samples: %d",
+		m_msaa > 1 ? "on" : "off",
+		msaaSamples,
+		m_msaa,
+		maxSamples
+	);
 
 	m_virtualWidth = width;
 	m_virtualHeight = height;
