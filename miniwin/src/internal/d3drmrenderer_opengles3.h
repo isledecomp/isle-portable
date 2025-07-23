@@ -28,6 +28,7 @@ struct GLES3MeshCacheEntry {
 	GLuint vboNormals;
 	GLuint vboTexcoords;
 	GLuint ibo;
+	GLuint vao;
 };
 
 class OpenGLES3Renderer : public Direct3DRMRenderer {
@@ -62,6 +63,7 @@ public:
 private:
 	void AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture);
 	void AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh);
+	GLES3MeshCacheEntry GLES3UploadMesh(const MeshGroup& meshGroup, bool forceUV = false);
 
 	MeshGroup m_uiMesh;
 	GLES3MeshCacheEntry m_uiMeshCache;

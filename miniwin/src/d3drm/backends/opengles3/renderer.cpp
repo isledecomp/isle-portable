@@ -171,7 +171,7 @@ Direct3DRMRenderer* OpenGLES3Renderer::Create(DWORD width, DWORD height, DWORD m
 	return new OpenGLES3Renderer(width, height, msaaSamples, context, shaderProgram);
 }
 
-GLES3MeshCacheEntry GLES3UploadMesh(const MeshGroup& meshGroup, bool forceUV = false)
+GLES3MeshCacheEntry OpenGLES3Renderer::GLES3UploadMesh(const MeshGroup& meshGroup, bool forceUV)
 {
 	GLES3MeshCacheEntry cache{&meshGroup, meshGroup.version};
 
@@ -211,18 +211,27 @@ GLES3MeshCacheEntry GLES3UploadMesh(const MeshGroup& meshGroup, bool forceUV = f
 	std::vector<D3DVECTOR> normals(vertices.size());
 	std::transform(vertices.begin(), vertices.end(), normals.begin(), [](const D3DRMVERTEX& v) { return v.normal; });
 
+	glGenVertexArrays(1, &cache.vao);
+	glBindVertexArray(cache.vao);
+
 	glGenBuffers(1, &cache.vboPositions);
 	glBindBuffer(GL_ARRAY_BUFFER, cache.vboPositions);
 	glBufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(D3DVECTOR), positions.data(), GL_STATIC_DRAW);
+	glEnableVertexAttribArray(m_posLoc);
+	glVertexAttribPointer(m_posLoc, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
 	glGenBuffers(1, &cache.vboNormals);
 	glBindBuffer(GL_ARRAY_BUFFER, cache.vboNormals);
 	glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(D3DVECTOR), normals.data(), GL_STATIC_DRAW);
+	glEnableVertexAttribArray(m_normLoc);
+	glVertexAttribPointer(m_normLoc, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
 	if (meshGroup.texture || forceUV) {
 		glGenBuffers(1, &cache.vboTexcoords);
 		glBindBuffer(GL_ARRAY_BUFFER, cache.vboTexcoords);
 		glBufferData(GL_ARRAY_BUFFER, texcoords.size() * sizeof(TexCoord), texcoords.data(), GL_STATIC_DRAW);
+		glEnableVertexAttribArray(m_texLoc);
+		glVertexAttribPointer(m_texLoc, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
 	}
 
 	glGenBuffers(1, &cache.ibo);
@@ -233,6 +242,8 @@ GLES3MeshCacheEntry GLES3UploadMesh(const MeshGroup& meshGroup, bool forceUV = f
 		cache.indices.data(),
 		GL_STATIC_DRAW
 	);
+
+	glBindVertexArray(0);
 
 	return cache;
 }
@@ -333,14 +344,6 @@ OpenGLES3Renderer::OpenGLES3Renderer(
 	}
 	SDL_DestroySurface(dummySurface);
 
-	m_uiMesh.vertices = {
-		{{0.0f, 0.0f, 0.0f}, {0, 0, -1}, {0.0f, 0.0f}},
-		{{1.0f, 0.0f, 0.0f}, {0, 0, -1}, {1.0f, 0.0f}},
-		{{1.0f, 1.0f, 0.0f}, {0, 0, -1}, {1.0f, 1.0f}},
-		{{0.0f, 1.0f, 0.0f}, {0, 0, -1}, {0.0f, 1.0f}}
-	};
-	m_uiMesh.indices = {0, 1, 2, 0, 2, 3};
-	m_uiMeshCache = GLES3UploadMesh(m_uiMesh, true);
 	m_posLoc = glGetAttribLocation(m_shaderProgram, "a_position");
 	m_normLoc = glGetAttribLocation(m_shaderProgram, "a_normal");
 	m_texLoc = glGetAttribLocation(m_shaderProgram, "a_texCoord");
@@ -358,6 +361,15 @@ OpenGLES3Renderer::OpenGLES3Renderer(
 	m_modelViewMatrixLoc = glGetUniformLocation(m_shaderProgram, "u_modelViewMatrix");
 	m_normalMatrixLoc = glGetUniformLocation(m_shaderProgram, "u_normalMatrix");
 	m_projectionMatrixLoc = glGetUniformLocation(m_shaderProgram, "u_projectionMatrix");
+
+	m_uiMesh.vertices = {
+		{{0.0f, 0.0f, 0.0f}, {0, 0, -1}, {0.0f, 0.0f}},
+		{{1.0f, 0.0f, 0.0f}, {0, 0, -1}, {1.0f, 0.0f}},
+		{{1.0f, 1.0f, 0.0f}, {0, 0, -1}, {1.0f, 1.0f}},
+		{{0.0f, 1.0f, 0.0f}, {0, 0, -1}, {0.0f, 1.0f}}
+	};
+	m_uiMesh.indices = {0, 1, 2, 0, 2, 3};
+	m_uiMeshCache = GLES3UploadMesh(m_uiMesh, true);
 
 	glUseProgram(m_shaderProgram);
 }
@@ -602,25 +614,9 @@ void OpenGLES3Renderer::SubmitDraw(
 		glUniform1i(m_textureLoc, 0);
 	}
 
-	glBindBuffer(GL_ARRAY_BUFFER, mesh.vboPositions);
-	glEnableVertexAttribArray(m_posLoc);
-	glVertexAttribPointer(m_posLoc, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-
-	glBindBuffer(GL_ARRAY_BUFFER, mesh.vboNormals);
-	glEnableVertexAttribArray(m_normLoc);
-	glVertexAttribPointer(m_normLoc, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-
-	if (appearance.textureId != NO_TEXTURE_ID) {
-		glBindBuffer(GL_ARRAY_BUFFER, mesh.vboTexcoords);
-		glEnableVertexAttribArray(m_texLoc);
-		glVertexAttribPointer(m_texLoc, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
-	}
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ibo);
+	glBindVertexArray(mesh.vao);
 	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh.indices.size()), GL_UNSIGNED_SHORT, nullptr);
-
-	glDisableVertexAttribArray(m_normLoc);
-	glDisableVertexAttribArray(m_texLoc);
+	glBindVertexArray(0);
 }
 
 HRESULT OpenGLES3Renderer::FinalizeFrame()
@@ -721,10 +717,8 @@ void OpenGLES3Renderer::Flip()
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, m_fbo);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	glBlitFramebuffer(0, 0, m_width, m_height, 0, 0, m_width, m_height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	SDL_GL_SwapWindow(DDWindow);
-	glFrontFace(GL_CW);
 	m_dirty = false;
 }
 
@@ -801,18 +795,10 @@ void OpenGLES3Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, c
 		static_cast<int>(std::round(dstRect.h * m_viewportTransform.scale))
 	);
 
-	glBindBuffer(GL_ARRAY_BUFFER, m_uiMeshCache.vboPositions);
-	glEnableVertexAttribArray(m_posLoc);
-	glVertexAttribPointer(m_posLoc, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-
-	glBindBuffer(GL_ARRAY_BUFFER, m_uiMeshCache.vboTexcoords);
-	glEnableVertexAttribArray(m_texLoc);
-	glVertexAttribPointer(m_texLoc, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_uiMeshCache.ibo);
+	glBindVertexArray(m_uiMeshCache.vao);
 	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(m_uiMeshCache.indices.size()), GL_UNSIGNED_SHORT, nullptr);
+	glBindVertexArray(0);
 
-	glDisableVertexAttribArray(m_texLoc);
 	glDisable(GL_SCISSOR_TEST);
 }
 
