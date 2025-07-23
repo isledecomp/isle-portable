@@ -269,15 +269,15 @@ bool CConfigApp::ValidateSettings()
 		m_full_screen = TRUE;
 		is_modified = TRUE;
 	}
-	if (!(m_msaa & (m_msaa - 1))) {	//Check if MSAA is power of 2 (1, 2, 4, 8, etc)
-		m_msaa = exp2(round(log2(m_msaa)));	//Closest power of 2
+	if (!(m_msaa & (m_msaa - 1))) {         // Check if MSAA is power of 2 (1, 2, 4, 8, etc)
+		m_msaa = exp2(round(log2(m_msaa))); // Closest power of 2
 		is_modified = TRUE;
 	}
 	if (m_msaa > 16) {
 		m_msaa = 16;
 		is_modified = TRUE;
 	}
-	else if (m_msaa < 1){
+	else if (m_msaa < 1) {
 		m_msaa = 1;
 		is_modified = TRUE;
 	}

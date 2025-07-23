@@ -13,8 +13,8 @@
 #include <QKeyEvent>
 #include <QMessageBox>
 #include <QProcess>
-#include <cmath>
 #include <SDL3/SDL.h>
+#include <cmath>
 #include <mxdirectx/legodxinfo.h>
 #include <ui_maindialog.h>
 
@@ -57,24 +57,9 @@ CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 		&CMainDialog::OnRadiobuttonTextureHighQuality
 	);
 
-	connect(
-		m_ui->windowedRadioButton,
-		&QRadioButton::toggled,
-		this,
-		&CMainDialog::OnRadioWindowed
-	);
-	connect(
-		m_ui->fullscreenRadioButton,
-		&QRadioButton::toggled,
-		this,
-		&CMainDialog::OnRadioFullscreen
-	);
-	connect(
-		m_ui->exFullscreenRadioButton,
-		&QRadioButton::toggled,
-		this,
-		&CMainDialog::OnRadioExclusiveFullscreen
-	);
+	connect(m_ui->windowedRadioButton, &QRadioButton::toggled, this, &CMainDialog::OnRadioWindowed);
+	connect(m_ui->fullscreenRadioButton, &QRadioButton::toggled, this, &CMainDialog::OnRadioFullscreen);
+	connect(m_ui->exFullscreenRadioButton, &QRadioButton::toggled, this, &CMainDialog::OnRadioExclusiveFullscreen);
 	connect(m_ui->devicesList, &QListWidget::currentRowChanged, this, &CMainDialog::OnList3DevicesSelectionChanged);
 	connect(m_ui->musicCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxMusic);
 	connect(m_ui->sound3DCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckbox3DSound);
@@ -193,10 +178,13 @@ bool CMainDialog::OnInitDialog()
 	displayModes = SDL_GetFullscreenDisplayModes(SDL_GetPrimaryDisplay(), &displayModeCount);
 
 	for (int i = 0; i < displayModeCount; ++i) {
-		QString mode = QString("%1x%2 @ %3Hz").arg(displayModes[i]->w).arg(displayModes[i]->h).arg(displayModes[i]->refresh_rate);
+		QString mode =
+			QString("%1x%2 @ %3Hz").arg(displayModes[i]->w).arg(displayModes[i]->h).arg(displayModes[i]->refresh_rate);
 		m_ui->exFullResComboBox->addItem(mode);
 
-		if ((displayModes[i]->w == currentConfigApp->m_exf_x_res) && (displayModes[i]->h == currentConfigApp->m_exf_y_res) && (displayModes[i]->refresh_rate == currentConfigApp->m_exf_fps)) {
+		if ((displayModes[i]->w == currentConfigApp->m_exf_x_res) &&
+			(displayModes[i]->h == currentConfigApp->m_exf_y_res) &&
+			(displayModes[i]->refresh_rate == currentConfigApp->m_exf_fps)) {
 			m_ui->exFullResComboBox->setCurrentIndex(i);
 		}
 	}
@@ -392,7 +380,8 @@ void CMainDialog::OnRadiobuttonTextureHighQuality(bool checked)
 	}
 }
 
-void CMainDialog::OnRadioWindowed(bool checked) {
+void CMainDialog::OnRadioWindowed(bool checked)
+{
 	if (checked) {
 		currentConfigApp->m_full_screen = false;
 		currentConfigApp->m_exclusive_full_screen = false;

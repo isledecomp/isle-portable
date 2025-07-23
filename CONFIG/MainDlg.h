@@ -30,7 +30,7 @@ private:
 	bool m_modified = false;
 	bool m_advanced = false;
 	Ui::MainDialog* m_ui = nullptr;
-	SDL_DisplayMode ** displayModes;
+	SDL_DisplayMode** displayModes;
 
 	void keyReleaseEvent(QKeyEvent* event) override;
 	bool OnInitDialog();
