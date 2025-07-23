@@ -1112,10 +1112,15 @@ The game will gradually increase the number of actors until this maximum is reac
   <tabstop>maxLoDSlider</tabstop>
   <tabstop>maxActorsSlider</tabstop>
   <tabstop>devicesList</tabstop>
+  <tabstop>windowedRadioButton</tabstop>
+  <tabstop>fullscreenRadioButton</tabstop>
+  <tabstop>exFullscreenRadioButton</tabstop>
   <tabstop>framerateSpinBox</tabstop>
   <tabstop>aspectRatioComboBox</tabstop>
   <tabstop>xResSpinBox</tabstop>
   <tabstop>yResSpinBox</tabstop>
+  <tabstop>exFullResComboBox</tabstop>
+  <tabstop>msaaSlider</tabstop>
   <tabstop>touchComboBox</tabstop>
   <tabstop>rumbleCheckBox</tabstop>
   <tabstop>textureCheckBox</tabstop>
