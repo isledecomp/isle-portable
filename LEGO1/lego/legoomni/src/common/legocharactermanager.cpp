@@ -1092,6 +1092,7 @@ LegoROI* LegoCharacterManager::FUN_10085a80(const char* p_name, const char* p_lo
 }
 
 // FUNCTION: LEGO1 0x10085aa0
+// FUNCTION: BETA10 0x1007703d
 CustomizeAnimFileVariable::CustomizeAnimFileVariable(const char* p_key)
 {
 	m_key = p_key;
@@ -1099,6 +1100,7 @@ CustomizeAnimFileVariable::CustomizeAnimFileVariable(const char* p_key)
 }
 
 // FUNCTION: LEGO1 0x10085b50
+// FUNCTION: BETA10 0x100770c8
 void CustomizeAnimFileVariable::SetValue(const char* p_value)
 {
 	// STRING: LEGO1 0x100fc4f4

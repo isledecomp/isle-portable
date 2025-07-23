@@ -24,7 +24,7 @@ public:
 	void SetBackBuffers(MxBool p_e) { m_flags1.m_bit2 = p_e; }
 
 	// FUNCTION: BETA10 0x100d9250
-	void SetF1bit3(MxBool p_e) { m_flags1.m_bit3 = p_e; }
+	void SetDoubleScaling(MxBool p_e) { m_flags1.m_bit3 = p_e; }
 
 	// inlined in ISLE
 	void Set16Bit(MxBool p_e) { m_flags1.m_bit5 = p_e; }
@@ -39,7 +39,7 @@ public:
 	void SetLacksLightSupport(MxBool p_e) { m_flags2.m_bit0 = p_e; }
 
 	// inlined in ISLE
-	void SetF2bit1(MxBool p_e) { m_flags2.m_bit1 = p_e; }
+	void SetEnabled(MxBool p_e) { m_flags2.m_bit1 = p_e; }
 
 	// FUNCTION: BETA10 0x1009e770
 	MxBool GetFullScreen() { return m_flags1.m_bit0; }
@@ -51,7 +51,7 @@ public:
 	MxBool GetBackBuffers() { return m_flags1.m_bit2; }
 
 	// FUNCTION: BETA10 0x10142010
-	MxBool GetF1bit3() { return m_flags1.m_bit3; }
+	MxBool GetDoubleScaling() { return m_flags1.m_bit3; }
 
 	// FUNCTION: BETA10 0x100d8150
 	MxBool Get16Bit() { return m_flags1.m_bit5; }
@@ -63,7 +63,7 @@ public:
 	MxBool GetLacksLightSupport() { return m_flags2.m_bit0; }
 
 	// FUNCTION: BETA10 0x10142050
-	MxBool GetF2bit1() { return m_flags2.m_bit1; }
+	MxBool GetEnabled() { return m_flags2.m_bit1; }
 
 private:
 	FlagBitfield m_flags1;

@@ -25,18 +25,21 @@ MxS32 g_volumeAttenuation[100] = {-6643, -5643, -5058, -4643, -4321, -4058, -383
 								  -43,   -29,   -14,   0};
 
 // FUNCTION: LEGO1 0x100ae740
+// FUNCTION: BETA10 0x10132c70
 MxSoundManager::MxSoundManager()
 {
 	Init();
 }
 
 // FUNCTION: LEGO1 0x100ae7d0
+// FUNCTION: BETA10 0x10132ce7
 MxSoundManager::~MxSoundManager()
 {
 	Destroy(TRUE);
 }
 
 // FUNCTION: LEGO1 0x100ae830
+// FUNCTION: BETA10 0x10132d59
 void MxSoundManager::Init()
 {
 	SDL_zero(m_engine);
@@ -44,6 +47,7 @@ void MxSoundManager::Init()
 }
 
 // FUNCTION: LEGO1 0x100ae840
+// FUNCTION: BETA10 0x10132d89
 void MxSoundManager::Destroy(MxBool p_fromDestructor)
 {
 	if (m_thread) {
@@ -157,12 +161,14 @@ void MxSoundManager::AudioStreamCallback(
 }
 
 // FUNCTION: LEGO1 0x100aeab0
+// FUNCTION: BETA10 0x101331e3
 void MxSoundManager::Destroy()
 {
 	Destroy(FALSE);
 }
 
 // FUNCTION: LEGO1 0x100aeac0
+// FUNCTION: BETA10 0x10133203
 void MxSoundManager::SetVolume(MxS32 p_volume)
 {
 	MxAudioManager::SetVolume(p_volume);
@@ -180,6 +186,7 @@ void MxSoundManager::SetVolume(MxS32 p_volume)
 }
 
 // FUNCTION: LEGO1 0x100aebd0
+// FUNCTION: BETA10 0x101332cf
 MxPresenter* MxSoundManager::FindPresenter(const MxAtomId& p_atomId, MxU32 p_objectId)
 {
 	AUTOLOCK(m_criticalSection);
@@ -188,8 +195,7 @@ MxPresenter* MxSoundManager::FindPresenter(const MxAtomId& p_atomId, MxU32 p_obj
 	MxPresenterListCursor cursor(m_presenters);
 
 	while (cursor.Next(presenter)) {
-		if (presenter->GetAction()->GetAtomId().GetInternal() == p_atomId.GetInternal() &&
-			presenter->GetAction()->GetObjectId() == p_objectId) {
+		if (presenter->GetAction()->GetAtomId() == p_atomId && presenter->GetAction()->GetObjectId() == p_objectId) {
 			return presenter;
 		}
 	}

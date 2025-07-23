@@ -313,10 +313,10 @@ target_sources(lego1 PRIVATE
   LEGO1/omni/src/common/mxcompositepresenter.cpp
   LEGO1/omni/src/common/mxcore.cpp
   LEGO1/omni/src/common/mxdebug.cpp
-  LEGO1/omni/src/common/mxmediamanager.cpp
   LEGO1/omni/src/common/mxmediapresenter.cpp
   LEGO1/omni/src/common/mxmisc.cpp
   LEGO1/omni/src/common/mxobjectfactory.cpp
+  LEGO1/omni/src/common/mxpresentationmanager.cpp
   LEGO1/omni/src/common/mxpresenter.cpp
   LEGO1/omni/src/common/mxstring.cpp
   LEGO1/omni/src/common/mxticklemanager.cpp
