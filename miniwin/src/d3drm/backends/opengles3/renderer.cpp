@@ -15,8 +15,17 @@ static GLuint CompileShader(GLenum type, const char* source)
 	GLint success;
 	glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
 	if (!success) {
+		GLint logLength = 0;
+		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logLength);
+		if (logLength > 0) {
+			std::vector<char> log(logLength);
+			glGetShaderInfoLog(shader, logLength, nullptr, log.data());
+			SDL_Log("Shader compile error: %s", log.data());
+		}
+		else {
+			SDL_Log("CompileShader (%s)", SDL_GetError());
+		}
 		glDeleteShader(shader);
-		SDL_Log("CompileShader (%s)", SDL_GetError());
 		return 0;
 	}
 	return shader;
