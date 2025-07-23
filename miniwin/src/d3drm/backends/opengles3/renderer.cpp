@@ -37,7 +37,7 @@ struct SceneLightGLES3 {
 	float direction[4];
 };
 
-Direct3DRMRenderer* OpenGLES3Renderer::Create(DWORD width, DWORD height, DWORD msaaSamples)
+Direct3DRMRenderer* OpenGLES3Renderer::Create(DWORD width, DWORD height, DWORD msaaSamples, float anisotropic)
 {
 	// We have to reset the attributes here after having enumerated the
 	// OpenGL ES 2.0 renderer, or else SDL gets very confused by SDL_GL_DEPTH_SIZE
@@ -179,7 +179,7 @@ Direct3DRMRenderer* OpenGLES3Renderer::Create(DWORD width, DWORD height, DWORD m
 	glDeleteShader(vs);
 	glDeleteShader(fs);
 
-	return new OpenGLES3Renderer(width, height, msaaSamples, context, shaderProgram);
+	return new OpenGLES3Renderer(width, height, msaaSamples, anisotropic, context, shaderProgram);
 }
 
 GLES3MeshCacheEntry OpenGLES3Renderer::GLES3UploadMesh(const MeshGroup& meshGroup, bool forceUV)
@@ -259,7 +259,7 @@ GLES3MeshCacheEntry OpenGLES3Renderer::GLES3UploadMesh(const MeshGroup& meshGrou
 	return cache;
 }
 
-bool UploadTexture(SDL_Surface* source, GLuint& outTexId, bool isUI)
+bool OpenGLES3Renderer::UploadTexture(SDL_Surface* source, GLuint& outTexId, bool isUI)
 {
 	SDL_Surface* surf = source;
 	if (source->format != SDL_PIXELFORMAT_RGBA32) {
@@ -284,11 +284,8 @@ bool UploadTexture(SDL_Surface* source, GLuint& outTexId, bool isUI)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		if (SDL_GL_ExtensionSupported("GL_EXT_texture_filter_anisotropic")) {
-			GLfloat maxAniso = 0.0f;
-			glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAniso);
-			GLfloat desiredAniso = fminf(8.0f, maxAniso);
-			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, desiredAniso);
+		if (m_anisotropic > 1.0f) {
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, m_anisotropic);
 		}
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
@@ -304,10 +301,11 @@ OpenGLES3Renderer::OpenGLES3Renderer(
 	DWORD width,
 	DWORD height,
 	DWORD msaaSamples,
+	float anisotropic,
 	SDL_GLContext context,
 	GLuint shaderProgram
 )
-	: m_context(context), m_shaderProgram(shaderProgram), m_msaa(msaaSamples)
+	: m_context(context), m_shaderProgram(shaderProgram), m_msaa(msaaSamples), m_anisotropic(anisotropic)
 {
 	glGenFramebuffers(1, &m_fbo);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
@@ -328,6 +326,22 @@ OpenGLES3Renderer::OpenGLES3Renderer(
 	if (m_msaa > 1) {
 		glGenFramebuffers(1, &m_resolveFBO);
 	}
+
+	bool anisoAvailable = SDL_GL_ExtensionSupported("GL_EXT_texture_filter_anisotropic");
+	GLfloat maxAniso = 0.0f;
+	if (anisoAvailable) {
+		glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAniso);
+	}
+	if (m_anisotropic > maxAniso) {
+		m_anisotropic = maxAniso;
+	}
+	SDL_Log(
+		"Anisotropic is %s. Requested: %f, active: %f, max aniso: %f",
+		m_anisotropic > 1.0f ? "on" : "off",
+		anisotropic,
+		m_anisotropic,
+		maxAniso
+	);
 
 	m_virtualWidth = width;
 	m_virtualHeight = height;
