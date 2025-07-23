@@ -81,6 +81,7 @@ BOOL MxDirect3D::Create(
 #endif
 		if (videoParam) {
 			miniwind3d->RequestMSAA(videoParam->GetMSAASamples());
+			miniwind3d->RequestAnisotropic(videoParam->GetAnisotropic());
 		}
 	}
 

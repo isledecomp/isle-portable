@@ -47,14 +47,25 @@ struct DirectDrawImpl : public IDirectDraw2, public IDirect3D2, public IDirect3D
 		override;
 	HRESULT EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx) override;
 	// IDirect3DMiniwin interface
-	HRESULT RequestMSAA(DWORD msaaSamples) override;
-	DWORD GetMSAASamples() const override;
+	HRESULT RequestMSAA(DWORD msaaSamples) override
+	{
+		m_msaaSamples = msaaSamples;
+		return DD_OK;
+	}
+	DWORD GetMSAASamples() const override { return m_msaaSamples; }
+	HRESULT RequestAnisotropic(float anisotropic) override
+	{
+		m_anisotropic = anisotropic;
+		return DD_OK;
+	}
+	float GetAnisotropic() const override { return m_anisotropic; }
 
 private:
 	FrameBufferImpl* m_frameBuffer;
 	int m_virtualWidth = 0;
 	int m_virtualHeight = 0;
 	DWORD m_msaaSamples = 0;
+	float m_anisotropic = 0.0f;
 };
 
 HRESULT DirectDrawEnumerate(LPDDENUMCALLBACKA cb, void* context);

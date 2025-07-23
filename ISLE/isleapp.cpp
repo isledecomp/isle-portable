@@ -183,6 +183,7 @@ IsleApp::IsleApp()
 	m_frameRate = 100.0f;
 	m_exclusiveFullScreen = FALSE;
 	m_msaaSamples = 0;
+	m_anisotropic = 0.0f;
 }
 
 // FUNCTION: ISLE 0x4011a0
@@ -1190,7 +1191,8 @@ bool IsleApp::LoadConfig()
 	}
 	m_frameRate = (1000.0f / iniparser_getdouble(dict, "isle:Frame Delta", m_frameDelta));
 	m_frameDelta = static_cast<int>(std::round(iniparser_getdouble(dict, "isle:Frame Delta", m_frameDelta)));
-	m_videoParam.SetMSAASamples(iniparser_getint(dict, "isle:MSAA", m_msaaSamples));
+	m_videoParam.SetMSAASamples((m_msaaSamples = iniparser_getint(dict, "isle:MSAA", m_msaaSamples)));
+	m_videoParam.SetAnisotropic((m_anisotropic = iniparser_getdouble(dict, "isle:Anisotropic", m_anisotropic)));
 
 	const char* deviceId = iniparser_getstring(dict, "isle:3D Device ID", NULL);
 	if (deviceId != NULL) {

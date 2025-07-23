@@ -36,7 +36,12 @@ Direct3DRMRenderer* CreateDirect3DRMRenderer(
 #endif
 #ifdef USE_OPENGLES3
 	if (SDL_memcmp(guid, &OpenGLES3_GUID, sizeof(GUID)) == 0) {
-		return OpenGLES3Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight, d3d->GetMSAASamples());
+		return OpenGLES3Renderer::Create(
+			DDSDesc.dwWidth,
+			DDSDesc.dwHeight,
+			d3d->GetMSAASamples(),
+			d3d->GetAnisotropic()
+		);
 	}
 #endif
 #ifdef USE_OPENGL1
