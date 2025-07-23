@@ -40,11 +40,6 @@ Direct3DRMRenderer* OpenGLES3Renderer::Create(DWORD width, DWORD height, DWORD m
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 
-	if (msaaSamples > 1) {
-		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, msaaSamples);
-	}
-
 	if (!DDWindow) {
 		SDL_Log("No window handler");
 		return nullptr;
@@ -290,17 +285,18 @@ OpenGLES3Renderer::OpenGLES3Renderer(
 	SDL_GLContext context,
 	GLuint shaderProgram
 )
-	: m_context(context), m_shaderProgram(shaderProgram)
+	: m_context(context), m_shaderProgram(shaderProgram), m_msaa(msaaSamples)
 {
 	glGenFramebuffers(1, &m_fbo);
 
-	if (msaaSamples > 1) {
-		glGenFramebuffers(1, &m_msaaFbo);
+	GLint maxSamples;
+	glGetIntegerv(GL_MAX_SAMPLES, &maxSamples);
+	if (m_msaa > maxSamples) {
+		m_msaa = maxSamples;
 	}
 
 	m_virtualWidth = width;
 	m_virtualHeight = height;
-	m_requestedMsaaSamples = msaaSamples;
 	ViewportTransform viewportTransform = {1.0f, 0.0f, 0.0f};
 	Resize(width, height, viewportTransform);
 
@@ -503,7 +499,7 @@ HRESULT OpenGLES3Renderer::BeginFrame()
 	SDL_GL_MakeCurrent(DDWindow, m_context);
 	m_dirty = true;
 
-	glBindFramebuffer(GL_FRAMEBUFFER, m_useMsaa ? m_msaaFbo : m_fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 
 	glEnable(GL_CULL_FACE);
 	glDisable(GL_BLEND);
@@ -626,67 +622,36 @@ void OpenGLES3Renderer::Resize(int width, int height, const ViewportTransform& v
 	m_renderedImage = SDL_CreateSurface(m_width, m_height, SDL_PIXELFORMAT_RGBA32);
 
 	if (m_colorTarget) {
-		glDeleteTextures(1, &m_colorTarget);
+		glDeleteRenderbuffers(1, &m_colorTarget);
+		m_depthTarget = 0;
 	}
 	if (m_depthTarget) {
 		glDeleteRenderbuffers(1, &m_depthTarget);
+		m_colorTarget = 0;
 	}
-	if (m_msaaColorRbo) {
-		glDeleteRenderbuffers(1, &m_msaaColorRbo);
-	}
-	if (m_msaaDepthRbo) {
-		glDeleteRenderbuffers(1, &m_msaaDepthRbo);
-	}
-	m_colorTarget = m_depthTarget = m_msaaColorRbo = m_msaaDepthRbo = 0;
-
-	GLint samples, maxSamples;
-	glGetIntegerv(GL_SAMPLES, &samples);
-	glGetIntegerv(GL_MAX_SAMPLES, &maxSamples);
-	m_useMsaa = samples > 1;
-
-	if (m_useMsaa) {
-		glBindFramebuffer(GL_FRAMEBUFFER, m_msaaFbo);
-
-		glGenRenderbuffers(1, &m_msaaColorRbo);
-		glBindRenderbuffer(GL_RENDERBUFFER, m_msaaColorRbo);
-		glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_RGBA8, width, height);
-		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, m_msaaColorRbo);
-
-		glGenRenderbuffers(1, &m_msaaDepthRbo);
-		glBindRenderbuffer(GL_RENDERBUFFER, m_msaaDepthRbo);
-		glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH24_STENCIL8, width, height);
-		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_msaaDepthRbo);
-
-		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-			SDL_Log("MSAA Framebuffer is not complete! Disabling MSAA.");
-			m_useMsaa = false;
-		}
-	}
-
-	SDL_Log(
-		"MSAA is %s. Requested samples: %d, active samples: %d, max samples: %d",
-		m_useMsaa ? "on" : "off",
-		m_requestedMsaaSamples,
-		samples,
-		maxSamples
-	);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 
 	// Create color texture
-	glGenTextures(1, &m_colorTarget);
-	glBindTexture(GL_TEXTURE_2D, m_colorTarget);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_colorTarget, 0);
+	glGenRenderbuffers(1, &m_colorTarget);
+	glBindRenderbuffer(GL_RENDERBUFFER, m_colorTarget);
+	if (m_msaa > 1) {
+		glRenderbufferStorageMultisample(GL_RENDERBUFFER, m_msaa, GL_RGBA8, width, height);
+	}
+	else {
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, width, height);
+	}
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, m_colorTarget);
 
 	// Create depth renderbuffer
 	glGenRenderbuffers(1, &m_depthTarget);
 	glBindRenderbuffer(GL_RENDERBUFFER, m_depthTarget);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
+	if (m_msaa > 1) {
+		glRenderbufferStorageMultisample(GL_RENDERBUFFER, m_msaa, GL_DEPTH24_STENCIL8, width, height);
+	}
+	else {
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
+	}
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_depthTarget);
 
 	glViewport(0, 0, m_width, m_height);
@@ -697,7 +662,7 @@ void OpenGLES3Renderer::Clear(float r, float g, float b)
 	SDL_GL_MakeCurrent(DDWindow, m_context);
 	m_dirty = true;
 
-	glBindFramebuffer(GL_FRAMEBUFFER, m_useMsaa ? m_msaaFbo : m_fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
@@ -712,63 +677,9 @@ void OpenGLES3Renderer::Flip()
 		return;
 	}
 
-	if (m_useMsaa) {
-		glBindFramebuffer(GL_READ_FRAMEBUFFER, m_msaaFbo);
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_fbo);
-		glBlitFramebuffer(0, 0, m_width, m_height, 0, 0, m_width, m_height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-	}
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	glDisable(GL_DEPTH_TEST);
-	glFrontFace(GL_CCW);
-	glDepthMask(GL_FALSE);
-
-	glUniform4f(m_colorLoc, 1.0f, 1.0f, 1.0f, 1.0f);
-	glUniform1f(m_shinLoc, 0.0f);
-
-	float ambient[] = {1.0f, 1.0f, 1.0f, 1.0f};
-	float blank[] = {0.0f, 0.0f, 0.0f, 0.0f};
-	glUniform4fv(u_lightLocs[0][0], 1, ambient);
-	glUniform4fv(u_lightLocs[0][1], 1, blank);
-	glUniform4fv(u_lightLocs[0][2], 1, blank);
-	glUniform1i(m_lightCountLoc, 1);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, m_colorTarget);
-	glUniform1i(m_textureLoc, 0);
-	glUniform1i(m_useTextureLoc, 1);
-
-	D3DRMMATRIX4D projection;
-	D3DRMMATRIX4D modelViewMatrix = {
-		{(float) m_width, 0.0f, 0.0f, 0.0f},
-		{0.0f, (float) -m_height, 0.0f, 0.0f},
-		{0.0f, 0.0f, 1.0f, 0.0f},
-		{0.0f, (float) m_height, 0.0f, 1.0f}
-	};
-	glUniformMatrix4fv(m_modelViewMatrixLoc, 1, GL_FALSE, &modelViewMatrix[0][0]);
-	Matrix3x3 identity = {{1.f, 0.f, 0.f}, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}};
-	glUniformMatrix3fv(m_normalMatrixLoc, 1, GL_FALSE, &identity[0][0]);
-	CreateOrthographicProjection((float) m_width, (float) m_height, projection);
-	glUniformMatrix4fv(m_projectionMatrixLoc, 1, GL_FALSE, &projection[0][0]);
-
-	glDisable(GL_SCISSOR_TEST);
-
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	glBindBuffer(GL_ARRAY_BUFFER, m_uiMeshCache.vboPositions);
-	glEnableVertexAttribArray(m_posLoc);
-	glVertexAttribPointer(m_posLoc, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-
-	glBindBuffer(GL_ARRAY_BUFFER, m_uiMeshCache.vboTexcoords);
-	glEnableVertexAttribArray(m_texLoc);
-	glVertexAttribPointer(m_texLoc, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_uiMeshCache.ibo);
-	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(m_uiMeshCache.indices.size()), GL_UNSIGNED_SHORT, nullptr);
-
-	glDisableVertexAttribArray(m_texLoc);
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, m_fbo);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+	glBlitFramebuffer(0, 0, m_width, m_height, 0, 0, m_width, m_height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
 	SDL_GL_SwapWindow(DDWindow);
 	glFrontFace(GL_CW);
@@ -780,7 +691,7 @@ void OpenGLES3Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, c
 	SDL_GL_MakeCurrent(DDWindow, m_context);
 	m_dirty = true;
 
-	glBindFramebuffer(GL_FRAMEBUFFER, m_useMsaa ? m_msaaFbo : m_fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 
 	glDisable(GL_DEPTH_TEST);
 	glDepthMask(GL_FALSE);
@@ -866,12 +777,6 @@ void OpenGLES3Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, c
 void OpenGLES3Renderer::Download(SDL_Surface* target)
 {
 	glFinish();
-
-	if (m_useMsaa) {
-		glBindFramebuffer(GL_READ_FRAMEBUFFER, m_msaaFbo);
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_fbo);
-		glBlitFramebuffer(0, 0, m_width, m_height, 0, 0, m_width, m_height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 	glReadPixels(0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, m_renderedImage->pixels);

@@ -72,12 +72,8 @@ private:
 	bool m_dirty = false;
 	std::vector<SceneLight> m_lights;
 	SDL_GLContext m_context;
-	uint32_t m_requestedMsaaSamples;
-	bool m_useMsaa;
+	uint32_t m_msaa;
 	GLuint m_fbo;
-	GLuint m_msaaFbo;
-	GLuint m_msaaColorRbo;
-	GLuint m_msaaDepthRbo;
 	GLuint m_colorTarget;
 	GLuint m_depthTarget;
 	GLuint m_shaderProgram;
