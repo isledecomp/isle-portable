@@ -71,7 +71,7 @@ Direct3DRMRenderer* OpenGLES3Renderer::Create(DWORD width, DWORD height, DWORD m
 	glFrontFace(GL_CW);
 
 	const char* vertexShaderSource = R"(#version 300 es
-		precision mediump float;
+		precision highp float;
 
 		in vec3 a_position;
 		in vec3 a_normal;
