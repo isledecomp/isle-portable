@@ -104,26 +104,16 @@ inline static void OpenGLES3Renderer_EnumDevice(const IDirect3DMiniwin* d3d, LPD
 		return;
 	}
 
+	delete device;
+
 	D3DDEVICEDESC halDesc = {};
 	halDesc.dcmColorModel = D3DCOLOR_RGB;
 	halDesc.dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
-	halDesc.dwDeviceZBufferBitDepth = DDBD_16;
+	halDesc.dwDeviceZBufferBitDepth = DDBD_24;
 	halDesc.dwDeviceRenderBitDepth = DDBD_32;
 	halDesc.dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
 	halDesc.dpcTriCaps.dwShadeCaps = D3DPSHADECAPS_ALPHAFLATBLEND;
 	halDesc.dpcTriCaps.dwTextureFilterCaps = D3DPTFILTERCAPS_LINEAR;
-
-	const char* extensions = (const char*) glGetString(GL_EXTENSIONS);
-	if (extensions) {
-		if (strstr(extensions, "GL_OES_depth24")) {
-			halDesc.dwDeviceZBufferBitDepth |= DDBD_24;
-		}
-		if (strstr(extensions, "GL_OES_depth32")) {
-			halDesc.dwDeviceZBufferBitDepth |= DDBD_32;
-		}
-	}
-
-	delete device;
 
 	D3DDEVICEDESC helDesc = {};
 
