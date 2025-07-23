@@ -127,5 +127,5 @@ inline static void OpenGLES3Renderer_EnumDevice(const IDirect3DMiniwin* d3d, LPD
 
 	D3DDEVICEDESC helDesc = {};
 
-	EnumDevice(cb, ctx, "OpenGL ES 2.0 HAL", &halDesc, &helDesc, OpenGLES3_GUID);
+	EnumDevice(cb, ctx, "OpenGL ES 3.0 HAL", &halDesc, &helDesc, OpenGLES3_GUID);
 }
