@@ -62,6 +62,9 @@ public:
 	int m_aspect_ratio;
 	int m_x_res;
 	int m_y_res;
+	int m_exf_x_res;
+	int m_exf_y_res;
+	float m_exf_fps;
 	float m_frame_delta;
 	LegoDeviceEnumerate* m_device_enumerator;
 	MxDriver* m_driver;

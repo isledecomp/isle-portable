@@ -623,25 +623,23 @@ The game will gradually increase the number of actors until this maximum is reac
               </widget>
              </item>
              <item row="0" column="0">
-              <layout class="QVBoxLayout" name="fullscreenCheckboxContainer">
+              <layout class="QVBoxLayout" name="fullscreenRadioContainer">
                <item>
-                <widget class="QCheckBox" name="fullscreenCheckBox">
-                 <property name="toolTip">
-                  <string>Toggle fullscreen display mode.</string>
+                <widget class="QRadioButton" name="windowedRadioButton">
+                 <property name="text">
+                  <string>Windowed</string>
                  </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QRadioButton" name="fullscreenRadioButton">
                  <property name="text">
                   <string>Fullscreen</string>
                  </property>
                 </widget>
                </item>
                <item>
-                <widget class="QCheckBox" name="exclusiveFullscreenCheckbox">
-                 <property name="enabled">
-                  <bool>false</bool>
-                 </property>
-                 <property name="toolTip">
-                  <string>Grants the app full control of the display for better performance and lower input lag. May cause slower alt-tabbing.</string>
-                 </property>
+                <widget class="QRadioButton" name="exFullscreenRadioButton">
                  <property name="text">
                   <string>Exclusive Fullscreen</string>
                  </property>
@@ -760,6 +758,25 @@ The game will gradually increase the number of actors until this maximum is reac
                 </widget>
                </item>
               </layout>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QGroupBox" name="exFullResContainer">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="title">
+             <string>Exclusive Fullscreen Resolution</string>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_4">
+             <item>
+              <widget class="QComboBox" name="exFullResComboBox">
+               <property name="placeholderText">
+                <string>Resolution</string>
+               </property>
+              </widget>
              </item>
             </layout>
            </widget>
@@ -1007,8 +1024,6 @@ The game will gradually increase the number of actors until this maximum is reac
   <tabstop>maxLoDSlider</tabstop>
   <tabstop>maxActorsSlider</tabstop>
   <tabstop>devicesList</tabstop>
-  <tabstop>fullscreenCheckBox</tabstop>
-  <tabstop>exclusiveFullscreenCheckbox</tabstop>
   <tabstop>framerateSpinBox</tabstop>
   <tabstop>aspectRatioComboBox</tabstop>
   <tabstop>xResSpinBox</tabstop>

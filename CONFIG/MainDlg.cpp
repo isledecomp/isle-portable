@@ -13,6 +13,7 @@
 #include <QKeyEvent>
 #include <QMessageBox>
 #include <QProcess>
+#include <SDL3/SDL.h>
 #include <mxdirectx/legodxinfo.h>
 #include <ui_maindialog.h>
 
@@ -54,15 +55,33 @@ CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 		this,
 		&CMainDialog::OnRadiobuttonTextureHighQuality
 	);
+
+	connect(
+		m_ui->windowedRadioButton,
+		&QRadioButton::toggled,
+		this,
+		&CMainDialog::OnRadioWindowed
+	);
+	connect(
+		m_ui->fullscreenRadioButton,
+		&QRadioButton::toggled,
+		this,
+		&CMainDialog::OnRadioFullscreen
+	);
+	connect(
+		m_ui->exFullscreenRadioButton,
+		&QRadioButton::toggled,
+		this,
+		&CMainDialog::OnRadioExclusiveFullscreen
+	);
 	connect(m_ui->devicesList, &QListWidget::currentRowChanged, this, &CMainDialog::OnList3DevicesSelectionChanged);
 	connect(m_ui->musicCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxMusic);
 	connect(m_ui->sound3DCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckbox3DSound);
-	connect(m_ui->fullscreenCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxFullscreen);
-	connect(m_ui->exclusiveFullscreenCheckbox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxExclusiveFullscreen);
 	connect(m_ui->rumbleCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxRumble);
 	connect(m_ui->textureCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxTexture);
 	connect(m_ui->touchComboBox, &QComboBox::currentIndexChanged, this, &CMainDialog::TouchControlsChanged);
 	connect(m_ui->transitionTypeComboBox, &QComboBox::currentIndexChanged, this, &CMainDialog::TransitionTypeChanged);
+	connect(m_ui->exFullResComboBox, &QComboBox::currentIndexChanged, this, &CMainDialog::ExclusiveResolutionChanged);
 	connect(m_ui->okButton, &QPushButton::clicked, this, &CMainDialog::accept);
 	connect(m_ui->cancelButton, &QPushButton::clicked, this, &CMainDialog::reject);
 	connect(m_ui->launchButton, &QPushButton::clicked, this, &CMainDialog::launch);
@@ -164,6 +183,20 @@ bool CMainDialog::OnInitDialog()
 	m_ui->maxActorsSlider->setValue(currentConfigApp->m_max_actors);
 	m_ui->maxActorsNum->setNum(currentConfigApp->m_max_actors);
 
+	m_ui->exFullResComboBox->clear();
+
+	int displayModeCount;
+	displayModes = SDL_GetFullscreenDisplayModes(SDL_GetPrimaryDisplay(), &displayModeCount);
+
+	for (int i = 0; i < displayModeCount; ++i) {
+		QString mode = QString("%1x%2 @ %3Hz").arg(displayModes[i]->w).arg(displayModes[i]->h).arg(displayModes[i]->refresh_rate);
+		m_ui->exFullResComboBox->addItem(mode);
+
+		if ((displayModes[i]->w == currentConfigApp->m_exf_x_res) && (displayModes[i]->h == currentConfigApp->m_exf_y_res) && (displayModes[i]->refresh_rate == currentConfigApp->m_exf_fps)) {
+			m_ui->exFullResComboBox->setCurrentIndex(i);
+		}
+	}
+
 	UpdateInterface();
 	return true;
 }
@@ -258,10 +291,22 @@ void CMainDialog::UpdateInterface()
 	else {
 		m_ui->textureQualityHighRadioButton->setChecked(true);
 	}
+	if (currentConfigApp->m_exclusive_full_screen) {
+		m_ui->exFullscreenRadioButton->setChecked(true);
+		m_ui->resolutionBox->setEnabled(false);
+		m_ui->exFullResContainer->setEnabled(true);
+	}
+	else {
+		m_ui->resolutionBox->setEnabled(true);
+		m_ui->exFullResContainer->setEnabled(false);
+		if (currentConfigApp->m_full_screen) {
+			m_ui->fullscreenRadioButton->setChecked(true);
+		}
+		else {
+			m_ui->windowedRadioButton->setChecked(true);
+		}
+	}
 	m_ui->musicCheckBox->setChecked(currentConfigApp->m_music);
-	m_ui->fullscreenCheckBox->setChecked(currentConfigApp->m_full_screen);
-	m_ui->exclusiveFullscreenCheckbox->setEnabled(currentConfigApp->m_full_screen);
-	m_ui->exclusiveFullscreenCheckbox->setChecked(currentConfigApp->m_exclusive_full_screen);
 	m_ui->rumbleCheckBox->setChecked(currentConfigApp->m_haptic);
 	m_ui->touchComboBox->setCurrentIndex(currentConfigApp->m_touch_scheme);
 	m_ui->transitionTypeComboBox->setCurrentIndex(currentConfigApp->m_transition_type);
@@ -336,25 +381,45 @@ void CMainDialog::OnRadiobuttonTextureHighQuality(bool checked)
 	}
 }
 
+void CMainDialog::OnRadioWindowed(bool checked) {
+	if (checked) {
+		currentConfigApp->m_full_screen = false;
+		currentConfigApp->m_exclusive_full_screen = false;
+		m_ui->resolutionBox->setEnabled(true);
+		m_ui->exFullResContainer->setEnabled(false);
+		m_modified = true;
+		UpdateInterface();
+	}
+}
+
+void CMainDialog::OnRadioFullscreen(bool checked)
+{
+	if (checked) {
+		currentConfigApp->m_full_screen = true;
+		currentConfigApp->m_exclusive_full_screen = false;
+		m_ui->resolutionBox->setEnabled(true);
+		m_ui->exFullResContainer->setEnabled(false);
+		m_modified = true;
+		UpdateInterface();
+	}
+}
+
+void CMainDialog::OnRadioExclusiveFullscreen(bool checked)
+{
+	if (checked) {
+		currentConfigApp->m_full_screen = true;
+		currentConfigApp->m_exclusive_full_screen = true;
+		m_ui->resolutionBox->setEnabled(false);
+		m_ui->exFullResContainer->setEnabled(true);
+		m_modified = true;
+		UpdateInterface();
+	}
+}
+
 // FUNCTION: CONFIG 0x004048c0
 void CMainDialog::OnCheckboxMusic(bool checked)
 {
 	currentConfigApp->m_music = checked;
-	m_modified = true;
-	UpdateInterface();
-}
-
-void CMainDialog::OnCheckboxFullscreen(bool checked)
-{
-	currentConfigApp->m_full_screen = checked;
-	m_ui->exclusiveFullscreenCheckbox->setEnabled(checked);
-	m_modified = true;
-	UpdateInterface();
-}
-
-void CMainDialog::OnCheckboxExclusiveFullscreen(bool checked)
-{
-	currentConfigApp->m_exclusive_full_screen = checked;
 	m_modified = true;
 	UpdateInterface();
 }
@@ -383,6 +448,15 @@ void CMainDialog::TouchControlsChanged(int index)
 void CMainDialog::TransitionTypeChanged(int index)
 {
 	currentConfigApp->m_transition_type = index;
+	m_modified = true;
+	UpdateInterface();
+}
+
+void CMainDialog::ExclusiveResolutionChanged(int index)
+{
+	currentConfigApp->m_exf_x_res = displayModes[index]->w;
+	currentConfigApp->m_exf_y_res = displayModes[index]->h;
+	currentConfigApp->m_exf_fps = displayModes[index]->refresh_rate;
 	m_modified = true;
 	UpdateInterface();
 }

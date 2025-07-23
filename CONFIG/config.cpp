@@ -68,8 +68,9 @@ bool CConfigApp::InitInstance()
 	}
 	SDL_DestroyWindow(window);
 	m_aspect_ratio = 0;
-	m_x_res = 640;
-	m_y_res = 480;
+	m_exf_x_res = m_x_res = 640;
+	m_exf_y_res = m_y_res = 480;
+	m_exf_fps = 60.00f;
 	m_frame_delta = 10.0f;
 	m_driver = NULL;
 	m_device = NULL;
@@ -186,6 +187,9 @@ bool CConfigApp::ReadRegisterSettings()
 	m_aspect_ratio = iniparser_getint(dict, "isle:Aspect Ratio", m_aspect_ratio);
 	m_x_res = iniparser_getint(dict, "isle:Horizontal Resolution", m_x_res);
 	m_y_res = iniparser_getint(dict, "isle:Vertical Resolution", m_y_res);
+	m_exf_x_res = iniparser_getint(dict, "isle:Exclusive X Resolution", m_exf_x_res);
+	m_exf_y_res = iniparser_getint(dict, "isle:Exclusive Y Resolution", m_exf_y_res);
+	m_exf_fps = iniparser_getdouble(dict, "isle:Exclusive Framerate", m_exf_fps);
 	m_frame_delta = iniparser_getdouble(dict, "isle:Frame Delta", m_frame_delta);
 	iniparser_freedict(dict);
 	return true;
@@ -259,7 +263,10 @@ bool CConfigApp::ValidateSettings()
 		m_touch_scheme = 2;
 		is_modified = TRUE;
 	}
-
+	if (m_exclusive_full_screen && !m_full_screen) {
+		m_full_screen = TRUE;
+		is_modified = TRUE;
+	}
 	return is_modified;
 }
 
@@ -367,6 +374,9 @@ void CConfigApp::WriteRegisterSettings() const
 	SetIniInt(dict, "isle:Aspect Ratio", m_aspect_ratio);
 	SetIniInt(dict, "isle:Horizontal Resolution", m_x_res);
 	SetIniInt(dict, "isle:Vertical Resolution", m_y_res);
+	SetIniInt(dict, "isle:Exclusive X Resolution", m_exf_x_res);
+	SetIniInt(dict, "isle:Exclusive Y Resolution", m_exf_y_res);
+	iniparser_set(dict, "isle:Exclusive Framerate", std::to_string(m_exf_fps).c_str());
 	iniparser_set(dict, "isle:Frame Delta", std::to_string(m_frame_delta).c_str());
 
 #undef SetIniBool
