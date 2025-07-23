@@ -41,7 +41,7 @@ Direct3DRMRenderer* CreateDirect3DRMRenderer(
 #endif
 #ifdef USE_OPENGL1
 	if (SDL_memcmp(guid, &OpenGL1_GUID, sizeof(GUID)) == 0) {
-		return OpenGL1Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
+		return OpenGL1Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight, d3d->GetMSAASamples());
 	}
 #endif
 #ifdef USE_CITRO3D
@@ -66,7 +66,7 @@ void Direct3DRMRenderer_EnumDevices(const IDirect3DMiniwin* d3d, LPD3DENUMDEVICE
 	OpenGLES3Renderer_EnumDevice(d3d, cb, ctx);
 #endif
 #ifdef USE_OPENGL1
-	OpenGL1Renderer_EnumDevice(cb, ctx);
+	OpenGL1Renderer_EnumDevice(d3d, cb, ctx);
 #endif
 #ifdef USE_CITRO3D
 	Citro3DRenderer_EnumDevice(cb, ctx);

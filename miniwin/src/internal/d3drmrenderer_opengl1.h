@@ -11,7 +11,7 @@ DEFINE_GUID(OpenGL1_GUID, 0x682656F3, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x
 
 class OpenGL1Renderer : public Direct3DRMRenderer {
 public:
-	static Direct3DRMRenderer* Create(DWORD width, DWORD height);
+	static Direct3DRMRenderer* Create(DWORD width, DWORD height, DWORD msaaSamples);
 	OpenGL1Renderer(DWORD width, DWORD height, SDL_GLContext context);
 	~OpenGL1Renderer() override;
 
@@ -54,9 +54,9 @@ private:
 	ViewportTransform m_viewportTransform;
 };
 
-inline static void OpenGL1Renderer_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
+inline static void OpenGL1Renderer_EnumDevice(const IDirect3DMiniwin* d3d, LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
-	Direct3DRMRenderer* device = OpenGL1Renderer::Create(640, 480);
+	Direct3DRMRenderer* device = OpenGL1Renderer::Create(640, 480, d3d->GetMSAASamples());
 	if (!device) {
 		return;
 	}
