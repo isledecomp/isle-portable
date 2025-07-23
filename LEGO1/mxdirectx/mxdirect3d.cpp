@@ -1,7 +1,12 @@
+#ifndef MINIWIN
+#include <initguid.h>
+#endif
+
 #include "mxdirect3d.h"
 
 #include <SDL3/SDL.h> // for SDL_Log
 #include <assert.h>
+#include <miniwin/miniwind3d.h>
 
 DECOMP_SIZE_ASSERT(MxDirect3D, 0x894)
 
@@ -44,6 +49,7 @@ BOOL MxDirect3D::Create(
 )
 {
 	BOOL success = FALSE;
+	IDirect3DMiniwin* miniwind3d = nullptr;
 	assert(m_currentDeviceInfo);
 
 	if (!MxDirectDraw::Create(
@@ -62,6 +68,20 @@ BOOL MxDirect3D::Create(
 
 	if (!D3DCreate()) {
 		goto done;
+	}
+
+	if (m_pDirect3d->QueryInterface(IID_IDirect3DMiniwin, (void**) &miniwind3d) == DD_OK) {
+		MxVideoParam* videoParam = (MxVideoParam*) SDL_GetPointerProperty(
+			SDL_GetWindowProperties(reinterpret_cast<SDL_Window*>(hWnd)),
+			ISLE_PROP_WINDOW_CREATE_VIDEO_PARAM,
+			nullptr
+		);
+#ifndef MXDIRECTX_FOR_CONFIG
+		assert(videoParam);
+#endif
+		if (videoParam) {
+			miniwind3d->RequestMSAA(videoParam->GetMSAASamples());
+		}
 	}
 
 	if (!D3DSetMode()) {

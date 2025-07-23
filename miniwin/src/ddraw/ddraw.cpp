@@ -29,6 +29,11 @@ HRESULT DirectDrawImpl::QueryInterface(const GUID& riid, void** ppvObject)
 		*ppvObject = static_cast<IDirect3D2*>(this);
 		return S_OK;
 	}
+	if (SDL_memcmp(&riid, &IID_IDirect3DMiniwin, sizeof(GUID)) == 0) {
+		this->IUnknown::AddRef();
+		*ppvObject = static_cast<IDirect3DMiniwin*>(this);
+		return S_OK;
+	}
 	MINIWIN_NOT_IMPLEMENTED();
 	return E_NOINTERFACE;
 }
@@ -220,7 +225,7 @@ void EnumDevice(
 
 HRESULT DirectDrawImpl::EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
-	Direct3DRMRenderer_EnumDevices(cb, ctx);
+	Direct3DRMRenderer_EnumDevices(this, cb, ctx);
 	return S_OK;
 }
 
@@ -317,13 +322,24 @@ HRESULT DirectDrawImpl::CreateDevice(
 	DDSDesc.dwSize = sizeof(DDSURFACEDESC);
 	pBackBuffer->GetSurfaceDesc(&DDSDesc);
 
-	DDRenderer = CreateDirect3DRMRenderer(DDSDesc, &guid);
+	DDRenderer = CreateDirect3DRMRenderer(this, DDSDesc, &guid);
 	if (!DDRenderer) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Device GUID not recognized");
 		return E_NOINTERFACE;
 	}
 	*ppDirect3DDevice = static_cast<IDirect3DDevice2*>(DDRenderer);
 	return DD_OK;
+}
+
+HRESULT DirectDrawImpl::RequestMSAA(DWORD msaaSamples)
+{
+	m_msaaSamples = msaaSamples;
+	return DD_OK;
+}
+
+DWORD DirectDrawImpl::GetMSAASamples() const
+{
+	return m_msaaSamples;
 }
 
 HRESULT DirectDrawEnumerate(LPDDENUMCALLBACKA cb, void* context)
