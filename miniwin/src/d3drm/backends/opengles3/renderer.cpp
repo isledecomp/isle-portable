@@ -336,7 +336,7 @@ OpenGLES3Renderer::OpenGLES3Renderer(
 		m_anisotropic = maxAniso;
 	}
 	SDL_Log(
-		"Anisotropic is %s. Requested: %f, available: %f, max aniso: %f",
+		"Anisotropic is %s. Requested: %f, active: %f, max aniso: %f",
 		m_anisotropic > 1.0f ? "on" : "off",
 		anisotropic,
 		m_anisotropic,
