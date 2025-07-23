@@ -76,8 +76,12 @@ BOOL MxDirect3D::Create(
 			ISLE_PROP_WINDOW_CREATE_VIDEO_PARAM,
 			nullptr
 		);
+#ifndef MXDIRECTX_FOR_CONFIG
 		assert(videoParam);
-		miniwind3d->RequestMSAA(videoParam->GetMSAASamples());
+#endif
+		if (videoParam) {
+			miniwind3d->RequestMSAA(videoParam->GetMSAASamples());
+		}
 	}
 
 	if (!D3DSetMode()) {

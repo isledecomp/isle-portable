@@ -233,8 +233,12 @@ BOOL MxDeviceEnumerate::EnumDirectDrawCallback(LPGUID p_guid, LPSTR p_driverDesc
 			ISLE_PROP_WINDOW_CREATE_VIDEO_PARAM,
 			nullptr
 		);
+#ifndef MXDIRECTX_FOR_CONFIG
 		assert(videoParam);
-		miniwind3d->RequestMSAA(videoParam->GetMSAASamples());
+#endif
+		if (videoParam) {
+			miniwind3d->RequestMSAA(videoParam->GetMSAASamples());
+		}
 	}
 
 	result = lpDD->SetCooperativeLevel(m_hWnd, DDSCL_NORMAL);
