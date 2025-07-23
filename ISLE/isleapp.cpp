@@ -918,7 +918,14 @@ MxResult IsleApp::SetupWindow()
 	if (m_exclusiveFullScreen && m_fullScreen) {
 		SDL_DisplayMode closestMode;
 		SDL_DisplayID displayID = SDL_GetDisplayForWindow(window);
-		if (SDL_GetClosestFullscreenDisplayMode(displayID, m_exclusiveXRes, m_exclusiveYRes, m_exclusiveFrameRate, true, &closestMode)) {
+		if (SDL_GetClosestFullscreenDisplayMode(
+				displayID,
+				m_exclusiveXRes,
+				m_exclusiveYRes,
+				m_exclusiveFrameRate,
+				true,
+				&closestMode
+			)) {
 			SDL_SetWindowFullscreenMode(window, &closestMode);
 		}
 	}
