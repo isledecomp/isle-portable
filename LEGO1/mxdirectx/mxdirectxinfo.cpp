@@ -1,6 +1,6 @@
 #include "mxdirectxinfo.h"
 
-#include "mxvideoparam.h"
+#include "omni/include/mxvideoparam.h"
 
 #include <SDL3/SDL_log.h>
 #include <assert.h>

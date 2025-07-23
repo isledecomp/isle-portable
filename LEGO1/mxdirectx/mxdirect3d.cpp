@@ -1,7 +1,5 @@
 #include "mxdirect3d.h"
 
-#include "mxvideoparam.h"
-
 #include <SDL3/SDL.h> // for SDL_Log
 #include <assert.h>
 #include <miniwin/miniwind3d.h>
