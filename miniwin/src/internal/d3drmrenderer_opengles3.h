@@ -74,7 +74,7 @@ private:
 	SDL_GLContext m_context;
 	uint32_t m_msaa;
 	GLuint m_fbo;
-	GLuint m_resolveFBO = 0;
+	GLuint m_resolveFBO;
 	GLuint m_colorTarget;
 	GLuint m_resolveColor = 0;
 	GLuint m_depthTarget;

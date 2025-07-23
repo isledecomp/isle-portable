@@ -365,21 +365,15 @@ OpenGLES3Renderer::OpenGLES3Renderer(
 OpenGLES3Renderer::~OpenGLES3Renderer()
 {
 	SDL_DestroySurface(m_renderedImage);
+	glDeleteTextures(1, &m_dummyTexture);
 	glDeleteProgram(m_shaderProgram);
-
-	if (m_colorTarget) {
-		glDeleteRenderbuffers(1, &m_colorTarget);
-	}
-	if (m_resolveColor) {
+	glDeleteRenderbuffers(1, &m_colorTarget);
+	glDeleteRenderbuffers(1, &m_depthTarget);
+	glDeleteFramebuffers(1, &m_fbo);
+	if (m_msaa > 1) {
 		glDeleteRenderbuffers(1, &m_resolveColor);
-	}
-	if (m_depthTarget) {
-		glDeleteRenderbuffers(1, &m_depthTarget);
-	}
-	if (m_depthTarget) {
 		glDeleteFramebuffers(1, &m_resolveFBO);
 	}
-	glDeleteFramebuffers(1, &m_fbo);
 
 	SDL_GL_DestroyContext(m_context);
 }
