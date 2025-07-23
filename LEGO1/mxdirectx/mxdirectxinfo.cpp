@@ -238,6 +238,7 @@ BOOL MxDeviceEnumerate::EnumDirectDrawCallback(LPGUID p_guid, LPSTR p_driverDesc
 #endif
 		if (videoParam) {
 			miniwind3d->RequestMSAA(videoParam->GetMSAASamples());
+			miniwind3d->RequestAnisotropic(videoParam->GetAnisotropic());
 		}
 	}
 

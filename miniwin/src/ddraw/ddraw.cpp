@@ -331,17 +331,6 @@ HRESULT DirectDrawImpl::CreateDevice(
 	return DD_OK;
 }
 
-HRESULT DirectDrawImpl::RequestMSAA(DWORD msaaSamples)
-{
-	m_msaaSamples = msaaSamples;
-	return DD_OK;
-}
-
-DWORD DirectDrawImpl::GetMSAASamples() const
-{
-	return m_msaaSamples;
-}
-
 HRESULT DirectDrawEnumerate(LPDDENUMCALLBACKA cb, void* context)
 {
 	const char* driverName = SDL_GetCurrentVideoDriver();

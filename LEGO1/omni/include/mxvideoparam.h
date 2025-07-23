@@ -56,6 +56,9 @@ public:
 	void SetMSAASamples(MxU32 p_msaaSamples) { m_msaaSamples = p_msaaSamples; }
 	MxU32 GetMSAASamples() { return m_msaaSamples; }
 
+	void SetAnisotropic(MxFloat p_anisotropic) { m_anisotropic = p_anisotropic; }
+	MxFloat GetAnisotropic() { return m_anisotropic; }
+
 private:
 	MxRect32 m_rect;           // 0x00
 	MxPalette* m_palette;      // 0x10
@@ -64,6 +67,7 @@ private:
 	int m_unk0x1c;             // 0x1c
 	char* m_deviceId;          // 0x20
 	MxU32 m_msaaSamples;
+	MxFloat m_anisotropic;
 };
 
 #endif // MXVIDEOPARAM_H

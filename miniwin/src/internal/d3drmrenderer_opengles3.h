@@ -33,8 +33,15 @@ struct GLES3MeshCacheEntry {
 
 class OpenGLES3Renderer : public Direct3DRMRenderer {
 public:
-	static Direct3DRMRenderer* Create(DWORD width, DWORD height, DWORD msaaSamples);
-	OpenGLES3Renderer(DWORD width, DWORD height, DWORD msaaSamples, SDL_GLContext context, GLuint shaderProgram);
+	static Direct3DRMRenderer* Create(DWORD width, DWORD height, DWORD msaaSamples, float anisotropic);
+	OpenGLES3Renderer(
+		DWORD width,
+		DWORD height,
+		DWORD msaaSamples,
+		float anisotropic,
+		SDL_GLContext context,
+		GLuint shaderProgram
+	);
 	~OpenGLES3Renderer() override;
 
 	void PushLights(const SceneLight* lightsArray, size_t count) override;
@@ -64,6 +71,7 @@ private:
 	void AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture);
 	void AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh);
 	GLES3MeshCacheEntry GLES3UploadMesh(const MeshGroup& meshGroup, bool forceUV = false);
+	bool UploadTexture(SDL_Surface* source, GLuint& outTexId, bool isUI);
 
 	MeshGroup m_uiMesh;
 	GLES3MeshCacheEntry m_uiMeshCache;
@@ -75,6 +83,7 @@ private:
 	std::vector<SceneLight> m_lights;
 	SDL_GLContext m_context;
 	uint32_t m_msaa;
+	float m_anisotropic;
 	GLuint m_fbo;
 	GLuint m_resolveFBO;
 	GLuint m_colorTarget;
@@ -99,7 +108,7 @@ private:
 
 inline static void OpenGLES3Renderer_EnumDevice(const IDirect3DMiniwin* d3d, LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
-	Direct3DRMRenderer* device = OpenGLES3Renderer::Create(640, 480, d3d->GetMSAASamples());
+	Direct3DRMRenderer* device = OpenGLES3Renderer::Create(640, 480, d3d->GetMSAASamples(), d3d->GetAnisotropic());
 	if (!device) {
 		return;
 	}
