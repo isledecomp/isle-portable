@@ -1,3 +1,7 @@
+#ifndef MINIWIN
+#include <initguid.h>
+#endif
+
 #include "mxdirect3d.h"
 
 #include <SDL3/SDL.h> // for SDL_Log
