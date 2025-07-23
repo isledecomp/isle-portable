@@ -70,8 +70,7 @@ Direct3DRMRenderer* OpenGLES3Renderer::Create(DWORD width, DWORD height, DWORD m
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CW);
 
-	const char* vertexShaderSource = R"(
-		#version 300 es
+	const char* vertexShaderSource = R"(#version 300 es
 		precision mediump float;
 
 		in vec3 a_position;
@@ -95,8 +94,7 @@ Direct3DRMRenderer* OpenGLES3Renderer::Create(DWORD width, DWORD height, DWORD m
 		}
 	)";
 
-	const char* fragmentShaderSource = R"(
-		#version 300 es
+	const char* fragmentShaderSource = R"(#version 300 es
 		precision mediump float;
 
 		struct SceneLight {
