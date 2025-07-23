@@ -62,11 +62,15 @@ public:
 	int m_aspect_ratio;
 	int m_x_res;
 	int m_y_res;
+	int m_exf_x_res;
+	int m_exf_y_res;
+	float m_exf_fps;
 	float m_frame_delta;
 	LegoDeviceEnumerate* m_device_enumerator;
 	MxDriver* m_driver;
 	Direct3DDeviceInfo* m_device;
 	int m_display_bit_depth;
+	int m_msaa;
 	bool m_flip_surfaces;
 	bool m_full_screen;
 	bool m_exclusive_full_screen;

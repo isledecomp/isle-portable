@@ -56,6 +56,9 @@
      <property name="scaledContents">
       <bool>false</bool>
      </property>
+     <property name="buddy">
+      <cstring>fullscreenRadioContainer_2</cstring>
+     </property>
     </widget>
    </item>
    <item>
@@ -353,12 +356,18 @@ A higher setting will cause higher quality textures to be drawn regardless of di
                </property>
                <property name="minimumSize">
                 <size>
-                 <width>15</width>
+                 <width>20</width>
                  <height>0</height>
                 </size>
                </property>
+               <property name="maximumSize">
+                <size>
+                 <width>20</width>
+                 <height>16777215</height>
+                </size>
+               </property>
                <property name="text">
-                <string>35</string>
+                <string>3.5</string>
                </property>
               </widget>
              </item>
@@ -533,8 +542,14 @@ The game will gradually increase the number of actors until this maximum is reac
                </property>
                <property name="minimumSize">
                 <size>
-                 <width>15</width>
+                 <width>20</width>
                  <height>0</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>20</width>
+                 <height>16777215</height>
                 </size>
                </property>
                <property name="text">
@@ -602,8 +617,59 @@ The game will gradually increase the number of actors until this maximum is reac
             <property name="title">
              <string>General</string>
             </property>
-            <layout class="QGridLayout" name="gridLayout_3">
-             <item row="0" column="1">
+            <layout class="QHBoxLayout" name="horizontalLayout_9">
+             <item>
+              <widget class="QWidget" name="fullscreenRadioContainer_2" native="true">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Windowed:&lt;/span&gt; Runs in a window, the initial resolution of which is dictated by Windowed Resolution. &lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Fullscreen:&lt;/span&gt; Runs in a borderless window that consumes the entire screen. &lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Exclusive Fullscreen:&lt;/span&gt; Grants the app full control of the display for better performance and lower input lag. May cause slower alt-tabbing.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <layout class="QVBoxLayout" name="fullscreenRadioContainer">
+                <property name="spacing">
+                 <number>3</number>
+                </property>
+                <property name="leftMargin">
+                 <number>0</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>0</number>
+                </property>
+                <item>
+                 <widget class="QRadioButton" name="windowedRadioButton">
+                  <property name="text">
+                   <string>Windowed</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QRadioButton" name="fullscreenRadioButton">
+                  <property name="text">
+                   <string>Fullscreen</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QRadioButton" name="exFullscreenRadioButton">
+                  <property name="text">
+                   <string>Exclusive Fullscreen</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item>
               <widget class="QSpinBox" name="framerateSpinBox">
                <property name="toolTip">
                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Maximum framerate. Values above 100fps are untested.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -621,33 +687,6 @@ The game will gradually increase the number of actors until this maximum is reac
                 <number>100</number>
                </property>
               </widget>
-             </item>
-             <item row="0" column="0">
-              <layout class="QVBoxLayout" name="fullscreenCheckboxContainer">
-               <item>
-                <widget class="QCheckBox" name="fullscreenCheckBox">
-                 <property name="toolTip">
-                  <string>Toggle fullscreen display mode.</string>
-                 </property>
-                 <property name="text">
-                  <string>Fullscreen</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QCheckBox" name="exclusiveFullscreenCheckbox">
-                 <property name="enabled">
-                  <bool>false</bool>
-                 </property>
-                 <property name="toolTip">
-                  <string>Grants the app full control of the display for better performance and lower input lag. May cause slower alt-tabbing.</string>
-                 </property>
-                 <property name="text">
-                  <string>Exclusive Fullscreen</string>
-                 </property>
-                </widget>
-               </item>
-              </layout>
              </item>
             </layout>
            </widget>
@@ -765,6 +804,72 @@ The game will gradually increase the number of actors until this maximum is reac
            </widget>
           </item>
           <item>
+           <widget class="QGroupBox" name="exFullResContainer">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="title">
+             <string>Exclusive Fullscreen Resolution</string>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_4">
+             <item>
+              <widget class="QComboBox" name="exFullResComboBox">
+               <property name="placeholderText">
+                <string>Resolution</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QGroupBox" name="msaaBox">
+            <property name="title">
+             <string>MSAA</string>
+            </property>
+            <layout class="QHBoxLayout" name="horizontalLayout_3">
+             <item>
+              <widget class="QSlider" name="msaaSlider">
+               <property name="minimum">
+                <number>0</number>
+               </property>
+               <property name="maximum">
+                <number>4</number>
+               </property>
+               <property name="pageStep">
+                <number>1</number>
+               </property>
+               <property name="orientation">
+                <enum>Qt::Orientation::Horizontal</enum>
+               </property>
+               <property name="tickPosition">
+                <enum>QSlider::TickPosition::TicksBothSides</enum>
+               </property>
+               <property name="tickInterval">
+                <number>1</number>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="msaaNum">
+               <property name="minimumSize">
+                <size>
+                 <width>16</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>1</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignmentFlag::AlignCenter</set>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
            <spacer name="verticalSpacer_4">
             <property name="orientation">
              <enum>Qt::Orientation::Vertical</enum>
@@ -772,7 +877,7 @@ The game will gradually increase the number of actors until this maximum is reac
             <property name="sizeHint" stdset="0">
              <size>
               <width>20</width>
-              <height>40</height>
+              <height>0</height>
              </size>
             </property>
            </spacer>
@@ -860,7 +965,7 @@ The game will gradually increase the number of actors until this maximum is reac
              <string>Settings for Texture Loader extension.</string>
             </property>
             <property name="title">
-             <string>Texture Loader Extension</string>
+             <string>Texture Loader</string>
             </property>
             <layout class="QHBoxLayout" name="horizontalLayout_2">
              <item>
@@ -1007,12 +1112,15 @@ The game will gradually increase the number of actors until this maximum is reac
   <tabstop>maxLoDSlider</tabstop>
   <tabstop>maxActorsSlider</tabstop>
   <tabstop>devicesList</tabstop>
-  <tabstop>fullscreenCheckBox</tabstop>
-  <tabstop>exclusiveFullscreenCheckbox</tabstop>
+  <tabstop>windowedRadioButton</tabstop>
+  <tabstop>fullscreenRadioButton</tabstop>
+  <tabstop>exFullscreenRadioButton</tabstop>
   <tabstop>framerateSpinBox</tabstop>
   <tabstop>aspectRatioComboBox</tabstop>
   <tabstop>xResSpinBox</tabstop>
   <tabstop>yResSpinBox</tabstop>
+  <tabstop>exFullResComboBox</tabstop>
+  <tabstop>msaaSlider</tabstop>
   <tabstop>touchComboBox</tabstop>
   <tabstop>rumbleCheckBox</tabstop>
   <tabstop>textureCheckBox</tabstop>

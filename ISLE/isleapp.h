@@ -109,6 +109,9 @@ private:
 	MxBool m_haptic;
 	MxS32 m_xRes;
 	MxS32 m_yRes;
+	MxS32 m_exclusiveXRes;
+	MxS32 m_exclusiveYRes;
+	MxFloat m_exclusiveFrameRate;
 	MxFloat m_frameRate;
 	MxBool m_exclusiveFullScreen;
 };
