@@ -84,6 +84,7 @@ bool CConfigApp::InitInstance()
 	m_3d_video_ram = FALSE;
 	m_joystick_index = -1;
 	m_display_bit_depth = 16;
+	m_msaa = 1;
 	m_haptic = TRUE;
 	m_touch_scheme = 2;
 	m_texture_load = TRUE;
@@ -182,6 +183,7 @@ bool CConfigApp::ReadRegisterSettings()
 	m_joystick_index = iniparser_getint(dict, "isle:JoystickIndex", m_joystick_index);
 	m_max_lod = iniparser_getdouble(dict, "isle:Max LOD", m_max_lod);
 	m_max_actors = iniparser_getint(dict, "isle:Max Allowed Extras", m_max_actors);
+	m_msaa = iniparser_getint(dict, "isle:MSAA", m_msaa);
 	m_texture_load = iniparser_getboolean(dict, "extensions:texture loader", m_texture_load);
 	m_texture_path = iniparser_getstring(dict, "texture loader:texture path", m_texture_path.c_str());
 	m_aspect_ratio = iniparser_getint(dict, "isle:Aspect Ratio", m_aspect_ratio);
@@ -267,6 +269,19 @@ bool CConfigApp::ValidateSettings()
 		m_full_screen = TRUE;
 		is_modified = TRUE;
 	}
+	if (!(m_msaa & (m_msaa - 1))) {	//Check if MSAA is power of 2 (1, 2, 4, 8, etc)
+		m_msaa = exp2(round(log2(m_msaa)));	//Closest power of 2
+		is_modified = TRUE;
+	}
+	if (m_msaa > 16) {
+		m_msaa = 16;
+		is_modified = TRUE;
+	}
+	else if (m_msaa < 1){
+		m_msaa = 1;
+		is_modified = TRUE;
+	}
+
 	return is_modified;
 }
 
@@ -344,6 +359,7 @@ void CConfigApp::WriteRegisterSettings() const
 	iniparser_set(dict, "isle:savepath", m_save_path.c_str());
 
 	SetIniInt(dict, "isle:Display Bit Depth", m_display_bit_depth);
+	SetIniInt(dict, "isle:MSAA", m_msaa);
 	SetIniBool(dict, "isle:Flip Surfaces", m_flip_surfaces);
 	SetIniBool(dict, "isle:Full Screen", m_full_screen);
 	SetIniBool(dict, "isle:Exclusive Full Screen", m_exclusive_full_screen);

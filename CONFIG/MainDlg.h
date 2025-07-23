@@ -60,6 +60,7 @@ private slots:
 	void SavePathEdited();
 	void MaxLoDChanged(int value);
 	void MaxActorsChanged(int value);
+	void MSAAChanged(int value);
 	void SelectTexturePathDialog();
 	void TexturePathEdited();
 	void XResChanged(int i);

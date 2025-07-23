@@ -13,6 +13,7 @@
 #include <QKeyEvent>
 #include <QMessageBox>
 #include <QProcess>
+#include <cmath>
 #include <SDL3/SDL.h>
 #include <mxdirectx/legodxinfo.h>
 #include <ui_maindialog.h>
@@ -99,6 +100,9 @@ CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 	connect(m_ui->maxLoDSlider, &QSlider::sliderMoved, this, &CMainDialog::MaxLoDChanged);
 	connect(m_ui->maxActorsSlider, &QSlider::valueChanged, this, &CMainDialog::MaxActorsChanged);
 	connect(m_ui->maxActorsSlider, &QSlider::sliderMoved, this, &CMainDialog::MaxActorsChanged);
+
+	connect(m_ui->msaaSlider, &QSlider::valueChanged, this, &CMainDialog::MSAAChanged);
+	connect(m_ui->msaaSlider, &QSlider::sliderMoved, this, &CMainDialog::MSAAChanged);
 
 	connect(m_ui->aspectRatioComboBox, &QComboBox::currentIndexChanged, this, &CMainDialog::AspectRatioChanged);
 	connect(m_ui->xResSpinBox, &QSpinBox::valueChanged, this, &CMainDialog::XResChanged);
@@ -312,9 +316,9 @@ void CMainDialog::UpdateInterface()
 	m_ui->transitionTypeComboBox->setCurrentIndex(currentConfigApp->m_transition_type);
 	m_ui->dataPath->setText(QString::fromStdString(currentConfigApp->m_cd_path));
 	m_ui->savePath->setText(QString::fromStdString(currentConfigApp->m_save_path));
+
 	m_ui->textureCheckBox->setChecked(currentConfigApp->m_texture_load);
 	m_ui->texturePath->setText(QString::fromStdString(currentConfigApp->m_texture_path));
-
 	m_ui->texturePath->setEnabled(currentConfigApp->m_texture_load);
 	m_ui->texturePathOpen->setEnabled(currentConfigApp->m_texture_load);
 
@@ -322,6 +326,13 @@ void CMainDialog::UpdateInterface()
 	m_ui->xResSpinBox->setValue(currentConfigApp->m_x_res);
 	m_ui->yResSpinBox->setValue(currentConfigApp->m_y_res);
 	m_ui->framerateSpinBox->setValue(static_cast<int>(std::round(1000.0f / currentConfigApp->m_frame_delta)));
+
+	m_ui->maxLoDSlider->setValue((int) (currentConfigApp->m_max_lod * 10));
+	m_ui->LoDNum->setNum(currentConfigApp->m_max_lod);
+	m_ui->maxActorsSlider->setValue(currentConfigApp->m_max_actors);
+	m_ui->maxActorsNum->setNum(currentConfigApp->m_max_actors);
+	m_ui->msaaSlider->setValue(log2(currentConfigApp->m_msaa));
+	m_ui->msaaNum->setNum(currentConfigApp->m_msaa);
 }
 
 // FUNCTION: CONFIG 0x004045e0
@@ -532,15 +543,22 @@ void CMainDialog::SavePathEdited()
 void CMainDialog::MaxLoDChanged(int value)
 {
 	currentConfigApp->m_max_lod = static_cast<float>(value) / 10.0f;
-	m_ui->LoDNum->setNum(value);
 	m_modified = true;
+	UpdateInterface();
 }
 
 void CMainDialog::MaxActorsChanged(int value)
 {
 	currentConfigApp->m_max_actors = value;
-	m_ui->maxActorsNum->setNum(value);
 	m_modified = true;
+	UpdateInterface();
+}
+
+void CMainDialog::MSAAChanged(int value)
+{
+	currentConfigApp->m_msaa = exp2(value);
+	m_modified = true;
+	UpdateInterface();
 }
 
 void CMainDialog::SelectTexturePathDialog()
