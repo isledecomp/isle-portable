@@ -88,6 +88,8 @@ CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 
 	connect(m_ui->msaaSlider, &QSlider::valueChanged, this, &CMainDialog::MSAAChanged);
 	connect(m_ui->msaaSlider, &QSlider::sliderMoved, this, &CMainDialog::MSAAChanged);
+	connect(m_ui->AFSlider, &QSlider::valueChanged, this, &CMainDialog::AFChanged);
+	connect(m_ui->AFSlider, &QSlider::sliderMoved, this, &CMainDialog::AFChanged);
 
 	connect(m_ui->aspectRatioComboBox, &QComboBox::currentIndexChanged, this, &CMainDialog::AspectRatioChanged);
 	connect(m_ui->xResSpinBox, &QSpinBox::valueChanged, this, &CMainDialog::XResChanged);
@@ -321,6 +323,8 @@ void CMainDialog::UpdateInterface()
 	m_ui->maxActorsNum->setNum(currentConfigApp->m_max_actors);
 	m_ui->msaaSlider->setValue(log2(currentConfigApp->m_msaa));
 	m_ui->msaaNum->setNum(currentConfigApp->m_msaa);
+	m_ui->AFSlider->setValue(log2(currentConfigApp->m_anisotropy));
+	m_ui->AFNum->setNum(currentConfigApp->m_anisotropy);
 }
 
 // FUNCTION: CONFIG 0x004045e0
@@ -546,6 +550,13 @@ void CMainDialog::MaxActorsChanged(int value)
 void CMainDialog::MSAAChanged(int value)
 {
 	currentConfigApp->m_msaa = exp2(value);
+	m_modified = true;
+	UpdateInterface();
+}
+
+void CMainDialog::AFChanged(int value)
+{
+	currentConfigApp->m_anisotropy = exp2(value);
 	m_modified = true;
 	UpdateInterface();
 }
