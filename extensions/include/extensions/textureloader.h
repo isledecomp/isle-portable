@@ -17,7 +17,7 @@ public:
 	static bool enabled;
 
 	static constexpr std::array<std::pair<std::string_view, std::string_view>, 1> defaults = {
-		{{"texture loader:texture path", "/textures/"}}
+		{{"texture loader:texture path", "/textures"}}
 	};
 
 private:
