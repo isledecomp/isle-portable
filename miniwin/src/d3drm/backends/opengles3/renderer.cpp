@@ -744,6 +744,17 @@ void OpenGLES3Renderer::Flip()
 
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, m_fbo);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+
+	// This is a workaround for what is (presumably) a driver bug in some WebGL environments (Android Chrome)
+	// During transitions, the screen would sometimes (randomly) briefly be cleared / flicker black when using
+	// glBlitFramebuffer. Any write to the back buffer before that fixes this issue. The following should have minimal
+	// performance impact.
+	glEnable(GL_SCISSOR_TEST);
+	glScissor(0, 0, 1, 1);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glDisable(GL_SCISSOR_TEST);
+
 	glBlitFramebuffer(0, 0, m_width, m_height, 0, 0, m_width, m_height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
 	SDL_GL_SwapWindow(DDWindow);
