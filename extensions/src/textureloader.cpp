@@ -99,11 +99,11 @@ SDL_Surface* TextureLoader::FindTexture(const char* p_name)
 {
 	SDL_Surface* surface;
 	const char* texturePath = options["texture loader:texture path"].c_str();
-	MxString path = MxString(MxOmni::GetHD()) + texturePath + p_name + ".bmp";
+	MxString path = MxString(MxOmni::GetHD()) + texturePath + "/" + p_name + ".bmp";
 
 	path.MapPathToFilesystem();
 	if (!(surface = SDL_LoadBMP(path.GetData()))) {
-		path = MxString(MxOmni::GetCD()) + texturePath + p_name + ".bmp";
+		path = MxString(MxOmni::GetCD()) + texturePath + "/" + p_name + ".bmp";
 		path.MapPathToFilesystem();
 		surface = SDL_LoadBMP(path.GetData());
 	}
