@@ -3,6 +3,7 @@
 using namespace Extensions;
 
 std::map<std::string, std::string> TextureLoader::options;
+std::vector<std::string> TextureLoader::excludedFiles;
 bool TextureLoader::enabled = false;
 
 void TextureLoader::Initialize()
@@ -97,6 +98,10 @@ bool TextureLoader::PatchTexture(LegoTextureInfo* p_textureInfo)
 
 SDL_Surface* TextureLoader::FindTexture(const char* p_name)
 {
+	if (std::find(excludedFiles.begin(), excludedFiles.end(), p_name) != excludedFiles.end()) {
+		return nullptr;
+	}
+
 	SDL_Surface* surface;
 	const char* texturePath = options["texture loader:texture path"].c_str();
 	MxString path = MxString(MxOmni::GetHD()) + texturePath + "/" + p_name + ".bmp";
