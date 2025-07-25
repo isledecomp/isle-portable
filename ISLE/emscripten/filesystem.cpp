@@ -1,5 +1,6 @@
 #include "filesystem.h"
 
+#include "events.h"
 #include "extensions/textureloader.h"
 #include "legogamestate.h"
 #include "misc.h"
@@ -73,6 +74,15 @@ void Emscripten_SetupFilesystem()
 		}
 	};
 
+	const auto preloadFile = [](const char* p_path) -> bool {
+		size_t length = 0;
+		void* data = SDL_LoadFile(p_path, &length);
+		if (data) {
+			SDL_free(data);
+		}
+		return length > 0;
+	};
+
 	for (const char* file : g_files) {
 		registerFile(file);
 	}
@@ -84,9 +94,17 @@ void Emscripten_SetupFilesystem()
 		Extensions::TextureLoader::options["texture loader:texture path"] = directory.GetData();
 		wasmfs_create_directory(directory.GetData(), 0644, fetchfs);
 
+		MxU32 i = 0;
+		Emscripten_SendExtensionProgress("HD Textures", 0);
 		for (const char* file : g_textures) {
 			MxString path = directory + "/" + file + ".bmp";
 			registerFile(path.GetData());
+
+			if (!preloadFile(path.GetData())) {
+				Extensions::TextureLoader::excludedFiles.emplace_back(file);
+			}
+
+			Emscripten_SendExtensionProgress("HD Textures", (++i * 100) / sizeOfArray(g_textures));
 		}
 	}
 #endif

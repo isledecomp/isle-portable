@@ -5,6 +5,7 @@
 
 #include <array>
 #include <map>
+#include <vector>
 
 namespace Extensions
 {
@@ -14,6 +15,7 @@ public:
 	static bool PatchTexture(LegoTextureInfo* p_textureInfo);
 
 	static std::map<std::string, std::string> options;
+	static std::vector<std::string> excludedFiles;
 	static bool enabled;
 
 	static constexpr std::array<std::pair<std::string_view, std::string_view>, 1> defaults = {
