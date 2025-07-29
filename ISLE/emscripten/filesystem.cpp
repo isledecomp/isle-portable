@@ -4,7 +4,7 @@
 #include "extensions/textureloader.h"
 #include "legogamestate.h"
 #include "misc.h"
-#include "mxomni.h"
+#include "mxmain.h"
 
 #include <SDL3/SDL_filesystem.h>
 #include <SDL3/SDL_log.h>
