@@ -19,6 +19,7 @@ if (EMSCRIPTEN)
 endif()
 
 if (PS2)
+  add_compile_definitions(PS2)
   add_compile_definitions(HAVE_MMAP=0)
   add_compile_definitions(HAVE_MALLOC=0)
   add_compile_definitions(USE_LOCKS=0)
