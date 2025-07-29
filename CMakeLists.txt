@@ -14,7 +14,7 @@ endif()
 
 if (EMSCRIPTEN)
   add_compile_options(-pthread)
-  add_link_options(-sALLOW_MEMORY_GROWTH=1 -sMAXIMUM_MEMORY=2gb -sUSE_PTHREADS=1 -sPROXY_TO_PTHREAD=1 -sOFFSCREENCANVAS_SUPPORT=1 -sPTHREAD_POOL_SIZE_STRICT=0 -sFORCE_FILESYSTEM=1 -sWASMFS=1 -sEXIT_RUNTIME=1)
+  add_link_options(-sUSE_WEBGL2=1 -sMIN_WEBGL_VERSION=2 -sALLOW_MEMORY_GROWTH=1 -sMAXIMUM_MEMORY=2gb -sUSE_PTHREADS=1 -sPROXY_TO_PTHREAD=1 -sOFFSCREENCANVAS_SUPPORT=1 -sPTHREAD_POOL_SIZE_STRICT=0 -sFORCE_FILESYSTEM=1 -sWASMFS=1 -sEXIT_RUNTIME=1)
   set(SDL_PTHREADS ON CACHE BOOL "Enable SDL pthreads" FORCE)
 endif()
 
@@ -184,6 +184,8 @@ target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/L
 target_link_libraries(lego1 PRIVATE SDL3::SDL3)
 target_link_libraries(lego1 PUBLIC SDL3::Headers)
 target_link_libraries(lego1 PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5>)
+# Allow unconditional include of miniwin/miniwind3d.h
+target_link_libraries(lego1 PRIVATE miniwin-headers)
 if(WIN32)
   set_property(TARGET lego1 PROPERTY PREFIX "")
 endif()
@@ -314,10 +316,10 @@ target_sources(lego1 PRIVATE
   LEGO1/omni/src/common/mxcompositepresenter.cpp
   LEGO1/omni/src/common/mxcore.cpp
   LEGO1/omni/src/common/mxdebug.cpp
-  LEGO1/omni/src/common/mxmediamanager.cpp
   LEGO1/omni/src/common/mxmediapresenter.cpp
   LEGO1/omni/src/common/mxmisc.cpp
   LEGO1/omni/src/common/mxobjectfactory.cpp
+  LEGO1/omni/src/common/mxpresentationmanager.cpp
   LEGO1/omni/src/common/mxpresenter.cpp
   LEGO1/omni/src/common/mxstring.cpp
   LEGO1/omni/src/common/mxticklemanager.cpp
@@ -468,9 +470,6 @@ target_sources(lego1 PRIVATE
   LEGO1/lego/legoomni/src/race/raceskel.cpp
   LEGO1/lego/legoomni/src/video/legoanimpresenter.cpp
   LEGO1/lego/legoomni/src/video/legoflctexturepresenter.cpp
-  LEGO1/lego/legoomni/src/video/legohideanimpresenter.cpp
-  LEGO1/lego/legoomni/src/video/legolocomotionanimpresenter.cpp
-  LEGO1/lego/legoomni/src/video/legoloopinganimpresenter.cpp
   LEGO1/lego/legoomni/src/video/legomodelpresenter.cpp
   LEGO1/lego/legoomni/src/video/legopalettepresenter.cpp
   LEGO1/lego/legoomni/src/video/legopartpresenter.cpp

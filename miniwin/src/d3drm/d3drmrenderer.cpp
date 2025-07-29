@@ -2,8 +2,8 @@
 #ifdef USE_OPENGL1
 #include "d3drmrenderer_opengl1.h"
 #endif
-#ifdef USE_OPENGLES2
-#include "d3drmrenderer_opengles2.h"
+#ifdef USE_OPENGLES3
+#include "d3drmrenderer_opengles3.h"
 #endif
 #ifdef USE_CITRO3D
 #include "d3drmrenderer_citro3d.h"
@@ -18,7 +18,11 @@
 #include "d3drmrenderer_software.h"
 #endif
 
-Direct3DRMRenderer* CreateDirect3DRMRenderer(const DDSURFACEDESC& DDSDesc, const GUID* guid)
+Direct3DRMRenderer* CreateDirect3DRMRenderer(
+	const IDirect3DMiniwin* d3d,
+	const DDSURFACEDESC& DDSDesc,
+	const GUID* guid
+)
 {
 #ifdef USE_SDL_GPU
 	if (SDL_memcmp(guid, &SDL3_GPU_GUID, sizeof(GUID)) == 0) {
@@ -30,14 +34,19 @@ Direct3DRMRenderer* CreateDirect3DRMRenderer(const DDSURFACEDESC& DDSDesc, const
 		return new Direct3DRMSoftwareRenderer(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
 #endif
-#ifdef USE_OPENGLES2
-	if (SDL_memcmp(guid, &OpenGLES2_GUID, sizeof(GUID)) == 0) {
-		return OpenGLES2Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
+#ifdef USE_OPENGLES3
+	if (SDL_memcmp(guid, &OpenGLES3_GUID, sizeof(GUID)) == 0) {
+		return OpenGLES3Renderer::Create(
+			DDSDesc.dwWidth,
+			DDSDesc.dwHeight,
+			d3d->GetMSAASamples(),
+			d3d->GetAnisotropic()
+		);
 	}
 #endif
 #ifdef USE_OPENGL1
 	if (SDL_memcmp(guid, &OpenGL1_GUID, sizeof(GUID)) == 0) {
-		return OpenGL1Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
+		return OpenGL1Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight, d3d->GetMSAASamples());
 	}
 #endif
 #ifdef USE_CITRO3D
@@ -53,16 +62,16 @@ Direct3DRMRenderer* CreateDirect3DRMRenderer(const DDSURFACEDESC& DDSDesc, const
 	return nullptr;
 }
 
-void Direct3DRMRenderer_EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
+void Direct3DRMRenderer_EnumDevices(const IDirect3DMiniwin* d3d, LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
 #ifdef USE_SDL_GPU
 	Direct3DRMSDL3GPU_EnumDevice(cb, ctx);
 #endif
-#ifdef USE_OPENGLES2
-	OpenGLES2Renderer_EnumDevice(cb, ctx);
+#ifdef USE_OPENGLES3
+	OpenGLES3Renderer_EnumDevice(d3d, cb, ctx);
 #endif
 #ifdef USE_OPENGL1
-	OpenGL1Renderer_EnumDevice(cb, ctx);
+	OpenGL1Renderer_EnumDevice(d3d, cb, ctx);
 #endif
 #ifdef USE_CITRO3D
 	Citro3DRenderer_EnumDevice(cb, ctx);

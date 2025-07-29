@@ -11,7 +11,11 @@ public:
 
 	static void SetDoMutex();
 
+#ifdef BETA10
+	void Enter(unsigned long p_threadId, const char* filename, int line);
+#else
 	void Enter();
+#endif
 	void Leave();
 
 private:
@@ -21,5 +25,12 @@ private:
 	// but only CriticalSection was ever used and we don't need both anyway.
 	SDL_Mutex* m_mutex;
 };
+
+#ifdef BETA10
+// TODO: Not quite correct yet, the second argument becomes a relocated value
+#define ENTER(criticalSection) criticalSection.Enter(-1, NULL, 0)
+#else
+#define ENTER(criticalSection) criticalSection.Enter()
+#endif
 
 #endif // MXCRITICALSECTION_H

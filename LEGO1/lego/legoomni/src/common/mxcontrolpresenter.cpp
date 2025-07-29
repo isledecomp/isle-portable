@@ -157,7 +157,7 @@ MxBool MxControlPresenter::Notify(LegoControlManagerNotificationParam* p_param, 
 				p_param->SetClickedAtom(m_action->GetAtomId().GetInternal());
 				UpdateEnabledChild(0);
 				p_param->SetNotification(c_notificationControl);
-				p_param->SetUnknown0x28(m_enabledChild);
+				p_param->SetEnabledChild(m_enabledChild);
 				return TRUE;
 			}
 			break;
@@ -167,7 +167,7 @@ MxBool MxControlPresenter::Notify(LegoControlManagerNotificationParam* p_param, 
 				p_param->SetClickedAtom(m_action->GetAtomId().GetInternal());
 				UpdateEnabledChild(m_stateOrCellIndex);
 				p_param->SetNotification(c_notificationControl);
-				p_param->SetUnknown0x28(m_enabledChild);
+				p_param->SetEnabledChild(m_enabledChild);
 				return TRUE;
 			}
 			break;

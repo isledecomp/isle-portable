@@ -4,13 +4,13 @@
 #include "d3drmtexture_impl.h"
 #include "ddraw_impl.h"
 
-#include <GLES2/gl2.h>
+#include <GLES3/gl3.h>
 #include <SDL3/SDL.h>
 #include <vector>
 
-DEFINE_GUID(OpenGLES2_GUID, 0x682656F3, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04);
+DEFINE_GUID(OpenGLES3_GUID, 0x682656F3, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04);
 
-struct GLES2TextureCacheEntry {
+struct GLES3TextureCacheEntry {
 	IDirect3DRMTexture* texture;
 	Uint32 version;
 	GLuint glTextureId;
@@ -18,7 +18,7 @@ struct GLES2TextureCacheEntry {
 	uint16_t height;
 };
 
-struct GLES2MeshCacheEntry {
+struct GLES3MeshCacheEntry {
 	const MeshGroup* meshGroup;
 	int version;
 	bool flat;
@@ -28,13 +28,21 @@ struct GLES2MeshCacheEntry {
 	GLuint vboNormals;
 	GLuint vboTexcoords;
 	GLuint ibo;
+	GLuint vao;
 };
 
-class OpenGLES2Renderer : public Direct3DRMRenderer {
+class OpenGLES3Renderer : public Direct3DRMRenderer {
 public:
-	static Direct3DRMRenderer* Create(DWORD width, DWORD height);
-	OpenGLES2Renderer(DWORD width, DWORD height, SDL_GLContext context, GLuint shaderProgram);
-	~OpenGLES2Renderer() override;
+	static Direct3DRMRenderer* Create(DWORD width, DWORD height, DWORD msaaSamples, float anisotropic);
+	OpenGLES3Renderer(
+		DWORD width,
+		DWORD height,
+		DWORD msaaSamples,
+		float anisotropic,
+		SDL_GLContext context,
+		GLuint shaderProgram
+	);
+	~OpenGLES3Renderer() override;
 
 	void PushLights(const SceneLight* lightsArray, size_t count) override;
 	void SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back) override;
@@ -62,18 +70,24 @@ public:
 private:
 	void AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture);
 	void AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh);
+	GLES3MeshCacheEntry GLES3UploadMesh(const MeshGroup& meshGroup, bool forceUV = false);
+	bool UploadTexture(SDL_Surface* source, GLuint& outTexId, bool isUI);
 
 	MeshGroup m_uiMesh;
-	GLES2MeshCacheEntry m_uiMeshCache;
-	std::vector<GLES2TextureCacheEntry> m_textures;
-	std::vector<GLES2MeshCacheEntry> m_meshs;
+	GLES3MeshCacheEntry m_uiMeshCache;
+	std::vector<GLES3TextureCacheEntry> m_textures;
+	std::vector<GLES3MeshCacheEntry> m_meshs;
 	D3DRMMATRIX4D m_projection;
 	SDL_Surface* m_renderedImage = nullptr;
 	bool m_dirty = false;
 	std::vector<SceneLight> m_lights;
 	SDL_GLContext m_context;
+	uint32_t m_msaa;
+	float m_anisotropic;
 	GLuint m_fbo;
+	GLuint m_resolveFBO;
 	GLuint m_colorTarget;
+	GLuint m_resolveColor = 0;
 	GLuint m_depthTarget;
 	GLuint m_shaderProgram;
 	GLuint m_dummyTexture;
@@ -92,35 +106,25 @@ private:
 	ViewportTransform m_viewportTransform;
 };
 
-inline static void OpenGLES2Renderer_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
+inline static void OpenGLES3Renderer_EnumDevice(const IDirect3DMiniwin* d3d, LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
-	Direct3DRMRenderer* device = OpenGLES2Renderer::Create(640, 480);
+	Direct3DRMRenderer* device = OpenGLES3Renderer::Create(640, 480, d3d->GetMSAASamples(), d3d->GetAnisotropic());
 	if (!device) {
 		return;
 	}
 
+	delete device;
+
 	D3DDEVICEDESC halDesc = {};
 	halDesc.dcmColorModel = D3DCOLOR_RGB;
 	halDesc.dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
-	halDesc.dwDeviceZBufferBitDepth = DDBD_16;
+	halDesc.dwDeviceZBufferBitDepth = DDBD_24;
 	halDesc.dwDeviceRenderBitDepth = DDBD_32;
 	halDesc.dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
 	halDesc.dpcTriCaps.dwShadeCaps = D3DPSHADECAPS_ALPHAFLATBLEND;
 	halDesc.dpcTriCaps.dwTextureFilterCaps = D3DPTFILTERCAPS_LINEAR;
 
-	const char* extensions = (const char*) glGetString(GL_EXTENSIONS);
-	if (extensions) {
-		if (strstr(extensions, "GL_OES_depth24")) {
-			halDesc.dwDeviceZBufferBitDepth |= DDBD_24;
-		}
-		if (strstr(extensions, "GL_OES_depth32")) {
-			halDesc.dwDeviceZBufferBitDepth |= DDBD_32;
-		}
-	}
-
-	delete device;
-
 	D3DDEVICEDESC helDesc = {};
 
-	EnumDevice(cb, ctx, "OpenGL ES 2.0 HAL", &halDesc, &helDesc, OpenGLES2_GUID);
+	EnumDevice(cb, ctx, "OpenGL ES 3.0 HAL", &halDesc, &helDesc, OpenGLES3_GUID);
 }

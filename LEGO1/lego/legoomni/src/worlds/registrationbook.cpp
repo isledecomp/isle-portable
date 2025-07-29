@@ -241,7 +241,7 @@ MxLong RegistrationBook::HandleKeyPress(SDL_Keycode p_key)
 // FUNCTION: LEGO1 0x100774a0
 MxLong RegistrationBook::HandleControl(LegoControlManagerNotificationParam& p_param)
 {
-	MxS16 buttonId = p_param.m_unk0x28;
+	MxS16 buttonId = p_param.m_enabledChild;
 	const InternationalCharacter* intChar = NULL;
 
 	for (int i = 0; i < sizeOfArray(m_intAlphabet); i++) {

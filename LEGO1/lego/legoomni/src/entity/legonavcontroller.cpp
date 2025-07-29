@@ -555,7 +555,7 @@ MxResult LegoNavController::ProcessJoystickInput(MxBool& p_und)
 				LegoWorld* world = CurrentWorld();
 
 				if (world && world->GetCameraController()) {
-					world->GetCameraController()->FUN_10012320(DTOR(povPosition));
+					world->GetCameraController()->RotateY(DTOR(povPosition));
 					p_und = TRUE;
 				}
 			}
@@ -902,7 +902,7 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 					break;
 				case SDLK_A:
 					if (g_animationCalcStep == 1) {
-						Lego()->m_unk0x13c = TRUE;
+						Lego()->m_initialized = TRUE;
 						AnimationManager()->FUN_10060570(TRUE);
 						g_animationCalcStep = 0;
 					}

@@ -185,7 +185,8 @@ bool Direct3DRMDevice2Impl::ConvertEventToRenderCoordinates(SDL_Event* event)
 	}
 	case SDL_EVENT_FINGER_MOTION:
 	case SDL_EVENT_FINGER_DOWN:
-	case SDL_EVENT_FINGER_UP: {
+	case SDL_EVENT_FINGER_UP:
+	case SDL_EVENT_FINGER_CANCELED: {
 		float x = (event->tfinger.x * m_windowWidth - m_viewportTransform.offsetX) / m_viewportTransform.scale;
 		float y = (event->tfinger.y * m_windowHeight - m_viewportTransform.offsetY) / m_viewportTransform.scale;
 		event->tfinger.x = x / m_virtualWidth;

@@ -16,7 +16,7 @@ static_assert(sizeof(GL11_BridgeTexCoord) == sizeof(TexCoord), "GL11_BridgeTexCo
 static_assert(sizeof(GL11_BridgeSceneLight) == sizeof(SceneLight), "GL11_BridgeSceneLight is wrong size");
 static_assert(sizeof(GL11_BridgeSceneVertex) == sizeof(D3DRMVERTEX), "GL11_BridgeSceneVertex is wrong size");
 
-Direct3DRMRenderer* OpenGL1Renderer::Create(DWORD width, DWORD height)
+Direct3DRMRenderer* OpenGL1Renderer::Create(DWORD width, DWORD height, DWORD msaaSamples)
 {
 	// We have to reset the attributes here after having enumerated the
 	// OpenGL ES 2.0 renderer, or else SDL gets very confused by SDL_GL_DEPTH_SIZE
@@ -29,6 +29,11 @@ Direct3DRMRenderer* OpenGL1Renderer::Create(DWORD width, DWORD height)
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+
+	if (msaaSamples > 1) {
+		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, msaaSamples);
+	}
 
 	if (!DDWindow) {
 		SDL_Log("No window handler");

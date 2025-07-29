@@ -185,8 +185,13 @@ IsleApp::IsleApp()
 	m_haptic = TRUE;
 	m_xRes = 640;
 	m_yRes = 480;
+	m_exclusiveXRes = m_xRes;
+	m_exclusiveYRes = m_yRes;
+	m_exclusiveFrameRate = 60.00f;
 	m_frameRate = 100.0f;
 	m_exclusiveFullScreen = FALSE;
+	m_msaaSamples = 0;
+	m_anisotropic = 0.0f;
 }
 
 // FUNCTION: ISLE 0x4011a0
@@ -291,7 +296,7 @@ void IsleApp::SetupVideoFlags(
 	m_videoParam.Flags().SetLacksLightSupport(!hasLightSupport);
 	m_videoParam.Flags().SetF1bit7(param_7);
 	m_videoParam.Flags().SetWideViewAngle(wideViewAngle);
-	m_videoParam.Flags().SetF2bit1(1);
+	m_videoParam.Flags().SetEnabled(TRUE);
 	m_videoParam.SetDeviceName(deviceId);
 	if (using8bit) {
 		m_videoParam.Flags().Set16Bit(0);
@@ -468,6 +473,7 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 	case SDL_EVENT_FINGER_MOTION:
 	case SDL_EVENT_FINGER_DOWN:
 	case SDL_EVENT_FINGER_UP:
+	case SDL_EVENT_FINGER_CANCELED:
 		IDirect3DRMMiniwinDevice* device = GetD3DRMMiniwinDevice();
 		if (device && !device->ConvertEventToRenderCoordinates(event)) {
 			SDL_Log("Failed to convert event coordinates: %s", SDL_GetError());
@@ -762,7 +768,8 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 			);
 		}
 		break;
-	case SDL_EVENT_FINGER_UP: {
+	case SDL_EVENT_FINGER_UP:
+	case SDL_EVENT_FINGER_CANCELED: {
 		g_mousedown = FALSE;
 
 		float x = SDL_clamp(event->tfinger.x, 0, 1) * g_targetWidth;
@@ -919,11 +926,19 @@ MxResult IsleApp::SetupWindow()
 #endif
 
 	window = SDL_CreateWindowWithProperties(props);
+	SDL_SetPointerProperty(SDL_GetWindowProperties(window), ISLE_PROP_WINDOW_CREATE_VIDEO_PARAM, &m_videoParam);
 
 	if (m_exclusiveFullScreen && m_fullScreen) {
 		SDL_DisplayMode closestMode;
 		SDL_DisplayID displayID = SDL_GetDisplayForWindow(window);
-		if (SDL_GetClosestFullscreenDisplayMode(displayID, m_xRes, m_yRes, m_frameRate, true, &closestMode)) {
+		if (SDL_GetClosestFullscreenDisplayMode(
+				displayID,
+				m_exclusiveXRes,
+				m_exclusiveYRes,
+				m_exclusiveFrameRate,
+				true,
+				&closestMode
+			)) {
 			SDL_SetWindowFullscreenMode(window, &closestMode);
 		}
 	}
@@ -1101,6 +1116,9 @@ bool IsleApp::LoadConfig()
 		iniparser_set(dict, "isle:Haptic", m_haptic ? "true" : "false");
 		iniparser_set(dict, "isle:Horizontal Resolution", SDL_itoa(m_xRes, buf, 10));
 		iniparser_set(dict, "isle:Vertical Resolution", SDL_itoa(m_yRes, buf, 10));
+		iniparser_set(dict, "isle:Exclusive X Resolution", SDL_itoa(m_exclusiveXRes, buf, 10));
+		iniparser_set(dict, "isle:Exclusive Y Resolution", SDL_itoa(m_exclusiveYRes, buf, 10));
+		iniparser_set(dict, "isle:Exclusive Framerate", SDL_itoa(m_exclusiveFrameRate, buf, 10));
 		iniparser_set(dict, "isle:Frame Delta", SDL_itoa(m_frameDelta, buf, 10));
 
 #ifdef EXTENSIONS
@@ -1175,11 +1193,16 @@ bool IsleApp::LoadConfig()
 	m_haptic = iniparser_getboolean(dict, "isle:Haptic", m_haptic);
 	m_xRes = iniparser_getint(dict, "isle:Horizontal Resolution", m_xRes);
 	m_yRes = iniparser_getint(dict, "isle:Vertical Resolution", m_yRes);
+	m_exclusiveXRes = iniparser_getint(dict, "isle:Exclusive X Resolution", m_exclusiveXRes);
+	m_exclusiveYRes = iniparser_getint(dict, "isle:Exclusive Y Resolution", m_exclusiveXRes);
+	m_exclusiveFrameRate = iniparser_getdouble(dict, "isle:Exclusive Framerate", m_exclusiveFrameRate);
 	if (!m_fullScreen) {
 		m_videoParam.GetRect() = MxRect32(0, 0, (m_xRes - 1), (m_yRes - 1));
 	}
 	m_frameRate = (1000.0f / iniparser_getdouble(dict, "isle:Frame Delta", m_frameDelta));
 	m_frameDelta = static_cast<int>(std::round(iniparser_getdouble(dict, "isle:Frame Delta", m_frameDelta)));
+	m_videoParam.SetMSAASamples((m_msaaSamples = iniparser_getint(dict, "isle:MSAA", m_msaaSamples)));
+	m_videoParam.SetAnisotropic((m_anisotropic = iniparser_getdouble(dict, "isle:Anisotropic", m_anisotropic)));
 
 	const char* deviceId = iniparser_getstring(dict, "isle:3D Device ID", NULL);
 	if (deviceId != NULL) {
