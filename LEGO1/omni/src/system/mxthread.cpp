@@ -65,16 +65,19 @@ MxResult MxThread::Start(MxS32 p_stackSize, MxS32 p_flag)
 #else
 		goto done;
 	}
-	const SDL_PropertiesID props = SDL_CreateProperties();
-	SDL_SetPointerProperty(props, SDL_PROP_THREAD_CREATE_ENTRY_FUNCTION_POINTER, (void*) MxThread::ThreadProc);
-	SDL_SetPointerProperty(props, SDL_PROP_THREAD_CREATE_USERDATA_POINTER, this);
-	SDL_SetNumberProperty(props, SDL_PROP_THREAD_CREATE_STACKSIZE_NUMBER, p_stackSize * 4);
 
-	if (!(m_thread = SDL_CreateThreadWithProperties(props))) {
-		goto done;
+	{
+		const SDL_PropertiesID props = SDL_CreateProperties();
+		SDL_SetPointerProperty(props, SDL_PROP_THREAD_CREATE_ENTRY_FUNCTION_POINTER, (void*) MxThread::ThreadProc);
+		SDL_SetPointerProperty(props, SDL_PROP_THREAD_CREATE_USERDATA_POINTER, this);
+		SDL_SetNumberProperty(props, SDL_PROP_THREAD_CREATE_STACKSIZE_NUMBER, p_stackSize * 4);
+
+		if (!(m_thread = SDL_CreateThreadWithProperties(props))) {
+			goto done;
+		}
+
+		SDL_DestroyProperties(props);
 	}
-
-	SDL_DestroyProperties(props);
 #endif
 
 	result = SUCCESS;
