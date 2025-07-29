@@ -95,13 +95,13 @@ void Police::ReadyWorld()
 {
 	LegoWorld::ReadyWorld();
 	PlayMusic(JukeboxScript::c_PoliceStation_Music);
-	FUN_10015820(FALSE, LegoOmni::c_disableInput | LegoOmni::c_disable3d | LegoOmni::c_clearScreen);
+	Disable(FALSE, LegoOmni::c_disableInput | LegoOmni::c_disable3d | LegoOmni::c_clearScreen);
 }
 
 // FUNCTION: LEGO1 0x1005e550
 MxLong Police::HandleControl(LegoControlManagerNotificationParam& p_param)
 {
-	if (p_param.m_unk0x28 == 1) {
+	if (p_param.m_enabledChild == 1) {
 		switch (p_param.m_clickedObjectId) {
 		case PoliceScript::c_LeftArrow_Ctl:
 		case PoliceScript::c_RightArrow_Ctl:

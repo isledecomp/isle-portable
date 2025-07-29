@@ -159,13 +159,13 @@ void Score::ReadyWorld()
 		PlayMusic(JukeboxScript::c_InformationCenter_Music);
 	}
 
-	FUN_10015820(FALSE, LegoOmni::c_disableInput | LegoOmni::c_disable3d | LegoOmni::c_clearScreen);
+	Disable(FALSE, LegoOmni::c_disableInput | LegoOmni::c_disable3d | LegoOmni::c_clearScreen);
 }
 
 // FUNCTION: LEGO1 0x100016d0
 MxLong Score::FUN_100016d0(LegoControlManagerNotificationParam& p_param)
 {
-	MxS16 unk0x28 = p_param.m_unk0x28;
+	MxS16 unk0x28 = p_param.m_enabledChild;
 
 	if (unk0x28 == 1 || p_param.m_clickedObjectId == InfoscorScript::c_LegoBox_Ctl) {
 		switch (p_param.m_clickedObjectId) {

@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+set -e
+
+export LD_LIBRARY_PATH="build/source/lib:$LD_LIBRARY_PATH"
+[ -z "$QMAKE" ] && export QMAKE=/usr/lib/qt6/bin/qmake
+
+# Sets a directory that has to have a following structure:
+# build
+# ├── bin
+# │   ├── isle
+# │   └── isle-config
+# └── lib
+#     ├── liblego1.so
+#     ├── libSDL3.so -> libSDL3.so.0        # Not important if available on the system
+#     ├── libSDL3.so.0 -> libSDL3.so.0.3.0  # Not important if available on the system
+#     └── libSDL3.so.0.3.0                  # Not important if available on the system
+# Can also be defined using --build=path
+BUILD_SOURCE=source
+
+# Sets where AppRun for AppImage is, can also be defined using --apprun=path
+APPRUN_SOURCE=AppRun
+
+# Sets where desktop file for AppImage is, can also be defined using --desktop-file=path
+DESKTOP_FILE_SOURCE=isledecomp.desktop
+
+# You know the drill
+ICON_SOURCE=../../icons/isle.svg
+
+cd $(dirname $0)
+
+clean(){
+    echo "Deleting build directory"
+    rm -rf build
+}
+
+download(){
+    if [ ! -e "$1" ]; then
+        curl -Lo "$1" "$2"
+    fi
+}
+
+prepare(){
+    mkdir -p build/tools
+    mkdir -p build/assets
+
+    download build/tools/appimagetool.AppImage https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-$(uname -m).AppImage
+    chmod u+x build/tools/appimagetool.AppImage
+
+    download build/tools/linuxdeploy.AppImage https://github.com/linuxdeploy/linuxdeploy/releases/latest/download/linuxdeploy-$(uname -m).AppImage
+    chmod u+x build/tools/linuxdeploy.AppImage
+
+    download build/tools/linuxdeploy-plugin-qt.AppImage https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/latest/download/linuxdeploy-plugin-qt-$(uname -m).AppImage
+    chmod u+x build/tools/linuxdeploy-plugin-qt.AppImage
+
+    if [ ! -f "build/assets/isledecomp.desktop" ]; then
+        cp $DESKTOP_FILE_SOURCE build/assets/isledecomp.desktop
+        cp $APPRUN_SOURCE build/assets/AppRun
+        cp ../../icons/isle.svg build/assets/isle.svg
+    fi
+
+    if [ ! -d "build/source" ]; then
+        cp -r $BUILD_SOURCE build/source
+    fi
+}
+
+compile(){
+    NO_STRIP=1 build/tools/linuxdeploy.AppImage \
+        --plugin qt \
+        -e build/source/bin/isle \
+        -e build/source/bin/isle-config \
+        -d build/assets/isledecomp.desktop \
+        -i build/assets/isle.svg \
+        --custom-apprun=AppRun \
+        --appdir=build/AppDir
+}
+
+package(){
+    build/tools/appimagetool.AppImage build/AppDir build/"LEGO_Island-$(uname -m).AppImage"
+}
+
+stop(){ # Can be used to do `Build clean stop` to just clean the directory
+    exit
+}
+
+for arg in "$@"; do
+    case "$arg" in
+        --build=*)          BUILD_SOURCE="${arg#--build=}";;
+        --apprun=*)         APPRUN_SOURCE="${arg#--apprun=}";;
+        --desktop-file=*)   DESKTOP_FILE_SOURCE="${arg#--desktop-file=}";;
+        --icon=*)           ICON_SOURCE="${arg#--icon=}";;
+        *)                  "$arg"
+    esac
+done
+
+prepare
+compile
+package
+# Symlinks named as binaries in appimage can call these binaries specifically
+# ln -s "LEGO_Island-$(uname -m).AppImage" isle-config 
+# ln -s "LEGO_Island-$(uname -m).AppImage" isle

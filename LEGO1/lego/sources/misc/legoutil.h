@@ -59,4 +59,12 @@ inline T RToD(T p_r)
 	return p_r * 180.0F / 3.1416F;
 }
 
+template <class... Ts>
+struct overloaded : Ts... {
+	using Ts::operator()...;
+};
+
+template <class... Ts>
+overloaded(Ts...) -> overloaded<Ts...>;
+
 #endif // __LEGOUTIL_H

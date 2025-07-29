@@ -48,26 +48,44 @@ HRESULT FrameBufferImpl::Blt(
 	if (!DDRenderer) {
 		return DDERR_GENERIC;
 	}
+
 	if (dynamic_cast<FrameBufferImpl*>(lpDDSrcSurface) == this) {
 		return Flip(nullptr, DDFLIP_WAIT);
 	}
+
 	if ((dwFlags & DDBLT_COLORFILL) == DDBLT_COLORFILL) {
+		Uint8 a = (lpDDBltFx->dwFillColor >> 24) & 0xFF;
 		Uint8 r = (lpDDBltFx->dwFillColor >> 16) & 0xFF;
 		Uint8 g = (lpDDBltFx->dwFillColor >> 8) & 0xFF;
 		Uint8 b = lpDDBltFx->dwFillColor & 0xFF;
-		DDRenderer->Clear(r / 255.0f, g / 255.0f, b / 255.0f);
+
+		float fa = a / 255.0f;
+		float fr = r / 255.0f;
+		float fg = g / 255.0f;
+		float fb = b / 255.0f;
+
+		if (lpDestRect) {
+			SDL_Rect dstRect = ConvertRect(lpDestRect);
+			DDRenderer->Draw2DImage(NO_TEXTURE_ID, SDL_Rect{}, dstRect, {fr, fg, fb, fa});
+		}
+		else {
+			DDRenderer->Clear(fr, fg, fb);
+		}
 		return DD_OK;
 	}
+
 	auto surface = static_cast<DirectDrawSurfaceImpl*>(lpDDSrcSurface);
 	if (!surface) {
 		return DDERR_GENERIC;
 	}
-	Uint32 textureId = DDRenderer->GetTextureId(surface->ToTexture());
 	SDL_Rect srcRect =
 		lpSrcRect ? ConvertRect(lpSrcRect) : SDL_Rect{0, 0, surface->m_surface->w, surface->m_surface->h};
 	SDL_Rect dstRect =
 		lpDestRect ? ConvertRect(lpDestRect) : SDL_Rect{0, 0, (int) m_virtualWidth, (int) m_virtualHeight};
-	DDRenderer->Draw2DImage(textureId, srcRect, dstRect);
+	float scaleX = (float) dstRect.w / (float) srcRect.w;
+	float scaleY = (float) dstRect.h / (float) srcRect.h;
+	Uint32 textureId = DDRenderer->GetTextureId(surface->ToTexture(), true, scaleX, scaleY);
+	DDRenderer->Draw2DImage(textureId, srcRect, dstRect, {1.0f, 1.0f, 1.0f, 1.0f});
 
 	return DD_OK;
 }
@@ -125,7 +143,7 @@ HRESULT FrameBufferImpl::GetPalette(LPDIRECTDRAWPALETTE* lplpDDPalette)
 HRESULT FrameBufferImpl::GetPixelFormat(LPDDPIXELFORMAT lpDDPixelFormat)
 {
 	memset(lpDDPixelFormat, 0, sizeof(*lpDDPixelFormat));
-	lpDDPixelFormat->dwFlags = DDPF_RGB;
+	lpDDPixelFormat->dwFlags = DDPF_RGB | DDPF_ALPHAPIXELS;
 	const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(m_transferBuffer->m_surface->format);
 	if (details->bits_per_pixel == 8) {
 		lpDDPixelFormat->dwFlags |= DDPF_PALETTEINDEXED8;
@@ -153,12 +171,14 @@ HRESULT FrameBufferImpl::Lock(LPRECT lpDestRect, DDSURFACEDESC* lpDDSurfaceDesc,
 	if (!DDRenderer) {
 		return DDERR_GENERIC;
 	}
+
+	m_readOnlyLock = (dwFlags & DDLOCK_READONLY) == DDLOCK_READONLY;
+
 	if ((dwFlags & DDLOCK_WRITEONLY) == DDLOCK_WRITEONLY) {
-		SDL_Rect rect = {0, 0, m_transferBuffer->m_surface->w, m_transferBuffer->m_surface->h};
 		const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(m_transferBuffer->m_surface->format);
 		SDL_Palette* palette = m_palette ? static_cast<DirectDrawPaletteImpl*>(m_palette)->m_palette : nullptr;
 		Uint32 color = SDL_MapRGBA(details, palette, 0, 0, 0, 0);
-		SDL_FillSurfaceRect(m_transferBuffer->m_surface, &rect, color);
+		SDL_FillSurfaceRect(m_transferBuffer->m_surface, nullptr, color);
 	}
 	else {
 		DDRenderer->Download(m_transferBuffer->m_surface);
@@ -206,7 +226,9 @@ HRESULT FrameBufferImpl::SetPalette(LPDIRECTDRAWPALETTE lpDDPalette)
 HRESULT FrameBufferImpl::Unlock(LPVOID lpSurfaceData)
 {
 	m_transferBuffer->Unlock(lpSurfaceData);
-	BltFast(0, 0, m_transferBuffer, nullptr, DDBLTFAST_WAIT);
+	if (!m_readOnlyLock) {
+		BltFast(0, 0, m_transferBuffer, nullptr, DDBLTFAST_WAIT);
+	}
 
 	return DD_OK;
 }

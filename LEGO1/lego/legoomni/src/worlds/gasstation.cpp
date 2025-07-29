@@ -267,7 +267,7 @@ void GasStation::ReadyWorld()
 		break;
 	}
 
-	FUN_10015820(FALSE, LegoOmni::c_disableInput | LegoOmni::c_disable3d | LegoOmni::c_clearScreen);
+	Disable(FALSE, LegoOmni::c_disableInput | LegoOmni::c_disable3d | LegoOmni::c_clearScreen);
 }
 
 // FUNCTION: LEGO1 0x10005590
@@ -330,7 +330,7 @@ MxLong GasStation::HandleEndAction(MxEndActionNotificationParam& p_param)
 				break;
 			case GasStationState::e_afterAcceptingQuest:
 				m_state->m_state = GasStationState::e_beforeExitingForQuest;
-				((Act1State*) GameState()->GetState("Act1State"))->m_unk0x018 = 7;
+				((Act1State*) GameState()->GetState("Act1State"))->m_state = Act1State::e_transitionToTowtrack;
 				m_destLocation = LegoGameState::e_garageExited;
 				m_radio.Stop();
 				BackgroundAudioManager()->Stop();
@@ -389,7 +389,7 @@ MxLong GasStation::HandleButtonDown(LegoControlManagerNotificationParam& p_param
 // FUNCTION: BETA10 0x10029445
 MxLong GasStation::HandleControl(LegoControlManagerNotificationParam& p_param)
 {
-	if (p_param.m_unk0x28 == 1) {
+	if (p_param.m_enabledChild == 1) {
 		MxDSAction action;
 
 		switch (p_param.m_clickedObjectId) {

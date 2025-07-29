@@ -44,13 +44,13 @@ ROIColorAlias g_roiColorAliases[22] = {
 int g_roiConfig = 100;
 
 // GLOBAL: LEGO1 0x10101370
-const char* g_unk0x10101370[] = {"bike", "moto", NULL};
+const char* g_sharedModelsHigh[] = {"bike", "moto", NULL};
 
 // GLOBAL: LEGO1 0x10101380
-const char* g_unk0x10101380[] = {"bike", "moto", "haus", NULL};
+const char* g_sharedModelsLow[] = {"bike", "moto", "haus", NULL};
 
 // GLOBAL: LEGO1 0x10101390
-const char* g_unk0x10101390[] = {"rcuser", "jsuser", "dunebugy", "chtrblad", "chtrbody", "chtrshld", NULL};
+const char* g_alwaysLoadNames[] = {"rcuser", "jsuser", "dunebugy", "chtrblad", "chtrbody", "chtrshld", NULL};
 
 // GLOBAL: LEGO1 0x101013ac
 ColorOverride g_colorOverride = NULL;
@@ -115,7 +115,7 @@ LegoROI::~LegoROI()
 // FUNCTION: LEGO1 0x100a84a0
 // FUNCTION: BETA10 0x10189b99
 LegoResult LegoROI::Read(
-	OrientableROI* p_unk0xd4,
+	OrientableROI* p_parentROI,
 	Tgl::Renderer* p_renderer,
 	ViewLODListManager* p_viewLODListManager,
 	LegoTextureContainer* p_textureContainer,
@@ -135,7 +135,7 @@ LegoResult LegoROI::Read(
 	LegoSphere sphere;
 	LegoBox box;
 
-	m_parentROI = p_unk0xd4;
+	m_parentROI = p_parentROI;
 
 	if (p_storage->Read(&length, sizeof(LegoU32)) != SUCCESS) {
 		goto done;
@@ -178,11 +178,11 @@ LegoResult LegoROI::Read(
 		textureName = NULL;
 	}
 
-	if (p_storage->Read(&m_unk0x100, sizeof(undefined)) != SUCCESS) {
+	if (p_storage->Read(&m_sharedLodList, sizeof(LegoBool)) != SUCCESS) {
 		goto done;
 	}
 
-	if (m_unk0x100) {
+	if (m_sharedLodList) {
 		for (roiLength = strlen(m_name); roiLength; roiLength--) {
 			if (m_name[roiLength - 1] < '0' || m_name[roiLength - 1] > '9') {
 				break;
@@ -225,30 +225,30 @@ LegoResult LegoROI::Read(
 			}
 
 			if (g_roiConfig <= 2) {
-				for (i = 0; g_unk0x10101380[i] != NULL; i++) {
-					if (!SDL_strncasecmp(m_name, g_unk0x10101380[i], 4)) {
-						roiName = g_unk0x10101380[i];
+				for (i = 0; g_sharedModelsLow[i] != NULL; i++) {
+					if (!SDL_strncasecmp(m_name, g_sharedModelsLow[i], 4)) {
+						roiName = g_sharedModelsLow[i];
 						break;
 					}
 				}
 			}
 			else {
-				for (i = 0; g_unk0x10101370[i] != NULL; i++) {
-					if (!SDL_strncasecmp(m_name, g_unk0x10101370[i], 4)) {
-						roiName = g_unk0x10101370[i];
+				for (i = 0; g_sharedModelsHigh[i] != NULL; i++) {
+					if (!SDL_strncasecmp(m_name, g_sharedModelsHigh[i], 4)) {
+						roiName = g_sharedModelsHigh[i];
 						break;
 					}
 				}
 			}
 
 			if ((lodList = p_viewLODListManager->Lookup(roiName))) {
-				for (j = 0; g_unk0x10101390[j] != NULL; j++) {
-					if (!SDL_strcasecmp(g_unk0x10101390[j], roiName)) {
+				for (j = 0; g_alwaysLoadNames[j] != NULL; j++) {
+					if (!SDL_strcasecmp(g_alwaysLoadNames[j], roiName)) {
 						break;
 					}
 				}
 
-				if (g_unk0x10101390[j] != NULL) {
+				if (g_alwaysLoadNames[j] != NULL) {
 					while (lodList->Size()) {
 						delete const_cast<ViewLOD*>(lodList->PopBack());
 					}
@@ -260,7 +260,7 @@ LegoResult LegoROI::Read(
 						}
 
 						if (j == 0) {
-							if (surplusLODs != 0 && lod->GetUnknown0x08Test8()) {
+							if (surplusLODs != 0 && lod->IsExtraLOD()) {
 								numLODs++;
 							}
 						}
@@ -277,7 +277,7 @@ LegoResult LegoROI::Read(
 					}
 
 					if (i == 0) {
-						if (surplusLODs != 0 && lod->GetUnknown0x08Test8()) {
+						if (surplusLODs != 0 && lod->IsExtraLOD()) {
 							numLODs++;
 						}
 					}
@@ -390,7 +390,7 @@ LegoROI* LegoROI::FindChildROI(const LegoChar* p_name, LegoROI* p_roi)
 
 // FUNCTION: LEGO1 0x100a8da0
 // FUNCTION: BETA10 0x1018a9fb
-LegoResult LegoROI::ApplyAnimationTransformation(
+LegoResult LegoROI::ApplyChildAnimationTransformation(
 	LegoTreeNode* p_node,
 	const Matrix4& p_matrix,
 	LegoTime p_time,
@@ -411,11 +411,11 @@ LegoResult LegoROI::ApplyAnimationTransformation(
 		roi->m_local2world.Product(mat, p_matrix);
 		roi->UpdateWorldData();
 
-		LegoBool und = data->GetVisibility(p_time);
-		roi->SetVisibility(und);
+		LegoBool visibility = data->GetVisibility(p_time);
+		roi->SetVisibility(visibility);
 
 		for (LegoU32 i = 0; i < p_node->GetNumChildren(); i++) {
-			ApplyAnimationTransformation(p_node->GetChild(i), roi->m_local2world, p_time, roi);
+			ApplyChildAnimationTransformation(p_node->GetChild(i), roi->m_local2world, p_time, roi);
 		}
 	}
 	else {
@@ -427,7 +427,7 @@ LegoResult LegoROI::ApplyAnimationTransformation(
 
 // FUNCTION: LEGO1 0x100a8e80
 // FUNCTION: BETA10 0x1018ab3a
-void LegoROI::FUN_100a8e80(LegoTreeNode* p_node, Matrix4& p_matrix, LegoTime p_time, LegoROI** p_roiMap)
+void LegoROI::ApplyAnimationTransformation(LegoTreeNode* p_node, Matrix4& p_matrix, LegoTime p_time, LegoROI** p_roiMap)
 {
 	MxMatrix mat;
 
@@ -439,11 +439,11 @@ void LegoROI::FUN_100a8e80(LegoTreeNode* p_node, Matrix4& p_matrix, LegoTime p_t
 		roi->m_local2world.Product(mat, p_matrix);
 		roi->UpdateWorldData();
 
-		LegoBool und = data->GetVisibility(p_time);
-		roi->SetVisibility(und);
+		LegoBool visiblity = data->GetVisibility(p_time);
+		roi->SetVisibility(visiblity);
 
 		for (LegoU32 i = 0; i < p_node->GetNumChildren(); i++) {
-			FUN_100a8e80(p_node->GetChild(i), roi->m_local2world, p_time, p_roiMap);
+			ApplyAnimationTransformation(p_node->GetChild(i), roi->m_local2world, p_time, p_roiMap);
 		}
 	}
 	else {
@@ -451,14 +451,14 @@ void LegoROI::FUN_100a8e80(LegoTreeNode* p_node, Matrix4& p_matrix, LegoTime p_t
 		local2world.Product(mat, p_matrix);
 
 		for (LegoU32 i = 0; i < p_node->GetNumChildren(); i++) {
-			FUN_100a8e80(p_node->GetChild(i), local2world, p_time, p_roiMap);
+			ApplyAnimationTransformation(p_node->GetChild(i), local2world, p_time, p_roiMap);
 		}
 	}
 }
 
 // FUNCTION: LEGO1 0x100a8fd0
 // FUNCTION: BETA10 0x1018ac81
-void LegoROI::FUN_100a8fd0(LegoTreeNode* p_node, Matrix4& p_matrix, LegoTime p_time, LegoROI** p_roiMap)
+void LegoROI::ApplyTransform(LegoTreeNode* p_node, Matrix4& p_matrix, LegoTime p_time, LegoROI** p_roiMap)
 {
 	MxMatrix mat;
 
@@ -470,7 +470,7 @@ void LegoROI::FUN_100a8fd0(LegoTreeNode* p_node, Matrix4& p_matrix, LegoTime p_t
 		roi->m_local2world.Product(mat, p_matrix);
 
 		for (LegoU32 i = 0; i < p_node->GetNumChildren(); i++) {
-			FUN_100a8fd0(p_node->GetChild(i), roi->m_local2world, p_time, p_roiMap);
+			ApplyTransform(p_node->GetChild(i), roi->m_local2world, p_time, p_roiMap);
 		}
 	}
 	else {
@@ -478,7 +478,7 @@ void LegoROI::FUN_100a8fd0(LegoTreeNode* p_node, Matrix4& p_matrix, LegoTime p_t
 		local2world.Product(mat, p_matrix);
 
 		for (LegoU32 i = 0; i < p_node->GetNumChildren(); i++) {
-			FUN_100a8fd0(p_node->GetChild(i), local2world, p_time, p_roiMap);
+			ApplyTransform(p_node->GetChild(i), local2world, p_time, p_roiMap);
 		}
 	}
 }
@@ -493,7 +493,7 @@ LegoResult LegoROI::SetFrame(LegoAnim* p_anim, LegoTime p_time)
 	mat = m_local2world;
 	mat.SetIdentity(); // this clears the matrix, assignment above is redundant
 
-	return ApplyAnimationTransformation(root, mat, p_time, this);
+	return ApplyChildAnimationTransformation(root, mat, p_time, this);
 }
 
 // FUNCTION: LEGO1 0x100a9170
@@ -756,7 +756,7 @@ TimeROI::TimeROI(Tgl::Renderer* p_renderer, ViewLODList* p_lodList, LegoTime p_t
 
 // FUNCTION: LEGO1 0x100a9b40
 // FUNCTION: BETA10 0x1018bbf0
-void TimeROI::FUN_100a9b40(Matrix4& p_matrix, LegoTime p_time)
+void TimeROI::CalculateWorldVelocity(Matrix4& p_matrix, LegoTime p_time)
 {
 	LegoTime time = p_time - m_time;
 

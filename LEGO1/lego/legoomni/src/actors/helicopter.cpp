@@ -82,7 +82,7 @@ void Helicopter::Exit()
 
 	if (GameState()->GetCurrentAct() == LegoGameState::e_act1) {
 		SpawnPlayer(
-			LegoGameState::e_unk40,
+			LegoGameState::e_helicopterSpawn,
 			TRUE,
 			IslePathActor::c_spawnBit1 | IslePathActor::c_playMusic | IslePathActor::c_spawnBit3
 		);
@@ -121,7 +121,7 @@ void Helicopter::Exit()
 // FUNCTION: BETA10 0x1002a3db
 MxLong Helicopter::HandleClick()
 {
-	if (!FUN_1003ef60()) {
+	if (!CanExit()) {
 		return 1;
 	}
 
@@ -148,7 +148,7 @@ MxLong Helicopter::HandleClick()
 			IslePathActor::c_spawnBit1 | IslePathActor::c_playMusic | IslePathActor::c_spawnBit3
 		);
 		((Isle*) CurrentWorld())->SetDestLocation(LegoGameState::e_copter);
-		FUN_10015820(TRUE, 0);
+		Disable(TRUE, 0);
 		TransitionManager()->StartTransition(MxTransitionManager::e_mosaic, 50, FALSE, TRUE);
 		SetActorState(c_disabled);
 		PlayMusic(JukeboxScript::c_Jail_Music);
@@ -189,7 +189,7 @@ MxLong Helicopter::HandleControl(LegoControlManagerNotificationParam& p_param)
 		break;
 	}
 
-	if (p_param.m_unk0x28 == 1) {
+	if (p_param.m_enabledChild == 1) {
 		MxU32 isPizza = FALSE;
 
 		switch (p_param.m_clickedObjectId) {
@@ -214,7 +214,7 @@ MxLong Helicopter::HandleControl(LegoControlManagerNotificationParam& p_param)
 			Act1State* act1State = (Act1State*) GameState()->GetState("Act1State");
 			assert(act1State);
 			if (m_state->m_unk0x08 == 0) {
-				act1State->m_unk0x018 = 4;
+				act1State->m_state = Act1State::e_helicopter;
 				m_state->m_unk0x08 = 1;
 				m_world->RemoveActor(this);
 				InvokeAction(Extra::ActionType::e_start, script, IsleScript::c_HelicopterTakeOff_Anim, NULL);
@@ -318,7 +318,7 @@ MxLong Helicopter::HandleEndAnim(LegoEndAnimNotificationParam& p_param)
 		if (GameState()->GetCurrentAct() == LegoGameState::e_act1) {
 			Act1State* act1State = (Act1State*) GameState()->GetState("Act1State");
 			assert(act1State);
-			act1State->m_unk0x018 = 4;
+			act1State->m_state = Act1State::e_helicopter;
 			SpawnPlayer(
 				LegoGameState::e_unk42,
 				TRUE,
@@ -359,7 +359,7 @@ MxLong Helicopter::HandleEndAnim(LegoEndAnimNotificationParam& p_param)
 		if (GameState()->GetCurrentAct() == LegoGameState::e_act1) {
 			Act1State* act1State = (Act1State*) GameState()->GetState("Act1State");
 			assert(act1State);
-			act1State->m_unk0x018 = 0;
+			act1State->m_state = Act1State::e_none;
 			SpawnPlayer(
 				LegoGameState::e_unk41,
 				TRUE,
@@ -426,7 +426,7 @@ void Helicopter::Animate(float p_time)
 			v2 *= f2;
 			v2 += v1;
 
-			m_world->GetCameraController()->FUN_100123e0(mat, 0);
+			m_world->GetCameraController()->TransformPointOfView(mat, 0);
 		}
 		else {
 			if (m_state->m_unk0x08 == 4) {
@@ -459,7 +459,7 @@ void Helicopter::FUN_100042a0(const Matrix4& p_matrix)
 	// the typecast makes this function match for unknown reasons
 	Vector3 vec6((const float*) m_unk0x1a8[3]); // locala0  // esp+0x28
 
-	m_world->GetCameraController()->FUN_100123b0(local48);
+	m_world->GetCameraController()->GetPointOfView(local48);
 	m_unk0x1a8.SetIdentity();
 	local90 = p_matrix;
 

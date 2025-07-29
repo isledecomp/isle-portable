@@ -27,6 +27,7 @@ MxCompositeMediaPresenter::~MxCompositeMediaPresenter()
 }
 
 // FUNCTION: LEGO1 0x10074090
+// FUNCTION: BETA10 0x100e9d37
 MxResult MxCompositeMediaPresenter::StartAction(MxStreamController* p_controller, MxDSAction* p_action)
 {
 	AUTOLOCK(m_criticalSection);
@@ -84,7 +85,7 @@ MxResult MxCompositeMediaPresenter::StartAction(MxStreamController* p_controller
 		if (!m_compositePresenter) {
 			SetTickleState(e_ready);
 			MxLong time = Timer()->GetTime();
-			m_action->SetUnknown90(time);
+			m_action->SetTimeStarted(time);
 		}
 
 		result = SUCCESS;
@@ -134,7 +135,7 @@ void MxCompositeMediaPresenter::StartingTickle()
 		if (!m_unk0x4c) {
 			ProgressTickleState(e_streaming);
 			MxLong time = Timer()->GetTime();
-			m_action->SetUnknown90(time);
+			m_action->SetTimeStarted(time);
 		}
 	}
 }

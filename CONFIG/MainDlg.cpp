@@ -11,6 +11,10 @@
 #include "res/resource.h"
 
 #include <QKeyEvent>
+#include <QMessageBox>
+#include <QProcess>
+#include <SDL3/SDL.h>
+#include <cmath>
 #include <mxdirectx/legodxinfo.h>
 #include <ui_maindialog.h>
 
@@ -52,13 +56,21 @@ CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 		this,
 		&CMainDialog::OnRadiobuttonTextureHighQuality
 	);
+
+	connect(m_ui->windowedRadioButton, &QRadioButton::toggled, this, &CMainDialog::OnRadioWindowed);
+	connect(m_ui->fullscreenRadioButton, &QRadioButton::toggled, this, &CMainDialog::OnRadioFullscreen);
+	connect(m_ui->exFullscreenRadioButton, &QRadioButton::toggled, this, &CMainDialog::OnRadioExclusiveFullscreen);
 	connect(m_ui->devicesList, &QListWidget::currentRowChanged, this, &CMainDialog::OnList3DevicesSelectionChanged);
 	connect(m_ui->musicCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxMusic);
 	connect(m_ui->sound3DCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckbox3DSound);
-	connect(m_ui->joystickCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxJoystick);
-	connect(m_ui->fullscreenCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxFullscreen);
+	connect(m_ui->rumbleCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxRumble);
+	connect(m_ui->textureCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxTexture);
+	connect(m_ui->touchComboBox, &QComboBox::currentIndexChanged, this, &CMainDialog::TouchControlsChanged);
+	connect(m_ui->transitionTypeComboBox, &QComboBox::currentIndexChanged, this, &CMainDialog::TransitionTypeChanged);
+	connect(m_ui->exFullResComboBox, &QComboBox::currentIndexChanged, this, &CMainDialog::ExclusiveResolutionChanged);
 	connect(m_ui->okButton, &QPushButton::clicked, this, &CMainDialog::accept);
 	connect(m_ui->cancelButton, &QPushButton::clicked, this, &CMainDialog::reject);
+	connect(m_ui->launchButton, &QPushButton::clicked, this, &CMainDialog::launch);
 
 	connect(m_ui->dataPathOpen, &QPushButton::clicked, this, &CMainDialog::SelectDataPathDialog);
 	connect(m_ui->savePathOpen, &QPushButton::clicked, this, &CMainDialog::SelectSavePathDialog);
@@ -66,10 +78,57 @@ CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 	connect(m_ui->dataPath, &QLineEdit::editingFinished, this, &CMainDialog::DataPathEdited);
 	connect(m_ui->savePath, &QLineEdit::editingFinished, this, &CMainDialog::SavePathEdited);
 
+	connect(m_ui->texturePathOpen, &QPushButton::clicked, this, &CMainDialog::SelectTexturePathDialog);
+	connect(m_ui->texturePath, &QLineEdit::editingFinished, this, &CMainDialog::TexturePathEdited);
+
 	connect(m_ui->maxLoDSlider, &QSlider::valueChanged, this, &CMainDialog::MaxLoDChanged);
+	connect(m_ui->maxLoDSlider, &QSlider::sliderMoved, this, &CMainDialog::MaxLoDChanged);
 	connect(m_ui->maxActorsSlider, &QSlider::valueChanged, this, &CMainDialog::MaxActorsChanged);
+	connect(m_ui->maxActorsSlider, &QSlider::sliderMoved, this, &CMainDialog::MaxActorsChanged);
+
+	connect(m_ui->msaaSlider, &QSlider::valueChanged, this, &CMainDialog::MSAAChanged);
+	connect(m_ui->msaaSlider, &QSlider::sliderMoved, this, &CMainDialog::MSAAChanged);
+	connect(m_ui->AFSlider, &QSlider::valueChanged, this, &CMainDialog::AFChanged);
+	connect(m_ui->AFSlider, &QSlider::sliderMoved, this, &CMainDialog::AFChanged);
+
+	connect(m_ui->aspectRatioComboBox, &QComboBox::currentIndexChanged, this, &CMainDialog::AspectRatioChanged);
+	connect(m_ui->xResSpinBox, &QSpinBox::valueChanged, this, &CMainDialog::XResChanged);
+	connect(m_ui->yResSpinBox, &QSpinBox::valueChanged, this, &CMainDialog::YResChanged);
+	connect(m_ui->framerateSpinBox, &QSpinBox::valueChanged, this, &CMainDialog::FramerateChanged);
 
 	layout()->setSizeConstraint(QLayout::SetFixedSize);
+
+	if (currentConfigApp->m_ram_quality_limit != 0) {
+		m_modified = true;
+		const QString ramError = QString("Insufficient RAM!");
+		m_ui->sound3DCheckBox->setChecked(false);
+		m_ui->sound3DCheckBox->setEnabled(false);
+		m_ui->sound3DCheckBox->setToolTip(ramError);
+		m_ui->modelQualityHighRadioButton->setEnabled(false);
+		m_ui->modelQualityHighRadioButton->setToolTip(ramError);
+		m_ui->modelQualityLowRadioButton->setEnabled(true);
+		if (currentConfigApp->m_ram_quality_limit == 2) {
+			m_ui->modelQualityLowRadioButton->setChecked(true);
+			m_ui->modelQualityMediumRadioButton->setEnabled(false);
+			m_ui->modelQualityMediumRadioButton->setToolTip(ramError);
+			m_ui->maxLoDSlider->setMaximum(30);
+			m_ui->maxActorsSlider->setMaximum(15);
+		}
+		else {
+			m_ui->modelQualityMediumRadioButton->setChecked(true);
+			m_ui->modelQualityMediumRadioButton->setEnabled(true);
+			m_ui->maxLoDSlider->setMaximum(40);
+			m_ui->maxActorsSlider->setMaximum(30);
+		}
+	}
+	else {
+		m_ui->sound3DCheckBox->setEnabled(true);
+		m_ui->modelQualityLowRadioButton->setEnabled(true);
+		m_ui->modelQualityMediumRadioButton->setEnabled(true);
+		m_ui->modelQualityHighRadioButton->setEnabled(true);
+		m_ui->maxLoDSlider->setMaximum(60);
+		m_ui->maxActorsSlider->setMaximum(40);
+	}
 }
 
 CMainDialog::~CMainDialog()
@@ -87,7 +146,7 @@ bool CMainDialog::OnInitDialog()
 	int device_i = 0;
 	int selected = 0;
 	char device_name[256];
-	const list<MxDriver>& driver_list = enumerator->GetDriverList();
+	const list<MxDriver>& driver_list = enumerator->m_ddInfo;
 	for (list<MxDriver>::const_iterator it_driver = driver_list.begin(); it_driver != driver_list.end(); it_driver++) {
 		const MxDriver& driver = *it_driver;
 		for (list<Direct3DDeviceInfo>::const_iterator it_device = driver.m_devices.begin();
@@ -111,7 +170,27 @@ bool CMainDialog::OnInitDialog()
 	m_ui->devicesList->setCurrentRow(selected);
 
 	m_ui->maxLoDSlider->setValue((int) currentConfigApp->m_max_lod * 10);
+	m_ui->LoDNum->setNum((int) currentConfigApp->m_max_lod * 10);
 	m_ui->maxActorsSlider->setValue(currentConfigApp->m_max_actors);
+	m_ui->maxActorsNum->setNum(currentConfigApp->m_max_actors);
+
+	m_ui->exFullResComboBox->clear();
+
+	int displayModeCount;
+	displayModes = SDL_GetFullscreenDisplayModes(SDL_GetPrimaryDisplay(), &displayModeCount);
+
+	for (int i = 0; i < displayModeCount; ++i) {
+		QString mode =
+			QString("%1x%2 @ %3Hz").arg(displayModes[i]->w).arg(displayModes[i]->h).arg(displayModes[i]->refresh_rate);
+		m_ui->exFullResComboBox->addItem(mode);
+
+		if ((displayModes[i]->w == currentConfigApp->m_exf_x_res) &&
+			(displayModes[i]->h == currentConfigApp->m_exf_y_res) &&
+			(displayModes[i]->refresh_rate == currentConfigApp->m_exf_fps)) {
+			m_ui->exFullResComboBox->setCurrentIndex(i);
+		}
+	}
+
 	UpdateInterface();
 	return true;
 }
@@ -155,6 +234,30 @@ void CMainDialog::accept()
 	QDialog::accept();
 }
 
+void CMainDialog::launch()
+{
+	if (m_modified) {
+		currentConfigApp->WriteRegisterSettings();
+	}
+
+	QDir::setCurrent(QCoreApplication::applicationDirPath());
+
+	QMessageBox msgBox = QMessageBox(
+		QMessageBox::Warning,
+		QString("Error!"),
+		QString("Unable to locate isle executable!"),
+		QMessageBox::Close
+	);
+
+	if (!QProcess::startDetached("./isle")) {   // Check in isle-config directory
+		if (!QProcess::startDetached("isle")) { // Check in $PATH
+			msgBox.exec();
+		}
+	}
+
+	QDialog::accept();
+}
+
 // FUNCTION: CONFIG 0x00404360
 void CMainDialog::UpdateInterface()
 {
@@ -182,11 +285,46 @@ void CMainDialog::UpdateInterface()
 	else {
 		m_ui->textureQualityHighRadioButton->setChecked(true);
 	}
-	m_ui->joystickCheckBox->setChecked(currentConfigApp->m_use_joystick);
+	if (currentConfigApp->m_exclusive_full_screen) {
+		m_ui->exFullscreenRadioButton->setChecked(true);
+		m_ui->resolutionBox->setEnabled(false);
+		m_ui->exFullResContainer->setEnabled(true);
+	}
+	else {
+		m_ui->resolutionBox->setEnabled(true);
+		m_ui->exFullResContainer->setEnabled(false);
+		if (currentConfigApp->m_full_screen) {
+			m_ui->fullscreenRadioButton->setChecked(true);
+		}
+		else {
+			m_ui->windowedRadioButton->setChecked(true);
+		}
+	}
 	m_ui->musicCheckBox->setChecked(currentConfigApp->m_music);
-	m_ui->fullscreenCheckBox->setChecked(currentConfigApp->m_full_screen);
+	m_ui->rumbleCheckBox->setChecked(currentConfigApp->m_haptic);
+	m_ui->touchComboBox->setCurrentIndex(currentConfigApp->m_touch_scheme);
+	m_ui->transitionTypeComboBox->setCurrentIndex(currentConfigApp->m_transition_type);
 	m_ui->dataPath->setText(QString::fromStdString(currentConfigApp->m_cd_path));
 	m_ui->savePath->setText(QString::fromStdString(currentConfigApp->m_save_path));
+
+	m_ui->textureCheckBox->setChecked(currentConfigApp->m_texture_load);
+	m_ui->texturePath->setText(QString::fromStdString(currentConfigApp->m_texture_path));
+	m_ui->texturePath->setEnabled(currentConfigApp->m_texture_load);
+	m_ui->texturePathOpen->setEnabled(currentConfigApp->m_texture_load);
+
+	m_ui->aspectRatioComboBox->setCurrentIndex(currentConfigApp->m_aspect_ratio);
+	m_ui->xResSpinBox->setValue(currentConfigApp->m_x_res);
+	m_ui->yResSpinBox->setValue(currentConfigApp->m_y_res);
+	m_ui->framerateSpinBox->setValue(static_cast<int>(std::round(1000.0f / currentConfigApp->m_frame_delta)));
+
+	m_ui->maxLoDSlider->setValue((int) (currentConfigApp->m_max_lod * 10));
+	m_ui->LoDNum->setNum(currentConfigApp->m_max_lod);
+	m_ui->maxActorsSlider->setValue(currentConfigApp->m_max_actors);
+	m_ui->maxActorsNum->setNum(currentConfigApp->m_max_actors);
+	m_ui->msaaSlider->setValue(log2(currentConfigApp->m_msaa));
+	m_ui->msaaNum->setNum(currentConfigApp->m_msaa);
+	m_ui->AFSlider->setValue(log2(currentConfigApp->m_anisotropy));
+	m_ui->AFNum->setNum(currentConfigApp->m_anisotropy);
 }
 
 // FUNCTION: CONFIG 0x004045e0
@@ -246,12 +384,40 @@ void CMainDialog::OnRadiobuttonTextureHighQuality(bool checked)
 	}
 }
 
-// FUNCTION: CONFIG 0x00404790
-void CMainDialog::OnCheckboxJoystick(bool checked)
+void CMainDialog::OnRadioWindowed(bool checked)
 {
-	currentConfigApp->m_use_joystick = checked;
-	m_modified = true;
-	UpdateInterface();
+	if (checked) {
+		currentConfigApp->m_full_screen = false;
+		currentConfigApp->m_exclusive_full_screen = false;
+		m_ui->resolutionBox->setEnabled(true);
+		m_ui->exFullResContainer->setEnabled(false);
+		m_modified = true;
+		UpdateInterface();
+	}
+}
+
+void CMainDialog::OnRadioFullscreen(bool checked)
+{
+	if (checked) {
+		currentConfigApp->m_full_screen = true;
+		currentConfigApp->m_exclusive_full_screen = false;
+		m_ui->resolutionBox->setEnabled(true);
+		m_ui->exFullResContainer->setEnabled(false);
+		m_modified = true;
+		UpdateInterface();
+	}
+}
+
+void CMainDialog::OnRadioExclusiveFullscreen(bool checked)
+{
+	if (checked) {
+		currentConfigApp->m_full_screen = true;
+		currentConfigApp->m_exclusive_full_screen = true;
+		m_ui->resolutionBox->setEnabled(false);
+		m_ui->exFullResContainer->setEnabled(true);
+		m_modified = true;
+		UpdateInterface();
+	}
 }
 
 // FUNCTION: CONFIG 0x004048c0
@@ -262,9 +428,39 @@ void CMainDialog::OnCheckboxMusic(bool checked)
 	UpdateInterface();
 }
 
-void CMainDialog::OnCheckboxFullscreen(bool checked)
+void CMainDialog::OnCheckboxRumble(bool checked)
 {
-	currentConfigApp->m_full_screen = checked;
+	currentConfigApp->m_haptic = checked;
+	m_modified = true;
+	UpdateInterface();
+}
+
+void CMainDialog::OnCheckboxTexture(bool checked)
+{
+	currentConfigApp->m_texture_load = checked;
+	m_modified = true;
+	UpdateInterface();
+}
+
+void CMainDialog::TouchControlsChanged(int index)
+{
+	currentConfigApp->m_touch_scheme = index;
+	m_modified = true;
+	UpdateInterface();
+}
+
+void CMainDialog::TransitionTypeChanged(int index)
+{
+	currentConfigApp->m_transition_type = index;
+	m_modified = true;
+	UpdateInterface();
+}
+
+void CMainDialog::ExclusiveResolutionChanged(int index)
+{
+	currentConfigApp->m_exf_x_res = displayModes[index]->w;
+	currentConfigApp->m_exf_y_res = displayModes[index]->h;
+	currentConfigApp->m_exf_fps = displayModes[index]->refresh_rate;
 	m_modified = true;
 	UpdateInterface();
 }
@@ -341,10 +537,112 @@ void CMainDialog::MaxLoDChanged(int value)
 {
 	currentConfigApp->m_max_lod = static_cast<float>(value) / 10.0f;
 	m_modified = true;
+	UpdateInterface();
 }
 
 void CMainDialog::MaxActorsChanged(int value)
 {
 	currentConfigApp->m_max_actors = value;
 	m_modified = true;
+	UpdateInterface();
+}
+
+void CMainDialog::MSAAChanged(int value)
+{
+	currentConfigApp->m_msaa = exp2(value);
+	m_modified = true;
+	UpdateInterface();
+}
+
+void CMainDialog::AFChanged(int value)
+{
+	currentConfigApp->m_anisotropy = exp2(value);
+	m_modified = true;
+	UpdateInterface();
+}
+
+void CMainDialog::SelectTexturePathDialog()
+{
+	QString texture_path = QString::fromStdString(currentConfigApp->m_texture_path);
+	texture_path = QFileDialog::getExistingDirectory(
+		this,
+		tr("Open Directory"),
+		texture_path,
+		QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
+	);
+
+	QDir texture_dir = QDir(texture_path);
+
+	if (texture_dir.exists()) {
+		currentConfigApp->m_texture_path = texture_dir.absolutePath().toStdString();
+		m_modified = true;
+	}
+	UpdateInterface();
+}
+
+void CMainDialog::TexturePathEdited()
+{
+	QDir texture_dir = QDir(m_ui->texturePath->text());
+
+	if (texture_dir.exists()) {
+		currentConfigApp->m_texture_path = texture_dir.absolutePath().toStdString();
+		m_modified = true;
+	}
+	UpdateInterface();
+}
+
+void CMainDialog::AspectRatioChanged(int index)
+{
+	currentConfigApp->m_aspect_ratio = index;
+	EnsureAspectRatio();
+	m_modified = true;
+	UpdateInterface();
+}
+
+void CMainDialog::XResChanged(int i)
+{
+	currentConfigApp->m_x_res = i;
+	m_modified = true;
+	UpdateInterface();
+}
+
+void CMainDialog::YResChanged(int i)
+{
+	currentConfigApp->m_y_res = i;
+	EnsureAspectRatio();
+	m_modified = true;
+	UpdateInterface();
+}
+
+void CMainDialog::EnsureAspectRatio()
+{
+	if (currentConfigApp->m_aspect_ratio != 3) {
+		m_ui->xResSpinBox->setReadOnly(true);
+		switch (currentConfigApp->m_aspect_ratio) {
+		case 0: {
+			float standardAspect = 4.0f / 3.0f;
+			currentConfigApp->m_x_res = static_cast<int>(std::round((currentConfigApp->m_y_res) * standardAspect));
+			break;
+		}
+		case 1: {
+			float wideAspect = 16.0f / 9.0f;
+			currentConfigApp->m_x_res = static_cast<int>(std::round((currentConfigApp->m_y_res) * wideAspect));
+			break;
+		}
+		case 2: {
+			currentConfigApp->m_x_res = currentConfigApp->m_y_res;
+			break;
+		}
+		}
+	}
+	else {
+		m_ui->xResSpinBox->setReadOnly(false);
+	}
+}
+
+void CMainDialog::FramerateChanged(int i)
+{
+	currentConfigApp->m_frame_delta = (1000.0f / static_cast<float>(i));
+	m_modified = true;
+	UpdateInterface();
 }

@@ -74,8 +74,9 @@ void LegoOmni::Init()
 	m_animationManager = NULL;
 	m_buildingManager = NULL;
 	m_bkgAudioManager = NULL;
-	m_unk0x13c = TRUE;
+	m_initialized = TRUE;
 	m_transitionManager = NULL;
+	m_version10 = FALSE;
 }
 
 // FUNCTION: LEGO1 0x10058c30
@@ -120,6 +121,8 @@ void LegoOmni::Destroy()
 		delete m_textureContainer;
 		m_textureContainer = NULL;
 	}
+
+	LegoPartPresenter::Release();
 
 	if (m_viewLODListManager) {
 		delete m_viewLODListManager;
@@ -542,26 +545,36 @@ LegoOmni::World LegoOmni::GetWorldId(const char* p_key)
 }
 
 // FUNCTION: LEGO1 0x1005b4f0
-void LegoOmni::FUN_1005b4f0(MxBool p_disable, MxU16 p_flags)
+// FUNCTION: BETA10 0x1008eeec
+void LegoOmni::Disable(MxBool p_disable, MxU16 p_flags)
 {
-	if (p_disable) {
-		if (p_flags & c_disableInput) {
-			m_inputManager->DisableInputProcessing();
-		}
+#ifdef BETA10
+	if (this->m_paused != p_disable) {
+		// This is probably a different variable, but this code was mostly added for structural matching
+		m_paused = p_disable;
+#endif
 
-		if (p_flags & c_disable3d) {
-			((LegoVideoManager*) m_videoManager)->SetRender3D(FALSE);
-		}
+		if (p_disable) {
+			if (p_flags & c_disableInput) {
+				m_inputManager->DisableInputProcessing();
+			}
 
-		if (p_flags & c_clearScreen) {
-			m_videoManager->GetDisplaySurface()->ClearScreen();
+			if (p_flags & c_disable3d) {
+				((LegoVideoManager*) m_videoManager)->SetRender3D(FALSE);
+			}
+
+			if (p_flags & c_clearScreen) {
+				m_videoManager->GetDisplaySurface()->ClearScreen();
+			}
 		}
+		else {
+			m_inputManager->EnableInputProcessing();
+			((LegoVideoManager*) m_videoManager)->SetRender3D(TRUE);
+			((LegoVideoManager*) m_videoManager)->UpdateView(0, 0, 0, 0);
+		}
+#ifdef BETA10
 	}
-	else {
-		m_inputManager->EnableInputProcessing();
-		((LegoVideoManager*) m_videoManager)->SetRender3D(TRUE);
-		((LegoVideoManager*) m_videoManager)->UpdateView(0, 0, 0, 0);
-	}
+#endif
 }
 
 // FUNCTION: LEGO1 0x1005b560

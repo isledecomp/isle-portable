@@ -53,7 +53,7 @@ MxLong InfoCenterEntity::HandleClick(LegoEventNotificationParam& p_param)
 		isle->SetDestLocation(LegoGameState::Area::e_infomain);
 
 		Act1State* act1state = (Act1State*) GameState()->GetState("Act1State");
-		act1state->SetUnknown18(0);
+		act1state->SetState(Act1State::e_none);
 		break;
 	}
 	case LegoGameState::Act::e_act2: {
@@ -80,11 +80,11 @@ MxLong InfoCenterEntity::HandleClick(LegoEventNotificationParam& p_param)
 // FUNCTION: LEGO1 0x100151d0
 MxLong GasStationEntity::HandleClick(LegoEventNotificationParam& p_param)
 {
-	if (FUN_1003ef60()) {
+	if (CanExit()) {
 		Act1State* state = (Act1State*) GameState()->GetState("Act1State");
 
-		if (state->GetUnknown18() != 8) {
-			state->SetUnknown18(0);
+		if (state->GetState() != Act1State::e_towtrack) {
+			state->SetState(Act1State::e_none);
 
 			if (UserActor()->GetActorId() != GameState()->GetActorId()) {
 				((IslePathActor*) UserActor())->Exit();
@@ -104,11 +104,11 @@ MxLong GasStationEntity::HandleClick(LegoEventNotificationParam& p_param)
 // FUNCTION: LEGO1 0x10015270
 MxLong HospitalEntity::HandleClick(LegoEventNotificationParam& p_param)
 {
-	if (FUN_1003ef60()) {
+	if (CanExit()) {
 		Act1State* act1State = (Act1State*) GameState()->GetState("Act1State");
 
-		if (act1State->GetUnknown18() != 10) {
-			act1State->SetUnknown18(0);
+		if (act1State->GetState() != Act1State::e_ambulance) {
+			act1State->SetState(Act1State::e_none);
 
 			if (UserActor()->GetActorId() != GameState()->GetActorId()) {
 				((IslePathActor*) UserActor())->Exit();
@@ -128,11 +128,11 @@ MxLong HospitalEntity::HandleClick(LegoEventNotificationParam& p_param)
 // FUNCTION: LEGO1 0x10015310
 MxLong PoliceEntity::HandleClick(LegoEventNotificationParam& p_param)
 {
-	if (FUN_1003ef60()) {
+	if (CanExit()) {
 		Act1State* state = (Act1State*) GameState()->GetState("Act1State");
 
-		if (state->GetUnknown18() != 10) {
-			state->SetUnknown18(0);
+		if (state->GetState() != Act1State::e_ambulance) {
+			state->SetState(Act1State::e_none);
 
 			if (UserActor()->GetActorId() != GameState()->GetActorId()) {
 				((IslePathActor*) UserActor())->Exit();
@@ -152,9 +152,9 @@ MxLong PoliceEntity::HandleClick(LegoEventNotificationParam& p_param)
 // FUNCTION: LEGO1 0x100153b0
 MxLong BeachHouseEntity::HandleClick(LegoEventNotificationParam& p_param)
 {
-	if (FUN_1003ef60()) {
+	if (CanExit()) {
 		Act1State* state = (Act1State*) GameState()->GetState("Act1State");
-		state->SetUnknown18(0);
+		state->SetState(Act1State::e_none);
 
 		if (UserActor()->GetActorId() != GameState()->GetActorId()) {
 			((IslePathActor*) UserActor())->Exit();
@@ -173,9 +173,9 @@ MxLong BeachHouseEntity::HandleClick(LegoEventNotificationParam& p_param)
 // FUNCTION: LEGO1 0x10015450
 MxLong RaceStandsEntity::HandleClick(LegoEventNotificationParam& p_param)
 {
-	if (FUN_1003ef60()) {
+	if (CanExit()) {
 		Act1State* state = (Act1State*) GameState()->GetState("Act1State");
-		state->SetUnknown18(0);
+		state->SetState(Act1State::e_none);
 
 		if (UserActor()->GetActorId() != GameState()->GetActorId()) {
 			((IslePathActor*) UserActor())->Exit();
@@ -195,7 +195,7 @@ MxLong RaceStandsEntity::HandleClick(LegoEventNotificationParam& p_param)
 // FUNCTION: BETA10 0x100256e8
 MxLong JailEntity::HandleClick(LegoEventNotificationParam& p_param)
 {
-	if (FUN_1003ef60()) {
+	if (CanExit()) {
 		PlayCamAnim(UserActor(), FALSE, 18, TRUE);
 	}
 

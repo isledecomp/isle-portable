@@ -56,12 +56,27 @@ bool CConfigApp::InitInstance()
 		return false;
 	}
 	m_device_enumerator = new LegoDeviceEnumerate;
-	if (m_device_enumerator->DoEnumerate()) {
+	SDL_Window* window = SDL_CreateWindow("Test window", 640, 480, SDL_WINDOW_HIDDEN | SDL_WINDOW_OPENGL);
+	HWND hWnd;
+#ifdef MINIWIN
+	hWnd = reinterpret_cast<HWND>(window);
+#else
+	hWnd = (HWND) SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
+#endif
+	if (m_device_enumerator->DoEnumerate(hWnd)) {
 		return FALSE;
 	}
+	SDL_DestroyWindow(window);
+	m_aspect_ratio = 0;
+	m_exf_x_res = m_x_res = 640;
+	m_exf_y_res = m_y_res = 480;
+	m_exf_fps = 60.00f;
+	m_frame_delta = 10.0f;
 	m_driver = NULL;
 	m_device = NULL;
 	m_full_screen = TRUE;
+	m_exclusive_full_screen = FALSE;
+	m_transition_type = 3; // 3: Mosaic
 	m_wide_view_angle = TRUE;
 	m_use_joystick = TRUE;
 	m_music = TRUE;
@@ -69,8 +84,15 @@ bool CConfigApp::InitInstance()
 	m_3d_video_ram = FALSE;
 	m_joystick_index = -1;
 	m_display_bit_depth = 16;
+	m_msaa = 1;
+	m_anisotropy = 1;
+	m_haptic = TRUE;
+	m_touch_scheme = 2;
+	m_texture_load = TRUE;
+	m_texture_path = "/textures/";
 	int totalRamMiB = SDL_GetSystemRAM();
 	if (totalRamMiB < 12) {
+		m_ram_quality_limit = 2;
 		m_3d_sound = FALSE;
 		m_model_quality = 0;
 		m_texture_quality = 1;
@@ -78,6 +100,7 @@ bool CConfigApp::InitInstance()
 		m_max_actors = 5;
 	}
 	else if (totalRamMiB < 20) {
+		m_ram_quality_limit = 1;
 		m_3d_sound = FALSE;
 		m_model_quality = 1;
 		m_texture_quality = 1;
@@ -85,6 +108,7 @@ bool CConfigApp::InitInstance()
 		m_max_actors = 10;
 	}
 	else {
+		m_ram_quality_limit = 0;
 		m_model_quality = 2;
 		m_3d_sound = TRUE;
 		m_texture_quality = 1;
@@ -113,7 +137,7 @@ D3DCOLORMODEL CConfigApp::GetHardwareDeviceColorModel() const
 // FUNCTION: CONFIG 0x00403410
 bool CConfigApp::IsPrimaryDriver() const
 {
-	return m_driver == &m_device_enumerator->GetDriverList().front();
+	return m_driver == &m_device_enumerator->m_ddInfo.front();
 }
 
 // FUNCTION: CONFIG 0x00403430
@@ -145,6 +169,9 @@ bool CConfigApp::ReadRegisterSettings()
 	m_display_bit_depth = iniparser_getint(dict, "isle:Display Bit Depth", -1);
 	m_flip_surfaces = iniparser_getboolean(dict, "isle:Flip Surfaces", m_flip_surfaces);
 	m_full_screen = iniparser_getboolean(dict, "isle:Full Screen", m_full_screen);
+	m_exclusive_full_screen = iniparser_getboolean(dict, "isle:Exclusive Full Screen", m_exclusive_full_screen);
+	m_transition_type = iniparser_getint(dict, "isle:Transition Type", m_transition_type);
+	m_touch_scheme = iniparser_getint(dict, "isle:Touch Scheme", m_touch_scheme);
 	m_3d_video_ram = iniparser_getboolean(dict, "isle:Back Buffers in Video RAM", m_3d_video_ram);
 	m_wide_view_angle = iniparser_getboolean(dict, "isle:Wide View Angle", m_wide_view_angle);
 	m_3d_sound = iniparser_getboolean(dict, "isle:3DSound", m_3d_sound);
@@ -152,10 +179,22 @@ bool CConfigApp::ReadRegisterSettings()
 	m_model_quality = iniparser_getint(dict, "isle:Island Quality", m_model_quality);
 	m_texture_quality = iniparser_getint(dict, "isle:Island Texture", m_texture_quality);
 	m_use_joystick = iniparser_getboolean(dict, "isle:UseJoystick", m_use_joystick);
+	m_haptic = iniparser_getboolean(dict, "isle:Haptic", m_haptic);
 	m_music = iniparser_getboolean(dict, "isle:Music", m_music);
 	m_joystick_index = iniparser_getint(dict, "isle:JoystickIndex", m_joystick_index);
 	m_max_lod = iniparser_getdouble(dict, "isle:Max LOD", m_max_lod);
 	m_max_actors = iniparser_getint(dict, "isle:Max Allowed Extras", m_max_actors);
+	m_msaa = iniparser_getint(dict, "isle:MSAA", m_msaa);
+	m_anisotropy = iniparser_getint(dict, "isle:Anisotropic", m_anisotropy);
+	m_texture_load = iniparser_getboolean(dict, "extensions:texture loader", m_texture_load);
+	m_texture_path = iniparser_getstring(dict, "texture loader:texture path", m_texture_path.c_str());
+	m_aspect_ratio = iniparser_getint(dict, "isle:Aspect Ratio", m_aspect_ratio);
+	m_x_res = iniparser_getint(dict, "isle:Horizontal Resolution", m_x_res);
+	m_y_res = iniparser_getint(dict, "isle:Vertical Resolution", m_y_res);
+	m_exf_x_res = iniparser_getint(dict, "isle:Exclusive X Resolution", m_exf_x_res);
+	m_exf_y_res = iniparser_getint(dict, "isle:Exclusive Y Resolution", m_exf_y_res);
+	m_exf_fps = iniparser_getdouble(dict, "isle:Exclusive Framerate", m_exf_fps);
+	m_frame_delta = iniparser_getdouble(dict, "isle:Frame Delta", m_frame_delta);
 	iniparser_freedict(dict);
 	return true;
 }
@@ -212,12 +251,48 @@ bool CConfigApp::ValidateSettings()
 		is_modified = TRUE;
 	}
 
-	if (m_max_lod < 0.0f || m_max_lod > 5.0f) {
+	if (m_max_lod < 0.0f || m_max_lod > 6.0f) {
 		m_max_lod = 3.5f;
 		is_modified = TRUE;
 	}
 	if (m_max_actors < 5 || m_max_actors > 40) {
 		m_max_actors = 20;
+		is_modified = TRUE;
+	}
+	if (!m_use_joystick) {
+		m_use_joystick = true;
+		is_modified = TRUE;
+	}
+	if (m_touch_scheme < 0 || m_touch_scheme > 2) {
+		m_touch_scheme = 2;
+		is_modified = TRUE;
+	}
+	if (m_exclusive_full_screen && !m_full_screen) {
+		m_full_screen = TRUE;
+		is_modified = TRUE;
+	}
+	if (!(m_msaa & (m_msaa - 1))) {         // Check if MSAA is power of 2 (1, 2, 4, 8, etc)
+		m_msaa = exp2(round(log2(m_msaa))); // Closest power of 2
+		is_modified = TRUE;
+	}
+	if (m_msaa > 16) {
+		m_msaa = 16;
+		is_modified = TRUE;
+	}
+	else if (m_msaa < 1) {
+		m_msaa = 1;
+		is_modified = TRUE;
+	}
+	if (!(m_anisotropy & (m_anisotropy - 1))) {         // Check if anisotropy is power of 2 (1, 2, 4, 8, etc)
+		m_anisotropy = exp2(round(log2(m_anisotropy))); // Closest power of 2
+		is_modified = TRUE;
+	}
+	if (m_anisotropy > 16) {
+		m_anisotropy = 16;
+		is_modified = TRUE;
+	}
+	else if (m_anisotropy < 1) {
+		m_anisotropy = 1;
 		is_modified = TRUE;
 	}
 
@@ -288,6 +363,8 @@ void CConfigApp::WriteRegisterSettings() const
 
 	dictionary* dict = dictionary_new(0);
 	iniparser_set(dict, "isle", NULL);
+	iniparser_set(dict, "extensions", NULL);
+	iniparser_set(dict, "texture loader", NULL);
 	if (m_device_enumerator->FormatDeviceName(buffer, m_driver, m_device) >= 0) {
 		iniparser_set(dict, "isle:3D Device ID", buffer);
 	}
@@ -296,16 +373,26 @@ void CConfigApp::WriteRegisterSettings() const
 	iniparser_set(dict, "isle:savepath", m_save_path.c_str());
 
 	SetIniInt(dict, "isle:Display Bit Depth", m_display_bit_depth);
+	SetIniInt(dict, "isle:MSAA", m_msaa);
+	SetIniInt(dict, "isle:Anisotropic", m_anisotropy);
 	SetIniBool(dict, "isle:Flip Surfaces", m_flip_surfaces);
 	SetIniBool(dict, "isle:Full Screen", m_full_screen);
+	SetIniBool(dict, "isle:Exclusive Full Screen", m_exclusive_full_screen);
 	SetIniBool(dict, "isle:Wide View Angle", m_wide_view_angle);
+
+	SetIniInt(dict, "isle:Transition Type", m_transition_type);
+	SetIniInt(dict, "isle:Touch Scheme", m_touch_scheme);
 
 	SetIniBool(dict, "isle:3DSound", m_3d_sound);
 	SetIniBool(dict, "isle:Music", m_music);
+	SetIniBool(dict, "isle:Haptic", m_haptic);
 
 	SetIniBool(dict, "isle:UseJoystick", m_use_joystick);
 	SetIniInt(dict, "isle:JoystickIndex", m_joystick_index);
 	SetIniBool(dict, "isle:Draw Cursor", m_draw_cursor);
+
+	SetIniBool(dict, "extensions:texture loader", m_texture_load);
+	iniparser_set(dict, "texture loader:texture path", m_texture_path.c_str());
 
 	SetIniBool(dict, "isle:Back Buffers in Video RAM", m_3d_video_ram);
 
@@ -314,6 +401,14 @@ void CConfigApp::WriteRegisterSettings() const
 
 	iniparser_set(dict, "isle:Max LOD", std::to_string(m_max_lod).c_str());
 	SetIniInt(dict, "isle:Max Allowed Extras", m_max_actors);
+
+	SetIniInt(dict, "isle:Aspect Ratio", m_aspect_ratio);
+	SetIniInt(dict, "isle:Horizontal Resolution", m_x_res);
+	SetIniInt(dict, "isle:Vertical Resolution", m_y_res);
+	SetIniInt(dict, "isle:Exclusive X Resolution", m_exf_x_res);
+	SetIniInt(dict, "isle:Exclusive Y Resolution", m_exf_y_res);
+	iniparser_set(dict, "isle:Exclusive Framerate", std::to_string(m_exf_fps).c_str());
+	iniparser_set(dict, "isle:Frame Delta", std::to_string(m_frame_delta).c_str());
 
 #undef SetIniBool
 #undef SetIniInt

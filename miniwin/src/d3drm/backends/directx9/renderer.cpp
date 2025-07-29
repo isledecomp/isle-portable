@@ -76,7 +76,7 @@ void DirectX9Renderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* 
 	);
 }
 
-Uint32 DirectX9Renderer::GetTextureId(IDirect3DRMTexture* iTexture)
+Uint32 DirectX9Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUI, float scaleX, float scaleY)
 {
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
 	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
@@ -216,24 +216,6 @@ Uint32 DirectX9Renderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshG
 	return static_cast<Uint32>(m_meshs.size() - 1);
 }
 
-void DirectX9Renderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc)
-{
-	halDesc->dcmColorModel = D3DCOLORMODEL::RGB;
-	halDesc->dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
-	halDesc->dwDeviceZBufferBitDepth = DDBD_24;
-	helDesc->dwDeviceRenderBitDepth = DDBD_32;
-	halDesc->dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
-	halDesc->dpcTriCaps.dwShadeCaps = D3DPSHADECAPS_ALPHAFLATBLEND;
-	halDesc->dpcTriCaps.dwTextureFilterCaps = D3DPTFILTERCAPS_LINEAR;
-
-	memset(helDesc, 0, sizeof(D3DDEVICEDESC));
-}
-
-const char* DirectX9Renderer::GetName()
-{
-	return "DirectX 9 HAL";
-}
-
 HRESULT DirectX9Renderer::BeginFrame()
 {
 	return Actual_BeginFrame();
@@ -291,9 +273,13 @@ void DirectX9Renderer::Flip()
 	Actual_Flip();
 }
 
-void DirectX9Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect)
+void DirectX9Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect, FColor color)
 {
-	Actual_Draw2DImage(m_textures[textureId].dxTexture, srcRect, dstRect);
+	Actual_Draw2DImage(m_textures[textureId].dxTexture, srcRect, dstRect, color);
+}
+
+void DirectX9Renderer::SetDither(bool dither)
+{
 }
 
 void DirectX9Renderer::Download(SDL_Surface* target)

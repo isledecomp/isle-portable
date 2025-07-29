@@ -102,29 +102,29 @@ MxBool SpheresIntersect(const BoundingSphere& p_sphere1, const BoundingSphere& p
 
 // FUNCTION: LEGO1 0x1003ded0
 // FUNCTION: BETA10 0x100d3802
-MxBool FUN_1003ded0(MxFloat p_param1[2], MxFloat p_param2[3], MxFloat p_param3[3])
+MxBool CalculateRayOriginDirection(MxFloat p_coordinates[2], MxFloat p_direction[3], MxFloat p_origin[3])
 {
-	MxFloat local1c[4];
-	MxFloat local10[3];
+	MxFloat screenPoint[4];
+	MxFloat farPoint[3];
 
 	Tgl::View* view = VideoManager()->Get3DManager()->GetLego3DView()->GetView();
 
-	local1c[0] = p_param1[0];
-	local1c[1] = p_param1[1];
-	local1c[2] = 1.0f;
-	local1c[3] = 1.0f;
+	screenPoint[0] = p_coordinates[0];
+	screenPoint[1] = p_coordinates[1];
+	screenPoint[2] = 1.0f;
+	screenPoint[3] = 1.0f;
 
-	view->TransformScreenToWorld(local1c, p_param3);
+	view->TransformScreenToWorld(screenPoint, p_origin);
 
-	local1c[0] *= 2.0;
-	local1c[1] *= 2.0;
-	local1c[3] = 2.0;
+	screenPoint[0] *= 2.0;
+	screenPoint[1] *= 2.0;
+	screenPoint[3] = 2.0;
 
-	view->TransformScreenToWorld(local1c, local10);
+	view->TransformScreenToWorld(screenPoint, farPoint);
 
-	p_param2[0] = local10[0] - p_param3[0];
-	p_param2[1] = local10[1] - p_param3[1];
-	p_param2[2] = local10[2] - p_param3[2];
+	p_direction[0] = farPoint[0] - p_origin[0];
+	p_direction[1] = farPoint[1] - p_origin[1];
+	p_direction[2] = farPoint[2] - p_origin[2];
 	return TRUE;
 }
 
@@ -176,7 +176,7 @@ LegoTreeNode* GetTreeNode(LegoTreeNode* p_node, MxU32 p_index)
 
 // FUNCTION: LEGO1 0x1003e050
 // FUNCTION: BETA10 0x100d3abc
-void FUN_1003e050(LegoAnimPresenter* p_presenter)
+void CalculateViewFromAnimation(LegoAnimPresenter* p_presenter)
 {
 	MxMatrix viewMatrix;
 	LegoTreeNode* rootNode = p_presenter->GetAnimation()->GetRoot();
@@ -184,7 +184,7 @@ void FUN_1003e050(LegoAnimPresenter* p_presenter)
 	LegoAnimNodeData* targetData = NULL;
 	MxS16 nodesCount = CountTotalTreeNodes(rootNode);
 
-	MxFloat cam;
+	MxFloat fov;
 	for (MxS16 i = 0; i < nodesCount; i++) {
 		if (camData && targetData) {
 			break;
@@ -194,7 +194,7 @@ void FUN_1003e050(LegoAnimPresenter* p_presenter)
 
 		if (!SDL_strncasecmp(data->GetName(), "CAM", strlen("CAM"))) {
 			camData = data;
-			cam = atof(&data->GetName()[strlen(data->GetName()) - 2]);
+			fov = atof(&data->GetName()[strlen(data->GetName()) - 2]);
 		}
 		else if (!SDL_strcasecmp(data->GetName(), "TARGET")) {
 			targetData = data;
@@ -223,8 +223,8 @@ void FUN_1003e050(LegoAnimPresenter* p_presenter)
 
 	roi->WrappedSetLocal2WorldWithWorldDataUpdate(viewMatrix);
 	view->Moved(*roi);
-	FUN_1003eda0();
-	video->Get3DManager()->SetFrustrum(cam, 0.1, 250.0);
+	ResetViewVelocity();
+	video->Get3DManager()->SetFrustrum(fov, 0.1, 250.0);
 }
 
 // FUNCTION: LEGO1 0x1003e300
@@ -477,7 +477,7 @@ void PlayCamAnim(LegoPathActor* p_actor, MxBool p_unused, MxU32 p_location, MxBo
 
 // FUNCTION: LEGO1 0x1003eda0
 // FUNCTION: BETA10 0x100d4bf4
-void FUN_1003eda0()
+void ResetViewVelocity()
 {
 	Mx3DPointFloat vec;
 	vec.Clear();
@@ -511,7 +511,7 @@ MxBool RemoveFromCurrentWorld(const MxAtomId& p_atomId, MxS32 p_id)
 			}
 			else {
 				if (((MxPresenter*) object)->GetAction()) {
-					FUN_100b7220(((MxPresenter*) object)->GetAction(), MxDSAction::c_world, FALSE);
+					ApplyMask(((MxPresenter*) object)->GetAction(), MxDSAction::c_world, FALSE);
 				}
 
 				((MxPresenter*) object)->EndAction();
@@ -540,7 +540,7 @@ MxBool RemoveFromWorld(MxAtomId& p_entityAtom, MxS32 p_entityId, MxAtomId& p_wor
 			}
 			else {
 				if (((MxPresenter*) object)->GetAction()) {
-					FUN_100b7220(((MxPresenter*) object)->GetAction(), MxDSAction::c_world, FALSE);
+					ApplyMask(((MxPresenter*) object)->GetAction(), MxDSAction::c_world, FALSE);
 				}
 
 				((MxPresenter*) object)->EndAction();
@@ -577,7 +577,7 @@ void SetAppCursor(Cursor p_cursor)
 }
 
 // FUNCTION: LEGO1 0x1003ef60
-MxBool FUN_1003ef60()
+MxBool CanExit()
 {
 	Act1State* act1State = (Act1State*) GameState()->GetState("Act1State");
 
@@ -591,9 +591,10 @@ MxBool FUN_1003ef60()
 		GameState()->m_currentArea != LegoGameState::e_polidoor) {
 		if (UserActor() == NULL || !UserActor()->IsA("TowTrack")) {
 			if (UserActor() == NULL || !UserActor()->IsA("Ambulance")) {
-				MxU32 unk0x18 = act1State->GetUnknown18();
+				MxU32 mission = act1State->GetState();
 
-				if (unk0x18 != 10 && unk0x18 != 8 && unk0x18 != 3) {
+				if (mission != Act1State::e_ambulance && mission != Act1State::e_towtrack &&
+					mission != Act1State::e_pizza) {
 					return TRUE;
 				}
 			}
@@ -708,19 +709,19 @@ void WriteDefaultTexture(LegoStorage* p_storage, const char* p_name)
 		memset(&desc, 0, sizeof(desc));
 		desc.dwSize = sizeof(desc);
 
-		if (surface->Lock(NULL, &desc, DDLOCK_SURFACEMEMORYPTR | DDLOCK_WRITEONLY, NULL) == DD_OK) {
+		if (surface->Lock(NULL, &desc, DDLOCK_SURFACEMEMORYPTR, NULL) == DD_OK) {
 			LegoImage* image = new LegoImage(desc.dwWidth, desc.dwHeight);
 
 			if (image != NULL) {
 				if (desc.dwWidth == desc.lPitch) {
-					memcpy(desc.lpSurface, image->GetBits(), desc.dwWidth * desc.dwHeight);
+					memcpy(image->GetBits(), desc.lpSurface, desc.dwWidth * desc.dwHeight);
 				}
 				else {
 					MxU8* surface = (MxU8*) desc.lpSurface;
-					const LegoU8* bits = image->GetBits();
+					LegoU8* bits = image->GetBits();
 
 					for (MxS32 i = 0; i < desc.dwHeight; i++) {
-						memcpy(surface, bits, desc.dwWidth);
+						memcpy(bits, surface, desc.dwWidth);
 						surface += desc.lPitch;
 						bits += desc.dwWidth;
 					}
@@ -774,11 +775,19 @@ void WriteNamedTexture(LegoStorage* p_storage, LegoNamedTexture* p_namedTexture)
 }
 
 // FUNCTION: LEGO1 0x1003f930
-void FUN_1003f930(LegoNamedTexture* p_namedTexture)
+void LoadFromNamedTexture(LegoNamedTexture* p_namedTexture)
 {
 	LegoTextureInfo* textureInfo = TextureContainer()->Get(p_namedTexture->GetName()->GetData());
 
 	if (textureInfo != NULL) {
 		textureInfo->LoadBits(p_namedTexture->GetTexture()->GetImage()->GetBits());
 	}
+}
+
+void EmitGameEvent(GameEvent p_event)
+{
+	SDL_Event event;
+	event.user.type = g_legoSdlEvents.m_gameEvent;
+	event.user.code = p_event;
+	SDL_PushEvent(&event);
 }

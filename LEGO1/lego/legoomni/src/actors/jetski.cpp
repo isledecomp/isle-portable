@@ -69,7 +69,7 @@ void Jetski::Animate(float p_time)
 // FUNCTION: LEGO1 0x1007e6f0
 void Jetski::Exit()
 {
-	SpawnPlayer(LegoGameState::e_unk45, FALSE, c_spawnBit1 | c_playMusic | c_spawnBit3);
+	SpawnPlayer(LegoGameState::e_jetskiSpawn, FALSE, c_spawnBit1 | c_playMusic | c_spawnBit3);
 	IslePathActor::Exit();
 	GameState()->m_currentArea = LegoGameState::e_jetski;
 	RemoveFromWorld();
@@ -83,11 +83,11 @@ void Jetski::Exit()
 MxLong Jetski::HandleClick()
 {
 #ifndef BETA10
-	if (!FUN_1003ef60()) {
+	if (!CanExit()) {
 		return 1;
 	}
 
-	FUN_10015820(TRUE, 0);
+	Disable(TRUE, 0);
 
 	((Isle*) CurrentWorld())->SetDestLocation(LegoGameState::Area::e_jetski);
 	TransitionManager()->StartTransition(MxTransitionManager::e_mosaic, 50, FALSE, TRUE);
@@ -139,7 +139,7 @@ void Jetski::RemoveFromWorld()
 // FUNCTION: LEGO1 0x1007e8e0
 MxLong Jetski::HandleControl(LegoControlManagerNotificationParam& p_param)
 {
-	if (p_param.m_unk0x28 == 1 && CurrentWorld()->IsA("Isle")) {
+	if (p_param.m_enabledChild == 1 && CurrentWorld()->IsA("Isle")) {
 		switch (p_param.m_clickedObjectId) {
 		case IsleScript::c_JetskiArms_Ctl:
 			Exit();
@@ -164,7 +164,7 @@ void Jetski::ActivateSceneActions()
 	PlayMusic(JukeboxScript::c_JetskiRace_Music);
 
 	Act1State* act1state = (Act1State*) GameState()->GetState("Act1State");
-	if (!act1state->m_unk0x018) {
+	if (!act1state->m_state) {
 		if (act1state->m_unk0x022) {
 			PlayCamAnim(this, FALSE, 68, TRUE);
 		}

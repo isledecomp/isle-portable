@@ -153,7 +153,7 @@ void IslePathActor::Exit()
 
 	FUN_1001b660();
 	FUN_10010c30();
-	FUN_1003eda0();
+	ResetViewVelocity();
 }
 
 // GLOBAL: LEGO1 0x10102b28
@@ -355,7 +355,7 @@ void IslePathActor::RegisterSpawnLocations()
 		JukeboxScript::c_PoliceStation_Music
 	);
 	g_spawnLocations[16] = SpawnLocation(
-		LegoGameState::e_unk40,
+		LegoGameState::e_helicopterSpawn,
 		g_isleScript,
 		0,
 		"edg02_51",
@@ -379,7 +379,7 @@ void IslePathActor::RegisterSpawnLocations()
 		JukeboxScript::c_noneJukebox
 	);
 	g_spawnLocations[18] = SpawnLocation(
-		LegoGameState::e_unk43,
+		LegoGameState::e_dunebuggySpawn,
 		g_isleScript,
 		0,
 		"edg02_35",
@@ -391,7 +391,7 @@ void IslePathActor::RegisterSpawnLocations()
 		JukeboxScript::c_noneJukebox
 	);
 	g_spawnLocations[19] = SpawnLocation(
-		LegoGameState::e_unk44,
+		LegoGameState::e_racecarSpawn,
 		g_isleScript,
 		0,
 		"EDG03_01",
@@ -403,7 +403,7 @@ void IslePathActor::RegisterSpawnLocations()
 		JukeboxScript::c_noneJukebox
 	);
 	g_spawnLocations[20] = SpawnLocation(
-		LegoGameState::e_unk45,
+		LegoGameState::e_jetskiSpawn,
 		g_isleScript,
 		0,
 		"edg10_70",
@@ -475,7 +475,7 @@ void IslePathActor::RegisterSpawnLocations()
 		JukeboxScript::c_noneJukebox
 	);
 	g_spawnLocations[26] = SpawnLocation(
-		LegoGameState::e_unk52,
+		LegoGameState::e_towTrackHookedUp,
 		g_isleScript,
 		0,
 		"edg02_19",
@@ -598,7 +598,7 @@ void IslePathActor::SpawnPlayer(LegoGameState::Area p_area, MxBool p_enter, MxU8
 		}
 
 		if (m_cameraFlag) {
-			FUN_1003eda0();
+			ResetViewVelocity();
 		}
 
 		if (p_flags & c_playMusic && g_spawnLocations[i].m_music != JukeboxScript::c_noneJukebox) {
@@ -632,7 +632,7 @@ void IslePathActor::VTable0xec(MxMatrix p_transform, LegoPathBoundary* p_boundar
 
 	m_roi->SetLocal2World(p_transform);
 	if (m_cameraFlag) {
-		FUN_1003eda0();
+		ResetViewVelocity();
 		FUN_10010c30();
 	}
 }

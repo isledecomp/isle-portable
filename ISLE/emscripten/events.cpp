@@ -36,3 +36,11 @@ void Emscripten_SendPresenterProgress(MxDSAction* p_action, MxPresenter::TickleS
 
 	Emscripten_SendEvent("presenterProgress", buf);
 }
+
+void Emscripten_SendExtensionProgress(const char* p_extension, MxU32 p_progress)
+{
+	char buf[128];
+	SDL_snprintf(buf, sizeof(buf), "{\"name\": \"%s\", \"progress\": %d}", p_extension, p_progress);
+
+	Emscripten_SendEvent("extensionProgress", buf);
+}

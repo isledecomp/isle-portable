@@ -131,6 +131,7 @@ done:
 }
 
 // FUNCTION: LEGO1 0x100b5bc0
+// STUB: BETA10 0x1013623c
 void MxMediaPresenter::EndAction()
 {
 	AUTOLOCK(m_criticalSection);
@@ -252,7 +253,7 @@ void MxMediaPresenter::Enable(MxBool p_enable)
 
 		if (p_enable) {
 			MxLong time = Timer()->GetTime();
-			m_action->SetUnknown90(time);
+			m_action->SetTimeStarted(time);
 			SetTickleState(e_repeating);
 		}
 		else {

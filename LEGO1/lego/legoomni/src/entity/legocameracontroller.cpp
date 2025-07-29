@@ -41,6 +41,10 @@ MxResult LegoCameraController::Create()
 // FUNCTION: BETA10 0x10067852
 MxLong LegoCameraController::Notify(MxParam& p_param)
 {
+	if (((LegoEventNotificationParam&) p_param).GetModifier() & LegoEventNotificationParam::c_motionHandled) {
+		return SUCCESS;
+	}
+
 	switch (((MxNotificationParam&) p_param).GetNotification()) {
 	case c_notificationDragEnd: {
 		if (((((LegoEventNotificationParam&) p_param).GetModifier()) & LegoEventNotificationParam::c_lButtonState) ==
@@ -120,28 +124,28 @@ void LegoCameraController::OnMouseMove(MxU8 p_modifier, MxPoint32 p_point)
 // FUNCTION: LEGO1 0x10012260
 void LegoCameraController::SetWorldTransform(const Vector3& p_at, const Vector3& p_dir, const Vector3& p_up)
 {
-	CalcLocalTransform(p_at, p_dir, p_up, m_matrix1);
-	m_matrix2 = m_matrix1;
+	CalcLocalTransform(p_at, p_dir, p_up, m_currentTransform);
+	m_originalTransform = m_currentTransform;
 }
 
 // FUNCTION: LEGO1 0x10012290
 // FUNCTION: BETA10 0x10068c34
-void LegoCameraController::FUN_10012290(float p_angle)
+void LegoCameraController::RotateZ(float p_angle)
 {
-	m_matrix1 = m_matrix2;
-	m_matrix1.RotateZ(p_angle);
+	m_currentTransform = m_originalTransform;
+	m_currentTransform.RotateZ(p_angle);
 }
 
 // FUNCTION: LEGO1 0x10012320
 // FUNCTION: BETA10 0x10068c73
-void LegoCameraController::FUN_10012320(float p_angle)
+void LegoCameraController::RotateY(float p_angle)
 {
-	m_matrix1 = m_matrix2;
-	m_matrix1.RotateY(p_angle);
+	m_currentTransform = m_originalTransform;
+	m_currentTransform.RotateY(p_angle);
 }
 
 // FUNCTION: LEGO1 0x100123b0
-MxResult LegoCameraController::FUN_100123b0(Matrix4& p_matrix)
+MxResult LegoCameraController::GetPointOfView(Matrix4& p_matrix)
 {
 	if (m_lego3DView) {
 		ViewROI* pov = m_lego3DView->GetPointOfView();
@@ -156,7 +160,7 @@ MxResult LegoCameraController::FUN_100123b0(Matrix4& p_matrix)
 
 // FUNCTION: LEGO1 0x100123e0
 // FUNCTION: BETA10 0x10068cb2
-void LegoCameraController::FUN_100123e0(const Matrix4& p_transform, MxU32 p_und)
+void LegoCameraController::TransformPointOfView(const Matrix4& p_transform, MxU32 p_multiply)
 {
 	if (m_lego3DView != NULL) {
 		ViewROI* pov = m_lego3DView->GetPointOfView();
@@ -164,14 +168,14 @@ void LegoCameraController::FUN_100123e0(const Matrix4& p_transform, MxU32 p_und)
 		if (pov != NULL) {
 			MxMatrix mat;
 
-			if (p_und) {
-				MXM4(mat, m_matrix1, p_transform);
+			if (p_multiply) {
+				MXM4(mat, m_currentTransform, p_transform);
 			}
 			else {
 				mat = p_transform;
 			}
 
-			((TimeROI*) pov)->FUN_100a9b40(mat, Timer()->GetTime());
+			((TimeROI*) pov)->CalculateWorldVelocity(mat, Timer()->GetTime());
 			pov->WrappedSetLocal2WorldWithWorldDataUpdate(mat);
 			m_lego3DView->Moved(*pov);
 

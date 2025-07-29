@@ -1,6 +1,7 @@
 #ifndef MXDISPLAYSURFACE_H
 #define MXDISPLAYSURFACE_H
 
+#include "cursor.h"
 #include "decomp.h"
 #include "mxcore.h"
 #include "mxvideoparam.h"
@@ -10,6 +11,9 @@
 #else
 #include <ddraw.h>
 #endif
+
+#define RGB555_CREATE(R, G, B) (((R) << 10) | (G) << 5 | (B) << 0)
+#define RGB8888_CREATE(R, G, B, A) (((A) << 24) | ((R) << 16) | ((G) << 8) | (B))
 
 class MxBitmap;
 class MxPalette;
@@ -70,14 +74,6 @@ public:
 		MxS32 p_height,
 		MxBool p_RLE
 	); // vtable+0x30
-	virtual void VTable0x34(
-		MxU8* p_pixels,
-		MxS32 p_bpp,
-		MxS32 p_width,
-		MxS32 p_height,
-		MxS32 p_x,
-		MxS32 p_y
-	); // vtable+0x34
 	virtual void Display(
 		MxS32 p_left,
 		MxS32 p_top,
@@ -96,7 +92,7 @@ public:
 	); // vtable+0x44
 
 	void ClearScreen();
-	static LPDIRECTDRAWSURFACE CreateCursorSurface();
+	static LPDIRECTDRAWSURFACE CreateCursorSurface(const CursorBitmap* p_cursorBitmap);
 	static LPDIRECTDRAWSURFACE CopySurface(LPDIRECTDRAWSURFACE p_src);
 
 	LPDIRECTDRAWSURFACE GetDirectDrawSurface1() { return m_ddSurface1; }

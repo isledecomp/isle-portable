@@ -1,7 +1,12 @@
+#ifndef MINIWIN
+#include <initguid.h>
+#endif
+
 #include "mxdirect3d.h"
 
 #include <SDL3/SDL.h> // for SDL_Log
 #include <assert.h>
+#include <miniwin/miniwind3d.h>
 
 DECOMP_SIZE_ASSERT(MxDirect3D, 0x894)
 
@@ -44,6 +49,7 @@ BOOL MxDirect3D::Create(
 )
 {
 	BOOL success = FALSE;
+	IDirect3DMiniwin* miniwind3d = nullptr;
 	assert(m_currentDeviceInfo);
 
 	if (!MxDirectDraw::Create(
@@ -62,6 +68,21 @@ BOOL MxDirect3D::Create(
 
 	if (!D3DCreate()) {
 		goto done;
+	}
+
+	if (m_pDirect3d->QueryInterface(IID_IDirect3DMiniwin, (void**) &miniwind3d) == DD_OK) {
+		MxVideoParam* videoParam = (MxVideoParam*) SDL_GetPointerProperty(
+			SDL_GetWindowProperties(reinterpret_cast<SDL_Window*>(hWnd)),
+			ISLE_PROP_WINDOW_CREATE_VIDEO_PARAM,
+			nullptr
+		);
+#ifndef MXDIRECTX_FOR_CONFIG
+		assert(videoParam);
+#endif
+		if (videoParam) {
+			miniwind3d->RequestMSAA(videoParam->GetMSAASamples());
+			miniwind3d->RequestAnisotropic(videoParam->GetAnisotropic());
+		}
 	}
 
 	if (!D3DSetMode()) {
@@ -170,39 +191,16 @@ BOOL MxDirect3D::D3DSetMode()
 	LPDIRECTDRAWSURFACE frontBuffer = FrontBuffer();
 	LPDIRECTDRAWSURFACE backBuffer = BackBuffer();
 
-	DDSURFACEDESC desc;
-	memset(&desc, 0, sizeof(desc));
-	desc.dwSize = sizeof(desc);
+	DDBLTFX ddBltFx = {};
+	ddBltFx.dwSize = sizeof(DDBLTFX);
+	ddBltFx.dwFillColor = 0xFF000000;
 
-	if (backBuffer->Lock(NULL, &desc, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL) == DD_OK) {
-		unsigned char* surface = (unsigned char*) desc.lpSurface;
-
-		for (int i = 0; i < mode.height; i++) {
-			memset(surface, 0, desc.lPitch);
-			surface += desc.lPitch;
-		}
-
-		backBuffer->Unlock(desc.lpSurface);
-	}
-	else {
-		SDL_Log("MxDirect3D::D3DSetMode() back lock failed\n");
+	if (backBuffer->Blt(NULL, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &ddBltFx) != DD_OK) {
+		SDL_Log("MxDirect3D::D3DSetMode() color fill failed\n");
 	}
 
 	if (IsFullScreen()) {
-		memset(&desc, 0, sizeof(desc));
-		desc.dwSize = sizeof(desc);
-
-		if (frontBuffer->Lock(NULL, &desc, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL) == DD_OK) {
-			unsigned char* surface = (unsigned char*) desc.lpSurface;
-
-			for (int i = 0; i < mode.height; i++) {
-				memset(surface, 0, desc.lPitch);
-				surface += desc.lPitch;
-			}
-
-			frontBuffer->Unlock(desc.lpSurface);
-		}
-		else {
+		if (frontBuffer->Blt(NULL, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &ddBltFx) != DD_OK) {
 			SDL_Log("MxDirect3D::D3DSetMode() front lock failed\n");
 		}
 	}
@@ -257,7 +255,7 @@ BOOL MxDirect3D::SetDevice(MxDeviceEnumerate& p_deviceEnumerate, MxDriver* p_dri
 	assert(d);
 	int i = 0;
 
-	for (list<MxDriver>::iterator it = p_deviceEnumerate.m_list.begin(); it != p_deviceEnumerate.m_list.end();
+	for (list<MxDriver>::iterator it = p_deviceEnumerate.m_ddInfo.begin(); it != p_deviceEnumerate.m_ddInfo.end();
 		 it++, i++) {
 		MxDriver& driver = *it;
 

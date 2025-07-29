@@ -59,7 +59,7 @@ EdgeReference g_skBMap[] = {
 
 // GLOBAL: LEGO1 0x100f0a50
 // GLOBAL: BETA10 0x101f5e60
-const SkeletonKickPhase g_skeletonKickPhases[] = {
+SkeletonKickPhase g_skeletonKickPhases[] = {
 	{&g_skBMap[0], 0.1, 0.2, LEGORACECAR_KICK2},
 	{&g_skBMap[1], 0.2, 0.3, LEGORACECAR_KICK2},
 	{&g_skBMap[2], 0.3, 0.4, LEGORACECAR_KICK2},
@@ -178,7 +178,7 @@ LegoRaceCar::LegoRaceCar()
 	m_skelKick1Anim = 0;
 	m_skelKick2Anim = 0;
 	m_unk0x5c.Clear();
-	m_unk0x58 = 0;
+	m_kickStart = 0;
 	m_kick1B = 0;
 	m_kick2B = 0;
 	NotificationManager()->Register(this);
@@ -201,10 +201,10 @@ MxLong LegoRaceCar::Notify(MxParam& p_param)
 // Initialized at LEGO1 0x10012db0
 // GLOBAL: LEGO1 0x10102af0
 // GLOBAL: BETA10 0x102114c0
-Mx3DPointFloat g_unk0x10102af0 = Mx3DPointFloat(0.0f, 2.0f, 0.0f);
+Mx3DPointFloat g_hitOffset = Mx3DPointFloat(0.0f, 2.0f, 0.0f);
 
 // FUNCTION: LEGO1 0x10012de0
-void LegoRaceCar::FUN_10012de0()
+void LegoRaceCar::InitYouCantStopSound()
 {
 	// Init to TRUE so we don't play "you can't stop in the middle of the race!" before the player ever moves
 	g_playedYouCantStopSound = TRUE;
@@ -229,7 +229,7 @@ void LegoRaceCar::InitSoundIndices()
 void LegoRaceCar::SetWorldSpeed(MxFloat p_worldSpeed)
 {
 	if (!m_userNavFlag) {
-		if (!LegoCarRaceActor::m_unk0x0c) {
+		if (!LegoCarRaceActor::m_animState) {
 			m_maxLinearVel = p_worldSpeed;
 		}
 		LegoAnimActor::SetWorldSpeed(p_worldSpeed);
@@ -244,7 +244,7 @@ void LegoRaceCar::SetWorldSpeed(MxFloat p_worldSpeed)
 void LegoRaceCar::SetMaxLinearVelocity(float p_maxLinearVelocity)
 {
 	if (p_maxLinearVelocity < 0) {
-		LegoCarRaceActor::m_unk0x0c = 2;
+		LegoCarRaceActor::m_animState = 2;
 		m_maxLinearVel = 0;
 		SetWorldSpeed(0);
 	}
@@ -299,7 +299,7 @@ void LegoRaceCar::ParseAction(char* p_extra)
 
 // FUNCTION: LEGO1 0x10012ff0
 // FUNCTION: BETA10 0x100cb60e
-void LegoRaceCar::FUN_10012ff0(float p_param)
+void LegoRaceCar::KickCamera(float p_param)
 {
 	LegoAnimActorStruct* a; // called `a` in BETA10
 	float deltaTime;
@@ -315,7 +315,7 @@ void LegoRaceCar::FUN_10012ff0(float p_param)
 	assert(a && a->GetAnimTreePtr() && a->GetAnimTreePtr()->GetCamAnim());
 
 	if (a->GetAnimTreePtr()) {
-		deltaTime = p_param - m_unk0x58;
+		deltaTime = p_param - m_kickStart;
 
 		if (a->GetDuration() <= deltaTime || deltaTime < 0.0) {
 			if (m_userState == LEGORACECAR_KICK1) {
@@ -340,10 +340,10 @@ void LegoRaceCar::FUN_10012ff0(float p_param)
 			transformationMatrix.SetIdentity();
 
 			// Possible bug in the original code: The first argument is not initialized
-			a->GetAnimTreePtr()->GetCamAnim()->FUN_1009f490(deltaTime, transformationMatrix);
+			a->GetAnimTreePtr()->GetCamAnim()->CalculateCameraTransform(deltaTime, transformationMatrix);
 
 			if (r->GetCameraController()) {
-				r->GetCameraController()->FUN_100123e0(transformationMatrix, 0);
+				r->GetCameraController()->TransformPointOfView(transformationMatrix, 0);
 			}
 
 			m_roi->SetLocal2World(transformationMatrix);
@@ -390,8 +390,9 @@ MxU32 LegoRaceCar::HandleSkeletonKicks(float p_param1)
 		return FALSE;
 	}
 
-	m_unk0x58 = p_param1;
+	m_kickStart = p_param1;
 	SoundManager()->GetCacheSoundManager()->Play(g_soundSkel3, NULL, FALSE);
+	EmitGameEvent(e_skeletonKick);
 
 	return TRUE;
 }
@@ -401,7 +402,7 @@ MxU32 LegoRaceCar::HandleSkeletonKicks(float p_param1)
 void LegoRaceCar::Animate(float p_time)
 {
 	if (m_userNavFlag && (m_userState == LEGORACECAR_KICK1 || m_userState == LEGORACECAR_KICK2)) {
-		FUN_10012ff0(p_time);
+		KickCamera(p_time);
 		return;
 	}
 
@@ -413,7 +414,7 @@ void LegoRaceCar::Animate(float p_time)
 		}
 	}
 
-	if (LegoCarRaceActor::m_unk0x0c == 1) {
+	if (LegoCarRaceActor::m_animState == 1) {
 		FUN_1005d4b0();
 
 		if (!m_userNavFlag) {
@@ -471,7 +472,7 @@ MxResult LegoRaceCar::HitActor(LegoPathActor* p_actor, MxBool p_bool)
 			assert(roi);
 			matr = roi->GetLocal2World();
 
-			Vector3(matr[3]) += g_unk0x10102af0;
+			Vector3(matr[3]) += g_hitOffset;
 			roi->SetLocal2World(matr);
 
 			p_actor->SetActorState(c_two);
@@ -516,7 +517,7 @@ MxResult LegoRaceCar::HitActor(LegoPathActor* p_actor, MxBool p_bool)
 
 				if (soundKey) {
 					SoundManager()->GetCacheSoundManager()->Play(soundKey, NULL, FALSE);
-					g_timeLastRaceCarSoundPlayed = g_unk0x100f3308 = time;
+					g_timeLastRaceCarSoundPlayed = g_timeLastHitSoundPlayed = time;
 				}
 			}
 
@@ -527,6 +528,9 @@ MxResult LegoRaceCar::HitActor(LegoPathActor* p_actor, MxBool p_bool)
 				return FAILURE;
 			}
 		}
+	}
+	else {
+		EmitGameEvent(e_hitActor);
 	}
 
 	return SUCCESS;
@@ -582,7 +586,7 @@ void LegoJetski::InitSoundIndices()
 void LegoJetski::SetWorldSpeed(MxFloat p_worldSpeed)
 {
 	if (!m_userNavFlag) {
-		if (!LegoCarRaceActor::m_unk0x0c) {
+		if (!LegoCarRaceActor::m_animState) {
 			m_maxLinearVel = p_worldSpeed;
 		}
 		LegoAnimActor::SetWorldSpeed(p_worldSpeed);
@@ -597,7 +601,7 @@ void LegoJetski::SetWorldSpeed(MxFloat p_worldSpeed)
 void LegoJetski::FUN_100136f0(float p_worldSpeed)
 {
 	if (p_worldSpeed < 0) {
-		LegoCarRaceActor::m_unk0x0c = 2;
+		LegoCarRaceActor::m_animState = 2;
 		m_maxLinearVel = 0;
 		SetWorldSpeed(0);
 	}
@@ -612,7 +616,7 @@ void LegoJetski::Animate(float p_time)
 {
 	LegoJetskiRaceActor::Animate(p_time);
 
-	if (LegoCarRaceActor::m_unk0x0c == 1) {
+	if (LegoCarRaceActor::m_animState == 1) {
 		FUN_1005d4b0();
 
 		if (!m_userNavFlag) {
@@ -685,7 +689,7 @@ MxResult LegoJetski::HitActor(LegoPathActor* p_actor, MxBool p_bool)
 			LegoROI* roi = p_actor->GetROI();
 			matr = roi->GetLocal2World();
 
-			Vector3(matr[3]) += g_unk0x10102af0;
+			Vector3(matr[3]) += g_hitOffset;
 			roi->SetLocal2World(matr);
 
 			p_actor->SetActorState(c_two);
@@ -714,7 +718,7 @@ MxResult LegoJetski::HitActor(LegoPathActor* p_actor, MxBool p_bool)
 
 				if (soundKey) {
 					SoundManager()->GetCacheSoundManager()->Play(soundKey, NULL, FALSE);
-					g_timeLastJetskiSoundPlayed = g_unk0x100f3308 = time;
+					g_timeLastJetskiSoundPlayed = g_timeLastHitSoundPlayed = time;
 				}
 			}
 
@@ -725,6 +729,9 @@ MxResult LegoJetski::HitActor(LegoPathActor* p_actor, MxBool p_bool)
 				return FAILURE;
 			}
 		}
+	}
+	else {
+		EmitGameEvent(e_hitActor);
 	}
 
 	return SUCCESS;

@@ -32,8 +32,6 @@ MxDirectDraw::MxDirectDraw()
 	m_pPalette = NULL;
 	m_pDirectDraw = NULL;
 	m_bIsOnPrimaryDevice = TRUE;
-	m_pText1Surface = NULL;
-	m_pText2Surface = NULL;
 	m_hWndMain = NULL;
 	m_bIgnoreWMSIZE = FALSE;
 	m_bPrimaryPalettized = FALSE;
@@ -236,8 +234,6 @@ void MxDirectDraw::DestroyButNotDirectDraw()
 
 	RELEASE(m_pPalette);
 	RELEASE(m_pClipper);
-	RELEASE(m_pText1Surface);
-	RELEASE(m_pText2Surface);
 	RELEASE(m_pZBuffer);
 	RELEASE(m_pBackBuffer);
 	RELEASE(m_pFrontBuffer);
@@ -409,13 +405,6 @@ BOOL MxDirectDraw::DDSetMode(int width, int height, int bpp)
 		}
 	}
 
-	// create debug text only in windowed mode?
-	if (!m_bFullScreen) {
-		if (!CreateTextSurfaces()) {
-			return FALSE;
-		}
-	}
-
 	return TRUE;
 }
 
@@ -530,166 +519,27 @@ BOOL MxDirectDraw::DDCreateSurfaces()
 void MxDirectDraw::ClearBackBuffers()
 {
 	HRESULT result;
-	byte* line;
-	DDSURFACEDESC ddsd;
+	DDBLTFX ddbltfx = {};
+	ddbltfx.dwSize = sizeof(DDBLTFX);
+	ddbltfx.dwFillColor = 0xFF000000;
 	int count = m_bFlipSurfaces ? 2 : 1;
-	int value = 0;
 
 	for (int i = 0; i < count; i++) {
-		memset(&ddsd, 0, sizeof(ddsd));
-		ddsd.dwSize = sizeof(ddsd);
-
-		result = m_pBackBuffer->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
+		result = m_pBackBuffer->Blt(NULL, NULL, NULL, DDBLT_COLORFILL | DDBLT_WAIT, &ddbltfx);
 		if (result == DDERR_SURFACELOST) {
 			m_pBackBuffer->Restore();
-			result = m_pBackBuffer->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
+			result = m_pBackBuffer->Blt(NULL, NULL, NULL, DDBLT_COLORFILL | DDBLT_WAIT, &ddbltfx);
 		}
 
 		if (result != DD_OK) {
-			// lock failed
+			// blt failed
 			return;
 		}
-
-		// clear backBuffer
-		line = (byte*) ddsd.lpSurface;
-		for (int j = ddsd.dwHeight; j--;) {
-			memset(line, value, ddsd.dwWidth);
-			line += ddsd.lPitch;
-		}
-
-		m_pBackBuffer->Unlock(ddsd.lpSurface);
 
 		if (m_bFlipSurfaces) {
 			m_pFrontBuffer->Flip(NULL, DDFLIP_WAIT);
 		}
 	}
-}
-
-// FUNCTION: LEGO1 0x1009e110
-// FUNCTION: BETA10 0x101219de
-BOOL MxDirectDraw::TextToTextSurface(const char* text, IDirectDrawSurface* pSurface, SIZE& textSizeOnSurface)
-{
-	HRESULT result;
-	HDC hdc;
-	RECT rc;
-	size_t textLength;
-
-	if (!pSurface) {
-		return FALSE;
-	}
-
-	result = pSurface->GetDC(&hdc);
-	if (result != DD_OK) {
-		Error("GetDC for text surface failed", result);
-		return FALSE;
-	}
-
-	textLength = strlen(text);
-
-	SelectObject(hdc, m_hFont);
-	SetTextColor(hdc, RGB(255, 255, 0));
-	SetBkColor(hdc, RGB(0, 0, 0));
-	SetBkMode(hdc, OPAQUE);
-	GetTextExtentPoint32(hdc, text, textLength, &textSizeOnSurface);
-	SetRect(&rc, 0, 0, textSizeOnSurface.cx, textSizeOnSurface.cy);
-	ExtTextOut(hdc, 0, 0, ETO_OPAQUE, &rc, text, textLength, NULL);
-	pSurface->ReleaseDC(hdc);
-
-	return TRUE;
-}
-
-// FUNCTION: LEGO1 0x1009e210
-// FUNCTION: BETA10 0x10121aea
-BOOL MxDirectDraw::TextToTextSurface1(const char* text)
-{
-	return TextToTextSurface(text, m_pText1Surface, m_text1SizeOnSurface);
-}
-
-// FUNCTION: LEGO1 0x1009e230
-// FUNCTION: BETA10 0x10121b1e
-BOOL MxDirectDraw::TextToTextSurface2(const char* text)
-{
-	return TextToTextSurface(text, m_pText2Surface, m_text2SizeOnSurface);
-}
-
-// FUNCTION: LEGO1 0x1009e250
-// FUNCTION: BETA10 0x10121b52
-BOOL MxDirectDraw::CreateTextSurfaces()
-{
-	HRESULT result;
-	DDCOLORKEY ddck;
-	DDSURFACEDESC ddsd;
-	HDC hdc;
-	char dummyinfo[] = "000x000x00 (RAMP) 0000";
-	char dummyfps[] = "000.00 fps (000.00 fps (000.00 fps) 00000 tps)";
-
-	if (m_hFont != NULL) {
-		DeleteObject(m_hFont);
-	}
-	m_hFont = CreateFont(
-		m_currentMode.width <= 600 ? 12 : 24,
-		0,
-		0,
-		0,
-		FW_NORMAL,
-		FALSE,
-		FALSE,
-		FALSE,
-		ANSI_CHARSET,
-		OUT_DEFAULT_PRECIS,
-		CLIP_DEFAULT_PRECIS,
-		DEFAULT_QUALITY,
-		VARIABLE_PITCH,
-		"Arial"
-	);
-
-	hdc = GetDC(NULL);
-	SelectObject(hdc, m_hFont);
-	GetTextExtentPoint(hdc, dummyfps, strlen(dummyfps), &m_text1SizeOnSurface);
-	GetTextExtentPoint(hdc, dummyinfo, strlen(dummyinfo), &m_text2SizeOnSurface);
-	ReleaseDC(NULL, hdc);
-
-	memset(&ddsd, 0, sizeof(ddsd));
-	ddsd.dwSize = sizeof(ddsd);
-	ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
-	ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
-	if (m_bOnlySystemMemory) {
-		ddsd.ddsCaps.dwCaps |= DDSCAPS_SYSTEMMEMORY;
-	}
-	ddsd.dwHeight = m_text1SizeOnSurface.cy;
-	ddsd.dwWidth = m_text1SizeOnSurface.cx;
-	result = CreateDDSurface(&ddsd, &m_pText1Surface, NULL);
-	if (result != DD_OK) {
-		Error("CreateSurface for text surface 1 failed", result);
-		return FALSE;
-	}
-	memset(&ddck, 0, sizeof(ddck));
-	m_pText1Surface->SetColorKey(DDCKEY_SRCBLT, &ddck);
-	if (!TextToTextSurface1(dummyfps)) {
-		return FALSE;
-	}
-
-	memset(&ddsd, 0, sizeof(ddsd));
-	ddsd.dwSize = sizeof(ddsd);
-	ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
-	ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
-	if (m_bOnlySystemMemory) {
-		ddsd.ddsCaps.dwCaps |= DDSCAPS_SYSTEMMEMORY;
-	}
-	ddsd.dwHeight = m_text2SizeOnSurface.cy;
-	ddsd.dwWidth = m_text2SizeOnSurface.cx;
-	result = CreateDDSurface(&ddsd, &m_pText2Surface, NULL);
-	if (result != DD_OK) {
-		Error("CreateSurface for text surface 2 failed", result);
-		return FALSE;
-	}
-	memset(&ddck, 0, sizeof(ddck));
-	m_pText2Surface->SetColorKey(DDCKEY_SRCBLT, &ddck);
-	if (!TextToTextSurface2(dummyinfo)) {
-		return FALSE;
-	}
-
-	return TRUE;
 }
 
 // FUNCTION: LEGO1 0x1009e4d0
@@ -723,26 +573,6 @@ BOOL MxDirectDraw::RestoreSurfaces()
 			result = m_pZBuffer->Restore();
 			if (result != DD_OK) {
 				Error("Restore of Z-buffer failed", result);
-				return FALSE;
-			}
-		}
-	}
-
-	if (m_pText1Surface != NULL) {
-		if (m_pText1Surface->IsLost() == DDERR_SURFACELOST) {
-			result = m_pText1Surface->Restore();
-			if (result != DD_OK) {
-				Error("Restore of text surface 1 failed", result);
-				return FALSE;
-			}
-		}
-	}
-
-	if (m_pText2Surface != NULL) {
-		if (m_pText2Surface->IsLost() == DDERR_SURFACELOST) {
-			result = m_pText2Surface->Restore();
-			if (result != DD_OK) {
-				Error("Restore of text surface 2 failed", result);
 				return FALSE;
 			}
 		}

@@ -108,7 +108,7 @@ MxResult LegoVideoManager::Create(MxVideoParam& p_videoParam, MxU32 p_frequencyM
 		goto done;
 	}
 
-	if (deviceEnumerate.DoEnumerate() != SUCCESS) {
+	if (deviceEnumerate.DoEnumerate(hwnd) != SUCCESS) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "LegoDeviceEnumerate::DoEnumerate failed");
 		goto done;
 	}
@@ -272,14 +272,13 @@ void LegoVideoManager::MoveCursor(MxS32 p_cursorX, MxS32 p_cursorY)
 {
 	m_cursorX = p_cursorX;
 	m_cursorY = p_cursorY;
-	m_drawCursor = TRUE;
 
-	if (623 < p_cursorX) {
-		m_cursorX = 623;
+	if (640 < p_cursorX) {
+		m_cursorX = 640;
 	}
 
-	if (463 < p_cursorY) {
-		m_cursorY = 463;
+	if (480 < p_cursorY) {
+		m_cursorY = 480;
 	}
 }
 
@@ -388,15 +387,7 @@ inline void LegoVideoManager::DrawCursor()
 	LPDIRECTDRAWSURFACE ddSurface2 = m_displaySurface->GetDirectDrawSurface2();
 
 	if (!m_cursorSurface) {
-		m_cursorRect.top = 0;
-		m_cursorRect.left = 0;
-		m_cursorRect.bottom = 16;
-		m_cursorRect.right = 16;
-		m_cursorSurface = MxDisplaySurface::CreateCursorSurface();
-
-		if (!m_cursorSurface) {
-			m_drawCursor = FALSE;
-		}
+		return;
 	}
 
 	ddSurface2
@@ -554,14 +545,14 @@ void LegoVideoManager::EnableFullScreenMovie(MxBool p_enable, MxBool p_scale)
 			m_palette = m_videoParam.GetPalette()->Clone();
 			OverrideSkyColor(FALSE);
 
-			m_displaySurface->GetVideoParam().Flags().SetF1bit3(p_scale);
+			m_displaySurface->GetVideoParam().Flags().SetDoubleScaling(p_scale);
 
 			m_render3d = FALSE;
 			m_fullScreenMovie = TRUE;
 		}
 		else {
 			m_displaySurface->ClearScreen();
-			m_displaySurface->GetVideoParam().Flags().SetF1bit3(FALSE);
+			m_displaySurface->GetVideoParam().Flags().SetDoubleScaling(FALSE);
 
 			// restore previous pallete
 			RealizePalette(m_palette);
@@ -586,23 +577,23 @@ void LegoVideoManager::EnableFullScreenMovie(MxBool p_enable, MxBool p_scale)
 	}
 
 	if (p_enable) {
-		m_displaySurface->GetVideoParam().Flags().SetF1bit3(p_scale);
+		m_displaySurface->GetVideoParam().Flags().SetDoubleScaling(p_scale);
 	}
 	else {
-		m_displaySurface->GetVideoParam().Flags().SetF1bit3(FALSE);
+		m_displaySurface->GetVideoParam().Flags().SetDoubleScaling(FALSE);
 	}
 }
 
 // FUNCTION: LEGO1 0x1007c440
 void LegoVideoManager::SetSkyColor(float p_red, float p_green, float p_blue)
 {
-	PALETTEENTRY colorStrucure;
+	PALETTEENTRY colorStructure;
 
-	colorStrucure.peRed = (p_red * 255.0f);
-	colorStrucure.peGreen = (p_green * 255.0f);
-	colorStrucure.peBlue = (p_blue * 255.0f);
-	colorStrucure.peFlags = D3DPAL_RESERVED | PC_NOCOLLAPSE;
-	m_videoParam.GetPalette()->SetSkyColor(&colorStrucure);
+	colorStructure.peRed = (p_red * 255.0f);
+	colorStructure.peGreen = (p_green * 255.0f);
+	colorStructure.peBlue = (p_blue * 255.0f);
+	colorStructure.peFlags = D3DPAL_RESERVED | PC_NOCOLLAPSE;
+	m_videoParam.GetPalette()->SetSkyColor(&colorStructure);
 	m_videoParam.GetPalette()->SetOverrideSkyColor(TRUE);
 	m_3dManager->GetLego3DView()->GetView()->SetBackgroundColor(p_red, p_green, p_blue);
 }
@@ -835,4 +826,31 @@ void LegoVideoManager::DrawTextToSurface32(
 		}
 		++p_text;
 	}
+}
+
+void LegoVideoManager::SetCursorBitmap(const CursorBitmap* p_cursorBitmap)
+{
+	if (p_cursorBitmap == NULL) {
+		m_drawCursor = FALSE;
+		return;
+	}
+
+	if (m_cursorSurface != NULL) {
+		m_cursorSurface->Release();
+		m_cursorSurface = NULL;
+	}
+
+	m_cursorRect.top = 0;
+	m_cursorRect.left = 0;
+	m_cursorRect.bottom = p_cursorBitmap->height;
+	m_cursorRect.right = p_cursorBitmap->width;
+
+	m_cursorSurface = MxDisplaySurface::CreateCursorSurface(p_cursorBitmap);
+
+	if (m_cursorSurface == NULL) {
+		m_drawCursor = FALSE;
+		return;
+	}
+
+	m_drawCursor = TRUE;
 }

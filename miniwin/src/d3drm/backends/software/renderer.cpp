@@ -80,7 +80,7 @@ void Direct3DRMSoftwareRenderer::ClearZBuffer()
 		_mm_empty();
 	}
 #endif
-#elif defined(__arm__) || defined(__aarch64__)
+#elif (defined(__arm__) || defined(__aarch64__)) && !defined(__3DS__)
 	if (SDL_HasNEON()) {
 		float32x4_t inf4 = vdupq_n_f32(inf);
 		for (; i + 4 <= size; i += 4) {
@@ -554,7 +554,7 @@ void Direct3DRMSoftwareRenderer::AddTextureDestroyCallback(Uint32 id, IDirect3DR
 	);
 }
 
-Uint32 Direct3DRMSoftwareRenderer::GetTextureId(IDirect3DRMTexture* iTexture)
+Uint32 Direct3DRMSoftwareRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUI, float scaleX, float scaleY)
 {
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
 	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
@@ -664,24 +664,6 @@ Uint32 Direct3DRMSoftwareRenderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGr
 	return (Uint32) (m_meshs.size() - 1);
 }
 
-void Direct3DRMSoftwareRenderer::GetDesc(D3DDEVICEDESC* halDesc, D3DDEVICEDESC* helDesc)
-{
-	memset(halDesc, 0, sizeof(D3DDEVICEDESC));
-
-	helDesc->dcmColorModel = D3DCOLORMODEL::RGB;
-	helDesc->dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
-	helDesc->dwDeviceZBufferBitDepth = DDBD_32;
-	helDesc->dwDeviceRenderBitDepth = DDBD_32;
-	helDesc->dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
-	helDesc->dpcTriCaps.dwShadeCaps = D3DPSHADECAPS_ALPHAFLATBLEND;
-	helDesc->dpcTriCaps.dwTextureFilterCaps = D3DPTFILTERCAPS_LINEAR;
-}
-
-const char* Direct3DRMSoftwareRenderer::GetName()
-{
-	return "Miniwin Emulation";
-}
-
 HRESULT Direct3DRMSoftwareRenderer::BeginFrame()
 {
 	if (!m_renderedImage || !SDL_LockSurface(m_renderedImage)) {
@@ -779,10 +761,9 @@ void Direct3DRMSoftwareRenderer::Resize(int width, int height, const ViewportTra
 
 void Direct3DRMSoftwareRenderer::Clear(float r, float g, float b)
 {
-	SDL_Rect rect = {0, 0, m_renderedImage->w, m_renderedImage->h};
 	const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(m_renderedImage->format);
 	Uint32 color = SDL_MapRGB(details, m_palette, r * 255, g * 255, b * 255);
-	SDL_FillSurfaceRect(m_renderedImage, &rect, color);
+	SDL_FillSurfaceRect(m_renderedImage, nullptr, color);
 }
 
 void Direct3DRMSoftwareRenderer::Flip()
@@ -792,18 +773,49 @@ void Direct3DRMSoftwareRenderer::Flip()
 	SDL_RenderPresent(m_renderer);
 }
 
-void Direct3DRMSoftwareRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect)
+void Direct3DRMSoftwareRenderer::Draw2DImage(
+	Uint32 textureId,
+	const SDL_Rect& srcRect,
+	const SDL_Rect& dstRect,
+	FColor color
+)
 {
-	SDL_Surface* surface = m_textures[textureId].cached;
-	SDL_UnlockSurface(surface);
 	SDL_Rect centeredRect = {
 		static_cast<int>(dstRect.x * m_viewportTransform.scale + m_viewportTransform.offsetX),
 		static_cast<int>(dstRect.y * m_viewportTransform.scale + m_viewportTransform.offsetY),
 		static_cast<int>(dstRect.w * m_viewportTransform.scale),
 		static_cast<int>(dstRect.h * m_viewportTransform.scale),
 	};
-	SDL_BlitSurfaceScaled(surface, &srcRect, m_renderedImage, &centeredRect, SDL_SCALEMODE_LINEAR);
+
+	if (textureId == NO_TEXTURE_ID) {
+		Uint32 sdlColor = SDL_MapRGBA(
+			m_format,
+			m_palette,
+			static_cast<Uint8>(color.r * 255),
+			static_cast<Uint8>(color.g * 255),
+			static_cast<Uint8>(color.b * 255),
+			static_cast<Uint8>(color.a * 255)
+		);
+		SDL_FillSurfaceRect(m_renderedImage, &centeredRect, sdlColor);
+		return;
+	}
+
+	bool isUpscaling = centeredRect.w > srcRect.w || centeredRect.h > srcRect.h;
+
+	SDL_Surface* surface = m_textures[textureId].cached;
+	SDL_UnlockSurface(surface);
+	SDL_BlitSurfaceScaled(
+		surface,
+		&srcRect,
+		m_renderedImage,
+		&centeredRect,
+		isUpscaling ? SDL_SCALEMODE_NEAREST : SDL_SCALEMODE_LINEAR
+	);
 	SDL_LockSurface(surface);
+}
+
+void Direct3DRMSoftwareRenderer::SetDither(bool dither)
+{
 }
 
 void Direct3DRMSoftwareRenderer::Download(SDL_Surface* target)

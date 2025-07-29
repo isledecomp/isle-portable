@@ -1,22 +1,32 @@
 #include "filesystem.h"
 
+#include "events.h"
+#include "extensions/textureloader.h"
 #include "legogamestate.h"
 #include "misc.h"
 #include "mxomni.h"
 
 #include <SDL3/SDL_filesystem.h>
 #include <SDL3/SDL_log.h>
+#include <emscripten.h>
 #include <emscripten/wasmfs.h>
 
 static backend_t opfs = nullptr;
 static backend_t fetchfs = nullptr;
 
 extern const char* g_files[46];
+extern const char* g_textures[120];
 
-void Emscripten_SetupConfig(const char* p_iniConfig)
+bool Emscripten_OPFSDisabled()
 {
-	if (!p_iniConfig || !*p_iniConfig) {
-		return;
+	return MAIN_THREAD_EM_ASM_INT({return !!Module["disableOpfs"]});
+}
+
+bool Emscripten_SetupConfig(const char* p_iniConfig)
+{
+	if (Emscripten_OPFSDisabled()) {
+		SDL_Log("OPFS is disabled; ignoring .ini path");
+		return false;
 	}
 
 	opfs = wasmfs_create_opfs_backend();
@@ -28,11 +38,13 @@ void Emscripten_SetupConfig(const char* p_iniConfig)
 		wasmfs_create_directory(iniConfig.GetData(), 0644, opfs);
 		*parse = '/';
 	}
+
+	return true;
 }
 
 void Emscripten_SetupFilesystem()
 {
-	fetchfs = wasmfs_create_fetch_backend((MxString(Emscripten_streamHost) + MxString("/LEGO")).GetData(), 512 * 1024);
+	fetchfs = wasmfs_create_fetch_backend((MxString(Emscripten_streamHost) + "/LEGO").GetData(), 512 * 1024);
 
 	wasmfs_create_directory("/LEGO", 0644, fetchfs);
 	wasmfs_create_directory("/LEGO/Scripts", 0644, fetchfs);
@@ -62,11 +74,42 @@ void Emscripten_SetupFilesystem()
 		}
 	};
 
+	const auto preloadFile = [](const char* p_path) -> bool {
+		size_t length = 0;
+		void* data = SDL_LoadFile(p_path, &length);
+		if (data) {
+			SDL_free(data);
+		}
+		return length > 0;
+	};
+
 	for (const char* file : g_files) {
 		registerFile(file);
 	}
 
-	if (GameState()->GetSavePath() && *GameState()->GetSavePath()) {
+#ifdef EXTENSIONS
+	if (Extensions::TextureLoader::enabled) {
+		MxString directory =
+			MxString("/LEGO") + Extensions::TextureLoader::options["texture loader:texture path"].c_str();
+		Extensions::TextureLoader::options["texture loader:texture path"] = directory.GetData();
+		wasmfs_create_directory(directory.GetData(), 0644, fetchfs);
+
+		MxU32 i = 0;
+		Emscripten_SendExtensionProgress("HD Textures", 0);
+		for (const char* file : g_textures) {
+			MxString path = directory + "/" + file + ".bmp";
+			registerFile(path.GetData());
+
+			if (!preloadFile(path.GetData())) {
+				Extensions::TextureLoader::excludedFiles.emplace_back(file);
+			}
+
+			Emscripten_SendExtensionProgress("HD Textures", (++i * 100) / sizeOfArray(g_textures));
+		}
+	}
+#endif
+
+	if (GameState()->GetSavePath() && *GameState()->GetSavePath() && !Emscripten_OPFSDisabled()) {
 		if (!opfs) {
 			opfs = wasmfs_create_opfs_backend();
 		}

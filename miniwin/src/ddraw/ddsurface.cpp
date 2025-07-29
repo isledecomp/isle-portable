@@ -52,6 +52,24 @@ HRESULT DirectDrawSurfaceImpl::Blt(
 	LPDDBLTFX lpDDBltFx
 )
 {
+	if ((dwFlags & DDBLT_COLORFILL) == DDBLT_COLORFILL) {
+		Uint8 a = (lpDDBltFx->dwFillColor >> 24) & 0xFF;
+		Uint8 r = (lpDDBltFx->dwFillColor >> 16) & 0xFF;
+		Uint8 g = (lpDDBltFx->dwFillColor >> 8) & 0xFF;
+		Uint8 b = lpDDBltFx->dwFillColor & 0xFF;
+
+		const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(m_surface->format);
+		Uint32 color = SDL_MapRGBA(details, nullptr, r, g, b, a);
+		if (lpDestRect) {
+			SDL_Rect dstRect = ConvertRect(lpDestRect);
+			SDL_FillSurfaceRect(m_surface, &dstRect, color);
+		}
+		else {
+			SDL_FillSurfaceRect(m_surface, nullptr, color);
+		}
+		return DD_OK;
+	}
+
 	auto other = static_cast<DirectDrawSurfaceImpl*>(lpDDSrcSurface);
 
 	SDL_Rect srcRect = lpSrcRect ? ConvertRect(lpSrcRect) : SDL_Rect{0, 0, other->m_surface->w, other->m_surface->h};
@@ -127,7 +145,7 @@ HRESULT DirectDrawSurfaceImpl::GetPalette(LPDIRECTDRAWPALETTE* lplpDDPalette)
 HRESULT DirectDrawSurfaceImpl::GetPixelFormat(LPDDPIXELFORMAT lpDDPixelFormat)
 {
 	memset(lpDDPixelFormat, 0, sizeof(*lpDDPixelFormat));
-	lpDDPixelFormat->dwFlags = DDPF_RGB;
+	lpDDPixelFormat->dwFlags = DDPF_RGB | DDPF_ALPHAPIXELS;
 	const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(m_surface->format);
 	if (details->bits_per_pixel == 8) {
 		lpDDPixelFormat->dwFlags |= DDPF_PALETTEINDEXED8;

@@ -35,7 +35,7 @@ void LegoModelPresenter::configureLegoModelPresenter(MxS32 p_modelPresenterConfi
 // FUNCTION: LEGO1 0x1007f670
 void LegoModelPresenter::Destroy(MxBool p_fromDestructor)
 {
-	m_criticalSection.Enter();
+	ENTER(m_criticalSection);
 	m_roi = NULL;
 	m_addedToView = FALSE;
 	m_criticalSection.Leave();
@@ -197,7 +197,7 @@ done:
 
 // FUNCTION: LEGO1 0x1007ff70
 // FUNCTION: BETA10 0x10099061
-MxResult LegoModelPresenter::FUN_1007ff70(
+MxResult LegoModelPresenter::CreateROI(
 	MxDSChunk& p_chunk,
 	LegoEntity* p_entity,
 	MxBool p_roiVisible,

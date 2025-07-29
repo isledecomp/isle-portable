@@ -10,6 +10,7 @@
 class MxCore;
 
 // VTABLE: LEGO1 0x100dc860
+// VTABLE: BETA10 0x101c23e8
 // SIZE 0x1c
 class MxThread {
 public:
@@ -21,9 +22,16 @@ public:
 	void Terminate();
 	void Sleep(MxS32 p_milliseconds);
 
+	void ResumeThread();
+	void SuspendThread();
+	bool TerminateThread(MxU32 p_exitCode);
+	MxS32 GetThreadPriority(MxU16& p_priority);
+	bool SetThreadPriority(MxU16 p_priority);
+
 	MxBool IsRunning() { return m_running; }
 
 	// SYNTHETIC: LEGO1 0x100bf580
+	// SYNTHETIC: BETA10 0x10147880
 	// MxThread::`scalar deleting destructor'
 
 protected:

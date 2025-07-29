@@ -7,6 +7,7 @@
 
 #include <QDialog>
 #include <QFileDialog>
+#include <SDL3/SDL.h>
 
 namespace Ui
 {
@@ -29,6 +30,7 @@ private:
 	bool m_modified = false;
 	bool m_advanced = false;
 	Ui::MainDialog* m_ui = nullptr;
+	SDL_DisplayMode** displayModes;
 
 	void keyReleaseEvent(QKeyEvent* event) override;
 	bool OnInitDialog();
@@ -40,17 +42,33 @@ private slots:
 	void OnRadiobuttonModelHighQuality(bool checked);
 	void OnRadiobuttonTextureLowQuality(bool checked);
 	void OnRadiobuttonTextureHighQuality(bool checked);
-	void OnCheckboxJoystick(bool checked);
+	void OnRadioWindowed(bool checked);
+	void OnRadioFullscreen(bool checked);
+	void OnRadioExclusiveFullscreen(bool checked);
 	void OnCheckboxMusic(bool checked);
-	void OnCheckboxFullscreen(bool checked);
+	void OnCheckboxRumble(bool checked);
+	void OnCheckboxTexture(bool checked);
+	void TouchControlsChanged(int index);
+	void TransitionTypeChanged(int index);
+	void ExclusiveResolutionChanged(int index);
 	void accept() override;
 	void reject() override;
+	void launch();
 	void SelectDataPathDialog();
 	void SelectSavePathDialog();
 	void DataPathEdited();
 	void SavePathEdited();
 	void MaxLoDChanged(int value);
 	void MaxActorsChanged(int value);
+	void MSAAChanged(int value);
+	void AFChanged(int value);
+	void SelectTexturePathDialog();
+	void TexturePathEdited();
+	void XResChanged(int i);
+	void YResChanged(int i);
+	void AspectRatioChanged(int index);
+	void EnsureAspectRatio();
+	void FramerateChanged(int i);
 };
 
 // SYNTHETIC: CONFIG 0x00403de0

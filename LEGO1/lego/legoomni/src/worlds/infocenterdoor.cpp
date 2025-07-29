@@ -88,7 +88,7 @@ void InfocenterDoor::ReadyWorld()
 {
 	LegoWorld::ReadyWorld();
 	PlayMusic(JukeboxScript::c_InformationCenter_Music);
-	FUN_10015820(FALSE, LegoOmni::c_disableInput | LegoOmni::c_disable3d | LegoOmni::c_clearScreen);
+	Disable(FALSE, LegoOmni::c_disableInput | LegoOmni::c_disable3d | LegoOmni::c_clearScreen);
 }
 
 // FUNCTION: LEGO1 0x10037a90
@@ -96,7 +96,7 @@ MxLong InfocenterDoor::HandleControl(LegoControlManagerNotificationParam& p_para
 {
 	MxLong result = 0;
 
-	if (p_param.m_unk0x28 == 1) {
+	if (p_param.m_enabledChild == 1) {
 		DeleteObjects(&m_atomId, InfodoorScript::c_iic037in_PlayWav, 510);
 
 		switch (p_param.m_clickedObjectId) {

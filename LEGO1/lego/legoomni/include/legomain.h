@@ -134,7 +134,7 @@ public:
 	LegoROI* FindROI(const char* p_name);
 	void AddWorld(LegoWorld* p_world);
 	void DeleteWorld(LegoWorld* p_world);
-	void FUN_1005b4f0(MxBool p_disable, MxU16 p_flags);
+	void Disable(MxBool p_disable, MxU16 p_flags);
 	LEGO1_EXPORT void CreateBackgroundAudio();
 	LEGO1_EXPORT void RemoveWorld(const MxAtomId& p_atom, MxLong p_objectId);
 	MxResult RegisterWorlds();
@@ -185,8 +185,8 @@ public:
 	// FUNCTION: BETA10 0x100d55c0
 	void SetExit(MxBool p_exit) { m_exit = p_exit; }
 
-	MxResult StartActionIfUnknown0x13c(MxDSAction& p_dsAction) { return m_unk0x13c ? Start(&p_dsAction) : SUCCESS; }
-	void SetUnknown13c(MxBool p_unk0x13c) { m_unk0x13c = p_unk0x13c; }
+	MxResult StartActionIfInitialized(MxDSAction& p_dsAction) { return m_initialized ? Start(&p_dsAction) : SUCCESS; }
+	void SetInitialized(MxBool p_unk0x13c) { m_initialized = p_unk0x13c; }
 
 	void CloseMainWindow()
 	{
@@ -199,6 +199,9 @@ public:
 
 		SDL_PushEvent(&event);
 	}
+
+	void SetVersion10(MxBool p_version10) { m_version10 = p_version10; }
+	MxBool IsVersion10() { return m_version10; }
 
 	// SYNTHETIC: LEGO1 0x10058b30
 	// LegoOmni::`scalar deleting destructor'
@@ -221,9 +224,10 @@ private:
 	MxDSAction m_action;                         // 0xa0
 	MxBackgroundAudioManager* m_bkgAudioManager; // 0x134
 	MxTransitionManager* m_transitionManager;    // 0x138
+	MxBool m_version10;
 
 public:
-	MxBool m_unk0x13c; // 0x13c
+	MxBool m_initialized; // 0x13c
 };
 
 #endif // LEGOMAIN_H

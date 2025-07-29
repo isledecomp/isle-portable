@@ -143,9 +143,12 @@ enum class DDBltFlags : uint32_t {
 };
 ENABLE_BITMASK_OPERATORS(DDBltFlags)
 
+#define DDPF_ALPHAPIXELS DDPixelFormatFlags::ALPHAPIXELS
 #define DDPF_PALETTEINDEXED8 DDPixelFormatFlags::PALETTEINDEXED8
 #define DDPF_RGB DDPixelFormatFlags::RGB
+#define DDPF_ALPHAPIXELS DDPixelFormatFlags::ALPHAPIXELS
 enum class DDPixelFormatFlags : uint32_t {
+	ALPHAPIXELS = 1 << 0,     // dwRGBAlphaBitMask is valid
 	PALETTEINDEXED8 = 1 << 5, // The texture uses an 8 bit palette
 	RGB = 1 << 6,             // dwRGBBitCount, dwRBitMask, dwGBitMask, and dwBBitMask is valid
 };
@@ -162,9 +165,11 @@ ENABLE_BITMASK_OPERATORS(DDBltFastFlags)
 #define DDLOCK_SURFACEMEMORYPTR DDLockFlags::SURFACEMEMORYPTR
 #define DDLOCK_WAIT DDLockFlags::WAIT
 #define DDLOCK_WRITEONLY DDLockFlags::WRITEONLY
+#define DDLOCK_READONLY DDLockFlags::READONLY
 enum class DDLockFlags : uint32_t {
 	SURFACEMEMORYPTR = 0,
 	WAIT = 1 << 0,
+	READONLY = 1 << 4,
 	WRITEONLY = 1 << 5,
 };
 ENABLE_BITMASK_OPERATORS(DDLockFlags)
@@ -246,9 +251,13 @@ struct DDSCAPS {
 };
 typedef struct DDSCAPS* LPDDSCAPS;
 
+#define DDBLTFX_NOTEARING DDBLTFXFlags::NOTEARING
+enum class DDBLTFXFlags : uint8_t {
+	NOTEARING = 1 << 3,
+};
 struct DDBLTFX {
 	DWORD dwSize;
-	DWORD dwDDFX;
+	DDBLTFXFlags dwDDFX;
 	DWORD dwROP;
 	DWORD dwFillColor;
 };

@@ -165,7 +165,7 @@ void ViewManager::UpdateROIDetailBasedOnLOD(ViewROI* p_roi, int p_lodLevel)
 	if (lodLevel < 0) {
 		lod = (ViewLOD*) p_roi->GetLOD(p_lodLevel);
 
-		if (lod->GetUnknown0x08() & ViewLOD::c_bit4) {
+		if (lod->GetFlags() & ViewLOD::c_hasMesh) {
 			scene->Add(group);
 			SetAppData(p_roi, reinterpret_cast<LPD3DRM_APPDATA>(p_roi));
 		}
@@ -184,7 +184,7 @@ void ViewManager::UpdateROIDetailBasedOnLOD(ViewROI* p_roi, int p_lodLevel)
 		lod = (ViewLOD*) p_roi->GetLOD(p_lodLevel);
 	}
 
-	if (lod->GetUnknown0x08() & ViewLOD::c_bit4) {
+	if (lod->GetFlags() & ViewLOD::c_hasMesh) {
 		meshBuilder = lod->GetMeshBuilder();
 
 		if (meshBuilder != NULL) {
@@ -235,7 +235,7 @@ inline void ViewManager::ManageVisibilityAndDetailRecursively(ViewROI* p_from, i
 			if (p_from->GetWorldBoundingSphere().Radius() > 0.001F) {
 				float projectedSize = ProjectedSize(p_from->GetWorldBoundingSphere());
 
-				if (projectedSize < seconds_allowed * g_viewDistance) {
+				if (RealtimeView::GetUserMaxLOD() <= 5.0f && projectedSize < seconds_allowed * g_viewDistance) {
 					if (p_from->GetLodLevel() != ViewROI::c_lodLevelInvisible) {
 						ManageVisibilityAndDetailRecursively(p_from, ViewROI::c_lodLevelInvisible);
 					}
@@ -361,7 +361,7 @@ inline int ViewManager::CalculateLODLevel(float p_maximumScale, float p_initialS
 	assert(from);
 
 	if (GetFirstLODIndex(from) != 0) {
-		if (p_maximumScale < g_minLODThreshold) {
+		if (RealtimeView::GetUserMaxLOD() <= 5.0f && p_maximumScale < g_minLODThreshold) {
 			return 0;
 		}
 		else {
@@ -389,7 +389,7 @@ inline int ViewManager::GetFirstLODIndex(ViewROI* p_roi)
 	const LODListBase* lods = p_roi->GetLODs();
 
 	if (lods != NULL && lods->Size() > 0) {
-		if (((ViewLOD*) p_roi->GetLOD(0))->GetUnknown0x08Test8()) {
+		if (((ViewLOD*) p_roi->GetLOD(0))->IsExtraLOD()) {
 			return 1;
 		}
 		else {
@@ -404,7 +404,7 @@ inline int ViewManager::GetFirstLODIndex(ViewROI* p_roi)
 			const LODListBase* lods = ((ViewROI*) *it)->GetLODs();
 
 			if (lods != NULL && lods->Size() > 0) {
-				if (((ViewLOD*) ((ViewROI*) *it)->GetLOD(0))->GetUnknown0x08Test8()) {
+				if (((ViewLOD*) ((ViewROI*) *it)->GetLOD(0))->IsExtraLOD()) {
 					return 1;
 				}
 				else {

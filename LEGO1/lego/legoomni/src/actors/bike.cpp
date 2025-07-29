@@ -52,9 +52,9 @@ void Bike::Exit()
 // FUNCTION: LEGO1 0x100769a0
 MxLong Bike::HandleClick()
 {
-	if (FUN_1003ef60()) {
+	if (CanExit()) {
 		Act1State* state = (Act1State*) GameState()->GetState("Act1State");
-		FUN_10015820(TRUE, 0);
+		Disable(TRUE, 0);
 
 		((Isle*) CurrentWorld())->SetDestLocation(LegoGameState::Area::e_bike);
 		TransitionManager()->StartTransition(MxTransitionManager::e_mosaic, 50, FALSE, TRUE);
@@ -81,7 +81,7 @@ MxLong Bike::HandleControl(LegoControlManagerNotificationParam& p_param)
 {
 	MxLong result = 0;
 
-	if (p_param.m_unk0x28 == 1) {
+	if (p_param.m_enabledChild == 1) {
 		switch (p_param.m_clickedObjectId) {
 		case IsleScript::c_BikeArms_Ctl:
 			Exit();
@@ -97,7 +97,7 @@ MxLong Bike::HandleControl(LegoControlManagerNotificationParam& p_param)
 		case IsleScript::c_BikeHorn_Ctl:
 			MxSoundPresenter* presenter =
 				(MxSoundPresenter*) CurrentWorld()->Find("MxSoundPresenter", "BikeHorn_Sound");
-			presenter->Enable(p_param.m_unk0x28);
+			presenter->Enable(p_param.m_enabledChild);
 			break;
 		}
 	}

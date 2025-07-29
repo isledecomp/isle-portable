@@ -16,6 +16,8 @@
 
 DECOMP_SIZE_ASSERT(MxTransitionManager, 0x900)
 
+MxTransitionManager::TransitionType g_transitionManagerConfig = MxTransitionManager::e_mosaic;
+
 // GLOBAL: LEGO1 0x100f4378
 RECT g_fullScreenRect = {0, 0, 640, 480};
 
@@ -105,7 +107,7 @@ MxResult MxTransitionManager::StartTransition(
 			backgroundAudioManager->Stop();
 		}
 
-		m_mode = p_animationType;
+		m_mode = g_transitionManagerConfig;
 
 		m_copyFlags.m_bit0 = p_doCopy;
 
@@ -246,7 +248,7 @@ void MxTransitionManager::DissolveTransition()
 				}
 				else {
 					MxU8* surf = (MxU8*) ddsd.lpSurface + ddsd.lPitch * row + xShift * 4;
-					*(MxU32*) surf = 0;
+					*(MxU32*) surf = 0xFF000000;
 				}
 			}
 		}
@@ -266,8 +268,15 @@ void MxTransitionManager::DissolveTransition()
 // FUNCTION: LEGO1 0x1004bed0
 void MxTransitionManager::MosaicTransition()
 {
+	static LPDIRECTDRAWSURFACE g_transitionSurface = nullptr;
+	static MxU32 g_colors[64][48];
+
 	if (m_animationTimer == 16) {
 		m_animationTimer = 0;
+		if (g_transitionSurface) {
+			g_transitionSurface->Release();
+			g_transitionSurface = nullptr;
+		}
 		EndTransition(TRUE);
 		return;
 	}
@@ -292,6 +301,84 @@ void MxTransitionManager::MosaicTransition()
 			for (i = 0; i < 48; i++) {
 				m_randomShift[i] = SDL_rand(64);
 			}
+
+			DDSURFACEDESC srcDesc = {};
+			srcDesc.dwSize = sizeof(srcDesc);
+			HRESULT lockRes = m_ddSurface->Lock(NULL, &srcDesc, DDLOCK_WAIT | DDLOCK_READONLY, NULL);
+			if (lockRes == DDERR_SURFACELOST) {
+				m_ddSurface->Restore();
+				lockRes = m_ddSurface->Lock(NULL, &srcDesc, DDLOCK_WAIT | DDLOCK_READONLY, NULL);
+			}
+
+			if (lockRes != DD_OK) {
+				return;
+			}
+
+			MxS32 bytesPerPixel = srcDesc.ddpfPixelFormat.dwRGBBitCount / 8;
+
+			for (MxS32 col = 0; col < 64; col++) {
+				for (MxS32 row = 0; row < 48; row++) {
+					MxS32 xBlock = (m_randomShift[row] + col) % 64;
+					MxS32 y = row * 10;
+					MxS32 x = xBlock * 10;
+
+					MxU8* pixelPtr = (MxU8*) srcDesc.lpSurface + y * srcDesc.lPitch + x * bytesPerPixel;
+
+					MxU32 pixel;
+					switch (bytesPerPixel) {
+					case 1:
+						pixel = *pixelPtr;
+						break;
+					case 2:
+						pixel = *(MxU16*) pixelPtr;
+						break;
+					default:
+						pixel = *(MxU32*) pixelPtr;
+						break;
+					}
+
+					g_colors[col][row] = pixel;
+				}
+			}
+
+			m_ddSurface->Unlock(srcDesc.lpSurface);
+
+			DDSURFACEDESC mainDesc = {};
+			mainDesc.dwSize = sizeof(mainDesc);
+			if (m_ddSurface->GetSurfaceDesc(&mainDesc) != DD_OK) {
+				return;
+			}
+
+			DDSURFACEDESC tempDesc = {};
+			tempDesc.dwSize = sizeof(tempDesc);
+			tempDesc.dwFlags = DDSD_WIDTH | DDSD_HEIGHT | DDSD_PIXELFORMAT | DDSD_CAPS;
+			tempDesc.dwWidth = 64;
+			tempDesc.dwHeight = 48;
+			tempDesc.ddpfPixelFormat = mainDesc.ddpfPixelFormat;
+			tempDesc.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
+
+			if (MVideoManager()->GetDirectDraw()->CreateSurface(&tempDesc, &g_transitionSurface, nullptr) != DD_OK) {
+				return;
+			}
+
+			DWORD fillColor = 0x00000000;
+			switch (mainDesc.ddpfPixelFormat.dwRGBBitCount) {
+			case 8:
+				fillColor = 0x10;
+				break;
+			case 16:
+				fillColor = RGB555_CREATE(0x1f, 0, 0x1f);
+				break;
+			}
+
+			DDBLTFX bltFx = {};
+			bltFx.dwSize = sizeof(bltFx);
+			bltFx.dwFillColor = fillColor;
+			g_transitionSurface->Blt(NULL, NULL, NULL, DDBLT_COLORFILL | DDBLT_WAIT, &bltFx);
+
+			DDCOLORKEY key = {};
+			key.dwColorSpaceLowValue = key.dwColorSpaceHighValue = fillColor;
+			g_transitionSurface->SetColorKey(DDCKEY_SRCBLT, &key);
 		}
 
 		// Run one tick of the animation
@@ -299,14 +386,17 @@ void MxTransitionManager::MosaicTransition()
 		memset(&ddsd, 0, sizeof(ddsd));
 		ddsd.dwSize = sizeof(ddsd);
 
-		HRESULT res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+		HRESULT res = g_transitionSurface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
 		if (res == DDERR_SURFACELOST) {
-			m_ddSurface->Restore();
-			res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT, NULL);
+			g_transitionSurface->Restore();
+			res = g_transitionSurface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
 		}
 
 		if (res == DD_OK) {
 			SubmitCopyRect(&ddsd);
+
+			// Combine xShift with this value to target the correct location in the buffer.
+			MxS32 bytesPerPixel = ddsd.ddpfPixelFormat.dwRGBBitCount / 8;
 
 			for (MxS32 col = 0; col < 64; col++) {
 				// Select 4 columns on each tick
@@ -319,69 +409,29 @@ void MxTransitionManager::MosaicTransition()
 				}
 
 				for (MxS32 row = 0; row < 48; row++) {
-					// To do the mosaic effect, we subdivide the 640x480 surface into
-					// 10x10 pixel blocks. At the chosen block, we sample the top-leftmost
-					// color and set the other 99 pixels to that value.
+					MxS32 x = (m_randomShift[row] + col) % 64;
+					MxU8* dest = (MxU8*) ddsd.lpSurface + row * ddsd.lPitch + x * bytesPerPixel;
 
-					// First, get the offset of the 10x10 block that we will sample for this row.
-					MxS32 xShift = 10 * ((m_randomShift[row] + col) % 64);
-
-					// Combine xShift with this value to target the correct location in the buffer.
-					MxS32 bytesPerPixel = ddsd.ddpfPixelFormat.dwRGBBitCount / 8;
-
-					// Seek to the sample position.
-					MxU8* source = (MxU8*) ddsd.lpSurface + 10 * row * ddsd.lPitch + bytesPerPixel * xShift;
-
-					// Sample byte or word depending on display mode.
-					MxU32 sample;
+					MxU32 source = g_colors[col][row];
 					switch (bytesPerPixel) {
 					case 1:
-						sample = *source;
+						*dest = (MxU8) source;
 						break;
 					case 2:
-						sample = *(MxU16*) source;
+						*((MxU16*) dest) = (MxU16) source;
 						break;
 					default:
-						sample = *(MxU32*) source;
+						*((MxU32*) dest) = source;
 						break;
-					}
-
-					// For each of the 10 rows in the 10x10 square:
-					for (MxS32 k = 10 * row; k < 10 * row + 10; k++) {
-						void* pos = (MxU8*) ddsd.lpSurface + k * ddsd.lPitch + bytesPerPixel * xShift;
-
-						switch (bytesPerPixel) {
-						case 1: {
-							// Optimization: If the pixel is only one byte, we can use memset
-							memset(pos, sample, 10);
-							break;
-						}
-						case 2: {
-							MxU16* p = (MxU16*) pos;
-							for (MxS32 tt = 0; tt < 10; tt++) {
-								p[tt] = (MxU16) sample;
-							}
-							break;
-						}
-						default: {
-							MxU32* p = (MxU32*) pos;
-							for (MxS32 tt = 0; tt < 10; tt++) {
-								p[tt] = (MxU32) sample;
-							}
-							break;
-						}
-						}
 					}
 				}
 			}
 
 			SetupCopyRect(&ddsd);
-			m_ddSurface->Unlock(ddsd.lpSurface);
+			g_transitionSurface->Unlock(ddsd.lpSurface);
 
-			if (VideoManager()->GetVideoParam().Flags().GetFlipSurfaces()) {
-				LPDIRECTDRAWSURFACE surf = VideoManager()->GetDisplaySurface()->GetDirectDrawSurface1();
-				surf->BltFast(0, 0, m_ddSurface, &g_fullScreenRect, DDBLTFAST_WAIT);
-			}
+			RECT srcRect = {0, 0, 64, 48};
+			m_ddSurface->Blt(&g_fullScreenRect, g_transitionSurface, &srcRect, DDBLT_WAIT | DDBLT_KEYSRC, NULL);
 
 			m_animationTimer++;
 		}
@@ -398,32 +448,18 @@ void MxTransitionManager::WipeDownTransition()
 		return;
 	}
 
-	DDSURFACEDESC ddsd;
-	memset(&ddsd, 0, sizeof(ddsd));
-	ddsd.dwSize = sizeof(ddsd);
+	RECT fillRect = g_fullScreenRect;
+	// For each of the 240 animation ticks, blank out two scanlines
+	// starting at the top of the screen.
+	fillRect.bottom = 2 * (m_animationTimer + 1);
 
-	HRESULT res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
-	if (res == DDERR_SURFACELOST) {
-		m_ddSurface->Restore();
-		res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
-	}
+	DDBLTFX bltFx = {};
+	bltFx.dwSize = sizeof(bltFx);
+	bltFx.dwFillColor = 0xFF000000;
 
-	if (res == DD_OK) {
-		SubmitCopyRect(&ddsd);
+	m_ddSurface->Blt(&fillRect, NULL, NULL, DDBLT_COLORFILL | DDBLT_WAIT, &bltFx);
 
-		// For each of the 240 animation ticks, blank out two scanlines
-		// starting at the top of the screen.
-		MxU8* line = (MxU8*) ddsd.lpSurface + 2 * ddsd.lPitch * m_animationTimer;
-		memset(line, 0, ddsd.lPitch);
-
-		line += ddsd.lPitch;
-		memset(line, 0, ddsd.lPitch);
-
-		SetupCopyRect(&ddsd);
-		m_ddSurface->Unlock(ddsd.lpSurface);
-
-		m_animationTimer++;
-	}
+	m_animationTimer++;
 }
 
 // FUNCTION: LEGO1 0x1004c270
@@ -435,40 +471,28 @@ void MxTransitionManager::WindowsTransition()
 		return;
 	}
 
-	DDSURFACEDESC ddsd;
-	memset(&ddsd, 0, sizeof(ddsd));
-	ddsd.dwSize = sizeof(ddsd);
+	DDBLTFX bltFx = {};
+	bltFx.dwSize = sizeof(bltFx);
+	bltFx.dwFillColor = 0xFF000000;
 
-	HRESULT res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
-	if (res == DDERR_SURFACELOST) {
-		m_ddSurface->Restore();
-		res = m_ddSurface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
-	}
+	int top = m_animationTimer;
+	int bottom = 480 - m_animationTimer - 1;
+	int left = m_animationTimer;
+	int right = 639 - m_animationTimer;
 
-	if (res == DD_OK) {
-		SubmitCopyRect(&ddsd);
+	RECT topRect = {0, top, 640, top + 1};
+	m_ddSurface->Blt(&topRect, NULL, NULL, DDBLT_COLORFILL | DDBLT_WAIT, &bltFx);
 
-		MxU8* line = (MxU8*) ddsd.lpSurface + m_animationTimer * ddsd.lPitch;
+	RECT bottomRect = {0, bottom, 640, bottom + 1};
+	m_ddSurface->Blt(&bottomRect, NULL, NULL, DDBLT_COLORFILL | DDBLT_WAIT, &bltFx);
 
-		MxS32 bytesPerPixel = ddsd.ddpfPixelFormat.dwRGBBitCount / 8;
+	RECT leftRect = {left, top + 1, left + 1, bottom};
+	m_ddSurface->Blt(&leftRect, NULL, NULL, DDBLT_COLORFILL | DDBLT_WAIT, &bltFx);
 
-		memset(line, 0, ddsd.lPitch);
+	RECT rightRect = {right, top + 1, right + 1, bottom};
+	m_ddSurface->Blt(&rightRect, NULL, NULL, DDBLT_COLORFILL | DDBLT_WAIT, &bltFx);
 
-		for (MxS32 i = m_animationTimer + 1; i < 480 - m_animationTimer; i++) {
-			line += ddsd.lPitch;
-
-			memset(line + m_animationTimer * bytesPerPixel, 0, bytesPerPixel);
-			memset(line + 640 + (-1 - m_animationTimer) * bytesPerPixel, 0, bytesPerPixel);
-		}
-
-		line += ddsd.lPitch;
-		memset(line, 0, ddsd.lPitch);
-
-		SetupCopyRect(&ddsd);
-		m_ddSurface->Unlock(ddsd.lpSurface);
-
-		m_animationTimer++;
-	}
+	m_animationTimer++;
 }
 
 // FUNCTION: LEGO1 0x1004c3e0
@@ -631,4 +655,9 @@ void MxTransitionManager::SetupCopyRect(LPDDSURFACEDESC p_ddsc)
 			m_waitIndicator->GetHeight()
 		);
 	}
+}
+
+void MxTransitionManager::configureMxTransitionManager(TransitionType p_transitionManagerConfig)
+{
+	g_transitionManagerConfig = p_transitionManagerConfig;
 }

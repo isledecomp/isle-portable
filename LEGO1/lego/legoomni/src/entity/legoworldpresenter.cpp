@@ -63,7 +63,7 @@ LegoWorldPresenter::~LegoWorldPresenter()
 	}
 
 	if (result == FALSE) {
-		FUN_10015820(FALSE, LegoOmni::c_disableInput | LegoOmni::c_disable3d | LegoOmni::c_clearScreen);
+		Disable(FALSE, LegoOmni::c_disableInput | LegoOmni::c_disable3d | LegoOmni::c_clearScreen);
 	}
 
 	if (m_entity) {
@@ -260,8 +260,12 @@ MxResult LegoWorldPresenter::LoadWorld(char* p_worldName, LegoWorld* p_world)
 	ModelDbPart* part;
 
 	while (cursor.Next(part)) {
-		if (GetViewLODListManager()->Lookup(part->m_roiName.GetData()) == NULL &&
-			LoadWorldPart(*part, wdbFile) != SUCCESS) {
+		ViewLODList* lodList = GetViewLODListManager()->Lookup(part->m_roiName.GetData());
+		if (lodList) {
+			lodList->Release();
+		}
+
+		if (lodList == NULL && LoadWorldPart(*part, wdbFile) != SUCCESS) {
 			return FAILURE;
 		}
 	}
@@ -393,7 +397,7 @@ MxResult LegoWorldPresenter::LoadWorldModel(ModelDbModel& p_model, SDL_IOStream*
 	}
 
 	modelPresenter.SetAction(&action);
-	modelPresenter.FUN_1007ff70(chunk, createdEntity, p_model.m_visible, p_world);
+	modelPresenter.CreateROI(chunk, createdEntity, p_model.m_visible, p_world);
 	delete[] buff;
 
 	return SUCCESS;

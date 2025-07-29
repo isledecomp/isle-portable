@@ -4,9 +4,9 @@
 #include "act3ammo.h"
 #include "anim/legoanim.h"
 #include "define.h"
+#include "legoanimpresenter.h"
 #include "legobuildingmanager.h"
 #include "legocachesoundmanager.h"
-#include "legolocomotionanimpresenter.h"
 #include "legopathedgecontainer.h"
 #include "legoplantmanager.h"
 #include "legoplants.h"
@@ -580,7 +580,7 @@ void Act3Brickster::Animate(float p_time)
 	}
 
 	if (m_unk0x54 < p_time) {
-		((Act3*) m_world)->FUN_10072ad0(5);
+		((Act3*) m_world)->TriggerHitSound(5);
 		m_unk0x54 = p_time + 15000.0f;
 	}
 
@@ -596,7 +596,7 @@ void Act3Brickster::Animate(float p_time)
 		assert(SoundManager()->GetCacheSoundManager());
 
 		if (m_unk0x58 >= 8) {
-			((Act3*) m_world)->FUN_10072ad0(6);
+			((Act3*) m_world)->TriggerHitSound(6);
 		}
 		else {
 			SoundManager()->GetCacheSoundManager()->Play("eatpz", NULL, FALSE);
@@ -639,7 +639,7 @@ void Act3Brickster::Animate(float p_time)
 			float time = p_time - (m_unk0x50 - m_shootAnim->GetDuration());
 
 			for (MxS32 i = 0; i < root->GetNumChildren(); i++) {
-				LegoROI::FUN_100a8e80(root->GetChild(i), local70, time, m_shootAnim->GetROIMap());
+				LegoROI::ApplyAnimationTransformation(root->GetChild(i), local70, time, m_shootAnim->GetROIMap());
 			}
 		}
 
@@ -686,7 +686,7 @@ void Act3Brickster::Animate(float p_time)
 			float time = p_time - (m_unk0x50 - m_shootAnim->GetDuration());
 
 			for (MxS32 i = 0; i < root->GetNumChildren(); i++) {
-				LegoROI::FUN_100a8e80(root->GetChild(i), locale4, time, m_shootAnim->GetROIMap());
+				LegoROI::ApplyAnimationTransformation(root->GetChild(i), locale4, time, m_shootAnim->GetROIMap());
 			}
 		}
 
@@ -1187,7 +1187,7 @@ void Act3Shark::Animate(float p_time)
 		vec = m_unk0x3c;
 
 		LegoTreeNode* node = m_unk0x34->GetAnimTreePtr()->GetRoot();
-		LegoROI::FUN_100a8e80(node, mat, duration, m_unk0x34->GetROIMap());
+		LegoROI::ApplyAnimationTransformation(node, mat, duration, m_unk0x34->GetROIMap());
 	}
 	else {
 		roiMap[1] = m_unk0x38;

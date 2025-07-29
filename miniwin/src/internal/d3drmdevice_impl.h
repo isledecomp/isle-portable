@@ -34,12 +34,15 @@ struct Direct3DRMDevice2Impl : public Direct3DRMObjectBaseImpl<IDirect3DRMDevice
 
 	// IDirect3DRMMiniwinDevice interface
 	bool ConvertEventToRenderCoordinates(SDL_Event* event) override;
+	bool ConvertRenderToWindowCoordinates(Sint32 inX, Sint32 inY, Sint32& outX, Sint32& outY) override;
 
 	Direct3DRMRenderer* m_renderer;
 
 private:
 	void Resize();
 
+	int m_windowWidth;
+	int m_windowHeight;
 	uint32_t m_virtualWidth;
 	uint32_t m_virtualHeight;
 	ViewportTransform m_viewportTransform;

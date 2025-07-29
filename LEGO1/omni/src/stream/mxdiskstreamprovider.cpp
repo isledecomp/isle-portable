@@ -161,10 +161,11 @@ void MxDiskStreamProvider::VTable0x20(MxDSAction* p_action)
 }
 
 // FUNCTION: LEGO1 0x100d1750
+// FUNCTION: BETA10 0x101632b8
 MxResult MxDiskStreamProvider::WaitForWorkToComplete()
 {
 	while (m_remainingWork) {
-		m_busySemaphore.Wait();
+		m_busySemaphore.Acquire();
 		if (m_unk0x35) {
 			PerformWork();
 		}

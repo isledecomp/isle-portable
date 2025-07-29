@@ -1,8 +1,8 @@
 #include "legoextraactor.h"
 
 #include "anim/legoanim.h"
+#include "legoanimpresenter.h"
 #include "legocachesoundmanager.h"
-#include "legolocomotionanimpresenter.h"
 #include "legosoundmanager.h"
 #include "legoworld.h"
 #include "misc.h"
@@ -235,6 +235,9 @@ MxResult LegoExtraActor::HitActor(LegoPathActor* p_actor, MxBool p_bool)
 				assert(m_roi);
 				assert(SoundManager()->GetCacheSoundManager());
 				SoundManager()->GetCacheSoundManager()->Play("crash5", m_roi->GetName(), FALSE);
+				if (p_actor->GetUserNavFlag()) {
+					EmitGameEvent(e_hitActor);
+				}
 				m_scheduledTime = Timer()->GetTime() + m_disAnim->GetDuration();
 				m_prevWorldSpeed = GetWorldSpeed();
 				VTable0xc4();
@@ -248,6 +251,9 @@ MxResult LegoExtraActor::HitActor(LegoPathActor* p_actor, MxBool p_bool)
 			LegoROI* roi = GetROI();
 			assert(roi);
 			SoundManager()->GetCacheSoundManager()->Play("crash5", m_roi->GetName(), FALSE);
+			if (p_actor->GetUserNavFlag()) {
+				EmitGameEvent(e_hitActor);
+			}
 			VTable0xc4();
 			SetActorState(c_two | c_noCollide);
 			Mx3DPointFloat dir = p_actor->GetWorldDirection();
@@ -373,7 +379,7 @@ void LegoExtraActor::Animate(float p_time)
 		MxS32 count = root->GetNumChildren();
 
 		for (MxS32 i = 0; i < count; i++) {
-			LegoROI::FUN_100a8e80(root->GetChild(i), matrix, duration2, laas->m_roiMap);
+			LegoROI::ApplyAnimationTransformation(root->GetChild(i), matrix, duration2, laas->m_roiMap);
 		}
 	}
 }

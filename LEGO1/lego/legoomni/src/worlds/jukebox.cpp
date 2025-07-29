@@ -123,7 +123,7 @@ MxBool JukeBox::HandleControl(LegoControlManagerNotificationParam& p_param)
 {
 	MxStillPresenter* presenter;
 
-	if (p_param.m_unk0x28 == 1) {
+	if (p_param.m_enabledChild == 1) {
 		switch (p_param.m_clickedObjectId) {
 		case JukeboxwScript::c_Dback_Ctl:
 			switch (m_state->m_music) {
@@ -211,7 +211,7 @@ MxBool JukeBox::HandleControl(LegoControlManagerNotificationParam& p_param)
 			break;
 		case JukeboxwScript::c_Note_Ctl:
 			Act1State* act1State = (Act1State*) GameState()->GetState("Act1State");
-			act1State->m_unk0x018 = 11;
+			act1State->m_state = Act1State::e_jukebox;
 			m_destLocation = LegoGameState::Area::e_jukeboxExterior;
 			TransitionManager()->StartTransition(MxTransitionManager::e_mosaic, 50, 0, FALSE);
 			break;
@@ -247,7 +247,7 @@ MxResult JukeBox::Tickle()
 
 	if (m_unk0x100 == 1) {
 		m_unk0x100 = 0;
-		FUN_10015820(FALSE, LegoOmni::c_disableInput | LegoOmni::c_disable3d | LegoOmni::c_clearScreen);
+		Disable(FALSE, LegoOmni::c_disableInput | LegoOmni::c_disable3d | LegoOmni::c_clearScreen);
 	}
 
 	return SUCCESS;
