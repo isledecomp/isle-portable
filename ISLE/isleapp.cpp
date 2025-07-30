@@ -1023,8 +1023,10 @@ MxResult IsleApp::SetupWindow()
 // FUNCTION: ISLE 0x4028d0
 bool IsleApp::LoadConfig()
 {
-#ifdef IOS
+#if defined(IOS)
 	const char* prefPath = SDL_GetUserFolder(SDL_FOLDER_DOCUMENTS);
+#elif defined(PS2)
+	char* prefPath = "mc0:/isledecomp/isle";
 #else
 	char* prefPath = SDL_GetPrefPath("isledecomp", "isle");
 #endif
