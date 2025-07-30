@@ -5,7 +5,7 @@
 #include "lego1_export.h"
 #include "legoutils.h"
 #include "mxdsaction.h"
-#include "mxomni.h"
+#include "mxmain.h"
 
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_timer.h>
@@ -114,6 +114,7 @@ public:
 	}
 
 	// FUNCTION: LEGO1 0x10058ab0
+	// FUNCTION: BETA10 0x1008f860
 	MxBool IsA(const char* p_name) const override // vtable+0x10
 	{
 		return !strcmp(p_name, LegoOmni::ClassName()) || MxOmni::IsA(p_name);
@@ -153,9 +154,14 @@ public:
 	// FUNCTION: BETA10 0x1009e7a0
 	LegoInputManager* GetInputManager() { return m_inputManager; }
 
+	// FUNCTION: BETA10 0x100e5400
 	LegoTextureContainer* GetTextureContainer() { return m_textureContainer; }
+
 	ViewLODListManager* GetViewLODListManager() { return m_viewLODListManager; }
+
+	// FUNCTION: BETA10 0x100969b0
 	LegoWorld* GetCurrentWorld() { return m_currentWorld; }
+
 	LegoNavController* GetNavController() { return m_navController; }
 	LegoPathActor* GetUserActor() { return m_userActor; }
 
@@ -204,6 +210,7 @@ public:
 	MxBool IsVersion10() { return m_version10; }
 
 	// SYNTHETIC: LEGO1 0x10058b30
+	// SYNTHETIC: BETA10 0x1008f8d0
 	// LegoOmni::`scalar deleting destructor'
 
 private:

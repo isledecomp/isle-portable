@@ -28,6 +28,7 @@ DECOMP_SIZE_ASSERT(MxStopWatch, 0x18)
 DECOMP_SIZE_ASSERT(MxFrequencyMeter, 0x20)
 
 // FUNCTION: LEGO1 0x1007aa20
+// FUNCTION: BETA10 0x100d5a00
 LegoVideoManager::LegoVideoManager()
 {
 	m_renderer = NULL;
@@ -296,12 +297,15 @@ void LegoVideoManager::ToggleFPS(MxBool p_visible)
 }
 
 // FUNCTION: LEGO1 0x1007b770
+// STUB: BETA10 0x100d69cc
 MxResult LegoVideoManager::Tickle()
 {
+#ifndef BETA10
 	if (m_unk0x554 && !m_videoParam.Flags().GetFlipSurfaces() &&
 		TransitionManager()->GetTransitionType() == MxTransitionManager::e_idle) {
 		Sleep(30);
 	}
+#endif
 
 	m_stopWatch->Stop();
 	m_elapsedSeconds = m_stopWatch->ElapsedSeconds();
@@ -467,6 +471,7 @@ void LegoVideoManager::DrawFPS()
 }
 
 // FUNCTION: LEGO1 0x1007c080
+// FUNCTION: BETA10 0x100d6d28
 MxPresenter* LegoVideoManager::GetPresenterAt(MxS32 p_x, MxS32 p_y)
 {
 	MxPresenterListCursor cursor(m_presenters);
@@ -504,6 +509,7 @@ MxPresenter* LegoVideoManager::GetPresenterByActionObjectName(const char* p_acti
 }
 
 // FUNCTION: LEGO1 0x1007c290
+// FUNCTION: BETA10 0x100d731e
 MxResult LegoVideoManager::RealizePalette(MxPalette* p_pallete)
 {
 	if (p_pallete && m_videoParam.GetPalette()) {
@@ -605,6 +611,7 @@ void LegoVideoManager::OverrideSkyColor(MxBool p_shouldOverride)
 }
 
 // FUNCTION: LEGO1 0x1007c4d0
+// FUNCTION: BETA10 0x100d77d3
 void LegoVideoManager::UpdateView(MxU32 p_x, MxU32 p_y, MxU32 p_width, MxU32 p_height)
 {
 	if (p_width == 0) {
