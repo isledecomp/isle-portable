@@ -22,6 +22,7 @@ MxTransitionManager::TransitionType g_transitionManagerConfig = MxTransitionMana
 RECT g_fullScreenRect = {0, 0, 640, 480};
 
 // FUNCTION: LEGO1 0x1004b8d0
+// FUNCTION: BETA10 0x100ec2c0
 MxTransitionManager::MxTransitionManager()
 {
 	m_animationTimer = 0;

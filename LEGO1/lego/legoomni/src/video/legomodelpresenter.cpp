@@ -46,7 +46,7 @@ void LegoModelPresenter::Destroy(MxBool p_fromDestructor)
 }
 
 // FUNCTION: LEGO1 0x1007f6b0
-// FUNCTION: BETA10 0x1009845e
+// STUB: BETA10 0x1009845e
 MxResult LegoModelPresenter::CreateROI(MxDSChunk* p_chunk)
 {
 	MxResult result = FAILURE;
