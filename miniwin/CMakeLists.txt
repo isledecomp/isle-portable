@@ -111,7 +111,13 @@ target_include_directories(miniwin
 )
 target_link_libraries(miniwin PUBLIC miniwin-headers)
 
-target_link_libraries(miniwin PRIVATE SDL3::SDL3)
+if (NXDK)
+  target_link_libraries(miniwin PRIVATE ${NXDK_DIR}/lib/libpbkit.lib)
+  target_link_libraries(miniwin PRIVATE ${NXDK_DIR}/lib/libSDL3.lib)
+  target_include_directories(miniwin PRIVATE ${NXDK_DIR}/lib/sdl/SDL3/include)
+else()
+  target_link_libraries(miniwin PRIVATE SDL3::SDL3)
+endif()
 
 target_compile_definitions(miniwin PUBLIC ${GRAPHICS_BACKENDS})
 

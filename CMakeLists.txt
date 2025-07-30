@@ -56,7 +56,7 @@ option(ENABLE_CLANG_TIDY "Enable clang-tidy")
 option(DOWNLOAD_DEPENDENCIES "Download dependencies" ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}" CACHE PATH "Directory where to put executables and dll")
 set(ISLE_EMSCRIPTEN_HOST "" CACHE STRING "Host URL for Emscripten streaming (e.g., https://test.com)")
-cmake_dependent_option(BUILD_SHARED_LIBS "Build lego1 as a shared library" ON "NOT EMSCRIPTEN" OFF)
+cmake_dependent_option(BUILD_SHARED_LIBS "Build lego1 as a shared library" ON "NOT EMSCRIPTEN;NOT NXDK" OFF)
 
 message(STATUS "Isle app:               ${ISLE_BUILD_APP}")
 message(STATUS "Config app:             ${ISLE_BUILD_CONFIG}")
@@ -72,22 +72,24 @@ if (DOWNLOAD_DEPENDENCIES)
   # FetchContent downloads and configures dependencies
   message(STATUS "Fetching SDL3 and iniparser. This might take a while...")
   include(FetchContent)
-  if (WINDOWS_STORE)
-    FetchContent_Declare(
-      SDL3
-      GIT_REPOSITORY "https://github.com/Helloyunho/SDL3-uwp.git"
-      GIT_TAG "main"
-      EXCLUDE_FROM_ALL
-    )
-  else()
-    FetchContent_Declare(
+  if (!NXDK)
+    if (WINDOWS_STORE)
+      FetchContent_Declare(
         SDL3
-        GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
+        GIT_REPOSITORY "https://github.com/Helloyunho/SDL3-uwp.git"
         GIT_TAG "main"
         EXCLUDE_FROM_ALL
-    )
+      )
+    else()
+      FetchContent_Declare(
+          SDL3
+          GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
+          GIT_TAG "main"
+          EXCLUDE_FROM_ALL
+      )
+    endif()
+    FetchContent_MakeAvailable(SDL3)
   endif()
-  FetchContent_MakeAvailable(SDL3)
 
   FetchContent_Declare(
     iniparser
@@ -105,7 +107,9 @@ else()
   # find_package looks for already-installed system packages.
   # Configure with `-DCMAKE_PREFIX_PATH="/path/to/package1;/path/to/package2"`
   # to add search paths.
-  find_package(SDL3 CONFIG REQUIRED)
+  if (!NXDK)
+    find_package(SDL3 CONFIG REQUIRED)
+  endif()
 
   find_package(iniparser REQUIRED CONFIG COMPONENTS shared)
   target_link_libraries(Isle::iniparser INTERFACE iniparser-shared)
@@ -178,8 +182,14 @@ target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/L
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/LEGO1/lego/sources>")
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/LEGO1/lego/legoomni/include>")
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/LEGO1/lego/legoomni/include/actions>")
-target_link_libraries(lego1 PRIVATE SDL3::SDL3)
-target_link_libraries(lego1 PUBLIC SDL3::Headers)
+if (NXDK)
+  target_link_libraries(lego1 PRIVATE ${NXDK_DIR}/lib/libpbkit.lib)
+  target_link_libraries(lego1 PRIVATE ${NXDK_DIR}/lib/libSDL3.lib)
+  target_include_directories(lego1 PRIVATE ${NXDK_DIR}/lib/sdl/SDL3/include)
+else()
+  target_link_libraries(lego1 PRIVATE SDL3::SDL3)
+  target_link_libraries(lego1 PUBLIC SDL3::Headers)
+endif()
 target_link_libraries(lego1 PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5>)
 # Allow unconditional include of miniwin/miniwind3d.h
 target_link_libraries(lego1 PRIVATE miniwin-headers)
@@ -520,7 +530,14 @@ if (ISLE_BUILD_APP)
   target_link_libraries(isle PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5>)
 
   # Link SDL and iniparser
-  target_link_libraries(isle PRIVATE SDL3::SDL3 Isle::iniparser)
+  if (NXDK)
+    target_link_libraries(isle PRIVATE ${NXDK_DIR}/lib/libpbkit.lib)
+    target_link_libraries(isle PRIVATE ${NXDK_DIR}/lib/libSDL3.lib)
+    target_include_directories(isle PRIVATE ${NXDK_DIR}/lib/sdl/SDL3/include)
+    target_link_libraries(isle PRIVATE Isle::iniparser)
+  else()
+    target_link_libraries(isle PRIVATE SDL3::SDL3 Isle::iniparser)
+  endif()
 
   # Allow unconditional include of miniwin/miniwindevice.h
   target_link_libraries(isle PRIVATE miniwin-headers)
@@ -638,6 +655,11 @@ if (ISLE_BUILD_CONFIG)
     target_link_libraries(isle-config PRIVATE DirectX5::DirectX5)
   endif()
   target_compile_definitions(isle-config PRIVATE DIRECT3D_VERSION=0x500)
+  if (NXDK)
+    target_link_libraries(isle-config PRIVATE ${NXDK_DIR}/lib/libpbkit.lib)
+    target_link_libraries(isle-config PRIVATE ${NXDK_DIR}/lib/libSDL3.lib)
+    target_include_directories(isle-config PRIVATE ${NXDK_DIR}/lib/sdl/SDL3/include)
+  endif()
   target_link_libraries(isle-config PRIVATE SDL3::SDL3 Isle::iniparser)
   if (NOT ISLE_MINIWIN)
     target_link_libraries(isle-config PRIVATE ddraw dxguid)
@@ -706,7 +728,7 @@ if (EXISTS "${CLANGFORMAT_BIN}")
 endif()
 
 set(install_extra_targets)
-if(DOWNLOAD_DEPENDENCIES)
+if(DOWNLOAD_DEPENDENCIES AND NOT NXDK)
   get_property(sdl3_type TARGET SDL3::SDL3 PROPERTY TYPE)
   if(sdl3_type STREQUAL "SHARED_LIBRARY")
     list(APPEND install_extra_targets "SDL3-shared")
