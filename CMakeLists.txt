@@ -334,7 +334,7 @@ target_sources(lego1 PRIVATE
   LEGO1/omni/src/entity/mxentity.cpp
   LEGO1/omni/src/event/mxeventmanager.cpp
   LEGO1/omni/src/event/mxeventpresenter.cpp
-  LEGO1/omni/src/main/mxomni.cpp
+  LEGO1/omni/src/main/mxmain.cpp
   LEGO1/omni/src/main/mxomnicreateflags.cpp
   LEGO1/omni/src/main/mxomnicreateparam.cpp
   LEGO1/omni/src/notify/mxactionnotificationparam.cpp

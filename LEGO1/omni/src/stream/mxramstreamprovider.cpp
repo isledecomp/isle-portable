@@ -3,7 +3,7 @@
 #include "decomp.h"
 #include "mxdsbuffer.h"
 #include "mxdsfile.h"
-#include "mxomni.h"
+#include "mxmain.h"
 #include "mxstreamcontroller.h"
 #include "mxutilities.h"
 
