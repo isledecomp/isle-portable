@@ -183,6 +183,7 @@ target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/L
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/LEGO1/lego/legoomni/include>")
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/LEGO1/lego/legoomni/include/actions>")
 if (NXDK)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSDL_DISABLE_ALLOCA -DSDL_DISABLE_ANALYZE_MACROS -DSTBI_NO_SIMD -DSDL_DISABLE_MMX -DSDL_platform_defines_h_")
   target_link_libraries(lego1 PRIVATE ${NXDK_DIR}/lib/libpbkit.lib)
   target_link_libraries(lego1 PRIVATE ${NXDK_DIR}/lib/libSDL3.lib)
   target_include_directories(lego1 PRIVATE ${NXDK_DIR}/lib/sdl/SDL3/include)
