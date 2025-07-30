@@ -1026,7 +1026,7 @@ bool IsleApp::LoadConfig()
 #if defined(IOS)
 	const char* prefPath = SDL_GetUserFolder(SDL_FOLDER_DOCUMENTS);
 #elif defined(PS2)
-	char* prefPath = "mc0:/isledecomp/isle";
+	const char* prefPath = "mc0:ISLE/";
 #else
 	char* prefPath = SDL_GetPrefPath("isledecomp", "isle");
 #endif
@@ -1229,7 +1229,7 @@ bool IsleApp::LoadConfig()
 
 	iniparser_freedict(dict);
 	delete[] iniConfig;
-#ifndef IOS
+#if !defined(IOS) && !defined(PS2)
 	SDL_free(prefPath);
 #endif
 
