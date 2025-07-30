@@ -3,6 +3,9 @@
 #include "decomp.h"
 
 #include <SDL3/SDL_timer.h>
+#ifdef PS2
+#include <kernel.h>
+#endif
 
 DECOMP_SIZE_ASSERT(MxThread, 0x1c)
 
@@ -10,7 +13,11 @@ DECOMP_SIZE_ASSERT(MxThread, 0x1c)
 // FUNCTION: BETA10 0x10147540
 MxThread::MxThread()
 {
+#ifdef PS2
+	m_thread = 0;
+#else
 	m_thread = NULL;
+#endif
 	m_running = TRUE;
 }
 
@@ -19,7 +26,13 @@ MxThread::MxThread()
 MxThread::~MxThread()
 {
 	if (m_thread) {
+#ifdef PS2
+		ReleaseWaitThread(m_thread);
+		DeleteThread(m_thread);
+		m_thread = 0;
+#else
 		SDL_WaitThread(m_thread, NULL);
+#endif
 	}
 }
 
@@ -30,6 +43,23 @@ MxResult MxThread::Start(MxS32 p_stackSize, MxS32 p_flag)
 	MxResult result = FAILURE;
 
 	if (m_semaphore.Init(0, 1) != SUCCESS) {
+#ifdef PS2
+		ee_thread_t thread;
+		thread.func = (void*)&(MxThread::ThreadProc);
+		thread .stack_size = p_stackSize * 4;
+		thread.initial_priority = 0x18;
+		int thid = CreateThread(&thread);
+
+		if (thid >= 0) {
+			MxThread* self = this;
+			int start = StartThread(thid, &self);
+			if (start >= 0) {
+				result = SUCCESS;
+				m_thread = thid; // store thread ID if needed
+			}
+		}
+	}
+#else
 		goto done;
 	}
 
@@ -45,6 +75,7 @@ MxResult MxThread::Start(MxS32 p_stackSize, MxS32 p_flag)
 
 		SDL_DestroyProperties(props);
 	}
+#endif
 
 	result = SUCCESS;
 

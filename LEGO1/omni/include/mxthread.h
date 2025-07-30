@@ -5,7 +5,11 @@
 #include "mxsemaphore.h"
 #include "mxtypes.h"
 
+#ifdef PS2
+#include <kernel.h>
+#else
 #include <SDL3/SDL_thread.h>
+#endif
 
 class MxCore;
 
@@ -41,9 +45,13 @@ public:
 	virtual ~MxThread();
 
 private:
+#ifdef PS2
+	static int ThreadProc(void* p_thread);
+	int m_thread;
+#else
 	static int SDLCALL ThreadProc(void* p_thread);
-
 	SDL_Thread* m_thread;
+#endif
 	MxBool m_running;        // 0x0c
 	MxSemaphore m_semaphore; // 0x10
 
