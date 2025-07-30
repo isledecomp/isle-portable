@@ -186,7 +186,9 @@ target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/L
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/LEGO1/lego/legoomni/include>")
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/LEGO1/lego/legoomni/include/actions>")
 target_link_libraries(lego1 PRIVATE SDL3::SDL3)
-target_link_libraries(lego1 PUBLIC SDL3::Headers)
+if (!NXDK) # Dunno why, but Ryzee's SDL3 doesn't like "SDL3::Headers"
+  target_link_libraries(lego1 PUBLIC SDL3::Headers)
+endif()
 target_link_libraries(lego1 PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5>)
 # Allow unconditional include of miniwin/miniwind3d.h
 target_link_libraries(lego1 PRIVATE miniwin-headers)
