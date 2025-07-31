@@ -71,7 +71,7 @@ void Direct3DRMSoftwareRenderer::ClearZBuffer()
 			_mm_storeu_ps(&m_zBuffer[i], inf4);
 		}
 	}
-#if defined(__i386__) || defined(_M_IX86)
+#if (defined(__i386__) || defined(_M_IX86)) && !defined(NXDK)
 	else if (SDL_HasMMX()) {
 		const __m64 mm_inf = _mm_set_pi32(0x7F800000, 0x7F800000);
 		for (; i + 2 <= size; i += 2) {
