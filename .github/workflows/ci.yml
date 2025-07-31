@@ -47,7 +47,7 @@ jobs:
           - { name: 'Emscripten',           os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, emsdk: true, werror: true,   clang-tidy: false,  cmake-wrapper: 'emcmake' }
           - { name: 'Nintendo 3DS',         os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, n3ds: true,  werror: true,   clang-tidy: false,  container: 'devkitpro/devkitarm:latest', cmake-args: '-DCMAKE_TOOLCHAIN_FILE=/opt/devkitpro/cmake/3DS.cmake' }
           - { name: 'Xbox One',             os: 'windows-latest', generator: 'Visual Studio 17 2022', dx5: false, config: false, msvc: true,  werror: false,  clang-tidy: false,  vc-arch: 'amd64', cmake-args: '-DCMAKE_SYSTEM_NAME=WindowsStore -DCMAKE_SYSTEM_VERSION=10.0.26100.0', xbox-one: true}
-          - { name: 'PlayStation Portable', os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, psp: true,   werror: true,   clang-tidy: false,  container: 'pspdev/pspdev:latest', cmake-args: '-DCMAKE_TOOLCHAIN_FILE=/usr/local/pspdev/psp/share/pspdev.cmake' }
+          - { name: 'PlayStation Portable', os: 'ubuntu-latest',  generator: 'Makefile',              dx5: false, config: false, psp: true,   werror: true,   clang-tidy: false,  container: 'pspdev/pspdev:latest', cmake-args: '-DCMAKE_TOOLCHAIN_FILE=/usr/local/pspdev/psp/share/pspdev.cmake' }
     steps:
       - name: Setup vcvars
         if: ${{ !!matrix.msvc }}
