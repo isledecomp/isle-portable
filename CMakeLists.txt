@@ -90,6 +90,27 @@ if (DOWNLOAD_DEPENDENCIES)
   endif()
   FetchContent_MakeAvailable(SDL3)
 
+  # if(ANDROID)
+  #   FetchContent_GetProperties(SDL3)
+  #   set(SDL3_ANDROID_DIR "${sdl3_SOURCE_DIR}/android-project")
+  #
+  #   add_custom_command(
+  #     OUTPUT ${SDL3_ANDROID_DIR}/SDL/build/outputs/aar/SDL-release.aar
+  #     COMMAND ${CMAKE_COMMAND} -E echo "Building SDL3.aar via Gradle..."
+  #     COMMAND ./gradlew :SDL:assembleRelease
+  #     WORKING_DIRECTORY ${SDL3_ANDROID_DIR}
+  #     DEPENDS ${SDL3_ANDROID_DIR}/SDL/build.gradle
+  #     COMMENT "Generating SDL3.aar from SDL3 android-project"
+  #   )
+  #
+  #   add_custom_target(build_sdl3_aar ALL
+  #     DEPENDS ${SDL3_ANDROID_DIR}/SDL/build/outputs/aar/SDL-release.aar
+  #   )
+  #
+  #   # Make your native targets depend on the aar build, e.g.
+  #   # add_dependencies(your_native_target build_sdl3_aar)
+  # endif()
+
   FetchContent_Declare(
     iniparser
     GIT_REPOSITORY "https://gitlab.com/iniparser/iniparser.git"
@@ -501,6 +522,14 @@ if (ISLE_EXTENSIONS)
 endif()
 
 if (ISLE_BUILD_APP)
+
+  if(ANDROID)
+    # SDL applications need to be built as a shared library
+    function(add_executable TARGET)
+      add_library(${TARGET} SHARED ${ARGN})
+    endfunction()
+  endif()
+
   add_executable(isle WIN32
     ISLE/res/isle.rc
     ISLE/isleapp.cpp

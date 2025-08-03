@@ -72,6 +72,10 @@
 #include "ios/config.h"
 #endif
 
+#ifdef __ANDROID__
+#include "android/config.h"
+#endif
+
 DECOMP_SIZE_ASSERT(IsleApp, 0x8c)
 
 // GLOBAL: ISLE 0x410030
@@ -1128,6 +1132,9 @@ bool IsleApp::LoadConfig()
 #endif
 #ifdef IOS
 		IOS_SetupDefaultConfigOverrides(dict);
+#endif
+#ifdef __ANDROID__
+		Android_SetupDefaultConfigOverrides(dict);
 #endif
 		iniparser_dump_ini(dict, iniFP);
 		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "New config written at '%s'", iniConfig);

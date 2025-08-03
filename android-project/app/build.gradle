@@ -1,0 +1,49 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace "org.legoisland.Isle"
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'org.legoisland.lego-island'
+        minSdk 21
+        targetSdk 35
+        versionCode 1
+        versionName '1.0'
+
+        externalNativeBuild {
+            cmake {
+                arguments '-DANDROID_STL=c++_shared'
+                abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
+                // abiFilters 'arm64-v8a'
+            }
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            version "3.30.5"
+            path '../../CMakeLists.txt'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+//             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    buildFeatures {
+        prefab true
+    }
+}
+
+dependencies {
+    implementation files('libs/SDL3.aar')
+}
