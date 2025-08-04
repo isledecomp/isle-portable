@@ -15,7 +15,12 @@ android {
 
         externalNativeBuild {
             cmake {
-                arguments '-DANDROID_STL=c++_shared', '-DCMAKE_BUILD_TYPE=Release', '-DISLE_USE_DX5=false', '-DISLE_BUILD_CONFIG=false', '-DENABLE_CLANG_TIDY=false', '-DISLE_WERROR=true', '-DISLE_DEBUG=false', '-Werror=dev', '-DCMAKE_MESSAGE_LOG_LEVEL=STATUS'
+                arguments '-DANDROID_STL=c++_shared'
+                if (project.hasProperty('cmakeArgs')) {
+                    project.cmakeArgs.split(" ").each {arg -> arguments arg}
+                }
+                abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
+//                abiFilters 'x86_64', 'arm64-v8a'
             }
         }
     }
