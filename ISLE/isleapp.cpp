@@ -72,7 +72,7 @@
 #include "ios/config.h"
 #endif
 
-#ifdef __ANDROID__
+#ifdef ANDROID
 #include "android/config.h"
 #endif
 
@@ -1131,7 +1131,7 @@ bool IsleApp::LoadConfig()
 #ifdef IOS
 		IOS_SetupDefaultConfigOverrides(dict);
 #endif
-#ifdef __ANDROID__
+#ifdef ANDROID
 		Android_SetupDefaultConfigOverrides(dict);
 #endif
 		iniparser_dump_ini(dict, iniFP);
@@ -1234,7 +1234,7 @@ bool IsleApp::LoadConfig()
 
 	iniparser_freedict(dict);
 	delete[] iniConfig;
-#ifndef IOS
+#if !defined(IOS) && !defined(ANDROID)
 	SDL_free(prefPath);
 #endif
 

@@ -1,3 +1,5 @@
 .cxx
 .gradle
 local.properties
+build
+*.aar
