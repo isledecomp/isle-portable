@@ -12,11 +12,12 @@ if (WINDOWS_STORE)
   add_compile_definitions(WINDOWS_STORE)
 endif()
 
+#[[
 if (NXDK)
   add_compile_definitions(MA_NO_WIN32_FILEIO)
   add_definitions("-DMA_NO_WIN32_FILEIO -fms-compatibility-version=1000 -D_MSC_VER=1000")
 endif()
-
+]]#
 
 if (EMSCRIPTEN)
   add_compile_options(-pthread)
