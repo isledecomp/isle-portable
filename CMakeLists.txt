@@ -12,6 +12,12 @@ if (WINDOWS_STORE)
   add_compile_definitions(WINDOWS_STORE)
 endif()
 
+if (NXDK)
+  add_compile_definitions(MA_NO_WIN32_FILEIO)
+  add_definitions("-DMA_NO_WIN32_FILEIO -fms-compatibility-version=1000 -D_MSC_VER=1000")
+endif()
+
+
 if (EMSCRIPTEN)
   add_compile_options(-pthread)
   add_link_options(-sUSE_WEBGL2=1 -sMIN_WEBGL_VERSION=2 -sALLOW_MEMORY_GROWTH=1 -sMAXIMUM_MEMORY=2gb -sUSE_PTHREADS=1 -sPROXY_TO_PTHREAD=1 -sOFFSCREENCANVAS_SUPPORT=1 -sPTHREAD_POOL_SIZE_STRICT=0 -sFORCE_FILESYSTEM=1 -sWASMFS=1 -sEXIT_RUNTIME=1)
@@ -378,7 +384,7 @@ target_include_directories(lego1 PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include
 if (WIN32)
   target_link_libraries(lego1 INTERFACE winmm)
 endif()
-#target_link_libraries(lego1 PRIVATE libsmacker miniaudio)
+target_link_libraries(lego1 PRIVATE libsmacker miniaudio)
 target_link_libraries(lego1 PRIVATE libsmacker)
 target_include_directories(lego1 PUBLIC $<BUILD_INTERFACE:$<TARGET_PROPERTY:miniaudio,INTERFACE_INCLUDE_DIRECTORIES>>)
 
