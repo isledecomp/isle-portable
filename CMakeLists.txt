@@ -48,7 +48,7 @@ option(ISLE_WERROR "Treat warnings as errors" OFF)
 cmake_dependent_option(ISLE_DEBUG "Enable imgui debug" ON "NOT NXDK" OFF)
 cmake_dependent_option(ISLE_USE_DX5 "Build with internal DirectX 5 SDK" "${NOT_MINGW}" "WIN32;CMAKE_SIZEOF_VOID_P EQUAL 4" OFF)
 cmake_dependent_option(ISLE_MINIWIN "Use miniwin" ON "NOT ISLE_USE_DX5" OFF)
-cmake_dependent_option(ISLE_EXTENSIONS "Use extensions" ON "NOT ISLE_USE_DX5" OFF)
+cmake_dependent_option(ISLE_EXTENSIONS "Use extensions" ON "NOT ISLE_USE_DX5;NOT NXDK" OFF)
 cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "MSVC OR ISLE_MINIWIN;NOT NINTENDO_3DS;NOT WINDOWS_STORE;NOT NXDK" OFF)
 cmake_dependent_option(ISLE_COMPILE_SHADERS "Compile shaders" ON "SDL_SHADERCROSS_BIN;TARGET Python3::Interpreter" OFF)
 option(CMAKE_POSITION_INDEPENDENT_CODE "Build with -fPIC" ON)
@@ -177,7 +177,7 @@ add_library(lego1
   LEGO1/main.cpp
 )
 target_precompile_headers(lego1 PRIVATE "LEGO1/lego1_pch.h")
-set_property(TARGET lego1 PROPERTY DEFINE_SYMBOL "LEGO1_DLL")
+set_property(TARGET lego1 PROPERTY DEFINE_SYMBOL "LEGO1_STATIC")
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/util>")
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/extensions/include>")
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/LEGO1>")
@@ -378,7 +378,8 @@ target_include_directories(lego1 PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include
 if (WIN32)
   target_link_libraries(lego1 INTERFACE winmm)
 endif()
-target_link_libraries(lego1 PRIVATE libsmacker miniaudio)
+#target_link_libraries(lego1 PRIVATE libsmacker miniaudio)
+target_link_libraries(lego1 PRIVATE libsmacker)
 target_include_directories(lego1 PUBLIC $<BUILD_INTERFACE:$<TARGET_PROPERTY:miniaudio,INTERFACE_INCLUDE_DIRECTORIES>>)
 
 # lego1_impl sources

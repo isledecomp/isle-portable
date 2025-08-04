@@ -1190,7 +1190,7 @@ bool IsleApp::LoadConfig()
 		m_videoParam.GetRect() = MxRect32(0, 0, (m_xRes - 1), (m_yRes - 1));
 	}
 	m_frameRate = (1000.0f / iniparser_getdouble(dict, "isle:Frame Delta", m_frameDelta));
-	m_frameDelta = static_cast<int>(std::round(iniparser_getdouble(dict, "isle:Frame Delta", m_frameDelta)));
+	m_frameDelta = static_cast<int>((iniparser_getdouble(dict, "isle:Frame Delta", m_frameDelta)));
 	m_videoParam.SetMSAASamples((m_msaaSamples = iniparser_getint(dict, "isle:MSAA", m_msaaSamples)));
 	m_videoParam.SetAnisotropic((m_anisotropic = iniparser_getdouble(dict, "isle:Anisotropic", m_anisotropic)));
 

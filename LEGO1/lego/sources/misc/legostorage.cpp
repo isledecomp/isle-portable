@@ -2,7 +2,7 @@
 
 #include "decomp.h"
 
-#include <memory.h>
+//#include <memory.h>
 #include <string.h>
 
 DECOMP_SIZE_ASSERT(LegoStorage, 0x08);
