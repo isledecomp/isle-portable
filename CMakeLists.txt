@@ -73,22 +73,27 @@ if (DOWNLOAD_DEPENDENCIES)
   # FetchContent downloads and configures dependencies
   message(STATUS "Fetching SDL3 and iniparser. This might take a while...")
   include(FetchContent)
-  if (WINDOWS_STORE)
-    FetchContent_Declare(
-      SDL3
-      GIT_REPOSITORY "https://github.com/Helloyunho/SDL3-uwp.git"
-      GIT_TAG "main"
-      EXCLUDE_FROM_ALL
-    )
-  else()
-    FetchContent_Declare(
+  # FIXME: properly build and source the .aar
+  if (NOT ANDROID)
+    if (WINDOWS_STORE)
+      FetchContent_Declare(
         SDL3
-        GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
+        GIT_REPOSITORY "https://github.com/Helloyunho/SDL3-uwp.git"
         GIT_TAG "main"
         EXCLUDE_FROM_ALL
-    )
+      )
+    else()
+      FetchContent_Declare(
+          SDL3
+          GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
+          GIT_TAG "main"
+          EXCLUDE_FROM_ALL
+      )
+    endif()
+    FetchContent_MakeAvailable(SDL3)
+  else()
+    find_package(SDL3 CONFIG REQUIRED)
   endif()
-  FetchContent_MakeAvailable(SDL3)
 
   # if(ANDROID)
   #   FetchContent_GetProperties(SDL3)
@@ -524,8 +529,7 @@ endif()
 if (ISLE_BUILD_APP)
 
   if(ANDROID)
-    # SDL applications need to be built as a shared library
-    function(add_executable TARGET)
+    function(add_executable TARGET PLATFORM)
       add_library(${TARGET} SHARED ${ARGN})
     endfunction()
   endif()
@@ -607,6 +611,11 @@ if (ISLE_BUILD_APP)
   if (IOS)
     target_sources(isle PRIVATE
       ISLE/ios/config.cpp
+    )
+  endif()
+  if (ANDROID)
+    target_sources(isle PRIVATE
+            ISLE/android/config.cpp
     )
   endif()
   if(Python3_FOUND)

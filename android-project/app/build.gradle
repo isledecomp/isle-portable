@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace "org.legoisland.Isle"
+    namespace "org.legoisland.isle"
     compileSdk 35
 
     defaultConfig {
-        applicationId 'org.legoisland.lego-island'
+        applicationId 'org.legoisland.isle'
         minSdk 21
         targetSdk 35
         versionCode 1
@@ -15,9 +15,7 @@ android {
 
         externalNativeBuild {
             cmake {
-                arguments '-DANDROID_STL=c++_shared'
-                abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
-                // abiFilters 'arm64-v8a'
+                arguments '-DANDROID_STL=c++_shared', '-DCMAKE_BUILD_TYPE=Release', '-DISLE_USE_DX5=false', '-DISLE_BUILD_CONFIG=false', '-DENABLE_CLANG_TIDY=false', '-DISLE_WERROR=true', '-DISLE_DEBUG=false', '-Werror=dev', '-DCMAKE_MESSAGE_LOG_LEVEL=STATUS'
             }
         }
     }
