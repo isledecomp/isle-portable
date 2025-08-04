@@ -47,6 +47,8 @@ jobs:
           - { name: 'Emscripten',          os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, emsdk: true, werror: true,   clang-tidy: false,  cmake-wrapper: 'emcmake' }
           - { name: 'Nintendo 3DS',        os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, n3ds: true,  werror: true,   clang-tidy: false,  container: 'devkitpro/devkitarm:latest', cmake-args: '-DCMAKE_TOOLCHAIN_FILE=/opt/devkitpro/cmake/3DS.cmake' }
           - { name: 'Xbox One',            os: 'windows-latest', generator: 'Visual Studio 17 2022', dx5: false, config: false, msvc: true,  werror: false,  clang-tidy: false,  vc-arch: 'amd64', cmake-args: '-DCMAKE_SYSTEM_NAME=WindowsStore -DCMAKE_SYSTEM_VERSION=10.0.26100.0', xbox-one: true}
+          - { name: 'Android',             os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, android: true, werror: true, clang-tidy: false,  cmake-args: ' -DANDROID_NDK_PATH=$ANDROID_NDK_HOME' }
+          - { name: 'Android (Debug)',     os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, android: true, werror: true, clang-tidy: false,  debug: true,  cmake-args: ' -DANDROID_NDK_PATH=$ANDROID_NDK_HOME' }
     steps:
       - name: Setup vcvars
         if: ${{ !!matrix.msvc }}
@@ -81,7 +83,7 @@ jobs:
           chmod a+x /opt/devkitpro/tools/bin/makerom
 
       - name: Install Linux dependencies (apt-get)
-        if: ${{ matrix.linux }}
+        if: ${{ matrix.linux || matrix.android }}
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -106,6 +108,18 @@ jobs:
 
       - uses: actions/checkout@v4
 
+      - name: Setup Java (Android)
+        if: ${{ matrix.android }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - name: Setup SDK (Android)
+        if: ${{ matrix.android }}
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'ndk;26.3.11579264 cmake;3.30.5'
+
       - name: Configure (CMake)
         run: |
           ${{ matrix.cmake-wrapper || '' }} cmake -S . -B build -G "${{ matrix.generator }}" \
@@ -123,7 +137,7 @@ jobs:
         run: cmake --build build --verbose --config Release
 
       - name: Package (CPack)
-        if: ${{ !matrix.n3ds }}
+        if: ${{ !matrix.n3ds && !matrix.android }}
         run: |
           cd build
           success=0
@@ -172,6 +186,14 @@ jobs:
           mv *.3dsx dist/
           mv *.cia dist/
 
+      - name: Package (Android)
+        if: ${{ matrix.android }}
+        run: |
+          cd build
+          mkdir -p dist
+          find ../ -name '*.apk'
+          mv  ../android-project/app/build/outputs/apk/*/*.apk dist/
+
       - name: Package Assets Separately
         if: matrix.build-assets
         run: (cd build/assets && zip -r ../dist/isle-assets.zip .)
@@ -185,6 +207,7 @@ jobs:
             build/dist/*.AppImage
             build/dist/*.3dsx
             build/dist/*.cia
+            build/dist/*.apk
 
   flatpak:
     name: "Flatpak (${{ matrix.arch }})"

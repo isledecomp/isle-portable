@@ -1032,12 +1032,12 @@ bool IsleApp::LoadConfig()
 #ifdef IOS
 	const char* prefPath = SDL_GetUserFolder(SDL_FOLDER_DOCUMENTS);
 #elif defined(ANDROID)
-    // SDL_GetAndroidExternalStoragePath() returns without a trailing / resulting in "filesisle.ini" :(
-    const char* androidPath = SDL_GetAndroidExternalStoragePath();
-    char* prefPath = new char[strlen(androidPath) + 2 ];
-    strcpy(prefPath, androidPath);
-    strcat(prefPath, "/");
-    SDL_Log("%s", prefPath);
+	// SDL_GetAndroidExternalStoragePath() returns without a trailing / resulting in "filesisle.ini" :(
+	const char* androidPath = SDL_GetAndroidExternalStoragePath();
+	char* prefPath = new char[strlen(androidPath) + 2];
+	strcpy(prefPath, androidPath);
+	strcat(prefPath, "/");
+	SDL_Log("%s", prefPath);
 #else
 	char* prefPath = SDL_GetPrefPath("isledecomp", "isle");
 #endif
