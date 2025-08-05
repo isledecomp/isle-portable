@@ -54,6 +54,7 @@ cmake_dependent_option(ISLE_COMPILE_SHADERS "Compile shaders" ON "SDL_SHADERCROS
 option(CMAKE_POSITION_INDEPENDENT_CODE "Build with -fPIC" ON)
 option(ENABLE_CLANG_TIDY "Enable clang-tidy")
 option(DOWNLOAD_DEPENDENCIES "Download dependencies" ON)
+set(ANDROID_NDK_PATH "" CACHE PATH "Path to Android NDK")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}" CACHE PATH "Directory where to put executables and dll")
 set(ISLE_EMSCRIPTEN_HOST "" CACHE STRING "Host URL for Emscripten streaming (e.g., https://test.com)")
 cmake_dependent_option(BUILD_SHARED_LIBS "Build lego1 as a shared library" ON "NOT EMSCRIPTEN" OFF)
@@ -72,6 +73,7 @@ if (DOWNLOAD_DEPENDENCIES)
   # FetchContent downloads and configures dependencies
   message(STATUS "Fetching SDL3 and iniparser. This might take a while...")
   include(FetchContent)
+  # FIXME: properly build and source the .aar
   if (WINDOWS_STORE)
     FetchContent_Declare(
       SDL3
@@ -81,10 +83,10 @@ if (DOWNLOAD_DEPENDENCIES)
     )
   else()
     FetchContent_Declare(
-        SDL3
-        GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
-        GIT_TAG "main"
-        EXCLUDE_FROM_ALL
+      SDL3
+      GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
+      GIT_TAG "main"
+      EXCLUDE_FROM_ALL
     )
   endif()
   FetchContent_MakeAvailable(SDL3)
@@ -105,10 +107,48 @@ else()
   # find_package looks for already-installed system packages.
   # Configure with `-DCMAKE_PREFIX_PATH="/path/to/package1;/path/to/package2"`
   # to add search paths.
+  if (ANDROID)
+    message(STATUS "Please place the version-appropriate SDL3.aar in android-project/app/libs")
+  endif()
   find_package(SDL3 CONFIG REQUIRED)
 
   find_package(iniparser REQUIRED CONFIG COMPONENTS shared)
   target_link_libraries(Isle::iniparser INTERFACE iniparser-shared)
+endif()
+
+# Effectively use as a gate for running the Android build
+if (ANDROID_NDK_PATH)
+
+  FetchContent_GetProperties(SDL3)
+
+  set(SDL_ANDROID_ARCHIVE "${CMAKE_SOURCE_DIR}/android-project/app/libs/SDL3.aar")
+  add_custom_command(OUTPUT "${SDL_ANDROID_ARCHIVE}"
+    COMMAND ${Python3_EXECUTABLE} "${SDL3_SOURCE_DIR}/build-scripts/build-release.py"
+       --actions android
+       --fast
+       --android-ndk-home=${ANDROID_NDK_PATH}
+       --force
+       --root="${SDL3_SOURCE_DIR}"
+    COMMAND sh -c "cp ${sdl3_SOURCE_DIR}/build-android/SDL3-*.aar ${SDL_ANDROID_ARCHIVE}"
+    COMMENT "Generating SDL3.aar for android-project"
+  )
+
+  set(GRADLEW "${CMAKE_SOURCE_DIR}/android-project/gradlew")
+  if(CMAKE_BUILD_TYPE MATCHES "^Rel")
+    set(GRADLE_TASK "assembleRelease")
+  else()
+    set(GRADLE_TASK "assembleDebug")
+  endif()
+
+  add_custom_target(ANDROID_GRADLE_BUILD ALL
+    DEPENDS "${SDL_ANDROID_ARCHIVE}"
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/android-project"
+    COMMAND "${GRADLEW}" ${GRADLE_TASK} -PcmakeArgs="-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DISLE_USE_DX5=${ISLE_USE_DX5} -DISLE_BUILD_CONFIG=${ISLE_BUILD_CONFIG} -DENABLE_CLANG_TIDY=${ENABLE_CLANG_TIDY} -DISLE_WERROR=${ISLE_WERROR} -DISLE_DEBUG=${ISLE_DEBUG} -Werror=dev"
+    VERBATIM
+    COMMENT "Building Android APK with Gradle"
+  )
+  message(STATUS "SDL AAR")
+  return()
 endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -498,6 +538,13 @@ if (ISLE_EXTENSIONS)
 endif()
 
 if (ISLE_BUILD_APP)
+
+  if(ANDROID)
+    function(add_executable TARGET PLATFORM)
+      add_library(${TARGET} SHARED ${ARGN})
+    endfunction()
+  endif()
+
   add_executable(isle WIN32
     ISLE/res/isle.rc
     ISLE/isleapp.cpp
@@ -575,6 +622,11 @@ if (ISLE_BUILD_APP)
   if (IOS)
     target_sources(isle PRIVATE
       ISLE/ios/config.cpp
+    )
+  endif()
+  if (ANDROID)
+    target_sources(isle PRIVATE
+            ISLE/android/config.cpp
     )
   endif()
   if(Python3_FOUND)

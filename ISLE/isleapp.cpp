@@ -72,6 +72,10 @@
 #include "ios/config.h"
 #endif
 
+#ifdef ANDROID
+#include "android/config.h"
+#endif
+
 DECOMP_SIZE_ASSERT(IsleApp, 0x8c)
 
 // GLOBAL: ISLE 0x410030
@@ -1025,6 +1029,13 @@ bool IsleApp::LoadConfig()
 {
 #ifdef IOS
 	const char* prefPath = SDL_GetUserFolder(SDL_FOLDER_DOCUMENTS);
+#elif defined(ANDROID)
+	// SDL_GetAndroidExternalStoragePath() returns without a trailing / resulting in "filesisle.ini" :(
+	const char* androidPath = SDL_GetAndroidExternalStoragePath();
+	char* prefPath = new char[strlen(androidPath) + 2];
+	strcpy(prefPath, androidPath);
+	strcat(prefPath, "/");
+	SDL_Log("%s", prefPath);
 #else
 	char* prefPath = SDL_GetPrefPath("isledecomp", "isle");
 #endif
@@ -1127,6 +1138,9 @@ bool IsleApp::LoadConfig()
 #ifdef IOS
 		IOS_SetupDefaultConfigOverrides(dict);
 #endif
+#ifdef ANDROID
+		Android_SetupDefaultConfigOverrides(dict);
+#endif
 		iniparser_dump_ini(dict, iniFP);
 		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "New config written at '%s'", iniConfig);
 		fclose(iniFP);
@@ -1227,7 +1241,7 @@ bool IsleApp::LoadConfig()
 
 	iniparser_freedict(dict);
 	delete[] iniConfig;
-#ifndef IOS
+#if !defined(IOS) && !defined(ANDROID)
 	SDL_free(prefPath);
 #endif
 
