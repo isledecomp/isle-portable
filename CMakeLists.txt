@@ -1,6 +1,30 @@
-cmake_minimum_required(VERSION 3.25...4.0 FATAL_ERROR)
-
+cmake_minimum_required(VERSION 3.10)
 project(isle LANGUAGES CXX C VERSION 0.1)
+
+if(WIIU)
+  message(STATUS "Building for Wii U")
+
+  find_package(SDL2 REQUIRED)
+
+  add_library(LEGO1 STATIC ${CMAKE_SOURCE_DIR}/LEGO1/main.cpp)
+  target_include_directories(LEGO1 PUBLIC ${CMAKE_SOURCE_DIR}/LEGO1)
+  wut_add_exports(LEGO1 ${CMAKE_CURRENT_SOURCE_DIR}/LEGO1/LEGO1.exports)
+  wut_create_rpl(LEGO1)
+
+  add_executable(isle ${CMAKE_SOURCE_DIR}/ISLE/isleapp.cpp ISLE/islefiles.cpp)
+  target_include_directories(isle PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/ISLE)
+  target_link_libraries(isle PRIVATE SDL2::SDL2)
+  wut_link_rpl(isle LEGO1)
+  wut_create_rpx(isle)
+
+else()
+  find_package(SDL3 CONFIG REQUIRED)
+  find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
+
+  add_executable(isle ISLE/isleapp.cpp ISLE/islefiles.cpp)
+  target_include_directories(isle PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/ISLE)
+  target_link_libraries(isle PRIVATE SDL3::SDL3 Qt6::Core Qt6::Gui Qt6::Widgets)
+endif()
 
 if (IOS)
   set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED NO)
@@ -14,7 +38,12 @@ endif()
 
 if (EMSCRIPTEN)
   add_compile_options(-pthread)
-  add_link_options(-sUSE_WEBGL2=1 -sMIN_WEBGL_VERSION=2 -sALLOW_MEMORY_GROWTH=1 -sMAXIMUM_MEMORY=2gb -sUSE_PTHREADS=1 -sPROXY_TO_PTHREAD=1 -sOFFSCREENCANVAS_SUPPORT=1 -sPTHREAD_POOL_SIZE_STRICT=0 -sFORCE_FILESYSTEM=1 -sWASMFS=1 -sEXIT_RUNTIME=1)
+  add_link_options(
+    -sUSE_WEBGL2=1 -sMIN_WEBGL_VERSION=2 -sALLOW_MEMORY_GROWTH=1
+    -sMAXIMUM_MEMORY=2gb -sUSE_PTHREADS=1 -sPROXY_TO_PTHREAD=1
+    -sOFFSCREENCANVAS_SUPPORT=1 -sPTHREAD_POOL_SIZE_STRICT=0
+    -sFORCE_FILESYSTEM=1 -sWASMFS=1 -sEXIT_RUNTIME=1
+  )
   set(SDL_PTHREADS ON CACHE BOOL "Enable SDL pthreads" FORCE)
 endif()
 
@@ -68,10 +97,10 @@ message(STATUS "Compile shaders:        ${ISLE_COMPILE_SHADERS}")
 
 add_library(Isle::iniparser INTERFACE IMPORTED)
 
-if (DOWNLOAD_DEPENDENCIES)
-  # FetchContent downloads and configures dependencies
+if (DOWNLOAD_DEPENDENCIES AND NOT WIIU)
   message(STATUS "Fetching SDL3 and iniparser. This might take a while...")
   include(FetchContent)
+
   if (WINDOWS_STORE)
     FetchContent_Declare(
       SDL3
@@ -81,33 +110,42 @@ if (DOWNLOAD_DEPENDENCIES)
     )
   else()
     FetchContent_Declare(
-        SDL3
-        GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
-        GIT_TAG "main"
-        EXCLUDE_FROM_ALL
+      SDL3
+      GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
+      GIT_TAG "main"
+      EXCLUDE_FROM_ALL
     )
   endif()
-  FetchContent_MakeAvailable(SDL3)
+endif()
 
+if (DOWNLOAD_DEPENDENCIES AND NOT WIIU)
   FetchContent_Declare(
     iniparser
     GIT_REPOSITORY "https://gitlab.com/iniparser/iniparser.git"
     GIT_TAG "main"
     EXCLUDE_FROM_ALL
   )
-  block()
-    set(BUILD_DOCS off)
-    set(BUILD_SHARED_LIBS off)
-    FetchContent_MakeAvailable(iniparser)
-    target_link_libraries(Isle::iniparser INTERFACE iniparser-static)
-  endblock()
-else()
-  # find_package looks for already-installed system packages.
-  # Configure with `-DCMAKE_PREFIX_PATH="/path/to/package1;/path/to/package2"`
-  # to add search paths.
-  find_package(SDL3 CONFIG REQUIRED)
 
+  set(BUILD_DOCS OFF CACHE BOOL "" FORCE)
+  set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+
+  FetchContent_Declare(
+    SDL3
+    GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
+    GIT_TAG "main"
+    EXCLUDE_FROM_ALL
+  )
+
+  FetchContent_MakeAvailable(SDL3 iniparser)
+
+  add_library(Isle::iniparser INTERFACE IMPORTED)
+  target_link_libraries(Isle::iniparser INTERFACE iniparser-static)
+
+elseif(NOT DOWNLOAD_DEPENDENCIES AND NOT WIIU)
+  find_package(SDL3 CONFIG REQUIRED)
   find_package(iniparser REQUIRED CONFIG COMPONENTS shared)
+
+  add_library(Isle::iniparser INTERFACE IMPORTED)
   target_link_libraries(Isle::iniparser INTERFACE iniparser-shared)
 endif()
 
@@ -178,8 +216,10 @@ target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/L
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/LEGO1/lego/sources>")
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/LEGO1/lego/legoomni/include>")
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/LEGO1/lego/legoomni/include/actions>")
+if(NOT WIIU)
 target_link_libraries(lego1 PRIVATE SDL3::SDL3)
 target_link_libraries(lego1 PUBLIC SDL3::Headers)
+endif()
 target_link_libraries(lego1 PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5>)
 # Allow unconditional include of miniwin/miniwind3d.h
 target_link_libraries(lego1 PRIVATE miniwin-headers)
@@ -497,7 +537,7 @@ if (ISLE_EXTENSIONS)
   )
 endif()
 
-if (ISLE_BUILD_APP)
+if (ISLE_BUILD_APP AND NOT WIIU)
   add_executable(isle WIN32
     ISLE/res/isle.rc
     ISLE/isleapp.cpp
@@ -513,14 +553,17 @@ if (ISLE_BUILD_APP)
       COMMAND_EXPAND_LISTS
     )
   endif()
+endif()
 
   target_compile_definitions(isle PRIVATE ISLE_APP)
 
   # Use internal DirectX 5 if required
   target_link_libraries(isle PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5>)
 
+if(NOT WIIU)
   # Link SDL and iniparser
   target_link_libraries(isle PRIVATE SDL3::SDL3 Isle::iniparser)
+endif()
 
   # Allow unconditional include of miniwin/miniwindevice.h
   target_link_libraries(isle PRIVATE miniwin-headers)
@@ -610,9 +653,8 @@ if (ISLE_BUILD_APP)
       )
     endif()
   endif()
-endif()
 
-if (ISLE_BUILD_CONFIG)
+if (ISLE_BUILD_CONFIG AND NOT WIIU)
   find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
   qt_standard_project_setup()
   qt_add_executable(isle-config WIN32
@@ -706,7 +748,7 @@ if (EXISTS "${CLANGFORMAT_BIN}")
 endif()
 
 set(install_extra_targets)
-if(DOWNLOAD_DEPENDENCIES)
+if(DOWNLOAD_DEPENDENCIES AND TARGET SDL3::SDL3)
   get_property(sdl3_type TARGET SDL3::SDL3 PROPERTY TYPE)
   if(sdl3_type STREQUAL "SHARED_LIBRARY")
     list(APPEND install_extra_targets "SDL3-shared")
@@ -757,10 +799,13 @@ if (ISLE_BUILD_CONFIG)
       message(STATUS "windeployqt not found: Qt binaries will not be installed")
     endif()
   endif()
-  install(TARGETS isle-config
-    RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
-    BUNDLE DESTINATION "."
-  )
+
+  if (TARGET isle-config)
+    install(TARGETS isle-config
+      RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+      BUNDLE DESTINATION "."
+    )
+  endif()
 endif()
 if(EMSCRIPTEN)
   install(FILES "$<TARGET_FILE_DIR:isle>/isle.js" "$<TARGET_FILE_DIR:isle>/isle.wasm"
