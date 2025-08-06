@@ -1,6 +1,7 @@
 #include "legoanimpresenter.h"
 
 #include "3dmanager/lego3dmanager.h"
+#include "SDL3/SDL_log.h"
 #include "anim/legoanim.h"
 #include "define.h"
 #include "legoanimactor.h"

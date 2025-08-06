@@ -31,7 +31,6 @@ private:
 	MxNotificationPtrList* m_queue;    // 0x08
 	MxNotificationPtrList* m_sendList; // 0x0c
 	MxCriticalSection m_lock;          // 0x10
-	MxS32 m_unk0x2c;                   // 0x2c
 	MxIdList m_listenerIds;            // 0x30
 	MxBool m_active;                   // 0x3c
 

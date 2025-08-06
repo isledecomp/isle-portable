@@ -64,7 +64,6 @@ private:
 	MxPalette* m_palette;      // 0x10
 	MxU32 m_backBuffers;       // 0x14
 	MxVideoParamFlags m_flags; // 0x18
-	int m_unk0x1c;             // 0x1c
 	char* m_deviceId;          // 0x20
 	MxU32 m_msaaSamples;
 	MxFloat m_anisotropic;

@@ -102,7 +102,6 @@ protected:
 	BOOL m_bIgnoreWMSIZE;                       // 0x844
 	BOOL m_bPrimaryPalettized;                  // 0x848
 	BOOL m_bFullScreen;                         // 0x84c
-	void* m_unk0x850;                           // 0x850
 	BOOL m_bOnlySystemMemory;                   // 0x854
 	BOOL m_bIsOnPrimaryDevice;                  // 0x858
 	ErrorHandler m_pErrorHandler;               // 0x85c

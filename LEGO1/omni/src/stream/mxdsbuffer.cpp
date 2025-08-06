@@ -22,7 +22,6 @@ MxDSBuffer::MxDSBuffer()
 	m_pIntoBuffer2 = NULL;
 	m_referenceCount = 0;
 	m_unk0x14 = 0;
-	m_unk0x18 = 0;
 	m_unk0x1c = 0;
 	m_writeOffset = 0;
 	m_bytesRemaining = 0;

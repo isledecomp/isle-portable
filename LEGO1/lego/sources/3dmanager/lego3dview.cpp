@@ -15,7 +15,6 @@ Lego3DView::Lego3DView()
 {
 	m_pViewManager = 0;
 	m_previousRenderTime = 0;
-	m_unk0x98 = 0;
 	m_pPointOfView = 0;
 }
 
@@ -50,7 +49,6 @@ BOOL Lego3DView::Create(const TglSurface::CreateStruct& rCreateStruct, Tgl::Rend
 	m_pViewManager->SetResolution(GetWidth(), GetHeight());
 	m_pViewManager->SetFrustrum(viewAngle, frontClippingDistance, backClippingDistance);
 	m_previousRenderTime = 0;
-	m_unk0x98 = 0;
 
 	// // NOTE: a derived class must inform view manager when it configures
 	// //       its (Tgl) view: calling Tgl::View::SetFrustrum() should be

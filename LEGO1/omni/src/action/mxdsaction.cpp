@@ -29,7 +29,6 @@ MxDSAction::MxDSAction()
 	m_direction.Fill(FLT_MAX);
 	m_up.Fill(FLT_MAX);
 	m_notificationObject = NULL;
-	m_unk0x88 = 0;
 	m_origin = NULL;
 	m_timeStarted = INT_MIN;
 }
@@ -90,7 +89,6 @@ void MxDSAction::CopyFrom(MxDSAction& p_dsAction)
 	m_up = p_dsAction.m_up;
 	AppendExtra(p_dsAction.m_extraLength, p_dsAction.m_extraData);
 	m_notificationObject = p_dsAction.m_notificationObject;
-	m_unk0x88 = p_dsAction.m_unk0x88;
 	m_origin = p_dsAction.m_origin;
 	m_timeStarted = p_dsAction.m_timeStarted;
 }

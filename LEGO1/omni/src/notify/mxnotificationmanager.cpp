@@ -29,7 +29,6 @@ MxNotification::~MxNotification()
 // FUNCTION: BETA10 0x10125805
 MxNotificationManager::MxNotificationManager() : MxCore(), m_lock(), m_listenerIds()
 {
-	m_unk0x2c = 0;
 	m_queue = NULL;
 	m_active = TRUE;
 	m_sendList = NULL;

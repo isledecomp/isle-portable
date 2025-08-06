@@ -28,10 +28,9 @@ struct DeviceModesInfo {
 	DeviceModesInfo();
 	~DeviceModesInfo();
 
-	GUID* m_guid;     // 0x00
-	int m_count;      // 0x08
-	DDCAPS m_ddcaps;  // 0x0c
-	void* m_unk0x178; // 0x178
+	GUID* m_guid;    // 0x00
+	int m_count;     // 0x08
+	DDCAPS m_ddcaps; // 0x0c
 
 	// SYNTHETIC: BETA10 0x1011c650
 	// DeviceModesInfo::`scalar deleting destructor'

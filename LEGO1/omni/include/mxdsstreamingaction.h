@@ -71,7 +71,6 @@ private:
 	MxDSBuffer* m_unk0xa0;        // 0xa0
 	MxDSBuffer* m_unk0xa4;        // 0xa4
 	MxLong m_unk0xa8;             // 0xa8
-	undefined2 m_unk0xac;         // 0xac
 	MxDSAction* m_internalAction; // 0xb0
 };
 

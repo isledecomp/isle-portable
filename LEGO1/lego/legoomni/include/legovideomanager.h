@@ -96,7 +96,6 @@ private:
 	LegoROI* m_viewROI;                   // 0x6c
 	undefined4 m_unk0x70;                 // 0x70
 	MxDirect3D* m_direct3d;               // 0x74
-	undefined4 m_unk0x78[27];             // 0x78
 	MxBool m_render3d;                    // 0xe4
 	MxBool m_unk0xe5;                     // 0xe5
 	MxBool m_unk0xe6;                     // 0xe6

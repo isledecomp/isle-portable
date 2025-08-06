@@ -42,7 +42,6 @@ public:
 private:
 	MxDSActionListCursor* m_cursor; // 0x9c
 	undefined4 m_unk0xa0;           // 0xa0
-	undefined4 m_unk0xa4;           // 0xa4
 };
 
 #endif // MXDSSERIALACTION_H

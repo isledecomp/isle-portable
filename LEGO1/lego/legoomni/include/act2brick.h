@@ -49,7 +49,7 @@ private:
 	undefined4 m_unk0x164;          // 0x164
 	Mx3DPointFloat m_unk0x168;      // 0x168
 	Mx3DPointFloat m_unk0x17c;      // 0x17c
-	MxS32 m_unk0x190;               // 0x190
+	MxU8 m_unk0x190;                // 0x190
 };
 
 #endif // ACT2BRICK_H

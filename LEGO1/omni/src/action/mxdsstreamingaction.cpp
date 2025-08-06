@@ -55,7 +55,6 @@ void MxDSStreamingAction::Init()
 	m_unk0xa0 = NULL;
 	m_unk0xa4 = NULL;
 	m_unk0xa8 = 0;
-	m_unk0xac = 2;
 	m_internalAction = NULL;
 }
 
@@ -69,7 +68,6 @@ MxDSStreamingAction* MxDSStreamingAction::CopyFrom(MxDSStreamingAction& p_dsStre
 	m_unk0x9c = p_dsStreamingAction.m_unk0x9c;
 	m_unk0xa0 = NULL;
 	m_unk0xa4 = NULL;
-	m_unk0xac = p_dsStreamingAction.m_unk0xac;
 	m_unk0xa8 = p_dsStreamingAction.m_unk0xa8;
 	SetInternalAction(p_dsStreamingAction.m_internalAction ? p_dsStreamingAction.m_internalAction->Clone() : NULL);
 

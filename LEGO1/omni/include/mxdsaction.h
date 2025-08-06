@@ -129,7 +129,6 @@ protected:
 	char* m_extraData;            // 0x7c
 	MxU16 m_extraLength;          // 0x80
 	MxCore* m_notificationObject; // 0x84
-	undefined4 m_unk0x88;         // 0x88
 	MxCore* m_origin;             // 0x8c
 	MxLong m_timeStarted;         // 0x90
 };

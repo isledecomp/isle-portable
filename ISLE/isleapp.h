@@ -73,20 +73,20 @@ private:
 	char* m_deviceId;            // 0x08
 	char* m_savePath;            // 0x0c
 	MxBool m_fullScreen;         // 0x10
-	MxS32 m_flipSurfaces;        // 0x14
-	MxS32 m_backBuffersInVram;   // 0x18
-	MxS32 m_using8bit;           // 0x1c
-	MxS32 m_using16bit;          // 0x20
-	MxS32 m_hasLightSupport;     // 0x24
-	MxS32 m_use3dSound;          // 0x28
-	MxS32 m_useMusic;            // 0x2c
-	MxS32 m_wideViewAngle;       // 0x38
+	MxBool m_flipSurfaces;       // 0x14
+	MxBool m_backBuffersInVram;  // 0x18
+	MxBool m_using8bit;          // 0x1c
+	MxBool m_using16bit;         // 0x20
+	MxBool m_hasLightSupport;    // 0x24
+	MxBool m_use3dSound;         // 0x28
+	MxBool m_useMusic;           // 0x2c
+	MxBool m_wideViewAngle;      // 0x38
 	MxS32 m_islandQuality;       // 0x3c
 	MxS32 m_islandTexture;       // 0x40
 	MxS32 m_gameStarted;         // 0x44
 	MxLong m_frameDelta;         // 0x48
 	MxVideoParam m_videoParam;   // 0x4c
-	MxS32 m_windowActive;        // 0x70
+	MxBool m_windowActive;       // 0x70
 	HWND m_windowHandle;         // 0x74
 	MxS32 m_drawCursor;          // 0x78
 	SDL_Cursor* m_cursorArrow;   // 0x7c
@@ -119,7 +119,7 @@ private:
 };
 
 extern IsleApp* g_isle;
-extern MxS32 g_closed;
+extern MxBool g_closed;
 
 extern IDirect3DRMMiniwinDevice* GetD3DRMMiniwinDevice();
 

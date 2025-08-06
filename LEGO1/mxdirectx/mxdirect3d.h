@@ -64,7 +64,6 @@ private:
 	IDirect3D2* m_pDirect3d;               // 0x884
 	IDirect3DDevice2* m_pDirect3dDevice;   // 0x888
 	BOOL m_bTexturesDisabled;              // 0x88c
-	undefined4 m_unk0x890;                 // 0x890
 	std::string m_deviceName;
 	std::string m_deviceDesc;
 };

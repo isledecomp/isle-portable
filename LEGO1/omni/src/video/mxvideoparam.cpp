@@ -14,7 +14,6 @@ MxVideoParam::MxVideoParam()
 	m_rect = MxRect32(0, 0, 640, 480);
 	m_palette = NULL;
 	m_backBuffers = 0;
-	m_unk0x1c = 0;
 	m_deviceId = NULL;
 }
 
@@ -26,7 +25,6 @@ MxVideoParam::MxVideoParam(MxRect32& p_rect, MxPalette* p_palette, MxULong p_bac
 	m_palette = p_palette;
 	m_backBuffers = p_backBuffers;
 	m_flags = p_flags;
-	m_unk0x1c = 0;
 	m_deviceId = NULL;
 	m_msaaSamples = 0;
 	m_anisotropic = 0.0f;
@@ -40,7 +38,6 @@ MxVideoParam::MxVideoParam(MxVideoParam& p_videoParam)
 	m_palette = p_videoParam.m_palette;
 	m_backBuffers = p_videoParam.m_backBuffers;
 	m_flags = p_videoParam.m_flags;
-	m_unk0x1c = p_videoParam.m_unk0x1c;
 	m_deviceId = NULL;
 	SetDeviceName(p_videoParam.m_deviceId);
 	m_msaaSamples = p_videoParam.m_msaaSamples;
@@ -84,7 +81,6 @@ MxVideoParam& MxVideoParam::operator=(const MxVideoParam& p_videoParam)
 	m_palette = p_videoParam.m_palette;
 	m_backBuffers = p_videoParam.m_backBuffers;
 	m_flags = p_videoParam.m_flags;
-	m_unk0x1c = p_videoParam.m_unk0x1c;
 	SetDeviceName(p_videoParam.m_deviceId);
 	m_msaaSamples = p_videoParam.m_msaaSamples;
 	m_anisotropic = p_videoParam.m_anisotropic;

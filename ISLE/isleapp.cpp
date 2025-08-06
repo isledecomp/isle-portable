@@ -84,7 +84,7 @@ MxU8 g_mousedown = FALSE;
 MxU8 g_mousemoved = FALSE;
 
 // GLOBAL: ISLE 0x41003c
-MxS32 g_closed = FALSE;
+MxBool g_closed = FALSE;
 
 // GLOBAL: ISLE 0x410050
 MxS32 g_rmDisabled = FALSE;

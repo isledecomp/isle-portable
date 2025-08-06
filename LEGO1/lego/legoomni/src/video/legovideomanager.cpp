@@ -36,8 +36,6 @@ LegoVideoManager::LegoVideoManager()
 	m_viewROI = NULL;
 	m_direct3d = NULL;
 	m_unk0xe6 = FALSE;
-	memset(m_unk0x78, 0, sizeof(m_unk0x78));
-	m_unk0x78[0] = 0x6c;
 	m_phonemeRefList = NULL;
 	m_isFullscreenMovie = FALSE;
 	m_palette = NULL;

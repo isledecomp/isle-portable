@@ -15,7 +15,6 @@ MxDSMediaAction::MxDSMediaAction()
 	m_unk0x9c.SetUnk0x04(0);
 	m_framesPerSecond = 0;
 	m_mediaFormat = 0;
-	m_unk0xb4 = -1;
 	m_paletteManagement = 1;
 	m_sustainTime = 0;
 }

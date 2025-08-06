@@ -35,7 +35,6 @@ public:
 private:
 	ViewManager* m_pViewManager; // 0x88
 	double m_previousRenderTime; // 0x90
-	double m_unk0x98;            // 0x98
 	ViewROI* m_pPointOfView;     // 0xa0
 };
 

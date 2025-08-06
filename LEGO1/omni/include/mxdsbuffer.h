@@ -100,7 +100,6 @@ private:
 	MxU8* m_pIntoBuffer;            // 0x0c
 	MxU8* m_pIntoBuffer2;           // 0x10
 	undefined4 m_unk0x14;           // 0x14
-	undefined4 m_unk0x18;           // 0x18
 	undefined4 m_unk0x1c;           // 0x1c
 	MxU16 m_referenceCount;         // 0x20
 	Type m_mode;                    // 0x24

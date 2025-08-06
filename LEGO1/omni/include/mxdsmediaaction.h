@@ -77,7 +77,6 @@ private:
 	MxS32 m_mediaFormat;       // 0xa8
 	MxS32 m_paletteManagement; // 0xac
 	MxLong m_sustainTime;      // 0xb0
-	undefined4 m_unk0xb4;      // 0xb4
 };
 
 #endif // MXDSMEDIAACTION_H
