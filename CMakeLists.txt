@@ -509,6 +509,9 @@ if (NXDK)
   target_sources(lego1 PRIVATE
   ISLE/xbox/atof.c
   )
+  target_sources(lego1 PRIVATE
+  ISLE/xbox/dbg.c
+  )
 endif()
 
 if (ISLE_BUILD_APP)
@@ -594,6 +597,9 @@ if (ISLE_BUILD_APP)
   if (NXDK)
     target_sources(isle PRIVATE
       ISLE/xbox/atof.c
+    )
+    target_sources(isle PRIVATE
+      ISLE/xbox/dbg.c
     )
   endif()
   if(Python3_FOUND)
@@ -838,6 +844,12 @@ if(NINTENDO_3DS)
     install(FILES "$<TARGET_FILE_DIR:isle>/isle.cia" DESTINATION "${CMAKE_INSTALL_BINDIR}")
   endif()
   install(FILES "$<TARGET_FILE_DIR:isle>/isle.3dsx" DESTINATION "${CMAKE_INSTALL_BINDIR}")
+endif()
+if (NXDK)
+  include("${CMAKE_SOURCE_DIR}/PostbuildAction.cmake")
+  set(XBE_TITLE isle)
+  set(XBOX_ISO_DIR ${CMAKE_CURRENT_BINARY_DIR}/xiso)
+  add_xbox_build_steps(isle ${XBE_TITLE} ${XBOX_ISO_DIR})
 endif()
 if(WINDOWS_STORE)
   install(

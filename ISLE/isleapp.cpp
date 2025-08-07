@@ -72,6 +72,10 @@
 #include "ios/config.h"
 #endif
 
+#ifdef NXDK
+#include "xbox/dbg.h"
+#endif
+
 DECOMP_SIZE_ASSERT(IsleApp, 0x8c)
 
 // GLOBAL: ISLE 0x410030
@@ -300,6 +304,8 @@ void IsleApp::SetupVideoFlags(
 
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 {
+	SDL_SetLogOutputFunction(my_output, NULL);
+
 	*appstate = NULL;
 
 	SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
