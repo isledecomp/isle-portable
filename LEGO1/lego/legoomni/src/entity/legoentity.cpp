@@ -119,7 +119,8 @@ void LegoEntity::SetWorld()
 {
 	LegoWorld* world = CurrentWorld();
 
-	LegoWorld* maybeWorld = dynamic_cast<LegoWorld*>(this);
+	//LegoWorld* maybeWorld = dynamic_cast<LegoWorld*>(this);
+	LegoWorld* maybeWorld = (LegoWorld*)(this);
 	if (world != NULL && world != maybeWorld) {
 		world->Add(this);
 	}

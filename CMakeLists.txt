@@ -12,13 +12,6 @@ if (WINDOWS_STORE)
   add_compile_definitions(WINDOWS_STORE)
 endif()
 
-#[[
-if (NXDK)
-  add_compile_definitions(MA_NO_WIN32_FILEIO)
-  add_definitions("-DMA_NO_WIN32_FILEIO -fms-compatibility-version=1000 -D_MSC_VER=1000")
-endif()
-]]#
-
 if (EMSCRIPTEN)
   add_compile_options(-pthread)
   add_link_options(-sUSE_WEBGL2=1 -sMIN_WEBGL_VERSION=2 -sALLOW_MEMORY_GROWTH=1 -sMAXIMUM_MEMORY=2gb -sUSE_PTHREADS=1 -sPROXY_TO_PTHREAD=1 -sOFFSCREENCANVAS_SUPPORT=1 -sPTHREAD_POOL_SIZE_STRICT=0 -sFORCE_FILESYSTEM=1 -sWASMFS=1 -sEXIT_RUNTIME=1)
@@ -512,6 +505,12 @@ if (ISLE_EXTENSIONS)
   )
 endif()
 
+if (NXDK)
+  target_sources(lego1 PRIVATE
+  ISLE/xbox/atof.c
+  )
+endif()
+
 if (ISLE_BUILD_APP)
   add_executable(isle WIN32
     ISLE/res/isle.rc
@@ -590,6 +589,11 @@ if (ISLE_BUILD_APP)
   if (IOS)
     target_sources(isle PRIVATE
       ISLE/ios/config.cpp
+    )
+  endif()
+  if (NXDK)
+    target_sources(isle PRIVATE
+      ISLE/xbox/atof.c
     )
   endif()
   if(Python3_FOUND)

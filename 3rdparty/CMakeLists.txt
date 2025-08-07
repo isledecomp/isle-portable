@@ -2,11 +2,19 @@ set(CMAKE_C_CLANG_TIDY)
 
 if(DOWNLOAD_DEPENDENCIES)
     include(FetchContent)
-    FetchContent_Declare(
-        miniaudio
-        URL https://github.com/mackron/miniaudio/archive/refs/tags/0.11.22.tar.gz
-        URL_MD5 4944268151ad037f148b089237566d05
-    )
+    if (NXDK)
+      FetchContent_Declare(
+          miniaudio
+          GIT_REPOSITORY "https://github.com/mackron/miniaudio.git"
+          GIT_TAG "dev"
+      )
+    else()
+      FetchContent_Declare(
+          miniaudio
+          URL https://github.com/mackron/miniaudio/archive/refs/tags/0.11.22.tar.gz
+          URL_MD5 4944268151ad037f148b089237566d05
+      )
+    endif()
     FetchContent_MakeAvailable(miniaudio)
 else()
     add_library(miniaudio STATIC
