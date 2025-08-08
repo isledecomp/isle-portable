@@ -3,5 +3,5 @@
 
 
 void my_output(void *userdata, int category, SDL_LogPriority priority, const char *message) {
-    DbgPrint("%s", message);
+    DbgPrint("%s\n", message);
 }
