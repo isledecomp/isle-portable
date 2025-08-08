@@ -10,6 +10,7 @@
 #include "mxautolock.h"
 #include "mxdebug.h"
 #include "roi/legoroi.h"
+#include "lego/sources/misc/legoutil.h"
 
 #include <SDL3/SDL_log.h>
 

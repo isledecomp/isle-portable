@@ -1,6 +1,9 @@
 #ifndef LEGO1_EXPORT_H
 #define LEGO1_EXPORT_H
 
+#undef LEGO1_DLL
+#define LEGO1_STATIC
+
 #ifdef LEGO1_STATIC
 #define LEGO1_EXPORT
 #elif defined(LEGO1_DLL)

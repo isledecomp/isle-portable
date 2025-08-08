@@ -72,6 +72,10 @@
 #include "ios/config.h"
 #endif
 
+#ifdef NXDK
+#include "xbox/dbg.h"
+#endif
+
 DECOMP_SIZE_ASSERT(IsleApp, 0x8c)
 
 // GLOBAL: ISLE 0x410030
@@ -300,6 +304,8 @@ void IsleApp::SetupVideoFlags(
 
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 {
+	SDL_SetLogOutputFunction(my_output, NULL);
+
 	*appstate = NULL;
 
 	SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
@@ -1190,7 +1196,7 @@ bool IsleApp::LoadConfig()
 		m_videoParam.GetRect() = MxRect32(0, 0, (m_xRes - 1), (m_yRes - 1));
 	}
 	m_frameRate = (1000.0f / iniparser_getdouble(dict, "isle:Frame Delta", m_frameDelta));
-	m_frameDelta = static_cast<int>(std::round(iniparser_getdouble(dict, "isle:Frame Delta", m_frameDelta)));
+	m_frameDelta = static_cast<int>((iniparser_getdouble(dict, "isle:Frame Delta", m_frameDelta)));
 	m_videoParam.SetMSAASamples((m_msaaSamples = iniparser_getint(dict, "isle:MSAA", m_msaaSamples)));
 	m_videoParam.SetAnisotropic((m_anisotropic = iniparser_getdouble(dict, "isle:Anisotropic", m_anisotropic)));
 

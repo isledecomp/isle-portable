@@ -31,6 +31,7 @@
 #include "mxvariabletable.h"
 #include "scripts.h"
 #include "viewmanager/viewmanager.h"
+#include "legopartpresenter.h"
 
 #include <SDL3/SDL_log.h>
 #include <SDL3/SDL_stdinc.h>

@@ -4,7 +4,8 @@
 #include "vector.h"
 
 #include <math.h>
-#include <memory.h>
+//#include <memory.h>
+#include <string.h>
 
 // FUNCTION: LEGO1 0x10002870
 // FUNCTION: BETA10 0x10048500

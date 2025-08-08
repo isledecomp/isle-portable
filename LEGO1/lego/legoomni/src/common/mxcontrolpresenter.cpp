@@ -79,7 +79,8 @@ void MxControlPresenter::EndAction()
 MxBool MxControlPresenter::CheckButtonDown(MxS32 p_x, MxS32 p_y, MxPresenter* p_presenter)
 {
 	assert(p_presenter);
-	MxVideoPresenter* presenter = dynamic_cast<MxVideoPresenter*>(p_presenter);
+	//MxVideoPresenter* presenter = dynamic_cast<MxVideoPresenter*>(p_presenter);
+	MxVideoPresenter* presenter = (MxVideoPresenter*)(p_presenter);
 	assert(presenter);
 
 	if (m_style == e_map) {

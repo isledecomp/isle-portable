@@ -45,18 +45,18 @@ option(ISLE_BUILD_APP "Build isle application" ON)
 option(ISLE_ASAN "Enable Address Sanitizer" OFF)
 option(ISLE_UBSAN "Enable Undefined Behavior Sanitizer" OFF)
 option(ISLE_WERROR "Treat warnings as errors" OFF)
-option(ISLE_DEBUG "Enable imgui debug" ON)
+cmake_dependent_option(ISLE_DEBUG "Enable imgui debug" ON "NOT NXDK" OFF)
 cmake_dependent_option(ISLE_USE_DX5 "Build with internal DirectX 5 SDK" "${NOT_MINGW}" "WIN32;CMAKE_SIZEOF_VOID_P EQUAL 4" OFF)
 cmake_dependent_option(ISLE_MINIWIN "Use miniwin" ON "NOT ISLE_USE_DX5" OFF)
-cmake_dependent_option(ISLE_EXTENSIONS "Use extensions" ON "NOT ISLE_USE_DX5" OFF)
-cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "MSVC OR ISLE_MINIWIN;NOT NINTENDO_3DS;NOT WINDOWS_STORE" OFF)
+cmake_dependent_option(ISLE_EXTENSIONS "Use extensions" ON "NOT ISLE_USE_DX5;NOT NXDK" OFF)
+cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "MSVC OR ISLE_MINIWIN;NOT NINTENDO_3DS;NOT WINDOWS_STORE;NOT NXDK" OFF)
 cmake_dependent_option(ISLE_COMPILE_SHADERS "Compile shaders" ON "SDL_SHADERCROSS_BIN;TARGET Python3::Interpreter" OFF)
 option(CMAKE_POSITION_INDEPENDENT_CODE "Build with -fPIC" ON)
 option(ENABLE_CLANG_TIDY "Enable clang-tidy")
 option(DOWNLOAD_DEPENDENCIES "Download dependencies" ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}" CACHE PATH "Directory where to put executables and dll")
 set(ISLE_EMSCRIPTEN_HOST "" CACHE STRING "Host URL for Emscripten streaming (e.g., https://test.com)")
-cmake_dependent_option(BUILD_SHARED_LIBS "Build lego1 as a shared library" ON "NOT EMSCRIPTEN" OFF)
+cmake_dependent_option(BUILD_SHARED_LIBS "Build lego1 as a shared library" ON "NOT EMSCRIPTEN;NOT NXDK" OFF)
 
 message(STATUS "Isle app:               ${ISLE_BUILD_APP}")
 message(STATUS "Config app:             ${ISLE_BUILD_CONFIG}")
@@ -79,12 +79,19 @@ if (DOWNLOAD_DEPENDENCIES)
       GIT_TAG "main"
       EXCLUDE_FROM_ALL
     )
+  elseif(NXDK)
+    FetchContent_Declare(
+      SDL3
+      GIT_REPOSITORY "https://github.com/Ryzee119/nxdk-sdl3.git"
+      GIT_TAG "master"
+      EXCLUDE_FROM_ALL
+    )
   else()
     FetchContent_Declare(
-        SDL3
-        GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
-        GIT_TAG "main"
-        EXCLUDE_FROM_ALL
+      SDL3
+      GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
+      GIT_TAG "main"
+      EXCLUDE_FROM_ALL
     )
   endif()
   FetchContent_MakeAvailable(SDL3)
@@ -170,7 +177,7 @@ add_library(lego1
   LEGO1/main.cpp
 )
 target_precompile_headers(lego1 PRIVATE "LEGO1/lego1_pch.h")
-set_property(TARGET lego1 PROPERTY DEFINE_SYMBOL "LEGO1_DLL")
+set_property(TARGET lego1 PROPERTY DEFINE_SYMBOL "LEGO1_STATIC")
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/util>")
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/extensions/include>")
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/LEGO1>")
@@ -372,6 +379,7 @@ if (WIN32)
   target_link_libraries(lego1 INTERFACE winmm)
 endif()
 target_link_libraries(lego1 PRIVATE libsmacker miniaudio)
+target_link_libraries(lego1 PRIVATE libsmacker)
 target_include_directories(lego1 PUBLIC $<BUILD_INTERFACE:$<TARGET_PROPERTY:miniaudio,INTERFACE_INCLUDE_DIRECTORIES>>)
 
 # lego1_impl sources
@@ -497,6 +505,15 @@ if (ISLE_EXTENSIONS)
   )
 endif()
 
+if (NXDK)
+  target_sources(lego1 PRIVATE
+  ISLE/xbox/atof.c
+  )
+  target_sources(lego1 PRIVATE
+  ISLE/xbox/dbg.c
+  )
+endif()
+
 if (ISLE_BUILD_APP)
   add_executable(isle WIN32
     ISLE/res/isle.rc
@@ -575,6 +592,14 @@ if (ISLE_BUILD_APP)
   if (IOS)
     target_sources(isle PRIVATE
       ISLE/ios/config.cpp
+    )
+  endif()
+  if (NXDK)
+    target_sources(isle PRIVATE
+      ISLE/xbox/atof.c
+    )
+    target_sources(isle PRIVATE
+      ISLE/xbox/dbg.c
     )
   endif()
   if(Python3_FOUND)
@@ -706,7 +731,7 @@ if (EXISTS "${CLANGFORMAT_BIN}")
 endif()
 
 set(install_extra_targets)
-if(DOWNLOAD_DEPENDENCIES)
+if(DOWNLOAD_DEPENDENCIES AND NOT NXDK)
   get_property(sdl3_type TARGET SDL3::SDL3 PROPERTY TYPE)
   if(sdl3_type STREQUAL "SHARED_LIBRARY")
     list(APPEND install_extra_targets "SDL3-shared")
@@ -819,6 +844,12 @@ if(NINTENDO_3DS)
     install(FILES "$<TARGET_FILE_DIR:isle>/isle.cia" DESTINATION "${CMAKE_INSTALL_BINDIR}")
   endif()
   install(FILES "$<TARGET_FILE_DIR:isle>/isle.3dsx" DESTINATION "${CMAKE_INSTALL_BINDIR}")
+endif()
+if (NXDK)
+  include("${CMAKE_SOURCE_DIR}/PostbuildAction.cmake")
+  set(XBE_TITLE isle)
+  set(XBOX_ISO_DIR ${CMAKE_CURRENT_BINARY_DIR}/xiso)
+  add_xbox_build_steps(isle ${XBE_TITLE} ${XBOX_ISO_DIR})
 endif()
 if(WINDOWS_STORE)
   install(

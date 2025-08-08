@@ -2,11 +2,19 @@ set(CMAKE_C_CLANG_TIDY)
 
 if(DOWNLOAD_DEPENDENCIES)
     include(FetchContent)
-    FetchContent_Declare(
-        miniaudio
-        URL https://github.com/mackron/miniaudio/archive/refs/tags/0.11.22.tar.gz
-        URL_MD5 4944268151ad037f148b089237566d05
-    )
+    if (NXDK)
+      FetchContent_Declare(
+          miniaudio
+          GIT_REPOSITORY "https://github.com/mackron/miniaudio.git"
+          GIT_TAG "dev"
+      )
+    else()
+      FetchContent_Declare(
+          miniaudio
+          URL https://github.com/mackron/miniaudio/archive/refs/tags/0.11.22.tar.gz
+          URL_MD5 4944268151ad037f148b089237566d05
+      )
+    endif()
     FetchContent_MakeAvailable(miniaudio)
 else()
     add_library(miniaudio STATIC
@@ -69,6 +77,12 @@ add_library(imgui STATIC
     ${imgui_SOURCE_DIR}/backends/imgui_impl_sdlrenderer3.cpp
 )
 target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR})
-target_link_libraries(imgui PUBLIC SDL3::Headers)
-target_link_libraries(imgui PRIVATE SDL3::SDL3)
+if (NXDK)
+  target_link_libraries(imgui PRIVATE ${NXDK_DIR}/lib/libpbkit.lib)
+  target_link_libraries(imgui PRIVATE ${NXDK_DIR}/lib/libSDL3.lib)
+  target_include_directories(imgui PRIVATE ${NXDK_DIR}/lib/sdl/SDL3/include)
+else()
+  target_link_libraries(imgui PUBLIC SDL3::Headers)
+  target_link_libraries(imgui PRIVATE SDL3::SDL3)
+endif()
 set_property(TARGET imgui PROPERTY CXX_CLANG_TIDY "")

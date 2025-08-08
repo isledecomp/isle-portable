@@ -4,7 +4,8 @@
 #include "matrix.h"
 
 #include <math.h>
-#include <memory.h>
+//#include <memory.h>
+#include <string.h>
 
 // FUNCTION: LEGO1 0x10002320
 // FUNCTION: BETA10 0x1000fcb0
