@@ -80,17 +80,14 @@ MxBool MxControlPresenter::CheckButtonDown(MxS32 p_x, MxS32 p_y, MxPresenter* p_
 {
 	assert(p_presenter);
 	MxVideoPresenter* presenter = dynamic_cast<MxVideoPresenter*>(p_presenter);
-	if (!presenter) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Invalid presenter");
-		return FALSE;
-	}
+	assert(presenter);
 
 	if (m_style == e_map) {
 		MxStillPresenter* map = (MxStillPresenter*) m_list.front();
 		assert(map && map->IsA("MxStillPresenter"));
 
 		if (presenter == map || map->GetDisplayZ() < presenter->GetDisplayZ()) {
-			if (map->VTable0x7c()) {
+			if (map->HasFrameBitmapOrAlpha()) {
 				MxRect32 rect(0, 0, map->GetWidth() - 1, map->GetHeight() - 1);
 				rect += map->GetLocation();
 
@@ -160,7 +157,7 @@ MxBool MxControlPresenter::Notify(LegoControlManagerNotificationParam* p_param, 
 				p_param->SetClickedAtom(m_action->GetAtomId().GetInternal());
 				UpdateEnabledChild(0);
 				p_param->SetNotification(c_notificationControl);
-				p_param->SetUnknown0x28(m_enabledChild);
+				p_param->SetEnabledChild(m_enabledChild);
 				return TRUE;
 			}
 			break;
@@ -170,7 +167,7 @@ MxBool MxControlPresenter::Notify(LegoControlManagerNotificationParam* p_param, 
 				p_param->SetClickedAtom(m_action->GetAtomId().GetInternal());
 				UpdateEnabledChild(m_stateOrCellIndex);
 				p_param->SetNotification(c_notificationControl);
-				p_param->SetUnknown0x28(m_enabledChild);
+				p_param->SetEnabledChild(m_enabledChild);
 				return TRUE;
 			}
 			break;

@@ -28,6 +28,8 @@ MxVideoParam::MxVideoParam(MxRect32& p_rect, MxPalette* p_palette, MxULong p_bac
 	m_flags = p_flags;
 	m_unk0x1c = 0;
 	m_deviceId = NULL;
+	m_msaaSamples = 0;
+	m_anisotropic = 0.0f;
 }
 
 // FUNCTION: LEGO1 0x100becf0
@@ -41,6 +43,8 @@ MxVideoParam::MxVideoParam(MxVideoParam& p_videoParam)
 	m_unk0x1c = p_videoParam.m_unk0x1c;
 	m_deviceId = NULL;
 	SetDeviceName(p_videoParam.m_deviceId);
+	m_msaaSamples = p_videoParam.m_msaaSamples;
+	m_anisotropic = p_videoParam.m_anisotropic;
 }
 
 // FUNCTION: LEGO1 0x100bed50
@@ -82,6 +86,8 @@ MxVideoParam& MxVideoParam::operator=(const MxVideoParam& p_videoParam)
 	m_flags = p_videoParam.m_flags;
 	m_unk0x1c = p_videoParam.m_unk0x1c;
 	SetDeviceName(p_videoParam.m_deviceId);
+	m_msaaSamples = p_videoParam.m_msaaSamples;
+	m_anisotropic = p_videoParam.m_anisotropic;
 
 	return *this;
 }

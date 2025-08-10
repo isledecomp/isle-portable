@@ -1,5 +1,5 @@
-#ifndef MXOMNI_H
-#define MXOMNI_H
+#ifndef MXMAIN_H
+#define MXMAIN_H
 
 #include "lego1_export.h"
 #include "mxcore.h"
@@ -32,6 +32,7 @@ class MxVariableTable;
 class MxVideoManager;
 
 // VTABLE: LEGO1 0x100dc168
+// VTABLE: BETA10 0x101c1c40
 // SIZE 0x68
 class MxOmni : public MxCore {
 public:
@@ -103,6 +104,7 @@ public:
 	MxLong HandleEndAction(MxParam& p_param);
 
 	// SYNTHETIC: LEGO1 0x100aefd0
+	// SYNTHETIC: BETA10 0x10130c90
 	// MxOmni::`scalar deleting destructor'
 
 protected:
@@ -128,4 +130,4 @@ protected:
 	MxBool m_paused;                              // 0x64
 };
 
-#endif // MXOMNI_H
+#endif // MXMAIN_H

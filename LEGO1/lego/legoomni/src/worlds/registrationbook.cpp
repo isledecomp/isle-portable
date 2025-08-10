@@ -241,7 +241,7 @@ MxLong RegistrationBook::HandleKeyPress(SDL_Keycode p_key)
 // FUNCTION: LEGO1 0x100774a0
 MxLong RegistrationBook::HandleControl(LegoControlManagerNotificationParam& p_param)
 {
-	MxS16 buttonId = p_param.m_unk0x28;
+	MxS16 buttonId = p_param.m_enabledChild;
 	const InternationalCharacter* intChar = NULL;
 
 	for (int i = 0; i < sizeOfArray(m_intAlphabet); i++) {
@@ -262,10 +262,10 @@ MxLong RegistrationBook::HandleControl(LegoControlManagerNotificationParam& p_pa
 				DeleteObjects(&m_atomId, RegbookScript::c_iic006in_RunAnim, RegbookScript::c_iic008in_PlayWav);
 
 				if (GameState()->GetCurrentAct() == LegoGameState::e_act1) {
-					m_infocenterState->m_unk0x74 = 15;
+					m_infocenterState->m_state = InfocenterState::e_backToInfoAct1;
 				}
 				else {
-					m_infocenterState->m_unk0x74 = 2;
+					m_infocenterState->m_state = InfocenterState::e_notRegistered;
 				}
 
 				TransitionManager()->StartTransition(MxTransitionManager::e_mosaic, 50, FALSE, FALSE);
@@ -355,7 +355,7 @@ void RegistrationBook::FUN_100775c0(MxS16 p_playerIndex)
 		break;
 	}
 
-	m_infocenterState->m_unk0x74 = 4;
+	m_infocenterState->m_state = InfocenterState::e_selectedSave;
 	if (m_unk0x2b8 == 0 && !m_unk0x2c1) {
 		DeleteObjects(&m_atomId, RegbookScript::c_iic006in_RunAnim, RegbookScript::c_iic008in_PlayWav);
 		TransitionManager()->StartTransition(MxTransitionManager::e_mosaic, 50, FALSE, FALSE);
@@ -682,12 +682,12 @@ MxBool RegistrationBook::CreateSurface()
 		}
 
 		if (presenter) {
-			m_checkboxSurface = presenter->VTable0x78();
+			m_checkboxSurface = presenter->GetSurface();
 		}
 
 		presenter = (MxStillPresenter*) Find("MxStillPresenter", "CheckHiLite_Bitmap");
 		if (presenter) {
-			m_checkboxHilite = presenter->VTable0x78();
+			m_checkboxHilite = presenter->GetSurface();
 		}
 
 		if (m_checkboxSurface && m_checkboxHilite) {

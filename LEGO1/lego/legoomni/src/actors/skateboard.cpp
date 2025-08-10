@@ -59,7 +59,7 @@ void SkateBoard::Exit()
 	if (m_act1state->m_state == Act1State::e_pizza) {
 		Pizza* pizza = (Pizza*) CurrentWorld()->Find(*g_isleScript, IsleScript::c_Pizza_Actor);
 		pizza->StopActions();
-		pizza->FUN_100382b0();
+		pizza->Reset();
 		m_pizzaVisible = FALSE;
 	}
 
@@ -110,7 +110,7 @@ MxLong SkateBoard::HandleControl(LegoControlManagerNotificationParam& p_param)
 {
 	MxU32 result = 0;
 
-	if (p_param.m_unk0x28 == 1 && p_param.m_clickedObjectId == IsleScript::c_SkateArms_Ctl) {
+	if (p_param.m_enabledChild == 1 && p_param.m_clickedObjectId == IsleScript::c_SkateArms_Ctl) {
 		Exit();
 		GameState()->m_currentArea = LegoGameState::Area::e_vehicleExited;
 		result = 1;

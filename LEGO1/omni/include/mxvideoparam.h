@@ -15,6 +15,8 @@
 
 class MxPalette;
 
+#define ISLE_PROP_WINDOW_CREATE_VIDEO_PARAM "ISLE.window.create.videoParam"
+
 // SIZE 0x24
 class MxVideoParam {
 public:
@@ -51,6 +53,12 @@ public:
 	// FUNCTION: BETA10 0x10141fe0
 	void SetBackBuffers(MxU32 p_backBuffers) { m_backBuffers = p_backBuffers; }
 
+	void SetMSAASamples(MxU32 p_msaaSamples) { m_msaaSamples = p_msaaSamples; }
+	MxU32 GetMSAASamples() { return m_msaaSamples; }
+
+	void SetAnisotropic(MxFloat p_anisotropic) { m_anisotropic = p_anisotropic; }
+	MxFloat GetAnisotropic() { return m_anisotropic; }
+
 private:
 	MxRect32 m_rect;           // 0x00
 	MxPalette* m_palette;      // 0x10
@@ -58,6 +66,8 @@ private:
 	MxVideoParamFlags m_flags; // 0x18
 	int m_unk0x1c;             // 0x1c
 	char* m_deviceId;          // 0x20
+	MxU32 m_msaaSamples;
+	MxFloat m_anisotropic;
 };
 
 #endif // MXVIDEOPARAM_H

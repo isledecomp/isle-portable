@@ -26,7 +26,11 @@ public:
 
 	float GetAttenuation(MxU32 p_volume);
 
-	MxPresenter* FUN_100aebd0(const MxAtomId& p_atomId, MxU32 p_objectId);
+	MxPresenter* FindPresenter(const MxAtomId& p_atomId, MxU32 p_objectId);
+
+	// SYNTHETIC: LEGO1 0x100ae7b0
+	// SYNTHETIC: BETA10 0x10133460
+	// MxSoundManager::`scalar deleting destructor'
 
 protected:
 	void Init();
@@ -48,8 +52,5 @@ protected:
 	SDL_AudioStream* m_stream;
 	undefined m_unk0x38[4];
 };
-
-// SYNTHETIC: LEGO1 0x100ae7b0
-// MxSoundManager::`scalar deleting destructor'
 
 #endif // MXSOUNDMANAGER_H

@@ -2,31 +2,35 @@
 
 #include "legocachesoundmanager.h"
 #include "mxautolock.h"
-#include "mxomni.h"
+#include "mxmain.h"
 
 #include <assert.h>
 
 DECOMP_SIZE_ASSERT(LegoSoundManager, 0x44)
 
 // FUNCTION: LEGO1 0x100298a0
+// FUNCTION: BETA10 0x100cffb0
 LegoSoundManager::LegoSoundManager()
 {
 	Init();
 }
 
 // FUNCTION: LEGO1 0x10029940
+// FUNCTION: BETA10 0x100d0027
 LegoSoundManager::~LegoSoundManager()
 {
 	Destroy(TRUE);
 }
 
 // FUNCTION: LEGO1 0x100299a0
+// FUNCTION: BETA10 0x100d0099
 void LegoSoundManager::Init()
 {
 	m_cacheSoundManager = NULL;
 }
 
 // FUNCTION: LEGO1 0x100299b0
+// FUNCTION: BETA10 0x100d00c9
 void LegoSoundManager::Destroy(MxBool p_fromDestructor)
 {
 	delete m_cacheSoundManager;
@@ -41,16 +45,18 @@ void LegoSoundManager::Destroy(MxBool p_fromDestructor)
 // FUNCTION: BETA10 0x100d0129
 MxResult LegoSoundManager::Create(MxU32 p_frequencyMS, MxBool p_createThread)
 {
-	MxBool locked = FALSE;
 	MxResult result = FAILURE;
+	MxBool locked = FALSE;
 
-	if (MxSoundManager::Create(10, FALSE) == SUCCESS) {
-		m_criticalSection.Enter();
-		locked = TRUE;
-		m_cacheSoundManager = new LegoCacheSoundManager;
-		assert(m_cacheSoundManager);
-		result = SUCCESS;
+	if (MxSoundManager::Create(10, FALSE) != SUCCESS) {
+		goto done;
 	}
+
+	ENTER(m_criticalSection);
+	locked = TRUE;
+	m_cacheSoundManager = new LegoCacheSoundManager;
+	assert(m_cacheSoundManager);
+	result = SUCCESS;
 
 done:
 	if (result != SUCCESS) {

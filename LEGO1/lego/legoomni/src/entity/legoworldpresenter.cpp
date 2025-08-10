@@ -260,8 +260,12 @@ MxResult LegoWorldPresenter::LoadWorld(char* p_worldName, LegoWorld* p_world)
 	ModelDbPart* part;
 
 	while (cursor.Next(part)) {
-		if (GetViewLODListManager()->Lookup(part->m_roiName.GetData()) == NULL &&
-			LoadWorldPart(*part, wdbFile) != SUCCESS) {
+		ViewLODList* lodList = GetViewLODListManager()->Lookup(part->m_roiName.GetData());
+		if (lodList) {
+			lodList->Release();
+		}
+
+		if (lodList == NULL && LoadWorldPart(*part, wdbFile) != SUCCESS) {
 			return FAILURE;
 		}
 	}

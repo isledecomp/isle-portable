@@ -30,6 +30,7 @@ struct InternationalCharacter {
 };
 
 // VTABLE: LEGO1 0x100d74a8
+// VTABLE: BETA10 0x101bc4f0
 // SIZE 0x30
 class LegoBackgroundColor : public MxVariable {
 public:
@@ -50,9 +51,11 @@ private:
 };
 
 // VTABLE: LEGO1 0x100d74b8
+// VTABLE: BETA10 0x101bc500
 // SIZE 0x24
 class LegoFullScreenMovie : public MxVariable {
 public:
+	LegoFullScreenMovie();
 	LegoFullScreenMovie(const char* p_key, const char* p_value);
 
 	void SetValue(const char* p_option) override; // vtable+0x04
@@ -110,19 +113,19 @@ public:
 		e_dunecarbuild,
 		e_jetskibuild,
 		e_racecarbuild,
-		e_unk40,
+		e_helicopterSpawn,
 		e_unk41,
 		e_unk42,
-		e_unk43,
-		e_unk44,
-		e_unk45,
+		e_dunebuggySpawn,
+		e_racecarSpawn,
+		e_jetskiSpawn,
 		e_act2main,
 		e_act3script,
 		e_unk48,
 		e_unk49,
 		e_unk50,
 		e_unk51,
-		e_unk52,
+		e_towTrackHookedUp,
 		e_jukeboxw,
 		e_jukeboxExterior,
 		e_unk55,

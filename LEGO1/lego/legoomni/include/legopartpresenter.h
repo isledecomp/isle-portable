@@ -4,6 +4,7 @@
 #include "lego1_export.h"
 #include "legonamedpartlist.h"
 #include "mxmediapresenter.h"
+#include "viewmanager/viewlodlist.h"
 
 // VTABLE: LEGO1 0x100d4df0
 // SIZE 0x54
@@ -50,10 +51,21 @@ public:
 	MxResult Read(MxDSChunk& p_chunk);
 	void Store();
 
+	static void Release()
+	{
+		for (auto* lodList : g_lodLists) {
+			lodList->Release();
+		}
+
+		g_lodLists.clear();
+	}
+
 private:
 	void Destroy(MxBool p_fromDestructor);
 
 	LegoNamedPartList* m_parts; // 0x50
+
+	static vector<ViewLODList*> g_lodLists;
 };
 
 #endif // LEGOPARTPRESENTER_H

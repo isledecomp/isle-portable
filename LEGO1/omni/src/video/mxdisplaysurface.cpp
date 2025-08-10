@@ -2,8 +2,8 @@
 
 #include "mxbitmap.h"
 #include "mxdebug.h"
+#include "mxmain.h"
 #include "mxmisc.h"
-#include "mxomni.h"
 #include "mxpalette.h"
 #include "mxutilities.h"
 #include "mxvideomanager.h"
@@ -482,7 +482,7 @@ void MxDisplaySurface::VTable0x28(
 
 	tempSurface->Unlock(NULL);
 
-	if (m_videoParam.Flags().GetF1bit3()) {
+	if (m_videoParam.Flags().GetDoubleScaling()) {
 		RECT destRect = {p_right, p_bottom, p_right + p_width * 2, p_bottom + p_height * 2};
 		m_ddSurface2->Blt(&destRect, tempSurface, NULL, DDBLT_WAIT | DDBLT_KEYSRC, NULL);
 	}
@@ -749,7 +749,7 @@ sixteen_bit:
 // FUNCTION: LEGO1 0x100bba50
 void MxDisplaySurface::Display(MxS32 p_left, MxS32 p_top, MxS32 p_left2, MxS32 p_top2, MxS32 p_width, MxS32 p_height)
 {
-	if (m_videoParam.Flags().GetF2bit1()) {
+	if (m_videoParam.Flags().GetEnabled()) {
 		if (m_videoParam.Flags().GetFlipSurfaces()) {
 			if (g_unk0x1010215c < 2) {
 				g_unk0x1010215c++;
@@ -1012,7 +1012,7 @@ void MxDisplaySurface::VTable0x24(
 
 	MxU8* data = p_bitmap->GetStart(p_left, p_top);
 
-	if (m_videoParam.Flags().GetF1bit3()) {
+	if (m_videoParam.Flags().GetDoubleScaling()) {
 		p_bottom *= 2;
 		p_right *= 2;
 

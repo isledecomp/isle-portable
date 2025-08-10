@@ -22,14 +22,14 @@ MxLoopingSmkPresenter::~MxLoopingSmkPresenter()
 void MxLoopingSmkPresenter::Init()
 {
 	m_elapsedDuration = 0;
-	SetBit1(FALSE);
-	SetBit2(FALSE);
+	SetUseSurface(FALSE);
+	SetUseVideoMemory(FALSE);
 }
 
 // FUNCTION: LEGO1 0x100b49d0
 void MxLoopingSmkPresenter::Destroy(MxBool p_fromDestructor)
 {
-	m_criticalSection.Enter();
+	ENTER(m_criticalSection);
 	Init();
 	m_criticalSection.Leave();
 
@@ -39,7 +39,7 @@ void MxLoopingSmkPresenter::Destroy(MxBool p_fromDestructor)
 }
 
 // FUNCTION: LEGO1 0x100b4a00
-void MxLoopingSmkPresenter::VTable0x88()
+void MxLoopingSmkPresenter::ResetCurrentFrameAtEnd()
 {
 	// [library:libsmacker] Figure out if this functionality is still required
 }
@@ -62,7 +62,7 @@ void MxLoopingSmkPresenter::NextFrame()
 }
 
 // FUNCTION: LEGO1 0x100b4a90
-void MxLoopingSmkPresenter::VTable0x8c()
+void MxLoopingSmkPresenter::LoadFrameIfRequired()
 {
 	if (m_action->GetDuration() < m_elapsedDuration) {
 		ProgressTickleState(e_freezing);
@@ -78,7 +78,7 @@ void MxLoopingSmkPresenter::VTable0x8c()
 // FUNCTION: LEGO1 0x100b4b00
 void MxLoopingSmkPresenter::RepeatingTickle()
 {
-	for (MxS16 i = 0; i < m_unk0x5c; i++) {
+	for (MxS16 i = 0; i < m_frameLoadTickleCount; i++) {
 		if (!m_loopingChunkCursor->HasMatch()) {
 			MxStreamChunk* chunk;
 			MxStreamChunkListCursor cursor(m_loopingChunks);
@@ -106,7 +106,7 @@ void MxLoopingSmkPresenter::RepeatingTickle()
 			break;
 		}
 
-		VTable0x8c();
+		LoadFrameIfRequired();
 
 		m_loopingChunkCursor->Next(chunk);
 

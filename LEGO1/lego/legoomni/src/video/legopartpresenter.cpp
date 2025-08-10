@@ -22,6 +22,8 @@ MxS32 g_partPresenterConfig1 = 1;
 // GLOBAL: LEGO1 0x100f7aa4
 MxS32 g_partPresenterConfig2 = 100;
 
+vector<ViewLODList*> LegoPartPresenter::g_lodLists;
+
 // FUNCTION: LEGO1 0x1007c990
 void LegoPartPresenter::configureLegoPartPresenter(MxS32 p_partPresenterConfig1, MxS32 p_partPresenterConfig2)
 {
@@ -39,7 +41,7 @@ MxResult LegoPartPresenter::AddToManager()
 // FUNCTION: LEGO1 0x1007c9d0
 void LegoPartPresenter::Destroy(MxBool p_fromDestructor)
 {
-	m_criticalSection.Enter();
+	ENTER(m_criticalSection);
 	VideoManager()->UnregisterPresenter(*this);
 
 	if (m_parts) {
@@ -261,6 +263,8 @@ void LegoPartPresenter::Store()
 				lodCursor.Detach();
 				lodList->PushBack(lod);
 			}
+
+			g_lodLists.push_back(lodList);
 		}
 		else {
 			lodList->Release();

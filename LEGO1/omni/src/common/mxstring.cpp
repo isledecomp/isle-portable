@@ -1,7 +1,7 @@
 #include "mxstring.h"
 
 #include "decomp.h"
-#include "mxomni.h"
+#include "mxmain.h"
 
 #include <SDL3/SDL_log.h>
 #include <SDL3/SDL_platform_defines.h>

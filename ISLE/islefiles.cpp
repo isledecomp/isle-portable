@@ -46,3 +46,24 @@ const char* g_files[46] = {
 	"/LEGO/data/WORLD.WDB",
 	"/LEGO/data/testinf.dta",
 };
+
+const char* g_textures[120] = {
+	"bank01.gif",   "beach.gif",    "black.gif",     "bowtie.gif",   "brela_01.gif", "bth1chst.gif", "bth2chst.gif",
+	"capch.gif",    "capdb.gif",    "capjs.gif",     "capmd.gif",    "caprc.gif",    "cave_24x.gif", "caverocx.gif",
+	"caverokx.gif", "cheker01.gif", "construct.gif", "copchest.gif", "dbfrfn.gif",   "doctor.gif",   "dogface.gif",
+	"dummy.gif",    "e.gif",        "flowers.gif",   "fruit.gif",    "gasroad.gif",  "gdface.gif",   "g.gif",
+	"grassx.gif",   "infochst.gif", "infoface.gif",  "jailpad.gif",  "jfrnt.gif",    "jsfrnt4.gif",  "jsfrnt.gif",
+	"jside.gif",    "jswnsh5.gif",  "jswnsh.gif",    "l6.gif",       "l.gif",        "mamachst.gif", "mamaface.gif",
+	"mamamap.gif",  "mech.gif",     "medic01.gif",   "mitesx.gif",   "mustache.gif", "nickchst.gif", "nickface.gif",
+	"nickmap.gif",  "nopizza.gif",  "norachst.gif",  "noraface.gif", "noramap.gif",  "nwcurve.gif",  "octan01.gif",
+	"octsq01.gif",  "o.gif",        "papachst.gif",  "papaface.gif", "papamap.gif",  "pebblesx.gif", "pepperha.gif",
+	"peppizza.gif", "peppmap.gif",  "peprchst.gif",  "peprface.gif", "pianokys.gif", "pizcurve.gif", "pizza01.gif",
+	"pizza.gif",    "polbar01.gif", "polbla01.gif",  "polkadot.gif", "polwhi01.gif", "postchst.gif", "post.gif",
+	"rac1chst.gif", "rac2chst.gif", "radar.gif",     "raddis01.gif", "rcback.gif",   "rc-butn.gif",  "rcfrnt5.gif",
+	"rcfrnt6.gif",  "rcfrnt7.gif",  "rcfrnt.gif",    "rcside1.gif",  "rcside2.gif",  "rcside3.gif",  "rctail.gif",
+	"redskul.gif",  "relrel01.gif", "road1way.gif",  "road3wa2.gif", "road3wa3.gif", "road3way.gif", "road4way.gif",
+	"roadstr8.gif", "rockx.gif",    "roofpiz.gif",   "sandredx.gif", "se_curve.gif", "shftchst.gif", "shftface2.gif",
+	"shftface.gif", "shldwn02.gif", "skull.gif",     "smile.gif",    "smileshd.gif", "supr2_01.gif", "tightcrv.gif",
+	"unkchst.gif",  "val_02.gif",   "vest.gif",      "water2x.gif",  "w_curve.gif",  "wnbars.gif",   "woman.gif",
+	"womanshd.gif"
+};

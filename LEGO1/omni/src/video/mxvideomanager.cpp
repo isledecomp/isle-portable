@@ -2,8 +2,8 @@
 
 #include "mxautolock.h"
 #include "mxdisplaysurface.h"
+#include "mxmain.h"
 #include "mxmisc.h"
-#include "mxomni.h"
 #include "mxpalette.h"
 #include "mxpresenter.h"
 #include "mxregion.h"
@@ -15,23 +15,27 @@
 DECOMP_SIZE_ASSERT(MxVideoManager, 0x64)
 
 // FUNCTION: LEGO1 0x100be1f0
+// STUB: BETA10 0x1012ca40
 MxVideoManager::MxVideoManager()
 {
 	Init();
 }
 
 // FUNCTION: LEGO1 0x100be270
+// FUNCTION: BETA10 0x1012dde0
 void MxVideoManager::UpdateView(MxU32 p_x, MxU32 p_y, MxU32 p_width, MxU32 p_height)
 {
 }
 
 // FUNCTION: LEGO1 0x100be2a0
+// FUNCTION: BETA10 0x1012cad8
 MxVideoManager::~MxVideoManager()
 {
 	Destroy(TRUE);
 }
 
 // FUNCTION: LEGO1 0x100be320
+// FUNCTION: BETA10 0x1012cb66
 MxResult MxVideoManager::Init()
 {
 	m_pDirectDraw = NULL;
@@ -44,6 +48,7 @@ MxResult MxVideoManager::Init()
 }
 
 // FUNCTION: LEGO1 0x100be340
+// FUNCTION: BETA10 0x1012cbca
 void MxVideoManager::Destroy(MxBool p_fromDestructor)
 {
 	if (m_thread) {
@@ -54,7 +59,7 @@ void MxVideoManager::Destroy(MxBool p_fromDestructor)
 		TickleManager()->UnregisterClient(this);
 	}
 
-	m_criticalSection.Enter();
+	ENTER(m_criticalSection);
 
 	if (m_displaySurface) {
 		delete m_displaySurface;
@@ -81,7 +86,7 @@ void MxVideoManager::Destroy(MxBool p_fromDestructor)
 	m_criticalSection.Leave();
 
 	if (!p_fromDestructor) {
-		MxMediaManager::Destroy();
+		MxPresentationManager::Destroy();
 	}
 }
 
@@ -134,6 +139,7 @@ void MxVideoManager::SortPresenterList()
 }
 
 // FUNCTION: LEGO1 0x100be600
+// STUB: BETA10 0x1012cfbc
 MxResult MxVideoManager::VTable0x28(
 	MxVideoParam& p_videoParam,
 	LPDIRECTDRAW p_pDirectDraw,
@@ -150,11 +156,11 @@ MxResult MxVideoManager::VTable0x28(
 
 	m_unk0x60 = FALSE;
 
-	if (MxMediaManager::Create() != SUCCESS) {
+	if (MxPresentationManager::Create() != SUCCESS) {
 		goto done;
 	}
 
-	m_criticalSection.Enter();
+	ENTER(m_criticalSection);
 	locked = TRUE;
 
 	m_videoParam = p_videoParam;
@@ -216,6 +222,7 @@ done:
 }
 
 // FUNCTION: LEGO1 0x100be820
+// STUB: BETA10 0x1012d3f1
 MxResult MxVideoManager::Create(MxVideoParam& p_videoParam, MxU32 p_frequencyMS, MxBool p_createThread)
 {
 	MxBool locked = FALSE;
@@ -224,12 +231,12 @@ MxResult MxVideoManager::Create(MxVideoParam& p_videoParam, MxU32 p_frequencyMS,
 
 	m_unk0x60 = TRUE;
 
-	if (MxMediaManager::Create() != SUCCESS) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "MxMediaManager::Create failed");
+	if (MxPresentationManager::Create() != SUCCESS) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "MxPresentationManager::Create failed");
 		goto done;
 	}
 
-	m_criticalSection.Enter();
+	ENTER(m_criticalSection);
 	locked = TRUE;
 
 	m_videoParam = p_videoParam;
@@ -308,6 +315,7 @@ done:
 }
 
 // FUNCTION: LEGO1 0x100bea50
+// FUNCTION: BETA10 0x1012d85f
 void MxVideoManager::Destroy()
 {
 	Destroy(FALSE);
@@ -316,7 +324,7 @@ void MxVideoManager::Destroy()
 // FUNCTION: LEGO1 0x100bea60
 void MxVideoManager::InvalidateRect(MxRect32& p_rect)
 {
-	m_criticalSection.Enter();
+	ENTER(m_criticalSection);
 
 	if (m_region) {
 		m_region->AddRect(p_rect);
@@ -326,6 +334,7 @@ void MxVideoManager::InvalidateRect(MxRect32& p_rect)
 }
 
 // FUNCTION: LEGO1 0x100bea90
+// FUNCTION: BETA10 0x1012d8e3
 MxResult MxVideoManager::Tickle()
 {
 	AUTOLOCK(m_criticalSection);
@@ -356,7 +365,7 @@ MxResult MxVideoManager::RealizePalette(MxPalette* p_palette)
 {
 	PALETTEENTRY paletteEntries[256];
 
-	m_criticalSection.Enter();
+	ENTER(m_criticalSection);
 
 	if (p_palette && m_videoParam.GetPalette()) {
 		p_palette->GetEntries(paletteEntries);

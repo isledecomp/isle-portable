@@ -956,7 +956,7 @@ undefined4 LegoCarBuild::FUN_10024890(MxParam* p_param)
 	LegoControlManagerNotificationParam* param = (LegoControlManagerNotificationParam*) p_param;
 	assert(m_buildState);
 
-	if (param->m_unk0x28) {
+	if (param->m_enabledChild) {
 		switch (param->m_clickedObjectId) {
 		// The enum values are all identical between CopterScript, DunecarScript, JetskiScript, and RacecarScript
 		case CopterScript::c_Info_Ctl:
@@ -1012,7 +1012,7 @@ undefined4 LegoCarBuild::FUN_10024890(MxParam* p_param)
 		case CopterScript::c_Platform_Ctl:
 			FUN_10024f50();
 			m_unk0xf8 = c_unknown8;
-			m_unk0xfc = param->m_unk0x28;
+			m_unk0xfc = param->m_enabledChild;
 			result = 1;
 			break;
 		default:
@@ -1054,7 +1054,7 @@ undefined4 LegoCarBuild::FUN_10024890(MxParam* p_param)
 	LegoControlManagerNotificationParam* param = (LegoControlManagerNotificationParam*) p_param;
 	assert(m_buildState);
 
-	if (param->m_unk0x28) {
+	if (param->m_enabledChild) {
 		switch (param->m_clickedObjectId) {
 		case CopterScript::c_Info_Ctl:
 			m_animPresenter->SetShelfState(LegoCarBuildAnimPresenter::e_selected);
@@ -1116,7 +1116,7 @@ undefined4 LegoCarBuild::FUN_10024890(MxParam* p_param)
 		case CopterScript::c_Platform_Ctl:
 			FUN_10024f50();
 			m_unk0xf8 = c_unknown8;
-			m_unk0xfc = param->m_unk0x28;
+			m_unk0xfc = param->m_enabledChild;
 			result = 1;
 			break;
 		default:
@@ -1233,7 +1233,7 @@ undefined4 LegoCarBuild::FUN_10024c20(MxNotificationParam* p_param)
 			jukeboxScript = JukeboxScript::c_RaceCarBuild_Music;
 		}
 
-		m_unk0x338 = SoundManager()->FUN_100aebd0(*g_jukeboxScript, jukeboxScript);
+		m_unk0x338 = SoundManager()->FindPresenter(*g_jukeboxScript, jukeboxScript);
 
 		if (m_unk0x338) {
 			BackgroundAudioManager()->SetPendingPresenter(m_unk0x338, 5, MxPresenter::e_repeating);

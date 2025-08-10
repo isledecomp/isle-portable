@@ -22,14 +22,14 @@ MxLoopingFlcPresenter::~MxLoopingFlcPresenter()
 void MxLoopingFlcPresenter::Init()
 {
 	this->m_elapsedDuration = 0;
-	SetBit1(FALSE);
-	SetBit2(FALSE);
+	SetUseSurface(FALSE);
+	SetUseVideoMemory(FALSE);
 }
 
 // FUNCTION: LEGO1 0x100b4430
 void MxLoopingFlcPresenter::Destroy(MxBool p_fromDestructor)
 {
-	m_criticalSection.Enter();
+	ENTER(m_criticalSection);
 	Init();
 	m_criticalSection.Leave();
 
@@ -56,7 +56,7 @@ void MxLoopingFlcPresenter::NextFrame()
 }
 
 // FUNCTION: LEGO1 0x100b44c0
-void MxLoopingFlcPresenter::VTable0x88()
+void MxLoopingFlcPresenter::LoadFrameIfRequired()
 {
 	if (m_action->GetDuration() < m_elapsedDuration) {
 		ProgressTickleState(e_freezing);
@@ -72,7 +72,7 @@ void MxLoopingFlcPresenter::VTable0x88()
 // FUNCTION: LEGO1 0x100b4520
 void MxLoopingFlcPresenter::RepeatingTickle()
 {
-	for (MxS16 i = 0; i < m_unk0x5c; i++) {
+	for (MxS16 i = 0; i < m_frameLoadTickleCount; i++) {
 		if (!m_loopingChunkCursor->HasMatch()) {
 			MxStreamChunk* chunk;
 			MxStreamChunkListCursor cursor(m_loopingChunks);
@@ -100,7 +100,7 @@ void MxLoopingFlcPresenter::RepeatingTickle()
 			break;
 		}
 
-		VTable0x88();
+		LoadFrameIfRequired();
 
 		m_loopingChunkCursor->Next(chunk);
 
@@ -117,7 +117,7 @@ MxResult MxLoopingFlcPresenter::AddToManager()
 	MxBool locked = FALSE;
 
 	if (MxFlcPresenter::AddToManager() == SUCCESS) {
-		m_criticalSection.Enter();
+		ENTER(m_criticalSection);
 		locked = TRUE;
 		result = SUCCESS;
 	}

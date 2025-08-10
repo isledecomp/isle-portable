@@ -27,14 +27,14 @@ void MxSmkPresenter::Init()
 {
 	m_currentFrame = 0;
 	memset(&m_mxSmk, 0, sizeof(m_mxSmk));
-	SetBit1(FALSE);
-	SetBit2(FALSE);
+	SetUseSurface(FALSE);
+	SetUseVideoMemory(FALSE);
 }
 
 // FUNCTION: LEGO1 0x100b3900
 void MxSmkPresenter::Destroy(MxBool p_fromDestructor)
 {
-	m_criticalSection.Enter();
+	ENTER(m_criticalSection);
 
 	MxSmk::Destroy(&m_mxSmk);
 	Init();
@@ -75,7 +75,7 @@ void MxSmkPresenter::LoadFrame(MxStreamChunk* p_chunk)
 
 	MxBool paletteChanged;
 	m_currentFrame++;
-	VTable0x88();
+	ResetCurrentFrameAtEnd();
 
 	MxRect32List rects(TRUE);
 	MxSmk::LoadFrame(bitmapInfo, bitmapData, &m_mxSmk, chunkData, paletteChanged, m_currentFrame - 1, &rects);
@@ -96,7 +96,7 @@ void MxSmkPresenter::LoadFrame(MxStreamChunk* p_chunk)
 }
 
 // FUNCTION: LEGO1 0x100b4260
-void MxSmkPresenter::VTable0x88()
+void MxSmkPresenter::ResetCurrentFrameAtEnd()
 {
 	// [library:libsmacker] Figure out if this functionality is still required
 }

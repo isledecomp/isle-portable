@@ -7,10 +7,10 @@
 #include "islepathactor.h"
 #include "jukebox_actions.h"
 #include "legoanimationmanager.h"
+#include "legoanimpresenter.h"
 #include "legocachesoundmanager.h"
 #include "legogamestate.h"
 #include "legoinputmanager.h"
-#include "legolocomotionanimpresenter.h"
 #include "legomain.h"
 #include "legopathstruct.h"
 #include "legosoundmanager.h"
@@ -939,6 +939,7 @@ MxResult LegoAct2::BadEnding()
 
 	MxTrace("Bad End of Act2\n");
 	m_unk0x10c4 = 14;
+	EmitGameEvent(e_badEnding);
 	return SUCCESS;
 }
 
@@ -1116,7 +1117,7 @@ MxResult LegoAct2::FUN_10052560(
 				action.SetDirection(*p_direction);
 			}
 
-			StartActionIfUnknown0x13c(action);
+			StartActionIfInitialized(action);
 		}
 		else {
 			MxMatrix matrix;

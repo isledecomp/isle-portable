@@ -1,7 +1,10 @@
 #include "mxdirectxinfo.h"
 
+#include "omni/include/mxvideoparam.h"
+
 #include <SDL3/SDL_log.h>
 #include <assert.h>
+#include <miniwin/miniwind3d.h>
 #include <stdio.h> // for vsprintf
 
 DECOMP_SIZE_ASSERT(MxAssignedDevice, 0xe4)
@@ -216,10 +219,27 @@ BOOL MxDeviceEnumerate::EnumDirectDrawCallback(LPGUID p_guid, LPSTR p_driverDesc
 	LPDIRECTDRAW lpDD = NULL;
 	MxDriver& newDevice = m_ddInfo.back();
 	HRESULT result = DirectDrawCreate(newDevice.m_guid, &lpDD, NULL);
+	IDirect3DMiniwin* miniwind3d = nullptr;
 
 	if (result != DD_OK) {
 		BuildErrorString("DirectDraw Create failed: %s\n", EnumerateErrorToString(result));
 		goto done;
+	}
+
+	result = lpDD->QueryInterface(IID_IDirect3DMiniwin, (void**) &miniwind3d);
+	if (result == DD_OK) {
+		MxVideoParam* videoParam = (MxVideoParam*) SDL_GetPointerProperty(
+			SDL_GetWindowProperties(reinterpret_cast<SDL_Window*>(m_hWnd)),
+			ISLE_PROP_WINDOW_CREATE_VIDEO_PARAM,
+			nullptr
+		);
+#ifndef MXDIRECTX_FOR_CONFIG
+		assert(videoParam);
+#endif
+		if (videoParam) {
+			miniwind3d->RequestMSAA(videoParam->GetMSAASamples());
+			miniwind3d->RequestAnisotropic(videoParam->GetAnisotropic());
+		}
 	}
 
 	result = lpDD->SetCooperativeLevel(m_hWnd, DDSCL_NORMAL);

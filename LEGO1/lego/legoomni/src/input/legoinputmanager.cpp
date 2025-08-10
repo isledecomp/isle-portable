@@ -28,6 +28,7 @@ const char* g_clickedAtom = NULL;
 MxBool g_unk0x100f67b8 = TRUE;
 
 // FUNCTION: LEGO1 0x1005b790
+// STUB: BETA10 0x10088a8e
 LegoInputManager::LegoInputManager()
 {
 	m_keyboardNotifyList = NULL;
@@ -55,11 +56,13 @@ LegoInputManager::~LegoInputManager()
 }
 
 // FUNCTION: LEGO1 0x1005b960
+// STUB: BETA10 0x10088c9c
 MxResult LegoInputManager::Create(HWND p_hwnd)
 {
 	MxResult result = SUCCESS;
 
 	m_controlManager = new LegoControlManager;
+	assert(m_controlManager);
 
 	if (!m_keyboardNotifyList) {
 		m_keyboardNotifyList = new LegoNotifyList;
@@ -612,6 +615,7 @@ MxBool LegoInputManager::HandleTouchEvent(SDL_Event* p_event, TouchScheme p_touc
 	case e_arrowKeys:
 		switch (p_event->type) {
 		case SDL_EVENT_FINGER_UP:
+		case SDL_EVENT_FINGER_CANCELED:
 			m_touchFlags.erase(event.fingerID);
 			break;
 		case SDL_EVENT_FINGER_DOWN:
@@ -647,6 +651,7 @@ MxBool LegoInputManager::HandleTouchEvent(SDL_Event* p_event, TouchScheme p_touc
 			}
 			break;
 		case SDL_EVENT_FINGER_UP:
+		case SDL_EVENT_FINGER_CANCELED:
 			if (event.fingerID == g_finger) {
 				g_finger = 0;
 				m_touchVirtualThumb = {0, 0};
@@ -795,6 +800,7 @@ void LegoInputManager::UpdateLastInputMethod(SDL_Event* p_event)
 	case SDL_EVENT_FINGER_MOTION:
 	case SDL_EVENT_FINGER_DOWN:
 	case SDL_EVENT_FINGER_UP:
+	case SDL_EVENT_FINGER_CANCELED:
 		m_lastInputMethod = SDL_TouchID_v{p_event->tfinger.touchID};
 		break;
 	}
