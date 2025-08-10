@@ -293,7 +293,7 @@ void IsleDebug_Render()
 				ImGui::Text("Current act: %d", gameState->GetCurrentAct());
 				ImGui::Text("Loaded act: %d", gameState->GetLoadedAct());
 				ImGui::Text("Previous area: %d", gameState->m_previousArea);
-				ImGui::Text("Unknown 0x42c: %d", gameState->m_unk0x42c);
+				ImGui::Text("Saved previous area: %d", gameState->m_savedPreviousArea);
 				ImGui::Value("Player count", gameState->m_playerCount);
 				ImGui::TreePop();
 			}

@@ -167,7 +167,7 @@ LegoGameState::LegoGameState()
 	m_jukeboxMusic = JukeboxScript::c_noneJukebox;
 	m_currentArea = e_undefined;
 	m_previousArea = e_undefined;
-	m_unk0x42c = e_undefined;
+	m_savedPreviousArea = e_undefined;
 	m_playerCount = 0;
 	m_isDirty = FALSE;
 	m_loadedAct = e_actNotFound;
@@ -326,7 +326,7 @@ MxResult LegoGameState::Save(MxULong p_slot)
 		}
 	}
 
-	area = m_unk0x42c;
+	area = m_savedPreviousArea;
 	storage.WriteU16(area);
 	SerializeScoreHistory(LegoFile::c_write);
 	m_isDirty = FALSE;
@@ -445,10 +445,10 @@ MxResult LegoGameState::Load(MxULong p_slot)
 	storage.ReadS16(actArea);
 
 	if (m_currentAct == e_act1) {
-		m_unk0x42c = e_undefined;
+		m_savedPreviousArea = e_undefined;
 	}
 	else {
-		m_unk0x42c = (Area) actArea;
+		m_savedPreviousArea = (Area) actArea;
 	}
 
 	result = SUCCESS;
@@ -1205,7 +1205,7 @@ void LegoGameState::Init()
 		}
 	}
 
-	m_unk0x42c = e_undefined;
+	m_savedPreviousArea = e_undefined;
 }
 
 // FUNCTION: BETA10 0x10086510
@@ -1584,18 +1584,18 @@ void LegoGameState::History::WriteScoreHistory()
 // FUNCTION: BETA10 0x1008732a
 LegoGameState::ScoreItem* LegoGameState::History::FindPlayerInScoreHistory(
 	LegoGameState::Username* p_player,
-	MxS16 p_unk0x24,
-	MxS32& p_unk0x2c
+	MxS16 p_playerId,
+	MxS32& p_playerScoreHistoryIndex
 )
 {
 	MxS32 i = 0;
 	for (; i < m_count; i++) {
-		if (!memcmp(p_player, &m_scores[i].m_name, sizeof(*p_player)) && m_scores[i].m_playerId == p_unk0x24) {
+		if (!memcmp(p_player, &m_scores[i].m_name, sizeof(*p_player)) && m_scores[i].m_playerId == p_playerId) {
 			break;
 		}
 	}
 
-	p_unk0x2c = i;
+	p_playerScoreHistoryIndex = i;
 
 	if (i >= m_count) {
 		return NULL;
