@@ -870,7 +870,7 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 							}
 
 							GameState()->SetCurrentAct(LegoGameState::e_act3);
-							act3State->m_unk0x08 = 2;
+							act3State->m_state = Act3State::e_goodEnding;
 							GameState()->m_currentArea = LegoGameState::e_act3script;
 							GameState()->SwitchArea(LegoGameState::e_infomain);
 							break;
@@ -884,7 +884,7 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 							}
 
 							GameState()->SetCurrentAct(LegoGameState::e_act3);
-							act3State->m_unk0x08 = 3;
+							act3State->m_state = Act3State::e_badEnding;
 							GameState()->m_currentArea = LegoGameState::e_act3script;
 							GameState()->SwitchArea(LegoGameState::e_infomain);
 							break;
