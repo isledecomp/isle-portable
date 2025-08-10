@@ -2,6 +2,7 @@
 
 #include "3dmanager/lego3dmanager.h"
 #include "anim/legoanim.h"
+#include "extensions/siloader.h"
 #include "isle.h"
 #include "isle_actions.h"
 #include "islepathactor.h"
@@ -36,6 +37,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <vec.h>
+
+using namespace Extensions;
 
 // FUNCTION: LEGO1 0x1003dd70
 // FUNCTION: BETA10 0x100d3410
@@ -515,6 +518,8 @@ MxBool RemoveFromCurrentWorld(const MxAtomId& p_atomId, MxS32 p_id)
 				}
 
 				((MxPresenter*) object)->EndAction();
+
+				Extension<SiLoader>::Call(RemoveWith, SiLoader::StreamObject{p_atomId, p_id}, world);
 			}
 
 			return TRUE;
@@ -544,6 +549,8 @@ MxBool RemoveFromWorld(MxAtomId& p_entityAtom, MxS32 p_entityId, MxAtomId& p_wor
 				}
 
 				((MxPresenter*) object)->EndAction();
+
+				Extension<SiLoader>::Call(RemoveWith, SiLoader::StreamObject{p_entityAtom, p_entityId}, world);
 			}
 
 			return TRUE;

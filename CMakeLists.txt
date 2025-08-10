@@ -42,6 +42,7 @@ find_program(SDL_SHADERCROSS_BIN NAMES "shadercross")
 find_package(Python3 3.12 COMPONENTS Interpreter)
 
 option(ISLE_BUILD_APP "Build isle application" ON)
+option(ISLE_BUILD_ASSETS "Build assets from the /assets directory" OFF) 
 option(ISLE_ASAN "Enable Address Sanitizer" OFF)
 option(ISLE_UBSAN "Enable Undefined Behavior Sanitizer" OFF)
 option(ISLE_WERROR "Treat warnings as errors" OFF)
@@ -490,9 +491,11 @@ if (NOT ISLE_MINIWIN)
 endif()
 
 if (ISLE_EXTENSIONS)
+  target_link_libraries(lego1 PRIVATE libweaver)
   target_compile_definitions(lego1 PUBLIC EXTENSIONS)
   target_sources(lego1 PRIVATE
     extensions/src/extensions.cpp
+    extensions/src/siloader.cpp
     extensions/src/textureloader.cpp
   )
 endif()
@@ -642,6 +645,36 @@ if (ISLE_BUILD_CONFIG)
   if (NOT ISLE_MINIWIN)
     target_link_libraries(isle-config PRIVATE ddraw dxguid)
   endif()
+endif()
+
+if(ISLE_BUILD_ASSETS)
+  message(STATUS "Asset building is enabled")
+  set(GENERATED_ASSETS_DIR "${CMAKE_BINARY_DIR}/assets")
+
+  add_executable(asset_generator EXCLUDE_FROM_ALL
+    assets/main.cpp
+  )
+  target_link_libraries(asset_generator PRIVATE libweaver)
+  target_include_directories(asset_generator PRIVATE "${CMAKE_SOURCE_DIR}/util" "${CMAKE_SOURCE_DIR}/LEGO1/omni/include" "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/LEGO1/lego/sources")
+
+  add_custom_command(
+    OUTPUT  ${GENERATED_ASSETS_DIR}/.stamp
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${GENERATED_ASSETS_DIR}
+    COMMAND $<TARGET_FILE:asset_generator> ${GENERATED_ASSETS_DIR}
+    COMMAND ${CMAKE_COMMAND} -E touch ${GENERATED_ASSETS_DIR}/.stamp
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/assets
+    DEPENDS asset_generator
+    COMMENT "Generating assets into ${GENERATED_ASSETS_DIR}/"
+    VERBATIM
+  )
+
+  add_custom_target(build_assets ALL
+    DEPENDS ${GENERATED_ASSETS_DIR}/.stamp
+  )
+
+  install(DIRECTORY ${GENERATED_ASSETS_DIR}/
+    DESTINATION assets
+  )
 endif()
 
 if (ISLE_MINIWIN)
