@@ -354,6 +354,9 @@ MxResult LegoOmni::Create(MxOmniCreateParam& p_param)
 	else {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create MxTransitionManager");
 	}
+
+	Extension<SiLoader>::Call(Load);
+
 done:
 	return result;
 	// LINE: BETA10 0x1008e35d

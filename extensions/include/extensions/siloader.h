@@ -14,6 +14,7 @@ public:
 	typedef std::pair<MxAtomId, MxU32> StreamObject;
 
 	static void Initialize();
+	static bool Load();
 	static bool StartWith(StreamObject p_object);
 	static bool RemoveWith(StreamObject p_object, LegoWorld* world);
 
@@ -29,9 +30,11 @@ private:
 };
 
 #ifdef EXTENSIONS
+constexpr auto Load = &SiLoader::Load;
 constexpr auto StartWith = &SiLoader::StartWith;
 constexpr auto RemoveWith = &SiLoader::RemoveWith;
 #else
+constexpr decltype(&SiLoader::Load) Load = nullptr;
 constexpr decltype(&SiLoader::StartWith) StartWith = nullptr;
 constexpr decltype(&SiLoader::RemoveWith) RemoveWith = nullptr;
 #endif

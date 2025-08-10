@@ -16,6 +16,10 @@ bool SiLoader::enabled = false;
 
 void SiLoader::Initialize()
 {
+}
+
+bool SiLoader::Load()
+{
 	char* files = SDL_strdup(options["si loader:files"].c_str());
 	char* saveptr;
 
@@ -24,6 +28,7 @@ void SiLoader::Initialize()
 	}
 
 	SDL_free(files);
+	return true;
 }
 
 bool SiLoader::StartWith(StreamObject p_object)
@@ -56,12 +61,18 @@ bool SiLoader::LoadFile(const char* p_file)
 	si::Interleaf si;
 	MxStreamController* controller;
 
-	if (si.Read(p_file) != si::Interleaf::ERROR_SUCCESS) {
-		SDL_Log("Could not parse SI file %s", p_file);
-		return false;
+	MxString path = MxString(MxOmni::GetHD()) + p_file;
+	path.MapPathToFilesystem();
+	if (si.Read(path.GetData()) != si::Interleaf::ERROR_SUCCESS) {
+		path = MxString(MxOmni::GetCD()) + p_file;
+		path.MapPathToFilesystem();
+		if (si.Read(path.GetData()) != si::Interleaf::ERROR_SUCCESS) {
+			SDL_Log("Could not parse SI file %s", p_file);
+			return false;
+		}
 	}
 
-	if ((controller = Streamer()->Open(p_file, MxStreamer::e_diskStream)) != SUCCESS) {
+	if (!(controller = Streamer()->Open(p_file, MxStreamer::e_diskStream))) {
 		SDL_Log("Could not load SI file %s", p_file);
 		return false;
 	}
@@ -75,7 +86,7 @@ bool SiLoader::LoadFile(const char* p_file)
 				uint32_t id;
 
 				if ((directive = SDL_strstr(extra.c_str(), "StartWith:"))) {
-					if (SDL_sscanf(extra.c_str(), "StartWith:%255[^;];%d", atom, &id) == 2) {
+					if (SDL_sscanf(directive, "StartWith:%255[^;];%d", atom, &id) == 2) {
 						startWith.emplace_back(
 							StreamObject{MxAtomId{atom, e_lowerCase2}, id},
 							StreamObject{controller->GetAtom(), object->id_}
@@ -84,7 +95,7 @@ bool SiLoader::LoadFile(const char* p_file)
 				}
 
 				if ((directive = SDL_strstr(extra.c_str(), "RemoveWith:"))) {
-					if (SDL_sscanf(extra.c_str(), "RemoveWith:%255[^;];%d", atom, &id) == 2) {
+					if (SDL_sscanf(directive, "RemoveWith:%255[^;];%d", atom, &id) == 2) {
 						removeWith.emplace_back(
 							StreamObject{MxAtomId{atom, e_lowerCase2}, id},
 							StreamObject{controller->GetAtom(), object->id_}
@@ -94,6 +105,11 @@ bool SiLoader::LoadFile(const char* p_file)
 			}
 		}
 	}
+
+	const auto& x = startWith;
+	const auto& y = removeWith;
+
+	assert(false);
 
 	return true;
 }

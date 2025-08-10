@@ -6,7 +6,7 @@
 #include <object.h>
 
 si::Interleaf::Version version = si::Interleaf::Version2_2;
-uint32_t bufferSize = 65535;
+uint32_t bufferSize = 65536;
 uint32_t bufferCount = 8;
 
 std::string out;
