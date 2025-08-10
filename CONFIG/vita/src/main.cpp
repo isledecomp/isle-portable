@@ -1,7 +1,4 @@
-// clang-format off
-#include <stdarg.h>
-#include <paf.h>
-// clang-format on
+#include "pafinc.h"
 #include <psp2/kernel/clib.h>
 #include <psp2/kernel/modulemgr.h>
 #include <psp2/kernel/processmgr.h>
@@ -59,8 +56,8 @@ extern "C" int module_start(SceSize args, void* argp)
 		);
 	}
 
-	paf_main();
-
+	res = paf_main();
+	sceKernelExitProcess(res);
 	return SCE_KERNEL_START_SUCCESS;
 }
 

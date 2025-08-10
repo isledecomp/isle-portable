@@ -12,6 +12,27 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(ScePaf_External)
 
+add_subdirectory(SceIniFileProcessor)
+
+add_library(iniparser_paf
+  iniparser_paf/src/dictionary.c
+  iniparser_paf/src/iniparser.c
+)
+
+target_link_libraries(iniparser_paf
+  ScePafStdc_stub
+  SceLibKernel_stub
+  SceLibc_stub
+)
+
+target_include_directories(iniparser_paf PUBLIC
+  iniparser_paf/src/
+)
+
+target_compile_options(iniparser_paf PRIVATE
+  -Wl,-q -Wall -fno-builtin -fshort-wchar -Wno-unused-function -Wno-sign-compare
+)
+
 add_executable(isle-config
   src/app.cpp
   src/main.cpp
@@ -22,7 +43,7 @@ set_target_properties(isle-config PROPERTIES
 )
 
 target_compile_options(isle-config PRIVATE
-  -fno-rtti -fno-exceptions -Wl,-q -Wall -fno-builtin -fshort-wchar -Wno-unused-function -Wno-sign-compare
+  -fno-rtti -fno-exceptions -Wl,-q -Wall -fno-builtin -fshort-wchar -Wno-unused-function -Wno-sign-compare -fno-use-cxa-atexit
 )
 
 target_link_options(isle-config PRIVATE
@@ -39,16 +60,23 @@ target_link_libraries(isle-config PRIVATE
   ScePafWidget_stub
   ScePafCommon_stub
   ScePafStdc_stub
+  SceAppSettings_stub
+  SceFios2_stub
+
+  #Isle::iniparser
+  iniparser_paf
 )
 
-block()
-  vita_create_self(isle-config.self isle-config
-    CONFIG exports.yml
-    UNSAFE
-    STRIPPED
-    REL_OPTIMIZE
-  )
-endblock()
+target_include_directories(isle-config PUBLIC
+  include
+)
+
+vita_create_self(isle-config.self isle-config
+  CONFIG exports.yml
+  UNSAFE
+  STRIPPED
+  REL_OPTIMIZE
+)
 
 include(${scepaf_external_SOURCE_DIR}/rco.cmake)
 make_rco(cxml/config_plugin.xml config_plugin.rco)

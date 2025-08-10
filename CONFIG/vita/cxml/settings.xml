@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<application_settings version="1.0" bg_color="4.0, 21.0, 105.0, 255.0">
+    <setting_list id="lego_island_config" title="msg_lego_island_config">
+        <setting_list id="page_game" title="msg_page_game" style="edit" icon="tex_spanner">
+            <text_field id="data_path" title="msg_data_path" max_length="255" min_length="0" keyboard_type="alphabet" key="data_path" default_value=""/>
+            <text_field id="save_path" title="msg_save_path" max_length="255" min_length="0" keyboard_type="alphabet" key="save_path" default_value=""/>
+            <list id="transition_type" title="msg_transition_type" key="transition_type" default_value="0">
+                <list_item id="transition_none" title="msg_transition_none" value="0" />
+                <list_item id="transition_dissolve" title="msg_transition_dissolve" value="1" />
+                <list_item id="transition_mosaic" title="msg_transition_mosaic" value="2" />
+                <list_item id="transition_wipe_down" title="msg_transition_wipe_down" value="3" />
+                <list_item id="transition_windows" title="msg_transition_windows" value="4" />
+            </list>
+            <toggle_switch id="music" title="msg_music" key="music" default_value="1"/>
+            <toggle_switch id="3d_sound" title="msg_3d_sound" key="3d_sound" default_value="1"/>
+        </setting_list>
+
+        <setting_list id="page_graphics" title="msg_page_graphics" style="edit" icon="tex_spanner">
+            <list id="island_texture_quality" title="msg_island_texture_quality" key="island_texture_quality" default_value="0">
+                <list_item id="texture_fast" title="msg_texture_fast" value="0" />
+                <list_item id="texture_high" title="msg_texture_high" value="1" />
+            </list>
+            <list id="island_model_quality" title="msg_island_model_quality" key="island_model_quality" default_value="0">
+                <list_item id="quality_low" title="msg_quality_low" value="0" />
+                <list_item id="quality_medium" title="msg_quality_medium" value="1" />
+                <list_item id="quality_high" title="msg_quality_high" value="2" />
+            </list>
+        </setting_list>
+
+        <setting_list id="page_controls" title="msg_page_controls" style="edit" icon="tex_spanner">
+            <list id="touch_control_scheme" title="msg_touch_control_scheme" key="touch_control_scheme" default_value="0">
+                <list_item id="virtual_gamepad" title="msg_virtual_gamepad" value="0" />
+                <list_item id="virtual_arrow_keys" title="msg_virtual_arrow_keys" value="1" />
+                <list_item id="virtual_mouse" title="msg_virtual_mouse" value="2" />
+            </list>
+            <toggle_switch id="rumble" title="msg_rumble" key="rumble" default_value="1"/>
+        </setting_list>
+
+        <setting_list id="page_extensions" title="msg_page_extensions" style="edit" icon="tex_spanner">
+            <toggle_switch id="texture_loader_extension" title="msg_texture_loader_extension" key="texture_loader_extension" default_value="0"/>
+            <text_field id="texture_loader_path" title="msg_texture_loader_path" max_length="255" min_length="0" keyboard_type="alphabet" key="texture_loader_path" default_value=""/>
+        </setting_list>
+    </setting_list>
+</application_settings>
