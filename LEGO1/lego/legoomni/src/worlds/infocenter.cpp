@@ -220,7 +220,7 @@ MxResult Infocenter::Create(MxDSAction& p_dsAction)
 
 	if (m_infocenterState->m_state == InfocenterState::e_selectedSave) {
 		LegoGameState* state = GameState();
-		state->m_previousArea = GameState()->m_unk0x42c;
+		state->m_previousArea = GameState()->m_savedPreviousArea;
 	}
 
 	InputManager()->Register(this);
@@ -523,7 +523,7 @@ void Infocenter::ReadyWorld()
 		LegoAct2State* state = (LegoAct2State*) GameState()->GetState("LegoAct2State");
 		GameState()->FindLoadedAct();
 
-		if (state && state->GetUnknown0x08() == 0x68) {
+		if (state && state->GetState() == LegoAct2State::c_badEnding) {
 			bg->Enable(TRUE);
 			PlayCutscene(e_badEndMovie, TRUE);
 			m_infocenterState->m_state = InfocenterState::e_playCutscene;
@@ -568,14 +568,14 @@ void Infocenter::ReadyWorld()
 		Act3State* state = (Act3State*) GameState()->GetState("Act3State");
 		GameState()->FindLoadedAct();
 
-		if (state && state->GetUnknown0x08() == 3) {
+		if (state && state->GetState() == Act3State::e_badEnding) {
 			bg->Enable(TRUE);
 			PlayCutscene(e_badEndMovie, TRUE);
 			m_infocenterState->m_state = InfocenterState::e_playCutscene;
 			return;
 		}
 
-		if (state && state->GetUnknown0x08() == 2) {
+		if (state && state->GetState() == Act3State::e_goodEnding) {
 			bg->Enable(TRUE);
 			PlayCutscene(e_goodEndMovie, TRUE);
 			m_infocenterState->m_state = InfocenterState::e_playCutscene;
@@ -1089,7 +1089,7 @@ MxU8 Infocenter::HandleControl(LegoControlManagerNotificationParam& p_param)
 			actionToPlay = GameState()->GetCurrentAct() != LegoGameState::e_act1 ? InfomainScript::c_GoTo_RegBook_Red
 																				 : InfomainScript::c_GoTo_RegBook;
 			m_radio.Stop();
-			GameState()->m_unk0x42c = GameState()->m_previousArea;
+			GameState()->m_savedPreviousArea = GameState()->m_previousArea;
 			InputManager()->DisableInputProcessing();
 			break;
 		case InfomainScript::c_Mama_Ctl:
@@ -1399,7 +1399,7 @@ void Infocenter::Reset()
 	CharacterManager()->ReleaseAllActors();
 	GameState()->SetCurrentAct(LegoGameState::e_act1);
 	GameState()->m_previousArea = LegoGameState::e_undefined;
-	GameState()->m_unk0x42c = LegoGameState::e_undefined;
+	GameState()->m_savedPreviousArea = LegoGameState::e_undefined;
 
 	InitializeBitmaps();
 	m_selectedCharacter = e_pepper;
