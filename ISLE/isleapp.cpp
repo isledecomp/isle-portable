@@ -605,7 +605,11 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 			}
 			break;
 
+#ifdef __vita__ // conflicts with screenshot button combination
+		case SDL_GAMEPAD_BUTTON_BACK:
+#else
 		case SDL_GAMEPAD_BUTTON_START:
+#endif
 			if (InputManager()) {
 				InputManager()->QueueEvent(c_notificationKeyPress, SDLK_ESCAPE, 0, 0, SDLK_ESCAPE);
 			}

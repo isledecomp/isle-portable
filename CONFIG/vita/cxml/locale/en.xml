@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <stringset>
     <!-- Main Page -->
+     <string id="msg_unfinished" src="the config app does not save the config yet!"/>
     <string id="msg_lego_island_config" src="Lego Island Config"/>
     <string id="msg_page_game" src="Game" />
     <string id="msg_page_graphics" src="Graphics" />
