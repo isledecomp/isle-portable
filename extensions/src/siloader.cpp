@@ -47,7 +47,7 @@ bool SiLoader::StartWith(StreamObject p_object)
 
 bool SiLoader::RemoveWith(StreamObject p_object, LegoWorld* world)
 {
-	for (auto& key : startWith) {
+	for (auto& key : removeWith) {
 		if (key.first == p_object) {
 			RemoveFromWorld(key.second.first, key.second.second, world->GetAtomId(), world->GetEntityId());
 		}
@@ -105,11 +105,6 @@ bool SiLoader::LoadFile(const char* p_file)
 			}
 		}
 	}
-
-	const auto& x = startWith;
-	const auto& y = removeWith;
-
-	assert(false);
 
 	return true;
 }
