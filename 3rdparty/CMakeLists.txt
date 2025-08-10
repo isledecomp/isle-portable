@@ -93,3 +93,10 @@ add_library(libweaver STATIC
     ${libweaver_SOURCE_DIR}/lib/sitypes.cpp
 )
 target_include_directories(libweaver PUBLIC ${libweaver_SOURCE_DIR}/lib)
+if(MSVC)
+    # Undefine _WIN32 for the MSVC compiler
+    target_compile_definitions(libweaver PRIVATE /U_WIN32)
+else()
+    # Undefine _WIN32 for GCC, Clang, and other compilers
+    target_compile_definitions(libweaver PRIVATE -U_WIN32)
+endif()
