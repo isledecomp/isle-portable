@@ -72,6 +72,14 @@
 #include "ios/config.h"
 #endif
 
+#ifdef __vita__
+#include "vita/config.h"
+#include "vita/messagebox.h"
+
+#include <psp2/appmgr.h>
+#include <psp2/kernel/clib.h>
+#endif
+
 DECOMP_SIZE_ASSERT(IsleApp, 0x8c)
 
 // GLOBAL: ISLE 0x410030
@@ -300,6 +308,22 @@ void IsleApp::SetupVideoFlags(
 
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 {
+#ifdef __vita__
+	SceAppUtilInitParam appUtilInitParam = {0};
+	SceAppUtilBootParam appUtilBootParam = {0};
+	sceAppUtilInit(&appUtilInitParam, &appUtilBootParam);
+	SceAppUtilAppEventParam eventParam = {0};
+	sceAppUtilReceiveAppEvent(&eventParam);
+	if (eventParam.type == 0x05) {
+		char buffer[2048];
+		sceAppUtilAppEventParseLiveArea(&eventParam, buffer);
+		if (strstr(buffer, "-config")) {
+			sceClibPrintf("Loading Config App.\n");
+			sceAppMgrLoadExec("app0:/isle-config.self", NULL, NULL);
+		}
+	}
+#endif
+
 	*appstate = NULL;
 
 	SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
@@ -581,7 +605,11 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 			}
 			break;
 
+#ifdef __vita__ // conflicts with screenshot button combination
+		case SDL_GAMEPAD_BUTTON_BACK:
+#else
 		case SDL_GAMEPAD_BUTTON_START:
+#endif
 			if (InputManager()) {
 				InputManager()->QueueEvent(c_notificationKeyPress, SDLK_ESCAPE, 0, 0, SDLK_ESCAPE);
 			}
@@ -909,7 +937,7 @@ MxResult IsleApp::SetupWindow()
 	SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, g_targetHeight);
 	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_FULLSCREEN_BOOLEAN, m_fullScreen);
 	SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, WINDOW_TITLE);
-#if defined(MINIWIN) && !defined(__3DS__) && !defined(WINDOWS_STORE)
+#if defined(MINIWIN) && !defined(__3DS__) && !defined(WINDOWS_STORE) && !defined(__vita__)
 	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
@@ -1126,6 +1154,9 @@ bool IsleApp::LoadConfig()
 #endif
 #ifdef IOS
 		IOS_SetupDefaultConfigOverrides(dict);
+#endif
+#ifdef __vita__
+		VITA_SetupDefaultConfigOverrides(dict);
 #endif
 		iniparser_dump_ini(dict, iniFP);
 		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "New config written at '%s'", iniConfig);

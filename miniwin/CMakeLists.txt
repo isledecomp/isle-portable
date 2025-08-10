@@ -30,7 +30,7 @@ target_compile_definitions(miniwin PRIVATE
 list(APPEND GRAPHICS_BACKENDS USE_SOFTWARE_RENDER)
 list(APPEND GRAPHICS_BACKENDS USE_SDL_GPU)
 
-if(NOT WINDOWS_STORE)
+if(NOT (VITA OR WINDOWS_STORE))
   find_package(OpenGL)
     if(OpenGL_FOUND)
       message(STATUS "Found OpenGL: enabling OpenGL 1.x renderer")
@@ -57,6 +57,23 @@ if(NOT WINDOWS_STORE)
   endif()
 endif()
 
+if(VITA)
+  target_sources(miniwin PRIVATE
+    src/d3drm/backends/gxm/renderer.cpp
+    src/d3drm/backends/gxm/memory.cpp
+    src/d3drm/backends/gxm/tlsf.c
+  )
+  target_link_libraries(miniwin PRIVATE
+    SceGxm_stub
+    SceRazorCapture_stub
+    SceRazorHud_stub
+    taihen_stub
+  )
+  list(APPEND GRAPHICS_BACKENDS USE_GXM)
+  list(REMOVE_ITEM GRAPHICS_BACKENDS USE_SOFTWARE_RENDER USE_SDL_GPU)
+  # for shaders incbin
+  target_include_directories(miniwin PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/d3drm/backends/gxm)
+endif()
 
 if(NINTENDO_3DS)
   if(ISLE_DEBUG)

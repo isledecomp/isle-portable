@@ -47,6 +47,7 @@ jobs:
           - { name: 'Emscripten',          os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, emsdk: true, werror: true,   clang-tidy: false,  cmake-wrapper: 'emcmake' }
           - { name: 'Nintendo 3DS',        os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, n3ds: true,  werror: true,   clang-tidy: false,  container: 'devkitpro/devkitarm:latest', cmake-args: '-DCMAKE_TOOLCHAIN_FILE=/opt/devkitpro/cmake/3DS.cmake' }
           - { name: 'Xbox One',            os: 'windows-latest', generator: 'Visual Studio 17 2022', dx5: false, config: false, msvc: true,  werror: false,  clang-tidy: false,  vc-arch: 'amd64', cmake-args: '-DCMAKE_SYSTEM_NAME=WindowsStore -DCMAKE_SYSTEM_VERSION=10.0.26100.0', xbox-one: true}
+          - { name: 'Vita',                os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, vita: true,  werror: true,   clang-tidy: false, cmake-args: '--preset vita'}
     steps:
       - name: Setup vcvars
         if: ${{ !!matrix.msvc }}
@@ -103,6 +104,18 @@ jobs:
       - name: Setup ninja
         if: ${{ matrix.msvc }}
         uses: ashutoshvarma/setup-ninja@master
+      
+      - name: Setup vitasdk
+        if: ${{ matrix.vita }}
+        run: |
+          git clone https://github.com/vitasdk/vdpm
+          cd vdpm
+          ./bootstrap-vitasdk.sh
+          export VITASDK=/usr/local/vitasdk
+          export PATH=$VITASDK/bin:$PATH
+          echo "VITASDK=/usr/local/vitasdk" >> $GITHUB_ENV
+          echo "PATH=$VITASDK/bin:$PATH" >> $GITHUB_ENV
+          ./install-all.sh
 
       - uses: actions/checkout@v4
 
@@ -180,6 +193,7 @@ jobs:
             build/dist/*.AppImage
             build/dist/*.3dsx
             build/dist/*.cia
+            build/dist/*.vpk
 
   flatpak:
     name: "Flatpak (${{ matrix.arch }})"
