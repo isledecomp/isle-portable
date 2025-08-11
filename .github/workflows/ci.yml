@@ -184,6 +184,10 @@ jobs:
           mkdir dist
           mv EBOOT.PBP dist/
 
+      - name: Package Assets Separately
+        if: matrix.build-assets
+        run: (cd build/assets && zip -r ../dist/isle-assets.zip .)
+
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
