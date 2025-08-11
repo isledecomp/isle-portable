@@ -82,7 +82,7 @@ if(DOWNLOAD_DEPENDENCIES)
         URL_MD5 ae59007fcb9efadc06c67621e1e107cb
     )
 else()
-    set(libsmacker_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/libweaver")
+    set(libweaver_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/libweaver")
 endif()
 
 add_library(libweaver STATIC
