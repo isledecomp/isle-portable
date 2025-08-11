@@ -122,10 +122,6 @@ jobs:
       - name: Build (CMake)
         run: cmake --build build --verbose --config Release
 
-      - name: Package Assets Separately
-        if: matrix.build-assets
-        run: (cd build/assets && zip -r ../dist/isle-assets.zip .)
-
       - name: Package (CPack)
         if: ${{ !matrix.n3ds }}
         run: |
@@ -175,6 +171,10 @@ jobs:
           mkdir dist
           mv *.3dsx dist/
           mv *.cia dist/
+
+      - name: Package Assets Separately
+        if: matrix.build-assets
+        run: (cd build/assets && zip -r ../dist/isle-assets.zip .)
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
