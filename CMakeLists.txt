@@ -650,6 +650,7 @@ endif()
 if(ISLE_BUILD_ASSETS)
   message(STATUS "Asset building is enabled")
   set(GENERATED_ASSETS_DIR "${CMAKE_BINARY_DIR}/assets")
+  set(GENERATED_ASSETS_DEPFILE "${GENERATED_ASSETS_DIR}/.d")
 
   add_executable(asset_generator EXCLUDE_FROM_ALL
     assets/main.cpp
@@ -659,8 +660,9 @@ if(ISLE_BUILD_ASSETS)
 
   add_custom_command(
     OUTPUT  ${GENERATED_ASSETS_DIR}/.stamp
+    DEPFILE ${GENERATED_ASSETS_DEPFILE}
     COMMAND ${CMAKE_COMMAND} -E make_directory ${GENERATED_ASSETS_DIR}
-    COMMAND $<TARGET_FILE:asset_generator> ${GENERATED_ASSETS_DIR}
+    COMMAND $<TARGET_FILE:asset_generator> ${GENERATED_ASSETS_DIR} ${GENERATED_ASSETS_DEPFILE}
     COMMAND ${CMAKE_COMMAND} -E touch ${GENERATED_ASSETS_DIR}/.stamp
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/assets
     DEPENDS asset_generator

@@ -1,6 +1,8 @@
 #include "mxdsaction.h"
 
 #include <file.h>
+#include <filesystem>
+#include <fstream>
 #include <interleaf.h>
 #include <object.h>
 
@@ -9,11 +11,13 @@ uint32_t bufferSize = 65536;
 uint32_t bufferCount = 8;
 
 std::string out;
+std::ofstream depfile;
 si::MemoryBuffer mxHd;
 
 void CreateWidescreen()
 {
 	si::Interleaf si;
+	std::string file = out + "/widescreen.si";
 	mxHd.seek(0, si::MemoryBuffer::SeekStart);
 	si.Read(&mxHd);
 
@@ -33,13 +37,15 @@ void CreateWidescreen()
 	GaraDoor_Wide.up_.y = 1.0;
 	GaraDoor_Wide.ReplaceWithFile("widescreen/garadoor.bmp");
 	si.AppendChild(&GaraDoor_Wide);
+	depfile << file << ": " << (std::filesystem::current_path() / "widescreen/garadoor.bmp").string() << std::endl;
 
-	si.Write((out + "/widescreen.si").c_str());
+	si.Write(file.c_str());
 }
 
 int main(int argc, char* argv[])
 {
 	out = argv[1];
+	depfile = std::ofstream(argv[2]);
 
 	mxHd.WriteU32(si::RIFF::MxHd);
 	mxHd.WriteU32(3 * sizeof(uint32_t));
