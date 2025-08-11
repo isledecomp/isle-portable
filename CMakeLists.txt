@@ -650,7 +650,7 @@ endif()
 if(ISLE_BUILD_ASSETS)
   message(STATUS "Asset building is enabled")
   set(GENERATED_ASSETS_DIR "${CMAKE_BINARY_DIR}/assets")
-  set(GENERATED_ASSETS_DEPFILE "${GENERATED_ASSETS_DIR}/.d")
+  set(GENERATED_ASSETS_DEPFILE "${GENERATED_ASSETS_DIR}/assets.d")
 
   add_executable(asset_generator EXCLUDE_FROM_ALL
     assets/main.cpp
