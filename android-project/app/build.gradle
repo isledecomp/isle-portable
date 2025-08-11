@@ -15,7 +15,7 @@ android {
 
         externalNativeBuild {
             cmake {
-                arguments '-DANDROID_STL=c++_shared'
+                arguments '-DANDROID_STL=c++_shared', "-DFETCHCONTENT_BASE_DIR=${projectDir.parentFile.parentFile}/build/_deps"
                 if (project.hasProperty('cmakeArgs')) {
                     project.cmakeArgs.split(" ").each {arg -> arguments arg}
                 }
@@ -34,7 +34,7 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
 //             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
@@ -47,6 +47,20 @@ android {
     }
 }
 
+tasks.register('downloadSDL3AndroidArchive', Exec) {
+    def rootDir = projectDir.parentFile.parentFile
+    def sdl3Dir = "build/_deps/sdl3-src"
+    def cmakeCommand = "cmake -B build -DANDROID_SDL=TRUE"
+    def pythonCommand = "python3 ${sdl3Dir}/build-scripts/build-release.py " +
+            "--actions android " +
+            "--fast " +
+            "--force " +
+            "--root='build/_deps/sdl3-src/'"
+    def mvCommand = "mv ${sdl3Dir}/build-android/SDL3-*.aar ${projectDir}/libs/SDL3.aar"
+
+    commandLine 'sh', '-c', "cd ${rootDir} && ${cmakeCommand} && ${pythonCommand} && mkdir -p ${projectDir}/libs/ && ${mvCommand}"
+}
+
 dependencies {
-    implementation files('libs/SDL3.aar')
+    implementation files('libs/SDL3.aar').builtBy(downloadSDL3AndroidArchive)
 }

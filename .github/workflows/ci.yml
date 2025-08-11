@@ -47,8 +47,8 @@ jobs:
           - { name: 'Emscripten',          os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, emsdk: true, werror: true,   clang-tidy: false,  cmake-wrapper: 'emcmake' }
           - { name: 'Nintendo 3DS',        os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, n3ds: true,  werror: true,   clang-tidy: false,  container: 'devkitpro/devkitarm:latest', cmake-args: '-DCMAKE_TOOLCHAIN_FILE=/opt/devkitpro/cmake/3DS.cmake' }
           - { name: 'Xbox One',            os: 'windows-latest', generator: 'Visual Studio 17 2022', dx5: false, config: false, msvc: true,  werror: false,  clang-tidy: false,  vc-arch: 'amd64', cmake-args: '-DCMAKE_SYSTEM_NAME=WindowsStore -DCMAKE_SYSTEM_VERSION=10.0.26100.0', xbox-one: true}
-          - { name: 'Android',             os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, android: true, werror: true, clang-tidy: false,  cmake-args: ' -DANDROID_NDK_PATH=$ANDROID_NDK_HOME' }
-          - { name: 'Android (Debug)',     os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, android: true, werror: true, clang-tidy: false,  debug: true,  cmake-args: ' -DANDROID_NDK_PATH=$ANDROID_NDK_HOME' }
+          - { name: 'Android',             os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, android: true, werror: true, clang-tidy: false,}
+          - { name: 'Android (Debug)',     os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, android: true, werror: true, clang-tidy: false,  debug: true }
     steps:
       - name: Setup vcvars
         if: ${{ !!matrix.msvc }}
@@ -118,9 +118,24 @@ jobs:
         if: ${{ matrix.android }}
         uses: android-actions/setup-android@v3
         with:
-          packages: 'ndk;26.3.11579264 cmake;3.30.5'
+          packages: 'cmake;3.30.5'
+
+      - name: Build (Android)
+        if: ${{ matrix.android }}
+        run: |
+          cd android-project && \
+          ./gradlew assemble${{ matrix.debug == 'true' && 'Debug' || 'Release' }} \
+            --info \
+            -PcmakeArgs="-DCMAKE_BUILD_TYPE=Release 
+              -DISLE_USE_DX5=${{ !!matrix.dx5 }} \
+              -DISLE_BUILD_CONFIG=${{ !!matrix.config }} \
+              -DENABLE_CLANG_TIDY=${{ !!matrix.clang-tidy  }} \
+              -DISLE_WERROR=${{ !!matrix.werror }} \
+              -DISLE_DEBUG=${{ matrix.debug || 'OFF' }} \
+              -Werror=dev"
 
       - name: Configure (CMake)
+        if: ${{ !matrix.android }}
         run: |
           ${{ matrix.cmake-wrapper || '' }} cmake -S . -B build -G "${{ matrix.generator }}" \
             ${{ matrix.cmake-args || '' }} \
@@ -134,6 +149,7 @@ jobs:
             -Werror=dev
 
       - name: Build (CMake)
+        if: ${{ !matrix.android }}
         run: cmake --build build --verbose --config Release
 
       - name: Package (CPack)
