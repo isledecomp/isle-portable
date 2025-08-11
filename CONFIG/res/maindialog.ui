@@ -1153,6 +1153,11 @@ The game will gradually increase the number of actors until this maximum is reac
                       <property name="enabled">
                        <bool>false</bool>
                       </property>
+                      <property name="toolTip">
+                       <string>Paths used by the SI Loader extension.
+
+Double-click a path to edit it.</string>
+                      </property>
                       <property name="sizeAdjustPolicy">
                        <enum>QAbstractScrollArea::SizeAdjustPolicy::AdjustToContentsOnFirstShow</enum>
                       </property>
