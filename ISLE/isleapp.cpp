@@ -963,15 +963,17 @@ MxResult IsleApp::SetupWindow()
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to open SDL_IOStream for icon: %s", SDL_GetError());
 	}
 
+	if (!SetupLegoOmni()) {
+		return FAILURE;
+	}
+
 	GameState()->SetSavePath(m_savePath);
 
 	if (VerifyFilesystem() != SUCCESS) {
 		return FAILURE;
 	}
 
-	if (!SetupLegoOmni()) {
-		return FAILURE;
-	}
+	Lego()->LoadSiLoader();
 
 	DetectGameVersion();
 	GameState()->SerializePlayersInfo(LegoStorage::c_read);
