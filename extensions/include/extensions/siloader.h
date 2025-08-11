@@ -19,10 +19,10 @@ public:
 	static bool RemoveWith(StreamObject p_object, LegoWorld* world);
 
 	static std::map<std::string, std::string> options;
+	static std::vector<std::string> files;
 	static bool enabled;
 
 private:
-	static std::vector<std::string> files;
 	static std::vector<std::pair<StreamObject, StreamObject>> startWith;
 	static std::vector<std::pair<StreamObject, StreamObject>> removeWith;
 
