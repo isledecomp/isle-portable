@@ -102,8 +102,6 @@ CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 	connect(m_ui->yResSpinBox, &QSpinBox::valueChanged, this, &CMainDialog::YResChanged);
 	connect(m_ui->framerateSpinBox, &QSpinBox::valueChanged, this, &CMainDialog::FramerateChanged);
 
-	layout()->setSizeConstraint(QLayout::SetFixedSize);
-
 	if (currentConfigApp->m_ram_quality_limit != 0) {
 		m_modified = true;
 		const QString ramError = QString("Insufficient RAM!");
@@ -624,13 +622,17 @@ void CMainDialog::AddCustomAssetPath()
 		data_path.absolutePath(),
 		"Interleaf files (*.si)"
 	);
+	for (QString& item : new_files) {
+		item = data_path.relativeFilePath(item);
+	}
+	assetPaths += new_files;
 	UpdateAssetPaths();
-	UpdateInterface();
 }
 
 void CMainDialog::RemoveCustomAssetPath()
 {
-
+	assetPaths.removeAt(m_ui->customAssetPaths->currentRow());
+	UpdateAssetPaths();
 }
 
 void CMainDialog::SelectedPathChanged(int currentRow)
@@ -640,12 +642,26 @@ void CMainDialog::SelectedPathChanged(int currentRow)
 
 void CMainDialog::EditCustomAssetPath()
 {
-
+	QDir data_path = QDir(QString::fromStdString(currentConfigApp->m_cd_path));
+	QString prev_asset_path = assetPaths[m_ui->customAssetPaths->currentRow()];
+	QString new_file = QFileDialog::getOpenFileName(
+		this,
+		"Open File",
+		data_path.absoluteFilePath(prev_asset_path),
+		"Interleaf files (*.si)"
+	);
+	if (!new_file.isEmpty()) {
+		new_file = data_path.relativeFilePath(new_file);
+		assetPaths[m_ui->customAssetPaths->currentRow()] = new_file;
+	}
+	UpdateAssetPaths();
 }
 
 void CMainDialog::UpdateAssetPaths()
 {
-
+	assetPaths.removeDuplicates();
+	currentConfigApp->m_custom_asset_path = assetPaths.join(u',').toStdString();
+	UpdateInterface();
 }
 
 void CMainDialog::AspectRatioChanged(int index)
