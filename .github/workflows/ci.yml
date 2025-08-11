@@ -34,7 +34,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: 'Linux',               os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: true,  linux: true, werror: true,   clang-tidy: true }
+          - { name: 'Linux',               os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: true,  linux: true, werror: true,   clang-tidy: true, build-assets: true }
           - { name: 'Linux (Debug)',       os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: true,  linux: true, werror: true,   clang-tidy: true,   debug: true }
           - { name: 'MSVC (x86)',          os: 'windows-latest', generator: 'Ninja',                 dx5: true,  config: false, msvc: true,  werror: false,  clang-tidy: false,  vc-arch: 'amd64_x86' }
           - { name: 'MSVC (x64)',          os: 'windows-latest', generator: 'Ninja',                 dx5: false, config: true,  msvc: true,  werror: false,  clang-tidy: false,   vc-arch: 'amd64' }
@@ -113,6 +113,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DISLE_USE_DX5=${{ !!matrix.dx5 }} \
             -DISLE_BUILD_CONFIG=${{ !!matrix.config }} \
+            -DISLE_BUILD_ASSETS=${{ !!matrix.build-assets }} \
             -DENABLE_CLANG_TIDY=${{ !!matrix.clang-tidy  }} \
             -DISLE_WERROR=${{ !!matrix.werror }} \
             -DISLE_DEBUG=${{ matrix.debug || 'OFF' }} \
@@ -170,6 +171,10 @@ jobs:
           mkdir dist
           mv *.3dsx dist/
           mv *.cia dist/
+
+      - name: Package Assets Separately
+        if: matrix.build-assets
+        run: (cd build/assets && zip -r ../dist/isle-assets.zip .)
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4

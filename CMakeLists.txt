@@ -49,14 +49,15 @@ find_program(SDL_SHADERCROSS_BIN NAMES "shadercross")
 find_package(Python3 3.12 COMPONENTS Interpreter)
 
 option(ISLE_BUILD_APP "Build isle application" ON)
+option(ISLE_BUILD_ASSETS "Build assets from the /assets directory" OFF)
 option(ISLE_ASAN "Enable Address Sanitizer" OFF)
 option(ISLE_UBSAN "Enable Undefined Behavior Sanitizer" OFF)
 option(ISLE_WERROR "Treat warnings as errors" OFF)
 option(ISLE_DEBUG "Enable imgui debug" ON)
 cmake_dependent_option(ISLE_USE_DX5 "Build with internal DirectX 5 SDK" "${NOT_MINGW}" "WIN32;CMAKE_SIZEOF_VOID_P EQUAL 4" OFF)
 cmake_dependent_option(ISLE_MINIWIN "Use miniwin" ON "NOT ISLE_USE_DX5" OFF)
-cmake_dependent_option(ISLE_EXTENSIONS "Use extensions" ON "NOT ISLE_USE_DX5" OFF)
-cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "MSVC OR ISLE_MINIWIN;NOT NINTENDO_3DS;NOT WINDOWS_STORE;NOT PS2" OFF)
+cmake_dependent_option(ISLE_EXTENSIONS "Use extensions" ON "NOT ISLE_USE_DX5;NOT WINDOWS_STORE;NOT PS2" OFF)
+cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "MSVC OR ISLE_MINIWIN;NOT NINTENDO_3DS;NOT WINDOWS_STORE;NOT PS2"" OFF)
 cmake_dependent_option(ISLE_COMPILE_SHADERS "Compile shaders" ON "SDL_SHADERCROSS_BIN;TARGET Python3::Interpreter" OFF)
 cmake_dependent_option(CMAKE_POSITION_INDEPENDENT_CODE "Build with -fPIC" ON "NOT PS2" OFF)
 option(ENABLE_CLANG_TIDY "Enable clang-tidy")
@@ -501,9 +502,11 @@ if (NOT ISLE_MINIWIN)
 endif()
 
 if (ISLE_EXTENSIONS)
+  target_link_libraries(lego1 PRIVATE libweaver)
   target_compile_definitions(lego1 PUBLIC EXTENSIONS)
   target_sources(lego1 PRIVATE
     extensions/src/extensions.cpp
+    extensions/src/siloader.cpp
     extensions/src/textureloader.cpp
   )
 endif()
@@ -655,6 +658,38 @@ if (ISLE_BUILD_CONFIG)
   endif()
 endif()
 
+if(ISLE_BUILD_ASSETS)
+  message(STATUS "Asset building is enabled")
+  set(GENERATED_ASSETS_DIR "${CMAKE_BINARY_DIR}/assets")
+  set(GENERATED_ASSETS_DEPFILE "${GENERATED_ASSETS_DIR}/assets.d")
+
+  add_executable(asset_generator EXCLUDE_FROM_ALL
+    assets/main.cpp
+  )
+  target_link_libraries(asset_generator PRIVATE libweaver)
+  target_include_directories(asset_generator PRIVATE "${CMAKE_SOURCE_DIR}/util" "${CMAKE_SOURCE_DIR}/LEGO1/omni/include" "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/LEGO1/lego/sources")
+
+  add_custom_command(
+    OUTPUT  ${GENERATED_ASSETS_DIR}/.stamp
+    DEPFILE ${GENERATED_ASSETS_DEPFILE}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${GENERATED_ASSETS_DIR}
+    COMMAND $<TARGET_FILE:asset_generator> ${GENERATED_ASSETS_DIR} ${GENERATED_ASSETS_DEPFILE}
+    COMMAND ${CMAKE_COMMAND} -E touch ${GENERATED_ASSETS_DIR}/.stamp
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/assets
+    DEPENDS asset_generator
+    COMMENT "Generating assets into ${GENERATED_ASSETS_DIR}/"
+    VERBATIM
+  )
+
+  add_custom_target(build_assets ALL
+    DEPENDS ${GENERATED_ASSETS_DIR}/.stamp
+  )
+
+  install(DIRECTORY ${GENERATED_ASSETS_DIR}/
+    DESTINATION assets
+  )
+endif()
+
 if (ISLE_MINIWIN)
   set_property(TARGET ${isle_targets} APPEND PROPERTY LINK_LIBRARIES "miniwin")
 endif()
@@ -683,6 +718,9 @@ if (MSVC)
     endif()
     if (TARGET isle-config)
       target_compile_options(isle-config PRIVATE "-Zc:__cplusplus")
+    endif()
+    if (TARGET asset_generator)
+      target_compile_options(asset_generator PRIVATE "-Zc:__cplusplus")
     endif()
   endif()
 endif()
