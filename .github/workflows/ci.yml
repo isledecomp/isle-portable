@@ -122,10 +122,6 @@ jobs:
       - name: Build (CMake)
         run: cmake --build build --verbose --config Release
 
-      - name: Package Assets Separately
-        if: matrix.build-assets
-        run: (cd build/assets && zip -r ../../isle-assets.zip .)
-
       - name: Package (CPack)
         if: ${{ !matrix.n3ds }}
         run: |
@@ -176,6 +172,10 @@ jobs:
           mv *.3dsx dist/
           mv *.cia dist/
 
+      - name: Package Assets Separately
+        if: matrix.build-assets
+        run: (cd build/assets && zip -r ../dist/isle-assets.zip .)
+
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -185,8 +185,6 @@ jobs:
             build/dist/*.AppImage
             build/dist/*.3dsx
             build/dist/*.cia
-            isle-assets.zip
-          if-no-files-found: ignore
 
   flatpak:
     name: "Flatpak (${{ matrix.arch }})"
