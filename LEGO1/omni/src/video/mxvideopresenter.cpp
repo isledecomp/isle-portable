@@ -200,22 +200,6 @@ inline MxS32 MxVideoPresenter::PrepareRects(RECT& p_rectDest, RECT& p_rectSrc)
 		return -1;
 	}
 
-	if (p_rectDest.bottom > 480) {
-		p_rectDest.bottom = 480;
-	}
-
-	if (p_rectDest.right > 640) {
-		p_rectDest.right = 640;
-	}
-
-	if (p_rectSrc.bottom > 480) {
-		p_rectSrc.bottom = 480;
-	}
-
-	if (p_rectSrc.right > 640) {
-		p_rectSrc.right = 640;
-	}
-
 	int height, width;
 	if ((height = (p_rectDest.bottom - p_rectDest.top) + 1) <= 1 ||
 		(width = (p_rectDest.right - p_rectDest.left) + 1) <= 1) {

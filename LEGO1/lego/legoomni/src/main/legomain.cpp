@@ -1,6 +1,7 @@
 #include "legomain.h"
 
 #include "3dmanager/lego3dmanager.h"
+#include "extensions/siloader.h"
 #include "islepathactor.h"
 #include "legoanimationmanager.h"
 #include "legobuildingmanager.h"
@@ -39,6 +40,8 @@ DECOMP_SIZE_ASSERT(LegoOmni, 0x140)
 DECOMP_SIZE_ASSERT(LegoOmni::WorldContainer, 0x1c)
 DECOMP_SIZE_ASSERT(LegoWorldList, 0x18)
 DECOMP_SIZE_ASSERT(LegoWorldListCursor, 0x10)
+
+using namespace Extensions;
 
 // GLOBAL: LEGO1 0x100f6718
 // GLOBAL: BETA10 0x101ee748
@@ -351,6 +354,9 @@ MxResult LegoOmni::Create(MxOmniCreateParam& p_param)
 	else {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create MxTransitionManager");
 	}
+
+	Extension<SiLoader>::Call(Load);
+
 done:
 	return result;
 	// LINE: BETA10 0x1008e35d
@@ -670,6 +676,14 @@ MxResult LegoOmni::Start(MxDSAction* p_dsAction)
 	this->m_action.SetObjectId(p_dsAction->GetObjectId());
 	this->m_action.SetUnknown24(p_dsAction->GetUnknown24());
 #endif
+
+	if (result == SUCCESS) {
+		Extension<SiLoader>::Call(
+			StartWith,
+			SiLoader::StreamObject{p_dsAction->GetAtomId(), p_dsAction->GetObjectId()}
+		);
+	}
+
 	return result;
 }
 

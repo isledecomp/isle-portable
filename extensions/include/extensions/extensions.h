@@ -9,7 +9,7 @@
 
 namespace Extensions
 {
-constexpr const char* availableExtensions[] = {"extensions:texture loader"};
+constexpr const char* availableExtensions[] = {"extensions:texture loader", "extensions:si loader"};
 
 LEGO1_EXPORT void Enable(const char* p_key, std::map<std::string, std::string> p_options);
 
