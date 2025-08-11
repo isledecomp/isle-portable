@@ -663,6 +663,17 @@ void LegoOmni::CreateBackgroundAudio()
 // FUNCTION: BETA10 0x1008f7e0
 MxResult LegoOmni::Start(MxDSAction* p_dsAction)
 {
+	{
+		auto result = Extension<SiLoader>::Call(
+						  HandleStart,
+						  SiLoader::StreamObject{p_dsAction->GetAtomId(), p_dsAction->GetObjectId()}
+		)
+						  .value_or(std::nullopt);
+		if (result) {
+			return result.value();
+		}
+	}
+
 	MxResult result = MxOmni::Start(p_dsAction);
 #ifdef BETA10
 	this->m_action = *p_dsAction;
@@ -673,14 +684,6 @@ MxResult LegoOmni::Start(MxDSAction* p_dsAction)
 	this->m_action.SetObjectId(p_dsAction->GetObjectId());
 	this->m_action.SetUnknown24(p_dsAction->GetUnknown24());
 #endif
-
-	if (result == SUCCESS) {
-		Extension<SiLoader>::Call(
-			StartWith,
-			SiLoader::StreamObject{p_dsAction->GetAtomId(), p_dsAction->GetObjectId()}
-		);
-	}
-
 	return result;
 }
 

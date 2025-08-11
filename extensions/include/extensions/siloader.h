@@ -4,6 +4,7 @@
 #include "legoworld.h"
 #include "mxatom.h"
 
+#include <interleaf.h>
 #include <map>
 #include <vector>
 
@@ -15,8 +16,8 @@ public:
 
 	static void Initialize();
 	static bool Load();
-	static bool StartWith(StreamObject p_object);
-	static bool RemoveWith(StreamObject p_object, LegoWorld* world);
+	static std::optional<MxResult> HandleStart(StreamObject p_object);
+	static std::optional<MxBool> HandleRemove(StreamObject p_object, LegoWorld* world);
 
 	static std::map<std::string, std::string> options;
 	static std::vector<std::string> files;
@@ -25,17 +26,23 @@ public:
 private:
 	static std::vector<std::pair<StreamObject, StreamObject>> startWith;
 	static std::vector<std::pair<StreamObject, StreamObject>> removeWith;
+	static std::vector<std::pair<StreamObject, StreamObject>> replace;
 
 	static bool LoadFile(const char* p_file);
+	static void ParseDirectives(
+		const MxAtomId& p_atom,
+		si::Core* p_core,
+		const MxAtomId* p_parentReplacedAtom = nullptr
+	);
 };
 
 #ifdef EXTENSIONS
 constexpr auto Load = &SiLoader::Load;
-constexpr auto StartWith = &SiLoader::StartWith;
-constexpr auto RemoveWith = &SiLoader::RemoveWith;
+constexpr auto HandleStart = &SiLoader::HandleStart;
+constexpr auto HandleRemove = &SiLoader::HandleRemove;
 #else
 constexpr decltype(&SiLoader::Load) Load = nullptr;
-constexpr decltype(&SiLoader::StartWith) StartWith = nullptr;
-constexpr decltype(&SiLoader::RemoveWith) RemoveWith = nullptr;
+constexpr decltype(&SiLoader::HandleStart) HandleStart = nullptr;
+constexpr decltype(&SiLoader::HandleRemove) HandleRemove = nullptr;
 #endif
 }; // namespace Extensions

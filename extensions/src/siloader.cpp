@@ -5,7 +5,6 @@
 #include "mxstreamer.h"
 
 #include <SDL3/SDL.h>
-#include <interleaf.h>
 
 using namespace Extensions;
 
@@ -13,6 +12,7 @@ std::map<std::string, std::string> SiLoader::options;
 std::vector<std::string> SiLoader::files;
 std::vector<std::pair<SiLoader::StreamObject, SiLoader::StreamObject>> SiLoader::startWith;
 std::vector<std::pair<SiLoader::StreamObject, SiLoader::StreamObject>> SiLoader::removeWith;
+std::vector<std::pair<SiLoader::StreamObject, SiLoader::StreamObject>> SiLoader::replace;
 bool SiLoader::enabled = false;
 
 void SiLoader::Initialize()
@@ -36,7 +36,7 @@ bool SiLoader::Load()
 	return true;
 }
 
-bool SiLoader::StartWith(StreamObject p_object)
+std::optional<MxResult> SiLoader::HandleStart(StreamObject p_object)
 {
 	for (const auto& key : startWith) {
 		if (key.first == p_object) {
@@ -47,10 +47,19 @@ bool SiLoader::StartWith(StreamObject p_object)
 		}
 	}
 
-	return true;
+	for (const auto& key : replace) {
+		if (key.first == p_object) {
+			MxDSAction action;
+			action.SetAtomId(key.second.first);
+			action.SetObjectId(key.second.second);
+			return Start(&action);
+		}
+	}
+
+	return std::nullopt;
 }
 
-bool SiLoader::RemoveWith(StreamObject p_object, LegoWorld* world)
+std::optional<MxBool> SiLoader::HandleRemove(StreamObject p_object, LegoWorld* world)
 {
 	for (const auto& key : removeWith) {
 		if (key.first == p_object) {
@@ -58,7 +67,13 @@ bool SiLoader::RemoveWith(StreamObject p_object, LegoWorld* world)
 		}
 	}
 
-	return true;
+	for (const auto& key : replace) {
+		if (key.first == p_object) {
+			return RemoveFromWorld(key.second.first, key.second.second, world->GetAtomId(), world->GetEntityId());
+		}
+	}
+
+	return std::nullopt;
 }
 
 bool SiLoader::LoadFile(const char* p_file)
@@ -82,7 +97,13 @@ bool SiLoader::LoadFile(const char* p_file)
 		return false;
 	}
 
-	for (si::Core* child : si.GetChildren()) {
+	ParseDirectives(controller->GetAtom(), &si);
+	return true;
+}
+
+void SiLoader::ParseDirectives(const MxAtomId& p_atom, si::Core* p_core, const MxAtomId* p_parentReplacedAtom)
+{
+	for (si::Core* child : p_core->GetChildren()) {
 		if (si::Object* object = dynamic_cast<si::Object*>(child)) {
 			if (object->type() != si::MxOb::Null) {
 				std::string extra(object->extra_.data(), object->extra_.size());
@@ -94,7 +115,7 @@ bool SiLoader::LoadFile(const char* p_file)
 					if (SDL_sscanf(directive, "StartWith:%255[^;];%d", atom, &id) == 2) {
 						startWith.emplace_back(
 							StreamObject{MxAtomId{atom, e_lowerCase2}, id},
-							StreamObject{controller->GetAtom(), object->id_}
+							StreamObject{p_atom, object->id_}
 						);
 					}
 				}
@@ -103,13 +124,28 @@ bool SiLoader::LoadFile(const char* p_file)
 					if (SDL_sscanf(directive, "RemoveWith:%255[^;];%d", atom, &id) == 2) {
 						removeWith.emplace_back(
 							StreamObject{MxAtomId{atom, e_lowerCase2}, id},
-							StreamObject{controller->GetAtom(), object->id_}
+							StreamObject{p_atom, object->id_}
 						);
+					}
+				}
+
+				if (p_parentReplacedAtom) {
+					replace.emplace_back(StreamObject{*p_parentReplacedAtom, id}, StreamObject{p_atom, object->id_});
+				}
+				else {
+					if ((directive = SDL_strstr(extra.c_str(), "Replace:"))) {
+						if (SDL_sscanf(directive, "Replace:%255[^;];%d", atom, &id) == 2) {
+							replace.emplace_back(
+								StreamObject{MxAtomId{atom, e_lowerCase2}, id},
+								StreamObject{p_atom, object->id_}
+							);
+							p_parentReplacedAtom = &replace.back().first.first;
+						}
 					}
 				}
 			}
 		}
-	}
 
-	return true;
+		ParseDirectives(p_atom, child, p_parentReplacedAtom);
+	}
 }

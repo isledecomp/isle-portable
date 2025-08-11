@@ -12,32 +12,37 @@ uint32_t bufferCount = 8;
 
 std::string out;
 std::ofstream depfile;
-si::MemoryBuffer mxHd;
 
 void CreateWidescreen()
 {
 	si::Interleaf si;
-	std::string file = out + "/widescreen.si";
-	mxHd.seek(0, si::MemoryBuffer::SeekStart);
-	si.Read(&mxHd);
+	si.Read("widescreen/GaraDoor.si");
 
-	si::Object GaraDoor_Wide;
-	const char extra[] =
-		"World:current, StartWith:\\Lego\\Scripts\\Isle\\Isle;1160, RemoveWith:\\Lego\\Scripts\\Isle\\Isle;1161";
-	GaraDoor_Wide.type_ = si::MxOb::Bitmap;
-	GaraDoor_Wide.flags_ = MxDSAction::c_enabled | MxDSAction::c_bit4;
-	GaraDoor_Wide.duration_ = -1;
-	GaraDoor_Wide.loops_ = 1;
-	GaraDoor_Wide.extra_ = si::bytearray(extra, sizeof(extra));
-	GaraDoor_Wide.presenter_ = "MxStillPresenter";
-	GaraDoor_Wide.name_ = "GaraDoor_Wide";
-	GaraDoor_Wide.filetype_ = si::MxOb::STL;
-	GaraDoor_Wide.location_.x = -240.0;
-	GaraDoor_Wide.location_.z = -1.0;
-	GaraDoor_Wide.up_.y = 1.0;
-	GaraDoor_Wide.ReplaceWithFile("widescreen/garadoor.bmp");
-	si.AppendChild(&GaraDoor_Wide);
-	depfile << file << ": " << (std::filesystem::current_path() / "widescreen/garadoor.bmp").string() << std::endl;
+	si::Object* garadoor = dynamic_cast<si::Object*>(si.GetChildAt(0));
+	const char append[] = "Replace:\\Lego\\Scripts\\Isle\\Isle;1160";
+	garadoor->extra_.append(append, sizeof(append));
+
+	si::Object GaraDoor_Background_Wide;
+	const char extra[] = "World:current, RemoveWith:\\Lego\\Scripts\\Isle\\Isle;1161";
+	GaraDoor_Background_Wide.id_ = 5001;
+	GaraDoor_Background_Wide.type_ = si::MxOb::Bitmap;
+	GaraDoor_Background_Wide.flags_ = MxDSAction::c_enabled | MxDSAction::c_bit4;
+	GaraDoor_Background_Wide.duration_ = -1;
+	GaraDoor_Background_Wide.loops_ = 1;
+	GaraDoor_Background_Wide.extra_ = si::bytearray(extra, sizeof(extra));
+	GaraDoor_Background_Wide.presenter_ = "MxStillPresenter";
+	GaraDoor_Background_Wide.name_ = "GaraDoor_Background_Wide";
+	GaraDoor_Background_Wide.filetype_ = si::MxOb::STL;
+	GaraDoor_Background_Wide.location_ = si::Vector3(-240.0, 0.0, -1.0);
+	GaraDoor_Background_Wide.direction_ = si::Vector3(0, 0, 0);
+	GaraDoor_Background_Wide.up_ = si::Vector3(0, 1.0, 0);
+	GaraDoor_Background_Wide.up_.y = 1.0;
+	GaraDoor_Background_Wide.ReplaceWithFile("widescreen/GaraDoor_Background_Wide.bmp");
+	garadoor->AppendChild(&GaraDoor_Background_Wide);
+
+	std::string file = out + "/widescreen.si";
+	depfile << file << ": " << (std::filesystem::current_path() / "widescreen/GaraDoor_Background_Wide.bmp").string()
+			<< std::endl;
 
 	si.Write(file.c_str());
 }
@@ -46,12 +51,6 @@ int main(int argc, char* argv[])
 {
 	out = argv[1];
 	depfile = std::ofstream(argv[2]);
-
-	mxHd.WriteU32(si::RIFF::MxHd);
-	mxHd.WriteU32(3 * sizeof(uint32_t));
-	mxHd.WriteU32(version);
-	mxHd.WriteU32(bufferSize);
-	mxHd.WriteU32(bufferCount);
 
 	CreateWidescreen();
 	return 0;
