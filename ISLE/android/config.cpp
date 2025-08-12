@@ -24,7 +24,7 @@ void Android_SetupDefaultConfigOverrides(dictionary* p_dictionary)
 
 	iniparser_set(p_dictionary, "isle:savepath", savedata);
 
-	// Default to Virtal Mouse
+	// Default to Virtual Mouse
 	char buf[16];
 	iniparser_set(p_dictionary, "isle:Touch Scheme", SDL_itoa(0, buf, 10));
 }

@@ -47,7 +47,7 @@ android {
     }
 }
 
-tasks.register('downloadSDL3AndroidArchive', Exec) {
+tasks.register('compileSDL3AndroidArchive', Exec) {
     def rootDir = projectDir.parentFile.parentFile
     def sdl3Dir = "build/_deps/sdl3-src"
     def cmakeCommand = "cmake -B build -DANDROID_SDL=TRUE"

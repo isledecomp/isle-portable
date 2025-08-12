@@ -1037,7 +1037,6 @@ bool IsleApp::LoadConfig()
 	char* prefPath = new char[strlen(androidPath) + 2];
 	strcpy(prefPath, androidPath);
 	strcat(prefPath, "/");
-	SDL_Log("%s", prefPath);
 #else
 	char* prefPath = SDL_GetPrefPath("isledecomp", "isle");
 #endif
