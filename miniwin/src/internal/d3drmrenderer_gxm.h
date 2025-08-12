@@ -78,7 +78,7 @@ public:
 	void Download(SDL_Surface* target) override;
 	void SetDither(bool dither) override;
 
-	void DeleteTextures(int index);
+	void DeferredDelete(int index);
 
 private:
 	void AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture);
@@ -107,6 +107,7 @@ private:
 	D3DRMMATRIX4D m_projection;
 	std::vector<SceneLight> m_lights;
 	std::vector<SceGxmTexture> m_textures_delete[GXM_FRAGMENT_BUFFER_COUNT];
+	std::vector<void*> m_buffers_delete[GXM_FRAGMENT_BUFFER_COUNT];
 
 	bool transparencyEnabled = false;
 

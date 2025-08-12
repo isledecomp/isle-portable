@@ -34,7 +34,7 @@
         },
         {
             "name": "mingw64-debug",
-            "inherits": ["mingw64", "debug"]
+            "inherits": ["debug", "mingw64"]
         },
 
         {
@@ -44,7 +44,7 @@
         },
         {
             "name": "vita-debug",
-            "inherits": ["vita", "debug"]
+            "inherits": ["debug", "vita"]
         }
     ]
 }

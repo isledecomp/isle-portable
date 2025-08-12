@@ -87,7 +87,7 @@ static void display_callback(const void* callback_data)
 	const GXMDisplayData* display_data = (const GXMDisplayData*) callback_data;
 
 	GXMRenderer* renderer = static_cast<GXMRenderer*>(DDRenderer);
-	renderer->DeleteTextures(display_data->index);
+	renderer->DeferredDelete(display_data->index);
 
 	SceDisplayFrameBuf framebuf;
 	SDL_memset(&framebuf, 0x00, sizeof(SceDisplayFrameBuf));
@@ -685,8 +685,8 @@ GXMRenderer::GXMRenderer(DWORD width, DWORD height, DWORD msaaSamples)
 	m_virtualHeight = height;
 
 	SceGxmMultisampleMode msaaMode = SCE_GXM_MULTISAMPLE_NONE;
-	if(msaaSamples == 2) msaaSamples = SCE_GXM_MULTISAMPLE_2X;
-	if(msaaSamples == 4) msaaSamples = SCE_GXM_MULTISAMPLE_4X;
+	if(msaaSamples == 2) msaaMode = SCE_GXM_MULTISAMPLE_2X;
+	if(msaaSamples == 4) msaaMode = SCE_GXM_MULTISAMPLE_4X;
 
 	int ret;
 	if (!gxm) {
@@ -930,37 +930,67 @@ void GXMRenderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* textu
 	);
 }
 
-void GXMRenderer::DeleteTextures(int index)
+void GXMRenderer::DeferredDelete(int index)
 {
 	for (auto& del : this->m_textures_delete[index]) {
 		void* textureData = sceGxmTextureGetData(&del);
 		gxm->free(textureData);
 	}
 	this->m_textures_delete[index].clear();
+
+	for (auto& del : this->m_buffers_delete[index]) {
+		gxm->free(del);
+	}
+	this->m_buffers_delete[index].clear();
 }
+
+static int calculateMipLevels(int width, int height) {
+    if (width <= 0 || height <= 0) {
+        return 1;
+    }
+    int maxDim = (width > height) ? width : height;
+    return floor(log2(maxDim)) + 1;
+}
+
+static int nextPowerOf2(int n) {
+    if (n <= 0) return 1;
+    n--;
+    n |= n >> 1;
+    n |= n >> 2;
+    n |= n >> 4;
+    n |= n >> 8;
+    n |= n >> 16;
+    n++;
+    return n;
+}
+
 
 static void convertTextureMetadata(
 	SDL_Surface* surface,
+	bool isUi,
 	bool* supportedFormat,
 	SceGxmTextureFormat* gxmTextureFormat,
 	size_t* textureSize,      // size in bytes
 	size_t* textureAlignment, // alignment in bytes
 	size_t* textureStride,    // stride in bytes
-	size_t* paletteOffset     // offset from textureData in bytes
+	size_t* paletteOffset,    // offset from textureData in bytes
+	size_t* mipLevels
 )
 {
 	int bytesPerPixel;
-	size_t extraDataSize = 0;
+	size_t paletteSize = 0;
+	*mipLevels = 1;
+
 	switch (surface->format) {
 	case SDL_PIXELFORMAT_INDEX8: {
 		*supportedFormat = true;
 		*gxmTextureFormat = SCE_GXM_TEXTURE_FORMAT_P8_ABGR;
-		int pixelsSize = surface->w * surface->h;
-		int alignBytes = ALIGNMENT(pixelsSize, SCE_GXM_PALETTE_ALIGNMENT);
-		extraDataSize = alignBytes + 256 * 4;
 		*textureAlignment = SCE_GXM_PALETTE_ALIGNMENT;
-		*paletteOffset = pixelsSize + alignBytes;
 		bytesPerPixel = 1;
+		if (!isUi) {
+            *mipLevels = calculateMipLevels(surface->w, surface->h);
+        }
+		paletteSize = 256 * 4; // palette
 		break;
 	}
 	case SDL_PIXELFORMAT_ABGR8888: {
@@ -968,6 +998,9 @@ static void convertTextureMetadata(
 		*gxmTextureFormat = SCE_GXM_TEXTURE_FORMAT_U8U8U8U8_ABGR;
 		*textureAlignment = SCE_GXM_TEXTURE_ALIGNMENT;
 		bytesPerPixel = 4;
+		if (!isUi) {
+			*mipLevels = calculateMipLevels(surface->w, surface->h);
+		}
 		break;
 	}
 	default: {
@@ -979,39 +1012,135 @@ static void convertTextureMetadata(
 	}
 	}
 	*textureStride = ALIGN(surface->w, 8) * bytesPerPixel;
-	*textureSize = (*textureStride) * surface->h + extraDataSize;
+
+	*mipLevels = 1; // look weird right now
+
+	size_t totalSize = 0;
+    int currentW = surface->w;
+    int currentH = surface->h;
+
+	// top mip
+	totalSize += (ALIGN(currentW, 8) * currentH) * bytesPerPixel;
+
+    for (size_t i = 1; i < *mipLevels; ++i) {
+        currentW = currentW > 1 ? currentW / 2 : 1;
+        currentH = currentH > 1 ? currentH / 2 : 1;
+        int po2W = nextPowerOf2(currentW * 2);
+        int po2H = nextPowerOf2(currentH * 2);
+        if (po2W < 8) {
+            po2W = 8;
+        }
+        totalSize += po2W * po2H * bytesPerPixel;
+    }
+
+	if(paletteSize != 0) {
+		int alignBytes = ALIGNMENT(totalSize, SCE_GXM_PALETTE_ALIGNMENT);
+		totalSize += alignBytes;
+		*paletteOffset = totalSize;
+		totalSize += paletteSize;
+	}
+
+	*textureSize = totalSize;
 }
 
-void copySurfaceToGxm(DirectDrawSurfaceImpl* surface, uint8_t* textureData, size_t dstStride, size_t dstSize)
+void copySurfaceToGxmARGB888(SDL_Surface* src, uint8_t* textureData, size_t dstStride, size_t mipLevels) {
+	uint8_t* currentLevelData = textureData;
+	uint32_t currentLevelWidth = src->w;
+	uint32_t currentLevelHeight = src->h;
+	size_t bytesPerPixel = 4;
+	
+	// copy top level mip (cant use transfer because this isnt gpu mapped)
+	size_t topLevelStride = ALIGN(currentLevelWidth, 8) * bytesPerPixel;
+	for (int y = 0; y < currentLevelHeight; y++) {
+		uint8_t* srcRow = (uint8_t*)src->pixels + (y * src->pitch);
+		uint8_t* dstRow = textureData + (y * topLevelStride);
+		memcpy(dstRow, srcRow, currentLevelWidth * bytesPerPixel);
+	}
+
+	for (size_t i = 1; i < mipLevels; ++i) {
+		uint32_t currentLevelSrcStride = SDL_max(currentLevelWidth, 8) * bytesPerPixel;
+		uint32_t currentLevelDestStride = SDL_max((currentLevelWidth / 2), 8) * bytesPerPixel;
+		uint8_t* nextLevelData = currentLevelData + (currentLevelSrcStride * currentLevelHeight);
+
+		sceGxmTransferDownscale(
+			SCE_GXM_TRANSFER_FORMAT_U8U8U8U8_ABGR, 			// src format
+			currentLevelData,								// src address
+			0, 0, currentLevelWidth, currentLevelHeight,	// x,y,w,h
+			currentLevelSrcStride,							// stride
+			SCE_GXM_TRANSFER_FORMAT_U8U8U8U8_ABGR,			// dst format
+			nextLevelData,									// dst address
+			0, 0,											// x,y
+			currentLevelDestStride,							// stride
+			NULL,											// sync
+			SCE_GXM_TRANSFER_FRAGMENT_SYNC,					// flag
+			NULL											// notification
+		);
+
+		currentLevelData	= nextLevelData;
+		currentLevelWidth	= currentLevelWidth / 2;
+		currentLevelHeight	= currentLevelHeight / 2;
+	}
+}
+
+void copySurfaceToGxmIndexed8(DirectDrawSurfaceImpl* surface, SDL_Surface* src, uint8_t* textureData, size_t dstStride, uint8_t* paletteData, size_t mipLevels) {
+	LPDIRECTDRAWPALETTE _palette;
+	surface->GetPalette(&_palette);
+	auto palette = static_cast<DirectDrawPaletteImpl*>(_palette);
+
+	// copy palette
+	memcpy(paletteData, palette->m_palette->colors, 256 * 4);
+
+	uint8_t* currentLevelData = textureData;
+	uint32_t currentLevelWidth = src->w;
+	uint32_t currentLevelHeight = src->h;
+	size_t bytesPerPixel = 1;
+	
+	// copy top level mip (cant use transfer because this isnt gpu mapped)
+	size_t topLevelStride = ALIGN(currentLevelWidth, 8) * bytesPerPixel;
+	for (int y = 0; y < currentLevelHeight; y++) {
+		uint8_t* srcRow = (uint8_t*)src->pixels + (y * src->pitch);
+		uint8_t* dstRow = textureData + (y * topLevelStride);
+		memcpy(dstRow, srcRow, currentLevelWidth * bytesPerPixel);
+	}
+
+	for (size_t i = 1; i < mipLevels; ++i) {
+		uint32_t currentLevelSrcStride = SDL_max(currentLevelWidth, 8) * bytesPerPixel;
+		uint32_t currentLevelDestStride = SDL_max((currentLevelWidth / 2), 8) * bytesPerPixel;
+		uint8_t* nextLevelData = currentLevelData + (currentLevelSrcStride * currentLevelHeight);
+
+		sceGxmTransferDownscale(
+			SCE_GXM_TRANSFER_FORMAT_U8_R, 					// src format
+			currentLevelData,								// src address
+			0, 0, currentLevelWidth, currentLevelHeight,	// x,y,w,h
+			currentLevelSrcStride,							// stride
+			SCE_GXM_TRANSFER_FORMAT_U8_R,					// dst format
+			nextLevelData,									// dst address
+			0, 0,											// x,y
+			currentLevelDestStride,							// stride
+			NULL,											// sync
+			SCE_GXM_TRANSFER_FRAGMENT_SYNC,					// flag
+			NULL											// notification
+		);
+
+		currentLevelData	= nextLevelData;
+		currentLevelWidth	= currentLevelWidth / 2;
+		currentLevelHeight	= currentLevelHeight / 2;
+	}
+
+	palette->Release();
+}
+
+void copySurfaceToGxm(DirectDrawSurfaceImpl* surface, uint8_t* textureData, size_t dstStride, size_t paletteOffset, size_t mipLevels)
 {
 	SDL_Surface* src = surface->m_surface;
+
 	switch (src->format) {
 	case SDL_PIXELFORMAT_ABGR8888: {
-		for (int y = 0; y < src->h; y++) {
-			uint8_t* srcRow = (uint8_t*) src->pixels + (y * src->pitch);
-			uint8_t* dstRow = textureData + (y * dstStride);
-			size_t rowSize = src->w * 4;
-			memcpy(dstRow, srcRow, rowSize);
-		}
+		copySurfaceToGxmARGB888(src, textureData, dstStride, mipLevels);
 		break;
 	}
 	case SDL_PIXELFORMAT_INDEX8: {
-		LPDIRECTDRAWPALETTE _palette;
-		surface->GetPalette(&_palette);
-		auto palette = static_cast<DirectDrawPaletteImpl*>(_palette);
-
-		// copy pixels
-		for (int y = 0; y < src->h; y++) {
-			void* srcRow = static_cast<uint8_t*>(src->pixels) + (y * src->pitch);
-			void* dstRow = static_cast<uint8_t*>(textureData) + (y * dstStride);
-			memcpy(dstRow, srcRow, src->w);
-		}
-
-		int pixelsSize = src->w * src->h;
-		int alignBytes = ALIGNMENT(pixelsSize, SCE_GXM_PALETTE_ALIGNMENT);
-		uint8_t* paletteData = textureData + pixelsSize + alignBytes;
-		memcpy(paletteData, palette->m_palette->colors, 256 * 4);
-		palette->Release();
+		copySurfaceToGxmIndexed8(surface, src, textureData, dstStride, textureData+paletteOffset, mipLevels);
 		break;
 	}
 	default: {
@@ -1035,18 +1164,21 @@ Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi, float 
 	size_t textureAlignment;
 	size_t textureStride;
 	size_t paletteOffset;
+	size_t mipLevels;
 
 	int textureWidth = surface->m_surface->w;
 	int textureHeight = surface->m_surface->h;
 
 	convertTextureMetadata(
 		surface->m_surface,
+		isUi,
 		&supportedFormat,
 		&gxmTextureFormat,
 		&textureSize,
 		&textureAlignment,
 		&textureStride,
-		&paletteOffset
+		&paletteOffset,
+		&mipLevels
 	);
 
 	if (!supportedFormat) {
@@ -1060,7 +1192,7 @@ Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi, float 
 				sceGxmNotificationWait(tex.notification);
 				tex.notification = &this->fragmentNotifications[this->currentFragmentBufferIndex];
 				uint8_t* textureData = (uint8_t*) sceGxmTextureGetData(&tex.gxmTexture);
-				copySurfaceToGxm(surface, textureData, textureStride, textureSize);
+				copySurfaceToGxm(surface, textureData, textureStride, paletteOffset, mipLevels);
 				tex.version = texture->m_version;
 			}
 			return i;
@@ -1068,21 +1200,22 @@ Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi, float 
 	}
 
 	DEBUG_ONLY_PRINTF(
-		"Create Texture %s w=%d h=%d s=%d size=%d align=%d\n",
+		"Create Texture %s w=%d h=%d s=%d size=%d align=%d mips=%d\n",
 		SDL_GetPixelFormatName(surface->m_surface->format),
 		textureWidth,
 		textureHeight,
 		textureStride,
 		textureSize,
-		textureAlignment
+		textureAlignment,
+		mipLevels
 	);
 
 	// allocate gpu memory
-	void* textureData = gxm->alloc(textureSize, textureAlignment);
-	copySurfaceToGxm(surface, (uint8_t*) textureData, textureStride, textureSize);
+	uint8_t* textureData = (uint8_t*)gxm->alloc(textureSize, textureAlignment);
+	copySurfaceToGxm(surface, (uint8_t*) textureData, textureStride, paletteOffset, mipLevels);
 
 	SceGxmTexture gxmTexture;
-	SCE_ERR(sceGxmTextureInitLinear, &gxmTexture, textureData, gxmTextureFormat, textureWidth, textureHeight, 0);
+	SCE_ERR(sceGxmTextureInitLinear, &gxmTexture, textureData, gxmTextureFormat, textureWidth, textureHeight, mipLevels);
 	if (isUi) {
 		sceGxmTextureSetMinFilter(&gxmTexture, SCE_GXM_TEXTURE_FILTER_POINT);
 		sceGxmTextureSetMagFilter(&gxmTexture, SCE_GXM_TEXTURE_FILTER_POINT);
@@ -1096,7 +1229,7 @@ Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi, float 
 		sceGxmTextureSetVAddrMode(&gxmTexture, SCE_GXM_TEXTURE_ADDR_REPEAT);
 	}
 	if (gxmTextureFormat == SCE_GXM_TEXTURE_FORMAT_P8_ABGR) {
-		sceGxmTextureSetPalette(&gxmTexture, (uint8_t*) textureData + paletteOffset);
+		sceGxmTextureSetPalette(&gxmTexture, textureData + paletteOffset);
 	}
 
 	for (Uint32 i = 0; i < m_textures.size(); ++i) {
@@ -1209,7 +1342,7 @@ void GXMRenderer::AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh)
 			auto* ctx = static_cast<GXMMeshDestroyContext*>(arg);
 			auto& cache = ctx->renderer->m_meshes[ctx->id];
 			cache.meshGroup = nullptr;
-			gxm->free(cache.meshData);
+			ctx->renderer->m_buffers_delete[gxm->backBufferIndex].push_back(cache.meshData);
 			cache.meshData = nullptr;
 			cache.indexBuffer = nullptr;
 			cache.vertexBuffer = nullptr;
@@ -1294,7 +1427,7 @@ void GXMRenderer::StartScene()
 
 	sceGxmBeginScene(
 		gxm->context,
-		0,
+		SCE_GXM_SCENE_FRAGMENT_TRANSFER_SYNC,
 		gxm->renderTarget,
 		nullptr,
 		nullptr,

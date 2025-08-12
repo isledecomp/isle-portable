@@ -17,6 +17,8 @@ add_library(iniparser_paf
   iniparser_paf/src/iniparser.c
 )
 
+target_compile_options(iniparser_paf PRIVATE -O3)
+
 target_link_libraries(iniparser_paf
   ScePafStdc_stub
   SceLibKernel_stub

@@ -501,6 +501,17 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		break;
 	}
 
+#ifdef __vita__
+	// reject back touch panel
+	switch(event->type) {
+	case SDL_EVENT_FINGER_MOTION:
+	case SDL_EVENT_FINGER_DOWN:
+	case SDL_EVENT_FINGER_UP:
+	case SDL_EVENT_FINGER_CANCELED:
+		if(event->tfinger.touchID == 2) return SDL_APP_CONTINUE;
+	}
+#endif
+
 	switch (event->type) {
 	case SDL_EVENT_WINDOW_FOCUS_GAINED:
 		if (!IsleDebug_Enabled()) {
