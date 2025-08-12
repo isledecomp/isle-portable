@@ -64,7 +64,7 @@ Direct3DRMRenderer* CreateDirect3DRMRenderer(
 #endif
 #ifdef USE_GXM
 	if (SDL_memcmp(guid, &GXM_GUID, sizeof(GUID)) == 0) {
-		return GXMRenderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
+		return GXMRenderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight, d3d->GetMSAASamples());
 	}
 #endif
 	return nullptr;

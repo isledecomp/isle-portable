@@ -51,8 +51,8 @@ struct GXMSceneLightUniform {
 
 class GXMRenderer : public Direct3DRMRenderer {
 public:
-	static Direct3DRMRenderer* Create(DWORD width, DWORD height);
-	GXMRenderer(DWORD width, DWORD height);
+	static Direct3DRMRenderer* Create(DWORD width, DWORD height, DWORD msaaSamples);
+	GXMRenderer(DWORD width, DWORD height, DWORD msaaSamples);
 	~GXMRenderer() override;
 
 	void PushLights(const SceneLight* lightsArray, size_t count) override;

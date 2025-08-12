@@ -76,7 +76,7 @@ typedef struct GXMContext {
 
 	void swap_display();
 	void copy_frontbuffer();
-	int init();
+	int init(SceGxmMultisampleMode msaaMode);
 	void destroy();
 	void clear(float r, float g, float b, bool new_scene);
 	void* alloc(size_t size, size_t align);

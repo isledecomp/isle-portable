@@ -30,7 +30,7 @@ bool Vita_ShowSimpleMessageBox(SDL_MessageBoxFlags flags, const char* title, con
 	if (!gxm) {
 		gxm = (GXMContext*) SDL_malloc(sizeof(GXMContext));
 	}
-	if (ret = gxm->init(); ret < 0) {
+	if (ret = gxm->init(SCE_GXM_MULTISAMPLE_NONE); ret < 0) {
 		return false;
 	}
 

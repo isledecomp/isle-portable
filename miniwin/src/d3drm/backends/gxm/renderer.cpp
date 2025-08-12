@@ -36,7 +36,6 @@ extern bool g_dpadRight;
 
 #define VITA_GXM_COLOR_FORMAT SCE_GXM_COLOR_FORMAT_A8B8G8R8
 #define VITA_GXM_PIXEL_FORMAT SCE_DISPLAY_PIXELFORMAT_A8B8G8R8
-const SceGxmMultisampleMode msaaMode = SCE_GXM_MULTISAMPLE_NONE;
 
 #define SCE_GXM_PRECOMPUTED_ALIGNMENT 16
 
@@ -181,7 +180,7 @@ int gxm_library_init()
 
 GXMContext* gxm;
 
-int GXMContext::init()
+int GXMContext::init(SceGxmMultisampleMode msaaMode)
 {
 	if (this->context) {
 		return 0;
@@ -475,7 +474,7 @@ int GXMContext::init()
 			this->shaderPatcher,
 			this->colorFragmentProgramId,
 			SCE_GXM_OUTPUT_REGISTER_FORMAT_UCHAR4,
-			SCE_GXM_MULTISAMPLE_NONE,
+			msaaMode,
 			NULL,
 			planeVertexProgramGxp,
 			&this->colorFragmentProgram
@@ -489,7 +488,7 @@ int GXMContext::init()
 			this->shaderPatcher,
 			this->imageFragmentProgramId,
 			SCE_GXM_OUTPUT_REGISTER_FORMAT_UCHAR4,
-			SCE_GXM_MULTISAMPLE_NONE,
+			msaaMode,
 			&blendInfoTransparent,
 			planeVertexProgramGxp,
 			&this->imageFragmentProgram
@@ -669,27 +668,31 @@ void GXMContext::swap_display()
 	this->backBufferIndex = (this->backBufferIndex + 1) % GXM_DISPLAY_BUFFER_COUNT;
 }
 
-Direct3DRMRenderer* GXMRenderer::Create(DWORD width, DWORD height)
+Direct3DRMRenderer* GXMRenderer::Create(DWORD width, DWORD height, DWORD msaaSamples)
 {
 	int ret = gxm_library_init();
 	if (ret < 0) {
 		return nullptr;
 	}
-	return new GXMRenderer(width, height);
+	return new GXMRenderer(width, height, msaaSamples);
 }
 
-GXMRenderer::GXMRenderer(DWORD width, DWORD height)
+GXMRenderer::GXMRenderer(DWORD width, DWORD height, DWORD msaaSamples)
 {
 	m_width = VITA_GXM_SCREEN_WIDTH;
 	m_height = VITA_GXM_SCREEN_HEIGHT;
 	m_virtualWidth = width;
 	m_virtualHeight = height;
 
+	SceGxmMultisampleMode msaaMode = SCE_GXM_MULTISAMPLE_NONE;
+	if(msaaSamples == 2) msaaSamples = SCE_GXM_MULTISAMPLE_2X;
+	if(msaaSamples == 4) msaaSamples = SCE_GXM_MULTISAMPLE_4X;
+
 	int ret;
 	if (!gxm) {
 		gxm = (GXMContext*) SDL_malloc(sizeof(GXMContext));
 	}
-	ret = SCE_ERR(gxm->init);
+	ret = SCE_ERR(gxm->init, msaaMode);
 	if (ret < 0) {
 		return;
 	}
