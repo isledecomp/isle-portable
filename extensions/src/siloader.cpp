@@ -10,24 +10,29 @@
 using namespace Extensions;
 
 std::map<std::string, std::string> SiLoader::options;
+std::vector<std::string> SiLoader::files;
 std::vector<std::pair<SiLoader::StreamObject, SiLoader::StreamObject>> SiLoader::startWith;
 std::vector<std::pair<SiLoader::StreamObject, SiLoader::StreamObject>> SiLoader::removeWith;
 bool SiLoader::enabled = false;
 
 void SiLoader::Initialize()
 {
-}
-
-bool SiLoader::Load()
-{
 	char* files = SDL_strdup(options["si loader:files"].c_str());
 	char* saveptr;
 
 	for (char* file = SDL_strtok_r(files, ",\n", &saveptr); file; file = SDL_strtok_r(NULL, ",\n", &saveptr)) {
-		LoadFile(file);
+		SiLoader::files.emplace_back(file);
 	}
 
 	SDL_free(files);
+}
+
+bool SiLoader::Load()
+{
+	for (const auto& file : files) {
+		LoadFile(file.c_str());
+	}
+
 	return true;
 }
 

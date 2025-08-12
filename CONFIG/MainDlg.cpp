@@ -65,6 +65,7 @@ CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 	connect(m_ui->sound3DCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckbox3DSound);
 	connect(m_ui->rumbleCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxRumble);
 	connect(m_ui->textureCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxTexture);
+	connect(m_ui->customAssetsCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxCustomAssets);
 	connect(m_ui->touchComboBox, &QComboBox::currentIndexChanged, this, &CMainDialog::TouchControlsChanged);
 	connect(m_ui->transitionTypeComboBox, &QComboBox::currentIndexChanged, this, &CMainDialog::TransitionTypeChanged);
 	connect(m_ui->exFullResComboBox, &QComboBox::currentIndexChanged, this, &CMainDialog::ExclusiveResolutionChanged);
@@ -81,6 +82,11 @@ CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 	connect(m_ui->texturePathOpen, &QPushButton::clicked, this, &CMainDialog::SelectTexturePathDialog);
 	connect(m_ui->texturePath, &QLineEdit::editingFinished, this, &CMainDialog::TexturePathEdited);
 
+	connect(m_ui->addCustomAssetPath, &QPushButton::clicked, this, &CMainDialog::AddCustomAssetPath);
+	connect(m_ui->removeCustomAssetPath, &QPushButton::clicked, this, &CMainDialog::RemoveCustomAssetPath);
+	connect(m_ui->customAssetPaths, &QListWidget::currentRowChanged, this, &CMainDialog::SelectedPathChanged);
+	connect(m_ui->customAssetPaths, &QListWidget::itemActivated, this, &CMainDialog::EditCustomAssetPath);
+
 	connect(m_ui->maxLoDSlider, &QSlider::valueChanged, this, &CMainDialog::MaxLoDChanged);
 	connect(m_ui->maxLoDSlider, &QSlider::sliderMoved, this, &CMainDialog::MaxLoDChanged);
 	connect(m_ui->maxActorsSlider, &QSlider::valueChanged, this, &CMainDialog::MaxActorsChanged);
@@ -95,8 +101,6 @@ CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 	connect(m_ui->xResSpinBox, &QSpinBox::valueChanged, this, &CMainDialog::XResChanged);
 	connect(m_ui->yResSpinBox, &QSpinBox::valueChanged, this, &CMainDialog::YResChanged);
 	connect(m_ui->framerateSpinBox, &QSpinBox::valueChanged, this, &CMainDialog::FramerateChanged);
-
-	layout()->setSizeConstraint(QLayout::SetFixedSize);
 
 	if (currentConfigApp->m_ram_quality_limit != 0) {
 		m_modified = true;
@@ -312,6 +316,16 @@ void CMainDialog::UpdateInterface()
 	m_ui->texturePath->setEnabled(currentConfigApp->m_texture_load);
 	m_ui->texturePathOpen->setEnabled(currentConfigApp->m_texture_load);
 
+	m_ui->customAssetsCheckBox->setChecked(currentConfigApp->m_custom_assets_enabled);
+	m_ui->customAssetPathContainer->setEnabled(currentConfigApp->m_custom_assets_enabled);
+	m_ui->customAssetPaths->setEnabled(currentConfigApp->m_custom_assets_enabled);
+	m_ui->addCustomAssetPath->setEnabled(currentConfigApp->m_custom_assets_enabled);
+	m_ui->removeCustomAssetPath->setEnabled(false);
+
+	m_ui->customAssetPaths->clear();
+	assetPaths = QString::fromStdString(currentConfigApp->m_custom_asset_path).split(u',');
+	m_ui->customAssetPaths->addItems(assetPaths);
+
 	m_ui->aspectRatioComboBox->setCurrentIndex(currentConfigApp->m_aspect_ratio);
 	m_ui->xResSpinBox->setValue(currentConfigApp->m_x_res);
 	m_ui->yResSpinBox->setValue(currentConfigApp->m_y_res);
@@ -438,6 +452,13 @@ void CMainDialog::OnCheckboxRumble(bool checked)
 void CMainDialog::OnCheckboxTexture(bool checked)
 {
 	currentConfigApp->m_texture_load = checked;
+	m_modified = true;
+	UpdateInterface();
+}
+
+void CMainDialog::OnCheckboxCustomAssets(bool checked)
+{
+	currentConfigApp->m_custom_assets_enabled = checked;
 	m_modified = true;
 	UpdateInterface();
 }
@@ -571,10 +592,10 @@ void CMainDialog::SelectTexturePathDialog()
 		QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
 	);
 
-	QDir texture_dir = QDir(texture_path);
+	QDir data_path = QDir(QString::fromStdString(currentConfigApp->m_cd_path));
 
-	if (texture_dir.exists()) {
-		currentConfigApp->m_texture_path = texture_dir.absolutePath().toStdString();
+	if (data_path.exists(texture_path)) {
+		currentConfigApp->m_texture_path = data_path.relativeFilePath(texture_path).toStdString();
 		m_modified = true;
 	}
 	UpdateInterface();
@@ -582,12 +603,64 @@ void CMainDialog::SelectTexturePathDialog()
 
 void CMainDialog::TexturePathEdited()
 {
-	QDir texture_dir = QDir(m_ui->texturePath->text());
+	QString texture_path = m_ui->texturePath->text();
+	QDir data_path = QDir(QString::fromStdString(currentConfigApp->m_cd_path));
 
-	if (texture_dir.exists()) {
-		currentConfigApp->m_texture_path = texture_dir.absolutePath().toStdString();
+	if (data_path.exists(texture_path)) {
+		currentConfigApp->m_texture_path = data_path.relativeFilePath(texture_path).toStdString();
 		m_modified = true;
 	}
+	UpdateInterface();
+}
+
+void CMainDialog::AddCustomAssetPath()
+{
+	QDir data_path = QDir(QString::fromStdString(currentConfigApp->m_cd_path));
+	QStringList new_files = QFileDialog::getOpenFileNames(
+		this,
+		"Select one or more files to open",
+		data_path.absolutePath(),
+		"Interleaf files (*.si)"
+	);
+	for (QString& item : new_files) {
+		item = data_path.relativeFilePath(item);
+	}
+	assetPaths += new_files;
+	UpdateAssetPaths();
+}
+
+void CMainDialog::RemoveCustomAssetPath()
+{
+	assetPaths.removeAt(m_ui->customAssetPaths->currentRow());
+	UpdateAssetPaths();
+}
+
+void CMainDialog::SelectedPathChanged(int currentRow)
+{
+	m_ui->removeCustomAssetPath->setEnabled(currentRow != -1 ? true : false);
+}
+
+void CMainDialog::EditCustomAssetPath()
+{
+	QDir data_path = QDir(QString::fromStdString(currentConfigApp->m_cd_path));
+	QString prev_asset_path = assetPaths[m_ui->customAssetPaths->currentRow()];
+	QString new_file = QFileDialog::getOpenFileName(
+		this,
+		"Open File",
+		data_path.absoluteFilePath(prev_asset_path),
+		"Interleaf files (*.si)"
+	);
+	if (!new_file.isEmpty()) {
+		new_file = data_path.relativeFilePath(new_file);
+		assetPaths[m_ui->customAssetPaths->currentRow()] = new_file;
+	}
+	UpdateAssetPaths();
+}
+
+void CMainDialog::UpdateAssetPaths()
+{
+	assetPaths.removeDuplicates();
+	currentConfigApp->m_custom_asset_path = assetPaths.join(u',').toStdString();
 	UpdateInterface();
 }
 

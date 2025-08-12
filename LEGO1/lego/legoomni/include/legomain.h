@@ -208,6 +208,7 @@ public:
 
 	void SetVersion10(MxBool p_version10) { m_version10 = p_version10; }
 	MxBool IsVersion10() { return m_version10; }
+	LEGO1_EXPORT void LoadSiLoader();
 
 	// SYNTHETIC: LEGO1 0x10058b30
 	// SYNTHETIC: BETA10 0x1008f8d0

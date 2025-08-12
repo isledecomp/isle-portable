@@ -89,7 +89,9 @@ bool CConfigApp::InitInstance()
 	m_haptic = TRUE;
 	m_touch_scheme = 2;
 	m_texture_load = TRUE;
-	m_texture_path = "/textures/";
+	m_texture_path = "textures/";
+	m_custom_assets_enabled = TRUE;
+	m_custom_asset_path = "assets/widescreen.si";
 	int totalRamMiB = SDL_GetSystemRAM();
 	if (totalRamMiB < 12) {
 		m_ram_quality_limit = 2;
@@ -188,6 +190,8 @@ bool CConfigApp::ReadRegisterSettings()
 	m_anisotropy = iniparser_getint(dict, "isle:Anisotropic", m_anisotropy);
 	m_texture_load = iniparser_getboolean(dict, "extensions:texture loader", m_texture_load);
 	m_texture_path = iniparser_getstring(dict, "texture loader:texture path", m_texture_path.c_str());
+	m_custom_assets_enabled = iniparser_getboolean(dict, "extensions:si loader", m_custom_assets_enabled);
+	m_custom_asset_path = iniparser_getstring(dict, "si loader:files", m_custom_asset_path.c_str());
 	m_aspect_ratio = iniparser_getint(dict, "isle:Aspect Ratio", m_aspect_ratio);
 	m_x_res = iniparser_getint(dict, "isle:Horizontal Resolution", m_x_res);
 	m_y_res = iniparser_getint(dict, "isle:Vertical Resolution", m_y_res);
@@ -364,7 +368,8 @@ void CConfigApp::WriteRegisterSettings() const
 	dictionary* dict = dictionary_new(0);
 	iniparser_set(dict, "isle", NULL);
 	iniparser_set(dict, "extensions", NULL);
-	iniparser_set(dict, "texture loader", NULL);
+	iniparser_set(dict, "si loader", NULL);
+
 	if (m_device_enumerator->FormatDeviceName(buffer, m_driver, m_device) >= 0) {
 		iniparser_set(dict, "isle:3D Device ID", buffer);
 	}
@@ -393,6 +398,9 @@ void CConfigApp::WriteRegisterSettings() const
 
 	SetIniBool(dict, "extensions:texture loader", m_texture_load);
 	iniparser_set(dict, "texture loader:texture path", m_texture_path.c_str());
+
+	SetIniBool(dict, "extensions:si loader", m_custom_assets_enabled);
+	iniparser_set(dict, "si loader:files", m_custom_asset_path.c_str());
 
 	SetIniBool(dict, "isle:Back Buffers in Video RAM", m_3d_video_ram);
 
@@ -451,8 +459,8 @@ CConfigApp g_theApp;
 int main(int argc, char* argv[])
 {
 	QApplication app(argc, argv);
-	QCoreApplication::setApplicationName("config");
-	QCoreApplication::setApplicationVersion("1.0");
+	QCoreApplication::setApplicationName("Isle-Config");
+	QCoreApplication::setApplicationVersion("2.0");
 
 	QCommandLineParser parser;
 	parser.setApplicationDescription("Configure LEGO Island");
@@ -470,7 +478,7 @@ int main(int argc, char* argv[])
 	if (parser.isSet(iniOption)) {
 		g_theApp.SetIniPath(parser.value(iniOption).toStdString());
 	}
-	qInfo() << "Ini path =" << QString::fromStdString(g_theApp.GetIniPath());
+	qInfo() << "INI path =" << QString::fromStdString(g_theApp.GetIniPath());
 
 	int result = 1;
 	if (g_theApp.InitInstance()) {

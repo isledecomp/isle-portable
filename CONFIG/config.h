@@ -87,7 +87,9 @@ public:
 	int m_texture_quality;
 	bool m_music;
 	bool m_texture_load;
+	bool m_custom_assets_enabled;
 	std::string m_texture_path;
+	std::string m_custom_asset_path;
 	std::string m_iniPath;
 	std::string m_base_path;
 	std::string m_cd_path;
