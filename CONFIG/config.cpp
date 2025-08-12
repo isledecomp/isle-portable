@@ -368,6 +368,7 @@ void CConfigApp::WriteRegisterSettings() const
 	dictionary* dict = dictionary_new(0);
 	iniparser_set(dict, "isle", NULL);
 	iniparser_set(dict, "extensions", NULL);
+	iniparser_set(dict, "texture loader", NULL);
 	iniparser_set(dict, "si loader", NULL);
 
 	if (m_device_enumerator->FormatDeviceName(buffer, m_driver, m_device) >= 0) {
