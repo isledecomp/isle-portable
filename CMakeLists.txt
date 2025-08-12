@@ -850,23 +850,24 @@ if(VITA)
 
   vita_create_self(isle.self isle UNSAFE)
 
-  add_custom_command(
-    OUTPUT param.sfo
-    COMMAND ${VITA_MKSFOEX} -s APP_VER=${VITA_VERSION} -s TITLE_ID=${VITA_TITLEID} "${VITA_APP_NAME}" param.sfo
+  set(VPK_FILE_ARGS "")
+  file(GLOB_RECURSE SCE_SYS_FILES packaging/vita/sce_sys/*)
+  foreach(FILE ${SCE_SYS_FILES})
+    file(RELATIVE_PATH REL_FILE ${CMAKE_CURRENT_SOURCE_DIR}/packaging/vita/ ${FILE})
+    list(APPEND VPK_FILE_ARGS "FILE")
+    list(APPEND VPK_FILE_ARGS ${FILE})
+    list(APPEND VPK_FILE_ARGS ${REL_FILE})
+  endforeach()
+
+  vita_create_vpk(isle.vpk ${VITA_TITLEID} isle.self
+    FILE "${CMAKE_CURRENT_BINARY_DIR}/CONFIG/vita/isle-config.self" isle-config.self
+    FILE "${CMAKE_CURRENT_BINARY_DIR}/CONFIG/vita/config_plugin.rco" config_plugin.rco
+    VERSION ${VITA_VERSION}
+    NAME ${VITA_APP_NAME}
+    ${VPK_FILE_ARGS}
   )
-  add_custom_target(param_sfo ALL DEPENDS param.sfo)
-  add_dependencies(isle param_sfo)
-  add_dependencies(isle config_plugin.rco_target)
+  add_dependencies(isle.vpk-vpk config_plugin.rco_target)
 
-  set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY OFF)
-  set(CPACK_ARCHIVE_FILE_EXTENSION "vpk")
-  set(CPACK_PACKAGE_FILE_NAME "lego-island-${PROJECT_VERSION}")
-
-  install(FILES "$<TARGET_FILE_DIR:isle>/isle.self" DESTINATION . RENAME "eboot.bin")
-  install(FILES "$<TARGET_FILE_DIR:isle-config>/isle-config.self" DESTINATION .)
-  install(FILES "$<TARGET_FILE_DIR:isle-config>/config_plugin.rco" DESTINATION .)
-  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/param.sfo" DESTINATION .)
-  install(DIRECTORY packaging/vita/sce_sys DESTINATION .)
 endif()
 
 if(MSVC OR IOS)
@@ -877,8 +878,6 @@ if(MSVC OR IOS)
   endif()
 elseif(APPLE AND NOT IOS)
   set(CPACK_GENERATOR DragNDrop)
-elseif(VITA)
-  set(CPACK_GENERATOR ZIP)
 else()
   set(CPACK_GENERATOR TGZ)
 endif()

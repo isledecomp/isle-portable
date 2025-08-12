@@ -135,7 +135,7 @@ jobs:
         run: cmake --build build --verbose --config Release
 
       - name: Package (CPack)
-        if: ${{ !matrix.n3ds }}
+        if: ${{ !matrix.n3ds && !matrix.vita }}
         run: |
           cd build
           success=0
@@ -183,6 +183,13 @@ jobs:
           mkdir dist
           mv *.3dsx dist/
           mv *.cia dist/
+      
+      - name: Package (Vita)
+        if: ${{ matrix.vita }}
+        run: |
+          cd build
+          mkdir dist
+          mv *.vpk dist/
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
