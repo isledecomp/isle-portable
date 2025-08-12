@@ -36,6 +36,17 @@ bool SiLoader::Load()
 	return true;
 }
 
+std::optional<MxCore*> SiLoader::HandleFind(StreamObject p_object, LegoWorld* world)
+{
+	for (const auto& key : replace) {
+		if (key.first == p_object) {
+			return world->Find(key.second.first, key.second.second);
+		}
+	}
+
+	return std::nullopt;
+}
+
 std::optional<MxResult> SiLoader::HandleStart(StreamObject p_object)
 {
 	for (const auto& key : startWith) {
@@ -101,7 +112,7 @@ bool SiLoader::LoadFile(const char* p_file)
 	return true;
 }
 
-void SiLoader::ParseDirectives(const MxAtomId& p_atom, si::Core* p_core, const MxAtomId* p_parentReplacedAtom)
+void SiLoader::ParseDirectives(const MxAtomId& p_atom, si::Core* p_core, MxAtomId p_parentReplacedAtom)
 {
 	for (si::Core* child : p_core->GetChildren()) {
 		if (si::Object* object = dynamic_cast<si::Object*>(child)) {
@@ -129,8 +140,11 @@ void SiLoader::ParseDirectives(const MxAtomId& p_atom, si::Core* p_core, const M
 					}
 				}
 
-				if (p_parentReplacedAtom) {
-					replace.emplace_back(StreamObject{*p_parentReplacedAtom, id}, StreamObject{p_atom, object->id_});
+				if (p_parentReplacedAtom.GetInternal()) {
+					replace.emplace_back(
+						StreamObject{p_parentReplacedAtom, object->id_},
+						StreamObject{p_atom, object->id_}
+					);
 				}
 				else {
 					if ((directive = SDL_strstr(extra.c_str(), "Replace:"))) {
@@ -139,7 +153,7 @@ void SiLoader::ParseDirectives(const MxAtomId& p_atom, si::Core* p_core, const M
 								StreamObject{MxAtomId{atom, e_lowerCase2}, id},
 								StreamObject{p_atom, object->id_}
 							);
-							p_parentReplacedAtom = &replace.back().first.first;
+							p_parentReplacedAtom = replace.back().first.first;
 						}
 					}
 				}
