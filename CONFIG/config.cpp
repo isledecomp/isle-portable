@@ -459,8 +459,8 @@ CConfigApp g_theApp;
 int main(int argc, char* argv[])
 {
 	QApplication app(argc, argv);
-	QCoreApplication::setApplicationName("config");
-	QCoreApplication::setApplicationVersion("1.0");
+	QCoreApplication::setApplicationName("Isle-Config");
+	QCoreApplication::setApplicationVersion("2.0");
 
 	QCommandLineParser parser;
 	parser.setApplicationDescription("Configure LEGO Island");
@@ -478,7 +478,7 @@ int main(int argc, char* argv[])
 	if (parser.isSet(iniOption)) {
 		g_theApp.SetIniPath(parser.value(iniOption).toStdString());
 	}
-	qInfo() << "Ini path =" << QString::fromStdString(g_theApp.GetIniPath());
+	qInfo() << "INI path =" << QString::fromStdString(g_theApp.GetIniPath());
 
 	int result = 1;
 	if (g_theApp.InitInstance()) {
