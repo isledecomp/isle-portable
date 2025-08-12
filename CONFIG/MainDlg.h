@@ -29,6 +29,7 @@ protected:
 private:
 	bool m_modified = false;
 	bool m_advanced = false;
+	QStringList assetPaths = QStringList();
 	Ui::MainDialog* m_ui = nullptr;
 	SDL_DisplayMode** displayModes;
 
@@ -48,6 +49,7 @@ private slots:
 	void OnCheckboxMusic(bool checked);
 	void OnCheckboxRumble(bool checked);
 	void OnCheckboxTexture(bool checked);
+	void OnCheckboxCustomAssets(bool checked);
 	void TouchControlsChanged(int index);
 	void TransitionTypeChanged(int index);
 	void ExclusiveResolutionChanged(int index);
@@ -64,6 +66,11 @@ private slots:
 	void AFChanged(int value);
 	void SelectTexturePathDialog();
 	void TexturePathEdited();
+	void AddCustomAssetPath();
+	void RemoveCustomAssetPath();
+	void SelectedPathChanged(int currentRow);
+	void EditCustomAssetPath();
+	void UpdateAssetPaths();
 	void XResChanged(int i);
 	void YResChanged(int i);
 	void AspectRatioChanged(int index);
