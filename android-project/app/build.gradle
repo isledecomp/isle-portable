@@ -15,7 +15,7 @@ android {
 
         externalNativeBuild {
             cmake {
-                arguments '-DANDROID_STL=c++_shared', "-DFETCHCONTENT_BASE_DIR=${projectDir.parentFile.parentFile}/build/_deps"
+                arguments '-DANDROID_STL=c++_shared', "-DFETCHCONTENT_BASE_DIR=${projectDir.parentFile}/build/_deps"
                 if (project.hasProperty('cmakeArgs')) {
                     project.cmakeArgs.split(" ").each {arg -> arguments arg}
                 }
@@ -48,9 +48,9 @@ android {
 }
 
 tasks.register('compileSDL3AndroidArchive', Exec) {
-    def rootDir = projectDir.parentFile.parentFile
+    def rootDir = projectDir.parentFile
     def sdl3Dir = "build/_deps/sdl3-src"
-    def cmakeCommand = "cmake -B build -DANDROID_SDL=TRUE"
+    def cmakeCommand = "cmake -P downloadSDL3.cmake"
     def pythonCommand = "python3 ${sdl3Dir}/build-scripts/build-release.py " +
             "--actions android " +
             "--fast " +
@@ -62,5 +62,5 @@ tasks.register('compileSDL3AndroidArchive', Exec) {
 }
 
 dependencies {
-    implementation files('libs/SDL3.aar').builtBy(downloadSDL3AndroidArchive)
+    implementation files('libs/SDL3.aar').builtBy(compileSDL3AndroidArchive)
 }

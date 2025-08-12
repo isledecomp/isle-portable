@@ -55,7 +55,6 @@ cmake_dependent_option(ISLE_COMPILE_SHADERS "Compile shaders" ON "SDL_SHADERCROS
 option(CMAKE_POSITION_INDEPENDENT_CODE "Build with -fPIC" ON)
 option(ENABLE_CLANG_TIDY "Enable clang-tidy")
 option(DOWNLOAD_DEPENDENCIES "Download dependencies" ON)
-option(ANDROID_SDL "Download SDL for Android Archive" OFF)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}" CACHE PATH "Directory where to put executables and dll")
 set(ISLE_EMSCRIPTEN_HOST "" CACHE STRING "Host URL for Emscripten streaming (e.g., https://test.com)")
 cmake_dependent_option(BUILD_SHARED_LIBS "Build lego1 as a shared library" ON "NOT EMSCRIPTEN" OFF)
@@ -68,9 +67,7 @@ message(STATUS "Isle extensions:        ${ISLE_EXTENSIONS}")
 message(STATUS "Isle debugging:         ${ISLE_DEBUG}")
 message(STATUS "Compile shaders:        ${ISLE_COMPILE_SHADERS}")
 
-if (NOT ANDROID_SDL)
-  add_library(Isle::iniparser INTERFACE IMPORTED)
-endif()
+add_library(Isle::iniparser INTERFACE IMPORTED)
 
 if (DOWNLOAD_DEPENDENCIES)
   # FetchContent downloads and configures dependencies
@@ -92,10 +89,6 @@ if (DOWNLOAD_DEPENDENCIES)
     )
   endif()
   FetchContent_MakeAvailable(SDL3)
-
-  if (ANDROID_SDL)
-    return()
-  endif()
 
   FetchContent_Declare(
     iniparser

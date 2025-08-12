@@ -48,7 +48,6 @@ jobs:
           - { name: 'Nintendo 3DS',        os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, n3ds: true,  werror: true,   clang-tidy: false,  container: 'devkitpro/devkitarm:latest', cmake-args: '-DCMAKE_TOOLCHAIN_FILE=/opt/devkitpro/cmake/3DS.cmake' }
           - { name: 'Xbox One',            os: 'windows-latest', generator: 'Visual Studio 17 2022', dx5: false, config: false, msvc: true,  werror: false,  clang-tidy: false,  vc-arch: 'amd64', cmake-args: '-DCMAKE_SYSTEM_NAME=WindowsStore -DCMAKE_SYSTEM_VERSION=10.0.26100.0', xbox-one: true}
           - { name: 'Android',             os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, android: true, werror: true, clang-tidy: false,}
-          - { name: 'Android (Debug)',     os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, android: true, werror: true, clang-tidy: false,  debug: true }
     steps:
       - name: Setup vcvars
         if: ${{ !!matrix.msvc }}
@@ -83,7 +82,7 @@ jobs:
           chmod a+x /opt/devkitpro/tools/bin/makerom
 
       - name: Install Linux dependencies (apt-get)
-        if: ${{ matrix.linux || matrix.android }}
+        if: ${{ matrix.linux }}
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -124,14 +123,14 @@ jobs:
         if: ${{ matrix.android }}
         run: |
           cd android-project && \
-          ./gradlew assemble${{ matrix.debug == 'true' && 'Debug' || 'Release' }} \
+          ./gradlew assembleRelease \
             --info \
             -PcmakeArgs="-DCMAKE_BUILD_TYPE=Release 
               -DISLE_USE_DX5=${{ !!matrix.dx5 }} \
               -DISLE_BUILD_CONFIG=${{ !!matrix.config }} \
               -DENABLE_CLANG_TIDY=${{ !!matrix.clang-tidy  }} \
               -DISLE_WERROR=${{ !!matrix.werror }} \
-              -DISLE_DEBUG=${{ matrix.debug || 'OFF' }} \
+              -DISLE_DEBUG=OFF \
               -Werror=dev"
 
       - name: Configure (CMake)
@@ -205,10 +204,8 @@ jobs:
       - name: Package (Android)
         if: ${{ matrix.android }}
         run: |
-          cd build
-          mkdir -p dist
-          find ../ -name '*.apk'
-          mv  ../android-project/app/build/outputs/apk/*/*.apk dist/
+          mkdir -p build/dist
+          mv  android-project/app/build/outputs/apk/*/*.apk build/dist/
 
       - name: Package Assets Separately
         if: matrix.build-assets
