@@ -9,7 +9,5 @@
 **/*.png binary
 **/*.svg text eol=lf
 **/*.desktop text eol=lf
-assets/widescreen/ filter=lfs diff=lfs merge=lfs -text
-assets/hdmusic/ filter=lfs diff=lfs merge=lfs -text
-assets/hdmusic/JBMusic1_HD.wav filter=lfs diff=lfs merge=lfs -text
-assets/widescreen/GaraDoor_Background_Wide.bmp filter=lfs diff=lfs merge=lfs -text
+assets/widescreen/** filter=lfs diff=lfs merge=lfs -text
+assets/hdmusic/** filter=lfs diff=lfs merge=lfs -text
