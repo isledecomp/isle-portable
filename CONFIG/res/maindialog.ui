@@ -75,6 +75,12 @@
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
        <widget class="QTabWidget" name="tabWidget">
+        <property name="minimumSize">
+         <size>
+          <width>425</width>
+          <height>0</height>
+         </size>
+        </property>
         <property name="currentIndex">
          <number>0</number>
         </property>
@@ -83,30 +89,6 @@
           <string>Game</string>
          </attribute>
          <layout class="QGridLayout" name="gridLayout">
-          <item row="1" column="2">
-           <layout class="QVBoxLayout" name="gameSettingsCheckBoxes">
-            <item>
-             <widget class="QCheckBox" name="sound3DCheckBox">
-              <property name="toolTip">
-               <string>Enable 3D positional audio effects.</string>
-              </property>
-              <property name="text">
-               <string>3D Sound</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QCheckBox" name="musicCheckBox">
-              <property name="toolTip">
-               <string>Enable in-game background music.</string>
-              </property>
-              <property name="text">
-               <string>Music</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
           <item row="2" column="0" colspan="3">
            <spacer name="verticalSpacer">
             <property name="orientation">
@@ -280,6 +262,32 @@ Set this to the CD image root.</string>
                </property>
                <property name="text">
                 <string>Open</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item row="1" column="2">
+           <widget class="QWidget" name="gameSettingsCheckBoxes" native="true">
+            <layout class="QVBoxLayout" name="layout">
+             <item>
+              <widget class="QCheckBox" name="sound3DCheckBox">
+               <property name="toolTip">
+                <string>Enable 3D positional audio effects.</string>
+               </property>
+               <property name="text">
+                <string>3D Sound</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="musicCheckBox">
+               <property name="toolTip">
+                <string>Enable in-game background music.</string>
+               </property>
+               <property name="text">
+                <string>Music</string>
                </property>
               </widget>
              </item>
@@ -769,7 +777,10 @@ The game will gradually increase the number of actors until this maximum is reac
                   </sizepolicy>
                  </property>
                  <property name="text">
-                  <string>x</string>
+                  <string>✕</string>
+                 </property>
+                 <property name="textFormat">
+                  <enum>Qt::TextFormat::PlainText</enum>
                  </property>
                  <property name="alignment">
                   <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -1140,11 +1151,17 @@ The game will gradually increase the number of actors until this maximum is reac
                         <height>30</height>
                        </size>
                       </property>
+                      <property name="font">
+                       <font>
+                        <pointsize>13</pointsize>
+                        <stylestrategy>NoAntialias</stylestrategy>
+                       </font>
+                      </property>
                       <property name="toolTip">
                        <string>Add path.</string>
                       </property>
-                      <property name="icon">
-                       <iconset theme="QIcon::ThemeIcon::ListAdd"/>
+                      <property name="text">
+                       <string>＋</string>
                       </property>
                      </widget>
                     </item>
@@ -1174,11 +1191,16 @@ Double-click a path to edit it.</string>
                         <height>30</height>
                        </size>
                       </property>
+                      <property name="font">
+                       <font>
+                        <pointsize>12</pointsize>
+                       </font>
+                      </property>
                       <property name="toolTip">
                        <string>Remove path.</string>
                       </property>
-                      <property name="icon">
-                       <iconset theme="QIcon::ThemeIcon::ListRemove"/>
+                      <property name="text">
+                       <string>✕</string>
                       </property>
                      </widget>
                     </item>
