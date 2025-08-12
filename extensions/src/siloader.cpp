@@ -47,22 +47,26 @@ std::optional<MxCore*> SiLoader::HandleFind(StreamObject p_object, LegoWorld* wo
 	return std::nullopt;
 }
 
-std::optional<MxResult> SiLoader::HandleStart(StreamObject p_object)
+std::optional<MxResult> SiLoader::HandleStart(MxDSAction& p_action)
 {
+	StreamObject object{p_action.GetAtomId(), p_action.GetObjectId()};
+
 	for (const auto& key : startWith) {
-		if (key.first == p_object) {
+		if (key.first == object) {
 			MxDSAction action;
 			action.SetAtomId(key.second.first);
 			action.SetObjectId(key.second.second);
+			action.SetUnknown24(p_action.GetUnknown24());
 			Start(&action);
 		}
 	}
 
 	for (const auto& key : replace) {
-		if (key.first == p_object) {
+		if (key.first == object) {
 			MxDSAction action;
 			action.SetAtomId(key.second.first);
 			action.SetObjectId(key.second.second);
+			action.SetUnknown24(p_action.GetUnknown24());
 			return Start(&action);
 		}
 	}
@@ -87,23 +91,27 @@ std::optional<MxBool> SiLoader::HandleRemove(StreamObject p_object, LegoWorld* w
 	return std::nullopt;
 }
 
-std::optional<MxBool> SiLoader::HandleDelete(StreamObject p_object)
+std::optional<MxBool> SiLoader::HandleDelete(MxDSAction& p_action)
 {
+	StreamObject object{p_action.GetAtomId(), p_action.GetObjectId()};
+
 	for (const auto& key : removeWith) {
-		if (key.first == p_object) {
+		if (key.first == object) {
 			MxDSAction action;
 			action.SetAtomId(key.second.first);
 			action.SetObjectId(key.second.second);
-			DeleteObject(&action);
+			action.SetUnknown24(p_action.GetUnknown24());
+			DeleteObject(action);
 		}
 	}
 
 	for (const auto& key : replace) {
-		if (key.first == p_object) {
+		if (key.first == object) {
 			MxDSAction action;
 			action.SetAtomId(key.second.first);
 			action.SetObjectId(key.second.second);
-			DeleteObject(&action);
+			action.SetUnknown24(p_action.GetUnknown24());
+			DeleteObject(action);
 			return TRUE;
 		}
 	}

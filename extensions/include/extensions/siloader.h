@@ -17,9 +17,9 @@ public:
 	static void Initialize();
 	static bool Load();
 	static std::optional<MxCore*> HandleFind(StreamObject p_object, LegoWorld* world);
-	static std::optional<MxResult> HandleStart(StreamObject p_object);
+	static std::optional<MxResult> HandleStart(MxDSAction& p_action);
 	static std::optional<MxBool> HandleRemove(StreamObject p_object, LegoWorld* world);
-	static std::optional<MxBool> HandleDelete(StreamObject p_object);
+	static std::optional<MxBool> HandleDelete(MxDSAction& p_action);
 
 	static std::map<std::string, std::string> options;
 	static std::vector<std::string> files;
