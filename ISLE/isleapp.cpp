@@ -983,6 +983,8 @@ MxResult IsleApp::SetupWindow()
 		return FAILURE;
 	}
 
+	Lego()->LoadSiLoader();
+
 	DetectGameVersion();
 	GameState()->SerializePlayersInfo(LegoStorage::c_read);
 	GameState()->SerializeScoreHistory(LegoStorage::c_read);

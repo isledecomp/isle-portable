@@ -1,6 +1,7 @@
 #include "filesystem.h"
 
 #include "events.h"
+#include "extensions/siloader.h"
 #include "extensions/textureloader.h"
 #include "legogamestate.h"
 #include "misc.h"
@@ -105,6 +106,14 @@ void Emscripten_SetupFilesystem()
 			}
 
 			Emscripten_SendExtensionProgress("HD Textures", (++i * 100) / sizeOfArray(g_textures));
+		}
+	}
+
+	if (Extensions::SiLoader::enabled) {
+		wasmfs_create_directory("/LEGO/extra", 0644, fetchfs);
+
+		for (const auto& file : Extensions::SiLoader::files) {
+			registerFile(file.c_str());
 		}
 	}
 #endif
