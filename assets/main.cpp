@@ -31,9 +31,9 @@ void CreateWidescreen()
 	GaraDoor_Background_Wide.presenter_ = "MxStillPresenter";
 	GaraDoor_Background_Wide.name_ = "GaraDoor_Background_Wide";
 	GaraDoor_Background_Wide.filetype_ = si::MxOb::STL;
-	GaraDoor_Background_Wide.location_.x = -240.0;
-	GaraDoor_Background_Wide.location_.z = -1.0;
-	GaraDoor_Background_Wide.up_.y = 1.0;
+	GaraDoor_Background_Wide.location_ = si::Vector3(-240.0, 0.0, -1.0);
+	GaraDoor_Background_Wide.direction_ = si::Vector3(0, 0, 0);
+	GaraDoor_Background_Wide.up_ = si::Vector3(0, 1.0, 0);
 	GaraDoor_Background_Wide.ReplaceWithFile("widescreen/GaraDoor_Background_Wide.bmp");
 	si.AppendChild(&GaraDoor_Background_Wide);
 
