@@ -47,6 +47,16 @@ android {
     }
 }
 
+afterEvaluate {
+    def androidPath = System.getenv("ANDROID_HOME") ?: android.sdkDirectory
+    def ndkPath = System.getenv("ANDROID_NDK_HOME") ?: android.ndkDirectory
+
+    tasks.named('compileSDL3AndroidArchive').configure {
+        environment "ANDROID_HOME", androidPath
+        environment "ANDROID_NDK_HOME", ndkPath
+    }
+}
+
 tasks.register('compileSDL3AndroidArchive', Exec) {
     def rootDir = projectDir.parentFile
     def sdl3Dir = "build/_deps/sdl3-src"
@@ -55,7 +65,7 @@ tasks.register('compileSDL3AndroidArchive', Exec) {
             "--actions android " +
             "--fast " +
             "--force " +
-            "--root='build/_deps/sdl3-src/'"
+            "--root='${sdl3Dir}'"
     def mvCommand = "mv ${sdl3Dir}/build-android/SDL3-*.aar ${projectDir}/libs/SDL3.aar"
 
     commandLine 'sh', '-c', "cd ${rootDir} && ${cmakeCommand} && ${pythonCommand} && mkdir -p ${projectDir}/libs/ && ${mvCommand}"
