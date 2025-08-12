@@ -12,8 +12,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(ScePaf_External)
 
-add_subdirectory(SceIniFileProcessor)
-
 add_library(iniparser_paf
   iniparser_paf/src/dictionary.c
   iniparser_paf/src/iniparser.c
