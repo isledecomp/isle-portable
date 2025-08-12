@@ -19,6 +19,7 @@ public:
 	static std::optional<MxCore*> HandleFind(StreamObject p_object, LegoWorld* world);
 	static std::optional<MxResult> HandleStart(StreamObject p_object);
 	static std::optional<MxBool> HandleRemove(StreamObject p_object, LegoWorld* world);
+	static std::optional<MxBool> HandleDelete(StreamObject p_object);
 
 	static std::map<std::string, std::string> options;
 	static std::vector<std::string> files;
@@ -38,10 +39,12 @@ constexpr auto Load = &SiLoader::Load;
 constexpr auto HandleFind = &SiLoader::HandleFind;
 constexpr auto HandleStart = &SiLoader::HandleStart;
 constexpr auto HandleRemove = &SiLoader::HandleRemove;
+constexpr auto HandleDelete = &SiLoader::HandleDelete;
 #else
 constexpr decltype(&SiLoader::Load) Load = nullptr;
 constexpr decltype(&SiLoader::HandleFind) HandleFind = nullptr;
 constexpr decltype(&SiLoader::HandleStart) HandleStart = nullptr;
 constexpr decltype(&SiLoader::HandleRemove) HandleRemove = nullptr;
+constexpr decltype(&SiLoader::HandleDelete) HandleDelete = nullptr;
 #endif
 }; // namespace Extensions

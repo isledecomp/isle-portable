@@ -87,6 +87,30 @@ std::optional<MxBool> SiLoader::HandleRemove(StreamObject p_object, LegoWorld* w
 	return std::nullopt;
 }
 
+std::optional<MxBool> SiLoader::HandleDelete(StreamObject p_object)
+{
+	for (const auto& key : removeWith) {
+		if (key.first == p_object) {
+			MxDSAction action;
+			action.SetAtomId(key.second.first);
+			action.SetObjectId(key.second.second);
+			DeleteObject(&action);
+		}
+	}
+
+	for (const auto& key : replace) {
+		if (key.first == p_object) {
+			MxDSAction action;
+			action.SetAtomId(key.second.first);
+			action.SetObjectId(key.second.second);
+			DeleteObject(&action);
+			return TRUE;
+		}
+	}
+
+	return std::nullopt;
+}
+
 bool SiLoader::LoadFile(const char* p_file)
 {
 	si::Interleaf si;
