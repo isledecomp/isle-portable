@@ -1391,12 +1391,12 @@ SDL_AppResult IsleApp::ParseArguments(int argc, char** argv)
 			consumed = 1;
 		}
 		else if (strcmp(argv[i], "--help") == 0) {
-			DisplayArgumentHelp();
+			DisplayArgumentHelp(argv[0]);
 			return SDL_APP_SUCCESS;
 		}
 		if (consumed <= 0) {
 			SDL_Log("Invalid argument(s): %s", argv[i]);
-			DisplayArgumentHelp();
+			DisplayArgumentHelp(argv[0]);
 			return SDL_APP_FAILURE;
 		}
 	}
@@ -1404,9 +1404,9 @@ SDL_AppResult IsleApp::ParseArguments(int argc, char** argv)
 	return SDL_APP_CONTINUE;
 }
 
-void IsleApp::DisplayArgumentHelp()
+void IsleApp::DisplayArgumentHelp(const char* p_execName)
 {
-	SDL_Log("Usage: isle [options]");
+	SDL_Log("Usage: %s [options]", p_execName);
 	SDL_Log("Options:");
 	SDL_Log("	--ini <path>		Set custom path to .ini config");
 #ifdef ISLE_DEBUG
