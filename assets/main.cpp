@@ -46,7 +46,11 @@ void CreateWidescreen()
 		object->location_ = si::Vector3(-240.0, 0.0, -1.0);
 		object->direction_ = si::Vector3(0, 0, 0);
 		object->up_ = si::Vector3(0, 1.0, 0);
-		object->ReplaceWithFile(file.c_str());
+
+		if (!object->ReplaceWithFile(file.c_str())) {
+			abort();
+		}
+
 		si.AppendChild(object);
 		depfile << result << ": " << (std::filesystem::current_path() / file).string() << std::endl;
 		i++;
@@ -176,7 +180,10 @@ void CreateHDMusic()
 		object->direction_ = si::Vector3(0, 0, 1);
 		object->up_ = si::Vector3(0, 1, 0);
 		object->volume_ = 79;
-		object->ReplaceWithFile(file.c_str());
+
+		if (!object->ReplaceWithFile(file.c_str())) {
+			abort();
+		}
 
 		si.AppendChild(object);
 		depfile << result << ": " << (std::filesystem::current_path() / file).string() << std::endl;
