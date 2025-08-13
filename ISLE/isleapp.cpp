@@ -1404,9 +1404,9 @@ SDL_AppResult IsleApp::ParseArguments(int argc, char** argv)
 	return SDL_APP_CONTINUE;
 }
 
-void IsleApp::DisplayArgumentHelp(char* execName)
+void IsleApp::DisplayArgumentHelp(const char* p_execName)
 {
-	SDL_Log("Usage: %s [options]", execName);
+	SDL_Log("Usage: %s [options]", p_execName);
 	SDL_Log("Options:");
 	SDL_Log("	--ini <path>		Set custom path to .ini config");
 #ifdef ISLE_DEBUG
