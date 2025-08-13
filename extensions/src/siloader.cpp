@@ -5,6 +5,7 @@
 #include "mxstreamer.h"
 
 #include <SDL3/SDL.h>
+#include <interleaf.h>
 
 using namespace Extensions;
 

@@ -230,6 +230,11 @@ void MxBackgroundAudioManager::StartAction(MxParam& p_param)
 	m_action2.SetObjectId(m_pendingPresenter->GetAction()->GetObjectId());
 	m_targetVolume = ((MxDSSound*) (m_pendingPresenter->GetAction()))->GetVolume();
 	m_pendingPresenter->SetVolume(0);
+
+	// Disabling the action here and starting it later once the actively presented music has been faded out.
+	// This was not necessary in retail because the streaming layer would implicitly not start another action
+	// before the previous one has ended (since it's all coming from JUKEBOX.SI), however since we now
+	// allow loading music from multiple SI files this would cause the new music to start immediately.
 	m_pendingPresenter->GetAction()->SetFlags(m_pendingPresenter->GetAction()->GetFlags() & ~MxDSAction::c_enabled);
 }
 

@@ -4,9 +4,13 @@
 #include "legoworld.h"
 #include "mxatom.h"
 
-#include <interleaf.h>
 #include <map>
 #include <vector>
+
+namespace si
+{
+class Core;
+}
 
 namespace Extensions
 {
