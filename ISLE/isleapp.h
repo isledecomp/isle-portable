@@ -99,7 +99,7 @@ private:
 	const CursorBitmap* m_cursorCurrentBitmap;
 	char* m_mediaPath;
 	MxFloat m_cursorSensitivity;
-	void DisplayArgumentHelp();
+	void DisplayArgumentHelp(char* execName);
 
 	char* m_iniPath;
 	MxFloat m_maxLod;

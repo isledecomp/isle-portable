@@ -505,14 +505,15 @@ void CMainDialog::SelectDataPathDialog()
 		QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
 	);
 
-	QDir data_dir = QDir(data_path);
-
-	if (data_dir.exists()) {
-		currentConfigApp->m_cd_path = data_dir.absolutePath().toStdString();
-		data_dir.cd(QString("DATA"));
-		data_dir.cd(QString("disk"));
-		currentConfigApp->m_base_path = data_dir.absolutePath().toStdString();
-		m_modified = true;
+	if (!data_path.isEmpty()) {
+		QDir data_dir = QDir(data_path);
+		if (data_dir.exists()) {
+			currentConfigApp->m_cd_path = data_dir.absolutePath().toStdString();
+			data_dir.cd(QString("DATA"));
+			data_dir.cd(QString("disk"));
+			currentConfigApp->m_base_path = data_dir.absolutePath().toStdString();
+			m_modified = true;
+		}
 	}
 	UpdateInterface();
 }
@@ -527,11 +528,12 @@ void CMainDialog::SelectSavePathDialog()
 		QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
 	);
 
-	QDir save_dir = QDir(save_path);
-
-	if (save_dir.exists()) {
-		currentConfigApp->m_save_path = save_dir.absolutePath().toStdString();
-		m_modified = true;
+	if (!save_path.isEmpty()) {
+		QDir save_dir = QDir(save_path);
+		if (save_dir.exists()) {
+			currentConfigApp->m_save_path = save_dir.absolutePath().toStdString();
+			m_modified = true;
+		}
 	}
 	UpdateInterface();
 }
@@ -547,13 +549,11 @@ void CMainDialog::DataPathEdited()
 		currentConfigApp->m_base_path = data_dir.absolutePath().toStdString();
 		m_modified = true;
 	}
-
 	UpdateInterface();
 }
 
 void CMainDialog::SavePathEdited()
 {
-
 	QDir save_dir = QDir(m_ui->savePath->text());
 
 	if (save_dir.exists()) {
@@ -606,7 +606,7 @@ void CMainDialog::SelectTexturePathDialog()
 		QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
 	);
 
-	if (data_path.exists(texture_path)) {
+	if (!texture_path.isEmpty() && data_path.exists(texture_path)) {
 		texture_path = data_path.relativeFilePath(texture_path);
 		texture_path.prepend(QDir::separator());
 		currentConfigApp->m_texture_path = texture_path.toStdString();
@@ -623,7 +623,7 @@ void CMainDialog::TexturePathEdited()
 	if (texture_path.startsWith(QDir::separator())) {
 		texture_path.remove(0, 1);
 	}
-	if (data_path.exists(texture_path)) {
+	if (data_path.exists(data_path.absoluteFilePath(texture_path))) {
 		texture_path = data_path.relativeFilePath(texture_path);
 		texture_path.prepend(QDir::separator());
 		currentConfigApp->m_texture_path = texture_path.toStdString();
