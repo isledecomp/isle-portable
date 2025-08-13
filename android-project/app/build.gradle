@@ -37,7 +37,7 @@ android {
             enableV4Signing = true
             keyAlias = System.getenv("SIGNING_KEY_ALIAS")
             keyPassword = System.getenv("SIGNING_KEY_PASSWORD")
-            storeFile = file(System.getenv("SIGNING_STORE_FILE"))
+            System.getenv("SIGNING_STORE_FILE")?.with { storeFile = file(it) }
             storePassword = System.getenv("SIGNING_STORE_PASSWORD")
         }
     }
