@@ -7,11 +7,6 @@
 #include <object.h>
 #include <string_view>
 
-struct AssetView {
-	std::string_view name;
-	std::string_view extra;
-};
-
 si::Interleaf::Version version = si::Interleaf::Version2_2;
 uint32_t bufferSize = 65536;
 uint32_t bufferCount = 8;
@@ -23,6 +18,10 @@ si::MemoryBuffer mxHd;
 void CreateWidescreen()
 {
 	std::string result = out + "/widescreen.si";
+	struct AssetView {
+		std::string_view name;
+		std::string_view extra;
+	};
 	constexpr const AssetView widescreenBitmaps[] = {
 		{"GaraDoor_Background_Wide",
 		 "World:current, StartWith:\\Lego\\Scripts\\Isle\\Isle;1160, RemoveWith:\\Lego\\Scripts\\Isle\\Isle;1161"}
@@ -60,7 +59,101 @@ void CreateWidescreen()
 void CreateHDMusic()
 {
 	std::string result = out + "/hdmusic.si";
-	constexpr const AssetView wavAudio[] = {{"JBMusic1_HD", "Replace:\\Lego\\Scripts\\Isle\\Jukebox;55"}};
+	struct AssetView {
+		std::string_view name;
+		std::string_view extra;
+		uint32_t duration;
+		uint32_t loops;
+		uint32_t flags;
+	};
+	constexpr const AssetView wavAudio[] = {
+		{"BrickstrChase_HD",
+		 "Replace:\\Lego\\Scripts\\Isle\\Jukebox;3",
+		 82850,
+		 10000,
+		 MxDSAction::c_enabled | MxDSAction::c_bit3},
+		{"BrickHunt_HD",
+		 "Replace:\\Lego\\Scripts\\Isle\\Jukebox;4",
+		 192630,
+		 10000,
+		 MxDSAction::c_enabled | MxDSAction::c_bit3},
+		{"ResidentalArea_Music_HD",
+		 "Replace:\\Lego\\Scripts\\Isle\\Jukebox;5",
+		 89540,
+		 10000,
+		 MxDSAction::c_enabled | MxDSAction::c_bit3},
+		{"BeachBlvd_Music_HD",
+		 "Replace:\\Lego\\Scripts\\Isle\\Jukebox;6",
+		 152600,
+		 10000,
+		 MxDSAction::c_enabled | MxDSAction::c_bit3},
+		{"Cave_Music_HD",
+		 "Replace:\\Lego\\Scripts\\Isle\\Jukebox;7",
+		 69240,
+		 10000,
+		 MxDSAction::c_enabled | MxDSAction::c_bit3},
+		{"CentralRoads_Music_HD",
+		 "Replace:\\Lego\\Scripts\\Isle\\Jukebox;8",
+		 193380,
+		 10000,
+		 MxDSAction::c_enabled | MxDSAction::c_bit3},
+		{"Jail_Music_HD",
+		 "Replace:\\Lego\\Scripts\\Isle\\Jukebox;9",
+		 68820,
+		 10000,
+		 MxDSAction::c_enabled | MxDSAction::c_bit3},
+		{"Hospital_Music_HD",
+		 "Replace:\\Lego\\Scripts\\Isle\\Jukebox;10",
+		 211990,
+		 10000,
+		 MxDSAction::c_enabled | MxDSAction::c_bit3},
+		{"InformationCenter_Music_HD",
+		 "Replace:\\Lego\\Scripts\\Isle\\Jukebox;11",
+		 154510,
+		 10000,
+		 MxDSAction::c_enabled | MxDSAction::c_bit3},
+		{"PoliceStation_Music_HD",
+		 "Replace:\\Lego\\Scripts\\Isle\\Jukebox;12",
+		 57090,
+		 10000,
+		 MxDSAction::c_enabled | MxDSAction::c_bit3},
+		{"Park_Music_HD",
+		 "Replace:\\Lego\\Scripts\\Isle\\Jukebox;13",
+		 91210,
+		 10000,
+		 MxDSAction::c_enabled | MxDSAction::c_bit3},
+		{"RaceTrackRoad_Music_HD",
+		 "Replace:\\Lego\\Scripts\\Isle\\Jukebox;16",
+		 189000,
+		 10000,
+		 MxDSAction::c_enabled | MxDSAction::c_bit3},
+		{"Beach_Music_HD",
+		 "Replace:\\Lego\\Scripts\\Isle\\Jukebox;17",
+		 127490,
+		 10000,
+		 MxDSAction::c_enabled | MxDSAction::c_bit3},
+		{"JetskiRace_Music_HD",
+		 "Replace:\\Lego\\Scripts\\Isle\\Jukebox;19",
+		 64440,
+		 10000,
+		 MxDSAction::c_enabled | MxDSAction::c_bit3},
+		{"Act3Music_HD",
+		 "Replace:\\Lego\\Scripts\\Isle\\Jukebox;20",
+		 80510,
+		 10000,
+		 MxDSAction::c_enabled | MxDSAction::c_bit3},
+		{"JBMusic1_HD", "Replace:\\Lego\\Scripts\\Isle\\Jukebox;55", 125850, 1, MxDSAction::c_enabled},
+		{"JBMusic2_HD", "Replace:\\Lego\\Scripts\\Isle\\Jukebox;56", 162900, 1, MxDSAction::c_enabled},
+		{"JBMusic3_HD", "Replace:\\Lego\\Scripts\\Isle\\Jukebox;57", 122750, 1, MxDSAction::c_enabled},
+		{"JBMusic4_HD", "Replace:\\Lego\\Scripts\\Isle\\Jukebox;58", 140000, 1, MxDSAction::c_enabled},
+		{"JBMusic5_HD", "Replace:\\Lego\\Scripts\\Isle\\Jukebox;59", 72720, 1, MxDSAction::c_enabled},
+		{"JBMusic6_HD", "Replace:\\Lego\\Scripts\\Isle\\Jukebox;60", 57030, 1, MxDSAction::c_enabled},
+		{"InfoCenter_3rd_Floor_Music_HD",
+		 "Replace:\\Lego\\Scripts\\Isle\\Jukebox;61",
+		 114520,
+		 10000,
+		 MxDSAction::c_enabled | MxDSAction::c_bit3}
+	};
 
 	si::Interleaf si;
 	mxHd.seek(0, si::MemoryBuffer::SeekStart);
@@ -70,20 +163,22 @@ void CreateHDMusic()
 	for (const AssetView& asset : wavAudio) {
 		si::Object* object = new si::Object;
 		std::string file = std::string("hdmusic/") + std::string(asset.name) + ".wav";
+
 		object->id_ = i;
 		object->type_ = si::MxOb::Sound;
-		object->flags_ = MxDSAction::c_enabled;
-		object->duration_ = 125850;
-		object->loops_ = 1;
+		object->flags_ = asset.flags;
+		object->duration_ = asset.duration * asset.loops;
+		object->loops_ = asset.loops;
 		object->extra_ = si::bytearray(asset.extra.data(), asset.extra.length());
 		object->presenter_ = "MxWavePresenter";
 		object->name_ = asset.name;
 		object->filetype_ = si::MxOb::WAV;
 		object->location_ = si::Vector3(0, 0, 0);
-		object->direction_ = si::Vector3(0, 0, 0);
-		object->up_ = si::Vector3(0, 1.0, 0);
+		object->direction_ = si::Vector3(0, 0, 1);
+		object->up_ = si::Vector3(0, 1, 0);
 		object->volume_ = 79;
 		object->ReplaceWithFile(file.c_str());
+
 		si.AppendChild(object);
 		depfile << result << ": " << (std::filesystem::current_path() / file).string() << std::endl;
 		i++;
