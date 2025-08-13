@@ -57,6 +57,8 @@ std::optional<MxResult> SiLoader::HandleStart(MxDSAction& p_action)
 			action.SetAtomId(key.second.first);
 			action.SetObjectId(key.second.second);
 			action.SetUnknown24(p_action.GetUnknown24());
+			action.SetNotificationObject(p_action.GetNotificationObject());
+			action.SetOrigin(p_action.GetOrigin());
 			Start(&action);
 		}
 	}
@@ -67,7 +69,12 @@ std::optional<MxResult> SiLoader::HandleStart(MxDSAction& p_action)
 			action.SetAtomId(key.second.first);
 			action.SetObjectId(key.second.second);
 			action.SetUnknown24(p_action.GetUnknown24());
-			return Start(&action);
+			action.SetNotificationObject(p_action.GetNotificationObject());
+			action.SetOrigin(p_action.GetOrigin());
+
+			MxResult result = Start(&action);
+			p_action.SetUnknown24(action.GetUnknown24());
+			return result;
 		}
 	}
 
@@ -101,6 +108,8 @@ std::optional<MxBool> SiLoader::HandleDelete(MxDSAction& p_action)
 			action.SetAtomId(key.second.first);
 			action.SetObjectId(key.second.second);
 			action.SetUnknown24(p_action.GetUnknown24());
+			action.SetNotificationObject(p_action.GetNotificationObject());
+			action.SetOrigin(p_action.GetOrigin());
 			DeleteObject(action);
 		}
 	}
@@ -111,7 +120,11 @@ std::optional<MxBool> SiLoader::HandleDelete(MxDSAction& p_action)
 			action.SetAtomId(key.second.first);
 			action.SetObjectId(key.second.second);
 			action.SetUnknown24(p_action.GetUnknown24());
+			action.SetNotificationObject(p_action.GetNotificationObject());
+			action.SetOrigin(p_action.GetOrigin());
+
 			DeleteObject(action);
+			p_action.SetUnknown24(action.GetUnknown24());
 			return TRUE;
 		}
 	}
@@ -147,6 +160,8 @@ bool SiLoader::LoadFile(const char* p_file)
 void SiLoader::ParseDirectives(const MxAtomId& p_atom, si::Core* p_core, MxAtomId p_parentReplacedAtom)
 {
 	for (si::Core* child : p_core->GetChildren()) {
+		MxAtomId replacedAtom = p_parentReplacedAtom;
+
 		if (si::Object* object = dynamic_cast<si::Object*>(child)) {
 			if (object->type() != si::MxOb::Null) {
 				std::string extra(object->extra_.data(), object->extra_.size());
@@ -185,13 +200,13 @@ void SiLoader::ParseDirectives(const MxAtomId& p_atom, si::Core* p_core, MxAtomI
 								StreamObject{MxAtomId{atom, e_lowerCase2}, id},
 								StreamObject{p_atom, object->id_}
 							);
-							p_parentReplacedAtom = replace.back().first.first;
+							replacedAtom = replace.back().first.first;
 						}
 					}
 				}
 			}
 		}
 
-		ParseDirectives(p_atom, child, p_parentReplacedAtom);
+		ParseDirectives(p_atom, child, replacedAtom);
 	}
 }

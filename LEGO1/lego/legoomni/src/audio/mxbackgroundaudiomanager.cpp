@@ -120,6 +120,15 @@ void MxBackgroundAudioManager::FadeInPendingPresenter()
 
 	if (m_activePresenter == NULL) {
 		if (m_pendingPresenter) {
+			if (m_pendingPresenter->GetCurrentTickleState() <= MxPresenter::e_starting) {
+				return;
+			}
+
+			if (!m_pendingPresenter->IsEnabled()) {
+				m_pendingPresenter->Enable(TRUE);
+				m_pendingPresenter->SetTickleState(MxPresenter::e_streaming);
+			}
+
 			if (m_volumeSuppressionAmount != 0) {
 				compare = 30;
 			}
@@ -221,6 +230,7 @@ void MxBackgroundAudioManager::StartAction(MxParam& p_param)
 	m_action2.SetObjectId(m_pendingPresenter->GetAction()->GetObjectId());
 	m_targetVolume = ((MxDSSound*) (m_pendingPresenter->GetAction()))->GetVolume();
 	m_pendingPresenter->SetVolume(0);
+	m_pendingPresenter->GetAction()->SetFlags(m_pendingPresenter->GetAction()->GetFlags() & ~MxDSAction::c_enabled);
 }
 
 // FUNCTION: LEGO1 0x1007f200
@@ -254,7 +264,8 @@ MxResult MxBackgroundAudioManager::PlayMusic(
 		return SUCCESS;
 	}
 
-	if (m_action2.GetObjectId() == -1 && m_action1.GetObjectId() != p_action.GetObjectId()) {
+	if (m_action2.GetObjectId() == -1 &&
+		(m_action1.GetObjectId() != p_action.GetObjectId() || m_action1.GetAtomId() != p_action.GetAtomId())) {
 		MxDSAction action;
 		action.SetAtomId(GetCurrentAction().GetAtomId());
 		action.SetObjectId(GetCurrentAction().GetObjectId());
