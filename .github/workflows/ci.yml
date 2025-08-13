@@ -105,6 +105,8 @@ jobs:
         uses: ashutoshvarma/setup-ninja@master
 
       - uses: actions/checkout@v4
+        with:
+          lfs: ${{ matrix.build-assets }}
 
       - name: Configure (CMake)
         run: |
