@@ -673,11 +673,6 @@ if(ISLE_BUILD_ASSETS)
   add_custom_target(build_assets ALL
     DEPENDS ${GENERATED_ASSETS_DIR}/.stamp
   )
-
-  install(DIRECTORY ${GENERATED_ASSETS_DIR}/
-    DESTINATION assets
-    COMPONENT assets
-  )
 endif()
 
 if (ISLE_MINIWIN)
