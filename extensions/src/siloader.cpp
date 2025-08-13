@@ -71,7 +71,10 @@ std::optional<MxResult> SiLoader::HandleStart(MxDSAction& p_action)
 			action.SetUnknown24(p_action.GetUnknown24());
 			action.SetNotificationObject(p_action.GetNotificationObject());
 			action.SetOrigin(p_action.GetOrigin());
-			return Start(&action);
+
+			MxResult result = Start(&action);
+			p_action.SetUnknown24(action.GetUnknown24());
+			return result;
 		}
 	}
 
@@ -119,7 +122,9 @@ std::optional<MxBool> SiLoader::HandleDelete(MxDSAction& p_action)
 			action.SetUnknown24(p_action.GetUnknown24());
 			action.SetNotificationObject(p_action.GetNotificationObject());
 			action.SetOrigin(p_action.GetOrigin());
+
 			DeleteObject(action);
+			p_action.SetUnknown24(action.GetUnknown24());
 			return TRUE;
 		}
 	}

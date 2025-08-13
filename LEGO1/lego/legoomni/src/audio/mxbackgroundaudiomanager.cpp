@@ -120,6 +120,10 @@ void MxBackgroundAudioManager::FadeInPendingPresenter()
 
 	if (m_activePresenter == NULL) {
 		if (m_pendingPresenter) {
+			if (m_pendingPresenter->GetCurrentTickleState() <= MxPresenter::e_starting) {
+				return;
+			}
+
 			if (!m_pendingPresenter->IsEnabled()) {
 				m_pendingPresenter->Enable(TRUE);
 				m_pendingPresenter->SetTickleState(MxPresenter::e_streaming);
@@ -260,7 +264,8 @@ MxResult MxBackgroundAudioManager::PlayMusic(
 		return SUCCESS;
 	}
 
-	if (m_action2.GetObjectId() == -1 && m_action1.GetObjectId() != p_action.GetObjectId()) {
+	if (m_action2.GetObjectId() == -1 &&
+		(m_action1.GetObjectId() != p_action.GetObjectId() || m_action1.GetAtomId() != p_action.GetAtomId())) {
 		MxDSAction action;
 		action.SetAtomId(GetCurrentAction().GetAtomId());
 		action.SetObjectId(GetCurrentAction().GetObjectId());
