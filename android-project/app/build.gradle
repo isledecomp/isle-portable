@@ -32,9 +32,20 @@ android {
         }
     }
 
+    signingConfigs {
+        register("release") {
+            enableV4Signing = true
+            keyAlias = System.getenv("SIGNING_KEY_ALIAS")
+            keyPassword = System.getenv("SIGNING_KEY_PASSWORD")
+            storeFile = file(System.getenv("SIGNING_STORE_FILE"))
+            storePassword = System.getenv("SIGNING_STORE_PASSWORD")
+        }
+    }
+    
     buildTypes {
         release {
             minifyEnabled true
+            signingConfig = signingConfigs.getByName("release")
 //             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }

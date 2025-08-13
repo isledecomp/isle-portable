@@ -121,9 +121,15 @@ jobs:
 
       - name: Build (Android)
         if: ${{ matrix.android }}
+        env:
+          SIGNING_KEY_ALIAS: ${{ secrets.keyAlias }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.keyPassword }}
+          SIGNING_STORE_PASSWORD: ${{ secrets.keystorePassword }}
+          SIGNING_STORE_FILE: ${{ github.workspace }}/release.keystore
         run: |
-          cd android-project && \
-          ./gradlew assembleRelease \
+          echo "${{ secrets.keystore }}" | base64 -d > release.keystore
+          cd android-project
+          ./gradlew packageRelease \
             --info \
             -PcmakeArgs="-DCMAKE_BUILD_TYPE=Release \
               -DISLE_USE_DX5=${{ !!matrix.dx5 }} \
