@@ -676,6 +676,7 @@ if(ISLE_BUILD_ASSETS)
 
   install(DIRECTORY ${GENERATED_ASSETS_DIR}/
     DESTINATION assets
+    COMPONENT assets
   )
 endif()
 
