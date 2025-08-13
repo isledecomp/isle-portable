@@ -119,11 +119,7 @@ void MxBackgroundAudioManager::FadeInPendingPresenter()
 	MxS32 compare, volume;
 
 	if (m_activePresenter == NULL) {
-		if (m_pendingPresenter) {
-			if (m_pendingPresenter->GetCurrentTickleState() <= MxPresenter::e_starting) {
-				return;
-			}
-
+		if (m_pendingPresenter && m_pendingPresenter->GetCurrentTickleState() <= MxPresenter::e_starting) {
 			if (!m_pendingPresenter->IsEnabled()) {
 				m_pendingPresenter->Enable(TRUE);
 				m_pendingPresenter->SetTickleState(MxPresenter::e_streaming);
