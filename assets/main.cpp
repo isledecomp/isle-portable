@@ -5,7 +5,6 @@
 #include <fstream>
 #include <interleaf.h>
 #include <object.h>
-#include <string_view>
 
 si::Interleaf::Version version = si::Interleaf::Version2_2;
 uint32_t bufferSize = 65536;
@@ -19,10 +18,10 @@ void CreateWidescreen()
 {
 	std::string result = out + "/widescreen.si";
 	struct AssetView {
-		std::string_view name;
-		std::string_view extra;
+		std::string name;
+		std::string extra;
 	};
-	constexpr const AssetView widescreenBitmaps[] = {
+	const AssetView widescreenBitmaps[] = {
 		{"GaraDoor_Background_Wide",
 		 "World:current, StartWith:\\Lego\\Scripts\\Isle\\Isle;1160, RemoveWith:\\Lego\\Scripts\\Isle\\Isle;1161"}
 	};
@@ -34,13 +33,13 @@ void CreateWidescreen()
 	int i = 0;
 	for (const AssetView& asset : widescreenBitmaps) {
 		si::Object* object = new si::Object;
-		std::string file = std::string("widescreen/") + std::string(asset.name) + ".bmp";
+		std::string file = std::string("widescreen/") + asset.name + ".bmp";
 		object->id_ = i;
 		object->type_ = si::MxOb::Bitmap;
 		object->flags_ = MxDSAction::c_enabled | MxDSAction::c_bit4;
 		object->duration_ = -1;
 		object->loops_ = 1;
-		object->extra_ = si::bytearray(asset.extra.data(), asset.extra.length());
+		object->extra_ = si::bytearray(asset.extra.c_str(), asset.extra.length() + 1);
 		object->presenter_ = "MxStillPresenter";
 		object->name_ = asset.name;
 		object->filetype_ = si::MxOb::STL;
@@ -60,13 +59,13 @@ void CreateHDMusic()
 {
 	std::string result = out + "/hdmusic.si";
 	struct AssetView {
-		std::string_view name;
-		std::string_view extra;
+		std::string name;
+		std::string extra;
 		uint32_t duration;
 		uint32_t loops;
 		uint32_t flags;
 	};
-	constexpr const AssetView wavAudio[] = {
+	const AssetView wavAudio[] = {
 		{"BrickstrChase_HD",
 		 "Replace:\\Lego\\Scripts\\Isle\\Jukebox;3",
 		 82850,
@@ -162,14 +161,14 @@ void CreateHDMusic()
 	int i = 0;
 	for (const AssetView& asset : wavAudio) {
 		si::Object* object = new si::Object;
-		std::string file = std::string("hdmusic/") + std::string(asset.name) + ".wav";
+		std::string file = std::string("hdmusic/") + asset.name + ".wav";
 
 		object->id_ = i;
 		object->type_ = si::MxOb::Sound;
 		object->flags_ = asset.flags;
 		object->duration_ = asset.duration * asset.loops;
 		object->loops_ = asset.loops;
-		object->extra_ = si::bytearray(asset.extra.data(), asset.extra.length());
+		object->extra_ = si::bytearray(asset.extra.c_str(), asset.extra.length() + 1);
 		object->presenter_ = "MxWavePresenter";
 		object->name_ = asset.name;
 		object->filetype_ = si::MxOb::WAV;
