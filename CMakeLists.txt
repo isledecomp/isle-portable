@@ -75,15 +75,8 @@ if (DOWNLOAD_DEPENDENCIES)
   include(FetchContent)
 
   if(ANDROID)
-    set(SDL3_SOURCE_DIR "${CMAKE_SOURCE_DIR}/android-project/build/_deps/sdl3-src")
-
-    add_library(SDL3 SHARED IMPORTED)
-    set_target_properties(SDL3 PROPERTIES
-      IMPORTED_LOCATION "${SDL3_SOURCE_DIR}/build-android/${CMAKE_ANDROID_ARCH_ABI}-build/libSDL3.so"
-      INTERFACE_INCLUDE_DIRECTORIES "${SDL3_SOURCE_DIR}/include"
-    )
-    add_library(SDL3::SDL3 ALIAS SDL3)
-    add_library(SDL3::Headers ALIAS SDL3)
+    # Built by Gradle
+    find_package(SDL3 REQUIRED CONFIG COMPONENTS Shared)
   else()
     if (WINDOWS_STORE)
       FetchContent_Declare(
