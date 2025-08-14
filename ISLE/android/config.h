@@ -1,4 +1,3 @@
-
 #ifndef ANDROID_CONFIG_H
 #define ANDROID_CONFIG_H
 

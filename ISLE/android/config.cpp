@@ -10,9 +10,10 @@ void Android_SetupDefaultConfigOverrides(dictionary* p_dictionary)
 	SDL_Log("Overriding default config for Android");
 
 	const char* data = SDL_GetAndroidExternalStoragePath();
-	char* savedata = new char[strlen(data) + strlen("/saves/") + 1];
-	strcpy(savedata, data);
-	strcat(savedata, "/saves/");
+	size_t len = SDL_strlen(data) + SDL_strlen("/saves/") + 1;
+	char* savedata = new char[len];
+	SDL_strlcpy(savedata, data, len);
+	SDL_strlcat(savedata, "/saves/", len);
 
 	if (!SDL_GetPathInfo(savedata, NULL)) {
 		SDL_CreateDirectory(savedata);
