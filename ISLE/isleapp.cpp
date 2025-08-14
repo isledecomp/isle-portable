@@ -9,6 +9,7 @@
 #include "legobuildingmanager.h"
 #include "legogamestate.h"
 #include "legoinputmanager.h"
+#include "legokeymaps.h"
 #include "legomain.h"
 #include "legomodelpresenter.h"
 #include "legopartpresenter.h"

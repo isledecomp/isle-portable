@@ -4,6 +4,7 @@
 #include "cursor.h"
 #include "lego1_export.h"
 #include "legoinputmanager.h"
+#include "legokeymaps.h"
 #include "legoutils.h"
 #include "mxtransitionmanager.h"
 #include "mxtypes.h"
