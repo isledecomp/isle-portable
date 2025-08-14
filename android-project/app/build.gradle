@@ -1,6 +1,7 @@
 plugins {
     id 'com.android.application'
 }
+def androidProject = projectDir.parentFile
 
 android {
     namespace "org.legoisland.isle"
@@ -15,16 +16,14 @@ android {
 
         externalNativeBuild {
             cmake {
-                arguments '-DANDROID_STL=c++_shared', "-DFETCHCONTENT_BASE_DIR=${projectDir.parentFile}/build/_deps"
+                arguments '-DANDROID_STL=c++_shared', "-DFETCHCONTENT_BASE_DIR=${androidProject}/build/_deps"
                 if (project.hasProperty('cmakeArgs')) {
                     project.cmakeArgs.split(" ").each {arg -> arguments arg}
                 }
                 abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
-//                abiFilters 'x86_64', 'arm64-v8a'
             }
         }
     }
-
     externalNativeBuild {
         cmake {
             version "3.30.5"
@@ -41,7 +40,6 @@ android {
             storePassword = System.getenv("SIGNING_STORE_PASSWORD")
         }
     }
-    
     buildTypes {
         release {
             minifyEnabled true
@@ -68,20 +66,36 @@ afterEvaluate {
     }
 }
 
+def aarDest = file("${projectDir}/libs/SDL3.aar")
+tasks.register('downloadSDL3', Exec) {
+    workingDir = androidProject
+    commandLine 'cmake', '-P', 'downloadSDL3.cmake'
+}
 tasks.register('compileSDL3AndroidArchive', Exec) {
-    def rootDir = projectDir.parentFile
-    def sdl3Dir = "build/_deps/sdl3-src"
-    def cmakeCommand = "cmake -P downloadSDL3.cmake"
-    def pythonCommand = "python3 ${sdl3Dir}/build-scripts/build-release.py " +
-            "--actions android " +
-            "--fast " +
-            "--force " +
-            "--root='${sdl3Dir}'"
-    def mvCommand = "mv ${sdl3Dir}/build-android/SDL3-*.aar ${projectDir}/libs/SDL3.aar"
+    workingDir = androidProject
+    dependsOn(downloadSDL3)
 
-    commandLine 'sh', '-c', "cd ${rootDir} && ${cmakeCommand} && ${pythonCommand} && mkdir -p ${projectDir}/libs/ && ${mvCommand}"
+    def sdl3Dir = "build/_deps/sdl3-src"
+    commandLine 'python', "${sdl3Dir}/build-scripts/build-release.py",
+            '--actions', 'android',
+            '--fast', '--force',
+            "--root=${sdl3Dir}"
+
+    doLast {
+        def aarFile = file("${androidProject}/${sdl3Dir}/build-android").listFiles().find {
+            it.name.endsWith(".aar")
+        }
+        aarDest.parentFile.mkdirs()
+        aarFile.renameTo(aarDest)
+    }
+}
+tasks.register('ensureSDL3') {
+    // if DOWNLOAD_DEPENDENCIES=OFF download the version appropriate
+    // 'devel android zip' and place the .aar at `aarDest`
+    if (aarDest.exists()) { return false }
+    dependsOn(compileSDL3AndroidArchive)
 }
 
 dependencies {
-    implementation files('libs/SDL3.aar').builtBy(compileSDL3AndroidArchive)
+    implementation files('libs/SDL3.aar').builtBy(ensureSDL3)
 }

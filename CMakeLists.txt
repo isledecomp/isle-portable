@@ -73,22 +73,35 @@ if (DOWNLOAD_DEPENDENCIES)
   # FetchContent downloads and configures dependencies
   message(STATUS "Fetching SDL3 and iniparser. This might take a while...")
   include(FetchContent)
-  if (WINDOWS_STORE)
-    FetchContent_Declare(
-      SDL3
-      GIT_REPOSITORY "https://github.com/Helloyunho/SDL3-uwp.git"
-      GIT_TAG "main"
-      EXCLUDE_FROM_ALL
+
+  if(ANDROID)
+    set(SDL3_SOURCE_DIR "${CMAKE_SOURCE_DIR}/android-project/build/_deps/sdl3-src")
+
+    add_library(SDL3 SHARED IMPORTED)
+    set_target_properties(SDL3 PROPERTIES
+      IMPORTED_LOCATION "${SDL3_SOURCE_DIR}/build-android/${CMAKE_ANDROID_ARCH_ABI}-build/libSDL3.so"
+      INTERFACE_INCLUDE_DIRECTORIES "${SDL3_SOURCE_DIR}/include"
     )
+    add_library(SDL3::SDL3 ALIAS SDL3)
+    add_library(SDL3::Headers ALIAS SDL3)
   else()
-    FetchContent_Declare(
-      SDL3
-      GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
-      GIT_TAG "main"
-      EXCLUDE_FROM_ALL
-    )
+    if (WINDOWS_STORE)
+      FetchContent_Declare(
+        SDL3
+        GIT_REPOSITORY "https://github.com/Helloyunho/SDL3-uwp.git"
+        GIT_TAG "main"
+        EXCLUDE_FROM_ALL
+      )
+    else()
+      FetchContent_Declare(
+        SDL3
+        GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
+        GIT_TAG "main"
+        EXCLUDE_FROM_ALL
+      )
+    endif()
+    FetchContent_MakeAvailable(SDL3)
   endif()
-  FetchContent_MakeAvailable(SDL3)
 
   FetchContent_Declare(
     iniparser
@@ -106,9 +119,6 @@ else()
   # find_package looks for already-installed system packages.
   # Configure with `-DCMAKE_PREFIX_PATH="/path/to/package1;/path/to/package2"`
   # to add search paths.
-  if (ANDROID)
-    message(STATUS "Please place the version-appropriate SDL3.aar in android-project/app/libs")
-  endif()
   find_package(SDL3 CONFIG REQUIRED)
 
   find_package(iniparser REQUIRED CONFIG COMPONENTS shared)
@@ -761,7 +771,7 @@ endif()
 set(install_extra_targets)
 if(DOWNLOAD_DEPENDENCIES)
   get_property(sdl3_type TARGET SDL3::SDL3 PROPERTY TYPE)
-  if(sdl3_type STREQUAL "SHARED_LIBRARY")
+  if(sdl3_type STREQUAL "SHARED_LIBRARY" AND NOT ANDROID)
     list(APPEND install_extra_targets "SDL3-shared")
   endif()
 endif()
