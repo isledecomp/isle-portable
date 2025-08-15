@@ -95,6 +95,11 @@ jobs:
           brew update
           brew install cmake ninja llvm qt6
           echo "LLVM_ROOT=$(brew --prefix llvm)/bin" >> $GITHUB_ENV
+      
+      - name: Install iOS SDK
+        if: ${{ matrix.ios }}
+        run: |
+          xcodebuild -downloadPlatform iOS
 
       - name: Setup Emscripten
         uses: mymindstorm/setup-emsdk@master
