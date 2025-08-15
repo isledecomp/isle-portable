@@ -44,7 +44,7 @@ if(NOT WINDOWS_STORE)
     message(STATUS "🧩 OpenGL 1.x support not enabled — needs OpenGL")
   endif()
 
-  find_library(OPENGL_ES3_LIBRARY NAMES GLESv2)
+  find_library(OPENGL_ES3_LIBRARY NAMES GLESv3 GLESv2)
   if(EMSCRIPTEN OR OPENGL_ES3_LIBRARY)
     message(STATUS "Found OpenGL: enabling OpenGL ES 3.x renderer")
     target_sources(miniwin PRIVATE src/d3drm/backends/opengles3/renderer.cpp)
