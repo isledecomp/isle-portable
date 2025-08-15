@@ -1207,10 +1207,11 @@ bool IsleApp::LoadConfig()
 
 	iniparser_freedict(dict);
 
-	if constexpr (std::is_same_v<decltype(prefPath), char*>) {
-		SDL_free(prefPath);
-	}
-
+	[](auto path) {
+		if constexpr (std::is_same_v<decltype(path), char*>) {
+			SDL_free(path);
+		}
+	}(prefPath);
 	return true;
 }
 
