@@ -68,10 +68,10 @@ public:
 	static void InsideBuildingManager()
 	{
 		auto buildingManager = Lego()->GetBuildingManager();
-		ImGui::Text("nextVariant: %d", buildingManager->m_nextVariant);
+		ImGui::Text("nextVariant: %u", buildingManager->m_nextVariant);
 		ImGui::Text("m_boundariesDetermined: %d", buildingManager->m_boundariesDetermined);
 		ImGui::Text("m_hideAfterAnimation: %d", buildingManager->m_hideAfterAnimation);
-		ImGui::Text("#Animated Entries", buildingManager->m_numEntries);
+		ImGui::Text("#Animated Entries: %d", buildingManager->m_numEntries);
 		if (buildingManager->m_numEntries) {
 			if (ImGui::BeginTable("Animated Entries", 6, ImGuiTableFlags_Borders)) {
 				ImGui::TableSetupColumn("ROI Name");
