@@ -9,7 +9,7 @@
 // SIZE 0x10
 class MxString : public MxCore {
 public:
-	MxString();
+	LEGO1_EXPORT MxString();
 	MxString(const MxString& p_str);
 	LEGO1_EXPORT MxString(const char* p_str);
 	MxString(const char* p_str, MxU16 p_maxlen);
