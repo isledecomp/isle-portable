@@ -15,8 +15,17 @@ static GLuint CompileShader(GLenum type, const char* source)
 	GLint success;
 	glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
 	if (!success) {
+		GLint logLength = 0;
+		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logLength);
+		if (logLength > 0) {
+			std::vector<char> log(logLength);
+			glGetShaderInfoLog(shader, logLength, nullptr, log.data());
+			SDL_Log("Shader compile error: %s", log.data());
+		}
+		else {
+			SDL_Log("CompileShader (%s)", SDL_GetError());
+		}
 		glDeleteShader(shader);
-		SDL_Log("CompileShader (%s)", SDL_GetError());
 		return 0;
 	}
 	return shader;
@@ -28,7 +37,7 @@ struct SceneLightGLES2 {
 	float direction[4];
 };
 
-Direct3DRMRenderer* OpenGLES2Renderer::Create(DWORD width, DWORD height)
+Direct3DRMRenderer* OpenGLES2Renderer::Create(DWORD width, DWORD height, float anisotropic)
 {
 	// We have to reset the attributes here after having enumerated the
 	// OpenGL ES 2.0 renderer, or else SDL gets very confused by SDL_GL_DEPTH_SIZE
@@ -134,7 +143,7 @@ Direct3DRMRenderer* OpenGLES2Renderer::Create(DWORD width, DWORD height)
 
 					// Specular
 					if (u_shininess > 0.0 && u_lights[i].direction.w == 1.0) {
-						vec3 viewVec = normalize(-v_viewPos); // Assuming camera at origin
+						vec3 viewVec = normalize(-v_viewPos);
 						vec3 H = normalize(lightVec + viewVec);
 						float dotNH = max(dot(v_normal, H), 0.0);
 						float spec = pow(dotNH, u_shininess);
@@ -168,7 +177,7 @@ Direct3DRMRenderer* OpenGLES2Renderer::Create(DWORD width, DWORD height)
 	glDeleteShader(vs);
 	glDeleteShader(fs);
 
-	return new OpenGLES2Renderer(width, height, context, shaderProgram);
+	return new OpenGLES2Renderer(width, height, anisotropic, context, shaderProgram);
 }
 
 GLES2MeshCacheEntry GLES2UploadMesh(const MeshGroup& meshGroup, bool forceUV = false)
@@ -237,7 +246,7 @@ GLES2MeshCacheEntry GLES2UploadMesh(const MeshGroup& meshGroup, bool forceUV = f
 	return cache;
 }
 
-bool UploadTexture(SDL_Surface* source, GLuint& outTexId, bool isUI)
+bool OpenGLES2Renderer::UploadTexture(SDL_Surface* source, GLuint& outTexId, bool isUI)
 {
 	SDL_Surface* surf = source;
 	if (source->format != SDL_PIXELFORMAT_RGBA32) {
@@ -262,11 +271,8 @@ bool UploadTexture(SDL_Surface* source, GLuint& outTexId, bool isUI)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		if (strstr((const char*) glGetString(GL_EXTENSIONS), "GL_EXT_texture_filter_anisotropic")) {
-			GLfloat maxAniso = 0.0f;
-			glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAniso);
-			GLfloat desiredAniso = fminf(8.0f, maxAniso);
-			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, desiredAniso);
+		if (m_anisotropic > 1.0f) {
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, m_anisotropic);
 		}
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
@@ -278,11 +284,33 @@ bool UploadTexture(SDL_Surface* source, GLuint& outTexId, bool isUI)
 	return true;
 }
 
-OpenGLES2Renderer::OpenGLES2Renderer(DWORD width, DWORD height, SDL_GLContext context, GLuint shaderProgram)
-	: m_context(context), m_shaderProgram(shaderProgram)
+OpenGLES2Renderer::OpenGLES2Renderer(
+	DWORD width,
+	DWORD height,
+	float anisotropic,
+	SDL_GLContext context,
+	GLuint shaderProgram
+)
+	: m_context(context), m_shaderProgram(shaderProgram), m_anisotropic(anisotropic)
 {
 	glGenFramebuffers(1, &m_fbo);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+
+	bool anisoAvailable = SDL_GL_ExtensionSupported("GL_EXT_texture_filter_anisotropic");
+	GLfloat maxAniso = 0.0f;
+	if (anisoAvailable) {
+		glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAniso);
+	}
+	if (m_anisotropic > maxAniso) {
+		m_anisotropic = maxAniso;
+	}
+	SDL_Log(
+		"Anisotropic is %s. Requested: %f, active: %f, max aniso: %f",
+		m_anisotropic > 1.0f ? "on" : "off",
+		anisotropic,
+		m_anisotropic,
+		maxAniso
+	);
 
 	m_virtualWidth = width;
 	m_virtualHeight = height;
@@ -310,14 +338,6 @@ OpenGLES2Renderer::OpenGLES2Renderer(DWORD width, DWORD height, SDL_GLContext co
 	}
 	SDL_DestroySurface(dummySurface);
 
-	m_uiMesh.vertices = {
-		{{0.0f, 0.0f, 0.0f}, {0, 0, -1}, {0.0f, 0.0f}},
-		{{1.0f, 0.0f, 0.0f}, {0, 0, -1}, {1.0f, 0.0f}},
-		{{1.0f, 1.0f, 0.0f}, {0, 0, -1}, {1.0f, 1.0f}},
-		{{0.0f, 1.0f, 0.0f}, {0, 0, -1}, {0.0f, 1.0f}}
-	};
-	m_uiMesh.indices = {0, 1, 2, 0, 2, 3};
-	m_uiMeshCache = GLES2UploadMesh(m_uiMesh, true);
 	m_posLoc = glGetAttribLocation(m_shaderProgram, "a_position");
 	m_normLoc = glGetAttribLocation(m_shaderProgram, "a_normal");
 	m_texLoc = glGetAttribLocation(m_shaderProgram, "a_texCoord");
@@ -336,13 +356,26 @@ OpenGLES2Renderer::OpenGLES2Renderer(DWORD width, DWORD height, SDL_GLContext co
 	m_normalMatrixLoc = glGetUniformLocation(m_shaderProgram, "u_normalMatrix");
 	m_projectionMatrixLoc = glGetUniformLocation(m_shaderProgram, "u_projectionMatrix");
 
+	m_uiMesh.vertices = {
+		{{0.0f, 0.0f, 0.0f}, {0, 0, -1}, {0.0f, 0.0f}},
+		{{1.0f, 0.0f, 0.0f}, {0, 0, -1}, {1.0f, 0.0f}},
+		{{1.0f, 1.0f, 0.0f}, {0, 0, -1}, {1.0f, 1.0f}},
+		{{0.0f, 1.0f, 0.0f}, {0, 0, -1}, {0.0f, 1.0f}}
+	};
+	m_uiMesh.indices = {0, 1, 2, 0, 2, 3};
+	m_uiMeshCache = GLES2UploadMesh(m_uiMesh, true);
+
 	glUseProgram(m_shaderProgram);
 }
 
 OpenGLES2Renderer::~OpenGLES2Renderer()
 {
 	SDL_DestroySurface(m_renderedImage);
+	glDeleteTextures(1, &m_dummyTexture);
 	glDeleteProgram(m_shaderProgram);
+	glDeleteTextures(1, &m_colorTarget);
+	glDeleteRenderbuffers(1, &m_depthTarget);
+	glDeleteFramebuffers(1, &m_fbo);
 	SDL_GL_DestroyContext(m_context);
 }
 
@@ -610,6 +643,15 @@ void OpenGLES2Renderer::Resize(int width, int height, const ViewportTransform& v
 	}
 	m_renderedImage = SDL_CreateSurface(m_width, m_height, SDL_PIXELFORMAT_RGBA32);
 
+	if (m_colorTarget) {
+		glDeleteTextures(1, &m_colorTarget);
+		m_colorTarget = 0;
+	}
+	if (m_depthTarget) {
+		glDeleteRenderbuffers(1, &m_depthTarget);
+		m_depthTarget = 0;
+	}
+
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 
 	// Create color texture
@@ -636,6 +678,12 @@ void OpenGLES2Renderer::Resize(int width, int height, const ViewportTransform& v
 		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, width, height);
 	}
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_depthTarget);
+	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if (status != GL_FRAMEBUFFER_COMPLETE) {
+		SDL_Log("FBO incomplete: 0x%X", status);
+	}
+
+	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 
 	glViewport(0, 0, m_width, m_height);
 }
