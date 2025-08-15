@@ -14,6 +14,9 @@
    <string>About Configure LEGO© Island</string>
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,1,0">
+   <property name="sizeConstraint">
+    <enum>QLayout::SizeConstraint::SetFixedSize</enum>
+   </property>
    <item>
     <widget class="QLabel" name="houseIcon">
      <property name="sizePolicy">
@@ -36,14 +39,14 @@
       <item>
        <widget class="QLabel" name="configureLabel">
         <property name="text">
-         <string>Configure LEGO Island Version 1.0</string>
+         <string>Configure LEGO Island Version 2.0</string>
         </property>
        </widget>
       </item>
       <item>
        <widget class="QLabel" name="copyrightLabel">
         <property name="text">
-         <string>Copyright © 1997 mindscape</string>
+         <string>Copyright © 2025</string>
         </property>
        </widget>
       </item>
@@ -53,7 +56,7 @@
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="standardButtons">
-      <set>QDialogButtonBox::Ok</set>
+      <set>QDialogButtonBox::StandardButton::Ok</set>
      </property>
     </widget>
    </item>
