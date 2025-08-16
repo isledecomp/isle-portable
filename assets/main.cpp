@@ -34,6 +34,7 @@ void CreateWidescreen()
 	for (const AssetView& asset : widescreenBitmaps) {
 		si::Object* object = new si::Object;
 		std::string file = std::string("widescreen/") + asset.name + ".bmp";
+
 		object->id_ = i;
 		object->type_ = si::MxOb::Bitmap;
 		object->flags_ = MxDSAction::c_enabled | MxDSAction::c_bit4;
