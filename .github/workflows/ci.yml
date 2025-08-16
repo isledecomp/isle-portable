@@ -6,6 +6,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
 
+env:
+  # Read-only LFS URL
+  GIT_LFS: https://f9622702b3bbcac0705052a10e62a5a5:31adabe20fe975a919bd1909a6f598f37b0d6486225efa84b38da1aaf27cbd35@assets.isle.pizza/a70a70ae5ebee06d2333bb1132711de1.r2.cloudflarestorage.com/assets
+
 jobs:
   clang-format:
     name: 'clang-format'
@@ -110,6 +114,11 @@ jobs:
       - name: Setup ninja
         if: ${{ matrix.msvc }}
         uses: ashutoshvarma/setup-ninja@master
+
+      - name: Configure Git LFS
+        if: ${{ matrix.build-assets }}
+        run: |
+          git config --global lfs.url "${{ env.GIT_LFS }}"
 
       - uses: actions/checkout@v4
         with:
