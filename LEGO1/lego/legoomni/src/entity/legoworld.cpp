@@ -1,6 +1,7 @@
 #include "legoworld.h"
 
 #include "anim/legoanim.h"
+#include "extensions/siloader.h"
 #include "legoanimationmanager.h"
 #include "legoanimpresenter.h"
 #include "legobuildingmanager.h"
@@ -31,6 +32,8 @@ DECOMP_SIZE_ASSERT(LegoEntityList, 0x18)
 DECOMP_SIZE_ASSERT(LegoEntityListCursor, 0x10)
 DECOMP_SIZE_ASSERT(LegoCacheSoundList, 0x18)
 DECOMP_SIZE_ASSERT(LegoCacheSoundListCursor, 0x10)
+
+using namespace Extensions;
 
 // FUNCTION: LEGO1 0x1001ca40
 LegoWorld::LegoWorld() : m_pathControllerList(TRUE)
@@ -636,6 +639,12 @@ MxCore* LegoWorld::Find(const char* p_class, const char* p_name)
 // FUNCTION: BETA10 0x100db3de
 MxCore* LegoWorld::Find(const MxAtomId& p_atom, MxS32 p_entityId)
 {
+	auto result =
+		Extension<SiLoader>::Call(HandleFind, SiLoader::StreamObject{p_atom, p_entityId}, this).value_or(std::nullopt);
+	if (result) {
+		return result.value();
+	}
+
 	LegoEntityListCursor entityCursor(m_entityList);
 	LegoEntity* entity;
 

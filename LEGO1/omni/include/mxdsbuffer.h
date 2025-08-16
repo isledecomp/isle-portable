@@ -91,6 +91,12 @@ public:
 
 	void SetUnk30(MxDSStreamingAction* p_unk0x30) { m_unk0x30 = p_unk0x30; }
 
+	void SetSourceBuffer(MxDSBuffer* p_sourceBuffer)
+	{
+		m_sourceBuffer = p_sourceBuffer;
+		m_sourceBuffer->AddRef(NULL);
+	}
+
 	// SYNTHETIC: LEGO1 0x100c6510
 	// SYNTHETIC: BETA10 0x10158530
 	// MxDSBuffer::`scalar deleting destructor'
@@ -107,6 +113,7 @@ private:
 	MxU32 m_writeOffset;            // 0x28
 	MxU32 m_bytesRemaining;         // 0x2c
 	MxDSStreamingAction* m_unk0x30; // 0x30
+	MxDSBuffer* m_sourceBuffer;
 };
 
 #endif // MXDSBUFFER_H

@@ -7,6 +7,11 @@
 #include <map>
 #include <vector>
 
+namespace si
+{
+class Core;
+}
+
 namespace Extensions
 {
 class SiLoader {
@@ -15,8 +20,10 @@ public:
 
 	static void Initialize();
 	static bool Load();
-	static bool StartWith(StreamObject p_object);
-	static bool RemoveWith(StreamObject p_object, LegoWorld* world);
+	static std::optional<MxCore*> HandleFind(StreamObject p_object, LegoWorld* world);
+	static std::optional<MxResult> HandleStart(MxDSAction& p_action);
+	static std::optional<MxBool> HandleRemove(StreamObject p_object, LegoWorld* world);
+	static std::optional<MxBool> HandleDelete(MxDSAction& p_action);
 
 	static std::map<std::string, std::string> options;
 	static std::vector<std::string> files;
@@ -25,17 +32,23 @@ public:
 private:
 	static std::vector<std::pair<StreamObject, StreamObject>> startWith;
 	static std::vector<std::pair<StreamObject, StreamObject>> removeWith;
+	static std::vector<std::pair<StreamObject, StreamObject>> replace;
 
 	static bool LoadFile(const char* p_file);
+	static void ParseDirectives(const MxAtomId& p_atom, si::Core* p_core, MxAtomId p_parentReplacedAtom = MxAtomId());
 };
 
 #ifdef EXTENSIONS
 constexpr auto Load = &SiLoader::Load;
-constexpr auto StartWith = &SiLoader::StartWith;
-constexpr auto RemoveWith = &SiLoader::RemoveWith;
+constexpr auto HandleFind = &SiLoader::HandleFind;
+constexpr auto HandleStart = &SiLoader::HandleStart;
+constexpr auto HandleRemove = &SiLoader::HandleRemove;
+constexpr auto HandleDelete = &SiLoader::HandleDelete;
 #else
 constexpr decltype(&SiLoader::Load) Load = nullptr;
-constexpr decltype(&SiLoader::StartWith) StartWith = nullptr;
-constexpr decltype(&SiLoader::RemoveWith) RemoveWith = nullptr;
+constexpr decltype(&SiLoader::HandleFind) HandleFind = nullptr;
+constexpr decltype(&SiLoader::HandleStart) HandleStart = nullptr;
+constexpr decltype(&SiLoader::HandleRemove) HandleRemove = nullptr;
+constexpr decltype(&SiLoader::HandleDelete) HandleDelete = nullptr;
 #endif
 }; // namespace Extensions

@@ -474,6 +474,11 @@ LegoWorld* LegoOmni::FindWorld(const MxAtomId& p_atom, MxS32 p_entityid)
 // STUB: BETA10 0x1008e93e
 void LegoOmni::DeleteObject(MxDSAction& p_dsAction)
 {
+	auto result = Extension<SiLoader>::Call(HandleDelete, p_dsAction).value_or(std::nullopt);
+	if (result && result.value()) {
+		return;
+	}
+
 	if (p_dsAction.GetAtomId().GetInternal() != NULL) {
 		LegoWorld* world = FindWorld(p_dsAction.GetAtomId(), p_dsAction.GetObjectId());
 		if (world) {
@@ -663,6 +668,13 @@ void LegoOmni::CreateBackgroundAudio()
 // FUNCTION: BETA10 0x1008f7e0
 MxResult LegoOmni::Start(MxDSAction* p_dsAction)
 {
+	{
+		auto result = Extension<SiLoader>::Call(HandleStart, *p_dsAction).value_or(std::nullopt);
+		if (result) {
+			return result.value();
+		}
+	}
+
 	MxResult result = MxOmni::Start(p_dsAction);
 #ifdef BETA10
 	this->m_action = *p_dsAction;
@@ -673,14 +685,6 @@ MxResult LegoOmni::Start(MxDSAction* p_dsAction)
 	this->m_action.SetObjectId(p_dsAction->GetObjectId());
 	this->m_action.SetUnknown24(p_dsAction->GetUnknown24());
 #endif
-
-	if (result == SUCCESS) {
-		Extension<SiLoader>::Call(
-			StartWith,
-			SiLoader::StreamObject{p_dsAction->GetAtomId(), p_dsAction->GetObjectId()}
-		);
-	}
-
 	return result;
 }
 

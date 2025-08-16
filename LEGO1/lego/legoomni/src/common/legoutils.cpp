@@ -503,6 +503,12 @@ MxBool RemoveFromCurrentWorld(const MxAtomId& p_atomId, MxS32 p_id)
 {
 	LegoWorld* world = CurrentWorld();
 
+	auto result =
+		Extension<SiLoader>::Call(HandleRemove, SiLoader::StreamObject{p_atomId, p_id}, world).value_or(std::nullopt);
+	if (result) {
+		return result.value();
+	}
+
 	if (world) {
 		MxCore* object = world->Find(p_atomId, p_id);
 
@@ -518,8 +524,6 @@ MxBool RemoveFromCurrentWorld(const MxAtomId& p_atomId, MxS32 p_id)
 				}
 
 				((MxPresenter*) object)->EndAction();
-
-				Extension<SiLoader>::Call(RemoveWith, SiLoader::StreamObject{p_atomId, p_id}, world);
 			}
 
 			return TRUE;
@@ -539,6 +543,12 @@ MxBool RemoveFromWorld(
 {
 	LegoWorld* world = FindWorld(p_worldAtom, p_worldEntityId);
 
+	auto result = Extension<SiLoader>::Call(HandleRemove, SiLoader::StreamObject{p_entityAtom, p_entityId}, world)
+					  .value_or(std::nullopt);
+	if (result) {
+		return result.value();
+	}
+
 	if (world) {
 		MxCore* object = world->Find(p_entityAtom, p_entityId);
 
@@ -554,8 +564,6 @@ MxBool RemoveFromWorld(
 				}
 
 				((MxPresenter*) object)->EndAction();
-
-				Extension<SiLoader>::Call(RemoveWith, SiLoader::StreamObject{p_entityAtom, p_entityId}, world);
 			}
 
 			return TRUE;
