@@ -78,8 +78,8 @@ if(DOWNLOAD_DEPENDENCIES)
     include(FetchContent)
     FetchContent_Populate(
         libweaver
-        URL https://github.com/isledecomp/SIEdit/archive/6da93b2072c41c41d526b8b9df7d4292be1f0f55.tar.gz
-        URL_MD5 ae59007fcb9efadc06c67621e1e107cb
+        URL https://github.com/isledecomp/SIEdit/archive/ae447259389f3bf8273c7e7a4844743faf7cbdb8.tar.gz
+        URL_MD5 dee68424fde8db6d5cef3b9034a8151f
     )
 else()
     set(libweaver_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/libweaver")

@@ -113,6 +113,11 @@ jobs:
 
       - uses: actions/checkout@v4
 
+      - name: Checkout LFS
+        if: ${{ matrix.build-assets }}
+        run: |
+          git lfs pull
+
       - name: Setup Java (Android)
         if: ${{ matrix.android }}
         uses: actions/setup-java@v4

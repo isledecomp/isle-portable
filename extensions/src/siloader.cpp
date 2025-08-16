@@ -13,6 +13,7 @@ std::map<std::string, std::string> SiLoader::options;
 std::vector<std::string> SiLoader::files;
 std::vector<std::pair<SiLoader::StreamObject, SiLoader::StreamObject>> SiLoader::startWith;
 std::vector<std::pair<SiLoader::StreamObject, SiLoader::StreamObject>> SiLoader::removeWith;
+std::vector<std::pair<SiLoader::StreamObject, SiLoader::StreamObject>> SiLoader::replace;
 bool SiLoader::enabled = false;
 
 void SiLoader::Initialize()
@@ -36,21 +37,52 @@ bool SiLoader::Load()
 	return true;
 }
 
-bool SiLoader::StartWith(StreamObject p_object)
+std::optional<MxCore*> SiLoader::HandleFind(StreamObject p_object, LegoWorld* world)
 {
-	for (const auto& key : startWith) {
+	for (const auto& key : replace) {
 		if (key.first == p_object) {
+			return world->Find(key.second.first, key.second.second);
+		}
+	}
+
+	return std::nullopt;
+}
+
+std::optional<MxResult> SiLoader::HandleStart(MxDSAction& p_action)
+{
+	StreamObject object{p_action.GetAtomId(), p_action.GetObjectId()};
+
+	for (const auto& key : startWith) {
+		if (key.first == object) {
 			MxDSAction action;
 			action.SetAtomId(key.second.first);
 			action.SetObjectId(key.second.second);
+			action.SetUnknown24(p_action.GetUnknown24());
+			action.SetNotificationObject(p_action.GetNotificationObject());
+			action.SetOrigin(p_action.GetOrigin());
 			Start(&action);
 		}
 	}
 
-	return true;
+	for (const auto& key : replace) {
+		if (key.first == object) {
+			MxDSAction action;
+			action.SetAtomId(key.second.first);
+			action.SetObjectId(key.second.second);
+			action.SetUnknown24(p_action.GetUnknown24());
+			action.SetNotificationObject(p_action.GetNotificationObject());
+			action.SetOrigin(p_action.GetOrigin());
+
+			MxResult result = Start(&action);
+			p_action.SetUnknown24(action.GetUnknown24());
+			return result;
+		}
+	}
+
+	return std::nullopt;
 }
 
-bool SiLoader::RemoveWith(StreamObject p_object, LegoWorld* world)
+std::optional<MxBool> SiLoader::HandleRemove(StreamObject p_object, LegoWorld* world)
 {
 	for (const auto& key : removeWith) {
 		if (key.first == p_object) {
@@ -58,7 +90,47 @@ bool SiLoader::RemoveWith(StreamObject p_object, LegoWorld* world)
 		}
 	}
 
-	return true;
+	for (const auto& key : replace) {
+		if (key.first == p_object) {
+			return RemoveFromWorld(key.second.first, key.second.second, world->GetAtomId(), world->GetEntityId());
+		}
+	}
+
+	return std::nullopt;
+}
+
+std::optional<MxBool> SiLoader::HandleDelete(MxDSAction& p_action)
+{
+	StreamObject object{p_action.GetAtomId(), p_action.GetObjectId()};
+
+	for (const auto& key : removeWith) {
+		if (key.first == object) {
+			MxDSAction action;
+			action.SetAtomId(key.second.first);
+			action.SetObjectId(key.second.second);
+			action.SetUnknown24(p_action.GetUnknown24());
+			action.SetNotificationObject(p_action.GetNotificationObject());
+			action.SetOrigin(p_action.GetOrigin());
+			DeleteObject(action);
+		}
+	}
+
+	for (const auto& key : replace) {
+		if (key.first == object) {
+			MxDSAction action;
+			action.SetAtomId(key.second.first);
+			action.SetObjectId(key.second.second);
+			action.SetUnknown24(p_action.GetUnknown24());
+			action.SetNotificationObject(p_action.GetNotificationObject());
+			action.SetOrigin(p_action.GetOrigin());
+
+			DeleteObject(action);
+			p_action.SetUnknown24(action.GetUnknown24());
+			return TRUE;
+		}
+	}
+
+	return std::nullopt;
 }
 
 bool SiLoader::LoadFile(const char* p_file)
@@ -68,10 +140,11 @@ bool SiLoader::LoadFile(const char* p_file)
 
 	MxString path = MxString(MxOmni::GetHD()) + p_file;
 	path.MapPathToFilesystem();
-	if (si.Read(path.GetData()) != si::Interleaf::ERROR_SUCCESS) {
+	if (si.Read(path.GetData(), si::Interleaf::ObjectsOnly | si::Interleaf::NoInfo) != si::Interleaf::ERROR_SUCCESS) {
 		path = MxString(MxOmni::GetCD()) + p_file;
 		path.MapPathToFilesystem();
-		if (si.Read(path.GetData()) != si::Interleaf::ERROR_SUCCESS) {
+		if (si.Read(path.GetData(), si::Interleaf::ObjectsOnly | si::Interleaf::NoInfo) !=
+			si::Interleaf::ERROR_SUCCESS) {
 			SDL_Log("Could not parse SI file %s", p_file);
 			return false;
 		}
@@ -82,7 +155,15 @@ bool SiLoader::LoadFile(const char* p_file)
 		return false;
 	}
 
-	for (si::Core* child : si.GetChildren()) {
+	ParseDirectives(controller->GetAtom(), &si);
+	return true;
+}
+
+void SiLoader::ParseDirectives(const MxAtomId& p_atom, si::Core* p_core, MxAtomId p_parentReplacedAtom)
+{
+	for (si::Core* child : p_core->GetChildren()) {
+		MxAtomId replacedAtom = p_parentReplacedAtom;
+
 		if (si::Object* object = dynamic_cast<si::Object*>(child)) {
 			if (object->type() != si::MxOb::Null) {
 				std::string extra(object->extra_.data(), object->extra_.size());
@@ -94,7 +175,7 @@ bool SiLoader::LoadFile(const char* p_file)
 					if (SDL_sscanf(directive, "StartWith:%255[^;];%d", atom, &id) == 2) {
 						startWith.emplace_back(
 							StreamObject{MxAtomId{atom, e_lowerCase2}, id},
-							StreamObject{controller->GetAtom(), object->id_}
+							StreamObject{p_atom, object->id_}
 						);
 					}
 				}
@@ -103,13 +184,31 @@ bool SiLoader::LoadFile(const char* p_file)
 					if (SDL_sscanf(directive, "RemoveWith:%255[^;];%d", atom, &id) == 2) {
 						removeWith.emplace_back(
 							StreamObject{MxAtomId{atom, e_lowerCase2}, id},
-							StreamObject{controller->GetAtom(), object->id_}
+							StreamObject{p_atom, object->id_}
 						);
+					}
+				}
+
+				if (p_parentReplacedAtom.GetInternal()) {
+					replace.emplace_back(
+						StreamObject{p_parentReplacedAtom, object->id_},
+						StreamObject{p_atom, object->id_}
+					);
+				}
+				else {
+					if ((directive = SDL_strstr(extra.c_str(), "Replace:"))) {
+						if (SDL_sscanf(directive, "Replace:%255[^;];%d", atom, &id) == 2) {
+							replace.emplace_back(
+								StreamObject{MxAtomId{atom, e_lowerCase2}, id},
+								StreamObject{p_atom, object->id_}
+							);
+							replacedAtom = replace.back().first.first;
+						}
 					}
 				}
 			}
 		}
-	}
 
-	return true;
+		ParseDirectives(p_atom, child, replacedAtom);
+	}
 }
