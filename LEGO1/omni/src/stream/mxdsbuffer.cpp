@@ -28,6 +28,7 @@ MxDSBuffer::MxDSBuffer()
 	m_bytesRemaining = 0;
 	m_mode = e_preallocated;
 	m_unk0x30 = 0;
+	m_sourceBuffer = NULL;
 }
 
 // FUNCTION: LEGO1 0x100c6530
@@ -35,6 +36,10 @@ MxDSBuffer::MxDSBuffer()
 MxDSBuffer::~MxDSBuffer()
 {
 	assert(m_referenceCount == 0);
+
+	if (m_sourceBuffer) {
+		m_sourceBuffer->ReleaseRef(NULL);
+	}
 
 	if (m_pBuffer != NULL) {
 		switch (m_mode) {
@@ -267,6 +272,28 @@ MxResult MxDSBuffer::ParseChunk(
 			return FAILURE;
 		}
 
+		// START FIX: Ref-Counting Backpressure for Split Chunks
+		//
+		// PROBLEM: When a `DS_CHUNK_SPLIT` is found, the temporary `MxStreamChunk`
+		// header that holds a reference to the source buffer is immediately
+		// destroyed. This prematurely releases the reference, causing the source
+		// buffer's ref-count to drop to zero.
+		//
+		// EFFECT: The source buffer is freed immediately instead of being kept
+		// alive on the m_list0x74 "keep-alive" list. This breaks the natural
+		// ref-counting backpressure mechanism, as the controller is blind to the
+		// downstream workload and keeps reading new data from the stream at full
+		// speed, eventually leading to a memory leak.
+		//
+		// SOLUTION: We explicitly link the new reassembly buffer to the original
+		// source buffer. We then add an artificial reference to the source buffer.
+		// This reference is designed to be released by the reassembly buffer's
+		// destructor, ensuring the source buffer is kept alive for the correct
+		// duration and that the backpressure system functions as intended.
+		if (p_header->GetBuffer()) {
+			buffer->SetSourceBuffer(p_header->GetBuffer());
+		}
+
 		MxU16* flags = MxStreamChunk::IntoFlags(buffer->GetBuffer());
 		*flags = p_header->GetChunkFlags() & ~DS_CHUNK_SPLIT;
 
@@ -409,9 +436,7 @@ MxU8 MxDSBuffer::ReleaseRef(MxDSChunk*)
 // FUNCTION: LEGO1 0x100c6ee0
 void MxDSBuffer::AddRef(MxDSChunk* p_chunk)
 {
-	if (p_chunk) {
-		m_referenceCount++;
-	}
+	m_referenceCount++;
 }
 
 // FUNCTION: LEGO1 0x100c6ef0

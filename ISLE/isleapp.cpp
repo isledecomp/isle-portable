@@ -40,6 +40,7 @@
 #include <array>
 #include <extensions/extensions.h>
 #include <miniwin/miniwindevice.h>
+#include <type_traits>
 #include <vec.h>
 
 #define SDL_MAIN_USE_CALLBACKS
@@ -74,6 +75,10 @@
 
 #ifdef IOS
 #include "ios/config.h"
+#endif
+
+#ifdef ANDROID
+#include "android/config.h"
 #endif
 
 DECOMP_SIZE_ASSERT(IsleApp, 0x8c)
@@ -176,6 +181,7 @@ IsleApp::IsleApp()
 
 	LegoOmni::CreateInstance();
 
+	m_mediaPath = NULL;
 	m_iniPath = NULL;
 	m_maxLod = RealtimeView::GetUserMaxLOD();
 	m_maxAllowedExtras = m_islandQuality <= 1 ? 10 : 20;
@@ -202,25 +208,11 @@ IsleApp::~IsleApp()
 		MxOmni::DestroyInstance();
 	}
 
-	if (m_hdPath) {
-		delete[] m_hdPath;
-	}
-
-	if (m_cdPath) {
-		delete[] m_cdPath;
-	}
-
-	if (m_deviceId) {
-		delete[] m_deviceId;
-	}
-
-	if (m_savePath) {
-		delete[] m_savePath;
-	}
-
-	if (m_mediaPath) {
-		delete[] m_mediaPath;
-	}
+	SDL_free(m_hdPath);
+	SDL_free(m_cdPath);
+	SDL_free(m_deviceId);
+	SDL_free(m_savePath);
+	SDL_free(m_mediaPath);
 }
 
 // FUNCTION: ISLE 0x401260
@@ -1037,33 +1029,33 @@ bool IsleApp::LoadConfig()
 {
 #ifdef IOS
 	const char* prefPath = SDL_GetUserFolder(SDL_FOLDER_DOCUMENTS);
-#else
-	char* prefPath = SDL_GetPrefPath("isledecomp", "isle");
-#endif
-	char* iniConfig;
-
-#ifdef __EMSCRIPTEN__
+#elif defined(ANDROID)
+	MxString androidPath = MxString(SDL_GetAndroidExternalStoragePath()) + "/";
+	const char* prefPath = androidPath.GetData();
+#elif defined(EMSCRIPTEN)
 	if (m_iniPath && !Emscripten_SetupConfig(m_iniPath)) {
 		m_iniPath = NULL;
 	}
+	char* prefPath = SDL_GetPrefPath("isledecomp", "isle");
+#else
+	char* prefPath = SDL_GetPrefPath("isledecomp", "isle");
 #endif
 
+	MxString iniConfig;
 	if (m_iniPath) {
-		iniConfig = new char[strlen(m_iniPath) + 1];
-		strcpy(iniConfig, m_iniPath);
+		iniConfig = m_iniPath;
 	}
 	else if (prefPath) {
-		iniConfig = new char[strlen(prefPath) + strlen("isle.ini") + 1]();
-		strcat(iniConfig, prefPath);
-		strcat(iniConfig, "isle.ini");
+		iniConfig = prefPath;
+		iniConfig += "isle.ini";
 	}
 	else {
-		iniConfig = new char[strlen("isle.ini") + 1];
-		strcpy(iniConfig, "isle.ini");
+		iniConfig = "isle.ini";
 	}
-	SDL_Log("Reading configuration from \"%s\"", iniConfig);
 
-	dictionary* dict = iniparser_load(iniConfig);
+	SDL_Log("Reading configuration from \"%s\"", iniConfig.GetData());
+
+	dictionary* dict = iniparser_load(iniConfig.GetData());
 
 	// [library:config]
 	// Load sane defaults if dictionary failed to load
@@ -1074,20 +1066,20 @@ bool IsleApp::LoadConfig()
 		}
 
 		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Loading sane defaults");
-		FILE* iniFP = fopen(iniConfig, "wb");
+		FILE* iniFP = fopen(iniConfig.GetData(), "wb");
 
 		if (!iniFP) {
 			SDL_LogError(
 				SDL_LOG_CATEGORY_APPLICATION,
 				"Failed to write config at '%s': %s",
-				iniConfig,
+				iniConfig.GetData(),
 				strerror(errno)
 			);
 			return false;
 		}
 
 		char buf[32];
-		dict = iniparser_load(iniConfig);
+		dict = iniparser_load(iniConfig.GetData());
 		iniparser_set(dict, "isle", NULL);
 
 		iniparser_set(dict, "isle:diskpath", SDL_GetBasePath());
@@ -1139,8 +1131,12 @@ bool IsleApp::LoadConfig()
 #ifdef IOS
 		IOS_SetupDefaultConfigOverrides(dict);
 #endif
+#ifdef ANDROID
+		Android_SetupDefaultConfigOverrides(dict);
+#endif
+
 		iniparser_dump_ini(dict, iniFP);
-		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "New config written at '%s'", iniConfig);
+		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "New config written at '%s'", iniConfig.GetData());
 		fclose(iniFP);
 	}
 
@@ -1148,20 +1144,10 @@ bool IsleApp::LoadConfig()
 	Emscripten_SetupDefaultConfigOverrides(dict);
 #endif
 
-	const char* hdPath = iniparser_getstring(dict, "isle:diskpath", SDL_GetBasePath());
-	m_hdPath = new char[strlen(hdPath) + 1];
-	strcpy(m_hdPath, hdPath);
-	MxOmni::SetHD(m_hdPath);
-
-	const char* cdPath = iniparser_getstring(dict, "isle:cdpath", MxOmni::GetCD());
-	m_cdPath = new char[strlen(cdPath) + 1];
-	strcpy(m_cdPath, cdPath);
-	MxOmni::SetCD(m_cdPath);
-
-	const char* mediaPath = iniparser_getstring(dict, "isle:mediapath", hdPath);
-	m_mediaPath = new char[strlen(mediaPath) + 1];
-	strcpy(m_mediaPath, mediaPath);
-
+	MxOmni::SetHD((m_hdPath = SDL_strdup(iniparser_getstring(dict, "isle:diskpath", SDL_GetBasePath()))));
+	MxOmni::SetCD((m_cdPath = SDL_strdup(iniparser_getstring(dict, "isle:cdpath", MxOmni::GetCD()))));
+	m_savePath = SDL_strdup(iniparser_getstring(dict, "isle:savepath", prefPath));
+	m_mediaPath = SDL_strdup(iniparser_getstring(dict, "isle:mediapath", m_hdPath));
 	m_flipSurfaces = iniparser_getboolean(dict, "isle:Flip Surfaces", m_flipSurfaces);
 	m_fullScreen = iniparser_getboolean(dict, "isle:Full Screen", m_fullScreen);
 	m_exclusiveFullScreen = iniparser_getboolean(dict, "isle:Exclusive Full Screen", m_exclusiveFullScreen);
@@ -1208,16 +1194,8 @@ bool IsleApp::LoadConfig()
 
 	const char* deviceId = iniparser_getstring(dict, "isle:3D Device ID", NULL);
 	if (deviceId != NULL) {
-		m_deviceId = new char[strlen(deviceId) + 1];
-		strcpy(m_deviceId, deviceId);
+		m_deviceId = SDL_strdup(deviceId);
 	}
-
-	// [library:config]
-	// The original game does not save any data if no savepath is given.
-	// Instead, we use SDLs prefPath as a default fallback and always save data.
-	const char* savePath = iniparser_getstring(dict, "isle:savepath", prefPath);
-	m_savePath = new char[strlen(savePath) + 1];
-	strcpy(m_savePath, savePath);
 
 #ifdef EXTENSIONS
 	for (const char* key : Extensions::availableExtensions) {
@@ -1238,11 +1216,12 @@ bool IsleApp::LoadConfig()
 #endif
 
 	iniparser_freedict(dict);
-	delete[] iniConfig;
-#ifndef IOS
-	SDL_free(prefPath);
-#endif
 
+	[](auto path) {
+		if constexpr (std::is_same_v<decltype(path), char*>) {
+			SDL_free(path);
+		}
+	}(prefPath);
 	return true;
 }
 
