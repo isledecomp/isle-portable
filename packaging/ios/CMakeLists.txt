@@ -15,7 +15,7 @@ if(ISLE_BUILD_APP)
     "${CMAKE_CURRENT_BINARY_DIR}/isle/Info.plist"
     @ONLY
   )
-  set(RESOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/isle/LaunchScreen.storyboard" "${CMAKE_CURRENT_SOURCE_DIR}/isle/Assets.xcassets")
+  set(RESOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/isle/Assets.xcassets")
   target_sources(${ISLE_TARGET_NAME} PRIVATE ${RESOURCE_FILES})
   set_source_files_properties(${RESOURCE_FILES}
     TARGET_DIRECTORY isle

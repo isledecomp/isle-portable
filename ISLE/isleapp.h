@@ -102,7 +102,7 @@ private:
 	MxFloat m_cursorSensitivity;
 	void DisplayArgumentHelp(const char* p_execName);
 
-	char* m_iniPath;
+	const char* m_iniPath;
 	MxFloat m_maxLod;
 	MxU32 m_maxAllowedExtras;
 	MxTransitionManager::TransitionType m_transitionType;

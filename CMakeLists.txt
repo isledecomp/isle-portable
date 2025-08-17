@@ -73,22 +73,28 @@ if (DOWNLOAD_DEPENDENCIES)
   # FetchContent downloads and configures dependencies
   message(STATUS "Fetching SDL3 and iniparser. This might take a while...")
   include(FetchContent)
-  if (WINDOWS_STORE)
-    FetchContent_Declare(
-      SDL3
-      GIT_REPOSITORY "https://github.com/Helloyunho/SDL3-uwp.git"
-      GIT_TAG "main"
-      EXCLUDE_FROM_ALL
-    )
+
+  if(ANDROID)
+    # Built by Gradle
+    find_package(SDL3 REQUIRED CONFIG COMPONENTS Shared)
   else()
-    FetchContent_Declare(
+    if (WINDOWS_STORE)
+      FetchContent_Declare(
+        SDL3
+        GIT_REPOSITORY "https://github.com/Helloyunho/SDL3-uwp.git"
+        GIT_TAG "main"
+        EXCLUDE_FROM_ALL
+      )
+    else()
+      FetchContent_Declare(
         SDL3
         GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
         GIT_TAG "main"
         EXCLUDE_FROM_ALL
-    )
+      )
+    endif()
+    FetchContent_MakeAvailable(SDL3)
   endif()
-  FetchContent_MakeAvailable(SDL3)
 
   FetchContent_Declare(
     iniparser
@@ -501,6 +507,13 @@ if (ISLE_EXTENSIONS)
 endif()
 
 if (ISLE_BUILD_APP)
+
+  if (ANDROID)
+    function(add_executable TARGET PLATFORM)
+      add_library(${TARGET} SHARED ${ARGN})
+    endfunction()
+  endif()
+
   add_executable(isle WIN32
     ISLE/res/isle.rc
     ISLE/isleapp.cpp
@@ -578,6 +591,11 @@ if (ISLE_BUILD_APP)
   if (IOS)
     target_sources(isle PRIVATE
       ISLE/ios/config.cpp
+    )
+  endif()
+  if (ANDROID)
+    target_sources(isle PRIVATE
+            ISLE/android/config.cpp
     )
   endif()
   if(Python3_FOUND)
@@ -673,10 +691,6 @@ if(ISLE_BUILD_ASSETS)
   add_custom_target(build_assets ALL
     DEPENDS ${GENERATED_ASSETS_DIR}/.stamp
   )
-
-  install(DIRECTORY ${GENERATED_ASSETS_DIR}/
-    DESTINATION assets
-  )
 endif()
 
 if (ISLE_MINIWIN)
@@ -746,7 +760,7 @@ endif()
 set(install_extra_targets)
 if(DOWNLOAD_DEPENDENCIES)
   get_property(sdl3_type TARGET SDL3::SDL3 PROPERTY TYPE)
-  if(sdl3_type STREQUAL "SHARED_LIBRARY")
+  if(sdl3_type STREQUAL "SHARED_LIBRARY" AND NOT ANDROID)
     list(APPEND install_extra_targets "SDL3-shared")
   endif()
 endif()
