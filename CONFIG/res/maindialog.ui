@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>640</width>
-    <height>480</height>
+    <height>502</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -958,7 +958,7 @@ The game will gradually increase the number of actors until this maximum is reac
           <item>
            <widget class="QGroupBox" name="keyMappings">
             <property name="enabled">
-             <bool>false</bool>
+             <bool>true</bool>
             </property>
             <property name="toolTip">
              <string>Work-In-Progress, currently non-functional</string>
@@ -1155,8 +1155,8 @@ The game will gradually increase the number of actors until this maximum is reac
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>217</width>
-               <height>217</height>
+               <width>449</width>
+               <height>391</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="verticalLayout_10">

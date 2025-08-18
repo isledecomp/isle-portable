@@ -3,17 +3,10 @@
 
 #include "decomp.h"
 #include "lego1_export.h"
-#include "legoeventnotificationparam.h"
-#include "mxlist.h"
-#include "mxpresenter.h"
-#include "mxqueue.h"
 
-#include <SDL3/SDL_haptic.h>
-#include <SDL3/SDL_joystick.h>
 #include <SDL3/SDL_keyboard.h>
 #include <SDL3/SDL_keycode.h>
 #include <SDL3/SDL_scancode.h>
-#include <SDL3/SDL_timer.h>
 #ifdef MINIWIN
 #include "miniwin/windows.h"
 #else

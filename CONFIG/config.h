@@ -4,6 +4,7 @@
 #include "AboutDlg.h"
 #include "compat.h"
 #include "decomp.h"
+#include "lego/legoomni/include/legokeymaps.h"
 
 #ifdef MINIWIN
 #include "miniwin/d3d.h"
@@ -12,6 +13,7 @@
 #endif
 
 #include <string>
+#include <SDL3/SDL_scancode.h>
 
 class LegoDeviceEnumerate;
 struct Direct3DDeviceInfo;

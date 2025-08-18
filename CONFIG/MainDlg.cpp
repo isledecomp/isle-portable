@@ -73,6 +73,8 @@ CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 	connect(m_ui->cancelButton, &QPushButton::clicked, this, &CMainDialog::reject);
 	connect(m_ui->launchButton, &QPushButton::clicked, this, &CMainDialog::launch);
 
+	connect(m_ui->keyForward_1, &QPushButton::clicked, this, &CMainDialog::ForwardKeyChanged);
+
 	connect(m_ui->dataPathOpen, &QPushButton::clicked, this, &CMainDialog::SelectDataPathDialog);
 	connect(m_ui->savePathOpen, &QPushButton::clicked, this, &CMainDialog::SelectSavePathDialog);
 
@@ -748,4 +750,13 @@ void CMainDialog::FramerateChanged(int i)
 	currentConfigApp->m_frame_delta = (1000.0f / static_cast<float>(i));
 	m_modified = true;
 	UpdateInterface();
+}
+
+void CMainDialog::ForwardKeyChanged() {
+	RebindInput(m_ui->keyForward_1);
+}
+
+void CMainDialog::RebindInput(QPushButton* &button)
+{
+	button->setText(QString("Press a key..."));
 }

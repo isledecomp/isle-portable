@@ -76,6 +76,8 @@ private slots:
 	void AspectRatioChanged(int index);
 	void EnsureAspectRatio();
 	void FramerateChanged(int i);
+	void ForwardKeyChanged();
+	void RebindInput(QPushButton* &button);
 };
 
 // SYNTHETIC: CONFIG 0x00403de0
