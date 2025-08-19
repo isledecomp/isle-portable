@@ -2,6 +2,7 @@
 
 #include "compat.h"
 #include "decomp.h"
+#include "extensions/siloader.h"
 #include "mxautolock.h"
 #include "mxmisc.h"
 #include "mxnotificationparam.h"
@@ -11,6 +12,8 @@
 
 DECOMP_SIZE_ASSERT(MxNotification, 0x08);
 DECOMP_SIZE_ASSERT(MxNotificationManager, 0x40);
+
+using namespace Extensions;
 
 // FUNCTION: LEGO1 0x100ac220
 MxNotification::MxNotification(MxCore* p_target, const MxNotificationParam& p_param)
@@ -105,6 +108,11 @@ MxResult MxNotificationManager::Tickle()
 		while (m_sendList->size() != 0) {
 			MxNotification* notif = m_sendList->front();
 			m_sendList->pop_front();
+
+			if (notif->GetParam()->GetNotification() == c_notificationEndAction) {
+				Extension<SiLoader>::Call(HandleEndAction, (MxEndActionNotificationParam&) *notif->GetParam());
+			}
+
 			notif->GetTarget()->Notify(*notif->GetParam());
 			delete notif;
 		}
@@ -159,6 +167,11 @@ void MxNotificationManager::FlushPending(MxCore* p_listener)
 	while (pending.size() != 0) {
 		notif = pending.front();
 		pending.pop_front();
+
+		if (notif->GetParam()->GetNotification() == c_notificationEndAction) {
+			Extension<SiLoader>::Call(HandleEndAction, (MxEndActionNotificationParam&) *notif->GetParam());
+		}
+
 		notif->GetTarget()->Notify(*notif->GetParam());
 		delete notif;
 	}

@@ -66,7 +66,7 @@ MxStreamController* MxStreamer::Open(const char* p_name, MxU16 p_lookupType)
 
 	MxStreamController* stream = NULL;
 
-	if (GetOpenStream(p_name)) {
+	if ((stream = GetOpenStream(p_name))) {
 		goto done;
 	}
 
