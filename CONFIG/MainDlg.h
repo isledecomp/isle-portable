@@ -5,6 +5,12 @@
 #include "decomp.h"
 #include "res/resource.h"
 
+#ifdef MINIWIN
+#include "miniwin/d3d.h"
+#else
+#include <d3d.h>
+#endif
+
 #include <QDialog>
 #include <QFileDialog>
 #include <QTimer>
@@ -33,6 +39,8 @@ private:
 	QStringList assetPaths = QStringList();
 	Ui::MainDialog* m_ui = nullptr;
 	SDL_DisplayMode** displayModes;
+	SDL_Window* inputWindow;
+	HWND hWnd;
 	QTimer sdlPoller;
     QTimer inputTimeout;
 	SDL_Scancode* currentKeyBind = nullptr;

@@ -758,15 +758,24 @@ void CMainDialog::ForwardKeyChanged() {
 
 void CMainDialog::RebindInput(QPushButton* &button, SDL_Scancode &key)
 {
+	SDL_InitSubSystem(SDL_INIT_EVENTS);
 	button->setText(QString("Press a key..."));
 	currentKeyBind = &key;
+
+	inputWindow = SDL_CreateWindow("Press a key...", 256, 128, SDL_WINDOW_HIDDEN | SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_ALWAYS_ON_TOP | SDL_WINDOW_UTILITY | SDL_WINDOW_KEYBOARD_GRABBED);
+#ifdef MINIWIN
+	hWnd = reinterpret_cast<HWND>(inputWindow);
+#else
+	hWnd = (HWND) SDL_GetPointerProperty(SDL_GetWindowProperties(inputWindow), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
+#endif
+
 	inputTimeout.setSingleShot(true);
 	inputTimeout.setInterval(3 * 1000);
 	sdlPoller.setSingleShot(false);
 	sdlPoller.setInterval(10);
 	connect(&inputTimeout, &QTimer::timeout, this, &CMainDialog::RebindTimeout);
 	connect(&sdlPoller, &QTimer::timeout, this, &CMainDialog::PollInputs);
-	SDL_InitSubSystem(SDL_INIT_EVENTS);
+	SDL_ShowWindow(inputWindow);
 	sdlPoller.start();
 	inputTimeout.start();
 }
@@ -781,6 +790,8 @@ void CMainDialog::PollInputs()
 			*currentKeyBind = sc;
 			sdlPoller.disconnect();
 			inputTimeout.disconnect();
+			SDL_DestroyWindow(inputWindow);
+			m_modified = true;
 			UpdateInterface();
 		}
 	}
@@ -791,5 +802,6 @@ void CMainDialog::RebindTimeout()
 	SDL_Log("Timeout");
 	sdlPoller.disconnect();
 	inputTimeout.disconnect();
+	SDL_DestroyWindow(inputWindow);
 	UpdateInterface();
 }
