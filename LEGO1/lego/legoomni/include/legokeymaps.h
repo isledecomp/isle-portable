@@ -16,14 +16,14 @@
 #include <map>
 #include <variant>
 
+struct KeyMaps {
+	SDL_Scancode k_forward[2];
+	SDL_Scancode k_back[2];
+	SDL_Scancode k_left[2];
+	SDL_Scancode k_right[2];
+	SDL_Scancode k_sprint[2];
+};
 
-struct {
-	SDL_Scancode k_forward[2] = {SDL_SCANCODE_UP, SDL_SCANCODE_KP_8};
-	SDL_Scancode k_back[2] = {SDL_SCANCODE_DOWN, SDL_SCANCODE_KP_2};
-	SDL_Scancode k_left[2] = {SDL_SCANCODE_LEFT, SDL_SCANCODE_KP_4};
-	SDL_Scancode k_right[2] = {SDL_SCANCODE_RIGHT, SDL_SCANCODE_KP_6};
-	SDL_Scancode k_sprint[2] = {SDL_SCANCODE_LCTRL, SDL_SCANCODE_RCTRL};
-} g_keyMaps;
-
+extern KeyMaps g_keyMaps;
 
 #endif

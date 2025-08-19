@@ -507,8 +507,8 @@ int main(int argc, char* argv[])
 
 	if (SDL_InitSubSystem(SDL_INIT_EVENTS) != true) {
 		qDebug() << "SDL_Init Error:" << SDL_GetError();
-		//return 1;
-    }
+		// return 1;
+	}
 
 	int result = 1;
 	if (g_theApp.InitInstance()) {

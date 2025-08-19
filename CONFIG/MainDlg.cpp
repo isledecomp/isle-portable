@@ -74,6 +74,15 @@ CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 	connect(m_ui->launchButton, &QPushButton::clicked, this, &CMainDialog::launch);
 
 	connect(m_ui->keyForward_1, &QPushButton::clicked, this, &CMainDialog::ForwardKeyChanged);
+	connect(m_ui->keyForward_2, &QPushButton::clicked, this, &CMainDialog::ForwardKeyChangedAlt);
+	connect(m_ui->keyBack_1, &QPushButton::clicked, this, &CMainDialog::BackwardKeyChanged);
+	connect(m_ui->keyBack_2, &QPushButton::clicked, this, &CMainDialog::BackwardKeyChangedAlt);
+	connect(m_ui->keyLeft_1, &QPushButton::clicked, this, &CMainDialog::LeftKeyChanged);
+	connect(m_ui->keyLeft_2, &QPushButton::clicked, this, &CMainDialog::LeftKeyChangedAlt);
+	connect(m_ui->keyRight_1, &QPushButton::clicked, this, &CMainDialog::RightKeyChanged);
+	connect(m_ui->keyRight_2, &QPushButton::clicked, this, &CMainDialog::RightKeyChangedAlt);
+	connect(m_ui->keySprint_1, &QPushButton::clicked, this, &CMainDialog::SprintKeyChanged);
+	connect(m_ui->keySprint_2, &QPushButton::clicked, this, &CMainDialog::SprintKeyChangedAlt);
 
 	connect(m_ui->dataPathOpen, &QPushButton::clicked, this, &CMainDialog::SelectDataPathDialog);
 	connect(m_ui->savePathOpen, &QPushButton::clicked, this, &CMainDialog::SelectSavePathDialog);
@@ -183,16 +192,18 @@ bool CMainDialog::OnInitDialog()
 	m_ui->exFullResComboBox->clear();
 
 	int displayModeCount;
-	displayModes = SDL_GetFullscreenDisplayModes(SDL_GetPrimaryDisplay(), &displayModeCount);
+	m_displayModes = SDL_GetFullscreenDisplayModes(SDL_GetPrimaryDisplay(), &displayModeCount);
 
 	for (int i = 0; i < displayModeCount; ++i) {
-		QString mode =
-			QString("%1x%2 @ %3Hz").arg(displayModes[i]->w).arg(displayModes[i]->h).arg(displayModes[i]->refresh_rate);
+		QString mode = QString("%1x%2 @ %3Hz")
+						   .arg(m_displayModes[i]->w)
+						   .arg(m_displayModes[i]->h)
+						   .arg(m_displayModes[i]->refresh_rate);
 		m_ui->exFullResComboBox->addItem(mode);
 
-		if ((displayModes[i]->w == currentConfigApp->m_exf_x_res) &&
-			(displayModes[i]->h == currentConfigApp->m_exf_y_res) &&
-			(displayModes[i]->refresh_rate == currentConfigApp->m_exf_fps)) {
+		if ((m_displayModes[i]->w == currentConfigApp->m_exf_x_res) &&
+			(m_displayModes[i]->h == currentConfigApp->m_exf_y_res) &&
+			(m_displayModes[i]->refresh_rate == currentConfigApp->m_exf_fps)) {
 			m_ui->exFullResComboBox->setCurrentIndex(i);
 		}
 	}
@@ -350,6 +361,22 @@ void CMainDialog::UpdateInterface()
 	m_ui->msaaNum->setNum(currentConfigApp->m_msaa);
 	m_ui->AFSlider->setValue(log2(currentConfigApp->m_anisotropy));
 	m_ui->AFNum->setNum(currentConfigApp->m_anisotropy);
+
+	m_ui->keyForward_1->setText(GetKeyName(g_keyMaps.k_forward[0]));
+	m_ui->keyForward_2->setText(GetKeyName(g_keyMaps.k_forward[1]));
+	m_ui->keyBack_1->setText(GetKeyName(g_keyMaps.k_back[0]));
+	m_ui->keyBack_2->setText(GetKeyName(g_keyMaps.k_back[1]));
+	m_ui->keyLeft_1->setText(GetKeyName(g_keyMaps.k_left[0]));
+	m_ui->keyLeft_2->setText(GetKeyName(g_keyMaps.k_left[1]));
+	m_ui->keyRight_1->setText(GetKeyName(g_keyMaps.k_right[0]));
+	m_ui->keyRight_2->setText(GetKeyName(g_keyMaps.k_right[1]));
+	m_ui->keySprint_1->setText(GetKeyName(g_keyMaps.k_sprint[0]));
+	m_ui->keySprint_2->setText(GetKeyName(g_keyMaps.k_sprint[1]));
+}
+
+QString CMainDialog::GetKeyName(SDL_Scancode key)
+{
+	return QString(SDL_GetKeyName(SDL_GetKeyFromScancode(key, 0, true)));
 }
 
 // FUNCTION: CONFIG 0x004045e0
@@ -490,9 +517,9 @@ void CMainDialog::TransitionTypeChanged(int index)
 
 void CMainDialog::ExclusiveResolutionChanged(int index)
 {
-	currentConfigApp->m_exf_x_res = displayModes[index]->w;
-	currentConfigApp->m_exf_y_res = displayModes[index]->h;
-	currentConfigApp->m_exf_fps = displayModes[index]->refresh_rate;
+	currentConfigApp->m_exf_x_res = m_displayModes[index]->w;
+	currentConfigApp->m_exf_y_res = m_displayModes[index]->h;
+	currentConfigApp->m_exf_fps = m_displayModes[index]->refresh_rate;
 	m_modified = true;
 	UpdateInterface();
 }
@@ -637,12 +664,8 @@ void CMainDialog::TexturePathEdited()
 void CMainDialog::AddCustomAssetPath()
 {
 	QDir data_path = QDir(QString::fromStdString(currentConfigApp->m_cd_path));
-	QStringList new_files = QFileDialog::getOpenFileNames(
-		this,
-		"Open File(s)",
-		data_path.absolutePath(),
-		"Interleaf files (*.si)"
-	);
+	QStringList new_files =
+		QFileDialog::getOpenFileNames(this, "Open File(s)", data_path.absolutePath(), "Interleaf files (*.si)");
 	if (!new_files.isEmpty()) {
 		for (QString& item : new_files) {
 			item = data_path.relativeFilePath(item);
@@ -752,30 +775,85 @@ void CMainDialog::FramerateChanged(int i)
 	UpdateInterface();
 }
 
-void CMainDialog::ForwardKeyChanged() {
+void CMainDialog::ForwardKeyChanged()
+{
 	RebindInput(m_ui->keyForward_1, g_keyMaps.k_forward[0]);
 }
 
-void CMainDialog::RebindInput(QPushButton* &button, SDL_Scancode &key)
+void CMainDialog::ForwardKeyChangedAlt()
+{
+	RebindInput(m_ui->keyForward_2, g_keyMaps.k_forward[1]);
+}
+
+void CMainDialog::BackwardKeyChanged()
+{
+	RebindInput(m_ui->keyBack_1, g_keyMaps.k_back[0]);
+}
+
+void CMainDialog::BackwardKeyChangedAlt()
+{
+	RebindInput(m_ui->keyBack_2, g_keyMaps.k_back[1]);
+}
+
+void CMainDialog::LeftKeyChanged()
+{
+	RebindInput(m_ui->keyLeft_1, g_keyMaps.k_left[0]);
+}
+
+void CMainDialog::LeftKeyChangedAlt()
+{
+	RebindInput(m_ui->keyLeft_2, g_keyMaps.k_left[1]);
+}
+
+void CMainDialog::RightKeyChanged()
+{
+	RebindInput(m_ui->keyRight_1, g_keyMaps.k_right[0]);
+}
+
+void CMainDialog::RightKeyChangedAlt()
+{
+	RebindInput(m_ui->keyRight_2, g_keyMaps.k_right[1]);
+}
+
+void CMainDialog::SprintKeyChanged()
+{
+	RebindInput(m_ui->keySprint_1, g_keyMaps.k_sprint[0]);
+}
+
+void CMainDialog::SprintKeyChangedAlt()
+{
+	RebindInput(m_ui->keySprint_2, g_keyMaps.k_sprint[1]);
+}
+
+void CMainDialog::RebindInput(QPushButton*& button, SDL_Scancode& key)
 {
 	SDL_InitSubSystem(SDL_INIT_EVENTS);
 	button->setText(QString("Press a key..."));
-	currentKeyBind = &key;
+	m_currentKeyBind = &key;
 
-	inputWindow = SDL_CreateWindow("Press a key...", 256, 128, SDL_WINDOW_HIDDEN | SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_ALWAYS_ON_TOP | SDL_WINDOW_UTILITY | SDL_WINDOW_KEYBOARD_GRABBED);
+	m_inputWindow = SDL_CreateWindow(
+		"Press a key...",
+		256,
+		128,
+		SDL_WINDOW_HIDDEN | SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_ALWAYS_ON_TOP | SDL_WINDOW_UTILITY |
+			SDL_WINDOW_KEYBOARD_GRABBED
+	);
 #ifdef MINIWIN
-	hWnd = reinterpret_cast<HWND>(inputWindow);
+	m_hWnd = reinterpret_cast<HWND>(m_inputWindow);
 #else
-	hWnd = (HWND) SDL_GetPointerProperty(SDL_GetWindowProperties(inputWindow), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
+	m_hWnd =
+		(HWND) SDL_GetPointerProperty(SDL_GetWindowProperties(m_inputWindow), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
 #endif
 
-	inputTimeout.setSingleShot(true);
-	inputTimeout.setInterval(3 * 1000);
+	inputTimeout.setSingleShot(false);
+	inputTimeout.setInterval(1000);
 	sdlPoller.setSingleShot(false);
 	sdlPoller.setInterval(10);
 	connect(&inputTimeout, &QTimer::timeout, this, &CMainDialog::RebindTimeout);
 	connect(&sdlPoller, &QTimer::timeout, this, &CMainDialog::PollInputs);
-	SDL_ShowWindow(inputWindow);
+	SDL_ShowWindow(m_inputWindow);
+	SDL_RaiseWindow(m_inputWindow);
+	timeoutCountdown = 3;
 	sdlPoller.start();
 	inputTimeout.start();
 }
@@ -785,13 +863,14 @@ void CMainDialog::PollInputs()
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
 		if (event.type == SDL_EVENT_KEY_DOWN) {
-			SDL_Log("Key down!");
-			SDL_Scancode sc = event.key.scancode;
-			*currentKeyBind = sc;
+			if (event.key.scancode != SDL_SCANCODE_ESCAPE) {
+				SDL_Scancode sc = event.key.scancode;
+				*m_currentKeyBind = sc;
+				m_modified = true;
+			}
 			sdlPoller.disconnect();
 			inputTimeout.disconnect();
-			SDL_DestroyWindow(inputWindow);
-			m_modified = true;
+			SDL_DestroyWindow(m_inputWindow);
 			UpdateInterface();
 		}
 	}
@@ -799,9 +878,11 @@ void CMainDialog::PollInputs()
 
 void CMainDialog::RebindTimeout()
 {
-	SDL_Log("Timeout");
-	sdlPoller.disconnect();
-	inputTimeout.disconnect();
-	SDL_DestroyWindow(inputWindow);
-	UpdateInterface();
+	timeoutCountdown -= 1;
+	if (timeoutCountdown <= 0) {
+		sdlPoller.disconnect();
+		inputTimeout.disconnect();
+		SDL_DestroyWindow(m_inputWindow);
+		UpdateInterface();
+	}
 }

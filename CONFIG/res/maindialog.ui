@@ -960,9 +960,6 @@ The game will gradually increase the number of actors until this maximum is reac
             <property name="enabled">
              <bool>true</bool>
             </property>
-            <property name="toolTip">
-             <string>Work-In-Progress, currently non-functional</string>
-            </property>
             <property name="title">
              <string>Keyboard Mappings</string>
             </property>

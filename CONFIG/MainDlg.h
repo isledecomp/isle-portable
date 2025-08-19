@@ -13,6 +13,7 @@
 
 #include <QDialog>
 #include <QFileDialog>
+#include <QString>
 #include <QTimer>
 #include <SDL3/SDL.h>
 
@@ -38,15 +39,17 @@ private:
 	bool m_advanced = false;
 	QStringList assetPaths = QStringList();
 	Ui::MainDialog* m_ui = nullptr;
-	SDL_DisplayMode** displayModes;
-	SDL_Window* inputWindow;
-	HWND hWnd;
+	SDL_DisplayMode** m_displayModes;
+	SDL_Window* m_inputWindow;
+	HWND m_hWnd;
 	QTimer sdlPoller;
-    QTimer inputTimeout;
-	SDL_Scancode* currentKeyBind = nullptr;
+	QTimer inputTimeout;
+	int timeoutCountdown = 0;
+	SDL_Scancode* m_currentKeyBind = nullptr;
 
 	void keyReleaseEvent(QKeyEvent* event) override;
 	bool OnInitDialog();
+	QString GetKeyName(SDL_Scancode key);
 private slots:
 	void OnList3DevicesSelectionChanged(int row);
 	void OnCheckbox3DSound(bool checked);
@@ -88,10 +91,19 @@ private slots:
 	void AspectRatioChanged(int index);
 	void EnsureAspectRatio();
 	void FramerateChanged(int i);
-	void ForwardKeyChanged();
-	void RebindInput(QPushButton* &button, SDL_Scancode &key);
+	void RebindInput(QPushButton*& button, SDL_Scancode& key);
 	void PollInputs();
 	void RebindTimeout();
+	void ForwardKeyChanged();
+	void ForwardKeyChangedAlt();
+	void BackwardKeyChanged();
+	void BackwardKeyChangedAlt();
+	void LeftKeyChanged();
+	void LeftKeyChangedAlt();
+	void RightKeyChanged();
+	void RightKeyChangedAlt();
+	void SprintKeyChanged();
+	void SprintKeyChangedAlt();
 };
 
 // SYNTHETIC: CONFIG 0x00403de0
