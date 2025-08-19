@@ -639,7 +639,7 @@ void CMainDialog::AddCustomAssetPath()
 	QDir data_path = QDir(QString::fromStdString(currentConfigApp->m_cd_path));
 	QStringList new_files = QFileDialog::getOpenFileNames(
 		this,
-		"Select one or more files to open",
+		"Open File(s)",
 		data_path.absolutePath(),
 		"Interleaf files (*.si)"
 	);
@@ -721,7 +721,10 @@ void CMainDialog::YResChanged(int i)
 
 void CMainDialog::EnsureAspectRatio()
 {
-	if (currentConfigApp->m_aspect_ratio != 3) {
+	if (currentConfigApp->m_aspect_ratio == 3) {
+		m_ui->xResSpinBox->setReadOnly(false);
+	}
+	else {
 		m_ui->xResSpinBox->setReadOnly(true);
 		switch (currentConfigApp->m_aspect_ratio) {
 		case 0: {
@@ -740,9 +743,6 @@ void CMainDialog::EnsureAspectRatio()
 		}
 		}
 	}
-	else {
-		m_ui->xResSpinBox->setReadOnly(false);
-	}
 }
 
 void CMainDialog::FramerateChanged(int i)
@@ -753,10 +753,43 @@ void CMainDialog::FramerateChanged(int i)
 }
 
 void CMainDialog::ForwardKeyChanged() {
-	RebindInput(m_ui->keyForward_1);
+	RebindInput(m_ui->keyForward_1, g_keyMaps.k_forward[0]);
 }
 
-void CMainDialog::RebindInput(QPushButton* &button)
+void CMainDialog::RebindInput(QPushButton* &button, SDL_Scancode &key)
 {
 	button->setText(QString("Press a key..."));
+	currentKeyBind = &key;
+	inputTimeout.setSingleShot(true);
+	inputTimeout.setInterval(3 * 1000);
+	sdlPoller.setSingleShot(false);
+	sdlPoller.setInterval(10);
+	connect(&inputTimeout, &QTimer::timeout, this, &CMainDialog::RebindTimeout);
+	connect(&sdlPoller, &QTimer::timeout, this, &CMainDialog::PollInputs);
+	SDL_InitSubSystem(SDL_INIT_EVENTS);
+	sdlPoller.start();
+	inputTimeout.start();
+}
+
+void CMainDialog::PollInputs()
+{
+	SDL_Event event;
+	while (SDL_PollEvent(&event)) {
+		if (event.type == SDL_EVENT_KEY_DOWN) {
+			SDL_Log("Key down!");
+			SDL_Scancode sc = event.key.scancode;
+			*currentKeyBind = sc;
+			sdlPoller.disconnect();
+			inputTimeout.disconnect();
+			UpdateInterface();
+		}
+	}
+}
+
+void CMainDialog::RebindTimeout()
+{
+	SDL_Log("Timeout");
+	sdlPoller.disconnect();
+	inputTimeout.disconnect();
+	UpdateInterface();
 }

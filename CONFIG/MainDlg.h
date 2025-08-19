@@ -7,6 +7,7 @@
 
 #include <QDialog>
 #include <QFileDialog>
+#include <QTimer>
 #include <SDL3/SDL.h>
 
 namespace Ui
@@ -32,6 +33,9 @@ private:
 	QStringList assetPaths = QStringList();
 	Ui::MainDialog* m_ui = nullptr;
 	SDL_DisplayMode** displayModes;
+	QTimer sdlPoller;
+    QTimer inputTimeout;
+	SDL_Scancode* currentKeyBind = nullptr;
 
 	void keyReleaseEvent(QKeyEvent* event) override;
 	bool OnInitDialog();
@@ -77,7 +81,9 @@ private slots:
 	void EnsureAspectRatio();
 	void FramerateChanged(int i);
 	void ForwardKeyChanged();
-	void RebindInput(QPushButton* &button);
+	void RebindInput(QPushButton* &button, SDL_Scancode &key);
+	void PollInputs();
+	void RebindTimeout();
 };
 
 // SYNTHETIC: CONFIG 0x00403de0
