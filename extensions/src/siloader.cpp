@@ -9,6 +9,8 @@
 
 using namespace Extensions;
 
+const char prependedMarker[] = ";;prepended;;";
+
 std::map<std::string, std::string> SiLoader::options;
 std::vector<std::string> SiLoader::files;
 std::vector<std::string> SiLoader::directives;
@@ -98,16 +100,18 @@ std::optional<MxResult> SiLoader::HandleStart(MxDSAction& p_action)
 		}
 	}
 
-	for (const auto& key : prepend) {
-		if (key.first == object) {
-			MxDSAction action;
-			MxResult result = start(key.second, p_action, action);
+	if (p_action.GetExtraLength() == 0 || !SDL_strstr(p_action.GetExtraData(), prependedMarker)) {
+		for (const auto& key : prepend) {
+			if (key.first == object) {
+				MxDSAction action;
+				MxResult result = start(key.second, p_action, action);
 
-			if (result == SUCCESS) {
-				p_action.SetUnknown24(action.GetUnknown24());
+				if (result == SUCCESS) {
+					p_action.SetUnknown24(action.GetUnknown24());
+				}
+
+				return result;
 			}
-
-			return result;
 		}
 	}
 
@@ -165,9 +169,9 @@ std::optional<MxBool> SiLoader::HandleDelete(MxDSAction& p_action)
 MxBool SiLoader::HandleEndAction(MxEndActionNotificationParam& p_param)
 {
 	StreamObject object{p_param.GetAction()->GetAtomId(), p_param.GetAction()->GetObjectId()};
-	auto start = [](const StreamObject& p_object, MxDSAction& p_in, MxDSAction& p_out) {
+	auto start = [](const StreamObject& p_object, MxDSAction& p_in, MxDSAction& p_out) -> MxResult {
 		if (!OpenStream(p_object.first.GetInternal())) {
-			return;
+			return FAILURE;
 		}
 
 		p_out.SetAtomId(p_object.first);
@@ -175,13 +179,17 @@ MxBool SiLoader::HandleEndAction(MxEndActionNotificationParam& p_param)
 		p_out.SetUnknown24(-1);
 		p_out.SetNotificationObject(p_in.GetNotificationObject());
 		p_out.SetOrigin(p_in.GetOrigin());
-		Start(&p_out);
+		p_out.AppendExtra(sizeof(prependedMarker), prependedMarker);
+		return Start(&p_out);
 	};
 
-	for (const auto& key : prepend) {
-		if (key.second == object) {
-			MxDSAction action;
-			start(key.second, *p_param.GetAction(), action);
+	if (!p_param.GetSender() || !p_param.GetSender()->IsA("MxCompositePresenter")) {
+		for (const auto& key : prepend) {
+			if (key.second == object) {
+				assert(false);
+				MxDSAction action;
+				start(key.first, *p_param.GetAction(), action);
+			}
 		}
 	}
 
@@ -218,7 +226,7 @@ bool SiLoader::LoadDirective(const char* p_directive)
 	char originAtom[256], targetAtom[256];
 	uint32_t originId, targetId;
 
-	if (SDL_sscanf(p_directive, "StartWith:%255[^;];%d;%255[^;];%d", originAtom, &originId, targetAtom, &targetId) ==
+	if (SDL_sscanf(p_directive, "StartWith:%255[^:]:%d:%255[^:]:%d", originAtom, &originId, targetAtom, &targetId) ==
 		4) {
 		startWith.emplace_back(
 			StreamObject{MxAtomId{originAtom, e_lowerCase2}, originId},
@@ -226,7 +234,7 @@ bool SiLoader::LoadDirective(const char* p_directive)
 		);
 	}
 
-	if (SDL_sscanf(p_directive, "RemoveWith:%255[^;];%d;%255[^;];%d", originAtom, &originId, targetAtom, &targetId) ==
+	if (SDL_sscanf(p_directive, "RemoveWith:%255[^:]:%d:%255[^:]:%d", originAtom, &originId, targetAtom, &targetId) ==
 		4) {
 		removeWith.emplace_back(
 			StreamObject{MxAtomId{originAtom, e_lowerCase2}, originId},
@@ -234,14 +242,14 @@ bool SiLoader::LoadDirective(const char* p_directive)
 		);
 	}
 
-	if (SDL_sscanf(p_directive, "Replace:%255[^;];%d;%255[^;];%d", originAtom, &originId, targetAtom, &targetId) == 4) {
+	if (SDL_sscanf(p_directive, "Replace:%255[^:]:%d:%255[^:]:%d", originAtom, &originId, targetAtom, &targetId) == 4) {
 		replace.emplace_back(
 			StreamObject{MxAtomId{originAtom, e_lowerCase2}, originId},
 			StreamObject{MxAtomId{targetAtom, e_lowerCase2}, targetId}
 		);
 	}
 
-	if (SDL_sscanf(p_directive, "Prepend:%255[^;];%d;%255[^;];%d", originAtom, &originId, targetAtom, &targetId) == 4) {
+	if (SDL_sscanf(p_directive, "Prepend:%255[^:]:%d:%255[^:]:%d", originAtom, &originId, targetAtom, &targetId) == 4) {
 		prepend.emplace_back(
 			StreamObject{MxAtomId{originAtom, e_lowerCase2}, originId},
 			StreamObject{MxAtomId{targetAtom, e_lowerCase2}, targetId}
