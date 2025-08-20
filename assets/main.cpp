@@ -20,10 +20,16 @@ void CreateWidescreen()
 	struct AssetView {
 		std::string name;
 		std::string extra;
+		int32_t z;
 	};
 	const AssetView widescreenBitmaps[] = {
 		{"GaraDoor_Background_Wide",
-		 "World:current, StartWith:\\Lego\\Scripts\\Isle\\Isle;1160, RemoveWith:\\Lego\\Scripts\\Isle\\Isle;1161"}
+		 "World:current, StartWith:\\Lego\\Scripts\\Isle\\Isle;1160, RemoveWith:\\Lego\\Scripts\\Isle\\Isle;1161",
+		 -1},
+		{"Police_Background_Wide",
+		 "World:\\lego\\scripts\\police\\police;0, StartWith:\\Lego\\Scripts\\Police\\Police;0, "
+		 "RemoveWith:\\Lego\\Scripts\\Police\\Police;0",
+		 10}
 	};
 
 	si::Interleaf si;
@@ -44,9 +50,9 @@ void CreateWidescreen()
 		object->presenter_ = "MxStillPresenter";
 		object->name_ = asset.name;
 		object->filetype_ = si::MxOb::STL;
-		object->location_ = si::Vector3(-240.0, 0.0, -1.0);
+		object->location_ = si::Vector3(-240, 0.0, asset.z);
 		object->direction_ = si::Vector3(0, 0, 0);
-		object->up_ = si::Vector3(0, 1.0, 0);
+		object->up_ = si::Vector3(0, 1, 0);
 
 		if (!object->ReplaceWithFile(file.c_str())) {
 			abort();
