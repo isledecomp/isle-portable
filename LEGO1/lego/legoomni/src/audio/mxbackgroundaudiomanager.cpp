@@ -287,6 +287,10 @@ MxResult MxBackgroundAudioManager::PlayMusic(
 			m_tickleState = p_tickleState;
 			m_speed = p_speed;
 		}
+		else {
+			m_action2.SetAtomId(MxAtomId());
+			m_action2.SetObjectId(-1);
+		}
 
 		return result;
 	}
