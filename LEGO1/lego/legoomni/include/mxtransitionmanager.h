@@ -69,9 +69,6 @@ private:
 	void WindowsTransition();
 	void BrokenTransition();
 
-	void SubmitCopyRect(LPDDSURFACEDESC p_ddsc);
-	void SetupCopyRect(LPDDSURFACEDESC p_ddsc);
-
 	MxVideoPresenter* m_waitIndicator; // 0x08
 	RECT m_copyRect;                   // 0x0c
 	MxU8* m_copyBuffer;                // 0x1c
