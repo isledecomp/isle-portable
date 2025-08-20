@@ -194,6 +194,41 @@ void CreateHDMusic()
 	si.Write(result.c_str());
 }
 
+void CreateBadEnd()
+{
+	std::string result = out + "/badend.si";
+
+	si::Interleaf si;
+	mxHd.seek(0, si::MemoryBuffer::SeekStart);
+	si.Read(&mxHd);
+
+	si::Object* composite = new si::Object;
+	std::string extra = "Replace:\\lego\\scripts\\intro:4";
+	composite->id_ = 0;
+	composite->type_ = si::MxOb::Presenter;
+	composite->flags_ = MxDSAction::c_enabled;
+	composite->duration_ = 0;
+	composite->loops_ = 1;
+	composite->extra_ = si::bytearray(extra.c_str(), extra.length() + 1);
+	composite->presenter_ = "MxCompositeMediaPresenter";
+	composite->name_ = "BadEnd_Movie";
+	si.AppendChild(composite);
+
+	si::Object* smk = new si::Object;
+	smk->id_ = 1;
+	smk->type_ = si::MxOb::SMK;
+	smk->flags_ = MxDSAction::c_enabled;
+	smk->duration_ = 75100;
+	smk->loops_ = 1;
+	smk->presenter_ = "MxSmkPresenter";
+	smk->name_ = "BadEnd_Smk";
+	smk->filetype_ = si::MxOb::SMK;
+	smk->location_ = si::Vector3(0, 0, -10000);
+	smk->direction_ = si::Vector3(0, 0, 1);
+	smk->up_ = si::Vector3(0, 1, 0);
+	smk->unknown29_ = 1; // Palette management = yes
+}
+
 int main(int argc, char* argv[])
 {
 	out = argv[1];
