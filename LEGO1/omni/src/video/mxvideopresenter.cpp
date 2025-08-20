@@ -253,8 +253,7 @@ void MxVideoPresenter::PutFrame()
 				rect.GetLeft(),
 				rect.GetTop(),
 				m_frameBitmap->GetBmiWidth(),
-				m_frameBitmap->GetBmiHeightAbs(),
-				TRUE
+				m_frameBitmap->GetBmiHeightAbs()
 			);
 		}
 	}
@@ -280,7 +279,7 @@ void MxVideoPresenter::PutFrame()
 				}
 			}
 			else {
-				displaySurface->VTable0x30(m_frameBitmap, 0, 0, GetX(), GetY(), GetWidth(), GetHeight(), FALSE);
+				displaySurface->VTable0x30(m_frameBitmap, 0, 0, GetX(), GetY(), GetWidth(), GetHeight());
 			}
 		}
 		else if (m_surface) {
