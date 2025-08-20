@@ -37,6 +37,8 @@ private:
 	static std::vector<std::pair<StreamObject, StreamObject>> removeWith;
 	static std::vector<std::pair<StreamObject, StreamObject>> replace;
 	static std::vector<std::pair<StreamObject, StreamObject>> prepend;
+	static std::vector<StreamObject> fullScreenMovie;
+	static std::vector<StreamObject> disable3d;
 
 	static bool LoadFile(const char* p_file);
 	static bool LoadDirective(const char* p_directive);

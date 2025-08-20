@@ -18,6 +18,8 @@ std::vector<std::pair<SiLoader::StreamObject, SiLoader::StreamObject>> SiLoader:
 std::vector<std::pair<SiLoader::StreamObject, SiLoader::StreamObject>> SiLoader::removeWith;
 std::vector<std::pair<SiLoader::StreamObject, SiLoader::StreamObject>> SiLoader::replace;
 std::vector<std::pair<SiLoader::StreamObject, SiLoader::StreamObject>> SiLoader::prepend;
+std::vector<SiLoader::StreamObject> SiLoader::fullScreenMovie;
+std::vector<SiLoader::StreamObject> SiLoader::disable3d;
 bool SiLoader::enabled = false;
 
 void SiLoader::Initialize()
@@ -25,14 +27,14 @@ void SiLoader::Initialize()
 	char* files = SDL_strdup(options["si loader:files"].c_str());
 	char* saveptr;
 
-	for (char* file = SDL_strtok_r(files, ",\n\r", &saveptr); file; file = SDL_strtok_r(NULL, ",\n\r", &saveptr)) {
+	for (char* file = SDL_strtok_r(files, ",\n\r ", &saveptr); file; file = SDL_strtok_r(NULL, ",\n\r ", &saveptr)) {
 		SiLoader::files.emplace_back(file);
 	}
 
 	char* directives = SDL_strdup(options["si loader:directives"].c_str());
 
-	for (char* directive = SDL_strtok_r(directives, ",\n\r", &saveptr); directive;
-		 directive = SDL_strtok_r(NULL, ",\n\r", &saveptr)) {
+	for (char* directive = SDL_strtok_r(directives, ",\n\r ", &saveptr); directive;
+		 directive = SDL_strtok_r(NULL, ",\n\r ", &saveptr)) {
 		SiLoader::directives.emplace_back(directive);
 	}
 
@@ -115,6 +117,14 @@ std::optional<MxResult> SiLoader::HandleStart(MxDSAction& p_action)
 		}
 	}
 
+	if (std::find(fullScreenMovie.begin(), fullScreenMovie.end(), object) != fullScreenMovie.end()) {
+		VideoManager()->EnableFullScreenMovie(TRUE);
+	}
+
+	if (std::find(disable3d.begin(), disable3d.end(), object) != disable3d.end()) {
+		VideoManager()->FUN_1007c520();
+	}
+
 	return std::nullopt;
 }
 
@@ -183,10 +193,13 @@ MxBool SiLoader::HandleEndAction(MxEndActionNotificationParam& p_param)
 		return Start(&p_out);
 	};
 
+	if (std::find(fullScreenMovie.begin(), fullScreenMovie.end(), object) != fullScreenMovie.end()) {
+		VideoManager()->EnableFullScreenMovie(FALSE);
+	}
+
 	if (!p_param.GetSender() || !p_param.GetSender()->IsA("MxCompositePresenter")) {
 		for (const auto& key : prepend) {
 			if (key.second == object) {
-				assert(false);
 				MxDSAction action;
 				start(key.first, *p_param.GetAction(), action);
 			}
@@ -226,34 +239,42 @@ bool SiLoader::LoadDirective(const char* p_directive)
 	char originAtom[256], targetAtom[256];
 	uint32_t originId, targetId;
 
-	if (SDL_sscanf(p_directive, "StartWith:%255[^:]:%d:%255[^:]:%d", originAtom, &originId, targetAtom, &targetId) ==
-		4) {
+	if (SDL_sscanf(
+			p_directive,
+			"StartWith:%255[^:;]%*[:;]%u%*[:;]%255[^:;]%*[:;]%u",
+			originAtom,
+			&originId,
+			targetAtom,
+			&targetId
+		) == 4) {
 		startWith.emplace_back(
 			StreamObject{MxAtomId{originAtom, e_lowerCase2}, originId},
 			StreamObject{MxAtomId{targetAtom, e_lowerCase2}, targetId}
 		);
 	}
-
-	if (SDL_sscanf(p_directive, "RemoveWith:%255[^:]:%d:%255[^:]:%d", originAtom, &originId, targetAtom, &targetId) ==
-		4) {
+	else if (SDL_sscanf(p_directive, "RemoveWith:%255[^:;]%*[:;]%u%*[:;]%255[^:;]%*[:;]%u", originAtom, &originId, targetAtom, &targetId) == 4) {
 		removeWith.emplace_back(
 			StreamObject{MxAtomId{originAtom, e_lowerCase2}, originId},
 			StreamObject{MxAtomId{targetAtom, e_lowerCase2}, targetId}
 		);
 	}
-
-	if (SDL_sscanf(p_directive, "Replace:%255[^:]:%d:%255[^:]:%d", originAtom, &originId, targetAtom, &targetId) == 4) {
+	else if (SDL_sscanf(p_directive, "Replace:%255[^:;]%*[:;]%u%*[:;]%255[^:;]%*[:;]%u", originAtom, &originId, targetAtom, &targetId) == 4) {
 		replace.emplace_back(
 			StreamObject{MxAtomId{originAtom, e_lowerCase2}, originId},
 			StreamObject{MxAtomId{targetAtom, e_lowerCase2}, targetId}
 		);
 	}
-
-	if (SDL_sscanf(p_directive, "Prepend:%255[^:]:%d:%255[^:]:%d", originAtom, &originId, targetAtom, &targetId) == 4) {
+	else if (SDL_sscanf(p_directive, "Prepend:%255[^:;]%*[:;]%u%*[:;]%255[^:;]%*[:;]%u", originAtom, &originId, targetAtom, &targetId) == 4) {
 		prepend.emplace_back(
-			StreamObject{MxAtomId{originAtom, e_lowerCase2}, originId},
-			StreamObject{MxAtomId{targetAtom, e_lowerCase2}, targetId}
+			StreamObject{MxAtomId{targetAtom, e_lowerCase2}, targetId},
+			StreamObject{MxAtomId{originAtom, e_lowerCase2}, originId}
 		);
+	}
+	else if (SDL_sscanf(p_directive, "FullScreenMovie:%255[^:;]%*[:;]%u", originAtom, &originId) == 2) {
+		fullScreenMovie.emplace_back(StreamObject{MxAtomId{originAtom, e_lowerCase2}, originId});
+	}
+	else if (SDL_sscanf(p_directive, "Disable3d:%255[^:;]%*[:;]%u", originAtom, &originId) == 2) {
+		disable3d.emplace_back(StreamObject{MxAtomId{originAtom, e_lowerCase2}, originId});
 	}
 
 	return true;
@@ -284,7 +305,7 @@ void SiLoader::ParseExtra(const MxAtomId& p_atom, si::Core* p_core, MxAtomId p_p
 				uint32_t id;
 
 				if ((directive = SDL_strstr(extra.c_str(), "StartWith:"))) {
-					if (SDL_sscanf(directive, "StartWith:%255[^;];%d", atom, &id) == 2) {
+					if (SDL_sscanf(directive, "StartWith:%255[^:;]%*[:;]%u", atom, &id) == 2) {
 						startWith.emplace_back(
 							StreamObject{MxAtomId{atom, e_lowerCase2}, id},
 							StreamObject{p_atom, object->id_}
@@ -293,7 +314,7 @@ void SiLoader::ParseExtra(const MxAtomId& p_atom, si::Core* p_core, MxAtomId p_p
 				}
 
 				if ((directive = SDL_strstr(extra.c_str(), "RemoveWith:"))) {
-					if (SDL_sscanf(directive, "RemoveWith:%255[^;];%d", atom, &id) == 2) {
+					if (SDL_sscanf(directive, "RemoveWith:%255[^:;]%*[:;]%u", atom, &id) == 2) {
 						removeWith.emplace_back(
 							StreamObject{MxAtomId{atom, e_lowerCase2}, id},
 							StreamObject{p_atom, object->id_}
@@ -309,7 +330,7 @@ void SiLoader::ParseExtra(const MxAtomId& p_atom, si::Core* p_core, MxAtomId p_p
 				}
 				else {
 					if ((directive = SDL_strstr(extra.c_str(), "Replace:"))) {
-						if (SDL_sscanf(directive, "Replace:%255[^;];%d", atom, &id) == 2) {
+						if (SDL_sscanf(directive, "Replace:%255[^:;]%*[:;]%u", atom, &id) == 2) {
 							replace.emplace_back(
 								StreamObject{MxAtomId{atom, e_lowerCase2}, id},
 								StreamObject{p_atom, object->id_}
@@ -320,12 +341,20 @@ void SiLoader::ParseExtra(const MxAtomId& p_atom, si::Core* p_core, MxAtomId p_p
 				}
 
 				if ((directive = SDL_strstr(extra.c_str(), "Prepend:"))) {
-					if (SDL_sscanf(directive, "Prepend:%255[^;];%d", atom, &id) == 2) {
+					if (SDL_sscanf(directive, "Prepend:%255[^:;]%*[:;]%u", atom, &id) == 2) {
 						prepend.emplace_back(
-							StreamObject{MxAtomId{atom, e_lowerCase2}, id},
-							StreamObject{p_atom, object->id_}
+							StreamObject{p_atom, object->id_},
+							StreamObject{MxAtomId{atom, e_lowerCase2}, id}
 						);
 					}
+				}
+
+				if ((directive = SDL_strstr(extra.c_str(), "FullScreenMovie"))) {
+					fullScreenMovie.emplace_back(StreamObject{MxAtomId{atom, e_lowerCase2}, id});
+				}
+
+				if ((directive = SDL_strstr(extra.c_str(), "Disable3d"))) {
+					disable3d.emplace_back(StreamObject{MxAtomId{atom, e_lowerCase2}, id});
 				}
 			}
 		}
