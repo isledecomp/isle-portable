@@ -215,8 +215,9 @@ void CreateBadEnd()
 	si.AppendChild(composite);
 
 	si::Object* smk = new si::Object;
+	std::string file = std::string("badend/BadEnd_Smk.smk");
 	smk->id_ = 1;
-	smk->type_ = si::MxOb::SMK;
+	smk->type_ = si::MxOb::Video;
 	smk->flags_ = MxDSAction::c_enabled;
 	smk->duration_ = 75100;
 	smk->loops_ = 1;
@@ -227,6 +228,35 @@ void CreateBadEnd()
 	smk->direction_ = si::Vector3(0, 0, 1);
 	smk->up_ = si::Vector3(0, 1, 0);
 	smk->unknown29_ = 1; // Palette management = yes
+	if (!smk->ReplaceWithFile(file.c_str())) {
+		abort();
+	}
+
+	composite->AppendChild(smk);
+	depfile << result << ": " << (std::filesystem::current_path() / file).string() << std::endl;
+
+	si::Object* wav = new si::Object;
+	file = std::string("badend/BadEnd_Wav.wav");
+	wav->id_ = 2;
+	wav->type_ = si::MxOb::Sound;
+	wav->flags_ = MxDSAction::c_enabled;
+	wav->duration_ = 77800;
+	wav->loops_ = 1;
+	wav->presenter_ = "MxWavePresenter";
+	wav->name_ = "BadEnd_Wav";
+	wav->filetype_ = si::MxOb::WAV;
+	wav->location_ = si::Vector3(0, 0, 0);
+	wav->direction_ = si::Vector3(0, 0, 1);
+	wav->up_ = si::Vector3(0, 1, 0);
+	wav->volume_ = 79;
+	if (!wav->ReplaceWithFile(file.c_str())) {
+		abort();
+	}
+
+	composite->AppendChild(wav);
+	depfile << result << ": " << (std::filesystem::current_path() / file).string() << std::endl;
+
+	si.Write(result.c_str());
 }
 
 int main(int argc, char* argv[])
@@ -242,5 +272,6 @@ int main(int argc, char* argv[])
 
 	CreateWidescreen();
 	CreateHDMusic();
+	CreateBadEnd();
 	return 0;
 }
