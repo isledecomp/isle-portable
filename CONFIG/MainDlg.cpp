@@ -862,8 +862,8 @@ void CMainDialog::PollInputs()
 {
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
-		if (event.type == SDL_EVENT_KEY_DOWN) {
-			if (event.key.scancode != SDL_SCANCODE_ESCAPE) {
+		if (event.type == SDL_EVENT_KEY_DOWN || event.type == SDL_EVENT_QUIT) {
+			if (event.type == SDL_EVENT_KEY_DOWN && event.key.scancode != SDL_SCANCODE_ESCAPE) {
 				SDL_Scancode sc = event.key.scancode;
 				*m_currentKeyBind = sc;
 				m_modified = true;
