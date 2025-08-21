@@ -2,6 +2,7 @@
 
 #include "act3.h"
 #include "credits_actions.h"
+#include "extensions/siloader.h"
 #include "helicopter.h"
 #include "infomain_actions.h"
 #include "intro_actions.h"
@@ -35,6 +36,8 @@
 DECOMP_SIZE_ASSERT(Infocenter, 0x1d8)
 DECOMP_SIZE_ASSERT(InfocenterMapEntry, 0x18)
 DECOMP_SIZE_ASSERT(InfocenterState, 0x94)
+
+using namespace Extensions;
 
 // GLOBAL: LEGO1 0x100f76a0
 const char* g_object2x4red = "2x4red";
@@ -339,7 +342,8 @@ MxLong Infocenter::HandleEndAction(MxEndActionNotificationParam& p_param)
 
 	MxLong result = m_radio.Notify(p_param);
 
-	if (result || (action->GetAtomId() != m_atomId && action->GetAtomId() != *g_introScript)) {
+	if (result || (action->GetAtomId() != m_atomId && action->GetAtomId() != *g_introScript &&
+				   !Extension<SiLoader>::Call(ReplacedIn, *action, m_atomId, *g_introScript).value_or(false))) {
 		return result;
 	}
 
