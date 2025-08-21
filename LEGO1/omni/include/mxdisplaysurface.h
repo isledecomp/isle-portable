@@ -92,7 +92,7 @@ public:
 	); // vtable+0x44
 
 	void ClearScreen();
-	static LPDIRECTDRAWSURFACE CreateCursorSurface(const CursorBitmap* p_cursorBitmap, MxPalette* p_palette);
+	static LPDIRECTDRAWSURFACE CreateCursorSurface(const CursorBitmap* p_cursorBitmap);
 	static LPDIRECTDRAWSURFACE CopySurface(LPDIRECTDRAWSURFACE p_src);
 
 	LPDIRECTDRAWSURFACE GetDirectDrawSurface1() { return m_ddSurface1; }
@@ -105,7 +105,8 @@ public:
 		MxU32 p_bitmapSize,
 		MxS32 p_width,
 		MxS32 p_height,
-		MxLong p_pitch
+		MxLong p_pitch,
+		MxU8 p_bpp
 	);
 
 	LPDIRECTDRAWSURFACE FUN_100bc8b0(MxS32 p_width, MxS32 p_height);
@@ -122,6 +123,8 @@ private:
 	LPDIRECTDRAWCLIPPER m_ddClipper;  // 0x34
 	MxBool m_initialized;             // 0x38
 	DDSURFACEDESC m_surfaceDesc;      // 0x3c
+	MxU16* m_16bitPal;                // 0xa8
+	MxU32* m_32bitPal;
 };
 
 // SYNTHETIC: LEGO1 0x100ba580

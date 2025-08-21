@@ -852,7 +852,7 @@ void LegoVideoManager::SetCursorBitmap(const CursorBitmap* p_cursorBitmap)
 	m_cursorRect.bottom = p_cursorBitmap->height;
 	m_cursorRect.right = p_cursorBitmap->width;
 
-	m_cursorSurface = MxDisplaySurface::CreateCursorSurface(p_cursorBitmap, m_videoParam.GetPalette());
+	m_cursorSurface = MxDisplaySurface::CreateCursorSurface(p_cursorBitmap);
 
 	if (m_cursorSurface == NULL) {
 		m_drawCursor = FALSE;
