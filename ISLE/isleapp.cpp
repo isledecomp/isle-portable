@@ -246,8 +246,7 @@ MxS32 IsleApp::SetupLegoOmni()
 		failure = Lego()->Create(param) == FAILURE;
 	}
 #else
-	MxS32 failure =
-		Lego()->Create(MxOmniCreateParam(m_windowHandle, m_videoParam, MxOmniCreateFlags())) == FAILURE;
+	MxS32 failure = Lego()->Create(MxOmniCreateParam(m_windowHandle, m_videoParam, MxOmniCreateFlags())) == FAILURE;
 #endif
 
 	if (!failure) {

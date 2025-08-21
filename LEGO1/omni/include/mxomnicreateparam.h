@@ -13,11 +13,7 @@
 // VTABLE: BETA10 0x101c1ca8
 class MxOmniCreateParam : public MxParam {
 public:
-	LEGO1_EXPORT MxOmniCreateParam(
-		HWND p_windowHandle,
-		MxVideoParam& p_vparam,
-		MxOmniCreateFlags p_flags
-	);
+	LEGO1_EXPORT MxOmniCreateParam(HWND p_windowHandle, MxVideoParam& p_vparam, MxOmniCreateFlags p_flags);
 
 	// FUNCTION: BETA10 0x10092cb0
 	MxOmniCreateFlags& CreateFlags() { return this->m_createFlags; }
