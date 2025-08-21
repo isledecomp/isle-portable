@@ -14,7 +14,6 @@
 class MxOmniCreateParam : public MxParam {
 public:
 	LEGO1_EXPORT MxOmniCreateParam(
-		const char* p_mediaPath,
 		HWND p_windowHandle,
 		MxVideoParam& p_vparam,
 		MxOmniCreateFlags p_flags
@@ -22,8 +21,6 @@ public:
 
 	// FUNCTION: BETA10 0x10092cb0
 	MxOmniCreateFlags& CreateFlags() { return this->m_createFlags; }
-
-	const MxString& GetMediaPath() const { return m_mediaPath; }
 
 	// FUNCTION: BETA10 0x10092c50
 	const HWND GetWindowHandle() const { return m_windowHandle; }
@@ -38,7 +35,6 @@ public:
 	// MxOmniCreateParam::`scalar deleting destructor'
 
 private:
-	MxString m_mediaPath;            // 0x04
 	HWND m_windowHandle;             // 0x14
 	MxVideoParam m_videoParam;       // 0x18
 	MxOmniCreateFlags m_createFlags; // 0x3c

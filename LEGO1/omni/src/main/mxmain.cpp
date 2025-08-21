@@ -95,7 +95,6 @@ MxResult MxOmni::Create(MxOmniCreateParam& p_param)
 		goto done;
 	}
 
-	m_mediaPath = p_param.GetMediaPath();
 	m_windowHandle = p_param.GetWindowHandle();
 
 	if (p_param.CreateFlags().CreateObjectFactory()) {

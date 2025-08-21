@@ -173,7 +173,6 @@ IsleApp::IsleApp()
 
 	LegoOmni::CreateInstance();
 
-	m_mediaPath = NULL;
 	m_iniPath = NULL;
 	m_maxLod = RealtimeView::GetUserMaxLOD();
 	m_maxAllowedExtras = m_islandQuality <= 1 ? 10 : 20;
@@ -204,7 +203,6 @@ IsleApp::~IsleApp()
 	SDL_free(m_cdPath);
 	SDL_free(m_deviceId);
 	SDL_free(m_savePath);
-	SDL_free(m_mediaPath);
 }
 
 // FUNCTION: ISLE 0x401260
@@ -244,12 +242,12 @@ MxS32 IsleApp::SetupLegoOmni()
 #ifdef COMPAT_MODE
 	MxS32 failure;
 	{
-		MxOmniCreateParam param(m_mediaPath, m_windowHandle, m_videoParam, MxOmniCreateFlags());
+		MxOmniCreateParam param(m_windowHandle, m_videoParam, MxOmniCreateFlags());
 		failure = Lego()->Create(param) == FAILURE;
 	}
 #else
 	MxS32 failure =
-		Lego()->Create(MxOmniCreateParam(m_mediaPath, m_windowHandle, m_videoParam, MxOmniCreateFlags())) == FAILURE;
+		Lego()->Create(MxOmniCreateParam(m_windowHandle, m_videoParam, MxOmniCreateFlags())) == FAILURE;
 #endif
 
 	if (!failure) {
@@ -1074,7 +1072,6 @@ bool IsleApp::LoadConfig()
 
 		iniparser_set(dict, "isle:diskpath", SDL_GetBasePath());
 		iniparser_set(dict, "isle:cdpath", MxOmni::GetCD());
-		iniparser_set(dict, "isle:mediapath", SDL_GetBasePath());
 		iniparser_set(dict, "isle:savepath", prefPath);
 
 		iniparser_set(dict, "isle:Flip Surfaces", m_flipSurfaces ? "true" : "false");
@@ -1137,7 +1134,6 @@ bool IsleApp::LoadConfig()
 	MxOmni::SetHD((m_hdPath = SDL_strdup(iniparser_getstring(dict, "isle:diskpath", SDL_GetBasePath()))));
 	MxOmni::SetCD((m_cdPath = SDL_strdup(iniparser_getstring(dict, "isle:cdpath", MxOmni::GetCD()))));
 	m_savePath = SDL_strdup(iniparser_getstring(dict, "isle:savepath", prefPath));
-	m_mediaPath = SDL_strdup(iniparser_getstring(dict, "isle:mediapath", m_hdPath));
 	m_flipSurfaces = iniparser_getboolean(dict, "isle:Flip Surfaces", m_flipSurfaces);
 	m_fullScreen = iniparser_getboolean(dict, "isle:Full Screen", m_fullScreen);
 	m_exclusiveFullScreen = iniparser_getboolean(dict, "isle:Exclusive Full Screen", m_exclusiveFullScreen);

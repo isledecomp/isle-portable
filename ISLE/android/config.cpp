@@ -20,7 +20,6 @@ void Android_SetupDefaultConfigOverrides(dictionary* p_dictionary)
 
 	iniparser_set(p_dictionary, "isle:diskpath", data);
 	iniparser_set(p_dictionary, "isle:cdpath", data);
-	iniparser_set(p_dictionary, "isle:mediapath", data);
 	iniparser_set(p_dictionary, "isle:savepath", savedata.GetData());
 
 	// Default to Virtual Mouse

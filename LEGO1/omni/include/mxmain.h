@@ -114,7 +114,6 @@ protected:
 
 	static vector<MxString> GlobIsleFiles(const MxString& p_path);
 
-	MxString m_mediaPath;                         // 0x08
 	HWND m_windowHandle;                          // 0x18
 	MxObjectFactory* m_objectFactory;             // 0x1c
 	MxVariableTable* m_variableTable;             // 0x20

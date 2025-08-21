@@ -97,7 +97,6 @@ private:
 	const CursorBitmap* m_cursorBusyBitmap;
 	const CursorBitmap* m_cursorNoBitmap;
 	const CursorBitmap* m_cursorCurrentBitmap;
-	char* m_mediaPath;
 	MxFloat m_cursorSensitivity;
 	void DisplayArgumentHelp(const char* p_execName);
 
