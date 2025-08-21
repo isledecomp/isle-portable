@@ -20,10 +20,16 @@ void CreateWidescreen()
 	struct AssetView {
 		std::string name;
 		std::string extra;
+		int32_t z;
 	};
 	const AssetView widescreenBitmaps[] = {
 		{"GaraDoor_Background_Wide",
-		 "World:current, StartWith:\\Lego\\Scripts\\Isle\\Isle;1160, RemoveWith:\\Lego\\Scripts\\Isle\\Isle;1161"}
+		 "World:current, StartWith:\\Lego\\Scripts\\Isle\\Isle;1160, RemoveWith:\\Lego\\Scripts\\Isle\\Isle;1161",
+		 -1},
+		{"Police_Background_Wide",
+		 "World:\\lego\\scripts\\police\\police;0, StartWith:\\Lego\\Scripts\\Police\\Police;0, "
+		 "RemoveWith:\\Lego\\Scripts\\Police\\Police;0",
+		 10}
 	};
 
 	si::Interleaf si;
@@ -44,9 +50,9 @@ void CreateWidescreen()
 		object->presenter_ = "MxStillPresenter";
 		object->name_ = asset.name;
 		object->filetype_ = si::MxOb::STL;
-		object->location_ = si::Vector3(-240.0, 0.0, -1.0);
+		object->location_ = si::Vector3(-240, 0.0, asset.z);
 		object->direction_ = si::Vector3(0, 0, 0);
-		object->up_ = si::Vector3(0, 1.0, 0);
+		object->up_ = si::Vector3(0, 1, 0);
 
 		if (!object->ReplaceWithFile(file.c_str())) {
 			abort();
@@ -194,6 +200,71 @@ void CreateHDMusic()
 	si.Write(result.c_str());
 }
 
+void CreateBadEnd()
+{
+	std::string result = out + "/badend.si";
+
+	si::Interleaf si;
+	mxHd.seek(0, si::MemoryBuffer::SeekStart);
+	si.Read(&mxHd);
+
+	si::Object* composite = new si::Object;
+	std::string extra = "Replace:\\lego\\scripts\\intro:4";
+	composite->id_ = 0;
+	composite->type_ = si::MxOb::Presenter;
+	composite->flags_ = MxDSAction::c_enabled;
+	composite->duration_ = 0;
+	composite->loops_ = 1;
+	composite->extra_ = si::bytearray(extra.c_str(), extra.length() + 1);
+	composite->presenter_ = "MxCompositeMediaPresenter";
+	composite->name_ = "BadEnd_Movie";
+	si.AppendChild(composite);
+
+	si::Object* smk = new si::Object;
+	std::string file = std::string("badend/BadEnd_Smk.smk");
+	smk->id_ = 1;
+	smk->type_ = si::MxOb::Video;
+	smk->flags_ = MxDSAction::c_enabled;
+	smk->duration_ = 75100;
+	smk->loops_ = 1;
+	smk->presenter_ = "MxSmkPresenter";
+	smk->name_ = "BadEnd_Smk";
+	smk->filetype_ = si::MxOb::SMK;
+	smk->location_ = si::Vector3(0, 0, -10000);
+	smk->direction_ = si::Vector3(0, 0, 1);
+	smk->up_ = si::Vector3(0, 1, 0);
+	smk->unknown29_ = 1; // Palette management = yes
+	if (!smk->ReplaceWithFile(file.c_str())) {
+		abort();
+	}
+
+	composite->AppendChild(smk);
+	depfile << result << ": " << (std::filesystem::current_path() / file).string() << std::endl;
+
+	si::Object* wav = new si::Object;
+	file = std::string("badend/BadEnd_Wav.wav");
+	wav->id_ = 2;
+	wav->type_ = si::MxOb::Sound;
+	wav->flags_ = MxDSAction::c_enabled;
+	wav->duration_ = 77800;
+	wav->loops_ = 1;
+	wav->presenter_ = "MxWavePresenter";
+	wav->name_ = "BadEnd_Wav";
+	wav->filetype_ = si::MxOb::WAV;
+	wav->location_ = si::Vector3(0, 0, 0);
+	wav->direction_ = si::Vector3(0, 0, 1);
+	wav->up_ = si::Vector3(0, 1, 0);
+	wav->volume_ = 79;
+	if (!wav->ReplaceWithFile(file.c_str())) {
+		abort();
+	}
+
+	composite->AppendChild(wav);
+	depfile << result << ": " << (std::filesystem::current_path() / file).string() << std::endl;
+
+	si.Write(result.c_str());
+}
+
 int main(int argc, char* argv[])
 {
 	out = argv[1];
@@ -207,5 +278,6 @@ int main(int argc, char* argv[])
 
 	CreateWidescreen();
 	CreateHDMusic();
+	CreateBadEnd();
 	return 0;
 }
