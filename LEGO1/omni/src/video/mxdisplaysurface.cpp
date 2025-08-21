@@ -447,7 +447,8 @@ void MxDisplaySurface::VTable0x28(
 			palette->Release();
 		}
 	}
-#else
+#endif
+
 	if (m_surfaceDesc.ddpfPixelFormat.dwRGBBitCount != 32) {
 		DDCOLORKEY colorKey;
 		if (m_surfaceDesc.ddpfPixelFormat.dwRGBBitCount == 8) {
@@ -458,7 +459,6 @@ void MxDisplaySurface::VTable0x28(
 		}
 		tempSurface->SetColorKey(DDCKEY_SRCBLT, &colorKey);
 	}
-#endif
 
 	DDSURFACEDESC tempDesc;
 	memset(&tempDesc, 0, sizeof(tempDesc));
@@ -571,7 +571,7 @@ void MxDisplaySurface::VTable0x30(
 	MxBITMAPINFO* bmi = p_bitmap->GetBitmapInfo();
 	if (bmi) {
 		PALETTEENTRY pe[256];
-		for (int i = 0; i < 256; i++) {
+		for (int i = 1; i < 256; i++) {
 			pe[i].peRed = bmi->m_bmiColors[i].rgbRed;
 			pe[i].peGreen = bmi->m_bmiColors[i].rgbGreen;
 			pe[i].peBlue = bmi->m_bmiColors[i].rgbBlue;
@@ -757,6 +757,11 @@ LPDIRECTDRAWSURFACE MxDisplaySurface::VTable0x44(
 				pe[i].peGreen = bmi->m_bmiColors[i].rgbGreen;
 				pe[i].peBlue = bmi->m_bmiColors[i].rgbBlue;
 				pe[i].peFlags = PC_NONE;
+			}
+			if (p_transparent) {
+				pe[0].peRed = 0;
+				pe[0].peGreen = 0;
+				pe[0].peBlue = 0;
 			}
 			LPDIRECTDRAWPALETTE palette = nullptr;
 			if (draw->CreatePalette(DDPCAPS_8BIT | DDPCAPS_ALLOW256, pe, &palette, NULL) == DD_OK && palette) {
