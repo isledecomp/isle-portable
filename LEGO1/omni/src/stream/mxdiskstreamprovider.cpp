@@ -32,7 +32,7 @@ MxResult MxDiskStreamProviderThread::Run()
 MxResult MxDiskStreamProviderThread::StartWithTarget(MxDiskStreamProvider* p_target)
 {
 	m_target = p_target;
-	return Start(0x1000, 0);
+	return Start(0, 0);
 }
 
 // FUNCTION: LEGO1 0x100d0f70
