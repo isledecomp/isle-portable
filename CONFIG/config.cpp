@@ -199,6 +199,18 @@ bool CConfigApp::ReadRegisterSettings()
 	m_exf_y_res = iniparser_getint(dict, "isle:Exclusive Y Resolution", m_exf_y_res);
 	m_exf_fps = iniparser_getdouble(dict, "isle:Exclusive Framerate", m_exf_fps);
 	m_frame_delta = iniparser_getdouble(dict, "isle:Frame Delta", m_frame_delta);
+
+	g_keyMaps.k_forward[0] = (SDL_Scancode) iniparser_getint(dict, "input:Forward", g_keyMaps.k_forward[0]);
+	g_keyMaps.k_forward[1] = (SDL_Scancode) iniparser_getint(dict, "input:Forward Alt", g_keyMaps.k_forward[1]);
+	g_keyMaps.k_back[0] = (SDL_Scancode) iniparser_getint(dict, "input:Backward", g_keyMaps.k_back[0]);
+	g_keyMaps.k_back[1] = (SDL_Scancode) iniparser_getint(dict, "input:Backward Alt", g_keyMaps.k_back[1]);
+	g_keyMaps.k_left[0] = (SDL_Scancode) iniparser_getint(dict, "input:Left", g_keyMaps.k_left[0]);
+	g_keyMaps.k_left[1] = (SDL_Scancode) iniparser_getint(dict, "input:Left Alt", g_keyMaps.k_left[1]);
+	g_keyMaps.k_right[0] = (SDL_Scancode) iniparser_getint(dict, "input:Right", g_keyMaps.k_right[0]);
+	g_keyMaps.k_right[1] = (SDL_Scancode) iniparser_getint(dict, "input:Right Alt", g_keyMaps.k_right[1]);
+	g_keyMaps.k_sprint[0] = (SDL_Scancode) iniparser_getint(dict, "input:Sprint", g_keyMaps.k_sprint[0]);
+	g_keyMaps.k_sprint[1] = (SDL_Scancode) iniparser_getint(dict, "input:Sprint Alt", g_keyMaps.k_sprint[1]);
+
 	iniparser_freedict(dict);
 	return true;
 }
@@ -370,6 +382,7 @@ void CConfigApp::WriteRegisterSettings() const
 	iniparser_set(dict, "extensions", NULL);
 	iniparser_set(dict, "texture loader", NULL);
 	iniparser_set(dict, "si loader", NULL);
+	iniparser_set(dict, "input", NULL);
 
 	if (m_device_enumerator->FormatDeviceName(buffer, m_driver, m_device) >= 0) {
 		iniparser_set(dict, "isle:3D Device ID", buffer);
@@ -418,6 +431,17 @@ void CConfigApp::WriteRegisterSettings() const
 	SetIniInt(dict, "isle:Exclusive Y Resolution", m_exf_y_res);
 	iniparser_set(dict, "isle:Exclusive Framerate", std::to_string(m_exf_fps).c_str());
 	iniparser_set(dict, "isle:Frame Delta", std::to_string(m_frame_delta).c_str());
+
+	SetIniInt(dict, "input:Forward", g_keyMaps.k_forward[0]);
+	SetIniInt(dict, "input:Forward Alt", g_keyMaps.k_forward[1]);
+	SetIniInt(dict, "input:Backward", g_keyMaps.k_back[0]);
+	SetIniInt(dict, "input:Backward Alt", g_keyMaps.k_back[1]);
+	SetIniInt(dict, "input:Left", g_keyMaps.k_left[0]);
+	SetIniInt(dict, "input:Left Alt", g_keyMaps.k_left[1]);
+	SetIniInt(dict, "input:Right", g_keyMaps.k_right[0]);
+	SetIniInt(dict, "input:Right Alt", g_keyMaps.k_right[1]);
+	SetIniInt(dict, "input:Sprint", g_keyMaps.k_sprint[0]);
+	SetIniInt(dict, "input:Sprint Alt", g_keyMaps.k_sprint[1]);
 
 #undef SetIniBool
 #undef SetIniInt
@@ -480,6 +504,11 @@ int main(int argc, char* argv[])
 		g_theApp.SetIniPath(parser.value(iniOption).toStdString());
 	}
 	qInfo() << "INI path =" << QString::fromStdString(g_theApp.GetIniPath());
+
+	if (SDL_InitSubSystem(SDL_INIT_EVENTS) != true) {
+		qDebug() << "SDL_Init Error:" << SDL_GetError();
+		// return 1;
+	}
 
 	int result = 1;
 	if (g_theApp.InitInstance()) {

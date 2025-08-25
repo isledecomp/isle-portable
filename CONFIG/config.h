@@ -4,6 +4,7 @@
 #include "AboutDlg.h"
 #include "compat.h"
 #include "decomp.h"
+#include "legokeymaps.h"
 
 #ifdef MINIWIN
 #include "miniwin/d3d.h"
@@ -11,6 +12,7 @@
 #include <d3d.h>
 #endif
 
+#include <SDL3/SDL_scancode.h>
 #include <string>
 
 class LegoDeviceEnumerate;
