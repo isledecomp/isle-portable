@@ -79,7 +79,7 @@ tasks.register('compileSDL3AndroidArchive', Exec) {
     commandLine 'python', "${sdl3Dir}/build-scripts/build-release.py",
             '--actions', 'android',
             '--fast', '--force',
-            "--root=${sdl3Dir}"
+            "--root=${sdl3Dir}", "--android-api=${android.defaultConfig.minSdk}"
 
     doLast {
         def aarFile = file("${androidProject}/${sdl3Dir}/build-android").listFiles().find {
