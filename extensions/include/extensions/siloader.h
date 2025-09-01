@@ -23,6 +23,7 @@ public:
 	static bool Load();
 	static std::optional<MxCore*> HandleFind(StreamObject p_object, LegoWorld* world);
 	static std::optional<MxResult> HandleStart(MxDSAction& p_action);
+	static MxBool HandleWorld(LegoWorld* p_world);
 	static std::optional<MxBool> HandleRemove(StreamObject p_object, LegoWorld* world);
 	static std::optional<MxBool> HandleDelete(MxDSAction& p_action);
 	static MxBool HandleEndAction(MxEndActionNotificationParam& p_param);
@@ -47,6 +48,7 @@ private:
 	static bool LoadDirective(const char* p_directive);
 	static MxStreamController* OpenStream(const char* p_file);
 	static void ParseExtra(const MxAtomId& p_atom, si::Core* p_core, MxAtomId p_parentReplacedAtom = MxAtomId());
+	static bool IsWorld(const StreamObject& p_object);
 };
 
 #ifdef EXTENSIONS
@@ -70,6 +72,7 @@ bool SiLoader::ReplacedIn(MxDSAction& p_action, Args... p_args)
 constexpr auto Load = &SiLoader::Load;
 constexpr auto HandleFind = &SiLoader::HandleFind;
 constexpr auto HandleStart = &SiLoader::HandleStart;
+constexpr auto HandleWorld = &SiLoader::HandleWorld;
 constexpr auto HandleRemove = &SiLoader::HandleRemove;
 constexpr auto HandleDelete = &SiLoader::HandleDelete;
 constexpr auto HandleEndAction = &SiLoader::HandleEndAction;
@@ -78,6 +81,7 @@ constexpr auto ReplacedIn = [](auto&&... args) { return SiLoader::ReplacedIn(std
 constexpr decltype(&SiLoader::Load) Load = nullptr;
 constexpr decltype(&SiLoader::HandleFind) HandleFind = nullptr;
 constexpr decltype(&SiLoader::HandleStart) HandleStart = nullptr;
+constexpr decltype(&SiLoader::HandleWorld) HandleWorld = nullptr;
 constexpr decltype(&SiLoader::HandleRemove) HandleRemove = nullptr;
 constexpr decltype(&SiLoader::HandleDelete) HandleDelete = nullptr;
 constexpr decltype(&SiLoader::HandleEndAction) HandleEndAction = nullptr;
