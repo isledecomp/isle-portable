@@ -25,11 +25,39 @@ void CreateWidescreen()
 	const AssetView widescreenBitmaps[] = {
 		{"GaraDoor_Background_Wide",
 		 "World:current, StartWith:\\Lego\\Scripts\\Isle\\Isle;1160, RemoveWith:\\Lego\\Scripts\\Isle\\Isle;1161",
-		 -1},
+		 -10},
 		{"Police_Background_Wide",
 		 "World:\\lego\\scripts\\police\\police;0, StartWith:\\Lego\\Scripts\\Police\\Police;0, "
 		 "RemoveWith:\\Lego\\Scripts\\Police\\Police;0",
-		 10}
+		 10},
+		{"Hospital_Background_Wide",
+		 "World:\\lego\\scripts\\hospital\\hospital;0, StartWith:\\Lego\\Scripts\\Hospital\\Hospital;0, "
+		 "RemoveWith:\\Lego\\Scripts\\Hospital\\Hospital;0",
+		 10},
+		{"SeaView_Background_Wide",
+		 "World:\\Lego\\Scripts\\Isle\\Isle;0, StartWith:\\Lego\\Scripts\\Isle\\Isle;1140, "
+		 "RemoveWith:\\Lego\\Scripts\\Isle\\Isle;1141",
+		 -10},
+		{"ElevRide_Background_Wide",
+		 "World:\\Lego\\Scripts\\Isle\\Isle;0, StartWith:\\Lego\\Scripts\\Isle\\Isle;1050, "
+		 "RemoveWith:\\Lego\\Scripts\\Isle\\Isle;1051",
+		 -10},
+		{"Observe_Background_Wide",
+		 "World:current, StartWith:\\Lego\\Scripts\\Isle\\Isle;1118, "
+		 "RemoveWith:\\Lego\\Scripts\\Isle\\Isle;1119",
+		 -10},
+		{"ElevDown_Background_Wide",
+		 "World:\\Lego\\Scripts\\Isle\\Isle;0, StartWith:\\Lego\\Scripts\\Isle\\Isle;1145, "
+		 "RemoveWith:\\Lego\\Scripts\\Isle\\Isle;1146",
+		 -10},
+		{"ElevOpen_Background_Wide",
+		 "World:\\Lego\\Scripts\\Isle\\Isle;0, StartWith:\\Lego\\Scripts\\Isle\\Isle;1114, "
+		 "RemoveWith:\\Lego\\Scripts\\Isle\\Isle;1115",
+		 -10},
+		{"PoliDoor_Background_Wide",
+		 "World:\\Lego\\Scripts\\Isle\\Isle;0, StartWith:\\Lego\\Scripts\\Isle\\Isle;1150, "
+		 "RemoveWith:\\Lego\\Scripts\\Isle\\Isle;1151",
+		 -10}
 	};
 
 	si::Interleaf si;

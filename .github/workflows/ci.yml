@@ -94,6 +94,7 @@ jobs:
         if: ${{ matrix.brew }}
         run: |
           brew update
+          brew uninstall cmake || true
           brew install cmake ninja llvm qt6
           echo "LLVM_ROOT=$(brew --prefix llvm)/bin" >> $GITHUB_ENV
       
