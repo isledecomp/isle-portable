@@ -407,6 +407,8 @@ LegoOmni* LegoOmni::GetInstance()
 void LegoOmni::AddWorld(LegoWorld* p_world)
 {
 	m_worldList->Append(p_world);
+
+	Extension<SiLoader>::Call(HandleWorld, p_world);
 }
 
 // FUNCTION: LEGO1 0x1005adb0

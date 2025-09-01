@@ -83,7 +83,7 @@ std::optional<MxResult> SiLoader::HandleStart(MxDSAction& p_action)
 	};
 
 	for (const auto& key : startWith) {
-		if (key.first == object) {
+		if (key.first == object && !IsWorld(key.first)) {
 			MxDSAction action;
 			start(key.second, p_action, action);
 		}
@@ -126,6 +126,30 @@ std::optional<MxResult> SiLoader::HandleStart(MxDSAction& p_action)
 	}
 
 	return std::nullopt;
+}
+
+MxBool SiLoader::HandleWorld(LegoWorld* p_world)
+{
+	StreamObject object{p_world->GetAtomId(), p_world->GetEntityId()};
+	auto start = [](const StreamObject& p_object, MxDSAction& p_out) {
+		if (!OpenStream(p_object.first.GetInternal())) {
+			return;
+		}
+
+		p_out.SetAtomId(p_object.first);
+		p_out.SetObjectId(p_object.second);
+		p_out.SetUnknown24(-1);
+		Start(&p_out);
+	};
+
+	for (const auto& key : startWith) {
+		if (key.first == object) {
+			MxDSAction action;
+			start(key.second, action);
+		}
+	}
+
+	return TRUE;
 }
 
 std::optional<MxBool> SiLoader::HandleRemove(StreamObject p_object, LegoWorld* world)
@@ -361,4 +385,18 @@ void SiLoader::ParseExtra(const MxAtomId& p_atom, si::Core* p_core, MxAtomId p_p
 
 		ParseExtra(p_atom, child, replacedAtom);
 	}
+}
+
+bool SiLoader::IsWorld(const StreamObject& p_object)
+{
+	// The convention in LEGO Island is that world objects are always at ID 0
+	if (p_object.second == 0) {
+		for (int i = 0; i < LegoOmni::e_numWorlds; i++) {
+			if (p_object.first == *Lego()->GetWorldAtom((LegoOmni::World) i)) {
+				return true;
+			}
+		}
+	}
+
+	return false;
 }
