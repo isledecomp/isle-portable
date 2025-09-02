@@ -55,6 +55,7 @@ cmake_dependent_option(ISLE_COMPILE_SHADERS "Compile shaders" ON "SDL_SHADERCROS
 option(CMAKE_POSITION_INDEPENDENT_CODE "Build with -fPIC" ON)
 option(ENABLE_CLANG_TIDY "Enable clang-tidy")
 option(DOWNLOAD_DEPENDENCIES "Download dependencies" ON)
+option(USE_SDL2 "Use SDL2 instead of SDL3 via a shim" ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}" CACHE PATH "Directory where to put executables and dll")
 set(ISLE_EMSCRIPTEN_HOST "" CACHE STRING "Host URL for Emscripten streaming (e.g., https://test.com)")
 cmake_dependent_option(BUILD_SHARED_LIBS "Build lego1 as a shared library" ON "NOT EMSCRIPTEN" OFF)
@@ -74,6 +75,7 @@ if (DOWNLOAD_DEPENDENCIES)
   message(STATUS "Fetching SDL3 and iniparser. This might take a while...")
   include(FetchContent)
 
+  if(NOT USE_SDL2)
   if(ANDROID)
     # Built by Gradle
     find_package(SDL3 REQUIRED CONFIG COMPONENTS Shared)
@@ -94,6 +96,7 @@ if (DOWNLOAD_DEPENDENCIES)
       )
     endif()
     FetchContent_MakeAvailable(SDL3)
+  endif()
   endif()
 
   FetchContent_Declare(
