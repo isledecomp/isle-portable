@@ -316,11 +316,9 @@ MxStreamController* SiLoader::OpenStream(const char* p_file)
 	return controller;
 }
 
-void SiLoader::ParseExtra(const MxAtomId& p_atom, si::Core* p_core, MxAtomId p_parentReplacedAtom)
+void SiLoader::ParseExtra(const MxAtomId& p_atom, si::Core* p_core)
 {
 	for (si::Core* child : p_core->GetChildren()) {
-		MxAtomId replacedAtom = p_parentReplacedAtom;
-
 		if (si::Object* object = dynamic_cast<si::Object*>(child)) {
 			if (object->type() != si::MxOb::Null) {
 				std::string extra(object->extra_.data(), object->extra_.size());
@@ -346,21 +344,12 @@ void SiLoader::ParseExtra(const MxAtomId& p_atom, si::Core* p_core, MxAtomId p_p
 					}
 				}
 
-				if (p_parentReplacedAtom.GetInternal()) {
-					replace.emplace_back(
-						StreamObject{p_parentReplacedAtom, object->id_},
-						StreamObject{p_atom, object->id_}
-					);
-				}
-				else {
-					if ((directive = SDL_strstr(extra.c_str(), "Replace:"))) {
-						if (SDL_sscanf(directive, "Replace:%255[^:;]%*[:;]%u", atom, &id) == 2) {
-							replace.emplace_back(
-								StreamObject{MxAtomId{atom, e_lowerCase2}, id},
-								StreamObject{p_atom, object->id_}
-							);
-							replacedAtom = replace.back().first.first;
-						}
+				if ((directive = SDL_strstr(extra.c_str(), "Replace:"))) {
+					if (SDL_sscanf(directive, "Replace:%255[^:;]%*[:;]%u", atom, &id) == 2) {
+						replace.emplace_back(
+							StreamObject{MxAtomId{atom, e_lowerCase2}, id},
+							StreamObject{p_atom, object->id_}
+						);
 					}
 				}
 
@@ -383,7 +372,7 @@ void SiLoader::ParseExtra(const MxAtomId& p_atom, si::Core* p_core, MxAtomId p_p
 			}
 		}
 
-		ParseExtra(p_atom, child, replacedAtom);
+		ParseExtra(p_atom, child);
 	}
 }
 

@@ -47,7 +47,7 @@ private:
 	static bool LoadFile(const char* p_file);
 	static bool LoadDirective(const char* p_directive);
 	static MxStreamController* OpenStream(const char* p_file);
-	static void ParseExtra(const MxAtomId& p_atom, si::Core* p_core, MxAtomId p_parentReplacedAtom = MxAtomId());
+	static void ParseExtra(const MxAtomId& p_atom, si::Core* p_core);
 	static bool IsWorld(const StreamObject& p_object);
 };
 
