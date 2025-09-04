@@ -29,7 +29,7 @@ public:
 	static MxBool HandleEndAction(MxEndActionNotificationParam& p_param);
 
 	template <typename... Args>
-	static bool ReplacedIn(MxDSAction& p_action, Args... p_args);
+	static std::optional<StreamObject> ReplacedIn(MxDSAction& p_action, Args... p_args);
 
 	static std::map<std::string, std::string> options;
 	static std::vector<std::string> files;
@@ -53,20 +53,22 @@ private:
 
 #ifdef EXTENSIONS
 template <typename... Args>
-bool SiLoader::ReplacedIn(MxDSAction& p_action, Args... p_args)
+std::optional<SiLoader::StreamObject> SiLoader::ReplacedIn(MxDSAction& p_action, Args... p_args)
 {
 	StreamObject object{p_action.GetAtomId(), p_action.GetObjectId()};
-	auto checkAtomId = [&p_action, &object](const auto& p_atomId) -> bool {
+	auto checkAtomId = [&p_action, &object](const auto& p_atomId) -> std::optional<StreamObject> {
 		for (const auto& key : replace) {
 			if (key.second == object && key.first.first == p_atomId) {
-				return true;
+				return key.first;
 			}
 		}
 
-		return false;
+		return std::nullopt;
 	};
 
-	return (checkAtomId(p_args) || ...);
+	std::optional<StreamObject> result;
+	((void) (!result.has_value() && (result = checkAtomId(p_args), true)), ...);
+	return result;
 }
 
 constexpr auto Load = &SiLoader::Load;
@@ -85,9 +87,9 @@ constexpr decltype(&SiLoader::HandleWorld) HandleWorld = nullptr;
 constexpr decltype(&SiLoader::HandleRemove) HandleRemove = nullptr;
 constexpr decltype(&SiLoader::HandleDelete) HandleDelete = nullptr;
 constexpr decltype(&SiLoader::HandleEndAction) HandleEndAction = nullptr;
-constexpr auto ReplacedIn = [](auto&&... args) {
+constexpr auto ReplacedIn = [](auto&&... args) -> std::optional<SiLoader::StreamObject> {
 	((void) args, ...);
-	return false;
+	return std::nullopt;
 };
 #endif
 }; // namespace Extensions

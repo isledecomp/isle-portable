@@ -5,6 +5,7 @@
 #include "bike.h"
 #include "carrace.h"
 #include "dunebuggy.h"
+#include "extensions/siloader.h"
 #include "helicopter.h"
 #include "isle_actions.h"
 #include "islepathactor.h"
@@ -41,6 +42,8 @@
 DECOMP_SIZE_ASSERT(Act1State, 0x26c)
 DECOMP_SIZE_ASSERT(LegoNamedPlane, 0x4c)
 DECOMP_SIZE_ASSERT(Isle, 0x140)
+
+using namespace Extensions;
 
 // GLOBAL: LEGO1 0x100f1198
 MxU32 g_isleFlags = 0x7f;
@@ -207,6 +210,14 @@ MxLong Isle::HandleEndAction(MxEndActionNotificationParam& p_param)
 		if (result == 0) {
 			if (p_param.GetAction()->GetAtomId() == *g_jukeboxScript) {
 				MxS32 script = p_param.GetAction()->GetObjectId();
+
+				if (script >= JukeboxScript::c_JBMusic1 && script <= JukeboxScript::c_JBMusic6) {
+					m_jukebox->StopAction((JukeboxScript::Script) script);
+					result = 1;
+				}
+			}
+			else if (auto replacedObject = Extension<SiLoader>::Call(ReplacedIn, *p_param.GetAction(), *g_jukeboxScript).value_or(std::nullopt)) {
+				MxS32 script = replacedObject->second;
 
 				if (script >= JukeboxScript::c_JBMusic1 && script <= JukeboxScript::c_JBMusic6) {
 					m_jukebox->StopAction((JukeboxScript::Script) script);
