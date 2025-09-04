@@ -87,7 +87,7 @@ constexpr decltype(&SiLoader::HandleWorld) HandleWorld = nullptr;
 constexpr decltype(&SiLoader::HandleRemove) HandleRemove = nullptr;
 constexpr decltype(&SiLoader::HandleDelete) HandleDelete = nullptr;
 constexpr decltype(&SiLoader::HandleEndAction) HandleEndAction = nullptr;
-constexpr auto ReplacedIn = [](auto&&... args) {
+constexpr auto ReplacedIn = [](auto&&... args) -> std::optional<SiLoader::StreamObject> {
 	((void) args, ...);
 	return std::nullopt;
 };
