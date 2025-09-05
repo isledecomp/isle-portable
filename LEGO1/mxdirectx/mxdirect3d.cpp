@@ -78,10 +78,8 @@ BOOL MxDirect3D::Create(
 			nullptr
 		);
 #else
-		MxVideoParam* videoParam = (MxVideoParam*) SDL_GetWindowData(
-			reinterpret_cast<SDL_Window*>(hWnd),
-			ISLE_PROP_WINDOW_CREATE_VIDEO_PARAM
-		);
+		MxVideoParam* videoParam =
+			(MxVideoParam*) SDL_GetWindowData(reinterpret_cast<SDL_Window*>(hWnd), ISLE_PROP_WINDOW_CREATE_VIDEO_PARAM);
 #endif
 #ifndef MXDIRECTX_FOR_CONFIG
 		assert(videoParam);
