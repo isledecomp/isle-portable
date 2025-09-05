@@ -903,14 +903,7 @@ MxResult IsleApp::SetupWindow()
 	if (m_fullScreen) {
 		flags |= SDL_WINDOW_FULLSCREEN;
 	}
-	window = SDL_CreateWindow(
-		WINDOW_TITLE,
-		SDL_WINDOWPOS_CENTERED,
-		SDL_WINDOWPOS_CENTERED,
-		g_targetWidth,
-		g_targetHeight,
-		flags
-	);
+	window = SDL_CreateWindow(WINDOW_TITLE, g_targetWidth, g_targetHeight, flags);
 
 	SDL_SetWindowData(window, ISLE_PROP_WINDOW_CREATE_VIDEO_PARAM, &m_videoParam);
 #endif
