@@ -235,10 +235,8 @@ BOOL MxDeviceEnumerate::EnumDirectDrawCallback(LPGUID p_guid, LPSTR p_driverDesc
 			nullptr
 		);
 #else
-		MxVideoParam* videoParam = (MxVideoParam*) SDL_GetWindowData(
-			reinterpret_cast<SDL_Window*>(m_hWnd),
-			ISLE_PROP_WINDOW_CREATE_VIDEO_PARAM
-		);
+		MxVideoParam* videoParam = (MxVideoParam*)
+			SDL_GetWindowData(reinterpret_cast<SDL_Window*>(m_hWnd), ISLE_PROP_WINDOW_CREATE_VIDEO_PARAM);
 #endif
 #ifndef MXDIRECTX_FOR_CONFIG
 		assert(videoParam);

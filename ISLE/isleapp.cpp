@@ -900,7 +900,9 @@ MxResult IsleApp::SetupWindow()
 #else
 	Uint32 flags = 0;
 	flags |= SDL_WINDOW_OPENGL;
-	if (m_fullScreen) flags |= SDL_WINDOW_FULLSCREEN;
+	if (m_fullScreen) {
+		flags |= SDL_WINDOW_FULLSCREEN;
+	}
 	window = SDL_CreateWindow(
 		WINDOW_TITLE,
 		SDL_WINDOWPOS_CENTERED,
