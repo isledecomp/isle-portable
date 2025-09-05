@@ -14,8 +14,6 @@ struct SDL_SurfaceShim : SDL_Surface {
 
 #define SDL_FillSurfaceRect(...) (SDL_FillRect(__VA_ARGS__) == 0)
 
-// #define SDL_ConvertSurface(...) SDL_ConvertSurface(__VA_ARGS__, 0)
-
 #define SDL_DestroySurface SDL_FreeSurface
 
 #define SDL_CreateSurface(width, height, format) (SDL_Surface*)SDL_CreateRGBSurfaceWithFormat(0 , width, height, SDL_BITSPERPIXEL(format) ,format)
@@ -30,7 +28,7 @@ inline SDL_Surface* SDL_ConvertSurface(SDL_Surface* surface, SDL_PixelFormat for
 #define SDL_SCALEMODE_NEAREST SDL_ScaleModeNearest
 
 #define SDL_BlitSurfaceScaled(surface, rect, destSurface, destRect, scaleMode) (SDL_BlitScaled(surface, rect, destSurface, destRect) == 0)
-#define SDL_SetSurfaceColorKey SDL_SetColorKey
+#define SDL_SetSurfaceColorKey(...) (SDL_SetColorKey(__VA_ARGS__) == 0)
 
 #define SDL_LoadBMP_IO (SDL_Surface*)SDL_LoadBMP_RW
 #define SDL_LoadBMP(file)  (SDL_Surface*)SDL_LoadBMP_RW(SDL_RWFromFile(file, "rb"), 1) //yoinked the existing SDL_LoadBMP macro so it could be cast

@@ -54,7 +54,7 @@ static void SDLCALL shim_audio_callback(void *userdata, Uint8 *stream, int len) 
 }
 
 #define SDL_ResumeAudioDevice(device) SDL_PauseAudioDevice(device, 0)
-#define SDL_PutAudioStreamData SDL_AudioStreamPut
+#define SDL_PutAudioStreamData(...) (SDL_AudioStreamPut(__VA_ARGS__) == 0)
 
 inline SDL_AudioDeviceID SDL_GetAudioStreamDevice(SDL_AudioStream* stream)
 {
