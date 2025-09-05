@@ -54,25 +54,24 @@ inline SDL_DisplayMode** SDL_GetFullscreenDisplayModes(SDL_DisplayID displayID, 
 	if (count) *count = 0;
 
 	const int num_modes = SDL_GetNumDisplayModes(displayID);
-	SDL_DisplayMode** result = static_cast<SDL_DisplayMode**>(SDL_malloc(sizeof(SDL_DisplayMode*) * num_modes));
-	if (result) {
-		SDL_DisplayMode *modes = (SDL_DisplayMode *)((Uint8 *)result + ((num_modes + 1) * sizeof(*result)));
-        for (i = 0; i < num_modes; ++i) {
-        	if (SDL_GetDisplayMode(displayID, i, &modes[i]) == 0) {
-				result[i] = modes++;
-        	}
-        }
-        result[i] = NULL;
-
-        if (count) {
-            *count = num_modes;
-        }
+    SDL_DisplayMode** result = static_cast<SDL_DisplayMode**>(SDL_malloc(sizeof(SDL_DisplayMode*) * (num_modes + 1)));
+	SDL_DisplayMode* modes = static_cast<SDL_DisplayMode*>(SDL_malloc(sizeof(SDL_DisplayMode) * num_modes));
+	if (!result || !modes) {
+		SDL_free(result);
 		SDL_free(modes);
-    } else {
-        if (count) {
-            *count = 0;
-        }
+		return NULL;
+	}
+	for (i = 0; i < num_modes; i++) {
+		if (SDL_GetDisplayMode(displayID, i, &modes[i]) == 0) {
+			result[i] = &modes[i];
+		}
     }
+	result[i] = NULL;
+
+	if (count) {
+		*count = num_modes;
+	}
+
     return result;
 }
 
@@ -142,6 +141,11 @@ inline SDL_HapticID* SDL_GetHaptics(int *count)
 
 // https://wiki.libsdl.org/SDL3/README-migration#sdl_videoh
 
+#define SDL_CreateWindow(title, w, h, flags) SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, w, h, flags)
+#define SDL_SetWindowFullscreen(...) (SDL_SetWindowFullscreen(__VA_ARGS__) == 0)
+
+#define SDL_GL_MakeCurrent(...) (SDL_GL_MakeCurrent(__VA_ARGS__) == 0)
+
 #define SDL_GetDisplayForWindow SDL_GetWindowDisplayIndex
 #define SDL_SetWindowFullscreenMode(...) (SDL_SetWindowDisplayMode(__VA_ARGS__) == 0)
 // #define SDL_GetClosestFullscreenDisplayMode SDL_GetClosestDisplayMode
@@ -176,3 +180,6 @@ static void SDL_ShowCursor() { SDL_ShowCursor(SDL_ENABLE); }
 #define SDL_SYSTEM_CURSOR_EW_RESIZE SDL_SYSTEM_CURSOR_SIZEWE
 #define SDL_SYSTEM_CURSOR_PROGRESS SDL_SYSTEM_CURSOR_WAITARROW
 
+// https://wiki.libsdl.org/SDL3/README-migration#sdl_inith
+
+#define SDL_Init(...) (SDL_Init(__VA_ARGS__) == 0)

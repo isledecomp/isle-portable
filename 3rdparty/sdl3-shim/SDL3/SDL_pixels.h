@@ -14,7 +14,20 @@ typedef SDL_PixelFormat SDL2_PixelFormat;
 #define SDL_GetRGB(pixel, format, palette, r,g,b) SDL_GetRGB(pixel, format, r,g,b)
 #define SDL_MapRGB(format, palette, r,g,b) SDL_MapRGB(format, r,g,b)
 
-#define SDL_GetPixelFormatDetails SDL_AllocFormat
+template<typename T>
+SDL_PixelFormatDetails* SDL_GetPixelFormatDetails(T format) {
+	if constexpr (std::is_same_v<T, SDL_PixelFormat>) {
+		return SDL_AllocFormat(format);
+	} else {
+		return SDL_AllocFormat(format->format);
+	}
+}
+
+
+static bool operator!=(SDL_PixelFormatDetails* lhs, SDL_PixelFormatEnum rhs)
+{
+	return lhs->format == rhs;
+}
 
 #define SDL_CreatePalette SDL_AllocPalette
 #define SDL_DestroyPalette SDL_FreePalette
