@@ -94,7 +94,7 @@ inline SDL_DisplayMode* SDL_GetCurrentDisplayMode(SDL_DisplayID displayID)
 // hardcode -1 as all uses are NULL or -1 (hacks out failure)
 #define SDL_CreateRenderer(window, name) SDL_CreateRenderer(window, -1, 0)
 
-#define SDL_RenderTexture SDL_RenderCopyF
+#define SDL_RenderTexture(...) (SDL_RenderCopyF(__VA_ARGS__) == 0)
 
 // https://wiki.libsdl.org/SDL3/README-migration#sdl_haptich
 // SDL_MouseID/SDL_KeyboardID are new
@@ -109,8 +109,8 @@ typedef int SDL_HapticID;
 #define SDL_OpenHaptic SDL_HapticOpen
 #define SDL_OpenHapticFromJoystick SDL_HapticOpenFromJoystick
 #define SDL_OpenHapticFromMouse SDL_HapticOpenFromMouse
-#define SDL_InitHapticRumble SDL_HapticRumbleInit
-#define SDL_PlayHapticRumble SDL_HapticRumblePlay
+#define SDL_InitHapticRumble(...) (SDL_HapticRumbleInit(__VA_ARGS__) == 0)
+#define SDL_PlayHapticRumble(...) (SDL_HapticRumblePlay(__VA_ARGS__) == 0)
 
 #define SDL_GetHapticID SDL_HapticIndex
 
@@ -143,7 +143,7 @@ inline SDL_HapticID* SDL_GetHaptics(int *count)
 // https://wiki.libsdl.org/SDL3/README-migration#sdl_videoh
 
 #define SDL_GetDisplayForWindow SDL_GetWindowDisplayIndex
-#define SDL_SetWindowFullscreenMode SDL_SetWindowDisplayMode
+#define SDL_SetWindowFullscreenMode(...) (SDL_SetWindowDisplayMode(__VA_ARGS__) == 0)
 // #define SDL_GetClosestFullscreenDisplayMode SDL_GetClosestDisplayMode
 inline bool SDL_GetClosestFullscreenDisplayMode(SDL_DisplayID displayID, int w, int h, float refresh_rate, bool include_high_density_modes, SDL_DisplayMode *closest)
 {
