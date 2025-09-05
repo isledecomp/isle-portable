@@ -879,20 +879,39 @@ MxResult IsleApp::SetupWindow()
 	m_cursorBusyBitmap = &busy_cursor;
 	m_cursorNoBitmap = &no_cursor;
 
+#if SDL_MAJOR_VERSION >= 3
 	SDL_PropertiesID props = SDL_CreateProperties();
 	SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, g_targetWidth);
 	SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, g_targetHeight);
 	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_FULLSCREEN_BOOLEAN, m_fullScreen);
 	SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, WINDOW_TITLE);
+#endif
 #if defined(MINIWIN) && !defined(__3DS__) && !defined(WINDOWS_STORE)
+#if SDL_MAJOR_VERSION >= 3
 	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
+#endif
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 #endif
 
+#if SDL_MAJOR_VERSION >= 3
 	window = SDL_CreateWindowWithProperties(props);
 	SDL_SetPointerProperty(SDL_GetWindowProperties(window), ISLE_PROP_WINDOW_CREATE_VIDEO_PARAM, &m_videoParam);
+#else
+	Uint32 flags = 0;
+	flags |= SDL_WINDOW_OPENGL;
+	if (m_fullScreen) flags |= SDL_WINDOW_FULLSCREEN;
+	window = SDL_CreateWindow(
+		WINDOW_TITLE,
+		SDL_WINDOWPOS_CENTERED,
+		SDL_WINDOWPOS_CENTERED,
+		g_targetWidth,
+		g_targetHeight,
+		flags
+	);
 
+	SDL_SetWindowData(window, ISLE_PROP_WINDOW_CREATE_VIDEO_PARAM, &m_videoParam);
+#endif
 	if (m_exclusiveFullScreen && m_fullScreen) {
 		SDL_DisplayMode closestMode;
 		SDL_DisplayID displayID = SDL_GetDisplayForWindow(window);
@@ -914,9 +933,9 @@ MxResult IsleApp::SetupWindow()
 	m_windowHandle =
 		(HWND) SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
 #endif
-
+#if SDL_MAJOR_VERSION >= 3
 	SDL_DestroyProperties(props);
-
+#endif
 	if (!m_windowHandle) {
 		return FAILURE;
 	}

@@ -3,15 +3,37 @@
 // https://wiki.libsdl.org/SDL3/README-migration#sdl_stdinch
 #define SDL_bool bool
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
+#include "SDL_audio.h"
 #include "SDL_events.h"
+#include "SDL_filesystem.h"
 #include "SDL_gamepad.h"
 #include "SDL_iostream.h"
+#include "SDL_keycode.h"
 #include "SDL_keyboard.h"
 #include "SDL_mutex.h"
 #include "SDL_pixels.h"
+// #include "SDL_properties.h"
 #include "SDL_surface.h"
 #include "SDL_timer.h"
+#include "SDL_video.h"
+#include "SDL_mouse.h"
+
+#include <random>
+
+static std::mt19937 rng(SDL_GetPerformanceCounter());
+inline Sint32 SDL_rand(const Sint32 n)
+{
+	std::uniform_int_distribution dist(0, n - 1);
+	return dist(rng);
+}
+inline float SDL_randf()
+{
+	static std::uniform_real_distribution dist(0.0f, 1.0f);
+	return dist(rng);
+}
+
+#define SDL_strtok_r SDL_strtokr
 
 // https://wiki.libsdl.org/SDL3/README-migration#sdl_logh
 
@@ -117,4 +139,40 @@ inline SDL_HapticID* SDL_GetHaptics(int *count)
 
 	return haptics;
 }
+
+// https://wiki.libsdl.org/SDL3/README-migration#sdl_videoh
+
+#define SDL_GetDisplayForWindow SDL_GetWindowDisplayIndex
+#define SDL_SetWindowFullscreenMode SDL_SetWindowDisplayMode
+// #define SDL_GetClosestFullscreenDisplayMode SDL_GetClosestDisplayMode
+inline bool SDL_GetClosestFullscreenDisplayMode(SDL_DisplayID displayID, int w, int h, float refresh_rate, bool include_high_density_modes, SDL_DisplayMode *closest)
+{
+	SDL_DisplayMode desired{};
+	desired.w = w;
+	desired.h = h;
+	desired.refresh_rate = static_cast<int>(refresh_rate);
+	desired.format = 0;
+	desired.driverdata = nullptr;
+
+	SDL_DisplayMode *result = SDL_GetClosestDisplayMode(displayID, &desired, closest);
+	return result != nullptr;
+}
+
+
+// https://wiki.libsdl.org/SDL3/README-migration#sdl_mouseh
+
+static void SDL_HideCursor() { SDL_ShowCursor(SDL_DISABLE); }
+static void SDL_ShowCursor() { SDL_ShowCursor(SDL_ENABLE); }
+
+#define SDL_SYSTEM_CURSOR_COUNT SDL_NUM_SYSTEM_CURSORS
+#define SDL_SYSTEM_CURSOR_DEFAULT SDL_SYSTEM_CURSOR_ARROW
+#define SDL_SYSTEM_CURSOR_POINTER SDL_SYSTEM_CURSOR_HAND
+#define SDL_SYSTEM_CURSOR_TEXT SDL_SYSTEM_CURSOR_IBEAM
+#define SDL_SYSTEM_CURSOR_NOT_ALLOWED SDL_SYSTEM_CURSOR_NO
+#define SDL_SYSTEM_CURSOR_MOVE SDL_SYSTEM_CURSOR_SIZEALL
+#define SDL_SYSTEM_CURSOR_NESW_RESIZE SDL_SYSTEM_CURSOR_SIZENESW
+#define SDL_SYSTEM_CURSOR_NS_RESIZE SDL_SYSTEM_CURSOR_SIZENS
+#define SDL_SYSTEM_CURSOR_NWSE_RESIZE SDL_SYSTEM_CURSOR_SIZENWSE
+#define SDL_SYSTEM_CURSOR_EW_RESIZE SDL_SYSTEM_CURSOR_SIZEWE
+#define SDL_SYSTEM_CURSOR_PROGRESS SDL_SYSTEM_CURSOR_WAITARROW
 
