@@ -28,7 +28,9 @@ target_compile_definitions(miniwin PRIVATE
 )
 
 list(APPEND GRAPHICS_BACKENDS USE_SOFTWARE_RENDER)
-list(APPEND GRAPHICS_BACKENDS USE_SDL_GPU)
+if(NOT USE_SDL2)
+  list(APPEND GRAPHICS_BACKENDS USE_SDL_GPU)
+endif()
 
 if(NOT WINDOWS_STORE)
   find_package(OpenGL)
@@ -116,11 +118,16 @@ endif()
 
 target_compile_definitions(miniwin PUBLIC MINIWIN)
 
+target_include_directories(miniwin PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/internal
+)
+
+if(USE_SDL_GPU IN_LIST GRAPHICS_BACKENDS)
 target_include_directories(miniwin
   PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/internal
     ${CMAKE_CURRENT_SOURCE_DIR}/src/d3drm/backends/sdl3gpu/shaders/generated
 )
+endif()
 target_link_libraries(miniwin PUBLIC miniwin-headers)
 
 target_link_libraries(miniwin PRIVATE SDL3::SDL3)
@@ -129,7 +136,7 @@ target_compile_definitions(miniwin PUBLIC ${GRAPHICS_BACKENDS})
 
 
 # Shader stuff
-
+if(USE_SDL_GPU IN_LIST GRAPHICS_BACKENDS)
 set(shader_src_dir "${CMAKE_CURRENT_SOURCE_DIR}/src/d3drm/backends/sdl3gpu/shaders/src")
 set(shader_gen_dir "${CMAKE_CURRENT_SOURCE_DIR}/src/d3drm/backends/sdl3gpu/shaders/generated")
 set(py_gencshadersource "${CMAKE_CURRENT_SOURCE_DIR}/src/d3drm/backends/sdl3gpu/shaders/gencshadersource.py")
@@ -213,7 +220,7 @@ endforeach()
 
 set(index_cpp "${shader_gen_dir}/ShaderIndex.cpp")
 set(index_h "${shader_gen_dir}/ShaderIndex.h")
-
+endif()
 if(ISLE_COMPILE_SHADERS)
   add_custom_command(OUTPUT "${index_h}" "${index_cpp}"
     COMMAND Python3::Interpreter "${py_gencshadersource}" "index"
