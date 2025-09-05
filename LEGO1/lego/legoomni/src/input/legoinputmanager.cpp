@@ -781,14 +781,26 @@ void LegoInputManager::UpdateLastInputMethod(SDL_Event* p_event)
 	switch (p_event->type) {
 	case SDL_EVENT_KEY_DOWN:
 	case SDL_EVENT_KEY_UP:
+#if SDL_MAJOR_VERSION >= 3
 		m_lastInputMethod = SDL_KeyboardID_v{p_event->key.which};
+#else
+		m_lastInputMethod = SDL_KeyboardID_v{0};
+#endif
 		break;
 	case SDL_EVENT_MOUSE_BUTTON_DOWN:
 	case SDL_EVENT_MOUSE_BUTTON_UP:
+#if SDL_MAJOR_VERSION >= 3
 		m_lastInputMethod = SDL_MouseID_v{p_event->button.which};
+#else
+		m_lastInputMethod = SDL_MouseID_v{0};
+#endif
 		break;
 	case SDL_EVENT_MOUSE_MOTION:
+#if SDL_MAJOR_VERSION >= 3
 		m_lastInputMethod = SDL_MouseID_v{p_event->motion.which};
+#else
+		m_lastInputMethod = SDL_MouseID_v{0};
+#endif
 		break;
 	case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
 	case SDL_EVENT_GAMEPAD_BUTTON_UP:

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <SDL2/SDL_surface.h>
+#include <SDL_surface.h>
 #include "SDL_pixels.h"
 
 // https://wiki.libsdl.org/SDL3/README-migration#sdl_surfaceh
@@ -32,3 +32,5 @@ inline SDL_Surface* SDL_ConvertSurface(SDL_Surface* surface, SDL_PixelFormat for
 #define SDL_BlitSurfaceScaled(surface, rect, destSurface, destRect, scaleMode) (SDL_BlitScaled(surface, rect, destSurface, destRect) == 0)
 #define SDL_SetSurfaceColorKey SDL_SetColorKey
 
+#define SDL_LoadBMP_IO (SDL_Surface*)SDL_LoadBMP_RW
+#define SDL_LoadBMP(file)  (SDL_Surface*)SDL_LoadBMP_RW(SDL_RWFromFile(file, "rb"), 1) //yoinked the existing SDL_LoadBMP macro so it could be cast

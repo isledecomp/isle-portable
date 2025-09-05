@@ -34,6 +34,7 @@ MxResult MxThread::Start(MxS32 p_stackSize, MxS32 p_flag)
 	}
 
 	{
+#if SDL_MAJOR_VERSION >= 3
 		const SDL_PropertiesID props = SDL_CreateProperties();
 		SDL_SetPointerProperty(props, SDL_PROP_THREAD_CREATE_ENTRY_FUNCTION_POINTER, (void*) MxThread::ThreadProc);
 		SDL_SetPointerProperty(props, SDL_PROP_THREAD_CREATE_USERDATA_POINTER, this);
@@ -44,6 +45,11 @@ MxResult MxThread::Start(MxS32 p_stackSize, MxS32 p_flag)
 		}
 
 		SDL_DestroyProperties(props);
+#else
+		if (!((m_thread = SDL_CreateThread(&MxThread::ThreadProc, "MxThread", this)))) {
+			goto done;
+		}
+#endif
 	}
 
 	result = SUCCESS;

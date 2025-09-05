@@ -1,6 +1,6 @@
 #pragma once
 
-#include <SDL2/SDL_pixels.h>
+#include <SDL_pixels.h>
 
 // https://wiki.libsdl.org/SDL3/README-migration#sdl_pixelsh
 #define bits_per_pixel BitsPerPixel
