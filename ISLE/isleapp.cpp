@@ -480,10 +480,16 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		if (event->key.repeat) {
 			break;
 		}
-
+#if SDL_MAJOR_VERSION >= 3
 		SDL_Keycode keyCode = event->key.key;
 
 		if ((event->key.mod & SDL_KMOD_LALT) && keyCode == SDLK_RETURN) {
+#else
+		SDL_Keycode keyCode = event->key.keysym.sym;
+
+		if ((event->key.keysym.mod & SDL_KMOD_LALT) && keyCode == SDLK_RETURN) {
+#endif
+
 			SDL_SetWindowFullscreen(window, !(SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN));
 		}
 		else {
@@ -493,6 +499,7 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		}
 		break;
 	}
+#if SDL_MAJOR_VERSION >= 3
 	case SDL_EVENT_KEYBOARD_ADDED:
 		if (InputManager()) {
 			InputManager()->AddKeyboard(event->kdevice.which);
@@ -513,6 +520,7 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 			InputManager()->RemoveMouse(event->mdevice.which);
 		}
 		break;
+#endif
 	case SDL_EVENT_GAMEPAD_ADDED:
 		if (InputManager()) {
 			InputManager()->AddJoystick(event->jdevice.which);

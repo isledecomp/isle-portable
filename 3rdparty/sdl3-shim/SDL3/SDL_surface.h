@@ -1,6 +1,6 @@
 #pragma once
 
-#include <SDL_surface.h>
+#include <SDL2/SDL_surface.h>
 #include "SDL_pixels.h"
 
 // https://wiki.libsdl.org/SDL3/README-migration#sdl_surfaceh
@@ -22,10 +22,7 @@ SDL_Surface* SDL_CreateSurface( int width, int height, T format) {
 
 inline SDL_Surface* SDL_ConvertSurface(SDL_Surface* surface, SDL_PixelFormat format)
 {
-	SDL_PixelFormatDetails* formatDetails = SDL_AllocFormat(format);
-	SDL_Surface* result = SDL_ConvertSurface(surface, formatDetails, 0);
-	SDL_free(formatDetails);
-	return result;
+	return SDL_ConvertSurfaceFormat(surface, format, 0);
 };
 inline SDL_Surface* SDL_ConvertSurface(SDL_Surface* surface, const SDL_PixelFormatDetails* formatDetails)
 {

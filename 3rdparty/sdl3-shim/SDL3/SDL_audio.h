@@ -68,14 +68,14 @@ inline SDL_AudioDeviceID SDL_GetAudioStreamDevice(SDL_AudioStream* stream)
 
 inline SDL_AudioStream * SDL_OpenAudioDeviceStream(const char* devid, const SDL_AudioSpec* desired, SDL_AudioStreamCallback callback, void* userdata)
 {
-	SDL_AudioSpec* obtained{};
+	SDL_AudioSpec obtained{};
 	SDL_AudioSpec desired2 = *desired;
 	desired2.callback = shim_audio_callback;
 	desired2.userdata = reinterpret_cast<void*>(static_cast<uintptr_t>(0));
-	SDL_AudioDeviceID device = SDL_OpenAudioDevice(devid, 0, &desired2, obtained, 0);
+	SDL_AudioDeviceID device = SDL_OpenAudioDevice(devid, 0, &desired2, &obtained, 0);
 	SDL_AudioStream* stream = SDL_NewAudioStream(
 			desired->format, desired->channels, desired->freq,
-			obtained->format, obtained->channels, obtained->freq
+			obtained.format, obtained.channels, obtained.freq
 			);
 	if (!stream) {
 		SDL_CloseAudioDevice(device);
@@ -88,7 +88,7 @@ inline SDL_AudioStream * SDL_OpenAudioDeviceStream(const char* devid, const SDL_
 		ctx.stream   = stream;
 		ctx.callback = callback;
 		ctx.userdata = userdata;
-		ctx.obtained = *obtained;
+		ctx.obtained = obtained;
 		g_audioCtxs[device] = ctx;
 		SDL_UnlockMutex(g_audioMutex);
 	}

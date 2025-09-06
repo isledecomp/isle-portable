@@ -322,8 +322,10 @@ void InvokeAction(Extra::ActionType p_actionId, const MxAtomId& p_pAtom, MxS32 p
 
 		break;
 	case Extra::ActionType::e_run: {
+#if SDL_MAJOR_VERSION >= 3
 		const char* args[] = {"/lego/sources/main/main.exe", "/script", p_pAtom.GetInternal(), NULL};
 		SDL_Process* process = SDL_CreateProcess(args, false);
+#endif
 	} break;
 	case Extra::ActionType::e_enable:
 		assert(p_streamId != DS_NOT_A_STREAM);

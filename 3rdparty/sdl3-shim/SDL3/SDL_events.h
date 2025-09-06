@@ -1,6 +1,7 @@
 #pragma once
 
-#include <SDL_events.h>
+#include "SDL.h"
+#include <SDL2/SDL_events.h>
 
 // https://wiki.libsdl.org/SDL3/README-migration#sdl_eventsh
 

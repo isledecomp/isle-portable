@@ -1,6 +1,8 @@
 #pragma once
 
-#include <SDL_timer.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_timer.h>
+#include <SDL2/SDL_mutex.h>
 
 // https://wiki.libsdl.org/SDL3/README-migration#sdl_timerh
 // https://wiki.libsdl.org/SDL3/README-migration#sdl_timerh | SDL_GetTicksNS()
@@ -53,7 +55,7 @@ inline SDL_TimerID SDL_AddTimer(Uint32 interval, SDL3_TimerCallback callback3, v
 	return id;
 }
 
-inline SDL_bool SDL_RemoveTimer(SDL_TimerID id)
+inline SDL_bool SDL_RemoveTimer2(SDL_TimerID id)
 {
 	SDL_LockMutex(g_timerMutex);
 	if (const auto it = g_timers.find(id); it != g_timers.end()) {
@@ -64,3 +66,5 @@ inline SDL_bool SDL_RemoveTimer(SDL_TimerID id)
 
 	return ::SDL_RemoveTimer(id);
 }
+
+#define SDL_RemoveTimer SDL_RemoveTimer2

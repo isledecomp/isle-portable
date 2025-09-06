@@ -1,6 +1,6 @@
 #pragma once
 
-#include <SDL_keycode.h>
+#include <SDL2/SDL_keycode.h>
 
 #define SDLK_MEDIA_FAST_FORWARD SDLK_AUDIOFASTFORWARD
 #define SDL_KMOD_ALT KMOD_ALT

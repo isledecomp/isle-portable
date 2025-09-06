@@ -1,6 +1,6 @@
 #pragma once
 
-#include <SDL_rwops.h>
+#include <SDL2/SDL_rwops.h>
 
 // https://wiki.libsdl.org/SDL3/README-migration#sdl_rwopsh
 

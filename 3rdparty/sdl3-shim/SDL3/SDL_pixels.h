@@ -1,6 +1,6 @@
 #pragma once
 
-#include <SDL_pixels.h>
+#include <SDL2/SDL_pixels.h>
 
 // https://wiki.libsdl.org/SDL3/README-migration#sdl_pixelsh
 #define bits_per_pixel BitsPerPixel
@@ -26,7 +26,7 @@ SDL_PixelFormatDetails* SDL_GetPixelFormatDetails(T format) {
 
 static bool operator!=(SDL_PixelFormatDetails* lhs, SDL_PixelFormatEnum rhs)
 {
-	return lhs->format == rhs;
+	return lhs->format != rhs;
 }
 
 #define SDL_CreatePalette SDL_AllocPalette

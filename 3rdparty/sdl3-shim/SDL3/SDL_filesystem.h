@@ -28,11 +28,11 @@ typedef struct SDL_PathInfo
 
 // https://github.com/libsdl-org/SDL/blob/main/src/filesystem/
 
-inline char ** SDL_GlobDirectory(const char *path, const char *pattern, SDL_GlobFlags flags, int *count)
+inline char** SDL_GlobDirectory(const char *path, const char *pattern, SDL_GlobFlags flags, int *count)
 {
 	// since the one use of this doesnt use pattern or flags this should be a pretty simple stub
 	SDL_Unsupported();
-	return static_cast<char**>(SDL_malloc(0));
+	return NULL;
 }
 
 inline bool SDL_RemovePath(const char *path)

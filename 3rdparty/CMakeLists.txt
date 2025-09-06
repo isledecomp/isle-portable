@@ -118,13 +118,16 @@ if(USE_SDL2)
   endforeach()
 
 
-  add_library(SDL3_shim INTERFACE)
-  target_link_libraries(SDL3_shim INTERFACE SDL2::SDL2)
-  target_include_directories(SDL3_shim INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/sdl3-shim")
-  target_include_directories(SDL3_shim INTERFACE "${CMAKE_CURRENT_BINARY_DIR}/sdl3-shim/")
+  add_library(SDL3_shim STATIC
+          sdl3-shim/main.cpp
+  )
+  target_link_libraries(SDL3_shim PRIVATE SDL2::SDL2)
+  target_include_directories(SDL3_shim PUBLIC
+          "${CMAKE_CURRENT_SOURCE_DIR}/sdl3-shim"
+          "${CMAKE_CURRENT_BINARY_DIR}/sdl3-shim"
+  )
 
   add_library(SDL3::SDL3 ALIAS SDL3_shim)
-
   add_library(SDL3::Headers ALIAS SDL3_shim)
 
 endif()

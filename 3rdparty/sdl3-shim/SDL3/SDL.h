@@ -3,21 +3,22 @@
 // https://wiki.libsdl.org/SDL3/README-migration#sdl_stdinch
 #define SDL_bool bool
 
-#include <SDL.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_keyboard.h>
+#include <SDL2/SDL_video.h>
+#include <SDL2/SDL_mouse.h>
+
 #include "SDL_audio.h"
 #include "SDL_events.h"
 #include "SDL_filesystem.h"
 #include "SDL_gamepad.h"
 #include "SDL_iostream.h"
 #include "SDL_keycode.h"
-#include "SDL_keyboard.h"
+#include "SDL_main.h"
 #include "SDL_mutex.h"
 #include "SDL_pixels.h"
-// #include "SDL_properties.h"
 #include "SDL_surface.h"
 #include "SDL_timer.h"
-#include "SDL_video.h"
-#include "SDL_mouse.h"
 
 #include <random>
 
@@ -98,7 +99,6 @@ inline SDL_DisplayMode* SDL_GetCurrentDisplayMode(SDL_DisplayID displayID)
 // https://wiki.libsdl.org/SDL3/README-migration#sdl_haptich
 // SDL_MouseID/SDL_KeyboardID are new
 
-typedef int SDL_MouseID;
 typedef int SDL_KeyboardID;
 #define SDL_GetKeyboardState (const bool*)SDL_GetKeyboardState
 typedef int SDL_HapticID;
@@ -165,8 +165,12 @@ inline bool SDL_GetClosestFullscreenDisplayMode(SDL_DisplayID displayID, int w, 
 
 // https://wiki.libsdl.org/SDL3/README-migration#sdl_mouseh
 
+typedef Uint32 SDL_MouseID;
+
 static void SDL_HideCursor() { SDL_ShowCursor(SDL_DISABLE); }
 static void SDL_ShowCursor() { SDL_ShowCursor(SDL_ENABLE); }
+
+typedef Uint32 SDL_MouseButtonFlags;
 
 #define SDL_SYSTEM_CURSOR_COUNT SDL_NUM_SYSTEM_CURSORS
 #define SDL_SYSTEM_CURSOR_DEFAULT SDL_SYSTEM_CURSOR_ARROW
