@@ -2,10 +2,9 @@
 
 <application_settings version="1.0" bg_color="4.0, 21.0, 105.0, 255.0">
     <setting_list id="lego_island_config" title="msg_lego_island_config">
-         <label id="unfinished_label" title="msg_unfinished" style="heading"/>
-
         <setting_list id="page_game" title="msg_page_game" style="edit" icon="tex_spanner">
-            <text_field id="data_path" title="msg_data_path" max_length="255" min_length="0" keyboard_type="alphabet" key="data_path" default_value=""/>
+            <text_field id="disk_path" title="msg_disk_path" max_length="255" min_length="0" keyboard_type="alphabet" key="disk_path" default_value=""/>
+            <text_field id="cd_path" title="msg_cd_path" max_length="255" min_length="0" keyboard_type="alphabet" key="cd_path" default_value=""/>
             <text_field id="save_path" title="msg_save_path" max_length="255" min_length="0" keyboard_type="alphabet" key="save_path" default_value=""/>
             <list id="transition_type" title="msg_transition_type" key="transition_type" default_value="0">
                 <list_item id="transition_none" title="msg_transition_none" value="0" />

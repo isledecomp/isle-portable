@@ -17,8 +17,9 @@ paf::Plugin* g_configPlugin;
 sce::AppSettings* g_appSettings;
 sce::AppSettings::Interface* g_appSetIf;
 
-void merge_dicts(dictionary* dst, dictionary* src) {
-	for(int i = 0; i < src->n; i++) {
+void merge_dicts(dictionary* dst, dictionary* src)
+{
+	for (int i = 0; i < src->n; i++) {
 		dictionary_set(dst, src->key[i], src->val[i]);
 	}
 }
@@ -62,36 +63,37 @@ struct Config {
 
 #define GetDictInt(x, name) x = iniparser_getint(this->dict, name, x)
 #define GetDictFloat(x, name) x = iniparser_getdouble(this->dict, name, x)
-#define GetDictString(x, name) { \
-		const char* val = iniparser_getstring(this->dict, name, nullptr); \
-		if (val != nullptr) { \
-			x = val; \
-		} \
+#define GetDictString(x, name)                                                                                         \
+	{                                                                                                                  \
+		const char* val = iniparser_getstring(this->dict, name, nullptr);                                              \
+		if (val != nullptr) {                                                                                          \
+			x = val;                                                                                                   \
+		}                                                                                                              \
 	}
 #define GetDictBool(x, name) x = iniparser_getboolean(this->dict, name, x)
 
-#define SetDictBool(NAME, VALUE)                                                                                        \
+#define SetDictBool(NAME, VALUE)                                                                                       \
 	{                                                                                                                  \
 		const char* v = VALUE ? "true" : "false";                                                                      \
 		sceClibPrintf("SetIniBool(%s, %s)\n", NAME, v);                                                                \
-		iniparser_set(this->dict, NAME, v);                                                                                  \
+		iniparser_set(this->dict, NAME, v);                                                                            \
 	}
-#define SetDictInt(NAME, VALUE)                                                                                         \
+#define SetDictInt(NAME, VALUE)                                                                                        \
 	{                                                                                                                  \
 		sceClibSnprintf(buffer, sizeof(buffer), "%d", VALUE);                                                          \
 		sceClibPrintf("SetIniInt(%s, %d)\n", NAME, VALUE);                                                             \
-		iniparser_set(this->dict, NAME, buffer);                                                                             \
+		iniparser_set(this->dict, NAME, buffer);                                                                       \
 	}
-#define SetDictFloat(NAME, VALUE)                                                                                       \
+#define SetDictFloat(NAME, VALUE)                                                                                      \
 	{                                                                                                                  \
 		sceClibSnprintf(buffer, sizeof(buffer), "%f", VALUE);                                                          \
 		sceClibPrintf("SetIniFloat(%s, %f)\n", NAME, VALUE);                                                           \
-		iniparser_set(this->dict, NAME, buffer);                                                                             \
+		iniparser_set(this->dict, NAME, buffer);                                                                       \
 	}
-#define SetDictString(NAME, VALUE)                                                                                         \
+#define SetDictString(NAME, VALUE)                                                                                     \
 	{                                                                                                                  \
 		sceClibPrintf("SetString(%s, %s)\n", NAME, VALUE);                                                             \
-		iniparser_set(this->dict, NAME, VALUE);                                                                              \
+		iniparser_set(this->dict, NAME, VALUE);                                                                        \
 	}
 
 	void Init(sce::AppSettings* settings)
@@ -138,7 +140,7 @@ struct Config {
 	void LoadIni()
 	{
 		dictionary* ini = iniparser_load(g_iniPath);
-		if(ini) {
+		if (ini) {
 			merge_dicts(this->dict, ini);
 			iniparser_freedict(ini);
 		}
@@ -159,28 +161,28 @@ struct Config {
 	void ToSettings()
 	{
 		const int len = sizeof(key_map) / sizeof(key_map[0]);
-		for(int i = 0; i < len; i++) {
+		for (int i = 0; i < len; i++) {
 			const setting_map m = key_map[i];
-			switch(m.type) {
-				case 'f': // float, AppSettings doesnt have float so just use string
-				case 's': {
-					const char* value = dictionary_get(this->dict, m.key_ini, "");
-					this->settings->SetString(m.key_app, value);
-					break;
-				}
-				case 'i': {
-					int32_t value = iniparser_getint(this->dict, m.key_ini, 0);
-					this->settings->SetInt(m.key_app, value);
-					break;
-				}
-				case 'b': {
-					bool value = iniparser_getboolean(this->dict, m.key_ini, 0) == 1;
-					this->settings->SetBool(m.key_app, value);
-					break;
-				}
-				default: {
-					sceClibPrintf("invalid setting map entry %s %s %c\n", m.key_app, m.key_ini, m.type);
-				}
+			switch (m.type) {
+			case 'f': // float, AppSettings doesnt have float so just use string
+			case 's': {
+				const char* value = dictionary_get(this->dict, m.key_ini, "");
+				this->settings->SetString(m.key_app, value);
+				break;
+			}
+			case 'i': {
+				int32_t value = iniparser_getint(this->dict, m.key_ini, 0);
+				this->settings->SetInt(m.key_app, value);
+				break;
+			}
+			case 'b': {
+				bool value = iniparser_getboolean(this->dict, m.key_ini, 0) == 1;
+				this->settings->SetBool(m.key_app, value);
+				break;
+			}
+			default: {
+				sceClibPrintf("invalid setting map entry %s %s %c\n", m.key_app, m.key_ini, m.type);
+			}
 			}
 		}
 	}
@@ -188,31 +190,31 @@ struct Config {
 	void FromSettings()
 	{
 		const int len = sizeof(key_map) / sizeof(key_map[0]);
-		for(int i = 0; i < len; i++) {
+		for (int i = 0; i < len; i++) {
 			const setting_map m = key_map[i];
-			switch(m.type) {
-				case 'f': // float, AppSettings doesnt have float so just use string
-				case 's': {
-					const char* def = dictionary_get(this->dict, m.key_ini, "");
-					this->settings->GetString(m.key_app, this->buffer, sizeof(this->buffer), def);
-					dictionary_set(this->dict, m.key_ini, buffer);
-					break;
-				}
-				case 'i': {
-					int32_t value = iniparser_getint(this->dict, m.key_ini, 0);
-					this->settings->GetInt(m.key_app, &value, value);
-					SetDictInt(m.key_ini, value);
-					break;
-				}
-				case 'b': {
-					bool value = iniparser_getboolean(this->dict, m.key_ini, 0) == 1;
-					this->settings->GetBool(m.key_app, &value, value);
-					SetDictBool(m.key_ini, value);
-					break;
-				}
-				default: {
-					sceClibPrintf("invalid setting map entry %s %s %c\n", m.key_app, m.key_ini, m.type);
-				}
+			switch (m.type) {
+			case 'f': // float, AppSettings doesnt have float so just use string
+			case 's': {
+				const char* def = dictionary_get(this->dict, m.key_ini, "");
+				this->settings->GetString(m.key_app, this->buffer, sizeof(this->buffer), def);
+				dictionary_set(this->dict, m.key_ini, buffer);
+				break;
+			}
+			case 'i': {
+				int32_t value = iniparser_getint(this->dict, m.key_ini, 0);
+				this->settings->GetInt(m.key_app, &value, value);
+				SetDictInt(m.key_ini, value);
+				break;
+			}
+			case 'b': {
+				bool value = iniparser_getboolean(this->dict, m.key_ini, 0) == 1;
+				this->settings->GetBool(m.key_app, &value, value);
+				SetDictBool(m.key_ini, value);
+				break;
+			}
+			default: {
+				sceClibPrintf("invalid setting map entry %s %s %c\n", m.key_app, m.key_ini, m.type);
+			}
 			}
 		}
 	}
