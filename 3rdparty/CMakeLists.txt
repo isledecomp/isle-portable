@@ -1,4 +1,5 @@
 set(CMAKE_C_CLANG_TIDY)
+set(CMAKE_CXX_CLANG_TIDY)
 
 if(DOWNLOAD_DEPENDENCIES)
     include(FetchContent)
@@ -72,3 +73,23 @@ target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR})
 target_link_libraries(imgui PUBLIC SDL3::Headers)
 target_link_libraries(imgui PRIVATE SDL3::SDL3)
 set_property(TARGET imgui PROPERTY CXX_CLANG_TIDY "")
+
+if(DOWNLOAD_DEPENDENCIES)
+    include(FetchContent)
+    FetchContent_Populate(
+        libweaver
+        URL https://github.com/isledecomp/SIEdit/archive/ae447259389f3bf8273c7e7a4844743faf7cbdb8.tar.gz
+        URL_MD5 dee68424fde8db6d5cef3b9034a8151f
+    )
+else()
+    set(libweaver_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/libweaver")
+endif()
+
+add_library(libweaver STATIC
+    ${libweaver_SOURCE_DIR}/lib/core.cpp
+    ${libweaver_SOURCE_DIR}/lib/file.cpp
+    ${libweaver_SOURCE_DIR}/lib/interleaf.cpp
+    ${libweaver_SOURCE_DIR}/lib/object.cpp
+    ${libweaver_SOURCE_DIR}/lib/sitypes.cpp
+)
+target_include_directories(libweaver PUBLIC ${libweaver_SOURCE_DIR}/lib)

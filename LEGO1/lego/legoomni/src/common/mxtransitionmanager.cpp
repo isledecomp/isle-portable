@@ -630,7 +630,6 @@ void MxTransitionManager::SetupCopyRect(LPDDSURFACEDESC p_ddsc)
 	// Setup display surface
 	if ((m_waitIndicator->GetAction()->GetFlags() & MxDSAction::c_bit5) != 0) {
 		MxDisplaySurface* displaySurface = VideoManager()->GetDisplaySurface();
-		MxBool und = FALSE;
 		displaySurface->VTable0x2c(
 			p_ddsc,
 			m_waitIndicator->GetBitmap(),
@@ -639,8 +638,7 @@ void MxTransitionManager::SetupCopyRect(LPDDSURFACEDESC p_ddsc)
 			m_waitIndicator->GetLocation().GetX(),
 			m_waitIndicator->GetLocation().GetY(),
 			m_waitIndicator->GetWidth(),
-			m_waitIndicator->GetHeight(),
-			und
+			m_waitIndicator->GetHeight()
 		);
 	}
 	else {

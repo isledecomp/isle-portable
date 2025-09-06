@@ -2,6 +2,9 @@
 #ifdef USE_OPENGL1
 #include "d3drmrenderer_opengl1.h"
 #endif
+#ifdef USE_OPENGLES2
+#include "d3drmrenderer_opengles2.h"
+#endif
 #ifdef USE_OPENGLES3
 #include "d3drmrenderer_opengles3.h"
 #endif
@@ -47,6 +50,11 @@ Direct3DRMRenderer* CreateDirect3DRMRenderer(
 		);
 	}
 #endif
+#ifdef USE_OPENGLES2
+	if (SDL_memcmp(guid, &OpenGLES2_GUID, sizeof(GUID)) == 0) {
+		return OpenGLES2Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight, d3d->GetAnisotropic());
+	}
+#endif
 #ifdef USE_OPENGL1
 	if (SDL_memcmp(guid, &OpenGL1_GUID, sizeof(GUID)) == 0) {
 		return OpenGL1Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight, d3d->GetMSAASamples());
@@ -77,6 +85,9 @@ void Direct3DRMRenderer_EnumDevices(const IDirect3DMiniwin* d3d, LPD3DENUMDEVICE
 #endif
 #ifdef USE_OPENGLES3
 	OpenGLES3Renderer_EnumDevice(d3d, cb, ctx);
+#endif
+#ifdef USE_OPENGLES2
+	OpenGLES2Renderer_EnumDevice(d3d, cb, ctx);
 #endif
 #ifdef USE_OPENGL1
 	OpenGL1Renderer_EnumDevice(d3d, cb, ctx);

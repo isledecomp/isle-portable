@@ -17,199 +17,204 @@ paf::Plugin* g_configPlugin;
 sce::AppSettings* g_appSettings;
 sce::AppSettings::Interface* g_appSetIf;
 
-struct Config {
-	paf::string m_base_path;
-	paf::string m_cd_path;
-	paf::string m_save_path;
-	int m_transition_type;
-	int m_texture_quality;
-	int m_model_quality;
-	int m_msaa;
-	int m_touch_scheme;
-	bool m_wide_view_angle;
-	bool m_music;
-	bool m_3d_sound;
-	bool m_haptic;
-	bool m_draw_cursor;
-	bool m_texture_load;
-	paf::string m_texture_path;
-	float m_max_lod;
-	int m_max_actors;
-	float m_frame_delta;
+void merge_dicts(dictionary* dst, dictionary* src) {
+	for(int i = 0; i < src->n; i++) {
+		dictionary_set(dst, src->key[i], src->val[i]);
+	}
+}
 
-	void Init()
+struct setting_map {
+	const char* key_ini;
+	const char* key_app;
+	const char type;
+};
+
+// mapping from ini key to settings.xml key
+const setting_map key_map[] = {
+	// Game
+	{"isle:diskpath", "disk_path", 's'},
+	{"isle:cdpath", "cd_path", 's'},
+	{"isle:savepath", "save_path", 's'},
+	{"isle:Transition Type", "transition_type", 'i'},
+	{"isle:Music", "music", 'b'},
+	{"isle:3DSound", "3d_sound", 'b'},
+
+	// Graphics
+	{"isle:Island Texture", "island_texture_quality", 'i'},
+	{"isle:Island Quality", "island_model_quality", 'i'},
+	//{"isle:Max LOD", "max_lod", 'f'},
+	//{"isle:Max Allowed Extras", "max_extras", 'i' },
+	{"isle:MSAA", "msaa", 'i'},
+
+	// Controls
+	{"isle:Touch Scheme", "touch_control_scheme", 'i'},
+	{"isle:Haptic", "rumble", 'b'},
+
+	// Extensions
+	{"extensions:texture loader", "texture_loader_extension", 'b'},
+	{"texture loader:texture path", "texture_loader_path", 's'}
+};
+
+struct Config {
+	sce::AppSettings* settings;
+	dictionary* dict;
+	char buffer[128];
+
+#define GetDictInt(x, name) x = iniparser_getint(this->dict, name, x)
+#define GetDictFloat(x, name) x = iniparser_getdouble(this->dict, name, x)
+#define GetDictString(x, name) { \
+		const char* val = iniparser_getstring(this->dict, name, nullptr); \
+		if (val != nullptr) { \
+			x = val; \
+		} \
+	}
+#define GetDictBool(x, name) x = iniparser_getboolean(this->dict, name, x)
+
+#define SetDictBool(NAME, VALUE)                                                                                        \
+	{                                                                                                                  \
+		const char* v = VALUE ? "true" : "false";                                                                      \
+		sceClibPrintf("SetIniBool(%s, %s)\n", NAME, v);                                                                \
+		iniparser_set(this->dict, NAME, v);                                                                                  \
+	}
+#define SetDictInt(NAME, VALUE)                                                                                         \
+	{                                                                                                                  \
+		sceClibSnprintf(buffer, sizeof(buffer), "%d", VALUE);                                                          \
+		sceClibPrintf("SetIniInt(%s, %d)\n", NAME, VALUE);                                                             \
+		iniparser_set(this->dict, NAME, buffer);                                                                             \
+	}
+#define SetDictFloat(NAME, VALUE)                                                                                       \
+	{                                                                                                                  \
+		sceClibSnprintf(buffer, sizeof(buffer), "%f", VALUE);                                                          \
+		sceClibPrintf("SetIniFloat(%s, %f)\n", NAME, VALUE);                                                           \
+		iniparser_set(this->dict, NAME, buffer);                                                                             \
+	}
+#define SetDictString(NAME, VALUE)                                                                                         \
+	{                                                                                                                  \
+		sceClibPrintf("SetString(%s, %s)\n", NAME, VALUE);                                                             \
+		iniparser_set(this->dict, NAME, VALUE);                                                                              \
+	}
+
+	void Init(sce::AppSettings* settings)
 	{
-		m_frame_delta = 10.0f;
-		m_transition_type = 3; // 3: Mosaic
-		m_wide_view_angle = true;
-		m_music = true;
-		m_3d_sound = true;
-		m_haptic = true;
-		m_touch_scheme = 2;
-		m_texture_load = true;
-		m_texture_path = "/textures/";
-		m_model_quality = 2;
-		m_texture_quality = 1;
-		m_msaa = 4;
-		m_max_lod = 3.5f;
-		m_max_actors = 20;
+		this->settings = settings;
+		dict = dictionary_new(0);
+
+		// set defaults
+		SetDictInt("isle:Display Bit Depth", 32);
+		SetDictBool("isle:Flip Surfaces", false);
+		SetDictBool("isle:Full Screen", true);
+		SetDictBool("isle:Exclusive Full Screen", true);
+		SetDictBool("isle:Wide View Angle", true);
+
+		SetDictInt("isle:Transition Type", 3); // 3: Mosaic
+		SetDictInt("isle:Touch Scheme", 2);
+
+		SetDictBool("isle:3DSound", true);
+		SetDictBool("isle:Music", true);
+		SetDictBool("isle:Haptic", true);
+
+		SetDictBool("isle:UseJoystick", true);
+		SetDictInt("isle:JoystickIndex", 0);
+		SetDictBool("isle:Draw Cursor", true);
+
+		SetDictBool("extensions:texture loader", false);
+		SetDictString("texture loader:texture path", "textures/");
+
+		SetDictBool("isle:Back Buffers in Video RAM", true);
+
+		SetDictInt("isle:Island Quality", 2);
+		SetDictInt("isle:Island Texture", 1);
+		SetDictInt("isle:MSAA", 4);
+
+		SetDictFloat("isle:Max LOD", 3.5);
+		SetDictInt("isle:Max Allowed Extras", 20);
+
+		SetDictInt("isle:Aspect Ratio", 0);
+		SetDictInt("isle:Horizontal Resolution", 640);
+		SetDictInt("isle:Vertical Resolution", 480);
+		SetDictFloat("isle:Frame Delta", 10.0f);
 	}
 
 	void LoadIni()
 	{
-		dictionary* dict = iniparser_load(g_iniPath);
-		if (!dict) {
-			dict = dictionary_new(0);
+		dictionary* ini = iniparser_load(g_iniPath);
+		if(ini) {
+			merge_dicts(this->dict, ini);
+			iniparser_freedict(ini);
 		}
-
-#define GET_INT(x, name) x = iniparser_getint(dict, name, x)
-#define GET_FLOAT(x, name) x = iniparser_getdouble(dict, name, x)
-#define GET_STRING(x, name) do { \
-	const char* val = iniparser_getstring(dict, name, nullptr); \
-	if(val != nullptr) x = val; \
-} while(0)
-#define GET_BOOLEAN(x, name) x = iniparser_getboolean(dict, name, x)
-
-		GET_STRING(m_base_path, "isle:diskpath");
-		GET_STRING(m_cd_path, "isle:cdpath");
-		GET_STRING(m_save_path, "isle:savepath");
-
-		// m_display_bit_depth = iniparser_getint(dict, "isle:Display Bit Depth", -1);
-		// GET_BOOLEAN(m_flip_surfaces, "isle:Flip Surfaces");
-		// GET_BOOLEAN(m_full_screen, "isle:Full Screen");
-		// GET_BOOLEAN(m_exclusive_full_screen, "isle:Exclusive Full Screen");
-		GET_INT(m_transition_type, "isle:Transition Type");
-		GET_INT(m_touch_scheme, "isle:Touch Scheme");
-		// GET_BOOLEAN(m_3d_video_ram, "isle:Back Buffers in Video RAM");
-		GET_BOOLEAN(m_wide_view_angle, "isle:Wide View Angle");
-		GET_BOOLEAN(m_3d_sound, "isle:3DSound");
-		GET_BOOLEAN(m_draw_cursor, "isle:Draw Cursor");
-		GET_INT(m_model_quality, "isle:Island Quality");
-		GET_INT(m_texture_quality, "isle:Island Texture");
-		GET_INT(m_msaa, "isle:MSAA");
-		// GET_BOOLEAN(m_use_joystick, "isle:UseJoystick");
-		GET_BOOLEAN(m_haptic, "isle:Haptic");
-		GET_BOOLEAN(m_music, "isle:Music");
-		// GET_INT(m_joystick_index, "isle:JoystickIndex");
-		GET_FLOAT(m_max_lod, "isle:Max LOD");
-		GET_INT(m_max_actors, "isle:Max Allowed Extras");
-		GET_BOOLEAN(m_texture_load, "extensions:texture loader");
-		GET_STRING(m_texture_path, "texture loader:texture path");
-		// GET_INT(m_aspect_ratio, "isle:Aspect Ratio");
-		// GET_INT(m_x_res, "isle:Horizontal Resolution");
-		// GET_INT(m_y_res, "isle:Vertical Resolution");
-		GET_FLOAT(m_frame_delta, "isle:Frame Delta");
-#undef GET_INT
-#undef GET_FLOAT
-#undef GET_STRING
-#undef GET_BOOLEAN
-		iniparser_freedict(dict);
 	}
 
 	bool SaveIni()
 	{
-		dictionary* dict = dictionary_new(0);
-
-		char buffer[128];
-#define SetIniBool(NAME, VALUE) iniparser_set(dict, NAME, VALUE ? "true" : "false")
-#define SetIniInt(NAME, VALUE)                                                                                         \
-	{                                                                                                                  \
-		sceClibPrintf(buffer, "%d", VALUE);                                                                            \
-		iniparser_set(dict, NAME, buffer);                                                                             \
-	}
-#define SetIniFloat(NAME, VALUE)                                                                                       \
-	{                                                                                                                  \
-		sceClibPrintf(buffer, "%f", VALUE);                                                                            \
-		iniparser_set(dict, NAME, buffer);                                                                             \
-	}
-#define SetString(NAME, VALUE) iniparser_set(dict, NAME, VALUE)
-
-		SetIniInt("isle:Display Bit Depth", 32);
-		SetIniBool("isle:Flip Surfaces", false);
-		SetIniBool("isle:Full Screen", true);
-		SetIniBool("isle:Exclusive Full Screen", true);
-		SetIniBool("isle:Wide View Angle", true); // option?
-
-		SetIniInt("isle:Transition Type", m_transition_type);
-		SetIniInt("isle:Touch Scheme", m_touch_scheme);
-
-		SetIniBool("isle:3DSound", m_3d_sound);
-		SetIniBool("isle:Music", m_music);
-		SetIniBool("isle:Haptic", m_haptic);
-
-		SetIniBool("isle:UseJoystick", true);
-		SetIniInt("isle:JoystickIndex", 0);
-		SetIniBool("isle:Draw Cursor", m_draw_cursor);
-
-		SetIniBool("extensions:texture loader", m_texture_load);
-		SetString("texture loader:texture path", m_texture_path.c_str());
-
-		SetIniBool("isle:Back Buffers in Video RAM", true);
-
-		SetIniInt("isle:Island Quality", m_model_quality);
-		SetIniInt("isle:Island Texture", m_texture_quality);
-		SetIniInt("isle:MSAA", m_msaa);
-
-		SetIniFloat("isle:Max LOD", m_max_lod);
-		SetIniInt("isle:Max Allowed Extras", m_max_actors);
-
-		SetIniInt("isle:Aspect Ratio", 0);
-		SetIniInt("isle:Horizontal Resolution", 640);
-		SetIniInt("isle:Vertical Resolution", 480);
-		SetIniFloat("isle:Frame Delta", 10.0f);
-
-#undef SetIniBool
-#undef SetIniInt
-#undef SetIniFloat
-#undef SetString
-
 		FILE* fd = fopen(g_iniPath, "w");
 		if (fd) {
-			iniparser_dump_ini(dict, fd);
-		} else {
+			iniparser_dump_ini(this->dict, fd);
+		}
+		else {
 			sceClibPrintf("failed to write isle.ini\n");
 		}
-		iniparser_freedict(dict);
-
 		return true;
 	}
 
-	void ToSettings(sce::AppSettings* appSettings)
+	void ToSettings()
 	{
-		appSettings->SetString("data_path", this->m_base_path.c_str());
-		appSettings->SetString("save_path", this->m_save_path.c_str());
-		appSettings->SetInt("transition_type", this->m_transition_type);
-		appSettings->SetBool("music", this->m_music);
-		appSettings->SetBool("3d_sound", this->m_3d_sound);
-		appSettings->SetInt("island_texture_quality", this->m_texture_quality);
-		appSettings->SetInt("island_model_quality", this->m_model_quality);
-		appSettings->SetInt("msaa", this->m_msaa);
-		appSettings->SetInt("touch_control_scheme", this->m_touch_scheme);
-		appSettings->SetBool("rumble", this->m_haptic);
-		appSettings->SetBool("texture_loader_extension", this->m_texture_load);
-		appSettings->SetString("texture_loader_path", this->m_texture_path.c_str());
+		const int len = sizeof(key_map) / sizeof(key_map[0]);
+		for(int i = 0; i < len; i++) {
+			const setting_map m = key_map[i];
+			switch(m.type) {
+				case 'f': // float, AppSettings doesnt have float so just use string
+				case 's': {
+					const char* value = dictionary_get(this->dict, m.key_ini, "");
+					this->settings->SetString(m.key_app, value);
+					break;
+				}
+				case 'i': {
+					int32_t value = iniparser_getint(this->dict, m.key_ini, 0);
+					this->settings->SetInt(m.key_app, value);
+					break;
+				}
+				case 'b': {
+					bool value = iniparser_getboolean(this->dict, m.key_ini, 0) == 1;
+					this->settings->SetBool(m.key_app, value);
+					break;
+				}
+				default: {
+					sceClibPrintf("invalid setting map entry %s %s %c\n", m.key_app, m.key_ini, m.type);
+				}
+			}
+		}
 	}
 
-	void FromSettings(sce::AppSettings* appSettings) {
-		char text_buf[255];
-
-		#define GET_STRING(x, name) appSettings->GetString(name, text_buf, sizeof(text_buf), x.c_str()); x = text_buf;
-
-		GET_STRING(this->m_base_path, "data_path");
-		GET_STRING(this->m_save_path, "save_path");
-		appSettings->GetInt("transition_type", &this->m_transition_type, this->m_transition_type);
-		printf("this->m_transition_type: %d\n", this->m_transition_type);
-		appSettings->GetBool("music", &this->m_music, this->m_music);
-		appSettings->GetBool("3d_sound", &this->m_3d_sound, this->m_3d_sound);
-		appSettings->GetInt("island_texture_quality", &this->m_texture_quality, this->m_texture_quality);
-		appSettings->GetInt("island_model_quality", &this->m_model_quality, this->m_model_quality);
-		appSettings->GetInt("msaa", &this->m_msaa, this->m_msaa);
-		appSettings->GetInt("touch_control_scheme", &this->m_touch_scheme, this->m_touch_scheme);
-		appSettings->GetBool("rumble", &this->m_haptic, this->m_haptic);
-		appSettings->GetBool("texture_loader_extension", &this->m_texture_load, this->m_texture_load);
-		GET_STRING(this->m_texture_path, "texture_loader_path");
-
-		#undef GET_STRING
+	void FromSettings()
+	{
+		const int len = sizeof(key_map) / sizeof(key_map[0]);
+		for(int i = 0; i < len; i++) {
+			const setting_map m = key_map[i];
+			switch(m.type) {
+				case 'f': // float, AppSettings doesnt have float so just use string
+				case 's': {
+					const char* def = dictionary_get(this->dict, m.key_ini, "");
+					this->settings->GetString(m.key_app, this->buffer, sizeof(this->buffer), def);
+					dictionary_set(this->dict, m.key_ini, buffer);
+					break;
+				}
+				case 'i': {
+					int32_t value = iniparser_getint(this->dict, m.key_ini, 0);
+					this->settings->GetInt(m.key_app, &value, value);
+					SetDictInt(m.key_ini, value);
+					break;
+				}
+				case 'b': {
+					bool value = iniparser_getboolean(this->dict, m.key_ini, 0) == 1;
+					this->settings->GetBool(m.key_app, &value, value);
+					SetDictBool(m.key_ini, value);
+					break;
+				}
+				default: {
+					sceClibPrintf("invalid setting map entry %s %s %c\n", m.key_app, m.key_ini, m.type);
+				}
+			}
+		}
 	}
 };
 
@@ -254,7 +259,7 @@ int exit_type = 0;
 
 void save_and_exit()
 {
-	g_config.FromSettings(g_appSettings);
+	g_config.FromSettings();
 	g_config.SaveIni();
 	g_fw->RequestShutdown();
 	exit_type = 1;
@@ -262,7 +267,7 @@ void save_and_exit()
 
 void save_and_launch()
 {
-	g_config.FromSettings(g_appSettings);
+	g_config.FromSettings();
 	g_config.SaveIni();
 	g_fw->RequestShutdown();
 	exit_type = 2;
@@ -319,7 +324,7 @@ int32_t CBOnPress2(const char* elementId, const char* newValue)
 
 void CBOnTerm(int32_t result)
 {
-	if(exit_type == 0) {
+	if (exit_type == 0) {
 		sceKernelExitProcess(0);
 	}
 }
@@ -340,9 +345,9 @@ int32_t CBOnGetSurface(paf::graph::Surface** surf, const char* elementId)
 
 void open_settings()
 {
-	g_config.Init();
+	g_config.Init(g_appSettings);
 	g_config.LoadIni();
-	g_config.ToSettings(g_appSettings);
+	g_config.ToSettings();
 
 	sce::AppSettings::InterfaceCallbacks ifCb;
 	ifCb.onStartPageTransitionCb = CBOnStartPageTransition;

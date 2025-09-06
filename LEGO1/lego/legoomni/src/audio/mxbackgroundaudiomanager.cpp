@@ -119,7 +119,12 @@ void MxBackgroundAudioManager::FadeInPendingPresenter()
 	MxS32 compare, volume;
 
 	if (m_activePresenter == NULL) {
-		if (m_pendingPresenter) {
+		if (m_pendingPresenter && m_pendingPresenter->GetCurrentTickleState() >= MxPresenter::e_streaming) {
+			if (!m_pendingPresenter->IsEnabled()) {
+				m_pendingPresenter->Enable(TRUE);
+				m_pendingPresenter->SetTickleState(MxPresenter::e_streaming);
+			}
+
 			if (m_volumeSuppressionAmount != 0) {
 				compare = 30;
 			}
@@ -221,6 +226,12 @@ void MxBackgroundAudioManager::StartAction(MxParam& p_param)
 	m_action2.SetObjectId(m_pendingPresenter->GetAction()->GetObjectId());
 	m_targetVolume = ((MxDSSound*) (m_pendingPresenter->GetAction()))->GetVolume();
 	m_pendingPresenter->SetVolume(0);
+
+	// Disabling the action here and starting it later once the actively presented music has been faded out.
+	// This was not necessary in retail because the streaming layer would implicitly not start another action
+	// before the previous one has ended (since it's all coming from JUKEBOX.SI), however since we now
+	// allow loading music from multiple SI files this would cause the new music to start immediately.
+	m_pendingPresenter->GetAction()->SetFlags(m_pendingPresenter->GetAction()->GetFlags() & ~MxDSAction::c_enabled);
 }
 
 // FUNCTION: LEGO1 0x1007f200
@@ -254,7 +265,8 @@ MxResult MxBackgroundAudioManager::PlayMusic(
 		return SUCCESS;
 	}
 
-	if (m_action2.GetObjectId() == -1 && m_action1.GetObjectId() != p_action.GetObjectId()) {
+	if (m_action2.GetObjectId() == -1 &&
+		(m_action1.GetObjectId() != p_action.GetObjectId() || m_action1.GetAtomId() != p_action.GetAtomId())) {
 		MxDSAction action;
 		action.SetAtomId(GetCurrentAction().GetAtomId());
 		action.SetObjectId(GetCurrentAction().GetObjectId());
@@ -275,11 +287,26 @@ MxResult MxBackgroundAudioManager::PlayMusic(
 			m_tickleState = p_tickleState;
 			m_speed = p_speed;
 		}
+		else {
+			m_action2.SetAtomId(MxAtomId());
+			m_action2.SetObjectId(-1);
+		}
 
 		return result;
 	}
 
 	return FAILURE;
+}
+
+// FUNCTION: BETA10 0x100e92ec
+void MxBackgroundAudioManager::Update(MxS32 p_targetVolume, MxS32 p_speed, MxPresenter::TickleState p_tickleState)
+{
+	assert(p_targetVolume >= 0 && p_targetVolume <= 100);
+	assert(p_speed > 0);
+
+	m_tickleState = p_tickleState;
+	m_speed = p_speed;
+	m_targetVolume = p_targetVolume;
 }
 
 // FUNCTION: LEGO1 0x1007f470

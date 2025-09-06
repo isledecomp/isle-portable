@@ -7,3 +7,6 @@
 [submodule "imgui"]
 	path = 3rdparty/imgui
 	url = https://github.com/ocornut/imgui
+[submodule "3rdparty/libweaver"]
+	path = 3rdparty/libweaver
+	url = https://github.com/isledecomp/SIEdit

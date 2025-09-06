@@ -61,8 +61,7 @@ public:
 		MxS32 p_right,
 		MxS32 p_bottom,
 		MxS32 p_width,
-		MxS32 p_height,
-		MxBool p_RLE
+		MxS32 p_height
 	); // vtable+0x2c
 	virtual void VTable0x30(
 		MxBitmap* p_bitmap,
@@ -71,8 +70,7 @@ public:
 		MxS32 p_right,
 		MxS32 p_bottom,
 		MxS32 p_width,
-		MxS32 p_height,
-		MxBool p_RLE
+		MxS32 p_height
 	); // vtable+0x30
 	virtual void Display(
 		MxS32 p_left,
@@ -92,23 +90,12 @@ public:
 	); // vtable+0x44
 
 	void ClearScreen();
-	static LPDIRECTDRAWSURFACE CreateCursorSurface(const CursorBitmap* p_cursorBitmap);
+	static LPDIRECTDRAWSURFACE CreateCursorSurface(const CursorBitmap* p_cursorBitmap, MxPalette* p_palette);
 	static LPDIRECTDRAWSURFACE CopySurface(LPDIRECTDRAWSURFACE p_src);
 
 	LPDIRECTDRAWSURFACE GetDirectDrawSurface1() { return m_ddSurface1; }
 	LPDIRECTDRAWSURFACE GetDirectDrawSurface2() { return m_ddSurface2; }
 	MxVideoParam& GetVideoParam() { return m_videoParam; }
-
-	void DrawTransparentRLE(
-		MxU8*& p_bitmapData,
-		MxU8*& p_surfaceData,
-		MxU32 p_bitmapSize,
-		MxS32 p_width,
-		MxS32 p_height,
-		MxLong p_pitch,
-		MxU8 p_bpp
-	);
-
 	LPDIRECTDRAWSURFACE FUN_100bc8b0(MxS32 p_width, MxS32 p_height);
 
 private:

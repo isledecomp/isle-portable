@@ -65,6 +65,7 @@ CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 	connect(m_ui->sound3DCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckbox3DSound);
 	connect(m_ui->rumbleCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxRumble);
 	connect(m_ui->textureCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxTexture);
+	connect(m_ui->customAssetsCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxCustomAssets);
 	connect(m_ui->touchComboBox, &QComboBox::currentIndexChanged, this, &CMainDialog::TouchControlsChanged);
 	connect(m_ui->transitionTypeComboBox, &QComboBox::currentIndexChanged, this, &CMainDialog::TransitionTypeChanged);
 	connect(m_ui->exFullResComboBox, &QComboBox::currentIndexChanged, this, &CMainDialog::ExclusiveResolutionChanged);
@@ -81,6 +82,11 @@ CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 	connect(m_ui->texturePathOpen, &QPushButton::clicked, this, &CMainDialog::SelectTexturePathDialog);
 	connect(m_ui->texturePath, &QLineEdit::editingFinished, this, &CMainDialog::TexturePathEdited);
 
+	connect(m_ui->addCustomAssetPath, &QPushButton::clicked, this, &CMainDialog::AddCustomAssetPath);
+	connect(m_ui->removeCustomAssetPath, &QPushButton::clicked, this, &CMainDialog::RemoveCustomAssetPath);
+	connect(m_ui->customAssetPaths, &QListWidget::currentRowChanged, this, &CMainDialog::SelectedPathChanged);
+	connect(m_ui->customAssetPaths, &QListWidget::itemActivated, this, &CMainDialog::EditCustomAssetPath);
+
 	connect(m_ui->maxLoDSlider, &QSlider::valueChanged, this, &CMainDialog::MaxLoDChanged);
 	connect(m_ui->maxLoDSlider, &QSlider::sliderMoved, this, &CMainDialog::MaxLoDChanged);
 	connect(m_ui->maxActorsSlider, &QSlider::valueChanged, this, &CMainDialog::MaxActorsChanged);
@@ -95,8 +101,6 @@ CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 	connect(m_ui->xResSpinBox, &QSpinBox::valueChanged, this, &CMainDialog::XResChanged);
 	connect(m_ui->yResSpinBox, &QSpinBox::valueChanged, this, &CMainDialog::YResChanged);
 	connect(m_ui->framerateSpinBox, &QSpinBox::valueChanged, this, &CMainDialog::FramerateChanged);
-
-	layout()->setSizeConstraint(QLayout::SetFixedSize);
 
 	if (currentConfigApp->m_ram_quality_limit != 0) {
 		m_modified = true;
@@ -308,9 +312,28 @@ void CMainDialog::UpdateInterface()
 	m_ui->savePath->setText(QString::fromStdString(currentConfigApp->m_save_path));
 
 	m_ui->textureCheckBox->setChecked(currentConfigApp->m_texture_load);
-	m_ui->texturePath->setText(QString::fromStdString(currentConfigApp->m_texture_path));
+	QString texture_path = QString::fromStdString(currentConfigApp->m_texture_path);
+	if (texture_path.startsWith(QDir::separator())) {
+		texture_path.remove(0, 1);
+	}
+	m_ui->texturePath->setText(texture_path);
 	m_ui->texturePath->setEnabled(currentConfigApp->m_texture_load);
 	m_ui->texturePathOpen->setEnabled(currentConfigApp->m_texture_load);
+
+	m_ui->customAssetsCheckBox->setChecked(currentConfigApp->m_custom_assets_enabled);
+	m_ui->customAssetPathContainer->setEnabled(currentConfigApp->m_custom_assets_enabled);
+	m_ui->customAssetPaths->setEnabled(currentConfigApp->m_custom_assets_enabled);
+	m_ui->addCustomAssetPath->setEnabled(currentConfigApp->m_custom_assets_enabled);
+	m_ui->removeCustomAssetPath->setEnabled(false);
+
+	m_ui->customAssetPaths->clear();
+	assetPaths = QString::fromStdString(currentConfigApp->m_custom_asset_path).split(u',');
+	for (QString& path : assetPaths) {
+		if (path.startsWith(QDir::separator())) {
+			path.remove(0, 1);
+		}
+	}
+	m_ui->customAssetPaths->addItems(assetPaths);
 
 	m_ui->aspectRatioComboBox->setCurrentIndex(currentConfigApp->m_aspect_ratio);
 	m_ui->xResSpinBox->setValue(currentConfigApp->m_x_res);
@@ -442,6 +465,13 @@ void CMainDialog::OnCheckboxTexture(bool checked)
 	UpdateInterface();
 }
 
+void CMainDialog::OnCheckboxCustomAssets(bool checked)
+{
+	currentConfigApp->m_custom_assets_enabled = checked;
+	m_modified = true;
+	UpdateInterface();
+}
+
 void CMainDialog::TouchControlsChanged(int index)
 {
 	currentConfigApp->m_touch_scheme = index;
@@ -475,14 +505,15 @@ void CMainDialog::SelectDataPathDialog()
 		QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
 	);
 
-	QDir data_dir = QDir(data_path);
-
-	if (data_dir.exists()) {
-		currentConfigApp->m_cd_path = data_dir.absolutePath().toStdString();
-		data_dir.cd(QString("DATA"));
-		data_dir.cd(QString("disk"));
-		currentConfigApp->m_base_path = data_dir.absolutePath().toStdString();
-		m_modified = true;
+	if (!data_path.isEmpty()) {
+		QDir data_dir = QDir(data_path);
+		if (data_dir.exists()) {
+			currentConfigApp->m_cd_path = data_dir.absolutePath().toStdString();
+			data_dir.cd(QString("DATA"));
+			data_dir.cd(QString("disk"));
+			currentConfigApp->m_base_path = data_dir.absolutePath().toStdString();
+			m_modified = true;
+		}
 	}
 	UpdateInterface();
 }
@@ -497,11 +528,12 @@ void CMainDialog::SelectSavePathDialog()
 		QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
 	);
 
-	QDir save_dir = QDir(save_path);
-
-	if (save_dir.exists()) {
-		currentConfigApp->m_save_path = save_dir.absolutePath().toStdString();
-		m_modified = true;
+	if (!save_path.isEmpty()) {
+		QDir save_dir = QDir(save_path);
+		if (save_dir.exists()) {
+			currentConfigApp->m_save_path = save_dir.absolutePath().toStdString();
+			m_modified = true;
+		}
 	}
 	UpdateInterface();
 }
@@ -517,13 +549,11 @@ void CMainDialog::DataPathEdited()
 		currentConfigApp->m_base_path = data_dir.absolutePath().toStdString();
 		m_modified = true;
 	}
-
 	UpdateInterface();
 }
 
 void CMainDialog::SavePathEdited()
 {
-
 	QDir save_dir = QDir(m_ui->savePath->text());
 
 	if (save_dir.exists()) {
@@ -563,7 +593,12 @@ void CMainDialog::AFChanged(int value)
 
 void CMainDialog::SelectTexturePathDialog()
 {
+	QDir data_path = QDir(QString::fromStdString(currentConfigApp->m_cd_path));
 	QString texture_path = QString::fromStdString(currentConfigApp->m_texture_path);
+	if (texture_path.startsWith(QDir::separator())) {
+		texture_path.remove(0, 1);
+	}
+	texture_path = data_path.absoluteFilePath(texture_path);
 	texture_path = QFileDialog::getExistingDirectory(
 		this,
 		tr("Open Directory"),
@@ -571,10 +606,10 @@ void CMainDialog::SelectTexturePathDialog()
 		QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
 	);
 
-	QDir texture_dir = QDir(texture_path);
-
-	if (texture_dir.exists()) {
-		currentConfigApp->m_texture_path = texture_dir.absolutePath().toStdString();
+	if (!texture_path.isEmpty() && data_path.exists(texture_path)) {
+		texture_path = data_path.relativeFilePath(texture_path);
+		texture_path.prepend(QDir::separator());
+		currentConfigApp->m_texture_path = texture_path.toStdString();
 		m_modified = true;
 	}
 	UpdateInterface();
@@ -582,12 +617,80 @@ void CMainDialog::SelectTexturePathDialog()
 
 void CMainDialog::TexturePathEdited()
 {
-	QDir texture_dir = QDir(m_ui->texturePath->text());
+	QString texture_path = m_ui->texturePath->text();
+	QDir data_path = QDir(QString::fromStdString(currentConfigApp->m_cd_path));
 
-	if (texture_dir.exists()) {
-		currentConfigApp->m_texture_path = texture_dir.absolutePath().toStdString();
+	if (texture_path.startsWith(QDir::separator())) {
+		texture_path.remove(0, 1);
+	}
+	if (data_path.exists(data_path.absoluteFilePath(texture_path))) {
+		texture_path = data_path.relativeFilePath(texture_path);
+		texture_path.prepend(QDir::separator());
+		currentConfigApp->m_texture_path = texture_path.toStdString();
 		m_modified = true;
 	}
+	UpdateInterface();
+}
+
+void CMainDialog::AddCustomAssetPath()
+{
+	QDir data_path = QDir(QString::fromStdString(currentConfigApp->m_cd_path));
+	QStringList new_files = QFileDialog::getOpenFileNames(
+		this,
+		"Select one or more files to open",
+		data_path.absolutePath(),
+		"Interleaf files (*.si)"
+	);
+	if (!new_files.isEmpty()) {
+		for (QString& item : new_files) {
+			item = data_path.relativeFilePath(item);
+		}
+		assetPaths += new_files;
+		m_modified = true;
+	}
+	UpdateAssetPaths();
+}
+
+void CMainDialog::RemoveCustomAssetPath()
+{
+	assetPaths.removeAt(m_ui->customAssetPaths->currentRow());
+	m_modified = true;
+	UpdateAssetPaths();
+}
+
+void CMainDialog::SelectedPathChanged(int currentRow)
+{
+	m_ui->removeCustomAssetPath->setEnabled(currentRow != -1 ? true : false);
+}
+
+void CMainDialog::EditCustomAssetPath()
+{
+	QDir data_path = QDir(QString::fromStdString(currentConfigApp->m_cd_path));
+	QString prev_asset_path = assetPaths[m_ui->customAssetPaths->currentRow()];
+	QString new_file = QFileDialog::getOpenFileName(
+		this,
+		"Open File",
+		data_path.absoluteFilePath(prev_asset_path),
+		"Interleaf files (*.si)"
+	);
+	if (!new_file.isEmpty()) {
+		new_file = data_path.relativeFilePath(new_file);
+		assetPaths[m_ui->customAssetPaths->currentRow()] = new_file;
+		m_modified = true;
+	}
+	UpdateAssetPaths();
+}
+
+void CMainDialog::UpdateAssetPaths()
+{
+	assetPaths.removeDuplicates();
+
+	for (QString& path : assetPaths) {
+		if (!path.startsWith(QDir::separator())) {
+			path.prepend(QDir::separator());
+		}
+	}
+	currentConfigApp->m_custom_asset_path = assetPaths.join(u',').toStdString();
 	UpdateInterface();
 }
 

@@ -127,7 +127,7 @@ MxResult LegoAct2::Create(MxDSAction& p_dsAction)
 		}
 
 		m_gameState = state;
-		m_gameState->m_unk0x08 = 0;
+		m_gameState->m_state = 0;
 
 		switch (GameState()->GetLoadedAct()) {
 		case LegoGameState::e_act2:
@@ -294,7 +294,7 @@ MxLong LegoAct2::Notify(MxParam& p_param)
 			result = 1;
 			break;
 		}
-		case c_notificationType22:
+		case c_notificationAct2Brick:
 			SoundManager()->GetCacheSoundManager()->Play("28bng", NULL, FALSE);
 
 			m_unk0x10c1++;
@@ -647,7 +647,7 @@ MxLong LegoAct2::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 		local2world[3][1] += 1.5;
 		local2world2[3][1] -= 0.1;
 
-		m_bricks[m_nextBrick - 1].FUN_1007a670(local2world, local2world2, boundary);
+		m_bricks[m_nextBrick - 1].Place(local2world, local2world2, boundary);
 	}
 
 	return 0;
@@ -671,7 +671,7 @@ MxResult LegoAct2::FUN_100516b0()
 	local2world[3][1] += 1.3;
 	local2world2[3][1] -= 0.1;
 
-	brick.FUN_1007a670(local2world, local2world2, boundary);
+	brick.Place(local2world, local2world2, boundary);
 	m_nextBrick++;
 	m_unk0x10c4 = 9;
 	m_unk0x10d0 = 0;
@@ -933,7 +933,7 @@ MxResult LegoAct2::BadEnding()
 	LegoPathActor* actor = m_unk0x1138;
 	actor->SetActorState(LegoPathActor::c_disabled);
 
-	m_gameState->SetUnknown0x08(104);
+	m_gameState->SetState(LegoAct2State::c_badEnding);
 	m_destLocation = LegoGameState::e_infomain;
 	TransitionManager()->StartTransition(MxTransitionManager::e_mosaic, 50, FALSE, FALSE);
 

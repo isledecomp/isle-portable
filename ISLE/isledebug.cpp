@@ -68,10 +68,10 @@ public:
 	static void InsideBuildingManager()
 	{
 		auto buildingManager = Lego()->GetBuildingManager();
-		ImGui::Text("nextVariant: %d", buildingManager->m_nextVariant);
+		ImGui::Text("nextVariant: %u", buildingManager->m_nextVariant);
 		ImGui::Text("m_boundariesDetermined: %d", buildingManager->m_boundariesDetermined);
 		ImGui::Text("m_hideAfterAnimation: %d", buildingManager->m_hideAfterAnimation);
-		ImGui::Text("#Animated Entries", buildingManager->m_numEntries);
+		ImGui::Text("#Animated Entries: %d", buildingManager->m_numEntries);
 		if (buildingManager->m_numEntries) {
 			if (ImGui::BeginTable("Animated Entries", 6, ImGuiTableFlags_Borders)) {
 				ImGui::TableSetupColumn("ROI Name");
@@ -293,7 +293,7 @@ void IsleDebug_Render()
 				ImGui::Text("Current act: %d", gameState->GetCurrentAct());
 				ImGui::Text("Loaded act: %d", gameState->GetLoadedAct());
 				ImGui::Text("Previous area: %d", gameState->m_previousArea);
-				ImGui::Text("Unknown 0x42c: %d", gameState->m_unk0x42c);
+				ImGui::Text("Saved previous area: %d", gameState->m_savedPreviousArea);
 				ImGui::Value("Player count", gameState->m_playerCount);
 				ImGui::TreePop();
 			}

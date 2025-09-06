@@ -34,7 +34,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: 'Linux',               os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: true,  linux: true, werror: true,   clang-tidy: true }
+          - { name: 'Linux',               os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: true,  linux: true, werror: true,   clang-tidy: true, build-assets: true }
           - { name: 'Linux (Debug)',       os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: true,  linux: true, werror: true,   clang-tidy: true,   debug: true }
           - { name: 'MSVC (x86)',          os: 'windows-latest', generator: 'Ninja',                 dx5: true,  config: false, msvc: true,  werror: false,  clang-tidy: false,  vc-arch: 'amd64_x86' }
           - { name: 'MSVC (x64)',          os: 'windows-latest', generator: 'Ninja',                 dx5: false, config: true,  msvc: true,  werror: false,  clang-tidy: false,   vc-arch: 'amd64' }
@@ -43,10 +43,11 @@ jobs:
           - { name: 'msys2 mingw32',       os: 'windows-latest', generator: 'Ninja',                 dx5: false, config: false, mingw: true, werror: true,   clang-tidy: true,   msystem: 'mingw32', msys-env: 'mingw-w64-i686',   shell: 'msys2 {0}' }
           - { name: 'msys2 mingw64',       os: 'windows-latest', generator: 'Ninja',                 dx5: false, config: true,  mingw: true, werror: true,   clang-tidy: true,   msystem: 'mingw64', msys-env: 'mingw-w64-x86_64', shell: 'msys2 {0}' }
           - { name: 'macOS',               os: 'macos-latest',   generator: 'Ninja',                 dx5: false, config: true,  brew: true,  werror: true,   clang-tidy: false }
-          - { name: 'iOS',                 os: 'macos-15',       generator: 'Xcode',                 dx5: false, config: false, brew: true,  werror: true,   clang-tidy: false,  cmake-args: '-DCMAKE_SYSTEM_NAME=iOS' }
+          - { name: 'iOS',                 os: 'macos-15',       generator: 'Xcode',                 dx5: false, config: false, brew: true,  werror: true,   clang-tidy: false,  cmake-args: '-DCMAKE_SYSTEM_NAME=iOS', ios: true }
           - { name: 'Emscripten',          os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, emsdk: true, werror: true,   clang-tidy: false,  cmake-wrapper: 'emcmake' }
           - { name: 'Nintendo 3DS',        os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, n3ds: true,  werror: true,   clang-tidy: false,  container: 'devkitpro/devkitarm:latest', cmake-args: '-DCMAKE_TOOLCHAIN_FILE=/opt/devkitpro/cmake/3DS.cmake' }
           - { name: 'Xbox One',            os: 'windows-latest', generator: 'Visual Studio 17 2022', dx5: false, config: false, msvc: true,  werror: false,  clang-tidy: false,  vc-arch: 'amd64', cmake-args: '-DCMAKE_SYSTEM_NAME=WindowsStore -DCMAKE_SYSTEM_VERSION=10.0.26100.0', xbox-one: true}
+          - { name: 'Android',             os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, android: true, werror: true, clang-tidy: false,}
           - { name: 'Vita',                os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, vita: true,  werror: true,   clang-tidy: false, cmake-args: '--preset vita'}
     steps:
       - name: Setup vcvars
@@ -94,8 +95,15 @@ jobs:
         if: ${{ matrix.brew }}
         run: |
           brew update
+          brew uninstall cmake || true
           brew install cmake ninja llvm qt6
           echo "LLVM_ROOT=$(brew --prefix llvm)/bin" >> $GITHUB_ENV
+      
+      - name: Use latest Xcode
+        if: ${{ matrix.ios }}
+        uses: maxim-lobanov/setup-xcode@v1.6.0
+        with:
+          xcode-version: latest-stable
 
       - name: Setup Emscripten
         uses: mymindstorm/setup-emsdk@master
@@ -119,23 +127,64 @@ jobs:
 
       - uses: actions/checkout@v4
 
+      - name: Checkout LFS
+        if: ${{ matrix.build-assets }}
+        run: |
+          git lfs pull
+
+      - name: Setup Java (Android)
+        if: ${{ matrix.android }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Get CMake (Android)
+        if: ${{ matrix.android }}
+        uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: 3.30.5
+
+      - name: Build (Android)
+        if: ${{ matrix.android }}
+        env:
+          SIGNING_KEY_ALIAS: ${{ secrets.keyAlias }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.keyPassword }}
+          SIGNING_STORE_PASSWORD: ${{ secrets.keystorePassword }}
+          SIGNING_STORE_FILE: ${{ github.workspace }}/release.keystore
+        run: |
+          echo "${{ secrets.keystore }}" | base64 -d > release.keystore
+          cd android-project
+          ./gradlew $([ -n "$SIGNING_KEY_ALIAS" ] && echo packageRelease || echo assembleDebug ) \
+            --info \
+            -PcmakeArgs="-DCMAKE_BUILD_TYPE=Release \
+              -DISLE_USE_DX5=${{ !!matrix.dx5 }} \
+              -DISLE_BUILD_CONFIG=${{ !!matrix.config }} \
+              -DENABLE_CLANG_TIDY=${{ !!matrix.clang-tidy  }} \
+              -DISLE_WERROR=${{ !!matrix.werror }} \
+              -DISLE_DEBUG=${{ matrix.debug || 'OFF' }} \
+              -Werror=dev"
+
       - name: Configure (CMake)
+        if: ${{ !matrix.android }}
         run: |
           ${{ matrix.cmake-wrapper || '' }} cmake -S . -B build -G "${{ matrix.generator }}" \
             ${{ matrix.cmake-args || '' }} \
             -DCMAKE_BUILD_TYPE=Release \
             -DISLE_USE_DX5=${{ !!matrix.dx5 }} \
             -DISLE_BUILD_CONFIG=${{ !!matrix.config }} \
+            -DISLE_BUILD_ASSETS=${{ !!matrix.build-assets }} \
             -DENABLE_CLANG_TIDY=${{ !!matrix.clang-tidy  }} \
             -DISLE_WERROR=${{ !!matrix.werror }} \
             -DISLE_DEBUG=${{ matrix.debug || 'OFF' }} \
             -Werror=dev
 
       - name: Build (CMake)
+        if: ${{ !matrix.android }}
         run: cmake --build build --verbose --config Release
 
       - name: Package (CPack)
-        if: ${{ !matrix.n3ds && !matrix.vita }}
+        if: ${{ !matrix.n3ds && !matrix.android && !matrix.vita }}
         run: |
           cd build
           success=0
@@ -191,6 +240,16 @@ jobs:
           mkdir dist
           mv *.vpk dist/
 
+      - name: Package (Android)
+        if: ${{ matrix.android }}
+        run: |
+          mkdir -p build/dist
+          mv  android-project/app/build/outputs/apk/*/*.apk build/dist/
+
+      - name: Package Assets Separately
+        if: matrix.build-assets
+        run: (cd build/assets && zip -r ../dist/isle-assets.zip .)
+
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -200,6 +259,7 @@ jobs:
             build/dist/*.AppImage
             build/dist/*.3dsx
             build/dist/*.cia
+            build/dist/*.apk
             build/dist/*.vpk
 
   flatpak:

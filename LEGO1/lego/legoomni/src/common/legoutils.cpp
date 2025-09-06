@@ -2,6 +2,7 @@
 
 #include "3dmanager/lego3dmanager.h"
 #include "anim/legoanim.h"
+#include "extensions/siloader.h"
 #include "isle.h"
 #include "isle_actions.h"
 #include "islepathactor.h"
@@ -36,6 +37,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <vec.h>
+
+using namespace Extensions;
 
 // FUNCTION: LEGO1 0x1003dd70
 // FUNCTION: BETA10 0x100d3410
@@ -500,6 +503,12 @@ MxBool RemoveFromCurrentWorld(const MxAtomId& p_atomId, MxS32 p_id)
 {
 	LegoWorld* world = CurrentWorld();
 
+	auto result =
+		Extension<SiLoader>::Call(HandleRemove, SiLoader::StreamObject{p_atomId, p_id}, world).value_or(std::nullopt);
+	if (result) {
+		return result.value();
+	}
+
 	if (world) {
 		MxCore* object = world->Find(p_atomId, p_id);
 
@@ -525,9 +534,20 @@ MxBool RemoveFromCurrentWorld(const MxAtomId& p_atomId, MxS32 p_id)
 }
 
 // FUNCTION: LEGO1 0x1003ee80
-MxBool RemoveFromWorld(MxAtomId& p_entityAtom, MxS32 p_entityId, MxAtomId& p_worldAtom, MxS32 p_worldEntityId)
+MxBool RemoveFromWorld(
+	const MxAtomId& p_entityAtom,
+	MxS32 p_entityId,
+	const MxAtomId& p_worldAtom,
+	MxS32 p_worldEntityId
+)
 {
 	LegoWorld* world = FindWorld(p_worldAtom, p_worldEntityId);
+
+	auto result = Extension<SiLoader>::Call(HandleRemove, SiLoader::StreamObject{p_entityAtom, p_entityId}, world)
+					  .value_or(std::nullopt);
+	if (result) {
+		return result.value();
+	}
 
 	if (world) {
 		MxCore* object = world->Find(p_entityAtom, p_entityId);

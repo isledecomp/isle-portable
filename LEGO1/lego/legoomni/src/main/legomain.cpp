@@ -1,6 +1,7 @@
 #include "legomain.h"
 
 #include "3dmanager/lego3dmanager.h"
+#include "extensions/siloader.h"
 #include "islepathactor.h"
 #include "legoanimationmanager.h"
 #include "legobuildingmanager.h"
@@ -39,6 +40,8 @@ DECOMP_SIZE_ASSERT(LegoOmni, 0x140)
 DECOMP_SIZE_ASSERT(LegoOmni::WorldContainer, 0x1c)
 DECOMP_SIZE_ASSERT(LegoWorldList, 0x18)
 DECOMP_SIZE_ASSERT(LegoWorldListCursor, 0x10)
+
+using namespace Extensions;
 
 // GLOBAL: LEGO1 0x100f6718
 // GLOBAL: BETA10 0x101ee748
@@ -404,6 +407,8 @@ LegoOmni* LegoOmni::GetInstance()
 void LegoOmni::AddWorld(LegoWorld* p_world)
 {
 	m_worldList->Append(p_world);
+
+	Extension<SiLoader>::Call(HandleWorld, p_world);
 }
 
 // FUNCTION: LEGO1 0x1005adb0
@@ -471,6 +476,11 @@ LegoWorld* LegoOmni::FindWorld(const MxAtomId& p_atom, MxS32 p_entityid)
 // STUB: BETA10 0x1008e93e
 void LegoOmni::DeleteObject(MxDSAction& p_dsAction)
 {
+	auto result = Extension<SiLoader>::Call(HandleDelete, p_dsAction).value_or(std::nullopt);
+	if (result && result.value()) {
+		return;
+	}
+
 	if (p_dsAction.GetAtomId().GetInternal() != NULL) {
 		LegoWorld* world = FindWorld(p_dsAction.GetAtomId(), p_dsAction.GetObjectId());
 		if (world) {
@@ -660,6 +670,13 @@ void LegoOmni::CreateBackgroundAudio()
 // FUNCTION: BETA10 0x1008f7e0
 MxResult LegoOmni::Start(MxDSAction* p_dsAction)
 {
+	{
+		auto result = Extension<SiLoader>::Call(HandleStart, *p_dsAction).value_or(std::nullopt);
+		if (result) {
+			return result.value();
+		}
+	}
+
 	MxResult result = MxOmni::Start(p_dsAction);
 #ifdef BETA10
 	this->m_action = *p_dsAction;
@@ -713,4 +730,9 @@ void LegoOmni::Resume()
 {
 	MxOmni::Resume();
 	SetAppCursor(e_cursorArrow);
+}
+
+void LegoOmni::LoadSiLoader()
+{
+	Extension<SiLoader>::Call(Load);
 }
