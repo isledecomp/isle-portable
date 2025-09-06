@@ -9,10 +9,10 @@
             <text_field id="save_path" title="msg_save_path" max_length="255" min_length="0" keyboard_type="alphabet" key="save_path" default_value=""/>
             <list id="transition_type" title="msg_transition_type" key="transition_type" default_value="0">
                 <list_item id="transition_none" title="msg_transition_none" value="0" />
-                <list_item id="transition_dissolve" title="msg_transition_dissolve" value="1" />
-                <list_item id="transition_mosaic" title="msg_transition_mosaic" value="2" />
-                <list_item id="transition_wipe_down" title="msg_transition_wipe_down" value="3" />
-                <list_item id="transition_windows" title="msg_transition_windows" value="4" />
+                <list_item id="transition_dissolve" title="msg_transition_dissolve" value="2" />
+                <list_item id="transition_mosaic" title="msg_transition_mosaic" value="3" />
+                <list_item id="transition_wipe_down" title="msg_transition_wipe_down" value="4" />
+                <list_item id="transition_windows" title="msg_transition_windows" value="5" />
             </list>
             <toggle_switch id="music" title="msg_music" key="music" default_value="1"/>
             <toggle_switch id="3d_sound" title="msg_3d_sound" key="3d_sound" default_value="1"/>
@@ -27,6 +27,11 @@
                 <list_item id="quality_low" title="msg_quality_low" value="0" />
                 <list_item id="quality_medium" title="msg_quality_medium" value="1" />
                 <list_item id="quality_high" title="msg_quality_high" value="2" />
+            </list>
+            <list id="msaa" title="msg_msaa" key="msaa" default_value="4">
+                <list_item id="msaa_1" title="msg_1x" value="1" />
+                <list_item id="msaa_2" title="msg_2x" value="2" />
+                <list_item id="msaa_4" title="msg_4x" value="4" />
             </list>
         </setting_list>
 

@@ -34,6 +34,11 @@
     <string id="msg_max_lod" src="Maximum LOD" />
     <string id="msg_max_actors" src="Maximum Actors" />
 
+    <string id="msg_msaa" src="MSAA" />
+    <string id="msg_1x" src="1x" />
+    <string id="msg_2x" src="2x" />
+    <string id="msg_4x" src="4x" />
+
     <!-- Controls -->
     <string id="msg_touch_control_scheme" src="Touch Control Scheme" />
     <string id="msg_virtual_gamepad" src="Virtual Gamepad" />

@@ -23,6 +23,7 @@ target_link_libraries(iniparser_paf
   ScePafStdc_stub
   SceLibKernel_stub
   SceLibc_stub
+  SceFios2_stub
 )
 
 target_include_directories(iniparser_paf PUBLIC
@@ -62,8 +63,8 @@ target_link_libraries(isle-config PRIVATE
   ScePafStdc_stub
   SceAppSettings_stub
   SceFios2_stub
+  SceLibc_stub
 
-  #Isle::iniparser
   iniparser_paf
 )
 

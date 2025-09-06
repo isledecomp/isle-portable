@@ -1,4 +1,3 @@
-#include "fios2.h"
 #include "pafinc.h"
 
 #include <app_settings.h>
@@ -8,6 +7,8 @@
 #include <psp2/kernel/clib.h>
 #include <psp2/kernel/modulemgr.h>
 #include <psp2/sysmodule.h>
+
+int sceLibcHeapSize = 10 * 1024 * 1024;
 
 const char* g_iniPath = "ux0:data/isledecomp/isle/isle.ini";
 
@@ -23,6 +24,7 @@ struct Config {
 	int m_transition_type;
 	int m_texture_quality;
 	int m_model_quality;
+	int m_msaa;
 	int m_touch_scheme;
 	bool m_wide_view_angle;
 	bool m_music;
@@ -48,6 +50,7 @@ struct Config {
 		m_texture_path = "/textures/";
 		m_model_quality = 2;
 		m_texture_quality = 1;
+		m_msaa = 4;
 		m_max_lod = 3.5f;
 		m_max_actors = 20;
 	}
@@ -61,9 +64,10 @@ struct Config {
 
 #define GET_INT(x, name) x = iniparser_getint(dict, name, x)
 #define GET_FLOAT(x, name) x = iniparser_getdouble(dict, name, x)
-#define GET_STRING(x, name)                                                                                            \
-	x = iniparser_getstring(dict, name, x.c_str());                                                                    \
-	sceClibPrintf("%s: %s\n", name, x.c_str())
+#define GET_STRING(x, name) do { \
+	const char* val = iniparser_getstring(dict, name, nullptr); \
+	if(val != nullptr) x = val; \
+} while(0)
 #define GET_BOOLEAN(x, name) x = iniparser_getboolean(dict, name, x)
 
 		GET_STRING(m_base_path, "isle:diskpath");
@@ -82,6 +86,7 @@ struct Config {
 		GET_BOOLEAN(m_draw_cursor, "isle:Draw Cursor");
 		GET_INT(m_model_quality, "isle:Island Quality");
 		GET_INT(m_texture_quality, "isle:Island Texture");
+		GET_INT(m_msaa, "isle:MSAA");
 		// GET_BOOLEAN(m_use_joystick, "isle:UseJoystick");
 		GET_BOOLEAN(m_haptic, "isle:Haptic");
 		GET_BOOLEAN(m_music, "isle:Music");
@@ -143,6 +148,7 @@ struct Config {
 
 		SetIniInt("isle:Island Quality", m_model_quality);
 		SetIniInt("isle:Island Texture", m_texture_quality);
+		SetIniInt("isle:MSAA", m_msaa);
 
 		SetIniFloat("isle:Max LOD", m_max_lod);
 		SetIniInt("isle:Max Allowed Extras", m_max_actors);
@@ -160,6 +166,8 @@ struct Config {
 		FILE* fd = fopen(g_iniPath, "w");
 		if (fd) {
 			iniparser_dump_ini(dict, fd);
+		} else {
+			sceClibPrintf("failed to write isle.ini\n");
 		}
 		iniparser_freedict(dict);
 
@@ -170,9 +178,39 @@ struct Config {
 	{
 		appSettings->SetString("data_path", this->m_base_path.c_str());
 		appSettings->SetString("save_path", this->m_save_path.c_str());
+		appSettings->SetInt("transition_type", this->m_transition_type);
+		appSettings->SetBool("music", this->m_music);
+		appSettings->SetBool("3d_sound", this->m_3d_sound);
+		appSettings->SetInt("island_texture_quality", this->m_texture_quality);
+		appSettings->SetInt("island_model_quality", this->m_model_quality);
+		appSettings->SetInt("msaa", this->m_msaa);
+		appSettings->SetInt("touch_control_scheme", this->m_touch_scheme);
+		appSettings->SetBool("rumble", this->m_haptic);
+		appSettings->SetBool("texture_loader_extension", this->m_texture_load);
+		appSettings->SetString("texture_loader_path", this->m_texture_path.c_str());
 	}
 
-	void FromSettings(sce::AppSettings* appSettings) {}
+	void FromSettings(sce::AppSettings* appSettings) {
+		char text_buf[255];
+
+		#define GET_STRING(x, name) appSettings->GetString(name, text_buf, sizeof(text_buf), x.c_str()); x = text_buf;
+
+		GET_STRING(this->m_base_path, "data_path");
+		GET_STRING(this->m_save_path, "save_path");
+		appSettings->GetInt("transition_type", &this->m_transition_type, this->m_transition_type);
+		printf("this->m_transition_type: %d\n", this->m_transition_type);
+		appSettings->GetBool("music", &this->m_music, this->m_music);
+		appSettings->GetBool("3d_sound", &this->m_3d_sound, this->m_3d_sound);
+		appSettings->GetInt("island_texture_quality", &this->m_texture_quality, this->m_texture_quality);
+		appSettings->GetInt("island_model_quality", &this->m_model_quality, this->m_model_quality);
+		appSettings->GetInt("msaa", &this->m_msaa, this->m_msaa);
+		appSettings->GetInt("touch_control_scheme", &this->m_touch_scheme, this->m_touch_scheme);
+		appSettings->GetBool("rumble", &this->m_haptic, this->m_haptic);
+		appSettings->GetBool("texture_loader_extension", &this->m_texture_load, this->m_texture_load);
+		GET_STRING(this->m_texture_path, "texture_loader_path");
+
+		#undef GET_STRING
+	}
 };
 
 Config g_config;
@@ -212,13 +250,14 @@ int load_app_settings_plugin()
 	return 0;
 }
 
-bool do_launch = false;
+int exit_type = 0;
 
 void save_and_exit()
 {
 	g_config.FromSettings(g_appSettings);
 	g_config.SaveIni();
 	g_fw->RequestShutdown();
+	exit_type = 1;
 }
 
 void save_and_launch()
@@ -226,7 +265,7 @@ void save_and_launch()
 	g_config.FromSettings(g_appSettings);
 	g_config.SaveIni();
 	g_fw->RequestShutdown();
-	do_launch = true;
+	exit_type = 2;
 }
 
 void CBOnStartPageTransition(const char* elementId, int32_t type)
@@ -280,7 +319,9 @@ int32_t CBOnPress2(const char* elementId, const char* newValue)
 
 void CBOnTerm(int32_t result)
 {
-	sceKernelExitProcess(0);
+	if(exit_type == 0) {
+		sceKernelExitProcess(0);
+	}
 }
 
 const wchar_t* CBOnGetString(const char* elementId)
@@ -328,44 +369,8 @@ void open_settings()
 	g_appSetIf->ShowFooter();
 }
 
-#define MAX_PATH_LENGTH 256
-
-static int64_t g_OpStorage[SCE_FIOS_OP_STORAGE_SIZE(64, MAX_PATH_LENGTH) / sizeof(int64_t) + 1];
-static int64_t g_ChunkStorage[SCE_FIOS_CHUNK_STORAGE_SIZE(1024) / sizeof(int64_t) + 1];
-static int64_t g_FHStorage[SCE_FIOS_FH_STORAGE_SIZE(1024, MAX_PATH_LENGTH) / sizeof(int64_t) + 1];
-static int64_t g_DHStorage[SCE_FIOS_DH_STORAGE_SIZE(32, MAX_PATH_LENGTH) / sizeof(int64_t) + 1];
-
-void init_fios2()
-{
-	sceSysmoduleLoadModule(SCE_SYSMODULE_FIOS2);
-	SceFiosParams params = SCE_FIOS_PARAMS_INITIALIZER;
-	params.opStorage.pPtr = g_OpStorage;
-	params.opStorage.length = sizeof(g_OpStorage);
-	params.chunkStorage.pPtr = g_ChunkStorage;
-	params.chunkStorage.length = sizeof(g_ChunkStorage);
-	params.fhStorage.pPtr = g_FHStorage;
-	params.fhStorage.length = sizeof(g_FHStorage);
-	params.dhStorage.pPtr = g_DHStorage;
-	params.dhStorage.length = sizeof(g_DHStorage);
-	params.pathMax = MAX_PATH_LENGTH;
-
-	params.threadAffinity[SCE_FIOS_IO_THREAD] = 0x10000;
-	params.threadAffinity[SCE_FIOS_CALLBACK_THREAD] = 0;
-	params.threadAffinity[SCE_FIOS_DECOMPRESSOR_THREAD] = 0;
-
-	params.threadPriority[SCE_FIOS_IO_THREAD] = 64;
-	params.threadPriority[SCE_FIOS_CALLBACK_THREAD] = 191;
-	params.threadPriority[SCE_FIOS_DECOMPRESSOR_THREAD] = 191;
-	int ret = sceFiosInitialize(&params);
-	if (ret < 0) {
-		sceClibPrintf("sceFiosInitialize: %08x\n", ret);
-	}
-}
-
 int paf_main(void)
 {
-	init_fios2();
-
 	paf::Framework::InitParam fwParam;
 	fwParam.mode = paf::Framework::Mode_Normal;
 
@@ -396,8 +401,9 @@ int paf_main(void)
 	open_settings();
 	paf_fw->Run();
 
-	if (do_launch) {
-		sceAppMgrLoadExec("app0:/eboot.bin", NULL, NULL);
+	if (exit_type == 2) {
+		int ret = sceAppMgrLoadExec("app0:/eboot.bin", NULL, NULL);
+		printf("sceAppMgrLoadExec: %08x\n", ret);
 	}
 	return 0;
 }

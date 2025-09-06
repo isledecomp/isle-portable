@@ -53,12 +53,14 @@ typedef struct GXMContext {
 
 	// display
 	SceGxmRenderTarget* renderTarget;
+	bool renderTargetInit = false;
 	void* displayBuffers[GXM_DISPLAY_BUFFER_COUNT];
 	SceUID displayBuffersUid[GXM_DISPLAY_BUFFER_COUNT];
 	SceGxmColorSurface displayBuffersSurface[GXM_DISPLAY_BUFFER_COUNT];
 	SceGxmSyncObject* displayBuffersSync[GXM_DISPLAY_BUFFER_COUNT];
 	int backBufferIndex = 0;
 	int frontBufferIndex = 1;
+	SceGxmMultisampleMode displayMsaa;
 
 	// depth buffer
 	SceUID depthBufferUid;
@@ -77,6 +79,15 @@ typedef struct GXMContext {
 	void swap_display();
 	void copy_frontbuffer();
 	int init(SceGxmMultisampleMode msaaMode);
+	void init_cdram_allocator();
+	int init_context();
+	int create_display_buffers(SceGxmMultisampleMode msaaMode);
+	void init_clear_mesh();
+	void destroy_display_buffers();
+	int register_base_shaders();
+	int patch_base_shaders(SceGxmMultisampleMode msaaMode);
+	void destroy_base_shaders();
+
 	void destroy();
 	void clear(float r, float g, float b, bool new_scene);
 	void* alloc(size_t size, size_t align);

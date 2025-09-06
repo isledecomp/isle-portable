@@ -180,33 +180,29 @@ int gxm_library_init()
 
 GXMContext* gxm;
 
-int GXMContext::init(SceGxmMultisampleMode msaaMode)
+void GXMContext::init_cdram_allocator()
 {
-	if (this->context) {
-		return 0;
-	}
+	// allocator
+	this->cdramMem = vita_mem_alloc(
+		SCE_KERNEL_MEMBLOCK_TYPE_USER_CDRAM_RW,
+		CDRAM_POOL_SIZE,
+		16,
+		SCE_GXM_MEMORY_ATTRIB_READ | SCE_GXM_MEMORY_ATTRIB_WRITE,
+		&this->cdramUID,
+		"cdram_pool"
+	);
+	this->cdramPool = SDL_malloc(tlsf_size());
+	tlsf_create(this->cdramPool);
+	tlsf_add_pool(this->cdramPool, this->cdramMem, CDRAM_POOL_SIZE);
+}
 
-	int ret = gxm_library_init();
-	if (ret < 0) {
-		return ret;
-	}
+int GXMContext::init_context()
+{
+	int ret;
 
 	const unsigned int patcherBufferSize = 64 * 1024;
 	const unsigned int patcherVertexUsseSize = 64 * 1024;
 	const unsigned int patcherFragmentUsseSize = 64 * 1024;
-
-	const uint32_t alignedWidth = ALIGN(VITA_GXM_SCREEN_WIDTH, SCE_GXM_TILE_SIZEX);
-	const uint32_t alignedHeight = ALIGN(VITA_GXM_SCREEN_HEIGHT, SCE_GXM_TILE_SIZEY);
-	uint32_t sampleCount = alignedWidth * alignedHeight;
-	uint32_t depthStrideInSamples = alignedWidth;
-
-	if (msaaMode == SCE_GXM_MULTISAMPLE_4X) {
-		sampleCount *= 4;
-		depthStrideInSamples *= 2;
-	}
-	else if (msaaMode == SCE_GXM_MULTISAMPLE_2X) {
-		sampleCount *= 2;
-	}
 
 	// allocate buffers
 	this->vdmRingBuffer = vita_mem_alloc(
@@ -306,6 +302,25 @@ int GXMContext::init(SceGxmMultisampleMode msaaMode)
 	if (ret < 0) {
 		return ret;
 	}
+	return 0;
+}
+
+int GXMContext::create_display_buffers(SceGxmMultisampleMode msaaMode)
+{
+	int ret;
+
+	const uint32_t alignedWidth = ALIGN(VITA_GXM_SCREEN_WIDTH, SCE_GXM_TILE_SIZEX);
+	const uint32_t alignedHeight = ALIGN(VITA_GXM_SCREEN_HEIGHT, SCE_GXM_TILE_SIZEY);
+	uint32_t sampleCount = alignedWidth * alignedHeight;
+	uint32_t depthStrideInSamples = alignedWidth;
+
+	if (msaaMode == SCE_GXM_MULTISAMPLE_4X) {
+		sampleCount *= 4;
+		depthStrideInSamples *= 2;
+	}
+	else if (msaaMode == SCE_GXM_MULTISAMPLE_2X) {
+		sampleCount *= 2;
+	}
 
 	// render target
 	SceGxmRenderTargetParams renderTargetParams;
@@ -321,6 +336,7 @@ int GXMContext::init(SceGxmMultisampleMode msaaMode)
 	if (ret < 0) {
 		return ret;
 	}
+	this->renderTargetInit = true;
 
 	for (int i = 0; i < GXM_DISPLAY_BUFFER_COUNT; i++) {
 		this->displayBuffers[i] = vita_mem_alloc(
@@ -387,19 +403,56 @@ int GXMContext::init(SceGxmMultisampleMode msaaMode)
 		return ret;
 	}
 
-	// allocator
-	this->cdramMem = vita_mem_alloc(
-		SCE_KERNEL_MEMBLOCK_TYPE_USER_CDRAM_RW,
-		CDRAM_POOL_SIZE,
-		16,
-		SCE_GXM_MEMORY_ATTRIB_READ | SCE_GXM_MEMORY_ATTRIB_WRITE,
-		&this->cdramUID,
-		"cdram_pool"
-	);
-	this->cdramPool = SDL_malloc(tlsf_size());
-	tlsf_create(this->cdramPool);
-	tlsf_add_pool(this->cdramPool, this->cdramMem, CDRAM_POOL_SIZE);
+	return 0;
+}
 
+void GXMContext::destroy_display_buffers()
+{
+	if (this->renderTargetInit) {
+		sceGxmFinish(this->context);
+		sceGxmDestroyRenderTarget(this->renderTarget);
+		this->renderTargetInit = false;
+	}
+	for (int i = 0; i < GXM_DISPLAY_BUFFER_COUNT; i++) {
+		if (this->displayBuffers[i]) {
+			vita_mem_free(this->displayBuffersUid[i]);
+			this->displayBuffers[i] = nullptr;
+			this->displayBuffersUid[i] = -1;
+			sceGxmSyncObjectDestroy(this->displayBuffersSync[i]);
+		}
+	}
+
+	if (this->depthBufferData) {
+		vita_mem_free(this->depthBufferUid);
+		this->depthBufferData = nullptr;
+		this->depthBufferUid = -1;
+	}
+
+	if (this->stencilBufferData) {
+		vita_mem_free(this->stencilBufferUid);
+		this->stencilBufferData = nullptr;
+		this->stencilBufferUid = -1;
+	}
+}
+
+void GXMContext::init_clear_mesh()
+{
+	this->clearVertices = static_cast<GXMVertex2D*>(this->alloc(sizeof(GXMVertex2D) * 4, 4));
+	this->clearVertices[0] = {.position = {-1.0, 1.0}, .texCoord = {0, 0}};
+	this->clearVertices[1] = {.position = {1.0, 1.0}, .texCoord = {0, 0}};
+	this->clearVertices[2] = {.position = {-1.0, -1.0}, .texCoord = {0, 0}};
+	this->clearVertices[3] = {.position = {1.0, -1.0}, .texCoord = {0, 0}};
+
+	this->clearIndices = static_cast<uint16_t*>(this->alloc(sizeof(uint16_t) * 4, 4));
+	this->clearIndices[0] = 0;
+	this->clearIndices[1] = 1;
+	this->clearIndices[2] = 2;
+	this->clearIndices[3] = 3;
+}
+
+int GXMContext::register_base_shaders()
+{
+	int ret;
 	// register plane, color, image shaders
 	ret = SCE_ERR(
 		sceGxmShaderPatcherRegisterProgram,
@@ -430,7 +483,13 @@ int GXMContext::init(SceGxmMultisampleMode msaaMode)
 	if (ret < 0) {
 		return ret;
 	}
+	this->color_uColor = sceGxmProgramFindParameterByName(colorFragmentProgramGxp, "uColor"); // vec4
+	return 0;
+}
 
+int GXMContext::patch_base_shaders(SceGxmMultisampleMode msaaMode)
+{
+	int ret;
 	{
 		GET_SHADER_PARAM(positionAttribute, planeVertexProgramGxp, "aPosition", -1);
 		GET_SHADER_PARAM(texCoordAttribute, planeVertexProgramGxp, "aTexCoord", -1);
@@ -498,26 +557,70 @@ int GXMContext::init(SceGxmMultisampleMode msaaMode)
 		}
 	}
 
-	this->color_uColor = sceGxmProgramFindParameterByName(colorFragmentProgramGxp, "uColor"); // vec4
+	return 0;
+}
 
-	this->clearVertices = static_cast<GXMVertex2D*>(this->alloc(sizeof(GXMVertex2D) * 4, 4));
-	this->clearVertices[0] = {.position = {-1.0, 1.0}, .texCoord = {0, 0}};
-	this->clearVertices[1] = {.position = {1.0, 1.0}, .texCoord = {0, 0}};
-	this->clearVertices[2] = {.position = {-1.0, -1.0}, .texCoord = {0, 0}};
-	this->clearVertices[3] = {.position = {1.0, -1.0}, .texCoord = {0, 0}};
+void GXMContext::destroy_base_shaders()
+{
+	sceGxmShaderPatcherReleaseVertexProgram(this->shaderPatcher, this->planeVertexProgram);
+	sceGxmShaderPatcherReleaseFragmentProgram(this->shaderPatcher, this->colorFragmentProgram);
+	sceGxmShaderPatcherReleaseFragmentProgram(this->shaderPatcher, this->imageFragmentProgram);
+}
 
-	this->clearIndices = static_cast<uint16_t*>(this->alloc(sizeof(uint16_t) * 4, 4));
-	this->clearIndices[0] = 0;
-	this->clearIndices[1] = 1;
-	this->clearIndices[2] = 2;
-	this->clearIndices[3] = 3;
+int GXMContext::init(SceGxmMultisampleMode msaaMode)
+{
+	int ret = 0;
+	ret = gxm_library_init();
+	if (ret < 0) {
+		return ret;
+	}
+	if (this->cdramPool == nullptr) {
+		this->init_cdram_allocator();
+	}
 
+	if (this->context == nullptr) {
+		ret = this->init_context();
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	if (this->planeVertexProgramId == 0) {
+		ret = this->register_base_shaders();
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	if (this->clearVertices == nullptr) {
+		this->init_clear_mesh();
+	}
+
+	// recreate when msaa is different
+	if (msaaMode != this->displayMsaa && this->renderTargetInit) {
+		this->destroy_display_buffers();
+		this->destroy_base_shaders();
+	}
+
+	if (!this->renderTargetInit) {
+		ret = this->create_display_buffers(msaaMode);
+		if (ret < 0) {
+			return ret;
+		}
+		ret = this->patch_base_shaders(msaaMode);
+		if (ret < 0) {
+			return ret;
+		}
+	}
 	return 0;
 }
 
 static int inuse_mem = 0;
 void* GXMContext::alloc(size_t size, size_t align)
 {
+	if (this->cdramPool == nullptr) {
+		this->init_cdram_allocator();
+	}
 	DEBUG_ONLY_PRINTF("cdram_alloc(%d, %d) inuse=%d ", size, align, inuse_mem);
 	void* ptr = tlsf_memalign(this->cdramPool, align, size);
 	DEBUG_ONLY_PRINTF("ptr=%p\n", ptr);
@@ -602,25 +705,9 @@ void GXMContext::destroy()
 	if (gxm->context) {
 		sceGxmFinish(gxm->context);
 	}
-	if (this->renderTarget) {
-		sceGxmDestroyRenderTarget(this->renderTarget);
-	}
-	for (int i = 0; i < GXM_DISPLAY_BUFFER_COUNT; i++) {
-		if (this->displayBuffersUid[i]) {
-			vita_mem_free(this->displayBuffersUid[i]);
-			this->displayBuffers[i] = nullptr;
-			sceGxmSyncObjectDestroy(this->displayBuffersSync[i]);
-		}
-	}
 
-	if (this->depthBufferUid) {
-		vita_mem_free(this->depthBufferUid);
-	}
-	if (this->stencilBufferUid) {
-		vita_mem_free(this->stencilBufferUid);
-	}
-	this->stencilBufferData = nullptr;
-	this->depthBufferData = nullptr;
+	this->destroy_display_buffers();
+	this->destroy_base_shaders();
 
 	sceGxmShaderPatcherDestroy(this->shaderPatcher);
 	sceGxmDestroyContext(this->context);
@@ -695,6 +782,7 @@ GXMRenderer::GXMRenderer(DWORD width, DWORD height, DWORD msaaSamples)
 	int ret;
 	if (!gxm) {
 		gxm = (GXMContext*) SDL_malloc(sizeof(GXMContext));
+		memset(gxm, 0, sizeof(GXMContext));
 	}
 	ret = SCE_ERR(gxm->init, msaaMode);
 	if (ret < 0) {
@@ -1020,7 +1108,7 @@ static void convertTextureMetadata(
 	}
 	*textureStride = ALIGN(surface->w, 8) * bytesPerPixel;
 
-	*mipLevels = 1; // look weird right now
+	*mipLevels = 1; // look weird
 
 	size_t totalSize = 0;
 	int currentW = surface->w;
@@ -1242,7 +1330,7 @@ Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi, float 
 
 	// allocate gpu memory
 	uint8_t* textureData = (uint8_t*) gxm->alloc(textureSize, textureAlignment);
-	copySurfaceToGxm(surface, (uint8_t*) textureData, textureStride, paletteOffset, mipLevels);
+	copySurfaceToGxm(surface, textureData, textureStride, paletteOffset, mipLevels);
 
 	SceGxmTexture gxmTexture;
 	SCE_ERR(
