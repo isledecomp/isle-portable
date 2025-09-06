@@ -300,22 +300,6 @@ void IsleApp::SetupVideoFlags(
 
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 {
-#ifdef __vita__
-	SceAppUtilInitParam appUtilInitParam = {0};
-	SceAppUtilBootParam appUtilBootParam = {0};
-	sceAppUtilInit(&appUtilInitParam, &appUtilBootParam);
-	SceAppUtilAppEventParam eventParam = {0};
-	sceAppUtilReceiveAppEvent(&eventParam);
-	if (eventParam.type == 0x05) {
-		char buffer[2048];
-		sceAppUtilAppEventParseLiveArea(&eventParam, buffer);
-		if (strstr(buffer, "-config")) {
-			sceClibPrintf("Loading Config App.\n");
-			sceAppMgrLoadExec("app0:/isle-config.self", NULL, NULL);
-		}
-	}
-#endif
-
 	*appstate = NULL;
 
 	SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
@@ -339,6 +323,23 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 
 	// Create global app instance
 	g_isle = new IsleApp();
+
+#ifdef __vita__
+	SceAppUtilInitParam appUtilInitParam = {0};
+	SceAppUtilBootParam appUtilBootParam = {0};
+	sceAppUtilInit(&appUtilInitParam, &appUtilBootParam);
+	SceAppUtilAppEventParam eventParam = {0};
+	sceAppUtilReceiveAppEvent(&eventParam);
+	if (eventParam.type == 0x05) {
+		g_isle->LoadConfig();
+		char buffer[2048];
+		sceAppUtilAppEventParseLiveArea(&eventParam, buffer);
+		if (strstr(buffer, "-config")) {
+			sceClibPrintf("Loading Config App.\n");
+			sceAppMgrLoadExec("app0:/isle-config.self", NULL, NULL);
+		}
+	}
+#endif
 
 	switch (g_isle->ParseArguments(argc, argv)) {
 	case SDL_APP_FAILURE:
