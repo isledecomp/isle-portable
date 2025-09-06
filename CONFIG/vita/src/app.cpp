@@ -108,6 +108,7 @@ struct Config {
 
 		SetDictString("isle:diskpath", "ux0:data/isledecomp/isle/DATA/disk");
 		SetDictString("isle:cdpath", "ux0:data/isledecomp/isle");
+		SetDictString("isle:savepath", "ux0:data/isledecomp/isle");
 		SetDictInt("isle:MSAA", 4);
 
 		SetDictInt("isle:Display Bit Depth", 32);
