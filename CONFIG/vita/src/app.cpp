@@ -102,6 +102,14 @@ struct Config {
 		dict = dictionary_new(0);
 
 		// set defaults
+		iniparser_set(this->dict, "isle", nullptr);
+		iniparser_set(dict, "extensions", NULL);
+		iniparser_set(this->dict, "texture loader", nullptr);
+
+		SetDictString("isle:diskpath", "ux0:data/isledecomp/isle/DATA/disk");
+		SetDictString("isle:cdpath", "ux0:data/isledecomp/isle");
+		SetDictInt("isle:MSAA", 4);
+
 		SetDictInt("isle:Display Bit Depth", 32);
 		SetDictBool("isle:Flip Surfaces", false);
 		SetDictBool("isle:Full Screen", true);
@@ -166,7 +174,7 @@ struct Config {
 			switch (m.type) {
 			case 'f': // float, AppSettings doesnt have float so just use string
 			case 's': {
-				const char* value = dictionary_get(this->dict, m.key_ini, "");
+				const char* value = iniparser_getstring(this->dict, m.key_ini, "");
 				this->settings->SetString(m.key_app, value);
 				break;
 			}
@@ -195,9 +203,9 @@ struct Config {
 			switch (m.type) {
 			case 'f': // float, AppSettings doesnt have float so just use string
 			case 's': {
-				const char* def = dictionary_get(this->dict, m.key_ini, "");
+				const char* def = iniparser_getstring(this->dict, m.key_ini, "");
 				this->settings->GetString(m.key_app, this->buffer, sizeof(this->buffer), def);
-				dictionary_set(this->dict, m.key_ini, buffer);
+				iniparser_set(this->dict, m.key_ini, buffer);
 				break;
 			}
 			case 'i': {
