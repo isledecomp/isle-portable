@@ -56,11 +56,13 @@ private:
 
 inline static void OpenGL1Renderer_EnumDevice(const IDirect3DMiniwin* d3d, LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
+#ifndef __PSP__
 	Direct3DRMRenderer* device = OpenGL1Renderer::Create(640, 480, d3d->GetMSAASamples());
 	if (!device) {
 		return;
 	}
 	delete device;
+#endif
 
 	D3DDEVICEDESC halDesc = {};
 	halDesc.dcmColorModel = D3DCOLORMODEL::RGB;
