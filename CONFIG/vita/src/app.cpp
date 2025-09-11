@@ -106,8 +106,8 @@ struct Config {
 		iniparser_set(dict, "extensions", NULL);
 		iniparser_set(this->dict, "texture loader", nullptr);
 
-		SetDictString("isle:diskpath", "ux0:data/isledecomp/isle/DATA/disk");
-		SetDictString("isle:cdpath", "ux0:data/isledecomp/isle");
+		SetDictString("isle:diskpath", "ux0:data/isledecomp/isle/disk");
+		SetDictString("isle:cdpath", "ux0:data/isledecomp/isle/cd");
 		SetDictString("isle:savepath", "ux0:data/isledecomp/isle");
 		SetDictInt("isle:MSAA", 4);
 

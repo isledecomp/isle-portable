@@ -17,15 +17,6 @@ void operator delete(void* ptr, unsigned int n)
 
 int paf_main(void);
 
-typedef struct _ScePafInit { // size is 0x18
-	SceSize global_heap_size;
-	int a2;
-	int a3;
-	int cdlg_mode;
-	int heap_opt_param1;
-	int heap_opt_param2;
-} ScePafInit;
-
 extern "C" int module_start(SceSize args, void* argp)
 {
 	int load_res;
@@ -33,11 +24,9 @@ extern "C" int module_start(SceSize args, void* argp)
 	SceSysmoduleOpt sysmodule_opt;
 
 	init_param.global_heap_size = 0x1000000;
-	init_param.a2 = 0xEA60;
-	init_param.a3 = 0x40000;
 	init_param.cdlg_mode = 0;
-	init_param.heap_opt_param1 = 0;
-	init_param.heap_opt_param2 = 0;
+	init_param.global_heap_alignment = 0;
+	init_param.global_heap_disable_assert_on_alloc_failure = 0;
 
 	load_res = 0xDEADBEEF;
 	sysmodule_opt.flags = 0;

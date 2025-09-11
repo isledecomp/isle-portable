@@ -1,13 +1,8 @@
 #ifndef __PAFSTD__
 #define __PAFSTD__
 
+#include <paf/std/stdc.h>
 #include <inttypes.h>
-#include <paf/std/stdlib.h>
-#include <paf/std/string.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 #define malloc sce_paf_malloc
 #define memcpy sce_paf_memcpy
@@ -15,6 +10,12 @@
 #define memmove sce_paf_memmove
 #define free sce_paf_free
 #define calloc sce_paf_calloc
+#define strcmp sce_paf_strcmp
+#define strlen sce_paf_strlen
+#define strncmp sce_paf_strncmp
+#define strchr sce_paf_strchr
+#define strtol sce_paf_strtol
+#define atof sce_paf_atof
 
 // _ctype_ isnt called that in scelibc, so just stub the functions that are needed
 

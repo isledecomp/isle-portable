@@ -7,8 +7,8 @@ include("${VITASDK}/share/vita.cmake" REQUIRED)
 include(FetchContent)
 FetchContent_Declare(
   ScePaf_External
-  URL https://github.com/olebeck/ScePaf/releases/download/v20/ScePaf-1.0.0.zip
-  URL_HASH SHA256=e96b917d5f627db62cf173f90785b2bdab7e936f79e0a59ccdf9253b96120dff
+  URL https://github.com/olebeck/ScePaf/releases/download/v21/ScePaf-1.0.0.zip
+  URL_HASH SHA256=357b914a5c99ea17afe0edc8787a05cbf2ecce2f1d73bb9be69f371a294b8943
   UPDATE_DISCONNECTED TRUE
 )
 FetchContent_MakeAvailable(ScePaf_External)
