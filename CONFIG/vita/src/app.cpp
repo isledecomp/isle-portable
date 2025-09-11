@@ -1,7 +1,6 @@
-#include <paf.h>
-
 #include <app_settings.h>
 #include <iniparser.h>
+#include <paf.h>
 #include <psp2/appmgr.h>
 #include <psp2/io/fcntl.h>
 #include <psp2/kernel/clib.h>

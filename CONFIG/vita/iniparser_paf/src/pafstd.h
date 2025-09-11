@@ -1,8 +1,8 @@
 #ifndef __PAFSTD__
 #define __PAFSTD__
 
-#include <paf/std/stdc.h>
 #include <inttypes.h>
+#include <paf/std/stdc.h>
 
 #define malloc sce_paf_malloc
 #define memcpy sce_paf_memcpy

@@ -1,5 +1,4 @@
 #include <paf.h>
-
 #include <psp2/kernel/clib.h>
 #include <psp2/kernel/modulemgr.h>
 #include <psp2/kernel/processmgr.h>
