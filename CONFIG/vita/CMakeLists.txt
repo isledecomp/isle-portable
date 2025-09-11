@@ -7,8 +7,8 @@ include("${VITASDK}/share/vita.cmake" REQUIRED)
 include(FetchContent)
 FetchContent_Declare(
   ScePaf_External
-  URL https://github.com/olebeck/ScePaf/releases/download/v17/ScePaf-1.0.0.zip
-  URL_HASH SHA256=8547bb98dcba623634e7701fc98172063bd0a77facebfe4932f43c17ff5f4da9
+  URL https://github.com/olebeck/ScePaf/releases/download/v20/ScePaf-1.0.0.zip
+  URL_HASH SHA256=e96b917d5f627db62cf173f90785b2bdab7e936f79e0a59ccdf9253b96120dff
   UPDATE_DISCONNECTED TRUE
 )
 FetchContent_MakeAvailable(ScePaf_External)
@@ -67,10 +67,6 @@ target_link_libraries(isle-config PRIVATE
   SceLibc_stub
 
   iniparser_paf
-)
-
-target_include_directories(isle-config PUBLIC
-  include
 )
 
 vita_create_self(isle-config.self isle-config
