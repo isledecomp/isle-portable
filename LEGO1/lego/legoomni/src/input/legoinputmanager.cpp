@@ -41,7 +41,7 @@ LegoInputManager::LegoInputManager()
 	m_y = 0;
 	m_controlManager = NULL;
 	m_unk0x81 = FALSE;
-	m_unk0x88 = FALSE;
+	m_inputProcessingDisabled = FALSE;
 	m_unk0x195 = 0;
 	m_unk0x335 = FALSE;
 	m_unk0x336 = FALSE;
@@ -248,7 +248,7 @@ void LegoInputManager::QueueEvent(NotificationId p_id, MxU8 p_modifier, MxLong p
 {
 	LegoEventNotificationParam param = LegoEventNotificationParam(p_id, NULL, p_modifier, p_x, p_y, p_key);
 
-	if (((!m_unk0x88) || ((m_unk0x335 && (param.GetNotification() == c_notificationButtonDown)))) ||
+	if (((!m_inputProcessingDisabled) || ((m_unk0x335 && (param.GetNotification() == c_notificationButtonDown)))) ||
 		((m_unk0x336 && (p_key == SDLK_SPACE)))) {
 		ProcessOneEvent(param);
 	}
@@ -499,9 +499,10 @@ void LegoInputManager::StopAutoDragTimer()
 }
 
 // FUNCTION: LEGO1 0x1005cff0
+// FUNCTION: BETA10 0x10096a10
 void LegoInputManager::EnableInputProcessing()
 {
-	m_unk0x88 = FALSE;
+	m_inputProcessingDisabled = FALSE;
 	g_clickedObjectId = -1;
 	g_clickedAtom = NULL;
 }

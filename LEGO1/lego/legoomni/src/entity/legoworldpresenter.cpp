@@ -59,7 +59,7 @@ LegoWorldPresenter::~LegoWorldPresenter()
 		PlantManager()->LoadWorldInfo(worldId);
 		AnimationManager()->LoadWorldInfo(worldId);
 		BuildingManager()->LoadWorldInfo();
-		result = ((LegoWorld*) m_entity)->VTable0x5c();
+		result = ((LegoWorld*) m_entity)->WaitForTransition();
 	}
 
 	if (result == FALSE) {

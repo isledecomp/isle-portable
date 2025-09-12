@@ -205,7 +205,7 @@ MxResult LegoCarBuild::Create(MxDSAction& p_dsAction)
 		}
 
 		m_buildState = buildState;
-		m_unk0x174 = m_buildState->m_unk0x4d;
+		m_unk0x174 = m_buildState->m_finishedBuild;
 
 		GameState()->StopArea(LegoGameState::e_previousArea);
 
@@ -515,10 +515,10 @@ void LegoCarBuild::AddSelectedPartToBuild()
 			FUN_100243a0();
 		}
 		else {
-			m_buildState->m_unk0x4d = TRUE;
+			m_buildState->m_finishedBuild = TRUE;
 			InvokeAction(Extra::e_start, m_atomId, m_carId, NULL);
 			NotificationManager()->Send(this, MxNotificationParam());
-			m_buildState->m_animationState = LegoVehicleBuildState::e_unknown4;
+			m_buildState->m_animationState = LegoVehicleBuildState::e_finishedBuild;
 			m_buildState->m_placedPartCount = 0;
 		}
 	}
@@ -674,7 +674,8 @@ MxLong LegoCarBuild::Notify(MxParam& p_param)
 				((LegoEventNotificationParam&) p_param).GetY()
 			);
 
-			if (result || m_unk0x10a || m_buildState->m_animationState == 4 || m_buildState->m_animationState == 6) {
+			if (result || m_unk0x10a || m_buildState->m_animationState == LegoVehicleBuildState::e_finishedBuild ||
+				m_buildState->m_animationState == LegoVehicleBuildState::e_exiting) {
 				m_unk0x109 = 0;
 				break;
 			}
@@ -687,9 +688,10 @@ MxLong LegoCarBuild::Notify(MxParam& p_param)
 			break;
 		case c_notificationButtonDown:
 			assert(m_buildState);
-			if (((m_buildState->m_animationState != 4) && (m_buildState->m_animationState != 6)) &&
-				(m_buildState->m_animationState != 2)) {
-				m_buildState->m_animationState = LegoVehicleBuildState::e_unknown0;
+			if (((m_buildState->m_animationState != LegoVehicleBuildState::e_finishedBuild) &&
+				 (m_buildState->m_animationState != LegoVehicleBuildState::e_exiting)) &&
+				(m_buildState->m_animationState != LegoVehicleBuildState::e_settingUpMovie)) {
+				m_buildState->m_animationState = LegoVehicleBuildState::e_none;
 				result = SelectPartFromMousePosition(
 					((LegoEventNotificationParam&) p_param).GetX(),
 					((LegoEventNotificationParam&) p_param).GetY()
@@ -738,7 +740,8 @@ MxLong LegoCarBuild::Notify(MxParam& p_param)
 // FUNCTION: BETA10 0x1006cc48
 undefined4 LegoCarBuild::FUN_10024250(LegoEventNotificationParam* p_param)
 {
-	if (p_param->GetKey() == ' ' && m_buildState->m_animationState != 4 && m_buildState->m_animationState != 2) {
+	if (p_param->GetKey() == ' ' && m_buildState->m_animationState != LegoVehicleBuildState::e_finishedBuild &&
+		m_buildState->m_animationState != LegoVehicleBuildState::e_settingUpMovie) {
 		if (m_numAnimsRun > 0) {
 			DeleteObjects(&m_atomId, 500, 0x1fe);
 			BackgroundAudioManager()->RaiseVolume();
@@ -759,7 +762,7 @@ void LegoCarBuild::ReadyWorld()
 
 	if (BackgroundAudioManager()->GetEnabled()) {
 		InvokeAction(Extra::ActionType::e_start, *g_jukeboxScript, FUN_10025ee0(m_carId), NULL);
-		m_buildState->m_animationState = LegoVehicleBuildState::e_unknown2;
+		m_buildState->m_animationState = LegoVehicleBuildState::e_settingUpMovie;
 		NotificationManager()->Send(this, MxNotificationParam());
 	}
 	else {
@@ -802,12 +805,12 @@ undefined4 LegoCarBuild::FUN_10024480(MxActionNotificationParam* p_param)
 	MxS32 result = 0;
 
 	switch (m_buildState->m_animationState) {
-	case 3:
+	case LegoVehicleBuildState::e_cutscene:
 		BackgroundAudioManager()->RaiseVolume();
-		m_buildState->m_animationState = LegoVehicleBuildState::e_unknown0;
+		m_buildState->m_animationState = LegoVehicleBuildState::e_none;
 		result = 1;
 		break;
-	case 6:
+	case LegoVehicleBuildState::e_exiting:
 		if (p_param->GetAction()->GetObjectId() == m_unk0x344) {
 			FUN_100243a0();
 			result = 1;
@@ -858,8 +861,8 @@ undefined4 LegoCarBuild::SelectPartFromMousePosition(MxLong p_x, MxLong p_y)
 		}
 	}
 	else {
-		if (m_animPresenter->FUN_10079c30(m_selectedPart->GetName())) {
-			m_unk0x114 = m_animPresenter->FUN_10079e20();
+		if (m_animPresenter->IsNextPartToPlace(m_selectedPart->GetName())) {
+			m_unk0x114 = m_animPresenter->GetTargetBoundingSphere();
 		}
 	}
 
@@ -905,7 +908,7 @@ undefined4 LegoCarBuild::FUN_100246e0(MxLong p_x, MxLong p_y)
 			m_PlaceBrick_Sound->Enable(TRUE);
 			m_animPresenter->SetShelfState(LegoCarBuildAnimPresenter::e_stopped);
 		}
-		else if (m_animPresenter->FUN_10079c30(m_selectedPart->GetName())) {
+		else if (m_animPresenter->IsNextPartToPlace(m_selectedPart->GetName())) {
 			if (SpheresIntersect(m_unk0x114, m_selectedPart->GetWorldBoundingSphere())) {
 				m_PlaceBrick_Sound->Enable(FALSE);
 				m_PlaceBrick_Sound->Enable(TRUE);
@@ -960,8 +963,8 @@ undefined4 LegoCarBuild::FUN_10024890(MxParam* p_param)
 		switch (param->m_clickedObjectId) {
 		// The enum values are all identical between CopterScript, DunecarScript, JetskiScript, and RacecarScript
 		case CopterScript::c_Info_Ctl:
-			if (m_buildState->m_animationState != LegoVehicleBuildState::e_unknown4 &&
-				m_buildState->m_animationState != LegoVehicleBuildState::e_unknown2 &&
+			if (m_buildState->m_animationState != LegoVehicleBuildState::e_finishedBuild &&
+				m_buildState->m_animationState != LegoVehicleBuildState::e_settingUpMovie &&
 				m_buildState->m_animationState != LegoVehicleBuildState::e_exiting &&
 				GameState()->GetCurrentAct() != LegoGameState::e_act2) {
 				if (m_numAnimsRun > 0) {
@@ -977,7 +980,7 @@ undefined4 LegoCarBuild::FUN_10024890(MxParam* p_param)
 			break;
 		case CopterScript::c_Exit_Ctl:
 			if (m_buildState->m_animationState != LegoVehicleBuildState::e_exiting &&
-				m_buildState->m_animationState != LegoVehicleBuildState::e_unknown4) {
+				m_buildState->m_animationState != LegoVehicleBuildState::e_finishedBuild) {
 				if (m_numAnimsRun > 0) {
 					DeleteObjects(&m_atomId, 500, 510);
 				}
@@ -987,13 +990,13 @@ undefined4 LegoCarBuild::FUN_10024890(MxParam* p_param)
 				if (GameState()->GetCurrentAct() == LegoGameState::e_act2) {
 					FUN_100243a0();
 				}
-				else if (m_animPresenter->AllPartsPlaced() || m_buildState->m_unk0x4d) {
-					m_buildState->m_unk0x4d = TRUE;
+				else if (m_animPresenter->AllPartsPlaced() || m_buildState->m_finishedBuild) {
+					m_buildState->m_finishedBuild = TRUE;
 					InvokeAction(Extra::e_start, m_atomId, m_carId, NULL);
 
 					NotificationManager()->Send(this, MxNotificationParam());
 
-					m_buildState->m_animationState = LegoVehicleBuildState::e_unknown4;
+					m_buildState->m_animationState = LegoVehicleBuildState::e_finishedBuild;
 				}
 				else {
 					FUN_10025720(4);
@@ -1066,8 +1069,8 @@ undefined4 LegoCarBuild::FUN_10024890(MxParam* p_param)
 			if (m_buildState->m_animationState != LegoVehicleBuildState::e_exiting) {
 				m_animPresenter->SetShelfState(LegoCarBuildAnimPresenter::e_selected);
 
-				if (m_animPresenter->AllPartsPlaced() || m_buildState->m_unk0x4d) {
-					m_buildState->m_unk0x4d = TRUE;
+				if (m_animPresenter->AllPartsPlaced() || m_buildState->m_finishedBuild) {
+					m_buildState->m_finishedBuild = TRUE;
 
 					// GameState()->GetCurrentAct() returns an MxS16 in BETA10
 					if (GameState()->GetCurrentAct() == 0) {
@@ -1076,7 +1079,7 @@ undefined4 LegoCarBuild::FUN_10024890(MxParam* p_param)
 						NotificationManager()->Send(this, MxNotificationParam());
 
 						assert(m_buildState);
-						m_buildState->m_animationState = LegoVehicleBuildState::e_unknown4;
+						m_buildState->m_animationState = LegoVehicleBuildState::e_finishedBuild;
 					}
 
 					else {
@@ -1156,7 +1159,7 @@ undefined4 LegoCarBuild::FUN_10024c20(MxNotificationParam* p_param)
 	assert(m_buildState);
 
 	switch (m_buildState->m_animationState) {
-	case 4:
+	case LegoVehicleBuildState::e_finishedBuild:
 		entity = (LegoEntity*) Find(m_atomId, m_carId);
 
 		if (entity && entity->GetROI()) {
@@ -1216,7 +1219,7 @@ undefined4 LegoCarBuild::FUN_10024c20(MxNotificationParam* p_param)
 			NotificationManager()->Send(this, MxNotificationParam());
 		}
 		break;
-	case 2:
+	case LegoVehicleBuildState::e_settingUpMovie:
 		MxU32 jukeboxScript;
 
 		switch (m_carId) {
@@ -1255,7 +1258,7 @@ void LegoCarBuild::FUN_10024ef0()
 	ResetViewVelocity();
 	m_buildState->m_animationState = LegoVehicleBuildState::e_cutscene;
 	FUN_10025720(FUN_10025d70());
-	m_buildState->m_unk0x4c += 1;
+	m_buildState->m_introductionCounter += 1;
 	Disable(FALSE, LegoOmni::c_disableInput | LegoOmni::c_disable3d | LegoOmni::c_clearScreen);
 }
 
@@ -1421,7 +1424,7 @@ void LegoCarBuild::FUN_10025450()
 	else {
 		const LegoChar* wiredName;
 
-		if (!m_animPresenter->FUN_10079c30(m_selectedPart->GetName())) {
+		if (!m_animPresenter->IsNextPartToPlace(m_selectedPart->GetName())) {
 			wiredName = m_animPresenter->GetWiredNameByPartName(m_selectedPart->GetName());
 		}
 		else {
@@ -1626,7 +1629,7 @@ void LegoCarBuild::FUN_10025d10(MxS32 p_param)
 // FUNCTION: LEGO1 0x10025d70
 MxS32 LegoCarBuild::FUN_10025d70()
 {
-	switch (m_buildState->m_unk0x4c % 3) {
+	switch (m_buildState->m_introductionCounter % 3) {
 	case 1:
 		return 1;
 	case 2:
@@ -1679,7 +1682,7 @@ MxBool LegoCarBuild::Escape()
 	InvokeAction(Extra::ActionType::e_stop, *g_jukeboxScript, targetEntityId, NULL);
 	DeleteObjects(&m_atomId, 500, 999);
 
-	m_buildState->m_animationState = LegoVehicleBuildState::e_unknown0;
+	m_buildState->m_animationState = LegoVehicleBuildState::e_none;
 	m_destLocation = LegoGameState::e_infomain;
 	return TRUE;
 }
@@ -1706,9 +1709,9 @@ MxS32 LegoCarBuild::FUN_10025ee0(undefined4 p_param1)
 LegoVehicleBuildState::LegoVehicleBuildState(const char* p_classType)
 {
 	m_className = p_classType;
-	m_unk0x4c = 0;
-	m_unk0x4d = FALSE;
-	m_unk0x4e = FALSE;
+	m_introductionCounter = 0;
+	m_finishedBuild = FALSE;
+	m_playedExitScript = FALSE;
 	m_placedPartCount = 0;
 }
 
@@ -1719,17 +1722,17 @@ MxResult LegoVehicleBuildState::Serialize(LegoStorage* p_storage)
 	LegoState::Serialize(p_storage);
 
 	if (p_storage->IsReadMode()) {
-		p_storage->ReadU8(m_unk0x4c);
-		p_storage->ReadU8(m_unk0x4d);
-		p_storage->ReadU8(m_unk0x4e);
+		p_storage->ReadU8(m_introductionCounter);
+		p_storage->ReadU8(m_finishedBuild);
+		p_storage->ReadU8(m_playedExitScript);
 #ifndef BETA10
 		p_storage->ReadU8(m_placedPartCount);
 #endif
 	}
 	else {
-		p_storage->WriteU8(m_unk0x4c);
-		p_storage->WriteU8(m_unk0x4d);
-		p_storage->WriteU8(m_unk0x4e);
+		p_storage->WriteU8(m_introductionCounter);
+		p_storage->WriteU8(m_finishedBuild);
+		p_storage->WriteU8(m_playedExitScript);
 #ifndef BETA10
 		p_storage->WriteU8(m_placedPartCount);
 #endif
