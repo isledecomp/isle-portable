@@ -10,7 +10,7 @@ Please note: this project is primarily dedicated to achieving platform independe
 
 Not finished.
 
-Status: [https://github.com/FilipAgain2763/isle-portmaster/yml/ci.yml
+Status: https://github.com/FilipAgain2763/isle-portmaster/yml/ci.yml
 
 
 ## Usage
