@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25...4.0 FATAL_ERROR)
 
-find_program(PSP2CGC NAMES ${CMAKE_CURRENT_SOURCE_DIR}/psp2cgc.exe psp2cgc.exe psp2cgc REQUIRED)
-find_program(PSP2SHADERPERF NAMES ${CMAKE_CURRENT_SOURCE_DIR}/psp2shaderperf.exe psp2shaderperf.exe psp2shaderperf REQUIRED)
+find_program(PSP2CGC NAMES ${CMAKE_CURRENT_SOURCE_DIR}/psp2cgc.exe psp2cgc.exe psp2cgc)
+find_program(PSP2SHADERPERF NAMES ${CMAKE_CURRENT_SOURCE_DIR}/psp2shaderperf.exe psp2shaderperf.exe psp2shaderperf)
 
 list(APPEND CGC_COMMON_FLAGS "-Wperf" "-cache" "-cachedir" "${CMAKE_CURRENT_BINARY_DIR}/cache" "-W4" "-Wsuppress=5206,5203")
 
