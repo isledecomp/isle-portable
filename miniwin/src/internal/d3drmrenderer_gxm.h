@@ -1,10 +1,10 @@
 #pragma once
 
+#include "../d3drm/backends/gxm/gxm_context.h"
 #include "d3drmrenderer.h"
 #include "d3drmtexture_impl.h"
 #include "ddpalette_impl.h"
 #include "ddraw_impl.h"
-#include "gxm_context.h"
 
 #include <SDL3/SDL.h>
 #include <psp2/gxm.h>
@@ -52,7 +52,7 @@ struct GXMSceneLightUniform {
 class GXMRenderer : public Direct3DRMRenderer {
 public:
 	static Direct3DRMRenderer* Create(DWORD width, DWORD height, DWORD msaaSamples);
-	GXMRenderer(DWORD width, DWORD height, DWORD msaaSamples);
+	GXMRenderer(DWORD width, DWORD height, SceGxmMultisampleMode msaaMode);
 	~GXMRenderer() override;
 
 	void PushLights(const SceneLight* lightsArray, size_t count) override;

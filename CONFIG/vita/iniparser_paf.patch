@@ -1,0 +1,53 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 4f7fdba..d388fc8 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,7 +1,7 @@
+ cmake_minimum_required(VERSION 3.18)
+ 
+ project(
+-  iniparser
++  iniparser_paf
+   DESCRIPTION "C library for parsing INI-style files"
+   HOMEPAGE_URL https://gitlab.com/iniparser/iniparser/
+   LANGUAGES C
+@@ -108,6 +108,19 @@ foreach(TARGET_TYPE ${TARGET_TYPES})
+               -pedantic)
+   endif(UNIX)
+ 
++  if(VITA)
++    target_compile_options(
++      ${TARGET_NAME}
++      PRIVATE -Wl,-q -Wall -fshort-wchar)
++    target_link_libraries(
++      ${TARGET_NAME}
++      PRIVATE SceLibc_stub
++    )
++    target_link_options(
++      ${TARGET_NAME}
++      PUBLIC -nostartfiles -nostdlib)
++  endif()
++
+   # install targets
+   install(
+     TARGETS ${TARGET_NAME}
+diff --git a/src/iniparser.c b/src/iniparser.c
+index 1086b46..8e0e9c2 100644
+--- a/src/iniparser.c
++++ b/src/iniparser.c
+@@ -14,6 +14,15 @@
+ #include <inttypes.h>
+ #include "iniparser.h"
+ 
++#ifdef __vita__
++extern FILE* _Stderr;
++#undef stderr
++#define stderr _Stderr
++extern const char _Ctype[];
++#undef __locale_ctype_ptr
++#define __locale_ctype_ptr() _Ctype
++#endif
++
+ /*---------------------------- Defines -------------------------------------*/
+ #define ASCIILINESZ         (1024)
+ #define INI_INVALID_KEY     ((char*)-1)

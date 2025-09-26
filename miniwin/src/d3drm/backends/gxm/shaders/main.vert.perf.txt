@@ -1,0 +1,87 @@
+Total estimated cost: 18 cycles, parallel mode
+Register count: 12 PAs, 0 temps, 56 SAs *
+Texture reads:  0 non-dependent, dependent: 0 unconditional, 0 conditional
+
+High level analysis:
+- One or multiple vertex outputs are misaligned due to a three coefficient TEXCOORD vertex output. This will lead to additional data movement instructions being generated. If only one three coefficient TEXCOORD output is present, assigning it the coordinate with the greatest index will allow the previous coordinates to be aligned.
+
+* Please refer to the Razor documentation for details regarding the meaning of these numbers. Decreasing the number of registers used will not necessarily increase performance
+
+Instruction statistics:
+Number of alu ops: 19
+Number of mem ops: 0
+Number of tex ops: 0
+Number of floating point ops: 14
+Number of integer ops: 0
+Number of pack ops: 0
+Number of mov ops: 4
+Number of nop ops: 0
+
+Constants:
+[DEFAULT  + 0  ] sa0   = (float4) uModelViewMatrix[4]
+[DEFAULT  + 32 ] sa32  = (float3) uNormalMatrix[3]
+[DEFAULT  + 16 ] sa16  = (float4) uProjectionMatrix[4]
+
+Vertex attributes:
+pa0   = (float4) aPosition
+pa4   = (float4) aNormal
+pa8   = (float4) aTexCoord
+
+
+Secondary program:
+ 0 :     nop                                                  
+ 1 :     mov.f32         i0.xyzw, sa8.xyzw                    
+ 2 :     mul.f32         i1.xyzw, sa16.xyzw, i0.xxxx          
+ 3 :     mad.f32         i1.xyzw, sa20.xyzw, i0.yyyy, i1.xyzw 
+ 4 :     mad.f32         i1.xyzw, sa24.xyzw, i0.zzzz, i1.xyzw 
+ 5 :     mad.f32         sa52.xy, sa28.xy, i0.ww, i1.xy       
+ 6 :     mad.f32         sa54.xy, sa30.xy, i0.ww, i1.zw       
+ 7 :     mov.f32         i1.xyzw, sa12.xyzw                   
+ 8 :     mul.f32         i2.xyzw, sa28.xyzw, i1.wwww          
+ 9 :     mad.f32         i2.xyzw, sa24.xyzw, i1.zzzz, i2.xyzw 
+ 10:     mad.f32         i2.xyzw, sa20.xyzw, i1.yyyy, i2.xyzw 
+ 11:     mad.f32         sa48.xy, sa16.xy, i1.xx, i2.xy       
+ 12:     mad.f32         sa50.xy, sa18.xy, i1.xx, i2.zw       
+ 13:     mov.f32         i2.xyzw, sa4.xyzw                    
+ 14:     mul.f32         i1.xyzw, sa16.xyzw, i2.xxxx          
+ 15:     mad.f32         i1.xyzw, sa20.xyzw, i2.yyyy, i1.xyzw 
+ 16:     mad.f32         i1.xyzw, sa24.xyzw, i2.zzzz, i1.xyzw 
+ 17:     mad.f32         sa44.xy, sa28.xy, i2.ww, i1.xy       
+ 18:     mad.f32         sa46.xy, sa30.xy, i2.ww, i1.zw       
+ 19:     mov.f32         i1.xyzw, sa0.xyzw                    
+ 20:     mul.f32         i0.xyzw, sa16.xyzw, i1.xxxx          
+ 20:     +mov.f32        sa4.xy, i1.yy                        
+ 21:     mad.f32         i0.xyzw, sa20.xyzw, i1.yyyy, i0.xyzw 
+ 22:     mad.f32         i0.xyzw, sa24.xyzw, i1.zzzz, i0.xyzw 
+ 23:     mad.f32         sa18.xy, sa28.xy, i1.ww, i0.xy       
+ 24:     mad.f32         sa16.xy, sa30.xy, i1.ww, i0.zw       
+ 25:     mov.f32         sa4.-y, i2.-y                        
+ 26:     mov.f32         sa6.xy, (sa8.y, sa12.y)              
+ 27:     mov.f32         sa0.x, i1.x                          
+ 28:     mov.f32         sa0.-y, i2.-x                        
+ 29:     mov.f32         sa8.-y, sa12.-x                      
+ 30:     mov.f32         sa10.-y, sa14.-x                     
+ 31:     mov.f32         sa2.xy, sa8.xy                       
+ 32:     mov.f32         sa8.x, i1.z                          
+ 33:     mov.f32         sa8.-y, i2.-z                        
+
+Primary program:
+ 0 :     mov.f32         o4.xy, pa8.xy                        
+ 1 :     mov.f32         i0.xyz, pa4.xyz                      
+ 2 :     mad.f32         i1.xyz, sa32.xyz, i0.xxx, {0, 0, 0}  
+ 3 :     mad.f32         i1.xyz, sa36.xyz, i0.yyy, i1.xyz     
+ 4 :     mad.f32         i0.xyz, sa40.xyz, i0.zzz, i1.xyz     
+ 5 :     mov.f32         i1.xyz, pa0.xyz                      
+ 6 :     mov.f32         i2.xyzw, sa48.xyzw                   
+ 7 :     mad.f32         i2.xyzw, sa52.xyzw, i1.zzzz, i2.xyzw 
+ 8 :     mad.f32         i2.xyzw, sa44.xyzw, i1.yyyy, i2.xyzw 
+ 9 :     mad.f32         o0.xy, sa18.xy, i1.xx, i2.xy         
+ 10:     mad.f32         o2.xy, sa16.xy, i1.xx, i2.zw         
+ 11:     dot.f32         o6.x, sa0.xyzw, i1.xyz1              
+ 12:     dot.f32         o6.-y, sa4.xyzw, i1.xyz1             
+ 13:     dot.f32         o6.--z, sa8.xyzw, i1.xyz1            
+ 14:     dot.f32         i1.x, i0.xyz, i0.xyz                 
+ 15:     rsq.f32         i1.x, i1.x                           
+ 16:     mad.f32         o10.xy, i0.yz, i1.xx, {0, 0}         
+ 17:     mad.f32         o8.-y, i0.-x, i1.-x, {0, 0}          
+

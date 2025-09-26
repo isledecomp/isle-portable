@@ -6,9 +6,9 @@ struct SceneLight {
 
 void main(
     float4 vPosition : POSITION,
+    float2 vTexCoord : TEXCOORD0,
     float3 vViewPos : TEXCOORD1,
     float3 vNormal : TEXCOORD2,
-    float2 vTexCoord : TEXCOORD3,
 
     uniform __nostrip SceneLight uLights[2] : BUFFER[0],
     uniform __nostrip float3 uAmbientLight : BUFFER[0],

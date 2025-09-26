@@ -176,16 +176,19 @@ struct Config {
 			case 's': {
 				const char* value = iniparser_getstring(this->dict, m.key_ini, "");
 				this->settings->SetString(m.key_app, value);
+				sceClibPrintf("ini->settings %s = %s\n", m.key_app, value);
 				break;
 			}
 			case 'i': {
 				int32_t value = iniparser_getint(this->dict, m.key_ini, 0);
 				this->settings->SetInt(m.key_app, value);
+				sceClibPrintf("ini->settings %s = %d\n", m.key_app, value);
 				break;
 			}
 			case 'b': {
 				bool value = iniparser_getboolean(this->dict, m.key_ini, 0) == 1;
 				this->settings->SetBool(m.key_app, value);
+				sceClibPrintf("ini->settings %s = %s\n", m.key_app, value ? "true" : "false");
 				break;
 			}
 			default: {
@@ -206,18 +209,21 @@ struct Config {
 				const char* def = iniparser_getstring(this->dict, m.key_ini, "");
 				this->settings->GetString(m.key_app, this->buffer, sizeof(this->buffer), def);
 				iniparser_set(this->dict, m.key_ini, buffer);
+				sceClibPrintf("settings->ini %s = %s\n", m.key_ini, buffer);
 				break;
 			}
 			case 'i': {
 				int32_t value = iniparser_getint(this->dict, m.key_ini, 0);
 				this->settings->GetInt(m.key_app, &value, value);
 				SetDictInt(m.key_ini, value);
+				sceClibPrintf("settings->ini %s = %d\n", m.key_ini, value);
 				break;
 			}
 			case 'b': {
 				bool value = iniparser_getboolean(this->dict, m.key_ini, 0) == 1;
 				this->settings->GetBool(m.key_app, &value, value);
 				SetDictBool(m.key_ini, value);
+				sceClibPrintf("settings->ini %s = %s\n", m.key_ini, value ? "true" : "false");
 				break;
 			}
 			default: {
@@ -384,7 +390,7 @@ void open_settings()
 	g_appSetIf->ShowFooter();
 }
 
-int paf_main(void)
+int main()
 {
 	paf::Framework::InitParam fwParam;
 	fwParam.mode = paf::Framework::Mode_Normal;

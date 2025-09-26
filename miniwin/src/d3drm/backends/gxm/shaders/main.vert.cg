@@ -8,9 +8,9 @@ void main(
     column_major uniform float4x4 uProjectionMatrix,
 
     out float4 vPosition : POSITION,
+    out float2 vTexCoord : TEXCOORD0,
     out float3 vViewPos : TEXCOORD1,
-    out float3 vNormal : TEXCOORD2,
-    out float2 vTexCoord : TEXCOORD3
+    out float3 vNormal : TEXCOORD2
 ) {
     float4 viewPos = mul(uModelViewMatrix, float4(aPosition, 1.0));
     vPosition = mul(uProjectionMatrix, viewPos);

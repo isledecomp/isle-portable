@@ -48,7 +48,7 @@ jobs:
           - { name: 'Nintendo 3DS',        os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, n3ds: true,  werror: true,   clang-tidy: false,  container: 'devkitpro/devkitarm:latest', cmake-args: '-DCMAKE_TOOLCHAIN_FILE=/opt/devkitpro/cmake/3DS.cmake' }
           - { name: 'Xbox One',            os: 'windows-latest', generator: 'Visual Studio 17 2022', dx5: false, config: false, msvc: true,  werror: false,  clang-tidy: false,  vc-arch: 'amd64', cmake-args: '-DCMAKE_SYSTEM_NAME=WindowsStore -DCMAKE_SYSTEM_VERSION=10.0.26100.0', xbox-one: true}
           - { name: 'Android',             os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, android: true, werror: true, clang-tidy: false,}
-          - { name: 'Vita',                os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, vita: true,  werror: true,   clang-tidy: false, cmake-args: '--preset vita'}
+          - { name: 'Vita',                os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, vita: true,  werror: true,   clang-tidy: false, cmake-args: '--toolchain /usr/local/vitasdk/share/vita.toolchain.cmake'}
     steps:
       - name: Setup vcvars
         if: ${{ !!matrix.msvc }}
@@ -122,7 +122,7 @@ jobs:
           export VITASDK=/usr/local/vitasdk
           export PATH=$VITASDK/bin:$PATH
           echo "VITASDK=/usr/local/vitasdk" >> $GITHUB_ENV
-          echo "PATH=$VITASDK/bin:$PATH" >> $GITHUB_ENV
+          echo "$VITASDK/bin" >> $GITHUB_PATH
           ./install-all.sh
 
       - uses: actions/checkout@v4

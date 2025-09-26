@@ -70,9 +70,12 @@ if(NOT (VITA OR WINDOWS_STORE))
 endif()
 
 if(VITA)
+  add_subdirectory(src/d3drm/backends/gxm/shaders)
+
   target_sources(miniwin PRIVATE
-    src/d3drm/backends/gxm/renderer.cpp
-    src/d3drm/backends/gxm/memory.cpp
+    src/d3drm/backends/gxm/gxm_context.cpp
+    src/d3drm/backends/gxm/gxm_renderer.cpp
+    src/d3drm/backends/gxm/gxm_memory.cpp
     src/d3drm/backends/gxm/tlsf.c
   )
   target_link_libraries(miniwin PRIVATE
@@ -80,11 +83,10 @@ if(VITA)
     SceRazorCapture_stub
     SceRazorHud_stub
     taihen_stub
+    gxm_shaders
   )
   list(APPEND GRAPHICS_BACKENDS USE_GXM)
   list(REMOVE_ITEM GRAPHICS_BACKENDS USE_SOFTWARE_RENDER USE_SDL_GPU)
-  # for shaders incbin
-  target_include_directories(miniwin PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/d3drm/backends/gxm)
 endif()
 
 if(NINTENDO_3DS)

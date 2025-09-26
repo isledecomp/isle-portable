@@ -1,4 +1,5 @@
 #include "gxm_memory.h"
+
 #include "tlsf.h"
 #include "utils.h"
 
@@ -6,12 +7,6 @@
 #include <psp2/gxm.h>
 #include <psp2/kernel/clib.h>
 #include <psp2/kernel/sysmem.h>
-
-#define CDRAM_POOL_SIZE 64 * 1024 * 1024
-
-static SceUID cdramAllocatorUID = -1;
-static tlsf_t cdramAllocator = nullptr;
-int inuse_mem = 0;
 
 void* patcher_host_alloc(void* user_data, unsigned int size)
 {

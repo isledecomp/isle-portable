@@ -1,8 +1,12 @@
 #pragma once
 
-#include "tlsf.h"
-
 #include <psp2/gxm.h>
+
+#define VITA_GXM_SCREEN_WIDTH 960
+#define VITA_GXM_SCREEN_HEIGHT 544
+#define VITA_GXM_SCREEN_STRIDE 1024
+#define VITA_GXM_PENDING_SWAPS 2
+#define VITA_GXM_PIXEL_FORMAT SCE_DISPLAY_PIXELFORMAT_A8B8G8R8
 
 #define GXM_DISPLAY_BUFFER_COUNT 3
 
@@ -72,7 +76,7 @@ typedef struct GXMContext {
 	// allocator
 	SceUID cdramUID;
 	void* cdramMem;
-	tlsf_t cdramPool;
+	void* cdramPool;
 
 	bool sceneStarted;
 
@@ -96,3 +100,6 @@ typedef struct GXMContext {
 
 // global so that common dialog can be rendererd without GXMRenderer
 extern GXMContext* gxm;
+
+extern bool with_razor_capture;
+extern bool with_razor_hud;

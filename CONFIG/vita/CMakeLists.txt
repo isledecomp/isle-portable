@@ -13,31 +13,24 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(ScePaf_External)
 
-add_library(iniparser_paf
-  iniparser_paf/src/dictionary.c
-  iniparser_paf/src/iniparser.c
-)
 
-target_compile_options(iniparser_paf PRIVATE -O3)
-
-target_link_libraries(iniparser_paf
-  ScePafStdc_stub
-  SceLibKernel_stub
-  SceLibc_stub
-  SceFios2_stub
+FetchContent_Declare(
+  iniparser_paf
+  GIT_REPOSITORY "https://gitlab.com/iniparser/iniparser.git"
+  GIT_TAG "v4.2.6"
+  UPDATE_DISCONNECTED TRUE
+  EXCLUDE_FROM_ALL
+  PATCH_COMMAND patch -p1 -i ${CMAKE_CURRENT_SOURCE_DIR}/iniparser_paf.patch
 )
-
-target_include_directories(iniparser_paf PUBLIC
-  iniparser_paf/src/
-)
-
-target_compile_options(iniparser_paf PRIVATE
-  -Wl,-q -Wall -fno-builtin -fshort-wchar -Wno-unused-function -Wno-sign-compare
-)
+block()
+  set(BUILD_DOCS off)
+  set(BUILD_SHARED_LIBS off)
+  FetchContent_MakeAvailable(iniparser_paf)
+endblock()
 
 add_executable(isle-config
+  src/paf_runtime.cpp  
   src/app.cpp
-  src/main.cpp
 )
 
 set_target_properties(isle-config PROPERTIES
@@ -66,7 +59,7 @@ target_link_libraries(isle-config PRIVATE
   SceFios2_stub
   SceLibc_stub
 
-  iniparser_paf
+  iniparser_paf-static
 )
 
 vita_create_self(isle-config.self isle-config

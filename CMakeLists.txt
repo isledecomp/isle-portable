@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.25...4.0 FATAL_ERROR)
 
-project(isle LANGUAGES CXX C VERSION 0.1)
+project(isle LANGUAGES CXX C ASM VERSION 0.1)
 
 if (IOS)
   set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED NO)
@@ -903,7 +903,6 @@ if(VITA)
 
   set(VPK_FILE_ARGS "")
   file(GLOB_RECURSE SCE_SYS_FILES packaging/vita/sce_sys/*)
-  file(GLOB_RECURSE SCE_MODULE_FILES packaging/vita/sce_module/*)
   foreach(FILE ${SCE_SYS_FILES} ${SCE_MODULE_FILES})
     file(RELATIVE_PATH REL_FILE ${CMAKE_CURRENT_SOURCE_DIR}/packaging/vita/ ${FILE})
     list(APPEND VPK_FILE_ARGS "FILE")
