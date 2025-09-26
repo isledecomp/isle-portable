@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.25...4.0 FATAL_ERROR)
 
+enable_language(ASM)
+
 find_program(PSP2CGC NAMES ${CMAKE_CURRENT_SOURCE_DIR}/psp2cgc.exe psp2cgc.exe psp2cgc)
 find_program(PSP2SHADERPERF NAMES ${CMAKE_CURRENT_SOURCE_DIR}/psp2shaderperf.exe psp2shaderperf.exe psp2shaderperf)
 

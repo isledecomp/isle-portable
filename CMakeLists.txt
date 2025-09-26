@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.25...4.0 FATAL_ERROR)
 
-project(isle LANGUAGES CXX C ASM VERSION 0.1)
+project(isle LANGUAGES CXX C VERSION 0.1)
 
 if (IOS)
   set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED NO)
@@ -903,11 +903,9 @@ if(VITA)
 
   set(VPK_FILE_ARGS "")
   file(GLOB_RECURSE SCE_SYS_FILES packaging/vita/sce_sys/*)
-  foreach(FILE ${SCE_SYS_FILES} ${SCE_MODULE_FILES})
+  foreach(FILE ${SCE_SYS_FILES})
     file(RELATIVE_PATH REL_FILE ${CMAKE_CURRENT_SOURCE_DIR}/packaging/vita/ ${FILE})
-    list(APPEND VPK_FILE_ARGS "FILE")
-    list(APPEND VPK_FILE_ARGS ${FILE})
-    list(APPEND VPK_FILE_ARGS ${REL_FILE})
+    list(APPEND VPK_FILE_ARGS FILE ${FILE} ${REL_FILE})
   endforeach()
 
   vita_create_vpk(isle.vpk ${VITA_TITLEID} isle.self
@@ -918,7 +916,6 @@ if(VITA)
     ${VPK_FILE_ARGS}
   )
   add_dependencies(isle.vpk-vpk config_plugin.rco_target)
-
 endif()
 
 if(MSVC OR IOS)
