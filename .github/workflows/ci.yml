@@ -107,6 +107,7 @@ jobs:
       - name: Install iOS components
         if: ${{ matrix.ios }}
         run: |
+          xcrun simctl list > /dev/null
           xcodebuild -downloadPlatform iOS
 
       - name: Setup Emscripten
