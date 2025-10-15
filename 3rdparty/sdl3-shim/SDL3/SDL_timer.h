@@ -22,7 +22,7 @@ struct SDL2TimerShimData {
 };
 
 static std::map<SDL_TimerID, void*> g_timers;
-static SDL_mutex *g_timerMutex = NULL;
+static SDL_mutex *g_timerMutex = SDL_CreateMutex();
 
 inline Uint32 shim_timer_callback (Uint32 interval, void *param)
 {

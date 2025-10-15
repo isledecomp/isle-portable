@@ -96,10 +96,19 @@ inline SDL_DisplayMode* SDL_GetCurrentDisplayMode(SDL_DisplayID displayID)
 
 #define SDL_RenderTexture(...) (SDL_RenderCopyF(__VA_ARGS__) == 0)
 
+#define SDL_CreateWindowAndRenderer(title, width, height, flags, window, renderer) (SDL_CreateWindowAndRenderer(width, height, flags, window, renderer) == 0)
+
+#define SDL_SetRenderScale(...) (SDL_RenderSetScale(__VA_ARGS__) == 0)
+
+// https://wiki.libsdl.org/SDL3/README-migration#sdl_keyboardh
+
+typedef int SDL_KeyboardID;
+
+#define SDL_GetKeyFromScancode(scancode, modstate, event) SDL_GetKeyFromScancode(scancode)
+
 // https://wiki.libsdl.org/SDL3/README-migration#sdl_haptich
 // SDL_MouseID/SDL_KeyboardID are new
 
-typedef int SDL_KeyboardID;
 #define SDL_GetKeyboardState (const bool*)SDL_GetKeyboardState
 typedef int SDL_HapticID;
 
