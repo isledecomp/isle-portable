@@ -82,11 +82,12 @@
 #endif
 
 // i will figure out this someday
-// #ifdef __WUT__
-// int main(int argc, char** argv) {
-//
-// }
-// #endif
+#ifdef __WUT__
+int main(int argc, char** argv) {
+    // stub so actions will work
+    return = 0
+}
+#endif
 
 DECOMP_SIZE_ASSERT(IsleApp, 0x8c)
 
