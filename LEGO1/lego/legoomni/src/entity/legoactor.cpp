@@ -129,7 +129,7 @@ const char* LegoActor::GetActorName(MxU8 p_id)
 
 // FUNCTION: LEGO1 0x1002d670
 // FUNCTION: BETA10 0x1003d65f
-void LegoActor::SetROI(LegoROI* p_roi, MxBool p_bool1, MxBool p_bool2)
+void LegoActor::SetROI(LegoROI* p_roi, MxBool p_bool1, MxBool p_updateTransform)
 {
 	if (p_roi) {
 		const char* name = p_roi->GetName();
@@ -143,7 +143,7 @@ void LegoActor::SetROI(LegoROI* p_roi, MxBool p_bool1, MxBool p_bool2)
 		}
 	}
 
-	LegoEntity::SetROI(p_roi, p_bool1, p_bool2);
+	LegoEntity::SetROI(p_roi, p_bool1, p_updateTransform);
 }
 
 // FUNCTION: LEGO1 0x1002d6e0
