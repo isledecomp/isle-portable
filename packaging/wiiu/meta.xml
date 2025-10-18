@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<app>
+    <name>Isle-U</name>
+    <short_description>LEGO Island for the Wii U</short_description>
+    <long_description>
+        LEGO Island for the Wii U
+    </long_description>
+    <coder>Lyelye</coder>
+    <version>1.0.0</version>
+    <release_date>2025-09-16</release_date>
+    <category>application</category>
+</app>

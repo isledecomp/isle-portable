@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <float.h>
 #include <limits.h>
+#include <random>
 
 DECOMP_SIZE_ASSERT(MxDSAction, 0x94)
 

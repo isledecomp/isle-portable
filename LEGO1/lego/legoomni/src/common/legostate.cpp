@@ -1,5 +1,6 @@
 #include "legostate.h"
 
+#include <random>
 #include <stdlib.h>
 
 DECOMP_SIZE_ASSERT(LegoState, 0x08)
@@ -29,10 +30,17 @@ MxU32 LegoState::Playlist::Next()
 		}
 		break;
 
-	case e_random:
+	case e_random: {
+#ifdef __WIIU__
+		static std::mt19937 rng{std::random_device{}()};
+		std::uniform_int_distribution<MxS32> dist(0, m_length - 1);
+		m_nextIndex = dist(rng);
+#else
 		m_nextIndex = SDL_rand(m_length);
+#endif
 		objectId = m_objectIds[m_nextIndex];
 		break;
+	}
 
 	case e_loopSkipFirst:
 		objectId = m_objectIds[m_nextIndex];

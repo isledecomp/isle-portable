@@ -28,9 +28,11 @@ target_compile_definitions(miniwin PRIVATE
 )
 
 list(APPEND GRAPHICS_BACKENDS USE_SOFTWARE_RENDER)
-list(APPEND GRAPHICS_BACKENDS USE_SDL_GPU)
+if(NOT USE_SDL2)
+  list(APPEND GRAPHICS_BACKENDS USE_SDL_GPU)
+endif()
 
-if(NOT WINDOWS_STORE)
+if(NOT WINDOWS_STORE AND NOT WIIU)
   find_package(OpenGL)
     if(OpenGL_FOUND)
       message(STATUS "Found OpenGL: enabling OpenGL 1.x renderer")
@@ -88,6 +90,13 @@ if(NINTENDO_3DS)
   endif()
 endif()
 
+if(NOT WIIU)
+  message(STATUS "Enabling GX2 renderer")
+  target_sources(miniwin PRIVATE src/d3drm/backends/gx2/renderer.cpp)
+  target_link_libraries(miniwin PRIVATE wut)
+  list(APPEND GRAPHICS_BACKENDS USE_GX2)
+endif()
+
 if(WIN32 AND NOT WINDOWS_STORE)
   target_sources(miniwin PRIVATE
     src/d3drm/backends/directx9/actual.cpp
@@ -116,11 +125,16 @@ endif()
 
 target_compile_definitions(miniwin PUBLIC MINIWIN)
 
+target_include_directories(miniwin PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/internal
+)
+
+if(USE_SDL_GPU IN_LIST GRAPHICS_BACKENDS)
 target_include_directories(miniwin
   PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/internal
     ${CMAKE_CURRENT_SOURCE_DIR}/src/d3drm/backends/sdl3gpu/shaders/generated
 )
+endif()
 target_link_libraries(miniwin PUBLIC miniwin-headers)
 
 target_link_libraries(miniwin PRIVATE SDL3::SDL3)
@@ -129,7 +143,7 @@ target_compile_definitions(miniwin PUBLIC ${GRAPHICS_BACKENDS})
 
 
 # Shader stuff
-
+if(USE_SDL_GPU IN_LIST GRAPHICS_BACKENDS)
 set(shader_src_dir "${CMAKE_CURRENT_SOURCE_DIR}/src/d3drm/backends/sdl3gpu/shaders/src")
 set(shader_gen_dir "${CMAKE_CURRENT_SOURCE_DIR}/src/d3drm/backends/sdl3gpu/shaders/generated")
 set(py_gencshadersource "${CMAKE_CURRENT_SOURCE_DIR}/src/d3drm/backends/sdl3gpu/shaders/gencshadersource.py")
@@ -213,7 +227,7 @@ endforeach()
 
 set(index_cpp "${shader_gen_dir}/ShaderIndex.cpp")
 set(index_h "${shader_gen_dir}/ShaderIndex.h")
-
+endif()
 if(ISLE_COMPILE_SHADERS)
   add_custom_command(OUTPUT "${index_h}" "${index_cpp}"
     COMMAND Python3::Interpreter "${py_gencshadersource}" "index"

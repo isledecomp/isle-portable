@@ -850,7 +850,7 @@ inline void LoadIsle()
 {
 	LegoWorld* world = FindWorld(*g_isleScript, IsleScript::c__Isle);
 	if (world != NULL) {
-		if (!world->NoDisabledObjects()) {
+		if (!world->GetUnknown0xd0Empty()) {
 			NotificationManager()->Send(world, MxNotificationParam(c_notificationType20, NULL));
 		}
 	}

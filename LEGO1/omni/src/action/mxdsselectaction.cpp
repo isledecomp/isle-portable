@@ -6,6 +6,7 @@
 #include "mxvariabletable.h"
 
 #include <SDL3/SDL_stdinc.h>
+#include <random>
 
 DECOMP_SIZE_ASSERT(MxDSSelectAction, 0xb0)
 DECOMP_SIZE_ASSERT(MxStringList, 0x18)
@@ -113,8 +114,14 @@ void MxDSSelectAction::Deserialize(MxU8*& p_source, MxS16 p_flags)
 		char buffer[10];
 		MxS16 value = atoi(&m_unk0x9c.GetData()[strlen("RANDOM_")]);
 
+#ifdef __WIIU__
+		static std::mt19937 rng{std::random_device{}()};
+		std::uniform_int_distribution<MxS32> dist(0, value);
+		MxS32 random = dist(rng);
+#else
 		srand(Timer()->GetTime());
 		MxS32 random = SDL_rand(value);
+#endif
 		string = SDL_itoa((MxS16) random, buffer, 10);
 	}
 

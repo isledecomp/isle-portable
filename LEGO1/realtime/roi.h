@@ -56,7 +56,7 @@ public:
 	// BoundingSphere::operator=
 
 	// SYNTHETIC: BETA10 0x1001fc50
-	// ??0BoundingSphere@@QAE@XZ
+	// BoundingSphere::BoundingSphere
 
 private:
 	Mx3DPointFloat center; // 0x00

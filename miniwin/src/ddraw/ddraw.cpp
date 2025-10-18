@@ -152,7 +152,7 @@ HRESULT DirectDrawImpl::EnumDisplayModes(
 #ifdef MINIWIN_PIXELFORMAT
 		format = MINIWIN_PIXELFORMAT;
 #else
-		format = modes[i]->format;
+		format = static_cast<SDL_PixelFormat>(modes[i]->format);
 #endif
 
 		const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(format);
@@ -245,7 +245,7 @@ HRESULT DirectDrawImpl::GetDisplayMode(LPDDSURFACEDESC lpDDSurfaceDesc)
 #ifdef MINIWIN_PIXELFORMAT
 	format = MINIWIN_PIXELFORMAT;
 #else
-	format = mode->format;
+	format = static_cast<SDL_PixelFormat>(mode->format);
 #endif
 
 	const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(format);

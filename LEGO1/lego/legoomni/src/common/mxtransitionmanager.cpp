@@ -125,9 +125,15 @@ MxResult MxTransitionManager::StartTransition(
 
 		m_animationSpeed = p_speed;
 
-		TickleManager()->RegisterClient(this, p_speed);
-		InputManager()->DisableInputProcessing();
-		VideoManager()->SetRender3D(FALSE);
+		MxTickleManager* tickleManager = TickleManager();
+		tickleManager->RegisterClient(this, p_speed);
+
+		LegoInputManager* inputManager = InputManager();
+		inputManager->SetUnknown88(TRUE);
+		inputManager->SetUnknown336(FALSE);
+
+		LegoVideoManager* videoManager = VideoManager();
+		videoManager->SetRender3D(FALSE);
 
 		SetAppCursor(e_cursorBusy);
 		return SUCCESS;

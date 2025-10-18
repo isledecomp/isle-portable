@@ -3,6 +3,7 @@
 #endif
 
 #include "mxdirect3d.h"
+#include "mxvideoparam.h"
 
 #include <SDL3/SDL.h> // for SDL_Log
 #include <assert.h>
@@ -71,11 +72,16 @@ BOOL MxDirect3D::Create(
 	}
 
 	if (m_pDirect3d->QueryInterface(IID_IDirect3DMiniwin, (void**) &miniwind3d) == DD_OK) {
+#if SDL_MAJOR_VERSION >= 3
 		MxVideoParam* videoParam = (MxVideoParam*) SDL_GetPointerProperty(
 			SDL_GetWindowProperties(reinterpret_cast<SDL_Window*>(hWnd)),
 			ISLE_PROP_WINDOW_CREATE_VIDEO_PARAM,
 			nullptr
 		);
+#else
+		MxVideoParam* videoParam =
+			(MxVideoParam*) SDL_GetWindowData(reinterpret_cast<SDL_Window*>(hWnd), ISLE_PROP_WINDOW_CREATE_VIDEO_PARAM);
+#endif
 #ifndef MXDIRECTX_FOR_CONFIG
 		assert(videoParam);
 #endif

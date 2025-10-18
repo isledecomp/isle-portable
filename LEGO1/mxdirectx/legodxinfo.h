@@ -17,13 +17,6 @@ public:
 	int GetBestDevice();
 	int FUN_1009d210();
 	unsigned char FUN_1009d3d0(Direct3DDeviceInfo& p_device);
-
-	// SYNTHETIC: BETA10 0x100d8d10
-	// LegoDeviceEnumerate::LegoDeviceEnumerate
-
-	// SYNTHETIC: LEGO1 0x1007b590
-	// SYNTHETIC: BETA10 0x100d8da0
-	// LegoDeviceEnumerate::~LegoDeviceEnumerate
 };
 
 #endif // LEGODXINFO_H

@@ -49,17 +49,17 @@ RegistrationBook::RegistrationBook() : m_registerDialogueTimer(0x80000000), m_un
 	memset(m_alphabet, 0, sizeof(m_alphabet));
 	memset(m_intAlphabet, 0, sizeof(m_intAlphabet));
 	memset(m_name, 0, sizeof(m_name));
-	m_newName.m_cursorPos = 0;
+	m_unk0x280.m_cursorPos = 0;
 
 	memset(m_checkmark, 0, sizeof(m_checkmark));
-	memset(&m_newName, -1, sizeof(m_newName) - 2);
+	memset(&m_unk0x280, -1, sizeof(m_unk0x280) - 2);
 
-	m_vehiclesToPosition = 0;
+	m_unk0x2b8 = 0;
 	m_infocenterState = NULL;
 
 	NotificationManager()->Register(this);
 
-	m_awaitLoad = FALSE;
+	m_unk0x2c1 = FALSE;
 	m_checkboxHilite = NULL;
 	m_checkboxSurface = NULL;
 	m_checkboxNormal = NULL;
@@ -155,9 +155,9 @@ MxLong RegistrationBook::HandleEndAction(MxEndActionNotificationParam& p_param)
 
 	switch ((MxS32) p_param.GetAction()->GetObjectId()) {
 	case RegbookScript::c_Textures:
-		m_awaitLoad = FALSE;
+		m_unk0x2c1 = FALSE;
 
-		if (m_vehiclesToPosition == 0) {
+		if (m_unk0x2b8 == 0) {
 			TransitionManager()->StartTransition(MxTransitionManager::e_mosaic, 50, FALSE, FALSE);
 		}
 		break;
@@ -198,40 +198,40 @@ MxLong RegistrationBook::HandleKeyPress(SDL_Keycode p_key)
 			BackgroundAudioManager()->RaiseVolume();
 		}
 	}
-	else if (key != SDLK_BACKSPACE && m_newName.m_cursorPos < 7) {
-		m_name[0][m_newName.m_cursorPos] = (*intoAlphabet)->Clone();
+	else if (key != SDLK_BACKSPACE && m_unk0x280.m_cursorPos < 7) {
+		m_name[0][m_unk0x280.m_cursorPos] = (*intoAlphabet)->Clone();
 
-		if (m_name[0][m_newName.m_cursorPos] != NULL) {
+		if (m_name[0][m_unk0x280.m_cursorPos] != NULL) {
 			(*intoAlphabet)->GetAction()->SetUnknown24((*intoAlphabet)->GetAction()->GetUnknown24() + 1);
-			m_name[0][m_newName.m_cursorPos]->Enable(TRUE);
-			m_name[0][m_newName.m_cursorPos]->SetTickleState(MxPresenter::e_repeating);
-			m_name[0][m_newName.m_cursorPos]->SetPosition(m_newName.m_cursorPos * 23 + 343, 121);
+			m_name[0][m_unk0x280.m_cursorPos]->Enable(TRUE);
+			m_name[0][m_unk0x280.m_cursorPos]->SetTickleState(MxPresenter::e_repeating);
+			m_name[0][m_unk0x280.m_cursorPos]->SetPosition(m_unk0x280.m_cursorPos * 23 + 343, 121);
 
-			if (m_newName.m_cursorPos == 0) {
+			if (m_unk0x280.m_cursorPos == 0) {
 				m_checkmark[0]->Enable(TRUE);
 			}
 
-			m_newName.m_letters[m_newName.m_cursorPos] =
+			m_unk0x280.m_letters[m_unk0x280.m_cursorPos] =
 				key >= SDLK_A && key <= SDLK_Z
 					? key - SDLK_A
 					: (intoAlphabet - m_intAlphabet) + sizeOfArray(m_alphabet) - m_intAlphabetOffset;
-			m_newName.m_cursorPos++;
+			m_unk0x280.m_cursorPos++;
 		}
 	}
 	else {
-		if (key == SDLK_BACKSPACE && m_newName.m_cursorPos > 0) {
-			m_newName.m_cursorPos--;
+		if (key == SDLK_BACKSPACE && m_unk0x280.m_cursorPos > 0) {
+			m_unk0x280.m_cursorPos--;
 
-			m_name[0][m_newName.m_cursorPos]->Enable(FALSE);
+			m_name[0][m_unk0x280.m_cursorPos]->Enable(FALSE);
 
-			delete m_name[0][m_newName.m_cursorPos];
-			m_name[0][m_newName.m_cursorPos] = NULL;
+			delete m_name[0][m_unk0x280.m_cursorPos];
+			m_name[0][m_unk0x280.m_cursorPos] = NULL;
 
-			if (m_newName.m_cursorPos == 0) {
+			if (m_unk0x280.m_cursorPos == 0) {
 				m_checkmark[0]->Enable(FALSE);
 			}
 
-			m_newName.m_letters[m_newName.m_cursorPos] = -1;
+			m_unk0x280.m_letters[m_unk0x280.m_cursorPos] = -1;
 		}
 	}
 
@@ -298,7 +298,7 @@ MxLong RegistrationBook::HandleControl(LegoControlManagerNotificationParam& p_pa
 				}
 			}
 
-			LoadSave(i);
+			FUN_100775c0(i);
 		}
 	}
 
@@ -307,57 +307,56 @@ MxLong RegistrationBook::HandleControl(LegoControlManagerNotificationParam& p_pa
 
 // FUNCTION: LEGO1 0x100775c0
 // STUB: BETA10 0x100f32b2
-void RegistrationBook::LoadSave(MxS16 p_checkMarkIndex)
+void RegistrationBook::FUN_100775c0(MxS16 p_playerIndex)
 {
 	if (m_infocenterState->HasRegistered()) {
 		GameState()->Save(0);
 	}
 
-	// The first checkmark searches for the name and is -1 if not found, while all other checkmarks start at 1
 	// TODO: structure incorrect
-	MxS16 player = p_checkMarkIndex == 0 ? GameState()->FindPlayer(*(LegoGameState::Username*) &m_newName.m_letters)
-										 : p_checkMarkIndex - 1;
+	MxS16 player = p_playerIndex == 0 ? GameState()->FindPlayer(*(LegoGameState::Username*) &m_unk0x280.m_letters)
+									  : p_playerIndex - 1;
 
 	switch (player) {
-	case 0: // Current save
+	case 0:
 		if (!m_infocenterState->HasRegistered()) {
 			GameState()->SwitchPlayer(0);
 			WriteInfocenterLetters(1);
-			LoadVehicles();
+			FUN_100778c0();
 		}
 		break;
-	case -1: // New save
+	case -1:
 		GameState()->Init();
 
 		PlayAction(RegbookScript::c_Textures);
 
-		m_awaitLoad = TRUE;
+		m_unk0x2c1 = TRUE;
 
 		// TOOD: structure incorrect
-		GameState()->AddPlayer(*(LegoGameState::Username*) &m_newName.m_letters);
+		GameState()->AddPlayer(*(LegoGameState::Username*) &m_unk0x280.m_letters);
 		GameState()->Save(0);
 
 		WriteInfocenterLetters(0);
-		GameState()->SerializePlayersInfo(LegoFile::c_write);
-		LoadVehicles();
+		GameState()->SerializePlayersInfo(2);
+		FUN_100778c0();
 		break;
 	default:
 		GameState()->Init();
 
 		PlayAction(RegbookScript::c_Textures);
 
-		m_awaitLoad = TRUE;
+		m_unk0x2c1 = TRUE;
 
 		GameState()->SwitchPlayer(player);
 
 		WriteInfocenterLetters(player + 1);
-		GameState()->SerializePlayersInfo(LegoFile::c_write);
-		LoadVehicles();
+		GameState()->SerializePlayersInfo(2);
+		FUN_100778c0();
 		break;
 	}
 
 	m_infocenterState->m_state = InfocenterState::e_selectedSave;
-	if (m_vehiclesToPosition == 0 && !m_awaitLoad) {
+	if (m_unk0x2b8 == 0 && !m_unk0x2c1) {
 		DeleteObjects(&m_atomId, RegbookScript::c_iic006in_RunAnim, RegbookScript::c_iic008in_PlayWav);
 		TransitionManager()->StartTransition(MxTransitionManager::e_mosaic, 50, FALSE, FALSE);
 	}
@@ -374,7 +373,7 @@ void RegistrationBook::WriteInfocenterLetters(MxS16 p_user)
 }
 
 // FUNCTION: LEGO1 0x100778c0
-void RegistrationBook::LoadVehicles()
+void RegistrationBook::FUN_100778c0()
 {
 	if (GameState()->GetCurrentAct() == LegoGameState::e_act1) {
 		Act1State* act1state = (Act1State*) GameState()->GetState("Act1State");
@@ -386,7 +385,7 @@ void RegistrationBook::LoadVehicles()
 				LegoPathStructNotificationParam(c_notificationPathStruct, NULL, 0, CopterScript::c_Helicopter_Actor)
 			);
 
-			m_vehiclesToPosition++;
+			m_unk0x2b8++;
 		}
 
 		if (act1state->m_jetskiPlane.IsPresent()) {
@@ -396,7 +395,7 @@ void RegistrationBook::LoadVehicles()
 				LegoPathStructNotificationParam(c_notificationPathStruct, NULL, 0, JetskiScript::c_Jetski_Actor)
 			);
 
-			m_vehiclesToPosition++;
+			m_unk0x2b8++;
 		}
 
 		if (act1state->m_dunebuggyPlane.IsPresent()) {
@@ -406,7 +405,7 @@ void RegistrationBook::LoadVehicles()
 				LegoPathStructNotificationParam(c_notificationPathStruct, NULL, 0, DunecarScript::c_DuneBugy_Actor)
 			);
 
-			m_vehiclesToPosition++;
+			m_unk0x2b8++;
 		}
 
 		if (act1state->m_racecarPlane.IsPresent()) {
@@ -416,10 +415,10 @@ void RegistrationBook::LoadVehicles()
 				LegoPathStructNotificationParam(c_notificationPathStruct, NULL, 0, RacecarScript::c_RaceCar_Actor)
 			);
 
-			m_vehiclesToPosition++;
+			m_unk0x2b8++;
 		}
 
-		if (m_vehiclesToPosition != 0) {
+		if (m_unk0x2b8 != 0) {
 			DeleteObjects(&m_atomId, RegbookScript::c_iic006in_RunAnim, RegbookScript::c_iic008in_PlayWav);
 			InputManager()->DisableInputProcessing();
 			SetAppCursor(e_cursorBusy);
@@ -657,10 +656,10 @@ MxLong RegistrationBook::HandlePathStruct(LegoPathStructNotificationParam& p_par
 	else {
 		RemoveActor(actor);
 		Remove(actor);
-		m_vehiclesToPosition--;
+		m_unk0x2b8--;
 	}
 
-	if (m_vehiclesToPosition == 0 && !m_awaitLoad) {
+	if (m_unk0x2b8 == 0 && !m_unk0x2c1) {
 		DeleteObjects(&m_atomId, RegbookScript::c_iic006in_RunAnim, RegbookScript::c_iic008in_PlayWav);
 		TransitionManager()->StartTransition(MxTransitionManager::e_mosaic, 50, FALSE, FALSE);
 	}

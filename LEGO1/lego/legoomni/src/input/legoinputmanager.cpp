@@ -13,6 +13,15 @@
 
 #include <SDL3/SDL_log.h>
 
+#ifdef __WIIU__
+template <class... Ts>
+struct overloaded : Ts... {
+	using Ts::operator()...;
+};
+template <class... Ts>
+overloaded(Ts...) -> overloaded<Ts...>;
+#endif
+
 DECOMP_SIZE_ASSERT(LegoInputManager, 0x338)
 DECOMP_SIZE_ASSERT(LegoNotifyList, 0x18)
 DECOMP_SIZE_ASSERT(LegoNotifyListCursor, 0x10)
@@ -41,7 +50,7 @@ LegoInputManager::LegoInputManager()
 	m_y = 0;
 	m_controlManager = NULL;
 	m_unk0x81 = FALSE;
-	m_inputProcessingDisabled = FALSE;
+	m_unk0x88 = FALSE;
 	m_unk0x195 = 0;
 	m_unk0x335 = FALSE;
 	m_unk0x336 = FALSE;
@@ -248,7 +257,7 @@ void LegoInputManager::QueueEvent(NotificationId p_id, MxU8 p_modifier, MxLong p
 {
 	LegoEventNotificationParam param = LegoEventNotificationParam(p_id, NULL, p_modifier, p_x, p_y, p_key);
 
-	if (((!m_inputProcessingDisabled) || ((m_unk0x335 && (param.GetNotification() == c_notificationButtonDown)))) ||
+	if (((!m_unk0x88) || ((m_unk0x335 && (param.GetNotification() == c_notificationButtonDown)))) ||
 		((m_unk0x336 && (p_key == SDLK_SPACE)))) {
 		ProcessOneEvent(param);
 	}
@@ -499,10 +508,9 @@ void LegoInputManager::StopAutoDragTimer()
 }
 
 // FUNCTION: LEGO1 0x1005cff0
-// FUNCTION: BETA10 0x10096a10
 void LegoInputManager::EnableInputProcessing()
 {
-	m_inputProcessingDisabled = FALSE;
+	m_unk0x88 = FALSE;
 	g_clickedObjectId = -1;
 	g_clickedAtom = NULL;
 }
@@ -782,14 +790,26 @@ void LegoInputManager::UpdateLastInputMethod(SDL_Event* p_event)
 	switch (p_event->type) {
 	case SDL_EVENT_KEY_DOWN:
 	case SDL_EVENT_KEY_UP:
+#if SDL_MAJOR_VERSION >= 3
 		m_lastInputMethod = SDL_KeyboardID_v{p_event->key.which};
+#else
+		m_lastInputMethod = SDL_KeyboardID_v{0};
+#endif
 		break;
 	case SDL_EVENT_MOUSE_BUTTON_DOWN:
 	case SDL_EVENT_MOUSE_BUTTON_UP:
+#if SDL_MAJOR_VERSION >= 3
 		m_lastInputMethod = SDL_MouseID_v{p_event->button.which};
+#else
+		m_lastInputMethod = SDL_MouseID_v{0};
+#endif
 		break;
 	case SDL_EVENT_MOUSE_MOTION:
+#if SDL_MAJOR_VERSION >= 3
 		m_lastInputMethod = SDL_MouseID_v{p_event->motion.which};
+#else
+		m_lastInputMethod = SDL_MouseID_v{0};
+#endif
 		break;
 	case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
 	case SDL_EVENT_GAMEPAD_BUTTON_UP:

@@ -8,6 +8,7 @@
 #include "mxpresenter.h"
 #include "mxqueue.h"
 
+#include <SDL3/SDL.h>
 #include <SDL3/SDL_haptic.h>
 #include <SDL3/SDL_joystick.h>
 #include <SDL3/SDL_keyboard.h>
@@ -129,13 +130,14 @@ public:
 	void SetWorld(LegoWorld* p_world);
 	void ClearWorld();
 
+	void SetUnknown88(MxBool p_unk0x88) { m_unk0x88 = p_unk0x88; }
 	void SetUnknown335(MxBool p_unk0x335) { m_unk0x335 = p_unk0x335; }
 	void SetUnknown336(MxBool p_unk0x336) { m_unk0x336 = p_unk0x336; }
 
-	// FUNCTION: BETA10 0x1002e390
+	// FUNCTION: BETA10 0x1002e290
 	void DisableInputProcessing()
 	{
-		m_inputProcessingDisabled = TRUE;
+		m_unk0x88 = TRUE;
 		m_unk0x336 = FALSE;
 	}
 
@@ -191,7 +193,7 @@ private:
 	MxBool m_unk0x80;                     // 0x80
 	MxBool m_unk0x81;                     // 0x81
 	LegoControlManager* m_controlManager; // 0x84
-	MxBool m_inputProcessingDisabled;     // 0x88
+	MxBool m_unk0x88;                     // 0x88
 	const bool* m_keyboardState;
 	MxBool m_unk0x195; // 0x195
 	MxBool m_unk0x335; // 0x335
