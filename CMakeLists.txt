@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.25...4.0 FATAL_ERROR)
 project(isle LANGUAGES CXX C VERSION 0.1)
 
 if(WIIU)
+  # used to fix an error
   add_library(SDL2_WiiU STATIC IMPORTED)
   set_target_properties(SDL2_WiiU PROPERTIES
     IMPORTED_LOCATION /opt/devkitpro/portlibs/wiiu/lib/libSDL2.a
@@ -215,6 +216,7 @@ add_library(lego1
 )
 # endif()
 if(NOT WIIU)
+# used to fix an error
 target_precompile_headers(lego1 PRIVATE "LEGO1/lego1_pch.h")
 endif()
 set_property(TARGET lego1 PROPERTY DEFINE_SYMBOL "LEGO1_DLL")
@@ -228,7 +230,7 @@ target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/L
 target_link_libraries(lego1 PRIVATE SDL3::SDL3)
 target_link_libraries(lego1 PUBLIC SDL3::Headers)
 target_link_libraries(lego1 PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5>)
-if(WIIU) # this is the only way to stop miniaudio atomics error when building isle.rpx and lego1.rpx
+if(WIIU) # this is the only way to stop miniaudio atomics error when building isle.rpx and lego1.rpl
   target_sources(lego1 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/atomic-dummy/atomic.c)
 endif()
 # Allow unconditional include of miniwin/miniwind3d.h
@@ -591,7 +593,7 @@ if (ISLE_BUILD_APP)
   if (WIN32)
     target_link_libraries(isle PRIVATE winmm)
   endif()
-  if(WIIU) # this is the only way to stop miniaudio atomics error when building isle.rpx and lego1.rpx
+  if(WIIU) # this is the only way to stop miniaudio atomics error when building isle.rpx and lego1.rpl
     target_sources(isle PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/atomic-dummy/atomic.c)
   endif()
   # Link LEGO1
@@ -952,7 +954,7 @@ if(WIIU)
   wut_create_rpx(isle)
 
   install(FILES "$<TARGET_FILE_DIR:isle>/isle.rpx" DESTINATION "${CMAKE_INSTALL_BINDIR}")
-  # install(FILES "$<TARGET_FILE_DIR:lego1>/lego1.rpl" DESTINATION "${CMAKE_INSTALL_PREFIX}/code")
+  # install(FILES "$<TARGET_FILE_DIR:lego1>/lego1.rpl" DESTINATION "${CMAKE_INSTALL_BINDIR}")
   if(BUILD_WUHB)
     # i did some resreach idk if this works i will test it out when im done with tiramisu version
     # makes isle.wuhb (Amroma environment ONLY)
