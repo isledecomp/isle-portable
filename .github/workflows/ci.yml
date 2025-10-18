@@ -227,7 +227,7 @@ jobs:
         run: |
           mkdir -p build/dist
           mv build/*.rpx packaging/wiiu/
-          mv packaging/wiiu/ dist/
+          mv packaging/wiiu/ build/dist/
           cd build/dist
           mv wiiu isle-U
 
