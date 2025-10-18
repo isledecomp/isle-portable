@@ -67,9 +67,19 @@ if(ISLE_DEBUG)
       ${imgui_SOURCE_DIR}/imgui_tables.cpp
       ${imgui_SOURCE_DIR}/imgui_widgets.cpp
       ${imgui_SOURCE_DIR}/imgui_demo.cpp
-      ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl3.cpp
-      ${imgui_SOURCE_DIR}/backends/imgui_impl_sdlrenderer3.cpp
   )
+  if(USE_SDL2)
+    target_sources(imgui PRIVATE
+        ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl2.cpp
+        ${imgui_SOURCE_DIR}/backends/imgui_impl_sdlrenderer2.cpp
+    )
+  else()
+    target_sources(imgui PRIVATE
+            ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl3.cpp
+            ${imgui_SOURCE_DIR}/backends/imgui_impl_sdlrenderer3.cpp
+    )
+  endif()
+
   target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR})
   target_link_libraries(imgui PUBLIC SDL3::Headers)
   target_link_libraries(imgui PRIVATE SDL3::SDL3)
@@ -123,6 +133,7 @@ if(USE_SDL2)
   )
   target_link_libraries(SDL3_shim PRIVATE SDL2::SDL2)
   target_include_directories(SDL3_shim PUBLIC
+          ${SDL2_INCLUDE_DIRS}
           "${CMAKE_CURRENT_SOURCE_DIR}/sdl3-shim"
           "${CMAKE_CURRENT_BINARY_DIR}/sdl3-shim"
   )

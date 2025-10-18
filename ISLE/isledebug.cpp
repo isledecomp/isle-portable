@@ -12,8 +12,13 @@
 #include "mxticklemanager.h"
 
 #include <SDL3/SDL.h>
+#if SDL_MAJOR_VERSION >= 3
 #include <backends/imgui_impl_sdl3.h>
 #include <backends/imgui_impl_sdlrenderer3.h>
+#else
+#include <backends/imgui_impl_sdl2.h>
+#include <backends/imgui_impl_sdlrenderer2.h>
+#endif
 #include <imgui.h>
 
 #ifdef ISLE_VALGRIND
@@ -176,7 +181,11 @@ void IsleDebug_Init()
 		ImGui::CreateContext();
 		ImGui::StyleColorsDark();
 
+#if SDL_MAJOR_VERSION >= 3
 		if (!ImGui_ImplSDL3_InitForSDLRenderer(g_debugWindow, g_debugRenderer)) {
+#else
+		if (!ImGui_ImplSDL2_InitForSDLRenderer(g_debugWindow, g_debugRenderer)) {
+#endif
 			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "ImGui_ImplSDL3_InitForSDLRenderer failed");
 			g_debugEnabled = false;
 			break;
@@ -188,7 +197,11 @@ void IsleDebug_Init()
 #else
 		SDL_SetTextureScaleMode(g_videoPalette, SDL_SCALEMODE_NEAREST);
 #endif
+#if SDL_MAJOR_VERSION >= 3
 		if (!ImGui_ImplSDLRenderer3_Init(g_debugRenderer)) {
+#else
+		if (!ImGui_ImplSDLRenderer2_Init(g_debugRenderer)) {
+#endif
 			g_debugEnabled = false;
 			break;
 		}
@@ -221,7 +234,11 @@ bool IsleDebug_Event(SDL_Event* event)
 		return false;
 	}
 	if (event->type == SDL_EVENT_KEY_DOWN) {
+#if SDL_MAJOR_VERSION >= 3
 		if (event->key.scancode == SCANCODE_KEY_PAUSE) {
+#else
+		if (event->key.keysym.scancode == SCANCODE_KEY_PAUSE) {
+#endif
 			if (!g_debugPaused) {
 				IsleDebug_SetPaused(true);
 			}
@@ -230,7 +247,11 @@ bool IsleDebug_Event(SDL_Event* event)
 			}
 			return true;
 		}
+#if SDL_MAJOR_VERSION >= 3
 		if (event->key.scancode == SCANCODE_KEY_RESUME) {
+#else
+		if (event->key.keysym.scancode == SCANCODE_KEY_RESUME) {
+#endif
 			g_debugDoStep = false;
 			if (g_debugPaused) {
 				IsleDebug_SetPaused(false);
@@ -241,7 +262,11 @@ bool IsleDebug_Event(SDL_Event* event)
 	if (SDL_GetWindowFromEvent(event) != g_debugWindow) {
 		return false;
 	}
+#if SDL_MAJOR_VERSION >= 3
 	ImGui_ImplSDL3_ProcessEvent(event);
+#else
+	ImGui_ImplSDL2_ProcessEvent(event);
+#endif
 	return true;
 }
 
@@ -251,9 +276,13 @@ void IsleDebug_Render()
 		return;
 	}
 	const ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
+#if SDL_MAJOR_VERSION >= 3
 	ImGui_ImplSDLRenderer3_NewFrame();
 	ImGui_ImplSDL3_NewFrame();
+#else
+	ImGui_ImplSDLRenderer2_NewFrame();
+	ImGui_ImplSDL2_NewFrame();
+#endif
 	ImGui::NewFrame();
 	ImGuiIO& io = ImGui::GetIO();
 	{
@@ -346,7 +375,11 @@ void IsleDebug_Render()
 		(Uint8) (clear_color.z * 255),
 		(Uint8) (clear_color.w * 255)
 	);
+#if SDL_MAJOR_VERSION >= 3
 	ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), g_debugRenderer);
+#else
+	ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), g_debugRenderer);
+#endif
 	SDL_RenderPresent(g_debugRenderer);
 }
 
