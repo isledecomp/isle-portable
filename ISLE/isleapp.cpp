@@ -81,14 +81,6 @@
 #include "android/config.h"
 #endif
 
-// i will figure out this someday
-#ifdef __WUT__
-int main(int argc, char** argv) {
-    // stub so actions will work
-    return = 0
-}
-#endif
-
 DECOMP_SIZE_ASSERT(IsleApp, 0x8c)
 
 // GLOBAL: ISLE 0x410030
@@ -301,6 +293,13 @@ void IsleApp::SetupVideoFlags(
 		m_videoParam.Flags().Set16Bit(1);
 	}
 }
+// i will figure out how to get this working :/
+#ifdef __WUT__
+int main(int argc, char** argv) {
+    void* appstate = nullptr;
+    return SDL_AppInit(&appstate, argc, argv);
+}
+#endif
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 {
 	*appstate = NULL;
