@@ -226,8 +226,8 @@ jobs:
         if: ${{ matrix.wiiu }}
         run: |
           mkdir -p build/dist
-          mv build/*.rpx isle-portable/packaging/wiiu/
-          mv isle-portable/packaging/wiiu/ dist/
+          mv build/*.rpx packaging/wiiu/
+          mv packaging/wiiu/ dist/
           cd build/dist
           mv wiiu isle-U
 
