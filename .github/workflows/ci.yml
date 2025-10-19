@@ -163,8 +163,8 @@ jobs:
             -DISLE_USE_DX5=${{ !!matrix.dx5 }} \
             -DISLE_BUILD_CONFIG=${{ !!matrix.config }} \
             -DUSE_SDL2=${{ !!matrix.use_sdl2 }} \
-            -DCMAKE_POSITION_INDEPENDENT_CODE=${{ matrix.wiiu == 'OFF' || 'ON' }} \
-            -DISLE_EXTENSIONS=${{ matrix.wiiu == 'OFF' || 'ON' }} \
+            -DCMAKE_POSITION_INDEPENDENT_CODE=${{ matrix.wiiu && 'OFF' || 'ON' }} \
+            -DISLE_EXTENSIONS=${{ matrix.wiiu && 'OFF' || 'ON' }} \
             -DISLE_BUILD_ASSETS=${{ !!matrix.build-assets }} \
             -DENABLE_CLANG_TIDY=${{ !!matrix.clang-tidy  }} \
             -DISLE_WERROR=${{ !!matrix.werror }} \
