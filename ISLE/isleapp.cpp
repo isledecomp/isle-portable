@@ -85,8 +85,6 @@
 #endif
 
 DECOMP_SIZE_ASSERT(IsleApp, 0x8c)
-NOT THERE
-Do a few things: NOT THERE
 // GLOBAL: ISLE 0x410030
 IsleApp* g_isle = NULL;
 
