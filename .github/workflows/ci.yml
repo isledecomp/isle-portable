@@ -162,6 +162,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DISLE_USE_DX5=${{ !!matrix.dx5 }} \
             -DISLE_BUILD_CONFIG=${{ !!matrix.config }} \
+            -DUSE_SDL2=${{ !!matrix.use_sdl2 }} \
             -DISLE_BUILD_ASSETS=${{ !!matrix.build-assets }} \
             -DENABLE_CLANG_TIDY=${{ !!matrix.clang-tidy  }} \
             -DISLE_WERROR=${{ !!matrix.werror }} \
