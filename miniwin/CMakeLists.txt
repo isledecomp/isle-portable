@@ -90,12 +90,13 @@ if(NINTENDO_3DS)
   endif()
 endif()
 
-if(NOT WIIU)
-  message(STATUS "Enabling GX2 renderer")
-  target_sources(miniwin PRIVATE src/d3drm/backends/gx2/renderer.cpp)
-  target_link_libraries(miniwin PRIVATE wut)
-  list(APPEND GRAPHICS_BACKENDS USE_GX2)
-endif()
+# comment out for now
+# if(NOT WIIU)
+#   message(STATUS "Enabling GX2 renderer")
+#   target_sources(miniwin PRIVATE src/d3drm/backends/gx2/renderer.cpp)
+#   target_link_libraries(miniwin PRIVATE wut)
+#   list(APPEND GRAPHICS_BACKENDS USE_GX2)
+# endif()
 
 if(WIN32 AND NOT WINDOWS_STORE)
   target_sources(miniwin PRIVATE
