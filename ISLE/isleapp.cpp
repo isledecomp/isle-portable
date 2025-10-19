@@ -67,6 +67,9 @@
 
 #ifdef __WIIU__
 #include "wiiu/config.h"
+#ifdef __WUT__
+#include <errlua/errlua.h>
+#endif
 #endif
 
 #ifdef WINDOWS_STORE
@@ -82,7 +85,8 @@
 #endif
 
 DECOMP_SIZE_ASSERT(IsleApp, 0x8c)
-
+NOT THERE
+Do a few things: NOT THERE
 // GLOBAL: ISLE 0x410030
 IsleApp* g_isle = NULL;
 
@@ -299,6 +303,8 @@ void IsleApp::SetupVideoFlags(
 #ifdef __WUT__
 int main(int argc, char** argv)
 {
+	errluaInit(); // added wiiu errlua
+	errluaSetScreenEnabled(true);
 	void* appstate = NULL;
 	return SDL_AppInit(&appstate, argc, argv);
 }
