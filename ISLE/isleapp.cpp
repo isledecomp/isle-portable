@@ -294,6 +294,8 @@ void IsleApp::SetupVideoFlags(
 	}
 }
 // i will figure out how to get this working :/
+// still black screen i checked if i had the right assets for isle-U/content/LEGO/
+// and i do the .si files are still there :/
 #ifdef __WUT__
 int main(int argc, char** argv)
 {
