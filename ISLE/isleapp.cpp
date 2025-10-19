@@ -68,7 +68,12 @@
 #ifdef __WIIU__
 #include "wiiu/config.h"
 #ifdef __WUT__
-#include <errlua/errlua.h>
+#include <coreinit/filesystem.h>
+#include <coreinit/memdefaultheap.h>
+#include <nn/erreula.h>
+#include <vpad/input.h>
+#include <whb/gfx.h>
+#include <whb/proc.h>
 #endif
 #endif
 
@@ -299,12 +304,83 @@ void IsleApp::SetupVideoFlags(
 // still black screen i checked if i had the right assets for isle-U/content/LEGO/
 // and i do the .si files are still there :/
 #ifdef __WUT__
+static void ShowWiiUError(const char16_t *msg) // ok i did it wrong this is errlua i think
+{
+    WHBProcInit();
+    WHBGfxInit();
+    FSInit();
+    VPADInit();
+
+    FSClient *fsClient = (FSClient *)MEMAllocFromDefaultHeap(sizeof(FSClient));
+    FSAddClient(fsClient, FS_ERROR_FLAG_NONE);
+
+    nn::erreula::CreateArg createArg;
+    createArg.region     = nn::erreula::RegionType::Europe;
+    createArg.language   = nn::erreula::LangType::English;
+    createArg.workMemory = MEMAllocFromDefaultHeap(nn::erreula::GetWorkMemorySize());
+    createArg.fsClient   = fsClient;
+    nn::erreula::Create(createArg);
+
+    nn::erreula::AppearArg appearArg;
+    appearArg.errorArg.errorType      = nn::erreula::ErrorType::Message1Button;
+    appearArg.errorArg.renderTarget   = nn::erreula::RenderTarget::Both;
+    appearArg.errorArg.controllerType = nn::erreula::ControllerType::DrcGamepad;
+    appearArg.errorArg.errorMessage   = msg;
+    appearArg.errorArg.button1Label   = u"OK";
+    appearArg.errorArg.errorTitle     = u"Isle Error";
+    nn::erreula::AppearErrorViewer(appearArg);
+
+    while (WHBProcIsRunning()) {
+        VPADStatus vpadStatus;
+        VPADRead(VPAD_CHAN_0, &vpadStatus, 1, nullptr);
+        VPADGetTPCalibratedPoint(VPAD_CHAN_0, &vpadStatus.tpNormal, &vpadStatus.tpNormal);
+
+        nn::erreula::ControllerInfo controllerInfo;
+        controllerInfo.vpad    = &vpadStatus;
+        controllerInfo.kpad[0] = nullptr;
+        controllerInfo.kpad[1] = nullptr;
+        controllerInfo.kpad[2] = nullptr;
+        controllerInfo.kpad[3] = nullptr;
+        nn::erreula::Calc(controllerInfo);
+
+        if (nn::erreula::IsDecideSelectButtonError()) {
+            nn::erreula::DisappearErrorViewer();
+            break;
+        }
+
+        WHBGfxBeginRender();
+        WHBGfxBeginRenderTV();
+        WHBGfxClearColor(0, 0, 0, 1);
+        nn::erreula::DrawTV();
+        WHBGfxFinishRenderTV();
+        WHBGfxBeginRenderDRC();
+        WHBGfxClearColor(0, 0, 0, 1);
+        nn::erreula::DrawDRC();
+        WHBGfxFinishRenderDRC();
+        WHBGfxFinishRender();
+    }
+
+    nn::erreula::Destroy();
+    MEMFreeToDefaultHeap(createArg.workMemory);
+    FSDelClient(fsClient, FS_ERROR_FLAG_NONE);
+    MEMFreeToDefaultHeap(fsClient);
+    FSShutdown();
+    VPADShutdown();
+    WHBGfxShutdown();
+    WHBProcShutdown();
+}
+
 int main(int argc, char** argv)
 {
-	errluaInit(); // added wiiu errlua
-	errluaSetScreenEnabled(true);
-	void* appstate = NULL;
-	return SDL_AppInit(&appstate, argc, argv);
+    void* appstate = NULL;
+    SDL_AppResult result = SDL_AppInit(&appstate, argc, argv);
+
+    if (result != 0) {
+        ShowWiiUError(u"SDL_AppInit failed");
+        return -1;
+    }
+
+    return 0;
 }
 #endif
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
