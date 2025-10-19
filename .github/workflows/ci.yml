@@ -46,7 +46,7 @@ jobs:
           - { name: 'iOS',                 os: 'macos-15',       generator: 'Xcode',                 dx5: false, config: false, brew: true,  werror: true,   clang-tidy: false,  cmake-args: '-DCMAKE_SYSTEM_NAME=iOS', ios: true }
           - { name: 'Emscripten',          os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, emsdk: true, werror: true,   clang-tidy: false,  cmake-wrapper: 'emcmake' }
           - { name: 'Nintendo 3DS',        os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, n3ds: true,  werror: true,   clang-tidy: false,  container: 'devkitpro/devkitarm:latest', cmake-args: '-DCMAKE_TOOLCHAIN_FILE=/opt/devkitpro/cmake/3DS.cmake' }
-          - { name: 'Nintendo Wii U',      os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, wiiu: true,  werror: false,  clang-tidy: false,  container: 'devkitpro/devkitppc:latest', cmake-args: '-DCMAKE_TOOLCHAIN_FILE=/opt/devkitpro/cmake/WiiU.cmake', use_sdl2: true, fpie: false, extensions: false }
+          - { name: 'Nintendo Wii U',      os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, wiiu: true,  werror: false,  clang-tidy: false,  container: 'devkitpro/devkitppc:latest', cmake-args: '-DCMAKE_TOOLCHAIN_FILE=/opt/devkitpro/cmake/WiiU.cmake', use_sdl2: true, fpic: false, extensions: false }
           - { name: 'Xbox One',            os: 'windows-latest', generator: 'Visual Studio 17 2022', dx5: false, config: false, msvc: true,  werror: false,  clang-tidy: false,  vc-arch: 'amd64', cmake-args: '-DCMAKE_SYSTEM_NAME=WindowsStore -DCMAKE_SYSTEM_VERSION=10.0.26100.0', xbox-one: true}
           - { name: 'Android',             os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, android: true, werror: true, clang-tidy: false,}
     steps:
@@ -163,8 +163,8 @@ jobs:
             -DISLE_USE_DX5=${{ !!matrix.dx5 }} \
             -DISLE_BUILD_CONFIG=${{ !!matrix.config }} \
             -DUSE_SDL2=${{ !!matrix.use_sdl2 }} \
-            -DCMAKE_POSITION_INDEPENDENT_CODE=${{ matrix.fpie }} \
-            -DISLE_EXTENSIONS=${{ matrix.extensions }}
+            -DCMAKE_POSITION_INDEPENDENT_CODE=${{ matrix.fpic || 'ON' }} \
+            -DISLE_EXTENSIONS=${{ matrix.extensions || 'ON' }} \
             -DISLE_BUILD_ASSETS=${{ !!matrix.build-assets }} \
             -DENABLE_CLANG_TIDY=${{ !!matrix.clang-tidy  }} \
             -DISLE_WERROR=${{ !!matrix.werror }} \
