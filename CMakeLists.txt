@@ -595,6 +595,8 @@ if (ISLE_BUILD_APP)
   endif()
   if(WIIU) # this is the only way to stop miniaudio atomics error when building isle.rpx and lego1.rpl
     target_sources(isle PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/atomic-dummy/atomic.c)
+    # now links wut
+    target_link_libraries(isle PRIVATE wut)
   endif()
   # Link LEGO1
   target_link_libraries(isle PRIVATE lego1)
