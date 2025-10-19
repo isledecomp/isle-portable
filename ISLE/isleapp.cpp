@@ -304,14 +304,26 @@ void IsleApp::SetupVideoFlags(
 // still black screen i checked if i had the right assets for isle-U/content/LEGO/
 // and i do the .si files are still there :/
 #ifdef __WUT__
-static void ShowWiiUError(const char16_t *msg) // ok i did it wrong this is errlua i think
+static void DrawColorScreen(float r, float g, float b)
+{
+    WHBGfxBeginRender();
+    WHBGfxBeginRenderTV();
+    WHBGfxClearColor(r, g, b, 1.0f);
+    WHBGfxFinishRenderTV();
+    WHBGfxBeginRenderDRC();
+    WHBGfxClearColor(r, g, b, 1.0f);
+    WHBGfxFinishRenderDRC();
+    WHBGfxFinishRender();
+}
+
+static void ShowWiiUError(const char16_t* msg)
 {
     WHBProcInit();
     WHBGfxInit();
     FSInit();
     VPADInit();
 
-    FSClient *fsClient = (FSClient *)MEMAllocFromDefaultHeap(sizeof(FSClient));
+    FSClient* fsClient = (FSClient*)MEMAllocFromDefaultHeap(sizeof(FSClient));
     FSAddClient(fsClient, FS_ERROR_FLAG_NONE);
 
     nn::erreula::CreateArg createArg;
@@ -337,10 +349,7 @@ static void ShowWiiUError(const char16_t *msg) // ok i did it wrong this is errl
 
         nn::erreula::ControllerInfo controllerInfo;
         controllerInfo.vpad    = &vpadStatus;
-        controllerInfo.kpad[0] = nullptr;
-        controllerInfo.kpad[1] = nullptr;
-        controllerInfo.kpad[2] = nullptr;
-        controllerInfo.kpad[3] = nullptr;
+        for (int i = 0; i < 4; i++) controllerInfo.kpad[i] = nullptr;
         nn::erreula::Calc(controllerInfo);
 
         if (nn::erreula::IsDecideSelectButtonError()) {
@@ -373,12 +382,43 @@ static void ShowWiiUError(const char16_t *msg) // ok i did it wrong this is errl
 int main(int argc, char** argv)
 {
     void* appstate = NULL;
-    SDL_AppResult result = SDL_AppInit(&appstate, argc, argv);
 
-    if (result != 0) {
+    WHBProcInit();
+    WHBGfxInit();
+    DrawColorScreen(1.0f, 0.0f, 0.0f);
+
+    SDL_AppResult initResult = SDL_AppInit(&appstate, argc, argv);
+    if (initResult != 0) {
         ShowWiiUError(u"SDL_AppInit failed");
         return -1;
     }
+
+    DrawColorScreen(0.0f, 1.0f, 0.0f);
+
+    SDL_AppResult iterateResult = SDL_AppIterate(&appstate);
+    if (iterateResult != 0) {
+        ShowWiiUError(u"SDL_AppIterate failed");
+        return -1;
+    }
+
+    DrawColorScreen(1.0f, 1.0f, 0.0f);
+
+    SDL_AppResult eventResult = SDL_AppEvent(appstate, &event);
+    if (eventResult != 0) {
+        ShowWiiUError(u"SDL_AppEvent failed");
+        return -1;
+    }
+
+    DrawColorScreen(0.0f, 0.0f, 1.0f);
+
+	SDL_AppResult argResult = app.ParseArguments(argc, argv);
+    if (argResult == SDL_APP_FAILURE) {
+        return -1;
+    } else if (argResult == SDL_APP_SUCCESS) {
+        return 0;
+    }
+
+	DrawColorScreen(1.0f, 0.0f, 1.0f);
 
     return 0;
 }
