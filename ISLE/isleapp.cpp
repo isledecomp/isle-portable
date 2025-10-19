@@ -295,9 +295,10 @@ void IsleApp::SetupVideoFlags(
 }
 // i will figure out how to get this working :/
 #ifdef __WUT__
-int main(int argc, char** argv) {
-    void* appstate = NULL;
-    return SDL_AppInit(&appstate, argc, argv);
+int main(int argc, char** argv)
+{
+	void* appstate = NULL;
+	return SDL_AppInit(&appstate, argc, argv);
 }
 #endif
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
