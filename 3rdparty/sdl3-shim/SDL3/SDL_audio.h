@@ -2,6 +2,7 @@
 
 #include "SDL.h"
 
+#include <cstring>
 #include <map>
 #include <mutex>
 

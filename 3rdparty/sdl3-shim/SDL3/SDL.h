@@ -7,6 +7,7 @@
 #include <SDL2/SDL_keyboard.h>
 #include <SDL2/SDL_video.h>
 #include <SDL2/SDL_mouse.h>
+#include <SDL2/SDL_version.h>
 
 #include "SDL_audio.h"
 #include "SDL_events.h"

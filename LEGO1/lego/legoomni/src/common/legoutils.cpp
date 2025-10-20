@@ -34,6 +34,7 @@
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_process.h>
 #include <SDL3/SDL_stdinc.h>
+#include <SDL3/SDL_version.h>
 #include <stdio.h>
 #include <string.h>
 #include <vec.h>

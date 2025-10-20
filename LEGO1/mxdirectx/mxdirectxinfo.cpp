@@ -3,6 +3,7 @@
 #include "omni/include/mxvideoparam.h"
 
 #include <SDL3/SDL_log.h>
+#include <SDL3/SDL_version.h>
 #include <assert.h>
 #include <miniwin/miniwind3d.h>
 #include <stdio.h> // for vsprintf

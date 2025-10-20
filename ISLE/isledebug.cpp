@@ -18,6 +18,12 @@
 #else
 #include <backends/imgui_impl_sdl2.h>
 #include <backends/imgui_impl_sdlrenderer2.h>
+#define ImGui_ImplSDL3_InitForSDLRenderer ImGui_ImplSDL2_InitForSDLRenderer
+#define ImGui_ImplSDLRenderer3_Init ImGui_ImplSDLRenderer2_Init
+#define ImGui_ImplSDL3_ProcessEvent ImGui_ImplSDL2_ProcessEvent
+#define ImGui_ImplSDLRenderer3_NewFrame ImGui_ImplSDLRenderer2_NewFrame
+#define ImGui_ImplSDL3_NewFrame ImGui_ImplSDL2_NewFrame
+#define ImGui_ImplSDLRenderer3_RenderDrawData ImGui_ImplSDLRenderer2_RenderDrawData
 #endif
 #include <imgui.h>
 
@@ -181,11 +187,7 @@ void IsleDebug_Init()
 		ImGui::CreateContext();
 		ImGui::StyleColorsDark();
 
-#if SDL_MAJOR_VERSION >= 3
 		if (!ImGui_ImplSDL3_InitForSDLRenderer(g_debugWindow, g_debugRenderer)) {
-#else
-		if (!ImGui_ImplSDL2_InitForSDLRenderer(g_debugWindow, g_debugRenderer)) {
-#endif
 			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "ImGui_ImplSDL3_InitForSDLRenderer failed");
 			g_debugEnabled = false;
 			break;
@@ -197,11 +199,7 @@ void IsleDebug_Init()
 #else
 		SDL_SetTextureScaleMode(g_videoPalette, SDL_SCALEMODE_NEAREST);
 #endif
-#if SDL_MAJOR_VERSION >= 3
 		if (!ImGui_ImplSDLRenderer3_Init(g_debugRenderer)) {
-#else
-		if (!ImGui_ImplSDLRenderer2_Init(g_debugRenderer)) {
-#endif
 			g_debugEnabled = false;
 			break;
 		}
@@ -262,11 +260,7 @@ bool IsleDebug_Event(SDL_Event* event)
 	if (SDL_GetWindowFromEvent(event) != g_debugWindow) {
 		return false;
 	}
-#if SDL_MAJOR_VERSION >= 3
 	ImGui_ImplSDL3_ProcessEvent(event);
-#else
-	ImGui_ImplSDL2_ProcessEvent(event);
-#endif
 	return true;
 }
 
@@ -276,13 +270,9 @@ void IsleDebug_Render()
 		return;
 	}
 	const ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-#if SDL_MAJOR_VERSION >= 3
+
 	ImGui_ImplSDLRenderer3_NewFrame();
 	ImGui_ImplSDL3_NewFrame();
-#else
-	ImGui_ImplSDLRenderer2_NewFrame();
-	ImGui_ImplSDL2_NewFrame();
-#endif
 	ImGui::NewFrame();
 	ImGuiIO& io = ImGui::GetIO();
 	{
@@ -375,11 +365,7 @@ void IsleDebug_Render()
 		(Uint8) (clear_color.z * 255),
 		(Uint8) (clear_color.w * 255)
 	);
-#if SDL_MAJOR_VERSION >= 3
 	ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), g_debugRenderer);
-#else
-	ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), g_debugRenderer);
-#endif
 	SDL_RenderPresent(g_debugRenderer);
 }
 

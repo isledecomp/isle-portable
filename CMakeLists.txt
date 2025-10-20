@@ -60,12 +60,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}" CACHE PATH "Directory w
 set(ISLE_EMSCRIPTEN_HOST "" CACHE STRING "Host URL for Emscripten streaming (e.g., https://test.com)")
 cmake_dependent_option(BUILD_SHARED_LIBS "Build lego1 as a shared library" ON "NOT EMSCRIPTEN" OFF)
 
-if(USE_SDL2)
-  add_compile_definitions(SDL_MAJOR_VERSION=2)
-else()
-  add_compile_definitions(SDL_MAJOR_VERSION=3)
-endif()
-
 message(STATUS "Isle app:               ${ISLE_BUILD_APP}")
 message(STATUS "Config app:             ${ISLE_BUILD_CONFIG}")
 message(STATUS "Internal DirectX5 SDK:  ${ISLE_USE_DX5}")
@@ -82,27 +76,40 @@ if (DOWNLOAD_DEPENDENCIES)
   include(FetchContent)
 
   if(NOT USE_SDL2)
-  if(ANDROID)
-    # Built by Gradle
-    find_package(SDL3 REQUIRED CONFIG COMPONENTS Shared)
-  else()
-    if (WINDOWS_STORE)
-      FetchContent_Declare(
-        SDL3
-        GIT_REPOSITORY "https://github.com/Helloyunho/SDL3-uwp.git"
-        GIT_TAG "main"
-        EXCLUDE_FROM_ALL
-      )
+    if(ANDROID)
+      # Built by Gradle
+      find_package(SDL3 REQUIRED CONFIG COMPONENTS Shared)
     else()
-      FetchContent_Declare(
-        SDL3
-        GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
-        GIT_TAG "main"
-        EXCLUDE_FROM_ALL
-      )
+      if (WINDOWS_STORE)
+        FetchContent_Declare(
+          SDL3
+          GIT_REPOSITORY "https://github.com/Helloyunho/SDL3-uwp.git"
+          GIT_TAG "main"
+          EXCLUDE_FROM_ALL
+        )
+      else()
+        FetchContent_Declare(
+          SDL3
+          GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
+          GIT_TAG "main"
+          EXCLUDE_FROM_ALL
+        )
+      endif()
+      FetchContent_MakeAvailable(SDL3)
     endif()
-    FetchContent_MakeAvailable(SDL3)
-  endif()
+  else()
+    FetchContent_Declare(
+            SDL2
+            GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
+            GIT_TAG SDL2
+            EXCLUDE_FROM_ALL
+    )
+#    set(SDL_STATIC ON CACHE BOOL "" FORCE)
+#    set(SDL_SHARED OFF CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(SDL2)
+
+    set(SDL2_INCLUDE_DIR ${SDL2_SOURCE_DIR}/include)
+    add_subdirectory(3rdparty/sdl3-shim SYSTEM)
   endif()
 
   FetchContent_Declare(
@@ -121,7 +128,12 @@ else()
   # find_package looks for already-installed system packages.
   # Configure with `-DCMAKE_PREFIX_PATH="/path/to/package1;/path/to/package2"`
   # to add search paths.
-  find_package(SDL3 CONFIG REQUIRED)
+  if(NOT USE_SDL2)
+    find_package(SDL3 CONFIG REQUIRED)
+  else()
+    find_package(SDL2 CONFIG REQUIRED)
+    add_subdirectory(3rdparty/sdl3-shim SYSTEM)
+  endif()
 
   find_package(iniparser REQUIRED CONFIG COMPONENTS shared)
   target_link_libraries(Isle::iniparser INTERFACE iniparser-shared)

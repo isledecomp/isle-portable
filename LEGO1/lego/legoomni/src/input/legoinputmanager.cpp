@@ -12,6 +12,7 @@
 #include "roi/legoroi.h"
 
 #include <SDL3/SDL_log.h>
+#include <SDL3/SDL_version.h>
 
 DECOMP_SIZE_ASSERT(LegoInputManager, 0x338)
 DECOMP_SIZE_ASSERT(LegoNotifyList, 0x18)
