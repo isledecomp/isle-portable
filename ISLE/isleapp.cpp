@@ -404,7 +404,7 @@ int main(int argc, char** argv)
     DrawColorScreen(1.0f, 1.0f, 0.0f);
 
 	SDL_Event event;
-    SDL_AppResult eventResult = SDL_AppEvent(appstate, $event);
+    SDL_AppResult eventResult = SDL_AppEvent(appstate, &event);
     if (eventResult != 0) {
         ShowWiiUError(u"SDL_AppEvent failed");
         return -1;
@@ -413,7 +413,7 @@ int main(int argc, char** argv)
     DrawColorScreen(0.0f, 0.0f, 1.0f);
 
 	IsleApp app;
-	SDL_AppResult argResult = app.ParseArguments(&argc, argv);
+	SDL_AppResult argResult = app.ParseArguments(argc, argv);
     if (argResult == SDL_APP_FAILURE) {
         return -1;
     } else if (argResult == SDL_APP_SUCCESS) {
