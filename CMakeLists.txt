@@ -67,6 +67,7 @@ message(STATUS "Internal miniwin:       ${ISLE_MINIWIN}")
 message(STATUS "Isle extensions:        ${ISLE_EXTENSIONS}")
 message(STATUS "Isle debugging:         ${ISLE_DEBUG}")
 message(STATUS "Compile shaders:        ${ISLE_COMPILE_SHADERS}")
+message(STATUS "Use SDL2:               ${USE_SDL2}")
 
 add_library(Isle::iniparser INTERFACE IMPORTED)
 
