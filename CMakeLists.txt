@@ -2,6 +2,20 @@ cmake_minimum_required(VERSION 3.25...4.0 FATAL_ERROR)
 
 project(isle LANGUAGES CXX C VERSION 0.1)
 
+if(WIIU)
+    add_library(libstdc_WiiU STATIC IMPORTED)
+  set_target_properties(libstdc_WiiU PROPERTIES
+    IMPORTED_LOCATION /opt/devkitpro/devkitPPC/powerpc-eabi/lib/libstdc++.a
+    INTERFACE_INCLUDE_DIRECTORIES /opt/devkitpro/devkitPPC/powerpc-eabi/include/c++/15.1.0
+  )
+
+  include_directories(BEFORE
+    /opt/devkitpro/portlibs/wiiu/include
+    /opt/devkitpro/devkitPPC/powerpc-eabi/include/c++/15.1.0/powerpc-eabi
+    /opt/devkitpro/devkitPPC/powerpc-eabi/include/c++/15.1.0
+  )
+endif()
+
 if (IOS)
   set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED NO)
   set(CMAKE_OSX_DEPLOYMENT_TARGET "12.0")
