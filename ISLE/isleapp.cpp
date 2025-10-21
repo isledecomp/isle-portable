@@ -898,7 +898,7 @@ MxResult IsleApp::SetupWindow()
 	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_FULLSCREEN_BOOLEAN, m_fullScreen);
 	SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, WINDOW_TITLE);
 #endif
-#if defined(MINIWIN) && !defined(__3DS__) && !defined(WINDOWS_STORE && !defined(__WIIU__))
+#if defined(MINIWIN) && !defined(__3DS__) && !defined(WINDOWS_STORE) && !defined(__WIIU__)
 #if SDL_MAJOR_VERSION >= 3
 	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
 #endif
