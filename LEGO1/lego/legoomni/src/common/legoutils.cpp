@@ -31,8 +31,10 @@
 #include "realtime/realtime.h"
 #include "scripts.h"
 
-#include <SDL3/SDL_events.h>
+#if SDL_MAJOR_VERSION >= 3
 #include <SDL3/SDL_process.h>
+#endif
+#include <SDL3/SDL_events.h>
 #include <SDL3/SDL_stdinc.h>
 #include <SDL3/SDL_version.h>
 #include <stdio.h>
