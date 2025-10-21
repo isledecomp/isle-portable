@@ -10,7 +10,6 @@ if(WIIU)
   )
 
   include_directories(BEFORE
-    /opt/devkitpro/portlibs/wiiu/include
     /opt/devkitpro/devkitPPC/powerpc-eabi/include/c++/15.1.0/powerpc-eabi
     /opt/devkitpro/devkitPPC/powerpc-eabi/include/c++/15.1.0
   )
