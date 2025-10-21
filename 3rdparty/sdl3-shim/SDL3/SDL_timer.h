@@ -3,6 +3,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_timer.h>
 #include <SDL2/SDL_mutex.h>
+#include <map>
 
 // https://wiki.libsdl.org/SDL3/README-migration#sdl_timerh
 // https://wiki.libsdl.org/SDL3/README-migration#sdl_timerh | SDL_GetTicksNS()
