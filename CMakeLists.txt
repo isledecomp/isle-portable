@@ -99,6 +99,17 @@ if (DOWNLOAD_DEPENDENCIES)
       FetchContent_MakeAvailable(SDL3)
     endif()
   else()
+    if(WIIU)
+    FetchContent_Declare(
+    SDL2
+    GIT_REPOSITORY "https://github.com/devkitPro/SDL.git"
+    GIT_TAG 3e4393af9e7e36a3f669a52505281555de538923
+    EXCLUDE_FROM_ALL
+    )
+#    set(SDL_STATIC ON CACHE BOOL "" FORCE)
+#    set(SDL_SHARED OFF CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(SDL2)
+    else()
     FetchContent_Declare(
             SDL2
             GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
@@ -108,6 +119,7 @@ if (DOWNLOAD_DEPENDENCIES)
 #    set(SDL_STATIC ON CACHE BOOL "" FORCE)
 #    set(SDL_SHARED OFF CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(SDL2)
+    endif()
 
     set(SDL2_INCLUDE_DIR ${SDL2_SOURCE_DIR}/include)
     add_subdirectory(3rdparty/sdl3-shim SYSTEM)
