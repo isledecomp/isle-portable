@@ -20,6 +20,7 @@
 #include "SDL_pixels.h"
 #include "SDL_surface.h"
 #include "SDL_timer.h"
+#include "SDL_platform_defines.h"
 
 #include <random>
 
