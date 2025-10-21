@@ -1,7 +1,5 @@
 #include "extensions/textureloader.h"
 
-#include <algorithm>
-
 using namespace Extensions;
 
 std::map<std::string, std::string> TextureLoader::options;

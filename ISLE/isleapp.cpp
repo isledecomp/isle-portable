@@ -65,18 +65,6 @@
 #include "3ds/config.h"
 #endif
 
-#ifdef __WIIU__
-#include "wiiu/config.h"
-#ifdef __WUT__
-#include <coreinit/filesystem.h>
-#include <coreinit/memdefaultheap.h>
-#include <nn/erreula.h>
-#include <vpad/input.h>
-#include <whb/gfx.h>
-#include <whb/proc.h>
-#endif
-#endif
-
 #ifdef WINDOWS_STORE
 #include "xbox_one_series/config.h"
 #endif
@@ -89,7 +77,12 @@
 #include "android/config.h"
 #endif
 
+#ifdef __WIIU__
+#include "wiiu/config.h"
+#endif
+
 DECOMP_SIZE_ASSERT(IsleApp, 0x8c)
+
 // GLOBAL: ISLE 0x410030
 IsleApp* g_isle = NULL;
 
@@ -300,6 +293,7 @@ void IsleApp::SetupVideoFlags(
 		m_videoParam.Flags().Set16Bit(1);
 	}
 }
+
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 {
 	*appstate = NULL;
@@ -354,23 +348,6 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 
 	// Get reference to window
 	*appstate = g_isle->GetWindowHandle();
-
-	// Currently, SDL doesn't send SDL_EVENT_MOUSE_ADDED at startup (unlike for gamepads)
-	// This will probably be fixed in the future: https://github.com/libsdl-org/SDL/issues/12815
-	{
-		int count;
-		SDL_MouseID* mice = SDL_GetMice(&count);
-
-		if (mice) {
-			for (int i = 0; i < count; i++) {
-				if (InputManager()) {
-					InputManager()->AddMouse(mice[i]);
-				}
-			}
-
-			SDL_free(mice);
-		}
-	}
 
 #ifdef __EMSCRIPTEN__
 	SDL_AddEventWatch(
@@ -526,7 +503,7 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		}
 		break;
 	}
-#if SDSDL_MAJOR_VERSION >= 3
+#if SDL_MAJOR_VERSION >= 3
 	case SDL_EVENT_KEYBOARD_ADDED:
 		if (InputManager()) {
 			InputManager()->AddKeyboard(event->kdevice.which);
@@ -921,7 +898,7 @@ MxResult IsleApp::SetupWindow()
 	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_FULLSCREEN_BOOLEAN, m_fullScreen);
 	SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, WINDOW_TITLE);
 #endif
-#if defined(MINIWIN) && !defined(__3DS__) && !defined(WINDOWS_STORE) && !defined(__WIIU__)
+#if defined(MINIWIN) && !defined(__3DS__) && !defined(WINDOWS_STORE && !defined(__WIIU__))
 #if SDL_MAJOR_VERSION >= 3
 	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
 #endif
@@ -1136,6 +1113,8 @@ bool IsleApp::LoadConfig()
 		iniparser_set(dict, "isle:Exclusive Y Resolution", SDL_itoa(m_exclusiveYRes, buf, 10));
 		iniparser_set(dict, "isle:Exclusive Framerate", SDL_itoa(m_exclusiveFrameRate, buf, 10));
 		iniparser_set(dict, "isle:Frame Delta", SDL_itoa(m_frameDelta, buf, 10));
+		iniparser_set(dict, "isle:MSAA", SDL_itoa(m_msaaSamples, buf, 10));
+		iniparser_set(dict, "isle:Anisotropic", SDL_itoa(m_anisotropic, buf, 10));
 
 #ifdef EXTENSIONS
 		iniparser_set(dict, "extensions", NULL);

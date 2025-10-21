@@ -11,8 +11,8 @@
 #include "misc.h"
 #include "mxticklemanager.h"
 
-#if SDL_MAJOR_VERSION >= 3
 #include <SDL3/SDL.h>
+#if SDL_MAJOR_VERSION >= 3
 #include <backends/imgui_impl_sdl3.h>
 #include <backends/imgui_impl_sdlrenderer3.h>
 #else
@@ -232,7 +232,11 @@ bool IsleDebug_Event(SDL_Event* event)
 		return false;
 	}
 	if (event->type == SDL_EVENT_KEY_DOWN) {
+#if SDL_MAJOR_VERSION >= 3
 		if (event->key.scancode == SCANCODE_KEY_PAUSE) {
+#else
+		if (event->key.keysym.scancode == SCANCODE_KEY_PAUSE) {
+#endif
 			if (!g_debugPaused) {
 				IsleDebug_SetPaused(true);
 			}
@@ -241,7 +245,11 @@ bool IsleDebug_Event(SDL_Event* event)
 			}
 			return true;
 		}
+#if SDL_MAJOR_VERSION >= 3
 		if (event->key.scancode == SCANCODE_KEY_RESUME) {
+#else
+		if (event->key.keysym.scancode == SCANCODE_KEY_RESUME) {
+#endif
 			g_debugDoStep = false;
 			if (g_debugPaused) {
 				IsleDebug_SetPaused(false);

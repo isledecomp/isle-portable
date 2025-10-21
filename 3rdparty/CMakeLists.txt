@@ -79,6 +79,7 @@ if(ISLE_DEBUG)
         ${imgui_SOURCE_DIR}/backends/imgui_impl_sdlrenderer3.cpp
     )
   endif()
+
   target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR})
   target_link_libraries(imgui PRIVATE SDL3::SDL3)
   set_property(TARGET imgui PROPERTY CXX_CLANG_TIDY "")

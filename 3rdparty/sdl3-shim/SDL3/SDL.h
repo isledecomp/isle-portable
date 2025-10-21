@@ -7,6 +7,7 @@
 #include <SDL2/SDL_keyboard.h>
 #include <SDL2/SDL_video.h>
 #include <SDL2/SDL_mouse.h>
+#include <SDL2/SDL_version.h>
 
 #include "SDL_audio.h"
 #include "SDL_events.h"
@@ -19,7 +20,6 @@
 #include "SDL_pixels.h"
 #include "SDL_surface.h"
 #include "SDL_timer.h"
-#include "SDL_version.h"
 
 #include <random>
 

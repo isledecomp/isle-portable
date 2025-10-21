@@ -2,28 +2,6 @@ cmake_minimum_required(VERSION 3.25...4.0 FATAL_ERROR)
 
 project(isle LANGUAGES CXX C VERSION 0.1)
 
-if(WIIU)
-  # used to fix an error
-  add_library(SDL2::SDL2 STATIC IMPORTED)
-  set_target_properties(SDL2::SDL2 PROPERTIES
-    IMPORTED_LOCATION /opt/devkitpro/portlibs/wiiu/lib/libSDL2.a
-    INTERFACE_INCLUDE_DIRECTORIES /opt/devkitpro/portlibs/wiiu/include
-  )
-
-  add_library(libstdc_WiiU STATIC IMPORTED)
-  set_target_properties(libstdc_WiiU PROPERTIES
-    IMPORTED_LOCATION /opt/devkitpro/devkitPPC/powerpc-eabi/lib/libstdc++.a
-    INTERFACE_INCLUDE_DIRECTORIES /opt/devkitpro/devkitPPC/powerpc-eabi/include/c++/15.1.0
-  )
-
-  include_directories(BEFORE
-    /opt/devkitpro/portlibs/wiiu/include
-    /opt/devkitpro/devkitPPC/powerpc-eabi/include/c++/15.1.0/powerpc-eabi
-    /opt/devkitpro/devkitPPC/powerpc-eabi/include/c++/15.1.0
-  )
-endif()
-
-
 if (IOS)
   set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED NO)
   set(CMAKE_OSX_DEPLOYMENT_TARGET "12.0")
@@ -74,11 +52,10 @@ cmake_dependent_option(ISLE_MINIWIN "Use miniwin" ON "NOT ISLE_USE_DX5" OFF)
 cmake_dependent_option(ISLE_EXTENSIONS "Use extensions" ON "NOT ISLE_USE_DX5;NOT WINDOWS_STORE" OFF)
 cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "MSVC OR ISLE_MINIWIN;NOT NINTENDO_3DS;NOT WINDOWS_STORE" OFF)
 cmake_dependent_option(ISLE_COMPILE_SHADERS "Compile shaders" ON "SDL_SHADERCROSS_BIN;TARGET Python3::Interpreter" OFF)
-option(CMAKE_POSITION_INDEPENDENT_CODE "Build with -fPIC" ON) # WUT/WIIU DOES NOT LIKE -fPIC (ITS OFF ON CI BUILDS)
+option(CMAKE_POSITION_INDEPENDENT_CODE "Build with -fPIC" ON)
 option(ENABLE_CLANG_TIDY "Enable clang-tidy")
 option(DOWNLOAD_DEPENDENCIES "Download dependencies" ON)
 option(USE_SDL2 "Use SDL2 instead of SDL3 via a shim" OFF)
-option(BUILD_WUHB "Build isle.wuhb and isle.rpx and lego1.rpl (WIIU ONLY)" OFF) # OFF FOR NOW
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}" CACHE PATH "Directory where to put executables and dll")
 set(ISLE_EMSCRIPTEN_HOST "" CACHE STRING "Host URL for Emscripten streaming (e.g., https://test.com)")
 cmake_dependent_option(BUILD_SHARED_LIBS "Build lego1 as a shared library" ON "NOT EMSCRIPTEN" OFF)
@@ -87,10 +64,10 @@ message(STATUS "Isle app:               ${ISLE_BUILD_APP}")
 message(STATUS "Config app:             ${ISLE_BUILD_CONFIG}")
 message(STATUS "Internal DirectX5 SDK:  ${ISLE_USE_DX5}")
 message(STATUS "Internal miniwin:       ${ISLE_MINIWIN}")
-message(STATUS "USE SDL2:               ${USE_SDL2}")
 message(STATUS "Isle extensions:        ${ISLE_EXTENSIONS}")
 message(STATUS "Isle debugging:         ${ISLE_DEBUG}")
 message(STATUS "Compile shaders:        ${ISLE_COMPILE_SHADERS}")
+message(STATUS "Use SDL2:               ${USE_SDL2}")
 
 add_library(Isle::iniparser INTERFACE IMPORTED)
 
@@ -122,8 +99,6 @@ if (DOWNLOAD_DEPENDENCIES)
       FetchContent_MakeAvailable(SDL3)
     endif()
   else()
-    # wut/devkitPPC has a prebuilt SDL2
-    if(NOT WIIU)
     FetchContent_Declare(
             SDL2
             GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
@@ -133,8 +108,8 @@ if (DOWNLOAD_DEPENDENCIES)
 #    set(SDL_STATIC ON CACHE BOOL "" FORCE)
 #    set(SDL_SHARED OFF CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(SDL2)
+
     set(SDL2_INCLUDE_DIR ${SDL2_SOURCE_DIR}/include)
-    endif()
     add_subdirectory(3rdparty/sdl3-shim SYSTEM)
   endif()
 
@@ -219,18 +194,11 @@ target_link_directories(DirectX5::DirectX5 INTERFACE "${CMAKE_SOURCE_DIR}/3rdpar
 
 add_library(Vec::Vec INTERFACE IMPORTED)
 target_include_directories(Vec::Vec INTERFACE "${CMAKE_SOURCE_DIR}/3rdparty/vec")
-# if(WIIU) # elf2rpl does not like .a files
-# add_executable(lego1
-#   LEGO1/main.cpp
-# )
-# set_target_properties(lego1 PROPERTIES ENABLE_EXPORTS TRUE)
-# else()
+
 add_library(lego1
   LEGO1/main.cpp
 )
-# endif()
 if(NOT WIIU)
-# used to fix an error
 target_precompile_headers(lego1 PRIVATE "LEGO1/lego1_pch.h")
 endif()
 set_property(TARGET lego1 PROPERTY DEFINE_SYMBOL "LEGO1_DLL")
@@ -244,9 +212,6 @@ target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/L
 target_link_libraries(lego1 PRIVATE SDL3::SDL3)
 target_link_libraries(lego1 PUBLIC SDL3::Headers)
 target_link_libraries(lego1 PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5>)
-if(WIIU) # this is the only way to stop miniaudio atomics error when building isle.rpx and lego1.rpl
-  target_sources(lego1 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/atomic-dummy/atomic.c)
-endif()
 # Allow unconditional include of miniwin/miniwind3d.h
 target_link_libraries(lego1 PRIVATE miniwin-headers)
 if(WIN32)
@@ -607,11 +572,6 @@ if (ISLE_BUILD_APP)
   if (WIN32)
     target_link_libraries(isle PRIVATE winmm)
   endif()
-  if(WIIU) # this is the only way to stop miniaudio atomics error when building isle.rpx and lego1.rpl
-    target_sources(isle PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/atomic-dummy/atomic.c)
-    # now links wut
-    target_link_libraries(isle PRIVATE wut)
-  endif()
   # Link LEGO1
   target_link_libraries(isle PRIVATE lego1)
   if(ISLE_DEBUG)
@@ -662,9 +622,9 @@ if (ISLE_BUILD_APP)
             ISLE/android/config.cpp
     )
   endif()
-  if(WIIU)
+  if (WIIU)
     target_sources(isle PRIVATE
-      ISLE/wiiu/config.cpp
+            ISLE/wiiu/config.cpp
     )
   endif()
   if(Python3_FOUND)
@@ -950,6 +910,14 @@ if(WINDOWS_STORE)
       PATTERN "*/*.msix"
       PATTERN "*/*.msixbundle")
 endif()
+if(WIIU)
+  wut_create_rpx(isle)
+
+  install(FILES "$<TARGET_FILE_DIR:isle>/isle.rpx" DESTINATION "${CMAKE_INSTALL_BINDIR}")
+  if(WIIU_WUHB)
+
+  endif()
+endif()
 if(MSVC OR IOS)
   set(CPACK_GENERATOR ZIP)
   if(IOS)
@@ -960,29 +928,6 @@ elseif(APPLE AND NOT IOS)
   set(CPACK_GENERATOR DragNDrop)
 else()
   set(CPACK_GENERATOR TGZ)
-endif()
-if(WIIU)
-  # makes and links isle.rpx and lego1.rpl (Tiramisu/Legacy environment ONLY)
-  # wut_add_exports(lego1 "${CMAKE_SOURCE_DIR}/LEGO1/exports.def")
-  # wut_create_rpl(lego1)
-
-  # wut_link_rpl(isle lego1) # lego1.rpl won't be a rpl for now
-  wut_create_rpx(isle)
-
-  install(FILES "$<TARGET_FILE_DIR:isle>/isle.rpx" DESTINATION "${CMAKE_INSTALL_BINDIR}")
-  # install(FILES "$<TARGET_FILE_DIR:lego1>/lego1.rpl" DESTINATION "${CMAKE_INSTALL_BINDIR}")
-  if(BUILD_WUHB)
-    # i did some resreach idk if this works i will test it out when im done with tiramisu version
-    # makes isle.wuhb (Amroma environment ONLY)
-    wut_create_wuhb(isle_amr
-    TARGET isle-U
-    ICON "icon.tga"
-    TITLE "Lego Island"
-    AUTHOR "Lyelye"
-    )
-
-    install(FILES "$<TARGET_FILE_DIR:isle>/isle.wuhb" DESTINATION "${CMAKE_INSTALL_BINDIR}")
-  endif()
 endif()
 
 include(CPack)

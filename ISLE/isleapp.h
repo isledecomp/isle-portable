@@ -23,7 +23,6 @@ public:
 	IsleApp();
 	~IsleApp();
 
-	void Run();
 	void Close();
 
 	MxS32 SetupLegoOmni();

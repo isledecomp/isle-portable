@@ -32,7 +32,7 @@ if(NOT USE_SDL2)
   list(APPEND GRAPHICS_BACKENDS USE_SDL_GPU)
 endif()
 
-if(NOT WINDOWS_STORE AND NOT WIIU)
+if(NOT WINDOWS_STORE)
   find_package(OpenGL)
     if(OpenGL_FOUND)
       message(STATUS "Found OpenGL: enabling OpenGL 1.x renderer")
@@ -89,14 +89,6 @@ if(NINTENDO_3DS)
     message(STATUS "🧩 Citro3D support not enabled")
   endif()
 endif()
-
-# comment out for now
-# if(NOT WIIU)
-#   message(STATUS "Enabling GX2 renderer")
-#   target_sources(miniwin PRIVATE src/d3drm/backends/gx2/renderer.cpp)
-#   target_link_libraries(miniwin PRIVATE wut)
-#   list(APPEND GRAPHICS_BACKENDS USE_GX2)
-# endif()
 
 if(WIN32 AND NOT WINDOWS_STORE)
   target_sources(miniwin PRIVATE

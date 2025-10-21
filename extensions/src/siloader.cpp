@@ -6,7 +6,6 @@
 
 #include <SDL3/SDL.h>
 #include <interleaf.h>
-#include <algorithm>
 
 using namespace Extensions;
 

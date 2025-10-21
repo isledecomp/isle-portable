@@ -194,7 +194,6 @@ bool CMainDialog::OnInitDialog()
 			m_ui->exFullResComboBox->setCurrentIndex(i);
 		}
 	}
-	SDL_free(displayModes);
 
 	UpdateInterface();
 	return true;
