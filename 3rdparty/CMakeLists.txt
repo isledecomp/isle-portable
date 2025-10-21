@@ -103,39 +103,3 @@ add_library(libweaver STATIC
     ${libweaver_SOURCE_DIR}/lib/sitypes.cpp
 )
 target_include_directories(libweaver PUBLIC ${libweaver_SOURCE_DIR}/lib)
-
-if(USE_SDL2)
-  if(DOWNLOAD_DEPENDENCIES)
-#    include(FetchContent)
-#    FetchContent_Declare(
-#            SDL2
-#            GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
-#            GIT_TAG 5d249570393f7a37e037abf22cd6012a4cc56a71
-#            EXCLUDE_FROM_ALL
-#    )
-#    FetchContent_MakeAvailable(SDL2)
-    # Find SDL2 normally
-    find_package(SDL2 REQUIRED)
-
-  endif()
-
-  file(GLOB SDL2_HEADERS "${SDL2_INCLUDE_DIR}/*.h")
-  foreach(header IN LISTS SDL2_HEADERS)
-    get_filename_component(fname ${header} NAME)
-    configure_file(${header} ${CMAKE_CURRENT_BINARY_DIR}/sdl3-shim/SDL3/${fname} COPYONLY)
-  endforeach()
-
-
-  add_library(SDL3_shim STATIC
-          sdl3-shim/main.cpp
-  )
-  target_link_libraries(SDL3_shim PRIVATE SDL2::SDL2)
-  target_include_directories(SDL3_shim PUBLIC
-          "${CMAKE_CURRENT_SOURCE_DIR}/sdl3-shim"
-          "${CMAKE_CURRENT_BINARY_DIR}/sdl3-shim"
-  )
-
-  add_library(SDL3::SDL3 ALIAS SDL3_shim)
-  add_library(SDL3::Headers ALIAS SDL3_shim)
-
-endif()
