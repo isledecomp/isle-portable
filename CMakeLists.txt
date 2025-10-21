@@ -4,7 +4,7 @@ project(isle LANGUAGES CXX C VERSION 0.1)
 
 if(WIIU)
   # used to fix an error
-  add_library(SDL2_WiiU STATIC IMPORTED)
+  add_library(SDL2::SDL2 STATIC IMPORTED)
   set_target_properties(SDL2_WiiU PROPERTIES
     IMPORTED_LOCATION /opt/devkitpro/portlibs/wiiu/lib/libSDL2.a
     INTERFACE_INCLUDE_DIRECTORIES /opt/devkitpro/portlibs/wiiu/include
