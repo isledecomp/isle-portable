@@ -19,6 +19,7 @@
 #include "SDL_pixels.h"
 #include "SDL_surface.h"
 #include "SDL_timer.h"
+#include "SDL_version.h"
 
 #include <random>
 
@@ -42,14 +43,14 @@ inline float SDL_randf()
 
 // https://wiki.libsdl.org/SDL3/README-migration#sdl_videoh
 
-typedef Uint32 SDL_DisplayID;
+typedef int SDL_DisplayID;
 inline SDL_DisplayID SDL_GetPrimaryDisplay()
 {
-	return 0;
+	return 1;
 }
 
 // Modified from 83bb0f9105922fd49282f0b931f7873a71877ac8 SDL_video.c#L1331
-inline SDL_DisplayMode** SDL_GetFullscreenDisplayModes(SDL_DisplayID displayID, int *count)
+inline SDL_DisplayMode** SDL_GetFullscreenDisplayModes(int displayID, int* count)
 {
 	int i;
 	if (count) *count = 0;
@@ -76,11 +77,21 @@ inline SDL_DisplayMode** SDL_GetFullscreenDisplayModes(SDL_DisplayID displayID, 
     return result;
 }
 
-inline SDL_DisplayMode* SDL_GetCurrentDisplayMode(SDL_DisplayID displayID)
+inline SDL_DisplayMode g_displayMode;
+inline SDL_mutex* g_displayMutex = SDL_CreateMutex();
+
+// This does not handle the differences between the SDL_DisplayMode struct
+// https://wiki.libsdl.org/SDL3/SDL_DisplayMode
+// https://wiki.libsdl.org/SDL2/SDL_DisplayMode
+inline SDL_DisplayMode* SDL_GetCurrentDisplayMode(int displayID)
 {
-	SDL_DisplayMode* mode = nullptr;
-	SDL_GetCurrentDisplayMode(displayID, mode);
-	return mode;
+	SDL_LockMutex(g_displayMutex);
+	if (SDL_GetCurrentDisplayMode(displayID, &g_displayMode) == 0) {
+		SDL_UnlockMutex(g_timerMutex);
+		return &g_displayMode;
+	}
+	SDL_UnlockMutex(g_timerMutex);
+	return NULL;
 }
 
 #define SDL_GetWindowSize(...) (SDL_GetWindowSize(__VA_ARGS__), true )
@@ -96,10 +107,19 @@ inline SDL_DisplayMode* SDL_GetCurrentDisplayMode(SDL_DisplayID displayID)
 
 #define SDL_RenderTexture(...) (SDL_RenderCopyF(__VA_ARGS__) == 0)
 
+#define SDL_CreateWindowAndRenderer(title, width, height, flags, window, renderer) (SDL_CreateWindowAndRenderer(width, height, flags, window, renderer) == 0)
+
+#define SDL_SetRenderScale(...) (SDL_RenderSetScale(__VA_ARGS__) == 0)
+
+// https://wiki.libsdl.org/SDL3/README-migration#sdl_keyboardh
+
+typedef int SDL_KeyboardID;
+
+#define SDL_GetKeyFromScancode(scancode, modstate, event) SDL_GetKeyFromScancode(scancode)
+
 // https://wiki.libsdl.org/SDL3/README-migration#sdl_haptich
 // SDL_MouseID/SDL_KeyboardID are new
 
-typedef int SDL_KeyboardID;
 #define SDL_GetKeyboardState (const bool*)SDL_GetKeyboardState
 typedef int SDL_HapticID;
 
@@ -166,17 +186,6 @@ inline bool SDL_GetClosestFullscreenDisplayMode(SDL_DisplayID displayID, int w, 
 // https://wiki.libsdl.org/SDL3/README-migration#sdl_mouseh
 
 typedef Uint32 SDL_MouseID;
-
-inline SDL_MouseID * SDL_GetMice(int *count)
-{
-	if (count) {
-		*count = 1;
-	}
-	const auto mice = static_cast<SDL_MouseID *>(SDL_malloc((*count + 1) * sizeof(SDL_MouseID)));
-	mice[0] = { 0 };
-	mice[1] = { 0 };
-	return mice;
-}
 
 static void SDL_HideCursor() { SDL_ShowCursor(SDL_DISABLE); }
 static void SDL_ShowCursor() { SDL_ShowCursor(SDL_ENABLE); }

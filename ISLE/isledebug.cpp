@@ -11,9 +11,20 @@
 #include "misc.h"
 #include "mxticklemanager.h"
 
+#if SDL_MAJOR_VERSION >= 3
 #include <SDL3/SDL.h>
 #include <backends/imgui_impl_sdl3.h>
 #include <backends/imgui_impl_sdlrenderer3.h>
+#else
+#include <backends/imgui_impl_sdl2.h>
+#include <backends/imgui_impl_sdlrenderer2.h>
+#define ImGui_ImplSDL3_InitForSDLRenderer ImGui_ImplSDL2_InitForSDLRenderer
+#define ImGui_ImplSDLRenderer3_Init ImGui_ImplSDLRenderer2_Init
+#define ImGui_ImplSDL3_ProcessEvent ImGui_ImplSDL2_ProcessEvent
+#define ImGui_ImplSDLRenderer3_NewFrame ImGui_ImplSDLRenderer2_NewFrame
+#define ImGui_ImplSDL3_NewFrame ImGui_ImplSDL2_NewFrame
+#define ImGui_ImplSDLRenderer3_RenderDrawData ImGui_ImplSDLRenderer2_RenderDrawData
+#endif
 #include <imgui.h>
 
 #ifdef ISLE_VALGRIND

@@ -12,6 +12,7 @@
 #include "roi/legoroi.h"
 
 #include <SDL3/SDL_log.h>
+#include <SDL3/SDL_version.h>
 
 #ifdef __WIIU__
 template <class... Ts>
@@ -793,7 +794,7 @@ void LegoInputManager::UpdateLastInputMethod(SDL_Event* p_event)
 #if SDL_MAJOR_VERSION >= 3
 		m_lastInputMethod = SDL_KeyboardID_v{p_event->key.which};
 #else
-		m_lastInputMethod = SDL_KeyboardID_v{0};
+		m_lastInputMethod = SDL_KeyboardID_v{1};
 #endif
 		break;
 	case SDL_EVENT_MOUSE_BUTTON_DOWN:
@@ -801,14 +802,14 @@ void LegoInputManager::UpdateLastInputMethod(SDL_Event* p_event)
 #if SDL_MAJOR_VERSION >= 3
 		m_lastInputMethod = SDL_MouseID_v{p_event->button.which};
 #else
-		m_lastInputMethod = SDL_MouseID_v{0};
+		m_lastInputMethod = SDL_MouseID_v{1};
 #endif
 		break;
 	case SDL_EVENT_MOUSE_MOTION:
 #if SDL_MAJOR_VERSION >= 3
 		m_lastInputMethod = SDL_MouseID_v{p_event->motion.which};
 #else
-		m_lastInputMethod = SDL_MouseID_v{0};
+		m_lastInputMethod = SDL_MouseID_v{1};
 #endif
 		break;
 	case SDL_EVENT_GAMEPAD_BUTTON_DOWN:

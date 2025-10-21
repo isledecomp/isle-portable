@@ -2,12 +2,11 @@
 
 #include "SDL.h"
 
+#include <cstring>
 #include <map>
 #include <mutex>
 
 // https://wiki.libsdl.org/SDL3/README-migration#sdl_audioh
-
-#define SDL_DestroyAudioStream SDL_FreeAudioStream
 
 #define SDL_AUDIO_F32 AUDIO_F32SYS
 
@@ -16,40 +15,31 @@
 typedef void SDL_AudioStreamCallback(void *userdata, SDL_AudioStream *stream, int additional_amount, int total_amount);
 
 struct ShimAudioCtx {
+	SDL_AudioDeviceID device;
 	SDL_AudioStream* stream;
 	SDL_AudioStreamCallback* callback;
 	void *userdata;
 	SDL_AudioSpec obtained;
 };
 
-static std::map<SDL_AudioDeviceID, ShimAudioCtx> g_audioCtxs;
-static SDL_mutex *g_audioMutex = NULL;
+static std::map<SDL_AudioStream*, ShimAudioCtx*> g_audioCtxs;
+static SDL_mutex *g_audioMutex = SDL_CreateMutex();
 
-static void SDLCALL shim_audio_callback(void *userdata, Uint8 *stream, int len) {
-	SDL_AudioDeviceID devid = reinterpret_cast<uintptr_t>(userdata);
+static void shim_audio_callback(void *userdata, Uint8 *data_stream, int len) {
+	const auto ctx = static_cast<ShimAudioCtx*>(userdata);
+	SDL_AudioStream* audio_stream = ctx->stream;
 
-	SDL_LockMutex(g_audioMutex);
-	const auto it = g_audioCtxs.find(devid);
-	if (it == g_audioCtxs.end()) {
-		SDL_UnlockMutex(g_audioMutex);
-		SDL_memset(stream, 0, len);
-		return;
-	}
+	int available = SDL_AudioStreamAvailable(audio_stream);
 
-	ShimAudioCtx &ctx = it->second;
-	SDL_UnlockMutex(g_audioMutex);
+	int additional_amount = len - available;
+	if (additional_amount < 0)
+		additional_amount = 0;
 
-	// How many sample frames the device is asking for
-	const int frame_size = (SDL_AUDIO_BITSIZE(ctx.obtained.format) / 8) * ctx.obtained.channels;
-	const int needed_frames = len / frame_size;
+	ctx->callback(ctx->userdata, audio_stream, additional_amount, len);
 
-	int total = (SDL_AudioStreamAvailable(ctx.stream) / frame_size) + needed_frames;
-	// SDL3 callback pushes more into the stream
-	ctx.callback(ctx.userdata, ctx.stream, needed_frames, total);
-
-	int got = SDL_AudioStreamGet(ctx.stream, stream, len);
-	if (got < len) {
-		SDL_memset(stream + got, 0, len - got);
+	int retrieved = SDL_AudioStreamGet(audio_stream, data_stream, len);
+	if (retrieved < len) {
+		memset(data_stream + retrieved, ctx->obtained.silence, len - retrieved);
 	}
 }
 
@@ -59,43 +49,64 @@ static void SDLCALL shim_audio_callback(void *userdata, Uint8 *stream, int len) 
 inline SDL_AudioDeviceID SDL_GetAudioStreamDevice(SDL_AudioStream* stream)
 {
 	SDL_LockMutex(g_audioMutex);
-	const auto it = g_audioCtxs.find(reinterpret_cast<uintptr_t>(stream));
+	const auto it = g_audioCtxs.find(stream);
 	if (it == g_audioCtxs.end()) {
 		return 0;
 	}
-	return it->first;
+	SDL_UnlockMutex(g_audioMutex);
+	return it->second->device;
 }
 
 inline SDL_AudioStream * SDL_OpenAudioDeviceStream(const char* devid, const SDL_AudioSpec* desired, SDL_AudioStreamCallback callback, void* userdata)
 {
 	SDL_AudioSpec obtained{};
 	SDL_AudioSpec desired2 = *desired;
+
+	auto ctx = new ShimAudioCtx();
+	ctx->callback = callback;
+	ctx->userdata = userdata;
+	ctx->stream = nullptr;
+
 	desired2.callback = shim_audio_callback;
-	desired2.userdata = reinterpret_cast<void*>(static_cast<uintptr_t>(0));
-	SDL_AudioDeviceID device = SDL_OpenAudioDevice(devid, 0, &desired2, &obtained, 0);
+	desired2.userdata = ctx;
+	const SDL_AudioDeviceID device = SDL_OpenAudioDevice(devid, 0, &desired2, &obtained, 0);
+	if (device <= 0) {
+		delete ctx;
+		return NULL;
+	}
+
 	SDL_AudioStream* stream = SDL_NewAudioStream(
 			desired->format, desired->channels, desired->freq,
 			obtained.format, obtained.channels, obtained.freq
 			);
 	if (!stream) {
 		SDL_CloseAudioDevice(device);
-		return nullptr;
+		delete ctx;
+		return NULL;
 	}
 
-	{
-		SDL_LockMutex(g_audioMutex);
-		ShimAudioCtx ctx;
-		ctx.stream   = stream;
-		ctx.callback = callback;
-		ctx.userdata = userdata;
-		ctx.obtained = obtained;
-		g_audioCtxs[device] = ctx;
-		SDL_UnlockMutex(g_audioMutex);
-	}
+	ctx->device   = device;
+	ctx->stream   = stream;
+	ctx->obtained = obtained;
 
-	SDL_LockAudioDevice(device);
-	desired2.userdata = reinterpret_cast<void*>(static_cast<uintptr_t>(device));
-	SDL_UnlockAudioDevice(device);
+	SDL_LockMutex(g_audioMutex);
+	g_audioCtxs[stream] = ctx;
+	SDL_UnlockMutex(g_audioMutex);
 
 	return stream;
+}
+
+inline SDL_bool SDL_DestroyAudioStream(SDL_AudioStream* stream)
+{
+	SDL_LockMutex(g_audioMutex);
+	if (const auto it = g_audioCtxs.find(stream); it != g_audioCtxs.end()) {
+		SDL_CloseAudioDevice(it->second->device);
+		delete it->second;
+		g_audioCtxs.erase(it);
+		SDL_UnlockMutex(g_audioMutex);
+	}
+	SDL_UnlockMutex(g_audioMutex);
+
+	SDL_FreeAudioStream(stream);
+	return true;
 }

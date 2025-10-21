@@ -32,6 +32,16 @@ static bool operator!=(SDL_PixelFormatDetails* lhs, SDL_PixelFormatEnum rhs)
 #define SDL_CreatePalette SDL_AllocPalette
 #define SDL_DestroyPalette SDL_FreePalette
 
-#define SDL_GetPixelFormatForMasks (SDL_PixelFormat)SDL_MasksToPixelFormatEnum
+// #define SDL_GetPixelFormatForMasks (SDL_PixelFormat)SDL_MasksToPixelFormatEnum
+inline SDL_PixelFormatEnum SDL_GetPixelFormatForMasks(int bpp, Uint32 Rmask, Uint32 Gmask, Uint32 Bmask, Uint32 Amask)
+{
+	// SDL2 checks if Rmask == 0; SDL3 just returns INDEX8 if Rmask doesn't match
+	// https://github.com/libsdl-org/SDL/blob/66d87bf0e1e29377b398d3c567e1ab3590760d8c/src/video/SDL_pixels.c#L310C5-L321C13
+	// https://github.com/libsdl-org/SDL/blob/3669920fddcc418c5f9aca97e77a3f380308d9c0/src/video/SDL_pixels.c#L411-L418C16
+	if (bpp == 8 && Rmask != 0xE0) {
+		return SDL_PIXELFORMAT_INDEX8;
+	}
+	return static_cast<SDL_PixelFormatEnum>(SDL_MasksToPixelFormatEnum(bpp, Rmask, Gmask, Bmask, Amask));
+}
 
 #define SDL_GetSurfacePalette(surface) (nullptr)

@@ -3,6 +3,7 @@
 #include "decomp.h"
 
 #include <SDL3/SDL_timer.h>
+#include <SDL3/SDL_version.h>
 
 DECOMP_SIZE_ASSERT(MxThread, 0x1c)
 

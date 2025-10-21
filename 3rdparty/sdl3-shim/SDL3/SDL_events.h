@@ -1,11 +1,16 @@
 #pragma once
 
 #include "SDL.h"
+
 #include <SDL2/SDL_events.h>
+#include <SDL2/SDL_video.h>
 
 // https://wiki.libsdl.org/SDL3/README-migration#sdl_eventsh
 
-#define SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED SDL_WINDOWEVENT_SIZE_CHANGED
+#define SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED (SDL_WINDOWEVENT + 2 + SDL_WINDOWEVENT_SIZE_CHANGED)
+#define SDL_EVENT_WINDOW_CLOSE_REQUESTED (SDL_WINDOWEVENT + 2 + SDL_WINDOWEVENT_CLOSE)
+#define SDL_EVENT_WINDOW_FOCUS_GAINED (SDL_WINDOWEVENT + 2 + SDL_WINDOWEVENT_FOCUS_GAINED)
+#define SDL_EVENT_WINDOW_FOCUS_LOST (SDL_WINDOWEVENT + 2 + SDL_WINDOWEVENT_FOCUS_LOST)
 
 // #define SDL_EVENT_MOUSE_BUTTON_DOWN SDL_MOUSEBUTTONDOWN
 // #define SDL_EVENT_MOUSE_BUTTON_UP SDL_MOUSEBUTTONUP
@@ -17,12 +22,6 @@
 #define SDL_EVENT_FINGER_CANCELED 0
 
 #define SDL_EVENT_QUIT SDL_QUIT
-
-#define SDL_EVENT_WINDOW_CLOSE_REQUESTED SDL_WINDOWEVENT_CLOSE
-
-#define SDL_EVENT_WINDOW_FOCUS_GAINED SDL_WINDOWEVENT_FOCUS_GAINED
-#define SDL_EVENT_WINDOW_FOCUS_LOST SDL_WINDOWEVENT_FOCUS_LOST
-
 
 #define SDL_EVENT_GAMEPAD_AXIS_MOTION SDL_CONTROLLERAXISMOTION
 #define SDL_EVENT_GAMEPAD_BUTTON_DOWN SDL_CONTROLLERBUTTONDOWN
@@ -68,3 +67,60 @@
 #define touchID touchId
 #define gaxis caxis
 #define gbutton cbutton
+
+inline SDL_Window* SDL_GetWindowFromEvent(const SDL_Event* event)
+{
+	Uint32 windowID = 0;
+
+	if (event->type >= SDL_USEREVENT && event->type <= SDL_LASTEVENT) {
+		windowID = event->user.windowID;
+	}
+	else {
+		switch (event->type) {
+		case SDL_WINDOWEVENT:
+			windowID = event->window.windowID;
+			break;
+
+		case SDL_KEYDOWN:
+		case SDL_KEYUP:
+		case SDL_KEYMAPCHANGED:
+			windowID = event->key.windowID;
+			break;
+
+		case SDL_TEXTEDITING:
+			windowID = event->edit.windowID;
+			break;
+		case SDL_TEXTINPUT:
+			windowID = event->text.windowID;
+			break;
+		case SDL_TEXTEDITING_EXT:
+			windowID = event->editExt.windowID;
+			break;
+
+		case SDL_MOUSEMOTION:
+			windowID = event->motion.windowID;
+			break;
+		case SDL_MOUSEBUTTONDOWN:
+		case SDL_MOUSEBUTTONUP:
+			windowID = event->button.windowID;
+			break;
+		case SDL_MOUSEWHEEL:
+			windowID = event->wheel.windowID;
+			break;
+
+		case SDL_FINGERDOWN:
+		case SDL_FINGERUP:
+		case SDL_FINGERMOTION:
+			windowID = event->tfinger.windowID;
+			break;
+
+		case SDL_DROPFILE:
+		case SDL_DROPTEXT:
+		case SDL_DROPBEGIN:
+		case SDL_DROPCOMPLETE:
+			windowID = event->drop.windowID;
+			break;
+		}
+	}
+	return SDL_GetWindowFromID(windowID);
+}
