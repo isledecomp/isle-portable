@@ -32,7 +32,9 @@
 #include "scripts.h"
 
 #include <SDL3/SDL_events.h>
+#ifndef __WIIU__
 #include <SDL3/SDL_process.h>
+#endif
 #include <SDL3/SDL_stdinc.h>
 #include <SDL3/SDL_version.h>
 #include <stdio.h>
