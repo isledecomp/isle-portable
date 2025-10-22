@@ -79,47 +79,6 @@
 
 #ifdef __WIIU__
 #include "wiiu/config.h"
-#ifdef __WUT__
-#include <stdio.h>
-#include <string>
-#include <whb/log.h>
-#include <whb/log_cafe.h>
-#include <whb/log_console.h>
-#include <whb/log_udp.h>
-#include <whb/proc.h>
-#endif
-#endif
-
-#ifdef __WUT__
-static FILE* sdlLogFile = nullptr;
-
-void WiiULogToFile(void* userdata, int category, SDL_LogPriority priority, const char* message)
-{
-	if (sdlLogFile) {
-		fprintf(sdlLogFile, "[%d] %s\n", priority, message);
-		fflush(sdlLogFile);
-	}
-}
-
-void InitWiiULog()
-{
-	sdlLogFile = fopen("sd:/SDL_Log.txt", "w");
-	if (sdlLogFile) {
-		SDL_LogSetOutputFunction(WiiULogToFile, nullptr);
-		SDL_Log("SDL logging redirected to sd:/SDL_Log.txt");
-	}
-	else {
-		WHBLogPrint("Failed to open sd:/SDL_Log.txt");
-	}
-}
-
-void CloseWiiULog()
-{
-	if (sdlLogFile) {
-		fclose(sdlLogFile);
-		sdlLogFile = nullptr;
-	}
-}
 #endif
 
 DECOMP_SIZE_ASSERT(IsleApp, 0x8c)
