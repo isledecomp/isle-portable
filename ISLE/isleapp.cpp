@@ -85,7 +85,6 @@
 #include <whb/log.h>
 #include <whb/log_cafe.h>
 #include <whb/log_console.h>
-#include <whb/log_file.h>
 #include <whb/log_udp.h>
 #include <whb/proc.h>
 #endif
