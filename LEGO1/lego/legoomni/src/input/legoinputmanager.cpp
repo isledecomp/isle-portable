@@ -3,6 +3,7 @@
 #include "legocameracontroller.h"
 #include "legocontrolmanager.h"
 #include "legomain.h"
+#include "legoutil.h"
 #include "legoutils.h"
 #include "legovideomanager.h"
 #include "legoworld.h"
