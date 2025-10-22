@@ -294,11 +294,12 @@ void IsleApp::SetupVideoFlags(
 	}
 }
 
+#ifdef __WUT__
 int main(int argc, char **argv)
 {
-    return 0;
+	return 0;
 }
-
+#endif
 
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 {
