@@ -294,6 +294,12 @@ void IsleApp::SetupVideoFlags(
 	}
 }
 
+int main(int argc, char **argv)
+{
+    return 0;
+}
+
+
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 {
 	*appstate = NULL;

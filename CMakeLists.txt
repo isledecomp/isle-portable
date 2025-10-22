@@ -936,11 +936,9 @@ if(WINDOWS_STORE)
       PATTERN "*/*.msixbundle")
 endif()
 if(WIIU)
-  # litte test commenting these out
+  wut_create_rpx(isle)
 
-  # wut_create_rpx(isle)
-
-  # install(FILES "$<TARGET_FILE_DIR:isle>/isle.rpx" DESTINATION "${CMAKE_INSTALL_BINDIR}")
+  install(FILES "$<TARGET_FILE_DIR:isle>/isle.rpx" DESTINATION "${CMAKE_INSTALL_BINDIR}")
   if(WIIU_WUHB)
 
   endif()
