@@ -55,16 +55,14 @@ if(DOWNLOAD_DEPENDENCIES)
         URL https://github.com/isledecomp/SIEdit/archive/ae447259389f3bf8273c7e7a4844743faf7cbdb8.tar.gz
         URL_MD5 dee68424fde8db6d5cef3b9034a8151f
     )
-else()
-    set(libweaver_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/libweaver")
+    add_library(libweaver STATIC
+        ${libweaver_SOURCE_DIR}/lib/core.cpp
+        ${libweaver_SOURCE_DIR}/lib/file.cpp
+        ${libweaver_SOURCE_DIR}/lib/interleaf.cpp
+        ${libweaver_SOURCE_DIR}/lib/object.cpp
+        ${libweaver_SOURCE_DIR}/lib/sitypes.cpp
+    )
+    add_Library(libweaver::libweaver ALIAS libweaver)
+    target_include_directories(libweaver PUBLIC ${libweaver_SOURCE_DIR}/include/libweaver)
 endif()
 
-add_library(libweaver STATIC
-    ${libweaver_SOURCE_DIR}/lib/core.cpp
-    ${libweaver_SOURCE_DIR}/lib/file.cpp
-    ${libweaver_SOURCE_DIR}/lib/interleaf.cpp
-    ${libweaver_SOURCE_DIR}/lib/object.cpp
-    ${libweaver_SOURCE_DIR}/lib/sitypes.cpp
-)
-add_library(libweaver::libweaver ALIAS libweaver)
-target_include_directories(libweaver PUBLIC ${libweaver_SOURCE_DIR}/lib)
