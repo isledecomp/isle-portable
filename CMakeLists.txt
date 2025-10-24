@@ -497,7 +497,7 @@ if (NOT ISLE_MINIWIN)
 endif()
 
 if (ISLE_EXTENSIONS)
-  target_link_libraries(lego1 PRIVATE libweaver)
+  target_link_libraries(lego1 PRIVATE libweaver::libweaver)
   target_compile_definitions(lego1 PUBLIC EXTENSIONS)
   target_sources(lego1 PRIVATE
     extensions/src/extensions.cpp

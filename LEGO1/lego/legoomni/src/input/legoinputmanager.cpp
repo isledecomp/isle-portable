@@ -7,6 +7,7 @@
 #include "legovideomanager.h"
 #include "legoworld.h"
 #include "misc.h"
+#include "misc/legoutil.h"
 #include "mxautolock.h"
 #include "mxdebug.h"
 #include "roi/legoroi.h"
