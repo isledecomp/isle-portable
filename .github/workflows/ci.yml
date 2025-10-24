@@ -46,8 +46,9 @@ jobs:
           - { name: 'iOS',                 os: 'macos-15',       generator: 'Xcode',                 dx5: false, config: false, brew: true,  werror: true,   clang-tidy: false,  cmake-args: '-DCMAKE_SYSTEM_NAME=iOS', ios: true }
           - { name: 'Emscripten',          os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, emsdk: true, werror: true,   clang-tidy: false,  cmake-wrapper: 'emcmake' }
           - { name: 'Nintendo 3DS',        os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, n3ds: true,  werror: true,   clang-tidy: false,  container: 'devkitpro/devkitarm:latest', cmake-args: '-DCMAKE_TOOLCHAIN_FILE=/opt/devkitpro/cmake/3DS.cmake' }
-          - { name: 'Xbox One',            os: 'windows-latest', generator: 'Visual Studio 17 2022', dx5: false, config: false, msvc: true,  werror: false,  clang-tidy: false,  vc-arch: 'amd64', cmake-args: '-DCMAKE_SYSTEM_NAME=WindowsStore -DCMAKE_SYSTEM_VERSION=10.0.26100.0', xbox-one: true}
-          - { name: 'Android',             os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, android: true, werror: true, clang-tidy: false,}
+          - { name: 'Xbox One',            os: 'windows-latest', generator: 'Visual Studio 17 2022', dx5: false, config: false, msvc: true,  werror: false,  clang-tidy: false,  vc-arch: 'amd64', cmake-args: '-DCMAKE_SYSTEM_NAME=WindowsStore -DCMAKE_SYSTEM_VERSION=10.0.26100.0', xbox-one: true }
+          - { name: 'Android',             os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, android: true, werror: true, clang-tidy: false }
+          - { name: 'Linux (Debug) [SDL2]',os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: true,  linux: true, werror: true,   clang-tidy: false,  debug: true, sdl2: true }
     steps:
       - name: Setup vcvars
         if: ${{ !!matrix.msvc }}
@@ -170,7 +171,7 @@ jobs:
             -DENABLE_CLANG_TIDY=${{ !!matrix.clang-tidy  }} \
             -DISLE_WERROR=${{ !!matrix.werror }} \
             -DISLE_DEBUG=${{ matrix.debug || 'OFF' }} \
-            -Werror=dev
+            ${{ matrix.sdl2 && '-DUSE_SDL2=ON' || '-Werror=dev' }}
 
       - name: Build (CMake)
         if: ${{ !matrix.android }}

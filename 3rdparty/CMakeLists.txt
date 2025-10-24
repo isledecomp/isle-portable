@@ -48,31 +48,42 @@ add_library(libsmacker STATIC
 )
 target_include_directories(libsmacker PUBLIC ${libsmacker_SOURCE_DIR})
 
-if(DOWNLOAD_DEPENDENCIES)
-    include(FetchContent)
-    FetchContent_Declare(
-        imgui
-        GIT_REPOSITORY "https://github.com/ocornut/imgui"
-        GIT_TAG f5befd2d29e66809cd1110a152e375a7f1981f06
-    )
-    FetchContent_MakeAvailable(imgui)
-else()
-    set(imgui_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/imgui")
-endif()
+if(ISLE_DEBUG)
+  if(DOWNLOAD_DEPENDENCIES)
+      include(FetchContent)
+      FetchContent_Declare(
+          imgui
+          GIT_REPOSITORY "https://github.com/ocornut/imgui"
+          GIT_TAG f5befd2d29e66809cd1110a152e375a7f1981f06
+      )
+      FetchContent_MakeAvailable(imgui)
+  else()
+      set(imgui_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/imgui")
+  endif()
 
-add_library(imgui STATIC
-    ${imgui_SOURCE_DIR}/imgui.cpp
-    ${imgui_SOURCE_DIR}/imgui_draw.cpp
-    ${imgui_SOURCE_DIR}/imgui_tables.cpp
-    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
-    ${imgui_SOURCE_DIR}/imgui_demo.cpp
-    ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl3.cpp
-    ${imgui_SOURCE_DIR}/backends/imgui_impl_sdlrenderer3.cpp
-)
-target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR})
-target_link_libraries(imgui PUBLIC SDL3::Headers)
-target_link_libraries(imgui PRIVATE SDL3::SDL3)
-set_property(TARGET imgui PROPERTY CXX_CLANG_TIDY "")
+  add_library(imgui STATIC
+      ${imgui_SOURCE_DIR}/imgui.cpp
+      ${imgui_SOURCE_DIR}/imgui_draw.cpp
+      ${imgui_SOURCE_DIR}/imgui_tables.cpp
+      ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+      ${imgui_SOURCE_DIR}/imgui_demo.cpp
+  )
+  if(USE_SDL2)
+    target_sources(imgui PRIVATE
+        ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl2.cpp
+        ${imgui_SOURCE_DIR}/backends/imgui_impl_sdlrenderer2.cpp
+    )
+  else()
+    target_sources(imgui PRIVATE
+        ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl3.cpp
+        ${imgui_SOURCE_DIR}/backends/imgui_impl_sdlrenderer3.cpp
+    )
+  endif()
+
+  target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR})
+  target_link_libraries(imgui PRIVATE SDL3::SDL3)
+  set_property(TARGET imgui PROPERTY CXX_CLANG_TIDY "")
+endif()
 
 if(DOWNLOAD_DEPENDENCIES)
     include(FetchContent)

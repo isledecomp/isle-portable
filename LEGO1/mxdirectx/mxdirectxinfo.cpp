@@ -3,6 +3,7 @@
 #include "omni/include/mxvideoparam.h"
 
 #include <SDL3/SDL_log.h>
+#include <SDL3/SDL_version.h>
 #include <assert.h>
 #include <miniwin/miniwind3d.h>
 #include <stdio.h> // for vsprintf
@@ -228,11 +229,16 @@ BOOL MxDeviceEnumerate::EnumDirectDrawCallback(LPGUID p_guid, LPSTR p_driverDesc
 
 	result = lpDD->QueryInterface(IID_IDirect3DMiniwin, (void**) &miniwind3d);
 	if (result == DD_OK) {
+#if SDL_MAJOR_VERSION >= 3
 		MxVideoParam* videoParam = (MxVideoParam*) SDL_GetPointerProperty(
 			SDL_GetWindowProperties(reinterpret_cast<SDL_Window*>(m_hWnd)),
 			ISLE_PROP_WINDOW_CREATE_VIDEO_PARAM,
 			nullptr
 		);
+#else
+		MxVideoParam* videoParam = (MxVideoParam*)
+			SDL_GetWindowData(reinterpret_cast<SDL_Window*>(m_hWnd), ISLE_PROP_WINDOW_CREATE_VIDEO_PARAM);
+#endif
 #ifndef MXDIRECTX_FOR_CONFIG
 		assert(videoParam);
 #endif
