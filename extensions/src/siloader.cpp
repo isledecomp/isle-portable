@@ -1,5 +1,7 @@
 #include "extensions/siloader.h"
 
+#include "legovideomanager.h"
+#include "misc.h"
 #include "mxdsaction.h"
 #include "mxmisc.h"
 #include "mxstreamer.h"

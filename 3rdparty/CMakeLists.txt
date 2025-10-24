@@ -92,4 +92,5 @@ add_library(libweaver STATIC
     ${libweaver_SOURCE_DIR}/lib/object.cpp
     ${libweaver_SOURCE_DIR}/lib/sitypes.cpp
 )
+add_library(libweaver::libweaver ALIAS libweaver)
 target_include_directories(libweaver PUBLIC ${libweaver_SOURCE_DIR}/lib)
