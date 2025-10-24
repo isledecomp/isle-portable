@@ -370,23 +370,6 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 	// Get reference to window
 	*appstate = g_isle->GetWindowHandle();
 
-	// Currently, SDL doesn't send SDL_EVENT_MOUSE_ADDED at startup (unlike for gamepads)
-	// This will probably be fixed in the future: https://github.com/libsdl-org/SDL/issues/12815
-	{
-		int count;
-		SDL_MouseID* mice = SDL_GetMice(&count);
-
-		if (mice) {
-			for (int i = 0; i < count; i++) {
-				if (InputManager()) {
-					InputManager()->AddMouse(mice[i]);
-				}
-			}
-
-			SDL_free(mice);
-		}
-	}
-
 #ifdef __EMSCRIPTEN__
 	SDL_AddEventWatch(
 		[](void* userdata, SDL_Event* event) -> bool {
@@ -1146,6 +1129,8 @@ bool IsleApp::LoadConfig()
 		iniparser_set(dict, "isle:Exclusive Y Resolution", SDL_itoa(m_exclusiveYRes, buf, 10));
 		iniparser_set(dict, "isle:Exclusive Framerate", SDL_itoa(m_exclusiveFrameRate, buf, 10));
 		iniparser_set(dict, "isle:Frame Delta", SDL_itoa(m_frameDelta, buf, 10));
+		iniparser_set(dict, "isle:MSAA", SDL_itoa(m_msaaSamples, buf, 10));
+		iniparser_set(dict, "isle:Anisotropic", SDL_itoa(m_anisotropic, buf, 10));
 
 #ifdef EXTENSIONS
 		iniparser_set(dict, "extensions", NULL);
