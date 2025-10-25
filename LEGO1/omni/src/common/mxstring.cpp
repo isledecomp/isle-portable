@@ -4,7 +4,9 @@
 #include "mxmain.h"
 
 #include <SDL3/SDL_log.h>
+#ifndef __WIIU__
 #include <SDL3/SDL_platform_defines.h>
+#endif
 #include <SDL3/SDL_stdinc.h>
 #include <stdlib.h>
 #include <string.h>

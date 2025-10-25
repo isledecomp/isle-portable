@@ -2,6 +2,19 @@ cmake_minimum_required(VERSION 3.25...4.0 FATAL_ERROR)
 
 project(isle LANGUAGES CXX C VERSION 0.1)
 
+if(WIIU)
+    add_library(libstdc_WiiU STATIC IMPORTED)
+  set_target_properties(libstdc_WiiU PROPERTIES
+    IMPORTED_LOCATION /opt/devkitpro/devkitPPC/powerpc-eabi/lib/libstdc++.a
+    INTERFACE_INCLUDE_DIRECTORIES /opt/devkitpro/devkitPPC/powerpc-eabi/include/c++/15.1.0
+  )
+
+  include_directories(BEFORE
+    /opt/devkitpro/devkitPPC/powerpc-eabi/include/c++/15.1.0/powerpc-eabi
+    /opt/devkitpro/devkitPPC/powerpc-eabi/include/c++/15.1.0
+  )
+endif()
+
 if (IOS)
   set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED NO)
   set(CMAKE_OSX_DEPLOYMENT_TARGET "12.0")
@@ -55,6 +68,7 @@ cmake_dependent_option(ISLE_COMPILE_SHADERS "Compile shaders" ON "SDL_SHADERCROS
 option(CMAKE_POSITION_INDEPENDENT_CODE "Build with -fPIC" ON)
 option(ENABLE_CLANG_TIDY "Enable clang-tidy")
 option(DOWNLOAD_DEPENDENCIES "Download dependencies" ON)
+option(USE_SDL2 "Use SDL2 instead of SDL3 via a shim" OFF)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}" CACHE PATH "Directory where to put executables and dll")
 set(ISLE_EMSCRIPTEN_HOST "" CACHE STRING "Host URL for Emscripten streaming (e.g., https://test.com)")
 cmake_dependent_option(BUILD_SHARED_LIBS "Build lego1 as a shared library" ON "NOT EMSCRIPTEN" OFF)
@@ -66,6 +80,7 @@ message(STATUS "Internal miniwin:       ${ISLE_MINIWIN}")
 message(STATUS "Isle extensions:        ${ISLE_EXTENSIONS}")
 message(STATUS "Isle debugging:         ${ISLE_DEBUG}")
 message(STATUS "Compile shaders:        ${ISLE_COMPILE_SHADERS}")
+message(STATUS "Use SDL2:               ${USE_SDL2}")
 
 add_library(Isle::iniparser INTERFACE IMPORTED)
 
@@ -74,26 +89,53 @@ if (DOWNLOAD_DEPENDENCIES)
   message(STATUS "Fetching SDL3 and iniparser. This might take a while...")
   include(FetchContent)
 
-  if(ANDROID)
-    # Built by Gradle
-    find_package(SDL3 REQUIRED CONFIG COMPONENTS Shared)
-  else()
-    if (WINDOWS_STORE)
-      FetchContent_Declare(
-        SDL3
-        GIT_REPOSITORY "https://github.com/Helloyunho/SDL3-uwp.git"
-        GIT_TAG "main"
-        EXCLUDE_FROM_ALL
-      )
+  if(NOT USE_SDL2)
+    if(ANDROID)
+      # Built by Gradle
+      find_package(SDL3 REQUIRED CONFIG COMPONENTS Shared)
     else()
-      FetchContent_Declare(
-        SDL3
-        GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
-        GIT_TAG "main"
-        EXCLUDE_FROM_ALL
-      )
+      if (WINDOWS_STORE)
+        FetchContent_Declare(
+          SDL3
+          GIT_REPOSITORY "https://github.com/Helloyunho/SDL3-uwp.git"
+          GIT_TAG "main"
+          EXCLUDE_FROM_ALL
+        )
+      else()
+        FetchContent_Declare(
+          SDL3
+          GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
+          GIT_TAG "main"
+          EXCLUDE_FROM_ALL
+        )
+      endif()
+      FetchContent_MakeAvailable(SDL3)
     endif()
-    FetchContent_MakeAvailable(SDL3)
+  else()
+    if(WIIU)
+    FetchContent_Declare(
+    SDL2
+    GIT_REPOSITORY "https://github.com/devkitPro/SDL.git"
+    GIT_TAG 3e4393af9e7e36a3f669a52505281555de538923
+    EXCLUDE_FROM_ALL
+    )
+#    set(SDL_STATIC ON CACHE BOOL "" FORCE)
+#    set(SDL_SHARED OFF CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(SDL2)
+    else()
+    FetchContent_Declare(
+            SDL2
+            GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
+            GIT_TAG SDL2
+            EXCLUDE_FROM_ALL
+    )
+#    set(SDL_STATIC ON CACHE BOOL "" FORCE)
+#    set(SDL_SHARED OFF CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(SDL2)
+    endif()
+
+    set(SDL2_INCLUDE_DIR ${SDL2_SOURCE_DIR}/include)
+    add_subdirectory(3rdparty/sdl3-shim SYSTEM)
   endif()
 
   FetchContent_Declare(
@@ -112,7 +154,12 @@ else()
   # find_package looks for already-installed system packages.
   # Configure with `-DCMAKE_PREFIX_PATH="/path/to/package1;/path/to/package2"`
   # to add search paths.
-  find_package(SDL3 CONFIG REQUIRED)
+  if(NOT USE_SDL2)
+    find_package(SDL3 CONFIG REQUIRED)
+  else()
+    find_package(SDL2 CONFIG REQUIRED)
+    add_subdirectory(3rdparty/sdl3-shim SYSTEM)
+  endif()
 
   find_package(iniparser REQUIRED CONFIG COMPONENTS shared)
   target_link_libraries(Isle::iniparser INTERFACE iniparser-shared)
@@ -176,7 +223,9 @@ target_include_directories(Vec::Vec INTERFACE "${CMAKE_SOURCE_DIR}/3rdparty/vec"
 add_library(lego1
   LEGO1/main.cpp
 )
+if(NOT WIIU)
 target_precompile_headers(lego1 PRIVATE "LEGO1/lego1_pch.h")
+endif()
 set_property(TARGET lego1 PROPERTY DEFINE_SYMBOL "LEGO1_DLL")
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/util>")
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/extensions/include>")
@@ -598,6 +647,11 @@ if (ISLE_BUILD_APP)
             ISLE/android/config.cpp
     )
   endif()
+  if (WIIU)
+    target_sources(isle PRIVATE
+            ISLE/wiiu/config.cpp
+    )
+  endif()
   if(Python3_FOUND)
     if(NOT DEFINED PYTHON_PIL_AVAILABLE)
       execute_process(
@@ -880,6 +934,14 @@ if(WINDOWS_STORE)
     FILES_MATCHING PATTERN "*/Dependencies/x64/Microsoft.VCLibs.x64*.14.00.appx"
       PATTERN "*/*.msix"
       PATTERN "*/*.msixbundle")
+endif()
+if(WIIU)
+  wut_create_rpx(isle)
+
+  install(FILES "$<TARGET_FILE_DIR:isle>/isle.rpx" DESTINATION "${CMAKE_INSTALL_BINDIR}")
+  if(WIIU_WUHB)
+
+  endif()
 endif()
 if(MSVC OR IOS)
   set(CPACK_GENERATOR ZIP)

@@ -46,6 +46,7 @@ jobs:
           - { name: 'iOS',                 os: 'macos-15',       generator: 'Xcode',                 dx5: false, config: false, brew: true,  werror: true,   clang-tidy: false,  cmake-args: '-DCMAKE_SYSTEM_NAME=iOS', ios: true }
           - { name: 'Emscripten',          os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, emsdk: true, werror: true,   clang-tidy: false,  cmake-wrapper: 'emcmake' }
           - { name: 'Nintendo 3DS',        os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, n3ds: true,  werror: true,   clang-tidy: false,  container: 'devkitpro/devkitarm:latest', cmake-args: '-DCMAKE_TOOLCHAIN_FILE=/opt/devkitpro/cmake/3DS.cmake' }
+          - { name: 'Nintendo Wii U',      os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, wiiu: true,  werror: false,  clang-tidy: false,  container: 'devkitpro/devkitppc:latest', cmake-args: '-DCMAKE_TOOLCHAIN_FILE=/opt/devkitpro/cmake/WiiU.cmake -DCMAKE_PREFIX_PATH=/opt/devkitpro/devkitPPC/powerpc-eabi/lib/libstdc++.a', sdl2: true }
           - { name: 'Xbox One',            os: 'windows-latest', generator: 'Visual Studio 17 2022', dx5: false, config: false, msvc: true,  werror: false,  clang-tidy: false,  vc-arch: 'amd64', cmake-args: '-DCMAKE_SYSTEM_NAME=WindowsStore -DCMAKE_SYSTEM_VERSION=10.0.26100.0', xbox-one: true}
           - { name: 'Android',             os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, android: true, werror: true, clang-tidy: false,}
     steps:
@@ -66,6 +67,7 @@ jobs:
             ${{ matrix.msys-env }}-ninja
             ${{ matrix.msys-env }}-clang-tools-extra
             ${{ (matrix.config && format('{0}-qt6-base', matrix.msys-env)) || '' }}
+
       - name: Install Qt
         if: ${{ !!matrix.msvc && matrix.config }}
         uses: jurplel/install-qt-action@v4
@@ -103,12 +105,6 @@ jobs:
         uses: maxim-lobanov/setup-xcode@v1.6.0
         with:
           xcode-version: latest-stable
-      
-      - name: Install iOS components
-        if: ${{ matrix.ios }}
-        run: |
-          xcrun simctl list > /dev/null
-          xcodebuild -downloadPlatform iOS
 
       - name: Setup Emscripten
         uses: mymindstorm/setup-emsdk@master
@@ -166,18 +162,20 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DISLE_USE_DX5=${{ !!matrix.dx5 }} \
             -DISLE_BUILD_CONFIG=${{ !!matrix.config }} \
+            -DCMAKE_POSITION_INDEPENDENT_CODE=${{ matrix.wiiu && 'OFF' || 'ON' }} \
+            -DISLE_EXTENSIONS=${{ matrix.wiiu && 'OFF' || 'ON' }} \
             -DISLE_BUILD_ASSETS=${{ !!matrix.build-assets }} \
             -DENABLE_CLANG_TIDY=${{ !!matrix.clang-tidy  }} \
             -DISLE_WERROR=${{ !!matrix.werror }} \
             -DISLE_DEBUG=${{ matrix.debug || 'OFF' }} \
-            -Werror=dev
+            ${{ matrix.sdl2 && '-DUSE_SDL2=ON' || '-Werror=dev' }}
 
       - name: Build (CMake)
         if: ${{ !matrix.android }}
         run: cmake --build build --verbose --config Release
 
       - name: Package (CPack)
-        if: ${{ !matrix.n3ds && !matrix.android }}
+        if: ${{ !matrix.n3ds && !matrix.android && !matrix.wiiu }}
         run: |
           cd build
           success=0
@@ -226,6 +224,15 @@ jobs:
           mv *.3dsx dist/
           mv *.cia dist/
 
+      - name: Package (Wii U)
+        if: ${{ matrix.wiiu }}
+        run: |
+          mkdir -p build/dist
+          mv build/*.rpx packaging/wiiu/Legacy/
+          mv packaging/wiiu/Legacy/ build/dist/
+          cd build/dist
+          mv Legacy isle-U
+
       - name: Package (Android)
         if: ${{ matrix.android }}
         run: |
@@ -242,6 +249,7 @@ jobs:
           name: '${{ matrix.name }}'
           path: |
             build/dist/isle-*
+            build/dist/isle-U-*
             build/dist/*.AppImage
             build/dist/*.3dsx
             build/dist/*.cia

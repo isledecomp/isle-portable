@@ -30,7 +30,11 @@ MxU32 LegoState::Playlist::Next()
 		break;
 
 	case e_random:
+#ifdef __WIIU__
+		m_nextIndex = SDL_tanf(m_length);
+#else
 		m_nextIndex = SDL_rand(m_length);
+#endif
 		objectId = m_objectIds[m_nextIndex];
 		break;
 

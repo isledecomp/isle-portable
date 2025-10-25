@@ -12,8 +12,19 @@
 #include "mxticklemanager.h"
 
 #include <SDL3/SDL.h>
+#if SDL_MAJOR_VERSION >= 3
 #include <backends/imgui_impl_sdl3.h>
 #include <backends/imgui_impl_sdlrenderer3.h>
+#else
+#include <backends/imgui_impl_sdl2.h>
+#include <backends/imgui_impl_sdlrenderer2.h>
+#define ImGui_ImplSDL3_InitForSDLRenderer ImGui_ImplSDL2_InitForSDLRenderer
+#define ImGui_ImplSDLRenderer3_Init ImGui_ImplSDLRenderer2_Init
+#define ImGui_ImplSDL3_ProcessEvent ImGui_ImplSDL2_ProcessEvent
+#define ImGui_ImplSDLRenderer3_NewFrame ImGui_ImplSDLRenderer2_NewFrame
+#define ImGui_ImplSDL3_NewFrame ImGui_ImplSDL2_NewFrame
+#define ImGui_ImplSDLRenderer3_RenderDrawData ImGui_ImplSDLRenderer2_RenderDrawData
+#endif
 #include <imgui.h>
 
 #ifdef ISLE_VALGRIND
@@ -221,7 +232,11 @@ bool IsleDebug_Event(SDL_Event* event)
 		return false;
 	}
 	if (event->type == SDL_EVENT_KEY_DOWN) {
+#if SDL_MAJOR_VERSION >= 3
 		if (event->key.scancode == SCANCODE_KEY_PAUSE) {
+#else
+		if (event->key.keysym.scancode == SCANCODE_KEY_PAUSE) {
+#endif
 			if (!g_debugPaused) {
 				IsleDebug_SetPaused(true);
 			}
@@ -230,7 +245,11 @@ bool IsleDebug_Event(SDL_Event* event)
 			}
 			return true;
 		}
+#if SDL_MAJOR_VERSION >= 3
 		if (event->key.scancode == SCANCODE_KEY_RESUME) {
+#else
+		if (event->key.keysym.scancode == SCANCODE_KEY_RESUME) {
+#endif
 			g_debugDoStep = false;
 			if (g_debugPaused) {
 				IsleDebug_SetPaused(false);
