@@ -134,24 +134,24 @@ MxResult LegoInputManager::GetNavigationKeyStates(MxU32& p_keyFlags)
 
 	MxU32 keyFlags = 0;
 
-	if (m_keyboardState[SDL_SCANCODE_KP_8] || m_keyboardState[SDL_SCANCODE_UP]) {
+	if (m_keyboardState[g_keyMaps.k_forward[0]] || m_keyboardState[g_keyMaps.k_forward[1]]) {
 		keyFlags |= c_up;
 	}
 
-	if ((m_keyboardState[SDL_SCANCODE_KP_2] || m_keyboardState[SDL_SCANCODE_DOWN])) {
+	if ((m_keyboardState[g_keyMaps.k_back[0]] || m_keyboardState[g_keyMaps.k_back[1]])) {
 		keyFlags |= c_down;
 	}
 
-	if ((m_keyboardState[SDL_SCANCODE_KP_4] || m_keyboardState[SDL_SCANCODE_LEFT])) {
+	if ((m_keyboardState[g_keyMaps.k_left[0]] || m_keyboardState[g_keyMaps.k_left[1]])) {
 		keyFlags |= c_left;
 	}
 
-	if ((m_keyboardState[SDL_SCANCODE_KP_6] || m_keyboardState[SDL_SCANCODE_RIGHT])) {
+	if ((m_keyboardState[g_keyMaps.k_right[0]] || m_keyboardState[g_keyMaps.k_right[1]])) {
 		keyFlags |= c_right;
 	}
 
-	if (m_keyboardState[SDL_SCANCODE_LCTRL] || m_keyboardState[SDL_SCANCODE_RCTRL]) {
-		keyFlags |= c_ctrl;
+	if (m_keyboardState[g_keyMaps.k_sprint[0]] || m_keyboardState[g_keyMaps.k_sprint[1]]) {
+		keyFlags |= c_sprint;
 	}
 
 	GetNavigationTouchStates(keyFlags);

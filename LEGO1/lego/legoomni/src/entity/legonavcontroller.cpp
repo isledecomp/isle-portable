@@ -623,8 +623,8 @@ MxResult LegoNavController::ProcessKeyboardInput()
 		break;
 	}
 
-	MxFloat maxAccelDivisor = keyFlags & LegoInputManager::c_ctrl ? 1.0f : 4.0f;
-	MxFloat minAccelDivisor = keyFlags & LegoInputManager::c_ctrl ? 1.0f : 2.0f;
+	MxFloat maxAccelDivisor = keyFlags & LegoInputManager::c_sprint ? 1.0f : 4.0f;
+	MxFloat minAccelDivisor = keyFlags & LegoInputManager::c_sprint ? 1.0f : 2.0f;
 
 	if (!skipRotationVelAndAccelCalc) {
 		m_targetRotationalVel = CalculateNewTargetVel(hMax, m_hMax / 2, m_maxRotationalVel);

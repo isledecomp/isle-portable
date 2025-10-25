@@ -9,6 +9,7 @@
 #include "legobuildingmanager.h"
 #include "legogamestate.h"
 #include "legoinputmanager.h"
+#include "legokeymaps.h"
 #include "legomain.h"
 #include "legomodelpresenter.h"
 #include "legopartpresenter.h"
@@ -46,6 +47,7 @@
 #define SDL_MAIN_USE_CALLBACKS
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
+#include <SDL3/SDL_scancode.h>
 #include <errno.h>
 #include <iniparser.h>
 #include <stdlib.h>
@@ -1090,6 +1092,18 @@ bool IsleApp::LoadConfig()
 		iniparser_set(dict, "isle:MSAA", SDL_itoa(m_msaaSamples, buf, 10));
 		iniparser_set(dict, "isle:Anisotropic", SDL_itoa(m_anisotropic, buf, 10));
 
+		iniparser_set(dict, "input", NULL);
+		iniparser_set(dict, "input:Forward", SDL_itoa(g_keyMaps.k_forward[0], buf, 10));
+		iniparser_set(dict, "input:Forward Alt", SDL_itoa(g_keyMaps.k_forward[1], buf, 10));
+		iniparser_set(dict, "input:Backward", SDL_itoa(g_keyMaps.k_back[0], buf, 10));
+		iniparser_set(dict, "input:Backward Alt", SDL_itoa(g_keyMaps.k_back[1], buf, 10));
+		iniparser_set(dict, "input:Left", SDL_itoa(g_keyMaps.k_left[0], buf, 10));
+		iniparser_set(dict, "input:Left Alt", SDL_itoa(g_keyMaps.k_left[1], buf, 10));
+		iniparser_set(dict, "input:Right", SDL_itoa(g_keyMaps.k_right[0], buf, 10));
+		iniparser_set(dict, "input:Right Alt", SDL_itoa(g_keyMaps.k_right[1], buf, 10));
+		iniparser_set(dict, "input:Sprint", SDL_itoa(g_keyMaps.k_sprint[0], buf, 10));
+		iniparser_set(dict, "input:Sprint Alt", SDL_itoa(g_keyMaps.k_sprint[1], buf, 10));
+
 #ifdef EXTENSIONS
 		iniparser_set(dict, "extensions", NULL);
 		for (const char* key : Extensions::availableExtensions) {
@@ -1166,6 +1180,17 @@ bool IsleApp::LoadConfig()
 	m_frameDelta = static_cast<int>(std::round(iniparser_getdouble(dict, "isle:Frame Delta", m_frameDelta)));
 	m_videoParam.SetMSAASamples((m_msaaSamples = iniparser_getint(dict, "isle:MSAA", m_msaaSamples)));
 	m_videoParam.SetAnisotropic((m_anisotropic = iniparser_getdouble(dict, "isle:Anisotropic", m_anisotropic)));
+
+	g_keyMaps.k_forward[0] = (SDL_Scancode) iniparser_getint(dict, "input:Forward", g_keyMaps.k_forward[0]);
+	g_keyMaps.k_forward[1] = (SDL_Scancode) iniparser_getint(dict, "input:Forward Alt", g_keyMaps.k_forward[1]);
+	g_keyMaps.k_back[0] = (SDL_Scancode) iniparser_getint(dict, "input:Backward", g_keyMaps.k_back[0]);
+	g_keyMaps.k_back[1] = (SDL_Scancode) iniparser_getint(dict, "input:Backward Alt", g_keyMaps.k_back[1]);
+	g_keyMaps.k_left[0] = (SDL_Scancode) iniparser_getint(dict, "input:Left", g_keyMaps.k_left[0]);
+	g_keyMaps.k_left[1] = (SDL_Scancode) iniparser_getint(dict, "input:Left Alt", g_keyMaps.k_left[1]);
+	g_keyMaps.k_right[0] = (SDL_Scancode) iniparser_getint(dict, "input:Right", g_keyMaps.k_right[0]);
+	g_keyMaps.k_right[1] = (SDL_Scancode) iniparser_getint(dict, "input:Right Alt", g_keyMaps.k_right[1]);
+	g_keyMaps.k_sprint[0] = (SDL_Scancode) iniparser_getint(dict, "input:Sprint", g_keyMaps.k_sprint[0]);
+	g_keyMaps.k_sprint[1] = (SDL_Scancode) iniparser_getint(dict, "input:Sprint Alt", g_keyMaps.k_sprint[1]);
 
 	const char* deviceId = iniparser_getstring(dict, "isle:3D Device ID", NULL);
 	if (deviceId != NULL) {

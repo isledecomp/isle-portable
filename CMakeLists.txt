@@ -450,6 +450,7 @@ target_sources(lego1 PRIVATE
   LEGO1/lego/legoomni/src/entity/legoworld.cpp
   LEGO1/lego/legoomni/src/entity/legoworldpresenter.cpp
   LEGO1/lego/legoomni/src/input/legoinputmanager.cpp
+  LEGO1/lego/legoomni/src/input/legokeymaps.cpp
   LEGO1/lego/legoomni/src/main/legomain.cpp
   LEGO1/lego/legoomni/src/main/scripts.cpp
   LEGO1/lego/legoomni/src/paths/legoanimactor.cpp
@@ -639,6 +640,7 @@ if (ISLE_BUILD_CONFIG)
   qt_add_executable(isle-config WIN32
     LEGO1/mxdirectx/mxdirectxinfo.cpp
     LEGO1/mxdirectx/legodxinfo.cpp
+    LEGO1/lego/legoomni/src/input/legokeymaps.cpp
     CONFIG/config.cpp
     CONFIG/AboutDlg.cpp
     CONFIG/MainDlg.cpp
@@ -654,6 +656,7 @@ if (ISLE_BUILD_CONFIG)
   list(APPEND isle_targets isle-config)
   target_compile_definitions(isle-config PRIVATE _AFXDLL MXDIRECTX_FOR_CONFIG)
   target_include_directories(isle-config PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/LEGO1")
+  target_include_directories(isle-config PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/LEGO1/lego/legoomni/include")
   target_include_directories(isle-config PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/util>")
   if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 14)
     target_link_libraries(isle-config PRIVATE DirectX5::DirectX5)

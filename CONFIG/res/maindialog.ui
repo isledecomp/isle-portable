@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>640</width>
-    <height>480</height>
+    <height>502</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -956,6 +956,123 @@ The game will gradually increase the number of actors until this maximum is reac
          </attribute>
          <layout class="QVBoxLayout" name="verticalLayout_7">
           <item>
+           <widget class="QGroupBox" name="keyMappings">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="title">
+             <string>Keyboard Mappings</string>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_5">
+             <item row="0" column="0">
+              <widget class="QLabel" name="forwardKeyLabel">
+               <property name="text">
+                <string>Forward</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="backKeyLabel">
+               <property name="text">
+                <string>Back</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="leftKeyLabel">
+               <property name="text">
+                <string>Left</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0">
+              <widget class="QLabel" name="rightKeyLabel">
+               <property name="text">
+                <string>Right</string>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="0">
+              <widget class="QLabel" name="sprintKeyLabel">
+               <property name="text">
+                <string>Sprint</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QPushButton" name="keyForward_1">
+               <property name="text">
+                <string>Up</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="2">
+              <widget class="QPushButton" name="keyForward_2">
+               <property name="text">
+                <string>Numpad 8</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QPushButton" name="keyBack_1">
+               <property name="text">
+                <string>Down</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="2">
+              <widget class="QPushButton" name="keyBack_2">
+               <property name="text">
+                <string>Numpad 2</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="1">
+              <widget class="QPushButton" name="keyLeft_1">
+               <property name="text">
+                <string>Left</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="2">
+              <widget class="QPushButton" name="keyLeft_2">
+               <property name="text">
+                <string>Numpad 4</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="1">
+              <widget class="QPushButton" name="keyRight_1">
+               <property name="text">
+                <string>Right</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="2">
+              <widget class="QPushButton" name="keyRight_2">
+               <property name="text">
+                <string>Numpad 6</string>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="1">
+              <widget class="QPushButton" name="keySprint_1">
+               <property name="text">
+                <string>Left Control</string>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="2">
+              <widget class="QPushButton" name="keySprint_2">
+               <property name="text">
+                <string>Right Control</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
            <widget class="QGroupBox" name="touchControl">
             <property name="toolTip">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Virtual Gamepad (Recommended):&lt;/span&gt; Slide your finger to move and turn.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Virtual Arrow Keys:&lt;/span&gt; Tap screen areas to move. The top moves forward, the bottom turns or moves back.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Virtual Mouse:&lt;/span&gt; Emulates classic mouse controls with touch.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -1036,7 +1153,7 @@ The game will gradually increase the number of actors until this maximum is reac
                <x>0</x>
                <y>0</y>
                <width>449</width>
-               <height>369</height>
+               <height>391</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="verticalLayout_10">
@@ -1326,6 +1443,16 @@ Double-click a path to edit it.</string>
   <tabstop>exFullResComboBox</tabstop>
   <tabstop>msaaSlider</tabstop>
   <tabstop>AFSlider</tabstop>
+  <tabstop>keyForward_1</tabstop>
+  <tabstop>keyForward_2</tabstop>
+  <tabstop>keyBack_1</tabstop>
+  <tabstop>keyBack_2</tabstop>
+  <tabstop>keyLeft_1</tabstop>
+  <tabstop>keyLeft_2</tabstop>
+  <tabstop>keyRight_1</tabstop>
+  <tabstop>keyRight_2</tabstop>
+  <tabstop>keySprint_1</tabstop>
+  <tabstop>keySprint_2</tabstop>
   <tabstop>touchComboBox</tabstop>
   <tabstop>rumbleCheckBox</tabstop>
   <tabstop>scrollArea</tabstop>

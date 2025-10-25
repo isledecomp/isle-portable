@@ -4,6 +4,7 @@
 #include "decomp.h"
 #include "lego1_export.h"
 #include "legoeventnotificationparam.h"
+#include "legokeymaps.h"
 #include "mxlist.h"
 #include "mxpresenter.h"
 #include "mxqueue.h"
@@ -12,6 +13,7 @@
 #include <SDL3/SDL_joystick.h>
 #include <SDL3/SDL_keyboard.h>
 #include <SDL3/SDL_keycode.h>
+#include <SDL3/SDL_scancode.h>
 #include <SDL3/SDL_timer.h>
 #ifdef MINIWIN
 #include "miniwin/windows.h"
@@ -87,7 +89,7 @@ public:
 		c_right = 0x02,
 		c_up = 0x04,
 		c_down = 0x08,
-		c_ctrl = 0x10,
+		c_sprint = 0x10,
 
 		c_leftOrRight = c_left | c_right,
 		c_upOrDown = c_up | c_down
