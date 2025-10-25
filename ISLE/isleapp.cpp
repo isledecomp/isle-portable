@@ -884,7 +884,7 @@ MxResult IsleApp::SetupWindow()
 	SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, g_targetHeight);
 	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_FULLSCREEN_BOOLEAN, m_fullScreen);
 	SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, WINDOW_TITLE);
-#if defined(MINIWIN) && !defined(__3DS__) && !defined(WINDOWS_STORE)
+#if defined(MINIWIN) && !defined(__3DS__) && !defined(WINDOWS_STORE) && !defined(PS2)
 	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
@@ -1000,8 +1000,10 @@ MxResult IsleApp::SetupWindow()
 // FUNCTION: ISLE 0x4028d0
 bool IsleApp::LoadConfig()
 {
-#ifdef IOS
+#if defined(IOS)
 	const char* prefPath = SDL_GetUserFolder(SDL_FOLDER_DOCUMENTS);
+#elif defined(PS2)
+	const char* prefPath = "mc0:ISLE/";
 #elif defined(ANDROID)
 	MxString androidPath = MxString(SDL_GetAndroidExternalStoragePath()) + "/";
 	const char* prefPath = androidPath.GetData();
