@@ -23,7 +23,9 @@ Direct3DRMRenderer* OpenGL1Renderer::Create(DWORD width, DWORD height, DWORD msa
 	// call below when on an EGL-based backend, and crashes with EGL_BAD_MATCH.
 	SDL_GL_ResetAttributes();
 	// But ResetAttributes resets it to 16.
+#ifndef __PSP__
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+#endif
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);

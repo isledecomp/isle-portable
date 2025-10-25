@@ -5,7 +5,11 @@
 #include "mxsemaphore.h"
 #include "mxtypes.h"
 
+#ifdef PSP
+#include <pspkerneltypes.h>
+#else
 #include <SDL3/SDL_thread.h>
+#endif
 
 class MxCore;
 
@@ -41,9 +45,15 @@ public:
 	virtual ~MxThread();
 
 private:
+#ifdef PSP
+	static int ThreadProc(SceSize args, void* argp);
+
+	int m_thread;
+#else
 	static int SDLCALL ThreadProc(void* p_thread);
 
 	SDL_Thread* m_thread;
+#endif
 	MxBool m_running;        // 0x0c
 	MxSemaphore m_semaphore; // 0x10
 

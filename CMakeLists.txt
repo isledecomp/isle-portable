@@ -49,15 +49,15 @@ option(ISLE_WERROR "Treat warnings as errors" OFF)
 option(ISLE_DEBUG "Enable imgui debug" ON)
 cmake_dependent_option(ISLE_USE_DX5 "Build with internal DirectX 5 SDK" "${NOT_MINGW}" "WIN32;CMAKE_SIZEOF_VOID_P EQUAL 4" OFF)
 cmake_dependent_option(ISLE_MINIWIN "Use miniwin" ON "NOT ISLE_USE_DX5" OFF)
-cmake_dependent_option(ISLE_EXTENSIONS "Use extensions" ON "NOT ISLE_USE_DX5;NOT WINDOWS_STORE" OFF)
-cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "MSVC OR ISLE_MINIWIN;NOT NINTENDO_3DS;NOT WINDOWS_STORE" OFF)
+cmake_dependent_option(ISLE_EXTENSIONS "Use extensions" ON "NOT ISLE_USE_DX5;NOT WINDOWS_STORE;NOT PSP" OFF)
+cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "MSVC OR ISLE_MINIWIN;NOT NINTENDO_3DS;NOT WINDOWS_STORE;NOT PSP" OFF)
 cmake_dependent_option(ISLE_COMPILE_SHADERS "Compile shaders" ON "SDL_SHADERCROSS_BIN;TARGET Python3::Interpreter" OFF)
-option(CMAKE_POSITION_INDEPENDENT_CODE "Build with -fPIC" ON)
+cmake_dependent_option(CMAKE_POSITION_INDEPENDENT_CODE "Build with -fPIC" ON "NOT PSP" OFF)
 option(ENABLE_CLANG_TIDY "Enable clang-tidy")
 option(DOWNLOAD_DEPENDENCIES "Download dependencies" ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}" CACHE PATH "Directory where to put executables and dll")
 set(ISLE_EMSCRIPTEN_HOST "" CACHE STRING "Host URL for Emscripten streaming (e.g., https://test.com)")
-cmake_dependent_option(BUILD_SHARED_LIBS "Build lego1 as a shared library" ON "NOT EMSCRIPTEN" OFF)
+cmake_dependent_option(BUILD_SHARED_LIBS "Build lego1 as a shared library" ON "NOT EMSCRIPTEN;NOT PSP" OFF)
 
 message(STATUS "Isle app:               ${ISLE_BUILD_APP}")
 message(STATUS "Config app:             ${ISLE_BUILD_CONFIG}")
@@ -118,6 +118,7 @@ else()
   target_link_libraries(Isle::iniparser INTERFACE iniparser-shared)
 endif()
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 if (ENABLE_CLANG_TIDY)
   find_program(CLANG_TIDY_BIN NAMES "clang-tidy" ENV "LLVM_ROOT" REQUIRED)
@@ -379,6 +380,11 @@ if (WIN32)
   target_link_libraries(lego1 INTERFACE winmm)
 endif()
 target_link_libraries(lego1 PRIVATE libsmacker miniaudio)
+
+if (PSP)
+  target_link_libraries(lego1 PRIVATE atomic)
+endif()
+
 target_include_directories(lego1 PUBLIC $<BUILD_INTERFACE:$<TARGET_PROPERTY:miniaudio,INTERFACE_INCLUDE_DIRECTORIES>>)
 
 # lego1_impl sources
@@ -556,6 +562,9 @@ if (ISLE_BUILD_APP)
     )
     target_compile_definitions(isle PRIVATE ISLE_DEBUG)
     target_link_libraries(isle PRIVATE imgui)
+    if(PSP)
+      target_compile_definitions(imgui PRIVATE IMGUI_DISABLE_DEFAULT_SHELL_FUNCTIONS)
+    endif()
     find_path(valgrind_INCLUDE_PATH NAMES valgrind/callgrind.h)
     if(valgrind_INCLUDE_PATH)
       # Run isle under valgrind to create a profile. Use e.g. kcachegrind to view the profile.
@@ -564,6 +573,9 @@ if (ISLE_BUILD_APP)
       target_compile_definitions(isle PRIVATE ISLE_VALGRIND)
       target_include_directories(isle PRIVATE ${valgrind_INCLUDE_PATH})
     endif()
+  endif()
+  if(PSP)
+    target_link_libraries(isle PRIVATE pspfpu)
   endif()
   if(EMSCRIPTEN)
     target_sources(isle PRIVATE
@@ -889,6 +901,19 @@ if(MSVC OR IOS)
   endif()
 elseif(APPLE AND NOT IOS)
   set(CPACK_GENERATOR DragNDrop)
+elseif(PSP)
+    # Create an EBOOT.PBP file
+    set(BUILD_PRX 1)
+    create_pbp_file(
+        TARGET ${PROJECT_NAME}
+        ICON_PATH "${CMAKE_SOURCE_DIR}/ISLE/res/psp/Game/ICON0.png"
+        ANIM_PATH "${CMAKE_SOURCE_DIR}/ISLE/res/psp/Game/ICON1.pmf"
+        BACKGROUND_PATH "${CMAKE_SOURCE_DIR}/ISLE/res/psp/Game/PIC1.png"
+        PREVIEW_PATH NULL
+        MUSIC_PATH "${CMAKE_SOURCE_DIR}/ISLE/res/psp/Game/SND0.at3"
+        TITLE ${PROJECT_NAME}
+        VERSION 01.00
+    )
 else()
   set(CPACK_GENERATOR TGZ)
 endif()

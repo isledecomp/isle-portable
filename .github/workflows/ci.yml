@@ -47,6 +47,7 @@ jobs:
           - { name: 'Emscripten',          os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, emsdk: true, werror: true,   clang-tidy: false,  cmake-wrapper: 'emcmake' }
           - { name: 'Nintendo 3DS',        os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, n3ds: true,  werror: true,   clang-tidy: false,  container: 'devkitpro/devkitarm:latest', cmake-args: '-DCMAKE_TOOLCHAIN_FILE=/opt/devkitpro/cmake/3DS.cmake' }
           - { name: 'Xbox One',            os: 'windows-latest', generator: 'Visual Studio 17 2022', dx5: false, config: false, msvc: true,  werror: false,  clang-tidy: false,  vc-arch: 'amd64', cmake-args: '-DCMAKE_SYSTEM_NAME=WindowsStore -DCMAKE_SYSTEM_VERSION=10.0.26100.0', xbox-one: true}
+          - { name: 'PlayStation Portable', os: 'ubuntu-latest',  generator: 'Unix Makefiles',        dx5: false, config: false, psp: true,   werror: true,   clang-tidy: false,  container: 'pspdev/pspdev:latest', cmake-args: '-DCMAKE_TOOLCHAIN_FILE=/usr/local/pspdev/psp/share/pspdev.cmake' }
           - { name: 'Android',             os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, android: true, werror: true, clang-tidy: false,}
     steps:
       - name: Setup vcvars
@@ -176,8 +177,12 @@ jobs:
         if: ${{ !matrix.android }}
         run: cmake --build build --verbose --config Release
 
+      - name: Package Assets Separately
+        if: matrix.build-assets
+        run: (cd build/assets && zip -r ../../isle-assets.zip .)
+
       - name: Package (CPack)
-        if: ${{ !matrix.n3ds && !matrix.android }}
+        if: ${{ !matrix.n3ds && !matrix.android && !matrix.psp }}
         run: |
           cd build
           success=0
@@ -226,6 +231,13 @@ jobs:
           mv *.3dsx dist/
           mv *.cia dist/
 
+      - name: Package (PSP)
+        if: ${{ matrix.psp }}
+        run: |
+          cd build
+          mkdir dist
+          mv EBOOT.PBP dist/
+
       - name: Package (Android)
         if: ${{ matrix.android }}
         run: |
@@ -246,6 +258,9 @@ jobs:
             build/dist/*.3dsx
             build/dist/*.cia
             build/dist/*.apk
+            build/dist/*.PBP
+            isle-assets.zip
+          if-no-files-found: ignore
 
   flatpak:
     name: "Flatpak (${{ matrix.arch }})"

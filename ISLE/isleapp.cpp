@@ -69,6 +69,10 @@
 #include "xbox_one_series/config.h"
 #endif
 
+#ifdef PSP
+#include <pspfpu.h>
+#endif
+
 #ifdef IOS
 #include "ios/config.h"
 #endif
@@ -149,6 +153,10 @@ IsleApp::IsleApp()
 	m_gameStarted = FALSE;
 	m_frameDelta = 10;
 	m_windowActive = TRUE;
+
+#ifdef PSP
+	pspFpuSetEnable(0);
+#endif
 
 #ifdef COMPAT_MODE
 	{
@@ -887,7 +895,9 @@ MxResult IsleApp::SetupWindow()
 #if defined(MINIWIN) && !defined(__3DS__) && !defined(WINDOWS_STORE)
 	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+#ifndef __PSP__
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+#endif
 #endif
 
 	window = SDL_CreateWindowWithProperties(props);

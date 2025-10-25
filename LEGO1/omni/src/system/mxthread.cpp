@@ -3,6 +3,9 @@
 #include "decomp.h"
 
 #include <SDL3/SDL_timer.h>
+#ifdef PSP
+#include <pspkernel.h>
+#endif
 
 DECOMP_SIZE_ASSERT(MxThread, 0x1c)
 
@@ -10,7 +13,11 @@ DECOMP_SIZE_ASSERT(MxThread, 0x1c)
 // FUNCTION: BETA10 0x10147540
 MxThread::MxThread()
 {
+#ifdef PSP
+	m_thread = 0;
+#else
 	m_thread = NULL;
+#endif
 	m_running = TRUE;
 }
 
@@ -19,7 +26,13 @@ MxThread::MxThread()
 MxThread::~MxThread()
 {
 	if (m_thread) {
+#ifdef PSP
+		sceKernelWaitThreadEnd(m_thread, NULL);
+		sceKernelDeleteThread(m_thread);
+		m_thread = 0;
+#else
 		SDL_WaitThread(m_thread, NULL);
+#endif
 	}
 }
 
@@ -29,7 +42,27 @@ MxResult MxThread::Start(MxS32 p_stackSize, MxS32 p_flag)
 {
 	MxResult result = FAILURE;
 
-	if (m_semaphore.Init(0, 1) != SUCCESS) {
+	if (m_semaphore.Init(0, 1) == SUCCESS) {
+#ifdef PSP
+		int thid = sceKernelCreateThread(
+			"MxThread",
+			ThreadProc,
+			0x18, // priority (0x18 is typical)
+			p_stackSize * 4,
+			0,
+			NULL
+		);
+
+		if (thid >= 0) {
+			MxThread* self = this;
+			int start = sceKernelStartThread(thid, sizeof(MxThread*), &self);
+			if (start >= 0) {
+				result = SUCCESS;
+				m_thread = thid; // store thread ID if needed
+			}
+		}
+	}
+#else
 		goto done;
 	}
 
@@ -45,6 +78,7 @@ MxResult MxThread::Start(MxS32 p_stackSize, MxS32 p_flag)
 
 		SDL_DestroyProperties(props);
 	}
+#endif
 
 	result = SUCCESS;
 
@@ -100,12 +134,20 @@ void MxThread::Terminate()
 	m_semaphore.Acquire();
 }
 
+#ifdef PSP
+int MxThread::ThreadProc(SceSize args, void* argp)
+{
+	MxThread* self = *(MxThread**) argp;
+	return self->Run();
+}
+#else
 // FUNCTION: LEGO1 0x100bf680
 // FUNCTION: BETA10 0x1014783b
 int MxThread::ThreadProc(void* p_thread)
 {
 	return static_cast<MxThread*>(p_thread)->Run();
 }
+#endif
 
 // FUNCTION: LEGO1 0x100bf690
 // FUNCTION: BETA10 0x10147855
