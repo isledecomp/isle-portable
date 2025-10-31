@@ -1,0 +1,54 @@
+struct SceneLight {
+    float4 color;
+    float4 vec;
+    float isDirectional;
+};
+
+void main(
+    float4 vPosition : POSITION,
+    float2 vTexCoord : TEXCOORD0,
+    float3 vViewPos : TEXCOORD1,
+    float3 vNormal : TEXCOORD2,
+
+    uniform __nostrip SceneLight uLights[2] : BUFFER[0],
+    uniform __nostrip float3 uAmbientLight : BUFFER[0],
+    uniform __nostrip float uShininess,
+    uniform __nostrip float4 uColor,
+    uniform __nostrip sampler2D uTexture,
+
+    out float4 outColor : COLOR
+) {
+    float3 diffuse = float3(0.0, 0.0, 0.0);
+    float3 specular = float3(0.0, 0.0, 0.0);
+
+    float3 viewVec = normalize(-vViewPos); // Assuming camera at origin
+
+    diffuse += uAmbientLight;
+
+    for (int i = 0; i < 2; ++i) {
+        float3 lightColor = uLights[i].color.rgb;
+        float isDirectional = uLights[i].isDirectional;
+
+        float3 lightVec = normalize(lerp(uLights[i].vec.xyz - vViewPos, -uLights[i].vec.xyz, isDirectional));
+
+        float3 halfVec = normalize(viewVec + lightVec);
+        float dotNL = max(dot(vNormal, lightVec), 0.0);
+        float dotNH = max(dot(vNormal, halfVec), 0.0);
+
+        // Diffuse contribution
+        diffuse += dotNL * lightColor;
+
+        // Specular
+        float spec = pow(dotNH, uShininess);
+        if(uShininess > 0.0) {
+            specular += spec * lightColor * sign(dotNL);
+        }
+    }
+
+    outColor.rgb = clamp(diffuse * uColor.rgb + specular, 0.0, 1.0);
+    outColor.a = uColor.a;
+#if TEXTURED
+    float4 texel = tex2D(uTexture, vTexCoord);
+    outColor.rgb *= texel.rgb;
+#endif
+}

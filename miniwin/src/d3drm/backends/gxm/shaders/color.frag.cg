@@ -1,0 +1,6 @@
+void main(
+    uniform float4 uColor : COLOR,
+    out float4 outColor : COLOR
+) {
+    outColor = uColor;
+}

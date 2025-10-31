@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<stringset>
+    <!-- Main Page -->
+    <string id="msg_lego_island_config" src="Lego Island Config"/>
+    <string id="msg_page_game" src="Game" />
+    <string id="msg_page_graphics" src="Graphics" />
+    <string id="msg_page_controls" src="Controls" />
+    <string id="msg_page_extensions" src="Extensions" />
+
+    <!-- Game Page -->
+    <string id="msg_disk_path" src="Disk Path" />
+    <string id="msg_cd_path" src="CD Path" />
+    <string id="msg_save_path" src="Save Path" />
+    <string id="msg_3d_sound" src="3D Sound" />
+    <string id="msg_music" src="Music" />
+
+    <string id="msg_transition_type" src="Transition Type" />
+    <string id="msg_transition_none" src="none" />
+    <string id="msg_transition_dissolve" src="dissolve" />
+    <string id="msg_transition_mosaic" src="mosaic" />
+    <string id="msg_transition_wipe_down" src="wipe down" />
+    <string id="msg_transition_windows" src="windows" />
+
+    <!-- Graphics -->
+    <string id="msg_island_texture_quality" src="Island Texture Quality" />
+    <string id="msg_texture_fast" src="fast" />
+    <string id="msg_texture_high" src="high" />
+
+    <string id="msg_island_model_quality" src="Island Model Quality" />
+    <string id="msg_quality_low" src="low" />
+    <string id="msg_quality_medium" src="medium" />
+    <string id="msg_quality_high" src="high" />
+
+    <string id="msg_max_lod" src="Maximum LOD" />
+    <string id="msg_max_actors" src="Maximum Actors" />
+
+    <string id="msg_msaa" src="MSAA" />
+    <string id="msg_1x" src="1x" />
+    <string id="msg_2x" src="2x" />
+    <string id="msg_4x" src="4x" />
+
+    <!-- Controls -->
+    <string id="msg_touch_control_scheme" src="Touch Control Scheme" />
+    <string id="msg_virtual_gamepad" src="Virtual Gamepad" />
+    <string id="msg_virtual_arrow_keys" src="Virtual Arrow Keys" />
+    <string id="msg_virtual_mouse" src="Virtual Mouse" />
+    <string id="msg_rumble" src="Rumble" />
+
+    <!-- Extensions -->
+    <string id="msg_texture_loader_extension" src="Texture Loader Extension" />
+    <string id="msg_texture_loader_path" src="Texture Loader Path" />
+
+    <!-- footer -->
+    <string id="msg_save_exit" src="Save &amp; Exit" />
+    <string id="msg_save_launch" src="Save &amp; Launch" />
+    <string id="msg_exit" src="Exit" />
+</stringset>

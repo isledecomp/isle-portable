@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resource version="0.1" type="normal" id="config_plugin">
+    <filetable>
+        <file src="settings.xml" type="application/xml" id="settings.xml" compress="off" />
+    </filetable>
+
+    <stringtable>
+<!--
+    <locale src_="locale/ja.xml" compress="on" id="ja" />
+-->
+    <locale src="locale/en.xml" compress="on" id="en" />
+<!--
+    <locale src_="locale/en-gb.xml" compress="on" id="en-gb" />
+    <locale src_="locale/zh-s.xml" compress="on" id="zh-s" />
+    <locale src_="locale/zh-t.xml" compress="on" id="zh-t" />
+    <locale src_="locale/da.xml" compress="on" id="da" />
+    <locale src_="locale/nl.xml" compress="on" id="nl" />
+    <locale src_="locale/fi.xml" compress="on" id="fi" />
+    <locale src_="locale/fr.xml" compress="on" id="fr" />
+    <locale src_="locale/de.xml" compress="on" id="de" />
+    <locale src_="locale/it.xml" compress="on" id="it" />
+    <locale src_="locale/ko.xml" compress="on" id="ko" />
+    <locale src_="locale/no.xml" compress="on" id="no" />
+    <locale src_="locale/pl.xml" compress="on" id="pl" />
+    <locale src_="locale/pt.xml" compress="on" id="pt" />
+    <locale src_="locale/ru.xml" compress="on" id="ru" />
+    <locale src_="locale/es.xml" compress="on" id="es" />
+    <locale src_="locale/sv.xml" compress="on" id="sv" />
+    <locale src_="locale/pt-br.xml" compress="on" id="pt-br" />
+    <locale src_="locale/tr.xml" compress="on" id="tr" />
+-->
+  </stringtable>
+</resource>

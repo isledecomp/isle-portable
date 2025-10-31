@@ -1,0 +1,30 @@
+Total estimated cost: 3 cycles, parallel mode
+Register count: 8 PAs, 0 temps, 0 SAs *
+Texture reads:  0 non-dependent, dependent: 0 unconditional, 0 conditional
+
+High level analysis:
+No warnings.
+
+* Please refer to the Razor documentation for details regarding the meaning of these numbers. Decreasing the number of registers used will not necessarily increase performance
+
+Instruction statistics:
+Number of alu ops: 4
+Number of mem ops: 0
+Number of tex ops: 0
+Number of floating point ops: 2
+Number of integer ops: 0
+Number of pack ops: 0
+Number of mov ops: 1
+Number of nop ops: 0
+
+
+Vertex attributes:
+pa0   = (float4) aPosition
+pa4   = (float4) aTexCoord
+
+
+Primary program:
+ 0:     mov.f32         o4.xy, pa4.xy         
+ 1:     mul.f32         o0.xy, pa0.xy, {1, 1} 
+ 2:     mul.f32         o2.xy, {1, 1}, {1, 1} 
+

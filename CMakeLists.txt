@@ -46,18 +46,18 @@ option(ISLE_BUILD_ASSETS "Build assets from the /assets directory" OFF)
 option(ISLE_ASAN "Enable Address Sanitizer" OFF)
 option(ISLE_UBSAN "Enable Undefined Behavior Sanitizer" OFF)
 option(ISLE_WERROR "Treat warnings as errors" OFF)
-option(ISLE_DEBUG "Enable imgui debug" ON)
+cmake_dependent_option(ISLE_DEBUG "Enable imgui debug" ON "NOT VITA" OFF)
 cmake_dependent_option(ISLE_USE_DX5 "Build with internal DirectX 5 SDK" "${NOT_MINGW}" "WIN32;CMAKE_SIZEOF_VOID_P EQUAL 4" OFF)
 cmake_dependent_option(ISLE_MINIWIN "Use miniwin" ON "NOT ISLE_USE_DX5" OFF)
 cmake_dependent_option(ISLE_EXTENSIONS "Use extensions" ON "NOT ISLE_USE_DX5;NOT WINDOWS_STORE" OFF)
-cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "MSVC OR ISLE_MINIWIN;NOT NINTENDO_3DS;NOT WINDOWS_STORE" OFF)
+cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "MSVC OR ISLE_MINIWIN;NOT NINTENDO_3DS;NOT WINDOWS_STORE;NOT VITA" OFF)
 cmake_dependent_option(ISLE_COMPILE_SHADERS "Compile shaders" ON "SDL_SHADERCROSS_BIN;TARGET Python3::Interpreter" OFF)
-option(CMAKE_POSITION_INDEPENDENT_CODE "Build with -fPIC" ON)
+cmake_dependent_option(CMAKE_POSITION_INDEPENDENT_CODE "Build with -fPIC" ON "NOT VITA" OFF)
 option(ENABLE_CLANG_TIDY "Enable clang-tidy")
 option(DOWNLOAD_DEPENDENCIES "Download dependencies" ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}" CACHE PATH "Directory where to put executables and dll")
 set(ISLE_EMSCRIPTEN_HOST "" CACHE STRING "Host URL for Emscripten streaming (e.g., https://test.com)")
-cmake_dependent_option(BUILD_SHARED_LIBS "Build lego1 as a shared library" ON "NOT EMSCRIPTEN" OFF)
+cmake_dependent_option(BUILD_SHARED_LIBS "Build lego1 as a shared library" ON "NOT EMSCRIPTEN;NOT VITA" OFF)
 
 message(STATUS "Isle app:               ${ISLE_BUILD_APP}")
 message(STATUS "Config app:             ${ISLE_BUILD_CONFIG}")
@@ -90,6 +90,7 @@ if (DOWNLOAD_DEPENDENCIES)
         SDL3
         GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
         GIT_TAG "main"
+        UPDATE_DISCONNECTED TRUE
         EXCLUDE_FROM_ALL
       )
     endif()
@@ -100,6 +101,7 @@ if (DOWNLOAD_DEPENDENCIES)
     iniparser
     GIT_REPOSITORY "https://gitlab.com/iniparser/iniparser.git"
     GIT_TAG "main"
+    UPDATE_DISCONNECTED TRUE
     EXCLUDE_FROM_ALL
   )
   block()
@@ -598,6 +600,12 @@ if (ISLE_BUILD_APP)
             ISLE/android/config.cpp
     )
   endif()
+  if(VITA)
+    target_sources(isle PRIVATE
+      ISLE/vita/config.cpp
+      ISLE/vita/messagebox.cpp
+    )
+  endif()
   if(Python3_FOUND)
     if(NOT DEFINED PYTHON_PIL_AVAILABLE)
       execute_process(
@@ -639,18 +647,18 @@ if (ISLE_BUILD_CONFIG)
   qt_add_executable(isle-config WIN32
     LEGO1/mxdirectx/mxdirectxinfo.cpp
     LEGO1/mxdirectx/legodxinfo.cpp
-    CONFIG/config.cpp
-    CONFIG/AboutDlg.cpp
-    CONFIG/MainDlg.cpp
-    CONFIG/detectdx5.cpp
-    CONFIG/res/config.rc
-    CONFIG/res/config.qrc
+    CONFIG/qt/config.cpp
+    CONFIG/qt/AboutDlg.cpp
+    CONFIG/qt/MainDlg.cpp
+    CONFIG/qt/detectdx5.cpp
+    CONFIG/qt/res/config.rc
+    CONFIG/qt/res/config.qrc
   )
   target_link_libraries(isle-config PRIVATE Qt6::Core Qt6::Widgets)
   set_property(TARGET isle-config PROPERTY AUTOMOC ON)
   set_property(TARGET isle-config PROPERTY AUTORCC ON)
   set_property(TARGET isle-config PROPERTY AUTOUIC ON)
-  set_property(TARGET isle-config PROPERTY AUTOUIC_SEARCH_PATHS "${CMAKE_CURRENT_SOURCE_DIR}/CONFIG/res")
+  set_property(TARGET isle-config PROPERTY AUTOUIC_SEARCH_PATHS "${CMAKE_CURRENT_SOURCE_DIR}/CONFIG/qt/res")
   list(APPEND isle_targets isle-config)
   target_compile_definitions(isle-config PRIVATE _AFXDLL MXDIRECTX_FOR_CONFIG)
   target_include_directories(isle-config PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/LEGO1")
@@ -782,7 +790,7 @@ endif()
 if(BUILD_SHARED_LIBS)
   list(APPEND install_extra_targets lego1)
 endif()
-if (NOT (NINTENDO_3DS OR WINDOWS_STORE))
+if (NOT (NINTENDO_3DS OR WINDOWS_STORE OR VITA))
   install(TARGETS isle ${install_extra_targets}
     RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
     LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
@@ -881,6 +889,35 @@ if(WINDOWS_STORE)
       PATTERN "*/*.msix"
       PATTERN "*/*.msixbundle")
 endif()
+if(VITA)
+  include("${VITASDK}/share/vita.cmake" REQUIRED)
+
+  add_subdirectory(CONFIG/vita)
+
+  set(ISLE_PACKAGE_NAME "vita-isle")
+  set(VITA_APP_NAME "Lego Island")
+  set(VITA_TITLEID  "LEGO00001")
+  set(VITA_VERSION  "01.00")
+
+  vita_create_self(isle.self isle UNSAFE)
+
+  set(VPK_FILE_ARGS "")
+  file(GLOB_RECURSE SCE_SYS_FILES packaging/vita/sce_sys/*)
+  foreach(FILE ${SCE_SYS_FILES})
+    file(RELATIVE_PATH REL_FILE ${CMAKE_CURRENT_SOURCE_DIR}/packaging/vita/ ${FILE})
+    list(APPEND VPK_FILE_ARGS FILE ${FILE} ${REL_FILE})
+  endforeach()
+
+  vita_create_vpk(isle.vpk ${VITA_TITLEID} isle.self
+    FILE "${CMAKE_CURRENT_BINARY_DIR}/CONFIG/vita/isle-config.self" isle-config.self
+    FILE "${CMAKE_CURRENT_BINARY_DIR}/CONFIG/vita/config_plugin.rco" config_plugin.rco
+    VERSION ${VITA_VERSION}
+    NAME ${VITA_APP_NAME}
+    ${VPK_FILE_ARGS}
+  )
+  add_dependencies(isle.vpk-vpk config_plugin.rco_target)
+endif()
+
 if(MSVC OR IOS)
   set(CPACK_GENERATOR ZIP)
   if(IOS)

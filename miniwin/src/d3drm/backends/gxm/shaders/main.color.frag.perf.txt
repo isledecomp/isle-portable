@@ -1,0 +1,134 @@
+Total estimated cost: 63.5 cycles, parallel mode
+Register count: 8 PAs, 16 temps, 38 SAs *
+Texture reads:  0 non-dependent, dependent: 0 unconditional, 0 conditional
+
+High level analysis:
+No warnings.
+
+* Please refer to the Razor documentation for details regarding the meaning of these numbers. Decreasing the number of registers used will not necessarily increase performance
+
+Instruction statistics:
+Number of alu ops: 63
+Number of mem ops: 0
+Number of tex ops: 0
+Number of floating point ops: 43
+Number of integer ops: 1
+Number of pack ops: 1
+Number of mov ops: 15
+Number of nop ops: 2
+
+Constants:
+[DEFAULT  + 0  ] sa0   = (float1) uShininess
+[DEFAULT  + 2  ] sa2   = (float4) uColor
+[BUFFER0  + 0  ]       = (float4) uLights[0].color
+[BUFFER0  + 4  ]       = (float4) uLights[0].vec
+[BUFFER0  + 8  ]       = (float1) uLights[0].isDirectional
+[BUFFER0  + 10 ]       = (float4) uLights[1].color
+[BUFFER0  + 14 ]       = (float4) uLights[1].vec
+[BUFFER0  + 18 ]       = (float1) uLights[1].isDirectional
+[BUFFER0  + 20 ]       = (float3) uAmbientLight
+[LITERAL  + 1  ] sa7   = 0xffffffff (-1.#QNAN0f) (-1.#QNANh, -1.#QNANh)
+[LITERAL  + 2  ] sa8   = 0x3f800000 (1.000000f) (0.00000h, 1.87500h)
+[BUFFER0       ] sa6   = buffer base address
+
+Iterators:
+pa0   = (float4) TEXCOORD1
+pa4   = (float4) TEXCOORD2
+
+
+Secondary program:
+ 0 :     lda32           sa1, [sa6, 0x9]            
+ 1 :     lda32.fetch3    sa9, [sa6, 0x4]            
+ 2 :     mul.f32         sa32.xy, -sa8.yz, sa0.yy   
+ 3 :     mul.f32         sa34.x, -sa10.y, sa0.y     
+ 4 :     lda32.fetch4    sa12, [sa6, 0x0]           
+ 5 :     mov.f32         sa36.xy, {0, 0}            
+ 6 :     mov.f32         sa30.x, {0}                
+ 7 :     lda32           sa15, [sa6, 0x13]          
+ 8 :     lda32.fetch3    sa16, [sa6, 0xe]           
+ 9 :     mul.f32         sa26.xy, -sa16.xy, sa14.yy 
+ 10:     mul.f32         sa28.x, -sa18.x, sa14.y    
+ 11:     lda32.fetch4    sa19, [sa6, 0xa]           
+ 12:     lda32.fetch3    sa22, [sa6, 0x14]          
+ 13:     nop                                        
+
+Primary program:
+ 0 :     cmp.gt.f32      p0, sa0.x, {0}                      
+ 1 :     mov.f32         i0.xyz, pa0.xyz                     
+ 2 :     add.f32         i1.xyz, sa8.yzw, -i0.xyz            
+ 2 :     +dot.f32        pa3.x, i0.xyz, i0.xyz               
+ 3 :     mov.f32         i2.xyz, sa32.xyz                    
+ 4 :     mad.f32         i2.xyz, -sa0.yyy, i1.xyz, i2.xyz    
+ 5 :     add.f32         i1.xyz, i2.xyz, i1.xyz              
+ 5 :     +rsq.f32        pa3.x, pa3.x                        
+ 6 :     dot.f32         i2.x, i1.xyz, i1.xyz                
+ 7 :     rsq.f32         pa3.x, i2.x                         
+ 7 :     +mul.f32        i0.xyz, -i0.xyz, pa2.yyy            
+ 8 :     mad.f32         i2.xyz, pa2.yyy, i1.xyz, i0.xyz     
+ 8 :     +mov.f32        r6.xy, i0.xy                        
+ 9 :     mov.f32         r8.x, i0.z                          
+ 10:     dot.f32         i0.x, i2.xyz, i2.xyz                
+ 10:     +mov.f32        r2.xy, i2.xy                        
+ 11:     mov.f32         r4.x, i2.z                          
+ 12:     rsq.f32         pa3.x, i0.x                         
+ 12:     +mul.f32        i0.xyz, i1.xyz, pa2.yyy             
+ 13:     dot.f32         i0.x, pa4.xyz, i0.xyz               
+ 14:     max.f32         r14.x, i0.x, {0}                    
+ 15:  p0 br              #19                                 
+ 16:     mov.f32         r10.xy, sa36.xy                     
+ 17:     or.u32          r12.x, sa30.x, 0x0                  
+ 18:     br              #30                                 
+#19:     cmov.lezero.f32 r0.x, r14.x, {0}, sa8.x             
+ 20:     cmov.ltzero.f32 i0.x, r14.x, sa8.x, {0}             
+ 21:     mad.f32         i0.x, r0.x, {1}, -i0.x              
+ 22:     mul.f32         i1.xyz, r2.xyz, pa2.yyy             
+ 23:     dot.f32         i1.x, pa4.xyz, i1.xyz               
+ 24:     max.f32         i1.x, i1.x, {0}                     
+ 25:     mul.f32         i0.xyz, sa12.xyz, i0.xxx            
+ 25:     +log.f32        pa3.x, i1.x                         
+ 26:     mul.f32         i1.x, sa0.x, pa2.y                  
+ 27:     exp.f32         i1.x, i1.x                          
+ 28:     mad.f32         r10.xy, i0.xy, i1.xx, {0, 0}        
+ 29:     mul.f32         r12.x, i0.z, i1.x                   
+#30:     nop                                                 
+ 31:     mov.f32         i0.xyz, sa16.xyz                    
+ 32:     mad.f32         i0.xyz, -pa0.xyz, {1, 1, 1}, i0.xyz 
+ 33:     mov.f32         i1.xyz, sa26.xyz                    
+ 34:     mad.f32         i1.xyz, -sa14.yyy, i0.xyz, i1.xyz   
+ 35:     add.f32         i0.xyz, i1.xyz, i0.xyz              
+ 35:     +mov.f32        i2.xyz, r6.xyz                      
+ 36:     dot.f32         i1.x, i0.xyz, i0.xyz                
+ 37:     rsq.f32         i1.x, i1.x                          
+ 38:     mad.f32         i2.xyz, i1.xxx, i0.xyz, i2.xyz      
+ 39:     mul.f32         i0.xyz, i0.xyz, i1.xxx              
+ 39:     +mov.f32        r0.xy, i2.xy                        
+ 40:     dot.f32         i0.x, pa4.xyz, i0.xyz               
+ 41:     max.f32         pa2.x, i0.x, {0}                    
+ 42:     dot.f32         i0.x, i2.xyz, i2.xyz                
+ 43:     mov.f32         r2.x, i2.z                          
+ 44:     rsq.f32         pa0.-y, i0.x                        
+ 45: !p0 br              #57                                 
+ 46:     cmov.lezero.f32 pa0.x, pa2.x, {0}, sa8.x            
+ 47:     cmov.ltzero.f32 i0.x, pa2.x, sa8.x, {0}             
+ 48:     mad.f32         i0.x, pa0.x, {1}, -i0.x             
+ 49:     mul.f32         i1.xyz, r0.xyz, pa0.yyy             
+ 50:     dot.f32         i1.x, pa4.xyz, i1.xyz               
+ 51:     max.f32         i1.x, i1.x, {0}                     
+ 52:     mul.f32         i0.xyz, sa18.yzw, i0.xxx            
+ 52:     +log.f32        pa0.x, i1.x                         
+ 53:     mul.f32         i1.x, sa0.x, pa0.x                  
+ 54:     exp.f32         i1.x, i1.x                          
+ 55:     mad.f32         r10.xy, i0.xy, i1.xx, r10.xy        
+ 56:     mad.f32         r12.x, i0.z, i1.x, r12.x            
+#57:     nop                                                 
+ 58:     mad.f32         i0.xy, r14.xx, sa12.xy, sa22.xy     
+ 59:     mad.f32         i0.--z, r14.--x, sa14.--x, sa24.--x 
+ 60:     mov.f32         i1.xyz, sa18.yzw                    
+ 61:     mad.f32         i0.xyz, pa2.xxx, i1.xyz, i0.xyz     
+ 62:     mov.f32         i1.xyz, r10.xyz                     
+ 63:     mov.f32         i2.xyzw, sa2.xyzw                   
+ 64:     mad.f32         i0.xyz, i2.xyz, i0.xyz, i1.xyz      
+ 65:     min.f32         i0.xyz, i0.xyz, {1, 1, 1}           
+ 66:     max.f32         i2.xyz, i0.xyz, {0, 0, 0}           
+ 67:     pack.f16.f32    pa0.xyzw, i2.xyzw                   
+
