@@ -37,8 +37,7 @@ macro(COMPILE_SHADER INPUT_CG OUTPUT_GXP PROFILE)
         COMMAND /usr/bin/env bash
         ARGS "-c" 
           "if [ \"${INPUT_CG_PATH}\" -nt \"${TRACKED_GXP_PATH}\" ]; then 
-              echo '${INPUT_CG} changed but dont have psp2cgc, cant compile' >&2; 
-              exit 1;
+              echo 'warning: ${INPUT_CG} changed but dont have psp2cgc, cant recompile' >&2; 
           fi"
         COMMAND ${CMAKE_COMMAND} -E copy "${TRACKED_GXP_PATH}" "${OUTPUT_GXP_PATH}"
         DEPENDS "${INPUT_CG_PATH}" "${TRACKED_GXP_PATH}"
