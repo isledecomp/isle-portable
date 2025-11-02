@@ -1,8 +1,16 @@
 #include "d3drmrenderer_opengles3.h"
 #include "meshutils.h"
 
+#if defined(__APPLE__)
+#include <OpenGL/gl.h>
+#include <OpenGL/glext.h>
+#define glBindVertexArray glBindVertexArrayAPPLE
+#define glGenVertexArrays glGenVertexArraysAPPLE
+#define glDeleteVertexArrays glDeleteVertexArraysAPPLE
+#else
 #include <GLES2/gl2ext.h>
 #include <GLES3/gl3.h>
+#endif
 #include <SDL3/SDL.h>
 #include <algorithm>
 #include <string>

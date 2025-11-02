@@ -4,7 +4,11 @@
 #include "d3drmtexture_impl.h"
 #include "ddraw_impl.h"
 
+#if defined(__APPLE__)
+#include <OpenGL/gl.h>
+#else
 #include <GLES2/gl2.h>
+#endif
 #include <SDL3/SDL.h>
 #include <vector>
 
