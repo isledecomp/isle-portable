@@ -1,8 +1,21 @@
 #include "d3drmrenderer_opengles2.h"
 #include "meshutils.h"
 
+#if defined(__APPLE__)
+#include <TargetConditionals.h>
+#if TARGET_OS_IOS
+#include <OpenGLES/ES2/gl.h>
+#include <OpenGLES/ES2/glext.h>
+#else
+#include <OpenGL/gl.h>
+#include <OpenGL/glext.h>
+#define GL_DEPTH_COMPONENT24_OES GL_DEPTH_COMPONENT24
+#define GL_DEPTH_COMPONENT32_OES GL_DEPTH_COMPONENT32
+#endif
+#else
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
+#endif
 #include <SDL3/SDL.h>
 #include <algorithm>
 #include <string>

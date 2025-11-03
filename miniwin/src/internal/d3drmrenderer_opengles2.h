@@ -4,7 +4,16 @@
 #include "d3drmtexture_impl.h"
 #include "ddraw_impl.h"
 
+#if defined(__APPLE__)
+#include <TargetConditionals.h>
+#if TARGET_OS_IOS
+#include <OpenGLES/ES2/gl.h>
+#else
+#include <OpenGL/gl.h>
+#endif
+#else
 #include <GLES2/gl2.h>
+#endif
 #include <SDL3/SDL.h>
 #include <vector>
 

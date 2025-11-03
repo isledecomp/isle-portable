@@ -1,8 +1,22 @@
 #include "d3drmrenderer_opengles3.h"
 #include "meshutils.h"
 
+#if defined(__APPLE__)
+#include <TargetConditionals.h>
+#if TARGET_OS_IOS
+#include <OpenGLES/ES2/glext.h>
+#include <OpenGLES/ES3/gl.h>
+#else
+#include <OpenGL/gl.h>
+#include <OpenGL/glext.h>
+#define glBindVertexArray glBindVertexArrayAPPLE
+#define glGenVertexArrays glGenVertexArraysAPPLE
+#define glDeleteVertexArrays glDeleteVertexArraysAPPLE
+#endif
+#else
 #include <GLES2/gl2ext.h>
 #include <GLES3/gl3.h>
+#endif
 #include <SDL3/SDL.h>
 #include <algorithm>
 #include <string>
