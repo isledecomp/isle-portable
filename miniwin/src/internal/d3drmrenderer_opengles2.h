@@ -5,7 +5,12 @@
 #include "ddraw_impl.h"
 
 #if defined(__APPLE__)
+#include <TargetConditionals.h>
+#if defined(TARGET_OS_IOS)
+#include <OpenGLES/ES2/gl.h>
+#else
 #include <OpenGL/gl.h>
+#endif
 #else
 #include <GLES2/gl2.h>
 #endif
