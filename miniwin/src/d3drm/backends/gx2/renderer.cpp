@@ -1,9 +1,7 @@
+#include "d3drmrenderer_gx2.h"
 #include <coreinit/systeminfo.h>
 #include <coreinit/thread.h>
 #include <coreinit/time.h>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
 #include <gfd.h>
 #include <gx2/draw.h>
 #include <gx2/mem.h>
@@ -12,98 +10,124 @@
 #include <whb/proc.h>
 #include <whb/sdcard.h>
 
-struct IsleGX2Backend {
-	GX2RBuffer positionBuffer;
-	GX2RBuffer colourBuffer;
-	WHBGfxShaderGroup shaderGroup;
-	bool rendering = false;
+#ifndef D3D_OK
+#define D3D_OK S_OK
+#endif
 
-	void Init(const char* shaderPath)
-	{
-		WHBLogUdpInit();
-		WHBProcInit();
-		WHBGfxInit();
-		WHBMountSdCard();
-		char path[256];
-		sprintf(path, "%s/%s", WHBGetSdCardMountPath(), shaderPath);
-		FILE* f = fopen(path, "rb");
-		if (!f) {
-			return;
-		}
-		fseek(f, 0, SEEK_END);
-		size_t fsize = ftell(f);
-		rewind(f);
-		char* data = (char*) malloc(fsize);
-		fread(data, 1, fsize, f);
-		WHBGfxLoadGFDShaderGroup(&shaderGroup, 0, data);
-		free(data);
-		WHBGfxInitShaderAttribute(&shaderGroup, "aPosition", 0, 0, GX2_ATTRIB_FORMAT_FLOAT_32_32_32_32);
-		WHBGfxInitShaderAttribute(&shaderGroup, "aColour", 1, 0, GX2_ATTRIB_FORMAT_FLOAT_32_32_32_32);
-		WHBGfxInitFetchShader(&shaderGroup);
-	}
+static struct IsleGX2Backend {
+    bool initialized = false;
+    bool rendering = false;
 
-	void StartFrame()
-	{
-		if (rendering) {
-			return;
-		}
-		WHBGfxBeginRender();
-		WHBGfxBeginRenderTV();
-		rendering = true;
-	}
+    void Init(const char* shaderPath)
+    {
+        if (initialized) return;
+        WHBLogUdpInit();
+        WHBProcInit();
+        WHBGfxInit();
+        WHBMountSdCard();
+        initialized = true;
+    }
 
-	void EndFrame()
-	{
-		if (!rendering) {
-			return;
-		}
-		WHBGfxFinishRenderTV();
-		WHBGfxBeginRenderDRC();
-		WHBGfxFinishRenderDRC();
-		WHBGfxFinishRender();
-		rendering = false;
-	}
+    void StartFrame()
+    {
+        if (rendering) return;
+        WHBGfxBeginRender();
+        WHBGfxBeginRenderTV();
+        rendering = true;
+    }
 
-	void Clear(float r, float g, float b)
-	{
-		StartFrame();
-		WHBGfxClearColor(r, g, b, 1.0f);
-	}
+    void EndFrame()
+    {
+        if (!rendering) return;
+        WHBGfxFinishRenderTV();
+        WHBGfxBeginRenderDRC();
+        WHBGfxFinishRenderDRC();
+        WHBGfxFinishRender();
+        rendering = false;
+    }
 
-	void Flip() { EndFrame(); }
+    void Clear(float r, float g, float b)
+    {
+        StartFrame();
+        WHBGfxClearColor(r, g, b, 1.0f);
+    }
 
-	void Shutdown()
-	{
-		WHBUnmountSdCard();
-		WHBGfxShutdown();
-		WHBProcShutdown();
-		WHBLogUdpDeinit();
-	}
-};
+    void Flip()
+    {
+        EndFrame();
+    }
 
-static IsleGX2Backend g_backend;
+    void Shutdown()
+    {
+        if (!initialized) return;
+        WHBUnmountSdCard();
+        WHBGfxShutdown();
+        WHBProcShutdown();
+        WHBLogUdpDeinit();
+        initialized = false;
+    }
 
-extern "C" void IsleBackendInit(const char* shaderPath)
+} g_backend;
+
+// ------------------------------------
+// GX2Renderer Implementation
+// ------------------------------------
+
+GX2Renderer::GX2Renderer(DWORD width, DWORD height)
 {
-	g_backend.Init(shaderPath);
+    m_width = width;
+    m_height = height;
+    m_virtualWidth = width;
+    m_virtualHeight = height;
+
+    g_backend.Init("content/renderer.gsh");
 }
-extern "C" void IsleBackendStartFrame()
+
+GX2Renderer::~GX2Renderer()
 {
-	g_backend.StartFrame();
+    g_backend.Shutdown();
 }
-extern "C" void IsleBackendEndFrame()
+
+HRESULT GX2Renderer::BeginFrame()
 {
-	g_backend.EndFrame();
+    g_backend.StartFrame();
+    return D3D_OK;
 }
-extern "C" void IsleBackendClear(float r, float g, float b)
+
+void GX2Renderer::EnableTransparency()
 {
-	g_backend.Clear(r, g, b);
+    // GX2 blending can be configured here if needed
 }
-extern "C" void IsleBackendFlip()
+
+HRESULT GX2Renderer::FinalizeFrame()
 {
-	g_backend.Flip();
+    g_backend.EndFrame();
+    return D3D_OK;
 }
-extern "C" void IsleBackendShutdown()
+
+void GX2Renderer::Clear(float r, float g, float b)
 {
-	g_backend.Shutdown();
+    g_backend.Clear(r, g, b);
 }
+
+void GX2Renderer::Flip()
+{
+    g_backend.Flip();
+}
+
+void GX2Renderer::Resize(int width, int height, const ViewportTransform& viewportTransform)
+{
+    m_width = width;
+    m_height = height;
+    m_viewportTransform = viewportTransform;
+}
+
+void GX2Renderer::PushLights(const SceneLight* vertices, size_t count) {}
+void GX2Renderer::SetProjection(const D3DRMMATRIX4D&, D3DVALUE, D3DVALUE) {}
+void GX2Renderer::SetFrustumPlanes(const Plane*) {}
+Uint32 GX2Renderer::GetTextureId(IDirect3DRMTexture*, bool, float, float) { return 0; }
+Uint32 GX2Renderer::GetMeshId(IDirect3DRMMesh*, const MeshGroup*) { return 0; }
+void GX2Renderer::SubmitDraw(DWORD, const D3DRMMATRIX4D&, const D3DRMMATRIX4D&, const D3DRMMATRIX4D&, const Matrix3x3&, const Appearance&) {}
+void GX2Renderer::Draw2DImage(Uint32, const SDL_Rect&, const SDL_Rect&, FColor) {}
+void GX2Renderer::Download(SDL_Surface*) {}
+void GX2Renderer::SetDither(bool) {}

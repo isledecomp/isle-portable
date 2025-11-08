@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.25...4.0 FATAL_ERROR)
 project(isle LANGUAGES CXX C VERSION 0.1)
 
 if(WIIU)
-    add_library(libstdc_WiiU STATIC IMPORTED)
+  add_library(libstdc_WiiU STATIC IMPORTED)
   set_target_properties(libstdc_WiiU PROPERTIES
     IMPORTED_LOCATION /opt/devkitpro/devkitPPC/powerpc-eabi/lib/libstdc++.a
     INTERFACE_INCLUDE_DIRECTORIES /opt/devkitpro/devkitPPC/powerpc-eabi/include/c++/15.1.0
@@ -597,6 +597,9 @@ if (ISLE_BUILD_APP)
   if (WIN32)
     target_link_libraries(isle PRIVATE winmm)
   endif()
+  if (WIIU)
+    target_sources(isle PRIVATE 3rdparty/atomic-dummy/atomic.c)
+  endif()
   # Link LEGO1
   target_link_libraries(isle PRIVATE lego1)
   if(ISLE_DEBUG)
@@ -649,7 +652,7 @@ if (ISLE_BUILD_APP)
   endif()
   if (WIIU)
     target_sources(isle PRIVATE
-            ISLE/wiiu/config.cpp
+      ISLE/wiiu/config.cpp
     )
   endif()
   if(Python3_FOUND)
