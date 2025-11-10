@@ -1074,7 +1074,7 @@ bool IsleApp::LoadConfig()
 
 	// [library:config]
 	// Load sane defaults if dictionary failed to load
-	if (!dict) {
+	if (!dict || dict->n == 0) {
 		if (m_iniPath) {
 			SDL_Log("Invalid config path '%s'", m_iniPath);
 			return false;
@@ -1094,7 +1094,7 @@ bool IsleApp::LoadConfig()
 		}
 
 		char buf[32];
-		dict = iniparser_load(iniConfig.GetData());
+		dict = dictionary_new(0);
 		iniparser_set(dict, "isle", NULL);
 
 		iniparser_set(dict, "isle:diskpath", SDL_GetBasePath());
