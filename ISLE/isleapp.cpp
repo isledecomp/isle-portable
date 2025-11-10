@@ -65,6 +65,12 @@
 #include "3ds/config.h"
 #endif
 
+#ifdef __SWITCH__
+#include <switch.h>
+#include "switch/filesys.h"
+#include "switch/config.h"
+#endif
+
 #ifdef WINDOWS_STORE
 #include "xbox_one_series/config.h"
 #endif
@@ -1141,6 +1147,9 @@ bool IsleApp::LoadConfig()
 
 #ifdef __3DS__
 		N3DS_SetupDefaultConfigOverrides(dict);
+#endif
+#ifdef __SWITCH__
+		NX_SetupDefaultConfigOverrides(dict);
 #endif
 #ifdef WINDOWS_STORE
 		XBONE_SetupDefaultConfigOverrides(dict);
