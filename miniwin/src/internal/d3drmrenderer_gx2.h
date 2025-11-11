@@ -14,7 +14,6 @@ public:
     GX2Renderer(DWORD width, DWORD height);
     ~GX2Renderer() override;
 
-    // --- Overrides from Direct3DRMRenderer ---
     void PushLights(const SceneLight* vertices, size_t count) override;
     void SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back) override;
     void SetFrustumPlanes(const Plane* frustumPlanes) override;
@@ -39,7 +38,6 @@ public:
     void SetDither(bool dither) override;
 };
 
-// --- Enum device helper ---
 inline static void GX2Renderer_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
     D3DDEVICEDESC halDesc = {};

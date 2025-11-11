@@ -5,6 +5,8 @@
 #include <gfd.h>
 #include <gx2/draw.h>
 #include <gx2/mem.h>
+#include <gx2/clear.h>
+#include <gx2/state.h>
 #include <whb/gfx.h>
 #include <whb/log_udp.h>
 #include <whb/proc.h>
@@ -14,34 +16,41 @@
 #define D3D_OK S_OK
 #endif
 
-static struct IsleGX2Backend {
+static struct GX2Backend {
     bool initialized = false;
     bool rendering = false;
 
-    void Init(const char* shaderPath)
+    void Init()
     {
-        if (initialized) return;
+        if (initialized)
+            return;
+
         WHBLogUdpInit();
         WHBProcInit();
         WHBGfxInit();
         WHBMountSdCard();
+
         initialized = true;
     }
 
     void StartFrame()
     {
-        if (rendering) return;
+        if (rendering)
+            return;
+
         WHBGfxBeginRender();
         WHBGfxBeginRenderTV();
+        WHBGfxBeginRenderDRC();
         rendering = true;
     }
 
     void EndFrame()
     {
-        if (!rendering) return;
-        WHBGfxFinishRenderTV();
-        WHBGfxBeginRenderDRC();
+        if (!rendering)
+            return;
+
         WHBGfxFinishRenderDRC();
+        WHBGfxFinishRenderTV();
         WHBGfxFinishRender();
         rendering = false;
     }
@@ -49,7 +58,12 @@ static struct IsleGX2Backend {
     void Clear(float r, float g, float b)
     {
         StartFrame();
-        WHBGfxClearColor(r, g, b, 1.0f);
+
+        GX2ColorBuffer* tvBuffer = WHBGfxGetTVColourBuffer();
+        GX2ColorBuffer* drcBuffer = WHBGfxGetDRCColourBuffer();
+
+        GX2ClearColor(tvBuffer, r, g, b, 1.0f);
+        GX2ClearColor(drcBuffer, r, g, b, 1.0f);
     }
 
     void Flip()
@@ -59,19 +73,16 @@ static struct IsleGX2Backend {
 
     void Shutdown()
     {
-        if (!initialized) return;
+        if (!initialized)
+            return;
+
         WHBUnmountSdCard();
         WHBGfxShutdown();
         WHBProcShutdown();
         WHBLogUdpDeinit();
         initialized = false;
     }
-
 } g_backend;
-
-// ------------------------------------
-// GX2Renderer Implementation
-// ------------------------------------
 
 GX2Renderer::GX2Renderer(DWORD width, DWORD height)
 {
@@ -80,7 +91,7 @@ GX2Renderer::GX2Renderer(DWORD width, DWORD height)
     m_virtualWidth = width;
     m_virtualHeight = height;
 
-    g_backend.Init("content/renderer.gsh");
+    g_backend.Init();
 }
 
 GX2Renderer::~GX2Renderer()
@@ -94,10 +105,7 @@ HRESULT GX2Renderer::BeginFrame()
     return D3D_OK;
 }
 
-void GX2Renderer::EnableTransparency()
-{
-    // GX2 blending can be configured here if needed
-}
+void GX2Renderer::EnableTransparency() {}
 
 HRESULT GX2Renderer::FinalizeFrame()
 {
@@ -121,13 +129,3 @@ void GX2Renderer::Resize(int width, int height, const ViewportTransform& viewpor
     m_height = height;
     m_viewportTransform = viewportTransform;
 }
-
-void GX2Renderer::PushLights(const SceneLight* vertices, size_t count) {}
-void GX2Renderer::SetProjection(const D3DRMMATRIX4D&, D3DVALUE, D3DVALUE) {}
-void GX2Renderer::SetFrustumPlanes(const Plane*) {}
-Uint32 GX2Renderer::GetTextureId(IDirect3DRMTexture*, bool, float, float) { return 0; }
-Uint32 GX2Renderer::GetMeshId(IDirect3DRMMesh*, const MeshGroup*) { return 0; }
-void GX2Renderer::SubmitDraw(DWORD, const D3DRMMATRIX4D&, const D3DRMMATRIX4D&, const D3DRMMATRIX4D&, const Matrix3x3&, const Appearance&) {}
-void GX2Renderer::Draw2DImage(Uint32, const SDL_Rect&, const SDL_Rect&, FColor) {}
-void GX2Renderer::Download(SDL_Surface*) {}
-void GX2Renderer::SetDither(bool) {}

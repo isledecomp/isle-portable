@@ -652,6 +652,7 @@ if (ISLE_BUILD_APP)
   endif()
   if (WIIU)
     target_sources(isle PRIVATE
+      ISLE/wiiu/apthooks.cpp
       ISLE/wiiu/config.cpp
     )
   endif()

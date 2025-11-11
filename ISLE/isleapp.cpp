@@ -78,6 +78,7 @@
 #endif
 
 #ifdef __WIIU__
+#include "wiiu/apthooks.h"
 #include "wiiu/config.h"
 #endif
 
@@ -294,6 +295,12 @@ void IsleApp::SetupVideoFlags(
 	}
 }
 
+#ifdef __WUT__
+int main(int argc, char* argv[]) {
+    return 0;
+}
+#endif
+
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 {
 	*appstate = NULL;
@@ -365,6 +372,9 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 #ifdef __3DS__
 	N3DS_SetupAptHooks();
 #endif
+#ifdef __WIIU__
+	WIIU_SetupAptHooks();
+#endif
 	return SDL_APP_CONTINUE;
 }
 
@@ -418,6 +428,10 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 
 		g_isle->MoveVirtualMouseViaJoystick();
 	}
+
+#ifdef __WIIU__
+	WIIU_ProcessCallbacks();
+#endif
 
 	return SDL_APP_CONTINUE;
 }
