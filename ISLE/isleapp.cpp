@@ -1075,6 +1075,8 @@ bool IsleApp::LoadConfig()
 	// [library:config]
 	// Load sane defaults if dictionary failed to load
 	if (!dict || dict->n == 0) {
+		iniparser_freedict(dict);
+
 		if (m_iniPath) {
 			SDL_Log("Invalid config path '%s'", m_iniPath);
 			return false;
