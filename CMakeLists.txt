@@ -103,7 +103,6 @@ if (DOWNLOAD_DEPENDENCIES)
         EXCLUDE_FROM_ALL
       )
       set(CMAKE_DISABLE_PRECOMPILE_HEADERS ON CACHE BOOL "Disable PCH globally" FORCE)
-      #set(SDL_PLATFORM_SWITCH ON CACHE BOOL "Enable Switch platform backend" FORCE)
     else()
       FetchContent_Declare(
         SDL3
@@ -905,6 +904,39 @@ if(NINTENDO_3DS)
     install(FILES "$<TARGET_FILE_DIR:isle>/isle.cia" DESTINATION "${CMAKE_INSTALL_BINDIR}")
   endif()
   install(FILES "$<TARGET_FILE_DIR:isle>/isle.3dsx" DESTINATION "${CMAKE_INSTALL_BINDIR}")
+endif()
+if(NINTENDO_SWITCH)
+  find_program(NACPTOOL NAMES nacptool)
+  find_program(ELF2NRO NAMES elf2nro)
+  
+  add_custom_command(
+      OUTPUT "isle.nacp"
+      COMMAND "${NACPTOOL}"
+        --create
+        "LEGO Island"
+        "isledecomp/isle-portable"
+        "${CMAKE_PROJECT_VERSION_MAJOR}.${CMAKE_PROJECT_VERSION_MINOR}.0"
+        "isle.nacp"
+      VERBATIM
+  )
+
+  add_custom_command(
+      OUTPUT "isle.nro"
+      COMMAND "${ELF2NRO}"
+        "$<TARGET_FILE:isle>"
+        "$<TARGET_FILE_DIR:isle>/isle.nro"
+        "--icon=${CMAKE_SOURCE_DIR}/packaging/switch/isle.jpg"
+        "--nacp=${CMAKE_BINARY_DIR}/isle.nacp"
+      DEPENDS "${CMAKE_SOURCE_DIR}/packaging/switch/isle.jpg" "${CMAKE_BINARY_DIR}/isle.nacp"
+      VERBATIM
+  )
+
+  add_custom_target(switch-nro
+    ALL
+    DEPENDS "${CMAKE_BINARY_DIR}/isle.nro"
+    COMMENT "Build switch NRO from ELF"
+  )
+
 endif()
 if(WINDOWS_STORE)
   install(
