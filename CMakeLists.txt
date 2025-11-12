@@ -22,6 +22,7 @@ if (NINTENDO_SWITCH)
   set(CMAKE_TOOLCHAIN_FILE "${DEVKITPRO}/cmake/Switch.cmake" CACHE PATH "toolchain file")
   add_compile_definitions(__SWITCH__)
   add_compile_definitions(SDL_VIDEO_DRIVER_SWITCH)
+  add_compile_definitions(IMGUI_DISABLE_DEFAULT_SHELL_FUNCTIONS)
 endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
