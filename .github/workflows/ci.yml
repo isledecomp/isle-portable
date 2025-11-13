@@ -191,7 +191,7 @@ jobs:
         run: cmake --build build --verbose --config Release
 
       - name: Package (CPack)
-        if: ${{ !matrix.n3ds && !martrix.nx && !matrix.android && !matrix.vita }}
+        if: ${{ !matrix.n3ds && !matrix.nx && !matrix.android && !matrix.vita }}
         run: |
           cd build
           success=0
