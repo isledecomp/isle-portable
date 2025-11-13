@@ -66,9 +66,10 @@
 #endif
 
 #ifdef __SWITCH__
-#include <switch.h>
-#include "switch/filesys.h"
 #include "switch/config.h"
+#include "switch/filesys.h"
+
+#include <switch.h>
 #endif
 
 #ifdef WINDOWS_STORE
@@ -837,17 +838,17 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		}
 	}
 	else if (event->user.type == g_legoSdlEvents.m_gameEvent) {
-		auto rumble = [](float p_strength, float p_lowFrequencyRumble, float p_highFrequencyRumble, MxU32 p_milliseconds
-					  ) {
-			if (g_isle->GetHaptic() &&
-				!InputManager()
-					 ->HandleRumbleEvent(p_strength, p_lowFrequencyRumble, p_highFrequencyRumble, p_milliseconds)) {
+		auto rumble =
+			[](float p_strength, float p_lowFrequencyRumble, float p_highFrequencyRumble, MxU32 p_milliseconds) {
+				if (g_isle->GetHaptic() &&
+					!InputManager()
+						 ->HandleRumbleEvent(p_strength, p_lowFrequencyRumble, p_highFrequencyRumble, p_milliseconds)) {
 // Platform-specific handling
 #ifdef __EMSCRIPTEN__
-				Emscripten_HandleRumbleEvent(p_lowFrequencyRumble, p_highFrequencyRumble, p_milliseconds);
+					Emscripten_HandleRumbleEvent(p_lowFrequencyRumble, p_highFrequencyRumble, p_milliseconds);
 #endif
-			}
-		};
+				}
+			};
 
 		switch (event->user.code) {
 		case e_hitActor:
@@ -1082,7 +1083,7 @@ bool IsleApp::LoadConfig()
 	// Load sane defaults if dictionary failed to load
 	if (!dict || dict->n == 0) {
 		iniparser_freedict(dict);
-		
+
 		if (m_iniPath) {
 			SDL_Log("Invalid config path '%s'", m_iniPath);
 			return false;
