@@ -18,6 +18,14 @@ if (EMSCRIPTEN)
   set(SDL_PTHREADS ON CACHE BOOL "Enable SDL pthreads" FORCE)
 endif()
 
+if (NINTENDO_SWITCH)
+  set(CMAKE_TOOLCHAIN_FILE "${DEVKITPRO}/cmake/Switch.cmake" CACHE PATH "toolchain file")
+  add_compile_definitions(__SWITCH__)
+  add_compile_definitions(SDL_PLATFORM_SWITCH)
+  add_compile_definitions(SDL_VIDEO_DRIVER_SWITCH)
+  add_compile_definitions(IMGUI_DISABLE_DEFAULT_SHELL_FUNCTIONS)
+endif()
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 include(CheckCXXSourceCompiles)
@@ -50,7 +58,7 @@ cmake_dependent_option(ISLE_DEBUG "Enable imgui debug" ON "NOT VITA" OFF)
 cmake_dependent_option(ISLE_USE_DX5 "Build with internal DirectX 5 SDK" "${NOT_MINGW}" "WIN32;CMAKE_SIZEOF_VOID_P EQUAL 4" OFF)
 cmake_dependent_option(ISLE_MINIWIN "Use miniwin" ON "NOT ISLE_USE_DX5" OFF)
 cmake_dependent_option(ISLE_EXTENSIONS "Use extensions" ON "NOT ISLE_USE_DX5;NOT WINDOWS_STORE" OFF)
-cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "MSVC OR ISLE_MINIWIN;NOT NINTENDO_3DS;NOT WINDOWS_STORE;NOT VITA" OFF)
+cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "MSVC OR ISLE_MINIWIN;NOT NINTENDO_3DS;NOT NINTENDO_SWITCH;NOT WINDOWS_STORE;NOT VITA" OFF)
 cmake_dependent_option(ISLE_COMPILE_SHADERS "Compile shaders" ON "SDL_SHADERCROSS_BIN;TARGET Python3::Interpreter" OFF)
 cmake_dependent_option(CMAKE_POSITION_INDEPENDENT_CODE "Build with -fPIC" ON "NOT VITA" OFF)
 option(ENABLE_CLANG_TIDY "Enable clang-tidy")
@@ -85,6 +93,18 @@ if (DOWNLOAD_DEPENDENCIES)
         GIT_TAG "main"
         EXCLUDE_FROM_ALL
       )
+    elseif (NINTENDO_SWITCH)
+      FetchContent_Declare(
+        SDL3
+        # Official repo missing Threads support?
+        #GIT_REPOSITORY "https://github.com/devkitPro/SDL.git"
+        #GIT_TAG "switch-sdl-3.2"
+        #GIT_REPOSITORY "https://github.com/vs49688/SDL.git"
+        GIT_REPOSITORY "https://github.com/SnepOMatic/SDL3-Switch.git"
+        GIT_TAG "switch-sdl-3.2.14"
+        EXCLUDE_FROM_ALL
+      )
+      set(CMAKE_DISABLE_PRECOMPILE_HEADERS ON CACHE BOOL "Disable PCH globally" FORCE)
     else()
       FetchContent_Declare(
         SDL3
@@ -178,7 +198,8 @@ target_include_directories(Vec::Vec INTERFACE "${CMAKE_SOURCE_DIR}/3rdparty/vec"
 add_library(lego1
   LEGO1/main.cpp
 )
-target_precompile_headers(lego1 PRIVATE "LEGO1/lego1_pch.h")
+target_include_directories(lego1 PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1")
+target_precompile_headers(lego1 PRIVATE "<lego1_pch.h>")
 set_property(TARGET lego1 PROPERTY DEFINE_SYMBOL "LEGO1_DLL")
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/util>")
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/extensions/include>")
@@ -585,6 +606,11 @@ if (ISLE_BUILD_APP)
       ISLE/3ds/config.cpp
     )
   endif()
+  if(NINTENDO_SWITCH)
+    target_sources(isle PRIVATE
+      ISLE/switch/config.cpp
+    )
+  endif()
   if(WINDOWS_STORE)
     target_sources(isle PRIVATE
       ISLE/xbox_one_series/config.cpp
@@ -879,6 +905,39 @@ if(NINTENDO_3DS)
     install(FILES "$<TARGET_FILE_DIR:isle>/isle.cia" DESTINATION "${CMAKE_INSTALL_BINDIR}")
   endif()
   install(FILES "$<TARGET_FILE_DIR:isle>/isle.3dsx" DESTINATION "${CMAKE_INSTALL_BINDIR}")
+endif()
+if(NINTENDO_SWITCH)
+  find_program(NACPTOOL NAMES nacptool)
+  find_program(ELF2NRO NAMES elf2nro)
+  
+  add_custom_command(
+      OUTPUT "isle.nacp"
+      COMMAND "${NACPTOOL}"
+        --create
+        "LEGO Island"
+        "isledecomp/isle-portable"
+        "${CMAKE_PROJECT_VERSION_MAJOR}.${CMAKE_PROJECT_VERSION_MINOR}.0"
+        "isle.nacp"
+      VERBATIM
+  )
+
+  add_custom_command(
+      OUTPUT "isle.nro"
+      COMMAND "${ELF2NRO}"
+        "$<TARGET_FILE:isle>"
+        "$<TARGET_FILE_DIR:isle>/isle.nro"
+        "--icon=${CMAKE_SOURCE_DIR}/packaging/switch/isle.jpg"
+        "--nacp=${CMAKE_BINARY_DIR}/isle.nacp"
+      DEPENDS "${CMAKE_SOURCE_DIR}/packaging/switch/isle.jpg" "${CMAKE_BINARY_DIR}/isle.nacp"
+      VERBATIM
+  )
+
+  add_custom_target(switch-nro
+    ALL
+    DEPENDS "${CMAKE_BINARY_DIR}/isle.nro"
+    COMMENT "Build switch NRO from ELF"
+  )
+
 endif()
 if(WINDOWS_STORE)
   install(
