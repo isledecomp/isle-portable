@@ -67,8 +67,6 @@
 
 #ifdef __SWITCH__
 #include "switch/config.h"
-#include "switch/filesys.h"
-
 #include <switch.h>
 #endif
 

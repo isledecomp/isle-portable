@@ -21,6 +21,7 @@ endif()
 if (NINTENDO_SWITCH)
   set(CMAKE_TOOLCHAIN_FILE "${DEVKITPRO}/cmake/Switch.cmake" CACHE PATH "toolchain file")
   add_compile_definitions(__SWITCH__)
+  add_compile_definitions(SDL_PLATFORM_SWITCH)
   add_compile_definitions(SDL_VIDEO_DRIVER_SWITCH)
   add_compile_definitions(IMGUI_DISABLE_DEFAULT_SHELL_FUNCTIONS)
 endif()
@@ -98,7 +99,8 @@ if (DOWNLOAD_DEPENDENCIES)
         # Official repo missing Threads support?
         #GIT_REPOSITORY "https://github.com/devkitPro/SDL.git"
         #GIT_TAG "switch-sdl-3.2"
-        GIT_REPOSITORY "https://github.com/vs49688/SDL.git"
+        #GIT_REPOSITORY "https://github.com/vs49688/SDL.git"
+        GIT_REPOSITORY "https://github.com/SnepOMatic/SDL3-Switch.git"
         GIT_TAG "switch-sdl-3.2.14"
         EXCLUDE_FROM_ALL
       )
@@ -606,7 +608,6 @@ if (ISLE_BUILD_APP)
   endif()
   if(NINTENDO_SWITCH)
     target_sources(isle PRIVATE
-      ISLE/switch/filesys.cpp
       ISLE/switch/config.cpp
     )
   endif()
