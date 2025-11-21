@@ -14,7 +14,7 @@ class LegoWorld;
 
 // VTABLE: LEGO1 0x100d6758
 // SIZE 0x2c
-class LEGO1_EXPORT LegoPlantManager : public MxCore {
+class LegoPlantManager : public MxCore {
 public:
 	// SIZE 0x0c
 	struct AnimEntry {

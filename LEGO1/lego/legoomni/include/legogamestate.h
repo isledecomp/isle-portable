@@ -15,7 +15,7 @@ class LegoStorage;
 class MxVariableTable;
 class MxString;
 
-LEGO1_EXPORT extern const char* g_actorNames[7];
+extern const char* g_actorNames[7];
 
 // SIZE 0x08
 struct ColorStringStruct {
