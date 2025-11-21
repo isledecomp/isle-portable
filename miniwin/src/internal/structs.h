@@ -1,6 +1,6 @@
 #pragma once
 
-#include <SDL3/SDL.h>
+#include <mortar/mortar.h>
 #include <stdint.h>
 
 typedef float Matrix3x3[3][3];
@@ -10,7 +10,7 @@ struct FColor {
 };
 
 struct Appearance {
-	SDL_Color color;
+	MORTAR_Color color;
 	float shininess;
 	uint32_t textureId;
 	uint32_t flat;

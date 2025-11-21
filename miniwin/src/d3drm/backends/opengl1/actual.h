@@ -2,7 +2,7 @@
 
 #include "structs.h"
 
-#include <SDL3/SDL.h>
+#include <mortar/mortar.h>
 #include <stdint.h>
 #include <vector>
 
@@ -37,7 +37,7 @@ struct GL11_BridgeSceneVertex {
 
 struct GLTextureCacheEntry {
 	IDirect3DRMTexture* texture;
-	Uint32 version;
+	uint32_t version;
 	GLuint glTextureId;
 	float width;
 	float height;
@@ -81,8 +81,8 @@ void GL11_Resize(int width, int height);
 void GL11_Clear(float r, float g, float b);
 void GL11_Draw2DImage(
 	const GLTextureCacheEntry* cache,
-	const SDL_Rect& srcRect,
-	const SDL_Rect& dstRect,
+	const MORTAR_Rect& srcRect,
+	const MORTAR_Rect& dstRect,
 	const FColor& color,
 	float left,
 	float right,
@@ -90,4 +90,4 @@ void GL11_Draw2DImage(
 	float top
 );
 void GL11_SetDither(bool dither);
-void GL11_Download(SDL_Surface* target);
+void GL11_Download(MORTAR_Surface* target);

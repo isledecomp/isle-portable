@@ -8,8 +8,8 @@
 #include "mxutilities.h"
 #include "mxvideomanager.h"
 
-#include <SDL3/SDL_log.h>
 #include <assert.h>
+#include <mortar/mortar_log.h>
 #ifdef MINIWIN
 #include "miniwin/windows.h"
 #else
@@ -184,7 +184,7 @@ MxResult MxDisplaySurface::Create(MxVideoParam& p_videoParam)
 		MxS32 height = m_videoParam.GetRect().GetHeight();
 
 		if (lpDirectDraw->SetCooperativeLevel(hWnd, DDSCL_EXCLUSIVE | DDSCL_FULLSCREEN)) {
-			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "DirectDraw::SetCooperativeLevel failed");
+			MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "DirectDraw::SetCooperativeLevel failed");
 			goto done;
 		}
 
@@ -192,7 +192,7 @@ MxResult MxDisplaySurface::Create(MxVideoParam& p_videoParam)
 		ddsd.dwSize = sizeof(ddsd);
 
 		if (lpDirectDraw->GetDisplayMode(&ddsd)) {
-			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "DirectDraw::GetDisplayMode failed");
+			MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "DirectDraw::GetDisplayMode failed");
 			goto done;
 		}
 
@@ -200,7 +200,7 @@ MxResult MxDisplaySurface::Create(MxVideoParam& p_videoParam)
 
 		if (ddsd.dwWidth != width || ddsd.dwHeight != height || ddsd.ddpfPixelFormat.dwRGBBitCount != bitdepth) {
 			if (lpDirectDraw->SetDisplayMode(width, height, bitdepth)) {
-				SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "DirectDraw::SetDisplayMode failed");
+				MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "DirectDraw::SetDisplayMode failed");
 				goto done;
 			}
 		}
@@ -214,14 +214,14 @@ MxResult MxDisplaySurface::Create(MxVideoParam& p_videoParam)
 		ddsd.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE | DDSCAPS_FLIP | DDSCAPS_3DDEVICE | DDSCAPS_COMPLEX;
 
 		if (lpDirectDraw->CreateSurface(&ddsd, &m_ddSurface1, NULL)) {
-			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "DirectDraw::CreateSurface failed");
+			MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "DirectDraw::CreateSurface failed");
 			goto done;
 		}
 
 		ddsd.ddsCaps.dwCaps = DDSCAPS_BACKBUFFER;
 
 		if (m_ddSurface1->GetAttachedSurface(&ddsd.ddsCaps, &m_ddSurface2)) {
-			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "DirectDrawSurface::GetAttachedSurface failed");
+			MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "DirectDrawSurface::GetAttachedSurface failed");
 			goto done;
 		}
 	}
@@ -232,7 +232,7 @@ MxResult MxDisplaySurface::Create(MxVideoParam& p_videoParam)
 		ddsd.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE;
 
 		if (lpDirectDraw->CreateSurface(&ddsd, &m_ddSurface1, NULL)) {
-			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "DirectDraw::CreateSurface failed");
+			MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "DirectDraw::CreateSurface failed");
 			goto done;
 		}
 
@@ -248,7 +248,7 @@ MxResult MxDisplaySurface::Create(MxVideoParam& p_videoParam)
 		}
 
 		if (lpDirectDraw->CreateSurface(&ddsd, &m_ddSurface2, NULL)) {
-			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "DirectDraw::CreateSurface failed");
+			MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "DirectDraw::CreateSurface failed");
 			goto done;
 		}
 	}
@@ -262,8 +262,8 @@ MxResult MxDisplaySurface::Create(MxVideoParam& p_videoParam)
 			result = SUCCESS;
 		}
 		else {
-			SDL_LogError(
-				SDL_LOG_CATEGORY_APPLICATION,
+			MORTAR_LogError(
+				MORTAR_LOG_CATEGORY_APPLICATION,
 				"DirectDraw::CreateClipper or DirectDrawSurface::SetClipper failed"
 			);
 		}
@@ -649,7 +649,7 @@ void MxDisplaySurface::Display(MxS32 p_left, MxS32 p_top, MxS32 p_left2, MxS32 p
 				ddbltfx.dwFillColor = 0xFF000000;
 
 				if (m_ddSurface2->Blt(NULL, NULL, NULL, DDBLT_COLORFILL | DDBLT_WAIT, &ddbltfx) != DD_OK) {
-					SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "MxDisplaySurface::Display error\n");
+					MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "MxDisplaySurface::Display error\n");
 				}
 			}
 			m_ddSurface1->Flip(NULL, DDFLIP_WAIT);

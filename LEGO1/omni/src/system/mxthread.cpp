@@ -2,7 +2,7 @@
 
 #include "decomp.h"
 
-#include <SDL3/SDL_timer.h>
+#include <mortar/mortar_timer.h>
 
 DECOMP_SIZE_ASSERT(MxThread, 0x1c)
 
@@ -19,7 +19,7 @@ MxThread::MxThread()
 MxThread::~MxThread()
 {
 	if (m_thread) {
-		SDL_WaitThread(m_thread, NULL);
+		MORTAR_WaitThread(m_thread, NULL);
 	}
 }
 
@@ -33,17 +33,8 @@ MxResult MxThread::Start(MxS32 p_stackSize, MxS32 p_flag)
 		goto done;
 	}
 
-	{
-		const SDL_PropertiesID props = SDL_CreateProperties();
-		SDL_SetPointerProperty(props, SDL_PROP_THREAD_CREATE_ENTRY_FUNCTION_POINTER, (void*) MxThread::ThreadProc);
-		SDL_SetPointerProperty(props, SDL_PROP_THREAD_CREATE_USERDATA_POINTER, this);
-		SDL_SetNumberProperty(props, SDL_PROP_THREAD_CREATE_STACKSIZE_NUMBER, p_stackSize * 4);
-
-		if (!(m_thread = SDL_CreateThreadWithProperties(props))) {
-			goto done;
-		}
-
-		SDL_DestroyProperties(props);
+	if (!(m_thread = MORTAR_CreateThread(MxThread::ThreadProc, this, p_stackSize * 4))) {
+		goto done;
 	}
 
 	result = SUCCESS;
@@ -56,7 +47,7 @@ done:
 // FUNCTION: BETA10 0x101476ee
 void MxThread::Sleep(MxS32 p_milliseconds)
 {
-	SDL_Delay(p_milliseconds);
+	MORTAR_Delay(p_milliseconds);
 }
 
 // FUNCTION: BETA10 0x10147710

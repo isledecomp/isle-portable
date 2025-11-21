@@ -4,7 +4,7 @@
 #include "lego1_export.h"
 #include "mxcore.h"
 
-#include <SDL3/SDL_stdinc.h>
+#include <mortar/mortar_stdinc.h>
 
 // VTABLE: LEGO1 0x100dc0e0
 // VTABLE: BETA10 0x101c1bb0
@@ -38,8 +38,8 @@ public:
 	// MxTimer::`scalar deleting destructor'
 
 private:
-	Uint64 m_startTime; // 0x08
-	MxBool m_isRunning; // 0x0c
+	uint64_t m_startTime; // 0x08
+	MxBool m_isRunning;   // 0x0c
 
 	static MxLong g_lastTimeCalculated;
 	static MxLong g_lastTimeTimerStarted;

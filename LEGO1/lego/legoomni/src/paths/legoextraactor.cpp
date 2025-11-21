@@ -122,7 +122,7 @@ void LegoExtraActor::GetWalkingBehavior(MxBool& p_countCounterclockWise, MxS32& 
 		break;
 	default:
 		p_countCounterclockWise = TRUE;
-		p_selectedEdgeIndex = 1 + SDL_rand(p_selectedEdgeIndex);
+		p_selectedEdgeIndex = 1 + MORTAR_rand(p_selectedEdgeIndex);
 		break;
 	}
 }

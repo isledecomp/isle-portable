@@ -24,7 +24,7 @@
 #elif defined(__vita__)
 #define Any_ShowSimpleMessageBox Vita_ShowSimpleMessageBox
 #else
-#define Any_ShowSimpleMessageBox SDL_ShowSimpleMessageBox
+#define Any_ShowSimpleMessageBox MORTAR_ShowSimpleMessageBox
 #endif
 
 // Disable "identifier was truncated to '255' characters" warning.

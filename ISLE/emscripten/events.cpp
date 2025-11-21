@@ -25,7 +25,7 @@ void Emscripten_SendEvent(const char* p_event, const char* p_json)
 void Emscripten_SendPresenterProgress(MxDSAction* p_action, MxPresenter::TickleState p_tickleState)
 {
 	char buf[128];
-	SDL_snprintf(
+	MORTAR_snprintf(
 		buf,
 		sizeof(buf),
 		"{\"objectId\": %d, \"objectName\": \"%s\", \"tickleState\": %d}",
@@ -40,7 +40,7 @@ void Emscripten_SendPresenterProgress(MxDSAction* p_action, MxPresenter::TickleS
 void Emscripten_SendExtensionProgress(const char* p_extension, MxU32 p_progress)
 {
 	char buf[128];
-	SDL_snprintf(buf, sizeof(buf), "{\"name\": \"%s\", \"progress\": %d}", p_extension, p_progress);
+	MORTAR_snprintf(buf, sizeof(buf), "{\"name\": \"%s\", \"progress\": %d}", p_extension, p_progress);
 
 	Emscripten_SendEvent("extensionProgress", buf);
 }

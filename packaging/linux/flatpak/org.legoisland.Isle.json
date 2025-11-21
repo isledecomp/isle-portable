@@ -71,6 +71,11 @@
                     "dest": "util/"
                 },
                 {
+                    "type": "dir",
+                    "path": "../../../mortar",
+                    "dest": "mortar/"
+                },
+                {
                     "type": "file",
                     "path": "../../../CMakeLists.txt"
                 }

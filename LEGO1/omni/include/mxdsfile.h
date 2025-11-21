@@ -46,14 +46,14 @@ public:
 	MxResult Open(MxULong) override;                 // vtable+0x14
 	MxResult Close() override;                       // vtable+0x18
 	MxResult Read(unsigned char*, MxULong) override; // vtable+0x20
-	MxResult Seek(MxLong, SDL_IOWhence) override;    // vtable+0x24
+	MxResult Seek(MxLong, MORTAR_IOWhence) override; // vtable+0x24
 	MxULong GetBufferSize() override;                // vtable+0x28
 	MxULong GetStreamBuffersNum() override;          // vtable+0x2c
 
 	// FUNCTION: BETA10 0x1015e110
 	void SetFileName(const char* p_filename) { m_filename = p_filename; }
 
-	MxS32 CalcFileSize() { return SDL_GetIOSize(m_io.m_file); }
+	MxS32 CalcFileSize() { return MORTAR_GetIOSize(m_io.m_file); }
 
 	// SYNTHETIC: LEGO1 0x100c01e0
 	// SYNTHETIC: BETA10 0x10148e40

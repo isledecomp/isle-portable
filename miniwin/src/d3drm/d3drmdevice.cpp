@@ -8,8 +8,8 @@
 #include "miniwin/d3drm.h"
 #include "miniwin/miniwindevice.h"
 
-#include <SDL3/SDL.h>
 #include <cassert>
+#include <mortar/mortar.h>
 
 Direct3DRMDevice2Impl::Direct3DRMDevice2Impl(DWORD width, DWORD height, Direct3DRMRenderer* renderer)
 	: m_virtualWidth(width), m_virtualHeight(height), m_renderer(renderer), m_viewports(new Direct3DRMViewportArrayImpl)
@@ -32,12 +32,12 @@ Direct3DRMDevice2Impl::~Direct3DRMDevice2Impl()
 
 HRESULT Direct3DRMDevice2Impl::QueryInterface(const GUID& riid, void** ppvObject)
 {
-	if (SDL_memcmp(&riid, &IID_IDirect3DRMDevice2, sizeof(riid)) == 0) {
+	if (MORTAR_memcmp(&riid, &IID_IDirect3DRMDevice2, sizeof(riid)) == 0) {
 		this->IUnknown::AddRef();
 		*ppvObject = static_cast<IDirect3DRMDevice2*>(this);
 		return DD_OK;
 	}
-	else if (SDL_memcmp(&riid, &IID_IDirect3DRMMiniwinDevice, sizeof(riid)) == 0) {
+	else if (MORTAR_memcmp(&riid, &IID_IDirect3DRMMiniwinDevice, sizeof(riid)) == 0) {
 		this->IUnknown::AddRef();
 		*ppvObject = static_cast<IDirect3DRMMiniwinDevice*>(this);
 		return DD_OK;
@@ -152,7 +152,7 @@ ViewportTransform CalculateViewportTransform(int virtualW, int virtualH, int win
 
 void Direct3DRMDevice2Impl::Resize()
 {
-	SDL_GetWindowSizeInPixels(DDWindow, &m_windowWidth, &m_windowHeight);
+	MORTAR_GetWindowSizeInPixels(DDWindow, &m_windowWidth, &m_windowHeight);
 #ifdef __3DS__
 	m_windowWidth = 320; // We are on the lower screen
 	m_windowHeight = 240;
@@ -169,28 +169,28 @@ void Direct3DRMDevice2Impl::Resize()
 	}
 }
 
-bool Direct3DRMDevice2Impl::ConvertEventToRenderCoordinates(SDL_Event* event)
+bool Direct3DRMDevice2Impl::ConvertEventToRenderCoordinates(MORTAR_Event* event)
 {
 	switch (event->type) {
-	case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED: {
+	case MORTAR_EVENT_WINDOW_PIXEL_SIZE_CHANGED: {
 		Resize();
 		break;
 	}
-	case SDL_EVENT_MOUSE_MOTION: {
+	case MORTAR_EVENT_MOUSE_MOTION: {
 		event->motion.x = (event->motion.x - m_viewportTransform.offsetX) / m_viewportTransform.scale;
 		event->motion.y = (event->motion.y - m_viewportTransform.offsetY) / m_viewportTransform.scale;
 		break;
 	}
-	case SDL_EVENT_MOUSE_BUTTON_DOWN:
-	case SDL_EVENT_MOUSE_BUTTON_UP: {
+	case MORTAR_EVENT_MOUSE_BUTTON_DOWN:
+	case MORTAR_EVENT_MOUSE_BUTTON_UP: {
 		event->button.x = (event->button.x - m_viewportTransform.offsetX) / m_viewportTransform.scale;
 		event->button.y = (event->button.y - m_viewportTransform.offsetY) / m_viewportTransform.scale;
 		break;
 	}
-	case SDL_EVENT_FINGER_MOTION:
-	case SDL_EVENT_FINGER_DOWN:
-	case SDL_EVENT_FINGER_UP:
-	case SDL_EVENT_FINGER_CANCELED: {
+	case MORTAR_EVENT_FINGER_MOTION:
+	case MORTAR_EVENT_FINGER_DOWN:
+	case MORTAR_EVENT_FINGER_UP:
+	case MORTAR_EVENT_FINGER_CANCELED: {
 		float x = (event->tfinger.x * m_windowWidth - m_viewportTransform.offsetX) / m_viewportTransform.scale;
 		float y = (event->tfinger.y * m_windowHeight - m_viewportTransform.offsetY) / m_viewportTransform.scale;
 		event->tfinger.x = x / m_virtualWidth;
@@ -202,10 +202,10 @@ bool Direct3DRMDevice2Impl::ConvertEventToRenderCoordinates(SDL_Event* event)
 	return true;
 }
 
-bool Direct3DRMDevice2Impl::ConvertRenderToWindowCoordinates(Sint32 inX, Sint32 inY, Sint32& outX, Sint32& outY)
+bool Direct3DRMDevice2Impl::ConvertRenderToWindowCoordinates(int inX, int inY, int& outX, int& outY)
 {
-	outX = static_cast<Sint32>(inX * m_viewportTransform.scale + m_viewportTransform.offsetX);
-	outY = static_cast<Sint32>(inY * m_viewportTransform.scale + m_viewportTransform.offsetY);
+	outX = static_cast<int>(inX * m_viewportTransform.scale + m_viewportTransform.offsetX);
+	outY = static_cast<int>(inY * m_viewportTransform.scale + m_viewportTransform.offsetY);
 
 	return true;
 }

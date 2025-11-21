@@ -6,12 +6,12 @@
 #include "mxstring.h"
 #include "mxtypes.h"
 
-#include <SDL3/SDL_iostream.h>
-#include <SDL3/SDL_stdinc.h>
+#include <mortar/mortar_iostream.h>
+#include <mortar/mortar_stdinc.h>
 
 // SIZE 0x18
 struct ModelDbPart {
-	MxResult Read(SDL_IOStream* p_file);
+	MxResult Read(MORTAR_IOStream* p_file);
 
 	MxString m_roiName;          // 0x00
 	undefined4 m_partDataLength; // 0x10
@@ -33,7 +33,7 @@ public:
 	// FUNCTION: LEGO1 0x10027c40
 	MxS8 Compare(ModelDbPart* p_a, ModelDbPart* p_b) override
 	{
-		MxS32 compare = SDL_strcasecmp(p_a->m_roiName.GetData(), p_b->m_roiName.GetData());
+		MxS32 compare = MORTAR_strcasecmp(p_a->m_roiName.GetData(), p_b->m_roiName.GetData());
 
 		if (compare == 0) {
 			p_b->m_partDataLength = p_a->m_partDataLength;
@@ -93,7 +93,7 @@ public:
 // SIZE 0x38
 struct ModelDbModel {
 	void Free();
-	MxResult Read(SDL_IOStream* p_file);
+	MxResult Read(MORTAR_IOStream* p_file);
 
 	char* m_modelName;       // 0x00
 	MxU32 m_modelDataLength; // 0x04
@@ -114,7 +114,7 @@ struct ModelDbWorld {
 	undefined m_unk0x10[0x08];   // 0x10
 };
 
-MxResult ReadModelDbWorlds(SDL_IOStream* p_file, ModelDbWorld*& p_worlds, MxS32& p_numWorlds);
+MxResult ReadModelDbWorlds(MORTAR_IOStream* p_file, ModelDbWorld*& p_worlds, MxS32& p_numWorlds);
 void FreeModelDbWorlds(ModelDbWorld*& p_worlds, MxS32 p_numWorlds);
 
 #endif // MODELDB_H

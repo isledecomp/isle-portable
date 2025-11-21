@@ -4,13 +4,13 @@
 #include "lego1_export.h"
 #include "mxtypes.h"
 
-#include <SDL3/SDL_stdinc.h>
-#include <string.h>
+#include <cstring>
+#include <mortar/mortar_stdinc.h>
 
 struct LegoSdlEvents {
-	Uint32 m_windowsMessage;
-	Uint32 m_presenterProgress;
-	Uint32 m_gameEvent;
+	uint32_t m_windowsMessage;
+	uint32_t m_presenterProgress;
+	uint32_t m_gameEvent;
 };
 
 LEGO1_EXPORT extern LegoSdlEvents g_legoSdlEvents;

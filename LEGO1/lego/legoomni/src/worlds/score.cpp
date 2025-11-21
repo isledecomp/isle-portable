@@ -96,7 +96,7 @@ MxLong Score::Notify(MxParam& p_param)
 			ret = HandleEndAction((MxEndActionNotificationParam&) p_param);
 			break;
 		case c_notificationKeyPress:
-			if (((LegoEventNotificationParam&) p_param).GetKey() == SDLK_SPACE) {
+			if (((LegoEventNotificationParam&) p_param).GetKey() == MORTARK_SPACE) {
 				DeleteScript();
 			}
 			ret = 1;

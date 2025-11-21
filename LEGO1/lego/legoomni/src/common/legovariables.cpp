@@ -9,7 +9,7 @@
 #include "mxdebug.h"
 #include "roi/legoroi.h"
 
-#include <SDL3/SDL_stdinc.h>
+#include <mortar/mortar_stdinc.h>
 
 DECOMP_SIZE_ASSERT(VisibilityVariable, 0x24)
 DECOMP_SIZE_ASSERT(CameraLocationVariable, 0x24)
@@ -119,10 +119,10 @@ void VisibilityVariable::SetValue(const char* p_value)
 		char* name = strtok(NULL, g_delimiter2);
 		MxBool show;
 
-		if (!SDL_strcasecmp(instruction, g_varHIDE)) {
+		if (!MORTAR_strcasecmp(instruction, g_varHIDE)) {
 			show = FALSE;
 		}
-		else if (!SDL_strcasecmp(instruction, g_varSHOW)) {
+		else if (!MORTAR_strcasecmp(instruction, g_varSHOW)) {
 			show = TRUE;
 		}
 		else {
@@ -168,19 +168,19 @@ void WhoAmIVariable::SetValue(const char* p_value)
 {
 	MxVariable::SetValue(p_value);
 
-	if (!SDL_strcasecmp(p_value, g_papa)) {
+	if (!MORTAR_strcasecmp(p_value, g_papa)) {
 		GameState()->SetActorId(LegoActor::c_papa);
 	}
-	else if (!SDL_strcasecmp(p_value, g_mama)) {
+	else if (!MORTAR_strcasecmp(p_value, g_mama)) {
 		GameState()->SetActorId(LegoActor::c_mama);
 	}
-	else if (!SDL_strcasecmp(p_value, g_pepper)) {
+	else if (!MORTAR_strcasecmp(p_value, g_pepper)) {
 		GameState()->SetActorId(LegoActor::c_pepper);
 	}
-	else if (!SDL_strcasecmp(p_value, g_nick)) {
+	else if (!MORTAR_strcasecmp(p_value, g_nick)) {
 		GameState()->SetActorId(LegoActor::c_nick);
 	}
-	else if (!SDL_strcasecmp(p_value, g_laura)) {
+	else if (!MORTAR_strcasecmp(p_value, g_laura)) {
 		GameState()->SetActorId(LegoActor::c_laura);
 	}
 }

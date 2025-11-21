@@ -2,8 +2,8 @@
 
 #include "structs.h"
 
-#include <SDL3/SDL.h>
 #include <d3d9.h>
+#include <mortar/mortar.h>
 #include <vector>
 #include <windows.h>
 
@@ -86,7 +86,7 @@ void Actual_SetProjection(const Matrix4x4* projection, float front, float back)
 	memcpy(&g_projection, projection, sizeof(Matrix4x4));
 }
 
-IDirect3DTexture9* UploadSurfaceToD3DTexture(SDL_Surface* surface)
+IDirect3DTexture9* UploadSurfaceToD3DTexture(MORTAR_Surface* surface)
 {
 	IDirect3DTexture9* texture;
 
@@ -97,7 +97,7 @@ IDirect3DTexture9* UploadSurfaceToD3DTexture(SDL_Surface* surface)
 		return nullptr;
 	}
 
-	SDL_Surface* conv = SDL_ConvertSurface(surface, SDL_PIXELFORMAT_ARGB8888);
+	MORTAR_Surface* conv = MORTAR_ConvertSurface(surface, MORTAR_PIXELFORMAT_ARGB8888);
 	if (!conv) {
 		texture->Release();
 		return nullptr;
@@ -115,7 +115,7 @@ IDirect3DTexture9* UploadSurfaceToD3DTexture(SDL_Surface* surface)
 	}
 
 	texture->UnlockRect(0);
-	SDL_DestroySurface(conv);
+	MORTAR_DestroySurface(conv);
 
 	return texture;
 }
@@ -373,7 +373,12 @@ uint32_t Actual_Flip()
 	return g_device->Present(nullptr, nullptr, nullptr, nullptr);
 }
 
-void Actual_Draw2DImage(IDirect3DTexture9* texture, const SDL_Rect& srcRect, const SDL_Rect& dstRect, FColor color)
+void Actual_Draw2DImage(
+	IDirect3DTexture9* texture,
+	const MORTAR_Rect& srcRect,
+	const MORTAR_Rect& dstRect,
+	FColor color
+)
 {
 	StartScene();
 
@@ -439,7 +444,7 @@ void Actual_Draw2DImage(IDirect3DTexture9* texture, const SDL_Rect& srcRect, con
 	g_device->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, quad, sizeof(Vertex));
 }
 
-uint32_t Actual_Download(SDL_Surface* target)
+uint32_t Actual_Download(MORTAR_Surface* target)
 {
 	IDirect3DSurface9* backBuffer;
 	HRESULT hr = g_device->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &backBuffer);
@@ -475,8 +480,8 @@ uint32_t Actual_Download(SDL_Surface* target)
 		return hr;
 	}
 
-	SDL_Surface* srcSurface =
-		SDL_CreateSurfaceFrom(g_width, g_height, SDL_PIXELFORMAT_ARGB8888, locked.pBits, locked.Pitch);
+	MORTAR_Surface* srcSurface =
+		MORTAR_CreateSurfaceFrom(g_width, g_height, MORTAR_PIXELFORMAT_ARGB8888, locked.pBits, locked.Pitch);
 	if (!srcSurface) {
 		sysMemSurface->UnlockRect();
 		sysMemSurface->Release();
@@ -486,7 +491,7 @@ uint32_t Actual_Download(SDL_Surface* target)
 	float srcAspect = static_cast<float>(g_width) / g_height;
 	float dstAspect = static_cast<float>(target->w) / target->h;
 
-	SDL_Rect srcRect;
+	MORTAR_Rect srcRect;
 	if (srcAspect > dstAspect) {
 		int cropWidth = static_cast<int>(g_height * dstAspect);
 		srcRect = {(g_width - cropWidth) / 2, 0, cropWidth, g_height};
@@ -496,14 +501,14 @@ uint32_t Actual_Download(SDL_Surface* target)
 		srcRect = {0, (g_height - cropHeight) / 2, g_width, cropHeight};
 	}
 
-	if (SDL_BlitSurfaceScaled(srcSurface, &srcRect, target, nullptr, SDL_SCALEMODE_NEAREST)) {
-		SDL_DestroySurface(srcSurface);
+	if (MORTAR_BlitSurfaceScaled(srcSurface, &srcRect, target, nullptr, MORTAR_SCALEMODE_NEAREST)) {
+		MORTAR_DestroySurface(srcSurface);
 		sysMemSurface->UnlockRect();
 		sysMemSurface->Release();
 		return E_FAIL;
 	}
 
-	SDL_DestroySurface(srcSurface);
+	MORTAR_DestroySurface(srcSurface);
 	sysMemSurface->UnlockRect();
 	sysMemSurface->Release();
 

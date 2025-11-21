@@ -5,7 +5,7 @@
 #include "mxsemaphore.h"
 #include "mxtypes.h"
 
-#include <SDL3/SDL_thread.h>
+#include <mortar/mortar_thread.h>
 
 class MxCore;
 
@@ -41,9 +41,9 @@ public:
 	virtual ~MxThread();
 
 private:
-	static int SDLCALL ThreadProc(void* p_thread);
+	static int ThreadProc(void* p_thread);
 
-	SDL_Thread* m_thread;
+	MORTAR_Thread* m_thread;
 	MxBool m_running;        // 0x0c
 	MxSemaphore m_semaphore; // 0x10
 

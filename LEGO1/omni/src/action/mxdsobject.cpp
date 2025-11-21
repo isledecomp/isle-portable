@@ -268,7 +268,7 @@ MxDSObject* CreateStreamObject(MxDSFile* p_file, MxS16 p_ofs)
 	MxU8* buf;
 	ISLE_MMCKINFO tmpChunk;
 
-	if (p_file->Seek(((MxLong*) p_file->GetBuffer())[p_ofs], SDL_IO_SEEK_SET)) {
+	if (p_file->Seek(((MxLong*) p_file->GetBuffer())[p_ofs], MORTAR_IO_SEEK_SET)) {
 		return NULL;
 	}
 

@@ -17,8 +17,8 @@
 #include "roi/legolod.h"
 #include "viewmanager/viewmanager.h"
 
-#include <SDL3/SDL_stdinc.h>
 #include <assert.h>
+#include <mortar/mortar_stdinc.h>
 #include <stdio.h>
 #include <vec.h>
 
@@ -475,7 +475,7 @@ LegoROI* LegoCharacterManager::CreateActorROI(const char* p_key)
 		goto done;
 	}
 
-	if (!SDL_strcasecmp(p_key, "pep")) {
+	if (!MORTAR_strcasecmp(p_key, "pep")) {
 		LegoActorInfo* pepper = GetActorInfo("pepper");
 
 		info->m_sound = pepper->m_sound;
@@ -660,7 +660,7 @@ MxBool LegoCharacterManager::SetHeadTexture(LegoROI* p_roi, LegoTextureInfo* p_t
 MxBool LegoCharacterManager::IsActor(const char* p_name)
 {
 	for (MxU32 i = 0; i < sizeOfArray(g_actorInfo); i++) {
-		if (!SDL_strcasecmp(g_actorInfo[i].m_name, p_name)) {
+		if (!MORTAR_strcasecmp(g_actorInfo[i].m_name, p_name)) {
 			return TRUE;
 		}
 	}
@@ -687,7 +687,7 @@ LegoActorInfo* LegoCharacterManager::GetActorInfo(const char* p_name)
 	MxU32 i;
 
 	for (i = 0; i < sizeOfArray(g_actorInfo); i++) {
-		if (!SDL_strcasecmp(g_actorInfo[i].m_name, p_name)) {
+		if (!MORTAR_strcasecmp(g_actorInfo[i].m_name, p_name)) {
 			break;
 		}
 	}
@@ -735,7 +735,7 @@ LegoROI* LegoCharacterManager::FindChildROI(LegoROI* p_roi, const char* p_name)
 	for (it = comp->begin(); it != comp->end(); it++) {
 		LegoROI* roi = (LegoROI*) *it;
 
-		if (!SDL_strcasecmp(p_name, roi->GetName())) {
+		if (!MORTAR_strcasecmp(p_name, roi->GetName())) {
 			return roi;
 		}
 	}

@@ -7,7 +7,7 @@
 #include "mxvariable.h"
 #include "roi/legoroi.h"
 
-#include <SDL3/SDL_stdinc.h>
+#include <mortar/mortar_stdinc.h>
 
 class LegoActor;
 class LegoExtraActor;
@@ -17,7 +17,7 @@ class LegoROI;
 #pragma warning(disable : 4237)
 
 struct LegoCharacterComparator {
-	MxBool operator()(const char* const& p_a, const char* const& p_b) const { return SDL_strcasecmp(p_a, p_b) < 0; }
+	MxBool operator()(const char* const& p_a, const char* const& p_b) const { return MORTAR_strcasecmp(p_a, p_b) < 0; }
 };
 
 // SIZE 0x08

@@ -27,7 +27,7 @@
 #include "mxstl/stlcompat.h"
 #include "mxutilities.h"
 
-#include <SDL3/SDL_stdinc.h>
+#include <mortar/mortar_stdinc.h>
 #include <stdio.h>
 
 DECOMP_SIZE_ASSERT(LegoWorldPresenter, 0x54)
@@ -36,7 +36,7 @@ DECOMP_SIZE_ASSERT(LegoWorldPresenter, 0x54)
 MxS32 g_legoWorldPresenterQuality = 1;
 
 // GLOBAL: LEGO1 0x100f75d8
-Sint64 g_wdbSkipGlobalPartsOffset = 0;
+int64_t g_wdbSkipGlobalPartsOffset = 0;
 
 // FUNCTION: LEGO1 0x100665b0
 void LegoWorldPresenter::configureLegoWorldPresenter(MxS32 p_legoWorldPresenterQuality)
@@ -174,9 +174,9 @@ MxResult LegoWorldPresenter::LoadWorld(char* p_worldName, LegoWorld* p_world)
 	strcat(wdbPath, "lego\\data\\world.wdb");
 	MxString::MapPathToFilesystem(wdbPath);
 
-	SDL_IOStream* wdbFile;
+	MORTAR_IOStream* wdbFile;
 
-	if ((wdbFile = SDL_IOFromFile(wdbPath, "rb")) == NULL) {
+	if ((wdbFile = MORTAR_IOFromFile(wdbPath, "rb")) == NULL) {
 		sprintf(wdbPath, "%s", MxOmni::GetCD());
 
 		if (wdbPath[strlen(wdbPath) - 1] != '\\' && wdbPath[strlen(wdbPath) - 1] != '/') {
@@ -186,7 +186,7 @@ MxResult LegoWorldPresenter::LoadWorld(char* p_worldName, LegoWorld* p_world)
 		strcat(wdbPath, "lego\\data\\world.wdb");
 		MxString::MapPathToFilesystem(wdbPath);
 
-		if ((wdbFile = SDL_IOFromFile(wdbPath, "rb")) == NULL) {
+		if ((wdbFile = MORTAR_IOFromFile(wdbPath, "rb")) == NULL) {
 			return FAILURE;
 		}
 	}
@@ -199,7 +199,7 @@ MxResult LegoWorldPresenter::LoadWorld(char* p_worldName, LegoWorld* p_world)
 	ReadModelDbWorlds(wdbFile, worlds, numWorlds);
 
 	for (i = 0; i < numWorlds; i++) {
-		if (!SDL_strcasecmp(worlds[i].m_worldName, p_worldName)) {
+		if (!MORTAR_strcasecmp(worlds[i].m_worldName, p_worldName)) {
 			break;
 		}
 	}
@@ -209,12 +209,12 @@ MxResult LegoWorldPresenter::LoadWorld(char* p_worldName, LegoWorld* p_world)
 	}
 
 	if (g_wdbSkipGlobalPartsOffset == 0) {
-		if (SDL_ReadIO(wdbFile, &size, sizeof(MxU32)) != sizeof(MxU32)) {
+		if (MORTAR_ReadIO(wdbFile, &size, sizeof(MxU32)) != sizeof(MxU32)) {
 			return FAILURE;
 		}
 
 		buff = new MxU8[size];
-		if (SDL_ReadIO(wdbFile, buff, size) != size) {
+		if (MORTAR_ReadIO(wdbFile, buff, size) != size) {
 			return FAILURE;
 		}
 
@@ -229,12 +229,12 @@ MxResult LegoWorldPresenter::LoadWorld(char* p_worldName, LegoWorld* p_world)
 
 		delete[] buff;
 
-		if (SDL_ReadIO(wdbFile, &size, sizeof(MxU32)) != sizeof(MxU32)) {
+		if (MORTAR_ReadIO(wdbFile, &size, sizeof(MxU32)) != sizeof(MxU32)) {
 			return FAILURE;
 		}
 
 		buff = new MxU8[size];
-		if (SDL_ReadIO(wdbFile, buff, size) != size) {
+		if (MORTAR_ReadIO(wdbFile, buff, size) != size) {
 			return FAILURE;
 		}
 
@@ -248,10 +248,10 @@ MxResult LegoWorldPresenter::LoadWorld(char* p_worldName, LegoWorld* p_world)
 
 		delete[] buff;
 
-		g_wdbSkipGlobalPartsOffset = SDL_TellIO(wdbFile);
+		g_wdbSkipGlobalPartsOffset = MORTAR_TellIO(wdbFile);
 	}
 	else {
-		if (SDL_SeekIO(wdbFile, g_wdbSkipGlobalPartsOffset, SDL_IO_SEEK_SET) != g_wdbSkipGlobalPartsOffset) {
+		if (MORTAR_SeekIO(wdbFile, g_wdbSkipGlobalPartsOffset, MORTAR_IO_SEEK_SET) != g_wdbSkipGlobalPartsOffset) {
 			return FAILURE;
 		}
 	}
@@ -271,25 +271,25 @@ MxResult LegoWorldPresenter::LoadWorld(char* p_worldName, LegoWorld* p_world)
 	}
 
 	for (j = 0; j < worlds[i].m_numModels; j++) {
-		if (!SDL_strncasecmp(worlds[i].m_models[j].m_modelName, "isle", 4)) {
+		if (!MORTAR_strncasecmp(worlds[i].m_models[j].m_modelName, "isle", 4)) {
 			switch (g_legoWorldPresenterQuality) {
 			case 0:
-				if (SDL_strcasecmp(worlds[i].m_models[j].m_modelName, "isle_lo")) {
+				if (MORTAR_strcasecmp(worlds[i].m_models[j].m_modelName, "isle_lo")) {
 					continue;
 				}
 				break;
 			case 1:
-				if (SDL_strcasecmp(worlds[i].m_models[j].m_modelName, "isle")) {
+				if (MORTAR_strcasecmp(worlds[i].m_models[j].m_modelName, "isle")) {
 					continue;
 				}
 				break;
 			case 2:
-				if (SDL_strcasecmp(worlds[i].m_models[j].m_modelName, "isle_hi")) {
+				if (MORTAR_strcasecmp(worlds[i].m_models[j].m_modelName, "isle_hi")) {
 					continue;
 				}
 			}
 		}
-		else if (g_legoWorldPresenterQuality <= 1 && !SDL_strncasecmp(worlds[i].m_models[j].m_modelName, "haus", 4)) {
+		else if (g_legoWorldPresenterQuality <= 1 && !MORTAR_strncasecmp(worlds[i].m_models[j].m_modelName, "haus", 4)) {
 			if (worlds[i].m_models[j].m_modelName[4] == '3') {
 				if (LoadWorldModel(worlds[i].m_models[j], wdbFile, p_world) != SUCCESS) {
 					return FAILURE;
@@ -313,18 +313,18 @@ MxResult LegoWorldPresenter::LoadWorld(char* p_worldName, LegoWorld* p_world)
 	}
 
 	FreeModelDbWorlds(worlds, numWorlds);
-	SDL_CloseIO(wdbFile);
+	MORTAR_CloseIO(wdbFile);
 	return SUCCESS;
 }
 
 // FUNCTION: LEGO1 0x10067360
-MxResult LegoWorldPresenter::LoadWorldPart(ModelDbPart& p_part, SDL_IOStream* p_wdbFile)
+MxResult LegoWorldPresenter::LoadWorldPart(ModelDbPart& p_part, MORTAR_IOStream* p_wdbFile)
 {
 	MxResult result;
 	MxU8* buff = new MxU8[p_part.m_partDataLength];
 
-	SDL_SeekIO(p_wdbFile, p_part.m_partDataOffset, SDL_IO_SEEK_SET);
-	if (SDL_ReadIO(p_wdbFile, buff, p_part.m_partDataLength) != p_part.m_partDataLength) {
+	MORTAR_SeekIO(p_wdbFile, p_part.m_partDataOffset, MORTAR_IO_SEEK_SET);
+	if (MORTAR_ReadIO(p_wdbFile, buff, p_part.m_partDataLength) != p_part.m_partDataLength) {
 		return FAILURE;
 	}
 
@@ -344,12 +344,12 @@ MxResult LegoWorldPresenter::LoadWorldPart(ModelDbPart& p_part, SDL_IOStream* p_
 }
 
 // FUNCTION: LEGO1 0x100674b0
-MxResult LegoWorldPresenter::LoadWorldModel(ModelDbModel& p_model, SDL_IOStream* p_wdbFile, LegoWorld* p_world)
+MxResult LegoWorldPresenter::LoadWorldModel(ModelDbModel& p_model, MORTAR_IOStream* p_wdbFile, LegoWorld* p_world)
 {
 	MxU8* buff = new MxU8[p_model.m_modelDataLength];
 
-	SDL_SeekIO(p_wdbFile, p_model.m_modelDataOffset, SDL_IO_SEEK_SET);
-	if (SDL_ReadIO(p_wdbFile, buff, p_model.m_modelDataLength) != p_model.m_modelDataLength) {
+	MORTAR_SeekIO(p_wdbFile, p_model.m_modelDataOffset, MORTAR_IO_SEEK_SET);
+	if (MORTAR_ReadIO(p_wdbFile, buff, p_model.m_modelDataLength) != p_model.m_modelDataLength) {
 		return FAILURE;
 	}
 

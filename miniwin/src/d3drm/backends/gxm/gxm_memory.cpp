@@ -3,14 +3,14 @@
 #include "tlsf.h"
 #include "utils.h"
 
-#include <SDL3/SDL_stdinc.h>
+#include <mortar/mortar_stdinc.h>
 #include <psp2/gxm.h>
 #include <psp2/kernel/clib.h>
 #include <psp2/kernel/sysmem.h>
 
 void* patcher_host_alloc(void* user_data, unsigned int size)
 {
-	void* mem = SDL_malloc(size);
+	void* mem = MORTAR_malloc(size);
 	(void) user_data;
 	return mem;
 }
@@ -18,7 +18,7 @@ void* patcher_host_alloc(void* user_data, unsigned int size)
 void patcher_host_free(void* user_data, void* mem)
 {
 	(void) user_data;
-	SDL_free(mem);
+	MORTAR_free(mem);
 }
 
 void* vita_mem_alloc(unsigned int type, size_t size, size_t alignment, int attribs, SceUID* uid, const char* name)
@@ -38,7 +38,7 @@ void* vita_mem_alloc(unsigned int type, size_t size, size_t alignment, int attri
 	*uid = sceKernelAllocMemBlock(name, type, size, NULL);
 
 	if (*uid < 0) {
-		SDL_Log("sceKernelAllocMemBlock: 0x%x", *uid);
+		MORTAR_Log("sceKernelAllocMemBlock: 0x%x", *uid);
 		return NULL;
 	}
 
@@ -47,7 +47,7 @@ void* vita_mem_alloc(unsigned int type, size_t size, size_t alignment, int attri
 	}
 
 	if (sceGxmMapMemory(mem, size, (SceGxmMemoryAttribFlags) attribs) < 0) {
-		SDL_Log("sceGxmMapMemory 0x%x 0x%x %d failed", mem, size, attribs);
+		MORTAR_Log("sceGxmMapMemory 0x%x 0x%x %d failed", mem, size, attribs);
 		return NULL;
 	}
 

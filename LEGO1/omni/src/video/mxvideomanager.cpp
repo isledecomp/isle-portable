@@ -10,7 +10,7 @@
 #include "mxticklemanager.h"
 #include "mxticklethread.h"
 
-#include <SDL3/SDL_log.h>
+#include <mortar/mortar_log.h>
 
 DECOMP_SIZE_ASSERT(MxVideoManager, 0x64)
 
@@ -232,7 +232,7 @@ MxResult MxVideoManager::Create(MxVideoParam& p_videoParam, MxU32 p_frequencyMS,
 	m_created = TRUE;
 
 	if (MxPresentationManager::Create() != SUCCESS) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "MxPresentationManager::Create failed");
+		MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "MxPresentationManager::Create failed");
 		goto done;
 	}
 
@@ -243,17 +243,17 @@ MxResult MxVideoManager::Create(MxVideoParam& p_videoParam, MxU32 p_frequencyMS,
 	m_region = new MxRegion();
 
 	if (!m_region) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "MxRegion::MxRegion failed");
+		MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "MxRegion::MxRegion failed");
 		goto done;
 	}
 
 	if (DirectDrawCreate(NULL, &m_pDirectDraw, NULL) != DD_OK) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "::DirectDrawCreate failed");
+		MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "::DirectDrawCreate failed");
 		goto done;
 	}
 
 	if (m_pDirectDraw->SetCooperativeLevel(MxOmni::GetInstance()->GetWindowHandle(), DDSCL_NORMAL) != DD_OK) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "IDirectDraw::SetCooperativeLevel failed");
+		MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "IDirectDraw::SetCooperativeLevel failed");
 		goto done;
 	}
 
@@ -263,7 +263,7 @@ MxResult MxVideoManager::Create(MxVideoParam& p_videoParam, MxU32 p_frequencyMS,
 		m_videoParam.SetPalette(palette);
 
 		if (!palette) {
-			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "MxPalette::MxPalette failed");
+			MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "MxPalette::MxPalette failed");
 			goto done;
 		}
 	}
@@ -272,7 +272,7 @@ MxResult MxVideoManager::Create(MxVideoParam& p_videoParam, MxU32 p_frequencyMS,
 		m_videoParam.SetPalette(palette);
 
 		if (!palette) {
-			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "MxPalette::Clone failed");
+			MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "MxPalette::Clone failed");
 			goto done;
 		}
 	}
@@ -285,7 +285,7 @@ MxResult MxVideoManager::Create(MxVideoParam& p_videoParam, MxU32 p_frequencyMS,
 			m_thread = new MxTickleThread(this, p_frequencyMS);
 
 			if (!m_thread || m_thread->Start(0, 0) != SUCCESS) {
-				SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "MxTickleThread::MxTickleThread failed");
+				MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "MxTickleThread::MxTickleThread failed");
 				goto done;
 			}
 		}
@@ -296,8 +296,8 @@ MxResult MxVideoManager::Create(MxVideoParam& p_videoParam, MxU32 p_frequencyMS,
 		status = SUCCESS;
 	}
 	else {
-		SDL_LogError(
-			SDL_LOG_CATEGORY_APPLICATION,
+		MORTAR_LogError(
+			MORTAR_LOG_CATEGORY_APPLICATION,
 			"MxDisplaySurface::MxDisplaySurface/MxDisplaySurface::Create failed"
 		);
 	}

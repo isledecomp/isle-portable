@@ -455,7 +455,7 @@ MxS32 Act2Actor::NextTargetLocation()
 	assert(!m_grec);
 
 	CurrentWorld();
-	MxU16 randomVal = 1 + SDL_rand(2);
+	MxU16 randomVal = 1 + MORTAR_rand(2);
 
 	if (m_visitedLocations == 8 && m_targetLocation != 8) {
 		newLocation = 8;

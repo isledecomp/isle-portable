@@ -709,11 +709,11 @@ MxU8 Infocenter::HandleMouseMove(MxS32 p_x, MxS32 p_y)
 
 // FUNCTION: LEGO1 0x1006fda0
 // FUNCTION: BETA10 0x1002f907
-MxLong Infocenter::HandleKeyPress(SDL_Keycode p_key)
+MxLong Infocenter::HandleKeyPress(MORTAR_Keycode p_key)
 {
 	MxLong result = 0;
 
-	if (p_key == SDLK_SPACE && m_worldStarted) {
+	if (p_key == MORTARK_SPACE && m_worldStarted) {
 		switch (m_infocenterState->m_state) {
 		case InfocenterState::e_playCutscene:
 			StopCutscene();
@@ -1147,7 +1147,9 @@ MxLong Infocenter::HandleNotification0(MxNotificationParam& p_param)
 			PlayAction(InfomainScript::c_iic043in_RunAnim);
 		}
 	}
-	else if (sender->IsA("MxEntity") && m_infocenterState->m_state != InfocenterState::e_selectedCharacterAndDestination && m_infocenterState->m_state != InfocenterState::e_exiting) {
+	else if (sender->IsA("MxEntity") &&
+			 m_infocenterState->m_state != InfocenterState::e_selectedCharacterAndDestination &&
+			 m_infocenterState->m_state != InfocenterState::e_exiting) {
 		switch (((MxEntity*) sender)->GetEntityId()) {
 		case 5: {
 			m_infoManDialogueTimer = 0;

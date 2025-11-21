@@ -6,7 +6,7 @@
 #include <vector>
 
 struct MeshGroup {
-	SDL_Color color = {0xFF, 0xFF, 0xFF, 0xFF};
+	MORTAR_Color color = {0xFF, 0xFF, 0xFF, 0xFF};
 	IDirect3DRMTexture* texture = nullptr;
 	IDirect3DRMMaterial* material = nullptr;
 	D3DRMRENDERQUALITY quality = D3DRMRENDER_GOURAUD;

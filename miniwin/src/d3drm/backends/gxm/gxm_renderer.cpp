@@ -7,8 +7,8 @@
 #include "tlsf.h"
 #include "utils.h"
 
-#include <SDL3/SDL.h>
 #include <algorithm>
+#include <mortar/mortar.h>
 #include <psp2/common_dialog.h>
 #include <psp2/display.h>
 #include <psp2/gxm.h>
@@ -45,7 +45,7 @@ Direct3DRMRenderer* GXMRenderer::Create(DWORD width, DWORD height, DWORD msaaSam
 	}
 
 	if (!gxm) {
-		gxm = (GXMContext*) SDL_malloc(sizeof(GXMContext));
+		gxm = (GXMContext*) MORTAR_malloc(sizeof(GXMContext));
 		memset(gxm, 0, sizeof(GXMContext));
 	}
 	ret = SCE_ERR(gxm->init, msaaMode);
@@ -259,7 +259,7 @@ GXMRenderer::~GXMRenderer()
 void GXMRenderer::PushLights(const SceneLight* lightsArray, size_t count)
 {
 	if (count > 3) {
-		SDL_Log("Unsupported number of lights (%d)", static_cast<int>(count));
+		MORTAR_Log("Unsupported number of lights (%d)", static_cast<int>(count));
 		count = 3;
 	}
 
@@ -277,10 +277,10 @@ void GXMRenderer::SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front,
 
 struct TextureDestroyContextGXM {
 	GXMRenderer* renderer;
-	Uint32 textureId;
+	uint32_t textureId;
 };
 
-void GXMRenderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture)
+void GXMRenderer::AddTextureDestroyCallback(uint32_t id, IDirect3DRMTexture* texture)
 {
 	auto* ctx = new TextureDestroyContextGXM{this, id};
 	texture->AddDestroyCallback(
@@ -335,7 +335,7 @@ static int nextPowerOf2(int n)
 }
 
 static void convertTextureMetadata(
-	SDL_Surface* surface,
+	MORTAR_Surface* surface,
 	bool isUi,
 	bool* supportedFormat,
 	SceGxmTextureFormat* gxmTextureFormat,
@@ -351,7 +351,7 @@ static void convertTextureMetadata(
 	*mipLevels = 1;
 
 	switch (surface->format) {
-	case SDL_PIXELFORMAT_INDEX8: {
+	case MORTAR_PIXELFORMAT_INDEX8: {
 		*supportedFormat = true;
 		*gxmTextureFormat = SCE_GXM_TEXTURE_FORMAT_P8_ABGR;
 		*textureAlignment = SCE_GXM_PALETTE_ALIGNMENT;
@@ -362,7 +362,7 @@ static void convertTextureMetadata(
 		paletteSize = 256 * 4; // palette
 		break;
 	}
-	case SDL_PIXELFORMAT_ABGR8888: {
+	case MORTAR_PIXELFORMAT_ABGR8888: {
 		*supportedFormat = true;
 		*gxmTextureFormat = SCE_GXM_TEXTURE_FORMAT_U8U8U8U8_ABGR;
 		*textureAlignment = SCE_GXM_TEXTURE_ALIGNMENT;
@@ -412,7 +412,7 @@ static void convertTextureMetadata(
 	*textureSize = totalSize;
 }
 
-void copySurfaceToGxmARGB888(SDL_Surface* src, uint8_t* textureData, size_t dstStride, size_t mipLevels)
+void copySurfaceToGxmARGB888(MORTAR_Surface* src, uint8_t* textureData, size_t dstStride, size_t mipLevels)
 {
 	uint8_t* currentLevelData = textureData;
 	uint32_t currentLevelWidth = src->w;
@@ -428,8 +428,8 @@ void copySurfaceToGxmARGB888(SDL_Surface* src, uint8_t* textureData, size_t dstS
 	}
 
 	for (size_t i = 1; i < mipLevels; ++i) {
-		uint32_t currentLevelSrcStride = SDL_max(currentLevelWidth, 8) * bytesPerPixel;
-		uint32_t currentLevelDestStride = SDL_max((currentLevelWidth / 2), 8) * bytesPerPixel;
+		uint32_t currentLevelSrcStride = MORTAR_max(currentLevelWidth, 8) * bytesPerPixel;
+		uint32_t currentLevelDestStride = MORTAR_max((currentLevelWidth / 2), 8) * bytesPerPixel;
 		uint8_t* nextLevelData = currentLevelData + (currentLevelSrcStride * currentLevelHeight);
 
 		sceGxmTransferDownscale(
@@ -458,7 +458,7 @@ void copySurfaceToGxmARGB888(SDL_Surface* src, uint8_t* textureData, size_t dstS
 
 void copySurfaceToGxmIndexed8(
 	DirectDrawSurfaceImpl* surface,
-	SDL_Surface* src,
+	MORTAR_Surface* src,
 	uint8_t* textureData,
 	size_t dstStride,
 	uint8_t* paletteData,
@@ -486,8 +486,8 @@ void copySurfaceToGxmIndexed8(
 	}
 
 	for (size_t i = 1; i < mipLevels; ++i) {
-		uint32_t currentLevelSrcStride = SDL_max(currentLevelWidth, 8) * bytesPerPixel;
-		uint32_t currentLevelDestStride = SDL_max((currentLevelWidth / 2), 8) * bytesPerPixel;
+		uint32_t currentLevelSrcStride = MORTAR_max(currentLevelWidth, 8) * bytesPerPixel;
+		uint32_t currentLevelDestStride = MORTAR_max((currentLevelWidth / 2), 8) * bytesPerPixel;
 		uint8_t* nextLevelData = currentLevelData + (currentLevelSrcStride * currentLevelHeight);
 
 		sceGxmTransferDownscale(
@@ -524,28 +524,29 @@ void copySurfaceToGxm(
 	size_t mipLevels
 )
 {
-	SDL_Surface* src = surface->m_surface;
+	MORTAR_Surface* src = surface->m_surface;
 
 	switch (src->format) {
-	case SDL_PIXELFORMAT_ABGR8888: {
+	case MORTAR_PIXELFORMAT_ABGR8888: {
 		copySurfaceToGxmARGB888(src, textureData, dstStride, mipLevels);
 		break;
 	}
-	case SDL_PIXELFORMAT_INDEX8: {
+	case MORTAR_PIXELFORMAT_INDEX8: {
 		copySurfaceToGxmIndexed8(surface, src, textureData, dstStride, textureData + paletteOffset, mipLevels);
 		break;
 	}
 	default: {
-		DEBUG_ONLY_PRINTF("unsupported format %d\n", SDL_GetPixelFormatName(src->format));
-		SDL_Surface* dst = SDL_CreateSurfaceFrom(src->w, src->h, SDL_PIXELFORMAT_ABGR8888, textureData, src->w * 4);
-		SDL_BlitSurface(src, nullptr, dst, nullptr);
-		SDL_DestroySurface(dst);
+		DEBUG_ONLY_PRINTF("unsupported format %d\n", MORTAR_GetPixelFormatName(src->format));
+		MORTAR_Surface* dst =
+			MORTAR_CreateSurfaceFrom(src->w, src->h, MORTAR_PIXELFORMAT_ABGR8888, textureData, src->w * 4);
+		MORTAR_BlitSurface(src, nullptr, dst, nullptr);
+		MORTAR_DestroySurface(dst);
 		break;
 	}
 	}
 }
 
-Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi, float scaleX, float scaleY)
+uint32_t GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi, float scaleX, float scaleY)
 {
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
 	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
@@ -577,7 +578,7 @@ Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi, float 
 		return NO_TEXTURE_ID;
 	}
 
-	for (Uint32 i = 0; i < m_textures.size(); ++i) {
+	for (uint32_t i = 0; i < m_textures.size(); ++i) {
 		auto& tex = m_textures[i];
 		if (tex.texture == texture) {
 			if (tex.version != texture->m_version) {
@@ -593,7 +594,7 @@ Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi, float 
 
 	DEBUG_ONLY_PRINTF(
 		"Create Texture %s w=%d h=%d s=%d size=%d align=%d mips=%d\n",
-		SDL_GetPixelFormatName(surface->m_surface->format),
+		MORTAR_GetPixelFormatName(surface->m_surface->format),
 		textureWidth,
 		textureHeight,
 		textureStride,
@@ -632,7 +633,7 @@ Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi, float 
 		sceGxmTextureSetPalette(&gxmTexture, textureData + paletteOffset);
 	}
 
-	for (Uint32 i = 0; i < m_textures.size(); ++i) {
+	for (uint32_t i = 0; i < m_textures.size(); ++i) {
 		auto& tex = m_textures[i];
 		if (!tex.texture) {
 			memset(&tex, 0, sizeof(tex));
@@ -652,7 +653,7 @@ Uint32 GXMRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUi, float 
 	tex.gxmTexture = gxmTexture;
 	tex.notification = &this->fragmentNotifications[this->currentFragmentBufferIndex];
 	m_textures.push_back(tex);
-	Uint32 textureId = (Uint32) (m_textures.size() - 1);
+	uint32_t textureId = (uint32_t) (m_textures.size() - 1);
 	AddTextureDestroyCallback(textureId, texture);
 	return textureId;
 }
@@ -731,10 +732,10 @@ GXMMeshCacheEntry GXMRenderer::GXMUploadMesh(const MeshGroup& meshGroup)
 
 struct GXMMeshDestroyContext {
 	GXMRenderer* renderer;
-	Uint32 id;
+	uint32_t id;
 };
 
-void GXMRenderer::AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh)
+void GXMRenderer::AddMeshDestroyCallback(uint32_t id, IDirect3DRMMesh* mesh)
 {
 	auto* ctx = new GXMMeshDestroyContext{this, id};
 	mesh->AddDestroyCallback(
@@ -753,9 +754,9 @@ void GXMRenderer::AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh)
 	);
 }
 
-Uint32 GXMRenderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup)
+uint32_t GXMRenderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup)
 {
-	for (Uint32 i = 0; i < m_meshes.size(); ++i) {
+	for (uint32_t i = 0; i < m_meshes.size(); ++i) {
 		auto& cache = m_meshes[i];
 		if (cache.meshGroup == meshGroup) {
 			if (cache.version != meshGroup->version) {
@@ -767,7 +768,7 @@ Uint32 GXMRenderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup)
 
 	auto newCache = this->GXMUploadMesh(*meshGroup);
 
-	for (Uint32 i = 0; i < m_meshes.size(); ++i) {
+	for (uint32_t i = 0; i < m_meshes.size(); ++i) {
 		auto& cache = m_meshes[i];
 		if (!cache.meshGroup) {
 			cache = std::move(newCache);
@@ -777,8 +778,8 @@ Uint32 GXMRenderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup)
 	}
 
 	m_meshes.push_back(std::move(newCache));
-	AddMeshDestroyCallback((Uint32) (m_meshes.size() - 1), mesh);
-	return (Uint32) (m_meshes.size() - 1);
+	AddMeshDestroyCallback((uint32_t) (m_meshes.size() - 1), mesh);
+	return (uint32_t) (m_meshes.size() - 1);
 }
 
 bool razor_live_started = false;
@@ -994,7 +995,7 @@ void GXMRenderer::Flip()
 	gxm->swap_display();
 }
 
-void GXMRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect, FColor color)
+void GXMRenderer::Draw2DImage(uint32_t textureId, const MORTAR_Rect& srcRect, const MORTAR_Rect& dstRect, FColor color)
 {
 	this->StartScene();
 	if (!this->cleared) {
@@ -1081,21 +1082,21 @@ void GXMRenderer::SetDither(bool dither)
 {
 }
 
-void GXMRenderer::Download(SDL_Surface* target)
+void GXMRenderer::Download(MORTAR_Surface* target)
 {
-	SDL_Rect srcRect = {
+	MORTAR_Rect srcRect = {
 		static_cast<int>(m_viewportTransform.offsetX),
 		static_cast<int>(m_viewportTransform.offsetY),
 		static_cast<int>(target->w * m_viewportTransform.scale),
 		static_cast<int>(target->h * m_viewportTransform.scale),
 	};
-	SDL_Surface* src = SDL_CreateSurfaceFrom(
+	MORTAR_Surface* src = MORTAR_CreateSurfaceFrom(
 		VITA_GXM_SCREEN_WIDTH,
 		VITA_GXM_SCREEN_HEIGHT,
-		SDL_PIXELFORMAT_ABGR8888,
+		MORTAR_PIXELFORMAT_ABGR8888,
 		gxm->displayBuffers[gxm->frontBufferIndex],
 		VITA_GXM_SCREEN_STRIDE * 4
 	);
-	SDL_BlitSurfaceScaled(src, &srcRect, target, nullptr, SDL_SCALEMODE_NEAREST);
-	SDL_DestroySurface(src);
+	MORTAR_BlitSurfaceScaled(src, &srcRect, target, nullptr, MORTAR_SCALEMODE_NEAREST);
+	MORTAR_DestroySurface(src);
 }

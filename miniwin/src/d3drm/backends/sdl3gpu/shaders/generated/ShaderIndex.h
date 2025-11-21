@@ -6,7 +6,7 @@
 // | This file is auto-generated, do not edit it. |
 // +==============================================+
 
-#include <SDL3/SDL.h>
+#include <mortar/backends/sdl3_dynamic.h>
 
 enum VertexShaderId {
   PositionColor,

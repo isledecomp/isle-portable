@@ -177,9 +177,9 @@ done:
 MxLong MxBitmap::Read(const char* p_filename)
 {
 	MxResult result = FAILURE;
-	SDL_IOStream* handle;
+	MORTAR_IOStream* handle;
 
-	handle = SDL_IOFromFile(p_filename, "rb");
+	handle = MORTAR_IOFromFile(p_filename, "rb");
 
 	if (handle == NULL) {
 		goto done;
@@ -193,7 +193,7 @@ MxLong MxBitmap::Read(const char* p_filename)
 
 done:
 	if (handle) {
-		SDL_CloseIO(handle);
+		MORTAR_CloseIO(handle);
 	}
 
 	return result;
@@ -201,7 +201,7 @@ done:
 
 // FUNCTION: LEGO1 0x100bcd60
 // FUNCTION: BETA10 0x1013d169
-MxResult MxBitmap::LoadFile(SDL_IOStream* p_handle)
+MxResult MxBitmap::LoadFile(MORTAR_IOStream* p_handle)
 {
 	MxResult result = FAILURE;
 	MxLong unused = 0;
@@ -210,7 +210,7 @@ MxResult MxBitmap::LoadFile(SDL_IOStream* p_handle)
 	BITMAPFILEHEADER hdr;
 
 	static_assert(sizeof(BITMAPFILEHEADER) == 14, "Incorrect size");
-	if (!SDL_ReadIO(p_handle, &hdr, 14)) {
+	if (!MORTAR_ReadIO(p_handle, &hdr, 14)) {
 		goto done;
 	}
 
@@ -223,7 +223,7 @@ MxResult MxBitmap::LoadFile(SDL_IOStream* p_handle)
 		goto done;
 	}
 
-	if (!SDL_ReadIO(p_handle, m_info, MxBitmapInfoSize())) {
+	if (!MORTAR_ReadIO(p_handle, m_info, MxBitmapInfoSize())) {
 		goto done;
 	}
 
@@ -237,7 +237,7 @@ MxResult MxBitmap::LoadFile(SDL_IOStream* p_handle)
 		goto done;
 	}
 
-	if (!SDL_ReadIO(p_handle, m_data, size)) {
+	if (!MORTAR_ReadIO(p_handle, m_data, size)) {
 		goto done;
 	}
 

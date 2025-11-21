@@ -7,7 +7,7 @@
 #include "mxstl/stlcompat.h"
 #include "mxstring.h"
 
-#include <SDL3/SDL_video.h>
+#include <mortar/mortar_video.h>
 #ifdef MINIWIN
 #include "miniwin/windows.h"
 #else

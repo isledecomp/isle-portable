@@ -7,7 +7,7 @@
 #include "mxstring.h"
 #include "mxvideoparam.h"
 
-#include <SDL3/SDL_video.h>
+#include <mortar/mortar_video.h>
 
 // VTABLE: LEGO1 0x100dc218
 // VTABLE: BETA10 0x101c1ca8

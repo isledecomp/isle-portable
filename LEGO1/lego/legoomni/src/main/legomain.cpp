@@ -34,8 +34,8 @@
 #include "scripts.h"
 #include "viewmanager/viewmanager.h"
 
-#include <SDL3/SDL_log.h>
-#include <SDL3/SDL_stdinc.h>
+#include <mortar/mortar_log.h>
+#include <mortar/mortar_stdinc.h>
 
 DECOMP_SIZE_ASSERT(LegoOmni, 0x140)
 DECOMP_SIZE_ASSERT(LegoOmni::WorldContainer, 0x1c)
@@ -190,22 +190,22 @@ MxResult LegoOmni::Create(MxOmniCreateParam& p_param)
 	p_param.CreateFlags().CreateTickleManager(FALSE);
 
 	if (!(m_tickleManager = new MxTickleManager())) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create MxTickleManager");
+		MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "Failed to create MxTickleManager");
 		goto done;
 	}
 
 	if (MxOmni::Create(p_param) != SUCCESS) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create MxOmni");
+		MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "Failed to create MxOmni");
 		goto done;
 	}
 	// LINE: BETA10 0x1008d7fa
 	if (!(m_objectFactory = new LegoObjectFactory())) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create LegoObjectFactory");
+		MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "Failed to create LegoObjectFactory");
 		goto done;
 	}
 	// LINE: BETA10 0x1008d882
 	if (!(m_soundManager = new LegoSoundManager()) || m_soundManager->Create(10, 0) != SUCCESS) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create LegoSoundManager");
+		MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "Failed to create LegoSoundManager");
 		delete m_soundManager;
 		m_soundManager = NULL;
 		goto done;
@@ -213,14 +213,14 @@ MxResult LegoOmni::Create(MxOmniCreateParam& p_param)
 	// LINE: BETA10 0x1008d990
 	if (!(m_videoManager = new LegoVideoManager()) ||
 		m_videoManager->Create(p_param.GetVideoParam(), 100, 0) != SUCCESS) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create LegoVideoManager");
+		MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "Failed to create LegoVideoManager");
 		delete m_videoManager;
 		m_videoManager = NULL;
 		goto done;
 	}
 	// LINE: BETA10 0x1008daa7
 	if (!(m_inputManager = new LegoInputManager()) || m_inputManager->Create(p_param.GetWindowHandle()) != SUCCESS) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create LegoInputManager");
+		MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "Failed to create LegoInputManager");
 		delete m_inputManager;
 		m_inputManager = NULL;
 		goto done;
@@ -267,8 +267,8 @@ MxResult LegoOmni::Create(MxOmniCreateParam& p_param)
 
 	if (!m_viewLODListManager || !m_textureContainer || !m_worldList || !m_characterManager || !m_plantManager ||
 		!m_animationManager || !m_buildingManager) {
-		SDL_LogError(
-			SDL_LOG_CATEGORY_APPLICATION,
+		MORTAR_LogError(
+			MORTAR_LOG_CATEGORY_APPLICATION,
 			"Failed to create "
 			"ViewLODListManager/LegoTextureContainer/LegoCharacterManager/LegoPlantManager/LegoAnimationManager/"
 			"LegoBuildingManager"
@@ -280,7 +280,7 @@ MxResult LegoOmni::Create(MxOmniCreateParam& p_param)
 	// LINE: BETA10 0x1008dfbd
 	visibilityVar = new VisibilityVariable();
 	if (!visibilityVar) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create VisibilityVariable");
+		MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "Failed to create VisibilityVariable");
 		goto done;
 	}
 	m_variableTable->SetVariable(visibilityVar);
@@ -288,7 +288,7 @@ MxResult LegoOmni::Create(MxOmniCreateParam& p_param)
 	// LINE: BETA10 0x1008e031
 	cameraLocationVar = new CameraLocationVariable();
 	if (!cameraLocationVar) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create CameraLocationVariable");
+		MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "Failed to create CameraLocationVariable");
 		goto done;
 	}
 	m_variableTable->SetVariable(cameraLocationVar);
@@ -296,7 +296,7 @@ MxResult LegoOmni::Create(MxOmniCreateParam& p_param)
 	// LINE: BETA10 0x1008e0a5
 	cursorVar = new CursorVariable();
 	if (!cursorVar) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create CursorVariable");
+		MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "Failed to create CursorVariable");
 		goto done;
 	}
 	m_variableTable->SetVariable(cursorVar);
@@ -304,7 +304,7 @@ MxResult LegoOmni::Create(MxOmniCreateParam& p_param)
 	// LINE: BETA10 0x1008e119
 	whoAmIVar = new WhoAmIVariable();
 	if (!whoAmIVar) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create WhoAmIVariable");
+		MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "Failed to create WhoAmIVariable");
 		goto done;
 	}
 	m_variableTable->SetVariable(whoAmIVar);
@@ -325,7 +325,7 @@ MxResult LegoOmni::Create(MxOmniCreateParam& p_param)
 	result = RegisterWorlds();
 
 	if (result != SUCCESS) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create RegisterWorlds");
+		MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "Failed to create RegisterWorlds");
 		goto done;
 	}
 #endif
@@ -333,7 +333,7 @@ MxResult LegoOmni::Create(MxOmniCreateParam& p_param)
 	// LINE: BETA10 0x1008e206
 	m_bkgAudioManager = new MxBackgroundAudioManager();
 	if (!m_bkgAudioManager) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create MxBackgroundAudioManager");
+		MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "Failed to create MxBackgroundAudioManager");
 		goto done;
 	}
 
@@ -342,7 +342,10 @@ MxResult LegoOmni::Create(MxOmniCreateParam& p_param)
 
 	if (m_transitionManager) {
 		if (m_transitionManager->GetDDrawSurfaceFromVideoManager() != SUCCESS) {
-			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "MxTransitionManager::GetDDrawSurfaceFromVideoManager failed");
+			MORTAR_LogError(
+				MORTAR_LOG_CATEGORY_APPLICATION,
+				"MxTransitionManager::GetDDrawSurfaceFromVideoManager failed"
+			);
 			goto done;
 		}
 
@@ -358,7 +361,7 @@ MxResult LegoOmni::Create(MxOmniCreateParam& p_param)
 		result = SUCCESS;
 	}
 	else {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create MxTransitionManager");
+		MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "Failed to create MxTransitionManager");
 	}
 done:
 	return result;
@@ -526,7 +529,7 @@ LegoROI* LegoOmni::FindROI(const char* p_name)
 			const char* name = roi->GetName();
 
 			if (name != NULL) {
-				if (!SDL_strcasecmp(name, p_name)) {
+				if (!MORTAR_strcasecmp(name, p_name)) {
 					return roi;
 				}
 			}
@@ -542,7 +545,7 @@ MxEntity* LegoOmni::AddToWorld(const char* p_id, MxS32 p_entityId, MxPresenter* 
 {
 	LegoWorld* world;
 
-	if (SDL_strcasecmp(p_id, g_current)) {
+	if (MORTAR_strcasecmp(p_id, g_current)) {
 		world = FindWorld(MxAtomId(p_id, e_lowerCase2), p_entityId);
 	}
 	else {
@@ -622,7 +625,7 @@ LegoOmni::World LegoOmni::GetWorldId(const char* p_key)
 	for (MxS32 i = 0; i < e_numWorlds; i++) {
 		// Note: m_key is never NULL
 		if (m_worlds[i].m_key != NULL) {
-			if (!SDL_strcasecmp(m_worlds[i].m_key, p_key)) {
+			if (!MORTAR_strcasecmp(m_worlds[i].m_key, p_key)) {
 				return m_worlds[i].m_id;
 			}
 		}

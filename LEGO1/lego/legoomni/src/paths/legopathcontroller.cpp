@@ -6,7 +6,7 @@
 #include "mxticklemanager.h"
 #include "mxtimer.h"
 
-#include <SDL3/SDL_stdinc.h>
+#include <mortar/mortar_stdinc.h>
 
 DECOMP_SIZE_ASSERT(LegoPathController, 0x40)
 DECOMP_SIZE_ASSERT(LegoPathCtrlEdge, 0x40)
@@ -109,7 +109,7 @@ MxResult LegoPathController::Create(
 			MxS32 j;
 
 			for (j = 0; j < sizeOfArray(g_ctrlBoundariesNamesA); j++) {
-				if (!SDL_strcasecmp(g_ctrlBoundariesNamesA[j], boundary.GetName())) {
+				if (!MORTAR_strcasecmp(g_ctrlBoundariesNamesA[j], boundary.GetName())) {
 					g_ctrlBoundariesA[j].m_controller = this;
 					g_ctrlBoundariesA[j].m_boundary = &boundary;
 
@@ -120,7 +120,7 @@ MxResult LegoPathController::Create(
 			}
 
 			for (j = 0; j < sizeOfArray(g_ctrlBoundariesNamesB); j++) {
-				if (!SDL_strcasecmp(g_ctrlBoundariesNamesB[j], boundary.GetName())) {
+				if (!MORTAR_strcasecmp(g_ctrlBoundariesNamesB[j], boundary.GetName())) {
 					g_ctrlBoundariesB[j].m_controller = this;
 					g_ctrlBoundariesB[j].m_boundary = &boundary;
 					g_ctrlEdgesB[j].m_controller = this;
@@ -407,7 +407,7 @@ MxResult LegoPathController::GetBoundaries(LegoPathBoundary*& p_boundaries, MxS3
 LegoPathBoundary* LegoPathController::GetPathBoundary(const char* p_name)
 {
 	for (MxS32 i = 0; i < m_numL; i++) {
-		if (!SDL_strcasecmp(m_boundaries[i].GetName(), p_name)) {
+		if (!MORTAR_strcasecmp(m_boundaries[i].GetName(), p_name)) {
 			return &m_boundaries[i];
 		}
 	}

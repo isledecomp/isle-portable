@@ -38,11 +38,19 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+set(ISLE_MORTAR_SDL3_DEFAULT ON)
+set(ISLE_MORTAR_SDL3_DYNAMIC_AVAILABLE ON)
+if(ANDROID OR IOS OR EMSCRIPTEN OR NINTENDO_3DS OR NX OR VITA OR XBOXONE OR CMAKE_SYSTEM_NAME MATCHES "NintendoSwitch")
+  set(ISLE_MORTAR_SDL3_DYNAMIC_AVAILABLE OFF)
+endif()
+option(ISLE_MORTAR_SDL3 "Mortar SDL3 backend" ${ISLE_MORTAR_SDL3_DEFAULT})
+cmake_dependent_option(ISLE_MORTAR_SDL3_DYNAMIC "Mortar dynamic SDL3 backend" ON "ISLE_MORTAR_SDL3;${ISLE_MORTAR_SDL3_DYNAMIC_AVAILABLE}" OFF)
+
 if (NOT MINGW)
   set(NOT_MINGW ON)
 else()
   set(NOT_MINGW OFF)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static -static-libgcc -static-libstdc++")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-static -static-libgcc -static-libstdc++")
 endif()
 
 find_program(SDL_SHADERCROSS_BIN NAMES "shadercross")
@@ -76,46 +84,48 @@ add_library(Isle::iniparser INTERFACE IMPORTED)
 
 if (DOWNLOAD_DEPENDENCIES)
   # FetchContent downloads and configures dependencies
-  message(STATUS "Fetching SDL3 and iniparser. This might take a while...")
   include(FetchContent)
-
-  if(ANDROID)
-    # Built by Gradle
-    find_package(SDL3 REQUIRED CONFIG COMPONENTS Shared)
-  else()
-    if (WINDOWS_STORE)
-      FetchContent_Declare(
-        SDL3
-        GIT_REPOSITORY "https://github.com/Helloyunho/SDL3-uwp.git"
-        GIT_TAG "main"
-        EXCLUDE_FROM_ALL
-      )
-    elseif (NINTENDO_SWITCH)
-      FetchContent_Declare(
-        SDL3
-        # Official repo missing Threads support?
-        #GIT_REPOSITORY "https://github.com/devkitPro/SDL.git"
-        #GIT_TAG "switch-sdl-3.2"
-        #GIT_REPOSITORY "https://github.com/vs49688/SDL.git"
-        GIT_REPOSITORY "https://github.com/SnepOMatic/SDL3-Switch.git"
-        GIT_TAG "switch-sdl-3.2.14"
-        EXCLUDE_FROM_ALL
-      )
-      set(CMAKE_DISABLE_PRECOMPILE_HEADERS ON CACHE BOOL "Disable PCH globally" FORCE)
+  if(ISLE_MORTAR_SDL3)
+    if(ANDROID)
+      # Built by Gradle
+      find_package(SDL3 REQUIRED CONFIG COMPONENTS Shared)
     else()
-      set(ISLE_SDL3_GIT_REPO "https://github.com/libsdl-org/SDL.git" CACHE STRING "The SDL3 git repo")
-      set(ISLE_SDL3_GIT_TAG "main" CACHE STRING "The SDL3 git tag")
-      FetchContent_Declare(
-        SDL3
-        GIT_REPOSITORY "${ISLE_SDL3_GIT_REPO}"
-        GIT_TAG "${ISLE_SDL3_GIT_TAG}"
-        UPDATE_DISCONNECTED TRUE
-        EXCLUDE_FROM_ALL
-      )
+      message(STATUS "Fetching SDL3. This might take a while...")
+      if (WINDOWS_STORE)
+        FetchContent_Declare(
+          SDL3
+          GIT_REPOSITORY "https://github.com/Helloyunho/SDL3-uwp.git"
+          GIT_TAG "main"
+          EXCLUDE_FROM_ALL
+        )
+      elseif (NINTENDO_SWITCH)
+        FetchContent_Declare(
+          SDL3
+          # Official repo missing Threads support?
+          #GIT_REPOSITORY "https://github.com/devkitPro/SDL.git"
+          #GIT_TAG "switch-sdl-3.2"
+          #GIT_REPOSITORY "https://github.com/vs49688/SDL.git"
+          GIT_REPOSITORY "https://github.com/SnepOMatic/SDL3-Switch.git"
+          GIT_TAG "switch-sdl-3.2.14"
+          EXCLUDE_FROM_ALL
+        )
+        set(CMAKE_DISABLE_PRECOMPILE_HEADERS ON CACHE BOOL "Disable PCH globally" FORCE)
+      else()
+        set(ISLE_SDL3_GIT_REPO "https://github.com/libsdl-org/SDL.git" CACHE STRING "The SDL3 git repo")
+        set(ISLE_SDL3_GIT_TAG "main" CACHE STRING "The SDL3 git tag")
+        FetchContent_Declare(
+          SDL3
+          GIT_REPOSITORY "${ISLE_SDL3_GIT_REPO}"
+          GIT_TAG "${ISLE_SDL3_GIT_TAG}"
+          UPDATE_DISCONNECTED TRUE
+          EXCLUDE_FROM_ALL
+        )
+      endif()
+      FetchContent_MakeAvailable(SDL3)
     endif()
-    FetchContent_MakeAvailable(SDL3)
   endif()
 
+  message(STATUS "Fetching iniparser. This might take a while...")
   FetchContent_Declare(
     iniparser
     GIT_REPOSITORY "https://gitlab.com/iniparser/iniparser.git"
@@ -130,10 +140,12 @@ if (DOWNLOAD_DEPENDENCIES)
     target_link_libraries(Isle::iniparser INTERFACE iniparser-static)
   endblock()
 else()
-  # find_package looks for already-installed system packages.
-  # Configure with `-DCMAKE_PREFIX_PATH="/path/to/package1;/path/to/package2"`
-  # to add search paths.
-  find_package(SDL3 CONFIG REQUIRED)
+  if(ISLE_MORTAR_SDL3)
+    # find_package looks for already-installed system packages.
+    # Configure with `-DCMAKE_PREFIX_PATH="/path/to/package1;/path/to/package2"`
+    # to add search paths.
+    find_package(SDL3 CONFIG REQUIRED)
+  endif()
 
   find_package(iniparser REQUIRED CONFIG)
   if(TARGET iniparser-shared)
@@ -213,8 +225,7 @@ target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/L
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/LEGO1/lego/sources>")
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/LEGO1/lego/legoomni/include>")
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/LEGO1/lego/legoomni/include/actions>")
-target_link_libraries(lego1 PRIVATE SDL3::SDL3)
-target_link_libraries(lego1 PUBLIC SDL3::Headers)
+target_link_libraries(lego1 PUBLIC mortar::headers)
 target_link_libraries(lego1 PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5>)
 # Allow unconditional include of miniwin/miniwind3d.h
 target_link_libraries(lego1 PRIVATE miniwin-headers)
@@ -563,8 +574,8 @@ if (ISLE_BUILD_APP)
   # Use internal DirectX 5 if required
   target_link_libraries(isle PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5>)
 
-  # Link SDL and iniparser
-  target_link_libraries(isle PRIVATE SDL3::SDL3 Isle::iniparser)
+  # Link mortar and iniparser
+  target_link_libraries(isle PRIVATE Isle::iniparser)
 
   # Allow unconditional include of miniwin/miniwindevice.h
   target_link_libraries(isle PRIVATE miniwin-headers)
@@ -671,6 +682,7 @@ if (ISLE_BUILD_CONFIG)
     CONFIG/qt/res/config.qrc
   )
   target_link_libraries(isle-config PRIVATE Qt6::Core Qt6::Widgets)
+  target_link_libraries(isle-config PRIVATE mortar::headers mortar::embed)
   set_property(TARGET isle-config PROPERTY AUTOMOC ON)
   set_property(TARGET isle-config PROPERTY AUTORCC ON)
   set_property(TARGET isle-config PROPERTY AUTOUIC ON)
@@ -683,7 +695,7 @@ if (ISLE_BUILD_CONFIG)
     target_link_libraries(isle-config PRIVATE DirectX5::DirectX5)
   endif()
   target_compile_definitions(isle-config PRIVATE DIRECT3D_VERSION=0x500)
-  target_link_libraries(isle-config PRIVATE SDL3::SDL3 Isle::iniparser)
+  target_link_libraries(isle-config PRIVATE Isle::iniparser)
   if (NOT ISLE_MINIWIN)
     target_link_libraries(isle-config PRIVATE ddraw dxguid)
   endif()
@@ -719,6 +731,89 @@ endif()
 
 if (ISLE_MINIWIN)
   set_property(TARGET ${isle_targets} APPEND PROPERTY LINK_LIBRARIES "miniwin")
+endif()
+
+add_library(mortar_headers INTERFACE)
+add_library(mortar::headers ALIAS mortar_headers)
+target_compile_definitions(mortar_headers INTERFACE $<$<BOOL:${BUILD_SHARED_LIBS}>:MORTAR_DLL>)
+target_include_directories(mortar_headers INTERFACE "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/mortar/include>")
+
+# Link with mortar::declare_embedded to declare mortar is embedded alongside it
+add_library(mortar_declare_embedded INTERFACE)
+add_library(mortar::declare_embedded ALIAS mortar_declare_embedded)
+target_sources(mortar_declare_embedded INTERFACE $<TARGET_OBJECTS:mortar>)
+target_compile_definitions(mortar_declare_embedded INTERFACE BUILDING_MORTAR)
+
+# Link with mortar::embed to embed mortar inside of it
+add_library(mortar_embed INTERFACE)
+add_library(mortar::embed ALIAS mortar_embed)
+target_sources(mortar_embed INTERFACE $<TARGET_OBJECTS:mortar>)
+target_link_libraries(mortar_embed INTERFACE mortar::declare_embedded)
+
+add_library(mortar STATIC
+  mortar/include/mortar/mortar.h
+  mortar/src/mortar.cpp
+)
+target_compile_definitions(mortar PRIVATE BUILDING_MORTAR)
+target_link_libraries(mortar PUBLIC mortar::headers)
+set_property(TARGET mortar PROPERTY C_VISIBILITY_PRESET "hidden")
+set_property(TARGET mortar PROPERTY CXX_VISIBILITY_PRESET "hidden")
+list(APPEND isle_targets mortar)
+
+if(ISLE_MORTAR_SDL3)
+  set(MORTAR_SDL3_SOURCES
+    mortar/src/sdl3/sdl3_audio.cpp
+    mortar/src/sdl3/sdl3_cpuinfo.cpp
+    mortar/src/sdl3/sdl3_error.cpp
+    mortar/src/sdl3/sdl3_events.cpp
+    mortar/src/sdl3/sdl3_filesystem.cpp
+    mortar/src/sdl3/sdl3_gamepad.cpp
+    mortar/src/sdl3/sdl3_haptic.cpp
+    mortar/src/sdl3/sdl3_init.cpp
+    mortar/src/sdl3/sdl3_iostream.cpp
+    mortar/src/sdl3/sdl3_joystick.cpp
+    mortar/src/sdl3/sdl3_keyboard.cpp
+    mortar/src/sdl3/sdl3_keycode.cpp
+    mortar/src/sdl3/sdl3_log.cpp
+    mortar/src/sdl3/sdl3_main.cpp
+    mortar/src/sdl3/sdl3_messagebox.cpp
+    mortar/src/sdl3/sdl3_mouse.cpp
+    mortar/src/sdl3/sdl3_mutex.cpp
+    mortar/src/sdl3/sdl3_pixels.cpp
+    mortar/src/sdl3/sdl3_process.cpp
+    mortar/src/sdl3/sdl3_rect.cpp
+    mortar/src/sdl3/sdl3_render.cpp
+    mortar/src/sdl3/sdl3_stdinc.cpp
+    mortar/src/sdl3/sdl3_surface.cpp
+    mortar/src/sdl3/sdl3_system.cpp
+    mortar/src/sdl3/sdl3_thread.cpp
+    mortar/src/sdl3/sdl3_timer.cpp
+    mortar/src/sdl3/sdl3_version.cpp
+    mortar/src/sdl3/sdl3_video.cpp
+  )
+  target_sources(mortar PRIVATE ${MORTAR_SDL3_SOURCES})
+  get_property(sdl3_alias TARGET SDL3::SDL3 PROPERTY ALIASED_TARGET)
+  add_dependencies(mortar "SDL3::SDL3")
+  set_property(SOURCE ${MORTAR_SDL3_SOURCES} APPEND PROPERTY INCLUDE_DIRECTORIES $<TARGET_PROPERTY:SDL3::Headers,INTERFACE_INCLUDE_DIRECTORIES>)
+  if(ISLE_MORTAR_SDL3_DYNAMIC)
+    target_compile_definitions(mortar_headers INTERFACE SDL3_DYNAMIC_LOAD)
+    set_property(TARGET lego1 APPEND PROPERTY BUILD_RPATH "$<TARGET_FILE_DIR:SDL3::SDL3>")
+    if(TARGET isle)
+      set_property(TARGET isle APPEND PROPERTY BUILD_RPATH "$<TARGET_FILE_DIR:SDL3::SDL3>")
+    endif()
+    if(TARGET isle-config)
+      set_property(TARGET isle-config APPEND PROPERTY BUILD_RPATH "$<TARGET_FILE_DIR:SDL3::SDL3>")
+    endif()
+  else()
+    target_link_libraries(mortar PRIVATE SDL3::Headers)
+    target_link_libraries(mortar_embed INTERFACE SDL3::SDL3)
+  endif()
+endif()
+target_link_libraries(lego1 PRIVATE mortar_headers mortar::embed)
+if(NOT BUILD_SHARED_LIBS)
+  if(TARGET isle)
+    target_link_libraries(isle PRIVATE mortar::embed)
+  endif()
 endif()
 
 if (MSVC)

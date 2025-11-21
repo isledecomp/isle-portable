@@ -8,7 +8,7 @@
 #include "mxmisc.h"
 #include "mxvariabletable.h"
 
-#include <SDL3/SDL_stdinc.h>
+#include <mortar/mortar_stdinc.h>
 #include <vec.h>
 
 // File name verified by BETA10 0x100cedf7
@@ -228,7 +228,7 @@ void LegoCarRaceActor::Animate(float p_time)
 	if (m_animState == 0) {
 		const char* value = VariableTable()->GetVariable(g_raceState);
 
-		if (SDL_strcasecmp(value, g_racing) == 0) {
+		if (MORTAR_strcasecmp(value, g_racing) == 0) {
 			m_animState = 1;
 			m_transformTime = p_time - 1.0f;
 			m_unk0x1c = p_time;
@@ -401,7 +401,7 @@ void LegoJetskiRaceActor::Animate(float p_time)
 {
 	if (m_animState == 0) {
 		const LegoChar* raceState = VariableTable()->GetVariable(g_raceState);
-		if (!SDL_strcasecmp(raceState, g_racing)) {
+		if (!MORTAR_strcasecmp(raceState, g_racing)) {
 			m_animState = 1;
 			m_transformTime = p_time - 1.0f;
 			m_unk0x1c = p_time;
