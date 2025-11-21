@@ -129,7 +129,7 @@ void CarRace::ReadyWorld()
 	AnimationManager()->Resume();
 	Disable(FALSE, LegoOmni::c_disableInput | LegoOmni::c_disable3d | LegoOmni::c_clearScreen);
 
-	m_unk0x144 = g_unk0x100d5d10[SDL_rand(8)];
+	m_unk0x144 = g_unk0x100d5d10[MORTAR_rand(8)];
 
 	AnimationManager()
 		->FUN_10060dc0(m_unk0x144, NULL, TRUE, LegoAnimationManager::e_unk0, NULL, FALSE, TRUE, FALSE, TRUE);
@@ -222,24 +222,24 @@ MxLong CarRace::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 
 					if (m_unk0xfc < m_unk0xf8 && m_unk0x100 < m_unk0xf8) {
 						position = 3;
-						m_unk0x148 = g_unk0x100d5d40[SDL_rand(3)];
-						m_unk0x14c = g_unk0x100d5d60[SDL_rand(3)];
+						m_unk0x148 = g_unk0x100d5d40[MORTAR_rand(3)];
+						m_unk0x14c = g_unk0x100d5d60[MORTAR_rand(3)];
 					}
 					else if (m_unk0xfc < m_unk0xf8 || m_unk0x100 < m_unk0xf8) {
 						position = 2;
 						if (m_unk0xfc == g_unk0x100f0c7c) {
-							m_unk0x148 = g_unk0x100d5d30[SDL_rand(4)];
-							m_unk0x14c = g_unk0x100d5d60[SDL_rand(3)];
+							m_unk0x148 = g_unk0x100d5d30[MORTAR_rand(4)];
+							m_unk0x14c = g_unk0x100d5d60[MORTAR_rand(3)];
 						}
 						else {
-							m_unk0x148 = g_unk0x100d5d50[SDL_rand(3)];
-							m_unk0x14c = g_unk0x100d5d40[SDL_rand(3)];
+							m_unk0x148 = g_unk0x100d5d50[MORTAR_rand(3)];
+							m_unk0x14c = g_unk0x100d5d40[MORTAR_rand(3)];
 						}
 					}
 					else {
 						position = 1;
-						m_unk0x148 = g_unk0x100d5d30[SDL_rand(4)];
-						m_unk0x14c = g_unk0x100d5d50[SDL_rand(3)];
+						m_unk0x148 = g_unk0x100d5d30[MORTAR_rand(4)];
+						m_unk0x14c = g_unk0x100d5d50[MORTAR_rand(3)];
 					}
 
 					InputManager()->DisableInputProcessing();

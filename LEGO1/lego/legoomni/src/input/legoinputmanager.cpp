@@ -12,7 +12,7 @@
 #include "mxdebug.h"
 #include "roi/legoroi.h"
 
-#include <SDL3/SDL_log.h>
+#include <mortar/mortar_log.h>
 
 DECOMP_SIZE_ASSERT(LegoInputManager, 0x338)
 DECOMP_SIZE_ASSERT(LegoNotifyList, 0x18)
@@ -100,27 +100,27 @@ void LegoInputManager::Destroy()
 
 	for (const auto& [id, joystick] : m_joysticks) {
 		if (joystick.second) {
-			SDL_CloseHaptic(joystick.second);
+			MORTAR_CloseHaptic(joystick.second);
 		}
 
-		SDL_CloseGamepad(joystick.first);
+		MORTAR_CloseGamepad(joystick.first);
 	}
 
 	for (const auto& [id, mouse] : m_mice) {
 		if (mouse.second) {
-			SDL_CloseHaptic(mouse.second);
+			MORTAR_CloseHaptic(mouse.second);
 		}
 	}
 
 	for (const auto& [id, haptic] : m_otherHaptics) {
-		SDL_CloseHaptic(haptic);
+		MORTAR_CloseHaptic(haptic);
 	}
 }
 
 // FUNCTION: LEGO1 0x1005c0f0
 void LegoInputManager::GetKeyboardState()
 {
-	m_keyboardState = SDL_GetKeyboardState(NULL);
+	m_keyboardState = MORTAR_GetKeyboardState(NULL);
 }
 
 // FUNCTION: LEGO1 0x1005c160
@@ -135,41 +135,41 @@ MxResult LegoInputManager::GetNavigationKeyStates(MxU32& p_keyFlags)
 	MxU32 keyFlags = 0;
 
 	if (!m_wasd) {
-		if (m_keyboardState[SDL_SCANCODE_KP_8] || m_keyboardState[SDL_SCANCODE_UP]) {
+		if (m_keyboardState[MORTAR_SCANCODE_KP_8] || m_keyboardState[MORTAR_SCANCODE_UP]) {
 			keyFlags |= c_up;
 		}
 
-		if ((m_keyboardState[SDL_SCANCODE_KP_2] || m_keyboardState[SDL_SCANCODE_DOWN])) {
+		if ((m_keyboardState[MORTAR_SCANCODE_KP_2] || m_keyboardState[MORTAR_SCANCODE_DOWN])) {
 			keyFlags |= c_down;
 		}
 
-		if ((m_keyboardState[SDL_SCANCODE_KP_4] || m_keyboardState[SDL_SCANCODE_LEFT])) {
+		if ((m_keyboardState[MORTAR_SCANCODE_KP_4] || m_keyboardState[MORTAR_SCANCODE_LEFT])) {
 			keyFlags |= c_left;
 		}
 
-		if ((m_keyboardState[SDL_SCANCODE_KP_6] || m_keyboardState[SDL_SCANCODE_RIGHT])) {
+		if ((m_keyboardState[MORTAR_SCANCODE_KP_6] || m_keyboardState[MORTAR_SCANCODE_RIGHT])) {
 			keyFlags |= c_right;
 		}
 	}
 	else {
-		if (m_keyboardState[SDL_SCANCODE_W]) {
+		if (m_keyboardState[MORTAR_SCANCODE_W]) {
 			keyFlags |= c_up;
 		}
 
-		if (m_keyboardState[SDL_SCANCODE_S]) {
+		if (m_keyboardState[MORTAR_SCANCODE_S]) {
 			keyFlags |= c_down;
 		}
 
-		if (m_keyboardState[SDL_SCANCODE_A]) {
+		if (m_keyboardState[MORTAR_SCANCODE_A]) {
 			keyFlags |= c_left;
 		}
 
-		if (m_keyboardState[SDL_SCANCODE_D]) {
+		if (m_keyboardState[MORTAR_SCANCODE_D]) {
 			keyFlags |= c_right;
 		}
 	}
 
-	if (m_keyboardState[SDL_SCANCODE_LCTRL] || m_keyboardState[SDL_SCANCODE_RCTRL]) {
+	if (m_keyboardState[MORTAR_SCANCODE_LCTRL] || m_keyboardState[MORTAR_SCANCODE_RCTRL]) {
 		keyFlags |= c_ctrl;
 	}
 
@@ -183,15 +183,15 @@ MxResult LegoInputManager::GetNavigationKeyStates(MxU32& p_keyFlags)
 // FUNCTION: LEGO1 0x1005c320
 MxResult LegoInputManager::GetJoystickState(MxU32* p_joystickX, MxU32* p_joystickY, MxU32* p_povPosition)
 {
-	if (!std::holds_alternative<SDL_JoystickID_v>(m_lastInputMethod) &&
-		!(std::holds_alternative<SDL_TouchID_v>(m_lastInputMethod) && m_touchScheme == e_gamepad)) {
+	if (!std::holds_alternative<MORTAR_JoystickID_v>(m_lastInputMethod) &&
+		!(std::holds_alternative<MORTAR_TouchID_v>(m_lastInputMethod) && m_touchScheme == e_gamepad)) {
 		return FAILURE;
 	}
 
 	MxS16 xPos, yPos = 0;
 	for (const auto& [id, joystick] : m_joysticks) {
-		xPos = SDL_GetGamepadAxis(joystick.first, SDL_GAMEPAD_AXIS_LEFTX);
-		yPos = SDL_GetGamepadAxis(joystick.first, SDL_GAMEPAD_AXIS_LEFTY);
+		xPos = MORTAR_GetGamepadAxis(joystick.first, MORTAR_GAMEPAD_AXIS_LEFTX);
+		yPos = MORTAR_GetGamepadAxis(joystick.first, MORTAR_GAMEPAD_AXIS_LEFTY);
 		if (xPos > -8000 && xPos < 8000) {
 			xPos = 0;
 		}
@@ -264,12 +264,12 @@ void LegoInputManager::ClearWorld()
 }
 
 // FUNCTION: LEGO1 0x1005c740
-void LegoInputManager::QueueEvent(NotificationId p_id, MxU8 p_modifier, MxLong p_x, MxLong p_y, SDL_Keycode p_key)
+void LegoInputManager::QueueEvent(NotificationId p_id, MxU8 p_modifier, MxLong p_x, MxLong p_y, MORTAR_Keycode p_key)
 {
 	LegoEventNotificationParam param = LegoEventNotificationParam(p_id, NULL, p_modifier, p_x, p_y, p_key);
 
 	if (((!m_inputProcessingDisabled) || ((m_unk0x335 && (param.GetNotification() == c_notificationButtonDown)))) ||
-		((m_unk0x336 && (p_key == SDLK_SPACE)))) {
+		((m_unk0x336 && (p_key == MORTARK_SPACE)))) {
 		ProcessOneEvent(param);
 	}
 }
@@ -293,8 +293,8 @@ MxBool LegoInputManager::ProcessOneEvent(LegoEventNotificationParam& p_param)
 	MxBool processRoi;
 
 	if (p_param.GetNotification() == c_notificationKeyPress) {
-		if (!Lego()->IsPaused() || p_param.GetKey() == SDLK_PAUSE) {
-			if (p_param.GetKey() == SDLK_LSHIFT || p_param.GetKey() == SDLK_RSHIFT) {
+		if (!Lego()->IsPaused() || p_param.GetKey() == MORTARK_PAUSE) {
+			if (p_param.GetKey() == MORTARK_LSHIFT || p_param.GetKey() == MORTARK_RSHIFT) {
 				if (m_unk0x195) {
 					m_unk0x80 = FALSE;
 					p_param.SetNotification(c_notificationDragEnd);
@@ -324,7 +324,7 @@ MxBool LegoInputManager::ProcessOneEvent(LegoEventNotificationParam& p_param)
 
 			if (m_unk0x335 != 0) {
 				if (p_param.GetNotification() == c_notificationButtonDown) {
-					LegoEventNotificationParam notification(c_notificationKeyPress, NULL, 0, 0, 0, SDLK_SPACE);
+					LegoEventNotificationParam notification(c_notificationKeyPress, NULL, 0, 0, 0, MORTARK_SPACE);
 					LegoNotifyListCursor cursor(m_keyboardNotifyList);
 					MxCore* target;
 
@@ -490,22 +490,22 @@ MxBool LegoInputManager::FUN_1005cdf0(LegoEventNotificationParam& p_param)
 	return result;
 }
 
-static Uint32 SDLCALL LegoInputManagerTimerCallback(void* userdata, SDL_TimerID timerID, Uint32 interval)
+static uint32_t LegoInputManagerTimerCallback(void* p_userdata, MORTAR_TimerID p_timerID, uint32_t p_interval)
 {
-	LegoInputManager* inputManager = (LegoInputManager*) userdata;
-	SDL_Event event;
-	event.type = g_legoSdlEvents.m_windowsMessage;
+	LegoInputManager* inputManager = (LegoInputManager*) p_userdata;
+	MORTAR_Event event;
+	event.user.type = g_legoSdlEvents.m_windowsMessage;
 	event.user.code = WM_TIMER;
-	event.user.data1 = (void*) (uintptr_t) timerID;
+	event.user.data1 = (void*) (uintptr_t) p_timerID;
 	event.user.data2 = NULL;
-	return interval;
+	return p_interval;
 }
 
 // FUNCTION: LEGO1 0x1005cfb0
 // FUNCTION: BETA10 0x10089fc5
 void LegoInputManager::StartAutoDragTimer()
 {
-	m_autoDragTimerID = SDL_AddTimer(m_autoDragTime, LegoInputManagerTimerCallback, this);
+	m_autoDragTimerID = MORTAR_AddTimer(m_autoDragTime, LegoInputManagerTimerCallback, this);
 }
 
 // FUNCTION: LEGO1 0x1005cfd0
@@ -513,7 +513,7 @@ void LegoInputManager::StartAutoDragTimer()
 void LegoInputManager::StopAutoDragTimer()
 {
 	if (m_autoDragTimerID) {
-		SDL_RemoveTimer(m_autoDragTimerID);
+		MORTAR_RemoveTimer(m_autoDragTimerID);
 		m_autoDragTimerID = 0;
 	}
 }
@@ -538,7 +538,7 @@ MxResult LegoInputManager::GetNavigationTouchStates(MxU32& p_keyStates)
 	return SUCCESS;
 }
 
-void LegoInputManager::AddKeyboard(SDL_KeyboardID p_keyboardID)
+void LegoInputManager::AddKeyboard(MORTAR_KeyboardID p_keyboardID)
 {
 	if (m_keyboards.count(p_keyboardID)) {
 		return;
@@ -547,7 +547,7 @@ void LegoInputManager::AddKeyboard(SDL_KeyboardID p_keyboardID)
 	m_keyboards[p_keyboardID] = {nullptr, nullptr};
 }
 
-void LegoInputManager::RemoveKeyboard(SDL_KeyboardID p_keyboardID)
+void LegoInputManager::RemoveKeyboard(MORTAR_KeyboardID p_keyboardID)
 {
 	if (!m_keyboards.count(p_keyboardID)) {
 		return;
@@ -556,17 +556,17 @@ void LegoInputManager::RemoveKeyboard(SDL_KeyboardID p_keyboardID)
 	m_keyboards.erase(p_keyboardID);
 }
 
-void LegoInputManager::AddMouse(SDL_MouseID p_mouseID)
+void LegoInputManager::AddMouse(MORTAR_MouseID p_mouseID)
 {
 	if (m_mice.count(p_mouseID)) {
 		return;
 	}
 
 	// Currently no way to get an individual haptic device for a mouse.
-	SDL_Haptic* haptic = SDL_OpenHapticFromMouse();
+	MORTAR_Haptic* haptic = MORTAR_OpenHapticFromMouse();
 	if (haptic) {
-		if (!SDL_InitHapticRumble(haptic)) {
-			SDL_CloseHaptic(haptic);
+		if (!MORTAR_InitHapticRumble(haptic)) {
+			MORTAR_CloseHaptic(haptic);
 			haptic = nullptr;
 		}
 	}
@@ -574,31 +574,31 @@ void LegoInputManager::AddMouse(SDL_MouseID p_mouseID)
 	m_mice[p_mouseID] = {nullptr, haptic};
 }
 
-void LegoInputManager::RemoveMouse(SDL_MouseID p_mouseID)
+void LegoInputManager::RemoveMouse(MORTAR_MouseID p_mouseID)
 {
 	if (!m_mice.count(p_mouseID)) {
 		return;
 	}
 
 	if (m_mice[p_mouseID].second) {
-		SDL_CloseHaptic(m_mice[p_mouseID].second);
+		MORTAR_CloseHaptic(m_mice[p_mouseID].second);
 	}
 
 	m_mice.erase(p_mouseID);
 }
 
-void LegoInputManager::AddJoystick(SDL_JoystickID p_joystickID)
+void LegoInputManager::AddJoystick(MORTAR_JoystickID p_joystickID)
 {
 	if (m_joysticks.count(p_joystickID)) {
 		return;
 	}
 
-	SDL_Gamepad* joystick = SDL_OpenGamepad(p_joystickID);
+	MORTAR_Gamepad* joystick = MORTAR_OpenGamepad(p_joystickID);
 	if (joystick) {
-		SDL_Haptic* haptic = SDL_OpenHapticFromJoystick(SDL_GetGamepadJoystick(joystick));
+		MORTAR_Haptic* haptic = MORTAR_OpenHapticFromJoystick(MORTAR_GetGamepadJoystick(joystick));
 		if (haptic) {
-			if (!SDL_InitHapticRumble(haptic)) {
-				SDL_CloseHaptic(haptic);
+			if (!MORTAR_InitHapticRumble(haptic)) {
+				MORTAR_CloseHaptic(haptic);
 				haptic = nullptr;
 			}
 		}
@@ -606,27 +606,27 @@ void LegoInputManager::AddJoystick(SDL_JoystickID p_joystickID)
 		m_joysticks[p_joystickID] = {joystick, haptic};
 	}
 	else {
-		SDL_Log("Failed to open gamepad: %s", SDL_GetError());
+		MORTAR_Log("Failed to open gamepad: %s", MORTAR_GetError());
 	}
 }
 
-void LegoInputManager::RemoveJoystick(SDL_JoystickID p_joystickID)
+void LegoInputManager::RemoveJoystick(MORTAR_JoystickID p_joystickID)
 {
 	if (!m_joysticks.count(p_joystickID)) {
 		return;
 	}
 
 	if (m_joysticks[p_joystickID].second) {
-		SDL_CloseHaptic(m_joysticks[p_joystickID].second);
+		MORTAR_CloseHaptic(m_joysticks[p_joystickID].second);
 	}
 
-	SDL_CloseGamepad(m_joysticks[p_joystickID].first);
+	MORTAR_CloseGamepad(m_joysticks[p_joystickID].first);
 	m_joysticks.erase(p_joystickID);
 }
 
-MxBool LegoInputManager::HandleTouchEvent(SDL_Event* p_event, TouchScheme p_touchScheme)
+MxBool LegoInputManager::HandleTouchEvent(MORTAR_Event* p_event, TouchScheme p_touchScheme)
 {
-	const SDL_TouchFingerEvent& event = p_event->tfinger;
+	const MORTAR_TouchFingerEvent& event = p_event->tfinger;
 	m_touchScheme = p_touchScheme;
 
 	switch (p_touchScheme) {
@@ -635,12 +635,12 @@ MxBool LegoInputManager::HandleTouchEvent(SDL_Event* p_event, TouchScheme p_touc
 		return FALSE;
 	case e_arrowKeys:
 		switch (p_event->type) {
-		case SDL_EVENT_FINGER_UP:
-		case SDL_EVENT_FINGER_CANCELED:
+		case MORTAR_EVENT_FINGER_UP:
+		case MORTAR_EVENT_FINGER_CANCELED:
 			m_touchFlags.erase(event.fingerID);
 			break;
-		case SDL_EVENT_FINGER_DOWN:
-		case SDL_EVENT_FINGER_MOTION:
+		case MORTAR_EVENT_FINGER_DOWN:
+		case MORTAR_EVENT_FINGER_MOTION:
 			m_touchFlags[event.fingerID] = 0;
 
 			if (event.y > 3.0 / 4.0) {
@@ -661,31 +661,31 @@ MxBool LegoInputManager::HandleTouchEvent(SDL_Event* p_event, TouchScheme p_touc
 		}
 		break;
 	case e_gamepad: {
-		static SDL_FingerID g_finger = (SDL_FingerID) 0;
+		static MORTAR_FingerID g_finger = (MORTAR_FingerID) 0;
 
 		switch (p_event->type) {
-		case SDL_EVENT_FINGER_DOWN:
+		case MORTAR_EVENT_FINGER_DOWN:
 			if (!g_finger) {
 				g_finger = event.fingerID;
 				m_touchVirtualThumb = {0, 0};
 				m_touchVirtualThumbOrigin = {event.x, event.y};
 			}
 			break;
-		case SDL_EVENT_FINGER_UP:
-		case SDL_EVENT_FINGER_CANCELED:
+		case MORTAR_EVENT_FINGER_UP:
+		case MORTAR_EVENT_FINGER_CANCELED:
 			if (event.fingerID == g_finger) {
 				g_finger = 0;
 				m_touchVirtualThumb = {0, 0};
 				m_touchVirtualThumbOrigin = {0, 0};
 			}
 			break;
-		case SDL_EVENT_FINGER_MOTION:
+		case MORTAR_EVENT_FINGER_MOTION:
 			if (event.fingerID == g_finger) {
 				const float thumbstickRadius = 0.25f;
 				const float deltaX =
-					SDL_clamp(event.x - m_touchVirtualThumbOrigin.x, -thumbstickRadius, thumbstickRadius);
+					MORTAR_clamp(event.x - m_touchVirtualThumbOrigin.x, -thumbstickRadius, thumbstickRadius);
 				const float deltaY =
-					SDL_clamp(event.y - m_touchVirtualThumbOrigin.y, -thumbstickRadius, thumbstickRadius);
+					MORTAR_clamp(event.y - m_touchVirtualThumbOrigin.y, -thumbstickRadius, thumbstickRadius);
 
 				m_touchVirtualThumb = {
 					(int) (deltaX / thumbstickRadius * 32767.0f),
@@ -715,21 +715,21 @@ MxBool LegoInputManager::HandleRumbleEvent(
 		g_hapticsInitialized = true;
 	}
 
-	SDL_Haptic* haptic = nullptr;
+	MORTAR_Haptic* haptic = nullptr;
 	std::visit(
 		overloaded{
-			[](SDL_KeyboardID_v p_id) {},
-			[&haptic, this](SDL_MouseID_v p_id) {
-				if (m_mice.count((SDL_MouseID) p_id)) {
-					haptic = m_mice[(SDL_MouseID) p_id].second;
+			[](MORTAR_KeyboardID_v p_id) {},
+			[&haptic, this](MORTAR_MouseID_v p_id) {
+				if (m_mice.count((MORTAR_MouseID) p_id)) {
+					haptic = m_mice[(MORTAR_MouseID) p_id].second;
 				}
 			},
-			[&haptic, this](SDL_JoystickID_v p_id) {
-				if (m_joysticks.count((SDL_JoystickID) p_id)) {
-					haptic = m_joysticks[(SDL_JoystickID) p_id].second;
+			[&haptic, this](MORTAR_JoystickID_v p_id) {
+				if (m_joysticks.count((MORTAR_JoystickID) p_id)) {
+					haptic = m_joysticks[(MORTAR_JoystickID) p_id].second;
 				}
 			},
-			[&haptic, this](SDL_TouchID_v p_id) {
+			[&haptic, this](MORTAR_TouchID_v p_id) {
 				// We can't currently correlate Touch devices with Haptic devices
 				if (!m_otherHaptics.empty()) {
 					haptic = m_otherHaptics.begin()->second;
@@ -740,16 +740,16 @@ MxBool LegoInputManager::HandleRumbleEvent(
 	);
 
 	if (haptic) {
-		return SDL_PlayHapticRumble(haptic, p_strength, p_milliseconds);
+		return MORTAR_PlayHapticRumble(haptic, p_strength, p_milliseconds);
 	}
 
 	// A joystick isn't necessarily a haptic device; try basic rumble instead
-	if (const SDL_JoystickID_v* joystick = std::get_if<SDL_JoystickID_v>(&m_lastInputMethod)) {
-		if (m_joysticks.count((SDL_JoystickID) *joystick)) {
-			return SDL_RumbleGamepad(
-				m_joysticks[(SDL_JoystickID) *joystick].first,
-				SDL_clamp(p_lowFrequencyRumble, 0, 1) * USHRT_MAX,
-				SDL_clamp(p_highFrequencyRumble, 0, 1) * USHRT_MAX,
+	if (const MORTAR_JoystickID_v* joystick = std::get_if<MORTAR_JoystickID_v>(&m_lastInputMethod)) {
+		if (m_joysticks.count((MORTAR_JoystickID) *joystick)) {
+			return MORTAR_RumbleGamepad(
+				m_joysticks[(MORTAR_JoystickID) *joystick].first,
+				MORTAR_clamp(p_lowFrequencyRumble, 0, 1) * USHRT_MAX,
+				MORTAR_clamp(p_highFrequencyRumble, 0, 1) * USHRT_MAX,
 				p_milliseconds
 			);
 		}
@@ -762,67 +762,67 @@ void LegoInputManager::InitializeHaptics()
 {
 	// We don't get added/removed events for haptic devices that are not joysticks or mice,
 	// so we initialize "otherHaptics" once at this point.
-	std::vector<SDL_HapticID> existingHaptics;
+	std::vector<MORTAR_HapticID> existingHaptics;
 
 	for (const auto& [id, mouse] : m_mice) {
 		if (mouse.second) {
-			existingHaptics.push_back(SDL_GetHapticID(mouse.second));
+			existingHaptics.push_back(MORTAR_GetHapticID(mouse.second));
 		}
 	}
 
 	for (const auto& [id, joystick] : m_joysticks) {
 		if (joystick.second) {
-			existingHaptics.push_back(SDL_GetHapticID(joystick.second));
+			existingHaptics.push_back(MORTAR_GetHapticID(joystick.second));
 		}
 	}
 
 	int count;
-	SDL_HapticID* haptics = SDL_GetHaptics(&count);
+	MORTAR_HapticID* haptics = MORTAR_GetHaptics(&count);
 	if (haptics) {
 		for (int i = 0; i < count; i++) {
 			if (std::find(existingHaptics.begin(), existingHaptics.end(), haptics[i]) == existingHaptics.end()) {
-				SDL_Haptic* haptic = SDL_OpenHaptic(haptics[i]);
+				MORTAR_Haptic* haptic = MORTAR_OpenHaptic(haptics[i]);
 				if (haptic) {
-					if (SDL_InitHapticRumble(haptic)) {
+					if (MORTAR_InitHapticRumble(haptic)) {
 						m_otherHaptics[haptics[i]] = haptic;
 					}
 					else {
-						SDL_CloseHaptic(haptic);
+						MORTAR_CloseHaptic(haptic);
 					}
 				}
 			}
 		}
 
-		SDL_free(haptics);
+		MORTAR_free(haptics);
 	}
 }
 
-void LegoInputManager::UpdateLastInputMethod(SDL_Event* p_event)
+void LegoInputManager::UpdateLastInputMethod(MORTAR_Event* p_event)
 {
 	switch (p_event->type) {
-	case SDL_EVENT_KEY_DOWN:
-	case SDL_EVENT_KEY_UP:
-		m_lastInputMethod = SDL_KeyboardID_v{p_event->key.which};
+	case MORTAR_EVENT_KEY_DOWN:
+	case MORTAR_EVENT_KEY_UP:
+		m_lastInputMethod = MORTAR_KeyboardID_v{p_event->key.which};
 		break;
-	case SDL_EVENT_MOUSE_BUTTON_DOWN:
-	case SDL_EVENT_MOUSE_BUTTON_UP:
-		m_lastInputMethod = SDL_MouseID_v{p_event->button.which};
+	case MORTAR_EVENT_MOUSE_BUTTON_DOWN:
+	case MORTAR_EVENT_MOUSE_BUTTON_UP:
+		m_lastInputMethod = MORTAR_MouseID_v{p_event->button.which};
 		break;
-	case SDL_EVENT_MOUSE_MOTION:
-		m_lastInputMethod = SDL_MouseID_v{p_event->motion.which};
+	case MORTAR_EVENT_MOUSE_MOTION:
+		m_lastInputMethod = MORTAR_MouseID_v{p_event->motion.which};
 		break;
-	case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
-	case SDL_EVENT_GAMEPAD_BUTTON_UP:
-		m_lastInputMethod = SDL_JoystickID_v{p_event->gbutton.which};
+	case MORTAR_EVENT_GAMEPAD_BUTTON_DOWN:
+	case MORTAR_EVENT_GAMEPAD_BUTTON_UP:
+		m_lastInputMethod = MORTAR_JoystickID_v{p_event->gbutton.which};
 		break;
-	case SDL_EVENT_GAMEPAD_AXIS_MOTION:
-		m_lastInputMethod = SDL_JoystickID_v{p_event->gaxis.which};
+	case MORTAR_EVENT_GAMEPAD_AXIS_MOTION:
+		m_lastInputMethod = MORTAR_JoystickID_v{p_event->gaxis.which};
 		break;
-	case SDL_EVENT_FINGER_MOTION:
-	case SDL_EVENT_FINGER_DOWN:
-	case SDL_EVENT_FINGER_UP:
-	case SDL_EVENT_FINGER_CANCELED:
-		m_lastInputMethod = SDL_TouchID_v{p_event->tfinger.touchID};
+	case MORTAR_EVENT_FINGER_MOTION:
+	case MORTAR_EVENT_FINGER_DOWN:
+	case MORTAR_EVENT_FINGER_UP:
+	case MORTAR_EVENT_FINGER_CANCELED:
+		m_lastInputMethod = MORTAR_TouchID_v{p_event->tfinger.touchID};
 		break;
 	}
 }
