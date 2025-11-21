@@ -109,8 +109,6 @@ private:
 	LegoCacheSound* m_sound;       // 0x24
 	MxBool m_hideAfterAnimation;   // 0x28
 	LegoWorld* m_world;            // 0x2c
-
-	friend class DebugViewer;
 };
 
 #endif // LEGOBUILDINGMANAGER_H

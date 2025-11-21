@@ -82,8 +82,6 @@ private:
 	AnimEntry* m_entries[5];       // 0x10
 	MxS8 m_numEntries;             // 0x24
 	LegoWorld* m_world;            // 0x28
-
-	friend class DebugViewer;
 };
 
 #endif // LEGOPLANTMANAGER_H
