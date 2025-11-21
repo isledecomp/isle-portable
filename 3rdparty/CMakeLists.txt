@@ -52,8 +52,8 @@ if(DOWNLOAD_DEPENDENCIES)
     include(FetchContent)
     FetchContent_Populate(
         libweaver
-        URL https://github.com/isledecomp/SIEdit/archive/ae447259389f3bf8273c7e7a4844743faf7cbdb8.tar.gz
-        URL_MD5 dee68424fde8db6d5cef3b9034a8151f
+        URL https://github.com/isledecomp/SIEdit/archive/afd4933844b95ef739a7e77b097deb7efe4ec576.tar.gz
+        URL_MD5 59fd3c36f4f380f730cd9bedfc846397
     )
     add_library(libweaver STATIC
         ${libweaver_SOURCE_DIR}/lib/core.cpp
@@ -62,7 +62,10 @@ if(DOWNLOAD_DEPENDENCIES)
         ${libweaver_SOURCE_DIR}/lib/object.cpp
         ${libweaver_SOURCE_DIR}/lib/sitypes.cpp
     )
-    add_Library(libweaver::libweaver ALIAS libweaver)
+    add_library(libweaver::libweaver ALIAS libweaver)
+    target_compile_definitions(libweaver PRIVATE $<$<BOOL:${WIN32}>:NOMINMAX>)
     target_include_directories(libweaver PUBLIC ${libweaver_SOURCE_DIR}/include/libweaver)
+    set_property(TARGET libweaver PROPERTY CXX_STANDARD 98)
+    set_property(TARGET libweaver PROPERTY CXX_STANDARD_REQUIRED ON)
 endif()
 
