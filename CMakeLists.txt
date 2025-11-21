@@ -42,7 +42,7 @@ if (NOT MINGW)
   set(NOT_MINGW ON)
 else()
   set(NOT_MINGW OFF)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static -static-libgcc -static-libstdc++")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-static -static-libgcc -static-libstdc++")
 endif()
 
 find_program(SDL_SHADERCROSS_BIN NAMES "shadercross")
@@ -194,6 +194,49 @@ target_link_directories(DirectX5::DirectX5 INTERFACE "${CMAKE_SOURCE_DIR}/3rdpar
 add_library(Vec::Vec INTERFACE IMPORTED)
 target_include_directories(Vec::Vec INTERFACE "${CMAKE_SOURCE_DIR}/3rdparty/vec")
 
+add_library(mortar
+    mortar/include/mortar/mortar.h
+    mortar/src/mortar.cpp
+    mortar/src/sdl3/sdl3_audio.cpp
+    mortar/src/sdl3/sdl3_cpuinfo.cpp
+    mortar/src/sdl3/sdl3_error.cpp
+    mortar/src/sdl3/sdl3_events.cpp
+    mortar/src/sdl3/sdl3_filesystem.cpp
+    mortar/src/sdl3/sdl3_gamepad.cpp
+    mortar/src/sdl3/sdl3_haptic.cpp
+    mortar/src/sdl3/sdl3_init.cpp
+    mortar/src/sdl3/sdl3_iostream.cpp
+    mortar/src/sdl3/sdl3_joystick.cpp
+    mortar/src/sdl3/sdl3_keyboard.cpp
+    mortar/src/sdl3/sdl3_keycode.cpp
+    mortar/src/sdl3/sdl3_log.cpp
+    mortar/src/sdl3/sdl3_main.cpp
+    mortar/src/sdl3/sdl3_messagebox.cpp
+    mortar/src/sdl3/sdl3_mouse.cpp
+    mortar/src/sdl3/sdl3_mutex.cpp
+    mortar/src/sdl3/sdl3_pixels.cpp
+    mortar/src/sdl3/sdl3_process.cpp
+    mortar/src/sdl3/sdl3_rect.cpp
+    mortar/src/sdl3/sdl3_render.cpp
+    mortar/src/sdl3/sdl3_stdinc.cpp
+    mortar/src/sdl3/sdl3_surface.cpp
+    mortar/src/sdl3/sdl3_system.cpp
+    mortar/src/sdl3/sdl3_thread.cpp
+    mortar/src/sdl3/sdl3_timer.cpp
+    mortar/src/sdl3/sdl3_video.cpp
+)
+add_library(mortar::mortar ALIAS mortar)
+target_include_directories(mortar PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/mortar/include>")
+target_include_directories(mortar PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/mortar/glad/include>")
+target_link_libraries(mortar PRIVATE SDL3::SDL3)
+if(BUILD_SHARED_LIBS AND WIN32)
+  set_property(TARGET mortar PROPERTY PREFIX "")
+endif()
+set_property(TARGET mortar PROPERTY DEFINE_SYMBOL "BUILDING_MORTAR")
+set_property(TARGET mortar PROPERTY C_VISIBILITY_PRESET "hidden")
+set_property(TARGET mortar PROPERTY CXX_VISIBILITY_PRESET "hidden")
+target_compile_definitions(mortar PUBLIC $<$<BOOL:${BUILD_SHARED_LIBS}>:MORTAR_DLL>)
+
 add_library(lego1
   LEGO1/main.cpp
 )
@@ -207,8 +250,7 @@ target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/L
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/LEGO1/lego/sources>")
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/LEGO1/lego/legoomni/include>")
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/LEGO1/lego/legoomni/include/actions>")
-target_link_libraries(lego1 PRIVATE SDL3::SDL3)
-target_link_libraries(lego1 PUBLIC SDL3::Headers)
+target_link_libraries(lego1 PRIVATE mortar::mortar)
 target_link_libraries(lego1 PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5>)
 # Allow unconditional include of miniwin/miniwind3d.h
 target_link_libraries(lego1 PRIVATE miniwin-headers)
@@ -557,8 +599,9 @@ if (ISLE_BUILD_APP)
   # Use internal DirectX 5 if required
   target_link_libraries(isle PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5>)
 
-  # Link SDL and iniparser
-  target_link_libraries(isle PRIVATE SDL3::SDL3 Isle::iniparser)
+  # Link mortar and iniparser
+  target_link_libraries(isle PRIVATE mortar::mortar)
+  target_link_libraries(isle PRIVATE Isle::iniparser)
 
   # Allow unconditional include of miniwin/miniwindevice.h
   target_link_libraries(isle PRIVATE miniwin-headers)
@@ -665,6 +708,7 @@ if (ISLE_BUILD_CONFIG)
     CONFIG/qt/res/config.qrc
   )
   target_link_libraries(isle-config PRIVATE Qt6::Core Qt6::Widgets)
+  target_link_libraries(isle-config PRIVATE mortar::mortar)
   set_property(TARGET isle-config PROPERTY AUTOMOC ON)
   set_property(TARGET isle-config PROPERTY AUTORCC ON)
   set_property(TARGET isle-config PROPERTY AUTOUIC ON)
@@ -677,7 +721,7 @@ if (ISLE_BUILD_CONFIG)
     target_link_libraries(isle-config PRIVATE DirectX5::DirectX5)
   endif()
   target_compile_definitions(isle-config PRIVATE DIRECT3D_VERSION=0x500)
-  target_link_libraries(isle-config PRIVATE SDL3::SDL3 Isle::iniparser)
+  target_link_libraries(isle-config PRIVATE Isle::iniparser)
   if (NOT ISLE_MINIWIN)
     target_link_libraries(isle-config PRIVATE ddraw dxguid)
   endif()

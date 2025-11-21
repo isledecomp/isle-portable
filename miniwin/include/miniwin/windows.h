@@ -1,6 +1,7 @@
 #pragma once
 
-#include <SDL3/SDL_video.h>
+#include <mortar/mortar.h>
+
 #include <limits.h>
 #include <stdint.h>
 #include <string.h>

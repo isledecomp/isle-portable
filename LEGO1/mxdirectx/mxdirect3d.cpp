@@ -5,7 +5,7 @@
 #include "mxdirect3d.h"
 #include "mxvideoparam.h"
 
-#include <SDL3/SDL.h> // for SDL_Log
+#include <mortar/mortar.h>
 #include <assert.h>
 #include <miniwin/miniwind3d.h>
 
@@ -72,11 +72,7 @@ BOOL MxDirect3D::Create(
 	}
 
 	if (m_pDirect3d->QueryInterface(IID_IDirect3DMiniwin, (void**) &miniwind3d) == DD_OK) {
-		MxVideoParam* videoParam = (MxVideoParam*) SDL_GetPointerProperty(
-			SDL_GetWindowProperties(reinterpret_cast<SDL_Window*>(hWnd)),
-			ISLE_PROP_WINDOW_CREATE_VIDEO_PARAM,
-			nullptr
-		);
+		MxVideoParam* videoParam = (MxVideoParam*)MORTAR_EXT_GetWindowProperty(reinterpret_cast<MORTAR_Window*>(hWnd), MORTAR_WINDOW_PROPERTY_USER, nullptr);
 #ifndef MXDIRECTX_FOR_CONFIG
 		assert(videoParam);
 #endif
@@ -197,12 +193,12 @@ BOOL MxDirect3D::D3DSetMode()
 	ddBltFx.dwFillColor = 0xFF000000;
 
 	if (backBuffer->Blt(NULL, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &ddBltFx) != DD_OK) {
-		SDL_Log("MxDirect3D::D3DSetMode() color fill failed\n");
+		MORTAR_Log("MxDirect3D::D3DSetMode() color fill failed\n");
 	}
 
 	if (IsFullScreen()) {
 		if (frontBuffer->Blt(NULL, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &ddBltFx) != DD_OK) {
-			SDL_Log("MxDirect3D::D3DSetMode() front lock failed\n");
+			MORTAR_Log("MxDirect3D::D3DSetMode() front lock failed\n");
 		}
 	}
 

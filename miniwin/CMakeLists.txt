@@ -131,6 +131,12 @@ if(USE_SDL_GPU IN_LIST GRAPHICS_BACKENDS)
     src/d3drm/backends/sdl3gpu/renderer.cpp
     src/d3drm/backends/sdl3gpu/shaders/generated/ShaderIndex.cpp
   )
+  set_property(SOURCE
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/d3drm/backends/sdl3gpu/renderer.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/d3drm/backends/sdl3gpu/shaders/generated/ShaderIndex.cpp"
+    APPEND PROPERTY INCLUDE_DIRECTORIES "$<TARGET_PROPERTY:SDL3::Headers,INTERFACE_INCLUDE_DIRECTORIES>"
+  )
+  target_link_libraries(miniwin PRIVATE SDL3::SDL3)
 endif()
 
 if(USE_SOFTWARE_RENDER IN_LIST GRAPHICS_BACKENDS)
@@ -148,7 +154,7 @@ target_include_directories(miniwin
 )
 target_link_libraries(miniwin PUBLIC miniwin-headers)
 
-target_link_libraries(miniwin PRIVATE SDL3::SDL3)
+target_link_libraries(miniwin PRIVATE mortar::mortar)
 
 target_compile_definitions(miniwin PUBLIC ${GRAPHICS_BACKENDS})
 
@@ -251,4 +257,3 @@ if(ISLE_COMPILE_SHADERS)
       "--shader-jsons" ${shader_jsons}
     DEPENDS "${py_gencshadersource}" ${shader_headers} ${shader_jsons})
 endif()
-target_sources(miniwin PRIVATE "${index}" "${index_cpp}")

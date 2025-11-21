@@ -5,7 +5,7 @@
 #include "mxgeometry/mxgeometry3d.h"
 #include "mxstring.h"
 
-#include <SDL3/SDL_iostream.h>
+#include <mortar/mortar_iostream.h>
 #include <assert.h>
 
 // VTABLE: LEGO1 0x100d7d80
@@ -241,7 +241,7 @@ public:
 	// LegoFile::`scalar deleting destructor'
 
 protected:
-	SDL_IOStream* m_file; // 0x08
+	MORTAR_IOStream* m_file; // 0x08
 };
 
 #endif // __LEGOSTORAGE_H

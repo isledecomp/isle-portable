@@ -709,11 +709,11 @@ MxU8 Infocenter::HandleMouseMove(MxS32 p_x, MxS32 p_y)
 
 // FUNCTION: LEGO1 0x1006fda0
 // FUNCTION: BETA10 0x1002f907
-MxLong Infocenter::HandleKeyPress(SDL_Keycode p_key)
+MxLong Infocenter::HandleKeyPress(MORTAR_Keycode p_key)
 {
 	MxLong result = 0;
 
-	if (p_key == SDLK_SPACE && m_worldStarted) {
+	if (p_key == MORTARK_SPACE && m_worldStarted) {
 		switch (m_infocenterState->m_state) {
 		case InfocenterState::e_playCutscene:
 			StopCutscene();

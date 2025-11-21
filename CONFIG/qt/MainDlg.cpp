@@ -13,7 +13,7 @@
 #include <QKeyEvent>
 #include <QMessageBox>
 #include <QProcess>
-#include <SDL3/SDL.h>
+#include <mortar/mortar.h>
 #include <cmath>
 #include <mxdirectx/legodxinfo.h>
 #include <ui_maindialog.h>
@@ -181,7 +181,7 @@ bool CMainDialog::OnInitDialog()
 	m_ui->exFullResComboBox->clear();
 
 	int displayModeCount;
-	displayModes = SDL_GetFullscreenDisplayModes(SDL_GetPrimaryDisplay(), &displayModeCount);
+	displayModes = MORTAR_GetFullscreenDisplayModes(MORTAR_GetPrimaryDisplay(), &displayModeCount);
 
 	for (int i = 0; i < displayModeCount; ++i) {
 		QString mode =

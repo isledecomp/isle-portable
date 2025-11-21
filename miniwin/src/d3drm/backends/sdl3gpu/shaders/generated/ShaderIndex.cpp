@@ -9,6 +9,8 @@
 #include "PositionColor.vert.h"
 #include "SolidColor.frag.h"
 
+#include <mortar/mortar.h>
+
 #if defined(SDL_PLATFORM_WINDOWS)
 static const SDL_GPUShaderCreateInfo VertexShaderDXILCodes[] = {
   // VertexShaderId::SolidColor
@@ -152,7 +154,7 @@ const SDL_GPUShaderCreateInfo* GetVertexShaderCode(VertexShaderId id, SDL_GPUSha
     SDL_assert(id < SDL_arraysize(VertexShaderSPIRVCodes));
     return &VertexShaderSPIRVCodes[id];
   }
-  SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Could not find vertex shader code for id=%d and formats=0x%x", id, formats);
+  MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "Could not find vertex shader code for id=%d and formats=0x%x", id, formats);
   return nullptr;
 }
 
@@ -177,6 +179,6 @@ const SDL_GPUShaderCreateInfo* GetFragmentShaderCode(FragmentShaderId id, SDL_GP
     SDL_assert(id < SDL_arraysize(FragmentShaderSPIRVCodes));
     return &FragmentShaderSPIRVCodes[id];
   }
-  SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Could not find fragment shader code for id=%d and formats=0x%x", id, formats);
+  MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "Could not find fragment shader code for id=%d and formats=0x%x", id, formats);
   return nullptr;
 }
