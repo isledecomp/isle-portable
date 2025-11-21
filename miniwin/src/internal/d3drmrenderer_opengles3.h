@@ -14,14 +14,14 @@
 #else
 #include <GLES3/gl3.h>
 #endif
-#include <SDL3/SDL.h>
+#include <mortar/mortar.h>
 #include <vector>
 
 DEFINE_GUID(OpenGLES3_GUID, 0x682656F3, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04);
 
 struct GLES3TextureCacheEntry {
 	IDirect3DRMTexture* texture;
-	Uint32 version;
+	uint32_t version;
 	GLuint glTextureId;
 	uint16_t width;
 	uint16_t height;
@@ -48,7 +48,7 @@ public:
 		DWORD height,
 		DWORD msaaSamples,
 		float anisotropic,
-		SDL_GLContext context,
+		MORTAR_GLContext context,
 		GLuint shaderProgram
 	);
 	~OpenGLES3Renderer() override;
@@ -56,8 +56,8 @@ public:
 	void PushLights(const SceneLight* lightsArray, size_t count) override;
 	void SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back) override;
 	void SetFrustumPlanes(const Plane* frustumPlanes) override;
-	Uint32 GetTextureId(IDirect3DRMTexture* texture, bool isUI, float scaleX, float scaleY) override;
-	Uint32 GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup) override;
+	uint32_t GetTextureId(IDirect3DRMTexture* texture, bool isUI, float scaleX, float scaleY) override;
+	uint32_t GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup) override;
 	HRESULT BeginFrame() override;
 	void EnableTransparency() override;
 	void SubmitDraw(
@@ -72,25 +72,25 @@ public:
 	void Resize(int width, int height, const ViewportTransform& viewportTransform) override;
 	void Clear(float r, float g, float b) override;
 	void Flip() override;
-	void Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect, FColor color) override;
-	void Download(SDL_Surface* target) override;
+	void Draw2DImage(uint32_t textureId, const MORTAR_Rect& srcRect, const MORTAR_Rect& dstRect, FColor color) override;
+	void Download(MORTAR_Surface* target) override;
 	void SetDither(bool dither) override;
 
 private:
-	void AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture);
-	void AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh);
+	void AddTextureDestroyCallback(uint32_t id, IDirect3DRMTexture* texture);
+	void AddMeshDestroyCallback(uint32_t id, IDirect3DRMMesh* mesh);
 	GLES3MeshCacheEntry GLES3UploadMesh(const MeshGroup& meshGroup, bool forceUV = false);
-	bool UploadTexture(SDL_Surface* source, GLuint& outTexId, bool isUI);
+	bool UploadTexture(MORTAR_Surface* source, GLuint& outTexId, bool isUI);
 
 	MeshGroup m_uiMesh;
 	GLES3MeshCacheEntry m_uiMeshCache;
 	std::vector<GLES3TextureCacheEntry> m_textures;
 	std::vector<GLES3MeshCacheEntry> m_meshs;
 	D3DRMMATRIX4D m_projection;
-	SDL_Surface* m_renderedImage = nullptr;
+	MORTAR_Surface* m_renderedImage = nullptr;
 	bool m_dirty = false;
 	std::vector<SceneLight> m_lights;
-	SDL_GLContext m_context;
+	MORTAR_GLContext m_context;
 	uint32_t m_msaa;
 	float m_anisotropic;
 	GLuint m_fbo;

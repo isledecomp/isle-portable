@@ -2,8 +2,8 @@
 
 #include "decomp.h"
 
-#include <SDL3/SDL_log.h>
-#include <assert.h>
+#include <cassert>
+#include <mortar/mortar_log.h>
 
 DECOMP_SIZE_ASSERT(MxDirectDraw, 0x880)
 
@@ -733,7 +733,7 @@ void MxDirectDraw::Error(const char* p_message, int p_error)
 
 	g_isInsideError = TRUE;
 	Destroy();
-	SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "MxDirectDraw error: [0x%08x] %s", p_error, p_message);
+	MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "MxDirectDraw error: [0x%08x] %s", p_error, p_message);
 	if (m_pErrorHandler) {
 		m_pErrorHandler(p_message, p_error, m_pErrorHandlerArg);
 	}

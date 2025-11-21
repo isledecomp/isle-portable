@@ -15,8 +15,6 @@
 
 class MxPalette;
 
-#define ISLE_PROP_WINDOW_CREATE_VIDEO_PARAM "ISLE.window.create.videoParam"
-
 // SIZE 0x24
 class MxVideoParam {
 public:

@@ -6,7 +6,7 @@
 #include "ddpalette_impl.h"
 #include "ddraw_impl.h"
 
-#include <SDL3/SDL.h>
+#include <mortar/mortar.h>
 #include <psp2/gxm.h>
 #include <psp2/kernel/clib.h>
 #include <psp2/types.h>
@@ -21,7 +21,7 @@ DEFINE_GUID(GXM_GUID, 0x682656F3, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 
 
 struct GXMTextureCacheEntry {
 	IDirect3DRMTexture* texture;
-	Uint32 version;
+	uint32_t version;
 	SceGxmTexture gxmTexture;
 	SceGxmNotification* notification; // latest frame it was used in
 };
@@ -58,8 +58,8 @@ public:
 	void PushLights(const SceneLight* lightsArray, size_t count) override;
 	void SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back) override;
 	void SetFrustumPlanes(const Plane* frustumPlanes) override;
-	Uint32 GetTextureId(IDirect3DRMTexture* texture, bool isUi, float scaleX, float scaleY) override;
-	Uint32 GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup) override;
+	uint32_t GetTextureId(IDirect3DRMTexture* texture, bool isUi, float scaleX, float scaleY) override;
+	uint32_t GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup) override;
 	HRESULT BeginFrame() override;
 	void EnableTransparency() override;
 	void SubmitDraw(
@@ -74,15 +74,15 @@ public:
 	void Resize(int width, int height, const ViewportTransform& viewportTransform) override;
 	void Clear(float r, float g, float b) override;
 	void Flip() override;
-	void Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect, FColor color) override;
-	void Download(SDL_Surface* target) override;
+	void Draw2DImage(uint32_t textureId, const MORTAR_Rect& srcRect, const MORTAR_Rect& dstRect, FColor color) override;
+	void Download(MORTAR_Surface* target) override;
 	void SetDither(bool dither) override;
 
 	void DeferredDelete(int index);
 
 private:
-	void AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture);
-	void AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh);
+	void AddTextureDestroyCallback(uint32_t id, IDirect3DRMTexture* texture);
+	void AddMeshDestroyCallback(uint32_t id, IDirect3DRMMesh* mesh);
 
 	GXMMeshCacheEntry GXMUploadMesh(const MeshGroup& meshGroup);
 
@@ -94,7 +94,7 @@ private:
 		GXMVertex2D* verts = &this->quadVertices[this->currentVertexBufferIndex][this->quadsUsed * 4];
 		this->quadsUsed += 1;
 		if (this->quadsUsed >= 50) {
-			SDL_Log("QuadVerticesBuffer overflow");
+			MORTAR_Log("QuadVerticesBuffer overflow");
 			this->quadsUsed = 0; // declare bankruptcy
 		}
 		return verts;
@@ -173,7 +173,7 @@ inline static void GXMRenderer_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx
 
 	int ret = gxm_library_init();
 	if (ret < 0) {
-		SDL_Log("gxm_library_init failed: %08x", ret);
+		MORTAR_Log("gxm_library_init failed: %08x", ret);
 		return;
 	}
 

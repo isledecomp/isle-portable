@@ -9,7 +9,7 @@ MxAutoLock::MxAutoLock(MxCriticalSection* p_criticalSection, const char* filenam
 	m_criticalSection = p_criticalSection;
 	m_currentThreadId = GetCurrentThreadId();
 
-	if (m_criticalSection != NULL) {
+	if (m_criticalSection != nullptr) {
 		m_criticalSection->Enter(m_currentThreadId, filename, line);
 	}
 }
@@ -19,7 +19,7 @@ MxAutoLock::MxAutoLock(MxCriticalSection* p_criticalSection)
 {
 	m_criticalSection = p_criticalSection;
 
-	if (m_criticalSection != NULL) {
+	if (m_criticalSection != nullptr) {
 		m_criticalSection->Enter();
 	}
 }
@@ -29,7 +29,7 @@ MxAutoLock::MxAutoLock(MxCriticalSection* p_criticalSection)
 // FUNCTION: BETA10 0x10138744
 MxAutoLock::~MxAutoLock()
 {
-	if (m_criticalSection != NULL) {
+	if (m_criticalSection != nullptr) {
 		m_criticalSection->Leave();
 	}
 }

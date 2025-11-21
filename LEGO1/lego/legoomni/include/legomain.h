@@ -7,8 +7,8 @@
 #include "mxdsaction.h"
 #include "mxmain.h"
 
-#include <SDL3/SDL_events.h>
-#include <SDL3/SDL_timer.h>
+#include <mortar/mortar_events.h>
+#include <mortar/mortar_timer.h>
 
 class Isle;
 class LegoAnimationManager;
@@ -196,14 +196,13 @@ public:
 
 	void CloseMainWindow()
 	{
-		SDL_QuitEvent quit;
-		quit.type = SDL_EVENT_QUIT;
-		quit.timestamp = SDL_GetTicksNS();
+		MORTAR_Event event;
+		MORTAR_zero(event);
 
-		SDL_Event event;
-		event.quit = quit;
+		event.quit.type = MORTAR_EVENT_QUIT;
+		event.quit.timestamp = MORTAR_GetTicksNS();
 
-		SDL_PushEvent(&event);
+		MORTAR_PushEvent(&event);
 	}
 
 	void SetVersion10(MxBool p_version10) { m_version10 = p_version10; }

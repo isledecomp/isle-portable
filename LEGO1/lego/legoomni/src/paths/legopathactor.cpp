@@ -16,7 +16,7 @@
 #include "mxutilities.h"
 #include "mxvariabletable.h"
 
-#include <SDL3/SDL.h>
+#include <mortar/mortar.h>
 #include <mxdebug.h>
 #include <vec.h>
 
@@ -729,7 +729,7 @@ void LegoPathActor::VTable0xa4(MxBool& p_und1, MxS32& p_und2)
 	case c_nick:
 	case c_brickster:
 		p_und1 = TRUE;
-		p_und2 = SDL_rand(p_und2) + 1;
+		p_und2 = MORTAR_rand(p_und2) + 1;
 		break;
 	case c_laura:
 		p_und1 = FALSE;

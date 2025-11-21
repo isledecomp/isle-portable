@@ -9,8 +9,8 @@
 #include "mxgeometry.h"
 #include "mxpresenterlist.h"
 
-#include <SDL3/SDL_stdinc.h>
 #include <assert.h>
+#include <mortar/mortar_stdinc.h>
 
 LegoSdlEvents g_legoSdlEvents;
 
@@ -75,7 +75,7 @@ void MakeSourceName(char* p_output, const char* p_input)
 
 	strcpy(p_output, p_input);
 
-	SDL_strlwr(p_output);
+	MORTAR_strlwr(p_output);
 
 	char* extLoc = strstr(p_output, ".si");
 	if (extLoc) {
@@ -100,7 +100,7 @@ MxBool KeyValueStringParse(char* p_output, const char* p_command, const char* p_
 	for (char* token = strtok(string, delim); token; token = strtok(NULL, delim)) {
 		len -= (strlen(token) + 1);
 
-		if (SDL_strcasecmp(token, p_command) == 0) {
+		if (MORTAR_strcasecmp(token, p_command) == 0) {
 			if (p_output && len > 0) {
 				char* output = p_output;
 				char* cur = &token[strlen(p_command)];
