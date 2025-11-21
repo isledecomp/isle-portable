@@ -11,10 +11,10 @@ jobs:
     name: 'clang-format'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Run clang-format
         run: |
-          find CONFIG LEGO1 ISLE miniwin -iname '*.h' -o -iname '*.cpp' | xargs \
+          find CONFIG LEGO1 ISLE miniwin mortar -iname '*.h' -o -iname '*.cpp' | xargs \
           pipx run "clang-format>=17,<18" \
             --style=file \
             -i
@@ -132,7 +132,7 @@ jobs:
           echo "$VITASDK/bin" >> $GITHUB_PATH
           ./install-all.sh
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Checkout LFS
         if: ${{ matrix.build-assets }}
@@ -197,7 +197,7 @@ jobs:
           success=0
           max_tries=10
           for i in $(seq $max_tries); do
-            cpack . && success=1
+            cpack . -C Release && success=1
             if test $success = 1; then
               break
             fi
@@ -296,7 +296,7 @@ jobs:
       options: --privileged
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Build Flatpak
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
@@ -310,7 +310,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v1
@@ -360,7 +360,7 @@ jobs:
           merge-multiple: true
 
       - name: Checkout uploadtool
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: 'probonopd/uploadtool'
           path: 'uploadtool'

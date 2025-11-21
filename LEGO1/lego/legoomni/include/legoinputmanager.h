@@ -8,11 +8,7 @@
 #include "mxpresenter.h"
 #include "mxqueue.h"
 
-#include <SDL3/SDL_haptic.h>
-#include <SDL3/SDL_joystick.h>
-#include <SDL3/SDL_keyboard.h>
-#include <SDL3/SDL_keycode.h>
-#include <SDL3/SDL_timer.h>
+#include <mortar/mortar.h>
 #ifdef MINIWIN
 #include "miniwin/windows.h"
 #else
@@ -103,7 +99,7 @@ public:
 	LegoInputManager();
 	~LegoInputManager() override;
 
-	LEGO1_EXPORT void QueueEvent(NotificationId p_id, MxU8 p_modifier, MxLong p_x, MxLong p_y, SDL_Keycode p_key);
+	LEGO1_EXPORT void QueueEvent(NotificationId p_id, MxU8 p_modifier, MxLong p_x, MxLong p_y, MORTAR_Keycode p_key);
 	void Register(MxCore*);
 	void UnRegister(MxCore*);
 
@@ -156,23 +152,23 @@ public:
 	void GetKeyboardState();
 	MxResult GetNavigationKeyStates(MxU32& p_keyFlags);
 	MxResult GetNavigationTouchStates(MxU32& p_keyFlags);
-	LEGO1_EXPORT void AddKeyboard(SDL_KeyboardID p_keyboardID);
-	LEGO1_EXPORT void RemoveKeyboard(SDL_KeyboardID p_keyboardID);
-	LEGO1_EXPORT void AddMouse(SDL_MouseID p_mouseID);
-	LEGO1_EXPORT void RemoveMouse(SDL_MouseID p_mouseID);
-	LEGO1_EXPORT void AddJoystick(SDL_JoystickID p_joystickID);
-	LEGO1_EXPORT void RemoveJoystick(SDL_JoystickID p_joystickID);
-	LEGO1_EXPORT MxBool HandleTouchEvent(SDL_Event* p_event, TouchScheme p_touchScheme);
+	LEGO1_EXPORT void AddKeyboard(MORTAR_KeyboardID p_keyboardID);
+	LEGO1_EXPORT void RemoveKeyboard(MORTAR_KeyboardID p_keyboardID);
+	LEGO1_EXPORT void AddMouse(MORTAR_MouseID p_mouseID);
+	LEGO1_EXPORT void RemoveMouse(MORTAR_MouseID p_mouseID);
+	LEGO1_EXPORT void AddJoystick(MORTAR_JoystickID p_joystickID);
+	LEGO1_EXPORT void RemoveJoystick(MORTAR_JoystickID p_joystickID);
+	LEGO1_EXPORT MxBool HandleTouchEvent(MORTAR_Event* p_event, TouchScheme p_touchScheme);
 	LEGO1_EXPORT MxBool
 	HandleRumbleEvent(float p_strength, float p_lowFrequencyRumble, float p_highFrequencyRumble, MxU32 p_milliseconds);
-	LEGO1_EXPORT void UpdateLastInputMethod(SDL_Event* p_event);
+	LEGO1_EXPORT void UpdateLastInputMethod(MORTAR_Event* p_event);
 	const auto& GetLastInputMethod() { return m_lastInputMethod; }
 
 	// clang-format off
-	enum class SDL_KeyboardID_v : SDL_KeyboardID {};
-	enum class SDL_MouseID_v : SDL_MouseID {};
-	enum class SDL_JoystickID_v : SDL_JoystickID {};
-	enum class SDL_TouchID_v : SDL_TouchID {};
+	enum class MORTAR_KeyboardID_v : MORTAR_KeyboardID {};
+	enum class MORTAR_MouseID_v : MORTAR_MouseID {};
+	enum class MORTAR_JoystickID_v : MORTAR_JoystickID {};
+	enum class MORTAR_TouchID_v : MORTAR_TouchID {};
 	// clang-format on
 
 	// SYNTHETIC: LEGO1 0x1005b8d0
@@ -189,7 +185,7 @@ private:
 	MxS32 m_x;                            // 0x6c
 	MxS32 m_y;                            // 0x70
 	MxS32 m_unk0x74;                      // 0x74
-	SDL_TimerID m_autoDragTimerID;        // 0x78
+	MORTAR_TimerID m_autoDragTimerID;     // 0x78
 	UINT m_autoDragTime;                  // 0x7c
 	MxBool m_unk0x80;                     // 0x80
 	MxBool m_unk0x81;                     // 0x81
@@ -202,14 +198,14 @@ private:
 
 	MxBool m_wasd;
 	TouchScheme m_touchScheme = e_none;
-	SDL_Point m_touchVirtualThumb = {0, 0};
-	SDL_FPoint m_touchVirtualThumbOrigin;
-	std::map<SDL_FingerID, MxU32> m_touchFlags;
-	std::map<SDL_KeyboardID, std::pair<void*, void*>> m_keyboards;
-	std::map<SDL_MouseID, std::pair<void*, SDL_Haptic*>> m_mice;
-	std::map<SDL_JoystickID, std::pair<SDL_Gamepad*, SDL_Haptic*>> m_joysticks;
-	std::map<SDL_HapticID, SDL_Haptic*> m_otherHaptics;
-	std::variant<SDL_KeyboardID_v, SDL_MouseID_v, SDL_JoystickID_v, SDL_TouchID_v> m_lastInputMethod;
+	MORTAR_Point m_touchVirtualThumb = {0, 0};
+	MORTAR_FPoint m_touchVirtualThumbOrigin;
+	std::map<MORTAR_FingerID, MxU32> m_touchFlags;
+	std::map<MORTAR_KeyboardID, std::pair<void*, void*>> m_keyboards;
+	std::map<MORTAR_MouseID, std::pair<void*, MORTAR_Haptic*>> m_mice;
+	std::map<MORTAR_JoystickID, std::pair<MORTAR_Gamepad*, MORTAR_Haptic*>> m_joysticks;
+	std::map<MORTAR_HapticID, MORTAR_Haptic*> m_otherHaptics;
+	std::variant<MORTAR_KeyboardID_v, MORTAR_MouseID_v, MORTAR_JoystickID_v, MORTAR_TouchID_v> m_lastInputMethod;
 };
 
 // TEMPLATE: LEGO1 0x10028850

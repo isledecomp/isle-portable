@@ -7,7 +7,7 @@
 #include "shape/legomesh.h"
 #include "tgl/d3drm/impl.h"
 
-#include <SDL3/SDL_stdinc.h>
+#include <mortar/mortar_stdinc.h>
 
 DECOMP_SIZE_ASSERT(LODObject, 0x04)
 DECOMP_SIZE_ASSERT(ViewLOD, 0x0c)
@@ -519,7 +519,7 @@ LegoResult LegoLOD::GetTextureInfo(LegoTextureInfo*& p_textureInfo)
 // FUNCTION: BETA10 0x1018e46d
 LegoBool LegoLOD::HasInhPrefix(const LegoChar* p_name)
 {
-	if (p_name != NULL && !SDL_strncasecmp(p_name, g_InhPrefix, strlen(g_InhPrefix))) {
+	if (p_name != NULL && !MORTAR_strncasecmp(p_name, g_InhPrefix, strlen(g_InhPrefix))) {
 		return TRUE;
 	}
 	else {

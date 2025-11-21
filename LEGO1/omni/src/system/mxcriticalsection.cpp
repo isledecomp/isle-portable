@@ -11,14 +11,14 @@ MxS32 g_useMutex = FALSE;
 // FUNCTION: LEGO1 0x100b6d20
 MxCriticalSection::MxCriticalSection()
 {
-	m_mutex = SDL_CreateMutex();
+	m_mutex = MORTAR_CreateMutex();
 }
 
 // FUNCTION: LEGO1 0x100b6d60
 MxCriticalSection::~MxCriticalSection()
 {
 	if (m_mutex != NULL) {
-		SDL_DestroyMutex(m_mutex);
+		MORTAR_DestroyMutex(m_mutex);
 	}
 }
 
@@ -53,7 +53,7 @@ void MxCriticalSection::Enter(unsigned long p_threadId, const char* filename, in
 // FUNCTION: LEGO1 0x100b6d80
 void MxCriticalSection::Enter()
 {
-	SDL_LockMutex(m_mutex);
+	MORTAR_LockMutex(m_mutex);
 }
 #endif
 
@@ -61,7 +61,7 @@ void MxCriticalSection::Enter()
 // FUNCTION: BETA10 0x1013c7ef
 void MxCriticalSection::Leave()
 {
-	SDL_UnlockMutex(m_mutex);
+	MORTAR_UnlockMutex(m_mutex);
 }
 
 // FUNCTION: LEGO1 0x100b6e00

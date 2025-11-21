@@ -19,8 +19,8 @@
 #include "tgl/d3drm/impl.h"
 #include "viewmanager/viewroi.h"
 
-#include <SDL3/SDL_log.h>
-#include <SDL3/SDL_stdinc.h>
+#include <mortar/mortar_log.h>
+#include <mortar/mortar_stdinc.h>
 #include <stdio.h>
 
 DECOMP_SIZE_ASSERT(LegoVideoManager, 0x590)
@@ -97,7 +97,7 @@ MxResult LegoVideoManager::Create(MxVideoParam& p_videoParam, MxU32 p_frequencyM
 		p_videoParam.SetPalette(palette);
 
 		if (!p_videoParam.GetPalette()) {
-			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "MxPalette::GetPalette returned NULL palette");
+			MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "MxPalette::GetPalette returned NULL palette");
 			goto done;
 		}
 		paletteCreated = TRUE;
@@ -107,12 +107,12 @@ MxResult LegoVideoManager::Create(MxVideoParam& p_videoParam, MxU32 p_frequencyM
 	p_videoParam.GetPalette()->GetEntries(paletteEntries);
 
 	if (CreateDirect3D() != SUCCESS) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "::CreateDirect3D failed");
+		MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "::CreateDirect3D failed");
 		goto done;
 	}
 
 	if (deviceEnumerate.DoEnumerate(hwnd) != SUCCESS) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "LegoDeviceEnumerate::DoEnumerate failed");
+		MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "LegoDeviceEnumerate::DoEnumerate failed");
 		goto done;
 	}
 
@@ -153,7 +153,7 @@ MxResult LegoVideoManager::Create(MxVideoParam& p_videoParam, MxU32 p_frequencyM
 			paletteEntries,
 			sizeof(paletteEntries) / sizeof(paletteEntries[0])
 		)) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "MxDirect3D::Create failed");
+		MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "MxDirect3D::Create failed");
 		goto done;
 	}
 
@@ -167,21 +167,21 @@ MxResult LegoVideoManager::Create(MxVideoParam& p_videoParam, MxU32 p_frequencyM
 			p_frequencyMS,
 			p_createThread
 		) != SUCCESS) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "MxVideoManager::VTable0x28 failed");
+		MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "MxVideoManager::VTable0x28 failed");
 		goto done;
 	}
 
 	m_renderer = Tgl::CreateRenderer();
 
 	if (!m_renderer) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Tgl::CreateRenderer failed");
+		MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "Tgl::CreateRenderer failed");
 		goto done;
 	}
 
 	m_3dManager = new Lego3DManager;
 
 	if (!m_3dManager) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Lego3DManager::Lego3DManager failed");
+		MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "Lego3DManager::Lego3DManager failed");
 		goto done;
 	}
 
@@ -198,14 +198,14 @@ MxResult LegoVideoManager::Create(MxVideoParam& p_videoParam, MxU32 p_frequencyM
 	createStruct.m_d3dDevice = m_direct3d->Direct3DDevice();
 
 	if (!m_3dManager->Create(createStruct)) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Lego3DManager::Create failed");
+		MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "Lego3DManager::Create failed");
 		goto done;
 	}
 
 	ViewLODList* pLODList;
 
 	if (ConfigureD3DRM() != SUCCESS) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "LegoVideoManager::ConfigureD3DRM failed");
+		MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "LegoVideoManager::ConfigureD3DRM failed");
 		goto done;
 	}
 
@@ -515,7 +515,7 @@ MxPresenter* LegoVideoManager::GetPresenterByActionObjectName(const char* p_acti
 			continue;
 		}
 
-		if (SDL_strcasecmp(presenter->GetAction()->GetObjectName(), p_actionObjectName) == 0) {
+		if (MORTAR_strcasecmp(presenter->GetAction()->GetObjectName(), p_actionObjectName) == 0) {
 			return presenter;
 		}
 	}

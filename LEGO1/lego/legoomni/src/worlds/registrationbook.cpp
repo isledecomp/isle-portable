@@ -29,7 +29,7 @@
 #include "regbook_actions.h"
 #include "scripts.h"
 
-#include <SDL3/SDL_log.h>
+#include <mortar/mortar_log.h>
 
 DECOMP_SIZE_ASSERT(RegistrationBook, 0x2d0)
 
@@ -173,14 +173,14 @@ MxLong RegistrationBook::HandleEndAction(MxEndActionNotificationParam& p_param)
 }
 
 // FUNCTION: LEGO1 0x100772d0
-MxLong RegistrationBook::HandleKeyPress(SDL_Keycode p_key)
+MxLong RegistrationBook::HandleKeyPress(MORTAR_Keycode p_key)
 {
 	// keycode is case-insensitive
-	SDL_Keycode key = p_key;
+	MORTAR_Keycode key = p_key;
 
 	MxStillPresenter** intoAlphabet = [this, key]() -> MxStillPresenter** {
-		if (key >= SDLK_A && key <= SDLK_Z) {
-			return &m_alphabet[key - SDLK_A];
+		if (key >= MORTARK_A && key <= MORTARK_Z) {
+			return &m_alphabet[key - MORTARK_A];
 		}
 
 		for (int i = 0; i < sizeOfArray(m_intAlphabet); i++) {
@@ -192,13 +192,13 @@ MxLong RegistrationBook::HandleKeyPress(SDL_Keycode p_key)
 		return nullptr;
 	}();
 
-	if (!intoAlphabet && key != SDLK_BACKSPACE) {
-		if (key == SDLK_SPACE) {
+	if (!intoAlphabet && key != MORTARK_BACKSPACE) {
+		if (key == MORTARK_SPACE) {
 			DeleteObjects(&m_atomId, RegbookScript::c_iic006in_RunAnim, RegbookScript::c_iic008in_PlayWav);
 			BackgroundAudioManager()->RaiseVolume();
 		}
 	}
-	else if (key != SDLK_BACKSPACE && m_newName.m_cursorPos < 7) {
+	else if (key != MORTARK_BACKSPACE && m_newName.m_cursorPos < 7) {
 		m_name[0][m_newName.m_cursorPos] = (*intoAlphabet)->Clone();
 
 		if (m_name[0][m_newName.m_cursorPos] != NULL) {
@@ -212,14 +212,14 @@ MxLong RegistrationBook::HandleKeyPress(SDL_Keycode p_key)
 			}
 
 			m_newName.m_letters[m_newName.m_cursorPos] =
-				key >= SDLK_A && key <= SDLK_Z
-					? key - SDLK_A
+				key >= MORTARK_A && key <= MORTARK_Z
+					? key - MORTARK_A
 					: (intoAlphabet - m_intAlphabet) + sizeOfArray(m_alphabet) - m_intAlphabetOffset;
 			m_newName.m_cursorPos++;
 		}
 	}
 	else {
-		if (key == SDLK_BACKSPACE && m_newName.m_cursorPos > 0) {
+		if (key == MORTARK_BACKSPACE && m_newName.m_cursorPos > 0) {
 			m_newName.m_cursorPos--;
 
 			m_name[0][m_newName.m_cursorPos]->Enable(FALSE);
@@ -276,13 +276,13 @@ MxLong RegistrationBook::HandleControl(LegoControlManagerNotificationParam& p_pa
 				}
 
 				if (buttonId < 27) {
-					HandleKeyPress(SDLK_A + buttonId - 1);
+					HandleKeyPress(MORTARK_A + buttonId - 1);
 				}
 				else if (intChar) {
-					HandleKeyPress((SDL_Keycode) intChar->m_character);
+					HandleKeyPress((MORTAR_Keycode) intChar->m_character);
 				}
 				else {
-					HandleKeyPress(SDLK_BACKSPACE);
+					HandleKeyPress(MORTARK_BACKSPACE);
 				}
 			}
 		}
@@ -503,8 +503,8 @@ void RegistrationBook::ReadyWorld()
 					index += m_intAlphabetOffset;
 
 					if (index >= sizeOfArray(m_intAlphabet) || !m_intAlphabet[index]) {
-						SDL_Log("Warning: international character not present in current game. Falling back to X");
-						return &m_alphabet[SDLK_X - SDLK_A];
+						MORTAR_Log("Warning: international character not present in current game. Falling back to X");
+						return &m_alphabet[MORTARK_X - MORTARK_A];
 					}
 
 					return &m_intAlphabet[index];
