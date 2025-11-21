@@ -22,12 +22,12 @@ void TextureLoader::Initialize()
 
 bool TextureLoader::PatchTexture(LegoTextureInfo* p_textureInfo)
 {
-	SDL_Surface* surface = FindTexture(p_textureInfo->m_name);
+	MORTAR_Surface* surface = FindTexture(p_textureInfo->m_name);
 	if (!surface) {
 		return false;
 	}
 
-	const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(surface->format);
+	const MORTAR_PixelFormatDetails* details = MORTAR_GetPixelFormatDetails(surface->format);
 
 	DDSURFACEDESC desc;
 	memset(&desc, 0, sizeof(desc));
@@ -46,7 +46,7 @@ bool TextureLoader::PatchTexture(LegoTextureInfo* p_textureInfo)
 
 	LPDIRECTDRAW pDirectDraw = VideoManager()->GetDirect3D()->DirectDraw();
 	if (pDirectDraw->CreateSurface(&desc, &p_textureInfo->m_surface, NULL) != DD_OK) {
-		SDL_DestroySurface(surface);
+		MORTAR_DestroySurface(surface);
 		return false;
 	}
 
@@ -54,18 +54,18 @@ bool TextureLoader::PatchTexture(LegoTextureInfo* p_textureInfo)
 	desc.dwSize = sizeof(desc);
 
 	if (p_textureInfo->m_surface->Lock(NULL, &desc, DDLOCK_SURFACEMEMORYPTR | DDLOCK_WRITEONLY, NULL) != DD_OK) {
-		SDL_DestroySurface(surface);
+		MORTAR_DestroySurface(surface);
 		return false;
 	}
 
 	MxU8* dst = (MxU8*) desc.lpSurface;
-	Uint8* srcPixels = (Uint8*) surface->pixels;
+	uint8_t* srcPixels = (uint8_t*) surface->pixels;
 
 	if (details->bits_per_pixel == 8) {
-		SDL_Palette* sdlPalette = SDL_GetSurfacePalette(surface);
+		MORTAR_Palette* sdlPalette = MORTAR_GetSurfacePalette(surface);
 		if (!sdlPalette) {
 			p_textureInfo->m_surface->Unlock(desc.lpSurface);
-			SDL_DestroySurface(surface);
+			MORTAR_DestroySurface(surface);
 			return false;
 		}
 
@@ -80,7 +80,7 @@ bool TextureLoader::PatchTexture(LegoTextureInfo* p_textureInfo)
 		LPDIRECTDRAWPALETTE ddPalette = nullptr;
 		if (pDirectDraw->CreatePalette(DDPCAPS_8BIT | DDPCAPS_ALLOW256, entries, &ddPalette, NULL) != DD_OK) {
 			p_textureInfo->m_surface->Unlock(desc.lpSurface);
-			SDL_DestroySurface(surface);
+			MORTAR_DestroySurface(surface);
 			return false;
 		}
 
@@ -94,30 +94,30 @@ bool TextureLoader::PatchTexture(LegoTextureInfo* p_textureInfo)
 
 	if (((TglImpl::RendererImpl*) VideoManager()->GetRenderer())
 			->CreateTextureFromSurface(p_textureInfo->m_surface, &p_textureInfo->m_texture) != D3DRM_OK) {
-		SDL_DestroySurface(surface);
+		MORTAR_DestroySurface(surface);
 		return false;
 	}
 
 	p_textureInfo->m_texture->SetAppData((LPD3DRM_APPDATA) p_textureInfo);
-	SDL_DestroySurface(surface);
+	MORTAR_DestroySurface(surface);
 	return true;
 }
 
-SDL_Surface* TextureLoader::FindTexture(const char* p_name)
+MORTAR_Surface* TextureLoader::FindTexture(const char* p_name)
 {
 	if (std::find(excludedFiles.begin(), excludedFiles.end(), p_name) != excludedFiles.end()) {
 		return nullptr;
 	}
 
-	SDL_Surface* surface;
+	MORTAR_Surface* surface;
 	const char* texturePath = options["texture loader:texture path"].c_str();
 	MxString path = MxString(MxOmni::GetHD()) + texturePath + "/" + p_name + ".bmp";
 
 	path.MapPathToFilesystem();
-	if (!(surface = SDL_LoadBMP(path.GetData()))) {
+	if (!(surface = MORTAR_LoadBMP(path.GetData()))) {
 		path = MxString(MxOmni::GetCD()) + texturePath + "/" + p_name + ".bmp";
 		path.MapPathToFilesystem();
-		surface = SDL_LoadBMP(path.GetData());
+		surface = MORTAR_LoadBMP(path.GetData());
 	}
 
 	return surface;

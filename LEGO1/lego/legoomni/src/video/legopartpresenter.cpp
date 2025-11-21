@@ -10,7 +10,7 @@
 #include "mxdssubscriber.h"
 #include "viewmanager/viewlodlist.h"
 
-#include <SDL3/SDL_stdinc.h>
+#include <mortar/mortar_stdinc.h>
 
 DECOMP_SIZE_ASSERT(LegoLODList, 0x18)
 DECOMP_SIZE_ASSERT(LegoNamedPart, 0x14)
@@ -90,7 +90,7 @@ MxResult LegoPartPresenter::Read(MxDSChunk& p_chunk)
 		storage.Read(textureName, textureNameLength);
 		textureName[textureNameLength] = '\0';
 
-		SDL_strlwr(textureName);
+		MORTAR_strlwr(textureName);
 
 		if (textureName[0] == '^') {
 			memmove(textureName, textureName + 1, strlen(textureName));
@@ -164,7 +164,7 @@ MxResult LegoPartPresenter::Read(MxDSChunk& p_chunk)
 		}
 
 		roiName[roiNameLength] = '\0';
-		SDL_strlwr(roiName);
+		MORTAR_strlwr(roiName);
 
 		if (storage.Read(&numLODs, sizeof(LegoU32)) != SUCCESS) {
 			goto done;

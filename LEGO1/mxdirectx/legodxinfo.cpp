@@ -1,8 +1,8 @@
 #include "legodxinfo.h"
 
-#include <SDL3/SDL_cpuinfo.h>
-#include <assert.h>
-#include <stdio.h> // for vsprintf
+#include <cassert>
+#include <cstdio> // for vsprintf
+#include <mortar/mortar_cpuinfo.h>
 
 // File name validated by BETA10 0x1011cba3; directory unknown
 

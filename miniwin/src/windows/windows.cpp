@@ -1,8 +1,8 @@
 #include "miniwin.h"
 #include "miniwin/ddraw.h"
 
-#include <SDL3/SDL.h>
 #include <cassert>
+#include <mortar/mortar.h>
 #include <vector>
 
 ULONG IUnknown::AddRef()
@@ -39,18 +39,18 @@ BOOL SetWindowPos(HWND hWnd, HWND hWndInsertAfter, int X, int Y, int cx, int cy,
 	if (!hWnd) {
 		return FALSE;
 	}
-	SDL_Window* sdlWindow = reinterpret_cast<SDL_Window*>(hWnd);
+	MORTAR_Window* mortarWindow = reinterpret_cast<MORTAR_Window*>(hWnd);
 
 	if (!(uFlags & SWP_NOACTIVATE)) {
-		SDL_RaiseWindow(sdlWindow);
+		MORTAR_RaiseWindow(mortarWindow);
 	}
 
 	if (!(uFlags & SWP_NOSIZE)) {
-		SDL_SetWindowSize(sdlWindow, cx, cy);
+		MORTAR_SetWindowSize(mortarWindow, cx, cy);
 	}
 
 	if (!(uFlags & SWP_NOMOVE)) {
-		SDL_SetWindowPosition(sdlWindow, X, Y);
+		MORTAR_SetWindowPosition(mortarWindow, X, Y);
 	}
 
 	return TRUE;
@@ -119,13 +119,13 @@ int StretchDIBits(
 
 LONG GetWindowLong(HWND hWnd, int nIndex)
 {
-	SDL_Window* sdlWindow = reinterpret_cast<SDL_Window*>(hWnd);
+	MORTAR_Window* mortarWindow = reinterpret_cast<MORTAR_Window*>(hWnd);
 	if (nIndex == GWL_STYLE) {
-		Uint32 flags = SDL_GetWindowFlags(sdlWindow);
+		uint32_t flags = MORTAR_GetWindowFlags(mortarWindow);
 		LONG style = WS_POPUP;
-		if ((flags & SDL_WINDOW_BORDERLESS) == 0) {
+		if ((flags & MORTAR_WINDOW_BORDERLESS) == 0) {
 			style = WS_OVERLAPPED | WS_CAPTION;
-			if (flags & SDL_WINDOW_RESIZABLE) {
+			if (flags & MORTAR_WINDOW_RESIZABLE) {
 				style |= WS_THICKFRAME;
 			}
 		}
@@ -141,10 +141,10 @@ LONG GetWindowLong(HWND hWnd, int nIndex)
 
 LONG SetWindowLong(HWND hWnd, int nIndex, LONG dwNewLong)
 {
-	SDL_Window* sdlWindow = reinterpret_cast<SDL_Window*>(hWnd);
+	MORTAR_Window* mortarWindow = reinterpret_cast<MORTAR_Window*>(hWnd);
 	if (nIndex == GWL_STYLE) {
-		SDL_SetWindowBordered(sdlWindow, (dwNewLong & WS_CAPTION) != 0);
-		SDL_SetWindowResizable(sdlWindow, (dwNewLong & WS_THICKFRAME) != 0);
+		MORTAR_SetWindowBordered(mortarWindow, (dwNewLong & WS_CAPTION) != 0);
+		MORTAR_SetWindowResizable(mortarWindow, (dwNewLong & WS_THICKFRAME) != 0);
 
 		return dwNewLong;
 	}
@@ -174,7 +174,7 @@ int SetRect(RECT* rc, int left, int top, int right, int bottom)
 
 VOID WINAPI Sleep(DWORD dwMilliseconds)
 {
-	SDL_Delay(dwMilliseconds);
+	MORTAR_Delay(dwMilliseconds);
 }
 
 BOOL ClientToScreen(HWND hWnd, LPPOINT lpPoint)

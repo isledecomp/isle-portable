@@ -25,7 +25,7 @@
 #include "mxutilities.h"
 #include "viewmanager/viewmanager.h"
 
-#include <SDL3/SDL_stdinc.h>
+#include <mortar/mortar_stdinc.h>
 
 DECOMP_SIZE_ASSERT(LegoWorld, 0xf8)
 DECOMP_SIZE_ASSERT(LegoEntityList, 0x18)
@@ -429,7 +429,7 @@ void LegoWorld::Add(MxCore* p_object)
 
 #ifndef BETA10
 	if (p_object->IsA("LegoAnimPresenter")) {
-		if (!SDL_strcasecmp(((LegoAnimPresenter*) p_object)->GetAction()->GetObjectName(), "ConfigAnimation")) {
+		if (!MORTAR_strcasecmp(((LegoAnimPresenter*) p_object)->GetAction()->GetObjectName(), "ConfigAnimation")) {
 			CalculateViewFromAnimation((LegoAnimPresenter*) p_object);
 			((LegoAnimPresenter*) p_object)
 				->GetAction()
@@ -601,7 +601,7 @@ MxCore* LegoWorld::Find(const char* p_class, const char* p_name)
 			}
 
 			LegoROI* roi = entity->GetROI();
-			if (roi && !SDL_strcasecmp(roi->GetName(), p_name)) {
+			if (roi && !MORTAR_strcasecmp(roi->GetName(), p_name)) {
 				return entity;
 			}
 		}
@@ -614,7 +614,7 @@ MxCore* LegoWorld::Find(const char* p_class, const char* p_name)
 		MxPresenter* presenter;
 
 		while (cursor.Next(presenter)) {
-			if (!SDL_strcasecmp(((LegoAnimPresenter*) presenter)->GetActionObjectName(), p_name)) {
+			if (!MORTAR_strcasecmp(((LegoAnimPresenter*) presenter)->GetActionObjectName(), p_name)) {
 				return presenter;
 			}
 		}

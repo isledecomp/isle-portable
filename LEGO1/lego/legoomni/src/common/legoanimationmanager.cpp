@@ -28,7 +28,7 @@
 #include "realtime/realtime.h"
 #include "viewmanager/viewmanager.h"
 
-#include <SDL3/SDL.h>
+#include <mortar/mortar.h>
 #include <stdio.h>
 #include <vec.h>
 
@@ -641,9 +641,9 @@ MxResult LegoAnimationManager::LoadWorldInfo(LegoOmni::World p_worldId)
 		strcat(path, filename);
 		MxString::MapPathToFilesystem(path);
 
-		SDL_PathInfo pathInfo;
+		MORTAR_PathInfo pathInfo;
 
-		if (!SDL_GetPathInfo(path, &pathInfo) || pathInfo.type != SDL_PATHTYPE_FILE) {
+		if (!MORTAR_GetPathInfo(path, &pathInfo) || pathInfo.type != MORTAR_PATHTYPE_FILE) {
 			sprintf(path, "%s", MxOmni::GetCD());
 
 			if (path[strlen(path) - 1] != '\\') {
@@ -653,7 +653,7 @@ MxResult LegoAnimationManager::LoadWorldInfo(LegoOmni::World p_worldId)
 			strcat(path, filename);
 			MxString::MapPathToFilesystem(path);
 
-			if (!SDL_GetPathInfo(path, &pathInfo) || pathInfo.type != SDL_PATHTYPE_FILE) {
+			if (!MORTAR_GetPathInfo(path, &pathInfo) || pathInfo.type != MORTAR_PATHTYPE_FILE) {
 				goto done;
 			}
 		}
@@ -750,7 +750,7 @@ done:
 MxBool LegoAnimationManager::FindVehicle(const char* p_name, MxU32& p_index)
 {
 	for (MxS32 i = 0; i < sizeOfArray(g_vehicles); i++) {
-		if (!SDL_strcasecmp(p_name, g_vehicles[i].m_name)) {
+		if (!MORTAR_strcasecmp(p_name, g_vehicles[i].m_name)) {
 			p_index = i;
 			return TRUE;
 		}
@@ -891,7 +891,7 @@ void LegoAnimationManager::FUN_10060480(const LegoChar* p_characterNames[], MxU3
 {
 	for (MxS32 i = 0; i < p_numCharacterNames; i++) {
 		for (MxS32 j = 0; j < sizeOfArray(g_characters); j++) {
-			if (!SDL_strcasecmp(g_characters[j].m_name, p_characterNames[i])) {
+			if (!MORTAR_strcasecmp(g_characters[j].m_name, p_characterNames[i])) {
 				g_characters[j].m_unk0x08 = TRUE;
 			}
 		}
@@ -1200,7 +1200,7 @@ void LegoAnimationManager::CameraTriggerFire(LegoPathActor* p_actor, MxBool, MxU
 				return;
 			}
 
-			if (location->m_unk0x5c && location->m_frequency < SDL_rand(100)) {
+			if (location->m_unk0x5c && location->m_frequency < MORTAR_rand(100)) {
 				return;
 			}
 		}
@@ -1595,7 +1595,7 @@ MxResult LegoAnimationManager::Tickle()
 		return SUCCESS;
 	}
 
-	m_unk0x410 = SDL_rand(10000) + 5000;
+	m_unk0x410 = MORTAR_rand(10000) + 5000;
 	m_unk0x408 = time;
 
 	if (time - m_unk0x404 > 10000) {
@@ -1702,7 +1702,7 @@ MxS8 LegoAnimationManager::GetCharacterIndex(const char* p_name)
 	MxS8 i;
 
 	for (i = 0; i < sizeOfArray(g_characters); i++) {
-		if (!SDL_strncasecmp(p_name, g_characters[i].m_name, 2)) {
+		if (!MORTAR_strncasecmp(p_name, g_characters[i].m_name, 2)) {
 			return i;
 		}
 	}
@@ -1753,7 +1753,7 @@ MxBool LegoAnimationManager::ModelExists(AnimInfo& p_info, const char* p_name)
 
 	if (models != NULL && modelCount) {
 		for (MxU8 i = 0; i < modelCount; i++) {
-			if (!SDL_strcasecmp(models[i].m_name, p_name)) {
+			if (!MORTAR_strcasecmp(models[i].m_name, p_name)) {
 				return TRUE;
 			}
 		}
@@ -1933,7 +1933,7 @@ void LegoAnimationManager::AddExtra(MxS32 p_location, MxBool p_und)
 				}
 
 				if (i != m_numAllowedExtras) {
-					MxU8 pathWalkingMode = SDL_rand(2) != 0 ? 1 : 2;
+					MxU8 pathWalkingMode = MORTAR_rand(2) != 0 ? 1 : 2;
 					MxBool bool1, bool2;
 
 					switch (g_pathWalkingModeSelector % 4) {
@@ -1990,7 +1990,7 @@ void LegoAnimationManager::AddExtra(MxS32 p_location, MxBool p_und)
 									active = TRUE;
 								}
 								else {
-									active = SDL_rand(100) < 50;
+									active = MORTAR_rand(100) < 50;
 								}
 
 							tryNextCharacter:
@@ -2035,7 +2035,7 @@ void LegoAnimationManager::AddExtra(MxS32 p_location, MxBool p_und)
 											MxS32 vehicleId = g_characters[m_lastExtraCharacterId].m_vehicleId;
 											if (vehicleId >= 0) {
 												g_vehicles[vehicleId].m_unk0x04 =
-													SDL_rand(100) < g_characters[m_lastExtraCharacterId].m_unk0x15;
+													MORTAR_rand(100) < g_characters[m_lastExtraCharacterId].m_unk0x15;
 											}
 
 											if (FUN_10063b90(
@@ -2053,10 +2053,10 @@ void LegoAnimationManager::AddExtra(MxS32 p_location, MxBool p_und)
 
 											float speed;
 											if (m_extras[i].m_unk0x14) {
-												speed = 0.9f + 1.5f * SDL_randf();
+												speed = 0.9f + 1.5f * MORTAR_randf();
 											}
 											else {
-												speed = 0.6f + 1.4f * SDL_randf();
+												speed = 0.6f + 1.4f * MORTAR_randf();
 											}
 
 											actor->SetWorldSpeed(speed);
@@ -2116,7 +2116,7 @@ MxBool LegoAnimationManager::FUN_10062e20(LegoROI* p_roi, LegoAnimPresenter* p_p
 		MxS32 i;
 
 		for (i = 0; i < (MxS32) sizeOfArray(g_characters); i++) {
-			if (!SDL_strcasecmp(name, g_characters[i].m_name)) {
+			if (!MORTAR_strcasecmp(name, g_characters[i].m_name)) {
 				characterId = i;
 				break;
 			}
@@ -2192,7 +2192,7 @@ MxBool LegoAnimationManager::FUN_10062e20(LegoROI* p_roi, LegoAnimPresenter* p_p
 		if (!local24) {
 			MxU8 pathWalkingMode;
 
-			switch (SDL_rand(3)) {
+			switch (MORTAR_rand(3)) {
 			case 0:
 				pathWalkingMode = 1;
 				break;
@@ -2459,10 +2459,10 @@ void LegoAnimationManager::FUN_10063d10()
 
 						if (speed < 0.0f) {
 							if (m_extras[i].m_unk0x14) {
-								speed = 0.9f + 1.5f * SDL_randf();
+								speed = 0.9f + 1.5f * MORTAR_randf();
 							}
 							else {
-								speed = 0.6f + 1.4f * SDL_randf();
+								speed = 0.6f + 1.4f * MORTAR_randf();
 							}
 						}
 
@@ -2546,7 +2546,7 @@ MxBool LegoAnimationManager::FUN_10064010(LegoPathBoundary* p_boundary, LegoOrie
 MxBool LegoAnimationManager::FUN_10064120(LegoLocation::Boundary* p_boundary, MxBool p_bool1, MxBool p_bool2)
 {
 	MxU32 local2c = 12;
-	float destScale = 0.25f + 0.5f * SDL_randf();
+	float destScale = 0.25f + 0.5f * MORTAR_randf();
 	LegoPathActor* actor = UserActor();
 
 	if (actor == NULL) {
@@ -2665,7 +2665,7 @@ MxResult LegoAnimationManager::FUN_10064380(
 			extraIndex = i;
 		}
 
-		if (roi != NULL && !SDL_strcasecmp(roi->GetName(), p_name)) {
+		if (roi != NULL && !MORTAR_strcasecmp(roi->GetName(), p_name)) {
 			actor = CharacterManager()->GetExtraActor(p_name);
 
 			if (actor != NULL && actor->GetController() != NULL) {
@@ -2683,7 +2683,7 @@ MxResult LegoAnimationManager::FUN_10064380(
 
 		MxS32 characterId;
 		for (characterId = 0; characterId < (MxS32) sizeOfArray(g_characters); characterId++) {
-			if (!SDL_strcasecmp(g_characters[characterId].m_name, p_name)) {
+			if (!MORTAR_strcasecmp(g_characters[characterId].m_name, p_name)) {
 				break;
 			}
 		}
@@ -2701,7 +2701,7 @@ MxResult LegoAnimationManager::FUN_10064380(
 	}
 
 	if (actor != NULL) {
-		MxU8 pathWalkingMode = SDL_rand(2) != 0 ? 1 : 2;
+		MxU8 pathWalkingMode = MORTAR_rand(2) != 0 ? 1 : 2;
 		actor->SetPathWalkingMode(pathWalkingMode);
 		actor->SetWorldSpeed(0.0f);
 
@@ -2757,7 +2757,19 @@ MxResult LegoAnimationManager::FUN_10064670(Vector3* p_position)
 	}
 
 	if (success) {
-		return FUN_10064380("brickstr", "EDG02_95", 1, 0.5f, 3, 0.5f, SDL_rand(3) + 14, -1, SDL_rand(3), -1, 0.5f);
+		return FUN_10064380(
+			"brickstr",
+			"EDG02_95",
+			1,
+			0.5f,
+			3,
+			0.5f,
+			MORTAR_rand(3) + 14,
+			-1,
+			MORTAR_rand(3),
+			-1,
+			0.5f
+		);
 	}
 
 	return FAILURE;
@@ -2782,11 +2794,11 @@ MxResult LegoAnimationManager::FUN_10064740(Vector3* p_position)
 
 	if (success) {
 		if (GameState()->GetActorId() != LegoActor::c_mama) {
-			FUN_10064380("mama", "USR00_47", 1, 0.43f, 3, 0.84f, SDL_rand(3) + 13, -1, SDL_rand(3), -1, 0.7f);
+			FUN_10064380("mama", "USR00_47", 1, 0.43f, 3, 0.84f, MORTAR_rand(3) + 13, -1, MORTAR_rand(3), -1, 0.7f);
 		}
 
 		if (GameState()->GetActorId() != LegoActor::c_papa) {
-			FUN_10064380("papa", "USR00_193", 3, 0.55f, 1, 0.4f, SDL_rand(3) + 13, -1, SDL_rand(3), -1, 0.9f);
+			FUN_10064380("papa", "USR00_193", 3, 0.55f, 1, 0.4f, MORTAR_rand(3) + 13, -1, MORTAR_rand(3), -1, 0.9f);
 		}
 
 		return SUCCESS;
@@ -2803,7 +2815,7 @@ MxResult LegoAnimationManager::FUN_10064880(const char* p_name, MxS32 p_unk0x0c,
 		LegoROI* roi = m_extras[i].m_roi;
 
 		if (roi != NULL) {
-			if (!SDL_strcasecmp(roi->GetName(), p_name)) {
+			if (!MORTAR_strcasecmp(roi->GetName(), p_name)) {
 				g_characters[m_extras[i].m_characterId].m_unk0x0c = p_unk0x0c;
 				g_characters[m_extras[i].m_characterId].m_unk0x10 = p_unk0x10;
 				return SUCCESS;

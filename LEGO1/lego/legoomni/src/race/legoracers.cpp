@@ -19,7 +19,7 @@
 #include "mxvariabletable.h"
 #include "raceskel.h"
 
-#include <SDL3/SDL_stdinc.h>
+#include <mortar/mortar_stdinc.h>
 #include <stdio.h>
 
 DECOMP_SIZE_ASSERT(EdgeReference, 0x08)
@@ -218,10 +218,10 @@ void LegoRaceCar::InitSoundIndices()
 {
 	// Note the (likely unintentional) order of operations: `%` is executed before `/`,
 	// so the division is performed at runtime.
-	g_playerHitStudsSoundsIndex = SDL_rand(sizeOfArray(g_playerHitStudsSounds));
-	g_studsHitPlayerSoundsIndex = SDL_rand(sizeOfArray(g_studsHitPlayerSounds));
-	g_playerHitRhodaSoundsIndex = SDL_rand(sizeOfArray(g_playerHitRhodaSounds));
-	g_rhodaHitPlayerSoundsIndex = SDL_rand(sizeOfArray(g_rhodaHitPlayerSounds));
+	g_playerHitStudsSoundsIndex = MORTAR_rand(sizeOfArray(g_playerHitStudsSounds));
+	g_studsHitPlayerSoundsIndex = MORTAR_rand(sizeOfArray(g_studsHitPlayerSounds));
+	g_playerHitRhodaSoundsIndex = MORTAR_rand(sizeOfArray(g_playerHitRhodaSounds));
+	g_rhodaHitPlayerSoundsIndex = MORTAR_rand(sizeOfArray(g_rhodaHitPlayerSounds));
 }
 
 // FUNCTION: LEGO1 0x10012e60
@@ -479,8 +479,8 @@ MxResult LegoRaceCar::HitActor(LegoPathActor* p_actor, MxBool p_bool)
 		}
 
 		if (m_userNavFlag) {
-			MxBool actorIsStuds = SDL_strcasecmp(p_actor->GetROI()->GetName(), "studs") == 0;
-			MxBool actorIsRhoda = SDL_strcasecmp(p_actor->GetROI()->GetName(), "rhoda") == 0;
+			MxBool actorIsStuds = MORTAR_strcasecmp(p_actor->GetROI()->GetName(), "studs") == 0;
+			MxBool actorIsRhoda = MORTAR_strcasecmp(p_actor->GetROI()->GetName(), "rhoda") == 0;
 			MxLong time = Timer()->GetTime();
 
 			const char* soundKey = NULL;
@@ -577,8 +577,8 @@ MxResult LegoRaceCar::CalculateSpline()
 void LegoJetski::InitSoundIndices()
 {
 	// See note in LegoRaceCar::InitSoundIndices
-	g_hitSnapSoundsIndex = SDL_rand(sizeOfArray(g_hitSnapSounds));
-	g_hitValerieSoundsIndex = SDL_rand(sizeOfArray(g_hitValerieSounds));
+	g_hitSnapSoundsIndex = MORTAR_rand(sizeOfArray(g_hitSnapSounds));
+	g_hitValerieSoundsIndex = MORTAR_rand(sizeOfArray(g_hitValerieSounds));
 }
 
 // FUNCTION: LEGO1 0x100136a0
@@ -696,8 +696,8 @@ MxResult LegoJetski::HitActor(LegoPathActor* p_actor, MxBool p_bool)
 		}
 
 		if (m_userNavFlag) {
-			MxBool actorIsSnap = SDL_strcasecmp(p_actor->GetROI()->GetName(), "snap") == 0;
-			MxBool actorIsValerie = SDL_strcasecmp(p_actor->GetROI()->GetName(), "valerie") == 0;
+			MxBool actorIsSnap = MORTAR_strcasecmp(p_actor->GetROI()->GetName(), "snap") == 0;
+			MxBool actorIsValerie = MORTAR_strcasecmp(p_actor->GetROI()->GetName(), "valerie") == 0;
 			MxLong time = Timer()->GetTime();
 
 			const char* soundKey = NULL;

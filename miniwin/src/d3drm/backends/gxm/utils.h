@@ -1,6 +1,6 @@
 #pragma once
 
-#include <SDL3/SDL_log.h>
+#include <mortar/mortar_log.h>
 #include <psp2/gxm.h>
 #include <psp2/kernel/clib.h>
 
@@ -34,7 +34,7 @@
 #define GET_SHADER_PARAM(var, gxp, name, ret)                                                                          \
 	const SceGxmProgramParameter* var = sceGxmProgramFindParameterByName(gxp, name);                                   \
 	if (!var) {                                                                                                        \
-		SDL_Log("Failed to find param %s", name);                                                                      \
+		MORTAR_Log("Failed to find param %s", name);                                                                   \
 		return ret;                                                                                                    \
 	}
 

@@ -4,7 +4,7 @@
 #include "lego1_export.h"
 #include "legoentitypresenter.h"
 
-#include <SDL3/SDL_iostream.h>
+#include <mortar/mortar_iostream.h>
 
 class LegoWorld;
 struct ModelDbPart;
@@ -51,8 +51,8 @@ public:
 	// LegoWorldPresenter::`scalar deleting destructor'
 
 private:
-	MxResult LoadWorldPart(ModelDbPart& p_part, SDL_IOStream* p_wdbFile);
-	MxResult LoadWorldModel(ModelDbModel& p_model, SDL_IOStream* p_wdbFile, LegoWorld* p_world);
+	MxResult LoadWorldPart(ModelDbPart& p_part, MORTAR_IOStream* p_wdbFile);
+	MxResult LoadWorldModel(ModelDbModel& p_model, MORTAR_IOStream* p_wdbFile, LegoWorld* p_world);
 
 	MxU32 m_nextObjectId;
 };

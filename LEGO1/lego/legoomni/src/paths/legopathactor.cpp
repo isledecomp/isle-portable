@@ -16,7 +16,7 @@
 #include "mxutilities.h"
 #include "mxvariabletable.h"
 
-#include <SDL3/SDL.h>
+#include <mortar/mortar.h>
 #include <mxdebug.h>
 #include <vec.h>
 
@@ -770,7 +770,7 @@ void LegoPathActor::GetWalkingBehavior(MxBool& p_countCounterclockWise, MxS32& p
 	case c_nick:
 	case c_brickster:
 		p_countCounterclockWise = TRUE;
-		p_selectedEdgeIndex = SDL_rand(p_selectedEdgeIndex) + 1;
+		p_selectedEdgeIndex = MORTAR_rand(p_selectedEdgeIndex) + 1;
 		break;
 	case c_laura:
 		p_countCounterclockWise = FALSE;
