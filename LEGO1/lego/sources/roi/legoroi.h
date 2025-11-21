@@ -101,8 +101,6 @@ private:
 	BoundingSphere m_sphere;  // 0xe8
 	LegoBool m_sharedLodList; // 0x100
 	LegoEntity* m_entity;     // 0x104
-
-	friend class DebugViewer;
 };
 
 // VTABLE: LEGO1 0x100dbea8

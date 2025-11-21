@@ -23,7 +23,6 @@ if (NINTENDO_SWITCH)
   add_compile_definitions(__SWITCH__)
   add_compile_definitions(SDL_PLATFORM_SWITCH)
   add_compile_definitions(SDL_VIDEO_DRIVER_SWITCH)
-  add_compile_definitions(IMGUI_DISABLE_DEFAULT_SHELL_FUNCTIONS)
 endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
@@ -54,7 +53,6 @@ option(ISLE_BUILD_ASSETS "Build assets from the /assets directory" OFF)
 option(ISLE_ASAN "Enable Address Sanitizer" OFF)
 option(ISLE_UBSAN "Enable Undefined Behavior Sanitizer" OFF)
 option(ISLE_WERROR "Treat warnings as errors" OFF)
-cmake_dependent_option(ISLE_DEBUG "Enable imgui debug" ON "NOT VITA" OFF)
 cmake_dependent_option(ISLE_USE_DX5 "Build with internal DirectX 5 SDK" "${NOT_MINGW}" "WIN32;CMAKE_SIZEOF_VOID_P EQUAL 4" OFF)
 cmake_dependent_option(ISLE_MINIWIN "Use miniwin" ON "NOT ISLE_USE_DX5" OFF)
 cmake_dependent_option(ISLE_EXTENSIONS "Use extensions" ON "NOT ISLE_USE_DX5;NOT WINDOWS_STORE" OFF)
@@ -72,7 +70,6 @@ message(STATUS "Config app:             ${ISLE_BUILD_CONFIG}")
 message(STATUS "Internal DirectX5 SDK:  ${ISLE_USE_DX5}")
 message(STATUS "Internal miniwin:       ${ISLE_MINIWIN}")
 message(STATUS "Isle extensions:        ${ISLE_EXTENSIONS}")
-message(STATUS "Isle debugging:         ${ISLE_DEBUG}")
 message(STATUS "Compile shaders:        ${ISLE_COMPILE_SHADERS}")
 
 add_library(Isle::iniparser INTERFACE IMPORTED)
@@ -573,21 +570,6 @@ if (ISLE_BUILD_APP)
   endif()
   # Link LEGO1
   target_link_libraries(isle PRIVATE lego1)
-  if(ISLE_DEBUG)
-    target_sources(isle PRIVATE
-      ISLE/isledebug.cpp
-    )
-    target_compile_definitions(isle PRIVATE ISLE_DEBUG)
-    target_link_libraries(isle PRIVATE imgui)
-    find_path(valgrind_INCLUDE_PATH NAMES valgrind/callgrind.h)
-    if(valgrind_INCLUDE_PATH)
-      # Run isle under valgrind to create a profile. Use e.g. kcachegrind to view the profile.
-      # > valgrind --tool=callgrind --dump-instr=yes --simulate-cache=yes --collect-jumps=yes \
-      # >         --collect-atstart=no --instr-atstart=no ./isle --debug
-      target_compile_definitions(isle PRIVATE ISLE_VALGRIND)
-      target_include_directories(isle PRIVATE ${valgrind_INCLUDE_PATH})
-    endif()
-  endif()
   if(EMSCRIPTEN)
     target_sources(isle PRIVATE
       ISLE/emscripten/config.cpp
@@ -909,7 +891,7 @@ endif()
 if(NINTENDO_SWITCH)
   find_program(NACPTOOL NAMES nacptool)
   find_program(ELF2NRO NAMES elf2nro)
-  
+
   add_custom_command(
       OUTPUT "isle.nacp"
       COMMAND "${NACPTOOL}"

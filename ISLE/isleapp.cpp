@@ -4,7 +4,6 @@
 
 #include "3dmanager/lego3dmanager.h"
 #include "decomp.h"
-#include "isledebug.h"
 #include "legoanimationmanager.h"
 #include "legobuildingmanager.h"
 #include "legogamestate.h"
@@ -413,8 +412,6 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 	}
 
 	if (!g_closed) {
-		IsleDebug_Render();
-
 		if (g_reqEnableRMDevice) {
 			g_reqEnableRMDevice = FALSE;
 			VideoManager()->EnableRMDevice();
@@ -452,10 +449,6 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 {
 	if (!g_isle) {
-		return SDL_APP_CONTINUE;
-	}
-
-	if (IsleDebug_Event(event)) {
 		return SDL_APP_CONTINUE;
 	}
 
@@ -498,13 +491,11 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 
 	switch (event->type) {
 	case SDL_EVENT_WINDOW_FOCUS_GAINED:
-		if (!IsleDebug_Enabled()) {
-			g_isle->SetWindowActive(TRUE);
-			Lego()->Resume();
-		}
+		g_isle->SetWindowActive(TRUE);
+		Lego()->Resume();
 		break;
 	case SDL_EVENT_WINDOW_FOCUS_LOST:
-		if (!IsleDebug_Enabled() && g_isle->GetGameStarted()) {
+		if (g_isle->GetGameStarted()) {
 			g_isle->SetWindowActive(FALSE);
 			Lego()->Pause();
 #ifdef __EMSCRIPTEN__
@@ -869,8 +860,6 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 
 void SDL_AppQuit(void* appstate, SDL_AppResult result)
 {
-	IsleDebug_Quit();
-
 	if (appstate != NULL) {
 		SDL_DestroyWindow((SDL_Window*) appstate);
 	}
@@ -1039,8 +1028,6 @@ MxResult IsleApp::SetupWindow()
 			SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Failed to get D3D device name and description");
 		}
 	}
-
-	IsleDebug_Init();
 
 	return SUCCESS;
 }
@@ -1265,10 +1252,6 @@ inline bool IsleApp::Tick()
 	// GLOBAL: ISLE 0x4101bc
 	static MxS32 g_startupDelay = 1;
 
-	if (IsleDebug_Paused() && IsleDebug_StepModeEnabled()) {
-		IsleDebug_SetPaused(false);
-	}
-
 	if (!m_windowActive) {
 		SDL_Delay(1);
 		return true;
@@ -1298,11 +1281,6 @@ inline bool IsleApp::Tick()
 		TickleManager()->Tickle();
 	}
 	g_lastFrameTime = currentTime;
-
-	if (IsleDebug_StepModeEnabled()) {
-		IsleDebug_SetPaused(true);
-		IsleDebug_ResetStepMode();
-	}
 
 	if (g_startupDelay == 0) {
 		return true;
@@ -1402,14 +1380,6 @@ SDL_AppResult IsleApp::ParseArguments(int argc, char** argv)
 			m_iniPath = argv[i + 1];
 			consumed = 2;
 		}
-		else if (strcmp(argv[i], "--debug") == 0) {
-#ifdef ISLE_DEBUG
-			IsleDebug_SetEnabled(true);
-#else
-			SDL_Log("isle is built without debug support. Ignoring --debug argument.");
-#endif
-			consumed = 1;
-		}
 		else if (strcmp(argv[i], "--help") == 0) {
 			DisplayArgumentHelp(argv[0]);
 			return SDL_APP_SUCCESS;
@@ -1429,9 +1399,6 @@ void IsleApp::DisplayArgumentHelp(const char* p_execName)
 	SDL_Log("Usage: %s [options]", p_execName);
 	SDL_Log("Options:");
 	SDL_Log("	--ini <path>		Set custom path to .ini config");
-#ifdef ISLE_DEBUG
-	SDL_Log("	--debug			Launch in debug mode");
-#endif
 	SDL_Log("	--help			Show this help message");
 }
 
