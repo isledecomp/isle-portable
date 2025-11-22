@@ -135,6 +135,8 @@ else()
 
   find_package(iniparser REQUIRED CONFIG COMPONENTS shared)
   target_link_libraries(Isle::iniparser INTERFACE iniparser-shared)
+
+  find_package(libweaver REQUIRED)
 endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

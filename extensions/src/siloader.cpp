@@ -242,10 +242,10 @@ bool SiLoader::LoadFile(const char* p_file)
 
 	MxString path = MxString(MxOmni::GetHD()) + p_file;
 	path.MapPathToFilesystem();
-	if (si.Read(path.GetData(), si::Interleaf::ObjectsOnly | si::Interleaf::NoInfo) != si::Interleaf::ERROR_SUCCESS) {
+	if (si.Read(path.GetData(), si::Interleaf::ObjectsOnly) != si::Interleaf::ERROR_SUCCESS) {
 		path = MxString(MxOmni::GetCD()) + p_file;
 		path.MapPathToFilesystem();
-		if (si.Read(path.GetData(), si::Interleaf::ObjectsOnly | si::Interleaf::NoInfo) !=
+		if (si.Read(path.GetData(), si::Interleaf::ObjectsOnly) !=
 			si::Interleaf::ERROR_SUCCESS) {
 			SDL_Log("Could not parse SI file %s", p_file);
 			return false;
