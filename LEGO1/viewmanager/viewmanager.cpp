@@ -38,25 +38,6 @@ inline void SetAppData(ViewROI* p_roi, LPD3DRM_APPDATA data);
 inline undefined4 GetD3DRM(IDirect3DRM2*& d3drm, Tgl::Renderer* pRenderer);
 inline undefined4 GetFrame(IDirect3DRMFrame2** frame, Tgl::Group* scene);
 
-// STUB: BETA10 0x1017202e
-int userVisualCallback(
-	LPDIRECT3DRMUSERVISUAL obj,
-	LPVOID arg,
-	D3DRMUSERVISUALREASON reason,
-	LPDIRECT3DRMDEVICE dev,
-	LPDIRECT3DRMVIEWPORT view
-)
-{
-	// This function calls into LegoBSP.cpp, which has likely been removed in LEGO1
-	return 0;
-}
-
-// FUNCTION: BETA10 0x10172074
-void addDestroyCallback(LPDIRECT3DRMOBJECT obj, LPVOID arg)
-{
-	// intentionally empty
-}
-
 // FUNCTION: LEGO1 0x100a5eb0
 // FUNCTION: BETA10 0x10171cb3
 ViewManager::ViewManager(Tgl::Renderer* pRenderer, Tgl::Group* scene, const OrientableROI* point_of_view)
@@ -66,20 +47,6 @@ ViewManager::ViewManager(Tgl::Renderer* pRenderer, Tgl::Group* scene, const Orie
 	prev_render_time = 0.09;
 	GetD3DRM(d3drm, pRenderer);
 	GetFrame(&frame, scene);
-
-#ifdef BETA10
-	LPDIRECT3DRMUSERVISUAL userVisual;
-	if (d3drm->CreateUserVisual(userVisualCallback, this, &userVisual)) {
-		assert(0);
-	}
-	if (userVisual->AddDestroyCallback(addDestroyCallback, this)) {
-		assert(0);
-	}
-	if (frame->AddVisual(userVisual)) {
-		assert(0);
-	}
-	userVisual->Release();
-#endif
 
 	width = 0.0;
 	height = 0.0;
