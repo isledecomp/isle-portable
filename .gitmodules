@@ -4,6 +4,3 @@
 [submodule "3rdparty/miniaudio"]
 	path = 3rdparty/miniaudio
 	url = https://github.com/mackron/miniaudio
-[submodule "3rdparty/libweaver"]
-	path = 3rdparty/libweaver
-	url = https://github.com/isledecomp/SIEdit
