@@ -2,8 +2,8 @@
 
 #include "structs.h"
 
-#include <mortar/mortar.h>
 #include <d3d9.h>
+#include <mortar/mortar.h>
 #include <vector>
 #include <windows.h>
 
@@ -373,7 +373,12 @@ uint32_t Actual_Flip()
 	return g_device->Present(nullptr, nullptr, nullptr, nullptr);
 }
 
-void Actual_Draw2DImage(IDirect3DTexture9* texture, const MORTAR_Rect& srcRect, const MORTAR_Rect& dstRect, FColor color)
+void Actual_Draw2DImage(
+	IDirect3DTexture9* texture,
+	const MORTAR_Rect& srcRect,
+	const MORTAR_Rect& dstRect,
+	FColor color
+)
 {
 	StartScene();
 

@@ -20,7 +20,7 @@
 		__sce_err_ret_val;                                                                                             \
 	})
 
-#define ALIGN(x, a) (((x) + ((a) -1)) & ~((a) -1))
+#define ALIGN(x, a) (((x) + ((a) - 1)) & ~((a) - 1))
 
 #define ALIGNMENT(n, a) (((a) - ((n) % (a))) % (a))
 
@@ -34,7 +34,7 @@
 #define GET_SHADER_PARAM(var, gxp, name, ret)                                                                          \
 	const SceGxmProgramParameter* var = sceGxmProgramFindParameterByName(gxp, name);                                   \
 	if (!var) {                                                                                                        \
-		MORTAR_Log("Failed to find param %s", name);                                                                      \
+		MORTAR_Log("Failed to find param %s", name);                                                                   \
 		return ret;                                                                                                    \
 	}
 

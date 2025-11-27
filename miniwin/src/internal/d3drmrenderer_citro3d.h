@@ -3,8 +3,8 @@
 #include "d3drmrenderer.h"
 #include "ddraw_impl.h"
 
-#include <mortar/mortar.h>
 #include <citro3d.h>
+#include <mortar/mortar.h>
 #include <vector>
 
 DEFINE_GUID(Citro3D_GUID, 0x682656F3, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3D, 0x53);

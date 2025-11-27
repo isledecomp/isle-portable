@@ -7,12 +7,12 @@
 #include "miniwin.h"
 #include "miniwin/d3d.h"
 
-#include <mortar/mortar.h>
 #include <assert.h>
 #include <cinttypes>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <mortar/mortar.h>
 
 MORTAR_Window* DDWindow;
 Direct3DRMRenderer* DDRenderer;
@@ -104,8 +104,8 @@ HRESULT DirectDrawImpl::CreateSurface(
 			uint32_t gMask = lpDDSurfaceDesc->ddpfPixelFormat.dwGBitMask;
 			uint32_t bMask = lpDDSurfaceDesc->ddpfPixelFormat.dwBBitMask;
 			uint32_t aMask = (lpDDSurfaceDesc->ddpfPixelFormat.dwFlags & DDPF_ALPHAPIXELS) == DDPF_ALPHAPIXELS
-							   ? lpDDSurfaceDesc->ddpfPixelFormat.dwRGBAlphaBitMask
-							   : 0;
+								 ? lpDDSurfaceDesc->ddpfPixelFormat.dwRGBAlphaBitMask
+								 : 0;
 
 			format = MORTAR_GetPixelFormatForMasks(bpp, rMask, gMask, bMask, aMask);
 			if (format == MORTAR_PIXELFORMAT_UNKNOWN) {

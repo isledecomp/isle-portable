@@ -4,9 +4,8 @@
 #include "ddsurface_impl.h"
 #include "miniwin.h"
 
-#include <mortar/mortar.h>
-
 #include <cassert>
+#include <mortar/mortar.h>
 
 DirectDrawSurfaceImpl::DirectDrawSurfaceImpl(int width, int height, MORTAR_PixelFormat format)
 {
@@ -74,7 +73,8 @@ HRESULT DirectDrawSurfaceImpl::Blt(
 
 	auto other = static_cast<DirectDrawSurfaceImpl*>(lpDDSrcSurface);
 
-	MORTAR_Rect srcRect = lpSrcRect ? ConvertRect(lpSrcRect) : MORTAR_Rect{0, 0, other->m_surface->w, other->m_surface->h};
+	MORTAR_Rect srcRect =
+		lpSrcRect ? ConvertRect(lpSrcRect) : MORTAR_Rect{0, 0, other->m_surface->w, other->m_surface->h};
 	MORTAR_Rect dstRect = lpDestRect ? ConvertRect(lpDestRect) : MORTAR_Rect{0, 0, m_surface->w, m_surface->h};
 
 	MORTAR_Surface* blitSource = other->m_surface;

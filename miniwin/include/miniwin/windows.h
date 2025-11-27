@@ -1,8 +1,7 @@
 #pragma once
 
-#include <mortar/mortar.h>
-
 #include <limits.h>
+#include <mortar/mortar.h>
 #include <stdint.h>
 #include <string.h>
 

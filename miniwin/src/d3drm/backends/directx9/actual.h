@@ -78,5 +78,10 @@ void Actual_SubmitDraw(
 void Actual_Resize(int width, int height, const ViewportTransform& viewportTransform);
 void Actual_Clear(float r, float g, float b);
 uint32_t Actual_Flip();
-void Actual_Draw2DImage(IDirect3DTexture9* texture, const MORTAR_Rect& srcRect, const MORTAR_Rect& dstRect, FColor color);
+void Actual_Draw2DImage(
+	IDirect3DTexture9* texture,
+	const MORTAR_Rect& srcRect,
+	const MORTAR_Rect& dstRect,
+	FColor color
+);
 uint32_t Actual_Download(MORTAR_Surface* target);

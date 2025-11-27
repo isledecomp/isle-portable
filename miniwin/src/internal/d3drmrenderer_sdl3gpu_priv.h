@@ -7,7 +7,6 @@
 #include "ddsurface_impl.h"
 
 #include <SDL3/SDL.h>
-
 #include <vector>
 
 typedef struct {

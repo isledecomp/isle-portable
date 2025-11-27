@@ -5,9 +5,9 @@
 #include "meshutils.h"
 #include "structs.h"
 
-#include <mortar/mortar.h>
 #include <algorithm>
 #include <cstring>
+#include <mortar/mortar.h>
 #include <vector>
 
 static_assert(sizeof(Matrix4x4) == sizeof(D3DRMMATRIX4D), "Matrix4x4 is wrong size");
@@ -26,11 +26,7 @@ DirectX9Renderer::DirectX9Renderer(DWORD width, DWORD height)
 	m_height = height;
 	m_virtualWidth = width;
 	m_virtualHeight = height;
-	Actual_Initialize(
-		MORTAR_EXT_GetWindowProperty(DDWindow, MORTAR_WINDOW_PROPERTY_HWND, nullptr),
-		width,
-		height
-	);
+	Actual_Initialize(MORTAR_EXT_GetWindowProperty(DDWindow, MORTAR_WINDOW_PROPERTY_HWND, nullptr), width, height);
 	m_renderedImage = MORTAR_CreateSurface(m_width, m_height, MORTAR_PIXELFORMAT_RGBA32);
 }
 
@@ -273,7 +269,12 @@ void DirectX9Renderer::Flip()
 	Actual_Flip();
 }
 
-void DirectX9Renderer::Draw2DImage(uint32_t textureId, const MORTAR_Rect& srcRect, const MORTAR_Rect& dstRect, FColor color)
+void DirectX9Renderer::Draw2DImage(
+	uint32_t textureId,
+	const MORTAR_Rect& srcRect,
+	const MORTAR_Rect& dstRect,
+	FColor color
+)
 {
 	Actual_Draw2DImage(m_textures[textureId].dxTexture, srcRect, dstRect, color);
 }

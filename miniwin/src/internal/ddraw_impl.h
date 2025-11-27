@@ -28,8 +28,11 @@ struct DirectDrawImpl : public IDirectDraw2, public IDirect3D2, public IDirect3D
 		LPDIRECTDRAWPALETTE* lplpDDPalette,
 		IUnknown* pUnkOuter
 	) override;
-	HRESULT CreateSurface(LPDDSURFACEDESC lpDDSurfaceDesc, LPDIRECTDRAWSURFACE* lplpDDSurface, IUnknown* pUnkOuter)
-		override;
+	HRESULT CreateSurface(
+		LPDDSURFACEDESC lpDDSurfaceDesc,
+		LPDIRECTDRAWSURFACE* lplpDDSurface,
+		IUnknown* pUnkOuter
+	) override;
 	HRESULT EnumDisplayModes(
 		DWORD dwFlags,
 		LPDDSURFACEDESC lpDDSurfaceDesc,
@@ -43,8 +46,11 @@ struct DirectDrawImpl : public IDirectDraw2, public IDirect3D2, public IDirect3D
 	HRESULT SetCooperativeLevel(HWND hWnd, DDSCLFlags dwFlags) override;
 	HRESULT SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWORD dwBPP) override;
 	// IDirect3D2 interface
-	HRESULT CreateDevice(const GUID& guid, IDirectDrawSurface* pBackBuffer, IDirect3DDevice2** ppDirect3DDevice)
-		override;
+	HRESULT CreateDevice(
+		const GUID& guid,
+		IDirectDrawSurface* pBackBuffer,
+		IDirect3DDevice2** ppDirect3DDevice
+	) override;
 	HRESULT EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx) override;
 	// IDirect3DMiniwin interface
 	HRESULT RequestMSAA(DWORD msaaSamples) override

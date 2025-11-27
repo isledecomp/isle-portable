@@ -16,8 +16,8 @@
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
 #endif
-#include <mortar/mortar.h>
 #include <algorithm>
+#include <mortar/mortar.h>
 #include <string>
 
 static GLuint CompileShader(GLenum type, const char* source)
@@ -778,7 +778,12 @@ void OpenGLES2Renderer::Flip()
 	m_dirty = false;
 }
 
-void OpenGLES2Renderer::Draw2DImage(uint32_t textureId, const MORTAR_Rect& srcRect, const MORTAR_Rect& dstRect, FColor color)
+void OpenGLES2Renderer::Draw2DImage(
+	uint32_t textureId,
+	const MORTAR_Rect& srcRect,
+	const MORTAR_Rect& dstRect,
+	FColor color
+)
 {
 	MORTAR_GL_MakeCurrent(DDWindow, m_context);
 	m_dirty = true;

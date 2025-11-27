@@ -1,25 +1,25 @@
-#include "d3drmrenderer_sdl3gpu_priv.h"
 #include "ShaderIndex.h"
 #include "d3drmrenderer.h"
+#include "d3drmrenderer_sdl3gpu_priv.h"
 #include "ddraw_impl.h"
 #include "mathutils.h"
 #include "meshutils.h"
 #include "miniwin.h"
 
 #include <SDL3/SDL.h>
-
-#include <mortar/mortar.h>
 #include <cmath>
 #include <cstddef>
+#include <mortar/mortar.h>
 
-static SDL_Window *to_SDL3_Window(MORTAR_Window *mortar_window)
+static SDL_Window* to_SDL3_Window(MORTAR_Window* mortar_window)
 {
-	SDL_Window *sdl3_window = (SDL_Window *)MORTAR_EXT_GetWindowProperty(mortar_window, MORTAR_WINDOW_PROPERTY_SDL3WINDOW, nullptr);
+	SDL_Window* sdl3_window =
+		(SDL_Window*) MORTAR_EXT_GetWindowProperty(mortar_window, MORTAR_WINDOW_PROPERTY_SDL3WINDOW, nullptr);
 	SDL_assert(sdl3_window != NULL);
 	return sdl3_window;
 }
 
-static SDL_Color to_SDL_Color(const MORTAR_Color &mortar_color)
+static SDL_Color to_SDL_Color(const MORTAR_Color& mortar_color)
 {
 	SDL_Color sdl_color;
 	sdl_color.r = mortar_color.r;
@@ -257,7 +257,11 @@ Direct3DRMRenderer* Direct3DRMSDL3GPURenderer::Create(DWORD width, DWORD height)
 	uploadBufferInfo.size = uploadBufferSize;
 	ScopedTransferBuffer uploadBuffer{device.ptr, SDL_CreateGPUTransferBuffer(device.ptr, &uploadBufferInfo)};
 	if (!uploadBuffer.ptr) {
-		MORTAR_LogError(LOG_CATEGORY_MINIWIN, "SDL_CreateGPUTransferBuffer filed for upload buffer (%s)", MORTAR_GetError());
+		MORTAR_LogError(
+			LOG_CATEGORY_MINIWIN,
+			"SDL_CreateGPUTransferBuffer filed for upload buffer (%s)",
+			MORTAR_GetError()
+		);
 		return nullptr;
 	}
 
@@ -522,7 +526,8 @@ uint32_t Direct3DRMSDL3GPURenderer::GetTextureId(IDirect3DRMTexture* iTexture, b
 {
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
 	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
-	SDL_Surface* surf = (SDL_Surface *)MORTAR_EXT_GetSurfaceProperty(surface->m_surface, MORTAR_SURFACE_PROPERTY_SDL3SURFACE, nullptr);
+	SDL_Surface* surf =
+		(SDL_Surface*) MORTAR_EXT_GetSurfaceProperty(surface->m_surface, MORTAR_SURFACE_PROPERTY_SDL3SURFACE, nullptr);
 
 	for (Uint32 i = 0; i < m_textures.size(); ++i) {
 		auto& tex = m_textures[i];
@@ -881,7 +886,13 @@ void Direct3DRMSDL3GPURenderer::Flip()
 	}
 
 	SDL_GPUTexture* swapchainTexture;
-	if (!SDL_WaitAndAcquireGPUSwapchainTexture(m_cmdbuf, to_SDL3_Window(DDWindow), &swapchainTexture, nullptr, nullptr) ||
+	if (!SDL_WaitAndAcquireGPUSwapchainTexture(
+			m_cmdbuf,
+			to_SDL3_Window(DDWindow),
+			&swapchainTexture,
+			nullptr,
+			nullptr
+		) ||
 		!swapchainTexture) {
 		MORTAR_Log("SDL_WaitAndAcquireGPUSwapchainTexture: %s", MORTAR_GetError());
 		return;
@@ -1030,7 +1041,13 @@ void Direct3DRMSDL3GPURenderer::Download(MORTAR_Surface* target)
 	SDL_Surface* renderedImage =
 		SDL_CreateSurfaceFrom(width, height, SDL_PIXELFORMAT_XRGB8888, downloadedData, width * 4);
 
-	SDL_BlitSurfaceScaled(renderedImage, nullptr, (SDL_Surface *)MORTAR_EXT_GetSurfaceProperty(target, MORTAR_SURFACE_PROPERTY_SDL3SURFACE, nullptr), nullptr, SDL_SCALEMODE_NEAREST);
+	SDL_BlitSurfaceScaled(
+		renderedImage,
+		nullptr,
+		(SDL_Surface*) MORTAR_EXT_GetSurfaceProperty(target, MORTAR_SURFACE_PROPERTY_SDL3SURFACE, nullptr),
+		nullptr,
+		SDL_SCALEMODE_NEAREST
+	);
 	SDL_DestroySurface(renderedImage);
 	SDL_UnmapGPUTransferBuffer(m_device, m_downloadBuffer);
 }
@@ -1068,7 +1085,7 @@ void Direct3DRMSDL3GPU_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 	EnumDevice(cb, ctx, "SDL3 GPU HAL", &halDesc, &helDesc, SDL3_GPU_GUID);
 }
 
-Direct3DRMRenderer *Create_Direct3DRMSDL3GPURenderer(DWORD width, DWORD height)
+Direct3DRMRenderer* Create_Direct3DRMSDL3GPURenderer(DWORD width, DWORD height)
 {
 	return Direct3DRMSDL3GPURenderer::Create(width, height);
 }

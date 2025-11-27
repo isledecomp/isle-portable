@@ -7,12 +7,11 @@
 #include "mathutils.h"
 #include "miniwin.h"
 
-#include <mortar/mortar.h>
-
-#include <cmath>
 #include <cassert>
+#include <cmath>
 #include <float.h>
 #include <functional>
+#include <mortar/mortar.h>
 
 Direct3DRMViewportImpl::Direct3DRMViewportImpl(DWORD width, DWORD height, Direct3DRMRenderer* renderer)
 	: m_virtualWidth(width), m_virtualHeight(height), m_renderer(renderer)

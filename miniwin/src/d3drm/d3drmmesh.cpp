@@ -133,8 +133,8 @@ HRESULT Direct3DRMMeshImpl::SetGroupColorRGB(D3DRMGROUPINDEX groupIndex, float r
 		return DDERR_INVALIDPARAMS;
 	}
 
-	m_groups[groupIndex]
-		.color = {static_cast<uint8_t>(r * 255.0f), static_cast<uint8_t>(g * 255.0f), static_cast<uint8_t>(b * 255.0f), 255};
+	m_groups[groupIndex].color =
+		{static_cast<uint8_t>(r * 255.0f), static_cast<uint8_t>(g * 255.0f), static_cast<uint8_t>(b * 255.0f), 255};
 
 	return DD_OK;
 }

@@ -4,9 +4,8 @@
 #include "d3drmtexture_impl.h"
 #include "ddraw_impl.h"
 
-#include <mortar/mortar.h>
-
 #include <cstddef>
+#include <mortar/mortar.h>
 #include <vector>
 
 DEFINE_GUID(SOFTWARE_GUID, 0x682656F3, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02);

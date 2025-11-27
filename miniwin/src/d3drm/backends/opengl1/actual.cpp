@@ -4,11 +4,10 @@
 
 #include "structs.h"
 
-#include <mortar/mortar.h>
-#include <mortar/mortar_opengl.h>
-
 #include <algorithm>
 #include <cstring>
+#include <mortar/mortar.h>
+#include <mortar/mortar_opengl.h>
 #include <vector>
 
 // GL extension API functions.

@@ -5,11 +5,11 @@
 #include "meshutils.h"
 #include "miniwin.h"
 
-#include <mortar/mortar.h>
 #include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <limits>
+#include <mortar/mortar.h>
 #if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
 #include <xmmintrin.h>
 #if defined(__i386__) || defined(_M_IX86)
@@ -753,8 +753,7 @@ void Direct3DRMSoftwareRenderer::Resize(int width, int height, const ViewportTra
 	if (m_uploadBuffer) {
 		MORTAR_DestroyTexture(m_uploadBuffer);
 	}
-	m_uploadBuffer =
-		MORTAR_CreateTexture(m_renderer, MORTAR_PIXELFORMAT_RGBA32, m_width, m_height);
+	m_uploadBuffer = MORTAR_CreateTexture(m_renderer, MORTAR_PIXELFORMAT_RGBA32, m_width, m_height);
 
 	m_zBuffer.resize(m_width * m_height);
 }

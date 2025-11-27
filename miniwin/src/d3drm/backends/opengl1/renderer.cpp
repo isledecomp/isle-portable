@@ -5,9 +5,9 @@
 #include "mathutils.h"
 #include "meshutils.h"
 
-#include <mortar/mortar.h>
 #include <algorithm>
 #include <cstring>
+#include <mortar/mortar.h>
 #include <vector>
 
 static_assert(sizeof(Matrix4x4) == sizeof(D3DRMMATRIX4D), "Matrix4x4 is wrong size");
@@ -171,7 +171,8 @@ static uint32_t UploadTextureData(MORTAR_Surface* src, bool useNPOT, bool isUI, 
 		finalSurface = resized;
 	}
 
-	uint32_t texId = GL11_UploadTextureData(finalSurface->pixels, finalSurface->w, finalSurface->h, isUI, scaleX, scaleY);
+	uint32_t texId =
+		GL11_UploadTextureData(finalSurface->pixels, finalSurface->w, finalSurface->h, isUI, scaleX, scaleY);
 	if (finalSurface != src) {
 		MORTAR_DestroySurface(finalSurface);
 	}
@@ -393,7 +394,12 @@ void OpenGL1Renderer::Flip()
 	}
 }
 
-void OpenGL1Renderer::Draw2DImage(uint32_t textureId, const MORTAR_Rect& srcRect, const MORTAR_Rect& dstRect, FColor color)
+void OpenGL1Renderer::Draw2DImage(
+	uint32_t textureId,
+	const MORTAR_Rect& srcRect,
+	const MORTAR_Rect& dstRect,
+	FColor color
+)
 {
 	MORTAR_GL_MakeCurrent(DDWindow, m_context);
 	m_dirty = true;

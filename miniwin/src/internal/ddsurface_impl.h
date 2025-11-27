@@ -1,7 +1,7 @@
 #pragma once
 
-#include <mortar/mortar.h>
 #include <miniwin/ddraw.h>
+#include <mortar/mortar.h>
 
 struct DirectDrawSurfaceImpl : public IDirectDrawSurface3 {
 	DirectDrawSurfaceImpl(int width, int height, MORTAR_PixelFormat format);
@@ -18,8 +18,13 @@ struct DirectDrawSurfaceImpl : public IDirectDrawSurface3 {
 		DDBltFlags dwFlags,
 		LPDDBLTFX lpDDBltFx
 	) override;
-	HRESULT BltFast(DWORD dwX, DWORD dwY, LPDIRECTDRAWSURFACE lpDDSrcSurface, LPRECT lpSrcRect, DDBltFastFlags dwTrans)
-		override;
+	HRESULT BltFast(
+		DWORD dwX,
+		DWORD dwY,
+		LPDIRECTDRAWSURFACE lpDDSrcSurface,
+		LPRECT lpSrcRect,
+		DDBltFastFlags dwTrans
+	) override;
 	HRESULT Flip(LPDIRECTDRAWSURFACE lpDDSurfaceTargetOverride, DDFlipFlags dwFlags) override;
 	HRESULT GetAttachedSurface(LPDDSCAPS lpDDSCaps, LPDIRECTDRAWSURFACE* lplpDDAttachedSurface) override;
 	HRESULT GetDC(HDC* lphDC) override;

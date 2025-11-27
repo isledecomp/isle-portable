@@ -139,7 +139,8 @@ static MORTAR_Surface* ConvertAndResizeSurface(MORTAR_Surface* original, bool is
 		MORTAR_BlitSurface(original, nullptr, padded, nullptr);
 	}
 	else {
-		MORTAR_ScaleMode scaleMode = (scaleX >= 1.0f && scaleY >= 1.0f) ? MORTAR_SCALEMODE_NEAREST : MORTAR_SCALEMODE_LINEAR;
+		MORTAR_ScaleMode scaleMode =
+			(scaleX >= 1.0f && scaleY >= 1.0f) ? MORTAR_SCALEMODE_NEAREST : MORTAR_SCALEMODE_LINEAR;
 		MORTAR_Rect dstRect = {0, 0, scaledW, scaledH};
 		MORTAR_BlitSurfaceScaled(original, nullptr, padded, &dstRect, scaleMode);
 	}
@@ -184,7 +185,13 @@ static void EncodeTextureLayout(const u8* src, u8* dst, int width, int height)
 	}
 }
 
-static bool ConvertAndUploadTexture(C3D_Tex* tex, MORTAR_Surface* originalSurface, bool isUI, float scaleX, float scaleY)
+static bool ConvertAndUploadTexture(
+	C3D_Tex* tex,
+	MORTAR_Surface* originalSurface,
+	bool isUI,
+	float scaleX,
+	float scaleY
+)
 {
 	MORTAR_Surface* resized = ConvertAndResizeSurface(originalSurface, isUI, scaleX, scaleY);
 	if (!resized) {
@@ -551,7 +558,12 @@ void Citro3DRenderer::Flip()
 	g_rendering = false;
 }
 
-void Citro3DRenderer::Draw2DImage(uint32_t textureId, const MORTAR_Rect& srcRect, const MORTAR_Rect& dstRect, FColor color)
+void Citro3DRenderer::Draw2DImage(
+	uint32_t textureId,
+	const MORTAR_Rect& srcRect,
+	const MORTAR_Rect& dstRect,
+	FColor color
+)
 {
 	C3D_AlphaBlend(GPU_BLEND_ADD, GPU_BLEND_ADD, GPU_ONE, GPU_ONE_MINUS_SRC_ALPHA, GPU_ONE, GPU_ONE_MINUS_SRC_ALPHA);
 	StartFrame();

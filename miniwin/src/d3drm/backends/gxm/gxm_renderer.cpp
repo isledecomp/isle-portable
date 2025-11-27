@@ -7,8 +7,8 @@
 #include "tlsf.h"
 #include "utils.h"
 
-#include <mortar/mortar.h>
 #include <algorithm>
+#include <mortar/mortar.h>
 #include <psp2/common_dialog.h>
 #include <psp2/display.h>
 #include <psp2/gxm.h>
@@ -537,7 +537,8 @@ void copySurfaceToGxm(
 	}
 	default: {
 		DEBUG_ONLY_PRINTF("unsupported format %d\n", MORTAR_GetPixelFormatName(src->format));
-		MORTAR_Surface* dst = MORTAR_CreateSurfaceFrom(src->w, src->h, MORTAR_PIXELFORMAT_ABGR8888, textureData, src->w * 4);
+		MORTAR_Surface* dst =
+			MORTAR_CreateSurfaceFrom(src->w, src->h, MORTAR_PIXELFORMAT_ABGR8888, textureData, src->w * 4);
 		MORTAR_BlitSurface(src, nullptr, dst, nullptr);
 		MORTAR_DestroySurface(dst);
 		break;
@@ -713,11 +714,10 @@ GXMMeshCacheEntry GXMRenderer::GXMUploadMesh(const MeshGroup& meshGroup)
 					vertex.normal.y,
 					vertex.normal.z,
 				},
-			.texCoord =
-				{
-					vertex.tu,
-					vertex.tv,
-				}
+			.texCoord = {
+				vertex.tu,
+				vertex.tv,
+			}
 		};
 	}
 	memcpy(indexBuffer, indices.data(), indices.size() * sizeof(uint16_t));
