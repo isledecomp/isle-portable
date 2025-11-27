@@ -13,8 +13,8 @@
 #include <QKeyEvent>
 #include <QMessageBox>
 #include <QProcess>
-#include <mortar/mortar.h>
 #include <cmath>
+#include <mortar/mortar.h>
 #include <mxdirectx/legodxinfo.h>
 #include <ui_maindialog.h>
 

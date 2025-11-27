@@ -2,9 +2,9 @@
 
 #include "mxstring.h"
 
+#include <iniparser.h>
 #include <mortar/mortar_filesystem.h>
 #include <mortar/mortar_log.h>
-#include <iniparser.h>
 
 void IOS_SetupDefaultConfigOverrides(dictionary* p_dictionary)
 {

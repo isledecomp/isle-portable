@@ -3,10 +3,10 @@
 
 #include "assert.h"
 
-#include <mortar/mortar_stdinc.h>
-#include <mortar/mortar_timer.h>
 #include <limits.h> // ULONG_MAX
 #include <math.h>
+#include <mortar/mortar_stdinc.h>
+#include <mortar/mortar_timer.h>
 #ifdef MINIWIN
 #include "miniwin/windows.h"
 #else
@@ -41,7 +41,7 @@ private:
 	uint64_t m_startTick; // 0x00
 	// ??? when we provide LARGE_INTEGER arithmetic, use a
 	//     LARGE_INTEGER m_elapsedTicks rather than m_elapsedSeconds
-	double m_elapsedSeconds;  // 0x0c
+	double m_elapsedSeconds;    // 0x0c
 	uint64_t m_ticksPerSeconds; // 0x14
 };
 

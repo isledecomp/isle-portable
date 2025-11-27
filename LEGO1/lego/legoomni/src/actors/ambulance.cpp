@@ -179,7 +179,8 @@ MxLong Ambulance::HandleEndAction(MxEndActionNotificationParam& p_param)
 			m_enableRandomAudio = 0;
 			TickleManager()->RegisterClient(this, 40000);
 		}
-		else if (objectId == IsleScript::c_hpz047pe_RunAnim || objectId == IsleScript::c_hpz048pe_RunAnim || objectId == IsleScript::c_hpz049bd_RunAnim || objectId == IsleScript::c_hpz053pa_RunAnim) {
+		else if (objectId == IsleScript::c_hpz047pe_RunAnim || objectId == IsleScript::c_hpz048pe_RunAnim ||
+				 objectId == IsleScript::c_hpz049bd_RunAnim || objectId == IsleScript::c_hpz053pa_RunAnim) {
 			if (m_taskState == Ambulance::e_finished) {
 				PlayAnimation(IsleScript::c_hpz055pa_RunAnim);
 				m_taskState = Ambulance::e_none;
@@ -232,7 +233,8 @@ MxLong Ambulance::HandleEndAction(MxEndActionNotificationParam& p_param)
 				StopActions();
 			}
 		}
-		else if (objectId == IsleScript::c_hho142cl_RunAnim || objectId == IsleScript::c_hho143cl_RunAnim || objectId == IsleScript::c_hho144cl_RunAnim) {
+		else if (objectId == IsleScript::c_hho142cl_RunAnim || objectId == IsleScript::c_hho143cl_RunAnim ||
+				 objectId == IsleScript::c_hho144cl_RunAnim) {
 			Reset();
 		}
 	}
@@ -348,7 +350,9 @@ MxLong Ambulance::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 			break;
 		}
 	}
-	else if (p_param.GetTrigger() == LegoPathStruct::c_camAnim && (p_param.GetData() == 0x22 || p_param.GetData() == 0x23 || p_param.GetData() == 0x24) && m_atPoliceTask == 0) {
+	else if (p_param.GetTrigger() == LegoPathStruct::c_camAnim &&
+			 (p_param.GetData() == 0x22 || p_param.GetData() == 0x23 || p_param.GetData() == 0x24) &&
+			 m_atPoliceTask == 0) {
 		m_atPoliceTask = 1;
 		m_taskState = Ambulance::e_waiting;
 

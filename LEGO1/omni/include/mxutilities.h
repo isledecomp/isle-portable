@@ -4,8 +4,8 @@
 #include "lego1_export.h"
 #include "mxtypes.h"
 
-#include <mortar/mortar_stdinc.h>
 #include <cstring>
+#include <mortar/mortar_stdinc.h>
 
 struct LegoSdlEvents {
 	uint32_t m_windowsMessage;

@@ -5,7 +5,12 @@
 #include <psp2/common_dialog.h>
 #include <psp2/message_dialog.h>
 
-bool Vita_ShowSimpleMessageBox(MORTAR_MessageBoxFlags flags, const char* title, const char* message, MORTAR_Window* window)
+bool Vita_ShowSimpleMessageBox(
+	MORTAR_MessageBoxFlags flags,
+	const char* title,
+	const char* message,
+	MORTAR_Window* window
+)
 {
 	int ret;
 	SceMsgDialogParam param;

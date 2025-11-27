@@ -432,7 +432,8 @@ MxLong Hospital::HandleButtonDown(LegoControlManagerNotificationParam& p_param)
 						TransitionManager()->StartTransition(MxTransitionManager::e_mosaic, 50, FALSE, FALSE);
 					}
 				}
-				else if (m_hospitalState->m_state == HospitalState::e_unknown10 || m_hospitalState->m_state == HospitalState::e_waitAcceptingQuest) {
+				else if (m_hospitalState->m_state == HospitalState::e_unknown10 ||
+						 m_hospitalState->m_state == HospitalState::e_waitAcceptingQuest) {
 					if (m_hospitalState->m_state == HospitalState::e_unknown10) {
 						m_hospitalState->m_state = HospitalState::e_unknown11;
 

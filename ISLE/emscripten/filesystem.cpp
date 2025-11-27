@@ -7,9 +7,9 @@
 #include "misc.h"
 #include "mxmain.h"
 
-#include <mortar/mortar.h>
 #include <emscripten.h>
 #include <emscripten/wasmfs.h>
+#include <mortar/mortar.h>
 
 static backend_t opfs = nullptr;
 static backend_t fetchfs = nullptr;

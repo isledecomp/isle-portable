@@ -46,7 +46,7 @@ public:
 	MxResult Open(MxULong) override;                 // vtable+0x14
 	MxResult Close() override;                       // vtable+0x18
 	MxResult Read(unsigned char*, MxULong) override; // vtable+0x20
-	MxResult Seek(MxLong, MORTAR_IOWhence) override;    // vtable+0x24
+	MxResult Seek(MxLong, MORTAR_IOWhence) override; // vtable+0x24
 	MxULong GetBufferSize() override;                // vtable+0x28
 	MxULong GetStreamBuffersNum() override;          // vtable+0x2c
 

@@ -59,9 +59,9 @@
 #include "sndanim_actions.h"
 #include "towtrack.h"
 
+#include <assert.h>
 #include <mortar/mortar_filesystem.h>
 #include <mortar/mortar_stdinc.h>
-#include <assert.h>
 #include <stdio.h>
 
 DECOMP_SIZE_ASSERT(LegoGameState::Username, 0x0e)

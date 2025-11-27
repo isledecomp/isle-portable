@@ -5,9 +5,9 @@
 #include "mxdirect3d.h"
 #include "mxvideoparam.h"
 
-#include <mortar/mortar.h>
 #include <assert.h>
 #include <miniwin/miniwind3d.h>
+#include <mortar/mortar.h>
 
 DECOMP_SIZE_ASSERT(MxDirect3D, 0x894)
 
@@ -72,7 +72,8 @@ BOOL MxDirect3D::Create(
 	}
 
 	if (m_pDirect3d->QueryInterface(IID_IDirect3DMiniwin, (void**) &miniwind3d) == DD_OK) {
-		MxVideoParam* videoParam = (MxVideoParam*)MORTAR_EXT_GetWindowProperty(reinterpret_cast<MORTAR_Window*>(hWnd), MORTAR_WINDOW_PROPERTY_USER, nullptr);
+		MxVideoParam* videoParam = (MxVideoParam*)
+			MORTAR_EXT_GetWindowProperty(reinterpret_cast<MORTAR_Window*>(hWnd), MORTAR_WINDOW_PROPERTY_USER, nullptr);
 #ifndef MXDIRECTX_FOR_CONFIG
 		assert(videoParam);
 #endif

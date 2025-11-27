@@ -2,9 +2,9 @@
 
 #include "mxtypes.h"
 
-#include <mortar/mortar_log.h>
 #include <algorithm>
 #include <emscripten/html5.h>
+#include <mortar/mortar_log.h>
 
 double g_fullWidth;
 double g_fullHeight;

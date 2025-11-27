@@ -3,9 +3,9 @@
 #include "filesystem.h"
 #include "window.h"
 
-#include <mortar/mortar_log.h>
 #include <emscripten.h>
 #include <iniparser.h>
+#include <mortar/mortar_log.h>
 
 void Emscripten_SetupDefaultConfigOverrides(dictionary* p_dictionary)
 {

@@ -2,8 +2,8 @@
 
 #include "decomp.h"
 
-#include <mortar/mortar_log.h>
 #include <cassert>
+#include <mortar/mortar_log.h>
 
 DECOMP_SIZE_ASSERT(MxDirectDraw, 0x880)
 

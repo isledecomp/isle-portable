@@ -10,8 +10,8 @@
 #include "mxsoundmanager.h"
 #include "mxutilities.h"
 
-#include <mortar/mortar_stdinc.h>
 #include <assert.h>
+#include <mortar/mortar_stdinc.h>
 
 DECOMP_SIZE_ASSERT(MxWavePresenter, 0x6c);
 DECOMP_SIZE_ASSERT(MxWavePresenter::WaveFormat, 0x18);

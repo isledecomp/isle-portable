@@ -2,8 +2,8 @@
 
 #include "mxstring.h"
 
-#include <mortar/mortar.h>
 #include <iniparser.h>
+#include <mortar/mortar.h>
 
 void Android_SetupDefaultConfigOverrides(dictionary* p_dictionary)
 {
@@ -26,16 +26,15 @@ void Android_SetupDefaultConfigOverrides(dictionary* p_dictionary)
 	iniparser_set(p_dictionary, "isle:Touch Scheme", MORTAR_itoa(0, buf, 10));
 }
 
-
 #ifdef SDL_PLATFORM_ANDROID
-extern int main(int argc, char *argv[]);
+extern int main(int argc, char* argv[]);
 
-extern "C" {
-
-int SDL_main(int argc, char *argv[])
+extern "C"
 {
-	return main(argc, argv);
-}
 
+	int SDL_main(int argc, char* argv[])
+	{
+		return main(argc, argv);
+	}
 }
 #endif

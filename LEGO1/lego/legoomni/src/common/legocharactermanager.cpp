@@ -17,8 +17,8 @@
 #include "roi/legolod.h"
 #include "viewmanager/viewmanager.h"
 
-#include <mortar/mortar_stdinc.h>
 #include <assert.h>
+#include <mortar/mortar_stdinc.h>
 #include <stdio.h>
 #include <vec.h>
 
@@ -573,7 +573,8 @@ LegoROI* LegoCharacterManager::CreateActorROI(const char* p_key)
 				childROI->SetLodColor(1.0F, 1.0F, 1.0F, 0.0F);
 			}
 		}
-		else if (g_actorLODs[i + 1].m_flags & LegoActorLOD::c_useColor || (i == 0 && part.m_partNameIndices[part.m_partNameIndex] == 0)) {
+		else if (g_actorLODs[i + 1].m_flags & LegoActorLOD::c_useColor ||
+				 (i == 0 && part.m_partNameIndices[part.m_partNameIndex] == 0)) {
 			LegoFloat red, green, blue, alpha;
 			childROI->GetRGBAColor(part.m_names[part.m_nameIndices[part.m_nameIndex]], red, green, blue, alpha);
 			childROI->SetLodColor(red, green, blue, alpha);

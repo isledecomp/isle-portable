@@ -69,27 +69,27 @@ public:
 	void DetectDoubleTap(const MORTAR_TouchFingerEvent& p_event);
 
 private:
-	char* m_hdPath;              // 0x00
-	char* m_cdPath;              // 0x04
-	char* m_deviceId;            // 0x08
-	char* m_savePath;            // 0x0c
-	MxBool m_fullScreen;         // 0x10
-	MxS32 m_flipSurfaces;        // 0x14
-	MxS32 m_backBuffersInVram;   // 0x18
-	MxS32 m_using8bit;           // 0x1c
-	MxS32 m_using16bit;          // 0x20
-	MxS32 m_hasLightSupport;     // 0x24
-	MxS32 m_use3dSound;          // 0x28
-	MxS32 m_useMusic;            // 0x2c
-	MxS32 m_wideViewAngle;       // 0x38
-	MxS32 m_islandQuality;       // 0x3c
-	MxS32 m_islandTexture;       // 0x40
-	MxS32 m_gameStarted;         // 0x44
-	MxLong m_frameDelta;         // 0x48
-	MxVideoParam m_videoParam;   // 0x4c
-	MxS32 m_windowActive;        // 0x70
-	HWND m_windowHandle;         // 0x74
-	MxS32 m_drawCursor;          // 0x78
+	char* m_hdPath;                 // 0x00
+	char* m_cdPath;                 // 0x04
+	char* m_deviceId;               // 0x08
+	char* m_savePath;               // 0x0c
+	MxBool m_fullScreen;            // 0x10
+	MxS32 m_flipSurfaces;           // 0x14
+	MxS32 m_backBuffersInVram;      // 0x18
+	MxS32 m_using8bit;              // 0x1c
+	MxS32 m_using16bit;             // 0x20
+	MxS32 m_hasLightSupport;        // 0x24
+	MxS32 m_use3dSound;             // 0x28
+	MxS32 m_useMusic;               // 0x2c
+	MxS32 m_wideViewAngle;          // 0x38
+	MxS32 m_islandQuality;          // 0x3c
+	MxS32 m_islandTexture;          // 0x40
+	MxS32 m_gameStarted;            // 0x44
+	MxLong m_frameDelta;            // 0x48
+	MxVideoParam m_videoParam;      // 0x4c
+	MxS32 m_windowActive;           // 0x70
+	HWND m_windowHandle;            // 0x74
+	MxS32 m_drawCursor;             // 0x78
 	MORTAR_Cursor* m_cursorArrow;   // 0x7c
 	MORTAR_Cursor* m_cursorBusy;    // 0x80
 	MORTAR_Cursor* m_cursorNo;      // 0x84

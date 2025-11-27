@@ -8,8 +8,8 @@
 #include "mxutilities.h"
 #include "mxvideomanager.h"
 
-#include <mortar/mortar_log.h>
 #include <assert.h>
+#include <mortar/mortar_log.h>
 #ifdef MINIWIN
 #include "miniwin/windows.h"
 #else

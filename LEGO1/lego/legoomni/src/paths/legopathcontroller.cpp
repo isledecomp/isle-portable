@@ -817,7 +817,8 @@ MxResult LegoPathController::FUN_10048310(
 					}
 				}
 				else {
-					boundaryList.push_back(LegoBEWithFloat(edge, p_oldBoundary, edge->DistanceToMidpoint(p_oldPosition))
+					boundaryList.push_back(
+						LegoBEWithFloat(edge, p_oldBoundary, edge->DistanceToMidpoint(p_oldPosition))
 					);
 					boundarySet.insert(&boundaryList.back());
 				}

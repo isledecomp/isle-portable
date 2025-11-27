@@ -9,10 +9,9 @@
 #include "mxtimer.h"
 #include "mxutilities.h"
 
+#include <cassert>
 #include <mortar/mortar_log.h>
 #include <mortar/mortar_stdinc.h>
-
-#include <cassert>
 
 DECOMP_SIZE_ASSERT(MxControlPresenter, 0x5c)
 

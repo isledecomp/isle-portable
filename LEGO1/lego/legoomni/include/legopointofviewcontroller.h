@@ -87,7 +87,7 @@ public:
 	{
 		LegoMouseController::RightUp(p_x, p_y);
 		AffectPointOfView();
-	}                                             // vtable+0x28
+	} // vtable+0x28
 	virtual void SetEntity(LegoEntity* p_entity); // vtable+0x2c
 
 	MxResult Create(Lego3DView* p_lego3DView);

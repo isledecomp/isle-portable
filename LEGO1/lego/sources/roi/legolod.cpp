@@ -57,9 +57,9 @@ LegoLOD::~LegoLOD()
 // FUNCTION: LEGO1 0x100aa510
 LegoResult LegoLOD::Read(Tgl::Renderer* p_renderer, LegoTextureContainer* p_textureContainer, LegoStorage* p_storage)
 {
-	float(*normals)[3] = NULL;
-	float(*vertices)[3] = NULL;
-	float(*textureVertices)[2] = NULL;
+	float (*normals)[3] = NULL;
+	float (*vertices)[3] = NULL;
+	float (*textureVertices)[2] = NULL;
 	LegoS32 numVerts = 0;
 	LegoS32 numNormals = 0;
 	LegoS32 numTextureVertices = 0;

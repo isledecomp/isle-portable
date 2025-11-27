@@ -54,10 +54,10 @@ typedef struct _ISLE_MMIOINFO {
 
 	/* fields maintained by MMIO functions during buffered I/O */
 	int64_t cchBuffer;  /* size of I/O buffer (or 0L) */
-	char* pchBuffer;   /* start of I/O buffer (or NULL) */
-	char* pchNext;     /* pointer to next byte to read/write */
-	char* pchEndRead;  /* pointer to last valid byte to read */
-	char* pchEndWrite; /* pointer to last byte to write */
+	char* pchBuffer;    /* start of I/O buffer (or NULL) */
+	char* pchNext;      /* pointer to next byte to read/write */
+	char* pchEndRead;   /* pointer to last valid byte to read */
+	char* pchEndWrite;  /* pointer to last byte to write */
 	int64_t lBufOffset; /* disk offset of start of buffer */
 
 	/* fields maintained by I/O procedure */

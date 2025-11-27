@@ -9,8 +9,8 @@
 #include "mxgeometry.h"
 #include "mxpresenterlist.h"
 
-#include <mortar/mortar_stdinc.h>
 #include <assert.h>
+#include <mortar/mortar_stdinc.h>
 
 LegoSdlEvents g_legoSdlEvents;
 

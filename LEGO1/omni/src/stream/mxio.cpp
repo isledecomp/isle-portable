@@ -523,7 +523,8 @@ MxU16 MXIOINFO::Descend(ISLE_MMCKINFO* p_chunkInfo, const ISLE_MMCKINFO* p_paren
 					result = MMIOERR_CHUNKNOTFOUND;
 					running = FALSE;
 				}
-				else if ((p_descend == MMIO_FINDLIST && tmp.ckid == FOURCC_LIST) || (p_descend == MMIO_FINDRIFF && tmp.ckid == FOURCC_RIFF)) {
+				else if ((p_descend == MMIO_FINDLIST && tmp.ckid == FOURCC_LIST) ||
+						 (p_descend == MMIO_FINDRIFF && tmp.ckid == FOURCC_RIFF)) {
 					if (Read(&tmp.fccType, 4) != 4) {
 						result = MMIOERR_CANNOTREAD;
 						running = FALSE;

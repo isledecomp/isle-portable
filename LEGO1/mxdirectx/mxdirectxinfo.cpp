@@ -2,9 +2,9 @@
 
 #include "omni/include/mxvideoparam.h"
 
-#include <mortar/mortar_log.h>
 #include <assert.h>
 #include <miniwin/miniwind3d.h>
+#include <mortar/mortar_log.h>
 #include <stdio.h> // for vsprintf
 
 DECOMP_SIZE_ASSERT(MxAssignedDevice, 0xe4)
@@ -228,8 +228,11 @@ BOOL MxDeviceEnumerate::EnumDirectDrawCallback(LPGUID p_guid, LPSTR p_driverDesc
 
 	result = lpDD->QueryInterface(IID_IDirect3DMiniwin, (void**) &miniwind3d);
 	if (result == DD_OK) {
-		MxVideoParam* videoParam = (MxVideoParam*)MORTAR_EXT_GetWindowProperty(reinterpret_cast<MORTAR_Window*>(m_hWnd),
-			MORTAR_WINDOW_PROPERTY_USER, nullptr);
+		MxVideoParam* videoParam = (MxVideoParam*) MORTAR_EXT_GetWindowProperty(
+			reinterpret_cast<MORTAR_Window*>(m_hWnd),
+			MORTAR_WINDOW_PROPERTY_USER,
+			nullptr
+		);
 #ifndef MXDIRECTX_FOR_CONFIG
 		assert(videoParam);
 #endif

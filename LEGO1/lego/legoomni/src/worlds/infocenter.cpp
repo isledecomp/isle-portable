@@ -1147,7 +1147,9 @@ MxLong Infocenter::HandleNotification0(MxNotificationParam& p_param)
 			PlayAction(InfomainScript::c_iic043in_RunAnim);
 		}
 	}
-	else if (sender->IsA("MxEntity") && m_infocenterState->m_state != InfocenterState::e_selectedCharacterAndDestination && m_infocenterState->m_state != InfocenterState::e_exiting) {
+	else if (sender->IsA("MxEntity") &&
+			 m_infocenterState->m_state != InfocenterState::e_selectedCharacterAndDestination &&
+			 m_infocenterState->m_state != InfocenterState::e_exiting) {
 		switch (((MxEntity*) sender)->GetEntityId()) {
 		case 5: {
 			m_infoManDialogueTimer = 0;
@@ -1522,7 +1524,7 @@ void Infocenter::PlayAction(InfomainScript::Script p_script)
 		}
 		else if (p_script > InfomainScript::c_iicx18in_RunAnim) {
 			// Shift all other actions by 1
-			p_script = (InfomainScript::Script)((int) p_script - 1);
+			p_script = (InfomainScript::Script) ((int) p_script - 1);
 		}
 	}
 

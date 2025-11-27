@@ -104,8 +104,7 @@ MxResult MxSoundManager::Create(MxU32 p_frequencyMS, MxBool p_createThread)
 	spec.format = MORTAR_AUDIO_F32;
 	spec.channels = ma_engine_get_channels(m_engine);
 
-	if ((m_stream = MORTAR_EX_OpenAudioPlaybackDevice(&spec, &AudioStreamCallback, this)) !=
-		NULL) {
+	if ((m_stream = MORTAR_EX_OpenAudioPlaybackDevice(&spec, &AudioStreamCallback, this)) != NULL) {
 		MORTAR_EX_ResumeAudioDevice(m_stream);
 	}
 	else {

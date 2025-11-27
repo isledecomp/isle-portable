@@ -1,8 +1,8 @@
 #include "legodxinfo.h"
 
-#include <mortar/mortar_cpuinfo.h>
 #include <cassert>
 #include <cstdio> // for vsprintf
+#include <mortar/mortar_cpuinfo.h>
 
 // File name validated by BETA10 0x1011cba3; directory unknown
 
@@ -109,8 +109,11 @@ int LegoDeviceEnumerate::GetDevice(int p_deviceNum, MxDriver*& p_driver, Direct3
 
 // FUNCTION: CONFIG 0x004027d0
 // FUNCTION: BETA10 0x1011cb70
-int LegoDeviceEnumerate::FormatDeviceName(char* p_buffer, const MxDriver* p_ddInfo, const Direct3DDeviceInfo* p_d3dInfo)
-	const
+int LegoDeviceEnumerate::FormatDeviceName(
+	char* p_buffer,
+	const MxDriver* p_ddInfo,
+	const Direct3DDeviceInfo* p_d3dInfo
+) const
 {
 	int number = 0;
 	assert(p_ddInfo && p_d3dInfo);

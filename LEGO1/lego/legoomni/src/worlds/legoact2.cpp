@@ -227,7 +227,8 @@ MxResult LegoAct2::Tickle()
 				m_infomanDirecting = Act2mainScript::c_Avo906In_PlayWav;
 			}
 		}
-		else if (m_timeSinceLastStage >= 90000 && m_timeSinceLastStage % 90000 == 0 && m_infomanDirecting == (Act2mainScript::Script) 0) {
+		else if (m_timeSinceLastStage >= 90000 && m_timeSinceLastStage % 90000 == 0 &&
+				 m_infomanDirecting == (Act2mainScript::Script) 0) {
 			StartAction(Act2mainScript::c_Avo908In_PlayWav, FALSE, FALSE, NULL, NULL, NULL);
 			m_infomanDirecting = Act2mainScript::c_Avo908In_PlayWav;
 		}

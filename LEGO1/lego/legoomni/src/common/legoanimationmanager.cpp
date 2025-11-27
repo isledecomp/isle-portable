@@ -2757,7 +2757,19 @@ MxResult LegoAnimationManager::FUN_10064670(Vector3* p_position)
 	}
 
 	if (success) {
-		return FUN_10064380("brickstr", "EDG02_95", 1, 0.5f, 3, 0.5f, MORTAR_rand(3) + 14, -1, MORTAR_rand(3), -1, 0.5f);
+		return FUN_10064380(
+			"brickstr",
+			"EDG02_95",
+			1,
+			0.5f,
+			3,
+			0.5f,
+			MORTAR_rand(3) + 14,
+			-1,
+			MORTAR_rand(3),
+			-1,
+			0.5f
+		);
 	}
 
 	return FAILURE;

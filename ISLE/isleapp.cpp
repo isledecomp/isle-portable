@@ -37,18 +37,17 @@
 #include "viewmanager/viewmanager.h"
 
 #include <array>
-#include <extensions/extensions.h>
-#include <miniwin/miniwindevice.h>
-#include <type_traits>
-#include <vec.h>
-
-#include <mortar/mortar.h>
-#include <mortar/mortar_main.h>
 #include <errno.h>
+#include <extensions/extensions.h>
 #include <iniparser.h>
 #include <inttypes.h>
+#include <miniwin/miniwindevice.h>
+#include <mortar/mortar.h>
+#include <mortar/mortar_main.h>
 #include <stdlib.h>
 #include <time.h>
+#include <type_traits>
+#include <vec.h>
 
 #ifdef __EMSCRIPTEN__
 #include "emscripten/config.h"
@@ -799,7 +798,11 @@ MORTAR_AppResult MORTAR_AppEvent(void* appstate, MORTAR_Event* event)
 			}
 			break;
 		default:
-			MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "Unknown MORTAR Windows message: 0x%" PRIX32, event->user.code);
+			MORTAR_LogError(
+				MORTAR_LOG_CATEGORY_APPLICATION,
+				"Unknown MORTAR Windows message: 0x%" PRIX32,
+				event->user.code
+			);
 			break;
 		}
 	}
@@ -825,17 +828,17 @@ MORTAR_AppResult MORTAR_AppEvent(void* appstate, MORTAR_Event* event)
 		}
 	}
 	else if (event->user.type == g_legoSdlEvents.m_gameEvent) {
-		auto rumble = [](float p_strength, float p_lowFrequencyRumble, float p_highFrequencyRumble, MxU32 p_milliseconds
-					  ) {
-			if (g_isle->GetHaptic() &&
-				!InputManager()
-					 ->HandleRumbleEvent(p_strength, p_lowFrequencyRumble, p_highFrequencyRumble, p_milliseconds)) {
+		auto rumble =
+			[](float p_strength, float p_lowFrequencyRumble, float p_highFrequencyRumble, MxU32 p_milliseconds) {
+				if (g_isle->GetHaptic() &&
+					!InputManager()
+						 ->HandleRumbleEvent(p_strength, p_lowFrequencyRumble, p_highFrequencyRumble, p_milliseconds)) {
 // Platform-specific handling
 #ifdef __EMSCRIPTEN__
-				Emscripten_HandleRumbleEvent(p_lowFrequencyRumble, p_highFrequencyRumble, p_milliseconds);
+					Emscripten_HandleRumbleEvent(p_lowFrequencyRumble, p_highFrequencyRumble, p_milliseconds);
 #endif
-			}
-		};
+				}
+			};
 
 		switch (event->user.code) {
 		case e_hitActor:
@@ -966,7 +969,11 @@ MxResult IsleApp::SetupWindow()
 		}
 	}
 	else {
-		MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "Failed to open MORTAR_IOStream for icon: %s", MORTAR_GetError());
+		MORTAR_LogError(
+			MORTAR_LOG_CATEGORY_APPLICATION,
+			"Failed to open MORTAR_IOStream for icon: %s",
+			MORTAR_GetError()
+		);
 	}
 
 	if (!SetupLegoOmni()) {
@@ -1576,12 +1583,12 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR szCmdLine, int nShowC
 	return MORTAR_main(0, NULL, MORTAR_AppInit, MORTAR_AppIterate, MORTAR_AppEvent, MORTAR_AppQuit);
 }
 #else
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
 	return MORTAR_main(argc, argv, MORTAR_AppInit, MORTAR_AppIterate, MORTAR_AppEvent, MORTAR_AppQuit);
 }
 #ifdef __ANDROID__
-int SDL_main(int argc, char *argv[])
+int SDL_main(int argc, char* argv[])
 {
 	return main(argc, argv);
 }

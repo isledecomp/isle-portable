@@ -30,9 +30,9 @@
 #include "racecar_actions.h"
 #include "scripts.h"
 
+#include <isle.h>
 #include <mortar/mortar_stdinc.h>
 #include <mortar/mortar_timer.h>
-#include <isle.h>
 #include <stdio.h>
 #include <vec.h>
 

@@ -40,7 +40,7 @@ public:
 	} // vtable+0x1c
 
 	virtual MxResult Read(unsigned char*, MxULong) = 0; // vtable+0x20
-	virtual MxLong Seek(MxLong, MORTAR_IOWhence) = 0;      // vtable+0x24
+	virtual MxLong Seek(MxLong, MORTAR_IOWhence) = 0;   // vtable+0x24
 	virtual MxULong GetBufferSize() = 0;                // vtable+0x28
 	virtual MxULong GetStreamBuffersNum() = 0;          // vtable+0x2c
 

@@ -39,7 +39,7 @@ public:
 
 private:
 	uint64_t m_startTime; // 0x08
-	MxBool m_isRunning; // 0x0c
+	MxBool m_isRunning;   // 0x0c
 
 	static MxLong g_lastTimeCalculated;
 	static MxLong g_lastTimeTimerStarted;

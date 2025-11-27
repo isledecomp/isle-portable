@@ -5,8 +5,8 @@
 #include "mxgeometry/mxgeometry3d.h"
 #include "mxstring.h"
 
-#include <mortar/mortar_iostream.h>
 #include <assert.h>
+#include <mortar/mortar_iostream.h>
 
 // VTABLE: LEGO1 0x100d7d80
 // SIZE 0x08

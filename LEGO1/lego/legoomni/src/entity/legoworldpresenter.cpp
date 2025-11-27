@@ -289,7 +289,8 @@ MxResult LegoWorldPresenter::LoadWorld(char* p_worldName, LegoWorld* p_world)
 				}
 			}
 		}
-		else if (g_legoWorldPresenterQuality <= 1 && !MORTAR_strncasecmp(worlds[i].m_models[j].m_modelName, "haus", 4)) {
+		else if (g_legoWorldPresenterQuality <= 1 &&
+				 !MORTAR_strncasecmp(worlds[i].m_models[j].m_modelName, "haus", 4)) {
 			if (worlds[i].m_models[j].m_modelName[4] == '3') {
 				if (LoadWorldModel(worlds[i].m_models[j], wdbFile, p_world) != SUCCESS) {
 					return FAILURE;

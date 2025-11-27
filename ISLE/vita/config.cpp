@@ -1,7 +1,7 @@
 #include "config.h"
 
-#include <mortar/mortar_log.h>
 #include <iniparser.h>
+#include <mortar/mortar_log.h>
 
 void VITA_SetupDefaultConfigOverrides(dictionary* p_dictionary)
 {

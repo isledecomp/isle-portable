@@ -337,7 +337,10 @@ MxResult LegoOmni::Create(MxOmniCreateParam& p_param)
 
 	if (m_transitionManager) {
 		if (m_transitionManager->GetDDrawSurfaceFromVideoManager() != SUCCESS) {
-			MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "MxTransitionManager::GetDDrawSurfaceFromVideoManager failed");
+			MORTAR_LogError(
+				MORTAR_LOG_CATEGORY_APPLICATION,
+				"MxTransitionManager::GetDDrawSurfaceFromVideoManager failed"
+			);
 			goto done;
 		}
 

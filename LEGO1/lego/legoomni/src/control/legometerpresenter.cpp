@@ -8,8 +8,8 @@
 #include "mxutilities.h"
 #include "mxvariabletable.h"
 
-#include <mortar/mortar_stdinc.h>
 #include <assert.h>
+#include <mortar/mortar_stdinc.h>
 
 DECOMP_SIZE_ASSERT(LegoMeterPresenter, 0x94)
 

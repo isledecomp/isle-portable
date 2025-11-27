@@ -16,8 +16,8 @@
 #include <QApplication>
 #include <QCommandLineParser>
 #include <QMessageBox>
-#include <mortar/mortar.h>
 #include <iniparser.h>
+#include <mortar/mortar.h>
 
 DECOMP_SIZE_ASSERT(CWinApp, 0xc4)
 DECOMP_SIZE_ASSERT(CConfigApp, 0x108)
