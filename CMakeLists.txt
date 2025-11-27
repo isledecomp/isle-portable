@@ -194,7 +194,11 @@ target_link_directories(DirectX5::DirectX5 INTERFACE "${CMAKE_SOURCE_DIR}/3rdpar
 add_library(Vec::Vec INTERFACE IMPORTED)
 target_include_directories(Vec::Vec INTERFACE "${CMAKE_SOURCE_DIR}/3rdparty/vec")
 
-add_library(mortar
+add_library(mortar_headers INTERFACE)
+add_library(mortar::headers ALIAS mortar_headers)
+target_compile_definitions(mortar_headers INTERFACE $<$<BOOL:${BUILD_SHARED_LIBS}>:MORTAR_DLL>)
+target_include_directories(mortar_headers INTERFACE "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/mortar/include>")
+add_library(mortar OBJECT
     mortar/include/mortar/mortar.h
     mortar/src/mortar.cpp
     mortar/src/sdl3/sdl3_audio.cpp
@@ -225,17 +229,11 @@ add_library(mortar
     mortar/src/sdl3/sdl3_timer.cpp
     mortar/src/sdl3/sdl3_video.cpp
 )
-add_library(mortar::mortar ALIAS mortar)
-target_include_directories(mortar PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/mortar/include>")
-target_include_directories(mortar PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/mortar/glad/include>")
+target_compile_definitions(mortar PRIVATE BUILDING_MORTAR)
 target_link_libraries(mortar PRIVATE SDL3::SDL3)
-if(BUILD_SHARED_LIBS AND WIN32)
-  set_property(TARGET mortar PROPERTY PREFIX "")
-endif()
-set_property(TARGET mortar PROPERTY DEFINE_SYMBOL "BUILDING_MORTAR")
+target_link_libraries(mortar PRIVATE mortar::headers)
 set_property(TARGET mortar PROPERTY C_VISIBILITY_PRESET "hidden")
 set_property(TARGET mortar PROPERTY CXX_VISIBILITY_PRESET "hidden")
-target_compile_definitions(mortar PUBLIC $<$<BOOL:${BUILD_SHARED_LIBS}>:MORTAR_DLL>)
 
 add_library(lego1
   LEGO1/main.cpp
@@ -250,7 +248,8 @@ target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/L
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/LEGO1/lego/sources>")
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/LEGO1/lego/legoomni/include>")
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/LEGO1/lego/legoomni/include/actions>")
-target_link_libraries(lego1 PRIVATE mortar::mortar)
+target_sources(lego1 PRIVATE $<TARGET_OBJECTS:mortar>)
+target_link_libraries(lego1 PUBLIC mortar::headers)
 target_link_libraries(lego1 PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5>)
 # Allow unconditional include of miniwin/miniwind3d.h
 target_link_libraries(lego1 PRIVATE miniwin-headers)
@@ -600,7 +599,6 @@ if (ISLE_BUILD_APP)
   target_link_libraries(isle PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5>)
 
   # Link mortar and iniparser
-  target_link_libraries(isle PRIVATE mortar::mortar)
   target_link_libraries(isle PRIVATE Isle::iniparser)
 
   # Allow unconditional include of miniwin/miniwindevice.h
@@ -706,9 +704,10 @@ if (ISLE_BUILD_CONFIG)
     CONFIG/qt/detectdx5.cpp
     CONFIG/qt/res/config.rc
     CONFIG/qt/res/config.qrc
+    $<TARGET_OBJECTS:mortar>
   )
   target_link_libraries(isle-config PRIVATE Qt6::Core Qt6::Widgets)
-  target_link_libraries(isle-config PRIVATE mortar::mortar)
+  target_link_libraries(isle-config PRIVATE mortar::headers)
   set_property(TARGET isle-config PROPERTY AUTOMOC ON)
   set_property(TARGET isle-config PROPERTY AUTORCC ON)
   set_property(TARGET isle-config PROPERTY AUTOUIC ON)
