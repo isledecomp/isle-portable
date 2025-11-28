@@ -768,6 +768,7 @@ if(ISLE_MORTAR_SDL3)
     mortar/src/sdl3/sdl3_video.cpp
   )
   target_sources(mortar PRIVATE ${MORTAR_SDL3_SOURCES})
+  add_dependencies(mortar SDL3::SDL3)
   set_property(SOURCE ${MORTAR_SDL3_SOURCES} APPEND PROPERTY INCLUDE_DIRECTORIES $<TARGET_PROPERTY:SDL3::Headers,INTERFACE_INCLUDE_DIRECTORIES>)
   if(ISLE_MORTAR_SDL3_DYNAMIC)
     target_compile_definitions(mortar_headers INTERFACE SDL3_DYNAMIC_LOAD)

@@ -57,7 +57,7 @@ def iterate_sdl3_symbols(sdl3_json):
 
 def main():
     parser = argparse.ArgumentParser(allow_abbrev=False)
-    parser.add_argument("sdl3_api", type=Path, help="Path of SDL3 json api")
+    parser.add_argument("sdl3_api", type=Path, help="Path of SDL3 json api (SDL/src/dynapi/gendynapi.py --dump)")
     args = parser.parse_args()
 
     with args.sdl3_api.open() as f_sdl3:
