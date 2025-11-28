@@ -1,7 +1,6 @@
 #define SDL_MAIN_HANDLED
 #include "mortar/mortar_main.h"
 #include "sdl3_internal.h"
-#include <SDL3/SDL_main.h>
 
 #include <stdlib.h>
 
@@ -61,9 +60,14 @@ static int mortar_sdl3_main(int argc, char *argv[])
 
 int MORTAR_SDL3_main(int argc, char *argv[], MORTAR_AppInit_cbfn *init, MORTAR_AppIterate_cbfn *iterate, MORTAR_AppEvent_cbfn *event, MORTAR_AppQuit_cbfn *quit)
 {
+	if (!load_sdl3_api()) {
+		return 1;
+	}
 	g_mortar_AppInit = init;
 	g_mortar_AppIterate = iterate;
 	g_mortar_AppEvent = event;
 	g_mortar_AppQuit = quit;
-	return SDL_RunApp(argc, argv, mortar_sdl3_main, NULL);
+	int result = SDL_RunApp(argc, argv, mortar_sdl3_main, NULL);
+	unload_sdl3_api();
+	return result;
 }

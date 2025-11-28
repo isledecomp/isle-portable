@@ -2,9 +2,13 @@
 #include "sdl3_internal.h"
 
 int SDL3_versionnum;
+SDL3_Symbols SDL3;
 
 bool MORTAR_Init()
 {
+	if (!load_sdl3_api()) {
+		return false;
+	}
 	SDL3_versionnum = SDL_GetVersion();
 
 	SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
@@ -19,4 +23,5 @@ bool MORTAR_Init()
 void MORTAR_Quit()
 {
 	SDL_Quit();
+	unload_sdl3_api();
 }

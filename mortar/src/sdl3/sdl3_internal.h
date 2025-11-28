@@ -1,7 +1,7 @@
 #pragma once
 
 #include "mortar/mortar.h"
-#include <SDL3/SDL.h>
+#include "mortar/backends/sdl3_dynamic.h"
 
 extern int SDL3_versionnum;
 

@@ -194,47 +194,6 @@ target_link_directories(DirectX5::DirectX5 INTERFACE "${CMAKE_SOURCE_DIR}/3rdpar
 add_library(Vec::Vec INTERFACE IMPORTED)
 target_include_directories(Vec::Vec INTERFACE "${CMAKE_SOURCE_DIR}/3rdparty/vec")
 
-add_library(mortar_headers INTERFACE)
-add_library(mortar::headers ALIAS mortar_headers)
-target_compile_definitions(mortar_headers INTERFACE $<$<BOOL:${BUILD_SHARED_LIBS}>:MORTAR_DLL>)
-target_include_directories(mortar_headers INTERFACE "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/mortar/include>")
-add_library(mortar OBJECT
-    mortar/include/mortar/mortar.h
-    mortar/src/mortar.cpp
-    mortar/src/sdl3/sdl3_audio.cpp
-    mortar/src/sdl3/sdl3_cpuinfo.cpp
-    mortar/src/sdl3/sdl3_error.cpp
-    mortar/src/sdl3/sdl3_events.cpp
-    mortar/src/sdl3/sdl3_filesystem.cpp
-    mortar/src/sdl3/sdl3_gamepad.cpp
-    mortar/src/sdl3/sdl3_haptic.cpp
-    mortar/src/sdl3/sdl3_init.cpp
-    mortar/src/sdl3/sdl3_iostream.cpp
-    mortar/src/sdl3/sdl3_joystick.cpp
-    mortar/src/sdl3/sdl3_keyboard.cpp
-    mortar/src/sdl3/sdl3_keycode.cpp
-    mortar/src/sdl3/sdl3_log.cpp
-    mortar/src/sdl3/sdl3_main.cpp
-    mortar/src/sdl3/sdl3_messagebox.cpp
-    mortar/src/sdl3/sdl3_mouse.cpp
-    mortar/src/sdl3/sdl3_mutex.cpp
-    mortar/src/sdl3/sdl3_pixels.cpp
-    mortar/src/sdl3/sdl3_process.cpp
-    mortar/src/sdl3/sdl3_rect.cpp
-    mortar/src/sdl3/sdl3_render.cpp
-    mortar/src/sdl3/sdl3_stdinc.cpp
-    mortar/src/sdl3/sdl3_surface.cpp
-    mortar/src/sdl3/sdl3_system.cpp
-    mortar/src/sdl3/sdl3_thread.cpp
-    mortar/src/sdl3/sdl3_timer.cpp
-    mortar/src/sdl3/sdl3_video.cpp
-)
-target_compile_definitions(mortar PRIVATE BUILDING_MORTAR)
-target_link_libraries(mortar PRIVATE SDL3::SDL3)
-target_link_libraries(mortar PRIVATE mortar::headers)
-set_property(TARGET mortar PROPERTY C_VISIBILITY_PRESET "hidden")
-set_property(TARGET mortar PROPERTY CXX_VISIBILITY_PRESET "hidden")
-
 add_library(lego1
   LEGO1/main.cpp
 )
@@ -248,7 +207,7 @@ target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/L
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/LEGO1/lego/sources>")
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/LEGO1/lego/legoomni/include>")
 target_include_directories(lego1 PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/LEGO1/lego/legoomni/include/actions>")
-target_sources(lego1 PRIVATE $<TARGET_OBJECTS:mortar>)
+target_sources(lego1 PRIVATE ${MORTAR_OBJECTS})
 target_link_libraries(lego1 PUBLIC mortar::headers)
 target_link_libraries(lego1 PRIVATE $<$<BOOL:${ISLE_USE_DX5}>:DirectX5::DirectX5>)
 # Allow unconditional include of miniwin/miniwind3d.h
@@ -708,7 +667,6 @@ if (ISLE_BUILD_CONFIG)
   )
   target_link_libraries(isle-config PRIVATE Qt6::Core Qt6::Widgets)
   target_link_libraries(isle-config PRIVATE mortar::headers)
-  target_link_libraries(isle-config PRIVATE SDL3::SDL3)
   set_property(TARGET isle-config PROPERTY AUTOMOC ON)
   set_property(TARGET isle-config PROPERTY AUTORCC ON)
   set_property(TARGET isle-config PROPERTY AUTOUIC ON)
@@ -758,6 +716,75 @@ endif()
 if (ISLE_MINIWIN)
   set_property(TARGET ${isle_targets} APPEND PROPERTY LINK_LIBRARIES "miniwin")
 endif()
+
+set(ISLE_MORTAR_SDL3_DEFAULT ON)
+
+option(ISLE_MORTAR_SDL3 "Mortar SDL3 backend" ${ISLE_MORTAR_SDL3_DEFAULT})
+cmake_dependent_option(ISLE_MORTAR_SDL3_DYNAMIC "Mortar dynamic SDL3 backend" ON "ISLE_MORTAR_SDL3;NOT ANDROID;NOT IOS;NOT EMSCIPRTEN;NOT N3DS;NOT NX;NOT XBOXONE;NOT VITA" OFF)
+
+add_library(mortar_headers INTERFACE)
+add_library(mortar::headers ALIAS mortar_headers)
+target_compile_definitions(mortar_headers INTERFACE $<$<BOOL:${BUILD_SHARED_LIBS}>:MORTAR_DLL>)
+target_include_directories(mortar_headers INTERFACE "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/mortar/include>")
+
+add_library(mortar OBJECT
+  mortar/include/mortar/mortar.h
+  mortar/src/mortar.cpp
+)
+target_compile_definitions(mortar PRIVATE BUILDING_MORTAR)
+target_link_libraries(mortar PRIVATE mortar::headers)
+set_property(TARGET mortar PROPERTY C_VISIBILITY_PRESET "hidden")
+set_property(TARGET mortar PROPERTY CXX_VISIBILITY_PRESET "hidden")
+set(MORTAR_OBJECTS $<TARGET_OBJECTS:mortar>)
+
+if(ISLE_MORTAR_SDL3)
+  set(MORTAR_SDL3_SOURCES
+    mortar/src/sdl3/sdl3_audio.cpp
+    mortar/src/sdl3/sdl3_cpuinfo.cpp
+    mortar/src/sdl3/sdl3_error.cpp
+    mortar/src/sdl3/sdl3_events.cpp
+    mortar/src/sdl3/sdl3_filesystem.cpp
+    mortar/src/sdl3/sdl3_gamepad.cpp
+    mortar/src/sdl3/sdl3_haptic.cpp
+    mortar/src/sdl3/sdl3_init.cpp
+    mortar/src/sdl3/sdl3_iostream.cpp
+    mortar/src/sdl3/sdl3_joystick.cpp
+    mortar/src/sdl3/sdl3_keyboard.cpp
+    mortar/src/sdl3/sdl3_keycode.cpp
+    mortar/src/sdl3/sdl3_log.cpp
+    mortar/src/sdl3/sdl3_main.cpp
+    mortar/src/sdl3/sdl3_messagebox.cpp
+    mortar/src/sdl3/sdl3_mouse.cpp
+    mortar/src/sdl3/sdl3_mutex.cpp
+    mortar/src/sdl3/sdl3_pixels.cpp
+    mortar/src/sdl3/sdl3_process.cpp
+    mortar/src/sdl3/sdl3_rect.cpp
+    mortar/src/sdl3/sdl3_render.cpp
+    mortar/src/sdl3/sdl3_stdinc.cpp
+    mortar/src/sdl3/sdl3_surface.cpp
+    mortar/src/sdl3/sdl3_system.cpp
+    mortar/src/sdl3/sdl3_thread.cpp
+    mortar/src/sdl3/sdl3_timer.cpp
+    mortar/src/sdl3/sdl3_video.cpp
+  )
+  target_sources(mortar PRIVATE ${MORTAR_SDL3_SOURCES})
+  set_property(SOURCE ${MORTAR_SDL3_SOURCES} APPEND PROPERTY INCLUDE_DIRECTORIES $<TARGET_PROPERTY:SDL3::Headers,INTERFACE_INCLUDE_DIRECTORIES>)
+  if(ISLE_MORTAR_SDL3_DYNAMIC)
+    target_compile_definitions(mortar_headers INTERFACE SDL3_DYNAMIC_LOAD)
+    set_property(TARGET lego1 APPEND PROPERTY BUILD_RPATH "$<TARGET_FILE_DIR:SDL3::SDL3>")
+    target_link_options(lego1 PRIVATE "-Wl,--enable-new-dtags")
+    if(TARGET isle)
+      set_property(TARGET isle APPEND PROPERTY BUILD_RPATH "$<TARGET_FILE_DIR:SDL3::SDL3>")
+    endif()
+    if(TARGET isle-config)
+      set_property(TARGET isle-config APPEND PROPERTY BUILD_RPATH "$<TARGET_FILE_DIR:SDL3::SDL3>")
+    endif()
+  else()
+    target_link_libraries(mortar PRIVATE SDL3::SDL3)
+  endif()
+endif()
+target_sources(lego1 PRIVATE $<TARGET_OBJECTS:mortar>)
+target_link_libraries(lego1 PRIVATE mortar_headers)
 
 if (MSVC)
   if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "15")

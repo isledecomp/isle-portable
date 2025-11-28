@@ -1381,6 +1381,9 @@ MORTAR_AppResult IsleApp::ParseArguments(int argc, char** argv)
 			m_iniPath = argv[i + 1];
 			consumed = 2;
 		}
+		else if (strcmp(argv[i], "--platform") == 0) {
+			consumed = 2;
+		}
 		else if (strcmp(argv[i], "--help") == 0) {
 			DisplayArgumentHelp(argv[0]);
 			return MORTAR_APP_SUCCESS;

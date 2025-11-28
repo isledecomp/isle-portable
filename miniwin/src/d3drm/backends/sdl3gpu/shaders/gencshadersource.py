@@ -110,7 +110,7 @@ def main() -> None:
             f.write("// clang-format off\n")
             f.write("\n")
             write_generated_warning(f)
-            f.write("#include <SDL3/SDL.h>\n")
+            f.write("#include <mortar/backends/sdl3_dynamic.h>\n")
             f.write("\n")
             f.write("// DXIL only makes sense on Windows platforms\n")
             f.write("#if defined(SDL_PLATFORM_WINDOWS)\n")
@@ -143,7 +143,7 @@ def main() -> None:
             f.write("// clang-format off\n")
             f.write("\n")
             write_generated_warning(f)
-            f.write("#include <SDL3/SDL.h>\n")
+            f.write("#include <mortar/backends/sdl3_dynamic.h>\n")
             f.write("\n")
             for str_stage, shader_metadatas in stage_metadatas.items():
                 if not shader_metadatas:

@@ -6,7 +6,7 @@
 #include "meshutils.h"
 #include "miniwin.h"
 
-#include <SDL3/SDL.h>
+#include <mortar/backends/sdl3_dynamic.h>
 #include <cmath>
 #include <cstddef>
 #include <mortar/mortar.h>
