@@ -28,8 +28,13 @@ struct DummySurfaceImpl : public IDirectDrawSurface3 {
 		MINIWIN_NOT_IMPLEMENTED();
 		return DDERR_GENERIC;
 	}
-	HRESULT BltFast(DWORD dwX, DWORD dwY, IDirectDrawSurface* lpDDSrcSurface, LPRECT lpSrcRect, DDBltFastFlags dwTrans)
-		override
+	HRESULT BltFast(
+		DWORD dwX,
+		DWORD dwY,
+		IDirectDrawSurface* lpDDSrcSurface,
+		LPRECT lpSrcRect,
+		DDBltFastFlags dwTrans
+	) override
 	{
 		MINIWIN_NOT_IMPLEMENTED();
 		return DDERR_GENERIC;

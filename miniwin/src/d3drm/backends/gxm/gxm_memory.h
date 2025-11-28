@@ -1,6 +1,6 @@
 #pragma once
 
-#include <SDL3/SDL_stdinc.h>
+#include <mortar/mortar_stdinc.h>
 #include <psp2/types.h>
 
 void* patcher_host_alloc(void* user_data, unsigned int size);

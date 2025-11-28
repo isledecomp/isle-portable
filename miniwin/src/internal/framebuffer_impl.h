@@ -1,8 +1,8 @@
 #pragma once
 
-#include <SDL3/SDL.h>
 #include <ddsurface_impl.h>
 #include <miniwin/ddraw.h>
+#include <mortar/mortar.h>
 
 struct FrameBufferImpl : public IDirectDrawSurface3 {
 	FrameBufferImpl(DWORD virtualWidth, DWORD virtualHeight);
@@ -19,8 +19,13 @@ struct FrameBufferImpl : public IDirectDrawSurface3 {
 		DDBltFlags dwFlags,
 		LPDDBLTFX lpDDBltFx
 	) override;
-	HRESULT BltFast(DWORD dwX, DWORD dwY, IDirectDrawSurface* lpDDSrcSurface, LPRECT lpSrcRect, DDBltFastFlags dwTrans)
-		override;
+	HRESULT BltFast(
+		DWORD dwX,
+		DWORD dwY,
+		IDirectDrawSurface* lpDDSrcSurface,
+		LPRECT lpSrcRect,
+		DDBltFastFlags dwTrans
+	) override;
 	HRESULT Flip(IDirectDrawSurface* lpDDSurfaceTargetOverride, DDFlipFlags dwFlags) override;
 	HRESULT GetAttachedSurface(LPDDSCAPS lpDDSCaps, IDirectDrawSurface** lplpDDAttachedSurface) override;
 	HRESULT GetDC(HDC* lphDC) override;

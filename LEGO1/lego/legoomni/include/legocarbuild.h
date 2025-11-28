@@ -6,7 +6,7 @@
 #include "legoworld.h"
 #include "mxgeometry/mxquaternion.h"
 
-#include <SDL3/SDL_stdinc.h>
+#include <mortar/mortar_stdinc.h>
 
 class LegoCarBuildAnimPresenter;
 class LegoControlManagerNotificationParam;
@@ -201,7 +201,7 @@ private:
 
 	MxU8 m_missclickCounter;                                  // 0x109
 	MxU16 m_lastActorScript;                                  // 0x10a
-	Uint64 m_lastActorScriptStartTime;                        // 0x10c
+	uint64_t m_lastActorScriptStartTime;                      // 0x10c
 	LegoROI* m_selectedPart;                                  // 0x110
 	BoundingSphere m_targetBoundingSphere;                    // 0x114
 	MxMatrix m_originalSelectedPartTransform;                 // 0x12c

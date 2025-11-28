@@ -216,7 +216,8 @@ MxLong Isle::HandleEndAction(MxEndActionNotificationParam& p_param)
 					result = 1;
 				}
 			}
-			else if (auto replacedObject = Extension<SiLoader>::Call(ReplacedIn, *p_param.GetAction(), *g_jukeboxScript).value_or(std::nullopt)) {
+			else if (auto replacedObject = Extension<SiLoader>::Call(ReplacedIn, *p_param.GetAction(), *g_jukeboxScript)
+											   .value_or(std::nullopt)) {
 				MxS32 script = replacedObject->second;
 
 				if (script >= JukeboxScript::c_JBMusic1 && script <= JukeboxScript::c_JBMusic6) {
@@ -385,7 +386,7 @@ MxLong Isle::HandleControl(LegoControlManagerNotificationParam& p_param)
 			break;
 		case IsleScript::c_Observe_Plane_Ctl:
 			if (!m_act1state->m_planeActive) {
-				switch (SDL_rand(3)) {
+				switch (MORTAR_rand(3)) {
 				case 0:
 					InvokeAction(Extra::e_start, *g_isleScript, IsleScript::c_nic002pr_RunAnim, NULL);
 					break;
@@ -573,7 +574,7 @@ void Isle::Enable(MxBool p_enable)
 			MxS32 locations[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 
 			for (MxU32 i = 0; i < 5; i++) {
-				MxS32 r = SDL_rand(5);
+				MxS32 r = MORTAR_rand(5);
 
 				for (MxU32 j = 0; j < sizeOfArray(locations); j++) {
 					if (locations[j] != 0 && r-- == 0) {

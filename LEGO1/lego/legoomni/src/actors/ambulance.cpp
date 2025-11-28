@@ -23,7 +23,7 @@
 #include "mxvariabletable.h"
 #include "scripts.h"
 
-#include <SDL3/SDL_stdinc.h>
+#include <mortar/mortar_stdinc.h>
 #include <stdio.h>
 
 DECOMP_SIZE_ASSERT(Ambulance, 0x184)
@@ -179,7 +179,8 @@ MxLong Ambulance::HandleEndAction(MxEndActionNotificationParam& p_param)
 			m_enableRandomAudio = 0;
 			TickleManager()->RegisterClient(this, 40000);
 		}
-		else if (objectId == IsleScript::c_hpz047pe_RunAnim || objectId == IsleScript::c_hpz048pe_RunAnim || objectId == IsleScript::c_hpz049bd_RunAnim || objectId == IsleScript::c_hpz053pa_RunAnim) {
+		else if (objectId == IsleScript::c_hpz047pe_RunAnim || objectId == IsleScript::c_hpz048pe_RunAnim ||
+				 objectId == IsleScript::c_hpz049bd_RunAnim || objectId == IsleScript::c_hpz053pa_RunAnim) {
 			if (m_taskState == Ambulance::e_finished) {
 				PlayAnimation(IsleScript::c_hpz055pa_RunAnim);
 				m_taskState = Ambulance::e_none;
@@ -232,7 +233,8 @@ MxLong Ambulance::HandleEndAction(MxEndActionNotificationParam& p_param)
 				StopActions();
 			}
 		}
-		else if (objectId == IsleScript::c_hho142cl_RunAnim || objectId == IsleScript::c_hho143cl_RunAnim || objectId == IsleScript::c_hho144cl_RunAnim) {
+		else if (objectId == IsleScript::c_hho142cl_RunAnim || objectId == IsleScript::c_hho143cl_RunAnim ||
+				 objectId == IsleScript::c_hho144cl_RunAnim) {
 			Reset();
 		}
 	}
@@ -247,14 +249,14 @@ MxLong Ambulance::HandleButtonDown(LegoControlManagerNotificationParam& p_param)
 	if (m_taskState == Ambulance::e_waiting) {
 		LegoROI* roi = PickROI(p_param.GetX(), p_param.GetY());
 
-		if (roi != NULL && !SDL_strcasecmp(roi->GetName(), "ps-gate")) {
+		if (roi != NULL && !MORTAR_strcasecmp(roi->GetName(), "ps-gate")) {
 			m_taskState = Ambulance::e_finished;
 			return 1;
 		}
 
 		roi = PickRootROI(p_param.GetX(), p_param.GetY());
 
-		if (roi != NULL && !SDL_strcasecmp(roi->GetName(), "gd")) {
+		if (roi != NULL && !MORTAR_strcasecmp(roi->GetName(), "gd")) {
 			m_taskState = Ambulance::e_finished;
 			return 1;
 		}
@@ -348,7 +350,9 @@ MxLong Ambulance::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 			break;
 		}
 	}
-	else if (p_param.GetTrigger() == LegoPathStruct::c_camAnim && (p_param.GetData() == 0x22 || p_param.GetData() == 0x23 || p_param.GetData() == 0x24) && m_atPoliceTask == 0) {
+	else if (p_param.GetTrigger() == LegoPathStruct::c_camAnim &&
+			 (p_param.GetData() == 0x22 || p_param.GetData() == 0x23 || p_param.GetData() == 0x24) &&
+			 m_atPoliceTask == 0) {
 		m_atPoliceTask = 1;
 		m_taskState = Ambulance::e_waiting;
 
@@ -477,7 +481,7 @@ void Ambulance::ActivateSceneActions()
 	else if (m_atPoliceTask != 0 && m_atBeachTask != 0) {
 		IsleScript::Script objectId;
 
-		switch (SDL_rand(2)) {
+		switch (MORTAR_rand(2)) {
 		case 0:
 			objectId = IsleScript::c_ham076cl_PlayWav;
 			break;
@@ -495,7 +499,7 @@ void Ambulance::ActivateSceneActions()
 	else {
 		IsleScript::Script objectId;
 
-		switch (SDL_rand(2)) {
+		switch (MORTAR_rand(2)) {
 		case 0:
 			objectId = IsleScript::c_ham075cl_PlayWav;
 			break;
@@ -522,7 +526,7 @@ MxResult Ambulance::Tickle()
 	else if (m_lastAction == IsleScript::c_noneIsle) {
 		IsleScript::Script objectId;
 
-		switch (1 + SDL_rand(12)) {
+		switch (1 + MORTAR_rand(12)) {
 		case 1:
 			objectId = IsleScript::c_ham034ra_PlayWav;
 			break;

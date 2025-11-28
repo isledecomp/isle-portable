@@ -298,12 +298,15 @@ MxLong Pizza::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 
 			MxTrace("Pizza mission: ending\n");
 		}
-		else if ((p_param.GetTrigger() == LegoPathStruct::c_camAnim && (
-			((p_param.GetData() == 0x24 || p_param.GetData() == 0x22) && GameState()->GetActorId() == LegoActor::c_mama) ||
-			(p_param.GetData() == 0x33 && GameState()->GetActorId() == LegoActor::c_papa) ||
-			((p_param.GetData() == 0x08 || p_param.GetData() == 0x09) && GameState()->GetActorId() == LegoActor::c_nick) ||
-			(p_param.GetData() == 0x0b && GameState()->GetActorId() == LegoActor::c_laura)
-		)) || (p_param.GetTrigger() == LegoPathStruct::c_w && p_param.GetData() == 0x169 && GameState()->GetActorId() == LegoActor::c_nick)) {
+		else if ((p_param.GetTrigger() == LegoPathStruct::c_camAnim &&
+				  (((p_param.GetData() == 0x24 || p_param.GetData() == 0x22) &&
+					GameState()->GetActorId() == LegoActor::c_mama) ||
+				   (p_param.GetData() == 0x33 && GameState()->GetActorId() == LegoActor::c_papa) ||
+				   ((p_param.GetData() == 0x08 || p_param.GetData() == 0x09) &&
+					GameState()->GetActorId() == LegoActor::c_nick) ||
+				   (p_param.GetData() == 0x0b && GameState()->GetActorId() == LegoActor::c_laura))) ||
+				 (p_param.GetTrigger() == LegoPathStruct::c_w && p_param.GetData() == 0x169 &&
+				  GameState()->GetActorId() == LegoActor::c_nick)) {
 			IsleScript::Script action;
 
 			if (time < m_mission->GetRedFinishTime()) {
@@ -360,7 +363,8 @@ MxLong Pizza::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 					InvokeAction(Extra::e_start, *g_isleScript, IsleScript::c_pns050p1_RunAnim, NULL);
 				}
 			}
-			else if (p_param.GetData() == 0x15f && GameState()->GetActorId() == LegoActor::c_papa && !m_playedLocationAnimation) {
+			else if (p_param.GetData() == 0x15f && GameState()->GetActorId() == LegoActor::c_papa &&
+					 !m_playedLocationAnimation) {
 				m_playedLocationAnimation = TRUE;
 				InvokeAction(Extra::e_start, *g_isleScript, IsleScript::c_wns050p1_RunAnim, NULL);
 			}

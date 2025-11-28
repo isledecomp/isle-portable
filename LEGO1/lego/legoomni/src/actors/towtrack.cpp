@@ -175,7 +175,7 @@ MxLong TowTrack::HandleEndAction(MxEndActionNotificationParam& p_param)
 				m_actorId = LegoActor::c_laura;
 			}
 
-			switch (1 + SDL_rand(m_actorId != 4 ? 4 : 3)) {
+			switch (1 + MORTAR_rand(m_actorId != 4 ? 4 : 3)) {
 			case 1:
 				PlayFinalAnimation(IsleScript::c_wrt074sl_RunAnim);
 				break;
@@ -190,7 +190,8 @@ MxLong TowTrack::HandleEndAction(MxEndActionNotificationParam& p_param)
 				break;
 			}
 		}
-		else if (objectId == IsleScript::c_wrt074sl_RunAnim || objectId == IsleScript::c_wrt075rh_RunAnim || objectId == IsleScript::c_wrt076df_RunAnim || objectId == IsleScript::c_wrt078ni_RunAnim) {
+		else if (objectId == IsleScript::c_wrt074sl_RunAnim || objectId == IsleScript::c_wrt075rh_RunAnim ||
+				 objectId == IsleScript::c_wrt076df_RunAnim || objectId == IsleScript::c_wrt078ni_RunAnim) {
 			m_state->m_state = TowTrackMissionState::e_hookedUp;
 			CurrentWorld()->PlaceActor(UserActor());
 			HandleClick();
@@ -274,7 +275,14 @@ MxLong TowTrack::HandleEndAction(MxEndActionNotificationParam& p_param)
 
 			m_state->UpdateScore(LegoState::e_yellow, m_actorId);
 		}
-		else if (objectId == IsleScript::c_wgs098nu_RunAnim || objectId == IsleScript::c_wgs099nu_RunAnim || objectId == IsleScript::c_wgs100nu_RunAnim || objectId == IsleScript::c_wgs101nu_RunAnim || objectId == IsleScript::c_wgs102nu_RunAnim || objectId == IsleScript::c_wgs085nu_RunAnim || objectId == IsleScript::c_wgs086nu_RunAnim || objectId == IsleScript::c_wgs087nu_RunAnim || objectId == IsleScript::c_wgs088nu_RunAnim || objectId == IsleScript::c_wgs089nu_RunAnim || objectId == IsleScript::c_wgs091nu_RunAnim || objectId == IsleScript::c_wgs092nu_RunAnim || objectId == IsleScript::c_wgs093nu_RunAnim || objectId == IsleScript::c_wgs094nu_RunAnim || objectId == IsleScript::c_wgs095nu_RunAnim) {
+		else if (objectId == IsleScript::c_wgs098nu_RunAnim || objectId == IsleScript::c_wgs099nu_RunAnim ||
+				 objectId == IsleScript::c_wgs100nu_RunAnim || objectId == IsleScript::c_wgs101nu_RunAnim ||
+				 objectId == IsleScript::c_wgs102nu_RunAnim || objectId == IsleScript::c_wgs085nu_RunAnim ||
+				 objectId == IsleScript::c_wgs086nu_RunAnim || objectId == IsleScript::c_wgs087nu_RunAnim ||
+				 objectId == IsleScript::c_wgs088nu_RunAnim || objectId == IsleScript::c_wgs089nu_RunAnim ||
+				 objectId == IsleScript::c_wgs091nu_RunAnim || objectId == IsleScript::c_wgs092nu_RunAnim ||
+				 objectId == IsleScript::c_wgs093nu_RunAnim || objectId == IsleScript::c_wgs094nu_RunAnim ||
+				 objectId == IsleScript::c_wgs095nu_RunAnim) {
 			((Act1State*) GameState()->GetState("Act1State"))->m_state = Act1State::e_none;
 			AnimationManager()->FUN_1005f6d0(TRUE);
 			g_isleFlags |= Isle::c_playMusic;
@@ -318,7 +326,8 @@ MxLong TowTrack::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 			PlayFinalAnimation(IsleScript::c_wgs097nu_RunAnim);
 		}
 	}
-	else if (m_state->m_state == TowTrackMissionState::e_started && p_param.GetTrigger() == LegoPathStruct::c_camAnim && p_param.GetData() == 0x37) {
+	else if (m_state->m_state == TowTrackMissionState::e_started && p_param.GetTrigger() == LegoPathStruct::c_camAnim &&
+			 p_param.GetData() == 0x37) {
 		m_state->m_state = TowTrackMissionState::e_hookingUp;
 		StopActions();
 
@@ -354,7 +363,7 @@ MxLong TowTrack::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 					objectId = IsleScript::c_wns034na_PlayWav;
 					break;
 				case c_mama:
-					switch (1 + SDL_rand(2)) {
+					switch (1 + MORTAR_rand(2)) {
 					case 1:
 						objectId = IsleScript::c_wns037na_PlayWav;
 						break;
@@ -364,7 +373,7 @@ MxLong TowTrack::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 					}
 					break;
 				case c_papa:
-					switch (1 + SDL_rand(2)) {
+					switch (1 + MORTAR_rand(2)) {
 					case 1:
 						objectId = IsleScript::c_wns041na_PlayWav;
 						break;
@@ -374,7 +383,7 @@ MxLong TowTrack::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 					}
 					break;
 				case c_nick:
-					switch (1 + SDL_rand(2)) {
+					switch (1 + MORTAR_rand(2)) {
 					case 1:
 						objectId = IsleScript::c_wns039na_PlayWav;
 						break;
@@ -384,7 +393,7 @@ MxLong TowTrack::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 					}
 					break;
 				case c_laura:
-					switch (1 + SDL_rand(2)) {
+					switch (1 + MORTAR_rand(2)) {
 					case 1:
 						objectId = IsleScript::c_wns043na_PlayWav;
 						break;

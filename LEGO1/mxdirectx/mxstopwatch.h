@@ -3,10 +3,10 @@
 
 #include "assert.h"
 
-#include <SDL3/SDL_stdinc.h>
-#include <SDL3/SDL_timer.h>
 #include <limits.h> // ULONG_MAX
 #include <math.h>
+#include <mortar/mortar_stdinc.h>
+#include <mortar/mortar_timer.h>
 #ifdef MINIWIN
 #include "miniwin/windows.h"
 #else
@@ -35,35 +35,35 @@ public:
 	double ElapsedSeconds() const;
 
 protected:
-	Uint64 TicksPerSeconds() const;
+	uint64_t TicksPerSeconds() const;
 
 private:
-	Uint64 m_startTick; // 0x00
+	uint64_t m_startTick; // 0x00
 	// ??? when we provide LARGE_INTEGER arithmetic, use a
 	//     LARGE_INTEGER m_elapsedTicks rather than m_elapsedSeconds
-	double m_elapsedSeconds;  // 0x0c
-	Uint64 m_ticksPerSeconds; // 0x14
+	double m_elapsedSeconds;    // 0x0c
+	uint64_t m_ticksPerSeconds; // 0x14
 };
 
 // FUNCTION: BETA10 0x100d8ba0
 inline MxStopWatch::MxStopWatch()
 {
 	Reset();
-	m_ticksPerSeconds = SDL_GetPerformanceFrequency();
+	m_ticksPerSeconds = MORTAR_GetPerformanceFrequency();
 }
 
 // FUNCTION: BETA10 0x100d8be0
 inline void MxStopWatch::Start()
 {
-	m_startTick = SDL_GetPerformanceCounter();
+	m_startTick = MORTAR_GetPerformanceCounter();
 }
 
 // FUNCTION: BETA10 0x100d8f50
 inline void MxStopWatch::Stop()
 {
-	Uint64 endTick;
+	uint64_t endTick;
 
-	endTick = SDL_GetPerformanceCounter();
+	endTick = MORTAR_GetPerformanceCounter();
 
 	m_elapsedSeconds = (double) (endTick - m_startTick) / (double) m_ticksPerSeconds;
 }
@@ -76,11 +76,11 @@ inline void MxStopWatch::Reset()
 }
 
 // FUNCTION: BETA10 0x100d8c60
-inline Uint64 MxStopWatch::TicksPerSeconds() const
+inline uint64_t MxStopWatch::TicksPerSeconds() const
 {
-	Uint64 ticksPerSeconds;
+	uint64_t ticksPerSeconds;
 
-	ticksPerSeconds = SDL_GetPerformanceFrequency();
+	ticksPerSeconds = MORTAR_GetPerformanceFrequency();
 	assert(ticksPerSeconds);
 
 	return ticksPerSeconds;

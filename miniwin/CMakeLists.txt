@@ -131,6 +131,11 @@ if(USE_SDL_GPU IN_LIST GRAPHICS_BACKENDS)
     src/d3drm/backends/sdl3gpu/renderer.cpp
     src/d3drm/backends/sdl3gpu/shaders/generated/ShaderIndex.cpp
   )
+  set_property(SOURCE
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/d3drm/backends/sdl3gpu/renderer.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/d3drm/backends/sdl3gpu/shaders/generated/ShaderIndex.cpp"
+    APPEND PROPERTY INCLUDE_DIRECTORIES "$<TARGET_PROPERTY:SDL3::Headers,INTERFACE_INCLUDE_DIRECTORIES>"
+  )
 endif()
 
 if(USE_SOFTWARE_RENDER IN_LIST GRAPHICS_BACKENDS)
@@ -148,7 +153,7 @@ target_include_directories(miniwin
 )
 target_link_libraries(miniwin PUBLIC miniwin-headers)
 
-target_link_libraries(miniwin PRIVATE SDL3::SDL3)
+target_link_libraries(miniwin PRIVATE mortar::headers)
 
 target_compile_definitions(miniwin PUBLIC ${GRAPHICS_BACKENDS})
 
@@ -183,6 +188,7 @@ set(shader_variables )
 set(shader_headers )
 set(shader_stages )
 foreach(shader_src IN LISTS miniwin_shaders)
+  get_filename_component(filename_dir "${shader_src}" DIRECTORY)
   get_filename_component(filename_wle "${shader_src}" NAME_WLE)
   get_filename_component(shader_name "${filename_wle}" NAME_WLE)
   get_filename_component(src_format_ext "${shader_src}" LAST_EXT)
@@ -213,13 +219,16 @@ foreach(shader_src IN LISTS miniwin_shaders)
     add_custom_command(OUTPUT "${dxil}"
       COMMAND "${SDL_SHADERCROSS_BIN}" "${shader_src}" -o "${dxil}"
         -s "${src_format}" -d "DXIL" -t "${shader_stage}"
+        -I "${filename_dir}"
       DEPENDS create-generated-shader-directories "${shader_src}" ${miniwin_shaders_DEPENDS})
     add_custom_command(OUTPUT "${msl}"
       COMMAND "${SDL_SHADERCROSS_BIN}" "${shader_src}" -o "${msl}"
         -s "${src_format}" -d "MSL" -t "${shader_stage}"
+        -I "${filename_dir}"
       DEPENDS create-generated-shader-directories "${shader_src}" ${miniwin_shaders_DEPENDS})
     add_custom_command(OUTPUT "${spirv}"
       COMMAND "${SDL_SHADERCROSS_BIN}" "${shader_src}" -o "${spirv}"
+        -I "${filename_dir}"
         -s "${src_format}" -d "SPIRV" -t "${shader_stage}"
       DEPENDS create-generated-shader-directories "${shader_src}" ${miniwin_shaders_DEPENDS})
     add_custom_command(OUTPUT "${shader_header}"
@@ -251,4 +260,3 @@ if(ISLE_COMPILE_SHADERS)
       "--shader-jsons" ${shader_jsons}
     DEPENDS "${py_gencshadersource}" ${shader_headers} ${shader_jsons})
 endif()
-target_sources(miniwin PRIVATE "${index}" "${index_cpp}")

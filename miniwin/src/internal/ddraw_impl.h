@@ -6,12 +6,12 @@
 #include "miniwin/ddraw.h"
 #include "miniwin/miniwind3d.h"
 
-#include <SDL3/SDL.h>
+#include <mortar/mortar.h>
 
-extern SDL_Window* DDWindow;
+extern MORTAR_Window* DDWindow;
 extern Direct3DRMRenderer* DDRenderer;
 
-inline static SDL_Rect ConvertRect(const RECT* r)
+inline static MORTAR_Rect ConvertRect(const RECT* r)
 {
 	return {r->left, r->top, r->right - r->left, r->bottom - r->top};
 }
@@ -28,8 +28,11 @@ struct DirectDrawImpl : public IDirectDraw2, public IDirect3D2, public IDirect3D
 		LPDIRECTDRAWPALETTE* lplpDDPalette,
 		IUnknown* pUnkOuter
 	) override;
-	HRESULT CreateSurface(LPDDSURFACEDESC lpDDSurfaceDesc, LPDIRECTDRAWSURFACE* lplpDDSurface, IUnknown* pUnkOuter)
-		override;
+	HRESULT CreateSurface(
+		LPDDSURFACEDESC lpDDSurfaceDesc,
+		LPDIRECTDRAWSURFACE* lplpDDSurface,
+		IUnknown* pUnkOuter
+	) override;
 	HRESULT EnumDisplayModes(
 		DWORD dwFlags,
 		LPDDSURFACEDESC lpDDSurfaceDesc,
@@ -43,8 +46,11 @@ struct DirectDrawImpl : public IDirectDraw2, public IDirect3D2, public IDirect3D
 	HRESULT SetCooperativeLevel(HWND hWnd, DDSCLFlags dwFlags) override;
 	HRESULT SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWORD dwBPP) override;
 	// IDirect3D2 interface
-	HRESULT CreateDevice(const GUID& guid, IDirectDrawSurface* pBackBuffer, IDirect3DDevice2** ppDirect3DDevice)
-		override;
+	HRESULT CreateDevice(
+		const GUID& guid,
+		IDirectDrawSurface* pBackBuffer,
+		IDirect3DDevice2** ppDirect3DDevice
+	) override;
 	HRESULT EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx) override;
 	// IDirect3DMiniwin interface
 	HRESULT RequestMSAA(DWORD msaaSamples) override

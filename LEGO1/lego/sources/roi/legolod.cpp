@@ -7,7 +7,7 @@
 #include "shape/legomesh.h"
 #include "tgl/d3drm/impl.h"
 
-#include <SDL3/SDL_stdinc.h>
+#include <mortar/mortar_stdinc.h>
 
 DECOMP_SIZE_ASSERT(LODObject, 0x04)
 DECOMP_SIZE_ASSERT(ViewLOD, 0x0c)
@@ -57,9 +57,9 @@ LegoLOD::~LegoLOD()
 // FUNCTION: LEGO1 0x100aa510
 LegoResult LegoLOD::Read(Tgl::Renderer* p_renderer, LegoTextureContainer* p_textureContainer, LegoStorage* p_storage)
 {
-	float(*normals)[3] = NULL;
-	float(*vertices)[3] = NULL;
-	float(*textureVertices)[2] = NULL;
+	float (*normals)[3] = NULL;
+	float (*vertices)[3] = NULL;
+	float (*textureVertices)[2] = NULL;
 	LegoS32 numVerts = 0;
 	LegoS32 numNormals = 0;
 	LegoS32 numTextureVertices = 0;
@@ -382,7 +382,7 @@ LegoResult LegoLOD::GetTextureInfo(LegoTextureInfo*& p_textureInfo)
 LegoBool LegoLOD::HasInhPrefix(const LegoChar* p_name)
 {
 	if (p_name != NULL) {
-		if (!SDL_strncasecmp(p_name, g_InhPrefix, strlen(g_InhPrefix))) {
+		if (!MORTAR_strncasecmp(p_name, g_InhPrefix, strlen(g_InhPrefix))) {
 			return TRUE;
 		}
 	}

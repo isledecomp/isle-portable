@@ -16,8 +16,8 @@
 #include <QApplication>
 #include <QCommandLineParser>
 #include <QMessageBox>
-#include <SDL3/SDL.h>
 #include <iniparser.h>
+#include <mortar/mortar.h>
 
 DECOMP_SIZE_ASSERT(CWinApp, 0xc4)
 DECOMP_SIZE_ASSERT(CConfigApp, 0x108)
@@ -27,7 +27,7 @@ DECOMP_STATIC_ASSERT(offsetof(CConfigApp, m_display_bit_depth) == 0xd0)
 // FUNCTION: CONFIG 0x00402c40
 CConfigApp::CConfigApp()
 {
-	char* prefPath = SDL_GetPrefPath("isledecomp", "isle");
+	char* prefPath = MORTAR_GetPrefPath("isledecomp", "isle");
 	char* iniConfig;
 	if (prefPath) {
 		m_iniPath = std::string{prefPath} + "isle.ini";
@@ -35,14 +35,14 @@ CConfigApp::CConfigApp()
 	else {
 		m_iniPath = "isle.ini";
 	}
-	SDL_free(prefPath);
+	MORTAR_free(prefPath);
 }
 
 // FUNCTION: CONFIG 0x00402dc0
 bool CConfigApp::InitInstance()
 {
-	if (!SDL_Init(SDL_INIT_VIDEO)) {
-		QString err = QString{"SDL failed to initialize ("} + SDL_GetError() + ")";
+	if (!MORTAR_Init()) {
+		QString err = QString{"SDL failed to initialize ("} + MORTAR_GetError() + ")";
 		QMessageBox::warning(nullptr, "SDL initialization error", err);
 		return false;
 	}
@@ -56,7 +56,13 @@ bool CConfigApp::InitInstance()
 		return false;
 	}
 	m_device_enumerator = new LegoDeviceEnumerate;
-	SDL_Window* window = SDL_CreateWindow("Test window", 640, 480, SDL_WINDOW_HIDDEN | SDL_WINDOW_OPENGL);
+	MORTAR_EX_CreateWindowProps createWindowProps = {};
+	createWindowProps.width = 640;
+	createWindowProps.height = 480;
+	createWindowProps.title = "Test window";
+	createWindowProps.hidden = true;
+	createWindowProps.opengl.enabled = true;
+	MORTAR_Window* window = MORTAR_EX_CreateWindow(&createWindowProps);
 	HWND hWnd;
 #ifdef MINIWIN
 	hWnd = reinterpret_cast<HWND>(window);
@@ -66,7 +72,7 @@ bool CConfigApp::InitInstance()
 	if (m_device_enumerator->DoEnumerate(hWnd)) {
 		return FALSE;
 	}
-	SDL_DestroyWindow(window);
+	MORTAR_DestroyWindow(window);
 	m_aspect_ratio = 0;
 	m_exf_x_res = m_x_res = 640;
 	m_exf_y_res = m_y_res = 480;
@@ -92,7 +98,7 @@ bool CConfigApp::InitInstance()
 	m_texture_path = "textures/";
 	m_custom_assets_enabled = TRUE;
 	m_custom_asset_path = "assets/widescreen.si";
-	int totalRamMiB = SDL_GetSystemRAM();
+	int totalRamMiB = MORTAR_GetSystemRAM();
 	if (totalRamMiB < 12) {
 		m_ram_quality_limit = 2;
 		m_3d_sound = FALSE;
@@ -441,7 +447,7 @@ int CConfigApp::ExitInstance()
 		delete m_device_enumerator;
 		m_device_enumerator = NULL;
 	}
-	SDL_Quit();
+	MORTAR_Quit();
 	return 0;
 }
 

@@ -173,7 +173,7 @@ MxResult LegoAct2::Tickle()
 	case LegoAct2::e_startSpeech:
 		((LegoPathActor*) m_pepper->GetEntity())->SetActorState(LegoPathActor::c_disabled);
 
-		switch (SDL_rand(3)) {
+		switch (MORTAR_rand(3)) {
 		case 0:
 			g_bricksterSpeech = Act2mainScript::c_tns002br_RunAnim;
 			break;
@@ -227,7 +227,8 @@ MxResult LegoAct2::Tickle()
 				m_infomanDirecting = Act2mainScript::c_Avo906In_PlayWav;
 			}
 		}
-		else if (m_timeSinceLastStage >= 90000 && m_timeSinceLastStage % 90000 == 0 && m_infomanDirecting == (Act2mainScript::Script) 0) {
+		else if (m_timeSinceLastStage >= 90000 && m_timeSinceLastStage % 90000 == 0 &&
+				 m_infomanDirecting == (Act2mainScript::Script) 0) {
 			StartAction(Act2mainScript::c_Avo908In_PlayWav, FALSE, FALSE, NULL, NULL, NULL);
 			m_infomanDirecting = Act2mainScript::c_Avo908In_PlayWav;
 		}
@@ -817,7 +818,7 @@ void LegoAct2::SpawnBricks()
 	// Unused but present in BETA
 	LegoEntity* entity;
 
-	if (SDL_rand(2) == 1) {
+	if (MORTAR_rand(2) == 1) {
 		m_firstBrick = 0;
 		location = infobridge;
 		MxTrace("infobridge\n");
@@ -841,7 +842,7 @@ void LegoAct2::SpawnBricks()
 	roi = brick->GetROI();
 	local2world = roi->GetLocal2World();
 
-	if (SDL_rand(2) == 1) {
+	if (MORTAR_rand(2) == 1) {
 		m_secondBrick = 2;
 		location = store;
 		MxTrace("store\n");
@@ -865,7 +866,7 @@ void LegoAct2::SpawnBricks()
 	roi = brick->GetROI();
 	local2world = roi->GetLocal2World();
 
-	if (SDL_rand(2) == 1) {
+	if (MORTAR_rand(2) == 1) {
 		m_thirdBrick = 4;
 		location = h3;
 		MxTrace("h3\n");
@@ -889,8 +890,8 @@ void LegoAct2::SpawnBricks()
 	roi = brick->GetROI();
 	local2world = roi->GetLocal2World();
 
-	if (SDL_rand(2) == 1) {
-		if (SDL_rand(2) == 1) {
+	if (MORTAR_rand(2) == 1) {
+		if (MORTAR_rand(2) == 1) {
 			m_fourthBrick = 6;
 			location = posta;
 			MxTrace("po.sta.\n");
@@ -902,7 +903,7 @@ void LegoAct2::SpawnBricks()
 		}
 	}
 	else {
-		if (SDL_rand(2) == 1) {
+		if (MORTAR_rand(2) == 1) {
 			m_fourthBrick = 8;
 			location = jail;
 			MxTrace("jail\n");
@@ -948,7 +949,7 @@ MxResult LegoAct2::BadEnding()
 // FUNCTION: BETA10 0x10013fd3
 void LegoAct2::CheckBricksterDestroying(MxS32 p_pathData)
 {
-	MxU8 randN = SDL_rand(3);
+	MxU8 randN = MORTAR_rand(3);
 	randN++;
 
 	switch (p_pathData) {

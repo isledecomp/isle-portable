@@ -15,8 +15,11 @@ struct Direct3DRMImpl : virtual public IDirect3DRM2 {
 	// IUnknown interface
 	HRESULT QueryInterface(const GUID& riid, void** ppvObject) override;
 	// IDirect3DRM interface
-	HRESULT CreateDeviceFromD3D(const IDirect3D2* d3d, IDirect3DDevice2* d3dDevice, IDirect3DRMDevice2** outDevice)
-		override;
+	HRESULT CreateDeviceFromD3D(
+		const IDirect3D2* d3d,
+		IDirect3DDevice2* d3dDevice,
+		IDirect3DRMDevice2** outDevice
+	) override;
 	HRESULT CreateDeviceFromSurface(
 		const GUID* guid,
 		IDirectDraw* dd,
@@ -95,8 +98,12 @@ struct Direct3DRMPickedArrayImpl : public IDirect3DRMPickedArray {
 	Direct3DRMPickedArrayImpl(const PickRecord* inputPicks, size_t count);
 	~Direct3DRMPickedArrayImpl() override;
 	DWORD GetSize() override;
-	HRESULT GetPick(DWORD index, IDirect3DRMVisual** visual, IDirect3DRMFrameArray** frameArray, D3DRMPICKDESC* desc)
-		override;
+	HRESULT GetPick(
+		DWORD index,
+		IDirect3DRMVisual** visual,
+		IDirect3DRMFrameArray** frameArray,
+		D3DRMPICKDESC* desc
+	) override;
 
 private:
 	std::vector<PickRecord> picks;

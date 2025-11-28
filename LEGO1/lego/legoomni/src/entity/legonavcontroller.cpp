@@ -26,7 +26,7 @@
 #include "realtime/realtimeview.h"
 #include "viewmanager/viewmanager.h"
 
-#include <SDL3/SDL_stdinc.h>
+#include <mortar/mortar_stdinc.h>
 #include <vec.h>
 
 DECOMP_SIZE_ASSERT(LegoNavController, 0x70)
@@ -109,17 +109,17 @@ MxU32 g_switchAct = FALSE;
 LegoAnimationManager::PlayMode g_unk0x100f66bc = LegoAnimationManager::e_unk2;
 
 // GLOBAL: LEGO1 0x100f66c0
-SDL_Keycode g_debugPassword[] = {
+MORTAR_Keycode g_debugPassword[] = {
 	// "OGEL"
-	SDLK_O,
-	SDLK_G,
-	SDLK_E,
-	SDLK_L,
+	MORTARK_O,
+	MORTARK_G,
+	MORTARK_E,
+	MORTARK_L,
 	0,
 };
 
 // GLOBAL: LEGO1 0x100f66c8
-SDL_Keycode* g_currentInput = g_debugPassword;
+MORTAR_Keycode* g_currentInput = g_debugPassword;
 
 // GLOBAL: LEGO1 0x100f66cc
 MxS32 g_nextCharacter = -1;
@@ -441,7 +441,7 @@ MxResult LegoNavController::UpdateLocation(const char* p_location)
 	MxResult result = FAILURE;
 
 	for (MxS32 i = 0; i < (MxS32) sizeOfArray(g_locations); i++) {
-		if (!SDL_strcasecmp(p_location, g_locations[i].m_name)) {
+		if (!MORTAR_strcasecmp(p_location, g_locations[i].m_name)) {
 			MxMatrix mat;
 			LegoROI* viewROI = VideoManager()->GetViewROI();
 
@@ -655,10 +655,10 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 {
 	if (((MxNotificationParam&) p_param).GetNotification() == c_notificationKeyPress) {
 		m_unk0x5d = TRUE;
-		SDL_Keycode key = ((LegoEventNotificationParam&) p_param).GetKey();
+		MORTAR_Keycode key = ((LegoEventNotificationParam&) p_param).GetKey();
 
 		switch (key) {
-		case SDLK_PAUSE: // Pause game
+		case MORTARK_PAUSE: // Pause game
 			if (Lego()->IsPaused()) {
 				Lego()->Resume();
 			}
@@ -666,7 +666,7 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 				Lego()->Pause();
 			}
 			break;
-		case SDLK_ESCAPE: { // Return to infocenter
+		case MORTARK_ESCAPE: { // Return to infocenter
 			LegoWorld* currentWorld = CurrentWorld();
 			if (currentWorld != NULL) {
 				InfocenterState* state = (InfocenterState*) GameState()->GetState("InfocenterState");
@@ -680,10 +680,10 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 			}
 			break;
 		}
-		case SDLK_SPACE: // Interrupt/end animations or free navigation
+		case MORTARK_SPACE: // Interrupt/end animations or free navigation
 			AnimationManager()->FUN_10061010(TRUE);
 			break;
-		case SDLK_Z: { // Make nearby plants "dance"
+		case MORTARK_Z: { // Make nearby plants "dance"
 			LegoOmni* omni = Lego();
 
 			if (omni->GetCurrentWorld() != NULL && omni->GetCurrentWorld()->GetWorldId() == LegoOmni::e_act1) {
@@ -717,15 +717,15 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 			}
 			break;
 		}
-		case SDLK_KP_PLUS:
-		case SDLK_KP_MINUS: { // Cycles through characters and puts them in front of you
+		case MORTARK_KP_PLUS:
+		case MORTARK_KP_MINUS: { // Cycles through characters and puts them in front of you
 			if (g_nextCharacter == -1) {
 				g_nextCharacter = 0;
 			}
 			else {
 				CharacterManager()->ReleaseActor(CharacterManager()->GetActorName(g_nextCharacter));
 
-				if (key == SDLK_KP_PLUS) {
+				if (key == MORTARK_KP_PLUS) {
 					g_nextCharacter++;
 					if (g_nextCharacter >= CharacterManager()->GetNumActors()) {
 						g_nextCharacter = 0;
@@ -752,7 +752,7 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 			}
 			break;
 		}
-		case SDLK_F12: { // Saves the game
+		case MORTARK_F12: { // Saves the game
 			InfocenterState* state = (InfocenterState*) GameState()->GetState("InfocenterState");
 			if (state && state->HasRegistered()) {
 				GameState()->Save(0);
@@ -764,7 +764,7 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 			if (!*g_currentInput) {
 				// password "protected" debug shortcuts
 				switch (((LegoEventNotificationParam&) p_param).GetKey()) {
-				case SDLK_TAB:
+				case MORTARK_TAB:
 					VideoManager()->ToggleFPS(g_fpsEnabled);
 					if (g_fpsEnabled) {
 						g_fpsEnabled = FALSE;
@@ -775,16 +775,16 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 				default:
 					m_unk0x5d = FALSE;
 					break;
-				case SDLK_0:
-				case SDLK_1:
-				case SDLK_2:
-				case SDLK_3:
-				case SDLK_4:
-				case SDLK_5:
-				case SDLK_6:
-				case SDLK_7:
-				case SDLK_8:
-				case SDLK_9:
+				case MORTARK_0:
+				case MORTARK_1:
+				case MORTARK_2:
+				case MORTARK_3:
+				case MORTARK_4:
+				case MORTARK_5:
+				case MORTARK_6:
+				case MORTARK_7:
+				case MORTARK_8:
+				case MORTARK_9:
 					if (g_changeLight && key <= '1') {
 						LegoROI* roi = VideoManager()->GetViewROI();
 						Tgl::FloatMatrix4 matrix;
@@ -837,7 +837,7 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 						}
 					}
 
-					if (g_switchAct && key >= SDLK_1 && key <= SDLK_5) {
+					if (g_switchAct && key >= MORTARK_1 && key <= MORTARK_5) {
 						switch (GameState()->GetCurrentAct()) {
 						case LegoGameState::e_act1:
 							GameState()->m_currentArea = LegoGameState::e_isle;
@@ -851,17 +851,17 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 						}
 
 						switch (key) {
-						case SDLK_1:
+						case MORTARK_1:
 							GameState()->SetCurrentAct(LegoGameState::e_act1);
 							GameState()->SwitchArea(LegoGameState::e_isle);
 							break;
-						case SDLK_2:
+						case MORTARK_2:
 							GameState()->SwitchArea(LegoGameState::e_act2main);
 							break;
-						case SDLK_3:
+						case MORTARK_3:
 							GameState()->SwitchArea(LegoGameState::e_act3script);
 							break;
-						case SDLK_4: {
+						case MORTARK_4: {
 							Act3State* act3State = (Act3State*) GameState()->GetState("Act3State");
 							if (act3State == NULL) {
 								act3State = new Act3State();
@@ -875,7 +875,7 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 							GameState()->SwitchArea(LegoGameState::e_infomain);
 							break;
 						}
-						case SDLK_5: {
+						case MORTARK_5: {
 							Act3State* act3State = (Act3State*) GameState()->GetState("Act3State");
 							if (act3State == NULL) {
 								act3State = new Act3State();
@@ -900,7 +900,7 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 						LegoOmni::GetInstance()->Start(&action);
 					}
 					break;
-				case SDLK_A:
+				case MORTARK_A:
 					if (g_animationCalcStep == 1) {
 						Lego()->m_initialized = TRUE;
 						AnimationManager()->FUN_10060570(TRUE);
@@ -916,22 +916,22 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 						}
 					}
 					break;
-				case SDLK_C:
+				case MORTARK_C:
 					g_locationCalcStep = 1;
 					break;
-				case SDLK_D:
+				case MORTARK_D:
 					m_unk0x60 = -1.0;
 					break;
-				case SDLK_F:
+				case MORTARK_F:
 					RealtimeView::SetUserMaxLOD(0.0);
 					break;
-				case SDLK_G:
+				case MORTARK_G:
 					g_switchAct = TRUE;
 					break;
-				case SDLK_H:
+				case MORTARK_H:
 					RealtimeView::SetUserMaxLOD(5.0);
 					break;
-				case SDLK_I: {
+				case MORTARK_I: {
 					LegoROI* roi = VideoManager()->GetViewROI();
 					MxMatrix mat;
 					mat.SetIdentity();
@@ -939,7 +939,7 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 					roi->WrappedUpdateWorldDataWithTransform(mat);
 					break;
 				}
-				case SDLK_J: {
+				case MORTARK_J: {
 					LegoROI* roi = VideoManager()->GetViewROI();
 					MxMatrix mat;
 					mat.SetIdentity();
@@ -947,7 +947,7 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 					roi->WrappedUpdateWorldDataWithTransform(mat);
 					break;
 				}
-				case SDLK_K: {
+				case MORTARK_K: {
 					MxMatrix mat;
 					LegoROI* roi = LegoOmni::GetInstance()->GetVideoManager()->GetViewROI();
 					mat.SetIdentity();
@@ -955,10 +955,10 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 					roi->WrappedUpdateWorldDataWithTransform(mat);
 					break;
 				}
-				case SDLK_L:
+				case MORTARK_L:
 					g_changeLight = TRUE;
 					break;
-				case SDLK_M: {
+				case MORTARK_M: {
 					LegoROI* roi = LegoOmni::GetInstance()->GetVideoManager()->GetViewROI();
 					MxMatrix mat;
 					mat.SetIdentity();
@@ -966,12 +966,12 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 					roi->WrappedUpdateWorldDataWithTransform(mat);
 					break;
 				}
-				case SDLK_N:
+				case MORTARK_N:
 					if (VideoManager()) {
 						VideoManager()->SetRender3D(!VideoManager()->GetRender3D());
 					}
 					break;
-				case SDLK_P:
+				case MORTARK_P:
 					if (!g_resetPlants) {
 						PlantManager()->LoadWorldInfo(LegoOmni::e_act1);
 						g_resetPlants = TRUE;
@@ -981,14 +981,14 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 						g_resetPlants = FALSE;
 					}
 					break;
-				case SDLK_S:
+				case MORTARK_S:
 					g_enableMusic = g_enableMusic == FALSE;
 					BackgroundAudioManager()->Enable(g_enableMusic);
 					break;
-				case SDLK_U:
+				case MORTARK_U:
 					m_unk0x60 = 1.0;
 					break;
-				case SDLK_V:
+				case MORTARK_V:
 					if (g_nextAnimation > 0 && g_animationCalcStep == 0) {
 						AnimationManager()->FUN_10061010(FALSE);
 					}
@@ -1000,7 +1000,7 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 					g_nextAnimation = 0;
 					g_animationCalcStep = 1;
 					break;
-				case SDLK_W: {
+				case MORTARK_W: {
 					MxMatrix mat;
 					LegoROI* roi = LegoOmni::GetInstance()->GetVideoManager()->GetViewROI();
 					const float* position = roi->GetWorldPosition();
@@ -1015,10 +1015,10 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 					);
 					break;
 				}
-				case SDLK_X:
+				case MORTARK_X:
 					RealtimeView::SetUserMaxLOD(3.6);
 					break;
-				case SDLK_KP_MULTIPLY: {
+				case MORTARK_KP_MULTIPLY: {
 					MxU8 newActor = GameState()->GetActorId() + 1;
 
 					if (newActor > LegoActor::c_laura) {
@@ -1028,10 +1028,10 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 					GameState()->SetActorId(newActor);
 					break;
 				}
-				case SDLK_KP_DIVIDE:
+				case MORTARK_KP_DIVIDE:
 					GameState()->SetActorId(LegoActor::c_brickster);
 					break;
-				case SDLK_F11:
+				case MORTARK_F11:
 					if (GameState()->m_isDirty) {
 						GameState()->m_isDirty = FALSE;
 					}
@@ -1039,7 +1039,7 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 						GameState()->m_isDirty = TRUE;
 					}
 					break;
-				case SDLK_MINUS:
+				case MORTARK_MINUS:
 					g_unk0x100f66bc = LegoAnimationManager::e_unk1;
 					break;
 				}

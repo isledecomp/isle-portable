@@ -31,9 +31,9 @@
 #include "realtime/realtime.h"
 #include "scripts.h"
 
-#include <SDL3/SDL_events.h>
-#include <SDL3/SDL_process.h>
-#include <SDL3/SDL_stdinc.h>
+#include <mortar/mortar_events.h>
+#include <mortar/mortar_process.h>
+#include <mortar/mortar_stdinc.h>
 #include <stdio.h>
 #include <string.h>
 #include <vec.h>
@@ -195,11 +195,11 @@ void CalculateViewFromAnimation(LegoAnimPresenter* p_presenter)
 
 		LegoAnimNodeData* data = (LegoAnimNodeData*) GetTreeNode(rootNode, i)->GetData();
 
-		if (!SDL_strncasecmp(data->GetName(), "CAM", strlen("CAM"))) {
+		if (!MORTAR_strncasecmp(data->GetName(), "CAM", strlen("CAM"))) {
 			camData = data;
 			fov = atof(&data->GetName()[strlen(data->GetName()) - 2]);
 		}
-		else if (!SDL_strcasecmp(data->GetName(), "TARGET")) {
+		else if (!MORTAR_strcasecmp(data->GetName(), "TARGET")) {
 			targetData = data;
 		}
 	}
@@ -235,34 +235,34 @@ Extra::ActionType MatchActionString(const char* p_str)
 {
 	Extra::ActionType result = Extra::ActionType::e_unknown;
 
-	if (!SDL_strcasecmp("openram", p_str)) {
+	if (!MORTAR_strcasecmp("openram", p_str)) {
 		result = Extra::ActionType::e_openram;
 	}
-	else if (!SDL_strcasecmp("opendisk", p_str)) {
+	else if (!MORTAR_strcasecmp("opendisk", p_str)) {
 		result = Extra::ActionType::e_opendisk;
 	}
-	else if (!SDL_strcasecmp("close", p_str)) {
+	else if (!MORTAR_strcasecmp("close", p_str)) {
 		result = Extra::ActionType::e_close;
 	}
-	else if (!SDL_strcasecmp("start", p_str)) {
+	else if (!MORTAR_strcasecmp("start", p_str)) {
 		result = Extra::ActionType::e_start;
 	}
-	else if (!SDL_strcasecmp("stop", p_str)) {
+	else if (!MORTAR_strcasecmp("stop", p_str)) {
 		result = Extra::ActionType::e_stop;
 	}
-	else if (!SDL_strcasecmp("run", p_str)) {
+	else if (!MORTAR_strcasecmp("run", p_str)) {
 		result = Extra::ActionType::e_run;
 	}
-	else if (!SDL_strcasecmp("exit", p_str)) {
+	else if (!MORTAR_strcasecmp("exit", p_str)) {
 		result = Extra::ActionType::e_exit;
 	}
-	else if (!SDL_strcasecmp("enable", p_str)) {
+	else if (!MORTAR_strcasecmp("enable", p_str)) {
 		result = Extra::ActionType::e_enable;
 	}
-	else if (!SDL_strcasecmp("disable", p_str)) {
+	else if (!MORTAR_strcasecmp("disable", p_str)) {
 		result = Extra::ActionType::e_disable;
 	}
-	else if (!SDL_strcasecmp("notify", p_str)) {
+	else if (!MORTAR_strcasecmp("notify", p_str)) {
 		result = Extra::ActionType::e_notify;
 	}
 
@@ -323,7 +323,7 @@ void InvokeAction(Extra::ActionType p_actionId, const MxAtomId& p_pAtom, MxS32 p
 		break;
 	case Extra::ActionType::e_run: {
 		const char* args[] = {"/lego/sources/main/main.exe", "/script", p_pAtom.GetInternal(), NULL};
-		SDL_Process* process = SDL_CreateProcess(args, false);
+		MORTAR_Process* process = MORTAR_CreateProcess(args, false);
 	} break;
 	case Extra::ActionType::e_enable:
 		assert(p_streamId != DS_NOT_A_STREAM);
@@ -589,11 +589,11 @@ void EnableAnimations(MxBool p_enable)
 // FUNCTION: LEGO1 0x1003ef40
 void SetAppCursor(Cursor p_cursor)
 {
-	SDL_Event event;
+	MORTAR_Event event;
 	event.user.type = g_legoSdlEvents.m_windowsMessage;
 	event.user.code = WM_ISLE_SETCURSOR;
 	event.user.data1 = (void*) p_cursor;
-	SDL_PushEvent(&event);
+	MORTAR_PushEvent(&event);
 }
 
 // FUNCTION: LEGO1 0x1003ef60
@@ -762,7 +762,7 @@ void WriteDefaultTexture(LegoStorage* p_storage, const char* p_name)
 						paletteEntries[i].SetBlue(entries[i].peBlue);
 					}
 
-					image->SetPalette(SDL_CreatePalette(i));
+					image->SetPalette(MORTAR_CreatePalette(i));
 
 					if (i > 0) {
 						for (MxS32 j = 0; j < i; j++) {
@@ -806,8 +806,8 @@ void LoadFromNamedTexture(LegoNamedTexture* p_namedTexture)
 
 void EmitGameEvent(GameEvent p_event)
 {
-	SDL_Event event;
+	MORTAR_Event event;
 	event.user.type = g_legoSdlEvents.m_gameEvent;
 	event.user.code = p_event;
-	SDL_PushEvent(&event);
+	MORTAR_PushEvent(&event);
 }

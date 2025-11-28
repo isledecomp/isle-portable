@@ -9,6 +9,8 @@
 #include "PositionColor.vert.h"
 #include "SolidColor.frag.h"
 
+#include <mortar/mortar.h>
+
 #if defined(SDL_PLATFORM_WINDOWS)
 static const SDL_GPUShaderCreateInfo VertexShaderDXILCodes[] = {
   // VertexShaderId::SolidColor
@@ -17,20 +19,6 @@ static const SDL_GPUShaderCreateInfo VertexShaderDXILCodes[] = {
     /* code */                  PositionColor_vert_dxil,
     /* entrypoint */            "main",
     /* format */                SDL_GPU_SHADERFORMAT_DXIL,
-    /* stage */                 SDL_GPU_SHADERSTAGE_VERTEX,
-    /* num_samplers */          0,
-    /* num_storage_textures */  0,
-    /* num_storage_buffers */   0,
-    /* num_uniform_buffers */   1,
-  },
-};
-static const SDL_GPUShaderCreateInfo VertexShaderDXBCCodes[] = {
-  // VertexShaderId::PositionColor
-  {
-    /* code_size */             sizeof(PositionColor_vert_dxbc),
-    /* code */                  PositionColor_vert_dxbc,
-    /* entrypoint */            "main",
-    /* format */                SDL_GPU_SHADERFORMAT_DXBC,
     /* stage */                 SDL_GPU_SHADERSTAGE_VERTEX,
     /* num_samplers */          0,
     /* num_storage_textures */  0,
@@ -85,20 +73,6 @@ static const SDL_GPUShaderCreateInfo FragmentShaderDXILCodes[] = {
     /* num_uniform_buffers */   1,
   },
 };
-static const SDL_GPUShaderCreateInfo FragmentShaderDXBCCodes[] = {
-  // FragmentShaderId::SolidColor
-  {
-    /* code_size */             sizeof(SolidColor_frag_dxbc),
-    /* code */                  SolidColor_frag_dxbc,
-    /* entrypoint */            "main",
-    /* format */                SDL_GPU_SHADERFORMAT_DXBC,
-    /* stage */                 SDL_GPU_SHADERSTAGE_FRAGMENT,
-    /* num_samplers */          1,
-    /* num_storage_textures */  0,
-    /* num_storage_buffers */   0,
-    /* num_uniform_buffers */   1,
-  },
-};
 #endif
 
 #if defined(SDL_PLATFORM_APPLE)
@@ -137,10 +111,6 @@ const SDL_GPUShaderCreateInfo* GetVertexShaderCode(VertexShaderId id, SDL_GPUSha
     SDL_assert(id < SDL_arraysize(VertexShaderDXILCodes));
     return &VertexShaderDXILCodes[id];
   }
-  if (formats & SDL_GPU_SHADERFORMAT_DXBC) {
-    SDL_assert(id < SDL_arraysize(VertexShaderDXBCCodes));
-    return &VertexShaderDXBCCodes[id];
-  }
 #endif
 #if defined(SDL_PLATFORM_APPLE)
   if (formats & SDL_GPU_SHADERFORMAT_MSL) {
@@ -152,7 +122,7 @@ const SDL_GPUShaderCreateInfo* GetVertexShaderCode(VertexShaderId id, SDL_GPUSha
     SDL_assert(id < SDL_arraysize(VertexShaderSPIRVCodes));
     return &VertexShaderSPIRVCodes[id];
   }
-  SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Could not find vertex shader code for id=%d and formats=0x%x", id, formats);
+  MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "Could not find vertex shader code for id=%d and formats=0x%x", id, formats);
   return nullptr;
 }
 
@@ -161,10 +131,6 @@ const SDL_GPUShaderCreateInfo* GetFragmentShaderCode(FragmentShaderId id, SDL_GP
   if (formats & SDL_GPU_SHADERFORMAT_DXIL) {
     SDL_assert(id < SDL_arraysize(FragmentShaderDXILCodes));
     return &FragmentShaderDXILCodes[id];
-  }
-  if (formats & SDL_GPU_SHADERFORMAT_DXBC) {
-    SDL_assert(id < SDL_arraysize(FragmentShaderDXBCCodes));
-    return &FragmentShaderDXBCCodes[id];
   }
 #endif
 #if defined(SDL_PLATFORM_APPLE)
@@ -177,6 +143,6 @@ const SDL_GPUShaderCreateInfo* GetFragmentShaderCode(FragmentShaderId id, SDL_GP
     SDL_assert(id < SDL_arraysize(FragmentShaderSPIRVCodes));
     return &FragmentShaderSPIRVCodes[id];
   }
-  SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Could not find fragment shader code for id=%d and formats=0x%x", id, formats);
+  MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "Could not find fragment shader code for id=%d and formats=0x%x", id, formats);
   return nullptr;
 }

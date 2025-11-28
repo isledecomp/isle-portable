@@ -7,10 +7,9 @@
 #include "misc.h"
 #include "mxmain.h"
 
-#include <SDL3/SDL_filesystem.h>
-#include <SDL3/SDL_log.h>
 #include <emscripten.h>
 #include <emscripten/wasmfs.h>
+#include <mortar/mortar.h>
 
 static backend_t opfs = nullptr;
 static backend_t fetchfs = nullptr;
@@ -26,7 +25,7 @@ bool Emscripten_OPFSDisabled()
 bool Emscripten_SetupConfig(const char* p_iniConfig)
 {
 	if (Emscripten_OPFSDisabled()) {
-		SDL_Log("OPFS is disabled; ignoring .ini path");
+		MORTAR_Log("OPFS is disabled; ignoring .ini path");
 		return false;
 	}
 
@@ -34,7 +33,7 @@ bool Emscripten_SetupConfig(const char* p_iniConfig)
 	MxString iniConfig = p_iniConfig;
 
 	char* parse = iniConfig.GetData();
-	while ((parse = SDL_strchr(++parse, '/'))) {
+	while ((parse = MORTAR_strchr(++parse, '/'))) {
 		*parse = '\0';
 		wasmfs_create_directory(iniConfig.GetData(), 0644, opfs);
 		*parse = '/';
@@ -64,22 +63,22 @@ void Emscripten_SetupFilesystem()
 		MxString path = MxString(Emscripten_bundledPath) + MxString(p_path);
 		path.MapPathToFilesystem();
 
-		if (SDL_GetPathInfo(path.GetData(), NULL)) {
-			SDL_Log("File %s is bundled and won't be streamed", p_path);
+		if (MORTAR_GetPathInfo(path.GetData(), NULL)) {
+			MORTAR_Log("File %s is bundled and won't be streamed", p_path);
 		}
 		else {
 			wasmfs_create_file(p_path, 0644, fetchfs);
 			MxOmni::GetCDFiles().emplace_back(p_path);
 
-			SDL_Log("File %s set up for streaming", p_path);
+			MORTAR_Log("File %s set up for streaming", p_path);
 		}
 	};
 
 	const auto preloadFile = [](const char* p_path) -> bool {
 		size_t length = 0;
-		void* data = SDL_LoadFile(p_path, &length);
+		void* data = MORTAR_LoadFile(p_path, &length);
 		if (data) {
-			SDL_free(data);
+			MORTAR_free(data);
 		}
 		return length > 0;
 	};
@@ -129,7 +128,7 @@ void Emscripten_SetupFilesystem()
 		}
 
 		char* parse = savePath.GetData();
-		while ((parse = SDL_strchr(++parse, '/'))) {
+		while ((parse = MORTAR_strchr(++parse, '/'))) {
 			*parse = '\0';
 			wasmfs_create_directory(savePath.GetData(), 0644, opfs);
 			*parse = '/';
