@@ -1268,7 +1268,7 @@ static void *open_object(const char *name) {
     return LoadLibraryA(name);
 }
 static void close_object(void *obj) {
-    FreeLibrary(obj);
+    FreeLibrary((HMODULE)obj);
 }
 static void *load_symbol(void *obj, const char *name) {
     return GetProcAddress(obj, name);
