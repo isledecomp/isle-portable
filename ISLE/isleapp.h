@@ -56,7 +56,6 @@ public:
 	MxFloat GetCursorSensitivity() { return m_cursorSensitivity; }
 	LegoInputManager::TouchScheme GetTouchScheme() { return m_touchScheme; }
 	MxBool GetHaptic() { return m_haptic; }
-	MxBool GetWasd() { return m_wasd; }
 
 	void SetWindowActive(MxS32 p_windowActive) { m_windowActive = p_windowActive; }
 	void SetGameStarted(MxS32 p_gameStarted) { m_gameStarted = p_gameStarted; }
