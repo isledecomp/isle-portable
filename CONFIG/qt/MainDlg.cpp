@@ -64,6 +64,7 @@ CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 	connect(m_ui->musicCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxMusic);
 	connect(m_ui->sound3DCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckbox3DSound);
 	connect(m_ui->rumbleCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxRumble);
+	connect(m_ui->wasdCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxWasd);
 	connect(m_ui->textureCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxTexture);
 	connect(m_ui->customAssetsCheckBox, &QCheckBox::toggled, this, &CMainDialog::OnCheckboxCustomAssets);
 	connect(m_ui->touchComboBox, &QComboBox::currentIndexChanged, this, &CMainDialog::TouchControlsChanged);
@@ -306,6 +307,7 @@ void CMainDialog::UpdateInterface()
 	}
 	m_ui->musicCheckBox->setChecked(currentConfigApp->m_music);
 	m_ui->rumbleCheckBox->setChecked(currentConfigApp->m_haptic);
+	m_ui->wasdCheckBox->setChecked(currentConfigApp->m_wasd);
 	m_ui->touchComboBox->setCurrentIndex(currentConfigApp->m_touch_scheme);
 	m_ui->transitionTypeComboBox->setCurrentIndex(currentConfigApp->m_transition_type);
 	m_ui->dataPath->setText(QString::fromStdString(currentConfigApp->m_cd_path));
@@ -454,6 +456,13 @@ void CMainDialog::OnCheckboxMusic(bool checked)
 void CMainDialog::OnCheckboxRumble(bool checked)
 {
 	currentConfigApp->m_haptic = checked;
+	m_modified = true;
+	UpdateInterface();
+}
+
+void CMainDialog::OnCheckboxWasd(bool checked)
+{
+	currentConfigApp->m_wasd = checked;
 	m_modified = true;
 	UpdateInterface();
 }

@@ -87,6 +87,7 @@ bool CConfigApp::InitInstance()
 	m_msaa = 1;
 	m_anisotropy = 1;
 	m_haptic = TRUE;
+	m_wasd = FALSE;
 	m_touch_scheme = 2;
 	m_texture_load = TRUE;
 	m_texture_path = "textures/";
@@ -182,6 +183,7 @@ bool CConfigApp::ReadRegisterSettings()
 	m_texture_quality = iniparser_getint(dict, "isle:Island Texture", m_texture_quality);
 	m_use_joystick = iniparser_getboolean(dict, "isle:UseJoystick", m_use_joystick);
 	m_haptic = iniparser_getboolean(dict, "isle:Haptic", m_haptic);
+	m_wasd = iniparser_getboolean(dict, "isle:WASD", m_wasd);
 	m_music = iniparser_getboolean(dict, "isle:Music", m_music);
 	m_joystick_index = iniparser_getint(dict, "isle:JoystickIndex", m_joystick_index);
 	m_max_lod = iniparser_getdouble(dict, "isle:Max LOD", m_max_lod);
@@ -392,6 +394,7 @@ void CConfigApp::WriteRegisterSettings() const
 	SetIniBool(dict, "isle:3DSound", m_3d_sound);
 	SetIniBool(dict, "isle:Music", m_music);
 	SetIniBool(dict, "isle:Haptic", m_haptic);
+	SetIniBool(dict, "isle:WASD", m_wasd);
 
 	SetIniBool(dict, "isle:UseJoystick", m_use_joystick);
 	SetIniInt(dict, "isle:JoystickIndex", m_joystick_index);

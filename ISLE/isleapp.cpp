@@ -194,6 +194,7 @@ IsleApp::IsleApp()
 	m_cursorSensitivity = 4;
 	m_touchScheme = LegoInputManager::e_gamepad;
 	m_haptic = TRUE;
+	m_wasd = FALSE;
 	m_xRes = 640;
 	m_yRes = 480;
 	m_exclusiveXRes = m_xRes;
@@ -1027,6 +1028,9 @@ MxResult IsleApp::SetupWindow()
 		else {
 			SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Failed to get D3D device name and description");
 		}
+		if (LegoOmni::GetInstance()->GetInputManager()) {
+			LegoOmni::GetInstance()->GetInputManager()->SetWasd(m_wasd);
+		}
 	}
 
 	return SUCCESS;
@@ -1118,6 +1122,7 @@ bool IsleApp::LoadConfig()
 		iniparser_set(dict, "isle:Transition Type", SDL_itoa(m_transitionType, buf, 10));
 		iniparser_set(dict, "isle:Touch Scheme", SDL_itoa(m_touchScheme, buf, 10));
 		iniparser_set(dict, "isle:Haptic", m_haptic ? "true" : "false");
+		iniparser_set(dict, "isle:WASD", m_wasd ? "true" : "false");
 		iniparser_set(dict, "isle:Horizontal Resolution", SDL_itoa(m_xRes, buf, 10));
 		iniparser_set(dict, "isle:Vertical Resolution", SDL_itoa(m_yRes, buf, 10));
 		iniparser_set(dict, "isle:Exclusive X Resolution", SDL_itoa(m_exclusiveXRes, buf, 10));
@@ -1197,6 +1202,7 @@ bool IsleApp::LoadConfig()
 		(MxTransitionManager::TransitionType) iniparser_getint(dict, "isle:Transition Type", m_transitionType);
 	m_touchScheme = (LegoInputManager::TouchScheme) iniparser_getint(dict, "isle:Touch Scheme", m_touchScheme);
 	m_haptic = iniparser_getboolean(dict, "isle:Haptic", m_haptic);
+	m_wasd = iniparser_getboolean(dict, "isle:WASD", m_wasd);
 	m_xRes = iniparser_getint(dict, "isle:Horizontal Resolution", m_xRes);
 	m_yRes = iniparser_getint(dict, "isle:Vertical Resolution", m_yRes);
 	m_exclusiveXRes = iniparser_getint(dict, "isle:Exclusive X Resolution", m_exclusiveXRes);

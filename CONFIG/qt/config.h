@@ -82,6 +82,7 @@ public:
 	bool m_draw_cursor;
 	bool m_use_joystick;
 	bool m_haptic;
+	bool m_wasd;
 	int m_joystick_index;
 	int m_model_quality;
 	int m_texture_quality;

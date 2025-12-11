@@ -56,6 +56,7 @@ public:
 	MxFloat GetCursorSensitivity() { return m_cursorSensitivity; }
 	LegoInputManager::TouchScheme GetTouchScheme() { return m_touchScheme; }
 	MxBool GetHaptic() { return m_haptic; }
+	MxBool GetWasd() { return m_wasd; }
 
 	void SetWindowActive(MxS32 p_windowActive) { m_windowActive = p_windowActive; }
 	void SetGameStarted(MxS32 p_gameStarted) { m_gameStarted = p_gameStarted; }
@@ -107,6 +108,7 @@ private:
 	MxTransitionManager::TransitionType m_transitionType;
 	LegoInputManager::TouchScheme m_touchScheme;
 	MxBool m_haptic;
+	MxBool m_wasd;
 	MxS32 m_xRes;
 	MxS32 m_yRes;
 	MxS32 m_exclusiveXRes;
