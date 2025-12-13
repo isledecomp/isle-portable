@@ -107,6 +107,7 @@ private:
 	MxTransitionManager::TransitionType m_transitionType;
 	LegoInputManager::TouchScheme m_touchScheme;
 	MxBool m_haptic;
+	MxBool m_wasd;
 	MxS32 m_xRes;
 	MxS32 m_yRes;
 	MxS32 m_exclusiveXRes;

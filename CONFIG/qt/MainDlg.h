@@ -48,6 +48,7 @@ private slots:
 	void OnRadioExclusiveFullscreen(bool checked);
 	void OnCheckboxMusic(bool checked);
 	void OnCheckboxRumble(bool checked);
+	void OnCheckboxWasd(bool checked);
 	void OnCheckboxTexture(bool checked);
 	void OnCheckboxCustomAssets(bool checked);
 	void TouchControlsChanged(int index);

@@ -1006,7 +1006,23 @@ The game will gradually increase the number of actors until this maximum is reac
            </widget>
           </item>
           <item>
-           <spacer name="verticalSpacer_2">
+           <widget class="QCheckBox" name="wasdCheckBox">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="toolTip">
+              <string>Use the WASD keys for navigation.</string>
+            </property>
+            <property name="text">
+             <string>Use WASD</string>
+            </property>
+            <property name="checkable">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item> 
+            <spacer name="verticalSpacer_2">
             <property name="orientation">
              <enum>Qt::Orientation::Vertical</enum>
             </property>
@@ -1328,6 +1344,7 @@ Double-click a path to edit it.</string>
   <tabstop>AFSlider</tabstop>
   <tabstop>touchComboBox</tabstop>
   <tabstop>rumbleCheckBox</tabstop>
+  <tabstop>wasdCheckBox</tabstop>
   <tabstop>scrollArea</tabstop>
   <tabstop>textureCheckBox</tabstop>
   <tabstop>texturePath</tabstop>

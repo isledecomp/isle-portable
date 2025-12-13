@@ -134,20 +134,39 @@ MxResult LegoInputManager::GetNavigationKeyStates(MxU32& p_keyFlags)
 
 	MxU32 keyFlags = 0;
 
-	if (m_keyboardState[SDL_SCANCODE_KP_8] || m_keyboardState[SDL_SCANCODE_UP]) {
-		keyFlags |= c_up;
-	}
+	if (!m_wasd) {
+		if (m_keyboardState[SDL_SCANCODE_KP_8] || m_keyboardState[SDL_SCANCODE_UP]) {
+			keyFlags |= c_up;
+		}
 
-	if ((m_keyboardState[SDL_SCANCODE_KP_2] || m_keyboardState[SDL_SCANCODE_DOWN])) {
-		keyFlags |= c_down;
-	}
+		if ((m_keyboardState[SDL_SCANCODE_KP_2] || m_keyboardState[SDL_SCANCODE_DOWN])) {
+			keyFlags |= c_down;
+		}
 
-	if ((m_keyboardState[SDL_SCANCODE_KP_4] || m_keyboardState[SDL_SCANCODE_LEFT])) {
-		keyFlags |= c_left;
-	}
+		if ((m_keyboardState[SDL_SCANCODE_KP_4] || m_keyboardState[SDL_SCANCODE_LEFT])) {
+			keyFlags |= c_left;
+		}
 
-	if ((m_keyboardState[SDL_SCANCODE_KP_6] || m_keyboardState[SDL_SCANCODE_RIGHT])) {
-		keyFlags |= c_right;
+		if ((m_keyboardState[SDL_SCANCODE_KP_6] || m_keyboardState[SDL_SCANCODE_RIGHT])) {
+			keyFlags |= c_right;
+		}
+	}
+	else {
+		if (m_keyboardState[SDL_SCANCODE_W]) {
+			keyFlags |= c_up;
+		}
+
+		if (m_keyboardState[SDL_SCANCODE_S]) {
+			keyFlags |= c_down;
+		}
+
+		if (m_keyboardState[SDL_SCANCODE_A]) {
+			keyFlags |= c_left;
+		}
+
+		if (m_keyboardState[SDL_SCANCODE_D]) {
+			keyFlags |= c_right;
+		}
 	}
 
 	if (m_keyboardState[SDL_SCANCODE_LCTRL] || m_keyboardState[SDL_SCANCODE_RCTRL]) {
