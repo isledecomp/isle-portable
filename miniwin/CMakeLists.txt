@@ -204,29 +204,38 @@ foreach(shader_src IN LISTS miniwin_shaders)
   else()
     message(FATAL_ERROR "Unknown stage (${src_stage_ext})")
   endif()
+  set(dxbc "${compiled_bindir}/dxbc/${filename_wle}.dxbc")
   set(dxil "${compiled_bindir}/dxil/${filename_wle}.dxil")
   set(msl "${compiled_bindir}/msl/${filename_wle}.msl")
   set(spirv "${compiled_bindir}/spirv/${filename_wle}.spv")
   set(shader_filename "${filename_wle}.h")
   set(shader_header "${shader_gen_dir}/${shader_filename}")
   if(ISLE_COMPILE_SHADERS)
+    add_custom_command(OUTPUT "${dxbc}"
+      COMMAND "${SDL_SHADERCROSS_BIN}" "${shader_src}" -o "${dxbc}"
+        -s "${src_format}" -d "DXBC" -t "${shader_stage}"
+        -I "${shader_src_dir}"
+      DEPENDS create-generated-shader-directories "${shader_src}" ${miniwin_shaders_DEPENDS})
     add_custom_command(OUTPUT "${dxil}"
       COMMAND "${SDL_SHADERCROSS_BIN}" "${shader_src}" -o "${dxil}"
         -s "${src_format}" -d "DXIL" -t "${shader_stage}"
+        -I "${shader_src_dir}"
       DEPENDS create-generated-shader-directories "${shader_src}" ${miniwin_shaders_DEPENDS})
     add_custom_command(OUTPUT "${msl}"
       COMMAND "${SDL_SHADERCROSS_BIN}" "${shader_src}" -o "${msl}"
         -s "${src_format}" -d "MSL" -t "${shader_stage}"
+        -I "${shader_src_dir}"
       DEPENDS create-generated-shader-directories "${shader_src}" ${miniwin_shaders_DEPENDS})
     add_custom_command(OUTPUT "${spirv}"
       COMMAND "${SDL_SHADERCROSS_BIN}" "${shader_src}" -o "${spirv}"
         -s "${src_format}" -d "SPIRV" -t "${shader_stage}"
+        -I "${shader_src_dir}"
       DEPENDS create-generated-shader-directories "${shader_src}" ${miniwin_shaders_DEPENDS})
     add_custom_command(OUTPUT "${shader_header}"
       COMMAND Python3::Interpreter "${py_gencshadersource}" "header" "--output" "${shader_header}"
         "--stage" "${shader_stage}" "--variable" "${shader_variable}"
-        "--dxil" "${dxil}" "--msl" "${msl}" "--spirv" "${spirv}"
-      DEPENDS "${py_gencshadersource}" "${dxil}" "${msl}" "${spirv}")
+        "--dxbc" "${dxbc}" "--dxil" "${dxil}" "--msl" "${msl}" "--spirv" "${spirv}"
+      DEPENDS "${py_gencshadersource}" "${dxbc}" "${dxil}" "${msl}" "${spirv}")
   endif()
   target_sources(miniwin PRIVATE "${shader_header}")
   list(APPEND shader_names "${shader_name}")
