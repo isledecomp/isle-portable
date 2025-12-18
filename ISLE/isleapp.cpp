@@ -45,6 +45,7 @@
 #define SDL_MAIN_USE_CALLBACKS
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
+#include <SDL3/SDL_revision.h>
 #include <errno.h>
 #include <iniparser.h>
 #include <stdlib.h>
@@ -307,6 +308,17 @@ void IsleApp::SetupVideoFlags(
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 {
 	*appstate = NULL;
+
+	{
+		int version = SDL_GetVersion();
+		SDL_Log(
+			"SDL version %d.%d.%d (%s)",
+			SDL_VERSIONNUM_MAJOR(version),
+			SDL_VERSIONNUM_MINOR(version),
+			SDL_VERSIONNUM_MICRO(version),
+			SDL_GetRevision()
+		);
+	}
 
 	SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
 	SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
