@@ -25,7 +25,6 @@ static const SDL_GPUShaderCreateInfo VertexShaderDXILCodes[] = {
   },
 };
 static const SDL_GPUShaderCreateInfo VertexShaderDXBCCodes[] = {
-  // VertexShaderId::PositionColor
   {
     /* code_size */             sizeof(PositionColor_vert_dxbc),
     /* code */                  PositionColor_vert_dxbc,
@@ -86,7 +85,6 @@ static const SDL_GPUShaderCreateInfo FragmentShaderDXILCodes[] = {
   },
 };
 static const SDL_GPUShaderCreateInfo FragmentShaderDXBCCodes[] = {
-  // FragmentShaderId::SolidColor
   {
     /* code_size */             sizeof(SolidColor_frag_dxbc),
     /* code */                  SolidColor_frag_dxbc,
