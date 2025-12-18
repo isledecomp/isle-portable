@@ -213,14 +213,17 @@ foreach(shader_src IN LISTS miniwin_shaders)
     add_custom_command(OUTPUT "${dxil}"
       COMMAND "${SDL_SHADERCROSS_BIN}" "${shader_src}" -o "${dxil}"
         -s "${src_format}" -d "DXIL" -t "${shader_stage}"
+        -I "${shader_src_dir}"
       DEPENDS create-generated-shader-directories "${shader_src}" ${miniwin_shaders_DEPENDS})
     add_custom_command(OUTPUT "${msl}"
       COMMAND "${SDL_SHADERCROSS_BIN}" "${shader_src}" -o "${msl}"
         -s "${src_format}" -d "MSL" -t "${shader_stage}"
+        -I "${shader_src_dir}"
       DEPENDS create-generated-shader-directories "${shader_src}" ${miniwin_shaders_DEPENDS})
     add_custom_command(OUTPUT "${spirv}"
       COMMAND "${SDL_SHADERCROSS_BIN}" "${shader_src}" -o "${spirv}"
         -s "${src_format}" -d "SPIRV" -t "${shader_stage}"
+        -I "${shader_src_dir}"
       DEPENDS create-generated-shader-directories "${shader_src}" ${miniwin_shaders_DEPENDS})
     add_custom_command(OUTPUT "${shader_header}"
       COMMAND Python3::Interpreter "${py_gencshadersource}" "header" "--output" "${shader_header}"
