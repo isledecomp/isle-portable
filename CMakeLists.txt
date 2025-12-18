@@ -133,8 +133,12 @@ else()
   # to add search paths.
   find_package(SDL3 CONFIG REQUIRED)
 
-  find_package(iniparser REQUIRED CONFIG COMPONENTS shared)
-  target_link_libraries(Isle::iniparser INTERFACE iniparser-shared)
+  find_package(iniparser REQUIRED CONFIG)
+  if(TARGET iniparser-shared)
+    target_link_libraries(Isle::iniparser INTERFACE iniparser-shared)
+  elseif(TARGET iniparser-static)
+    target_link_libraries(Isle::iniparser INTERFACE iniparser-static)
+  endif()
 
   find_package(libweaver REQUIRED)
 endif()
