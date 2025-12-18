@@ -132,6 +132,7 @@ public:
 	void SetUnknown335(MxBool p_unk0x335) { m_unk0x335 = p_unk0x335; }
 	void SetUnknown336(MxBool p_unk0x336) { m_unk0x336 = p_unk0x336; }
 
+	MxBool GetWasd() { return m_wasd; }
 	void SetWasd(MxBool p_wasd) { m_wasd = p_wasd; }
 
 	// FUNCTION: BETA10 0x1002e390

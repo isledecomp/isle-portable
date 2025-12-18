@@ -655,7 +655,44 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 {
 	if (((MxNotificationParam&) p_param).GetNotification() == c_notificationKeyPress) {
 		m_unk0x5d = TRUE;
-		SDL_Keycode key = ((LegoEventNotificationParam&) p_param).GetKey();
+		SDL_Keycode originKey = ((LegoEventNotificationParam&) p_param).GetKey();
+		SDL_Keycode key = originKey;
+
+		// This is necessary so any players using the WASD movement option can
+		// also use Debug Mode, which normally makes use of the WASD keys.
+		//
+		// For those players, we just swap the two and remap
+		// those conflicting debug keys to the arrow keys.
+		if (LegoOmni::GetInstance()->GetInputManager()->GetWasd()) {
+			switch (originKey) {
+			case SDLK_W:
+				key = SDLK_UP;
+				break;
+			case SDLK_A:
+				key = SDLK_LEFT;
+				break;
+			case SDLK_S:
+				key = SDLK_DOWN;
+				break;
+			case SDLK_D:
+				key = SDLK_RIGHT;
+				break;
+			case SDLK_UP:
+				key = SDLK_W;
+				break;
+			case SDLK_LEFT:
+				key = SDLK_A;
+				break;
+			case SDLK_DOWN:
+				key = SDLK_S;
+				break;
+			case SDLK_RIGHT:
+				key = SDLK_D;
+				break;
+			default:
+				break;
+			}
+		}
 
 		switch (key) {
 		case SDLK_PAUSE: // Pause game
@@ -763,7 +800,7 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 			// Check if the the key is part of the debug password
 			if (!*g_currentInput) {
 				// password "protected" debug shortcuts
-				switch (((LegoEventNotificationParam&) p_param).GetKey()) {
+				switch (key) {
 				case SDLK_TAB:
 					VideoManager()->ToggleFPS(g_fpsEnabled);
 					if (g_fpsEnabled) {
