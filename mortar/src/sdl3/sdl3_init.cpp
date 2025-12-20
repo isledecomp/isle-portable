@@ -21,5 +21,4 @@ bool MORTAR_Init()
 void MORTAR_Quit()
 {
 	SDL_Quit();
-	unload_sdl3_api();
 }

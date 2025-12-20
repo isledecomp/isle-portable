@@ -56,17 +56,19 @@ static SDL_AppResult SDLCALL sdl3_AppEvent(void* appstate, SDL_Event* sdl3_event
 	if (!event_sdl3_to_mortar(sdl3_event, &mortar_event)) {
 		return SDL_APP_CONTINUE;
 	}
-	return appresult_mortar_to_sdl3(g_mortar_AppEvent(appstate, &mortar_event));
+	MORTAR_AppResult mortar_app_result = g_mortar_AppEvent(appstate, &mortar_event);
+	return appresult_mortar_to_sdl3(mortar_app_result);
 }
 
-void SDLCALL sdl3_AppQuit(void* appstate, SDL_AppResult result)
+static void SDLCALL sdl3_AppQuit(void* appstate, SDL_AppResult result)
 {
 	g_mortar_AppQuit(appstate, appresult_sdl3_to_mortar(result));
 }
 
 static int mortar_sdl3_main(int argc, char* argv[])
 {
-	return SDL_EnterAppMainCallbacks(argc, argv, sdl3_AppInit, sdl3_AppIterate, sdl3_AppEvent, sdl3_AppQuit);
+	int result = SDL_EnterAppMainCallbacks(argc, argv, sdl3_AppInit, sdl3_AppIterate, sdl3_AppEvent, sdl3_AppQuit);
+	return result;
 }
 
 bool MORTAR_SDL3_Initialize(void)
