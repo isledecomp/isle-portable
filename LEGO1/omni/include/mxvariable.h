@@ -12,6 +12,8 @@ public:
 	// FUNCTION: BETA10 0x1007b750
 	MxVariable() {}
 
+	virtual ~MxVariable() {}
+
 	// FUNCTION: BETA10 0x1012a840
 	MxVariable(const char* p_key, const char* p_value)
 	{
