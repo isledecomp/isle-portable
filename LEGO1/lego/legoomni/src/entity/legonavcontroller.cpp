@@ -341,7 +341,7 @@ MxBool LegoNavController::CalculateNewPosDir(
 	MxBool und = FALSE;
 
 	MxTime currentTime = Timer()->GetTime();
-	float deltaTime = (currentTime - m_lastTime) / 1000.0;
+	float deltaTime = Min((currentTime - m_lastTime) / 1000.0, 1. / 10.);
 	m_lastTime = currentTime;
 
 	if (ProcessKeyboardInput() == FAILURE) {
