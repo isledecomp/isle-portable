@@ -802,16 +802,21 @@ HRESULT Direct3DRMViewportImpl::Pick(float x, float y, LPDIRECT3DRMPICKEDARRAY* 
 				ComputeFrameWorldMatrix(frame, worldMatrix);
 				D3DRMBOX worldBox = ComputeTransformedAABB(box, worldMatrix);
 
-				float distance = FLT_MAX;
-				if (RayIntersectsBox(pickRay, worldBox, distance) &&
-					RayIntersectsMeshTriangles(pickRay, *mesh, worldMatrix, distance)) {
-					auto* arr = new Direct3DRMFrameArrayImpl();
-					for (IDirect3DRMFrame* f : path) {
-						arr->AddElement(f);
-					}
+				float boxDist = FLT_MAX;
 
-					PickRecord rec = {visual, arr, {distance}};
-					hits.push_back(rec);
+				// Check box first as an optimization
+				if (RayIntersectsBox(pickRay, worldBox, boxDist)) {
+					float meshDist = FLT_MAX;
+
+					if (RayIntersectsMeshTriangles(pickRay, *mesh, worldMatrix, meshDist)) {
+						auto* arr = new Direct3DRMFrameArrayImpl();
+						for (IDirect3DRMFrame* f : path) {
+							arr->AddElement(f);
+						}
+
+						PickRecord rec = {visual, arr, {meshDist}};
+						hits.push_back(rec);
+					}
 				}
 				mesh->Release();
 			}
