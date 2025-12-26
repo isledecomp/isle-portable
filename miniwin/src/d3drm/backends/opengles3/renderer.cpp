@@ -17,8 +17,8 @@
 #include <GLES2/gl2ext.h>
 #include <GLES3/gl3.h>
 #endif
-#include <SDL3/SDL.h>
 #include <algorithm>
+#include <mortar/mortar.h>
 #include <string>
 
 static GLuint CompileShader(GLenum type, const char* source)
@@ -34,10 +34,10 @@ static GLuint CompileShader(GLenum type, const char* source)
 		if (logLength > 0) {
 			std::vector<char> log(logLength);
 			glGetShaderInfoLog(shader, logLength, nullptr, log.data());
-			SDL_Log("Shader compile error: %s", log.data());
+			MORTAR_Log("Shader compile error: %s", log.data());
 		}
 		else {
-			SDL_Log("CompileShader (%s)", SDL_GetError());
+			MORTAR_Log("CompileShader (%s)", MORTAR_GetError());
 		}
 		glDeleteShader(shader);
 		return 0;
@@ -54,28 +54,28 @@ struct SceneLightGLES3 {
 Direct3DRMRenderer* OpenGLES3Renderer::Create(DWORD width, DWORD height, DWORD msaaSamples, float anisotropic)
 {
 	// We have to reset the attributes here after having enumerated the
-	// OpenGL ES 2.0 renderer, or else SDL gets very confused by SDL_GL_DEPTH_SIZE
+	// OpenGL ES 2.0 renderer, or else SDL gets very confused by MORTAR_GL_DEPTH_SIZE
 	// call below when on an EGL-based backend, and crashes with EGL_BAD_MATCH.
-	SDL_GL_ResetAttributes();
+	MORTAR_GL_ResetAttributes();
 	// But ResetAttributes resets it to 16.
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+	MORTAR_GL_SetAttribute(MORTAR_GL_DEPTH_SIZE, 24);
+	MORTAR_GL_SetAttribute(MORTAR_GL_CONTEXT_PROFILE_MASK, MORTAR_GL_CONTEXT_PROFILE_ES);
+	MORTAR_GL_SetAttribute(MORTAR_GL_CONTEXT_MAJOR_VERSION, 3);
+	MORTAR_GL_SetAttribute(MORTAR_GL_CONTEXT_MINOR_VERSION, 0);
 
 	if (!DDWindow) {
-		SDL_Log("No window handler");
+		MORTAR_Log("No window handler");
 		return nullptr;
 	}
 
-	SDL_GLContext context = SDL_GL_CreateContext(DDWindow);
+	MORTAR_GLContext context = MORTAR_GL_CreateContext(DDWindow);
 	if (!context) {
-		SDL_Log("SDL_GL_CreateContext: %s", SDL_GetError());
+		MORTAR_Log("MORTAR_GL_CreateContext: %s", MORTAR_GetError());
 		return nullptr;
 	}
 
-	if (!SDL_GL_MakeCurrent(DDWindow, context)) {
-		SDL_GL_DestroyContext(context);
+	if (!MORTAR_GL_MakeCurrent(DDWindow, context)) {
+		MORTAR_GL_DestroyContext(context);
 		return nullptr;
 	}
 
@@ -273,11 +273,11 @@ GLES3MeshCacheEntry OpenGLES3Renderer::GLES3UploadMesh(const MeshGroup& meshGrou
 	return cache;
 }
 
-bool OpenGLES3Renderer::UploadTexture(SDL_Surface* source, GLuint& outTexId, bool isUI)
+bool OpenGLES3Renderer::UploadTexture(MORTAR_Surface* source, GLuint& outTexId, bool isUI)
 {
-	SDL_Surface* surf = source;
-	if (source->format != SDL_PIXELFORMAT_RGBA32) {
-		surf = SDL_ConvertSurface(source, SDL_PIXELFORMAT_RGBA32);
+	MORTAR_Surface* surf = source;
+	if (source->format != MORTAR_PIXELFORMAT_RGBA32) {
+		surf = MORTAR_ConvertSurface(source, MORTAR_PIXELFORMAT_RGBA32);
 		if (!surf) {
 			return false;
 		}
@@ -305,7 +305,7 @@ bool OpenGLES3Renderer::UploadTexture(SDL_Surface* source, GLuint& outTexId, boo
 	}
 
 	if (surf != source) {
-		SDL_DestroySurface(surf);
+		MORTAR_DestroySurface(surf);
 	}
 
 	return true;
@@ -316,7 +316,7 @@ OpenGLES3Renderer::OpenGLES3Renderer(
 	DWORD height,
 	DWORD msaaSamples,
 	float anisotropic,
-	SDL_GLContext context,
+	MORTAR_GLContext context,
 	GLuint shaderProgram
 )
 	: m_context(context), m_shaderProgram(shaderProgram), m_msaa(msaaSamples), m_anisotropic(anisotropic)
@@ -329,7 +329,7 @@ OpenGLES3Renderer::OpenGLES3Renderer(
 	if (m_msaa > maxSamples) {
 		m_msaa = maxSamples;
 	}
-	SDL_Log(
+	MORTAR_Log(
 		"MSAA is %s. Requested samples: %d, active samples: %d, max samples: %d",
 		m_msaa > 1 ? "on" : "off",
 		msaaSamples,
@@ -341,7 +341,7 @@ OpenGLES3Renderer::OpenGLES3Renderer(
 		glGenFramebuffers(1, &m_resolveFBO);
 	}
 
-	bool anisoAvailable = SDL_GL_ExtensionSupported("GL_EXT_texture_filter_anisotropic");
+	bool anisoAvailable = MORTAR_GL_ExtensionSupported("GL_EXT_texture_filter_anisotropic");
 	GLfloat maxAniso = 0.0f;
 	if (anisoAvailable) {
 		glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAniso);
@@ -349,7 +349,7 @@ OpenGLES3Renderer::OpenGLES3Renderer(
 	if (m_anisotropic > maxAniso) {
 		m_anisotropic = maxAniso;
 	}
-	SDL_Log(
+	MORTAR_Log(
 		"Anisotropic is %s. Requested: %f, active: %f, max aniso: %f",
 		m_anisotropic > 1.0f ? "on" : "off",
 		anisotropic,
@@ -362,26 +362,26 @@ OpenGLES3Renderer::OpenGLES3Renderer(
 	ViewportTransform viewportTransform = {1.0f, 0.0f, 0.0f};
 	Resize(width, height, viewportTransform);
 
-	SDL_Surface* dummySurface = SDL_CreateSurface(1, 1, SDL_PIXELFORMAT_RGBA32);
+	MORTAR_Surface* dummySurface = MORTAR_CreateSurface(1, 1, MORTAR_PIXELFORMAT_RGBA32);
 	if (!dummySurface) {
-		SDL_Log("Failed to create surface: %s", SDL_GetError());
+		MORTAR_Log("Failed to create surface: %s", MORTAR_GetError());
 		return;
 	}
-	if (!SDL_LockSurface(dummySurface)) {
-		SDL_Log("Failed to lock surface: %s", SDL_GetError());
-		SDL_DestroySurface(dummySurface);
+	if (!MORTAR_LockSurface(dummySurface)) {
+		MORTAR_Log("Failed to lock surface: %s", MORTAR_GetError());
+		MORTAR_DestroySurface(dummySurface);
 		return;
 	}
-	((Uint32*) dummySurface->pixels)[0] = 0xFFFFFFFF;
-	SDL_UnlockSurface(dummySurface);
+	((uint32_t*) dummySurface->pixels)[0] = 0xFFFFFFFF;
+	MORTAR_UnlockSurface(dummySurface);
 
 	UploadTexture(dummySurface, m_dummyTexture, false);
 	if (!m_dummyTexture) {
-		SDL_DestroySurface(dummySurface);
-		SDL_Log("Failed to create surface: %s", SDL_GetError());
+		MORTAR_DestroySurface(dummySurface);
+		MORTAR_Log("Failed to create surface: %s", MORTAR_GetError());
 		return;
 	}
-	SDL_DestroySurface(dummySurface);
+	MORTAR_DestroySurface(dummySurface);
 
 	m_posLoc = glGetAttribLocation(m_shaderProgram, "a_position");
 	m_normLoc = glGetAttribLocation(m_shaderProgram, "a_normal");
@@ -415,7 +415,7 @@ OpenGLES3Renderer::OpenGLES3Renderer(
 
 OpenGLES3Renderer::~OpenGLES3Renderer()
 {
-	SDL_DestroySurface(m_renderedImage);
+	MORTAR_DestroySurface(m_renderedImage);
 	glDeleteTextures(1, &m_dummyTexture);
 	glDeleteProgram(m_shaderProgram);
 	glDeleteRenderbuffers(1, &m_colorTarget);
@@ -426,13 +426,13 @@ OpenGLES3Renderer::~OpenGLES3Renderer()
 		glDeleteFramebuffers(1, &m_resolveFBO);
 	}
 
-	SDL_GL_DestroyContext(m_context);
+	MORTAR_GL_DestroyContext(m_context);
 }
 
 void OpenGLES3Renderer::PushLights(const SceneLight* lightsArray, size_t count)
 {
 	if (count > 3) {
-		SDL_Log("Unsupported number of lights (%d)", static_cast<int>(count));
+		MORTAR_Log("Unsupported number of lights (%d)", static_cast<int>(count));
 		count = 3;
 	}
 
@@ -450,10 +450,10 @@ void OpenGLES3Renderer::SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE 
 
 struct TextureDestroyContextGLS2 {
 	OpenGLES3Renderer* renderer;
-	Uint32 textureId;
+	uint32_t textureId;
 };
 
-void OpenGLES3Renderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture)
+void OpenGLES3Renderer::AddTextureDestroyCallback(uint32_t id, IDirect3DRMTexture* texture)
 {
 	auto* ctx = new TextureDestroyContextGLS2{this, id};
 	texture->AddDestroyCallback(
@@ -471,13 +471,13 @@ void OpenGLES3Renderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture*
 	);
 }
 
-Uint32 OpenGLES3Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUI, float scaleX, float scaleY)
+uint32_t OpenGLES3Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUI, float scaleX, float scaleY)
 {
-	SDL_GL_MakeCurrent(DDWindow, m_context);
+	MORTAR_GL_MakeCurrent(DDWindow, m_context);
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
 	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
 
-	for (Uint32 i = 0; i < m_textures.size(); ++i) {
+	for (uint32_t i = 0; i < m_textures.size(); ++i) {
 		auto& tex = m_textures[i];
 		if (tex.texture == texture) {
 			if (tex.version != texture->m_version) {
@@ -495,7 +495,7 @@ Uint32 OpenGLES3Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUI, 
 		return NO_TEXTURE_ID;
 	}
 
-	for (Uint32 i = 0; i < m_textures.size(); ++i) {
+	for (uint32_t i = 0; i < m_textures.size(); ++i) {
 		auto& tex = m_textures[i];
 		if (!tex.texture) {
 			tex.texture = texture;
@@ -511,16 +511,16 @@ Uint32 OpenGLES3Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUI, 
 	m_textures.push_back(
 		{texture, texture->m_version, texId, (uint16_t) surface->m_surface->w, (uint16_t) surface->m_surface->h}
 	);
-	AddTextureDestroyCallback((Uint32) (m_textures.size() - 1), texture);
-	return (Uint32) (m_textures.size() - 1);
+	AddTextureDestroyCallback((uint32_t) (m_textures.size() - 1), texture);
+	return (uint32_t) (m_textures.size() - 1);
 }
 
 struct GLES3MeshDestroyContext {
 	OpenGLES3Renderer* renderer;
-	Uint32 id;
+	uint32_t id;
 };
 
-void OpenGLES3Renderer::AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh)
+void OpenGLES3Renderer::AddMeshDestroyCallback(uint32_t id, IDirect3DRMMesh* mesh)
 {
 	auto* ctx = new GLES3MeshDestroyContext{this, id};
 	mesh->AddDestroyCallback(
@@ -539,9 +539,9 @@ void OpenGLES3Renderer::AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh)
 	);
 }
 
-Uint32 OpenGLES3Renderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup)
+uint32_t OpenGLES3Renderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup)
 {
-	for (Uint32 i = 0; i < m_meshs.size(); ++i) {
+	for (uint32_t i = 0; i < m_meshs.size(); ++i) {
 		auto& cache = m_meshs[i];
 		if (cache.meshGroup == meshGroup) {
 			if (cache.version != meshGroup->version) {
@@ -553,7 +553,7 @@ Uint32 OpenGLES3Renderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* mesh
 
 	auto newCache = GLES3UploadMesh(*meshGroup);
 
-	for (Uint32 i = 0; i < m_meshs.size(); ++i) {
+	for (uint32_t i = 0; i < m_meshs.size(); ++i) {
 		auto& cache = m_meshs[i];
 		if (!cache.meshGroup) {
 			cache = std::move(newCache);
@@ -563,13 +563,13 @@ Uint32 OpenGLES3Renderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* mesh
 	}
 
 	m_meshs.push_back(std::move(newCache));
-	AddMeshDestroyCallback((Uint32) (m_meshs.size() - 1), mesh);
-	return (Uint32) (m_meshs.size() - 1);
+	AddMeshDestroyCallback((uint32_t) (m_meshs.size() - 1), mesh);
+	return (uint32_t) (m_meshs.size() - 1);
 }
 
 HRESULT OpenGLES3Renderer::BeginFrame()
 {
-	SDL_GL_MakeCurrent(DDWindow, m_context);
+	MORTAR_GL_MakeCurrent(DDWindow, m_context);
 	m_dirty = true;
 
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
@@ -669,14 +669,14 @@ HRESULT OpenGLES3Renderer::FinalizeFrame()
 
 void OpenGLES3Renderer::Resize(int width, int height, const ViewportTransform& viewportTransform)
 {
-	SDL_GL_MakeCurrent(DDWindow, m_context);
+	MORTAR_GL_MakeCurrent(DDWindow, m_context);
 	m_width = width;
 	m_height = height;
 	m_viewportTransform = viewportTransform;
 	if (m_renderedImage) {
-		SDL_DestroySurface(m_renderedImage);
+		MORTAR_DestroySurface(m_renderedImage);
 	}
-	m_renderedImage = SDL_CreateSurface(m_width, m_height, SDL_PIXELFORMAT_RGBA32);
+	m_renderedImage = MORTAR_CreateSurface(m_width, m_height, MORTAR_PIXELFORMAT_RGBA32);
 
 	if (m_colorTarget) {
 		glDeleteRenderbuffers(1, &m_colorTarget);
@@ -716,7 +716,7 @@ void OpenGLES3Renderer::Resize(int width, int height, const ViewportTransform& v
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_depthTarget);
 	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	if (status != GL_FRAMEBUFFER_COMPLETE) {
-		SDL_Log("FBO incomplete: 0x%X", status);
+		MORTAR_Log("FBO incomplete: 0x%X", status);
 	}
 
 	if (m_msaa > 1) {
@@ -727,7 +727,7 @@ void OpenGLES3Renderer::Resize(int width, int height, const ViewportTransform& v
 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, m_resolveColor);
 		GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		if (status != GL_FRAMEBUFFER_COMPLETE) {
-			SDL_Log("Resolve FBO incomplete: 0x%X", status);
+			MORTAR_Log("Resolve FBO incomplete: 0x%X", status);
 		}
 	}
 
@@ -738,7 +738,7 @@ void OpenGLES3Renderer::Resize(int width, int height, const ViewportTransform& v
 
 void OpenGLES3Renderer::Clear(float r, float g, float b)
 {
-	SDL_GL_MakeCurrent(DDWindow, m_context);
+	MORTAR_GL_MakeCurrent(DDWindow, m_context);
 	m_dirty = true;
 
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
@@ -751,7 +751,7 @@ void OpenGLES3Renderer::Clear(float r, float g, float b)
 
 void OpenGLES3Renderer::Flip()
 {
-	SDL_GL_MakeCurrent(DDWindow, m_context);
+	MORTAR_GL_MakeCurrent(DDWindow, m_context);
 	if (!m_dirty) {
 		return;
 	}
@@ -771,13 +771,18 @@ void OpenGLES3Renderer::Flip()
 
 	glBlitFramebuffer(0, 0, m_width, m_height, 0, 0, m_width, m_height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
-	SDL_GL_SwapWindow(DDWindow);
+	MORTAR_GL_SwapWindow(DDWindow);
 	m_dirty = false;
 }
 
-void OpenGLES3Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect, FColor color)
+void OpenGLES3Renderer::Draw2DImage(
+	uint32_t textureId,
+	const MORTAR_Rect& srcRect,
+	const MORTAR_Rect& dstRect,
+	FColor color
+)
 {
-	SDL_GL_MakeCurrent(DDWindow, m_context);
+	MORTAR_GL_MakeCurrent(DDWindow, m_context);
 	m_dirty = true;
 
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
@@ -795,7 +800,7 @@ void OpenGLES3Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, c
 	glUniform4f(m_colorLoc, color.r, color.g, color.b, color.a);
 	glUniform1f(m_shinLoc, 0.0f);
 
-	SDL_Rect expandedDstRect;
+	MORTAR_Rect expandedDstRect;
 	if (textureId != NO_TEXTURE_ID) {
 		const GLES3TextureCacheEntry& texture = m_textures[textureId];
 		float scaleX = static_cast<float>(dstRect.w) / srcRect.w;
@@ -855,7 +860,7 @@ void OpenGLES3Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, c
 	glDisable(GL_SCISSOR_TEST);
 }
 
-void OpenGLES3Renderer::Download(SDL_Surface* target)
+void OpenGLES3Renderer::Download(MORTAR_Surface* target)
 {
 	glFinish();
 
@@ -871,31 +876,31 @@ void OpenGLES3Renderer::Download(SDL_Surface* target)
 
 	glReadPixels(0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, m_renderedImage->pixels);
 
-	SDL_Rect srcRect = {
+	MORTAR_Rect srcRect = {
 		static_cast<int>(m_viewportTransform.offsetX),
 		static_cast<int>(m_viewportTransform.offsetY),
 		static_cast<int>(target->w * m_viewportTransform.scale),
 		static_cast<int>(target->h * m_viewportTransform.scale),
 	};
 
-	SDL_Surface* bufferClone = SDL_CreateSurface(target->w, target->h, SDL_PIXELFORMAT_RGBA32);
+	MORTAR_Surface* bufferClone = MORTAR_CreateSurface(target->w, target->h, MORTAR_PIXELFORMAT_RGBA32);
 	if (!bufferClone) {
-		SDL_Log("SDL_CreateSurface: %s", SDL_GetError());
+		MORTAR_Log("MORTAR_CreateSurface: %s", MORTAR_GetError());
 		return;
 	}
 
-	SDL_BlitSurfaceScaled(m_renderedImage, &srcRect, bufferClone, nullptr, SDL_SCALEMODE_NEAREST);
+	MORTAR_BlitSurfaceScaled(m_renderedImage, &srcRect, bufferClone, nullptr, MORTAR_SCALEMODE_NEAREST);
 
 	// Flip image vertically into target
-	SDL_Rect rowSrc = {0, 0, bufferClone->w, 1};
-	SDL_Rect rowDst = {0, 0, bufferClone->w, 1};
+	MORTAR_Rect rowSrc = {0, 0, bufferClone->w, 1};
+	MORTAR_Rect rowDst = {0, 0, bufferClone->w, 1};
 	for (int y = 0; y < bufferClone->h; ++y) {
 		rowSrc.y = y;
 		rowDst.y = bufferClone->h - 1 - y;
-		SDL_BlitSurface(bufferClone, &rowSrc, target, &rowDst);
+		MORTAR_BlitSurface(bufferClone, &rowSrc, target, &rowDst);
 	}
 
-	SDL_DestroySurface(bufferClone);
+	MORTAR_DestroySurface(bufferClone);
 }
 
 void OpenGLES3Renderer::SetDither(bool dither)

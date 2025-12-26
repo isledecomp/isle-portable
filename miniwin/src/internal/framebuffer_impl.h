@@ -1,8 +1,8 @@
 #pragma once
 
-#include <SDL3/SDL.h>
 #include <ddsurface_impl.h>
 #include <miniwin/ddraw.h>
+#include <mortar/mortar.h>
 
 struct FrameBufferImpl : public IDirectDrawSurface3 {
 	FrameBufferImpl(DWORD virtualWidth, DWORD virtualHeight);

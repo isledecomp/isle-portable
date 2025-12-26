@@ -1,5 +1,6 @@
 #include "legostate.h"
 
+#include <mortar/mortar_stdinc.h>
 #include <stdlib.h>
 
 DECOMP_SIZE_ASSERT(LegoState, 0x08)
@@ -30,7 +31,7 @@ MxU32 LegoState::Playlist::Next()
 		break;
 
 	case e_random:
-		m_nextIndex = SDL_rand(m_length);
+		m_nextIndex = MORTAR_rand(m_length);
 		objectId = m_objectIds[m_nextIndex];
 		break;
 

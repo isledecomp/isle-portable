@@ -15,44 +15,44 @@ void ModelDbModel::Free()
 }
 
 // FUNCTION: LEGO1 0x100276b0
-MxResult ModelDbModel::Read(SDL_IOStream* p_file)
+MxResult ModelDbModel::Read(MORTAR_IOStream* p_file)
 {
 	MxU32 len;
 
-	if (SDL_ReadIO(p_file, &len, sizeof(MxU32)) != sizeof(MxU32)) {
+	if (MORTAR_ReadIO(p_file, &len, sizeof(MxU32)) != sizeof(MxU32)) {
 		return FAILURE;
 	}
 
 	m_modelName = new char[len];
-	if (SDL_ReadIO(p_file, m_modelName, len) != len) {
+	if (MORTAR_ReadIO(p_file, m_modelName, len) != len) {
 		return FAILURE;
 	}
 
-	if (SDL_ReadIO(p_file, &m_modelDataLength, sizeof(MxU32)) != sizeof(MxU32)) {
+	if (MORTAR_ReadIO(p_file, &m_modelDataLength, sizeof(MxU32)) != sizeof(MxU32)) {
 		return FAILURE;
 	}
-	if (SDL_ReadIO(p_file, &m_modelDataOffset, sizeof(MxU32)) != sizeof(MxU32)) {
+	if (MORTAR_ReadIO(p_file, &m_modelDataOffset, sizeof(MxU32)) != sizeof(MxU32)) {
 		return FAILURE;
 	}
-	if (SDL_ReadIO(p_file, &len, sizeof(len)) != sizeof(len)) {
+	if (MORTAR_ReadIO(p_file, &len, sizeof(len)) != sizeof(len)) {
 		return FAILURE;
 	}
 
 	m_presenterName = new char[len];
-	if (SDL_ReadIO(p_file, m_presenterName, len) != len) {
+	if (MORTAR_ReadIO(p_file, m_presenterName, len) != len) {
 		return FAILURE;
 	}
 
-	if (SDL_ReadIO(p_file, m_location, 3 * sizeof(float)) != 3 * sizeof(float)) {
+	if (MORTAR_ReadIO(p_file, m_location, 3 * sizeof(float)) != 3 * sizeof(float)) {
 		return FAILURE;
 	}
-	if (SDL_ReadIO(p_file, m_direction, 3 * sizeof(float)) != 3 * sizeof(float)) {
+	if (MORTAR_ReadIO(p_file, m_direction, 3 * sizeof(float)) != 3 * sizeof(float)) {
 		return FAILURE;
 	}
-	if (SDL_ReadIO(p_file, m_up, 3 * sizeof(float)) != 3 * sizeof(float)) {
+	if (MORTAR_ReadIO(p_file, m_up, 3 * sizeof(float)) != 3 * sizeof(float)) {
 		return FAILURE;
 	}
-	if (SDL_ReadIO(p_file, &m_visible, sizeof(MxU8)) != sizeof(MxU8)) {
+	if (MORTAR_ReadIO(p_file, &m_visible, sizeof(MxU8)) != sizeof(MxU8)) {
 		return FAILURE;
 	}
 
@@ -60,27 +60,27 @@ MxResult ModelDbModel::Read(SDL_IOStream* p_file)
 }
 
 // FUNCTION: LEGO1 0x10027850
-MxResult ModelDbPart::Read(SDL_IOStream* p_file)
+MxResult ModelDbPart::Read(MORTAR_IOStream* p_file)
 {
 	MxU32 len;
 
-	if (SDL_ReadIO(p_file, &len, sizeof(MxU32)) != sizeof(MxU32)) {
+	if (MORTAR_ReadIO(p_file, &len, sizeof(MxU32)) != sizeof(MxU32)) {
 		return FAILURE;
 	}
 
 	char* buff = new char[len];
 
-	if (SDL_ReadIO(p_file, buff, len) != len) {
+	if (MORTAR_ReadIO(p_file, buff, len) != len) {
 		return FAILURE;
 	}
 
 	m_roiName = buff;
 	delete[] buff;
 
-	if (SDL_ReadIO(p_file, &m_partDataLength, sizeof(undefined4)) != sizeof(undefined4)) {
+	if (MORTAR_ReadIO(p_file, &m_partDataLength, sizeof(undefined4)) != sizeof(undefined4)) {
 		return FAILURE;
 	}
-	if (SDL_ReadIO(p_file, &m_partDataOffset, sizeof(undefined4)) != sizeof(undefined4)) {
+	if (MORTAR_ReadIO(p_file, &m_partDataOffset, sizeof(undefined4)) != sizeof(undefined4)) {
 		return FAILURE;
 	}
 
@@ -88,13 +88,13 @@ MxResult ModelDbPart::Read(SDL_IOStream* p_file)
 }
 
 // FUNCTION: LEGO1 0x10027910
-MxResult ReadModelDbWorlds(SDL_IOStream* p_file, ModelDbWorld*& p_worlds, MxS32& p_numWorlds)
+MxResult ReadModelDbWorlds(MORTAR_IOStream* p_file, ModelDbWorld*& p_worlds, MxS32& p_numWorlds)
 {
 	p_worlds = NULL;
 	p_numWorlds = 0;
 
 	MxS32 numWorlds;
-	if (SDL_ReadIO(p_file, &numWorlds, sizeof(numWorlds)) != sizeof(numWorlds)) {
+	if (MORTAR_ReadIO(p_file, &numWorlds, sizeof(numWorlds)) != sizeof(numWorlds)) {
 		return FAILURE;
 	}
 
@@ -102,16 +102,16 @@ MxResult ReadModelDbWorlds(SDL_IOStream* p_file, ModelDbWorld*& p_worlds, MxS32&
 	MxS32 worldNameLen, numParts, i, j;
 
 	for (i = 0; i < numWorlds; i++) {
-		if (SDL_ReadIO(p_file, &worldNameLen, sizeof(MxS32)) != sizeof(MxS32)) {
+		if (MORTAR_ReadIO(p_file, &worldNameLen, sizeof(MxS32)) != sizeof(MxS32)) {
 			return FAILURE;
 		}
 
 		worlds[i].m_worldName = new char[worldNameLen];
-		if (SDL_ReadIO(p_file, worlds[i].m_worldName, worldNameLen) != worldNameLen) {
+		if (MORTAR_ReadIO(p_file, worlds[i].m_worldName, worldNameLen) != worldNameLen) {
 			return FAILURE;
 		}
 
-		if (SDL_ReadIO(p_file, &numParts, sizeof(MxS32)) != sizeof(MxS32)) {
+		if (MORTAR_ReadIO(p_file, &numParts, sizeof(MxS32)) != sizeof(MxS32)) {
 			return FAILURE;
 		}
 
@@ -127,7 +127,7 @@ MxResult ReadModelDbWorlds(SDL_IOStream* p_file, ModelDbWorld*& p_worlds, MxS32&
 			worlds[i].m_partList->Append(part);
 		}
 
-		if (SDL_ReadIO(p_file, &worlds[i].m_numModels, sizeof(MxS32)) != sizeof(MxS32)) {
+		if (MORTAR_ReadIO(p_file, &worlds[i].m_numModels, sizeof(MxS32)) != sizeof(MxS32)) {
 			return FAILURE;
 		}
 

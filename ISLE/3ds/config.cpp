@@ -1,11 +1,11 @@
 #include "config.h"
 
-#include <SDL3/SDL_log.h>
 #include <iniparser.h>
+#include <mortar/mortar_log.h>
 
 void N3DS_SetupDefaultConfigOverrides(dictionary* p_dictionary)
 {
-	SDL_Log("Overriding default config for 3DS");
+	MORTAR_Log("Overriding default config for 3DS");
 
 	// We are currently not bundling the assets into romfs.
 	// User must place assets in sdmc:/3ds/isle where

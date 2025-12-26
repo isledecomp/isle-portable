@@ -45,7 +45,7 @@ LegoFile::LegoFile()
 LegoFile::~LegoFile()
 {
 	if (m_file) {
-		SDL_CloseIO(m_file);
+		MORTAR_CloseIO(m_file);
 	}
 }
 
@@ -55,7 +55,7 @@ LegoResult LegoFile::Read(void* p_buffer, LegoU32 p_size)
 	if (!m_file) {
 		return FAILURE;
 	}
-	if (SDL_ReadIO(m_file, p_buffer, p_size) != p_size) {
+	if (MORTAR_ReadIO(m_file, p_buffer, p_size) != p_size) {
 		return FAILURE;
 	}
 	return SUCCESS;
@@ -67,7 +67,7 @@ LegoResult LegoFile::Write(const void* p_buffer, LegoU32 p_size)
 	if (!m_file) {
 		return FAILURE;
 	}
-	if (SDL_WriteIO(m_file, p_buffer, p_size) != p_size) {
+	if (MORTAR_WriteIO(m_file, p_buffer, p_size) != p_size) {
 		return FAILURE;
 	}
 	return SUCCESS;
@@ -79,7 +79,7 @@ LegoResult LegoFile::GetPosition(LegoU32& p_position)
 	if (!m_file) {
 		return FAILURE;
 	}
-	Sint64 position = SDL_TellIO(m_file);
+	int64_t position = MORTAR_TellIO(m_file);
 	if (position == -1) {
 		return FAILURE;
 	}
@@ -93,7 +93,7 @@ LegoResult LegoFile::SetPosition(LegoU32 p_position)
 	if (!m_file) {
 		return FAILURE;
 	}
-	if (SDL_SeekIO(m_file, p_position, SDL_IO_SEEK_SET) != p_position) {
+	if (MORTAR_SeekIO(m_file, p_position, MORTAR_IO_SEEK_SET) != p_position) {
 		return FAILURE;
 	}
 	return SUCCESS;
@@ -103,7 +103,7 @@ LegoResult LegoFile::SetPosition(LegoU32 p_position)
 LegoResult LegoFile::Open(const char* p_name, LegoU32 p_mode)
 {
 	if (m_file) {
-		SDL_CloseIO(m_file);
+		MORTAR_CloseIO(m_file);
 	}
 	char mode[4];
 	mode[0] = '\0';
@@ -126,7 +126,7 @@ LegoResult LegoFile::Open(const char* p_name, LegoU32 p_mode)
 	MxString path(p_name);
 	path.MapPathToFilesystem();
 
-	if (!(m_file = SDL_IOFromFile(path.GetData(), mode))) {
+	if (!(m_file = MORTAR_IOFromFile(path.GetData(), mode))) {
 		return FAILURE;
 	}
 	return SUCCESS;

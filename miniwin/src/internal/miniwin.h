@@ -1,8 +1,8 @@
 #pragma once
 
-#include <SDL3/SDL.h>
+#include <mortar/mortar.h>
 
-#define LOG_CATEGORY_MINIWIN (SDL_LOG_CATEGORY_CUSTOM)
+#define LOG_CATEGORY_MINIWIN (MORTAR_LOG_CATEGORY_CUSTOM)
 
 #ifdef _MSC_VER
 #define MINIWIN_PRETTY_FUNCTION __FUNCSIG__
@@ -14,17 +14,17 @@
 	do {                                                                                                               \
 		static bool visited = false;                                                                                   \
 		if (!visited) {                                                                                                \
-			SDL_LogError(LOG_CATEGORY_MINIWIN, "%s: Not implemented", MINIWIN_PRETTY_FUNCTION);                        \
+			MORTAR_LogError(LOG_CATEGORY_MINIWIN, "%s: Not implemented", MINIWIN_PRETTY_FUNCTION);                     \
 			visited = true;                                                                                            \
 		}                                                                                                              \
 	} while (0)
 
 #define MINIWIN_ERROR(MSG)                                                                                             \
 	do {                                                                                                               \
-		SDL_LogError(LOG_CATEGORY_MINIWIN, "%s: %s", __func__, MSG);                                                   \
+		MORTAR_LogError(LOG_CATEGORY_MINIWIN, "%s: %s", __func__, MSG);                                                \
 	} while (0)
 
 #define MINIWIN_TRACE(...)                                                                                             \
 	do {                                                                                                               \
-		SDL_LogTrace(LOG_CATEGORY_MINIWIN, __VA_ARGS__);                                                               \
+		MORTAR_LogTrace(LOG_CATEGORY_MINIWIN, __VA_ARGS__);                                                            \
 	} while (0)

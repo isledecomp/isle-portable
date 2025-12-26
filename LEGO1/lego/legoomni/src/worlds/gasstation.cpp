@@ -22,7 +22,7 @@
 #include "radio.h"
 #include "scripts.h"
 
-#include <SDL3/SDL_stdinc.h>
+#include <mortar/mortar_stdinc.h>
 
 DECOMP_SIZE_ASSERT(GasStation, 0x128)
 DECOMP_SIZE_ASSERT(GasStationState, 0x24)
@@ -346,9 +346,9 @@ MxLong GasStation::HandleEndAction(MxEndActionNotificationParam& p_param)
 }
 
 // FUNCTION: LEGO1 0x10005920
-MxLong GasStation::HandleKeyPress(SDL_Keycode p_key)
+MxLong GasStation::HandleKeyPress(MORTAR_Keycode p_key)
 {
-	if (p_key == SDLK_SPACE && g_animationSkipCounterGasStation == 0 && m_setWithCurrentAction != 0) {
+	if (p_key == MORTARK_SPACE && g_animationSkipCounterGasStation == 0 && m_setWithCurrentAction != 0) {
 		m_state->StopActions();
 		return 1;
 	}
@@ -364,7 +364,7 @@ MxLong GasStation::HandleButtonDown(LegoControlManagerNotificationParam& p_param
 		LegoROI* roi = PickROI(p_param.GetX(), p_param.GetY());
 
 		if (roi != NULL) {
-			if (!SDL_strncasecmp(roi->GetName(), "capdb", 5) || !SDL_strncasecmp(roi->GetName(), "*capdb", 6)) {
+			if (!MORTAR_strncasecmp(roi->GetName(), "capdb", 5) || !MORTAR_strncasecmp(roi->GetName(), "*capdb", 6)) {
 				m_waitingState = e_canceled;
 				m_waiting = FALSE;
 
