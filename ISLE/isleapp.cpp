@@ -718,8 +718,8 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 	case SDL_EVENT_FINGER_MOTION: {
 		g_mousemoved = TRUE;
 
-		float x = SDL_clamp(event->tfinger.x, 0, 1) * g_targetWidth;
-		float y = SDL_clamp(event->tfinger.y, 0, 1) * g_targetHeight;
+		float x = event->tfinger.x * g_targetWidth;
+		float y = event->tfinger.y * g_targetHeight;
 
 		if (InputManager()) {
 			MxU8 modifier = LegoEventNotificationParam::c_lButtonState;
@@ -756,8 +756,8 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 	case SDL_EVENT_FINGER_DOWN: {
 		g_mousedown = TRUE;
 
-		float x = SDL_clamp(event->tfinger.x, 0, 1) * g_targetWidth;
-		float y = SDL_clamp(event->tfinger.y, 0, 1) * g_targetHeight;
+		float x = event->tfinger.x * g_targetWidth;
+		float y = event->tfinger.y * g_targetHeight;
 
 		if (InputManager()) {
 			InputManager()->HandleTouchEvent(event, g_isle->GetTouchScheme());
@@ -791,8 +791,8 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 	case SDL_EVENT_FINGER_CANCELED: {
 		g_mousedown = FALSE;
 
-		float x = SDL_clamp(event->tfinger.x, 0, 1) * g_targetWidth;
-		float y = SDL_clamp(event->tfinger.y, 0, 1) * g_targetHeight;
+		float x = event->tfinger.x * g_targetWidth;
+		float y = event->tfinger.y * g_targetHeight;
 
 		g_isle->DetectDoubleTap(event->tfinger);
 
