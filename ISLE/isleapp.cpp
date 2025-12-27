@@ -204,7 +204,7 @@ IsleApp::IsleApp()
 	m_frameRate = 100.0f;
 	m_exclusiveFullScreen = FALSE;
 	m_msaaSamples = 0;
-	m_anisotropic = 0.0f;
+	m_anisotropic = 16.0f;
 }
 
 // FUNCTION: ISLE 0x4011a0
