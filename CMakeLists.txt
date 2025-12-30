@@ -106,7 +106,7 @@ if (DOWNLOAD_DEPENDENCIES)
       FetchContent_Declare(
         SDL3
         GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
-        GIT_TAG "release-3.2.28"
+        GIT_TAG "7d66d3271b1c27d78651fa2a4fe1383e2f9b492d"
         UPDATE_DISCONNECTED TRUE
         EXCLUDE_FROM_ALL
       )
