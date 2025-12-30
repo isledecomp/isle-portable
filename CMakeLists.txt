@@ -102,19 +102,13 @@ if (DOWNLOAD_DEPENDENCIES)
         EXCLUDE_FROM_ALL
       )
       set(CMAKE_DISABLE_PRECOMPILE_HEADERS ON CACHE BOOL "Disable PCH globally" FORCE)
-    elseif (EMSCRIPTEN)
-      FetchContent_Declare(
-        SDL3
-        GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
-        GIT_TAG "7d66d3271b1c27d78651fa2a4fe1383e2f9b492d"
-        UPDATE_DISCONNECTED TRUE
-        EXCLUDE_FROM_ALL
-      )
     else()
+      set(ISLE_SDL3_GIT_REPO "https://github.com/libsdl-org/SDL.git" CACHE STRING "The SDL3 git repo")
+      set(ISLE_SDL3_GIT_TAG "main" CACHE STRING "The SDL3 git tag")
       FetchContent_Declare(
         SDL3
-        GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
-        GIT_TAG "main"
+        GIT_REPOSITORY "${ISLE_SDL3_GIT_REPO}"
+        GIT_TAG "${ISLE_SDL3_GIT_TAG}"
         UPDATE_DISCONNECTED TRUE
         EXCLUDE_FROM_ALL
       )
