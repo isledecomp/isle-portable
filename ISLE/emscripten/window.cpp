@@ -16,6 +16,8 @@ extern MxS32 g_targetHeight;
 
 void Emscripten_SetupWindow(SDL_Window* p_window)
 {
+	SDL_SetWindowResizable(p_window, false);
+
 	EmscriptenFullscreenStrategy strategy;
 	strategy.scaleMode = g_scaleAspect ? EMSCRIPTEN_FULLSCREEN_SCALE_ASPECT : EMSCRIPTEN_FULLSCREEN_SCALE_STRETCH;
 	strategy.canvasResolutionScaleMode = EMSCRIPTEN_FULLSCREEN_CANVAS_SCALE_HIDEF;
