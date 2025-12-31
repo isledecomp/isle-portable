@@ -205,6 +205,7 @@ IsleApp::IsleApp()
 	m_exclusiveFullScreen = FALSE;
 	m_msaaSamples = 0;
 	m_anisotropic = 16.0f;
+	m_activeInBackground = FALSE;
 }
 
 // FUNCTION: ISLE 0x4011a0
@@ -504,11 +505,13 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 
 	switch (event->type) {
 	case SDL_EVENT_WINDOW_FOCUS_GAINED:
-		g_isle->SetWindowActive(TRUE);
-		Lego()->Resume();
+		if (!g_isle->GetActiveInBackground()) {
+			g_isle->SetWindowActive(TRUE);
+			Lego()->Resume();
+		}
 		break;
 	case SDL_EVENT_WINDOW_FOCUS_LOST:
-		if (g_isle->GetGameStarted()) {
+		if (!g_isle->GetActiveInBackground() && g_isle->GetGameStarted()) {
 			g_isle->SetWindowActive(FALSE);
 			Lego()->Pause();
 #ifdef __EMSCRIPTEN__
@@ -1143,6 +1146,7 @@ bool IsleApp::LoadConfig()
 		iniparser_set(dict, "isle:Frame Delta", SDL_itoa(m_frameDelta, buf, 10));
 		iniparser_set(dict, "isle:MSAA", SDL_itoa(m_msaaSamples, buf, 10));
 		iniparser_set(dict, "isle:Anisotropic", SDL_itoa(m_anisotropic, buf, 10));
+		iniparser_set(dict, "isle:Active in background", m_activeInBackground ? "true" : "false");
 
 #ifdef EXTENSIONS
 		iniparser_set(dict, "extensions", NULL);
@@ -1227,6 +1231,7 @@ bool IsleApp::LoadConfig()
 	m_frameDelta = static_cast<int>(std::round(iniparser_getdouble(dict, "isle:Frame Delta", m_frameDelta)));
 	m_videoParam.SetMSAASamples((m_msaaSamples = iniparser_getint(dict, "isle:MSAA", m_msaaSamples)));
 	m_videoParam.SetAnisotropic((m_anisotropic = iniparser_getdouble(dict, "isle:Anisotropic", m_anisotropic)));
+	m_activeInBackground = iniparser_getboolean(dict, "isle:Active in Background", m_activeInBackground);
 
 	const char* deviceId = iniparser_getstring(dict, "isle:3D Device ID", NULL);
 	if (deviceId != NULL) {
