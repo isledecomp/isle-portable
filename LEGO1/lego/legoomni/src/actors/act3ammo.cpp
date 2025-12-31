@@ -307,7 +307,7 @@ void Act3Ammo::Animate(float p_time)
 	MxU32 local14 = FALSE;
 	MxU32 localb8 = FALSE;
 
-	if (f >= p_time) {
+	if (f > p_time) {
 		m_actorTime = (p_time - m_lastTime) * m_worldSpeed + m_actorTime;
 		m_unk0x7c = (p_time - m_lastTime) * m_worldSpeed + m_unk0x7c;
 		m_lastTime = p_time;
