@@ -56,6 +56,7 @@ public:
 	MxFloat GetCursorSensitivity() { return m_cursorSensitivity; }
 	LegoInputManager::TouchScheme GetTouchScheme() { return m_touchScheme; }
 	MxBool GetHaptic() { return m_haptic; }
+	MxBool GetActiveInBackground() { return m_activeInBackground; }
 
 	void SetWindowActive(MxS32 p_windowActive) { m_windowActive = p_windowActive; }
 	void SetGameStarted(MxS32 p_gameStarted) { m_gameStarted = p_gameStarted; }
@@ -117,6 +118,7 @@ private:
 	MxBool m_exclusiveFullScreen;
 	MxU32 m_msaaSamples;
 	MxFloat m_anisotropic;
+	MxBool m_activeInBackground;
 };
 
 extern IsleApp* g_isle;
