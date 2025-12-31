@@ -148,7 +148,10 @@ void MxSoundManager::AudioStreamCallback(
 )
 {
 	static vector<MxU8> g_buffer;
-	g_buffer.reserve(p_additionalAmount);
+	if (p_additionalAmount > g_buffer.size()) {
+		// We resize and don't reserve memory to avoid an AddressSanitizerContainerOverflow asan error
+		g_buffer.resize(p_additionalAmount);
+	}
 
 	MxSoundManager* manager = (MxSoundManager*) p_userdata;
 	ma_uint32 bytesPerFrame = ma_get_bytes_per_frame(ma_format_f32, ma_engine_get_channels(manager->m_engine));
