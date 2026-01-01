@@ -149,7 +149,6 @@ void MxSoundManager::AudioStreamCallback(
 {
 	static vector<MxU8> g_buffer;
 	if (p_additionalAmount > g_buffer.size()) {
-		// We resize and don't reserve memory to avoid an AddressSanitizerContainerOverflow asan error
 		g_buffer.resize(p_additionalAmount);
 	}
 
