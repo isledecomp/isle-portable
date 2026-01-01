@@ -9,7 +9,8 @@
 #include "mxtypes.h"
 #include "mxvideoparam.h"
 
-#include <SDL3/SDL.h>
+#include <mortar/mortar.h>
+#include <mortar/mortar_main.h>
 #ifdef MINIWIN
 #include "miniwin/windows.h"
 #else
@@ -43,14 +44,14 @@ public:
 	bool Tick();
 	void SetupCursor(Cursor p_cursor);
 
-	static MxU8 MapMouseButtonFlagsToModifier(SDL_MouseButtonFlags p_flags);
+	static MxU8 MapMouseButtonFlagsToModifier(MORTAR_MouseButtonFlags p_flags);
 
 	HWND GetWindowHandle() { return m_windowHandle; }
 	MxLong GetFrameDelta() { return m_frameDelta; }
 	MxS32 GetFullScreen() { return m_fullScreen; }
-	SDL_Cursor* GetCursorCurrent() { return m_cursorCurrent; }
-	SDL_Cursor* GetCursorBusy() { return m_cursorBusy; }
-	SDL_Cursor* GetCursorNo() { return m_cursorNo; }
+	MORTAR_Cursor* GetCursorCurrent() { return m_cursorCurrent; }
+	MORTAR_Cursor* GetCursorBusy() { return m_cursorBusy; }
+	MORTAR_Cursor* GetCursorNo() { return m_cursorNo; }
 	MxS32 GetDrawCursor() { return m_drawCursor; }
 	MxS32 GetGameStarted() { return m_gameStarted; }
 	MxFloat GetCursorSensitivity() { return m_cursorSensitivity; }
@@ -62,38 +63,38 @@ public:
 	void SetGameStarted(MxS32 p_gameStarted) { m_gameStarted = p_gameStarted; }
 	void SetDrawCursor(MxS32 p_drawCursor) { m_drawCursor = p_drawCursor; }
 
-	SDL_AppResult ParseArguments(int argc, char** argv);
+	MORTAR_AppResult ParseArguments(int argc, char** argv);
 	MxResult VerifyFilesystem();
 	void DetectGameVersion();
 	void MoveVirtualMouseViaJoystick();
-	void DetectDoubleTap(const SDL_TouchFingerEvent& p_event);
+	void DetectDoubleTap(const MORTAR_TouchFingerEvent& p_event);
 
 private:
-	char* m_hdPath;              // 0x00
-	char* m_cdPath;              // 0x04
-	char* m_deviceId;            // 0x08
-	char* m_savePath;            // 0x0c
-	MxBool m_fullScreen;         // 0x10
-	MxS32 m_flipSurfaces;        // 0x14
-	MxS32 m_backBuffersInVram;   // 0x18
-	MxS32 m_using8bit;           // 0x1c
-	MxS32 m_using16bit;          // 0x20
-	MxS32 m_hasLightSupport;     // 0x24
-	MxS32 m_use3dSound;          // 0x28
-	MxS32 m_useMusic;            // 0x2c
-	MxS32 m_wideViewAngle;       // 0x38
-	MxS32 m_islandQuality;       // 0x3c
-	MxS32 m_islandTexture;       // 0x40
-	MxS32 m_gameStarted;         // 0x44
-	MxLong m_frameDelta;         // 0x48
-	MxVideoParam m_videoParam;   // 0x4c
-	MxS32 m_windowActive;        // 0x70
-	HWND m_windowHandle;         // 0x74
-	MxS32 m_drawCursor;          // 0x78
-	SDL_Cursor* m_cursorArrow;   // 0x7c
-	SDL_Cursor* m_cursorBusy;    // 0x80
-	SDL_Cursor* m_cursorNo;      // 0x84
-	SDL_Cursor* m_cursorCurrent; // 0x88
+	char* m_hdPath;                 // 0x00
+	char* m_cdPath;                 // 0x04
+	char* m_deviceId;               // 0x08
+	char* m_savePath;               // 0x0c
+	MxBool m_fullScreen;            // 0x10
+	MxS32 m_flipSurfaces;           // 0x14
+	MxS32 m_backBuffersInVram;      // 0x18
+	MxS32 m_using8bit;              // 0x1c
+	MxS32 m_using16bit;             // 0x20
+	MxS32 m_hasLightSupport;        // 0x24
+	MxS32 m_use3dSound;             // 0x28
+	MxS32 m_useMusic;               // 0x2c
+	MxS32 m_wideViewAngle;          // 0x38
+	MxS32 m_islandQuality;          // 0x3c
+	MxS32 m_islandTexture;          // 0x40
+	MxS32 m_gameStarted;            // 0x44
+	MxLong m_frameDelta;            // 0x48
+	MxVideoParam m_videoParam;      // 0x4c
+	MxS32 m_windowActive;           // 0x70
+	HWND m_windowHandle;            // 0x74
+	MxS32 m_drawCursor;             // 0x78
+	MORTAR_Cursor* m_cursorArrow;   // 0x7c
+	MORTAR_Cursor* m_cursorBusy;    // 0x80
+	MORTAR_Cursor* m_cursorNo;      // 0x84
+	MORTAR_Cursor* m_cursorCurrent; // 0x88
 	const CursorBitmap* m_cursorArrowBitmap;
 	const CursorBitmap* m_cursorBusyBitmap;
 	const CursorBitmap* m_cursorNoBitmap;

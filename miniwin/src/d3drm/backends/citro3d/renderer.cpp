@@ -84,10 +84,10 @@ void Citro3DRenderer::SetFrustumPlanes(const Plane* frustumPlanes)
 
 struct Citro3DCacheDestroyContext {
 	Citro3DRenderer* renderer;
-	Uint32 id;
+	uint32_t id;
 };
 
-void Citro3DRenderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture)
+void Citro3DRenderer::AddTextureDestroyCallback(uint32_t id, IDirect3DRMTexture* texture)
 {
 	auto* ctx = new Citro3DCacheDestroyContext{this, id};
 	texture->AddDestroyCallback(
@@ -115,10 +115,10 @@ static int NearestPowerOfTwoClamp(int val)
 	return 512;
 }
 
-static SDL_Surface* ConvertAndResizeSurface(SDL_Surface* original, bool isUI, float scaleX, float scaleY)
+static MORTAR_Surface* ConvertAndResizeSurface(MORTAR_Surface* original, bool isUI, float scaleX, float scaleY)
 {
 	if (!isUI) {
-		return SDL_ConvertSurface(original, SDL_PIXELFORMAT_RGBA8888);
+		return MORTAR_ConvertSurface(original, MORTAR_PIXELFORMAT_RGBA8888);
 	}
 
 	scaleX = std::min(scaleX, 1.0f);
@@ -130,18 +130,19 @@ static SDL_Surface* ConvertAndResizeSurface(SDL_Surface* original, bool isUI, fl
 	int paddedW = NearestPowerOfTwoClamp(scaledW);
 	int paddedH = NearestPowerOfTwoClamp(scaledH);
 
-	SDL_Surface* padded = SDL_CreateSurface(paddedW, paddedH, SDL_PIXELFORMAT_RGBA8888);
+	MORTAR_Surface* padded = MORTAR_CreateSurface(paddedW, paddedH, MORTAR_PIXELFORMAT_RGBA8888);
 	if (!padded) {
 		return nullptr;
 	}
 
 	if (scaleX == 1.0f && scaleY == 1.0f) {
-		SDL_BlitSurface(original, nullptr, padded, nullptr);
+		MORTAR_BlitSurface(original, nullptr, padded, nullptr);
 	}
 	else {
-		SDL_ScaleMode scaleMode = (scaleX >= 1.0f && scaleY >= 1.0f) ? SDL_SCALEMODE_NEAREST : SDL_SCALEMODE_LINEAR;
-		SDL_Rect dstRect = {0, 0, scaledW, scaledH};
-		SDL_BlitSurfaceScaled(original, nullptr, padded, &dstRect, scaleMode);
+		MORTAR_ScaleMode scaleMode =
+			(scaleX >= 1.0f && scaleY >= 1.0f) ? MORTAR_SCALEMODE_NEAREST : MORTAR_SCALEMODE_LINEAR;
+		MORTAR_Rect dstRect = {0, 0, scaledW, scaledH};
+		MORTAR_BlitSurfaceScaled(original, nullptr, padded, &dstRect, scaleMode);
 	}
 
 	return padded;
@@ -184,9 +185,15 @@ static void EncodeTextureLayout(const u8* src, u8* dst, int width, int height)
 	}
 }
 
-static bool ConvertAndUploadTexture(C3D_Tex* tex, SDL_Surface* originalSurface, bool isUI, float scaleX, float scaleY)
+static bool ConvertAndUploadTexture(
+	C3D_Tex* tex,
+	MORTAR_Surface* originalSurface,
+	bool isUI,
+	float scaleX,
+	float scaleY
+)
 {
-	SDL_Surface* resized = ConvertAndResizeSurface(originalSurface, isUI, scaleX, scaleY);
+	MORTAR_Surface* resized = ConvertAndResizeSurface(originalSurface, isUI, scaleX, scaleY);
 	if (!resized) {
 		return false;
 	}
@@ -202,7 +209,7 @@ static bool ConvertAndUploadTexture(C3D_Tex* tex, SDL_Surface* originalSurface, 
 	params.type = GPU_TEX_2D;
 	if (!C3D_TexInitWithParams(tex, nullptr, params)) {
 		if (resized != originalSurface) {
-			SDL_DestroySurface(resized);
+			MORTAR_DestroySurface(resized);
 		}
 		return false;
 	}
@@ -210,14 +217,14 @@ static bool ConvertAndUploadTexture(C3D_Tex* tex, SDL_Surface* originalSurface, 
 	uint8_t* tiledData = (uint8_t*) malloc(width * height * 4);
 	if (!tiledData) {
 		if (resized != originalSurface) {
-			SDL_DestroySurface(resized);
+			MORTAR_DestroySurface(resized);
 		}
 		return false;
 	}
 
 	EncodeTextureLayout((const u8*) resized->pixels, tiledData, width, height);
 	if (resized != originalSurface) {
-		SDL_DestroySurface(resized);
+		MORTAR_DestroySurface(resized);
 	}
 
 	C3D_TexUpload(tex, tiledData);
@@ -237,16 +244,16 @@ static bool ConvertAndUploadTexture(C3D_Tex* tex, SDL_Surface* originalSurface, 
 	return true;
 }
 
-Uint32 Citro3DRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUI, float scaleX, float scaleY)
+uint32_t Citro3DRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUI, float scaleX, float scaleY)
 {
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
 	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
-	SDL_Surface* originalSurface = surface->m_surface;
+	MORTAR_Surface* originalSurface = surface->m_surface;
 
 	int originalW = originalSurface->w;
 	int originalH = originalSurface->h;
 
-	for (Uint32 i = 0; i < m_textures.size(); ++i) {
+	for (uint32_t i = 0; i < m_textures.size(); ++i) {
 		auto& tex = m_textures[i];
 		if (tex.texture == texture) {
 			if (tex.version != texture->m_version) {
@@ -285,7 +292,7 @@ Uint32 Citro3DRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUI, fl
 		return NO_TEXTURE_ID;
 	}
 
-	for (Uint32 i = 0; i < m_textures.size(); ++i) {
+	for (uint32_t i = 0; i < m_textures.size(); ++i) {
 		if (!m_textures[i].texture) {
 			m_textures[i] = std::move(entry);
 			AddTextureDestroyCallback(i, texture);
@@ -294,8 +301,8 @@ Uint32 Citro3DRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUI, fl
 	}
 
 	m_textures.push_back(std::move(entry));
-	AddTextureDestroyCallback((Uint32) (m_textures.size() - 1), texture);
-	return (Uint32) (m_textures.size() - 1);
+	AddTextureDestroyCallback((uint32_t) (m_textures.size() - 1), texture);
+	return (uint32_t) (m_textures.size() - 1);
 }
 
 C3DMeshCacheEntry C3DUploadMesh(const MeshGroup& meshGroup)
@@ -337,7 +344,7 @@ C3DMeshCacheEntry C3DUploadMesh(const MeshGroup& meshGroup)
 	return cache;
 }
 
-void Citro3DRenderer::AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh)
+void Citro3DRenderer::AddMeshDestroyCallback(uint32_t id, IDirect3DRMMesh* mesh)
 {
 	auto* ctx = new Citro3DCacheDestroyContext{this, id};
 	mesh->AddDestroyCallback(
@@ -355,9 +362,9 @@ void Citro3DRenderer::AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh)
 	);
 }
 
-Uint32 Citro3DRenderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup)
+uint32_t Citro3DRenderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup)
 {
-	for (Uint32 i = 0; i < m_meshs.size(); ++i) {
+	for (uint32_t i = 0; i < m_meshs.size(); ++i) {
 		auto& cache = m_meshs[i];
 		if (cache.meshGroup == meshGroup) {
 			if (cache.version != meshGroup->version) {
@@ -369,7 +376,7 @@ Uint32 Citro3DRenderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGr
 
 	auto newCache = C3DUploadMesh(*meshGroup);
 
-	for (Uint32 i = 0; i < m_meshs.size(); ++i) {
+	for (uint32_t i = 0; i < m_meshs.size(); ++i) {
 		auto& cache = m_meshs[i];
 		if (!cache.meshGroup) {
 			cache = std::move(newCache);
@@ -379,8 +386,8 @@ Uint32 Citro3DRenderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGr
 	}
 
 	m_meshs.push_back(std::move(newCache));
-	AddMeshDestroyCallback((Uint32) (m_meshs.size() - 1), mesh);
-	return (Uint32) (m_meshs.size() - 1);
+	AddMeshDestroyCallback((uint32_t) (m_meshs.size() - 1), mesh);
+	return (uint32_t) (m_meshs.size() - 1);
 }
 
 void Citro3DRenderer::StartFrame()
@@ -551,7 +558,12 @@ void Citro3DRenderer::Flip()
 	g_rendering = false;
 }
 
-void Citro3DRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect, FColor color)
+void Citro3DRenderer::Draw2DImage(
+	uint32_t textureId,
+	const MORTAR_Rect& srcRect,
+	const MORTAR_Rect& dstRect,
+	FColor color
+)
 {
 	C3D_AlphaBlend(GPU_BLEND_ADD, GPU_BLEND_ADD, GPU_ONE, GPU_ONE_MINUS_SRC_ALPHA, GPU_ONE, GPU_ONE_MINUS_SRC_ALPHA);
 	StartFrame();
@@ -635,53 +647,53 @@ void Citro3DRenderer::SetDither(bool dither)
 {
 }
 
-void Citro3DRenderer::Download(SDL_Surface* target)
+void Citro3DRenderer::Download(MORTAR_Surface* target)
 {
 	u16 width, height;
 	u8* fb = gfxGetFramebuffer(GFX_BOTTOM, GFX_LEFT, &width, &height);
 	if (!fb) {
-		SDL_Log("Failed to get framebuffer");
+		MORTAR_Log("Failed to get framebuffer");
 		return;
 	}
 
-	SDL_Surface* srcSurface = SDL_CreateSurfaceFrom(width, height, SDL_PIXELFORMAT_BGR24, fb, width * 3);
+	MORTAR_Surface* srcSurface = MORTAR_CreateSurfaceFrom(width, height, MORTAR_PIXELFORMAT_BGR24, fb, width * 3);
 	if (!srcSurface) {
-		SDL_Log("SDL_CreateSurfaceFrom failed: %s", SDL_GetError());
+		MORTAR_Log("MORTAR_CreateSurfaceFrom failed: %s", MORTAR_GetError());
 		return;
 	}
 
-	SDL_Surface* convertedSurface = SDL_ConvertSurface(srcSurface, target->format);
-	SDL_DestroySurface(srcSurface);
+	MORTAR_Surface* convertedSurface = MORTAR_ConvertSurface(srcSurface, target->format);
+	MORTAR_DestroySurface(srcSurface);
 	if (!convertedSurface) {
-		SDL_Log("SDL_ConvertSurface failed: %s", SDL_GetError());
+		MORTAR_Log("MORTAR_ConvertSurface failed: %s", MORTAR_GetError());
 		return;
 	}
 
 	int rotatedWidth = height;
 	int rotatedHeight = width;
-	SDL_Surface* rotatedSurface = SDL_CreateSurface(rotatedWidth, rotatedHeight, target->format);
+	MORTAR_Surface* rotatedSurface = MORTAR_CreateSurface(rotatedWidth, rotatedHeight, target->format);
 	if (!rotatedSurface) {
-		SDL_Log("SDL_CreateSurface failed: %s", SDL_GetError());
-		SDL_DestroySurface(convertedSurface);
+		MORTAR_Log("MORTAR_CreateSurface failed: %s", MORTAR_GetError());
+		MORTAR_DestroySurface(convertedSurface);
 		return;
 	}
 
-	Uint32* srcPixels = (Uint32*) convertedSurface->pixels;
-	Uint32* dstPixels = (Uint32*) rotatedSurface->pixels;
+	uint32_t* srcPixels = (uint32_t*) convertedSurface->pixels;
+	uint32_t* dstPixels = (uint32_t*) rotatedSurface->pixels;
 	for (int y = 0; y < height; ++y) {
 		for (int x = 0; x < width; ++x) {
-			Uint32 pixel = srcPixels[y * width + x];
+			uint32_t pixel = srcPixels[y * width + x];
 			int newX = y;
 			int newY = width - 1 - x;
 			dstPixels[newY * rotatedWidth + newX] = pixel;
 		}
 	}
 
-	SDL_DestroySurface(convertedSurface);
+	MORTAR_DestroySurface(convertedSurface);
 
-	SDL_Rect srcRect = {0, 0, rotatedSurface->w, rotatedSurface->h};
-	SDL_Rect dstRect = {0, 0, target->w, target->h};
-	SDL_BlitSurfaceScaled(rotatedSurface, &srcRect, target, &dstRect, SDL_SCALEMODE_NEAREST);
+	MORTAR_Rect srcRect = {0, 0, rotatedSurface->w, rotatedSurface->h};
+	MORTAR_Rect dstRect = {0, 0, target->w, target->h};
+	MORTAR_BlitSurfaceScaled(rotatedSurface, &srcRect, target, &dstRect, MORTAR_SCALEMODE_NEAREST);
 
-	SDL_DestroySurface(rotatedSurface);
+	MORTAR_DestroySurface(rotatedSurface);
 }

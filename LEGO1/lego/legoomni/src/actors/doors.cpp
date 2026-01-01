@@ -6,8 +6,8 @@
 #include "roi/legoroi.h"
 #include "tgl/tglvector.h"
 
-#include <SDL3/SDL_stdinc.h>
 #include <assert.h>
+#include <mortar/mortar_stdinc.h>
 
 DECOMP_SIZE_ASSERT(Doors, 0x1f8)
 
@@ -132,10 +132,11 @@ void Doors::ParseAction(char* p_extra)
 	for (CompoundObject::const_iterator it = comp->begin(); it != comp->end(); it++) {
 		LegoROI* roi = (LegoROI*) *it;
 
-		if (roi && (!SDL_strncasecmp(roi->GetName(), "dor-lt", 6) || !SDL_strncasecmp(roi->GetName(), "dor-sl", 6))) {
+		if (roi &&
+			(!MORTAR_strncasecmp(roi->GetName(), "dor-lt", 6) || !MORTAR_strncasecmp(roi->GetName(), "dor-sl", 6))) {
 			m_ltDoor = roi;
 		}
-		else if (roi && (!SDL_strncasecmp(roi->GetName(), "dor-rt", 6) || !SDL_strncasecmp(roi->GetName(), "dor-sr", 6))) {
+		else if (roi && (!MORTAR_strncasecmp(roi->GetName(), "dor-rt", 6) || !MORTAR_strncasecmp(roi->GetName(), "dor-sr", 6))) {
 			m_rtDoor = roi;
 		}
 	}

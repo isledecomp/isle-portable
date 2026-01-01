@@ -9,9 +9,9 @@
 #include "mxtimer.h"
 #include "mxutilities.h"
 
-#include <SDL3/SDL_log.h>
-#include <SDL3/SDL_stdinc.h>
-#include <assert.h>
+#include <cassert>
+#include <mortar/mortar_log.h>
+#include <mortar/mortar_stdinc.h>
 
 DECOMP_SIZE_ASSERT(MxControlPresenter, 0x5c)
 
@@ -226,10 +226,10 @@ void MxControlPresenter::ParseExtra()
 		if (KeyValueStringParse(output, g_strSTYLE, extraCopy)) {
 			char* token = strtok(output, g_parseExtraTokens);
 
-			if (!SDL_strcasecmp(token, g_strTOGGLE)) {
+			if (!MORTAR_strcasecmp(token, g_strTOGGLE)) {
 				m_style = e_toggle;
 			}
-			else if (!SDL_strcasecmp(token, g_strGRID)) {
+			else if (!MORTAR_strcasecmp(token, g_strGRID)) {
 				m_style = e_grid;
 				token = strtok(NULL, g_parseExtraTokens);
 				assert(token);
@@ -239,7 +239,7 @@ void MxControlPresenter::ParseExtra()
 				assert(token);
 				m_rowsOrColumns = atoi(token);
 			}
-			else if (!SDL_strcasecmp(token, g_strMAP)) {
+			else if (!MORTAR_strcasecmp(token, g_strMAP)) {
 				m_style = e_map;
 				token = strtok(NULL, g_parseExtraTokens);
 
@@ -262,7 +262,7 @@ void MxControlPresenter::ParseExtra()
 		}
 
 		if (KeyValueStringParse(output, g_strVISIBILITY, extraCopy)) {
-			if (!SDL_strcasecmp(output, "FALSE")) {
+			if (!MORTAR_strcasecmp(output, "FALSE")) {
 				Enable(FALSE);
 			}
 		}

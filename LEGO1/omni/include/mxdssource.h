@@ -4,7 +4,7 @@
 #include "mxcore.h"
 #include "mxdsbuffer.h"
 
-#include <SDL3/SDL_iostream.h>
+#include <mortar/mortar_iostream.h>
 
 // VTABLE: LEGO1 0x100dc8c8
 // VTABLE: BETA10 0x101c2450
@@ -40,7 +40,7 @@ public:
 	} // vtable+0x1c
 
 	virtual MxResult Read(unsigned char*, MxULong) = 0; // vtable+0x20
-	virtual MxLong Seek(MxLong, SDL_IOWhence) = 0;      // vtable+0x24
+	virtual MxLong Seek(MxLong, MORTAR_IOWhence) = 0;   // vtable+0x24
 	virtual MxULong GetBufferSize() = 0;                // vtable+0x28
 	virtual MxULong GetStreamBuffersNum() = 0;          // vtable+0x2c
 

@@ -6,7 +6,7 @@
 #include "legopathactor.h"
 #include "legopathstruct.h"
 
-#include <SDL3/SDL_log.h>
+#include <mortar/mortar_log.h>
 
 DECOMP_SIZE_ASSERT(LegoPathBoundary, 0x74)
 

@@ -19,7 +19,7 @@
 #include "realtime/realtime.h"
 #include "roi/legoroi.h"
 
-#include <SDL3/SDL_stdinc.h>
+#include <mortar/mortar_stdinc.h>
 
 DECOMP_SIZE_ASSERT(LegoModelPresenter, 0x6c)
 
@@ -95,7 +95,7 @@ MxResult LegoModelPresenter::CreateROI(MxDSChunk* p_chunk)
 		storage.Read(textureName, textureNameLength);
 		textureName[textureNameLength] = '\0';
 
-		SDL_strlwr(textureName);
+		MORTAR_strlwr(textureName);
 
 		if (textureName[0] == '^') {
 			memmove(textureName, textureName + 1, strlen(textureName));
@@ -313,7 +313,7 @@ void LegoModelPresenter::ParseExtra()
 			list<LegoROI*>& roiList = currentWorld->GetROIList();
 
 			for (list<LegoROI*>::iterator it = roiList.begin(); it != roiList.end(); it++) {
-				if (!SDL_strcasecmp((*it)->GetName(), output)) {
+				if (!MORTAR_strcasecmp((*it)->GetName(), output)) {
 					m_roi = *it;
 					roiList.erase(it);
 

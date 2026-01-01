@@ -7,7 +7,7 @@
 #include "mxgeometry.h"
 #include "mxutilities.h"
 
-#include <SDL3/SDL_events.h>
+#include <mortar/mortar_events.h>
 
 class MxCompositePresenter;
 class MxDSAction;
@@ -66,11 +66,12 @@ protected:
 		m_previousTickleStates |= 1 << (MxU8) m_currentTickleState;
 		m_currentTickleState = p_tickleState;
 
-		SDL_Event event;
+		MORTAR_Event event;
+		MORTAR_memset(&event, 0, sizeof(event));
 		event.user.type = g_legoSdlEvents.m_presenterProgress;
 		event.user.code = m_currentTickleState;
 		event.user.data1 = (void*) m_action;
-		SDL_PushEvent(&event);
+		MORTAR_PushEvent(&event);
 	}
 
 public:

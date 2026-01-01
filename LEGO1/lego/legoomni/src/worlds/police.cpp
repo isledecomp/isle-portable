@@ -161,7 +161,7 @@ MxLong Police::HandleKeyPress(LegoEventNotificationParam& p_param)
 {
 	MxLong result = 0;
 
-	if (p_param.GetKey() == SDLK_SPACE && m_policeState->GetState() == PoliceState::e_playingAnimation) {
+	if (p_param.GetKey() == MORTARK_SPACE && m_policeState->GetState() == PoliceState::e_playingAnimation) {
 		DeleteObjects(&m_atomId, PoliceScript::c_nps001ni_RunAnim, PoliceScript::c_nps002la_RunAnim);
 		m_policeState->SetState(PoliceState::e_noAnimation);
 		return 1;
@@ -198,7 +198,7 @@ MxBool Police::Escape()
 PoliceState::PoliceState()
 {
 	m_state = PoliceState::e_noAnimation;
-	m_policeScript = (SDL_rand(2) == 0) ? PoliceScript::c_nps002la_RunAnim : PoliceScript::c_nps001ni_RunAnim;
+	m_policeScript = (MORTAR_rand(2) == 0) ? PoliceScript::c_nps002la_RunAnim : PoliceScript::c_nps001ni_RunAnim;
 }
 
 // FUNCTION: LEGO1 0x1005e990
