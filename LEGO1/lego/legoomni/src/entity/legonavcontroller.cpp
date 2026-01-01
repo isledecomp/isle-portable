@@ -840,7 +840,28 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 							// Add to base g_locations offset
 							g_nextLocation += key - '0';
 							g_locationCalcStep = 0;
-							UpdateLocation(g_nextLocation);
+
+							LegoPathActor* userActor = UserActor();
+							if (userActor != NULL && (MxU32) g_nextLocation < sizeOfArray(g_locations)) {
+								LegoWorld* world = CurrentWorld();
+								LegoLocation::Boundary* boundary = &g_locations[g_nextLocation].m_boundaryA;
+								if (world != NULL && boundary->m_name != NULL) {
+									world->PlaceActor(
+										userActor,
+										boundary->m_name,
+										boundary->m_src,
+										boundary->m_srcScale,
+										boundary->m_dest,
+										boundary->m_destScale
+									);
+								}
+								userActor->SetLocation(
+									g_locations[g_nextLocation].m_position,
+									g_locations[g_nextLocation].m_direction,
+									g_locations[g_nextLocation].m_up,
+									FALSE
+								);
+							}
 						}
 					}
 					else if (g_animationCalcStep) {
