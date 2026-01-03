@@ -7,6 +7,7 @@
 #include "miniwin.h"
 
 #include <SDL3/SDL.h>
+#include <cassert>
 #include <cmath>
 #include <cstddef>
 
@@ -349,6 +350,7 @@ Direct3DRMSDL3GPURenderer::Direct3DRMSDL3GPURenderer(
 
 Direct3DRMSDL3GPURenderer::~Direct3DRMSDL3GPURenderer()
 {
+	assert(m_refCount == 0);
 	SDL_ReleaseGPUBuffer(m_device, m_uiMeshCache.vertexBuffer);
 	SDL_ReleaseGPUBuffer(m_device, m_uiMeshCache.indexBuffer);
 	SDL_ReleaseWindowFromGPUDevice(m_device, DDWindow);
@@ -717,6 +719,9 @@ SDL_GPUTransferBuffer* Direct3DRMSDL3GPURenderer::GetUploadBuffer(size_t size)
 
 void Direct3DRMSDL3GPURenderer::StartRenderPass(float r, float g, float b, bool clear)
 {
+	if (m_cmdbuf != nullptr) {
+		SDL_CancelGPUCommandBuffer(m_cmdbuf);
+	}
 	m_cmdbuf = SDL_AcquireGPUCommandBuffer(m_device);
 	if (!m_cmdbuf) {
 		SDL_LogError(

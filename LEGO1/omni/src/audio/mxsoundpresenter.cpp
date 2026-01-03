@@ -13,13 +13,13 @@ void MxSoundPresenter::Destroy(MxBool p_fromDestructor)
 		MSoundManager()->UnregisterPresenter(*this);
 	}
 
-	ENTER(m_criticalSection);
-	MxMediaPresenter::Init();
-	m_criticalSection.Leave();
-
 	if (!p_fromDestructor) {
 		MxMediaPresenter::Destroy(FALSE);
 	}
+
+	ENTER(m_criticalSection);
+	MxMediaPresenter::Init();
+	m_criticalSection.Leave();
 }
 
 // FUNCTION: LEGO1 0x100b1aa0

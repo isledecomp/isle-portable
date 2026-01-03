@@ -483,6 +483,7 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		if (device && !device->ConvertEventToRenderCoordinates(event)) {
 			SDL_Log("Failed to convert event coordinates: %s", SDL_GetError());
 		}
+		device->Release();
 
 #ifdef __EMSCRIPTEN__
 		Emscripten_ConvertEventToRenderCoordinates(event);

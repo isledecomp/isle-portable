@@ -545,11 +545,11 @@ ViewROI* ViewManager::Pick(Tgl::View* p_view, int x, int y)
 							}
 						}
 					}
-
-					visual->Release();
-					frameArray->Release();
 				}
 			}
+
+			visual->Release();
+			frameArray->Release();
 		}
 
 		picked->Release();

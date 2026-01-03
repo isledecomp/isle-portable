@@ -86,6 +86,9 @@ BOOL TglSurface::Create(const CreateStruct& rCreateStruct, Renderer* pRenderer, 
 	int textureColorCount = -1;
 	Result result;
 
+	assert(!m_pRenderer);
+	assert(!m_pScene);
+	assert(!m_pDevice);
 	m_pRenderer = pRenderer;
 	m_pScene = pScene;
 	m_pDevice = m_pRenderer->CreateDevice(createData);
@@ -145,6 +148,7 @@ BOOL TglSurface::Create(const CreateStruct& rCreateStruct, Renderer* pRenderer, 
 	m_width = m_pDevice->GetWidth();
 	m_height = m_pDevice->GetHeight();
 
+	assert(!m_pView);
 	m_pView = CreateView(m_pRenderer, m_pDevice);
 	if (!m_pView) {
 		delete m_pDevice;

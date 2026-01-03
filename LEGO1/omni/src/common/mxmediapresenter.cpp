@@ -16,6 +16,12 @@ DECOMP_SIZE_ASSERT(MxStreamChunkListCursor, 0x10);
 // FUNCTION: LEGO1 0x100b54e0
 void MxMediaPresenter::Init()
 {
+	if (this->m_loopingChunks) {
+		delete m_loopingChunks;
+	}
+	if (this->m_loopingChunkCursor) {
+		delete this->m_loopingChunkCursor;
+	}
 	this->m_subscriber = NULL;
 	this->m_loopingChunks = NULL;
 	this->m_loopingChunkCursor = NULL;
@@ -38,6 +44,7 @@ void MxMediaPresenter::Destroy(MxBool p_fromDestructor)
 
 		if (m_loopingChunkCursor) {
 			delete m_loopingChunkCursor;
+			m_loopingChunkCursor = NULL;
 		}
 
 		if (m_loopingChunks) {
@@ -49,6 +56,7 @@ void MxMediaPresenter::Destroy(MxBool p_fromDestructor)
 			}
 
 			delete m_loopingChunks;
+			m_loopingChunks = NULL;
 		}
 
 		Init();
@@ -106,6 +114,12 @@ MxResult MxMediaPresenter::StartAction(MxStreamController* p_controller, MxDSAct
 
 	if (MxPresenter::StartAction(p_controller, p_action) == SUCCESS) {
 		if (m_action->GetFlags() & MxDSAction::c_looping) {
+			if (m_loopingChunks) {
+				delete m_loopingChunks;
+			}
+			if (m_loopingChunkCursor) {
+				delete m_loopingChunkCursor;
+			}
 			m_loopingChunks = new MxStreamChunkList;
 			m_loopingChunkCursor = new MxStreamChunkListCursor(m_loopingChunks);
 

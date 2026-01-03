@@ -2,16 +2,19 @@
 #include "miniwin/ddraw.h"
 
 #include <SDL3/SDL.h>
+#include <cassert>
 #include <vector>
 
 ULONG IUnknown::AddRef()
 {
+	assert(m_refCount > 0);
 	m_refCount += 1;
 	return m_refCount;
 }
 
 ULONG IUnknown::Release()
 {
+	assert(m_refCount > 0);
 	m_refCount -= 1;
 	if (m_refCount == 0) {
 		delete this;

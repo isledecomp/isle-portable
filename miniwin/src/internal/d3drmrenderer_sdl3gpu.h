@@ -131,7 +131,7 @@ inline static void Direct3DRMSDL3GPU_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, voi
 	if (!device) {
 		return;
 	}
-	delete device;
+	device->Release();
 #endif
 
 	D3DDEVICEDESC halDesc = {};

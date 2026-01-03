@@ -155,6 +155,11 @@ void LegoOmni::Destroy()
 		m_transitionManager = NULL;
 	}
 
+	if (m_videoManager) {
+		delete m_videoManager;
+		m_videoManager = NULL;
+	}
+
 	m_action.ClearAtom();
 	DestroyScripts();
 

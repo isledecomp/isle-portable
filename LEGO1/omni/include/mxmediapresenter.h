@@ -57,10 +57,10 @@ public:
 	// MxMediaPresenter::`scalar deleting destructor'
 
 protected:
-	MxDSSubscriber* m_subscriber;                  // 0x40
-	MxStreamChunkList* m_loopingChunks;            // 0x44
-	MxStreamChunkListCursor* m_loopingChunkCursor; // 0x48
-	MxStreamChunk* m_currentChunk;                 // 0x4c
+	MxDSSubscriber* m_subscriber = NULL;                  // 0x40
+	MxStreamChunkList* m_loopingChunks = NULL;            // 0x44
+	MxStreamChunkListCursor* m_loopingChunkCursor = NULL; // 0x48
+	MxStreamChunk* m_currentChunk = NULL;                 // 0x4c
 
 	void Init();
 	void Destroy(MxBool p_fromDestructor);
