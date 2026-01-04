@@ -57,19 +57,21 @@ BOOL LegoView::Create(const TglSurface::CreateStruct& rCreateStruct, Tgl::Render
 		viewAngle = 90;
 	}
 
+	assert(!m_pScene);
 	m_pScene = pRenderer->CreateGroup();
 	assert(m_pScene);
 	// TglSurface::Create() calls CreateView(), and we need the camera in
 	// CreateView(), so create camera before calling TglSurface::Create()
+	assert(!m_pCamera);
 	m_pCamera = pRenderer->CreateCamera();
 	assert(m_pCamera);
 
 	if (!TglSurface::Create(rCreateStruct, pRenderer, m_pScene)) {
 		delete m_pScene;
-		m_pScene = 0;
+		m_pScene = NULL;
 
 		delete m_pCamera;
-		m_pCamera = 0;
+		m_pCamera = NULL;
 
 		return FALSE;
 	}
@@ -96,10 +98,10 @@ Tgl::View* LegoView::CreateView(Tgl::Renderer* pRenderer, Tgl::Device* pDevice)
 void LegoView::Destroy()
 {
 	delete m_pScene;
-	m_pScene = 0;
+	m_pScene = NULL;
 
 	delete m_pCamera;
-	m_pCamera = 0;
+	m_pCamera = NULL;
 
 	TglSurface::Destroy();
 }

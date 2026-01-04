@@ -19,6 +19,14 @@ Direct3DRMViewportImpl::Direct3DRMViewportImpl(DWORD width, DWORD height, Direct
 {
 }
 
+Direct3DRMViewportImpl::~Direct3DRMViewportImpl()
+{
+	if (m_camera) {
+		m_camera->Release();
+		m_camera = nullptr;
+	}
+}
+
 static void D3DRMMatrixMultiply(D3DRMMATRIX4D out, const D3DRMMATRIX4D a, const D3DRMMATRIX4D b)
 {
 	for (int i = 0; i < 4; ++i) {
@@ -374,11 +382,11 @@ HRESULT Direct3DRMViewportImpl::Clear()
 
 HRESULT Direct3DRMViewportImpl::SetCamera(IDirect3DRMFrame* camera)
 {
-	if (m_camera) {
-		m_camera->Release();
-	}
 	if (camera) {
 		camera->AddRef();
+	}
+	if (m_camera) {
+		m_camera->Release();
 	}
 	m_camera = camera;
 	return DD_OK;

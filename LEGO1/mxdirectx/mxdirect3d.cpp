@@ -139,6 +139,7 @@ BOOL MxDirect3D::D3DCreate()
 		Error("Creation of IDirect3D failed", result);
 		return FALSE;
 	}
+	m_pDirect3d->Release();
 	return TRUE;
 }
 
@@ -181,6 +182,7 @@ BOOL MxDirect3D::D3DSetMode()
 	}
 
 	LPDIRECTDRAWSURFACE backBuf = BackBuffer();
+	assert(!m_pDirect3dDevice);
 	HRESULT result = m_pDirect3d->CreateDevice(m_currentDeviceInfo->m_guid, backBuf, &m_pDirect3dDevice);
 
 	if (result != DD_OK) {

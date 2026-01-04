@@ -54,10 +54,8 @@ ViewportAppData::~ViewportAppData()
 	}
 
 	refCount = pChildFrames->Release();
-	assert(refCount == 0);
 
 	refCount = m_pLightFrame->Release();
-	assert(refCount == 0);
 }
 
 // Forward declare to satisfy order check

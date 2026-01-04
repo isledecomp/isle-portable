@@ -275,6 +275,10 @@ BOOL MxDeviceEnumerate::EnumDirectDrawCallback(LPGUID p_guid, LPSTR p_driverDesc
 	}
 
 done:
+	if (miniwind3d) {
+		miniwind3d->Release();
+	}
+
 	if (lpDirect3d2) {
 		lpDirect3d2->Release();
 	}

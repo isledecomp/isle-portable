@@ -21,6 +21,7 @@ class Direct3DRMFrameImpl;
 
 struct Direct3DRMViewportImpl : public Direct3DRMObjectBaseImpl<IDirect3DRMViewport> {
 	Direct3DRMViewportImpl(DWORD width, DWORD height, Direct3DRMRenderer* renderer);
+	~Direct3DRMViewportImpl() override;
 	HRESULT Render(IDirect3DRMFrame* group) override;
 	/**
 	 * @brief Blit the render back to our backbuffer

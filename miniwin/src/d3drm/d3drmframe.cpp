@@ -10,11 +10,8 @@
 Direct3DRMFrameImpl::Direct3DRMFrameImpl(Direct3DRMFrameImpl* parent)
 {
 	m_children = new Direct3DRMFrameArrayImpl;
-	m_children->AddRef();
 	m_lights = new Direct3DRMLightArrayImpl;
-	m_lights->AddRef();
 	m_visuals = new Direct3DRMVisualArrayImpl;
-	m_visuals->AddRef();
 	if (parent) {
 		parent->AddChild(this);
 	}

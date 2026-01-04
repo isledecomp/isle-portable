@@ -176,6 +176,9 @@ HRESULT Direct3DRMMeshImpl::SetGroupTexture(D3DRMGROUPINDEX groupIndex, IDirect3
 	}
 
 	texture->AddRef();
+	if (group.texture) {
+		group.texture->Release();
+	}
 	group.texture = texture;
 	group.version++;
 	return DD_OK;

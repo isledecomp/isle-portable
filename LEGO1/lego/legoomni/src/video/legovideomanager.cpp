@@ -54,6 +54,8 @@ LegoVideoManager::LegoVideoManager()
 	m_unk0xe5 = FALSE;
 	m_unk0x554 = FALSE;
 	m_paused = FALSE;
+	m_camera = NULL;
+	m_appdata = NULL;
 }
 
 // FUNCTION: LEGO1 0x1007ab40
@@ -237,6 +239,11 @@ done:
 // FUNCTION: BETA10 0x100d6816
 void LegoVideoManager::Destroy()
 {
+	if (m_camera != NULL) {
+		m_camera->Release();
+		m_camera = NULL;
+	}
+
 	if (m_cursorSurface != NULL) {
 		m_cursorSurface->Release();
 		m_cursorSurface = NULL;
@@ -264,6 +271,12 @@ void LegoVideoManager::Destroy()
 
 	delete m_3dManager;
 	MxVideoManager::Destroy();
+
+	if (m_direct3d != NULL) {
+		delete m_direct3d;
+		m_direct3d = NULL;
+	}
+
 	delete m_phonemeRefList;
 	delete m_stopWatch;
 }
@@ -677,6 +690,7 @@ int LegoVideoManager::EnableRMDevice()
 			d3drmDev2->SetDither(m_dither);
 			d3drmDev2->SetBufferCount(m_bufferCount);
 			m_camera->Release();
+			m_camera = nullptr;
 
 			if (viewport->AddDestroyCallback(ViewportDestroyCallback, m_appdata) == D3DRM_OK) {
 				((TglImpl::ViewImpl*) m_3dManager->GetLego3DView()->GetView())->SetImplementationData(viewport);

@@ -9,10 +9,12 @@
 #include "miniwin/miniwindevice.h"
 
 #include <SDL3/SDL.h>
+#include <cassert>
 
 Direct3DRMDevice2Impl::Direct3DRMDevice2Impl(DWORD width, DWORD height, Direct3DRMRenderer* renderer)
 	: m_virtualWidth(width), m_virtualHeight(height), m_renderer(renderer), m_viewports(new Direct3DRMViewportArrayImpl)
 {
+	m_renderer->AddRef();
 	Resize();
 }
 
@@ -25,7 +27,7 @@ Direct3DRMDevice2Impl::~Direct3DRMDevice2Impl()
 		viewport->Release();
 	}
 	m_viewports->Release();
-	delete m_renderer;
+	m_renderer->Release();
 }
 
 HRESULT Direct3DRMDevice2Impl::QueryInterface(const GUID& riid, void** ppvObject)
@@ -161,7 +163,9 @@ void Direct3DRMDevice2Impl::Resize()
 	for (int i = 0; i < m_viewports->GetSize(); i++) {
 		IDirect3DRMViewport* viewport;
 		m_viewports->GetElement(i, &viewport);
+		assert(viewport);
 		static_cast<Direct3DRMViewportImpl*>(viewport)->UpdateProjectionMatrix();
+		viewport->Release();
 	}
 }
 
