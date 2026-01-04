@@ -812,6 +812,12 @@ if (NOT (NINTENDO_3DS OR WINDOWS_STORE OR VITA))
     LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
     BUNDLE DESTINATION "."
   )
+  if(APPLE)
+  elseif(UNIX)
+    set(rel_libpath "${CMAKE_INSTALL_FULL_LIBDIR}")
+    cmake_path(RELATIVE_PATH rel_libpath BASE_DIRECTORY "${CMAKE_INSTALL_FULL_BINDIR}")
+    set_property(TARGET isle ${install_extra_targets} APPEND PROPERTY INSTALL_RPATH "$ORIGIN/${rel_libpath}")
+  endif()
 endif()
 if (ISLE_BUILD_CONFIG)
   if(WIN32)
