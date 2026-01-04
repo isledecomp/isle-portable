@@ -120,6 +120,7 @@ HRESULT FrameBufferImpl::GetAttachedSurface(LPDDSCAPS lpDDSCaps, LPDIRECTDRAWSUR
 	if ((lpDDSCaps->dwCaps & DDSCAPS_BACKBUFFER) != DDSCAPS_BACKBUFFER) {
 		return DDERR_INVALIDPARAMS;
 	}
+	AddRef();
 	*lplpDDAttachedSurface = static_cast<IDirectDrawSurface*>(this);
 	return DD_OK;
 }
