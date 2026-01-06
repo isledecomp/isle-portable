@@ -232,13 +232,14 @@ HRESULT DirectDrawSurfaceImpl::SetPalette(LPDIRECTDRAWPALETTE lpDDPalette)
 		m_texture->Changed(FALSE, TRUE);
 	}
 
+	lpDDPalette->AddRef();
+
 	if (m_palette) {
 		m_palette->Release();
 	}
 
 	m_palette = lpDDPalette;
 	SDL_SetSurfacePalette(m_surface, ((DirectDrawPaletteImpl*) m_palette)->m_palette);
-	m_palette->AddRef();
 	return DD_OK;
 }
 

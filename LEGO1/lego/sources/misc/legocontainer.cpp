@@ -119,7 +119,7 @@ void LegoTextureContainer::EraseCached(LegoTextureInfo* p_textureInfo)
 		if ((*it).first == p_textureInfo) {
 			(*it).second = FALSE;
 
-			if (p_textureInfo->m_texture->Release() == TRUE) {
+			if (p_textureInfo->m_texture->Release() == 1) {
 				delete p_textureInfo;
 				m_cached.erase(it);
 			}

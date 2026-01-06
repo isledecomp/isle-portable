@@ -43,7 +43,13 @@ inline Result LightSetColor(IDirect3DRMFrame2* pLight, float r, float g, float b
 	result = ResultVal(lights->GetElement(0, &light));
 	assert(Succeeded(result));
 
-	return ResultVal(light->SetColorRGB(r, g, b));
+	lights->Release();
+
+	result = ResultVal(light->SetColorRGB(r, g, b));
+
+	light->Release();
+
+	return result;
 }
 
 // FUNCTION: LEGO1 0x100a37e0

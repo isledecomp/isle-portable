@@ -203,6 +203,8 @@ LegoGameState::~LegoGameState()
 	}
 
 	delete[] m_savePath;
+
+	delete LegoOmni::GetInstance()->GetUserActor();
 }
 
 // FUNCTION: LEGO1 0x10039780

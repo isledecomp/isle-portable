@@ -157,6 +157,7 @@ void LegoPhonemePresenter::EndAction()
 				TextureContainer()->EraseCached(phoneme->GetCachedTextureInfo());
 				TextureContainer()->EraseCached(phoneme->GetTextureInfo());
 				cursor.Destroy();
+				phoneme = NULL;
 			}
 			else {
 				phoneme->SetCount(phoneme->GetCount() - 1);
@@ -166,6 +167,10 @@ void LegoPhonemePresenter::EndAction()
 			if (!m_isPartOfAnimMM) {
 				CharacterManager()->ReleaseActor(m_roiName.GetData());
 			}
+		}
+		else {
+			delete phoneme;
+			phoneme = NULL;
 		}
 	}
 }

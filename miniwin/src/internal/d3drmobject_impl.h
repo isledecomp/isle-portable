@@ -21,8 +21,8 @@ struct Direct3DRMObjectBaseImpl : public T {
 				it->first(this, it->second);
 			}
 			m_callbacks.clear();
+			SDL_free(m_name);
 		}
-		SDL_free(m_name);
 		return this->T::Release();
 	}
 	HRESULT AddDestroyCallback(D3DRMOBJECTCALLBACK callback, void* arg) override
