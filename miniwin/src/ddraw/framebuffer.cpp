@@ -214,13 +214,14 @@ HRESULT FrameBufferImpl::SetPalette(LPDIRECTDRAWPALETTE lpDDPalette)
 		MINIWIN_NOT_IMPLEMENTED();
 	}
 
+	lpDDPalette->AddRef();
+
 	if (m_palette) {
 		m_palette->Release();
 	}
 
 	m_palette = lpDDPalette;
 	SDL_SetSurfacePalette(m_transferBuffer->m_surface, ((DirectDrawPaletteImpl*) m_palette)->m_palette);
-	m_palette->AddRef();
 	return DD_OK;
 }
 
