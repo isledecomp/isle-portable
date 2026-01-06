@@ -167,7 +167,8 @@ void LegoPhonemePresenter::EndAction()
 			if (!m_isPartOfAnimMM) {
 				CharacterManager()->ReleaseActor(m_roiName.GetData());
 			}
-		} else {
+		}
+		else {
 			delete phoneme;
 			phoneme = NULL;
 		}
