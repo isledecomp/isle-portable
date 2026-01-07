@@ -264,7 +264,7 @@ void LegoRaceCar::ParseAction(char* p_extra)
 	LegoRace* currentWorld = (LegoRace*) CurrentWorld();
 
 	if (KeyValueStringParse(buffer, g_strCOMP, p_extra) && currentWorld) {
-		currentWorld->VTable0x7c(this, atoi(buffer));
+		currentWorld->SetMapLocator(this, atoi(buffer));
 	}
 
 	if (m_userNavFlag) {
@@ -663,7 +663,7 @@ void LegoJetski::ParseAction(char* p_extra)
 	JetskiRace* currentWorld = (JetskiRace*) CurrentWorld();
 
 	if (KeyValueStringParse(buffer, g_strCOMP, p_extra) && currentWorld) {
-		currentWorld->VTable0x7c(this, atoi(buffer));
+		currentWorld->SetMapLocator(this, atoi(buffer));
 	}
 }
 

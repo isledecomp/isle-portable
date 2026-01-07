@@ -30,7 +30,7 @@ Mx3DPointFloat g_unk0x10104c18 = Mx3DPointFloat(0.0f, 2.5f, 0.0f);
 // FUNCTION: BETA10 0x10080908
 LegoExtraActor::LegoExtraActor()
 {
-	m_unk0x70 = 0.0f;
+	m_lastPathStruct = 0.0f;
 	m_scheduledTime = 0;
 	m_unk0x0c = 0;
 	m_unk0x0e = 0;
@@ -508,7 +508,7 @@ inline MxU32 LegoExtraActor::VTable0x6c(
 						}
 					}
 					else {
-						if (roi->FUN_100a9410(p_v1, p_v2, p_f1, p_f2, p_v3, m_collideBox && actor->GetCollideBox())) {
+						if (roi->Intersect(p_v1, p_v2, p_f1, p_f2, p_v3, m_collideBox && actor->GetCollideBox())) {
 							if (HitActor(actor, TRUE) < 0) {
 								return 0;
 							}

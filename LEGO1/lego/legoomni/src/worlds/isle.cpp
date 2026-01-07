@@ -604,8 +604,8 @@ void Isle::Enable(MxBool p_enable)
 			NotificationManager()->Send(this, MxNotificationParam(c_notificationTransitioned, NULL));
 			SetIsWorldActive(FALSE);
 			break;
-		case LegoGameState::e_jetrace2:
-			if (((JetskiRaceState*) GameState()->GetState("JetskiRaceState"))->m_unk0x28 == 2) {
+		case LegoGameState::e_jetraceFinished:
+			if (((JetskiRaceState*) GameState()->GetState("JetskiRaceState"))->m_state == RaceState::e_finished) {
 				m_act1state->m_state = Act1State::e_transitionToJetski;
 			}
 
@@ -742,16 +742,16 @@ void Isle::Enable(MxBool p_enable)
 		case Act1State::e_transitionToJetski: {
 			((IslePathActor*) UserActor())
 				->SpawnPlayer(
-					LegoGameState::e_jetrace2,
+					LegoGameState::e_jetraceFinished,
 					FALSE,
 					IslePathActor::c_spawnBit1 | IslePathActor::c_playMusic | IslePathActor::c_spawnBit3
 				);
 			JetskiRaceState* raceState = (JetskiRaceState*) GameState()->GetState("JetskiRaceState");
 
-			if (raceState->m_unk0x28 == 2) {
+			if (raceState->m_state == RaceState::e_finished) {
 				IsleScript::Script script = IsleScript::c_noneIsle;
 
-				switch (raceState->GetState(GameState()->GetActorId())->GetUnknown0x02()) {
+				switch (raceState->GetState(GameState()->GetActorId())->GetLastScore()) {
 				case 1:
 					script = IsleScript::c_sjs014in_RunAnim;
 					break;
@@ -776,16 +776,16 @@ void Isle::Enable(MxBool p_enable)
 			GameState()->m_currentArea = LegoGameState::e_carraceExterior;
 			((IslePathActor*) UserActor())
 				->SpawnPlayer(
-					LegoGameState::e_unk21,
+					LegoGameState::e_carraceFinished,
 					FALSE,
 					IslePathActor::c_spawnBit1 | IslePathActor::c_playMusic | IslePathActor::c_spawnBit3
 				);
 			CarRaceState* raceState = (CarRaceState*) GameState()->GetState("CarRaceState");
 
-			if (raceState->m_unk0x28 == 2) {
+			if (raceState->m_state == RaceState::e_finished) {
 				IsleScript::Script script = IsleScript::c_noneIsle;
 
-				switch (raceState->GetState(GameState()->GetActorId())->GetUnknown0x02()) {
+				switch (raceState->GetState(GameState()->GetActorId())->GetLastScore()) {
 				case 1:
 					script = IsleScript::c_srt003in_RunAnim;
 					break;
@@ -849,7 +849,8 @@ void Isle::Enable(MxBool p_enable)
 			(m_act1state->m_state != Act1State::e_none || GameState()->m_currentArea != LegoGameState::e_copter) &&
 			(m_act1state->m_state != Act1State::e_none || GameState()->m_currentArea != LegoGameState::e_jetski) &&
 			(m_act1state->m_state != Act1State::e_none || GameState()->m_currentArea != LegoGameState::e_skateboard) &&
-			(m_act1state->m_state != Act1State::e_none || GameState()->m_currentArea != LegoGameState::e_jetrace2)) {
+			(m_act1state->m_state != Act1State::e_none || GameState()->m_currentArea != LegoGameState::e_jetraceFinished
+			)) {
 			Disable(FALSE, LegoOmni::c_disableInput | LegoOmni::c_disable3d | LegoOmni::c_clearScreen);
 		}
 

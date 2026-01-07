@@ -31,7 +31,7 @@ extern MxU32 g_isleFlags;
 // FUNCTION: LEGO1 0x1004c720
 TowTrack::TowTrack()
 {
-	m_unk0x168 = 0;
+	m_unused0x168 = 0;
 	m_actorId = -1;
 	m_state = NULL;
 	m_treeBlockageTriggered = 0;
@@ -202,19 +202,19 @@ MxLong TowTrack::HandleEndAction(MxEndActionNotificationParam& p_param)
 
 			switch (m_actorId) {
 			case c_pepper:
-				FUN_1004dcb0(IsleScript::c_wgs085nu_RunAnim);
+				PlayActorAnimation(IsleScript::c_wgs085nu_RunAnim);
 				break;
 			case c_mama:
-				FUN_1004dcb0(IsleScript::c_wgs086nu_RunAnim);
+				PlayActorAnimation(IsleScript::c_wgs086nu_RunAnim);
 				break;
 			case c_papa:
-				FUN_1004dcb0(IsleScript::c_wgs088nu_RunAnim);
+				PlayActorAnimation(IsleScript::c_wgs088nu_RunAnim);
 				break;
 			case c_nick:
-				FUN_1004dcb0(IsleScript::c_wgs087nu_RunAnim);
+				PlayActorAnimation(IsleScript::c_wgs087nu_RunAnim);
 				break;
 			case c_laura:
-				FUN_1004dcb0(IsleScript::c_wgs089nu_RunAnim);
+				PlayActorAnimation(IsleScript::c_wgs089nu_RunAnim);
 				break;
 			}
 
@@ -231,19 +231,19 @@ MxLong TowTrack::HandleEndAction(MxEndActionNotificationParam& p_param)
 
 			switch (m_actorId) {
 			case c_pepper:
-				FUN_1004dcb0(IsleScript::c_wgs091nu_RunAnim);
+				PlayActorAnimation(IsleScript::c_wgs091nu_RunAnim);
 				break;
 			case c_mama:
-				FUN_1004dcb0(IsleScript::c_wgs092nu_RunAnim);
+				PlayActorAnimation(IsleScript::c_wgs092nu_RunAnim);
 				break;
 			case c_papa:
-				FUN_1004dcb0(IsleScript::c_wgs094nu_RunAnim);
+				PlayActorAnimation(IsleScript::c_wgs094nu_RunAnim);
 				break;
 			case c_nick:
-				FUN_1004dcb0(IsleScript::c_wgs093nu_RunAnim);
+				PlayActorAnimation(IsleScript::c_wgs093nu_RunAnim);
 				break;
 			case c_laura:
-				FUN_1004dcb0(IsleScript::c_wgs095nu_RunAnim);
+				PlayActorAnimation(IsleScript::c_wgs095nu_RunAnim);
 				break;
 			}
 
@@ -256,19 +256,19 @@ MxLong TowTrack::HandleEndAction(MxEndActionNotificationParam& p_param)
 
 			switch (m_actorId) {
 			case c_pepper:
-				FUN_1004dcb0(IsleScript::c_wgs098nu_RunAnim);
+				PlayActorAnimation(IsleScript::c_wgs098nu_RunAnim);
 				break;
 			case c_mama:
-				FUN_1004dcb0(IsleScript::c_wgs099nu_RunAnim);
+				PlayActorAnimation(IsleScript::c_wgs099nu_RunAnim);
 				break;
 			case c_papa:
-				FUN_1004dcb0(IsleScript::c_wgs101nu_RunAnim);
+				PlayActorAnimation(IsleScript::c_wgs101nu_RunAnim);
 				break;
 			case c_nick:
-				FUN_1004dcb0(IsleScript::c_wgs100nu_RunAnim);
+				PlayActorAnimation(IsleScript::c_wgs100nu_RunAnim);
 				break;
 			case c_laura:
-				FUN_1004dcb0(IsleScript::c_wgs102nu_RunAnim);
+				PlayActorAnimation(IsleScript::c_wgs102nu_RunAnim);
 				break;
 			}
 
@@ -574,7 +574,7 @@ void TowTrack::PlayFinalAnimation(IsleScript::Script p_objectId)
 }
 
 // FUNCTION: LEGO1 0x1004dcb0
-void TowTrack::FUN_1004dcb0(IsleScript::Script p_objectId)
+void TowTrack::PlayActorAnimation(IsleScript::Script p_objectId)
 {
 	AnimationManager()->FUN_1005f6d0(TRUE);
 	AnimationManager()
