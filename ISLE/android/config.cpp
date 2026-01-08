@@ -2,20 +2,18 @@
 
 #include "mxstring.h"
 
-#include <SDL3/SDL_filesystem.h>
-#include <SDL3/SDL_log.h>
-#include <SDL3/SDL_system.h>
 #include <iniparser.h>
+#include <mortar/mortar.h>
 
 void Android_SetupDefaultConfigOverrides(dictionary* p_dictionary)
 {
-	SDL_Log("Overriding default config for Android");
+	MORTAR_Log("Overriding default config for Android");
 
-	const char* data = SDL_GetAndroidExternalStoragePath();
+	const char* data = MORTAR_GetAndroidExternalStoragePath();
 	MxString savedata = MxString(data) + "/saves/";
 
-	if (!SDL_GetPathInfo(savedata.GetData(), NULL)) {
-		SDL_CreateDirectory(savedata.GetData());
+	if (!MORTAR_GetPathInfo(savedata.GetData(), NULL)) {
+		MORTAR_CreateDirectory(savedata.GetData());
 	}
 
 	iniparser_set(p_dictionary, "isle:diskpath", data);
@@ -25,5 +23,16 @@ void Android_SetupDefaultConfigOverrides(dictionary* p_dictionary)
 
 	// Default to Virtual Mouse
 	char buf[16];
-	iniparser_set(p_dictionary, "isle:Touch Scheme", SDL_itoa(0, buf, 10));
+	iniparser_set(p_dictionary, "isle:Touch Scheme", MORTAR_itoa(0, buf, 10));
+}
+
+extern int main(int argc, char* argv[]);
+
+extern "C"
+{
+
+	int SDL_main(int argc, char* argv[])
+	{
+		return main(argc, argv);
+	}
 }

@@ -5,7 +5,7 @@
 #include "lego1_export.h"
 #include "mxcore.h"
 
-#include <SDL3/SDL_stdinc.h>
+#include <mortar/mortar_stdinc.h>
 #ifdef MINIWIN
 #include "miniwin/ddraw.h"
 #else
@@ -86,7 +86,7 @@ private:
 	MxU16 m_animationTimer;          // 0x34
 	MxU16 m_columnOrder[640];        // 0x36
 	MxU16 m_randomShift[480];        // 0x536
-	Uint64 m_systemTime;             // 0x8f8
+	uint64_t m_systemTime;           // 0x8f8
 	MxS32 m_animationSpeed;          // 0x8fc
 };
 

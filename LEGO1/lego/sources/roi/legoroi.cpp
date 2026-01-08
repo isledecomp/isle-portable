@@ -9,7 +9,7 @@
 #include "shape/legobox.h"
 #include "shape/legosphere.h"
 
-#include <SDL3/SDL_stdinc.h>
+#include <mortar/mortar_stdinc.h>
 #include <string.h>
 #include <vec.h>
 
@@ -146,7 +146,7 @@ LegoResult LegoROI::Read(
 		goto done;
 	}
 	m_name[length] = '\0';
-	SDL_strlwr(m_name);
+	MORTAR_strlwr(m_name);
 
 	if (sphere.Read(p_storage) != SUCCESS) {
 		goto done;
@@ -173,7 +173,7 @@ LegoResult LegoROI::Read(
 			goto done;
 		}
 		textureName[length] = '\0';
-		SDL_strlwr(textureName);
+		MORTAR_strlwr(textureName);
 	}
 	else {
 		textureName = NULL;
@@ -227,7 +227,7 @@ LegoResult LegoROI::Read(
 
 			if (g_roiConfig <= 2) {
 				for (i = 0; g_sharedModelsLow[i] != NULL; i++) {
-					if (!SDL_strncasecmp(m_name, g_sharedModelsLow[i], 4)) {
+					if (!MORTAR_strncasecmp(m_name, g_sharedModelsLow[i], 4)) {
 						roiName = g_sharedModelsLow[i];
 						break;
 					}
@@ -235,7 +235,7 @@ LegoResult LegoROI::Read(
 			}
 			else {
 				for (i = 0; g_sharedModelsHigh[i] != NULL; i++) {
-					if (!SDL_strncasecmp(m_name, g_sharedModelsHigh[i], 4)) {
+					if (!MORTAR_strncasecmp(m_name, g_sharedModelsHigh[i], 4)) {
 						roiName = g_sharedModelsHigh[i];
 						break;
 					}
@@ -244,7 +244,7 @@ LegoResult LegoROI::Read(
 
 			if ((lodList = p_viewLODListManager->Lookup(roiName))) {
 				for (j = 0; g_alwaysLoadNames[j] != NULL; j++) {
-					if (!SDL_strcasecmp(g_alwaysLoadNames[j], roiName)) {
+					if (!MORTAR_strcasecmp(g_alwaysLoadNames[j], roiName)) {
 						break;
 					}
 				}
@@ -302,7 +302,7 @@ LegoResult LegoROI::Read(
 	}
 
 	if (textureName != NULL) {
-		if (!SDL_strncasecmp(textureName, "t_", 2)) {
+		if (!MORTAR_strncasecmp(textureName, "t_", 2)) {
 			textureInfo = p_textureContainer->Get(textureName + 2);
 
 			if (textureInfo == NULL) {
@@ -362,7 +362,7 @@ LegoROI* LegoROI::FindChildROI(const LegoChar* p_name, LegoROI* p_roi)
 	CompoundObject::iterator it;
 	const LegoChar* name = p_roi->GetName();
 
-	if (name != NULL && *name != '\0' && !SDL_strcasecmp(name, p_name)) {
+	if (name != NULL && *name != '\0' && !MORTAR_strcasecmp(name, p_name)) {
 		return p_roi;
 	}
 
@@ -372,7 +372,7 @@ LegoROI* LegoROI::FindChildROI(const LegoChar* p_name, LegoROI* p_roi)
 			LegoROI* roi = (LegoROI*) *it;
 			name = roi->GetName();
 
-			if (name != NULL && *name != '\0' && !SDL_strcasecmp(name, p_name)) {
+			if (name != NULL && *name != '\0' && !MORTAR_strcasecmp(name, p_name)) {
 				return roi;
 			}
 		}
@@ -804,7 +804,7 @@ LegoBool LegoROI::GetRGBAColor(const LegoChar* p_name, float& p_red, float& p_gr
 LegoBool LegoROI::ColorAliasLookup(const LegoChar* p_param, float& p_red, float& p_green, float& p_blue, float& p_alpha)
 {
 	for (LegoU32 i = 0; i < sizeOfArray(g_roiColorAliases); i++) {
-		if (SDL_strcasecmp(g_roiColorAliases[i].m_name, p_param) == 0) {
+		if (MORTAR_strcasecmp(g_roiColorAliases[i].m_name, p_param) == 0) {
 			p_red = g_roiColorAliases[i].m_red / 255.0;
 			p_green = g_roiColorAliases[i].m_green / 255.0;
 			p_blue = g_roiColorAliases[i].m_blue / 255.0;
@@ -851,7 +851,7 @@ void LegoROI::SetName(const LegoChar* p_name)
 	if (p_name != NULL) {
 		m_name = new LegoChar[strlen(p_name) + 1];
 		strcpy(m_name, p_name);
-		SDL_strlwr(m_name);
+		MORTAR_strlwr(m_name);
 	}
 	else {
 		m_name = NULL;

@@ -1,25 +1,26 @@
 #include "d3drmmesh_impl.h"
 #include "miniwin.h"
 
+#include <cstdint>
 #include <limits>
 
 HRESULT Direct3DRMMeshImpl::QueryInterface(const GUID& riid, void** ppvObject)
 {
-	if (SDL_memcmp(&riid, &IID_IDirect3DRMMesh, sizeof(GUID)) == 0) {
+	if (MORTAR_memcmp(&riid, &IID_IDirect3DRMMesh, sizeof(GUID)) == 0) {
 		this->IUnknown::AddRef();
 		*ppvObject = static_cast<IDirect3DRMMesh*>(this);
 		return S_OK;
 	}
-	if (SDL_memcmp(&riid, &IID_IDirect3DRMFrame, sizeof(GUID)) == 0) {
+	if (MORTAR_memcmp(&riid, &IID_IDirect3DRMFrame, sizeof(GUID)) == 0) {
 		return E_NOINTERFACE;
 	}
-	SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Direct3DRMMeshImpl does not implement guid");
+	MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "Direct3DRMMeshImpl does not implement guid");
 	return E_NOINTERFACE;
 }
 
 HRESULT Direct3DRMMeshImpl::Clone(int flags, GUID iid, void** object)
 {
-	if (!object || SDL_memcmp(&iid, &IID_IDirect3DRMMesh, sizeof(GUID)) != 0) {
+	if (!object || MORTAR_memcmp(&iid, &IID_IDirect3DRMMesh, sizeof(GUID)) != 0) {
 		return DDERR_INVALIDPARAMS;
 	}
 
@@ -108,10 +109,10 @@ HRESULT Direct3DRMMeshImpl::SetGroupColor(D3DRMGROUPINDEX groupIndex, D3DCOLOR c
 	}
 
 	m_groups[groupIndex].color = {
-		static_cast<Uint8>((color >> 16) & 0xFF),
-		static_cast<Uint8>((color >> 8) & 0xFF),
-		static_cast<Uint8>((color >> 0) & 0xFF),
-		static_cast<Uint8>((color >> 24) & 0xFF)
+		static_cast<uint8_t>((color >> 16) & 0xFF),
+		static_cast<uint8_t>((color >> 8) & 0xFF),
+		static_cast<uint8_t>((color >> 0) & 0xFF),
+		static_cast<uint8_t>((color >> 24) & 0xFF)
 	};
 	return DD_OK;
 }
@@ -122,8 +123,8 @@ HRESULT Direct3DRMMeshImpl::SetGroupColorRGB(D3DRMGROUPINDEX groupIndex, float r
 		return DDERR_INVALIDPARAMS;
 	}
 
-	m_groups[groupIndex]
-		.color = {static_cast<Uint8>(r * 255.0f), static_cast<Uint8>(g * 255.0f), static_cast<Uint8>(b * 255.0f), 255};
+	m_groups[groupIndex].color =
+		{static_cast<uint8_t>(r * 255.0f), static_cast<uint8_t>(g * 255.0f), static_cast<uint8_t>(b * 255.0f), 255};
 
 	return DD_OK;
 }
@@ -134,7 +135,7 @@ D3DCOLOR Direct3DRMMeshImpl::GetGroupColor(D3DRMGROUPINDEX index)
 		return 0xFFFFFFFF;
 	}
 
-	const SDL_Color& color = m_groups[index].color;
+	const MORTAR_Color& color = m_groups[index].color;
 	return (color.a << 24) | (color.r << 16) | (color.g << 8) | color.b;
 }
 

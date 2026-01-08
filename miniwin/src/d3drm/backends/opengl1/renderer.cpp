@@ -5,9 +5,9 @@
 #include "mathutils.h"
 #include "meshutils.h"
 
-#include <SDL3/SDL.h>
 #include <algorithm>
 #include <cstring>
+#include <mortar/mortar.h>
 #include <vector>
 
 static_assert(sizeof(Matrix4x4) == sizeof(D3DRMMATRIX4D), "Matrix4x4 is wrong size");
@@ -19,34 +19,34 @@ static_assert(sizeof(GL11_BridgeSceneVertex) == sizeof(D3DRMVERTEX), "GL11_Bridg
 Direct3DRMRenderer* OpenGL1Renderer::Create(DWORD width, DWORD height, DWORD msaaSamples)
 {
 	// We have to reset the attributes here after having enumerated the
-	// OpenGL ES 2.0 renderer, or else SDL gets very confused by SDL_GL_DEPTH_SIZE
+	// OpenGL ES 2.0 renderer, or else SDL gets very confused by MORTAR_GL_DEPTH_SIZE
 	// call below when on an EGL-based backend, and crashes with EGL_BAD_MATCH.
-	SDL_GL_ResetAttributes();
+	MORTAR_GL_ResetAttributes();
 	// But ResetAttributes resets it to 16.
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+	MORTAR_GL_SetAttribute(MORTAR_GL_DEPTH_SIZE, 24);
+	MORTAR_GL_SetAttribute(MORTAR_GL_CONTEXT_PROFILE_MASK, MORTAR_GL_CONTEXT_PROFILE_COMPATIBILITY);
+	MORTAR_GL_SetAttribute(MORTAR_GL_CONTEXT_MAJOR_VERSION, 1);
+	MORTAR_GL_SetAttribute(MORTAR_GL_CONTEXT_MINOR_VERSION, 1);
 
 	if (msaaSamples > 1) {
-		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, msaaSamples);
+		MORTAR_GL_SetAttribute(MORTAR_GL_MULTISAMPLEBUFFERS, 1);
+		MORTAR_GL_SetAttribute(MORTAR_GL_MULTISAMPLESAMPLES, msaaSamples);
 	}
 
 	if (!DDWindow) {
-		SDL_Log("No window handler");
+		MORTAR_Log("No window handler");
 		return nullptr;
 	}
 
-	SDL_GLContext context = SDL_GL_CreateContext(DDWindow);
+	MORTAR_GLContext context = MORTAR_GL_CreateContext(DDWindow);
 	if (!context) {
-		SDL_Log("SDL_GL_CreateContext: %s", SDL_GetError());
+		MORTAR_Log("MORTAR_GL_CreateContext: %s", MORTAR_GetError());
 		return nullptr;
 	}
 
-	if (!SDL_GL_MakeCurrent(DDWindow, context)) {
-		SDL_GL_DestroyContext(context);
-		SDL_Log("SDL_GL_MakeCurrent: %s", SDL_GetError());
+	if (!MORTAR_GL_MakeCurrent(DDWindow, context)) {
+		MORTAR_GL_DestroyContext(context);
+		MORTAR_Log("MORTAR_GL_MakeCurrent: %s", MORTAR_GetError());
 		return nullptr;
 	}
 
@@ -55,28 +55,28 @@ Direct3DRMRenderer* OpenGL1Renderer::Create(DWORD width, DWORD height, DWORD msa
 	return new OpenGL1Renderer(width, height, context);
 }
 
-OpenGL1Renderer::OpenGL1Renderer(DWORD width, DWORD height, SDL_GLContext context) : m_context(context)
+OpenGL1Renderer::OpenGL1Renderer(DWORD width, DWORD height, MORTAR_GLContext context) : m_context(context)
 {
 	m_width = width;
 	m_height = height;
 	m_virtualWidth = width;
 	m_virtualHeight = height;
-	m_renderedImage = SDL_CreateSurface(m_width, m_height, SDL_PIXELFORMAT_RGBA32);
+	m_renderedImage = MORTAR_CreateSurface(m_width, m_height, MORTAR_PIXELFORMAT_RGBA32);
 	GL11_LoadExtensions();
-	m_useVBOs = SDL_GL_ExtensionSupported("GL_ARB_vertex_buffer_object");
-	m_useNPOT = SDL_GL_ExtensionSupported("GL_OES_texture_npot");
+	m_useVBOs = MORTAR_GL_ExtensionSupported("GL_ARB_vertex_buffer_object");
+	m_useNPOT = MORTAR_GL_ExtensionSupported("GL_OES_texture_npot");
 }
 
 OpenGL1Renderer::~OpenGL1Renderer()
 {
-	SDL_DestroySurface(m_renderedImage);
-	SDL_GL_DestroyContext(m_context);
+	MORTAR_DestroySurface(m_renderedImage);
+	MORTAR_GL_DestroyContext(m_context);
 }
 
 void OpenGL1Renderer::PushLights(const SceneLight* lightsArray, size_t count)
 {
 	if (count > 8) {
-		SDL_Log("Unsupported number of lights (%d)", static_cast<int>(count));
+		MORTAR_Log("Unsupported number of lights (%d)", static_cast<int>(count));
 		count = 8;
 	}
 
@@ -94,10 +94,10 @@ void OpenGL1Renderer::SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE fr
 
 struct TextureDestroyContextGL {
 	OpenGL1Renderer* renderer;
-	Uint32 textureId;
+	uint32_t textureId;
 };
 
-void OpenGL1Renderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture)
+void OpenGL1Renderer::AddTextureDestroyCallback(uint32_t id, IDirect3DRMTexture* texture)
 {
 	auto* ctx = new TextureDestroyContextGL{this, id};
 	texture->AddDestroyCallback(
@@ -124,18 +124,18 @@ static int NextPowerOfTwo(int v)
 	return power;
 }
 
-static Uint32 UploadTextureData(SDL_Surface* src, bool useNPOT, bool isUI, float scaleX, float scaleY)
+static uint32_t UploadTextureData(MORTAR_Surface* src, bool useNPOT, bool isUI, float scaleX, float scaleY)
 {
-	SDL_Surface* working = src;
-	if (src->format != SDL_PIXELFORMAT_RGBA32) {
-		working = SDL_ConvertSurface(src, SDL_PIXELFORMAT_RGBA32);
+	MORTAR_Surface* working = src;
+	if (src->format != MORTAR_PIXELFORMAT_RGBA32) {
+		working = MORTAR_ConvertSurface(src, MORTAR_PIXELFORMAT_RGBA32);
 		if (!working) {
-			SDL_Log("SDL_ConvertSurface failed: %s", SDL_GetError());
+			MORTAR_Log("MORTAR_ConvertSurface failed: %s", MORTAR_GetError());
 			return NO_TEXTURE_ID;
 		}
 	}
 
-	SDL_Surface* finalSurface = working;
+	MORTAR_Surface* finalSurface = working;
 
 	int newW = working->w;
 	int newH = working->h;
@@ -152,39 +152,40 @@ static Uint32 UploadTextureData(SDL_Surface* src, bool useNPOT, bool isUI, float
 	}
 
 	if (newW != working->w || newH != working->h) {
-		SDL_Surface* resized = SDL_CreateSurface(newW, newH, working->format);
+		MORTAR_Surface* resized = MORTAR_CreateSurface(newW, newH, working->format);
 		if (!resized) {
-			SDL_Log("SDL_CreateSurface (resize) failed: %s", SDL_GetError());
+			MORTAR_Log("MORTAR_CreateSurface (resize) failed: %s", MORTAR_GetError());
 			if (working != src) {
-				SDL_DestroySurface(working);
+				MORTAR_DestroySurface(working);
 			}
 			return NO_TEXTURE_ID;
 		}
 
-		SDL_Rect srcRect = {0, 0, working->w, working->h};
-		SDL_Rect dstRect = {0, 0, newW, newH};
-		SDL_BlitSurfaceScaled(working, &srcRect, resized, &dstRect, SDL_SCALEMODE_NEAREST);
+		MORTAR_Rect srcRect = {0, 0, working->w, working->h};
+		MORTAR_Rect dstRect = {0, 0, newW, newH};
+		MORTAR_BlitSurfaceScaled(working, &srcRect, resized, &dstRect, MORTAR_SCALEMODE_NEAREST);
 
 		if (working != src) {
-			SDL_DestroySurface(working);
+			MORTAR_DestroySurface(working);
 		}
 		finalSurface = resized;
 	}
 
-	Uint32 texId = GL11_UploadTextureData(finalSurface->pixels, finalSurface->w, finalSurface->h, isUI, scaleX, scaleY);
+	uint32_t texId =
+		GL11_UploadTextureData(finalSurface->pixels, finalSurface->w, finalSurface->h, isUI, scaleX, scaleY);
 	if (finalSurface != src) {
-		SDL_DestroySurface(finalSurface);
+		MORTAR_DestroySurface(finalSurface);
 	}
 	return texId;
 }
 
-Uint32 OpenGL1Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUI, float scaleX, float scaleY)
+uint32_t OpenGL1Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUI, float scaleX, float scaleY)
 {
-	SDL_GL_MakeCurrent(DDWindow, m_context);
+	MORTAR_GL_MakeCurrent(DDWindow, m_context);
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
 	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
 
-	for (Uint32 i = 0; i < m_textures.size(); ++i) {
+	for (uint32_t i = 0; i < m_textures.size(); ++i) {
 		auto& tex = m_textures[i];
 		if (tex.texture == texture) {
 			if (tex.version != texture->m_version) {
@@ -200,7 +201,7 @@ Uint32 OpenGL1Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUI, fl
 
 	GLuint texId = UploadTextureData(surface->m_surface, m_useNPOT, isUI, scaleX, scaleY);
 
-	for (Uint32 i = 0; i < m_textures.size(); ++i) {
+	for (uint32_t i = 0; i < m_textures.size(); ++i) {
 		auto& tex = m_textures[i];
 		if (!tex.texture) {
 			tex.texture = texture;
@@ -220,8 +221,8 @@ Uint32 OpenGL1Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUI, fl
 		 static_cast<float>(surface->m_surface->w),
 		 static_cast<float>(surface->m_surface->h)}
 	);
-	AddTextureDestroyCallback((Uint32) (m_textures.size() - 1), texture);
-	return (Uint32) (m_textures.size() - 1);
+	AddTextureDestroyCallback((uint32_t) (m_textures.size() - 1), texture);
+	return (uint32_t) (m_textures.size() - 1);
 }
 
 GLMeshCacheEntry GLUploadMesh(const MeshGroup& meshGroup, bool useVBOs)
@@ -272,10 +273,10 @@ GLMeshCacheEntry GLUploadMesh(const MeshGroup& meshGroup, bool useVBOs)
 
 struct GLMeshDestroyContext {
 	OpenGL1Renderer* renderer;
-	Uint32 id;
+	uint32_t id;
 };
 
-void OpenGL1Renderer::AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh)
+void OpenGL1Renderer::AddMeshDestroyCallback(uint32_t id, IDirect3DRMMesh* mesh)
 {
 	auto* ctx = new GLMeshDestroyContext{this, id};
 	mesh->AddDestroyCallback(
@@ -290,9 +291,9 @@ void OpenGL1Renderer::AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh)
 	);
 }
 
-Uint32 OpenGL1Renderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup)
+uint32_t OpenGL1Renderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup)
 {
-	for (Uint32 i = 0; i < m_meshs.size(); ++i) {
+	for (uint32_t i = 0; i < m_meshs.size(); ++i) {
 		auto& cache = m_meshs[i];
 		if (cache.meshGroup == meshGroup) {
 			if (cache.version != meshGroup->version) {
@@ -304,7 +305,7 @@ Uint32 OpenGL1Renderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGr
 
 	auto newCache = GLUploadMesh(*meshGroup, m_useVBOs);
 
-	for (Uint32 i = 0; i < m_meshs.size(); ++i) {
+	for (uint32_t i = 0; i < m_meshs.size(); ++i) {
 		auto& cache = m_meshs[i];
 		if (!cache.meshGroup) {
 			cache = std::move(newCache);
@@ -314,13 +315,13 @@ Uint32 OpenGL1Renderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGr
 	}
 
 	m_meshs.push_back(std::move(newCache));
-	AddMeshDestroyCallback((Uint32) (m_meshs.size() - 1), mesh);
-	return (Uint32) (m_meshs.size() - 1);
+	AddMeshDestroyCallback((uint32_t) (m_meshs.size() - 1), mesh);
+	return (uint32_t) (m_meshs.size() - 1);
 }
 
 HRESULT OpenGL1Renderer::BeginFrame()
 {
-	SDL_GL_MakeCurrent(DDWindow, m_context);
+	MORTAR_GL_MakeCurrent(DDWindow, m_context);
 	GL11_BeginFrame((Matrix4x4*) &m_projection[0][0]);
 
 	int lightIdx = 0;
@@ -368,34 +369,39 @@ HRESULT OpenGL1Renderer::FinalizeFrame()
 
 void OpenGL1Renderer::Resize(int width, int height, const ViewportTransform& viewportTransform)
 {
-	SDL_GL_MakeCurrent(DDWindow, m_context);
+	MORTAR_GL_MakeCurrent(DDWindow, m_context);
 	m_width = width;
 	m_height = height;
 	m_viewportTransform = viewportTransform;
-	SDL_DestroySurface(m_renderedImage);
-	m_renderedImage = SDL_CreateSurface(m_width, m_height, SDL_PIXELFORMAT_RGBA32);
+	MORTAR_DestroySurface(m_renderedImage);
+	m_renderedImage = MORTAR_CreateSurface(m_width, m_height, MORTAR_PIXELFORMAT_RGBA32);
 	GL11_Resize(width, height);
 }
 
 void OpenGL1Renderer::Clear(float r, float g, float b)
 {
-	SDL_GL_MakeCurrent(DDWindow, m_context);
+	MORTAR_GL_MakeCurrent(DDWindow, m_context);
 	m_dirty = true;
 	GL11_Clear(r, g, b);
 }
 
 void OpenGL1Renderer::Flip()
 {
-	SDL_GL_MakeCurrent(DDWindow, m_context);
+	MORTAR_GL_MakeCurrent(DDWindow, m_context);
 	if (m_dirty) {
-		SDL_GL_SwapWindow(DDWindow);
+		MORTAR_GL_SwapWindow(DDWindow);
 		m_dirty = false;
 	}
 }
 
-void OpenGL1Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect, FColor color)
+void OpenGL1Renderer::Draw2DImage(
+	uint32_t textureId,
+	const MORTAR_Rect& srcRect,
+	const MORTAR_Rect& dstRect,
+	FColor color
+)
 {
-	SDL_GL_MakeCurrent(DDWindow, m_context);
+	MORTAR_GL_MakeCurrent(DDWindow, m_context);
 	m_dirty = true;
 
 	float left = -m_viewportTransform.offsetX / m_viewportTransform.scale;
@@ -416,33 +422,33 @@ void OpenGL1Renderer::SetDither(bool dither)
 	GL11_SetDither(dither);
 }
 
-void OpenGL1Renderer::Download(SDL_Surface* target)
+void OpenGL1Renderer::Download(MORTAR_Surface* target)
 {
 	GL11_Download(m_renderedImage);
 
-	SDL_Rect srcRect = {
+	MORTAR_Rect srcRect = {
 		static_cast<int>(m_viewportTransform.offsetX),
 		static_cast<int>(m_viewportTransform.offsetY),
 		static_cast<int>(target->w * m_viewportTransform.scale),
 		static_cast<int>(target->h * m_viewportTransform.scale),
 	};
 
-	SDL_Surface* bufferClone = SDL_CreateSurface(target->w, target->h, SDL_PIXELFORMAT_RGBA32);
+	MORTAR_Surface* bufferClone = MORTAR_CreateSurface(target->w, target->h, MORTAR_PIXELFORMAT_RGBA32);
 	if (!bufferClone) {
-		SDL_Log("SDL_CreateSurface: %s", SDL_GetError());
+		MORTAR_Log("MORTAR_CreateSurface: %s", MORTAR_GetError());
 		return;
 	}
 
-	SDL_BlitSurfaceScaled(m_renderedImage, &srcRect, bufferClone, nullptr, SDL_SCALEMODE_NEAREST);
+	MORTAR_BlitSurfaceScaled(m_renderedImage, &srcRect, bufferClone, nullptr, MORTAR_SCALEMODE_NEAREST);
 
 	// Flip image vertically into target
-	SDL_Rect rowSrc = {0, 0, bufferClone->w, 1};
-	SDL_Rect rowDst = {0, 0, bufferClone->w, 1};
+	MORTAR_Rect rowSrc = {0, 0, bufferClone->w, 1};
+	MORTAR_Rect rowDst = {0, 0, bufferClone->w, 1};
 	for (int y = 0; y < bufferClone->h; ++y) {
 		rowSrc.y = y;
 		rowDst.y = bufferClone->h - 1 - y;
-		SDL_BlitSurface(bufferClone, &rowSrc, target, &rowDst);
+		MORTAR_BlitSurface(bufferClone, &rowSrc, target, &rowDst);
 	}
 
-	SDL_DestroySurface(bufferClone);
+	MORTAR_DestroySurface(bufferClone);
 }

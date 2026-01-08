@@ -1,11 +1,11 @@
 #include "config.h"
 
-#include <SDL3/SDL_log.h>
 #include <iniparser.h>
+#include <mortar/mortar_log.h>
 
 void XBONE_SetupDefaultConfigOverrides(dictionary* p_dictionary)
 {
-	SDL_Log("Overriding default config for Xbox One/Series");
+	MORTAR_Log("Overriding default config for Xbox One/Series");
 
 	// Use DevelopmentFiles path for disk and cd paths
 	// It's good to use that path since user can easily

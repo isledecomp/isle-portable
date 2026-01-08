@@ -11,10 +11,10 @@ void Emscripten_HandleRumbleEvent(float p_lowFrequencyRumble, float p_highFreque
 {
 	std::visit(
 		overloaded{
-			[](LegoInputManager::SDL_KeyboardID_v p_id) {},
-			[](LegoInputManager::SDL_MouseID_v p_id) {},
-			[p_lowFrequencyRumble, p_highFrequencyRumble, p_milliseconds](LegoInputManager::SDL_JoystickID_v p_id) {
-				const char* name = SDL_GetJoystickNameForID((SDL_JoystickID) p_id);
+			[](LegoInputManager::MORTAR_KeyboardID_v p_id) {},
+			[](LegoInputManager::MORTAR_MouseID_v p_id) {},
+			[p_lowFrequencyRumble, p_highFrequencyRumble, p_milliseconds](LegoInputManager::MORTAR_JoystickID_v p_id) {
+				const char* name = MORTAR_GetJoystickNameForID((MORTAR_JoystickID) p_id);
 				if (name) {
 					MAIN_THREAD_EM_ASM(
 						{
@@ -33,13 +33,13 @@ void Emscripten_HandleRumbleEvent(float p_lowFrequencyRumble, float p_highFreque
 							}
 						},
 						name,
-						SDL_clamp(p_lowFrequencyRumble, 0, 1),
-						SDL_clamp(p_highFrequencyRumble, 0, 1),
+						MORTAR_clamp(p_lowFrequencyRumble, 0, 1),
+						MORTAR_clamp(p_highFrequencyRumble, 0, 1),
 						p_milliseconds
 					);
 				}
 			},
-			[p_milliseconds](LegoInputManager::SDL_TouchID_v p_id) {
+			[p_milliseconds](LegoInputManager::MORTAR_TouchID_v p_id) {
 				MAIN_THREAD_EM_ASM(
 					{
 						if (navigator.vibrate) {

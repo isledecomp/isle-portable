@@ -59,9 +59,9 @@
 #include "sndanim_actions.h"
 #include "towtrack.h"
 
-#include <SDL3/SDL_filesystem.h>
-#include <SDL3/SDL_stdinc.h>
 #include <assert.h>
+#include <mortar/mortar_filesystem.h>
+#include <mortar/mortar_stdinc.h>
 #include <stdio.h>
 
 DECOMP_SIZE_ASSERT(LegoGameState::Username, 0x0e)
@@ -619,7 +619,7 @@ MxResult LegoGameState::AddPlayer(Username& p_player)
 
 	if (m_playerCount == 9) {
 		GetFileSavePath(&from, 8);
-		SDL_RemovePath(from.GetData());
+		MORTAR_RemovePath(from.GetData());
 		m_playerCount--;
 	}
 
@@ -627,7 +627,7 @@ MxResult LegoGameState::AddPlayer(Username& p_player)
 		m_players[i] = m_players[i - 1];
 		GetFileSavePath(&from, i - 1);
 		GetFileSavePath(&to, i);
-		SDL_RenamePath(from.GetData(), to.GetData());
+		MORTAR_RenamePath(from.GetData(), to.GetData());
 	}
 
 	m_playerCount++;
@@ -652,18 +652,18 @@ void LegoGameState::SwitchPlayer(MxS16 p_playerId)
 
 		Username selectedName(m_players[p_playerId]);
 
-		SDL_RenamePath(from.GetData(), temp.GetData());
+		MORTAR_RenamePath(from.GetData(), temp.GetData());
 
 		for (MxS16 i = p_playerId; i > 0; i--) {
 			m_players[i] = m_players[i - 1];
 			GetFileSavePath(&from, i - 1);
 			GetFileSavePath(&to, i);
-			SDL_RenamePath(from.GetData(), to.GetData());
+			MORTAR_RenamePath(from.GetData(), to.GetData());
 		}
 
 		m_players[0] = selectedName;
 		GetFileSavePath(&from, 0);
-		SDL_RenamePath(temp.GetData(), from.GetData());
+		MORTAR_RenamePath(temp.GetData(), from.GetData());
 	}
 
 	if (Load(0) != SUCCESS) {
@@ -1086,8 +1086,8 @@ void LegoGameState::SetROIColorOverride()
 MxBool ROIColorOverride(const char* p_input, char* p_output, MxU32 p_copyLen)
 {
 	if (p_output != NULL && p_copyLen != 0 &&
-		(SDL_strncasecmp(p_input, "INDIR-F-", strlen("INDIR-F-")) == 0 ||
-		 SDL_strncasecmp(p_input, "INDIR-G-", strlen("INDIR-F-")) == 0)) {
+		(MORTAR_strncasecmp(p_input, "INDIR-F-", strlen("INDIR-F-")) == 0 ||
+		 MORTAR_strncasecmp(p_input, "INDIR-G-", strlen("INDIR-F-")) == 0)) {
 
 		char buf[256];
 		sprintf(buf, "c_%s", &p_input[strlen("INDIR-F-")]);

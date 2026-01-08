@@ -215,16 +215,16 @@ RadioState::RadioState()
 {
 	srand(Timer()->GetTime());
 
-	m_activePlaylist = SDL_rand(3);
+	m_activePlaylist = MORTAR_rand(3);
 
 	m_playlists[0] = Playlist((MxU32*) g_jingles, sizeOfArray(g_jingles), Playlist::e_loop);
-	m_playlists[0].m_nextIndex = SDL_rand(sizeOfArray(g_jingles));
+	m_playlists[0].m_nextIndex = MORTAR_rand(sizeOfArray(g_jingles));
 
 	m_playlists[1] = Playlist((MxU32*) g_news, sizeOfArray(g_news), Playlist::e_loop);
-	m_playlists[1].m_nextIndex = SDL_rand(sizeOfArray(g_news));
+	m_playlists[1].m_nextIndex = MORTAR_rand(sizeOfArray(g_news));
 
 	m_playlists[2] = Playlist((MxU32*) g_songs, sizeOfArray(g_songs), Playlist::e_loop);
-	m_playlists[2].m_nextIndex = SDL_rand(sizeOfArray(g_songs));
+	m_playlists[2].m_nextIndex = MORTAR_rand(sizeOfArray(g_songs));
 
 	m_active = FALSE;
 }

@@ -27,7 +27,7 @@
 #include "realtime/realtime.h"
 #include "viewmanager/viewmanager.h"
 
-#include <SDL3/SDL_stdinc.h>
+#include <mortar/mortar_stdinc.h>
 #include <stdio.h>
 
 DECOMP_SIZE_ASSERT(LegoAnimPresenter, 0xbc)
@@ -250,7 +250,7 @@ void LegoAnimPresenter::FUN_100692b0()
 			else if (actorType == LegoAnimActorEntry::e_actorType4) {
 				LegoChar* baseName = new LegoChar[strlen(str)];
 				strcpy(baseName, str + 1);
-				SDL_strlwr(baseName);
+				MORTAR_strlwr(baseName);
 
 				LegoChar* und = FUN_10069150(str);
 				roi = CharacterManager()->FUN_10085a80(und, baseName, TRUE);
@@ -274,7 +274,7 @@ void LegoAnimPresenter::FUN_100692b0()
 					*i = '\0';
 				}
 
-				SDL_strlwr(lodName);
+				MORTAR_strlwr(lodName);
 
 				LegoChar* und = FUN_10069150(str);
 				roi = CharacterManager()->CreateAutoROI(und, lodName, TRUE);
@@ -317,11 +317,11 @@ void LegoAnimPresenter::FUN_100695c0()
 					LegoU32 len = strlen(actorName);
 					strcpy(lodName, actorName);
 
-					for (LegoChar* i = &lodName[len - 1]; SDL_isdigit(*i) || *i == '_'; i--) {
+					for (LegoChar* i = &lodName[len - 1]; MORTAR_isdigit(*i) || *i == '_'; i--) {
 						*i = '\0';
 					}
 
-					SDL_strlwr(lodName);
+					MORTAR_strlwr(lodName);
 
 					CharacterManager()->CreateAutoROI(actorName, lodName, FALSE);
 					FUN_100698b0(rois, actorName);
@@ -376,7 +376,7 @@ LegoBool LegoAnimPresenter::FUN_100698b0(const CompoundObject& p_rois, const Leg
 			const char* name = roi->GetName();
 
 			if (name != NULL) {
-				if (!SDL_strcasecmp(name, str)) {
+				if (!MORTAR_strcasecmp(name, str)) {
 					m_sceneROIs->Append(roi);
 					result = TRUE;
 					break;
@@ -398,7 +398,7 @@ LegoROI* LegoAnimPresenter::FindROI(const LegoChar* p_name)
 	while (cursor.Next(roi)) {
 		LegoChar* nameOrVar = GetVariableOrIdentity(roi->GetName(), NULL);
 
-		if (nameOrVar != NULL && !SDL_strcasecmp(nameOrVar, p_name)) {
+		if (nameOrVar != NULL && !MORTAR_strcasecmp(nameOrVar, p_name)) {
 			delete[] nameOrVar;
 			return roi;
 		}
@@ -436,7 +436,7 @@ void LegoAnimPresenter::FUN_10069b10()
 		if (m_roiMap[index]->GetName() != NULL) {
 			for (MxS32 i = 0; i < m_unk0x94; i++) {
 				if (m_unk0x8c[i] == NULL && m_unk0x90[i] != NULL) {
-					if (!SDL_strcasecmp(m_unk0x90[i], m_roiMap[index]->GetName())) {
+					if (!MORTAR_strcasecmp(m_unk0x90[i], m_roiMap[index]->GetName())) {
 						m_unk0x8c[i] = m_roiMap[index];
 						break;
 					}

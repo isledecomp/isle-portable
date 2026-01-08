@@ -9,7 +9,7 @@
 FrameBufferImpl::FrameBufferImpl(DWORD virtualWidth, DWORD virtualHeight)
 	: m_virtualWidth(virtualWidth), m_virtualHeight(virtualHeight)
 {
-	m_transferBuffer = new DirectDrawSurfaceImpl(m_virtualWidth, m_virtualHeight, SDL_PIXELFORMAT_RGBA32);
+	m_transferBuffer = new DirectDrawSurfaceImpl(m_virtualWidth, m_virtualHeight, MORTAR_PIXELFORMAT_RGBA32);
 }
 
 FrameBufferImpl::~FrameBufferImpl()
@@ -54,10 +54,10 @@ HRESULT FrameBufferImpl::Blt(
 	}
 
 	if ((dwFlags & DDBLT_COLORFILL) == DDBLT_COLORFILL) {
-		Uint8 a = (lpDDBltFx->dwFillColor >> 24) & 0xFF;
-		Uint8 r = (lpDDBltFx->dwFillColor >> 16) & 0xFF;
-		Uint8 g = (lpDDBltFx->dwFillColor >> 8) & 0xFF;
-		Uint8 b = lpDDBltFx->dwFillColor & 0xFF;
+		uint8_t a = (lpDDBltFx->dwFillColor >> 24) & 0xFF;
+		uint8_t r = (lpDDBltFx->dwFillColor >> 16) & 0xFF;
+		uint8_t g = (lpDDBltFx->dwFillColor >> 8) & 0xFF;
+		uint8_t b = lpDDBltFx->dwFillColor & 0xFF;
 
 		float fa = a / 255.0f;
 		float fr = r / 255.0f;
@@ -65,8 +65,8 @@ HRESULT FrameBufferImpl::Blt(
 		float fb = b / 255.0f;
 
 		if (lpDestRect) {
-			SDL_Rect dstRect = ConvertRect(lpDestRect);
-			DDRenderer->Draw2DImage(NO_TEXTURE_ID, SDL_Rect{}, dstRect, {fr, fg, fb, fa});
+			MORTAR_Rect dstRect = ConvertRect(lpDestRect);
+			DDRenderer->Draw2DImage(NO_TEXTURE_ID, MORTAR_Rect{}, dstRect, {fr, fg, fb, fa});
 		}
 		else {
 			DDRenderer->Clear(fr, fg, fb);
@@ -78,13 +78,13 @@ HRESULT FrameBufferImpl::Blt(
 	if (!surface) {
 		return DDERR_GENERIC;
 	}
-	SDL_Rect srcRect =
-		lpSrcRect ? ConvertRect(lpSrcRect) : SDL_Rect{0, 0, surface->m_surface->w, surface->m_surface->h};
-	SDL_Rect dstRect =
-		lpDestRect ? ConvertRect(lpDestRect) : SDL_Rect{0, 0, (int) m_virtualWidth, (int) m_virtualHeight};
+	MORTAR_Rect srcRect =
+		lpSrcRect ? ConvertRect(lpSrcRect) : MORTAR_Rect{0, 0, surface->m_surface->w, surface->m_surface->h};
+	MORTAR_Rect dstRect =
+		lpDestRect ? ConvertRect(lpDestRect) : MORTAR_Rect{0, 0, (int) m_virtualWidth, (int) m_virtualHeight};
 	float scaleX = (float) dstRect.w / (float) srcRect.w;
 	float scaleY = (float) dstRect.h / (float) srcRect.h;
-	Uint32 textureId = DDRenderer->GetTextureId(surface->ToTexture(), true, scaleX, scaleY);
+	uint32_t textureId = DDRenderer->GetTextureId(surface->ToTexture(), true, scaleX, scaleY);
 	DDRenderer->Draw2DImage(textureId, srcRect, dstRect, {1.0f, 1.0f, 1.0f, 1.0f});
 
 	return DD_OK;
@@ -145,7 +145,7 @@ HRESULT FrameBufferImpl::GetPixelFormat(LPDDPIXELFORMAT lpDDPixelFormat)
 {
 	memset(lpDDPixelFormat, 0, sizeof(*lpDDPixelFormat));
 	lpDDPixelFormat->dwFlags = DDPF_RGB | DDPF_ALPHAPIXELS;
-	const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(m_transferBuffer->m_surface->format);
+	const MORTAR_PixelFormatDetails* details = MORTAR_GetPixelFormatDetails(m_transferBuffer->m_surface->format);
 	if (details->bits_per_pixel == 8) {
 		lpDDPixelFormat->dwFlags |= DDPF_PALETTEINDEXED8;
 	}
@@ -176,10 +176,10 @@ HRESULT FrameBufferImpl::Lock(LPRECT lpDestRect, DDSURFACEDESC* lpDDSurfaceDesc,
 	m_readOnlyLock = (dwFlags & DDLOCK_READONLY) == DDLOCK_READONLY;
 
 	if ((dwFlags & DDLOCK_WRITEONLY) == DDLOCK_WRITEONLY) {
-		const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(m_transferBuffer->m_surface->format);
-		SDL_Palette* palette = m_palette ? static_cast<DirectDrawPaletteImpl*>(m_palette)->m_palette : nullptr;
-		Uint32 color = SDL_MapRGBA(details, palette, 0, 0, 0, 0);
-		SDL_FillSurfaceRect(m_transferBuffer->m_surface, nullptr, color);
+		const MORTAR_PixelFormatDetails* details = MORTAR_GetPixelFormatDetails(m_transferBuffer->m_surface->format);
+		MORTAR_Palette* palette = m_palette ? static_cast<DirectDrawPaletteImpl*>(m_palette)->m_palette : nullptr;
+		uint32_t color = MORTAR_MapRGBA(details, palette, 0, 0, 0, 0);
+		MORTAR_FillSurfaceRect(m_transferBuffer->m_surface, nullptr, color);
 	}
 	else {
 		DDRenderer->Download(m_transferBuffer->m_surface);
@@ -210,7 +210,7 @@ HRESULT FrameBufferImpl::SetColorKey(DDColorKeyFlags dwFlags, LPDDCOLORKEY lpDDC
 
 HRESULT FrameBufferImpl::SetPalette(LPDIRECTDRAWPALETTE lpDDPalette)
 {
-	if (m_transferBuffer->m_surface->format != SDL_PIXELFORMAT_INDEX8) {
+	if (m_transferBuffer->m_surface->format != MORTAR_PIXELFORMAT_INDEX8) {
 		MINIWIN_NOT_IMPLEMENTED();
 	}
 
@@ -221,7 +221,7 @@ HRESULT FrameBufferImpl::SetPalette(LPDIRECTDRAWPALETTE lpDDPalette)
 	}
 
 	m_palette = lpDDPalette;
-	SDL_SetSurfacePalette(m_transferBuffer->m_surface, ((DirectDrawPaletteImpl*) m_palette)->m_palette);
+	MORTAR_SetSurfacePalette(m_transferBuffer->m_surface, ((DirectDrawPaletteImpl*) m_palette)->m_palette);
 	return DD_OK;
 }
 
