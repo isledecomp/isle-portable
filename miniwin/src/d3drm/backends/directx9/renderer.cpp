@@ -5,9 +5,9 @@
 #include "meshutils.h"
 #include "structs.h"
 
-#include <SDL3/SDL.h>
 #include <algorithm>
 #include <cstring>
+#include <mortar/mortar.h>
 #include <vector>
 
 static_assert(sizeof(Matrix4x4) == sizeof(D3DRMMATRIX4D), "Matrix4x4 is wrong size");
@@ -26,12 +26,8 @@ DirectX9Renderer::DirectX9Renderer(DWORD width, DWORD height)
 	m_height = height;
 	m_virtualWidth = width;
 	m_virtualHeight = height;
-	Actual_Initialize(
-		SDL_GetPointerProperty(SDL_GetWindowProperties(DDWindow), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL),
-		width,
-		height
-	);
-	m_renderedImage = SDL_CreateSurface(m_width, m_height, SDL_PIXELFORMAT_RGBA32);
+	Actual_Initialize(MORTAR_EXT_GetWindowProperty(DDWindow, MORTAR_WINDOW_PROPERTY_HWND, nullptr), width, height);
+	m_renderedImage = MORTAR_CreateSurface(m_width, m_height, MORTAR_PIXELFORMAT_RGBA32);
 }
 
 DirectX9Renderer::~DirectX9Renderer()
@@ -55,10 +51,10 @@ void DirectX9Renderer::SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE f
 
 struct TextureDestroyContextDX9 {
 	DirectX9Renderer* renderer;
-	Uint32 textureId;
+	uint32_t textureId;
 };
 
-void DirectX9Renderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture)
+void DirectX9Renderer::AddTextureDestroyCallback(uint32_t id, IDirect3DRMTexture* texture)
 {
 	auto* ctx = new TextureDestroyContextDX9{this, id};
 	texture->AddDestroyCallback(
@@ -76,12 +72,12 @@ void DirectX9Renderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* 
 	);
 }
 
-Uint32 DirectX9Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUI, float scaleX, float scaleY)
+uint32_t DirectX9Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUI, float scaleX, float scaleY)
 {
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
 	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
 
-	for (Uint32 i = 0; i < m_textures.size(); ++i) {
+	for (uint32_t i = 0; i < m_textures.size(); ++i) {
 		auto& tex = m_textures[i];
 		if (tex.texture == texture) {
 			if (tex.version != texture->m_version) {
@@ -104,7 +100,7 @@ Uint32 DirectX9Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUI, f
 		return NO_TEXTURE_ID;
 	}
 
-	for (Uint32 i = 0; i < m_textures.size(); ++i) {
+	for (uint32_t i = 0; i < m_textures.size(); ++i) {
 		auto& tex = m_textures[i];
 		if (!tex.texture) {
 			tex.texture = texture;
@@ -116,8 +112,8 @@ Uint32 DirectX9Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUI, f
 	}
 
 	m_textures.push_back({texture, texture->m_version, newTex});
-	AddTextureDestroyCallback((Uint32) (m_textures.size() - 1), texture);
-	return (Uint32) (m_textures.size() - 1);
+	AddTextureDestroyCallback((uint32_t) (m_textures.size() - 1), texture);
+	return (uint32_t) (m_textures.size() - 1);
 }
 
 D3D9MeshCacheEntry UploadD3D9Mesh(const MeshGroup& meshGroup)
@@ -165,10 +161,10 @@ D3D9MeshCacheEntry UploadD3D9Mesh(const MeshGroup& meshGroup)
 
 struct D3D9MeshDestroyContext {
 	DirectX9Renderer* renderer;
-	Uint32 id;
+	uint32_t id;
 };
 
-void DirectX9Renderer::AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh)
+void DirectX9Renderer::AddMeshDestroyCallback(uint32_t id, IDirect3DRMMesh* mesh)
 {
 	auto* ctx = new D3D9MeshDestroyContext{this, id};
 	mesh->AddDestroyCallback(
@@ -191,9 +187,9 @@ void DirectX9Renderer::AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh)
 	);
 }
 
-Uint32 DirectX9Renderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup)
+uint32_t DirectX9Renderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup)
 {
-	for (Uint32 i = 0; i < m_meshs.size(); ++i) {
+	for (uint32_t i = 0; i < m_meshs.size(); ++i) {
 		auto& cache = m_meshs[i];
 		if (cache.meshGroup == meshGroup) {
 			if (cache.version != meshGroup->version) {
@@ -205,7 +201,7 @@ Uint32 DirectX9Renderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshG
 
 	auto newCache = UploadD3D9Mesh(*meshGroup);
 
-	for (Uint32 i = 0; i < m_meshs.size(); ++i) {
+	for (uint32_t i = 0; i < m_meshs.size(); ++i) {
 		if (!m_meshs[i].meshGroup) {
 			m_meshs[i] = std::move(newCache);
 			return i;
@@ -213,7 +209,7 @@ Uint32 DirectX9Renderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshG
 	}
 
 	m_meshs.push_back(std::move(newCache));
-	return static_cast<Uint32>(m_meshs.size() - 1);
+	return static_cast<uint32_t>(m_meshs.size() - 1);
 }
 
 HRESULT DirectX9Renderer::BeginFrame()
@@ -273,7 +269,12 @@ void DirectX9Renderer::Flip()
 	Actual_Flip();
 }
 
-void DirectX9Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect, FColor color)
+void DirectX9Renderer::Draw2DImage(
+	uint32_t textureId,
+	const MORTAR_Rect& srcRect,
+	const MORTAR_Rect& dstRect,
+	FColor color
+)
 {
 	Actual_Draw2DImage(m_textures[textureId].dxTexture, srcRect, dstRect, color);
 }
@@ -282,7 +283,7 @@ void DirectX9Renderer::SetDither(bool dither)
 {
 }
 
-void DirectX9Renderer::Download(SDL_Surface* target)
+void DirectX9Renderer::Download(MORTAR_Surface* target)
 {
 	Actual_Download(target);
 }

@@ -13,20 +13,20 @@ LegoPaletteEntry::LegoPaletteEntry()
 	m_color.r = 0;
 	m_color.g = 0;
 	m_color.b = 0;
-	m_color.a = SDL_ALPHA_OPAQUE;
+	m_color.a = MORTAR_ALPHA_OPAQUE;
 }
 
 // FUNCTION: LEGO1 0x100994d0
 LegoResult LegoPaletteEntry::Read(LegoStorage* p_storage)
 {
 	LegoResult result;
-	if ((result = p_storage->Read(&m_color.r, sizeof(Uint8))) != SUCCESS) {
+	if ((result = p_storage->Read(&m_color.r, sizeof(uint8_t))) != SUCCESS) {
 		return result;
 	}
-	if ((result = p_storage->Read(&m_color.g, sizeof(Uint8))) != SUCCESS) {
+	if ((result = p_storage->Read(&m_color.g, sizeof(uint8_t))) != SUCCESS) {
 		return result;
 	}
-	if ((result = p_storage->Read(&m_color.b, sizeof(Uint8))) != SUCCESS) {
+	if ((result = p_storage->Read(&m_color.b, sizeof(uint8_t))) != SUCCESS) {
 		return result;
 	}
 	return SUCCESS;
@@ -36,13 +36,13 @@ LegoResult LegoPaletteEntry::Read(LegoStorage* p_storage)
 LegoResult LegoPaletteEntry::Write(LegoStorage* p_storage) const
 {
 	LegoResult result;
-	if ((result = p_storage->Write(&m_color.r, sizeof(Uint8))) != SUCCESS) {
+	if ((result = p_storage->Write(&m_color.r, sizeof(uint8_t))) != SUCCESS) {
 		return result;
 	}
-	if ((result = p_storage->Write(&m_color.g, sizeof(Uint8))) != SUCCESS) {
+	if ((result = p_storage->Write(&m_color.g, sizeof(uint8_t))) != SUCCESS) {
 		return result;
 	}
-	if ((result = p_storage->Write(&m_color.b, sizeof(Uint8))) != SUCCESS) {
+	if ((result = p_storage->Write(&m_color.b, sizeof(uint8_t))) != SUCCESS) {
 		return result;
 	}
 	return SUCCESS;
@@ -58,15 +58,15 @@ LegoImage::LegoImage()
 // FUNCTION: LEGO1 0x100995a0
 LegoImage::LegoImage(LegoU32 p_width, LegoU32 p_height)
 {
-	m_surface = SDL_CreateSurface(p_width, p_height, SDL_PIXELFORMAT_INDEX8);
+	m_surface = MORTAR_CreateSurface(p_width, p_height, MORTAR_PIXELFORMAT_INDEX8);
 	m_palette = NULL;
 }
 
 // FUNCTION: LEGO1 0x100995f0
 LegoImage::~LegoImage()
 {
-	SDL_DestroySurface(m_surface);
-	SDL_DestroyPalette(m_palette);
+	MORTAR_DestroySurface(m_surface);
+	MORTAR_DestroyPalette(m_palette);
 }
 
 // FUNCTION: LEGO1 0x10099610
@@ -84,9 +84,9 @@ LegoResult LegoImage::Read(LegoStorage* p_storage, LegoU32 p_square)
 		return result;
 	}
 	if (m_palette) {
-		SDL_DestroyPalette(m_palette);
+		MORTAR_DestroyPalette(m_palette);
 	}
-	m_palette = SDL_CreatePalette(count);
+	m_palette = MORTAR_CreatePalette(count);
 	for (LegoU32 i = 0; i < count; i++) {
 		LegoPaletteEntry paletteEntry;
 		if ((result = paletteEntry.Read(p_storage)) != SUCCESS) {
@@ -95,19 +95,19 @@ LegoResult LegoImage::Read(LegoStorage* p_storage, LegoU32 p_square)
 		m_palette->colors[i] = paletteEntry.GetColor();
 	}
 	if (m_surface) {
-		SDL_DestroySurface(m_surface);
+		MORTAR_DestroySurface(m_surface);
 	}
-	m_surface = SDL_CreateSurface(width, height, SDL_PIXELFORMAT_INDEX8);
+	m_surface = MORTAR_CreateSurface(width, height, MORTAR_PIXELFORMAT_INDEX8);
 	if ((result = p_storage->Read(m_surface->pixels, width * height)) != SUCCESS) {
 		return result;
 	}
 
 	if (p_square && width != height) {
-		SDL_Surface* newSurface;
+		MORTAR_Surface* newSurface;
 
 		if (height < width) {
 			LegoU32 aspect = width / height;
-			newSurface = SDL_CreateSurface(width, width, SDL_PIXELFORMAT_INDEX8);
+			newSurface = MORTAR_CreateSurface(width, width, MORTAR_PIXELFORMAT_INDEX8);
 			LegoU8* src = (LegoU8*) m_surface->pixels;
 			LegoU8* dst = (LegoU8*) newSurface->pixels;
 
@@ -125,7 +125,7 @@ LegoResult LegoImage::Read(LegoStorage* p_storage, LegoU32 p_square)
 		}
 		else {
 			LegoU32 aspect = height / width;
-			newSurface = SDL_CreateSurface(height, height, SDL_PIXELFORMAT_INDEX8);
+			newSurface = MORTAR_CreateSurface(height, height, MORTAR_PIXELFORMAT_INDEX8);
 			LegoU8* src = (LegoU8*) m_surface->pixels;
 			LegoU8* dst = (LegoU8*) newSurface->pixels;
 
@@ -145,7 +145,7 @@ LegoResult LegoImage::Read(LegoStorage* p_storage, LegoU32 p_square)
 			width = height;
 		}
 
-		SDL_DestroySurface(m_surface);
+		MORTAR_DestroySurface(m_surface);
 		m_surface = newSurface;
 	}
 

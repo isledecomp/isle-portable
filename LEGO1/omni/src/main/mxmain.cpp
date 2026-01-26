@@ -17,8 +17,8 @@
 #include "mxvariabletable.h"
 #include "mxvideomanager.h"
 
-#include <SDL3/SDL_filesystem.h>
-#include <SDL3/SDL_log.h>
+#include <mortar/mortar_filesystem.h>
+#include <mortar/mortar_log.h>
 
 // GLOBAL: LEGO1 0x101015b8
 MxString g_hdPath = "";
@@ -167,7 +167,7 @@ MxResult MxOmni::Create(MxOmniCreateParam& p_param)
 	}
 
 	{
-		Uint32 event = SDL_RegisterEvents(3);
+		uint32_t event = MORTAR_RegisterEvents(3);
 		g_legoSdlEvents.m_windowsMessage = event + 0;
 		g_legoSdlEvents.m_presenterProgress = event + 1;
 		g_legoSdlEvents.m_gameEvent = event + 2;
@@ -443,22 +443,22 @@ void MxOmni::Resume()
 vector<MxString> MxOmni::GlobIsleFiles(const MxString& p_path)
 {
 	int count;
-	char** files = SDL_GlobDirectory(p_path.GetData(), NULL, 0, &count);
+	char** files = MORTAR_GlobDirectory(p_path.GetData(), NULL, &count);
 	vector<MxString> result;
 
 	if (files == NULL) {
-		SDL_Log("Error enumerating files for path %s (%s)", p_path.GetData(), SDL_GetError());
+		MORTAR_Log("Error enumerating files for path %s (%s)", p_path.GetData(), MORTAR_GetError());
 		return result;
 	}
 
 	for (int i = 0; i < count; i++) {
-		if (!SDL_strncasecmp(files[i], "lego", 4)) {
+		if (!MORTAR_strncasecmp(files[i], "lego", 4)) {
 			result.emplace_back(files[i]);
 		}
 	}
 
-	SDL_Log("Found %d game files in %s", count, p_path.GetData());
+	MORTAR_Log("Found %d game files in %s", count, p_path.GetData());
 
-	SDL_free(files);
+	MORTAR_free(files);
 	return result;
 }

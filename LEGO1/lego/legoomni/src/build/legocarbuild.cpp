@@ -30,9 +30,9 @@
 #include "racecar_actions.h"
 #include "scripts.h"
 
-#include <SDL3/SDL_stdinc.h>
-#include <SDL3/SDL_timer.h>
 #include <isle.h>
+#include <mortar/mortar_stdinc.h>
+#include <mortar/mortar_timer.h>
 #include <stdio.h>
 #include <vec.h>
 
@@ -559,7 +559,7 @@ MxResult LegoCarBuild::Tickle()
 	}
 
 	if (m_lastActorScript) {
-		MxULong time = SDL_GetTicks();
+		MxULong time = MORTAR_GetTicks();
 		MxULong dTime = (time - m_lastActorScriptStartTime) / 100;
 
 		if (m_carId == RaceCar_Actor) {
@@ -1324,30 +1324,30 @@ void LegoCarBuild::ToggleColorControlsEnabled()
 void LegoCarBuild::EnableDecalForSelectedPart(MxBool p_enabled)
 {
 	if (m_animPresenter->StringDoesNotEndOnZero(m_selectedPart->GetName()) && m_Decals_Ctl) {
-		if (SDL_strncasecmp(m_selectedPart->GetName(), "JSFRNT", strlen("JSFRNT")) == 0) {
+		if (MORTAR_strncasecmp(m_selectedPart->GetName(), "JSFRNT", strlen("JSFRNT")) == 0) {
 			m_Decal_Bitmap->Enable(p_enabled);
 			m_Decals_Ctl->Enable(p_enabled);
 			m_Decals_Ctl1->Enable(p_enabled);
 			m_Decals_Ctl2->Enable(p_enabled);
 			m_Decals_Ctl3->Enable(p_enabled);
 		}
-		else if (SDL_strncasecmp(m_selectedPart->GetName(), "JSWNSH", strlen("JSWNSH")) == 0) {
+		else if (MORTAR_strncasecmp(m_selectedPart->GetName(), "JSWNSH", strlen("JSWNSH")) == 0) {
 			m_Decal_Bitmap->Enable(p_enabled);
 			m_Decals_Ctl4->Enable(p_enabled);
 			m_Decals_Ctl5->Enable(p_enabled);
 			m_Decals_Ctl6->Enable(p_enabled);
 			m_Decals_Ctl7->Enable(p_enabled);
 		}
-		else if (SDL_strncasecmp(m_selectedPart->GetName(), "RCBACK", strlen("RCBACK")) == 0) {
+		else if (MORTAR_strncasecmp(m_selectedPart->GetName(), "RCBACK", strlen("RCBACK")) == 0) {
 			m_Decals_Ctl1->Enable(p_enabled);
 		}
-		else if (SDL_strncasecmp(m_selectedPart->GetName(), "RCTAIL", strlen("RCTAIL")) == 0) {
+		else if (MORTAR_strncasecmp(m_selectedPart->GetName(), "RCTAIL", strlen("RCTAIL")) == 0) {
 			m_Decals_Ctl2->Enable(p_enabled);
 		}
-		else if (m_Decals_Ctl1 && SDL_strncasecmp(m_selectedPart->GetName(), "chljety", strlen("chljety")) == 0) {
+		else if (m_Decals_Ctl1 && MORTAR_strncasecmp(m_selectedPart->GetName(), "chljety", strlen("chljety")) == 0) {
 			m_Decals_Ctl1->Enable(p_enabled);
 		}
-		else if (m_Decals_Ctl2 && SDL_strncasecmp(m_selectedPart->GetName(), "chrjety", strlen("chrjety")) == 0) {
+		else if (m_Decals_Ctl2 && MORTAR_strncasecmp(m_selectedPart->GetName(), "chrjety", strlen("chrjety")) == 0) {
 			m_Decals_Ctl2->Enable(p_enabled);
 		}
 		else if (m_Decals_Ctl) {
@@ -1511,7 +1511,7 @@ void LegoCarBuild::StartActorScriptByType(MxS32 p_actionType)
 		case LookupTableActionType::e_introduction1:
 		case LookupTableActionType::e_introduction2:
 		case LookupTableActionType::e_introduction3:
-			switch (SDL_rand(3)) {
+			switch (MORTAR_rand(3)) {
 			case 0:
 				m_lastActorScript = CopterScript::c_ips004d2_RunAnim;
 				StopPlayingActorScript();
@@ -1610,7 +1610,7 @@ void LegoCarBuild::StartActorScriptByType(MxS32 p_actionType)
 #endif
 
 	if (m_lastActorScript != 0) {
-		m_lastActorScriptStartTime = SDL_GetTicks();
+		m_lastActorScriptStartTime = MORTAR_GetTicks();
 	}
 }
 

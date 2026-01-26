@@ -23,7 +23,7 @@ Direct3DRMTextureImpl::~Direct3DRMTextureImpl()
 
 HRESULT Direct3DRMTextureImpl::QueryInterface(const GUID& riid, void** ppvObject)
 {
-	if (SDL_memcmp(&riid, &IID_IDirect3DRMTexture2, sizeof(GUID)) == 0) {
+	if (MORTAR_memcmp(&riid, &IID_IDirect3DRMTexture2, sizeof(GUID)) == 0) {
 		this->IUnknown::AddRef();
 		*ppvObject = static_cast<IDirect3DRMTexture2*>(this);
 		return DD_OK;

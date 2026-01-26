@@ -2,9 +2,9 @@
 
 #include "omni/include/mxvideoparam.h"
 
-#include <SDL3/SDL_log.h>
 #include <assert.h>
 #include <miniwin/miniwind3d.h>
+#include <mortar/mortar_log.h>
 #include <stdio.h> // for vsprintf
 
 DECOMP_SIZE_ASSERT(MxAssignedDevice, 0xe4)
@@ -228,9 +228,9 @@ BOOL MxDeviceEnumerate::EnumDirectDrawCallback(LPGUID p_guid, LPSTR p_driverDesc
 
 	result = lpDD->QueryInterface(IID_IDirect3DMiniwin, (void**) &miniwind3d);
 	if (result == DD_OK) {
-		MxVideoParam* videoParam = (MxVideoParam*) SDL_GetPointerProperty(
-			SDL_GetWindowProperties(reinterpret_cast<SDL_Window*>(m_hWnd)),
-			ISLE_PROP_WINDOW_CREATE_VIDEO_PARAM,
+		MxVideoParam* videoParam = (MxVideoParam*) MORTAR_EXT_GetWindowProperty(
+			reinterpret_cast<MORTAR_Window*>(m_hWnd),
+			MORTAR_WINDOW_PROPERTY_USER,
 			nullptr
 		);
 #ifndef MXDIRECTX_FOR_CONFIG
@@ -298,7 +298,7 @@ void MxDeviceEnumerate::BuildErrorString(const char* p_format, ...)
 	va_list args;
 
 	va_start(args, p_format);
-	SDL_LogMessageV(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_ERROR, p_format, args);
+	MORTAR_LogMessageV(MORTAR_LOG_CATEGORY_APPLICATION, MORTAR_LOG_PRIORITY_ERROR, p_format, args);
 	va_end(args);
 }
 

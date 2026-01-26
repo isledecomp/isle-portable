@@ -77,7 +77,7 @@ void FlattenSurfaces(
 }
 
 void Create2DTransformMatrix(
-	const SDL_Rect& dstRect,
+	const MORTAR_Rect& dstRect,
 	float scale,
 	float offsetX,
 	float offsetY,

@@ -6,7 +6,7 @@
 #include "mxaudiomanager.h"
 #include "mxminiaudio.h"
 
-#include <SDL3/SDL_audio.h>
+#include <mortar/mortar_audio.h>
 
 // VTABLE: LEGO1 0x100dc128
 // VTABLE: BETA10 0x101c1ce8
@@ -43,13 +43,13 @@ protected:
 
 	static void AudioStreamCallback(
 		void* p_userdata,
-		SDL_AudioStream* p_stream,
+		MORTAR_AudioStream* p_stream,
 		int p_additionalAmount,
 		int p_totalAmount
 	);
 
 	MxMiniaudio<ma_engine> m_engine;
-	SDL_AudioStream* m_stream;
+	MORTAR_AudioStream* m_stream;
 	undefined m_unk0x38[4];
 };
 

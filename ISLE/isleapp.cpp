@@ -37,19 +37,17 @@
 #include "viewmanager/viewmanager.h"
 
 #include <array>
-#include <extensions/extensions.h>
-#include <miniwin/miniwindevice.h>
-#include <type_traits>
-#include <vec.h>
-
-#define SDL_MAIN_USE_CALLBACKS
-#include <SDL3/SDL.h>
-#include <SDL3/SDL_main.h>
-#include <SDL3/SDL_revision.h>
 #include <errno.h>
+#include <extensions/extensions.h>
 #include <iniparser.h>
+#include <inttypes.h>
+#include <miniwin/miniwindevice.h>
+#include <mortar/mortar.h>
+#include <mortar/mortar_main.h>
 #include <stdlib.h>
 #include <time.h>
+#include <type_traits>
+#include <vec.h>
 
 #ifdef __EMSCRIPTEN__
 #include "emscripten/config.h"
@@ -137,7 +135,7 @@ bool g_dpadRight = false;
 // STRING: ISLE 0x4101dc
 #define WINDOW_TITLE "LEGO®"
 
-SDL_Window* window;
+MORTAR_Window* window;
 
 extern const char* g_files[46];
 
@@ -216,11 +214,11 @@ IsleApp::~IsleApp()
 		MxOmni::DestroyInstance();
 	}
 
-	SDL_free(m_hdPath);
-	SDL_free(m_cdPath);
-	SDL_free(m_deviceId);
-	SDL_free(m_savePath);
-	SDL_free(m_mediaPath);
+	MORTAR_free(m_hdPath);
+	MORTAR_free(m_cdPath);
+	MORTAR_free(m_deviceId);
+	MORTAR_free(m_savePath);
+	MORTAR_free(m_mediaPath);
 }
 
 // FUNCTION: ISLE 0x401260
@@ -232,7 +230,7 @@ void IsleApp::Close()
 	if (Lego()) {
 		GameState()->Save(0);
 		if (InputManager()) {
-			InputManager()->QueueEvent(c_notificationKeyPress, 0, 0, 0, SDLK_SPACE);
+			InputManager()->QueueEvent(c_notificationKeyPress, 0, 0, 0, MORTARK_SPACE);
 		}
 
 		VideoManager()->Get3DManager()->GetLego3DView()->GetViewManager()->RemoveAll(NULL);
@@ -306,34 +304,22 @@ void IsleApp::SetupVideoFlags(
 	}
 }
 
-SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
+MORTAR_AppResult MORTAR_AppInit(void** appstate, int argc, char** argv)
 {
 	*appstate = NULL;
 
-	{
-		int version = SDL_GetVersion();
-		SDL_Log(
-			"SDL version %d.%d.%d (%s)",
-			SDL_VERSIONNUM_MAJOR(version),
-			SDL_VERSIONNUM_MINOR(version),
-			SDL_VERSIONNUM_MICRO(version),
-			SDL_GetRevision()
-		);
-	}
+	MORTAR_Log("MORTAR backend: %s", MORTAR_GetBackendDescription());
 
-	SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
-	SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
-
-	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD | SDL_INIT_HAPTIC)) {
+	if (!MORTAR_Init()) {
 		char buffer[256];
-		SDL_snprintf(
+		MORTAR_snprintf(
 			buffer,
 			sizeof(buffer),
-			"\"LEGO® Island\" failed to start.\nPlease quit all other applications and try again.\nSDL error: %s",
-			SDL_GetError()
+			"\"LEGO® Island\" failed to start.\nPlease quit all other applications and try again.\nMORTAR error: %s",
+			MORTAR_GetError()
 		);
-		Any_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "LEGO® Island Error", buffer, NULL);
-		return SDL_APP_FAILURE;
+		Any_ShowSimpleMessageBox(MORTAR_MESSAGEBOX_ERROR, "LEGO® Island Error", buffer, NULL);
+		return MORTAR_APP_FAILURE;
 	}
 
 	// [library:window]
@@ -361,38 +347,38 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 #endif
 
 	switch (g_isle->ParseArguments(argc, argv)) {
-	case SDL_APP_FAILURE:
+	case MORTAR_APP_FAILURE:
 		Any_ShowSimpleMessageBox(
-			SDL_MESSAGEBOX_ERROR,
+			MORTAR_MESSAGEBOX_ERROR,
 			"LEGO® Island Error",
 			"\"LEGO® Island\" failed to start.  Invalid CLI arguments.",
 			window
 		);
-		return SDL_APP_FAILURE;
-	case SDL_APP_SUCCESS:
-		return SDL_APP_SUCCESS;
-	case SDL_APP_CONTINUE:
+		return MORTAR_APP_FAILURE;
+	case MORTAR_APP_SUCCESS:
+		return MORTAR_APP_SUCCESS;
+	case MORTAR_APP_CONTINUE:
 		break;
 	}
 
 	// Create window
 	if (g_isle->SetupWindow() != SUCCESS) {
 		Any_ShowSimpleMessageBox(
-			SDL_MESSAGEBOX_ERROR,
+			MORTAR_MESSAGEBOX_ERROR,
 			"LEGO® Island Error",
 			"\"LEGO® Island\" failed to start.\nPlease quit all other applications and try again.",
 			window
 		);
-		return SDL_APP_FAILURE;
+		return MORTAR_APP_FAILURE;
 	}
 
 	// Get reference to window
 	*appstate = g_isle->GetWindowHandle();
 
 #ifdef __EMSCRIPTEN__
-	SDL_AddEventWatch(
-		[](void* userdata, SDL_Event* event) -> bool {
-			if (event->type == SDL_EVENT_TERMINATING && g_isle && g_isle->GetGameStarted()) {
+	MORTAR_AddEventWatch(
+		[](void* userdata, MORTAR_Event* event) -> bool {
+			if (event->type == MORTAR_EVENT_TERMINATING && g_isle && g_isle->GetGameStarted()) {
 				GameState()->Save(0);
 				return false;
 			}
@@ -405,24 +391,24 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 #ifdef __3DS__
 	N3DS_SetupAptHooks();
 #endif
-	return SDL_APP_CONTINUE;
+	return MORTAR_APP_CONTINUE;
 }
 
-SDL_AppResult SDL_AppIterate(void* appstate)
+MORTAR_AppResult MORTAR_AppIterate(void* appstate)
 {
 	if (g_closed) {
-		return SDL_APP_SUCCESS;
+		return MORTAR_APP_SUCCESS;
 	}
 
 	if (!g_isle->Tick()) {
 		Any_ShowSimpleMessageBox(
-			SDL_MESSAGEBOX_ERROR,
+			MORTAR_MESSAGEBOX_ERROR,
 			"LEGO® Island Error",
 			"\"LEGO® Island\" failed to start.\nPlease quit all other applications and try again."
 			"\nFailed to initialize; see logs for details",
 			NULL
 		);
-		return SDL_APP_FAILURE;
+		return MORTAR_APP_FAILURE;
 	}
 
 	if (!g_closed) {
@@ -434,19 +420,19 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 		}
 
 		if (g_closed) {
-			return SDL_APP_SUCCESS;
+			return MORTAR_APP_SUCCESS;
 		}
 
 		if (g_mousedown && g_mousemoved && g_isle) {
 			if (!g_isle->Tick()) {
 				Any_ShowSimpleMessageBox(
-					SDL_MESSAGEBOX_ERROR,
+					MORTAR_MESSAGEBOX_ERROR,
 					"LEGO® Island Error",
 					"\"LEGO® Island\" failed to start.\nPlease quit all other applications and try again."
 					"\nFailed to initialize; see logs for details",
 					NULL
 				);
-				return SDL_APP_FAILURE;
+				return MORTAR_APP_FAILURE;
 			}
 		}
 
@@ -457,13 +443,13 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 		g_isle->MoveVirtualMouseViaJoystick();
 	}
 
-	return SDL_APP_CONTINUE;
+	return MORTAR_APP_CONTINUE;
 }
 
-SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
+MORTAR_AppResult MORTAR_AppEvent(void* appstate, MORTAR_Event* event)
 {
 	if (!g_isle) {
-		return SDL_APP_CONTINUE;
+		return MORTAR_APP_CONTINUE;
 	}
 
 	if (InputManager()) {
@@ -471,18 +457,18 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 	}
 
 	switch (event->type) {
-	case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
-	case SDL_EVENT_MOUSE_MOTION:
-	case SDL_EVENT_MOUSE_BUTTON_DOWN:
-	case SDL_EVENT_MOUSE_BUTTON_UP:
-	case SDL_EVENT_FINGER_MOTION:
-	case SDL_EVENT_FINGER_DOWN:
-	case SDL_EVENT_FINGER_UP:
-	case SDL_EVENT_FINGER_CANCELED:
+	case MORTAR_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+	case MORTAR_EVENT_MOUSE_MOTION:
+	case MORTAR_EVENT_MOUSE_BUTTON_DOWN:
+	case MORTAR_EVENT_MOUSE_BUTTON_UP:
+	case MORTAR_EVENT_FINGER_MOTION:
+	case MORTAR_EVENT_FINGER_DOWN:
+	case MORTAR_EVENT_FINGER_UP:
+	case MORTAR_EVENT_FINGER_CANCELED:
 		IDirect3DRMMiniwinDevice* device = GetD3DRMMiniwinDevice();
 		if (device) {
 			if (!device->ConvertEventToRenderCoordinates(event)) {
-				SDL_Log("Failed to convert event coordinates: %s", SDL_GetError());
+				MORTAR_Log("Failed to convert event coordinates: %s", MORTAR_GetError());
 			}
 
 			device->Release();
@@ -497,24 +483,24 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 #ifdef __vita__
 	// reject back touch panel
 	switch (event->type) {
-	case SDL_EVENT_FINGER_MOTION:
-	case SDL_EVENT_FINGER_DOWN:
-	case SDL_EVENT_FINGER_UP:
-	case SDL_EVENT_FINGER_CANCELED:
+	case MORTAR_EVENT_FINGER_MOTION:
+	case MORTAR_EVENT_FINGER_DOWN:
+	case MORTAR_EVENT_FINGER_UP:
+	case MORTAR_EVENT_FINGER_CANCELED:
 		if (event->tfinger.touchID == 2) {
-			return SDL_APP_CONTINUE;
+			return MORTAR_APP_CONTINUE;
 		}
 	}
 #endif
 
 	switch (event->type) {
-	case SDL_EVENT_WINDOW_FOCUS_GAINED:
+	case MORTAR_EVENT_WINDOW_FOCUS_GAINED:
 		if (!g_isle->GetActiveInBackground()) {
 			g_isle->SetWindowActive(TRUE);
 			Lego()->Resume();
 		}
 		break;
-	case SDL_EVENT_WINDOW_FOCUS_LOST:
+	case MORTAR_EVENT_WINDOW_FOCUS_LOST:
 		if (!g_isle->GetActiveInBackground() && g_isle->GetGameStarted()) {
 			g_isle->SetWindowActive(FALSE);
 			Lego()->Pause();
@@ -523,23 +509,23 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 #endif
 		}
 		break;
-	case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
-	case SDL_EVENT_QUIT:
+	case MORTAR_EVENT_WINDOW_CLOSE_REQUESTED:
+	case MORTAR_EVENT_QUIT:
 		if (!g_closed) {
 			delete g_isle;
 			g_isle = NULL;
 			g_closed = TRUE;
 		}
 		break;
-	case SDL_EVENT_KEY_DOWN: {
+	case MORTAR_EVENT_KEY_DOWN: {
 		if (event->key.repeat) {
 			break;
 		}
 
-		SDL_Keycode keyCode = event->key.key;
+		MORTAR_Keycode keyCode = event->key.key;
 
-		if ((event->key.mod & SDL_KMOD_LALT) && keyCode == SDLK_RETURN) {
-			SDL_SetWindowFullscreen(window, !(SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN));
+		if ((event->key.mod & MORTAR_KMOD_LALT) && keyCode == MORTARK_RETURN) {
+			MORTAR_SetWindowFullscreen(window, !(MORTAR_GetWindowFlags(window) & MORTAR_WINDOW_FULLSCREEN));
 		}
 		else {
 			if (InputManager()) {
@@ -548,51 +534,51 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		}
 		break;
 	}
-	case SDL_EVENT_KEYBOARD_ADDED:
+	case MORTAR_EVENT_KEYBOARD_ADDED:
 		if (InputManager()) {
 			InputManager()->AddKeyboard(event->kdevice.which);
 		}
 		break;
-	case SDL_EVENT_KEYBOARD_REMOVED:
+	case MORTAR_EVENT_KEYBOARD_REMOVED:
 		if (InputManager()) {
 			InputManager()->RemoveKeyboard(event->kdevice.which);
 		}
 		break;
-	case SDL_EVENT_MOUSE_ADDED:
+	case MORTAR_EVENT_MOUSE_ADDED:
 		if (InputManager()) {
 			InputManager()->AddMouse(event->mdevice.which);
 		}
 		break;
-	case SDL_EVENT_MOUSE_REMOVED:
+	case MORTAR_EVENT_MOUSE_REMOVED:
 		if (InputManager()) {
 			InputManager()->RemoveMouse(event->mdevice.which);
 		}
 		break;
-	case SDL_EVENT_GAMEPAD_ADDED:
+	case MORTAR_EVENT_GAMEPAD_ADDED:
 		if (InputManager()) {
 			InputManager()->AddJoystick(event->jdevice.which);
 		}
 		break;
-	case SDL_EVENT_GAMEPAD_REMOVED:
+	case MORTAR_EVENT_GAMEPAD_REMOVED:
 		if (InputManager()) {
 			InputManager()->RemoveJoystick(event->jdevice.which);
 		}
 		break;
-	case SDL_EVENT_GAMEPAD_BUTTON_DOWN: {
+	case MORTAR_EVENT_GAMEPAD_BUTTON_DOWN: {
 		switch (event->gbutton.button) {
-		case SDL_GAMEPAD_BUTTON_DPAD_UP:
+		case MORTAR_GAMEPAD_BUTTON_DPAD_UP:
 			g_dpadUp = true;
 			break;
-		case SDL_GAMEPAD_BUTTON_DPAD_DOWN:
+		case MORTAR_GAMEPAD_BUTTON_DPAD_DOWN:
 			g_dpadDown = true;
 			break;
-		case SDL_GAMEPAD_BUTTON_DPAD_LEFT:
+		case MORTAR_GAMEPAD_BUTTON_DPAD_LEFT:
 			g_dpadLeft = true;
 			break;
-		case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
+		case MORTAR_GAMEPAD_BUTTON_DPAD_RIGHT:
 			g_dpadRight = true;
 			break;
-		case SDL_GAMEPAD_BUTTON_EAST:
+		case MORTAR_GAMEPAD_BUTTON_EAST:
 			g_mousedown = TRUE;
 			if (InputManager()) {
 				InputManager()->QueueEvent(
@@ -605,40 +591,40 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 			}
 			break;
 
-		case SDL_GAMEPAD_BUTTON_SOUTH:
+		case MORTAR_GAMEPAD_BUTTON_SOUTH:
 			if (InputManager()) {
-				InputManager()->QueueEvent(c_notificationKeyPress, SDLK_SPACE, 0, 0, SDLK_SPACE);
+				InputManager()->QueueEvent(c_notificationKeyPress, MORTARK_SPACE, 0, 0, MORTARK_SPACE);
 			}
 			break;
 
 #ifdef __vita__ // conflicts with screenshot button combination
-		case SDL_GAMEPAD_BUTTON_BACK:
+		case MORTAR_GAMEPAD_BUTTON_BACK:
 #else
-		case SDL_GAMEPAD_BUTTON_START:
+		case MORTAR_GAMEPAD_BUTTON_START:
 #endif
 			if (InputManager()) {
-				InputManager()->QueueEvent(c_notificationKeyPress, SDLK_ESCAPE, 0, 0, SDLK_ESCAPE);
+				InputManager()->QueueEvent(c_notificationKeyPress, MORTARK_ESCAPE, 0, 0, MORTARK_ESCAPE);
 			}
 			break;
 		}
 		break;
 	}
 
-	case SDL_EVENT_GAMEPAD_BUTTON_UP: {
+	case MORTAR_EVENT_GAMEPAD_BUTTON_UP: {
 		switch (event->gbutton.button) {
-		case SDL_GAMEPAD_BUTTON_DPAD_UP:
+		case MORTAR_GAMEPAD_BUTTON_DPAD_UP:
 			g_dpadUp = false;
 			break;
-		case SDL_GAMEPAD_BUTTON_DPAD_DOWN:
+		case MORTAR_GAMEPAD_BUTTON_DPAD_DOWN:
 			g_dpadDown = false;
 			break;
-		case SDL_GAMEPAD_BUTTON_DPAD_LEFT:
+		case MORTAR_GAMEPAD_BUTTON_DPAD_LEFT:
 			g_dpadLeft = false;
 			break;
-		case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
+		case MORTAR_GAMEPAD_BUTTON_DPAD_RIGHT:
 			g_dpadRight = false;
 			break;
-		case SDL_GAMEPAD_BUTTON_EAST:
+		case MORTAR_GAMEPAD_BUTTON_EAST:
 			g_mousedown = FALSE;
 			if (InputManager()) {
 				InputManager()->QueueEvent(
@@ -653,19 +639,19 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		}
 		break;
 	}
-	case SDL_EVENT_GAMEPAD_AXIS_MOTION: {
+	case MORTAR_EVENT_GAMEPAD_AXIS_MOTION: {
 		MxS16 axisValue = 0;
 		if (event->gaxis.value < -8000 || event->gaxis.value > 8000) {
 			// Ignore small axis values
 			axisValue = event->gaxis.value;
 		}
-		if (event->gaxis.axis == SDL_GAMEPAD_AXIS_RIGHTX) {
-			g_lastJoystickMouseX = ((MxFloat) axisValue) / SDL_JOYSTICK_AXIS_MAX * g_isle->GetCursorSensitivity();
+		if (event->gaxis.axis == MORTAR_GAMEPAD_AXIS_RIGHTX) {
+			g_lastJoystickMouseX = ((MxFloat) axisValue) / MORTAR_JOYSTICK_AXIS_MAX * g_isle->GetCursorSensitivity();
 		}
-		else if (event->gaxis.axis == SDL_GAMEPAD_AXIS_RIGHTY) {
-			g_lastJoystickMouseY = ((MxFloat) axisValue) / SDL_JOYSTICK_AXIS_MAX * g_isle->GetCursorSensitivity();
+		else if (event->gaxis.axis == MORTAR_GAMEPAD_AXIS_RIGHTY) {
+			g_lastJoystickMouseY = ((MxFloat) axisValue) / MORTAR_JOYSTICK_AXIS_MAX * g_isle->GetCursorSensitivity();
 		}
-		else if (event->gaxis.axis == SDL_GAMEPAD_AXIS_RIGHT_TRIGGER) {
+		else if (event->gaxis.axis == MORTAR_GAMEPAD_AXIS_RIGHT_TRIGGER) {
 			if (axisValue != 0 && !g_mousedown) {
 				g_mousedown = TRUE;
 
@@ -695,7 +681,7 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		}
 		break;
 	}
-	case SDL_EVENT_MOUSE_MOTION:
+	case MORTAR_EVENT_MOUSE_MOTION:
 		if (g_mouseWarped) {
 			g_mouseWarped = FALSE;
 			break;
@@ -716,13 +702,13 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		g_lastMouseX = event->motion.x;
 		g_lastMouseY = event->motion.y;
 
-		SDL_ShowCursor();
+		MORTAR_ShowCursor();
 		g_isle->SetDrawCursor(FALSE);
 		if (VideoManager()) {
 			VideoManager()->SetCursorBitmap(NULL);
 		}
 		break;
-	case SDL_EVENT_FINGER_MOTION: {
+	case MORTAR_EVENT_FINGER_MOTION: {
 		g_mousemoved = TRUE;
 
 		float x = event->tfinger.x * g_targetWidth;
@@ -740,27 +726,27 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		g_lastMouseX = x;
 		g_lastMouseY = y;
 
-		SDL_HideCursor();
+		MORTAR_HideCursor();
 		g_isle->SetDrawCursor(FALSE);
 		if (VideoManager()) {
 			VideoManager()->SetCursorBitmap(NULL);
 		}
 		break;
 	}
-	case SDL_EVENT_MOUSE_BUTTON_DOWN:
+	case MORTAR_EVENT_MOUSE_BUTTON_DOWN:
 		g_mousedown = TRUE;
 
 		if (InputManager()) {
 			InputManager()->QueueEvent(
 				c_notificationButtonDown,
-				IsleApp::MapMouseButtonFlagsToModifier(SDL_GetMouseState(NULL, NULL)),
+				IsleApp::MapMouseButtonFlagsToModifier(MORTAR_GetMouseState(NULL, NULL)),
 				event->button.x,
 				event->button.y,
 				0
 			);
 		}
 		break;
-	case SDL_EVENT_FINGER_DOWN: {
+	case MORTAR_EVENT_FINGER_DOWN: {
 		g_mousedown = TRUE;
 
 		float x = event->tfinger.x * g_targetWidth;
@@ -774,28 +760,28 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		g_lastMouseX = x;
 		g_lastMouseY = y;
 
-		SDL_HideCursor();
+		MORTAR_HideCursor();
 		g_isle->SetDrawCursor(FALSE);
 		if (VideoManager()) {
 			VideoManager()->SetCursorBitmap(NULL);
 		}
 		break;
 	}
-	case SDL_EVENT_MOUSE_BUTTON_UP:
+	case MORTAR_EVENT_MOUSE_BUTTON_UP:
 		g_mousedown = FALSE;
 
 		if (InputManager()) {
 			InputManager()->QueueEvent(
 				c_notificationButtonUp,
-				IsleApp::MapMouseButtonFlagsToModifier(SDL_GetMouseState(NULL, NULL)),
+				IsleApp::MapMouseButtonFlagsToModifier(MORTAR_GetMouseState(NULL, NULL)),
 				event->button.x,
 				event->button.y,
 				0
 			);
 		}
 		break;
-	case SDL_EVENT_FINGER_UP:
-	case SDL_EVENT_FINGER_CANCELED: {
+	case MORTAR_EVENT_FINGER_UP:
+	case MORTAR_EVENT_FINGER_CANCELED: {
 		g_mousedown = FALSE;
 
 		float x = event->tfinger.x * g_targetWidth;
@@ -822,7 +808,11 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 			}
 			break;
 		default:
-			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unknown SDL Windows message: 0x%" SDL_PRIx32, event->user.code);
+			MORTAR_LogError(
+				MORTAR_LOG_CATEGORY_APPLICATION,
+				"Unknown MORTAR Windows message: 0x%" PRIX32,
+				event->user.code
+			);
 			break;
 		}
 	}
@@ -837,14 +827,14 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 #endif
 
 		if (!g_isle->GetGameStarted() && action && state == MxPresenter::e_ready &&
-			!SDL_strncmp(action->GetObjectName(), "Lego_Smk", 8)) {
+			!MORTAR_strncmp(action->GetObjectName(), "Lego_Smk", 8)) {
 			g_isle->SetGameStarted(TRUE);
 
 #ifdef __EMSCRIPTEN__
-			Emscripten_SetupWindow((SDL_Window*) g_isle->GetWindowHandle());
+			Emscripten_SetupWindow((MORTAR_Window*) g_isle->GetWindowHandle());
 #endif
 
-			SDL_Log("Game started");
+			MORTAR_Log("Game started");
 		}
 	}
 	else if (event->user.type == g_legoSdlEvents.m_gameEvent) {
@@ -875,29 +865,29 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		}
 	}
 
-	return SDL_APP_CONTINUE;
+	return MORTAR_APP_CONTINUE;
 }
 
-void SDL_AppQuit(void* appstate, SDL_AppResult result)
+void MORTAR_AppQuit(void* appstate, MORTAR_AppResult result)
 {
 	if (appstate != NULL) {
-		SDL_DestroyWindow((SDL_Window*) appstate);
+		MORTAR_DestroyWindow((MORTAR_Window*) appstate);
 	}
 
-	SDL_Quit();
+	MORTAR_Quit();
 }
 
-MxU8 IsleApp::MapMouseButtonFlagsToModifier(SDL_MouseButtonFlags p_flags)
+MxU8 IsleApp::MapMouseButtonFlagsToModifier(MORTAR_MouseButtonFlags p_flags)
 {
 	// [library:window]
 	// Map button states to Windows button states (LegoEventNotificationParam)
 	// Not mapping mod keys SHIFT and CTRL since they are not used by the game.
 
 	MxU8 modifier = 0;
-	if (p_flags & SDL_BUTTON_LMASK) {
+	if (p_flags & MORTAR_BUTTON_LMASK) {
 		modifier |= LegoEventNotificationParam::c_lButtonState;
 	}
-	if (p_flags & SDL_BUTTON_RMASK) {
+	if (p_flags & MORTAR_BUTTON_RMASK) {
 		modifier |= LegoEventNotificationParam::c_rButtonState;
 	}
 
@@ -928,32 +918,32 @@ MxResult IsleApp::SetupWindow()
 	srand(time(NULL));
 
 	// [library:window] Use original game cursors in the resources instead?
-	m_cursorCurrent = m_cursorArrow = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_DEFAULT);
-	m_cursorBusy = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_WAIT);
-	m_cursorNo = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_NOT_ALLOWED);
-	SDL_SetCursor(m_cursorCurrent);
+	m_cursorCurrent = m_cursorArrow = MORTAR_CreateSystemCursor(MORTAR_SYSTEM_CURSOR_DEFAULT);
+	m_cursorBusy = MORTAR_CreateSystemCursor(MORTAR_SYSTEM_CURSOR_WAIT);
+	m_cursorNo = MORTAR_CreateSystemCursor(MORTAR_SYSTEM_CURSOR_NOT_ALLOWED);
+	MORTAR_SetCursor(m_cursorCurrent);
 	m_cursorCurrentBitmap = m_cursorArrowBitmap = &arrow_cursor;
 	m_cursorBusyBitmap = &busy_cursor;
 	m_cursorNoBitmap = &no_cursor;
 
-	SDL_PropertiesID props = SDL_CreateProperties();
-	SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, g_targetWidth);
-	SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, g_targetHeight);
-	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_FULLSCREEN_BOOLEAN, m_fullScreen);
-	SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, WINDOW_TITLE);
+	MORTAR_EX_CreateWindowProps createWindowProps = {};
+	createWindowProps.width = g_targetWidth;
+	createWindowProps.height = g_targetHeight;
+	createWindowProps.fullscreen = m_fullScreen;
+	createWindowProps.title = WINDOW_TITLE;
 #if defined(MINIWIN) && !defined(__3DS__) && !defined(WINDOWS_STORE) && !defined(__vita__)
-	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
-	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+	createWindowProps.opengl.enabled = true;
+	createWindowProps.opengl.doublebuffer = true;
+	createWindowProps.opengl.depth_size = 24;
 #endif
 
-	window = SDL_CreateWindowWithProperties(props);
-	SDL_SetPointerProperty(SDL_GetWindowProperties(window), ISLE_PROP_WINDOW_CREATE_VIDEO_PARAM, &m_videoParam);
+	window = MORTAR_EX_CreateWindow(&createWindowProps);
+	MORTAR_EXT_SetWindowProperty(window, MORTAR_WINDOW_PROPERTY_USER, &m_videoParam);
 
 	if (m_exclusiveFullScreen && m_fullScreen) {
-		SDL_DisplayMode closestMode;
-		SDL_DisplayID displayID = SDL_GetDisplayForWindow(window);
-		if (SDL_GetClosestFullscreenDisplayMode(
+		MORTAR_DisplayMode closestMode;
+		MORTAR_DisplayID displayID = MORTAR_GetDisplayForWindow(window);
+		if (MORTAR_GetClosestFullscreenDisplayMode(
 				displayID,
 				m_exclusiveXRes,
 				m_exclusiveYRes,
@@ -961,38 +951,39 @@ MxResult IsleApp::SetupWindow()
 				true,
 				&closestMode
 			)) {
-			SDL_SetWindowFullscreenMode(window, &closestMode);
+			MORTAR_SetWindowFullscreenMode(window, &closestMode);
 		}
 	}
 
 #ifdef MINIWIN
 	m_windowHandle = reinterpret_cast<HWND>(window);
 #else
-	m_windowHandle =
-		(HWND) SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
+	m_windowHandle = (HWND) MORTAR_EXT_GetWindowProperty(window, MORTAR_WINDOW_PROPERTY_HWND, NULL);
 #endif
-
-	SDL_DestroyProperties(props);
 
 	if (!m_windowHandle) {
 		return FAILURE;
 	}
 
-	SDL_IOStream* icon_stream = SDL_IOFromMem(isle_bmp, isle_bmp_len);
+	MORTAR_IOStream* icon_stream = MORTAR_IOFromMem(isle_bmp, isle_bmp_len);
 
 	if (icon_stream) {
-		SDL_Surface* icon = SDL_LoadBMP_IO(icon_stream, true);
+		MORTAR_Surface* icon = MORTAR_LoadBMP_IO(icon_stream, true);
 
 		if (icon) {
-			SDL_SetWindowIcon(window, icon);
-			SDL_DestroySurface(icon);
+			MORTAR_SetWindowIcon(window, icon);
+			MORTAR_DestroySurface(icon);
 		}
 		else {
-			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load icon: %s", SDL_GetError());
+			MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "Failed to load icon: %s", MORTAR_GetError());
 		}
 	}
 	else {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to open SDL_IOStream for icon: %s", SDL_GetError());
+		MORTAR_LogError(
+			MORTAR_LOG_CATEGORY_APPLICATION,
+			"Failed to open MORTAR_IOStream for icon: %s",
+			MORTAR_GetError()
+		);
 	}
 
 	if (!SetupLegoOmni()) {
@@ -1038,14 +1029,14 @@ MxResult IsleApp::SetupWindow()
 		}
 		MxDirect3D* d3d = LegoOmni::GetInstance()->GetVideoManager()->GetDirect3D();
 		if (d3d) {
-			SDL_Log(
+			MORTAR_Log(
 				"Direct3D driver name=\"%s\" description=\"%s\"",
 				d3d->GetDeviceName().c_str(),
 				d3d->GetDeviceDescription().c_str()
 			);
 		}
 		else {
-			SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Failed to get D3D device name and description");
+			MORTAR_LogWarn(MORTAR_LOG_CATEGORY_APPLICATION, "Failed to get D3D device name and description");
 		}
 		if (LegoOmni::GetInstance()->GetInputManager()) {
 			LegoOmni::GetInstance()->GetInputManager()->SetWasd(m_wasd);
@@ -1059,17 +1050,17 @@ MxResult IsleApp::SetupWindow()
 bool IsleApp::LoadConfig()
 {
 #ifdef IOS
-	const char* prefPath = SDL_GetUserFolder(SDL_FOLDER_DOCUMENTS);
+	const char* prefPath = MORTAR_GetUserFolder(MORTAR_FOLDER_DOCUMENTS);
 #elif defined(ANDROID)
-	MxString androidPath = MxString(SDL_GetAndroidExternalStoragePath()) + "/";
+	MxString androidPath = MxString(MORTAR_GetAndroidExternalStoragePath()) + "/";
 	const char* prefPath = androidPath.GetData();
 #elif defined(EMSCRIPTEN)
 	if (m_iniPath && !Emscripten_SetupConfig(m_iniPath)) {
 		m_iniPath = NULL;
 	}
-	char* prefPath = SDL_GetPrefPath("isledecomp", "isle");
+	char* prefPath = MORTAR_GetPrefPath("isledecomp", "isle");
 #else
-	char* prefPath = SDL_GetPrefPath("isledecomp", "isle");
+	char* prefPath = MORTAR_GetPrefPath("isledecomp", "isle");
 #endif
 
 	MxString iniConfig;
@@ -1084,7 +1075,7 @@ bool IsleApp::LoadConfig()
 		iniConfig = "isle.ini";
 	}
 
-	SDL_Log("Reading configuration from \"%s\"", iniConfig.GetData());
+	MORTAR_Log("Reading configuration from \"%s\"", iniConfig.GetData());
 
 	dictionary* dict = iniparser_load(iniConfig.GetData());
 
@@ -1094,16 +1085,16 @@ bool IsleApp::LoadConfig()
 		iniparser_freedict(dict);
 
 		if (m_iniPath) {
-			SDL_Log("Invalid config path '%s'", m_iniPath);
+			MORTAR_Log("Invalid config path '%s'", m_iniPath);
 			return false;
 		}
 
-		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Loading sane defaults");
+		MORTAR_LogInfo(MORTAR_LOG_CATEGORY_APPLICATION, "Loading sane defaults");
 		FILE* iniFP = fopen(iniConfig.GetData(), "wb");
 
 		if (!iniFP) {
-			SDL_LogError(
-				SDL_LOG_CATEGORY_APPLICATION,
+			MORTAR_LogError(
+				MORTAR_LOG_CATEGORY_APPLICATION,
 				"Failed to write config at '%s': %s",
 				iniConfig.GetData(),
 				strerror(errno)
@@ -1115,9 +1106,9 @@ bool IsleApp::LoadConfig()
 		dict = dictionary_new(0);
 		iniparser_set(dict, "isle", NULL);
 
-		iniparser_set(dict, "isle:diskpath", SDL_GetBasePath());
+		iniparser_set(dict, "isle:diskpath", MORTAR_GetBasePath());
 		iniparser_set(dict, "isle:cdpath", MxOmni::GetCD());
-		iniparser_set(dict, "isle:mediapath", SDL_GetBasePath());
+		iniparser_set(dict, "isle:mediapath", MORTAR_GetBasePath());
 		iniparser_set(dict, "isle:savepath", prefPath);
 
 		iniparser_set(dict, "isle:Flip Surfaces", m_flipSurfaces ? "true" : "false");
@@ -1128,28 +1119,28 @@ bool IsleApp::LoadConfig()
 		iniparser_set(dict, "isle:3DSound", m_use3dSound ? "true" : "false");
 		iniparser_set(dict, "isle:Music", m_useMusic ? "true" : "false");
 
-		SDL_snprintf(buf, sizeof(buf), "%f", m_cursorSensitivity);
+		MORTAR_snprintf(buf, sizeof(buf), "%f", m_cursorSensitivity);
 		iniparser_set(dict, "isle:Cursor Sensitivity", buf);
 
 		iniparser_set(dict, "isle:Back Buffers in Video RAM", "-1");
 
-		iniparser_set(dict, "isle:Island Quality", SDL_itoa(m_islandQuality, buf, 10));
-		iniparser_set(dict, "isle:Island Texture", SDL_itoa(m_islandTexture, buf, 10));
-		SDL_snprintf(buf, sizeof(buf), "%f", m_maxLod);
+		iniparser_set(dict, "isle:Island Quality", MORTAR_itoa(m_islandQuality, buf, 10));
+		iniparser_set(dict, "isle:Island Texture", MORTAR_itoa(m_islandTexture, buf, 10));
+		MORTAR_snprintf(buf, sizeof(buf), "%f", m_maxLod);
 		iniparser_set(dict, "isle:Max LOD", buf);
-		iniparser_set(dict, "isle:Max Allowed Extras", SDL_itoa(m_maxAllowedExtras, buf, 10));
-		iniparser_set(dict, "isle:Transition Type", SDL_itoa(m_transitionType, buf, 10));
-		iniparser_set(dict, "isle:Touch Scheme", SDL_itoa(m_touchScheme, buf, 10));
+		iniparser_set(dict, "isle:Max Allowed Extras", MORTAR_itoa(m_maxAllowedExtras, buf, 10));
+		iniparser_set(dict, "isle:Transition Type", MORTAR_itoa(m_transitionType, buf, 10));
+		iniparser_set(dict, "isle:Touch Scheme", MORTAR_itoa(m_touchScheme, buf, 10));
 		iniparser_set(dict, "isle:Haptic", m_haptic ? "true" : "false");
 		iniparser_set(dict, "isle:WASD", m_wasd ? "true" : "false");
-		iniparser_set(dict, "isle:Horizontal Resolution", SDL_itoa(m_xRes, buf, 10));
-		iniparser_set(dict, "isle:Vertical Resolution", SDL_itoa(m_yRes, buf, 10));
-		iniparser_set(dict, "isle:Exclusive X Resolution", SDL_itoa(m_exclusiveXRes, buf, 10));
-		iniparser_set(dict, "isle:Exclusive Y Resolution", SDL_itoa(m_exclusiveYRes, buf, 10));
-		iniparser_set(dict, "isle:Exclusive Framerate", SDL_itoa(m_exclusiveFrameRate, buf, 10));
-		iniparser_set(dict, "isle:Frame Delta", SDL_itoa(m_frameDelta, buf, 10));
-		iniparser_set(dict, "isle:MSAA", SDL_itoa(m_msaaSamples, buf, 10));
-		iniparser_set(dict, "isle:Anisotropic", SDL_itoa(m_anisotropic, buf, 10));
+		iniparser_set(dict, "isle:Horizontal Resolution", MORTAR_itoa(m_xRes, buf, 10));
+		iniparser_set(dict, "isle:Vertical Resolution", MORTAR_itoa(m_yRes, buf, 10));
+		iniparser_set(dict, "isle:Exclusive X Resolution", MORTAR_itoa(m_exclusiveXRes, buf, 10));
+		iniparser_set(dict, "isle:Exclusive Y Resolution", MORTAR_itoa(m_exclusiveYRes, buf, 10));
+		iniparser_set(dict, "isle:Exclusive Framerate", MORTAR_itoa(m_exclusiveFrameRate, buf, 10));
+		iniparser_set(dict, "isle:Frame Delta", MORTAR_itoa(m_frameDelta, buf, 10));
+		iniparser_set(dict, "isle:MSAA", MORTAR_itoa(m_msaaSamples, buf, 10));
+		iniparser_set(dict, "isle:Anisotropic", MORTAR_itoa(m_anisotropic, buf, 10));
 		iniparser_set(dict, "isle:Active in background", m_activeInBackground ? "true" : "false");
 
 #ifdef EXTENSIONS
@@ -1179,7 +1170,7 @@ bool IsleApp::LoadConfig()
 		VITA_SetupDefaultConfigOverrides(dict);
 #endif
 		iniparser_dump_ini(dict, iniFP);
-		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "New config written at '%s'", iniConfig.GetData());
+		MORTAR_LogInfo(MORTAR_LOG_CATEGORY_APPLICATION, "New config written at '%s'", iniConfig.GetData());
 		fclose(iniFP);
 	}
 
@@ -1187,10 +1178,10 @@ bool IsleApp::LoadConfig()
 	Emscripten_SetupDefaultConfigOverrides(dict);
 #endif
 
-	MxOmni::SetHD((m_hdPath = SDL_strdup(iniparser_getstring(dict, "isle:diskpath", SDL_GetBasePath()))));
-	MxOmni::SetCD((m_cdPath = SDL_strdup(iniparser_getstring(dict, "isle:cdpath", MxOmni::GetCD()))));
-	m_savePath = SDL_strdup(iniparser_getstring(dict, "isle:savepath", prefPath));
-	m_mediaPath = SDL_strdup(iniparser_getstring(dict, "isle:mediapath", m_hdPath));
+	MxOmni::SetHD((m_hdPath = MORTAR_strdup(iniparser_getstring(dict, "isle:diskpath", MORTAR_GetBasePath()))));
+	MxOmni::SetCD((m_cdPath = MORTAR_strdup(iniparser_getstring(dict, "isle:cdpath", MxOmni::GetCD()))));
+	m_savePath = MORTAR_strdup(iniparser_getstring(dict, "isle:savepath", prefPath));
+	m_mediaPath = MORTAR_strdup(iniparser_getstring(dict, "isle:mediapath", m_hdPath));
 	m_flipSurfaces = iniparser_getboolean(dict, "isle:Flip Surfaces", m_flipSurfaces);
 	m_fullScreen = iniparser_getboolean(dict, "isle:Full Screen", m_fullScreen);
 	m_exclusiveFullScreen = iniparser_getboolean(dict, "isle:Exclusive Full Screen", m_exclusiveFullScreen);
@@ -1239,14 +1230,14 @@ bool IsleApp::LoadConfig()
 
 	const char* deviceId = iniparser_getstring(dict, "isle:3D Device ID", NULL);
 	if (deviceId != NULL) {
-		m_deviceId = SDL_strdup(deviceId);
+		m_deviceId = MORTAR_strdup(deviceId);
 	}
 
 #ifdef EXTENSIONS
 	for (const char* key : Extensions::availableExtensions) {
 		if (iniparser_getboolean(dict, key, 0)) {
 			std::vector<const char*> extensionKeys;
-			const char* section = SDL_strchr(key, ':') + 1;
+			const char* section = MORTAR_strchr(key, ':') + 1;
 			extensionKeys.resize(iniparser_getsecnkeys(dict, section));
 			iniparser_getseckeys(dict, section, extensionKeys.data());
 
@@ -1264,7 +1255,7 @@ bool IsleApp::LoadConfig()
 
 	[](auto path) {
 		if constexpr (std::is_same_v<decltype(path), char*>) {
-			SDL_free(path);
+			MORTAR_free(path);
 		}
 	}(prefPath);
 	return true;
@@ -1280,7 +1271,7 @@ inline bool IsleApp::Tick()
 	static MxS32 g_startupDelay = 1;
 
 	if (!m_windowActive) {
-		SDL_Delay(1);
+		MORTAR_Delay(1);
 		return true;
 	}
 
@@ -1300,7 +1291,7 @@ inline bool IsleApp::Tick()
 	}
 
 	if (m_frameDelta + g_lastFrameTime >= currentTime) {
-		SDL_Delay(1);
+		MORTAR_Delay(1);
 		return true;
 	}
 
@@ -1327,7 +1318,7 @@ inline bool IsleApp::Tick()
 	if (!stream) {
 		stream = Streamer()->Open("\\lego\\scripts\\nocd", MxStreamer::e_diskStream);
 		if (!stream) {
-			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to open NOCD.si: Streamer failed to load");
+			MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "Failed to open NOCD.si: Streamer failed to load");
 			return false;
 		}
 
@@ -1337,7 +1328,7 @@ inline bool IsleApp::Tick()
 		VideoManager()->EnableFullScreenMovie(TRUE, TRUE);
 
 		if (Start(&ds) != SUCCESS) {
-			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to open NOCD.si: Failed to start initial action");
+			MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "Failed to open NOCD.si: Failed to start initial action");
 			return false;
 		}
 	}
@@ -1346,7 +1337,7 @@ inline bool IsleApp::Tick()
 		ds.SetUnknown24(-1);
 		ds.SetObjectId(0);
 		if (Start(&ds) != SUCCESS) {
-			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to open ISLE.si: Failed to start initial action");
+			MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "Failed to open ISLE.si: Failed to start initial action");
 			return false;
 		}
 	}
@@ -1389,16 +1380,16 @@ void IsleApp::SetupCursor(Cursor p_cursor)
 	}
 	else {
 		if (m_cursorCurrent != NULL) {
-			SDL_SetCursor(m_cursorCurrent);
-			SDL_ShowCursor();
+			MORTAR_SetCursor(m_cursorCurrent);
+			MORTAR_ShowCursor();
 		}
 		else {
-			SDL_HideCursor();
+			MORTAR_HideCursor();
 		}
 	}
 }
 
-SDL_AppResult IsleApp::ParseArguments(int argc, char** argv)
+MORTAR_AppResult IsleApp::ParseArguments(int argc, char** argv)
 {
 	for (int i = 1, consumed; i < argc; i += consumed) {
 		consumed = -1;
@@ -1407,26 +1398,30 @@ SDL_AppResult IsleApp::ParseArguments(int argc, char** argv)
 			m_iniPath = argv[i + 1];
 			consumed = 2;
 		}
+		else if (strcmp(argv[i], "--platform") == 0) {
+			// Handled by mortar
+			consumed = 2;
+		}
 		else if (strcmp(argv[i], "--help") == 0) {
 			DisplayArgumentHelp(argv[0]);
-			return SDL_APP_SUCCESS;
+			return MORTAR_APP_SUCCESS;
 		}
 		if (consumed <= 0) {
-			SDL_Log("Invalid argument(s): %s", argv[i]);
+			MORTAR_Log("Invalid argument(s): %s", argv[i]);
 			DisplayArgumentHelp(argv[0]);
-			return SDL_APP_FAILURE;
+			return MORTAR_APP_FAILURE;
 		}
 	}
 
-	return SDL_APP_CONTINUE;
+	return MORTAR_APP_CONTINUE;
 }
 
 void IsleApp::DisplayArgumentHelp(const char* p_execName)
 {
-	SDL_Log("Usage: %s [options]", p_execName);
-	SDL_Log("Options:");
-	SDL_Log("	--ini <path>		Set custom path to .ini config");
-	SDL_Log("	--help			Show this help message");
+	MORTAR_Log("Usage: %s [options]", p_execName);
+	MORTAR_Log("Options:");
+	MORTAR_Log("	--ini <path>		Set custom path to .ini config");
+	MORTAR_Log("	--help			Show this help message");
 }
 
 MxResult IsleApp::VerifyFilesystem()
@@ -1443,7 +1438,7 @@ MxResult IsleApp::VerifyFilesystem()
 			path += file;
 			path.MapPathToFilesystem();
 
-			if (SDL_GetPathInfo(path.GetData(), NULL)) {
+			if (MORTAR_GetPathInfo(path.GetData(), NULL)) {
 				found = true;
 				break;
 			}
@@ -1451,16 +1446,16 @@ MxResult IsleApp::VerifyFilesystem()
 
 		if (!found) {
 			char buffer[1024];
-			SDL_snprintf(
+			MORTAR_snprintf(
 				buffer,
 				sizeof(buffer),
 				"\"LEGO® Island\" failed to start.\nPlease make sure the file %s is located in either diskpath or "
-				"cdpath.\nSDL error: %s",
+				"cdpath.\nMORTAR error: %s",
 				file,
-				SDL_GetError()
+				MORTAR_GetError()
 			);
 
-			Any_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "LEGO® Island Error", buffer, NULL);
+			Any_ShowSimpleMessageBox(MORTAR_MESSAGEBOX_ERROR, "LEGO® Island Error", buffer, NULL);
 			return FAILURE;
 		}
 	}
@@ -1472,15 +1467,15 @@ MxResult IsleApp::VerifyFilesystem()
 void IsleApp::DetectGameVersion()
 {
 	const char* file = "/lego/scripts/infocntr/infomain.si";
-	SDL_PathInfo info;
+	MORTAR_PathInfo info;
 	bool success = false;
 
 	MxString path = MxString(m_hdPath) + file;
 	path.MapPathToFilesystem();
-	if (!(success = SDL_GetPathInfo(path.GetData(), &info))) {
+	if (!(success = MORTAR_GetPathInfo(path.GetData(), &info))) {
 		path = MxString(m_cdPath) + file;
 		path.MapPathToFilesystem();
-		success = SDL_GetPathInfo(path.GetData(), &info);
+		success = MORTAR_GetPathInfo(path.GetData(), &info);
 	}
 
 	assert(success);
@@ -1489,11 +1484,11 @@ void IsleApp::DetectGameVersion()
 	Lego()->SetVersion10(info.size == 58130432 || info.size == 57737216);
 
 	if (Lego()->IsVersion10()) {
-		SDL_Log("Detected game version 1.0");
-		SDL_SetWindowTitle(reinterpret_cast<SDL_Window*>(m_windowHandle), "Lego Island");
+		MORTAR_Log("Detected game version 1.0");
+		MORTAR_SetWindowTitle(reinterpret_cast<MORTAR_Window*>(m_windowHandle), "Lego Island");
 	}
 	else {
-		SDL_Log("Detected game version 1.1");
+		MORTAR_Log("Detected game version 1.1");
 	}
 }
 
@@ -1551,8 +1546,8 @@ void IsleApp::MoveVirtualMouseViaJoystick()
 	if (moveX != 0 || moveY != 0) {
 		g_mousemoved = TRUE;
 
-		g_lastMouseX = SDL_clamp(g_lastMouseX + moveX, 0, g_targetWidth);
-		g_lastMouseY = SDL_clamp(g_lastMouseY + moveY, 0, g_targetHeight);
+		g_lastMouseX = MORTAR_clamp(g_lastMouseX + moveX, 0, g_targetWidth);
+		g_lastMouseY = MORTAR_clamp(g_lastMouseY + moveY, 0, g_targetHeight);
 
 		if (InputManager()) {
 			InputManager()->QueueEvent(
@@ -1564,7 +1559,7 @@ void IsleApp::MoveVirtualMouseViaJoystick()
 			);
 		}
 
-		SDL_HideCursor();
+		MORTAR_HideCursor();
 		g_isle->SetDrawCursor(TRUE);
 		if (VideoManager()) {
 			VideoManager()->SetCursorBitmap(m_cursorCurrentBitmap);
@@ -1572,28 +1567,28 @@ void IsleApp::MoveVirtualMouseViaJoystick()
 		}
 		IDirect3DRMMiniwinDevice* device = GetD3DRMMiniwinDevice();
 		if (device) {
-			Sint32 x, y;
+			int x, y;
 			device->ConvertRenderToWindowCoordinates(g_lastMouseX, g_lastMouseY, x, y);
 			g_mouseWarped = TRUE;
-			SDL_WarpMouseInWindow(window, x, y);
+			MORTAR_WarpMouseInWindow(window, x, y);
 		}
 	}
 }
 
-void IsleApp::DetectDoubleTap(const SDL_TouchFingerEvent& p_event)
+void IsleApp::DetectDoubleTap(const MORTAR_TouchFingerEvent& p_event)
 {
-	typedef std::pair<Uint64, std::array<float, 2>> LastTap;
+	typedef std::pair<uint64_t, std::array<float, 2>> LastTap;
 
 	const MxU32 doubleTapMs = 500;
 	const float doubleTapDist = 0.001;
 	static LastTap lastTap = {0, {0, 0}};
 
 	LastTap currentTap = {p_event.timestamp, {p_event.x, p_event.y}};
-	if (SDL_NS_TO_MS(currentTap.first - lastTap.first) < doubleTapMs &&
+	if (MORTAR_NS_TO_MS(currentTap.first - lastTap.first) < doubleTapMs &&
 		DISTSQRD2(currentTap.second, lastTap.second) < doubleTapDist) {
 
 		if (InputManager()) {
-			InputManager()->QueueEvent(c_notificationKeyPress, SDLK_SPACE, 0, 0, SDLK_SPACE);
+			InputManager()->QueueEvent(c_notificationKeyPress, MORTARK_SPACE, 0, 0, MORTARK_SPACE);
 		}
 
 		lastTap = {0, {0, 0}};
@@ -1602,3 +1597,21 @@ void IsleApp::DetectDoubleTap(const SDL_TouchFingerEvent& p_event)
 		lastTap = currentTap;
 	}
 }
+
+#ifdef _WIN32
+int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR szCmdLine, int nShowCmd)
+{
+	return MORTAR_main(0, NULL, MORTAR_AppInit, MORTAR_AppIterate, MORTAR_AppEvent, MORTAR_AppQuit);
+}
+#else
+int main(int argc, char* argv[])
+{
+	return MORTAR_main(argc, argv, MORTAR_AppInit, MORTAR_AppIterate, MORTAR_AppEvent, MORTAR_AppQuit);
+}
+#ifdef __ANDROID__
+int SDL_main(int argc, char* argv[])
+{
+	return main(argc, argv);
+}
+#endif
+#endif
