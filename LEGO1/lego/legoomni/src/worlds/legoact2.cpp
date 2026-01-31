@@ -534,7 +534,7 @@ void LegoAct2::Enable(MxBool p_enable)
 		GameState()->SetActor(LegoActor::c_pepper);
 		m_pepper = FindROI("pepper");
 
-		((IslePathActor*) m_pepper->GetEntity())->VTable0xec(m_transformOnDisable, m_boundaryOnDisable, TRUE);
+		((IslePathActor*) m_pepper->GetEntity())->UpdateWorld(m_transformOnDisable, m_boundaryOnDisable, TRUE);
 
 		if (GameState()->m_previousArea == LegoGameState::e_infomain) {
 			GameState()->StopArea(LegoGameState::e_infomain);
@@ -1209,19 +1209,19 @@ MxResult LegoAct2::InitializeShooting()
 
 	ap = (LegoLocomotionAnimPresenter*) Find("LegoAnimPresenter", "Ambul_Anim0");
 	assert(ap);
-	ap->FUN_1006d680(m_unk0x1138, 0.0f);
+	ap->CreateROIAndBuildMap(m_unk0x1138, 0.0f);
 
 	ap = (LegoLocomotionAnimPresenter*) Find("LegoAnimPresenter", "Ambul_Anim2");
 	assert(ap);
-	ap->FUN_1006d680(m_unk0x1138, 6.0f);
+	ap->CreateROIAndBuildMap(m_unk0x1138, 6.0f);
 
 	ap = (LegoLocomotionAnimPresenter*) Find("LegoAnimPresenter", "Ambul_Anim3");
 	assert(ap);
-	ap->FUN_1006d680(m_unk0x1138, 3.0f);
+	ap->CreateROIAndBuildMap(m_unk0x1138, 3.0f);
 
 	ap = (LegoLocomotionAnimPresenter*) Find("LegoAnimPresenter", "BrShoot");
 	assert(ap);
-	ap->FUN_1006d680(m_unk0x1138, -1.0f);
+	ap->CreateROIAndBuildMap(m_unk0x1138, -1.0f);
 
 	actor->SetWorldSpeed(0.0f);
 	m_unk0x1138->InitializeNextShot();

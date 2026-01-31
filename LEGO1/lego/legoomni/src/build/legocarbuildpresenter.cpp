@@ -123,7 +123,7 @@ void LegoCarBuildAnimPresenter::PutFrame()
 		MoveShelfForward();
 	case e_stopped:
 		if (m_carBuildEntity->GetROI()) {
-			FUN_1006b9a0(m_anim, m_shelfFrameBuffer, NULL);
+			ApplyTransformWithVisibilityAndCam(m_anim, m_shelfFrameBuffer, NULL);
 		}
 	default:
 		break;
@@ -591,7 +591,7 @@ void LegoCarBuildAnimPresenter::RotateAroundYAxis(MxFloat p_angle)
 		m_platformAnimNodeData->GetRotationKey(0)->SetAngle(newRotation[3]);
 
 		if (m_carBuildEntity->GetROI()) {
-			FUN_1006b9a0(&m_platformAnim, m_shelfFrameBuffer, NULL);
+			ApplyTransformWithVisibilityAndCam(&m_platformAnim, m_shelfFrameBuffer, NULL);
 		}
 	}
 }

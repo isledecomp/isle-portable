@@ -6,9 +6,11 @@
 // clang-format on
 #include "legoracemap.h"
 
-#define LEGORACECAR_UNKNOWN_0 0
-#define LEGORACECAR_UNKNOWN_1 1
+#define LEGORACECAR_NONE 0
+#define LEGORACECAR_NEAR_SKELETON 1
+// kick to the left
 #define LEGORACECAR_KICK1 2 // name guessed
+// kick to the right
 #define LEGORACECAR_KICK2 4 // name validated by BETA10 0x100cb659
 
 // SIZE 0x08
@@ -23,7 +25,7 @@ struct SkeletonKickPhase {
 	EdgeReference* m_edgeRef; // 0x00
 	float m_lower;            // 0x04
 	float m_upper;            // 0x08
-	MxU8 m_userState;         // 0x0c
+	MxU8 m_kickState;         // 0x0c
 };
 
 // VTABLE: LEGO1 0x100d5a08 LegoCarRaceActor
@@ -62,10 +64,23 @@ public:
 	void SetWorldSpeed(MxFloat p_worldSpeed) override; // vtable+0x30
 
 	// FUNCTION: LEGO1 0x10014150
-	MxU32 VTable0x6c(LegoPathBoundary* p_boundary, Vector3& p_v1, Vector3& p_v2, float p_f1, float p_f2, Vector3& p_v3)
-		override
+	MxU32 CheckPresenterAndActorIntersections(
+		LegoPathBoundary* p_boundary,
+		Vector3& p_rayOrigin,
+		Vector3& p_rayDirection,
+		float p_rayLength,
+		float p_radius,
+		Vector3& p_intersectionPoint
+	) override
 	{
-		return LegoJetskiRaceActor::VTable0x6c(p_boundary, p_v1, p_v2, p_f1, p_f2, p_v3);
+		return LegoJetskiRaceActor::CheckPresenterAndActorIntersections(
+			p_boundary,
+			p_rayOrigin,
+			p_rayDirection,
+			p_rayLength,
+			p_radius,
+			p_intersectionPoint
+		);
 	} // vtable+0x6c
 
 	void Animate(float p_time) override;                               // vtable+0x70
@@ -78,9 +93,9 @@ public:
 	} // vtable+0x98
 
 	// FUNCTION: LEGO1 0x10014210
-	MxResult VTable0x9c() override { return LegoJetskiRaceActor::VTable0x9c(); } // vtable+0x9c
+	MxResult CalculateSpline() override { return LegoJetskiRaceActor::CalculateSpline(); } // vtable+0x9c
 
-	virtual void FUN_100136f0(float p_worldSpeed);
+	virtual void SetMaxLinearVelocity(float p_worldSpeed);
 
 	static void InitSoundIndices();
 
@@ -125,10 +140,23 @@ public:
 
 	// FUNCTION: LEGO1 0x10014500
 	// FUNCTION: BETA10 0x100cd5e0
-	MxU32 VTable0x6c(LegoPathBoundary* p_boundary, Vector3& p_v1, Vector3& p_v2, float p_f1, float p_f2, Vector3& p_v3)
-		override
+	MxU32 CheckPresenterAndActorIntersections(
+		LegoPathBoundary* p_boundary,
+		Vector3& p_rayOrigin,
+		Vector3& p_rayDirection,
+		float p_rayLength,
+		float p_radius,
+		Vector3& p_intersectionPoint
+	) override
 	{
-		return LegoCarRaceActor::VTable0x6c(p_boundary, p_v1, p_v2, p_f1, p_f2, p_v3);
+		return LegoCarRaceActor::CheckPresenterAndActorIntersections(
+			p_boundary,
+			p_rayOrigin,
+			p_rayDirection,
+			p_rayLength,
+			p_radius,
+			p_intersectionPoint
+		);
 	} // vtable+0x6c
 
 	void Animate(float p_time) override;                               // vtable+0x70
@@ -141,7 +169,7 @@ public:
 		LegoCarRaceActor::SwitchBoundary(p_boundary, p_edge, p_unk0xe4);
 	} // vtable+0x98
 
-	MxResult VTable0x9c() override; // vtable+0x9c
+	MxResult CalculateSpline() override; // vtable+0x9c
 
 	virtual void SetMaxLinearVelocity(float p_maxLinearVelocity);
 	virtual void KickCamera(float p_param);
@@ -154,7 +182,7 @@ public:
 	// LegoRaceCar::`scalar deleting destructor'
 
 private:
-	undefined m_userState;    // 0x54
+	MxU8 m_kickState;         // 0x54
 	float m_kickStart;        // 0x58
 	Mx3DPointFloat m_unk0x5c; // 0x5c
 

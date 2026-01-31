@@ -179,9 +179,9 @@ MxResult Act2Actor::HitActor(LegoPathActor*, MxBool)
 }
 
 // FUNCTION: LEGO1 0x10018a20
-MxResult Act2Actor::VTable0x9c()
+MxResult Act2Actor::CalculateSpline()
 {
-	if (m_grec && !m_grec->GetBit1()) {
+	if (m_grec && !m_grec->HasPath()) {
 		delete m_grec;
 		m_grec = NULL;
 		return SUCCESS;
@@ -198,7 +198,7 @@ MxResult Act2Actor::VTable0x9c()
 			brickstrROI->UpdateTransformationRelativeToParent(brickstrMatrix);
 		}
 
-		return LegoPathActor::VTable0x9c();
+		return LegoPathActor::CalculateSpline();
 	}
 }
 
@@ -410,7 +410,7 @@ void Act2Actor::FindPath(MxU32 p_location)
 	newDirection = g_brickstrLocations[p_location].m_direction;
 	LegoPathBoundary* newBoundary = m_pathController->GetPathBoundary(g_brickstrLocations[p_location].m_boundary);
 
-	MxResult sts = m_pathController->FUN_10048310(
+	MxResult sts = m_pathController->FindPath(
 		m_grec,
 		m_roi->GetWorldPosition(),
 		m_roi->GetWorldDirection(),
@@ -607,7 +607,7 @@ MxU32 Act2Actor::UpdateShot(MxFloat p_time)
 		return FALSE;
 	}
 
-	m_lastTime = p_time;
+	m_transformTime = p_time;
 	LegoROI* brickstrROI = FindROI("brickstr");
 
 	MxMatrix initialTransform = m_roi->GetLocal2World();

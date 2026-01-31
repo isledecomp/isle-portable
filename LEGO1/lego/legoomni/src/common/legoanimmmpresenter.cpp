@@ -152,7 +152,7 @@ void LegoAnimMMPresenter::ReadyTickle()
 	}
 
 	if (m_tranInfo != NULL && m_tranInfo->m_unk0x0c != NULL) {
-		m_presenter->VTable0xa0(*m_tranInfo->m_unk0x0c);
+		m_presenter->SetTransform(*m_tranInfo->m_unk0x0c);
 	}
 
 	if (m_presenter != NULL) {
@@ -168,7 +168,7 @@ void LegoAnimMMPresenter::StartingTickle()
 {
 	if (m_presenter == NULL || m_presenter->GetCurrentTickleState() == e_idle) {
 		if (m_tranInfo != NULL && m_tranInfo->m_unk0x08 != NULL) {
-			m_presenter->FUN_1006b140(m_tranInfo->m_unk0x08);
+			m_presenter->CopyTransform(m_tranInfo->m_unk0x08);
 		}
 
 		m_unk0x50 = Timer()->GetTime();
@@ -225,7 +225,7 @@ MxLong LegoAnimMMPresenter::Notify(MxParam& p_param)
 }
 
 // FUNCTION: LEGO1 0x1004b360
-void LegoAnimMMPresenter::VTable0x60(MxPresenter* p_presenter)
+void LegoAnimMMPresenter::AdvanceSerialAction(MxPresenter* p_presenter)
 {
 	if (m_presenter == p_presenter && ((MxU8) p_presenter->GetCurrentTickleState() == MxPresenter::e_streaming ||
 									   (MxU8) p_presenter->GetCurrentTickleState() == MxPresenter::e_done)) {
@@ -316,7 +316,7 @@ MxBool LegoAnimMMPresenter::FUN_1004b450()
 MxBool LegoAnimMMPresenter::FUN_1004b530(MxLong p_time)
 {
 	if (m_presenter != NULL) {
-		m_presenter->FUN_1006afc0(m_unk0x68, 0);
+		m_presenter->GetTransforms(m_unk0x68, 0);
 		m_roiMap = m_presenter->GetROIMap(m_roiMapSize);
 		m_roiMapSize++;
 	}
@@ -403,7 +403,7 @@ MxBool LegoAnimMMPresenter::FUN_1004b610(MxLong p_time)
 	m_action->SetTimeStarted(Timer()->GetTime());
 
 	if (m_compositePresenter != NULL) {
-		m_compositePresenter->VTable0x60(this);
+		m_compositePresenter->AdvanceSerialAction(this);
 	}
 
 	return TRUE;
@@ -471,10 +471,10 @@ MxBool LegoAnimMMPresenter::FUN_1004b6d0(MxLong p_time)
 			}
 
 #ifdef BETA10
-			actor->VTable0xa8();
+			actor->ApplyLocal2World();
 #else
 			if (m_tranInfo->m_unk0x29) {
-				actor->VTable0xa8();
+				actor->ApplyLocal2World();
 			}
 #endif
 		}
@@ -498,7 +498,7 @@ void LegoAnimMMPresenter::FUN_1004b840()
 	MxDSAction* action = m_action;
 
 	if (m_presenter != NULL) {
-		m_presenter->FUN_1006c7a0();
+		m_presenter->ApplyFinishedTransform();
 	}
 
 	for (MxCompositePresenterList::iterator it = m_list.begin(); it != m_list.end(); it++) {

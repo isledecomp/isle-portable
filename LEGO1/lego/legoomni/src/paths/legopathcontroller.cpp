@@ -14,10 +14,10 @@ DECOMP_SIZE_ASSERT(LegoPathController::CtrlBoundary, 0x08)
 DECOMP_SIZE_ASSERT(LegoPathController::CtrlEdge, 0x08)
 
 // GLOBAL: LEGO1 0x100d7cc8
-MxU32 g_unk0x100d7cc8[] = {2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 2, 0};
+MxU32 g_ctrlEdgesNamesA[] = {2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 2, 0};
 
 // GLOBAL: LEGO1 0x100d7d08
-MxU32 g_unk0x100d7d08[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+MxU32 g_ctrlEdgesNamesB[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 // GLOBAL: LEGO1 0x100f42e8
 // GLOBAL: BETA10 0x101f25f0
@@ -28,7 +28,7 @@ LegoPathController::CtrlBoundary* LegoPathController::g_ctrlBoundariesA = NULL;
 LegoPathController::CtrlEdge* LegoPathController::g_ctrlEdgesA = NULL;
 
 // GLOBAL: LEGO1 0x100f42f0
-const char* LegoPathController::g_unk0x100f42f0[] = {
+const char* LegoPathController::g_ctrlBoundariesNamesA[] = {
 	"edg03_21",
 	"edg03_23",
 	"edg03_30",
@@ -48,7 +48,7 @@ const char* LegoPathController::g_unk0x100f42f0[] = {
 };
 
 // GLOBAL: LEGO1 0x100f4330
-const char* LegoPathController::g_unk0x100f4330[] = {
+const char* LegoPathController::g_ctrlBoundariesNamesB[] = {
 	"edg03_06",
 	"edg03_21",
 	"edg03_30",
@@ -108,23 +108,23 @@ MxResult LegoPathController::Create(
 			LegoPathBoundary& boundary = m_boundaries[i];
 			MxS32 j;
 
-			for (j = 0; j < sizeOfArray(g_unk0x100f42f0); j++) {
-				if (!SDL_strcasecmp(g_unk0x100f42f0[j], boundary.GetName())) {
+			for (j = 0; j < sizeOfArray(g_ctrlBoundariesNamesA); j++) {
+				if (!SDL_strcasecmp(g_ctrlBoundariesNamesA[j], boundary.GetName())) {
 					g_ctrlBoundariesA[j].m_controller = this;
 					g_ctrlBoundariesA[j].m_boundary = &boundary;
 
-					MxU32 edge = g_unk0x100d7cc8[j];
+					MxU32 edge = g_ctrlEdgesNamesA[j];
 					g_ctrlEdgesA[j].m_controller = this;
 					g_ctrlEdgesA[j].m_edge = boundary.GetEdges()[edge];
 				}
 			}
 
-			for (j = 0; j < sizeOfArray(g_unk0x100f4330); j++) {
-				if (!SDL_strcasecmp(g_unk0x100f4330[j], boundary.GetName())) {
+			for (j = 0; j < sizeOfArray(g_ctrlBoundariesNamesB); j++) {
+				if (!SDL_strcasecmp(g_ctrlBoundariesNamesB[j], boundary.GetName())) {
 					g_ctrlBoundariesB[j].m_controller = this;
 					g_ctrlBoundariesB[j].m_boundary = &boundary;
 					g_ctrlEdgesB[j].m_controller = this;
-					g_ctrlEdgesB[j].m_edge = boundary.GetEdges()[g_unk0x100d7d08[j]];
+					g_ctrlEdgesB[j].m_edge = boundary.GetEdges()[g_ctrlEdgesNamesB[j]];
 				}
 			}
 		}
@@ -170,7 +170,7 @@ void LegoPathController::Destroy()
 	m_numE = 0;
 
 	MxS32 j;
-	for (j = 0; j < sizeOfArray(g_unk0x100f42f0); j++) {
+	for (j = 0; j < sizeOfArray(g_ctrlBoundariesNamesA); j++) {
 		if (g_ctrlBoundariesA[j].m_controller == this) {
 			g_ctrlBoundariesA[j].m_controller = NULL;
 			g_ctrlBoundariesA[j].m_boundary = NULL;
@@ -182,7 +182,7 @@ void LegoPathController::Destroy()
 		}
 	}
 
-	for (j = 0; j < sizeOfArray(g_unk0x100f4330); j++) {
+	for (j = 0; j < sizeOfArray(g_ctrlBoundariesNamesB); j++) {
 		if (g_ctrlBoundariesB[j].m_controller == this) {
 			g_ctrlBoundariesB[j].m_controller = NULL;
 			g_ctrlBoundariesB[j].m_boundary = NULL;
@@ -199,7 +199,7 @@ void LegoPathController::Destroy()
 // FUNCTION: BETA10 0x100b6d60
 MxResult LegoPathController::Tickle()
 {
-	FUN_10046970();
+	AnimateActors();
 	return SUCCESS;
 }
 
@@ -230,8 +230,14 @@ MxResult LegoPathController::PlaceActor(
 	assert(pSrcE && pDestE);
 
 	float time = Timer()->GetTime();
-	MxResult result =
-		p_actor->VTable0x88(pBoundary, time, *pSrcE, p_srcScale, (LegoOrientedEdge&) *pDestE, p_destScale);
+	MxResult result = p_actor->SetTransformAndDestinationFromEdge(
+		pBoundary,
+		time,
+		*pSrcE,
+		p_srcScale,
+		(LegoOrientedEdge&) *pDestE,
+		p_destScale
+	);
 
 	if (result != SUCCESS) {
 		assert(0);
@@ -305,7 +311,8 @@ MxResult LegoPathController::PlaceActor(
 				return FAILURE;
 			}
 
-			if (p_actor->VTable0x84(boundary, time, p_position, p_direction, edge, 0.5f) == SUCCESS) {
+			if (p_actor->SetTransformAndDestinationFromPoints(boundary, time, p_position, p_direction, edge, 0.5f) ==
+				SUCCESS) {
 				p_actor->SetController(this);
 				m_actors.insert(p_actor);
 				return SUCCESS;
@@ -350,7 +357,7 @@ MxResult LegoPathController::RemoveActor(LegoPathActor* p_actor)
 
 // FUNCTION: LEGO1 0x100468f0
 // FUNCTION: BETA10 0x100b72f7
-void LegoPathController::FUN_100468f0(LegoAnimPresenter* p_presenter)
+void LegoPathController::AddPresenterIfInRange(LegoAnimPresenter* p_presenter)
 {
 	for (MxS32 i = 0; i < m_numL; i++) {
 		if (!(m_boundaries[i].m_flags & LegoWEGEdge::c_bit3)) {
@@ -370,7 +377,7 @@ void LegoPathController::RemovePresenterFromBoundaries(LegoAnimPresenter* p_pres
 
 // FUNCTION: LEGO1 0x10046970
 // FUNCTION: BETA10 0x100b73d8
-void LegoPathController::FUN_10046970()
+void LegoPathController::AnimateActors()
 {
 	float time = Timer()->GetTime();
 
@@ -388,7 +395,7 @@ void LegoPathController::FUN_10046970()
 }
 
 // FUNCTION: LEGO1 0x10046b30
-MxResult LegoPathController::FUN_10046b30(LegoPathBoundary*& p_boundaries, MxS32& p_numL)
+MxResult LegoPathController::GetBoundaries(LegoPathBoundary*& p_boundaries, MxS32& p_numL)
 {
 	p_boundaries = m_boundaries;
 	p_numL = m_numL;
@@ -410,7 +417,7 @@ LegoPathBoundary* LegoPathController::GetPathBoundary(const char* p_name)
 
 // FUNCTION: LEGO1 0x10046bb0
 // FUNCTION: BETA10 0x100b75bc
-void LegoPathController::FUN_10046bb0(LegoWorld* p_world)
+void LegoPathController::SetWorld(LegoWorld* p_world)
 {
 	for (MxS32 i = 0; i < m_numT; i++) {
 		m_structs[i].SetWorld(p_world);
@@ -437,10 +444,10 @@ MxResult LegoPathController::Init()
 		return FAILURE;
 	}
 
-	g_ctrlBoundariesA = new CtrlBoundary[sizeOfArray(g_unk0x100f42f0)];
-	g_ctrlEdgesA = new CtrlEdge[sizeOfArray(g_unk0x100f42f0)];
-	g_ctrlBoundariesB = new CtrlBoundary[sizeOfArray(g_unk0x100f4330)];
-	g_ctrlEdgesB = new CtrlEdge[sizeOfArray(g_unk0x100f4330)];
+	g_ctrlBoundariesA = new CtrlBoundary[sizeOfArray(g_ctrlBoundariesNamesA)];
+	g_ctrlEdgesA = new CtrlEdge[sizeOfArray(g_ctrlBoundariesNamesA)];
+	g_ctrlBoundariesB = new CtrlBoundary[sizeOfArray(g_ctrlBoundariesNamesB)];
+	g_ctrlEdgesB = new CtrlEdge[sizeOfArray(g_ctrlBoundariesNamesB)];
 	return SUCCESS;
 }
 
@@ -765,7 +772,7 @@ MxResult LegoPathController::ReadVector(LegoStorage* p_storage, Mx4DPointFloat& 
 
 // FUNCTION: LEGO1 0x10048310
 // FUNCTION: BETA10 0x100b8911
-MxResult LegoPathController::FUN_10048310(
+MxResult LegoPathController::FindPath(
 	LegoPathEdgeContainer* p_grec,
 	const Vector3& p_oldPosition,
 	const Vector3& p_oldDirection,
@@ -774,7 +781,7 @@ MxResult LegoPathController::FUN_10048310(
 	const Vector3& p_newDirection,
 	LegoPathBoundary* p_newBoundary,
 	LegoU8 p_mask,
-	MxFloat* p_param9
+	MxFloat* p_distance
 )
 {
 	p_grec->m_position = p_newPosition;
@@ -782,22 +789,22 @@ MxResult LegoPathController::FUN_10048310(
 	p_grec->m_boundary = p_newBoundary;
 
 	if (p_newBoundary == p_oldBoundary) {
-		p_grec->SetBit1(TRUE);
+		p_grec->SetPath(TRUE);
 		return SUCCESS;
 	}
 
-	list<LegoBEWithFloat> boundaryList;
-	list<LegoBEWithFloat>::iterator boundaryListIt;
+	list<LegoBEWithMidpoint> boundaryList;
+	list<LegoBEWithMidpoint>::iterator boundaryListIt;
 
-	LegoBEWithFloatSet boundarySet;
-	LegoBEWithFloatSet::iterator boundarySetItA;
-	LegoBEWithFloatSet::iterator boundarySetItB;
+	LegoBEWithMidpointSet boundarySet;
+	LegoBEWithMidpointSet::iterator boundarySetItA;
+	LegoBEWithMidpointSet::iterator boundarySetItB;
 
 	LegoPathCtrlEdgeSet pathCtrlEdgeSet(m_pfsE);
 
-	MxFloat local14 = 999999.0f;
+	MxFloat minDistance = 999999.0f;
 
-	p_grec->SetBit1(FALSE);
+	p_grec->SetPath(FALSE);
 
 	for (MxS32 i = 0; i < p_oldBoundary->GetNumEdges(); i++) {
 		LegoPathCtrlEdge* edge = (LegoPathCtrlEdge*) p_oldBoundary->GetEdges()[i];
@@ -809,15 +816,16 @@ MxResult LegoPathController::FUN_10048310(
 				if (p_newBoundary == otherFace) {
 					float dist;
 					if ((dist = edge->DistanceToMidpoint(p_oldPosition) + edge->DistanceToMidpoint(p_newPosition)) <
-						local14) {
-						local14 = dist;
+						minDistance) {
+						minDistance = dist;
 						p_grec->erase(p_grec->begin(), p_grec->end());
-						p_grec->SetBit1(TRUE);
+						p_grec->SetPath(TRUE);
 						p_grec->push_back(LegoBoundaryEdge(edge, p_oldBoundary));
 					}
 				}
 				else {
-					boundaryList.push_back(LegoBEWithFloat(edge, p_oldBoundary, edge->DistanceToMidpoint(p_oldPosition))
+					boundaryList.push_back(
+						LegoBEWithMidpoint(edge, p_oldBoundary, edge->DistanceToMidpoint(p_oldPosition))
 					);
 					boundarySet.insert(&boundaryList.back());
 				}
@@ -827,10 +835,10 @@ MxResult LegoPathController::FUN_10048310(
 		pathCtrlEdgeSet.erase(edge);
 	}
 
-	if (!p_grec->GetBit1()) {
+	if (!p_grec->HasPath()) {
 		while (pathCtrlEdgeSet.size() > 0) {
-			LegoBEWithFloat edgeWithFloat;
-			MxFloat local70 = 999999.0f;
+			LegoBEWithMidpoint edgeWithMidpoint;
+			MxFloat minDist = 999999.0f;
 
 			boundarySetItA = boundarySetItB = boundarySet.begin();
 
@@ -855,19 +863,20 @@ MxResult LegoPathController::FUN_10048310(
 					if (bOther == p_newBoundary) {
 						shouldRemove = FALSE;
 
-						LegoBEWithFloat* pfs = *boundarySetItA;
+						LegoBEWithMidpoint* pfs = *boundarySetItA;
 						assert(pfs);
 
 						float dist;
-						if ((dist = pfs->m_edge->DistanceToMidpoint(p_newPosition) + pfs->m_unk0x0c) < local70) {
-							edgeWithFloat.m_edge = NULL;
-							local70 = dist;
+						if ((dist = pfs->m_edge->DistanceToMidpoint(p_newPosition) + pfs->m_distanceToMidpoint) <
+							minDist) {
+							edgeWithMidpoint.m_edge = NULL;
+							minDist = dist;
 
 							// TODO: Match
-							if (dist < local14) {
-								local14 = dist;
+							if (dist < minDistance) {
+								minDistance = dist;
 								p_grec->erase(p_grec->begin(), p_grec->end());
-								p_grec->SetBit1(TRUE);
+								p_grec->SetPath(TRUE);
 
 								do {
 									p_grec->push_front(LegoBoundaryEdge(pfs->m_edge, pfs->m_boundary));
@@ -885,10 +894,10 @@ MxResult LegoPathController::FUN_10048310(
 									shouldRemove = FALSE;
 
 									float dist;
-									if ((dist = edge->DistanceBetweenMidpoints(*e) + (*boundarySetItA)->m_unk0x0c) <
-										local70) {
-										local70 = dist;
-										edgeWithFloat = LegoBEWithFloat(edge, bOther, *boundarySetItA, dist);
+									if ((dist = edge->DistanceBetweenMidpoints(*e) +
+												(*boundarySetItA)->m_distanceToMidpoint) < minDist) {
+										minDist = dist;
+										edgeWithMidpoint = LegoBEWithMidpoint(edge, bOther, *boundarySetItA, dist);
 									}
 								}
 							}
@@ -909,9 +918,9 @@ MxResult LegoPathController::FUN_10048310(
 				}
 			}
 
-			if (edgeWithFloat.m_edge != NULL) {
-				pathCtrlEdgeSet.erase(edgeWithFloat.m_edge);
-				boundaryList.push_back(edgeWithFloat);
+			if (edgeWithMidpoint.m_edge != NULL) {
+				pathCtrlEdgeSet.erase(edgeWithMidpoint.m_edge);
+				boundaryList.push_back(edgeWithMidpoint);
 				boundarySet.insert(&boundaryList.back());
 			}
 			else {
@@ -920,7 +929,7 @@ MxResult LegoPathController::FUN_10048310(
 		}
 	}
 
-	if (p_grec->GetBit1()) {
+	if (p_grec->HasPath()) {
 		if (p_grec->size() > 0) {
 			LegoPathCtrlEdge* edge = p_grec->front().m_edge;
 
@@ -941,8 +950,8 @@ MxResult LegoPathController::FUN_10048310(
 			}
 		}
 
-		if (p_param9 != NULL) {
-			*p_param9 = local14;
+		if (p_distance != NULL) {
+			*p_distance = minDistance;
 		}
 
 		return SUCCESS;
@@ -953,20 +962,20 @@ MxResult LegoPathController::FUN_10048310(
 
 // FUNCTION: LEGO1 0x1004a240
 // FUNCTION: BETA10 0x100b9160
-MxS32 LegoPathController::FUN_1004a240(
+MxS32 LegoPathController::GetNextPathEdge(
 	LegoPathEdgeContainer& p_grec,
-	Vector3& p_v1,
-	Vector3& p_v2,
+	Vector3& p_position,
+	Vector3& p_direction,
 	float p_f1,
 	LegoOrientedEdge*& p_edge,
 	LegoPathBoundary*& p_boundary
 )
 {
 	if (p_grec.size() == 0) {
-		p_v1 = p_grec.m_position;
-		p_v2 = p_grec.m_direction;
+		p_position = p_grec.m_position;
+		p_direction = p_grec.m_direction;
 		p_boundary = p_grec.m_boundary;
-		p_grec.SetBit1(FALSE);
+		p_grec.SetPath(FALSE);
 		return 1;
 	}
 
@@ -975,28 +984,28 @@ MxS32 LegoPathController::FUN_1004a240(
 	p_grec.pop_front();
 
 	Mx3DPointFloat vec;
-	p_v1 = *p_edge->CCWVertex(*p_boundary);
-	p_v1 -= *p_edge->CWVertex(*p_boundary);
-	p_v1 *= p_f1;
-	p_v1 += *p_edge->CWVertex(*p_boundary);
+	p_position = *p_edge->CCWVertex(*p_boundary);
+	p_position -= *p_edge->CWVertex(*p_boundary);
+	p_position *= p_f1;
+	p_position += *p_edge->CWVertex(*p_boundary);
 	p_edge->GetFaceNormal(*p_boundary, vec);
-	p_v2.EqualsCross(*p_boundary->GetUp(), vec);
+	p_direction.EqualsCross(*p_boundary->GetUp(), vec);
 	return 0;
 }
 
 // FUNCTION: LEGO1 0x1004a380
 // FUNCTION: BETA10 0x100b957f
-MxResult LegoPathController::FUN_1004a380(
-	Vector3& p_param1,
-	Vector3& p_param2,
-	Mx3DPointFloat* p_param3,
+MxResult LegoPathController::FindIntersectionBoundary(
+	Vector3& p_location,
+	Vector3& p_direction,
+	Mx3DPointFloat* p_coefficients,
 	LegoPathBoundary*& p_boundary,
-	MxFloat& p_param5
+	MxFloat& p_apexParameter
 )
 {
-	MxFloat param5 = p_param5;
-	Mx3DPointFloat local24;
-	MxU32 local8 = TRUE;
+	MxFloat originalApexParameter = p_apexParameter;
+	Mx3DPointFloat intersectionPoint;
+	MxU32 solutionNotFound = TRUE;
 
 	for (MxS32 i = 0; i < m_numL; i++) {
 		if (m_boundaries[i].m_flags & LegoPathBoundary::c_bit3) {
@@ -1004,75 +1013,76 @@ MxResult LegoPathController::FUN_1004a380(
 		}
 
 		LegoPathBoundary* b = &m_boundaries[i];
-		Mx4DPointFloat* unk0x14 = b->GetUp();
-		float local28 = p_param3[0].Dot(p_param3[0], *unk0x14);
+		Mx4DPointFloat* up = b->GetUp();
+		float coeffADotUp = p_coefficients[0].Dot(p_coefficients[0], *up);
 
-		if (local28 < 0.001 && local28 > -0.001) {
+		if (coeffADotUp < 0.001 && coeffADotUp > -0.001) {
 			continue;
 		}
 
-		float local2c = p_param3[1].Dot(p_param3[1], *unk0x14);
-		float local34 = p_param3[2].Dot(p_param3[2], *unk0x14) + unk0x14->index_operator(3);
-		float local3c = local2c * local2c - local34 * local28 * 4.0f;
+		float coeffBDotUp = p_coefficients[1].Dot(p_coefficients[1], *up);
+		float coeffCDotUp = p_coefficients[2].Dot(p_coefficients[2], *up) + up->index_operator(3);
+		float quadraticDiscriminant = coeffBDotUp * coeffBDotUp - coeffCDotUp * coeffADotUp * 4.0f;
 
-		if (local3c < -0.001) {
+		if (quadraticDiscriminant < -0.001) {
 			continue;
 		}
 
-		if (local3c < 0.0f) {
-			local3c = 0.0f;
+		if (quadraticDiscriminant < 0.0f) {
+			quadraticDiscriminant = 0.0f;
 		}
 		else {
-			local3c = sqrt(local3c);
+			quadraticDiscriminant = sqrt(quadraticDiscriminant);
 		}
 
-		float local38 = (local3c - local2c) / (local28 * 2.0f);
-		float local44 = (-local3c - local2c) / (local28 * 2.0f);
+		float intersectionParameter = (quadraticDiscriminant - coeffBDotUp) / (coeffADotUp * 2.0f);
+		float alternativeIntersectionParameter = (-quadraticDiscriminant - coeffBDotUp) / (coeffADotUp * 2.0f);
 
-		if (!IsBetween(local38, 0.0f, param5)) {
-			if (IsBetween(local44, 0.0f, param5)) {
-				local38 = local44;
+		if (!IsBetween(intersectionParameter, 0.0f, originalApexParameter)) {
+			if (IsBetween(alternativeIntersectionParameter, 0.0f, originalApexParameter)) {
+				intersectionParameter = alternativeIntersectionParameter;
 			}
 			else {
 				continue;
 			}
 		}
 
-		if (local8 || FUN_100c17a0(local38, p_param5, 0.0f, param5)) {
-			Mx3DPointFloat local58(p_param3[0]);
+		if (solutionNotFound ||
+			BothSameComparison(intersectionParameter, p_apexParameter, 0.0f, originalApexParameter)) {
+			Mx3DPointFloat tSqrA(p_coefficients[0]);
 
-			local58 *= local38 * local38;
-			local24 = p_param3[1];
-			local24 *= local38;
-			local24 += p_param3[2];
-			local24 += local58;
+			tSqrA *= intersectionParameter * intersectionParameter;
+			intersectionPoint = p_coefficients[1];
+			intersectionPoint *= intersectionParameter;
+			intersectionPoint += p_coefficients[2];
+			intersectionPoint += tSqrA;
 
 			assert(b->GetNumEdges() > 1);
 
 			MxS32 j;
 			for (j = b->GetNumEdges() - 1; j >= 0; j--) {
-				Mx4DPointFloat* local60 = b->GetEdgeNormal(j);
+				Mx4DPointFloat* edgeNormal = b->GetEdgeNormal(j);
 
-				if (local24.Dot(*local60, local24) + local60->index_operator(3) < -0.001) {
+				if (intersectionPoint.Dot(*edgeNormal, intersectionPoint) + edgeNormal->index_operator(3) < -0.001) {
 					break;
 				}
 			}
 
 			if (j < 0) {
-				Mx3DPointFloat local74(p_param1);
-				local74 -= local24;
+				Mx3DPointFloat direction(p_location);
+				direction -= intersectionPoint;
 
-				if (local74.Dot(local74, *unk0x14) >= 0.0f) {
-					p_param5 = local38;
+				if (direction.Dot(direction, *up) >= 0.0f) {
+					p_apexParameter = intersectionParameter;
 					p_boundary = b;
-					local8 = FALSE;
+					solutionNotFound = FALSE;
 				}
 			}
 		}
 	}
 
-	if (local8) {
-		p_param5 = param5;
+	if (solutionNotFound) {
+		p_apexParameter = originalApexParameter;
 		return FAILURE;
 	}
 

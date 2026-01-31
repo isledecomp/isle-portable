@@ -315,7 +315,7 @@ MxS32 g_legoAnimationManagerConfig = 1;
 float g_unk0x100f7500 = 0.1f;
 
 // GLOBAL: LEGO1 0x100f7504
-MxS32 g_unk0x100f7504 = 0;
+MxS32 g_pathWalkingModeSelector = 0;
 
 // FUNCTION: LEGO1 0x1005eb50
 void LegoAnimationManager::configureLegoAnimationManager(MxS32 p_legoAnimationManagerConfig)
@@ -1933,10 +1933,10 @@ void LegoAnimationManager::AddExtra(MxS32 p_location, MxBool p_und)
 				}
 
 				if (i != m_numAllowedExtras) {
-					MxU8 und = SDL_rand(2) != 0 ? 1 : 2;
+					MxU8 pathWalkingMode = SDL_rand(2) != 0 ? 1 : 2;
 					MxBool bool1, bool2;
 
-					switch (g_unk0x100f7504 % 4) {
+					switch (g_pathWalkingModeSelector % 4) {
 					case 0:
 						bool1 = FALSE;
 						bool2 = FALSE;
@@ -1954,7 +1954,7 @@ void LegoAnimationManager::AddExtra(MxS32 p_location, MxBool p_und)
 					if (p_location < 0) {
 						boundary = new LegoLocation::Boundary;
 
-						if (!FUN_10064120(boundary, und == 2, bool2)) {
+						if (!FUN_10064120(boundary, pathWalkingMode == 2, bool2)) {
 							delete boundary;
 							boundary = NULL;
 						}
@@ -2008,19 +2008,19 @@ void LegoAnimationManager::AddExtra(MxS32 p_location, MxBool p_und)
 											g_characters[m_lastExtraCharacterId].m_name
 										);
 
-										switch (g_unk0x100f7504++ % 4) {
+										switch (g_pathWalkingModeSelector++ % 4) {
 										case 0:
-											actor->SetUnknown0x0c(und != 1 ? 1 : 2);
+											actor->SetPathWalkingMode(pathWalkingMode != 1 ? 1 : 2);
 											break;
 										case 1: {
-											actor->SetUnknown0x0c(und);
+											actor->SetPathWalkingMode(pathWalkingMode);
 											MxS32 src = boundary->m_src;
 											boundary->m_src = boundary->m_dest;
 											boundary->m_dest = src;
 											break;
 										}
 										default:
-											actor->SetUnknown0x0c(und);
+											actor->SetPathWalkingMode(pathWalkingMode);
 											break;
 										}
 
@@ -2190,21 +2190,21 @@ MxBool LegoAnimationManager::FUN_10062e20(LegoROI* p_roi, LegoAnimPresenter* p_p
 		MxResult result = 1; // Not a valid MxResult value
 
 		if (!local24) {
-			MxU8 unk0x0c;
+			MxU8 pathWalkingMode;
 
 			switch (SDL_rand(3)) {
 			case 0:
-				unk0x0c = 1;
+				pathWalkingMode = 1;
 				break;
 			case 1:
-				unk0x0c = 2;
+				pathWalkingMode = 2;
 				break;
 			case 2:
-				unk0x0c = 0;
+				pathWalkingMode = 0;
 				break;
 			}
 
-			actor->SetUnknown0x0c(unk0x0c);
+			actor->SetPathWalkingMode(pathWalkingMode);
 
 			Mx3DPointFloat position;
 			Mx3DPointFloat direction;
@@ -2390,7 +2390,7 @@ MxBool LegoAnimationManager::FUN_10063b90(LegoWorld* p_world, LegoExtraActor* p_
 		presenter = (LegoLocomotionAnimPresenter*) p_world->Find("LegoAnimPresenter", vehicleWC);
 
 		if (presenter != NULL) {
-			presenter->FUN_1006d680(p_actor, 1.7f);
+			presenter->CreateROIAndBuildMap(p_actor, 1.7f);
 		}
 
 		g_vehicles[g_characters[p_characterId].m_vehicleId].m_unk0x04 = FALSE;
@@ -2403,7 +2403,7 @@ MxBool LegoAnimationManager::FUN_10063b90(LegoWorld* p_world, LegoExtraActor* p_
 			presenter = (LegoLocomotionAnimPresenter*) p_world->Find("LegoAnimPresenter", vehicleWC);
 
 			if (presenter != NULL) {
-				presenter->FUN_1006d680(p_actor, 0.7f);
+				presenter->CreateROIAndBuildMap(p_actor, 0.7f);
 			}
 		}
 
@@ -2416,7 +2416,7 @@ MxBool LegoAnimationManager::FUN_10063b90(LegoWorld* p_world, LegoExtraActor* p_
 			presenter = (LegoLocomotionAnimPresenter*) p_world->Find("LegoAnimPresenter", vehicleWC);
 
 			if (presenter != NULL) {
-				presenter->FUN_1006d680(p_actor, 4.0f);
+				presenter->CreateROIAndBuildMap(p_actor, 4.0f);
 			}
 		}
 
@@ -2429,7 +2429,7 @@ MxBool LegoAnimationManager::FUN_10063b90(LegoWorld* p_world, LegoExtraActor* p_
 			presenter = (LegoLocomotionAnimPresenter*) p_world->Find("LegoAnimPresenter", vehicleWC);
 
 			if (presenter != NULL) {
-				presenter->FUN_1006d680(p_actor, 0.0f);
+				presenter->CreateROIAndBuildMap(p_actor, 0.0f);
 			}
 		}
 
@@ -2701,8 +2701,8 @@ MxResult LegoAnimationManager::FUN_10064380(
 	}
 
 	if (actor != NULL) {
-		MxU8 unk0x0c = SDL_rand(2) != 0 ? 1 : 2;
-		actor->SetUnknown0x0c(unk0x0c);
+		MxU8 pathWalkingMode = SDL_rand(2) != 0 ? 1 : 2;
+		actor->SetPathWalkingMode(pathWalkingMode);
 		actor->SetWorldSpeed(0.0f);
 
 		if (world->PlaceActor(actor, p_boundaryName, p_src, p_srcScale, p_dest, p_destScale) != SUCCESS) {
@@ -2718,12 +2718,12 @@ MxResult LegoAnimationManager::FUN_10064380(
 		LegoLocomotionAnimPresenter* presenter =
 			(LegoLocomotionAnimPresenter*) world->Find("LegoAnimPresenter", cycles[p_undIdx1]);
 		if (presenter != NULL) {
-			presenter->FUN_1006d680(actor, 0.0f);
+			presenter->CreateROIAndBuildMap(actor, 0.0f);
 		}
 
 		presenter = (LegoLocomotionAnimPresenter*) world->Find("LegoAnimPresenter", cycles[p_undIdx2]);
 		if (presenter != NULL) {
-			presenter->FUN_1006d680(actor, 4.0f);
+			presenter->CreateROIAndBuildMap(actor, 4.0f);
 		}
 
 		m_extras[i].m_unk0x08 = Timer()->GetTime();

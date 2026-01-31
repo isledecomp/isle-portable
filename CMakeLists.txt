@@ -310,7 +310,7 @@ target_sources(lego1 PRIVATE
   LEGO1/lego/sources/misc/legostorage.cpp
   LEGO1/lego/sources/misc/legotexture.cpp
   LEGO1/lego/sources/misc/legotree.cpp
-  LEGO1/lego/sources/misc/legounknown.cpp
+  LEGO1/lego/sources/misc/legospline.cpp
 )
 target_include_directories(lego1 PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include" "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/LEGO1/lego/sources")
 

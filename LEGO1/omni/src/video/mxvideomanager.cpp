@@ -43,7 +43,7 @@ MxResult MxVideoManager::Init()
 	m_displaySurface = NULL;
 	m_region = NULL;
 	m_videoParam.SetPalette(NULL);
-	m_unk0x60 = FALSE;
+	m_created = FALSE;
 	return SUCCESS;
 }
 
@@ -73,7 +73,7 @@ void MxVideoManager::Destroy(MxBool p_fromDestructor)
 		delete m_videoParam.GetPalette();
 	}
 
-	if (m_unk0x60) {
+	if (m_created) {
 		if (m_pDirectDraw) {
 			m_pDirectDraw->Release();
 		}
@@ -154,7 +154,7 @@ MxResult MxVideoManager::VTable0x28(
 	MxBool locked = FALSE;
 	MxResult status = FAILURE;
 
-	m_unk0x60 = FALSE;
+	m_created = FALSE;
 
 	if (MxPresentationManager::Create() != SUCCESS) {
 		goto done;
@@ -229,7 +229,7 @@ MxResult MxVideoManager::Create(MxVideoParam& p_videoParam, MxU32 p_frequencyMS,
 	MxResult status = FAILURE;
 	HWND hWnd = NULL;
 
-	m_unk0x60 = TRUE;
+	m_created = TRUE;
 
 	if (MxPresentationManager::Create() != SUCCESS) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "MxPresentationManager::Create failed");

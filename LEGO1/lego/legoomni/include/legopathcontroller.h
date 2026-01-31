@@ -109,13 +109,13 @@ public:
 	);
 	MxResult PlaceActor(LegoPathActor* p_actor);
 	MxResult RemoveActor(LegoPathActor* p_actor);
-	void FUN_100468f0(LegoAnimPresenter* p_presenter);
+	void AddPresenterIfInRange(LegoAnimPresenter* p_presenter);
 	void RemovePresenterFromBoundaries(LegoAnimPresenter* p_presenter);
-	MxResult FUN_10046b30(LegoPathBoundary*& p_boundaries, MxS32& p_numL);
+	MxResult GetBoundaries(LegoPathBoundary*& p_boundaries, MxS32& p_numL);
 	LegoPathBoundary* GetPathBoundary(const char* p_name);
 	void Enable(MxBool p_enable);
-	void FUN_10046bb0(LegoWorld* p_world);
-	MxResult FUN_10048310(
+	void SetWorld(LegoWorld* p_world);
+	MxResult FindPath(
 		LegoPathEdgeContainer* p_grec,
 		const Vector3& p_oldPosition,
 		const Vector3& p_oldDirection,
@@ -124,17 +124,17 @@ public:
 		const Vector3& p_newDirection,
 		LegoPathBoundary* p_newBoundary,
 		LegoU8 p_mask,
-		MxFloat* p_param9
+		MxFloat* p_distance
 	);
-	MxS32 FUN_1004a240(
+	MxS32 GetNextPathEdge(
 		LegoPathEdgeContainer& p_grec,
-		Vector3& p_v1,
-		Vector3& p_v2,
+		Vector3& p_position,
+		Vector3& p_direction,
 		float p_f1,
 		LegoOrientedEdge*& p_edge,
 		LegoPathBoundary*& p_boundary
 	);
-	MxResult FUN_1004a380(
+	MxResult FindIntersectionBoundary(
 		Vector3& p_param1,
 		Vector3& p_param2,
 		Mx3DPointFloat* p_param3,
@@ -159,7 +159,7 @@ public:
 	static LegoPathBoundary* GetControlBoundaryB(MxS32 p_index) { return g_ctrlBoundariesB[p_index].m_boundary; }
 
 private:
-	void FUN_10046970();
+	void AnimateActors();
 	MxResult Read(LegoStorage* p_storage);
 	MxResult ReadStructs(LegoStorage* p_storage);
 	MxResult ReadEdges(LegoStorage* p_storage);
@@ -179,7 +179,7 @@ private:
 	}
 
 	// FUNCTION: BETA10 0x100c17a0
-	static MxU32 FUN_100c17a0(MxFloat p_v1, MxFloat p_v2, MxFloat p_a, MxFloat p_b)
+	static MxU32 BothSameComparison(MxFloat p_v1, MxFloat p_v2, MxFloat p_a, MxFloat p_b)
 	{
 		assert(IsBetween(p_v1, p_a, p_b));
 		assert(IsBetween(p_v2, p_a, p_b));
@@ -207,8 +207,8 @@ private:
 	static CtrlBoundary* g_ctrlBoundariesA;
 	static CtrlEdge* g_ctrlEdgesA;
 
-	static const char* g_unk0x100f42f0[];
-	static const char* g_unk0x100f4330[];
+	static const char* g_ctrlBoundariesNamesA[];
+	static const char* g_ctrlBoundariesNamesB[];
 	static CtrlBoundary* g_ctrlBoundariesB;
 	static CtrlEdge* g_ctrlEdgesB;
 };
@@ -296,58 +296,58 @@ private:
 // _Tree<LegoPathCtrlEdge *,LegoPathCtrlEdge *,set<LegoPathCtrlEdge *,LegoPathCtrlEdgeCompare,allocator<LegoPathCtrlEdge *> >::_Kfn,LegoPathCtrlEdgeCompare,allocator<LegoPathCtrlEdge *> >::_Ubound
 
 // TEMPLATE: LEGO1 0x100493a0
-// list<LegoBEWithFloat,allocator<LegoBEWithFloat> >::~list<LegoBEWithFloat,allocator<LegoBEWithFloat> >
+// list<LegoBEWithMidpoint,allocator<LegoBEWithMidpoint> >::~list<LegoBEWithMidpoint,allocator<LegoBEWithMidpoint> >
 
 // TEMPLATE: LEGO1 0x10049410
-// list<LegoBEWithFloat,allocator<LegoBEWithFloat> >::insert
+// list<LegoBEWithMidpoint,allocator<LegoBEWithMidpoint> >::insert
 
 // TEMPLATE: LEGO1 0x10049470
-// list<LegoBEWithFloat,allocator<LegoBEWithFloat> >::_Buynode
+// list<LegoBEWithMidpoint,allocator<LegoBEWithMidpoint> >::_Buynode
 
 // TEMPLATE: LEGO1 0x100494a0
-// _Tree<LegoBEWithFloat *,LegoBEWithFloat *,multiset<LegoBEWithFloat *,LegoBEWithFloatComparator,allocator<LegoBEWithFloat *> >::_Kfn,LegoBEWithFloatComparator,allocator<LegoBEWithFloat *> >::iterator::_Inc
+// _Tree<LegoBEWithMidpoint *,LegoBEWithMidpoint *,multiset<LegoBEWithMidpoint *,LegoBEWithMidpointComparator,allocator<LegoBEWithMidpoint *> >::_Kfn,LegoBEWithMidpointComparator,allocator<LegoBEWithMidpoint *> >::iterator::_Inc
 
 // TEMPLATE: LEGO1 0x100494e0
-// _Tree<LegoBEWithFloat *,LegoBEWithFloat *,multiset<LegoBEWithFloat *,LegoBEWithFloatComparator,allocator<LegoBEWithFloat *> >::_Kfn,LegoBEWithFloatComparator,allocator<LegoBEWithFloat *> >::~_Tree<LegoBEWithFloat *,LegoBEWithFloat *,multiset<LegoBEWithFlo
+// _Tree<LegoBEWithMidpoint *,LegoBEWithMidpoint *,multiset<LegoBEWithMidpoint *,LegoBEWithMidpointComparator,allocator<LegoBEWithMidpoint *> >::_Kfn,LegoBEWithMidpointComparator,allocator<LegoBEWithMidpoint *> >::~_Tree<LegoBEWithMidpoint *,LegoBEWithMidpoint *,multiset<LegoBEWithFlo
 
 // TEMPLATE: LEGO1 0x100495b0
-// _Tree<LegoBEWithFloat *,LegoBEWithFloat *,multiset<LegoBEWithFloat *,LegoBEWithFloatComparator,allocator<LegoBEWithFloat *> >::_Kfn,LegoBEWithFloatComparator,allocator<LegoBEWithFloat *> >::insert
+// _Tree<LegoBEWithMidpoint *,LegoBEWithMidpoint *,multiset<LegoBEWithMidpoint *,LegoBEWithMidpointComparator,allocator<LegoBEWithMidpoint *> >::_Kfn,LegoBEWithMidpointComparator,allocator<LegoBEWithMidpoint *> >::insert
 
 // TEMPLATE: LEGO1 0x10049840
-// _Tree<LegoBEWithFloat *,LegoBEWithFloat *,multiset<LegoBEWithFloat *,LegoBEWithFloatComparator,allocator<LegoBEWithFloat *> >::_Kfn,LegoBEWithFloatComparator,allocator<LegoBEWithFloat *> >::iterator::_Dec
+// _Tree<LegoBEWithMidpoint *,LegoBEWithMidpoint *,multiset<LegoBEWithMidpoint *,LegoBEWithMidpointComparator,allocator<LegoBEWithMidpoint *> >::_Kfn,LegoBEWithMidpointComparator,allocator<LegoBEWithMidpoint *> >::iterator::_Dec
 
 // TEMPLATE: LEGO1 0x10049890
-// _Tree<LegoBEWithFloat *,LegoBEWithFloat *,multiset<LegoBEWithFloat *,LegoBEWithFloatComparator,allocator<LegoBEWithFloat *> >::_Kfn,LegoBEWithFloatComparator,allocator<LegoBEWithFloat *> >::erase
+// _Tree<LegoBEWithMidpoint *,LegoBEWithMidpoint *,multiset<LegoBEWithMidpoint *,LegoBEWithMidpointComparator,allocator<LegoBEWithMidpoint *> >::_Kfn,LegoBEWithMidpointComparator,allocator<LegoBEWithMidpoint *> >::erase
 
 // TEMPLATE: LEGO1 0x10049cf0
-// _Tree<LegoBEWithFloat *,LegoBEWithFloat *,multiset<LegoBEWithFloat *,LegoBEWithFloatComparator,allocator<LegoBEWithFloat *> >::_Kfn,LegoBEWithFloatComparator,allocator<LegoBEWithFloat *> >::_Buynode
+// _Tree<LegoBEWithMidpoint *,LegoBEWithMidpoint *,multiset<LegoBEWithMidpoint *,LegoBEWithMidpointComparator,allocator<LegoBEWithMidpoint *> >::_Kfn,LegoBEWithMidpointComparator,allocator<LegoBEWithMidpoint *> >::_Buynode
 
 // TEMPLATE: LEGO1 0x10049d50
-// _Tree<LegoBEWithFloat *,LegoBEWithFloat *,multiset<LegoBEWithFloat *,LegoBEWithFloatComparator,allocator<LegoBEWithFloat *> >::_Kfn,LegoBEWithFloatComparator,allocator<LegoBEWithFloat *> >::_Init
+// _Tree<LegoBEWithMidpoint *,LegoBEWithMidpoint *,multiset<LegoBEWithMidpoint *,LegoBEWithMidpointComparator,allocator<LegoBEWithMidpoint *> >::_Kfn,LegoBEWithMidpointComparator,allocator<LegoBEWithMidpoint *> >::_Init
 
 // TEMPLATE: LEGO1 0x10049e00
-// _Tree<LegoBEWithFloat *,LegoBEWithFloat *,multiset<LegoBEWithFloat *,LegoBEWithFloatComparator,allocator<LegoBEWithFloat *> >::_Kfn,LegoBEWithFloatComparator,allocator<LegoBEWithFloat *> >::_Insert
+// _Tree<LegoBEWithMidpoint *,LegoBEWithMidpoint *,multiset<LegoBEWithMidpoint *,LegoBEWithMidpointComparator,allocator<LegoBEWithMidpoint *> >::_Kfn,LegoBEWithMidpointComparator,allocator<LegoBEWithMidpoint *> >::_Insert
 
 // TEMPLATE: LEGO1 0x10049d10
-// _Tree<LegoBEWithFloat *,LegoBEWithFloat *,multiset<LegoBEWithFloat *,LegoBEWithFloatComparator,allocator<LegoBEWithFloat *> >::_Kfn,LegoBEWithFloatComparator,allocator<LegoBEWithFloat *> >::_Erase
+// _Tree<LegoBEWithMidpoint *,LegoBEWithMidpoint *,multiset<LegoBEWithMidpoint *,LegoBEWithMidpointComparator,allocator<LegoBEWithMidpoint *> >::_Kfn,LegoBEWithMidpointComparator,allocator<LegoBEWithMidpoint *> >::_Erase
 
 // TEMPLATE: LEGO1 0x1004a090
-// _Tree<LegoBEWithFloat *,LegoBEWithFloat *,multiset<LegoBEWithFloat *,LegoBEWithFloatComparator,allocator<LegoBEWithFloat *> >::_Kfn,LegoBEWithFloatComparator,allocator<LegoBEWithFloat *> >::_Lrotate
+// _Tree<LegoBEWithMidpoint *,LegoBEWithMidpoint *,multiset<LegoBEWithMidpoint *,LegoBEWithMidpointComparator,allocator<LegoBEWithMidpoint *> >::_Kfn,LegoBEWithMidpointComparator,allocator<LegoBEWithMidpoint *> >::_Lrotate
 
 // TEMPLATE: LEGO1 0x1004a0f0
-// _Tree<LegoBEWithFloat *,LegoBEWithFloat *,multiset<LegoBEWithFloat *,LegoBEWithFloatComparator,allocator<LegoBEWithFloat *> >::_Kfn,LegoBEWithFloatComparator,allocator<LegoBEWithFloat *> >::_Rrotate
+// _Tree<LegoBEWithMidpoint *,LegoBEWithMidpoint *,multiset<LegoBEWithMidpoint *,LegoBEWithMidpointComparator,allocator<LegoBEWithMidpoint *> >::_Kfn,LegoBEWithMidpointComparator,allocator<LegoBEWithMidpoint *> >::_Rrotate
 
 // TEMPLATE: LEGO1 0x1004a150
-// List<LegoBEWithFloat>::~List<LegoBEWithFloat>
+// List<LegoBEWithMidpoint>::~List<LegoBEWithMidpoint>
 
 // TEMPLATE: LEGO1 0x1004a1a0
-// Multiset<LegoBEWithFloat *,LegoBEWithFloatComparator>::~Multiset<LegoBEWithFloat *,LegoBEWithFloatComparator>
+// Multiset<LegoBEWithMidpoint *,LegoBEWithMidpointComparator>::~Multiset<LegoBEWithMidpoint *,LegoBEWithMidpointComparator>
 
 // TEMPLATE: LEGO1 0x1004a1f0
-// multiset<LegoBEWithFloat *,LegoBEWithFloatComparator,allocator<LegoBEWithFloat *> >::~multiset<LegoBEWithFloat *,LegoBEWithFloatComparator,allocator<LegoBEWithFloat *> >
+// multiset<LegoBEWithMidpoint *,LegoBEWithMidpointComparator,allocator<LegoBEWithMidpoint *> >::~multiset<LegoBEWithMidpoint *,LegoBEWithMidpointComparator,allocator<LegoBEWithMidpoint *> >
 
 // TEMPLATE: LEGO1 0x1004a760
-// ?_Construct@@YAXPAPAULegoBEWithFloat@@ABQAU1@@Z
+// ?_Construct@@YAXPAPAULegoBEWithMidpoint@@ABQAU1@@Z
 
 // TEMPLATE: LEGO1 0x1004a780
 // ?_Construct@@YAXPAPAULegoPathCtrlEdge@@ABQAU1@@Z
@@ -356,7 +356,7 @@ private:
 // _Tree<LegoPathCtrlEdge *,LegoPathCtrlEdge *,set<LegoPathCtrlEdge *,LegoPathCtrlEdgeCompare,allocator<LegoPathCtrlEdge *> >::_Kfn,LegoPathCtrlEdgeCompare,allocator<LegoPathCtrlEdge *> >::_Nil
 
 // GLOBAL: LEGO1 0x100f4364
-// _Tree<LegoBEWithFloat *,LegoBEWithFloat *,multiset<LegoBEWithFloat *,LegoBEWithFloatComparator,allocator<LegoBEWithFloat *> >::_Kfn,LegoBEWithFloatComparator,allocator<LegoBEWithFloat *> >::_Nil
+// _Tree<LegoBEWithMidpoint *,LegoBEWithMidpoint *,multiset<LegoBEWithMidpoint *,LegoBEWithMidpointComparator,allocator<LegoBEWithMidpoint *> >::_Kfn,LegoBEWithMidpointComparator,allocator<LegoBEWithMidpoint *> >::_Nil
 // clang-format on
 
 #endif // LEGOPATHCONTROLLER_H
