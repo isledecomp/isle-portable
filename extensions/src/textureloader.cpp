@@ -64,6 +64,7 @@ bool TextureLoader::PatchTexture(LegoTextureInfo* p_textureInfo)
 	if (details->bits_per_pixel == 8) {
 		SDL_Palette* sdlPalette = SDL_GetSurfacePalette(surface);
 		if (!sdlPalette) {
+			p_textureInfo->m_surface->Unlock(desc.lpSurface);
 			SDL_DestroySurface(surface);
 			return false;
 		}
@@ -78,6 +79,7 @@ bool TextureLoader::PatchTexture(LegoTextureInfo* p_textureInfo)
 
 		LPDIRECTDRAWPALETTE ddPalette = nullptr;
 		if (pDirectDraw->CreatePalette(DDPCAPS_8BIT | DDPCAPS_ALLOW256, entries, &ddPalette, NULL) != DD_OK) {
+			p_textureInfo->m_surface->Unlock(desc.lpSurface);
 			SDL_DestroySurface(surface);
 			return false;
 		}
