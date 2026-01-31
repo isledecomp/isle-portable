@@ -31,17 +31,17 @@ Direct3DRMRenderer* CreateDirect3DRMRenderer(
 )
 {
 #ifdef USE_SDL_GPU
-	if (SDL_memcmp(guid, &SDL3_GPU_GUID, sizeof(GUID)) == 0) {
-		return Direct3DRMSDL3GPURenderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
+	if (MORTAR_memcmp(guid, &SDL3_GPU_GUID, sizeof(GUID)) == 0) {
+		return Create_Direct3DRMSDL3GPURenderer(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
 #endif
 #ifdef USE_SOFTWARE_RENDER
-	if (SDL_memcmp(guid, &SOFTWARE_GUID, sizeof(GUID)) == 0) {
+	if (MORTAR_memcmp(guid, &SOFTWARE_GUID, sizeof(GUID)) == 0) {
 		return new Direct3DRMSoftwareRenderer(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
 #endif
 #ifdef USE_OPENGLES3
-	if (SDL_memcmp(guid, &OpenGLES3_GUID, sizeof(GUID)) == 0) {
+	if (MORTAR_memcmp(guid, &OpenGLES3_GUID, sizeof(GUID)) == 0) {
 		return OpenGLES3Renderer::Create(
 			DDSDesc.dwWidth,
 			DDSDesc.dwHeight,
@@ -51,27 +51,27 @@ Direct3DRMRenderer* CreateDirect3DRMRenderer(
 	}
 #endif
 #ifdef USE_OPENGLES2
-	if (SDL_memcmp(guid, &OpenGLES2_GUID, sizeof(GUID)) == 0) {
+	if (MORTAR_memcmp(guid, &OpenGLES2_GUID, sizeof(GUID)) == 0) {
 		return OpenGLES2Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight, d3d->GetAnisotropic());
 	}
 #endif
 #ifdef USE_OPENGL1
-	if (SDL_memcmp(guid, &OpenGL1_GUID, sizeof(GUID)) == 0) {
+	if (MORTAR_memcmp(guid, &OpenGL1_GUID, sizeof(GUID)) == 0) {
 		return OpenGL1Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight, d3d->GetMSAASamples());
 	}
 #endif
 #ifdef USE_CITRO3D
-	if (SDL_memcmp(guid, &Citro3D_GUID, sizeof(GUID)) == 0) {
+	if (MORTAR_memcmp(guid, &Citro3D_GUID, sizeof(GUID)) == 0) {
 		return new Citro3DRenderer(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
 #endif
 #ifdef USE_DIRECTX9
-	if (SDL_memcmp(guid, &DirectX9_GUID, sizeof(GUID)) == 0) {
+	if (MORTAR_memcmp(guid, &DirectX9_GUID, sizeof(GUID)) == 0) {
 		return DirectX9Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight);
 	}
 #endif
 #ifdef USE_GXM
-	if (SDL_memcmp(guid, &GXM_GUID, sizeof(GUID)) == 0) {
+	if (MORTAR_memcmp(guid, &GXM_GUID, sizeof(GUID)) == 0) {
 		return GXMRenderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight, d3d->GetMSAASamples());
 	}
 #endif

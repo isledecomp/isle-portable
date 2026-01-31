@@ -129,7 +129,7 @@ void CarRace::ReadyWorld()
 	AnimationManager()->Resume();
 	Disable(FALSE, LegoOmni::c_disableInput | LegoOmni::c_disable3d | LegoOmni::c_clearScreen);
 
-	m_introAnimation = g_introAnimations[SDL_rand(8)];
+	m_introAnimation = g_introAnimations[MORTAR_rand(8)];
 
 	AnimationManager()
 		->FUN_10060dc0(m_introAnimation, NULL, TRUE, LegoAnimationManager::e_unk0, NULL, FALSE, TRUE, FALSE, TRUE);
@@ -235,24 +235,24 @@ MxLong CarRace::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 
 					if (m_opponent1Laps < m_playerLaps && m_opponent2Laps < m_playerLaps) {
 						score = 3;
-						m_firstFinishAnimation = g_studsLoosesAnimation[SDL_rand(3)];
-						m_secondFinishAnimation = g_rhodaLoosesAnimation[SDL_rand(3)];
+						m_firstFinishAnimation = g_studsLoosesAnimation[MORTAR_rand(3)];
+						m_secondFinishAnimation = g_rhodaLoosesAnimation[MORTAR_rand(3)];
 					}
 					else if (m_opponent1Laps < m_playerLaps || m_opponent2Laps < m_playerLaps) {
 						score = 2;
 						if (m_opponent1Laps == g_lapsCount) {
-							m_firstFinishAnimation = g_studsWinsAnimations[SDL_rand(4)];
-							m_secondFinishAnimation = g_rhodaLoosesAnimation[SDL_rand(3)];
+							m_firstFinishAnimation = g_studsWinsAnimations[MORTAR_rand(4)];
+							m_secondFinishAnimation = g_rhodaLoosesAnimation[MORTAR_rand(3)];
 						}
 						else {
-							m_firstFinishAnimation = g_rhodaWinsAnimations[SDL_rand(3)];
-							m_secondFinishAnimation = g_studsLoosesAnimation[SDL_rand(3)];
+							m_firstFinishAnimation = g_rhodaWinsAnimations[MORTAR_rand(3)];
+							m_secondFinishAnimation = g_studsLoosesAnimation[MORTAR_rand(3)];
 						}
 					}
 					else {
 						score = 1;
-						m_firstFinishAnimation = g_studsWinsAnimations[SDL_rand(4)];
-						m_secondFinishAnimation = g_rhodaWinsAnimations[SDL_rand(3)];
+						m_firstFinishAnimation = g_studsWinsAnimations[MORTAR_rand(4)];
+						m_secondFinishAnimation = g_rhodaWinsAnimations[MORTAR_rand(3)];
 					}
 
 					InputManager()->DisableInputProcessing();

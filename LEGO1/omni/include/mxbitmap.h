@@ -4,7 +4,7 @@
 #include "mxcore.h"
 #include "mxtypes.h"
 
-#include <SDL3/SDL_iostream.h>
+#include <mortar/mortar_iostream.h>
 #ifdef MINIWIN
 #include "miniwin/ddraw.h"
 #else
@@ -48,7 +48,7 @@ public:
 	virtual MxResult ImportBitmap(MxBitmap* p_bitmap);                                     // vtable+0x14
 	virtual MxResult ImportBitmapInfo(MxBITMAPINFO* p_info);                               // vtable+0x18
 	virtual MxResult SetSize(MxS32 p_width, MxS32 p_height, MxPalette* p_palette, MxBool); // vtable+0x1c
-	virtual MxResult LoadFile(SDL_IOStream* p_handle);                                     // vtable+0x20
+	virtual MxResult LoadFile(MORTAR_IOStream* p_handle);                                  // vtable+0x20
 	virtual MxLong Read(const char* p_filename);                                           // vtable+0x24
 
 	// FUNCTION: LEGO1 0x1004e0d0

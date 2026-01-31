@@ -1,10 +1,10 @@
 #pragma once
 
-#include <SDL3/SDL.h>
 #include <miniwin/ddraw.h>
+#include <mortar/mortar.h>
 
 struct DirectDrawSurfaceImpl : public IDirectDrawSurface3 {
-	DirectDrawSurfaceImpl(int width, int height, SDL_PixelFormat format);
+	DirectDrawSurfaceImpl(int width, int height, MORTAR_PixelFormat format);
 	~DirectDrawSurfaceImpl() override;
 
 	// IUnknown interface
@@ -37,7 +37,7 @@ struct DirectDrawSurfaceImpl : public IDirectDrawSurface3 {
 
 	IDirect3DRMTexture2* ToTexture();
 
-	SDL_Surface* m_surface = nullptr;
+	MORTAR_Surface* m_surface = nullptr;
 
 private:
 	IDirect3DRMTexture2* m_texture = nullptr;

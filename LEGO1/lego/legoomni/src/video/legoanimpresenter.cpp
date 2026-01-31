@@ -27,7 +27,7 @@
 #include "realtime/realtime.h"
 #include "viewmanager/viewmanager.h"
 
-#include <SDL3/SDL_stdinc.h>
+#include <mortar/mortar_stdinc.h>
 #include <stdio.h>
 
 DECOMP_SIZE_ASSERT(LegoAnimPresenter, 0xbc)
@@ -250,7 +250,7 @@ void LegoAnimPresenter::CreateManagedActors()
 			else if (actorType == LegoAnimActorEntry::e_managedInvisibleRoi) {
 				LegoChar* baseName = new LegoChar[strlen(str)];
 				strcpy(baseName, str + 1);
-				SDL_strlwr(baseName);
+				MORTAR_strlwr(baseName);
 
 				LegoChar* roiName = GetActorName(str);
 				roi = CharacterManager()->FUN_10085a80(roiName, baseName, TRUE);
@@ -274,7 +274,7 @@ void LegoAnimPresenter::CreateManagedActors()
 					*c = '\0';
 				}
 
-				SDL_strlwr(lodName);
+				MORTAR_strlwr(lodName);
 
 				LegoChar* roiName = GetActorName(str);
 				roi = CharacterManager()->CreateAutoROI(roiName, lodName, TRUE);
@@ -317,11 +317,11 @@ void LegoAnimPresenter::CreateSceneROIs()
 					LegoU32 len = strlen(actorName);
 					strcpy(lodName, actorName);
 
-					for (LegoChar* i = &lodName[len - 1]; SDL_isdigit(*i) || *i == '_'; i--) {
+					for (LegoChar* i = &lodName[len - 1]; MORTAR_isdigit(*i) || *i == '_'; i--) {
 						*i = '\0';
 					}
 
-					SDL_strlwr(lodName);
+					MORTAR_strlwr(lodName);
 
 					CharacterManager()->CreateAutoROI(actorName, lodName, FALSE);
 					AppendROIToScene(rois, actorName);
@@ -376,7 +376,7 @@ LegoBool LegoAnimPresenter::AppendROIToScene(const CompoundObject& p_rois, const
 			const char* name = roi->GetName();
 
 			if (name != NULL) {
-				if (!SDL_strcasecmp(name, str)) {
+				if (!MORTAR_strcasecmp(name, str)) {
 					m_sceneROIs->Append(roi);
 					result = TRUE;
 					break;
@@ -398,7 +398,7 @@ LegoROI* LegoAnimPresenter::FindROI(const LegoChar* p_name)
 	while (cursor.Next(roi)) {
 		LegoChar* nameOrVar = GetVariableOrIdentity(roi->GetName(), NULL);
 
-		if (nameOrVar != NULL && !SDL_strcasecmp(nameOrVar, p_name)) {
+		if (nameOrVar != NULL && !MORTAR_strcasecmp(nameOrVar, p_name)) {
 			delete[] nameOrVar;
 			return roi;
 		}
@@ -436,7 +436,7 @@ void LegoAnimPresenter::BuildROIMap()
 		if (m_roiMap[index]->GetName() != NULL) {
 			for (MxS32 i = 0; i < m_ptAtCamCount; i++) {
 				if (m_ptAtCamROI[i] == NULL && m_ptAtCamNames[i] != NULL) {
-					if (!SDL_strcasecmp(m_ptAtCamNames[i], m_roiMap[index]->GetName())) {
+					if (!MORTAR_strcasecmp(m_ptAtCamNames[i], m_roiMap[index]->GetName())) {
 						m_ptAtCamROI[i] = m_roiMap[index];
 						break;
 					}

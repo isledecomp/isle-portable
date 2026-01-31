@@ -3,7 +3,7 @@
 
 #include "legotypes.h"
 
-#include <SDL3/SDL_surface.h>
+#include <mortar/mortar_surface.h>
 
 class LegoStorage;
 
@@ -18,13 +18,13 @@ public:
 	void SetGreen(LegoU8 p_green) { m_color.g = p_green; }
 	LegoU8 GetBlue() const { return m_color.b; }
 	void SetBlue(LegoU8 p_blue) { m_color.b = p_blue; }
-	SDL_Color GetColor() const { return m_color; }
-	void SetColor(SDL_Color p_color) { m_color = p_color; }
+	MORTAR_Color GetColor() const { return m_color; }
+	void SetColor(MORTAR_Color p_color) { m_color = p_color; }
 	LegoResult Read(LegoStorage* p_storage);
 	LegoResult Write(LegoStorage* p_storage) const;
 
 protected:
-	SDL_Color m_color;
+	MORTAR_Color m_color;
 };
 
 // 0x310
@@ -36,10 +36,10 @@ public:
 	LegoU32 GetWidth() const { return m_surface->w; }
 	LegoU32 GetHeight() const { return m_surface->h; }
 	LegoU32 GetCount() const { return m_palette ? m_palette->ncolors : 0; }
-	SDL_Palette* GetPalette() const { return m_palette; }
-	void SetPalette(SDL_Palette* p_palette)
+	MORTAR_Palette* GetPalette() const { return m_palette; }
+	void SetPalette(MORTAR_Palette* p_palette)
 	{
-		SDL_DestroyPalette(m_palette);
+		MORTAR_DestroyPalette(m_palette);
 		m_palette = p_palette;
 	}
 	void SetPaletteEntry(LegoU32 p_i, LegoPaletteEntry& p_paletteEntry)
@@ -51,8 +51,8 @@ public:
 	LegoResult Write(LegoStorage* p_storage);
 
 protected:
-	SDL_Surface* m_surface;
-	SDL_Palette* m_palette;
+	MORTAR_Surface* m_surface;
+	MORTAR_Palette* m_palette;
 	//	LegoU32 m_count;                 // 0x08
 	//	LegoPaletteEntry m_palette[256]; // 0x0c
 	//	LegoU8* m_bits;                  // 0x30c

@@ -5,6 +5,7 @@
 #include "d3drmvisual_impl.h"
 #include "miniwin.h"
 
+#include <cassert>
 #include <cstring>
 
 Direct3DRMFrameImpl::Direct3DRMFrameImpl(Direct3DRMFrameImpl* parent)
@@ -29,15 +30,15 @@ Direct3DRMFrameImpl::~Direct3DRMFrameImpl()
 
 HRESULT Direct3DRMFrameImpl::QueryInterface(const GUID& riid, void** ppvObject)
 {
-	if (SDL_memcmp(&riid, &IID_IDirect3DRMFrame, sizeof(GUID)) == 0) {
+	if (MORTAR_memcmp(&riid, &IID_IDirect3DRMFrame, sizeof(GUID)) == 0) {
 		this->IUnknown::AddRef();
 		*ppvObject = static_cast<IDirect3DRMFrame*>(this);
 		return S_OK;
 	}
-	if (SDL_memcmp(&riid, &IID_IDirect3DRMMesh, sizeof(GUID)) == 0) {
+	if (MORTAR_memcmp(&riid, &IID_IDirect3DRMMesh, sizeof(GUID)) == 0) {
 		return E_NOINTERFACE;
 	}
-	SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Direct3DRMFrameImpl does not implement guid");
+	MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "Direct3DRMFrameImpl does not implement guid");
 	return E_NOINTERFACE;
 }
 
@@ -49,7 +50,7 @@ HRESULT Direct3DRMFrameImpl::AddChild(IDirect3DRMFrame* child)
 			return DD_OK;
 		}
 		auto result = childImpl->m_parent->m_children->DeleteElement(childImpl);
-		SDL_assert(result == DD_OK);
+		assert(result == DD_OK);
 	}
 	childImpl->m_parent = this;
 	return m_children->AddElement(child);

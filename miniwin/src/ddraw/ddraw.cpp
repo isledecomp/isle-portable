@@ -7,29 +7,29 @@
 #include "miniwin.h"
 #include "miniwin/d3d.h"
 
-#include <SDL3/SDL.h>
 #include <assert.h>
 #include <cinttypes>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <mortar/mortar.h>
 
-SDL_Window* DDWindow;
+MORTAR_Window* DDWindow;
 Direct3DRMRenderer* DDRenderer;
 
 HRESULT DirectDrawImpl::QueryInterface(const GUID& riid, void** ppvObject)
 {
-	if (SDL_memcmp(&riid, &IID_IDirectDraw2, sizeof(GUID)) == 0) {
+	if (MORTAR_memcmp(&riid, &IID_IDirectDraw2, sizeof(GUID)) == 0) {
 		this->IUnknown::AddRef();
 		*ppvObject = static_cast<IDirectDraw2*>(this);
 		return S_OK;
 	}
-	if (SDL_memcmp(&riid, &IID_IDirect3D2, sizeof(GUID)) == 0) {
+	if (MORTAR_memcmp(&riid, &IID_IDirect3D2, sizeof(GUID)) == 0) {
 		this->IUnknown::AddRef();
 		*ppvObject = static_cast<IDirect3D2*>(this);
 		return S_OK;
 	}
-	if (SDL_memcmp(&riid, &IID_IDirect3DMiniwin, sizeof(GUID)) == 0) {
+	if (MORTAR_memcmp(&riid, &IID_IDirect3DMiniwin, sizeof(GUID)) == 0) {
 		this->IUnknown::AddRef();
 		*ppvObject = static_cast<IDirect3DMiniwin*>(this);
 		return S_OK;
@@ -72,7 +72,7 @@ HRESULT DirectDrawImpl::CreateSurface(
 			if ((lpDDSurfaceDesc->dwFlags & DDSD_ZBUFFERBITDEPTH) != DDSD_ZBUFFERBITDEPTH) {
 				return DDERR_INVALIDPARAMS;
 			}
-			SDL_Log("Todo: Set %" PRIu32 "bit Z-Buffer", lpDDSurfaceDesc->dwZBufferBitDepth);
+			MORTAR_Log("Todo: Set %" PRIu32 "bit Z-Buffer", lpDDSurfaceDesc->dwZBufferBitDepth);
 			*lplpDDSurface = static_cast<IDirectDrawSurface*>(new DummySurfaceImpl);
 			return DD_OK;
 		}
@@ -91,24 +91,24 @@ HRESULT DirectDrawImpl::CreateSurface(
 		}
 	}
 
-	SDL_PixelFormat format;
+	MORTAR_PixelFormat format;
 #ifdef MINIWIN_PIXELFORMAT
 	format = MINIWIN_PIXELFORMAT;
 #else
-	format = SDL_PIXELFORMAT_RGBA32;
+	format = MORTAR_PIXELFORMAT_RGBA32;
 #endif
 	if ((lpDDSurfaceDesc->dwFlags & DDSD_PIXELFORMAT) == DDSD_PIXELFORMAT) {
 		if ((lpDDSurfaceDesc->ddpfPixelFormat.dwFlags & DDPF_RGB) == DDPF_RGB) {
 			int bpp = lpDDSurfaceDesc->ddpfPixelFormat.dwRGBBitCount;
-			Uint32 rMask = lpDDSurfaceDesc->ddpfPixelFormat.dwRBitMask;
-			Uint32 gMask = lpDDSurfaceDesc->ddpfPixelFormat.dwGBitMask;
-			Uint32 bMask = lpDDSurfaceDesc->ddpfPixelFormat.dwBBitMask;
-			Uint32 aMask = (lpDDSurfaceDesc->ddpfPixelFormat.dwFlags & DDPF_ALPHAPIXELS) == DDPF_ALPHAPIXELS
-							   ? lpDDSurfaceDesc->ddpfPixelFormat.dwRGBAlphaBitMask
-							   : 0;
+			uint32_t rMask = lpDDSurfaceDesc->ddpfPixelFormat.dwRBitMask;
+			uint32_t gMask = lpDDSurfaceDesc->ddpfPixelFormat.dwGBitMask;
+			uint32_t bMask = lpDDSurfaceDesc->ddpfPixelFormat.dwBBitMask;
+			uint32_t aMask = (lpDDSurfaceDesc->ddpfPixelFormat.dwFlags & DDPF_ALPHAPIXELS) == DDPF_ALPHAPIXELS
+								 ? lpDDSurfaceDesc->ddpfPixelFormat.dwRGBAlphaBitMask
+								 : 0;
 
-			format = SDL_GetPixelFormatForMasks(bpp, rMask, gMask, bMask, aMask);
-			if (format == SDL_PIXELFORMAT_UNKNOWN) {
+			format = MORTAR_GetPixelFormatForMasks(bpp, rMask, gMask, bMask, aMask);
+			if (format == MORTAR_PIXELFORMAT_UNKNOWN) {
 				return DDERR_INVALIDPIXELFORMAT;
 			}
 		}
@@ -134,18 +134,18 @@ HRESULT DirectDrawImpl::EnumDisplayModes(
 	LPDDENUMMODESCALLBACK lpEnumModesCallback
 )
 {
-	SDL_DisplayID displayID = SDL_GetPrimaryDisplay();
+	MORTAR_DisplayID displayID = MORTAR_GetPrimaryDisplay();
 	if (!displayID) {
 		return DDERR_GENERIC;
 	}
 
 	int count_modes;
-	SDL_DisplayMode** modes = SDL_GetFullscreenDisplayModes(displayID, &count_modes);
+	MORTAR_DisplayMode** modes = MORTAR_GetFullscreenDisplayModes(displayID, &count_modes);
 	if (!modes) {
 		return DDERR_GENERIC;
 	}
 
-	SDL_PixelFormat format;
+	MORTAR_PixelFormat format;
 	HRESULT status = S_OK;
 
 	for (int i = 0; i < count_modes; i++) {
@@ -155,7 +155,7 @@ HRESULT DirectDrawImpl::EnumDisplayModes(
 		format = modes[i]->format;
 #endif
 
-		const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(format);
+		const MORTAR_PixelFormatDetails* details = MORTAR_GetPixelFormatDetails(format);
 		if (!details) {
 			continue;
 		}
@@ -179,7 +179,7 @@ HRESULT DirectDrawImpl::EnumDisplayModes(
 			status = DDERR_GENERIC;
 		}
 	}
-	SDL_free(modes);
+	MORTAR_free(modes);
 
 	return status;
 }
@@ -216,11 +216,11 @@ void EnumDevice(
 	GUID deviceGuid
 )
 {
-	char* deviceNameDup = SDL_strdup(name);
-	char* deviceDescDup = SDL_strdup("Miniwin driver");
+	char* deviceNameDup = MORTAR_strdup(name);
+	char* deviceDescDup = MORTAR_strdup("Miniwin driver");
 	cb(&deviceGuid, deviceNameDup, deviceDescDup, halDesc, helDesc, ctx);
-	SDL_free(deviceDescDup);
-	SDL_free(deviceNameDup);
+	MORTAR_free(deviceDescDup);
+	MORTAR_free(deviceNameDup);
 }
 
 HRESULT DirectDrawImpl::EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
@@ -231,24 +231,24 @@ HRESULT DirectDrawImpl::EnumDevices(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 
 HRESULT DirectDrawImpl::GetDisplayMode(LPDDSURFACEDESC lpDDSurfaceDesc)
 {
-	SDL_DisplayID displayID = SDL_GetPrimaryDisplay();
+	MORTAR_DisplayID displayID = MORTAR_GetPrimaryDisplay();
 	if (!displayID) {
 		return DDERR_GENERIC;
 	}
 
-	const SDL_DisplayMode* mode = SDL_GetCurrentDisplayMode(displayID);
+	const MORTAR_DisplayMode* mode = MORTAR_GetCurrentDisplayMode(displayID);
 	if (!mode) {
 		return DDERR_GENERIC;
 	}
 
-	SDL_PixelFormat format;
+	MORTAR_PixelFormat format;
 #ifdef MINIWIN_PIXELFORMAT
 	format = MINIWIN_PIXELFORMAT;
 #else
 	format = mode->format;
 #endif
 
-	const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(format);
+	const MORTAR_PixelFormatDetails* details = MORTAR_GetPixelFormatDetails(format);
 
 	lpDDSurfaceDesc->dwFlags = DDSD_WIDTH | DDSD_HEIGHT;
 	lpDDSurfaceDesc->dwWidth = mode->w;
@@ -274,11 +274,11 @@ HRESULT DirectDrawImpl::RestoreDisplayMode()
 
 HRESULT DirectDrawImpl::SetCooperativeLevel(HWND hWnd, DDSCLFlags dwFlags)
 {
-	SDL_Window* sdlWindow = reinterpret_cast<SDL_Window*>(hWnd);
+	MORTAR_Window* sdlWindow = reinterpret_cast<MORTAR_Window*>(hWnd);
 
 	if (m_virtualWidth == 0 || m_virtualHeight == 0) {
-		if (!SDL_GetWindowSize(sdlWindow, &m_virtualWidth, &m_virtualHeight)) {
-			SDL_LogError(LOG_CATEGORY_MINIWIN, "SDL_GetWindowSizeInPixels: %s", SDL_GetError());
+		if (!MORTAR_GetWindowSize(sdlWindow, &m_virtualWidth, &m_virtualHeight)) {
+			MORTAR_LogError(LOG_CATEGORY_MINIWIN, "SDL_GetWindowSizeInPixels: %s", MORTAR_GetError());
 		}
 	}
 
@@ -295,7 +295,7 @@ HRESULT DirectDrawImpl::SetCooperativeLevel(HWND hWnd, DDSCLFlags dwFlags)
 		}
 
 #ifndef __EMSCRIPTEN__
-		if (!SDL_SetWindowFullscreen(sdlWindow, fullscreen)) {
+		if (!MORTAR_SetWindowFullscreen(sdlWindow, fullscreen)) {
 			return DDERR_GENERIC;
 		}
 #endif
@@ -324,7 +324,7 @@ HRESULT DirectDrawImpl::CreateDevice(
 
 	DDRenderer = CreateDirect3DRMRenderer(this, DDSDesc, &guid);
 	if (!DDRenderer) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Device GUID not recognized");
+		MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "Device GUID not recognized");
 		return E_NOINTERFACE;
 	}
 	*ppDirect3DDevice = static_cast<IDirect3DDevice2*>(DDRenderer);
@@ -333,10 +333,10 @@ HRESULT DirectDrawImpl::CreateDevice(
 
 HRESULT DirectDrawEnumerate(LPDDENUMCALLBACKA cb, void* context)
 {
-	const char* driverName = SDL_GetCurrentVideoDriver();
-	char* driverNameDup = SDL_strdup(driverName);
+	const char* driverName = MORTAR_GetCurrentVideoDriver();
+	char* driverNameDup = MORTAR_strdup(driverName);
 	BOOL callback_result = cb(NULL, driverNameDup, NULL, context);
-	SDL_free(driverNameDup);
+	MORTAR_free(driverNameDup);
 	if (!callback_result) {
 		return DDERR_GENERIC;
 	}

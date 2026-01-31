@@ -3,9 +3,8 @@
 #include "decomp.h"
 #include "mxmain.h"
 
-#include <SDL3/SDL_log.h>
-#include <SDL3/SDL_platform_defines.h>
-#include <SDL3/SDL_stdinc.h>
+#include <mortar/mortar_log.h>
+#include <mortar/mortar_stdinc.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -93,14 +92,14 @@ void MxString::Reverse()
 // FUNCTION: BETA10 0x1012c537
 void MxString::ToUpperCase()
 {
-	SDL_strupr(this->m_data);
+	MORTAR_strupr(this->m_data);
 }
 
 // FUNCTION: LEGO1 0x100ae4a0
 // FUNCTION: BETA10 0x1012c55c
 void MxString::ToLowerCase()
 {
-	SDL_strlwr(this->m_data);
+	MORTAR_strlwr(this->m_data);
 }
 
 // FUNCTION: LEGO1 0x100ae4b0
@@ -195,7 +194,7 @@ void MxString::MapPathToFilesystem(char* p_path)
 	// [library:filesystem]
 	// This function is used to map an internal Windows-style path (found in SI files or in the code)
 	// to an actual file on disk or CD. We have to account for both Windows path separators and case.
-#if !defined(SDL_PLATFORM_WINDOWS)
+#if !defined(_WIN32)
 	char* path = p_path;
 	while (*path) {
 		if (*path == '\\') {
@@ -205,18 +204,18 @@ void MxString::MapPathToFilesystem(char* p_path)
 		path++;
 	}
 
-	size_t pathLen = SDL_strlen(p_path);
+	size_t pathLen = MORTAR_strlen(p_path);
 
 	auto mapPath = [p_path, pathLen](const vector<MxString>& p_files) -> bool {
 		for (const MxString& file : p_files) {
 			// Test whether file is a suffix of the provided path (case insensitive)
 			// If yes, copy the original file system path into p_path.
 			for (size_t i = pathLen, j = file.GetLength(); i != 0 && j != 0; i--, j--) {
-				if (SDL_tolower(p_path[i - 1]) != SDL_tolower(file.GetData()[j - 1])) {
+				if (MORTAR_tolower(p_path[i - 1]) != MORTAR_tolower(file.GetData()[j - 1])) {
 					break;
 				}
 				else if (j == 1) {
-					SDL_strlcpy(&p_path[i - 1], file.GetData(), file.GetLength() + 1);
+					MORTAR_strlcpy(&p_path[i - 1], file.GetData(), file.GetLength() + 1);
 					return true;
 				}
 			}

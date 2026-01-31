@@ -10,6 +10,6 @@ struct Direct3DRMTextureImpl : public Direct3DRMObjectBaseImpl<IDirect3DRMTextur
 	HRESULT Changed(BOOL pixels, BOOL palette) override;
 
 	IDirectDrawSurface* m_surface = nullptr;
-	Uint8 m_version = 0;
+	uint8_t m_version = 0;
 	bool m_holdsRef;
 };

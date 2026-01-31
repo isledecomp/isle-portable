@@ -2,7 +2,7 @@
 
 #include "misc/legostorage.h"
 
-#include <SDL3/SDL_stdinc.h>
+#include <mortar/mortar_stdinc.h>
 
 DECOMP_SIZE_ASSERT(LegoMeshUnkComponent, 0x1c)
 DECOMP_SIZE_ASSERT(LegoMesh, 0x24)
@@ -75,7 +75,7 @@ LegoResult LegoMesh::Read(LegoStorage* p_storage)
 		}
 
 		m_textureName[textureLength] = '\0';
-		SDL_strlwr(m_textureName);
+		MORTAR_strlwr(m_textureName);
 	}
 
 	if ((result = p_storage->Read(&materialLength, sizeof(LegoU32))) != SUCCESS) {
@@ -89,7 +89,7 @@ LegoResult LegoMesh::Read(LegoStorage* p_storage)
 		}
 
 		m_materialName[materialLength] = '\0';
-		SDL_strlwr(m_materialName);
+		MORTAR_strlwr(m_materialName);
 	}
 
 	return SUCCESS;

@@ -5,7 +5,7 @@
 #include "mxutilities.h"
 #include "mxvariabletable.h"
 
-#include <SDL3/SDL_stdinc.h>
+#include <mortar/mortar_stdinc.h>
 
 DECOMP_SIZE_ASSERT(MxDSSelectAction, 0xb0)
 DECOMP_SIZE_ASSERT(MxStringList, 0x18)
@@ -106,7 +106,7 @@ void MxDSSelectAction::Deserialize(MxU8*& p_source, MxS16 p_flags)
 
 	m_unk0x9c = (char*) p_source;
 
-	if (SDL_strncasecmp(m_unk0x9c.GetData(), "RANDOM_", strlen("RANDOM_")) != 0) {
+	if (MORTAR_strncasecmp(m_unk0x9c.GetData(), "RANDOM_", strlen("RANDOM_")) != 0) {
 		string = VariableTable()->GetVariable((char*) p_source);
 	}
 	else {
@@ -114,8 +114,8 @@ void MxDSSelectAction::Deserialize(MxU8*& p_source, MxS16 p_flags)
 		MxS16 value = atoi(&m_unk0x9c.GetData()[strlen("RANDOM_")]);
 
 		srand(Timer()->GetTime());
-		MxS32 random = SDL_rand(value);
-		string = SDL_itoa((MxS16) random, buffer, 10);
+		MxS32 random = MORTAR_rand(value);
+		string = MORTAR_itoa((MxS16) random, buffer, 10);
 	}
 
 	p_source += strlen((char*) p_source) + 1;

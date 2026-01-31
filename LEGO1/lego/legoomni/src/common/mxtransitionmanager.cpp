@@ -12,7 +12,7 @@
 #include "mxticklemanager.h"
 #include "mxvideopresenter.h"
 
-#include <SDL3/SDL_timer.h>
+#include <mortar/mortar_timer.h>
 
 DECOMP_SIZE_ASSERT(MxTransitionManager, 0x900)
 
@@ -59,12 +59,12 @@ MxResult MxTransitionManager::GetDDrawSurfaceFromVideoManager() // vtable+0x14
 // FUNCTION: LEGO1 0x1004bac0
 MxResult MxTransitionManager::Tickle()
 {
-	Uint64 time = m_animationSpeed + m_systemTime;
-	if (time > SDL_GetTicks()) {
+	uint64_t time = m_animationSpeed + m_systemTime;
+	if (time > MORTAR_GetTicks()) {
 		return SUCCESS;
 	}
 
-	m_systemTime = SDL_GetTicks();
+	m_systemTime = MORTAR_GetTicks();
 
 	switch (m_mode) {
 	case e_noAnimation:
@@ -120,7 +120,7 @@ MxResult MxTransitionManager::StartTransition(
 			action->SetFlags(action->GetFlags() | MxDSAction::c_bit10);
 		}
 
-		Uint64 time = SDL_GetTicks();
+		uint64_t time = MORTAR_GetTicks();
 		m_systemTime = time;
 
 		m_animationSpeed = p_speed;
@@ -190,7 +190,7 @@ void MxTransitionManager::DissolveTransition()
 
 		// ...then shuffle the list (to ensure that we hit each column once)
 		for (i = 0; i < 640; i++) {
-			MxS32 swap = SDL_rand(640);
+			MxS32 swap = MORTAR_rand(640);
 			MxU16 t = m_columnOrder[i];
 			m_columnOrder[i] = m_columnOrder[swap];
 			m_columnOrder[swap] = t;
@@ -198,7 +198,7 @@ void MxTransitionManager::DissolveTransition()
 
 		// For each scanline, pick a random X offset
 		for (i = 0; i < 480; i++) {
-			m_randomShift[i] = SDL_rand(640);
+			m_randomShift[i] = MORTAR_rand(640);
 		}
 	}
 
@@ -286,7 +286,7 @@ void MxTransitionManager::MosaicTransition()
 			}
 
 			for (i = 0; i < 64; i++) {
-				MxS32 swap = SDL_rand(64);
+				MxS32 swap = MORTAR_rand(64);
 				MxU16 t = m_columnOrder[i];
 				m_columnOrder[i] = m_columnOrder[swap];
 				m_columnOrder[swap] = t;
@@ -294,7 +294,7 @@ void MxTransitionManager::MosaicTransition()
 
 			// The same is true here. We only need 48 rows.
 			for (i = 0; i < 48; i++) {
-				m_randomShift[i] = SDL_rand(64);
+				m_randomShift[i] = MORTAR_rand(64);
 			}
 
 			DDSURFACEDESC srcDesc = {};

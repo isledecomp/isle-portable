@@ -7,7 +7,7 @@
 #include "legoworld.h"
 #include "radio.h"
 
-#include <SDL3/SDL_keycode.h>
+#include <mortar/mortar_keycode.h>
 
 class MxStillPresenter;
 
@@ -114,7 +114,7 @@ private:
 	inline void StopAction(GarageScript::Script p_objectId);
 
 	MxLong HandleEndAction(MxEndActionNotificationParam& p_param);
-	MxLong HandleKeyPress(SDL_Keycode p_key);
+	MxLong HandleKeyPress(MORTAR_Keycode p_key);
 	MxLong HandleButtonDown(LegoControlManagerNotificationParam& p_param);
 
 	MxS16 m_currentActorId;             // 0xf8

@@ -10,8 +10,8 @@
 #include "mxsoundmanager.h"
 #include "mxutilities.h"
 
-#include <SDL3/SDL_stdinc.h>
 #include <assert.h>
+#include <mortar/mortar_stdinc.h>
 
 DECOMP_SIZE_ASSERT(MxWavePresenter, 0x6c);
 DECOMP_SIZE_ASSERT(MxWavePresenter::WaveFormat, 0x18);
@@ -20,9 +20,9 @@ DECOMP_SIZE_ASSERT(MxWavePresenter::WaveFormat, 0x18);
 void MxWavePresenter::Init()
 {
 	m_waveFormat = NULL;
-	SDL_zero(m_rb);
-	SDL_zero(m_ab);
-	SDL_zero(m_sound);
+	MORTAR_zero(m_rb);
+	MORTAR_zero(m_ab);
+	MORTAR_zero(m_sound);
 	m_chunkLength = 0;
 	m_started = FALSE;
 	m_is3d = FALSE;
@@ -327,7 +327,7 @@ void MxWavePresenter::ParseExtra()
 
 		char soundValue[512];
 		if (KeyValueStringParse(soundValue, g_strSOUND, extraCopy)) {
-			if (!SDL_strcasecmp(soundValue, "FALSE")) {
+			if (!MORTAR_strcasecmp(soundValue, "FALSE")) {
 				Enable(FALSE);
 			}
 		}

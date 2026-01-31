@@ -9,7 +9,7 @@
 #include "mxticklethread.h"
 #include "mxwavepresenter.h"
 
-#include <SDL3/SDL_log.h>
+#include <mortar/mortar_log.h>
 
 DECOMP_SIZE_ASSERT(MxSoundManager, 0x3c);
 
@@ -42,7 +42,7 @@ MxSoundManager::~MxSoundManager()
 // FUNCTION: BETA10 0x10132d59
 void MxSoundManager::Init()
 {
-	SDL_zero(m_engine);
+	MORTAR_zero(m_engine);
 	m_stream = NULL;
 }
 
@@ -61,7 +61,7 @@ void MxSoundManager::Destroy(MxBool p_fromDestructor)
 	ENTER(m_criticalSection);
 
 	if (m_stream) {
-		SDL_DestroyAudioStream(m_stream);
+		MORTAR_DestroyAudioStream(m_stream);
 	}
 
 	m_engine.Destroy(ma_engine_uninit);
@@ -98,21 +98,20 @@ MxResult MxSoundManager::Create(MxU32 p_frequencyMS, MxBool p_createThread)
 		goto done;
 	}
 
-	SDL_AudioSpec spec;
-	SDL_zero(spec);
+	MORTAR_AudioSpec spec;
+	MORTAR_zero(spec);
 	spec.freq = ma_engine_get_sample_rate(m_engine);
-	spec.format = SDL_AUDIO_F32;
+	spec.format = MORTAR_AUDIO_F32;
 	spec.channels = ma_engine_get_channels(m_engine);
 
-	if ((m_stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, &AudioStreamCallback, this)) !=
-		NULL) {
-		SDL_ResumeAudioDevice(SDL_GetAudioStreamDevice(m_stream));
+	if ((m_stream = MORTAR_EX_OpenAudioPlaybackDevice(&spec, &AudioStreamCallback, this)) != NULL) {
+		MORTAR_EX_ResumeAudioDevice(m_stream);
 	}
 	else {
-		SDL_LogError(
-			SDL_LOG_CATEGORY_APPLICATION,
+		MORTAR_LogError(
+			MORTAR_LOG_CATEGORY_APPLICATION,
 			"Failed to open default audio device for playback: %s",
-			SDL_GetError()
+			MORTAR_GetError()
 		);
 	}
 
@@ -142,7 +141,7 @@ done:
 
 void MxSoundManager::AudioStreamCallback(
 	void* p_userdata,
-	SDL_AudioStream* p_stream,
+	MORTAR_AudioStream* p_stream,
 	int p_additionalAmount,
 	int p_totalAmount
 )
@@ -158,7 +157,7 @@ void MxSoundManager::AudioStreamCallback(
 	ma_uint64 framesRead;
 
 	if (ma_engine_read_pcm_frames(manager->m_engine, g_buffer.data(), bufferSizeInFrames, &framesRead) == MA_SUCCESS) {
-		SDL_PutAudioStreamData(manager->m_stream, g_buffer.data(), framesRead * bytesPerFrame);
+		MORTAR_PutAudioStreamData(manager->m_stream, g_buffer.data(), framesRead * bytesPerFrame);
 	}
 }
 

@@ -23,7 +23,7 @@ public:
 	};
 
 private:
-	static SDL_Surface* FindTexture(const char* p_name);
+	static MORTAR_Surface* FindTexture(const char* p_name);
 };
 
 #ifdef EXTENSIONS

@@ -19,7 +19,7 @@ MxResult MxSemaphore::Init(MxU32 p_initialCount, MxU32 p_maxCount)
 	// [library:synchronization] No support for max count, but shouldn't be necessary
 	MxResult result = FAILURE;
 
-	m_semaphore = SDL_CreateSemaphore(p_initialCount);
+	m_semaphore = MORTAR_CreateSemaphore(p_initialCount);
 	if (!m_semaphore) {
 		goto done;
 	}
@@ -35,7 +35,7 @@ done:
 void MxSemaphore::Acquire()
 {
 	// [library:synchronization] Removed timeout since only INFINITE is ever requested
-	SDL_WaitSemaphore(m_semaphore);
+	MORTAR_WaitSemaphore(m_semaphore);
 }
 
 // FUNCTION: BETA10 0x10159385
@@ -49,5 +49,5 @@ void MxSemaphore::TryAcquire()
 void MxSemaphore::Release()
 {
 	// [library:synchronization] Removed release count since only 1 is ever requested
-	SDL_SignalSemaphore(m_semaphore);
+	MORTAR_SignalSemaphore(m_semaphore);
 }

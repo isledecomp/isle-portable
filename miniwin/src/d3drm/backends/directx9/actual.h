@@ -2,7 +2,7 @@
 
 #include "structs.h"
 
-#include <SDL3/SDL.h>
+#include <mortar/mortar.h>
 #include <stdint.h>
 #include <vector>
 
@@ -53,7 +53,7 @@ bool Actual_Initialize(void* hwnd, int width, int height);
 void Actual_Shutdown();
 void Actual_PushLights(const BridgeSceneLight* lightsArray, size_t count);
 void Actual_SetProjection(const Matrix4x4* projection, float front, float back);
-IDirect3DTexture9* UploadSurfaceToD3DTexture(SDL_Surface* surface);
+IDirect3DTexture9* UploadSurfaceToD3DTexture(MORTAR_Surface* surface);
 void ReleaseD3DTexture(IDirect3DTexture9* dxTexture);
 void ReleaseD3DVertexBuffer(IDirect3DVertexBuffer9* buffer);
 void ReleaseD3DIndexBuffer(IDirect3DIndexBuffer9* buffer);
@@ -78,5 +78,10 @@ void Actual_SubmitDraw(
 void Actual_Resize(int width, int height, const ViewportTransform& viewportTransform);
 void Actual_Clear(float r, float g, float b);
 uint32_t Actual_Flip();
-void Actual_Draw2DImage(IDirect3DTexture9* texture, const SDL_Rect& srcRect, const SDL_Rect& dstRect, FColor color);
-uint32_t Actual_Download(SDL_Surface* target);
+void Actual_Draw2DImage(
+	IDirect3DTexture9* texture,
+	const MORTAR_Rect& srcRect,
+	const MORTAR_Rect& dstRect,
+	FColor color
+);
+uint32_t Actual_Download(MORTAR_Surface* target);

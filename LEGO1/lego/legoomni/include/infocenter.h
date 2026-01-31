@@ -151,7 +151,7 @@ public:
 private:
 	void InitializeBitmaps();
 
-	MxLong HandleKeyPress(SDL_Keycode p_key);
+	MxLong HandleKeyPress(MORTAR_Keycode p_key);
 	MxU8 HandleMouseMove(MxS32 p_x, MxS32 p_y);
 	MxU8 HandleButtonUp(MxS32 p_x, MxS32 p_y);
 	MxU8 HandleControl(LegoControlManagerNotificationParam& p_param);

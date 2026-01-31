@@ -2,7 +2,7 @@
 
 #include "miniwin/d3drm.h"
 
-#include <SDL3/SDL.h>
+#include <mortar/mortar.h>
 #include <vector>
 
 template <typename T>
@@ -11,7 +11,7 @@ struct Direct3DRMObjectBaseImpl : public T {
 	Direct3DRMObjectBaseImpl(const Direct3DRMObjectBaseImpl& other) : m_appData(other.m_appData), T(other)
 	{
 		if (other.m_name) {
-			m_name = SDL_strdup(other.m_name);
+			m_name = MORTAR_strdup(other.m_name);
 		}
 	}
 	ULONG Release() override
@@ -21,7 +21,7 @@ struct Direct3DRMObjectBaseImpl : public T {
 				it->first(this, it->second);
 			}
 			m_callbacks.clear();
-			SDL_free(m_name);
+			MORTAR_free(m_name);
 		}
 		return this->T::Release();
 	}
@@ -48,10 +48,10 @@ struct Direct3DRMObjectBaseImpl : public T {
 	LPVOID GetAppData() override { return m_appData; }
 	HRESULT SetName(const char* name) override
 	{
-		SDL_free(m_name);
+		MORTAR_free(m_name);
 		m_name = NULL;
 		if (name) {
-			m_name = SDL_strdup(name);
+			m_name = MORTAR_strdup(name);
 		}
 		return D3DRM_OK;
 	}
@@ -61,9 +61,9 @@ struct Direct3DRMObjectBaseImpl : public T {
 			return DDERR_INVALIDPARAMS;
 		}
 		const char* s = m_name ? m_name : "";
-		size_t l = SDL_strlen(s);
+		size_t l = MORTAR_strlen(s);
 		if (name) {
-			SDL_strlcpy(name, s, *size);
+			MORTAR_strlcpy(name, s, *size);
 		}
 		else {
 			*size = l + 1;

@@ -1,17 +1,17 @@
 #include "ddpalette_impl.h"
 #include "miniwin/ddraw.h"
 
-#include <SDL3/SDL.h>
+#include <mortar/mortar.h>
 
 DirectDrawPaletteImpl::DirectDrawPaletteImpl(LPPALETTEENTRY lpColorTable)
 {
-	m_palette = SDL_CreatePalette(256);
+	m_palette = MORTAR_CreatePalette(256);
 	SetEntries(0, 0, 256, lpColorTable);
 }
 
 DirectDrawPaletteImpl::~DirectDrawPaletteImpl()
 {
-	SDL_DestroyPalette(m_palette);
+	MORTAR_DestroyPalette(m_palette);
 }
 
 HRESULT DirectDrawPaletteImpl::GetEntries(DWORD dwFlags, DWORD dwBase, DWORD dwNumEntries, LPPALETTEENTRY lpEntries)
@@ -27,15 +27,15 @@ HRESULT DirectDrawPaletteImpl::GetEntries(DWORD dwFlags, DWORD dwBase, DWORD dwN
 
 HRESULT DirectDrawPaletteImpl::SetEntries(DWORD dwFlags, DWORD dwStartingEntry, DWORD dwCount, LPPALETTEENTRY lpEntries)
 {
-	SDL_Color colors[256];
+	MORTAR_Color colors[256];
 	for (DWORD i = 0; i < dwCount; i++) {
 		colors[i + dwStartingEntry].r = lpEntries[i].peRed;
 		colors[i + dwStartingEntry].g = lpEntries[i].peGreen;
 		colors[i + dwStartingEntry].b = lpEntries[i].peBlue;
-		colors[i + dwStartingEntry].a = SDL_ALPHA_OPAQUE;
+		colors[i + dwStartingEntry].a = MORTAR_ALPHA_OPAQUE;
 	}
 
-	SDL_SetPaletteColors(m_palette, colors, dwStartingEntry, dwCount);
+	MORTAR_SetPaletteColors(m_palette, colors, dwStartingEntry, dwCount);
 
 	return DD_OK;
 }

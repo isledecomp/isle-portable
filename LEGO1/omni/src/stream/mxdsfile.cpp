@@ -3,7 +3,7 @@
 #include "decomp.h"
 #include "mxdebug.h"
 
-#include <SDL3/SDL.h>
+#include <mortar/mortar.h>
 #include <stdio.h>
 
 #define SI_MAJOR_VERSION 2
@@ -43,7 +43,7 @@ MxResult MxDSFile::Open(MxULong p_uStyle)
 		Close();
 	}
 	else {
-		Seek(0, SDL_IO_SEEK_SET);
+		Seek(0, MORTAR_IO_SEEK_SET);
 	}
 
 	return result;
@@ -72,7 +72,7 @@ MxResult MxDSFile::ReadChunks()
 	m_io.Read(&m_header, 0x0c);
 	if ((m_header.m_majorVersion != SI_MAJOR_VERSION) || (m_header.m_minorVersion != SI_MINOR_VERSION)) {
 		sprintf(tempBuffer, "Wrong SI file version. %d.%d expected.", SI_MAJOR_VERSION, SI_MINOR_VERSION);
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "LEGO® Island Error", tempBuffer, NULL);
+		MORTAR_ShowSimpleMessageBox(MORTAR_MESSAGEBOX_ERROR, "LEGO® Island Error", tempBuffer, NULL);
 		return FAILURE;
 	}
 
@@ -118,7 +118,7 @@ MxResult MxDSFile::Read(unsigned char* p_buf, MxULong p_nbytes)
 
 // FUNCTION: LEGO1 0x100cc7b0
 // FUNCTION: BETA10 0x1015dfee
-MxResult MxDSFile::Seek(MxLong p_lOffset, SDL_IOWhence p_iOrigin)
+MxResult MxDSFile::Seek(MxLong p_lOffset, MORTAR_IOWhence p_iOrigin)
 {
 	m_position = m_io.Seek(p_lOffset, p_iOrigin);
 	if (m_position == -1) {

@@ -26,8 +26,8 @@ LegoCacheSound::~LegoCacheSound()
 // FUNCTION: BETA10 0x10066498
 void LegoCacheSound::Init()
 {
-	SDL_zero(m_buffer);
-	SDL_zero(m_cacheSound);
+	MORTAR_zero(m_buffer);
+	MORTAR_zero(m_cacheSound);
 	m_data = NULL;
 	m_unk0x58 = FALSE;
 	memset(&m_wfx, 0, sizeof(m_wfx));

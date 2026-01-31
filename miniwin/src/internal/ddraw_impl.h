@@ -6,12 +6,12 @@
 #include "miniwin/ddraw.h"
 #include "miniwin/miniwind3d.h"
 
-#include <SDL3/SDL.h>
+#include <mortar/mortar.h>
 
-extern SDL_Window* DDWindow;
+extern MORTAR_Window* DDWindow;
 extern Direct3DRMRenderer* DDRenderer;
 
-inline static SDL_Rect ConvertRect(const RECT* r)
+inline static MORTAR_Rect ConvertRect(const RECT* r)
 {
 	return {r->left, r->top, r->right - r->left, r->bottom - r->top};
 }

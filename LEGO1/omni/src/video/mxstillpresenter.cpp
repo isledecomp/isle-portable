@@ -12,7 +12,7 @@
 #include "mxutilities.h"
 #include "mxvideomanager.h"
 
-#include <SDL3/SDL_stdinc.h>
+#include <mortar/mortar_stdinc.h>
 
 DECOMP_SIZE_ASSERT(MxStillPresenter, 0x6c);
 
@@ -212,7 +212,7 @@ void MxStillPresenter::ParseExtra()
 
 		char output[512];
 		if (KeyValueStringParse(output, g_strVISIBILITY, extraCopy)) {
-			if (SDL_strcasecmp(output, "FALSE") == 0) {
+			if (MORTAR_strcasecmp(output, "FALSE") == 0) {
 				Enable(FALSE);
 			}
 		}

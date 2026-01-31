@@ -20,7 +20,7 @@
 #include "mxtransitionmanager.h"
 #include "scripts.h"
 
-#include <SDL3/SDL_stdinc.h>
+#include <mortar/mortar_stdinc.h>
 
 DECOMP_SIZE_ASSERT(Hospital, 0x12c)
 DECOMP_SIZE_ASSERT(HospitalState, 0x18)
@@ -220,11 +220,11 @@ void Hospital::ReadyWorld()
 }
 
 // FUNCTION: LEGO1 0x10074dd0
-MxLong Hospital::HandleKeyPress(SDL_Keycode p_key)
+MxLong Hospital::HandleKeyPress(MORTAR_Keycode p_key)
 {
 	MxLong result = 0;
 
-	if (p_key == SDLK_SPACE && g_animationSkipCounterHospital == 0) {
+	if (p_key == MORTARK_SPACE && g_animationSkipCounterHospital == 0) {
 		DeleteObjects(&m_atomId, HospitalScript::c_hho002cl_RunAnim, HospitalScript::c_hho006cl_RunAnim);
 		result = 1;
 	}
@@ -406,7 +406,7 @@ MxLong Hospital::HandleButtonDown(LegoControlManagerNotificationParam& p_param)
 				roiName += 1;
 			}
 
-			if (!SDL_strcasecmp("actor_ha", roiName)) {
+			if (!MORTAR_strcasecmp("actor_ha", roiName)) {
 				InputManager()->DisableInputProcessing();
 
 				m_interactionMode = 3;

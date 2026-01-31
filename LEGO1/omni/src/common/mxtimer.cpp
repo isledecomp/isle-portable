@@ -1,6 +1,6 @@
 #include "mxtimer.h"
 
-#include <SDL3/SDL_timer.h>
+#include <mortar/mortar_timer.h>
 
 // GLOBAL: LEGO1 0x10101414
 // GLOBAL: BETA10 0x10201f84
@@ -14,7 +14,7 @@ MxLong MxTimer::g_lastTimeTimerStarted = 0;
 MxTimer::MxTimer()
 {
 	m_isRunning = FALSE;
-	m_startTime = SDL_GetTicks();
+	m_startTime = MORTAR_GetTicks();
 	InitLastTimeCalculated();
 }
 
@@ -22,7 +22,7 @@ MxTimer::MxTimer()
 // FUNCTION: BETA10 0x1012bf23
 MxLong MxTimer::GetRealTime()
 {
-	MxTimer::g_lastTimeCalculated = SDL_GetTicks();
+	MxTimer::g_lastTimeCalculated = MORTAR_GetTicks();
 	return MxTimer::g_lastTimeCalculated - m_startTime;
 }
 

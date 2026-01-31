@@ -16,7 +16,7 @@
 #include "mxtimer.h"
 #include "realtime/realtime.h"
 
-#include <SDL3/SDL_stdinc.h>
+#include <mortar/mortar_stdinc.h>
 
 DECOMP_SIZE_ASSERT(LegoCarBuildAnimPresenter::CarBuildPart, 0x0c)
 DECOMP_SIZE_ASSERT(LegoCarBuildAnimPresenter, 0x150)
@@ -97,7 +97,7 @@ inline void LegoCarBuildAnimPresenter::UpdateFlashingPartVisibility()
 					if (roi) {
 						const LegoChar* name = roi->GetName();
 
-						if (name && SDL_strcasecmp(wiredName, name) == 0) {
+						if (name && MORTAR_strcasecmp(wiredName, name) == 0) {
 							if (showFlashingPart) {
 								roi->SetVisibility(TRUE);
 							}
@@ -221,7 +221,7 @@ void LegoCarBuildAnimPresenter::StreamingTickle()
 			for (MxS32 j = 0; j <= m_roiMapSize; j++) {
 				LegoROI* roi = m_roiMap[j];
 
-				if (roi && roi->GetName() && (SDL_strcasecmp(name, roi->GetName()) == 0)) {
+				if (roi && roi->GetName() && (MORTAR_strcasecmp(name, roi->GetName()) == 0)) {
 					roi->ClearMeshOffset();
 					roi->SetLodColor("lego red");
 				}
@@ -243,7 +243,7 @@ void LegoCarBuildAnimPresenter::StreamingTickle()
 	for (i = 0; i < totalNodes; i++) {
 		LegoAnimNodeData* animNodeData = (LegoAnimNodeData*) GetTreeNode(m_anim->GetRoot(), i)->GetData();
 
-		if (SDL_strncasecmp(animNodeData->GetName(), "CAM", strlen("CAM")) == 0) {
+		if (MORTAR_strncasecmp(animNodeData->GetName(), "CAM", strlen("CAM")) == 0) {
 			camera = local60->FindChildROI(animNodeData->GetName(), local60);
 			fov = atof(&animNodeData->GetName()[strlen(animNodeData->GetName()) - 2]);
 			break;
@@ -330,7 +330,7 @@ void LegoCarBuildAnimPresenter::SwapNodesByName(LegoChar* p_name1, LegoChar* p_n
 {
 	char buffer[40];
 
-	if (SDL_strcasecmp(p_name1, p_name2) != 0) {
+	if (MORTAR_strcasecmp(p_name1, p_name2) != 0) {
 		LegoAnimNodeData* node1 = FindNodeDataByName(m_anim->GetRoot(), p_name1);
 		LegoAnimNodeData* node2 = FindNodeDataByName(m_anim->GetRoot(), p_name2);
 
@@ -391,7 +391,7 @@ void LegoCarBuildAnimPresenter::InitBuildPlatform()
 	for (i = 0; i < totalNodes; i++) {
 		name = ((LegoAnimNodeData*) GetTreeNode(m_anim->GetRoot(), i)->GetData())->GetName();
 
-		SDL_strupr(name);
+		MORTAR_strupr(name);
 
 		if (StringEndsOnW(name)) {
 			m_parts[name[strlen(name) - 1] - 'A'].m_wiredName = new LegoChar[strlen(name) + 1];
@@ -411,7 +411,7 @@ void LegoCarBuildAnimPresenter::InitBuildPlatform()
 		name = ((LegoAnimNodeData*) GetTreeNode(m_anim->GetRoot(), i)->GetData())->GetName();
 		if (StringEndsOnYOrN(name)) {
 			for (MxS16 ii = 0; ii < m_numberOfParts; ii++) {
-				if (SDL_strncasecmp(m_parts[ii].m_wiredName, name, strlen(name) - 2) == 0) {
+				if (MORTAR_strncasecmp(m_parts[ii].m_wiredName, name, strlen(name) - 2) == 0) {
 					m_parts[ii].m_name = new LegoChar[strlen(name) + 1];
 					assert(m_parts[ii].m_name);
 					strcpy(m_parts[ii].m_name, name);
@@ -492,7 +492,7 @@ LegoAnimNodeData* LegoCarBuildAnimPresenter::FindNodeDataByName(LegoTreeNode* p_
 	if (p_treeNode) {
 		data = (LegoAnimNodeData*) p_treeNode->GetData();
 
-		if (SDL_strcasecmp(data->GetName(), p_name) == 0) {
+		if (MORTAR_strcasecmp(data->GetName(), p_name) == 0) {
 			return data;
 		}
 
@@ -518,7 +518,7 @@ LegoTreeNode* LegoCarBuildAnimPresenter::FindNodeByName(LegoTreeNode* p_treeNode
 	if (p_treeNode) {
 		data = (LegoAnimNodeData*) p_treeNode->GetData();
 
-		if (SDL_strcasecmp(data->GetName(), p_name) == 0) {
+		if (MORTAR_strcasecmp(data->GetName(), p_name) == 0) {
 			return p_treeNode;
 		}
 
@@ -541,9 +541,9 @@ void LegoCarBuildAnimPresenter::AddPartToBuildByName(const LegoChar* p_name)
 	MxS16 i;
 	LegoChar buffer[40];
 
-	if (SDL_strcasecmp(m_parts[m_placedPartCount].m_name, p_name) != 0) {
+	if (MORTAR_strcasecmp(m_parts[m_placedPartCount].m_name, p_name) != 0) {
 		for (i = m_placedPartCount + 1; i < m_numberOfParts; i++) {
-			if (SDL_strcasecmp(m_parts[i].m_name, p_name) == 0) {
+			if (MORTAR_strcasecmp(m_parts[i].m_name, p_name) == 0) {
 				break;
 			}
 		}
@@ -619,7 +619,7 @@ void LegoCarBuildAnimPresenter::MoveShelfForward()
 // FUNCTION: BETA10 0x100724fa
 MxBool LegoCarBuildAnimPresenter::StringEqualsPlatform(const LegoChar* p_string)
 {
-	return SDL_strcasecmp(p_string, "PLATFORM") == 0;
+	return MORTAR_strcasecmp(p_string, "PLATFORM") == 0;
 }
 
 // FUNCTION: LEGO1 0x10079b40
@@ -641,7 +641,7 @@ MxBool LegoCarBuildAnimPresenter::StringEndsOnYOrN(const LegoChar* p_string)
 // FUNCTION: BETA10 0x10072624
 MxBool LegoCarBuildAnimPresenter::StringEqualsShelf(const LegoChar* p_string)
 {
-	return SDL_strncasecmp(p_string, "SHELF", strlen("SHELF")) == 0;
+	return MORTAR_strncasecmp(p_string, "SHELF", strlen("SHELF")) == 0;
 }
 
 // FUNCTION: LEGO1 0x10079c30
@@ -653,7 +653,7 @@ MxBool LegoCarBuildAnimPresenter::IsNextPartToPlace(const LegoChar* p_name)
 	}
 
 	return m_placedPartCount < m_numberOfParts &&
-		   SDL_strncasecmp(p_name, m_parts[m_placedPartCount].m_name, strlen(p_name) - 3) == 0;
+		   MORTAR_strncasecmp(p_name, m_parts[m_placedPartCount].m_name, strlen(p_name) - 3) == 0;
 }
 
 // FUNCTION: LEGO1 0x10079ca0
@@ -661,7 +661,7 @@ MxBool LegoCarBuildAnimPresenter::IsNextPartToPlace(const LegoChar* p_name)
 MxBool LegoCarBuildAnimPresenter::PartIsPlaced(const LegoChar* p_name)
 {
 	for (MxS16 i = 0; i < m_placedPartCount; i++) {
-		if (SDL_strcasecmp(p_name, m_parts[i].m_name) == 0) {
+		if (MORTAR_strcasecmp(p_name, m_parts[i].m_name) == 0) {
 			return TRUE;
 		}
 	}
@@ -688,7 +688,7 @@ MxBool LegoCarBuildAnimPresenter::StringDoesNotEndOnZero(const LegoChar* p_strin
 const LegoChar* LegoCarBuildAnimPresenter::GetWiredNameByPartName(const LegoChar* p_name)
 {
 	for (MxS16 i = 0; i < m_numberOfParts; i++) {
-		if (SDL_strcasecmp(p_name, m_parts[i].m_name) == 0) {
+		if (MORTAR_strcasecmp(p_name, m_parts[i].m_name) == 0) {
 			return m_parts[i].m_wiredName;
 		}
 	}
@@ -701,7 +701,7 @@ const LegoChar* LegoCarBuildAnimPresenter::GetWiredNameByPartName(const LegoChar
 void LegoCarBuildAnimPresenter::SetPartObjectIdByName(const LegoChar* p_name, MxS16 p_objectId)
 {
 	for (MxS16 i = 0; i < m_numberOfParts; i++) {
-		if (SDL_strcasecmp(p_name, m_parts[i].m_name) == 0) {
+		if (MORTAR_strcasecmp(p_name, m_parts[i].m_name) == 0) {
 			m_parts[i].m_objectId = p_objectId;
 			return;
 		}

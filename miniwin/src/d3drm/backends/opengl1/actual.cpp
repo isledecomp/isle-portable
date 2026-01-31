@@ -4,10 +4,10 @@
 
 #include "structs.h"
 
-#include <SDL3/SDL.h>
-#include <SDL3/SDL_opengl.h>
 #include <algorithm>
 #include <cstring>
+#include <mortar/mortar.h>
+#include <mortar/mortar_opengl.h>
 #include <vector>
 
 // GL extension API functions.
@@ -26,14 +26,14 @@ void GL11_InitState()
 
 void GL11_LoadExtensions()
 {
-	g_useVBOs = SDL_GL_ExtensionSupported("GL_ARB_vertex_buffer_object");
+	g_useVBOs = MORTAR_GL_ExtensionSupported("GL_ARB_vertex_buffer_object");
 
 	if (g_useVBOs) {
 		// Load the required GL function pointers.
-		mwglGenBuffers = (PFNGLGENBUFFERSPROC) SDL_GL_GetProcAddress("glGenBuffersARB");
-		mwglBindBuffer = (PFNGLBINDBUFFERPROC) SDL_GL_GetProcAddress("glBindBufferARB");
-		mwglBufferData = (PFNGLBUFFERDATAPROC) SDL_GL_GetProcAddress("glBufferDataARB");
-		mwglDeleteBuffers = (PFNGLDELETEBUFFERSPROC) SDL_GL_GetProcAddress("glDeleteBuffersARB");
+		mwglGenBuffers = (PFNGLGENBUFFERSPROC) MORTAR_GL_GetProcAddress("glGenBuffersARB");
+		mwglBindBuffer = (PFNGLBINDBUFFERPROC) MORTAR_GL_GetProcAddress("glBindBufferARB");
+		mwglBufferData = (PFNGLBUFFERDATAPROC) MORTAR_GL_GetProcAddress("glBufferDataARB");
+		mwglDeleteBuffers = (PFNGLDELETEBUFFERSPROC) MORTAR_GL_GetProcAddress("glDeleteBuffersARB");
 	}
 }
 
@@ -293,8 +293,8 @@ void GL11_Clear(float r, float g, float b)
 
 void GL11_Draw2DImage(
 	const GLTextureCacheEntry* cache,
-	const SDL_Rect& srcRect,
-	const SDL_Rect& dstRect,
+	const MORTAR_Rect& srcRect,
+	const MORTAR_Rect& dstRect,
 	const FColor& color,
 	float left,
 	float right,
@@ -359,7 +359,7 @@ void GL11_Draw2DImage(
 	glMatrixMode(GL_PROJECTION);
 }
 
-void GL11_Download(SDL_Surface* target)
+void GL11_Download(MORTAR_Surface* target)
 {
 	glFinish();
 	glReadPixels(0, 0, target->w, target->h, GL_RGBA, GL_UNSIGNED_BYTE, target->pixels);

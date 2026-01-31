@@ -69,7 +69,7 @@ private:
 	MxU32 m_intAlphabetOffset;
 
 	MxLong HandleEndAction(MxEndActionNotificationParam& p_param);
-	MxLong HandleKeyPress(SDL_Keycode p_key);
+	MxLong HandleKeyPress(MORTAR_Keycode p_key);
 	MxLong HandleControl(LegoControlManagerNotificationParam& p_param);
 	MxLong HandlePathStruct(LegoPathStructNotificationParam& p_param);
 	void LoadSave(MxS16 p_checkMarkIndex);

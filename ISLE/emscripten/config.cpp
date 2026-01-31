@@ -3,13 +3,13 @@
 #include "filesystem.h"
 #include "window.h"
 
-#include <SDL3/SDL_log.h>
 #include <emscripten.h>
 #include <iniparser.h>
+#include <mortar/mortar_log.h>
 
 void Emscripten_SetupDefaultConfigOverrides(dictionary* p_dictionary)
 {
-	SDL_Log("Overriding default config for Emscripten");
+	MORTAR_Log("Overriding default config for Emscripten");
 
 	iniparser_set(p_dictionary, "isle:diskpath", Emscripten_bundledPath);
 	iniparser_set(p_dictionary, "isle:cdpath", Emscripten_streamPath);

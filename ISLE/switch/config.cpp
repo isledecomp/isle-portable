@@ -1,7 +1,7 @@
 #include "config.h"
 
-#include <SDL3/SDL_log.h>
 #include <iniparser.h>
+#include <mortar/mortar_log.h>
 
 void NX_SetupDefaultConfigOverrides(dictionary* p_dictionary)
 {

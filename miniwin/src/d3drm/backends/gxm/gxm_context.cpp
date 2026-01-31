@@ -5,7 +5,7 @@
 #include "tlsf.h"
 #include "utils.h"
 
-#include <SDL3/SDL.h>
+#include <mortar/mortar.h>
 #include <psp2/common_dialog.h>
 #include <psp2/display.h>
 #include <psp2/gxm.h>
@@ -29,7 +29,7 @@ static void display_callback(const void* callback_data)
 	const GXMDisplayData* display_data = (const GXMDisplayData*) callback_data;
 
 	SceDisplayFrameBuf framebuf;
-	SDL_memset(&framebuf, 0x00, sizeof(SceDisplayFrameBuf));
+	MORTAR_memset(&framebuf, 0x00, sizeof(SceDisplayFrameBuf));
 	framebuf.size = sizeof(SceDisplayFrameBuf);
 	framebuf.base = display_data->address;
 	framebuf.pitch = VITA_GXM_SCREEN_STRIDE;
@@ -86,7 +86,7 @@ int gxm_library_init()
 #endif
 
 	SceGxmInitializeParams initializeParams;
-	SDL_memset(&initializeParams, 0, sizeof(SceGxmInitializeParams));
+	MORTAR_memset(&initializeParams, 0, sizeof(SceGxmInitializeParams));
 	initializeParams.flags = 0;
 	initializeParams.displayQueueMaxPendingCount = VITA_GXM_PENDING_SWAPS;
 	initializeParams.displayQueueCallback = display_callback;
@@ -95,7 +95,7 @@ int gxm_library_init()
 
 	int err = sceGxmInitialize(&initializeParams);
 	if (err != 0) {
-		SDL_LogError(SDL_LOG_CATEGORY_RENDER, "gxm init failed: %d", err);
+		MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "gxm init failed: %d", err);
 		return err;
 	}
 	gxm_initialized = true;
@@ -115,7 +115,7 @@ void GXMContext::init_cdram_allocator()
 		&this->cdramUID,
 		"cdram_pool"
 	);
-	this->cdramPool = SDL_malloc(tlsf_size());
+	this->cdramPool = MORTAR_malloc(tlsf_size());
 	tlsf_create(this->cdramPool);
 	tlsf_add_pool(this->cdramPool, this->cdramMem, CDRAM_POOL_SIZE);
 }
@@ -164,8 +164,8 @@ int GXMContext::init_context()
 
 	// create context
 	SceGxmContextParams contextParams;
-	memset(&contextParams, 0, sizeof(SceGxmContextParams));
-	contextParams.hostMem = SDL_malloc(SCE_GXM_MINIMUM_CONTEXT_HOST_MEM_SIZE);
+	MORTAR_memset(&contextParams, 0, sizeof(SceGxmContextParams));
+	contextParams.hostMem = MORTAR_malloc(SCE_GXM_MINIMUM_CONTEXT_HOST_MEM_SIZE);
 	contextParams.hostMemSize = SCE_GXM_MINIMUM_CONTEXT_HOST_MEM_SIZE;
 	contextParams.vdmRingBufferMem = this->vdmRingBuffer;
 	contextParams.vdmRingBufferMemSize = SCE_GXM_DEFAULT_VDM_RING_BUFFER_SIZE;
@@ -203,7 +203,7 @@ int GXMContext::init_context()
 	);
 
 	SceGxmShaderPatcherParams patcherParams;
-	memset(&patcherParams, 0, sizeof(SceGxmShaderPatcherParams));
+	MORTAR_memset(&patcherParams, 0, sizeof(SceGxmShaderPatcherParams));
 	patcherParams.userData = NULL;
 	patcherParams.hostAllocCallback = &patcher_host_alloc;
 	patcherParams.hostFreeCallback = &patcher_host_free;
@@ -248,7 +248,7 @@ int GXMContext::create_display_buffers(SceGxmMultisampleMode msaaMode)
 
 	// render target
 	SceGxmRenderTargetParams renderTargetParams;
-	memset(&renderTargetParams, 0, sizeof(SceGxmRenderTargetParams));
+	MORTAR_memset(&renderTargetParams, 0, sizeof(SceGxmRenderTargetParams));
 	renderTargetParams.flags = 0;
 	renderTargetParams.width = VITA_GXM_SCREEN_WIDTH;
 	renderTargetParams.height = VITA_GXM_SCREEN_HEIGHT;
@@ -639,7 +639,7 @@ void GXMContext::destroy()
 	vita_mem_free(this->fragmentRingBufferUid);
 	vita_mem_free(this->vertexRingBufferUid);
 	vita_mem_free(this->vdmRingBufferUid);
-	SDL_free(this->contextHostMem);
+	MORTAR_free(this->contextHostMem);
 }
 
 void GXMContext::swap_display()
@@ -650,7 +650,7 @@ void GXMContext::swap_display()
 	}
 
 	SceCommonDialogUpdateParam updateParam;
-	SDL_zero(updateParam);
+	MORTAR_zero(updateParam);
 	updateParam.renderTarget.colorFormat = VITA_GXM_COLOR_FORMAT;
 	updateParam.renderTarget.surfaceType = SCE_GXM_COLOR_SURFACE_LINEAR;
 	updateParam.renderTarget.width = VITA_GXM_SCREEN_WIDTH;

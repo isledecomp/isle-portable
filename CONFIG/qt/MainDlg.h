@@ -7,7 +7,7 @@
 
 #include <QDialog>
 #include <QFileDialog>
-#include <SDL3/SDL.h>
+#include <mortar/mortar.h>
 
 namespace Ui
 {
@@ -31,7 +31,7 @@ private:
 	bool m_advanced = false;
 	QStringList assetPaths = QStringList();
 	Ui::MainDialog* m_ui = nullptr;
-	SDL_DisplayMode** displayModes;
+	MORTAR_DisplayMode** displayModes;
 
 	void keyReleaseEvent(QKeyEvent* event) override;
 	bool OnInitDialog();

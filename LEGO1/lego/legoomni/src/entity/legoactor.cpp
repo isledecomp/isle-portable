@@ -7,7 +7,7 @@
 #include "mxutilities.h"
 #include "roi/legoroi.h"
 
-#include <SDL3/SDL_stdinc.h>
+#include <mortar/mortar_stdinc.h>
 
 DECOMP_SIZE_ASSERT(LegoActor, 0x78)
 
@@ -117,7 +117,7 @@ void LegoActor::ParseAction(char* p_extra)
 	}
 
 	if (KeyValueStringParse(value, g_strVISIBILITY, p_extra)) {
-		GetROI()->SetVisibility(SDL_strcasecmp(value, "FALSE") != 0);
+		GetROI()->SetVisibility(MORTAR_strcasecmp(value, "FALSE") != 0);
 	}
 }
 
@@ -135,7 +135,7 @@ void LegoActor::SetROI(LegoROI* p_roi, MxBool p_bool1, MxBool p_updateTransform)
 		const char* name = p_roi->GetName();
 
 		for (MxU32 i = 1; i <= sizeOfArray(g_actorNames) - 2; i++) {
-			if (!SDL_strcasecmp(name, g_actorNames[i])) {
+			if (!MORTAR_strcasecmp(name, g_actorNames[i])) {
 				m_type = e_actor;
 				m_actorId = i;
 				break;

@@ -3,7 +3,7 @@
 
 #include "mxtypes.h"
 
-#include <SDL3/SDL_iostream.h>
+#include <mortar/mortar_iostream.h>
 
 // [library:filesystem]
 // We define the bare minimum constants and structures to be compatible with the code in mxio.cpp
@@ -53,15 +53,15 @@ typedef struct _ISLE_MMIOINFO {
 	MxU32 dwFlags; /* general status flags */
 
 	/* fields maintained by MMIO functions during buffered I/O */
-	Sint64 cchBuffer;  /* size of I/O buffer (or 0L) */
-	char* pchBuffer;   /* start of I/O buffer (or NULL) */
-	char* pchNext;     /* pointer to next byte to read/write */
-	char* pchEndRead;  /* pointer to last valid byte to read */
-	char* pchEndWrite; /* pointer to last byte to write */
-	Sint64 lBufOffset; /* disk offset of start of buffer */
+	int64_t cchBuffer;  /* size of I/O buffer (or 0L) */
+	char* pchBuffer;    /* start of I/O buffer (or NULL) */
+	char* pchNext;      /* pointer to next byte to read/write */
+	char* pchEndRead;   /* pointer to last valid byte to read */
+	char* pchEndWrite;  /* pointer to last byte to write */
+	int64_t lBufOffset; /* disk offset of start of buffer */
 
 	/* fields maintained by I/O procedure */
-	Sint64 lDiskOffset; /* disk offset of next read or write */
+	int64_t lDiskOffset; /* disk offset of next read or write */
 } ISLE_MMIOINFO;
 
 /* RIFF chunk information data structure */
@@ -83,7 +83,7 @@ public:
 	MxU16 Close(MxLong);
 	MxLong Read(void*, MxLong);
 	MxLong Write(void*, MxLong);
-	MxLong Seek(MxLong, SDL_IOWhence);
+	MxLong Seek(MxLong, MORTAR_IOWhence);
 	MxU16 SetBuffer(char*, MxLong, MxLong);
 	MxU16 Flush(MxU16);
 	MxU16 Advance(MxU16);
@@ -95,7 +95,7 @@ public:
 	// an HFILE (int) instead of an HMMIO (WORD).
 	ISLE_MMIOINFO m_info;
 	// [library:filesystem] This handle is always used instead of the `hmmio` member in m_info.
-	SDL_IOStream* m_file;
+	MORTAR_IOStream* m_file;
 };
 
 #endif // MXIO_H

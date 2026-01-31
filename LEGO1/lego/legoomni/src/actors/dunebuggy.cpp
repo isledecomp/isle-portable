@@ -18,7 +18,7 @@
 #include "mxtransitionmanager.h"
 #include "mxvariabletable.h"
 
-#include <SDL3/SDL_stdinc.h>
+#include <mortar/mortar_stdinc.h>
 #include <stdio.h>
 
 DECOMP_SIZE_ASSERT(DuneBuggy, 0x16c)
@@ -167,22 +167,22 @@ MxS32 DuneBuggy::GetColorOffset(const char* p_variable)
 	const char* color = VariableTable()->GetVariable(p_variable);
 	assert(color);
 
-	if (!SDL_strcasecmp(color, "lego green")) {
+	if (!MORTAR_strcasecmp(color, "lego green")) {
 		offset = 1;
 	}
-	else if (!SDL_strcasecmp(color, "lego red")) {
+	else if (!MORTAR_strcasecmp(color, "lego red")) {
 		offset = 2;
 	}
-	else if (!SDL_strcasecmp(color, "lego yellow")) {
+	else if (!MORTAR_strcasecmp(color, "lego yellow")) {
 		offset = 3;
 	}
-	else if (!SDL_strcasecmp(color, "lego black")) {
+	else if (!MORTAR_strcasecmp(color, "lego black")) {
 		offset = 4;
 	}
-	else if (!SDL_strcasecmp(color, "lego blue")) {
+	else if (!MORTAR_strcasecmp(color, "lego blue")) {
 		offset = 5;
 	}
-	else if (!SDL_strcasecmp(color, "lego white")) {
+	else if (!MORTAR_strcasecmp(color, "lego white")) {
 		offset = 6;
 	}
 

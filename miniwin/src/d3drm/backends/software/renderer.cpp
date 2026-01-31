@@ -5,11 +5,11 @@
 #include "meshutils.h"
 #include "miniwin.h"
 
-#include <SDL3/SDL.h>
 #include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <limits>
+#include <mortar/mortar.h>
 #if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
 #include <xmmintrin.h>
 #if defined(__i386__) || defined(_M_IX86)
@@ -28,7 +28,7 @@ Direct3DRMSoftwareRenderer::Direct3DRMSoftwareRenderer(DWORD width, DWORD height
 	m_virtualWidth = width;
 	m_virtualHeight = height;
 
-	m_renderer = SDL_CreateRenderer(DDWindow, NULL);
+	m_renderer = MORTAR_CreateRenderer(DDWindow);
 
 	ViewportTransform viewportTransform = {1.0f, 0.0f, 0.0f};
 	Resize(width, height, viewportTransform);
@@ -36,9 +36,9 @@ Direct3DRMSoftwareRenderer::Direct3DRMSoftwareRenderer(DWORD width, DWORD height
 
 Direct3DRMSoftwareRenderer::~Direct3DRMSoftwareRenderer()
 {
-	SDL_DestroySurface(m_renderedImage);
-	SDL_DestroyTexture(m_uploadBuffer);
-	SDL_DestroyRenderer(m_renderer);
+	MORTAR_DestroySurface(m_renderedImage);
+	MORTAR_DestroyTexture(m_uploadBuffer);
+	MORTAR_DestroyRenderer(m_renderer);
 }
 
 void Direct3DRMSoftwareRenderer::PushLights(const SceneLight* lights, size_t count)
@@ -65,14 +65,14 @@ void Direct3DRMSoftwareRenderer::ClearZBuffer()
 	size_t i = 0;
 
 #if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
-	if (SDL_HasSSE2()) {
+	if (MORTAR_HasSSE2()) {
 		__m128 inf4 = _mm_set1_ps(inf);
 		for (; i + 4 <= size; i += 4) {
 			_mm_storeu_ps(&m_zBuffer[i], inf4);
 		}
 	}
 #if defined(__i386__) || defined(_M_IX86)
-	else if (SDL_HasMMX()) {
+	else if (MORTAR_HasMMX()) {
 		const __m64 mm_inf = _mm_set_pi32(0x7F800000, 0x7F800000);
 		for (; i + 2 <= size; i += 2) {
 			*reinterpret_cast<__m64*>(&m_zBuffer[i]) = mm_inf;
@@ -81,7 +81,7 @@ void Direct3DRMSoftwareRenderer::ClearZBuffer()
 	}
 #endif
 #elif (defined(__arm__) || defined(__aarch64__)) && !defined(__3DS__)
-	if (SDL_HasNEON()) {
+	if (MORTAR_HasNEON()) {
 		float32x4_t inf4 = vdupq_n_f32(inf);
 		for (; i + 4 <= size; i += 4) {
 			vst1q_f32(&m_zBuffer[i], inf4);
@@ -210,36 +210,36 @@ void Direct3DRMSoftwareRenderer::DrawTriangleClipped(const D3DRMVERTEX (&v)[3], 
 	}
 }
 
-Uint32 Direct3DRMSoftwareRenderer::BlendPixel(Uint8* pixelAddr, Uint8 r, Uint8 g, Uint8 b, Uint8 a)
+uint32_t Direct3DRMSoftwareRenderer::BlendPixel(uint8_t* pixelAddr, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 {
-	Uint32 dstPixel;
+	uint32_t dstPixel;
 	switch (m_bytesPerPixel) {
 	case 1:
 		dstPixel = *pixelAddr;
 		break;
 	case 2:
-		dstPixel = *(Uint16*) pixelAddr;
+		dstPixel = *(uint16_t*) pixelAddr;
 		break;
 	case 4:
-		dstPixel = *(Uint32*) pixelAddr;
+		dstPixel = *(uint32_t*) pixelAddr;
 		break;
 	}
 
-	Uint8 dstR, dstG, dstB, dstA;
-	SDL_GetRGBA(dstPixel, m_format, m_palette, &dstR, &dstG, &dstB, &dstA);
+	uint8_t dstR, dstG, dstB, dstA;
+	MORTAR_GetRGBA(dstPixel, m_format, m_palette, &dstR, &dstG, &dstB, &dstA);
 
 	float alpha = a / 255.0f;
 	float invAlpha = 1.0f - alpha;
 
-	Uint8 outR = static_cast<Uint8>(r * alpha + dstR * invAlpha);
-	Uint8 outG = static_cast<Uint8>(g * alpha + dstG * invAlpha);
-	Uint8 outB = static_cast<Uint8>(b * alpha + dstB * invAlpha);
-	Uint8 outA = static_cast<Uint8>(a + dstA * invAlpha);
+	uint8_t outR = static_cast<uint8_t>(r * alpha + dstR * invAlpha);
+	uint8_t outG = static_cast<uint8_t>(g * alpha + dstG * invAlpha);
+	uint8_t outB = static_cast<uint8_t>(b * alpha + dstB * invAlpha);
+	uint8_t outA = static_cast<uint8_t>(a + dstA * invAlpha);
 
-	return SDL_MapRGBA(m_format, m_palette, outR, outG, outB, outA);
+	return MORTAR_MapRGBA(m_format, m_palette, outR, outG, outB, outA);
 }
 
-SDL_Color Direct3DRMSoftwareRenderer::ApplyLighting(
+MORTAR_Color Direct3DRMSoftwareRenderer::ApplyLighting(
 	const D3DVECTOR& position,
 	const D3DVECTOR& oNormal,
 	const Appearance& appearance
@@ -293,17 +293,17 @@ SDL_Color Direct3DRMSoftwareRenderer::ApplyLighting(
 		}
 	}
 
-	return SDL_Color{
-		static_cast<Uint8>(std::min(255.0f, diffuse.r * appearance.color.r + specular.r * 255.0f)),
-		static_cast<Uint8>(std::min(255.0f, diffuse.g * appearance.color.g + specular.g * 255.0f)),
-		static_cast<Uint8>(std::min(255.0f, diffuse.b * appearance.color.b + specular.b * 255.0f)),
+	return MORTAR_Color{
+		static_cast<uint8_t>(std::min(255.0f, diffuse.r * appearance.color.r + specular.r * 255.0f)),
+		static_cast<uint8_t>(std::min(255.0f, diffuse.g * appearance.color.g + specular.g * 255.0f)),
+		static_cast<uint8_t>(std::min(255.0f, diffuse.b * appearance.color.b + specular.b * 255.0f)),
 		appearance.color.a
 	};
 }
 
 struct VertexXY {
 	float x, y, z, w;
-	SDL_Color color;
+	MORTAR_Color color;
 	float u_over_w, v_over_w;
 	float one_over_w;
 };
@@ -319,10 +319,10 @@ VertexXY InterpolateVertex(float y, const VertexXY& v0, const VertexXY& v1)
 	r.x = v0.x + t * (v1.x - v0.x);
 	r.z = v0.z + t * (v1.z - v0.z);
 	r.w = v0.w + t * (v1.w - v0.w);
-	r.color.r = static_cast<Uint8>(v0.color.r + t * (v1.color.r - v0.color.r));
-	r.color.g = static_cast<Uint8>(v0.color.g + t * (v1.color.g - v0.color.g));
-	r.color.b = static_cast<Uint8>(v0.color.b + t * (v1.color.b - v0.color.b));
-	r.color.a = static_cast<Uint8>(v0.color.a + t * (v1.color.a - v0.color.a));
+	r.color.r = static_cast<uint8_t>(v0.color.r + t * (v1.color.r - v0.color.r));
+	r.color.g = static_cast<uint8_t>(v0.color.g + t * (v1.color.g - v0.color.g));
+	r.color.b = static_cast<uint8_t>(v0.color.b + t * (v1.color.b - v0.color.b));
+	r.color.a = static_cast<uint8_t>(v0.color.a + t * (v1.color.a - v0.color.a));
 
 	r.u_over_w = v0.u_over_w + t * (v1.u_over_w - v0.u_over_w);
 	r.v_over_w = v0.v_over_w + t * (v1.v_over_w - v0.v_over_w);
@@ -359,15 +359,15 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 	ProjectVertex(v1.position, p1);
 	ProjectVertex(v2.position, p2);
 
-	Uint8 r, g, b;
-	SDL_Color c0 = ApplyLighting(v0.position, v0.normal, appearance);
-	SDL_Color c1 = {}, c2 = {};
+	uint8_t r, g, b;
+	MORTAR_Color c0 = ApplyLighting(v0.position, v0.normal, appearance);
+	MORTAR_Color c1 = {}, c2 = {};
 	if (!appearance.flat) {
 		c1 = ApplyLighting(v1.position, v1.normal, appearance);
 		c2 = ApplyLighting(v2.position, v2.normal, appearance);
 	}
 
-	Uint8* pixels = (Uint8*) m_renderedImage->pixels;
+	uint8_t* pixels = (uint8_t*) m_renderedImage->pixels;
 	int pitch = m_renderedImage->pitch;
 
 	VertexXY verts[3] = {
@@ -376,16 +376,16 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 		{p2.x, p2.y, p2.z, p2.w, c2, v2.texCoord.u, v2.texCoord.v}
 	};
 
-	Uint32 textureId = appearance.textureId;
+	uint32_t textureId = appearance.textureId;
 	int texturePitch;
-	Uint8* texels = nullptr;
+	uint8_t* texels = nullptr;
 	int texWidthScale;
 	int texHeightScale;
 	if (textureId != NO_TEXTURE_ID) {
-		SDL_Surface* texture = m_textures[textureId].cached;
+		MORTAR_Surface* texture = m_textures[textureId].cached;
 		if (texture) {
 			texturePitch = texture->pitch;
-			texels = static_cast<Uint8*>(texture->pixels);
+			texels = static_cast<uint8_t*>(texture->pixels);
 			texWidthScale = texture->w - 1;
 			texHeightScale = texture->h - 1;
 		}
@@ -450,20 +450,20 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 				continue;
 			}
 
-			Uint8 r, g, b;
+			uint8_t r, g, b;
 			if (appearance.flat) {
 				r = c0.r;
 				g = c0.g;
 				b = c0.b;
 			}
 			else {
-				r = static_cast<Uint8>(left.color.r + t * (right.color.r - left.color.r));
-				g = static_cast<Uint8>(left.color.g + t * (right.color.g - left.color.g));
-				b = static_cast<Uint8>(left.color.b + t * (right.color.b - left.color.b));
+				r = static_cast<uint8_t>(left.color.r + t * (right.color.r - left.color.r));
+				g = static_cast<uint8_t>(left.color.g + t * (right.color.g - left.color.g));
+				b = static_cast<uint8_t>(left.color.b + t * (right.color.b - left.color.b));
 			}
 
-			Uint8* pixelAddr = pixels + y * pitch + x * m_bytesPerPixel;
-			Uint32 finalColor;
+			uint8_t* pixelAddr = pixels + y * pitch + x * m_bytesPerPixel;
+			uint32_t finalColor;
 
 			if (appearance.color.a == 255) {
 				zref = z;
@@ -485,23 +485,23 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 					int texX = static_cast<int>(u * texWidthScale);
 					int texY = static_cast<int>(v * texHeightScale);
 
-					Uint8* texelAddr = texels + texY * texturePitch + texX * m_bytesPerPixel;
+					uint8_t* texelAddr = texels + texY * texturePitch + texX * m_bytesPerPixel;
 
-					Uint32 texelColor;
+					uint32_t texelColor;
 					switch (m_bytesPerPixel) {
 					case 1:
 						texelColor = *texelAddr;
 						break;
 					case 2:
-						texelColor = *(Uint16*) texelAddr;
+						texelColor = *(uint16_t*) texelAddr;
 						break;
 					case 4:
-						texelColor = *(Uint32*) texelAddr;
+						texelColor = *(uint32_t*) texelAddr;
 						break;
 					}
 
-					Uint8 tr, tg, tb, ta;
-					SDL_GetRGBA(texelColor, m_format, m_palette, &tr, &tg, &tb, &ta);
+					uint8_t tr, tg, tb, ta;
+					MORTAR_GetRGBA(texelColor, m_format, m_palette, &tr, &tg, &tb, &ta);
 
 					// Multiply vertex color by texel color
 					r = (r * tr + 127) / 255;
@@ -509,7 +509,7 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 					b = (b * tb + 127) / 255;
 				}
 
-				finalColor = SDL_MapRGBA(m_format, m_palette, r, g, b, 255);
+				finalColor = MORTAR_MapRGBA(m_format, m_palette, r, g, b, 255);
 			}
 			else {
 				finalColor = BlendPixel(pixelAddr, r, g, b, appearance.color.a);
@@ -517,13 +517,13 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 
 			switch (m_bytesPerPixel) {
 			case 1:
-				*pixelAddr = static_cast<Uint8>(finalColor);
+				*pixelAddr = static_cast<uint8_t>(finalColor);
 				break;
 			case 2:
-				*reinterpret_cast<Uint16*>(pixelAddr) = static_cast<Uint16>(finalColor);
+				*reinterpret_cast<uint16_t*>(pixelAddr) = static_cast<uint16_t>(finalColor);
 				break;
 			case 4:
-				*reinterpret_cast<Uint32*>(pixelAddr) = finalColor;
+				*reinterpret_cast<uint32_t*>(pixelAddr) = finalColor;
 				break;
 			}
 		}
@@ -532,10 +532,10 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 
 struct CacheDestroyContext {
 	Direct3DRMSoftwareRenderer* renderer;
-	Uint32 id;
+	uint32_t id;
 };
 
-void Direct3DRMSoftwareRenderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture)
+void Direct3DRMSoftwareRenderer::AddTextureDestroyCallback(uint32_t id, IDirect3DRMTexture* texture)
 {
 	auto* ctx = new CacheDestroyContext{this, id};
 	texture->AddDestroyCallback(
@@ -543,8 +543,8 @@ void Direct3DRMSoftwareRenderer::AddTextureDestroyCallback(Uint32 id, IDirect3DR
 			auto* ctx = static_cast<CacheDestroyContext*>(arg);
 			auto& cacheEntry = ctx->renderer->m_textures[ctx->id];
 			if (cacheEntry.cached) {
-				SDL_UnlockSurface(cacheEntry.cached);
-				SDL_DestroySurface(cacheEntry.cached);
+				MORTAR_UnlockSurface(cacheEntry.cached);
+				MORTAR_DestroySurface(cacheEntry.cached);
 				cacheEntry.cached = nullptr;
 				cacheEntry.texture = nullptr;
 			}
@@ -554,31 +554,31 @@ void Direct3DRMSoftwareRenderer::AddTextureDestroyCallback(Uint32 id, IDirect3DR
 	);
 }
 
-Uint32 Direct3DRMSoftwareRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUI, float scaleX, float scaleY)
+uint32_t Direct3DRMSoftwareRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUI, float scaleX, float scaleY)
 {
 	auto texture = static_cast<Direct3DRMTextureImpl*>(iTexture);
 	auto surface = static_cast<DirectDrawSurfaceImpl*>(texture->m_surface);
 
 	// Check if already mapped
-	for (Uint32 i = 0; i < m_textures.size(); ++i) {
+	for (uint32_t i = 0; i < m_textures.size(); ++i) {
 		auto& texRef = m_textures[i];
 		if (texRef.texture == texture) {
 			if (texRef.version != texture->m_version) {
 				// Update animated textures
-				SDL_DestroySurface(texRef.cached);
-				texRef.cached = SDL_ConvertSurface(surface->m_surface, m_renderedImage->format);
-				SDL_LockSurface(texRef.cached);
+				MORTAR_DestroySurface(texRef.cached);
+				texRef.cached = MORTAR_ConvertSurface(surface->m_surface, m_renderedImage->format);
+				MORTAR_LockSurface(texRef.cached);
 				texRef.version = texture->m_version;
 			}
 			return i;
 		}
 	}
 
-	SDL_Surface* convertedRender = SDL_ConvertSurface(surface->m_surface, m_renderedImage->format);
-	SDL_LockSurface(convertedRender);
+	MORTAR_Surface* convertedRender = MORTAR_ConvertSurface(surface->m_surface, m_renderedImage->format);
+	MORTAR_LockSurface(convertedRender);
 
 	// Reuse freed slot
-	for (Uint32 i = 0; i < m_textures.size(); ++i) {
+	for (uint32_t i = 0; i < m_textures.size(); ++i) {
 		auto& texRef = m_textures[i];
 		if (!texRef.texture) {
 			texRef = {texture, texture->m_version, convertedRender};
@@ -589,8 +589,8 @@ Uint32 Direct3DRMSoftwareRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bo
 
 	// Append new
 	m_textures.push_back({texture, texture->m_version, convertedRender});
-	AddTextureDestroyCallback(static_cast<Uint32>(m_textures.size() - 1), texture);
-	return static_cast<Uint32>(m_textures.size() - 1);
+	AddTextureDestroyCallback(static_cast<uint32_t>(m_textures.size() - 1), texture);
+	return static_cast<uint32_t>(m_textures.size() - 1);
 }
 
 MeshCache UploadMesh(const MeshGroup& meshGroup)
@@ -618,7 +618,7 @@ MeshCache UploadMesh(const MeshGroup& meshGroup)
 	return cache;
 }
 
-void Direct3DRMSoftwareRenderer::AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh)
+void Direct3DRMSoftwareRenderer::AddMeshDestroyCallback(uint32_t id, IDirect3DRMMesh* mesh)
 {
 	auto* ctx = new CacheDestroyContext{this, id};
 	mesh->AddDestroyCallback(
@@ -636,9 +636,9 @@ void Direct3DRMSoftwareRenderer::AddMeshDestroyCallback(Uint32 id, IDirect3DRMMe
 	);
 }
 
-Uint32 Direct3DRMSoftwareRenderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup)
+uint32_t Direct3DRMSoftwareRenderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup)
 {
-	for (Uint32 i = 0; i < m_meshs.size(); ++i) {
+	for (uint32_t i = 0; i < m_meshs.size(); ++i) {
 		auto& cache = m_meshs[i];
 		if (cache.meshGroup == meshGroup) {
 			if (cache.version != meshGroup->version) {
@@ -650,7 +650,7 @@ Uint32 Direct3DRMSoftwareRenderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGr
 
 	auto newCache = UploadMesh(*meshGroup);
 
-	for (Uint32 i = 0; i < m_meshs.size(); ++i) {
+	for (uint32_t i = 0; i < m_meshs.size(); ++i) {
 		auto& cache = m_meshs[i];
 		if (!cache.meshGroup) {
 			cache = std::move(newCache);
@@ -660,19 +660,19 @@ Uint32 Direct3DRMSoftwareRenderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGr
 	}
 
 	m_meshs.push_back(std::move(newCache));
-	AddMeshDestroyCallback((Uint32) (m_meshs.size() - 1), mesh);
-	return (Uint32) (m_meshs.size() - 1);
+	AddMeshDestroyCallback((uint32_t) (m_meshs.size() - 1), mesh);
+	return (uint32_t) (m_meshs.size() - 1);
 }
 
 HRESULT Direct3DRMSoftwareRenderer::BeginFrame()
 {
-	if (!m_renderedImage || !SDL_LockSurface(m_renderedImage)) {
+	if (!m_renderedImage || !MORTAR_LockSurface(m_renderedImage)) {
 		return DDERR_GENERIC;
 	}
 	ClearZBuffer();
 
-	m_format = SDL_GetPixelFormatDetails(m_renderedImage->format);
-	m_palette = SDL_GetSurfacePalette(m_renderedImage);
+	m_format = MORTAR_GetPixelFormatDetails(m_renderedImage->format);
+	m_palette = MORTAR_GetSurfacePalette(m_renderedImage);
 	m_bytesPerPixel = m_format->bits_per_pixel / 8;
 
 	return DD_OK;
@@ -718,7 +718,7 @@ void Direct3DRMSoftwareRenderer::SubmitDraw(
 
 HRESULT Direct3DRMSoftwareRenderer::FinalizeFrame()
 {
-	SDL_UnlockSurface(m_renderedImage);
+	MORTAR_UnlockSurface(m_renderedImage);
 
 	return DD_OK;
 }
@@ -746,41 +746,40 @@ void Direct3DRMSoftwareRenderer::Resize(int width, int height, const ViewportTra
 	m_viewportTransform.offsetY = (m_height - (m_virtualHeight * m_viewportTransform.scale)) / 2.0f;
 
 	if (m_renderedImage) {
-		SDL_DestroySurface(m_renderedImage);
+		MORTAR_DestroySurface(m_renderedImage);
 	}
-	m_renderedImage = SDL_CreateSurface(m_width, m_height, SDL_PIXELFORMAT_RGBA32);
+	m_renderedImage = MORTAR_CreateSurface(m_width, m_height, MORTAR_PIXELFORMAT_RGBA32);
 
 	if (m_uploadBuffer) {
-		SDL_DestroyTexture(m_uploadBuffer);
+		MORTAR_DestroyTexture(m_uploadBuffer);
 	}
-	m_uploadBuffer =
-		SDL_CreateTexture(m_renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, m_width, m_height);
+	m_uploadBuffer = MORTAR_CreateTexture(m_renderer, MORTAR_PIXELFORMAT_RGBA32, m_width, m_height);
 
 	m_zBuffer.resize(m_width * m_height);
 }
 
 void Direct3DRMSoftwareRenderer::Clear(float r, float g, float b)
 {
-	const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(m_renderedImage->format);
-	Uint32 color = SDL_MapRGB(details, m_palette, r * 255, g * 255, b * 255);
-	SDL_FillSurfaceRect(m_renderedImage, nullptr, color);
+	const MORTAR_PixelFormatDetails* details = MORTAR_GetPixelFormatDetails(m_renderedImage->format);
+	uint32_t color = MORTAR_MapRGB(details, m_palette, r * 255, g * 255, b * 255);
+	MORTAR_FillSurfaceRect(m_renderedImage, nullptr, color);
 }
 
 void Direct3DRMSoftwareRenderer::Flip()
 {
-	SDL_UpdateTexture(m_uploadBuffer, nullptr, m_renderedImage->pixels, m_renderedImage->pitch);
-	SDL_RenderTexture(m_renderer, m_uploadBuffer, nullptr, nullptr);
-	SDL_RenderPresent(m_renderer);
+	MORTAR_UpdateTexture(m_uploadBuffer, nullptr, m_renderedImage->pixels, m_renderedImage->pitch);
+	MORTAR_RenderTexture(m_renderer, m_uploadBuffer, nullptr, nullptr);
+	MORTAR_RenderPresent(m_renderer);
 }
 
 void Direct3DRMSoftwareRenderer::Draw2DImage(
-	Uint32 textureId,
-	const SDL_Rect& srcRect,
-	const SDL_Rect& dstRect,
+	uint32_t textureId,
+	const MORTAR_Rect& srcRect,
+	const MORTAR_Rect& dstRect,
 	FColor color
 )
 {
-	SDL_Rect centeredRect = {
+	MORTAR_Rect centeredRect = {
 		static_cast<int>(dstRect.x * m_viewportTransform.scale + m_viewportTransform.offsetX),
 		static_cast<int>(dstRect.y * m_viewportTransform.scale + m_viewportTransform.offsetY),
 		static_cast<int>(dstRect.w * m_viewportTransform.scale),
@@ -788,44 +787,44 @@ void Direct3DRMSoftwareRenderer::Draw2DImage(
 	};
 
 	if (textureId == NO_TEXTURE_ID) {
-		Uint32 sdlColor = SDL_MapRGBA(
+		uint32_t sdlColor = MORTAR_MapRGBA(
 			m_format,
 			m_palette,
-			static_cast<Uint8>(color.r * 255),
-			static_cast<Uint8>(color.g * 255),
-			static_cast<Uint8>(color.b * 255),
-			static_cast<Uint8>(color.a * 255)
+			static_cast<uint8_t>(color.r * 255),
+			static_cast<uint8_t>(color.g * 255),
+			static_cast<uint8_t>(color.b * 255),
+			static_cast<uint8_t>(color.a * 255)
 		);
-		SDL_FillSurfaceRect(m_renderedImage, &centeredRect, sdlColor);
+		MORTAR_FillSurfaceRect(m_renderedImage, &centeredRect, sdlColor);
 		return;
 	}
 
 	bool isUpscaling = centeredRect.w > srcRect.w || centeredRect.h > srcRect.h;
 
-	SDL_Surface* surface = m_textures[textureId].cached;
-	SDL_UnlockSurface(surface);
-	SDL_BlitSurfaceScaled(
+	MORTAR_Surface* surface = m_textures[textureId].cached;
+	MORTAR_UnlockSurface(surface);
+	MORTAR_BlitSurfaceScaled(
 		surface,
 		&srcRect,
 		m_renderedImage,
 		&centeredRect,
-		isUpscaling ? SDL_SCALEMODE_NEAREST : SDL_SCALEMODE_LINEAR
+		isUpscaling ? MORTAR_SCALEMODE_NEAREST : MORTAR_SCALEMODE_LINEAR
 	);
-	SDL_LockSurface(surface);
+	MORTAR_LockSurface(surface);
 }
 
 void Direct3DRMSoftwareRenderer::SetDither(bool dither)
 {
 }
 
-void Direct3DRMSoftwareRenderer::Download(SDL_Surface* target)
+void Direct3DRMSoftwareRenderer::Download(MORTAR_Surface* target)
 {
-	SDL_Rect srcRect = {
+	MORTAR_Rect srcRect = {
 		static_cast<int>(m_viewportTransform.offsetX),
 		static_cast<int>(m_viewportTransform.offsetY),
 		static_cast<int>(m_virtualWidth * m_viewportTransform.scale),
 		static_cast<int>(m_virtualHeight * m_viewportTransform.scale),
 	};
 
-	SDL_BlitSurfaceScaled(m_renderedImage, &srcRect, target, nullptr, SDL_SCALEMODE_LINEAR);
+	MORTAR_BlitSurfaceScaled(m_renderedImage, &srcRect, target, nullptr, MORTAR_SCALEMODE_LINEAR);
 }

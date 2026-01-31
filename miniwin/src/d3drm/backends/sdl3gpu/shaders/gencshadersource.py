@@ -44,7 +44,7 @@ def write_generated_warning(f: "io") -> None:
     f.write("\n")
 
 def write_uint8_array(f: "io", variable: str, data: bytes) -> None:
-    f.write(f"static const Uint8 {variable}[{len(data)}] = {{\n")
+    f.write(f"static const uint8_t {variable}[{len(data)}] = {{\n")
     for rowdata in itertools.batched(data, 16):
         f.write("  "),
         f.write(", ".join(f"0x{d:02x}" for d in rowdata))
@@ -71,7 +71,7 @@ def write_shader_switch(f: "io", suffix: str, capitalized_stage: str, shader_var
         f.write(f"      *size = SDL_arraysize({var_name}{suffix});\n")
         f.write(f"      return {var_name}{suffix};\n")
     f.write(f"    default:\n")
-    f.write(f"      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, \"Invalid {capitalized_stage} shader id: %d\", id);\n")
+    f.write(f"      MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, \"Invalid {capitalized_stage} shader id: %d\", id);\n")
     f.write(f"      break;\n")
     f.write(f"    }}\n")
 
@@ -112,7 +112,7 @@ def main() -> None:
             f.write("// clang-format off\n")
             f.write("\n")
             write_generated_warning(f)
-            f.write("#include <SDL3/SDL.h>\n")
+            f.write("#include <mortar/backends/sdl3_dynamic.h>\n")
             f.write("\n")
             f.write("// DX only makes sense on Windows platforms\n")
             f.write("#if defined(SDL_PLATFORM_WINDOWS)\n")
@@ -146,7 +146,7 @@ def main() -> None:
             f.write("// clang-format off\n")
             f.write("\n")
             write_generated_warning(f)
-            f.write("#include <SDL3/SDL.h>\n")
+            f.write("#include <mortar/backends/sdl3_dynamic.h>\n")
             f.write("\n")
             for str_stage, shader_metadatas in stage_metadatas.items():
                 if not shader_metadatas:
@@ -168,6 +168,8 @@ def main() -> None:
             f.write(f"#include \"{args.header.name}\"\n\n")
             for shader_header in args.shader_headers:
                 f.write(f"#include \"{shader_header.name}\"\n")
+            f.write("\n")
+            f.write("#include <mortar/mortar.h>\n")
 
             for str_stage, shader_metadatas in stage_metadatas.items():
                 if not shader_metadatas:
@@ -224,7 +226,7 @@ def main() -> None:
                 f.write(f"    SDL_assert(id < SDL_arraysize({capitalized_stage}ShaderSPIRVCodes));\n")
                 f.write(f"    return &{capitalized_stage}ShaderSPIRVCodes[id];\n")
                 f.write(f"  }}\n")
-                f.write(f"  SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, \"Could not find {stage} shader code for id=%d and formats=0x%x\", id, formats);\n")
+                f.write(f"  MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, \"Could not find {stage} shader code for id=%d and formats=0x%x\", id, formats);\n")
                 f.write(f"  return nullptr;\n")
                 f.write(f"}}\n")
     else:

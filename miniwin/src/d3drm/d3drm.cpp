@@ -13,7 +13,8 @@
 #include "ddsurface_impl.h"
 #include "miniwin.h"
 
-#include <SDL3/SDL.h>
+#include <cassert>
+#include <mortar/mortar.h>
 
 Direct3DRMPickedArrayImpl::Direct3DRMPickedArrayImpl(const PickRecord* inputPicks, size_t count)
 {
@@ -99,12 +100,12 @@ private:
 
 HRESULT Direct3DRMImpl::QueryInterface(const GUID& riid, void** ppvObject)
 {
-	if (SDL_memcmp(&riid, &IID_IDirect3DRM2, sizeof(GUID)) == 0) {
+	if (MORTAR_memcmp(&riid, &IID_IDirect3DRM2, sizeof(GUID)) == 0) {
 		this->IUnknown::AddRef();
 		*ppvObject = static_cast<IDirect3DRM2*>(this);
 		return DD_OK;
 	}
-	SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Direct3DRMImpl does not implement guid");
+	MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "Direct3DRMImpl does not implement guid");
 	return E_NOINTERFACE;
 }
 
@@ -134,11 +135,11 @@ HRESULT Direct3DRMImpl::CreateDeviceFromSurface(
 
 	IDirect3DMiniwin* miniwind3d = nullptr;
 	dd->QueryInterface(IID_IDirect3DMiniwin, (void**) &miniwind3d);
-	SDL_assert(miniwind3d);
+	assert(miniwind3d);
 
 	DDRenderer = CreateDirect3DRMRenderer(miniwind3d, DDSDesc, guid);
 	if (!DDRenderer) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Device GUID not recognized");
+		MORTAR_LogError(MORTAR_LOG_CATEGORY_APPLICATION, "Device GUID not recognized");
 		return E_NOINTERFACE;
 	}
 	*outDevice =

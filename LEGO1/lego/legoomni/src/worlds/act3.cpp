@@ -683,7 +683,7 @@ void Act3::ReadyWorld()
 	AnimationManager()->FUN_1005f6d0(FALSE);
 	VideoManager()->Get3DManager()->SetFrustrum(90.0f, 0.1f, 125.0f);
 
-	m_unk0x426c = g_unk0x100d95e8[SDL_rand(3)];
+	m_unk0x426c = g_unk0x100d95e8[MORTAR_rand(3)];
 	AnimationManager()
 		->FUN_10060dc0(m_unk0x426c, NULL, TRUE, LegoAnimationManager::e_unk0, NULL, TRUE, FALSE, FALSE, FALSE);
 
