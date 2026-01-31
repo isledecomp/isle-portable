@@ -948,6 +948,12 @@ MxResult IsleApp::SetupWindow()
 #endif
 
 	window = SDL_CreateWindowWithProperties(props);
+
+#ifdef __EMSCRIPTEN__
+	// Force correct window size since SDL3 may have picked up CSS dimensions
+	SDL_SetWindowSize(window, g_targetWidth, g_targetHeight);
+#endif
+
 	SDL_SetPointerProperty(SDL_GetWindowProperties(window), ISLE_PROP_WINDOW_CREATE_VIDEO_PARAM, &m_videoParam);
 
 	if (m_exclusiveFullScreen && m_fullScreen) {
