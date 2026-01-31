@@ -938,6 +938,12 @@ MxResult IsleApp::SetupWindow()
 #endif
 
 	window = MORTAR_EX_CreateWindow(&createWindowProps);
+
+#ifdef __EMSCRIPTEN__
+	// Force correct window size since SDL3 may have picked up CSS dimensions
+	MORTAR_SetWindowSize(window, g_targetWidth, g_targetHeight);
+#endif
+
 	MORTAR_EXT_SetWindowProperty(window, MORTAR_WINDOW_PROPERTY_USER, &m_videoParam);
 
 	if (m_exclusiveFullScreen && m_fullScreen) {
