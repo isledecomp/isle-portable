@@ -66,6 +66,26 @@ static MORTAR_Surface* create_mortar_surface_from_sdl3(SDL_Surface* sdl3_surface
 	mortar_surface->mortar.pixels = sdl3_surface->pixels;
 	mortar_surface->mortar.format = pixelformat_sdl3_to_mortar(sdl3_surface->format);
 	mortar_surface->sdl3_surface = sdl3_surface;
+
+	SDL_Palette* sdl3_palette = SDL_GetSurfacePalette(sdl3_surface);
+	if (sdl3_palette && sdl3_palette->ncolors > 0) {
+		MORTAR_Palette* mortar_palette = MORTAR_CreatePalette(sdl3_palette->ncolors);
+		if (mortar_palette) {
+			MORTAR_Color* colors = (MORTAR_Color*) SDL_malloc(sizeof(MORTAR_Color) * sdl3_palette->ncolors);
+			if (colors) {
+				for (int i = 0; i < sdl3_palette->ncolors; i++) {
+					colors[i].r = sdl3_palette->colors[i].r;
+					colors[i].g = sdl3_palette->colors[i].g;
+					colors[i].b = sdl3_palette->colors[i].b;
+					colors[i].a = sdl3_palette->colors[i].a;
+				}
+				MORTAR_SetPaletteColors(mortar_palette, colors, 0, sdl3_palette->ncolors);
+				SDL_free(colors);
+			}
+			mortar_surface->mortar_palette = (MORTAR_SDL_Palette*) mortar_palette;
+		}
+	}
+
 	return &mortar_surface->mortar;
 }
 

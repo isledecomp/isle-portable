@@ -268,6 +268,7 @@
 	X(SDL_Surface*, SDL_CreateSurfaceFrom, (int width, int height, SDL_PixelFormat format, void* pixels, int pitch))   \
 	X(void, SDL_DestroySurface, (SDL_Surface * surface))                                                               \
 	X(bool, SDL_SetSurfacePalette, (SDL_Surface * surface, SDL_Palette * palette))                                     \
+	X(SDL_Palette*, SDL_GetSurfacePalette, (SDL_Surface * surface))                                                    \
 	X(bool, SDL_LockSurface, (SDL_Surface * surface))                                                                  \
 	X(void, SDL_UnlockSurface, (SDL_Surface * surface))                                                                \
 	X(SDL_Surface*, SDL_LoadBMP_IO, (SDL_IOStream * src, bool closeio))                                                \
@@ -4465,7 +4466,7 @@ static void unload_sdl3_api()
 #ifdef SDL_GetSurfacePalette
 #undef SDL_GetSurfacePalette
 #endif // SDL_GetSurfacePalette
-#define SDL_GetSurfacePalette SDL3_symbol_SDL_GetSurfacePalette_is_marked_unused
+#define SDL_GetSurfacePalette SDL3.SDL_GetSurfacePalette_symbol
 #ifdef SDL_AddSurfaceAlternateImage
 #undef SDL_AddSurfaceAlternateImage
 #endif // SDL_AddSurfaceAlternateImage

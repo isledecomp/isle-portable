@@ -92,6 +92,7 @@
   "SDL_GetPrimaryDisplay",
   "SDL_GetRGBA",
   "SDL_GetRevision",
+  "SDL_GetSurfacePalette",
   "SDL_GetSystemRAM",
   "SDL_GetTicks",
   "SDL_GetTicksNS",
