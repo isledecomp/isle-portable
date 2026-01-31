@@ -5,10 +5,13 @@ if(DOWNLOAD_DEPENDENCIES)
     include(FetchContent)
     FetchContent_Declare(
         miniaudio
-        URL https://github.com/mackron/miniaudio/archive/refs/tags/0.11.22.tar.gz
-        URL_MD5 4944268151ad037f148b089237566d05
+        URL https://github.com/mackron/miniaudio/archive/refs/tags/0.11.24.tar.gz
+        URL_MD5 19e8eb21223c56a4a2d167d04decddc9
     )
-    FetchContent_MakeAvailable(miniaudio)
+    block()
+        set(BUILD_SHARED_LIBS OFF)
+        FetchContent_MakeAvailable(miniaudio)
+    endblock()
 else()
     add_library(miniaudio STATIC
         miniaudio/extras/miniaudio_split/miniaudio.c
