@@ -31,15 +31,24 @@ COPY --chown=emscripten:emscripten packaging/ ./packaging/
 COPY --chown=emscripten:emscripten extensions/ ./extensions/
 COPY --chown=emscripten:emscripten CMakeLists.txt .
 
-RUN emcmake cmake -S . -B build -DISLE_BUILD_CONFIG=OFF -DISLE_DEBUG=OFF -DCMAKE_BUILD_TYPE=Release -DISLE_EMSCRIPTEN_HOST=/assets && \
+RUN emcmake cmake -S . -B build -DISLE_BUILD_CONFIG=OFF -DISLE_DEBUG=OFF -DCMAKE_BUILD_TYPE=Release && \
     emmake cmake --build build -j 32
 
 RUN echo "Fetching isle.pizza frontend..."; \
-    git clone --depth 1 -b legacy https://github.com/isledecomp/isle.pizza /tmp/isle.pizza;
+    git clone --depth 1 https://github.com/isledecomp/isle.pizza /tmp/isle.pizza;
 
-FROM openresty/openresty:alpine
+FROM node:22-alpine
 
-COPY docker/emscripten/nginx.conf /usr/local/openresty/nginx/conf/nginx.conf
-COPY --from=builder /tmp/isle.pizza /usr/local/openresty/nginx/html
-COPY --from=builder /src/build/isle.* /usr/local/openresty/nginx/html
+WORKDIR /app
+
+COPY --from=builder /tmp/isle.pizza ./
+COPY --from=builder /src/build/isle.js /src/build/isle.wasm ./
+
+RUN npm ci
+
+COPY docker/emscripten/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 EXPOSE 6931
+
+ENTRYPOINT ["/entrypoint.sh"]
