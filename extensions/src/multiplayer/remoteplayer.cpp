@@ -12,28 +12,21 @@
 #include "mxgeometry/mxgeometry3d.h"
 #include "realtime/realtime.h"
 #include "roi/legoroi.h"
-#include <vec.h>
 
 #include <SDL3/SDL_stdinc.h>
 #include <SDL3/SDL_timer.h>
 #include <cmath>
+#include <vec.h>
 #include <vector>
 
 using namespace Multiplayer;
 
-// clang-format off
-static const char* g_vehicleROINames[VEHICLE_COUNT] = {
-	"copter", "jsuser", "dunebugy", "bike", "board", "moto", "towtk", "ambul"
-};
+static const char* g_vehicleROINames[VEHICLE_COUNT] =
+	{"copter", "jsuser", "dunebugy", "bike", "board", "moto", "towtk", "ambul"};
 
-static const char* g_rideAnimNames[VEHICLE_COUNT] = {
-	NULL, NULL, NULL, "CNs001Bd", "CNs001sk", "CNs011Ni", NULL, NULL
-};
+static const char* g_rideAnimNames[VEHICLE_COUNT] = {NULL, NULL, NULL, "CNs001Bd", "CNs001sk", "CNs011Ni", NULL, NULL};
 
-static const char* g_rideVehicleROINames[VEHICLE_COUNT] = {
-	NULL, NULL, NULL, "bikebd", "board", "motoni", NULL, NULL
-};
-// clang-format on
+static const char* g_rideVehicleROINames[VEHICLE_COUNT] = {NULL, NULL, NULL, "bikebd", "board", "motoni", NULL, NULL};
 
 static bool IsLargeVehicle(int8_t p_vehicleType)
 {
@@ -43,10 +36,9 @@ static bool IsLargeVehicle(int8_t p_vehicleType)
 RemotePlayer::RemotePlayer(uint32_t p_peerId, uint8_t p_actorId)
 	: m_peerId(p_peerId), m_actorId(p_actorId), m_roi(nullptr), m_spawned(false), m_visible(false), m_targetSpeed(0.0f),
 	  m_targetVehicleType(VEHICLE_NONE), m_targetWorldId(-1), m_lastUpdateTime(SDL_GetTicks()),
-	  m_hasReceivedUpdate(false), m_walkAnim(nullptr), m_walkRoiMap(nullptr), m_walkRoiMapSize(0),
-	  m_animTime(0.0f), m_idleTime(0.0f), m_wasMoving(false), m_idleAnim(nullptr), m_idleRoiMap(nullptr),
-	  m_idleRoiMapSize(0), m_idleAnimTime(0.0f), m_rideAnim(nullptr), m_rideRoiMap(nullptr),
-	  m_rideRoiMapSize(0), m_rideVehicleROI(nullptr),
+	  m_hasReceivedUpdate(false), m_walkAnim(nullptr), m_walkRoiMap(nullptr), m_walkRoiMapSize(0), m_animTime(0.0f),
+	  m_idleTime(0.0f), m_wasMoving(false), m_idleAnim(nullptr), m_idleRoiMap(nullptr), m_idleRoiMapSize(0),
+	  m_idleAnimTime(0.0f), m_rideAnim(nullptr), m_rideRoiMap(nullptr), m_rideRoiMapSize(0), m_rideVehicleROI(nullptr),
 	  m_vehicleROI(nullptr), m_currentVehicleType(VEHICLE_NONE)
 {
 	SDL_snprintf(m_uniqueName, sizeof(m_uniqueName), "%s_mp_%u", LegoActor::GetActorName(p_actorId), p_peerId);
@@ -412,7 +404,12 @@ void RemotePlayer::UpdateAnimation(float p_deltaTime)
 			MxMatrix transform(m_roi->GetLocal2World());
 			LegoTreeNode* root = m_idleAnim->GetRoot();
 			for (LegoU32 i = 0; i < root->GetNumChildren(); i++) {
-				LegoROI::ApplyAnimationTransformation(root->GetChild(i), transform, (LegoTime) timeInCycle, m_idleRoiMap);
+				LegoROI::ApplyAnimationTransformation(
+					root->GetChild(i),
+					transform,
+					(LegoTime) timeInCycle,
+					m_idleRoiMap
+				);
 			}
 		}
 	}
