@@ -1,7 +1,6 @@
 #pragma once
 
 #include "extensions/multiplayer/protocol.h"
-#include "mxgeometry/mxmatrix.h"
 #include "mxtypes.h"
 
 #include <cstdint>
@@ -23,8 +22,6 @@ public:
 	void Despawn();
 	void UpdateFromNetwork(const PlayerStateMsg& p_msg);
 	void Tick(float p_deltaTime);
-
-	// Re-add ROI to 3D scene after world transition
 	void ReAddToScene();
 
 	uint32_t GetPeerId() const { return m_peerId; }
@@ -51,17 +48,14 @@ private:
 	void EnterVehicle(int8_t p_vehicleType);
 	void ExitVehicle();
 
-	// Identity
 	uint32_t m_peerId;
 	uint8_t m_actorId;
 	char m_uniqueName[32];
 
-	// Visual
 	LegoROI* m_roi;
 	bool m_spawned;
 	bool m_visible;
 
-	// Network state (latest received)
 	float m_targetPosition[3];
 	float m_targetDirection[3];
 	float m_targetUp[3];
@@ -71,12 +65,10 @@ private:
 	uint32_t m_lastUpdateTime;
 	bool m_hasReceivedUpdate;
 
-	// Interpolation state
 	float m_currentPosition[3];
 	float m_currentDirection[3];
 	float m_currentUp[3];
 
-	// Walk animation state
 	LegoAnim* m_walkAnim;
 	LegoROI** m_walkRoiMap;
 	MxU32 m_walkRoiMapSize;
@@ -84,19 +76,16 @@ private:
 	float m_idleTime;
 	bool m_wasMoving;
 
-	// Idle animation state (CNs008xx - breathing/swaying)
 	LegoAnim* m_idleAnim;
 	LegoROI** m_idleRoiMap;
 	MxU32 m_idleRoiMapSize;
 	float m_idleAnimTime;
 
-	// Ride animation state (small vehicles)
 	LegoAnim* m_rideAnim;
 	LegoROI** m_rideRoiMap;
 	MxU32 m_rideRoiMapSize;
 	LegoROI* m_rideVehicleROI;
 
-	// Vehicle state
 	LegoROI* m_vehicleROI;
 	int8_t m_currentVehicleType;
 };

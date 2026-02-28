@@ -2,7 +2,6 @@
 
 #include "extensions/multiplayer/websockettransport.h"
 
-#include <SDL3/SDL_log.h>
 #include <SDL3/SDL_stdinc.h>
 #include <emscripten.h>
 
@@ -36,8 +35,6 @@ void WebSocketTransport::Connect(const char* p_roomId)
 
 	std::string url = m_relayBaseUrl + "/room/" + p_roomId;
 
-	// Pass the address of m_connectedFlag so JS callbacks can update it
-	// directly via shared WASM heap memory, avoiding proxy calls for IsConnected().
 	// clang-format off
 	m_socketId = MAIN_THREAD_EM_ASM_INT({
 		var url = UTF8ToString($0);
@@ -78,11 +75,8 @@ void WebSocketTransport::Connect(const char* p_roomId)
 	}, url.c_str(), &m_connectedFlag);
 	// clang-format on
 
-	if (m_socketId > 0) {
-		SDL_Log("Multiplayer: connecting to %s", url.c_str());
-	}
-	else {
-		SDL_Log("Multiplayer: failed to create WebSocket connection to %s", url.c_str());
+	if (m_socketId <= 0) {
+		m_socketId = -1;
 	}
 }
 
@@ -100,7 +94,6 @@ void WebSocketTransport::Disconnect()
 		}, m_socketId);
 		// clang-format on
 
-		SDL_Log("Multiplayer: disconnected");
 		m_socketId = -1;
 		m_connectedFlag = 0;
 	}
@@ -108,8 +101,6 @@ void WebSocketTransport::Disconnect()
 
 bool WebSocketTransport::IsConnected() const
 {
-	// Read the shared flag directly from WASM heap memory.
-	// No proxy call needed - the JS callbacks update this via Atomics.store.
 	return m_socketId > 0 && m_connectedFlag != 0;
 }
 

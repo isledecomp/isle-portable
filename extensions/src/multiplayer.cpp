@@ -6,8 +6,6 @@
 #include "extensions/multiplayer/websockettransport.h"
 #endif
 
-#include <SDL3/SDL_log.h>
-
 using namespace Extensions;
 
 std::map<std::string, std::string> MultiplayerExt::options;
@@ -21,7 +19,6 @@ void MultiplayerExt::Initialize()
 	relayUrl = options["multiplayer:relay url"];
 
 	if (relayUrl.empty()) {
-		SDL_Log("Multiplayer: no relay url configured, multiplayer will not connect");
 		return;
 	}
 
@@ -31,12 +28,7 @@ void MultiplayerExt::Initialize()
 	s_networkManager = new Multiplayer::NetworkManager();
 	s_networkManager->Initialize(s_transport);
 
-	// Auto-connect to default room for MVP
 	s_networkManager->Connect("default");
-
-	SDL_Log("Multiplayer: initialized with relay url %s", relayUrl.c_str());
-#else
-	SDL_Log("Multiplayer: no transport available for this platform yet");
 #endif
 }
 

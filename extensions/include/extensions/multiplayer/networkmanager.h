@@ -37,7 +37,6 @@ public:
 	void Disconnect();
 	bool IsConnected() const;
 
-	// Called by the Multiplayer extension on world transitions
 	void OnWorldEnabled(LegoWorld* p_world);
 	void OnWorldDisabled(LegoWorld* p_world);
 
@@ -45,6 +44,8 @@ private:
 	void BroadcastLocalState();
 	void ProcessIncomingPackets();
 	void UpdateRemotePlayers(float p_deltaTime);
+
+	RemotePlayer* CreateAndSpawnPlayer(uint32_t p_peerId, uint8_t p_actorId);
 
 	void HandleJoin(const PlayerJoinMsg& p_msg);
 	void HandleLeave(const PlayerLeaveMsg& p_msg);

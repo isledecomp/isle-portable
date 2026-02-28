@@ -8,7 +8,6 @@
 #include "mxticklemanager.h"
 #include "roi/legoroi.h"
 
-#include <SDL3/SDL_log.h>
 #include <SDL3/SDL_stdinc.h>
 #include <SDL3/SDL_timer.h>
 #include <vector>
@@ -45,16 +44,13 @@ MxResult NetworkManager::Tickle()
 	ProcessIncomingPackets();
 	UpdateRemotePlayers(0.016f);
 
-	// Timeout check - remove stale remote players.
 	// Re-read time because ProcessIncomingPackets updates player timestamps
 	// via SDL_GetTicks(), which may be newer than the 'now' captured above.
-	// Using the stale 'now' would cause unsigned underflow (now < lastUpdate).
 	uint32_t timeoutNow = SDL_GetTicks();
 	std::vector<uint32_t> timedOut;
 	for (auto& [peerId, player] : m_remotePlayers) {
 		uint32_t lastUpdate = player->GetLastUpdateTime();
 		if (timeoutNow >= lastUpdate && (timeoutNow - lastUpdate) > TIMEOUT_MS) {
-			SDL_Log("Multiplayer: peer %u timed out", peerId);
 			timedOut.push_back(peerId);
 		}
 	}
@@ -110,9 +106,6 @@ void NetworkManager::OnWorldEnabled(LegoWorld* p_world)
 		return;
 	}
 
-	SDL_Log("Multiplayer: OnWorldEnabled worldId=%d (e_act1=%d)", p_world->GetWorldId(), LegoOmni::e_act1);
-
-	// Register with tickle manager on first world enable (engine is now initialized)
 	if (!m_registered) {
 		TickleManager()->RegisterClient(this, 10);
 		m_registered = true;
@@ -121,19 +114,15 @@ void NetworkManager::OnWorldEnabled(LegoWorld* p_world)
 	if (p_world->GetWorldId() == LegoOmni::e_act1) {
 		m_inIsleWorld = true;
 
-		// Re-add all remote player ROIs to the 3D scene
 		for (auto& [peerId, player] : m_remotePlayers) {
 			if (player->IsSpawned()) {
 				player->ReAddToScene();
 
-				// Only show if the remote player is also in ISLE
 				if (player->GetWorldId() == (int8_t) LegoOmni::e_act1) {
 					player->SetVisible(true);
 				}
 			}
 		}
-
-		SDL_Log("Multiplayer: ISLE world enabled, re-added %zu remote players", m_remotePlayers.size());
 	}
 }
 
@@ -182,28 +171,12 @@ void NetworkManager::BroadcastLocalState()
 		actorId = m_lastValidActorId;
 	}
 
-	// Don't broadcast if we haven't seen a valid character yet
 	if (!IsValidActorId(actorId)) {
 		return;
 	}
 
 	int8_t worldId = (int8_t) currentWorld->GetWorldId();
 	int8_t vehicleType = DetectLocalVehicleType();
-
-	// Log first broadcast per session for debugging
-	static bool firstBroadcast = true;
-	if (firstBroadcast) {
-		SDL_Log(
-			"Multiplayer: first broadcast actorId=%u worldId=%d vehicleType=%d pos=(%.1f,%.1f,%.1f)",
-			actorId,
-			worldId,
-			vehicleType,
-			pos[0],
-			pos[1],
-			pos[2]
-		);
-		firstBroadcast = false;
-	}
 
 	uint8_t buf[64];
 	size_t len = SerializeStateMsg(
@@ -240,7 +213,6 @@ void NetworkManager::ProcessIncomingPackets()
 				uint32_t assignedId;
 				SDL_memcpy(&assignedId, data + 1, sizeof(uint32_t));
 				m_localPeerId = assignedId;
-				SDL_Log("Multiplayer: assigned peer ID %u", m_localPeerId);
 			}
 			break;
 		}
@@ -266,7 +238,6 @@ void NetworkManager::ProcessIncomingPackets()
 			break;
 		}
 		default:
-			SDL_Log("Multiplayer: unknown message type %u (len=%zu)", msgType, length);
 			break;
 		}
 	});
@@ -279,19 +250,10 @@ void NetworkManager::UpdateRemotePlayers(float p_deltaTime)
 	}
 }
 
-void NetworkManager::HandleJoin(const PlayerJoinMsg& p_msg)
+RemotePlayer* NetworkManager::CreateAndSpawnPlayer(uint32_t p_peerId, uint8_t p_actorId)
 {
-	uint32_t peerId = p_msg.header.peerId;
+	auto player = std::make_unique<RemotePlayer>(p_peerId, p_actorId);
 
-	if (m_remotePlayers.count(peerId)) {
-		return; // Already known
-	}
-
-	SDL_Log("Multiplayer: peer %u joined as actor %d (%s)", peerId, p_msg.actorId, p_msg.name);
-
-	auto player = std::make_unique<RemotePlayer>(peerId, p_msg.actorId);
-
-	// Spawn in current world if we're in ISLE
 	if (m_inIsleWorld) {
 		LegoWorld* world = CurrentWorld();
 		if (world && world->GetWorldId() == LegoOmni::e_act1) {
@@ -299,7 +261,20 @@ void NetworkManager::HandleJoin(const PlayerJoinMsg& p_msg)
 		}
 	}
 
-	m_remotePlayers[peerId] = std::move(player);
+	RemotePlayer* ptr = player.get();
+	m_remotePlayers[p_peerId] = std::move(player);
+	return ptr;
+}
+
+void NetworkManager::HandleJoin(const PlayerJoinMsg& p_msg)
+{
+	uint32_t peerId = p_msg.header.peerId;
+
+	if (m_remotePlayers.count(peerId)) {
+		return;
+	}
+
+	CreateAndSpawnPlayer(peerId, p_msg.actorId);
 }
 
 void NetworkManager::HandleLeave(const PlayerLeaveMsg& p_msg)
@@ -313,65 +288,27 @@ void NetworkManager::HandleState(const PlayerStateMsg& p_msg)
 
 	auto it = m_remotePlayers.find(peerId);
 	if (it == m_remotePlayers.end()) {
-		// Auto-create remote player on first STATE if we haven't seen a JOIN
 		if (!IsValidActorId(p_msg.actorId)) {
 			return;
 		}
 
-		SDL_Log("Multiplayer: new remote peer %u (actor %u)", peerId, p_msg.actorId);
-		auto player = std::make_unique<RemotePlayer>(peerId, p_msg.actorId);
-
-		if (m_inIsleWorld) {
-			LegoWorld* world = CurrentWorld();
-			if (world && world->GetWorldId() == LegoOmni::e_act1) {
-				player->Spawn(world);
-			}
-		}
-
-		m_remotePlayers[peerId] = std::move(player);
+		CreateAndSpawnPlayer(peerId, p_msg.actorId);
 		it = m_remotePlayers.find(peerId);
 	}
 
-	// Handle actor change (e.g., Pepper -> Nick): despawn and respawn with new actor
+	// Handle actor change (e.g., Pepper -> Nick)
 	if (IsValidActorId(p_msg.actorId) && it->second->GetActorId() != p_msg.actorId) {
-		SDL_Log("Multiplayer: peer %u changed actor %u -> %u", peerId, it->second->GetActorId(), p_msg.actorId);
 		it->second->Despawn();
-		auto player = std::make_unique<RemotePlayer>(peerId, p_msg.actorId);
-
-		if (m_inIsleWorld) {
-			LegoWorld* world = CurrentWorld();
-			if (world && world->GetWorldId() == LegoOmni::e_act1) {
-				player->Spawn(world);
-			}
-		}
-
-		m_remotePlayers[peerId] = std::move(player);
+		m_remotePlayers.erase(it);
+		CreateAndSpawnPlayer(peerId, p_msg.actorId);
 		it = m_remotePlayers.find(peerId);
 	}
 
 	it->second->UpdateFromNetwork(p_msg);
 
-	// Handle visibility based on worldId
 	bool bothInIsle = m_inIsleWorld && (p_msg.worldId == (int8_t) LegoOmni::e_act1);
-
 	if (it->second->IsSpawned()) {
-		bool wasVisible = it->second->IsVisible();
 		it->second->SetVisible(bothInIsle);
-		if (wasVisible != bothInIsle) {
-			SDL_Log(
-				"Multiplayer: peer %u visibility %d->%d (inIsle=%d, msgWorld=%d, e_act1=%d, spawned=%d)",
-				peerId,
-				wasVisible,
-				bothInIsle,
-				m_inIsleWorld,
-				p_msg.worldId,
-				(int8_t) LegoOmni::e_act1,
-				it->second->IsSpawned()
-			);
-		}
-	}
-	else {
-		SDL_Log("Multiplayer: peer %u not spawned, skipping visibility (inIsle=%d)", peerId, m_inIsleWorld);
 	}
 }
 
@@ -379,7 +316,6 @@ void NetworkManager::RemoveRemotePlayer(uint32_t p_peerId)
 {
 	auto it = m_remotePlayers.find(p_peerId);
 	if (it != m_remotePlayers.end()) {
-		SDL_Log("Multiplayer: peer %u removed", p_peerId);
 		it->second->Despawn();
 		m_remotePlayers.erase(it);
 	}
