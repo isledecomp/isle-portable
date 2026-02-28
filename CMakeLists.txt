@@ -531,6 +531,10 @@ if (ISLE_EXTENSIONS)
     extensions/src/extensions.cpp
     extensions/src/siloader.cpp
     extensions/src/textureloader.cpp
+    extensions/src/multiplayer.cpp
+    extensions/src/multiplayer/networkmanager.cpp
+    extensions/src/multiplayer/remoteplayer.cpp
+    extensions/src/multiplayer/websockettransport.cpp
   )
 endif()
 

@@ -1,5 +1,6 @@
 #include "extensions/extensions.h"
 
+#include "extensions/multiplayer.h"
 #include "extensions/siloader.h"
 #include "extensions/textureloader.h"
 
@@ -18,6 +19,11 @@ void Extensions::Enable(const char* p_key, std::map<std::string, std::string> p_
 				SiLoader::options = std::move(p_options);
 				SiLoader::enabled = true;
 				SiLoader::Initialize();
+			}
+			else if (!SDL_strcasecmp(p_key, "extensions:multiplayer")) {
+				MultiplayerExt::options = std::move(p_options);
+				MultiplayerExt::enabled = true;
+				MultiplayerExt::Initialize();
 			}
 
 			SDL_Log("Enabled extension: %s", p_key);

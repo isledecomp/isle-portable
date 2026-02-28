@@ -92,6 +92,7 @@ public:
 	MxU32 GetSoundId(LegoROI* p_roi, MxBool p_basedOnMood);
 	MxU8 GetMood(LegoROI* p_roi);
 	LegoROI* CreateAutoROI(const char* p_name, const char* p_lodName, MxBool p_createEntity);
+	LegoROI* CreateCharacterClone(const char* p_uniqueName, const char* p_characterType);
 	MxResult UpdateBoundingSphereAndBox(LegoROI* p_roi);
 	LegoROI* FUN_10085a80(const char* p_name, const char* p_lodName, MxBool p_createEntity);
 

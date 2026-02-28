@@ -1,6 +1,7 @@
 #include "legoworld.h"
 
 #include "anim/legoanim.h"
+#include "extensions/multiplayer.h"
 #include "extensions/siloader.h"
 #include "legoanimationmanager.h"
 #include "legoanimpresenter.h"
@@ -753,6 +754,7 @@ void LegoWorld::Enable(MxBool p_enable)
 #ifndef BETA10
 		SetIsWorldActive(TRUE);
 #endif
+		Extensions::Extension<Extensions::MultiplayerExt>::Call(Extensions::HandleWorldEnable, this, TRUE);
 	}
 	else if (!p_enable && m_disabledObjects.size() == 0) {
 		MxPresenter* presenter;
@@ -815,6 +817,7 @@ void LegoWorld::Enable(MxBool p_enable)
 		}
 
 		GetViewManager()->RemoveAll(NULL);
+		Extensions::Extension<Extensions::MultiplayerExt>::Call(Extensions::HandleWorldEnable, this, FALSE);
 	}
 }
 
