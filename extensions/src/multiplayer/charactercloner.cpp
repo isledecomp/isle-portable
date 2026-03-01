@@ -11,6 +11,7 @@
 #include "viewmanager/viewlodlist.h"
 
 #include <SDL3/SDL_stdinc.h>
+#include <cstdio>
 #include <vec.h>
 
 using namespace Multiplayer;
