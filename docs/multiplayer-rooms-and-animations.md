@@ -18,14 +18,15 @@ URL-based rooms + animation trigger system + Svelte overlay.
 - **No text chat** -- emotes are the communication
 - **Connection lifecycle handled by INI config** at startup (no `mp_connect`/`mp_disconnect` from Svelte)
 
-### Key Design Principle: Animations, Not Emotes
+### Animation Categories
 
-The UI presents these as "emotes", but the internal system is a **generic animation trigger mechanism**. The protocol, C++ exports, and network messages all deal in animation names -- not emote-specific concepts. This means:
+The multiplayer UI supports three types of player animations:
 
-- The protocol message carries an animation name string, not an emote-specific concept
-- The C++ export is `mp_trigger_animation(const char* animName)`, not `mp_trigger_emote`
-- The mapping from UI label to animation name lives entirely in the Svelte overlay
-- New animations can be added without changing the protocol
+1. **Walking animation** -- plays while the player is moving. Persistent setting (stays until changed).
+2. **Idle animation** -- plays while stationary, after ~2.5s of not moving. Persistent setting (stays until changed).
+3. **One-off emotes** -- plays one full cycle while stationary. Movement interrupts. After completing, returns to the 2.5s timeout → idle animation flow. Triggers an emoji popup in the local player's UI (similar to the debug menu activation feedback).
+
+All three are selected by the player through the overlay UI. Internally, the protocol and C++ exports deal in animation name strings (e.g., `"CNs003xx"`) -- the Svelte overlay maps UI labels to these names.
 
 ## User Flow
 
@@ -113,7 +114,7 @@ Collapsed:
 └──────────────────────────────────────────────┘
 ```
 
-Clicking an emote button broadcasts an animation to all other players through the multiplayer protocol as a one-shot message. The animation is **not played on the local player** -- it is only visible to remote players. This avoids interfering with the local player's path actor state and movement controls.
+Changing a walk/idle animation or triggering an emote broadcasts to all other players through the multiplayer protocol. Animations are **not played on the local player** -- they are only visible to remote players. This avoids interfering with the local player's path actor state and movement controls. One-off emotes show an emoji popup locally as feedback.
 
 ## Svelte → WASM Bridge
 
@@ -121,11 +122,19 @@ One-way, minimal. The C++ side exports only what the Svelte overlay needs:
 
 ```cpp
 extern "C" {
-  // Broadcast an animation to all other players by its CNs name
-  // (e.g., "CNs003xx"). The animation is NOT played on the local player --
-  // it is only visible to remote players. The mapping from UI emote label
-  // to animation name lives in the Svelte overlay.
-  EMSCRIPTEN_KEEPALIVE void mp_trigger_animation(const char* animName);
+  // Set the walking animation for this player (persistent).
+  // Index into the walk animation table. Included in every PlayerStateMsg.
+  // Not played locally -- only visible to remote players.
+  EMSCRIPTEN_KEEPALIVE void mp_set_walk_animation(int index);
+
+  // Set the idle animation for this player (persistent).
+  // Index into the idle animation table. Included in every PlayerStateMsg.
+  // Not played locally -- only visible to remote players.
+  EMSCRIPTEN_KEEPALIVE void mp_set_idle_animation(int index);
+
+  // Trigger a one-off emote (plays one cycle on remote players).
+  // Index into the emote table. Not played locally.
+  EMSCRIPTEN_KEEPALIVE void mp_trigger_emote(int index);
 
   // Room info -- for the overlay to display
   EMSCRIPTEN_KEEPALIVE int mp_get_player_count();
@@ -184,107 +193,123 @@ The game has two distinct animation playback mechanisms:
 | `ApplyAnimationTransformation()` + ROI map | Directly applies bone transforms from a `LegoAnim` tree at a given time. Used for walk/idle/ride cycles. | **Working** -- already used for remote players |
 | `StartEntityAction()` + presenter system | Loads animations from SI files via the action/presenter pipeline. Used for click animations, disassemble/reassemble. | **Not available** -- requires the full presenter infrastructure which remote players don't have |
 
-The emote system should use `ApplyAnimationTransformation()` since it already works for remote players.
+All multiplayer animations use `ApplyAnimationTransformation()` since it already works for remote players.
 
-### CNs### Locomotion/Gesture Animations (g_cycles)
+### CNs### Animations (g_cycles)
 
 The `g_cycles[11][17]` array in `legoanimationmanager.cpp` maps character types to animation names. Each character has character-specific variants (e.g., `CNs001Pe` for Pepper), but **generic `xx` versions exist that work on any character** since all characters share the same skeleton structure.
 
-Remote players already use two of these:
-- `CNs001xx` -- walk cycle
-- `CNs008xx` -- idle/breathing
+All are loaded as `LegoAnimPresenter` objects in the world and can be looked up via `world->Find("LegoAnimPresenter", "CNs003xx")`.
 
-The remaining generic animations are available for emotes. Their exact visual content needs to be identified by playing them in-game:
+**Playback for remote players**: Same pattern already used for walk/idle -- call `BuildROIMap()` to map animation bones to the character's ROI, then `ApplyAnimationTransformation()` each frame with an advancing time value.
 
-| Slot | Name | Status |
-|------|------|--------|
-| 0 | `CNs001xx` | Walk cycle (already used) |
-| 1 | `CNs002xx` | **Available for emotes** -- visual TBD |
-| 2 | `CNs003xx` | **Available for emotes** -- visual TBD |
-| 3 | `CNs004xx` | **Available for emotes** -- visual TBD |
-| 4 | `CNs005xx` | **Available for emotes** -- visual TBD |
-| 5 | `CNs007xx` | **Available for emotes** -- visual TBD |
-| 6 | `CNs006xx` | **Available for emotes** -- visual TBD |
-| 7 | `CNs008xx` | Idle/breathing (already used) |
-| 8 | `CNs009xx` | **Available for emotes** -- visual TBD |
-| 9 | `CNs010xx` | **Available for emotes** -- visual TBD |
-| 10 | `CNs011xx` | **Available for emotes** -- visual TBD |
-| 11 | `CNs012xx` | **Available for emotes** -- visual TBD |
+#### Walking Animations (looping, while moving)
 
-These are the NPC idle/gesture animations that play when NPCs are near the player, selected by the mood system (moods 0-3). They include fidgets, gestures, looking around, etc. All are loaded as `LegoAnimPresenter` objects in the world and can be looked up via `world->Find("LegoAnimPresenter", "CNs003xx")`.
+| Name | UI Label | Description |
+|------|----------|-------------|
+| `CNs001xx` | Normal | Walking upright/straight (default) |
+| `CNs002xx` | Joyful | Happy, energetic walk |
+| `CNs003xx` | Gloomy | Sad, leaning forward, depressed |
+| `CNs005xx` | Sneaky | Walking hunched forward |
+| `CNs006xx` | Scared | Frightened walk |
+| `CNs007xx` | Hyper | Super excited, head pops off |
 
-**Playback for remote players**: Same pattern already used for walk/idle -- call `BuildROIMap()` to map animation bones to the character's ROI, then `ApplyAnimationTransformation()` each frame with an advancing time value. The animation runs for its `GetDuration()` then returns to idle.
+`CNs004xx` appears identical to `CNs001xx` and is excluded.
 
-### Click/Customize Animation (Body Flip)
+#### Idle Animations (looping, after ~2.5s stationary)
 
-When clicking on an NPC, `ClickAnimation()` (`legoentity.cpp:309`) plays a body flip animation:
+| Name | UI Label | Description |
+|------|----------|-------------|
+| `CNs008xx` | Sway | Body swaying back and forth (default) |
+| `CNs009xx` | Groove | Happy, body swaying side to side |
+| `CNs010xx` | Excited | Swinging arms energetically |
 
-1. Gets animation ID: `m_move + g_characterAnimationId` (IDs 10-13, 4 variants)
-2. Loads from a separate SI file (`CUSTOMIZE_ANIM_FILE`)
-3. Uses `SUBST:actor_01:characterName` to apply to any character
-4. Played via `StartEntityAction()` (presenter pipeline)
+#### One-Off Emotes (single cycle, must be stationary)
 
-This animation works on any character via the SUBST mechanism, but uses the presenter system which isn't available for remote players. To use this as an emote, the animation data would need to be extracted and played via `ApplyAnimationTransformation()` instead -- or the presenter system would need to be extended.
+| Name | UI Label | Description |
+|------|----------|-------------|
+| `CNs011xx` | Wave | Waving hello with one hand |
+| `CNs012xx` | Hat Tip | Taking off hat and waving with it |
 
-### Disassemble/Reassemble (BNsDis/BNsAss)
+### Other Animation Assets (Future)
 
-Action IDs in Isle: `BNsDis01`-`03` (231-233), `BNsAss01`-`03` (228-230). Character falls apart into pieces then reassembles. Triggered by NPC collision in `LegoExtraActor::HitActor()`. Also uses the presenter system -- same portability challenge as the click animation.
+These use the presenter system which isn't available for remote players yet:
 
-### Procedural Flip
+- **Click/Customize body flip** (`CUSTOMIZE_ANIM_FILE`, IDs 10-13): Full body flip animation triggered by clicking NPCs. Uses `SUBST:actor_01:characterName` to work on any character. Would need extraction to `ApplyAnimationTransformation()` or presenter system extension.
+- **Disassemble/Reassemble** (`BNsDis01`-`03` / `BNsAss01`-`03`, action IDs 228-233): Character falls apart into pieces then reassembles. Same presenter portability challenge.
+- **Procedural flip**: Not animation data -- pure code in `LegoExtraActor::StepState()` (`RotateX`/`RotateZ` at 0.7 rad/frame for 2 seconds). Easiest to port since it's just transform math.
 
-Not an animation file -- pure code in `LegoExtraActor::StepState()`. Applies `RotateX`/`RotateZ` at 0.7 rad/frame for 2 seconds based on a collision axis. Triggered by NPC collision at certain angles.
+## Protocol: Animation Messages
 
-**Easiest to port**: Since it's just transform math, it can be replicated for remote players by applying the same rotation transforms. No animation data or presenter system needed.
+### Walk/Idle: Carried in PlayerStateMsg
 
-### Emote Implementation Strategy
-
-**Phase 1 emotes** (use `ApplyAnimationTransformation()` -- already proven for remote players):
-
-1. Pick the best-looking CNs###xx animations after visual review (up to 10 candidates)
-2. Optionally add the procedural flip as a special emote (code-driven, no animation data)
-
-**Future emotes** (would require extending the presenter system for remote players):
-
-3. Click animation body flip (from CUSTOMIZE_ANIM_FILE)
-4. Disassemble/reassemble (BNsDis/BNsAss)
-
-## Protocol: MSG_ANIMATION
-
-A new one-shot message sent when any player triggers an animation:
+Walk and idle animation selections are **persistent state** -- they must survive player joins, reconnects, and packet loss. They are included in the existing 15Hz `PlayerStateMsg`:
 
 ```
-MSG_ANIMATION = 9
-
-struct AnimationMsg {
-  MessageHeader header;      // 9 bytes (type + peerId + sequence)
-  uint8_t nameLength;        // 1 byte
-  char animName[nameLength]; // variable length (e.g., "CNs003xx" = 8 bytes)
+struct PlayerStateMsg {
+  MessageHeader header;
+  float position[3];
+  float direction[3];
+  float up[3];
+  float speed;
+  int8_t vehicleType;
+  int32_t worldId;
+  uint8_t walkAnimId;     // index into walk animation table (0 = default)
+  uint8_t idleAnimId;     // index into idle animation table (0 = default)
 };
 ```
 
-The animation is identified by its `CNs` name string. This matches how animations are looked up internally (`world->Find("LegoAnimPresenter", name)`) and avoids needing an ID mapping layer. Name strings are short (8-10 bytes typically), so the overhead vs. a fixed integer ID is minimal.
+Using a `uint8_t` index into a fixed animation table (rather than a string name) keeps the per-tick overhead minimal. The table mapping is shared between Svelte (UI labels) and C++ (CNs name lookup):
 
-For the procedural flip, a reserved name like `"_flip"` can be used (the `_` prefix distinguishes it from CNs names).
+**Walk animation table:**
 
-The relay broadcasts it to all peers (it already broadcasts unknown message types). Remote clients receive the message and play the corresponding animation on that peer's character.
+| Index | CNs Name | UI Label |
+|-------|----------|----------|
+| 0 | `CNs001xx` | Normal (default) |
+| 1 | `CNs002xx` | Joyful |
+| 2 | `CNs003xx` | Gloomy |
+| 3 | `CNs005xx` | Sneaky |
+| 4 | `CNs006xx` | Scared |
+| 5 | `CNs007xx` | Hyper |
 
-### Why a One-Shot Message (Not Player State)
+**Idle animation table:**
 
-Animations are discrete events, not continuous state. Piggybacking on the 15Hz `PlayerStateMsg` would mean:
+| Index | CNs Name | UI Label |
+|-------|----------|----------|
+| 0 | `CNs008xx` | Sway (default) |
+| 1 | `CNs009xx` | Groove |
+| 2 | `CNs010xx` | Excited |
 
-- Wasting bandwidth sending an animation field every 66ms even when idle
-- Needing "started at" timestamps or frame counters to avoid replaying
-- Difficulty distinguishing "no animation" from "animation just ended"
+This way every `PlayerStateMsg` carries the current walk/idle setting. New players joining a room automatically receive the correct animations from the first state update -- no special join-time sync needed.
 
-A one-shot message is cleaner: fire once, play once, done.
+### Emotes: One-Shot Message
 
-### Animation Interruption
+Emotes are discrete events, not persistent state. A separate message type:
 
-If a player moves while an emote/animation is playing, the animation is **immediately cleared/interrupted**. Movement always takes priority. This keeps the gameplay responsive and prevents players from getting stuck in animation states.
+```
+MSG_EMOTE = 9
 
-On the local player: any path actor movement input cancels the active triggered animation and returns to normal movement animation.
+struct EmoteMsg {
+  MessageHeader header;      // 9 bytes (type + peerId + sequence)
+  uint8_t emoteId;           // 1 byte -- index into emote table
+};
+```
 
-On remote players: when a `PlayerStateMsg` arrives indicating movement (non-zero speed), any active triggered animation on that remote player is cancelled.
+Total: 10 bytes per emote trigger.
+
+**Emote table:**
+
+| Index | CNs Name | UI Label |
+|-------|----------|----------|
+| 0 | `CNs011xx` | Wave |
+| 1 | `CNs012xx` | Hat Tip |
+
+The relay broadcasts it to all peers. The remote player must be stationary -- if a `PlayerStateMsg` arrives indicating movement (non-zero speed) during the emote, it is **immediately interrupted**. After the emote completes (or is interrupted), the remote player returns to the ~2.5s idle timeout → idle animation flow.
+
+### Why This Split
+
+- **Walk/idle in PlayerStateMsg**: persistent state that must be known by all peers at all times. Piggybacking on the existing 15Hz message means zero additional messages and automatic sync on join. 2 extra bytes per tick is negligible.
+- **Emotes as one-shot messages**: discrete events with "fire once, play once" semantics. Don't belong in continuous state.
 
 ## Relay: Room Preview Endpoint
 
@@ -314,39 +339,53 @@ Works with the COOP/COEP setup:
 - **WebSocket** (`wss://relay.isle.pizza/room/...`): unaffected by COEP
 - **HTTP fetch** (`GET https://relay.isle.pizza/room/.../info`): needs `Cross-Origin-Resource-Policy: same-site` (relay and isle.pizza share the same registrable domain)
 
-## C++ Implementation: Animation Trigger
+## C++ Implementation: Animation System
 
-When `mp_trigger_animation(animName)` is called:
+### Exports (Svelte → WASM)
 
-1. Send `MSG_ANIMATION` with the animation name to all peers via the relay
-2. Nothing happens locally -- the animation is only visible to other players
+All three exports affect remote players only -- nothing is played on the local player.
 
-When a remote `MSG_ANIMATION` is received:
+- `mp_set_walk_animation(index)`: stores the walk animation index, included in subsequent `PlayerStateMsg` broadcasts
+- `mp_set_idle_animation(index)`: stores the idle animation index, included in subsequent `PlayerStateMsg` broadcasts
+- `mp_trigger_emote(index)`: sends `MSG_EMOTE` to all peers
 
-1. Look up the remote player by `peerId` from the message header
-2. If CNs name: look up the animation presenter via `world->Find("LegoAnimPresenter", animName)`, build ROI map if not cached, play the animation for its duration then return to idle
-3. If `"_flip"`: apply procedural rotation on the remote player's transform for 2 seconds (same math as `LegoExtraActor::StepState()` `c_hitAnimation`)
+### Remote Player State Machine
 
-The remote player's `UpdateAnimation()` already handles walk vs. idle selection. A triggered animation adds a third state: when active, it takes priority over both walk and idle. When it completes (duration elapsed) or is interrupted (movement detected), it returns to the normal walk/idle logic.
+The remote player's `UpdateAnimation()` currently has two states (moving → walk, stationary → idle). This extends to:
+
+```
+moving ──────────────────────────────► walk animation (from walkAnimId in PlayerStateMsg)
+    │                                      ▲
+    │                                      │ movement detected
+    ▼                                      │
+stationary ──(2.5s timeout)──► idle animation (from idleAnimId in PlayerStateMsg)
+    │                              ▲
+    │  MSG_EMOTE received          │ emote completed / movement detected
+    ▼                              │
+emote playing ─────────────────────┘
+```
+
+- **Walk/idle changes**: when `walkAnimId` or `idleAnimId` in an incoming `PlayerStateMsg` differs from the current value, look up the new animation via `world->Find("LegoAnimPresenter", tableLookup(index))`, build ROI map (cache it), swap in as the active walk/idle animation.
+- **Emote** (`MSG_EMOTE`): look up animation presenter from emote table, build ROI map if not cached, play for one `GetDuration()` cycle. If movement is detected during playback, interrupt immediately and return to walk. After completion, return to stationary state (2.5s timeout → idle).
 
 ## Files Changed
 
 | File | Change |
 |------|--------|
-| `extensions/include/extensions/multiplayer/protocol.h` | Add `MSG_ANIMATION` (type 9) and `AnimationMsg` struct |
-| `extensions/src/multiplayer/networkmanager.cpp` | Handle incoming `MSG_ANIMATION`, add `SendAnimation(const char* animName)` method |
-| `extensions/include/extensions/multiplayer/networkmanager.h` | Declare `SendAnimation()` |
-| `extensions/src/multiplayer/remoteplayer.cpp` | Add triggered animation state, animation playback with duration, interruption on movement, procedural flip support |
-| `extensions/include/extensions/multiplayer/remoteplayer.h` | Add triggered animation members (current anim, ROI map, elapsed time, flip state) |
-| `extensions/src/multiplayer.cpp` | Add `mp_trigger_animation()` and `mp_get_player_count()` C exports |
+| `extensions/include/extensions/multiplayer/protocol.h` | Add `walkAnimId`/`idleAnimId` to `PlayerStateMsg`, add `MSG_EMOTE` (9) and `EmoteMsg` struct |
+| `extensions/src/multiplayer/networkmanager.cpp` | Include walk/idle IDs in state broadcasts, handle incoming `MSG_EMOTE`, add `SendEmote()` |
+| `extensions/include/extensions/multiplayer/networkmanager.h` | Declare `SendEmote()`, walk/idle animation index storage |
+| `extensions/src/multiplayer/remoteplayer.cpp` | Extended state machine: configurable walk/idle from PlayerStateMsg, emote playback with duration + interruption, animation ROI map caching |
+| `extensions/include/extensions/multiplayer/remoteplayer.h` | Add animation state members (current walk/idle/emote anim, ROI maps, elapsed time, animation tables) |
+| `extensions/src/multiplayer.cpp` | Add `mp_set_walk_animation()`, `mp_set_idle_animation()`, `mp_trigger_emote()`, `mp_get_player_count()` C exports |
 | `ISLE/emscripten/config.cpp` | Remove hardcoded `"default"` room override |
-| `CMakeLists.txt` | Add `mp_trigger_animation`, `mp_get_player_count` to `EXPORTED_FUNCTIONS` |
+| `CMakeLists.txt` | Add `_mp_set_walk_animation`, `_mp_set_idle_animation`, `_mp_trigger_emote`, `_mp_get_player_count` to `EXPORTED_FUNCTIONS` |
 | `extensions/src/multiplayer/server/gameroom.ts` | Add HTTP room preview, configurable max players with ceiling enforcement, capacity check on WebSocket upgrade |
 | `extensions/src/multiplayer/server/relay.ts` | Add `MAX_PLAYERS_CEILING` env config |
 | isle.pizza `src/core/opfs.js` | Write `multiplayer:room` and `extensions:multiplayer` to INI |
 | isle.pizza `src/App.svelte` | Read `#r/:name` from URL hash, write room config to INI before launch, mount overlay |
 | isle.pizza: room creation UI | Max player selector, room name generation, navigate to `#r/NAME` |
-| isle.pizza: new overlay component | Collapsible panel: emote buttons calling `mp_trigger_animation`, room info, copy link |
+| isle.pizza: new overlay component | Collapsible panel: walk/idle selectors, emote buttons with emoji popup, room info, copy link |
 | isle.pizza: word lists module | Lego Island-themed adjective/color/noun word lists for room name generation |
 
 ## Implementation Priority
@@ -354,15 +393,13 @@ The remote player's `UpdateAnimation()` already handles walk vs. idle selection.
 1. **Room name generation + URL routing** -- word lists, generate names in Svelte, read `#r/:name` from URL hash.
 2. **INI config integration** -- write `multiplayer:room` and `extensions:multiplayer` to `isle.ini` via OPFS. Disable multiplayer for solo play. Remove hardcoded room from `config.cpp`.
 3. **Configurable room size** -- max player selector in room creation UI, relay ceiling enforcement, capacity check on WebSocket upgrade.
-4. **Visual review of CNs animations** -- play each CNs002xx-CNs012xx in-game to identify what they look like. Select the best candidates for emotes and assign UI labels.
-5. **Animation trigger protocol** -- `MSG_ANIMATION` message type, send/receive in `NetworkManager`.
-6. **C++ animation trigger** -- `mp_trigger_animation()` broadcasts to peers (no local playback). Triggered animation state in `RemotePlayer` with duration-based playback and movement interruption. Procedural flip support.
-7. **C++ exports** -- `mp_trigger_animation()` and `mp_get_player_count()` as WASM exports.
-8. **Svelte overlay** -- collapsible panel with emote buttons calling `mp_trigger_animation`, room info badge, copy link button.
-9. **Room preview** -- relay HTTP endpoint returning player count and max, Svelte pre-join display.
+4. **Animation protocol** -- add `walkAnimId`/`idleAnimId` fields to `PlayerStateMsg`, add `MSG_EMOTE` message type.
+5. **Remote player animation state machine** -- extend `RemotePlayer::UpdateAnimation()` to read walk/idle IDs from state updates, emote playback with duration + interruption, animation ROI map caching.
+6. **C++ exports** -- `mp_set_walk_animation()`, `mp_set_idle_animation()`, `mp_trigger_emote()`, `mp_get_player_count()` as WASM exports.
+7. **Svelte overlay** -- collapsible panel with walk/idle animation selectors (persistent), emote buttons with emoji popup feedback, room info badge, copy link button.
+8. **Room preview** -- relay HTTP endpoint returning player count and max, Svelte pre-join display.
 
 ## Open Questions
 
-1. **Visual identification of CNs animations**: The 10 generic CNs animations (CNs002xx-CNs012xx, excluding walk and idle) need to be played in-game to determine what they look like visually. Only after this can we assign emote labels and select the best subset for the UI.
-2. **Autonomous animation playback for remote players**: The current `RemotePlayer::UpdateAnimation()` uses a simple moving/idle state machine. Adding a third "triggered animation" state is straightforward in concept (play for duration, then return to idle), but needs to handle: animation caching (avoid rebuilding ROI maps each trigger), smooth transitions back to idle, and the procedural flip as a special case. Needs prototyping.
-3. **Room capacity UX**: When a player tries to join a full room, the relay rejects the WebSocket upgrade. The game calls `exit()`, which triggers the existing page reload in isle.pizza (`Module.onExit`). The frontend detects the error condition and shows a modal/popup (using existing isle.pizza styles) informing the player the room is full before returning to the main page.
+1. **Animation ROI map caching**: Remote players need ROI maps for each animation they play. Building maps is expensive. Need a caching strategy -- pre-build maps for all known animations on spawn, or lazily build and cache on first use?
+2. **Room capacity UX**: When a player tries to join a full room, the relay rejects the WebSocket upgrade. The game calls `exit()`, which triggers the existing page reload in isle.pizza (`Module.onExit`). The frontend detects the error condition and shows a modal/popup (using existing isle.pizza styles) informing the player the room is full before returning to the main page.
