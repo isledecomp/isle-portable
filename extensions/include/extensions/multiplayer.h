@@ -31,8 +31,9 @@ public:
 	static bool enabled;
 
 	static std::string relayUrl;
+	static std::string room;
 
-	static void SetNetworkManager(Multiplayer::NetworkManager* p_mgr);
+	static void SetNetworkManager(Multiplayer::NetworkManager* p_networkManager);
 	static Multiplayer::NetworkManager* GetNetworkManager();
 
 private:

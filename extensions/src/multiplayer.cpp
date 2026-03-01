@@ -16,14 +16,16 @@ using namespace Extensions;
 std::map<std::string, std::string> MultiplayerExt::options;
 bool MultiplayerExt::enabled = false;
 std::string MultiplayerExt::relayUrl;
+std::string MultiplayerExt::room;
 Multiplayer::NetworkManager* MultiplayerExt::s_networkManager = nullptr;
 Multiplayer::NetworkTransport* MultiplayerExt::s_transport = nullptr;
 
 void MultiplayerExt::Initialize()
 {
 	relayUrl = options["multiplayer:relay url"];
+	room = options["multiplayer:room"];
 
-	if (relayUrl.empty()) {
+	if (relayUrl.empty() || room.empty()) {
 		return;
 	}
 
@@ -33,7 +35,7 @@ void MultiplayerExt::Initialize()
 	s_networkManager = new Multiplayer::NetworkManager();
 	s_networkManager->Initialize(s_transport);
 
-	s_networkManager->Connect("default");
+	s_networkManager->Connect(room.c_str());
 #endif
 }
 
@@ -98,9 +100,9 @@ MxBool MultiplayerExt::HandleEntityNotify(LegoEntity* p_entity)
 	return s_networkManager->HandleEntityMutation(p_entity, changeType);
 }
 
-void MultiplayerExt::SetNetworkManager(Multiplayer::NetworkManager* p_mgr)
+void MultiplayerExt::SetNetworkManager(Multiplayer::NetworkManager* p_networkManager)
 {
-	s_networkManager = p_mgr;
+	s_networkManager = p_networkManager;
 }
 
 Multiplayer::NetworkManager* MultiplayerExt::GetNetworkManager()
