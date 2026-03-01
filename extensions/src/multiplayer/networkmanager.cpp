@@ -18,11 +18,7 @@
 #include <vector>
 
 extern MxU8 g_counters[];
-extern MxS32 g_plantMaxMove[];
-extern MxU32 g_plantMaxSound;
 extern MxU8 g_buildingInfoDownshift[];
-extern MxS32 g_buildingMaxMove[];
-extern MxU32 g_buildingMaxSound;
 
 using namespace Multiplayer;
 
@@ -676,20 +672,20 @@ void NetworkManager::ApplyWorldEvent(uint8_t p_entityType, uint8_t p_changeType,
 					}
 
 					// Clamp move to the new variant's max (mirrors SwitchVariant)
-					if (info->m_move != 0 && info->m_move >= (MxU32) g_plantMaxMove[info->m_variant]) {
-						info->m_move = g_plantMaxMove[info->m_variant] - 1;
+					if (info->m_move != 0 && info->m_move >= (MxU32) LegoPlantManager::g_maxMove[info->m_variant]) {
+						info->m_move = LegoPlantManager::g_maxMove[info->m_variant] - 1;
 					}
 				}
 				break;
 			case CHANGE_SOUND:
 				info->m_sound++;
-				if (info->m_sound >= g_plantMaxSound) {
+				if (info->m_sound >= LegoPlantManager::g_maxSound) {
 					info->m_sound = 0;
 				}
 				break;
 			case CHANGE_MOVE:
 				info->m_move++;
-				if (info->m_move >= (MxU32) g_plantMaxMove[info->m_variant]) {
+				if (info->m_move >= (MxU32) LegoPlantManager::g_maxMove[info->m_variant]) {
 					info->m_move = 0;
 				}
 				break;
@@ -747,7 +743,7 @@ void NetworkManager::ApplyWorldEvent(uint8_t p_entityType, uint8_t p_changeType,
 			case CHANGE_SOUND:
 				if (info->m_flags & LegoBuildingInfo::c_hasSounds) {
 					info->m_sound++;
-					if (info->m_sound >= g_buildingMaxSound) {
+					if (info->m_sound >= LegoBuildingManager::g_maxSound) {
 						info->m_sound = 0;
 					}
 				}
@@ -755,7 +751,7 @@ void NetworkManager::ApplyWorldEvent(uint8_t p_entityType, uint8_t p_changeType,
 			case CHANGE_MOVE:
 				if (info->m_flags & LegoBuildingInfo::c_hasMoves) {
 					info->m_move++;
-					if (info->m_move >= (MxU32) g_buildingMaxMove[p_entityIndex]) {
+					if (info->m_move >= (MxU32) LegoBuildingManager::g_maxMove[p_entityIndex]) {
 						info->m_move = 0;
 					}
 				}
@@ -788,4 +784,3 @@ void NetworkManager::ApplyWorldEvent(uint8_t p_entityType, uint8_t p_changeType,
 		}
 	}
 }
-

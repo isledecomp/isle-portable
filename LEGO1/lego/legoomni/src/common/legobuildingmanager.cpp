@@ -197,7 +197,7 @@ LegoBuildingInfo g_buildingInfoInit[16] = {
 // clang-format on
 
 // GLOBAL: LEGO1 0x100f3738
-MxU32 g_buildingMaxSound = 6;
+MxU32 LegoBuildingManager::g_maxSound = 6;
 
 // GLOBAL: LEGO1 0x100f373c
 MxU32 g_buildingSoundIdOffset = 0x3c;
@@ -226,7 +226,7 @@ MxS32 g_buildingManagerConfig = 1;
 LegoBuildingInfo g_buildingInfo[16];
 
 // GLOBAL: LEGO1 0x100f3748
-MxS32 g_buildingMaxMove[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 0};
+MxS32 LegoBuildingManager::g_maxMove[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 0};
 
 #define HAUS1_INDEX 12
 
@@ -493,7 +493,7 @@ MxBool LegoBuildingManager::SwitchSound(LegoEntity* p_entity)
 	if (info != NULL && info->m_flags & LegoBuildingInfo::c_hasSounds) {
 		info->m_sound++;
 
-		if (info->m_sound >= g_buildingMaxSound) {
+		if (info->m_sound >= g_maxSound) {
 			info->m_sound = 0;
 		}
 
@@ -513,7 +513,7 @@ MxBool LegoBuildingManager::SwitchMove(LegoEntity* p_entity)
 	if (info != NULL && info->m_flags & LegoBuildingInfo::c_hasMoves) {
 		info->m_move++;
 
-		if (info->m_move >= g_buildingMaxMove[info - g_buildingInfo]) {
+		if (info->m_move >= g_maxMove[info - g_buildingInfo]) {
 			info->m_move = 0;
 		}
 

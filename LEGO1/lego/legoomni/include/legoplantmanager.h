@@ -11,6 +11,10 @@ struct LegoPlantInfo;
 class LegoROI;
 class LegoStorage;
 class LegoWorld;
+namespace Multiplayer
+{
+class NetworkManager;
+}
 
 // VTABLE: LEGO1 0x100d6758
 // SIZE 0x2c
@@ -67,6 +71,8 @@ public:
 	// LegoPlantManager::`scalar deleting destructor'
 
 private:
+	friend class Multiplayer::NetworkManager;
+
 	void RemovePlant(MxS32 p_index, LegoOmni::World p_worldId);
 	void AdjustHeight(MxS32 p_index);
 	LegoPlantInfo* GetInfo(LegoEntity* p_entity);
@@ -74,6 +80,8 @@ private:
 	void AdjustCounter(LegoEntity* p_entity, MxS32 p_adjust);
 
 	static char* g_customizeAnimFile;
+	static MxS32 g_maxMove[4];
+	static MxU32 g_maxSound;
 
 	LegoOmni::World m_worldId;     // 0x08
 	MxBool m_boundariesDetermined; // 0x0c

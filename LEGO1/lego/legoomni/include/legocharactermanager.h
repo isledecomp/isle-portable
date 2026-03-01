@@ -13,6 +13,10 @@ class LegoActor;
 class LegoExtraActor;
 class LegoStorage;
 class LegoROI;
+namespace Multiplayer
+{
+class CharacterCloner;
+}
 
 #pragma warning(disable : 4237)
 
@@ -92,13 +96,14 @@ public:
 	MxU32 GetSoundId(LegoROI* p_roi, MxBool p_basedOnMood);
 	MxU8 GetMood(LegoROI* p_roi);
 	LegoROI* CreateAutoROI(const char* p_name, const char* p_lodName, MxBool p_createEntity);
-	LegoROI* CreateCharacterClone(const char* p_uniqueName, const char* p_characterType);
 	MxResult UpdateBoundingSphereAndBox(LegoROI* p_roi);
 	LegoROI* FUN_10085a80(const char* p_name, const char* p_lodName, MxBool p_createEntity);
 
 	static const char* GetCustomizeAnimFile() { return g_customizeAnimFile; }
 
 private:
+	friend class Multiplayer::CharacterCloner;
+
 	LegoROI* CreateActorROI(const char* p_key);
 	void RemoveROI(LegoROI* p_roi);
 	LegoROI* FindChildROI(LegoROI* p_roi, const char* p_name);

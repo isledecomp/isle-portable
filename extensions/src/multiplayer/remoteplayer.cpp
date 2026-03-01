@@ -2,6 +2,7 @@
 
 #include "3dmanager/lego3dmanager.h"
 #include "anim/legoanim.h"
+#include "extensions/multiplayer/charactercloner.h"
 #include "legoactor.h"
 #include "legoanimpresenter.h"
 #include "legocharactermanager.h"
@@ -79,7 +80,7 @@ void RemotePlayer::Spawn(LegoWorld* p_isleWorld)
 		return;
 	}
 
-	m_roi = charMgr->CreateCharacterClone(m_uniqueName, actorName);
+	m_roi = CharacterCloner::Clone(charMgr, m_uniqueName, actorName);
 	if (!m_roi) {
 		return;
 	}
