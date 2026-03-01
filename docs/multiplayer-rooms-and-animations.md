@@ -268,7 +268,7 @@ Using a `uint8_t` index into a fixed animation table (rather than a string name)
 | 0 | `CNs001xx` | Normal (default) |
 | 1 | `CNs002xx` | Joyful |
 | 2 | `CNs003xx` | Gloomy |
-| 3 | `CNs005xx` | Sneaky |
+| 3 | `CNs005xx` | Leaning |
 | 4 | `CNs006xx` | Scared |
 | 5 | `CNs007xx` | Hyper |
 
@@ -368,6 +368,8 @@ emote playing ─────────────────────┘
 - **Walk/idle changes**: when `walkAnimId` or `idleAnimId` in an incoming `PlayerStateMsg` differs from the current value, look up the new animation via `world->Find("LegoAnimPresenter", tableLookup(index))`, build ROI map (cache it), swap in as the active walk/idle animation.
 - **Emote** (`MSG_EMOTE`): look up animation presenter from emote table, build ROI map if not cached, play for one `GetDuration()` cycle. If movement is detected during playback, interrupt immediately and return to walk. After completion, return to stationary state (2.5s timeout → idle).
 
+**Animation ROI map caching**: ROI maps are lazily built on first use and cached per animation name. The cache must be invalidated on world change (the `LegoAnimPresenter` objects are world-specific and destroyed when switching worlds).
+
 ## Files Changed
 
 | File | Change |
@@ -401,5 +403,4 @@ emote playing ─────────────────────┘
 
 ## Open Questions
 
-1. **Animation ROI map caching**: Remote players need ROI maps for each animation they play. Building maps is expensive. Need a caching strategy -- pre-build maps for all known animations on spawn, or lazily build and cache on first use?
-2. **Room capacity UX**: When a player tries to join a full room, the relay rejects the WebSocket upgrade. The game calls `exit()`, which triggers the existing page reload in isle.pizza (`Module.onExit`). The frontend detects the error condition and shows a modal/popup (using existing isle.pizza styles) informing the player the room is full before returning to the main page.
+1. **Room capacity UX**: When a player tries to join a full room, the relay rejects the WebSocket upgrade. The game calls `exit()`, which triggers the existing page reload in isle.pizza (`Module.onExit`). The frontend shows a toast (using existing isle.pizza toast styles) informing the player the room is full. The toast must survive the page reload -- persist the error condition (e.g., in `sessionStorage`) before reload and display it after the page loads.
