@@ -7,6 +7,9 @@ bindings = [
   { name = "GAME_ROOM", class_name = "GameRoom" }
 ]
 
+[vars]
+MAX_PLAYERS_CEILING = 64
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["GameRoom"]

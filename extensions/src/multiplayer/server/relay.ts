@@ -2,6 +2,7 @@ export { GameRoom } from "./gameroom";
 
 export interface Env {
 	GAME_ROOM: DurableObjectNamespace;
+	MAX_PLAYERS_CEILING?: number;
 }
 
 export default {

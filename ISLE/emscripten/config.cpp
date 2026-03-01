@@ -17,12 +17,6 @@ void Emscripten_SetupDefaultConfigOverrides(dictionary* p_dictionary)
 	iniparser_set(p_dictionary, "isle:Full Screen", "false");
 	iniparser_set(p_dictionary, "isle:Flip Surfaces", "true");
 
-	iniparser_set(p_dictionary, "extensions", NULL);
-	iniparser_set(p_dictionary, "extensions:multiplayer", "true");
-	iniparser_set(p_dictionary, "multiplayer", NULL);
-	iniparser_set(p_dictionary, "multiplayer:relay url", "ws://localhost:8787");
-	iniparser_set(p_dictionary, "multiplayer:room", "default");
-
 	// Emscripten-only for now
 	Emscripten_SetScaleAspect(iniparser_getboolean(p_dictionary, "isle:Original Aspect Ratio", true));
 	Emscripten_SetOriginalResolution(iniparser_getboolean(p_dictionary, "isle:Original Resolution", true));

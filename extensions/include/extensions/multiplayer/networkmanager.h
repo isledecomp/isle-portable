@@ -39,6 +39,7 @@ public:
 	void Connect(const char* p_roomId);
 	void Disconnect();
 	bool IsConnected() const;
+	bool WasRejected() const;
 
 	void OnWorldEnabled(LegoWorld* p_world);
 	void OnWorldDisabled(LegoWorld* p_world);
@@ -84,6 +85,7 @@ private:
 
 	static const uint32_t BROADCAST_INTERVAL_MS = 66; // ~15Hz
 	static const uint32_t TIMEOUT_MS = 5000;          // 5 second timeout
+	static const int EXIT_ROOM_FULL = 10;
 };
 
 } // namespace Multiplayer

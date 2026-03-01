@@ -9,7 +9,7 @@ namespace Multiplayer
 {
 
 WebSocketTransport::WebSocketTransport(const std::string& p_relayBaseUrl)
-	: m_relayBaseUrl(p_relayBaseUrl), m_socketId(-1), m_connectedFlag(0)
+	: m_relayBaseUrl(p_relayBaseUrl), m_socketId(-1), m_connectedFlag(0), m_rejectedFlag(0)
 {
 	// clang-format off
 	MAIN_THREAD_EM_ASM({
@@ -35,10 +35,13 @@ void WebSocketTransport::Connect(const char* p_roomId)
 
 	std::string url = m_relayBaseUrl + "/room/" + p_roomId;
 
+	m_rejectedFlag = 0;
+
 	// clang-format off
 	m_socketId = MAIN_THREAD_EM_ASM_INT({
 		var url = UTF8ToString($0);
 		var connPtr = $1;
+		var rejPtr = $2;
 		var socketId = Module._mpNextSocketId++;
 		Module._mpMessageQueues[socketId] = [];
 
@@ -58,7 +61,13 @@ void WebSocketTransport::Connect(const char* p_roomId)
 			};
 
 			ws.onclose = function() {
+				var wasConnected = Atomics.load(HEAP32, connPtr >> 2);
 				Atomics.store(HEAP32, connPtr >> 2, 0);
+				if (!wasConnected) {
+					// Never connected — server rejected (room full / 503)
+					Atomics.store(HEAP32, rejPtr >> 2, 1);
+					Module._exitCode = 10;
+				}
 			};
 
 			ws.onerror = function() {
@@ -72,7 +81,7 @@ void WebSocketTransport::Connect(const char* p_roomId)
 		}
 
 		return socketId;
-	}, url.c_str(), &m_connectedFlag);
+	}, url.c_str(), &m_connectedFlag, &m_rejectedFlag);
 	// clang-format on
 
 	if (m_socketId <= 0) {
@@ -102,6 +111,11 @@ void WebSocketTransport::Disconnect()
 bool WebSocketTransport::IsConnected() const
 {
 	return m_socketId > 0 && m_connectedFlag != 0;
+}
+
+bool WebSocketTransport::WasRejected() const
+{
+	return m_rejectedFlag != 0;
 }
 
 void WebSocketTransport::Send(const uint8_t* p_data, size_t p_length)

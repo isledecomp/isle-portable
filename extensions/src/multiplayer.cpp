@@ -100,6 +100,15 @@ MxBool MultiplayerExt::HandleEntityNotify(LegoEntity* p_entity)
 	return s_networkManager->HandleEntityMutation(p_entity, changeType);
 }
 
+MxBool MultiplayerExt::CheckRejected()
+{
+	if (s_networkManager && s_networkManager->WasRejected()) {
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
 void MultiplayerExt::SetNetworkManager(Multiplayer::NetworkManager* p_networkManager)
 {
 	s_networkManager = p_networkManager;

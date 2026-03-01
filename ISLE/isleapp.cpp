@@ -38,6 +38,7 @@
 
 #include <array>
 #include <extensions/extensions.h>
+#include <extensions/multiplayer.h>
 #include <miniwin/miniwindevice.h>
 #include <type_traits>
 #include <vec.h>
@@ -90,6 +91,8 @@
 #include <psp2/appmgr.h>
 #include <psp2/kernel/clib.h>
 #endif
+
+using namespace Extensions;
 
 DECOMP_SIZE_ASSERT(IsleApp, 0x8c)
 
@@ -1293,6 +1296,12 @@ inline bool IsleApp::Tick()
 	if (!Lego()) {
 		return true;
 	}
+
+	if (Extension<MultiplayerExt>::Call(CheckRejected).value_or(FALSE)) {
+		g_closed = TRUE;
+		return true;
+	}
+
 	if (!TickleManager()) {
 		return true;
 	}

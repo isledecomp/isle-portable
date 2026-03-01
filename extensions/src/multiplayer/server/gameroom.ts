@@ -12,10 +12,18 @@ import {
 } from "./protocol";
 import type { Env } from "./relay";
 
+const CORS_HEADERS: Record<string, string> = {
+	"Access-Control-Allow-Origin": "*",
+	"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+	"Access-Control-Allow-Headers": "Content-Type",
+	"Cross-Origin-Resource-Policy": "cross-origin",
+};
+
 export class GameRoom implements DurableObject {
 	private connections = new Map<number, WebSocket>();
 	private nextPeerId = 1;
 	private hostPeerId = 0;
+	private maxPlayers = 5;
 
 	constructor(
 		private state: DurableObjectState,
@@ -23,8 +31,17 @@ export class GameRoom implements DurableObject {
 	) {}
 
 	async fetch(request: Request): Promise<Response> {
+		// Handle non-WebSocket requests (HTTP API)
 		if (request.headers.get("Upgrade") !== "websocket") {
-			return new Response("Expected WebSocket", { status: 426 });
+			return this.handleHttpRequest(request);
+		}
+
+		// Capacity check
+		if (this.connections.size >= this.maxPlayers) {
+			return new Response("Room is full", {
+				status: 503,
+				headers: CORS_HEADERS,
+			});
 		}
 
 		const pair = new WebSocketPair();
@@ -47,6 +64,64 @@ export class GameRoom implements DurableObject {
 		server.addEventListener("error", handleDisconnect);
 
 		return new Response(null, { status: 101, webSocket: client });
+	}
+
+	// ---- HTTP API ----
+
+	private async handleHttpRequest(request: Request): Promise<Response> {
+		const method = request.method.toUpperCase();
+
+		if (method === "OPTIONS") {
+			return new Response(null, { status: 204, headers: CORS_HEADERS });
+		}
+
+		if (method === "POST") {
+			try {
+				const body = (await request.json()) as {
+					maxPlayers?: number;
+				};
+				const ceiling = this.env.MAX_PLAYERS_CEILING
+					? Number(this.env.MAX_PLAYERS_CEILING)
+					: 64;
+				if (body.maxPlayers !== undefined) {
+					this.maxPlayers = Math.max(
+						2,
+						Math.min(body.maxPlayers, ceiling)
+					);
+				}
+			} catch {
+				// Ignore parse errors, keep defaults
+			}
+			return new Response(
+				JSON.stringify({ maxPlayers: this.maxPlayers }),
+				{
+					headers: {
+						"Content-Type": "application/json",
+						...CORS_HEADERS,
+					},
+				}
+			);
+		}
+
+		if (method === "GET") {
+			return new Response(
+				JSON.stringify({
+					players: this.connections.size,
+					maxPlayers: this.maxPlayers,
+				}),
+				{
+					headers: {
+						"Content-Type": "application/json",
+						...CORS_HEADERS,
+					},
+				}
+			);
+		}
+
+		return new Response("Method Not Allowed", {
+			status: 405,
+			headers: CORS_HEADERS,
+		});
 	}
 
 	// ---- Connection lifecycle ----

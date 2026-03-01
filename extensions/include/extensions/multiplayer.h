@@ -33,6 +33,9 @@ public:
 	static std::string relayUrl;
 	static std::string room;
 
+	// Returns true if the multiplayer connection was rejected (e.g. room full).
+	static MxBool CheckRejected();
+
 	static void SetNetworkManager(Multiplayer::NetworkManager* p_networkManager);
 	static Multiplayer::NetworkManager* GetNetworkManager();
 
@@ -44,9 +47,11 @@ private:
 #ifdef EXTENSIONS
 constexpr auto HandleWorldEnable = &MultiplayerExt::HandleWorldEnable;
 constexpr auto HandleEntityNotify = &MultiplayerExt::HandleEntityNotify;
+constexpr auto CheckRejected = &MultiplayerExt::CheckRejected;
 #else
 constexpr decltype(&MultiplayerExt::HandleWorldEnable) HandleWorldEnable = nullptr;
 constexpr decltype(&MultiplayerExt::HandleEntityNotify) HandleEntityNotify = nullptr;
+constexpr decltype(&MultiplayerExt::CheckRejected) CheckRejected = nullptr;
 #endif
 
 }; // namespace Extensions
