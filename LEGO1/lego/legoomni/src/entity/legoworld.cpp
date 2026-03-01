@@ -755,7 +755,7 @@ void LegoWorld::Enable(MxBool p_enable)
 		SetIsWorldActive(TRUE);
 #endif
 
-		Extensions::Extension<Extensions::MultiplayerExt>::Call(Extensions::HandleWorldEnable, this, TRUE);
+		Extension<MultiplayerExt>::Call(HandleWorldEnable, this, TRUE);
 	}
 	else if (!p_enable && m_disabledObjects.size() == 0) {
 		MxPresenter* presenter;
@@ -819,7 +819,7 @@ void LegoWorld::Enable(MxBool p_enable)
 
 		GetViewManager()->RemoveAll(NULL);
 
-		Extensions::Extension<Extensions::MultiplayerExt>::Call(Extensions::HandleWorldEnable, this, FALSE);
+		Extension<MultiplayerExt>::Call(HandleWorldEnable, this, FALSE);
 	}
 }
 

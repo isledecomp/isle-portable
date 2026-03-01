@@ -21,6 +21,8 @@
 
 #include <stdio.h>
 
+using namespace Extensions;
+
 DECOMP_SIZE_ASSERT(LegoEntity, 0x68)
 
 // FUNCTION: LEGO1 0x100105f0
@@ -484,8 +486,7 @@ MxLong LegoEntity::Notify(MxParam& p_param)
 		InvokeAction(m_actionType, MxAtomId(m_siFile, e_lowerCase2), m_targetEntityId, this);
 	}
 	else {
-		auto handled = Extensions::Extension<Extensions::MultiplayerExt>::Call(Extensions::HandleEntityNotify, this);
-		if (handled.has_value() && handled.value()) {
+		if (Extension<MultiplayerExt>::Call(HandleEntityNotify, this).value_or(FALSE)) {
 			return 1;
 		}
 
