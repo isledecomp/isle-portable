@@ -2,11 +2,11 @@
 
 ## Context
 
-The multiplayer extension currently syncs only player character positions/animations (~48 bytes at 15 Hz per peer). Each player sees others walking around, but the world itself is completely independent -- everyone has their own copy of plants, buildings, characters, etc. The question is: what would it take to share some of this world state, and is it worth the complexity?
+The multiplayer extension syncs player character positions/animations (~52 bytes at 15 Hz per peer) and, as of the Tier 1 implementation, shared plant and building state. The remaining question is: what additional world state is worth syncing, and what are the trade-offs?
 
 ## The Short Answer
 
-Feasible, data is tiny (~3 KB total), but architecturally hard. The challenge isn't bandwidth -- it's introducing **authority** into a currently symmetric system, and **intercepting mutations** in code designed for single-player direct-mutation patterns. Tier 1 (plants + buildings) would be roughly **700-1,150 new lines** across client and server, taking an estimated **2-3x the effort of the original MVP**.
+Tier 1 (plants + buildings) is **implemented**. The remaining tiers vary significantly in value. Tier 4 (vehicle world presence) is the highest-value next step but is complicated by autonomous vehicle coasting after exit. Tier 2 (NPC customization) has **low practical value** because NPCs are randomly spawned and pathed per-session -- players never see the same NPCs in the same locations. Tier 3 (vehicle colors + environment) is low-effort but low-value.
 
 ---
 
@@ -94,27 +94,32 @@ Steady-state bandwidth addition: essentially zero (events are click-driven, ~0.1
 
 ## Tiered Implementation
 
-### Tier 1: Plants + Buildings (recommended starting point)
-- **Value**: HIGH -- most visible shared elements. Two players clicking the same flower and seeing each other's changes is the core "shared world" experience.
-- **Effort**: ~700-1,150 new lines of C++ and TypeScript
-- **Scope**: Host election, snapshot sync, event-based deltas, mutation interception hook, visual state application on receiving peers
-- **Estimated time**: 2-3 weeks for someone familiar with the codebase
+### Tier 1: Plants + Buildings ~~IMPLEMENTED~~
+- **Status**: Complete. Host election, snapshot sync, event-based deltas, mutation interception hook, and visual state application are all working.
+- This established the authority model (server-assigned host), the hybrid sync pattern (snapshot on join + change-type events during play), and the extension hook in `LegoEntity::Notify()`. All subsequent tiers build on this foundation.
 
-### Tier 2: NPC Character Customization
-- **Value**: MEDIUM -- less frequent but visible
+### Tier 2: NPC Character Customization ~~LOW VALUE -- DEPRIORITIZE~~
+- **Value**: **LOW** (downgraded from MEDIUM)
 - **Effort**: ~150-200 additional lines
 - **Risk**: Character customization involves LOD cloning and texture swapping (`legocharactermanager.cpp:807-858`). Remote triggering could have subtle visual bugs.
+- **Problem**: NPCs are **randomly spawned and autonomously pathed per-session**, making customization sync nearly meaningless in practice:
+  - NPCs spawn on randomized `LegoPathBoundary` paths. The walking mode is selected via a global counter (`g_pathWalkingModeSelector++`) combined with `SDL_rand()` calls for edge selection.
+  - NPC speeds are randomized (`0.9f + 1.5f * SDL_randf()` for walking).
+  - NPC **positions are never saved** -- only customization data (hats, colors, mood) persists across world loads. On every world load, NPCs are recreated at different boundaries with different paths.
+  - This means players will never see the same NPCs in the same places. If Player A customizes "pepper" with a red hat, Player B would need to find "pepper" somewhere in their own world to notice -- but "pepper" is on a completely different path walking in a different direction.
+  - The only way NPC customization sync would have visible impact is if NPC positions/paths were also synced, which would require deterministic spawning, synchronized pathfinding, and shared random seeds -- a massive undertaking far beyond this tier's scope.
 
 ### Tier 3: Vehicle Colors + Environment
 - **Value**: LOW -- vehicle colors are rarely changed during gameplay, environment changes are cosmetic
 - **Effort**: ~100-150 additional lines
 
-### Tier 4: Vehicle World Presence (placement, enter/exit, visibility)
+### Tier 4: Vehicle World Presence (placement, enter/exit, visibility, coasting)
 - **Value**: HIGH -- without this, each player sees all 7 vehicles sitting idle in the world even when another player is driving one. When Player A enters the helicopter, Player B should see it disappear (it's "in use"), and when Player A exits, it should reappear at the exit location for everyone.
-- **Effort**: ~300-500 additional lines (MEDIUM-HIGH complexity)
+- **Effort**: ~500-800 additional lines (**HIGH** complexity)
 - **Scope**:
   - Sync vehicle enter/exit events so vehicles disappear/reappear for all peers
-  - Sync vehicle positions on exit (where the vehicle is "parked")
+  - Sync vehicle positions during post-exit coasting (see below)
+  - Sync vehicle final resting position
   - Sync custom textures for built vehicles (helicopter windshield, jetski front, etc.)
 
 **How vehicles work:**
@@ -125,15 +130,28 @@ There are 7 vehicles in the Isle world: motorcycle, bike, skateboard, helicopter
 1. **Idle**: Vehicle is visible in the world via `m_roi->SetVisibility(TRUE)`
 2. **Enter** (`IslePathActor::Enter()`): `m_roi->SetVisibility(FALSE)` -- vehicle disappears, player takes control
 3. **Active**: Vehicle is invisible; dashboard UI is shown; vehicle is the `UserActor`
-4. **Exit** (`IslePathActor::Exit()`): `m_roi->SetVisibility(TRUE)` -- vehicle reappears at exit position
+4. **Exit** (`IslePathActor::Exit()`): `m_roi->SetVisibility(TRUE)` -- vehicle reappears at exit position **and continues moving autonomously**
 
-The existing multiplayer MVP already syncs `vehicleType` in `PlayerStateMsg` (the remote player rendering knows which vehicle model to show). What's missing is the **world-side effect**: hiding/showing the idle vehicle entity when any player enters/exits it.
+**Autonomous vehicle coasting (critical finding):**
 
-**Sync approach:**
-- `MSG_WORLD_EVENT` with a new `EVENT_VEHICLE_ENTER` / `EVENT_VEHICLE_EXIT` type
+Vehicles do **NOT** stop when a player exits them. `IslePathActor::Exit()` sets `m_userNavFlag = FALSE` and `m_actorState = c_initial`, but **never resets `m_worldSpeed`**. The vehicle retains whatever velocity it had at the moment of exit and continues following its path boundary:
+
+1. `LegoAnimActor::Animate()` is called every frame. It checks `m_actorState == c_initial && !m_userNavFlag && m_worldSpeed <= 0` to decide whether to idle. Since `m_worldSpeed > 0`, this condition is FALSE, so it calls `LegoPathActor::Animate()`.
+2. `LegoPathActor::Animate()` calls `CalculateTransform()` in a while-loop until caught up to the current time.
+3. `CalculateTransform()` sees `m_worldSpeed > 0` with `m_userNavFlag = FALSE` and continues advancing the vehicle along the spline path, evaluating `m_spline.Evaluate(m_traveledDistance / m_BADuration, ...)` with the retained speed.
+4. The vehicle coasts along path boundaries, potentially transitioning between boundaries, until speed depletes or it reaches a dead end.
+
+None of the 7 vehicle `Exit()` methods reset `m_worldSpeed` -- they all delegate to `IslePathActor::Exit()`.
+
+**Sync approach (revised):**
+- `MSG_WORLD_EVENT` with `EVENT_VEHICLE_ENTER` / `EVENT_VEHICLE_EXIT` types
 - On enter: host broadcasts which vehicle was entered; all peers call `SetVisibility(FALSE)` on that vehicle's ROI
-- On exit: host broadcasts the vehicle exit + new position (the `LegoNamedPlane` data -- boundary name, position, direction, up); all peers call `SetVisibility(TRUE)` and update the vehicle's transform
-- On snapshot: include which vehicles are currently "in use" (a bitmask, 1 byte) plus the saved `LegoNamedPlane` for each parked vehicle
+- On exit: host broadcasts the vehicle exit event; all peers call `SetVisibility(TRUE)`. **But the vehicle is now coasting**, so one of two approaches is needed:
+  - **Option A: Periodic position sync while coasting.** The host periodically broadcasts the coasting vehicle's position/orientation (similar to player position sync but at a lower frequency, e.g., 5 Hz) until the vehicle stops (`m_worldSpeed <= 0`). Then a final position is broadcast. This is simpler but adds bandwidth during coasting.
+  - **Option B: Deterministic path replay.** Sync the path state (boundary ID, spline distance, speed) and let each client simulate independently. Much harder -- requires all clients to have identical path data and deterministic spline evaluation, and boundary transitions would need to match exactly. Fragile and not recommended.
+- On snapshot: include which vehicles are currently "in use" (a bitmask, 1 byte) plus the saved `LegoNamedPlane` for each parked vehicle, plus coasting state for any currently-coasting vehicles
+
+**Simplified Tier 4a (enter/exit visibility only):** As a stepping stone, only sync enter/exit visibility (hide when entered, show when exited) without syncing the coasting position. The vehicle would "teleport" to its final resting position when it stops. This removes the worst artifact (seeing idle vehicles that are being driven) with much less complexity (~300 lines). Position sync during coasting could be added later.
 
 **Key complexity**: Built vehicles have custom textures that are serialized as bitmap data (variable size, potentially several KB each). For Tier 4, syncing textures on join would require including them in the snapshot. An alternative is to skip texture sync initially and use default textures for remote players' built vehicles -- visually imperfect but functional.
 
@@ -149,22 +167,21 @@ The existing multiplayer MVP already syncs `vehicleType` in `PlayerStateMsg` (th
 
 ## Estimated Effort Summary
 
-| Component | New Lines | Difficulty |
-|-----------|-----------|------------|
-| relay.ts host tracking | 40-60 | Easy |
-| protocol.h new messages | 100-150 | Easy |
-| ~~MemoryStorage adapter~~ | 0 | `LegoMemory` already exists in `legostorage.h` |
-| NetworkManager world sync | 200-300 | Medium |
-| Mutation hooks + routing | 200-400 | **Hard** |
-| Visual state application | 100-150 | Medium |
-| Out-of-world state handling | 50-100 | Medium (NULL entity branching, direct array writes) |
-| Extension hook in LegoEntity | 5-10 | Easy (but architecturally important) |
-| **Total (Tier 1)** | **~750-1,250** | |
-| **Total (Tiers 1-3)** | **~1,000-1,600** | |
-| Tier 4: Vehicle enter/exit/visibility | 300-500 | Medium-Hard (Act1State integration, texture sync) |
-| **Total (Tiers 1-4)** | **~1,300-2,100** | |
+| Component | New Lines | Difficulty | Status |
+|-----------|-----------|------------|--------|
+| ~~Tier 1: Plants + Buildings~~ | ~~750-1,250~~ | ~~Hard~~ | **DONE** |
+| Tier 2: NPC Customization | 150-200 | Medium | Deprioritized (low value) |
+| Tier 3: Vehicle Colors + Environment | 100-150 | Easy | |
+| Tier 4a: Vehicle enter/exit visibility only | ~300 | Medium | |
+| Tier 4b: + coasting position sync | 200-500 | **Hard** (path system integration) | |
+| **Total (Tier 4a)** | **~300** | | |
+| **Total (Tier 4a+4b)** | **~500-800** | | |
 
-For comparison, the current MVP is ~1,620 lines across 8 files. Tier 1 is roughly 60-75% as much code but substantially more complex due to the authority model, two-way communication patterns, out-of-world state handling, and decompiled code hooks.
+**Recommended priority order:**
+1. **Tier 4a** (vehicle visibility) -- highest visual impact for moderate effort
+2. **Tier 4b** (coasting sync) -- incremental on top of 4a, hardest remaining piece
+3. **Tier 3** (vehicle colors + environment) -- small incremental work
+4. ~~**Tier 2**~~ (NPC customization) -- deprioritized, near-zero perceptible benefit without NPC position sync
 
 ## Open Questions and Risks
 
@@ -217,17 +234,13 @@ None of the verified findings above are architectural blockers. Summary:
 
 ## Opinion
 
-The host/leader election concern you raised is valid -- it IS the main source of complexity. But in this case, the server-assigned approach keeps it manageable because:
+With Tier 1 implemented, the authority model, hybrid sync pattern, and mutation interception architecture are all proven. The remaining tiers build on this foundation.
 
-1. The relay server already has the connection lifecycle (it knows who joined/left)
-2. Adding host tracking to it is small (~50 lines)
-3. Host migration is low-risk because the world state is small and changes are infrequent
+**Tier 4 (vehicles) is the clear next priority** -- seeing idle vehicles that another player is driving is the most visible remaining multiplayer artifact. The enter/exit visibility sync (Tier 4a) is straightforward and high-impact. The coasting position sync (Tier 4b) is the harder part: vehicles retain their speed after exit and continue following path boundaries via `CalculateTransform()` with spline evaluation. This requires either periodic position broadcasts (simple but adds bandwidth) or deterministic path replay (fragile). A pragmatic approach is to implement 4a first, then add 4b with periodic position sync.
 
-The harder part is the mutation interception -- surgically hooking into decompiled game code. But the extension pattern already established a precedent for this (the `LegoWorld::Enable()` hook), so one more hook in `LegoEntity::Notify()` is consistent.
+**Tier 2 (NPC customization) should be deprioritized or dropped.** NPCs are randomly spawned on randomized path boundaries with randomized walking modes and speeds (`g_pathWalkingModeSelector`, `SDL_rand()`, `SDL_randf()`). NPC positions are never saved -- only customization data persists. This means players never see the same NPCs in the same places, so syncing appearance changes produces near-zero perceptible benefit. Making NPC sync meaningful would require deterministic spawning and synchronized pathfinding -- a fundamentally different (and much larger) undertaking.
 
-**Bottom line**: Tier 1 (plants + buildings) is a meaningful but manageable extension. It's 2-3x the complexity of the original MVP, not 10x. The architecture is clean (host authority, hybrid sync, single hook), the data volumes are trivial, and the existing serialization code can be reused wholesale. The main risk is the mutation interception in decompiled code, which requires careful testing but is architecturally sound.
-
-I would **recommend implementing Tier 1** as a natural next step. Tiers 2-3 are incremental. Tier 4 (vehicle world presence) is independently valuable and could be tackled in parallel with or after Tier 1 -- it addresses one of the most visible multiplayer artifacts (seeing idle vehicles that another player is actually driving).
+**Tier 3 (vehicle colors + environment) is low-effort and low-value** -- fine as incremental work whenever convenient.
 
 ## Key Files
 
@@ -243,4 +256,6 @@ I would **recommend implementing Tier 1** as a natural next step. Tiers 2-3 are 
 - `LEGO1/lego/legoomni/include/isle.h` - Act1State with vehicle LegoNamedPlane fields
 - `LEGO1/lego/legoomni/src/worlds/isle.cpp` - Act1State::Serialize(), RemoveActors(), PlaceActors()
 - `LEGO1/lego/legoomni/src/actors/islepathactor.cpp` - Enter()/Exit() with SetVisibility toggle
+- `LEGO1/lego/legoomni/src/paths/legopathactor.cpp` - CalculateTransform() autonomous coasting logic
+- `LEGO1/lego/legoomni/src/paths/legoanimactor.cpp` - Animate() frame loop (m_worldSpeed check)
 - `LEGO1/lego/legoomni/include/legonamedplane.h` - LegoNamedPlane struct (position/direction/up)
