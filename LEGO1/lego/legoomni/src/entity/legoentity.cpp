@@ -484,12 +484,8 @@ MxLong LegoEntity::Notify(MxParam& p_param)
 		InvokeAction(m_actionType, MxAtomId(m_siFile, e_lowerCase2), m_targetEntityId, this);
 	}
 	else {
-		// Multiplayer extension intercept: for plants and buildings, route through
-		// the multiplayer system. Returns TRUE if the click should be suppressed
-		// locally (non-host sends a request to the host instead of applying directly).
-		auto intercepted =
-			Extensions::Extension<Extensions::MultiplayerExt>::Call(Extensions::HandleEntityNotify, this);
-		if (intercepted.has_value() && intercepted.value()) {
+		auto handled = Extensions::Extension<Extensions::MultiplayerExt>::Call(Extensions::HandleEntityNotify, this);
+		if (handled.has_value() && handled.value()) {
 			return 1;
 		}
 

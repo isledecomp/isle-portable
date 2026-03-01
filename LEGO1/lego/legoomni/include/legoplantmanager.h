@@ -13,7 +13,7 @@ class LegoStorage;
 class LegoWorld;
 namespace Multiplayer
 {
-class NetworkManager;
+class WorldStateSync;
 }
 
 // VTABLE: LEGO1 0x100d6758
@@ -71,7 +71,7 @@ public:
 	// LegoPlantManager::`scalar deleting destructor'
 
 private:
-	friend class Multiplayer::NetworkManager;
+	friend class Multiplayer::WorldStateSync;
 
 	void RemovePlant(MxS32 p_index, LegoOmni::World p_worldId);
 	void AdjustHeight(MxS32 p_index);

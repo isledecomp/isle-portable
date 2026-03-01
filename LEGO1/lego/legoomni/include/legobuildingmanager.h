@@ -14,7 +14,7 @@ class LegoCacheSound;
 class LegoPathBoundary;
 namespace Multiplayer
 {
-class NetworkManager;
+class WorldStateSync;
 }
 
 // SIZE 0x2c
@@ -102,7 +102,7 @@ public:
 	// LegoBuildingManager::`scalar deleting destructor'
 
 private:
-	friend class Multiplayer::NetworkManager;
+	friend class Multiplayer::WorldStateSync;
 
 	static char* g_customizeAnimFile;
 	static MxS32 g_maxMove[16];

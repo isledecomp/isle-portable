@@ -536,6 +536,7 @@ if (ISLE_EXTENSIONS)
     extensions/src/multiplayer/networkmanager.cpp
     extensions/src/multiplayer/remoteplayer.cpp
     extensions/src/multiplayer/websockettransport.cpp
+    extensions/src/multiplayer/worldstatesync.cpp
   )
 endif()
 
