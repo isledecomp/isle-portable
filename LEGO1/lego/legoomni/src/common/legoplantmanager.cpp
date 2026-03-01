@@ -37,7 +37,7 @@ float g_heightPerCount[] = {0.1f, 0.7f, 0.5f, 0.9f};
 MxU8 g_counters[] = {1, 2, 2, 3};
 
 // GLOBAL: LEGO1 0x100f315c
-MxU32 LegoPlantManager::g_maxSound = 8;
+MxU32 g_plantMaxSound = 8;
 
 // GLOBAL: LEGO1 0x100f3160
 MxU32 g_plantSoundIdOffset = 56;
@@ -46,7 +46,7 @@ MxU32 g_plantSoundIdOffset = 56;
 MxU32 g_plantSoundIdMoodOffset = 66;
 
 // GLOBAL: LEGO1 0x100f3168
-MxS32 LegoPlantManager::g_maxMove[4] = {3, 3, 3, 3};
+MxS32 g_plantMaxMove[4] = {3, 3, 3, 3};
 
 // GLOBAL: LEGO1 0x100f3178
 MxU32 g_plantAnimationId[4] = {30, 33, 36, 39};
@@ -433,8 +433,8 @@ MxBool LegoPlantManager::SwitchVariant(LegoEntity* p_entity)
 	lodList->Release();
 	CharacterManager()->UpdateBoundingSphereAndBox(roi);
 
-	if (info->m_move != 0 && info->m_move >= g_maxMove[info->m_variant]) {
-		info->m_move = g_maxMove[info->m_variant] - 1;
+	if (info->m_move != 0 && info->m_move >= g_plantMaxMove[info->m_variant]) {
+		info->m_move = g_plantMaxMove[info->m_variant] - 1;
 	}
 
 	return TRUE;
@@ -450,7 +450,7 @@ MxBool LegoPlantManager::SwitchSound(LegoEntity* p_entity)
 	if (info != NULL) {
 		info->m_sound++;
 
-		if (info->m_sound >= g_maxSound) {
+		if (info->m_sound >= g_plantMaxSound) {
 			info->m_sound = 0;
 		}
 
@@ -470,7 +470,7 @@ MxBool LegoPlantManager::SwitchMove(LegoEntity* p_entity)
 	if (info != NULL) {
 		info->m_move++;
 
-		if (info->m_move >= g_maxMove[info->m_variant]) {
+		if (info->m_move >= g_plantMaxMove[info->m_variant]) {
 			info->m_move = 0;
 		}
 

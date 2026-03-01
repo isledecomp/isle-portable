@@ -99,8 +99,6 @@ public:
 
 private:
 	static char* g_customizeAnimFile;
-	static MxS32 g_maxMove[16];
-	static MxU32 g_maxSound;
 
 	MxU8 m_nextVariant;            // 0x08
 	MxBool m_boundariesDetermined; // 0x09

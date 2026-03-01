@@ -3,6 +3,7 @@
 #include <SDL3/SDL_stdinc.h>
 #include <cstddef>
 #include <cstdint>
+#include <type_traits>
 
 namespace Multiplayer
 {
@@ -11,6 +12,11 @@ enum MessageType : uint8_t {
 	MSG_JOIN = 1,
 	MSG_LEAVE = 2,
 	MSG_STATE = 3,
+	MSG_HOST_ASSIGN = 4,
+	MSG_REQUEST_SNAPSHOT = 5,
+	MSG_WORLD_SNAPSHOT = 6,
+	MSG_WORLD_EVENT = 7,
+	MSG_WORLD_EVENT_REQUEST = 8,
 	MSG_ASSIGN_ID = 0xFF
 };
 
@@ -25,6 +31,22 @@ enum VehicleType : int8_t {
 	VEHICLE_TOWTRACK = 6,
 	VEHICLE_AMBULANCE = 7,
 	VEHICLE_COUNT = 8
+};
+
+// Entity types for world events
+enum WorldEntityType : uint8_t {
+	ENTITY_PLANT = 0,
+	ENTITY_BUILDING = 1
+};
+
+// Change types for world events (maps to Switch* methods on LegoEntity)
+enum WorldChangeType : uint8_t {
+	CHANGE_VARIANT = 0,
+	CHANGE_SOUND = 1,
+	CHANGE_MOVE = 2,
+	CHANGE_COLOR = 3,
+	CHANGE_MOOD = 4,
+	CHANGE_DECREMENT = 5
 };
 
 #pragma pack(push, 1)
@@ -56,96 +78,50 @@ struct PlayerStateMsg {
 	float speed;
 };
 
-#pragma pack(pop)
+// Server -> all: announces which peer is the host
+struct HostAssignMsg {
+	MessageHeader header;
+	uint32_t hostPeerId;
+};
 
-static const size_t STATE_MSG_SIZE = sizeof(PlayerStateMsg);
-static const size_t JOIN_MSG_SIZE = sizeof(PlayerJoinMsg);
-static const size_t LEAVE_MSG_SIZE = sizeof(PlayerLeaveMsg);
-static const size_t HEADER_SIZE = sizeof(MessageHeader);
+// Client -> host: request full world state snapshot
+struct RequestSnapshotMsg {
+	MessageHeader header;
+};
+
+// Host -> specific client: full world state blob (variable length)
+// Relay reads targetPeerId at offset 9 and routes to that peer only.
+struct WorldSnapshotMsg {
+	MessageHeader header;
+	uint32_t targetPeerId;
+	uint16_t dataLength;
+	// Followed by dataLength bytes of serialized plant + building state
+};
+
+// Host -> all: single world state mutation
+struct WorldEventMsg {
+	MessageHeader header;
+	uint8_t entityType;  // WorldEntityType
+	uint8_t changeType;  // WorldChangeType
+	uint8_t entityIndex; // Index into g_plantInfo[] or g_buildingInfo[]
+	uint8_t padding;     // Alignment
+};
+
+// Non-host -> host: request a mutation (same layout as WorldEventMsg)
+struct WorldEventRequestMsg {
+	MessageHeader header;
+	uint8_t entityType;  // WorldEntityType
+	uint8_t changeType;  // WorldChangeType
+	uint8_t entityIndex; // Index into g_plantInfo[] or g_buildingInfo[]
+	uint8_t padding;     // Alignment
+};
+
+#pragma pack(pop)
 
 // Validate actorId is a playable character (1-5, not brickster)
 inline bool IsValidActorId(uint8_t p_actorId)
 {
 	return p_actorId >= 1 && p_actorId <= 5;
-}
-
-// Serialize a STATE message into a buffer. Returns bytes written.
-inline size_t SerializeStateMsg(
-	uint8_t* p_buf,
-	size_t p_bufLen,
-	uint32_t p_peerId,
-	uint32_t p_sequence,
-	uint8_t p_actorId,
-	int8_t p_worldId,
-	int8_t p_vehicleType,
-	const float p_position[3],
-	const float p_direction[3],
-	const float p_up[3],
-	float p_speed
-)
-{
-	if (p_bufLen < STATE_MSG_SIZE) {
-		return 0;
-	}
-
-	PlayerStateMsg msg;
-	msg.header.type = MSG_STATE;
-	msg.header.peerId = p_peerId;
-	msg.header.sequence = p_sequence;
-	msg.actorId = p_actorId;
-	msg.worldId = p_worldId;
-	msg.vehicleType = p_vehicleType;
-	SDL_memcpy(msg.position, p_position, sizeof(float) * 3);
-	SDL_memcpy(msg.direction, p_direction, sizeof(float) * 3);
-	SDL_memcpy(msg.up, p_up, sizeof(float) * 3);
-	msg.speed = p_speed;
-
-	SDL_memcpy(p_buf, &msg, STATE_MSG_SIZE);
-	return STATE_MSG_SIZE;
-}
-
-// Serialize a JOIN message into a buffer. Returns bytes written.
-inline size_t SerializeJoinMsg(
-	uint8_t* p_buf,
-	size_t p_bufLen,
-	uint32_t p_peerId,
-	uint32_t p_sequence,
-	uint8_t p_actorId,
-	const char* p_name
-)
-{
-	if (p_bufLen < JOIN_MSG_SIZE) {
-		return 0;
-	}
-
-	PlayerJoinMsg msg;
-	msg.header.type = MSG_JOIN;
-	msg.header.peerId = p_peerId;
-	msg.header.sequence = p_sequence;
-	msg.actorId = p_actorId;
-	SDL_memset(msg.name, 0, sizeof(msg.name));
-	if (p_name) {
-		SDL_strlcpy(msg.name, p_name, sizeof(msg.name));
-	}
-
-	SDL_memcpy(p_buf, &msg, JOIN_MSG_SIZE);
-	return JOIN_MSG_SIZE;
-}
-
-// Serialize a LEAVE message into a buffer. Returns bytes written.
-inline size_t SerializeLeaveMsg(uint8_t* p_buf, size_t p_bufLen, uint32_t p_peerId, uint32_t p_sequence)
-{
-	if (p_bufLen < LEAVE_MSG_SIZE) {
-		return 0;
-	}
-
-	PlayerLeaveMsg msg;
-	msg.header.type = MSG_LEAVE;
-	msg.header.peerId = p_peerId;
-	msg.header.sequence = p_sequence;
-
-	SDL_memcpy(p_buf, &msg, LEAVE_MSG_SIZE);
-	return LEAVE_MSG_SIZE;
 }
 
 // Parse the message type from a buffer. Returns MSG type or 0 on error.
@@ -157,45 +133,28 @@ inline uint8_t ParseMessageType(const uint8_t* p_data, size_t p_length)
 	return p_data[0];
 }
 
-// Deserialize a message header from a buffer.
-inline bool DeserializeHeader(const uint8_t* p_data, size_t p_length, MessageHeader& p_out)
+// Generic serialization: copy a packed message struct into a buffer.
+template <typename T>
+inline size_t SerializeMsg(uint8_t* p_buf, size_t p_bufLen, const T& p_msg)
 {
-	if (p_length < HEADER_SIZE) {
+	static_assert(std::is_trivially_copyable_v<T>);
+	if (p_bufLen < sizeof(T)) {
+		return 0;
+	}
+	SDL_memcpy(p_buf, &p_msg, sizeof(T));
+	return sizeof(T);
+}
+
+// Generic deserialization: copy raw bytes into a packed message struct.
+template <typename T>
+inline bool DeserializeMsg(const uint8_t* p_data, size_t p_length, T& p_out)
+{
+	static_assert(std::is_trivially_copyable_v<T>);
+	if (p_length < sizeof(T)) {
 		return false;
 	}
-	SDL_memcpy(&p_out, p_data, HEADER_SIZE);
+	SDL_memcpy(&p_out, p_data, sizeof(T));
 	return true;
-}
-
-// Deserialize a STATE message from a buffer.
-inline bool DeserializeStateMsg(const uint8_t* p_data, size_t p_length, PlayerStateMsg& p_out)
-{
-	if (p_length < STATE_MSG_SIZE) {
-		return false;
-	}
-	SDL_memcpy(&p_out, p_data, STATE_MSG_SIZE);
-	return p_out.header.type == MSG_STATE;
-}
-
-// Deserialize a JOIN message from a buffer.
-inline bool DeserializeJoinMsg(const uint8_t* p_data, size_t p_length, PlayerJoinMsg& p_out)
-{
-	if (p_length < JOIN_MSG_SIZE) {
-		return false;
-	}
-	SDL_memcpy(&p_out, p_data, JOIN_MSG_SIZE);
-	p_out.name[sizeof(p_out.name) - 1] = '\0';
-	return p_out.header.type == MSG_JOIN && IsValidActorId(p_out.actorId);
-}
-
-// Deserialize a LEAVE message from a buffer.
-inline bool DeserializeLeaveMsg(const uint8_t* p_data, size_t p_length, PlayerLeaveMsg& p_out)
-{
-	if (p_length < LEAVE_MSG_SIZE) {
-		return false;
-	}
-	SDL_memcpy(&p_out, p_data, LEAVE_MSG_SIZE);
-	return p_out.header.type == MSG_LEAVE;
 }
 
 } // namespace Multiplayer

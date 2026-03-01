@@ -2,6 +2,7 @@
 
 #include "3dmanager/lego3dmanager.h"
 #include "define.h"
+#include "extensions/multiplayer.h"
 #include "legoanimationmanager.h"
 #include "legobuildingmanager.h"
 #include "legocameracontroller.h"
@@ -483,6 +484,15 @@ MxLong LegoEntity::Notify(MxParam& p_param)
 		InvokeAction(m_actionType, MxAtomId(m_siFile, e_lowerCase2), m_targetEntityId, this);
 	}
 	else {
+		// Multiplayer extension intercept: for plants and buildings, route through
+		// the multiplayer system. Returns TRUE if the click should be suppressed
+		// locally (non-host sends a request to the host instead of applying directly).
+		auto intercepted =
+			Extensions::Extension<Extensions::MultiplayerExt>::Call(Extensions::HandleEntityNotify, this);
+		if (intercepted.has_value() && intercepted.value()) {
+			return 1;
+		}
+
 		switch (GameState()->GetActorId()) {
 		case LegoActor::c_pepper:
 			if (GameState()->GetCurrentAct() != LegoGameState::e_act2 &&

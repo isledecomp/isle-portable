@@ -21,8 +21,10 @@
 
 using namespace Multiplayer;
 
+// LOD names for vehicle models. The helicopter is a compound ROI ("copter")
+// with no standalone LOD; use its body part instead.
 static const char* g_vehicleROINames[VEHICLE_COUNT] =
-	{"copter", "jsuser", "dunebugy", "bike", "board", "moto", "towtk", "ambul"};
+	{"chtrbody", "jsuser", "dunebugy", "bike", "board", "moto", "towtk", "ambul"};
 
 static const char* g_rideAnimNames[VEHICLE_COUNT] = {NULL, NULL, NULL, "CNs001Bd", "CNs001sk", "CNs011Ni", NULL, NULL};
 
@@ -437,13 +439,12 @@ void RemotePlayer::EnterVehicle(int8_t p_vehicleType)
 	m_animTime = 0.0f;
 
 	if (IsLargeVehicle(p_vehicleType)) {
-		m_roi->SetVisibility(FALSE);
-
 		char vehicleName[48];
 		SDL_snprintf(vehicleName, sizeof(vehicleName), "%s_mp_%u", g_vehicleROINames[p_vehicleType], m_peerId);
 
 		m_vehicleROI = CharacterManager()->CreateAutoROI(vehicleName, g_vehicleROINames[p_vehicleType], FALSE);
 		if (m_vehicleROI) {
+			m_roi->SetVisibility(FALSE);
 			MxMatrix mat(m_roi->GetLocal2World());
 			m_vehicleROI->WrappedSetLocal2WorldWithWorldDataUpdate(mat);
 			m_vehicleROI->SetVisibility(m_visible ? TRUE : FALSE);
@@ -473,12 +474,16 @@ void RemotePlayer::EnterVehicle(int8_t p_vehicleType)
 			return;
 		}
 
+		// Use the base vehicle LOD (e.g. "moto", "bike") which is always loaded as
+		// a world object.  The ride-specific variant LODs (e.g. "motoni", "bikebd")
+		// are only available when the original animation pipeline starts locally.
+		const char* baseName = g_vehicleROINames[p_vehicleType];
 		char variantName[48];
 		SDL_snprintf(variantName, sizeof(variantName), "%s_mp_%u", vehicleVariantName, m_peerId);
-		m_rideVehicleROI = CharacterManager()->CreateAutoROI(variantName, vehicleVariantName, FALSE);
+		m_rideVehicleROI = CharacterManager()->CreateAutoROI(variantName, baseName, FALSE);
 
-		// Rename to base name so FindChildROI can match animation tree nodes.
-		// ReleaseAutoROI uses pointer comparison, not name.
+		// Rename to variant name so FindChildROI can match animation tree nodes
+		// (e.g. "MOTONI" in the anim tree matches ROI named "motoni").
 		if (m_rideVehicleROI) {
 			m_rideVehicleROI->SetName(vehicleVariantName);
 		}

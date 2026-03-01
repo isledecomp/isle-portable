@@ -74,8 +74,6 @@ private:
 	void AdjustCounter(LegoEntity* p_entity, MxS32 p_adjust);
 
 	static char* g_customizeAnimFile;
-	static MxS32 g_maxMove[4];
-	static MxU32 g_maxSound;
 
 	LegoOmni::World m_worldId;     // 0x08
 	MxBool m_boundariesDetermined; // 0x0c

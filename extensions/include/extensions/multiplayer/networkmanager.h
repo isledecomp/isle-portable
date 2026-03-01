@@ -10,7 +10,9 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
+class LegoEntity;
 class LegoWorld;
 
 namespace Multiplayer
@@ -40,6 +42,12 @@ public:
 	void OnWorldEnabled(LegoWorld* p_world);
 	void OnWorldDisabled(LegoWorld* p_world);
 
+	// Called from multiplayer extension when a plant/building entity is clicked.
+	// Returns TRUE if the mutation should be suppressed locally (non-host).
+	MxBool HandleEntityMutation(LegoEntity* p_entity, MxU8 p_changeType);
+
+	bool IsHost() const { return m_localPeerId != 0 && m_localPeerId == m_hostPeerId; }
+
 private:
 	void BroadcastLocalState();
 	void ProcessIncomingPackets();
@@ -50,6 +58,11 @@ private:
 	void HandleJoin(const PlayerJoinMsg& p_msg);
 	void HandleLeave(const PlayerLeaveMsg& p_msg);
 	void HandleState(const PlayerStateMsg& p_msg);
+	void HandleHostAssign(const HostAssignMsg& p_msg);
+	void HandleRequestSnapshot(const RequestSnapshotMsg& p_msg);
+	void HandleWorldSnapshot(const uint8_t* p_data, size_t p_length);
+	void HandleWorldEvent(const WorldEventMsg& p_msg);
+	void HandleWorldEventRequest(const WorldEventRequestMsg& p_msg);
 
 	void RemoveRemotePlayer(uint32_t p_peerId);
 	void RemoveAllRemotePlayers();
@@ -57,15 +70,33 @@ private:
 	int8_t DetectLocalVehicleType();
 	bool IsInIsleWorld() const;
 
+	// Serialize and send a fixed-size message via the transport
+	template <typename T>
+	void SendMessage(const T& p_msg);
+
+	// World state sync helpers
+	void SendSnapshotRequest();
+	void SendWorldSnapshot(uint32_t p_targetPeerId);
+	void BroadcastWorldEvent(uint8_t p_entityType, uint8_t p_changeType, uint8_t p_entityIndex);
+	void SendWorldEventRequest(uint8_t p_entityType, uint8_t p_changeType, uint8_t p_entityIndex);
+
+	// Apply a world event mutation locally (for both host and receiving peers)
+	void ApplyWorldEvent(uint8_t p_entityType, uint8_t p_changeType, uint8_t p_entityIndex);
+
 	NetworkTransport* m_transport;
 	std::map<uint32_t, std::unique_ptr<RemotePlayer>> m_remotePlayers;
 
 	uint32_t m_localPeerId;
+	uint32_t m_hostPeerId;
 	uint32_t m_sequence;
 	uint32_t m_lastBroadcastTime;
 	uint8_t m_lastValidActorId;
 	bool m_inIsleWorld;
 	bool m_registered;
+	bool m_snapshotRequested;
+
+	// Queue world events that arrive between snapshot request and response
+	std::vector<WorldEventMsg> m_pendingWorldEvents;
 
 	static const uint32_t BROADCAST_INTERVAL_MS = 66; // ~15Hz
 	static const uint32_t TIMEOUT_MS = 5000;          // 5 second timeout

@@ -2,6 +2,11 @@
 
 #include "extensions/multiplayer/networkmanager.h"
 #include "extensions/multiplayer/networktransport.h"
+#include "extensions/multiplayer/protocol.h"
+#include "legoactor.h"
+#include "legoentity.h"
+#include "legogamestate.h"
+#include "misc.h"
 #ifdef __EMSCRIPTEN__
 #include "extensions/multiplayer/websockettransport.h"
 #endif
@@ -46,6 +51,51 @@ MxBool MultiplayerExt::HandleWorldEnable(LegoWorld* p_world, MxBool p_enable)
 	}
 
 	return TRUE;
+}
+
+MxBool MultiplayerExt::HandleEntityNotify(LegoEntity* p_entity)
+{
+	if (!s_networkManager) {
+		return FALSE;
+	}
+
+	// Only intercept plants and buildings
+	MxU8 type = p_entity->GetType();
+	if (type != LegoEntity::e_plant && type != LegoEntity::e_building) {
+		return FALSE;
+	}
+
+	// Determine the change type based on the active character,
+	// mirroring the logic in LegoEntity::Notify().
+	MxU8 changeType;
+	switch (GameState()->GetActorId()) {
+	case LegoActor::c_pepper:
+		if (GameState()->GetCurrentAct() == LegoGameState::e_act2 ||
+			GameState()->GetCurrentAct() == LegoGameState::e_act3) {
+			return FALSE;
+		}
+		changeType = Multiplayer::CHANGE_VARIANT;
+		break;
+	case LegoActor::c_mama:
+		changeType = Multiplayer::CHANGE_SOUND;
+		break;
+	case LegoActor::c_papa:
+		changeType = Multiplayer::CHANGE_MOVE;
+		break;
+	case LegoActor::c_nick:
+		changeType = Multiplayer::CHANGE_COLOR;
+		break;
+	case LegoActor::c_laura:
+		changeType = Multiplayer::CHANGE_MOOD;
+		break;
+	case LegoActor::c_brickster:
+		changeType = Multiplayer::CHANGE_DECREMENT;
+		break;
+	default:
+		return FALSE;
+	}
+
+	return s_networkManager->HandleEntityMutation(p_entity, changeType);
 }
 
 void MultiplayerExt::SetNetworkManager(Multiplayer::NetworkManager* p_mgr)
