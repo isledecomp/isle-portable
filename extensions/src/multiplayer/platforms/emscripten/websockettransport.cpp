@@ -1,6 +1,6 @@
 #ifdef __EMSCRIPTEN__
 
-#include "extensions/multiplayer/websockettransport.h"
+#include "extensions/multiplayer/platforms/emscripten/websockettransport.h"
 
 #include <SDL3/SDL_stdinc.h>
 #include <emscripten.h>

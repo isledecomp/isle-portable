@@ -1,6 +1,7 @@
 #pragma once
 
 #include "extensions/multiplayer/networktransport.h"
+#include "extensions/multiplayer/platformcallbacks.h"
 #include "extensions/multiplayer/protocol.h"
 #include "extensions/multiplayer/remoteplayer.h"
 #include "extensions/multiplayer/worldstatesync.h"
@@ -33,7 +34,7 @@ public:
 		return !strcmp(p_name, NetworkManager::ClassName()) || MxCore::IsA(p_name);
 	}
 
-	void Initialize(NetworkTransport* p_transport);
+	void Initialize(NetworkTransport* p_transport, PlatformCallbacks* p_callbacks);
 	void Shutdown();
 
 	void Connect(const char* p_roomId);
@@ -78,6 +79,7 @@ private:
 	void SendMessage(const T& p_msg);
 
 	NetworkTransport* m_transport;
+	PlatformCallbacks* m_callbacks;
 	WorldStateSync m_worldSync;
 	std::map<uint32_t, std::unique_ptr<RemotePlayer>> m_remotePlayers;
 

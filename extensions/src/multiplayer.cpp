@@ -8,8 +8,11 @@
 #include "legoentity.h"
 #include "legogamestate.h"
 #include "misc.h"
+
 #ifdef __EMSCRIPTEN__
-#include "extensions/multiplayer/websockettransport.h"
+#include "extensions/multiplayer/platforms/emscripten/callbacks.h"
+#include "extensions/multiplayer/platforms/emscripten/websockettransport.h"
+
 #include <emscripten.h>
 #endif
 
@@ -21,6 +24,7 @@ std::string MultiplayerExt::relayUrl;
 std::string MultiplayerExt::room;
 Multiplayer::NetworkManager* MultiplayerExt::s_networkManager = nullptr;
 Multiplayer::NetworkTransport* MultiplayerExt::s_transport = nullptr;
+Multiplayer::PlatformCallbacks* MultiplayerExt::s_callbacks = nullptr;
 
 void MultiplayerExt::Initialize()
 {
@@ -33,9 +37,10 @@ void MultiplayerExt::Initialize()
 
 #ifdef __EMSCRIPTEN__
 	s_transport = new Multiplayer::WebSocketTransport(relayUrl);
+	s_callbacks = new Multiplayer::EmscriptenCallbacks();
 
 	s_networkManager = new Multiplayer::NetworkManager();
-	s_networkManager->Initialize(s_transport);
+	s_networkManager->Initialize(s_transport, s_callbacks);
 
 	s_networkManager->Connect(room.c_str());
 #endif

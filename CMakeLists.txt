@@ -535,9 +535,14 @@ if (ISLE_EXTENSIONS)
     extensions/src/multiplayer/charactercloner.cpp
     extensions/src/multiplayer/networkmanager.cpp
     extensions/src/multiplayer/remoteplayer.cpp
-    extensions/src/multiplayer/websockettransport.cpp
     extensions/src/multiplayer/worldstatesync.cpp
   )
+  if(EMSCRIPTEN)
+    target_sources(lego1 PRIVATE
+      extensions/src/multiplayer/platforms/emscripten/websockettransport.cpp
+      extensions/src/multiplayer/platforms/emscripten/callbacks.cpp
+    )
+  endif()
 endif()
 
 if (ISLE_BUILD_APP)
@@ -595,7 +600,7 @@ if (ISLE_BUILD_APP)
     )
     if(ISLE_EXTENSIONS)
       target_sources(isle PRIVATE
-        extensions/src/multiplayer/wasm_exports.cpp
+        extensions/src/multiplayer/platforms/emscripten/wasm_exports.cpp
       )
     endif()
     target_compile_definitions(isle PRIVATE "ISLE_EMSCRIPTEN_HOST=\"${ISLE_EMSCRIPTEN_HOST}\"")

@@ -11,9 +11,6 @@
 #include <SDL3/SDL_stdinc.h>
 #include <SDL3/SDL_timer.h>
 #include <vector>
-#ifdef __EMSCRIPTEN__
-#include <emscripten.h>
-#endif
 
 using namespace Multiplayer;
 
@@ -32,8 +29,9 @@ void NetworkManager::SendMessage(const T& p_msg)
 }
 
 NetworkManager::NetworkManager()
-	: m_transport(nullptr), m_localPeerId(0), m_hostPeerId(0), m_sequence(0), m_lastBroadcastTime(0),
-	  m_lastValidActorId(0), m_localWalkAnimId(0), m_localIdleAnimId(0), m_inIsleWorld(false), m_registered(false)
+	: m_transport(nullptr), m_callbacks(nullptr), m_localPeerId(0), m_hostPeerId(0), m_sequence(0),
+	  m_lastBroadcastTime(0), m_lastValidActorId(0), m_localWalkAnimId(0), m_localIdleAnimId(0), m_inIsleWorld(false),
+	  m_registered(false)
 {
 }
 
@@ -78,9 +76,10 @@ MxResult NetworkManager::Tickle()
 	return SUCCESS;
 }
 
-void NetworkManager::Initialize(NetworkTransport* p_transport)
+void NetworkManager::Initialize(NetworkTransport* p_transport, PlatformCallbacks* p_callbacks)
 {
 	m_transport = p_transport;
+	m_callbacks = p_callbacks;
 	m_worldSync.SetTransport(p_transport);
 }
 
@@ -460,7 +459,10 @@ void NetworkManager::RemoveAllRemotePlayers()
 
 void NetworkManager::NotifyPlayerCountChanged()
 {
-#ifdef __EMSCRIPTEN__
+	if (!m_callbacks) {
+		return;
+	}
+
 	int count = -1;
 	if (m_inIsleWorld) {
 		count = 1; // local player
@@ -470,17 +472,8 @@ void NetworkManager::NotifyPlayerCountChanged()
 			}
 		}
 	}
-	// clang-format off
-	MAIN_THREAD_EM_ASM({
-		var canvas = Module.canvas;
-		if (canvas) {
-			canvas.dispatchEvent(new CustomEvent('playerCountChanged', {
-				detail: { count: $0 < 0 ? null : $0 }
-			}));
-		}
-	}, count);
-	// clang-format on
-#endif
+
+	m_callbacks->OnPlayerCountChanged(count);
 }
 
 int8_t NetworkManager::DetectLocalVehicleType()

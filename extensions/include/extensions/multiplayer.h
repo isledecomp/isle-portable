@@ -13,6 +13,7 @@ namespace Multiplayer
 {
 class NetworkManager;
 class NetworkTransport;
+class PlatformCallbacks;
 } // namespace Multiplayer
 
 namespace Extensions
@@ -42,6 +43,7 @@ public:
 private:
 	static Multiplayer::NetworkManager* s_networkManager;
 	static Multiplayer::NetworkTransport* s_transport;
+	static Multiplayer::PlatformCallbacks* s_callbacks;
 };
 
 #ifdef EXTENSIONS
