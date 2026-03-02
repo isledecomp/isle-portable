@@ -1,5 +1,6 @@
 #include "extensions/multiplayer.h"
 
+#include "extensions/extensions.h"
 #include "extensions/multiplayer/networkmanager.h"
 #include "extensions/multiplayer/networktransport.h"
 #include "extensions/multiplayer/protocol.h"
@@ -117,4 +118,9 @@ void MultiplayerExt::SetNetworkManager(Multiplayer::NetworkManager* p_networkMan
 Multiplayer::NetworkManager* MultiplayerExt::GetNetworkManager()
 {
 	return s_networkManager;
+}
+
+bool Extensions::IsMultiplayerRejected()
+{
+	return Extension<MultiplayerExt>::Call(CheckRejected).value_or(FALSE);
 }

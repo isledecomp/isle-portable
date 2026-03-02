@@ -37,7 +37,6 @@
 #include "viewmanager/viewmanager.h"
 
 #include <array>
-#include <extensions/extensions.h>
 #include <extensions/multiplayer.h>
 #include <miniwin/miniwindevice.h>
 #include <type_traits>
@@ -1297,10 +1296,12 @@ inline bool IsleApp::Tick()
 		return true;
 	}
 
-	if (Extension<MultiplayerExt>::Call(CheckRejected).value_or(FALSE)) {
+#ifdef EXTENSIONS
+	if (Extensions::IsMultiplayerRejected()) {
 		g_closed = TRUE;
 		return true;
 	}
+#endif
 
 	if (!TickleManager()) {
 		return true;
