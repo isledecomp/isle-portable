@@ -17,6 +17,7 @@ enum MessageType : uint8_t {
 	MSG_WORLD_SNAPSHOT = 6,
 	MSG_WORLD_EVENT = 7,
 	MSG_WORLD_EVENT_REQUEST = 8,
+	MSG_EMOTE = 9,
 	MSG_ASSIGN_ID = 0xFF
 };
 
@@ -76,6 +77,8 @@ struct PlayerStateMsg {
 	float direction[3];
 	float up[3];
 	float speed;
+	uint8_t walkAnimId; // Index into walk animation table (0 = default)
+	uint8_t idleAnimId; // Index into idle animation table (0 = default)
 };
 
 // Server -> all: announces which peer is the host
@@ -116,7 +119,39 @@ struct WorldEventRequestMsg {
 	uint8_t padding;     // Alignment
 };
 
+// One-shot emote trigger, broadcast to all peers
+struct EmoteMsg {
+	MessageHeader header;
+	uint8_t emoteId; // Index into emote table
+};
+
 #pragma pack(pop)
+
+// Walk animation table: index -> CNs name
+static const char* const g_walkAnimNames[] = {
+	"CNs001xx", // 0: Normal (default)
+	"CNs002xx", // 1: Joyful
+	"CNs003xx", // 2: Gloomy
+	"CNs005xx", // 3: Leaning
+	"CNs006xx", // 4: Scared
+	"CNs007xx", // 5: Hyper
+};
+static const int g_walkAnimCount = sizeof(g_walkAnimNames) / sizeof(g_walkAnimNames[0]);
+
+// Idle animation table: index -> CNs name
+static const char* const g_idleAnimNames[] = {
+	"CNs008xx", // 0: Sway (default)
+	"CNs009xx", // 1: Groove
+	"CNs010xx", // 2: Excited
+};
+static const int g_idleAnimCount = sizeof(g_idleAnimNames) / sizeof(g_idleAnimNames[0]);
+
+// Emote table: index -> CNs name
+static const char* const g_emoteAnimNames[] = {
+	"CNs011xx", // 0: Wave
+	"CNs012xx", // 1: Hat Tip
+};
+static const int g_emoteAnimCount = sizeof(g_emoteAnimNames) / sizeof(g_emoteAnimNames[0]);
 
 // Validate actorId is a playable character (1-5, not brickster)
 inline bool IsValidActorId(uint8_t p_actorId)

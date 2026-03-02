@@ -15,6 +15,8 @@ endif()
 if (EMSCRIPTEN)
   add_compile_options(-pthread)
   add_link_options(-sUSE_WEBGL2=1 -sMIN_WEBGL_VERSION=2 -sALLOW_MEMORY_GROWTH=1 -sMAXIMUM_MEMORY=2gb -sUSE_PTHREADS=1 -sPROXY_TO_PTHREAD=1 -sOFFSCREENCANVAS_SUPPORT=1 -sPTHREAD_POOL_SIZE_STRICT=0 -sFORCE_FILESYSTEM=1 -sWASMFS=1 -sEXIT_RUNTIME=1)
+  add_link_options("-sEXPORTED_FUNCTIONS=[\"_main\",\"_mp_set_walk_animation\",\"_mp_set_idle_animation\",\"_mp_trigger_emote\",\"_mp_get_player_count\"]")
+  add_link_options("-sEXPORTED_RUNTIME_METHODS=[\"ccall\",\"cwrap\"]")
   set(SDL_PTHREADS ON CACHE BOOL "Enable SDL pthreads" FORCE)
 endif()
 

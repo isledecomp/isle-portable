@@ -41,6 +41,11 @@ public:
 	bool IsConnected() const;
 	bool WasRejected() const;
 
+	void SetWalkAnimation(uint8_t p_index);
+	void SetIdleAnimation(uint8_t p_index);
+	void SendEmote(uint8_t p_emoteId);
+	int GetPlayerCount() const;
+
 	void OnWorldEnabled(LegoWorld* p_world);
 	void OnWorldDisabled(LegoWorld* p_world);
 
@@ -61,6 +66,7 @@ private:
 	void HandleLeave(const PlayerLeaveMsg& p_msg);
 	void HandleState(const PlayerStateMsg& p_msg);
 	void HandleHostAssign(const HostAssignMsg& p_msg);
+	void HandleEmote(const EmoteMsg& p_msg);
 
 	void RemoveRemotePlayer(uint32_t p_peerId);
 	void RemoveAllRemotePlayers();
@@ -80,6 +86,8 @@ private:
 	uint32_t m_sequence;
 	uint32_t m_lastBroadcastTime;
 	uint8_t m_lastValidActorId;
+	uint8_t m_localWalkAnimId;
+	uint8_t m_localIdleAnimId;
 	bool m_inIsleWorld;
 	bool m_registered;
 

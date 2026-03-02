@@ -10,6 +10,7 @@
 #include "misc.h"
 #ifdef __EMSCRIPTEN__
 #include "extensions/multiplayer/websockettransport.h"
+#include <emscripten.h>
 #endif
 
 using namespace Extensions;
@@ -124,3 +125,42 @@ bool Extensions::IsMultiplayerRejected()
 {
 	return Extension<MultiplayerExt>::Call(CheckRejected).value_or(FALSE);
 }
+
+#ifdef __EMSCRIPTEN__
+extern "C" {
+
+EMSCRIPTEN_KEEPALIVE void mp_set_walk_animation(int index)
+{
+	Multiplayer::NetworkManager* mgr = MultiplayerExt::GetNetworkManager();
+	if (mgr) {
+		mgr->SetWalkAnimation(static_cast<uint8_t>(index));
+	}
+}
+
+EMSCRIPTEN_KEEPALIVE void mp_set_idle_animation(int index)
+{
+	Multiplayer::NetworkManager* mgr = MultiplayerExt::GetNetworkManager();
+	if (mgr) {
+		mgr->SetIdleAnimation(static_cast<uint8_t>(index));
+	}
+}
+
+EMSCRIPTEN_KEEPALIVE void mp_trigger_emote(int index)
+{
+	Multiplayer::NetworkManager* mgr = MultiplayerExt::GetNetworkManager();
+	if (mgr) {
+		mgr->SendEmote(static_cast<uint8_t>(index));
+	}
+}
+
+EMSCRIPTEN_KEEPALIVE int mp_get_player_count()
+{
+	Multiplayer::NetworkManager* mgr = MultiplayerExt::GetNetworkManager();
+	if (mgr) {
+		return mgr->GetPlayerCount();
+	}
+	return 0;
+}
+
+} // extern "C"
+#endif

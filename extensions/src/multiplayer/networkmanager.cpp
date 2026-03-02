@@ -30,7 +30,7 @@ void NetworkManager::SendMessage(const T& p_msg)
 
 NetworkManager::NetworkManager()
 	: m_transport(nullptr), m_localPeerId(0), m_hostPeerId(0), m_sequence(0), m_lastBroadcastTime(0),
-	  m_lastValidActorId(0), m_inIsleWorld(false), m_registered(false)
+	  m_lastValidActorId(0), m_localWalkAnimId(0), m_localIdleAnimId(0), m_inIsleWorld(false), m_registered(false)
 {
 }
 
@@ -212,6 +212,8 @@ void NetworkManager::BroadcastLocalState()
 	SDL_memcpy(msg.direction, dir, sizeof(msg.direction));
 	SDL_memcpy(msg.up, up, sizeof(msg.up));
 	msg.speed = speed;
+	msg.walkAnimId = m_localWalkAnimId;
+	msg.idleAnimId = m_localIdleAnimId;
 
 	SendMessage(msg);
 }
@@ -288,6 +290,13 @@ void NetworkManager::ProcessIncomingPackets()
 			WorldEventRequestMsg msg;
 			if (DeserializeMsg(data, length, msg) && msg.header.type == MSG_WORLD_EVENT_REQUEST) {
 				m_worldSync.HandleWorldEventRequest(msg);
+			}
+			break;
+		}
+		case MSG_EMOTE: {
+			EmoteMsg msg;
+			if (DeserializeMsg(data, length, msg) && msg.header.type == MSG_EMOTE) {
+				HandleEmote(msg);
 			}
 			break;
 		}
@@ -375,6 +384,47 @@ void NetworkManager::HandleHostAssign(const HostAssignMsg& p_msg)
 
 	if (!IsHost() && oldHost != m_hostPeerId) {
 		m_worldSync.OnHostChanged();
+	}
+}
+
+void NetworkManager::SetWalkAnimation(uint8_t p_index)
+{
+	if (p_index < g_walkAnimCount) {
+		m_localWalkAnimId = p_index;
+	}
+}
+
+void NetworkManager::SetIdleAnimation(uint8_t p_index)
+{
+	if (p_index < g_idleAnimCount) {
+		m_localIdleAnimId = p_index;
+	}
+}
+
+void NetworkManager::SendEmote(uint8_t p_emoteId)
+{
+	if (p_emoteId >= g_emoteAnimCount) {
+		return;
+	}
+
+	EmoteMsg msg{};
+	msg.header = {MSG_EMOTE, m_localPeerId, m_sequence++};
+	msg.emoteId = p_emoteId;
+	SendMessage(msg);
+}
+
+int NetworkManager::GetPlayerCount() const
+{
+	// +1 for the local player
+	return static_cast<int>(m_remotePlayers.size()) + 1;
+}
+
+void NetworkManager::HandleEmote(const EmoteMsg& p_msg)
+{
+	uint32_t peerId = p_msg.header.peerId;
+	auto it = m_remotePlayers.find(peerId);
+	if (it != m_remotePlayers.end()) {
+		it->second->TriggerEmote(p_msg.emoteId);
 	}
 }
 

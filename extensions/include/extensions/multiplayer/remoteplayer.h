@@ -4,6 +4,8 @@
 #include "mxtypes.h"
 
 #include <cstdint>
+#include <map>
+#include <string>
 
 class LegoROI;
 class LegoWorld;
@@ -32,9 +34,49 @@ public:
 	uint32_t GetLastUpdateTime() const { return m_lastUpdateTime; }
 
 	void SetVisible(bool p_visible);
+	void TriggerEmote(uint8_t p_emoteId);
 
 private:
-	void BuildWalkROIMap(LegoWorld* p_isleWorld);
+	// Cached ROI map entry for an animation
+	struct AnimCache {
+		LegoAnim* anim;
+		LegoROI** roiMap;
+		MxU32 roiMapSize;
+
+		AnimCache() : anim(nullptr), roiMap(nullptr), roiMapSize(0) {}
+		~AnimCache()
+		{
+			if (roiMap) {
+				delete[] roiMap;
+			}
+		}
+
+		AnimCache(const AnimCache&) = delete;
+		AnimCache& operator=(const AnimCache&) = delete;
+		AnimCache(AnimCache&& p_other) noexcept
+			: anim(p_other.anim), roiMap(p_other.roiMap), roiMapSize(p_other.roiMapSize)
+		{
+			p_other.roiMap = nullptr;
+			p_other.roiMapSize = 0;
+			p_other.anim = nullptr;
+		}
+		AnimCache& operator=(AnimCache&& p_other) noexcept
+		{
+			if (this != &p_other) {
+				if (roiMap) {
+					delete[] roiMap;
+				}
+				anim = p_other.anim;
+				roiMap = p_other.roiMap;
+				roiMapSize = p_other.roiMapSize;
+				p_other.roiMap = nullptr;
+				p_other.roiMapSize = 0;
+				p_other.anim = nullptr;
+			}
+			return *this;
+		}
+	};
+
 	void BuildROIMap(
 		LegoAnim* p_anim,
 		LegoROI* p_rootROI,
@@ -42,6 +84,7 @@ private:
 		LegoROI**& p_roiMap,
 		MxU32& p_roiMapSize
 	);
+	AnimCache* GetOrBuildAnimCache(const char* p_animName);
 	void UpdateTransform(float p_deltaTime);
 	void UpdateAnimation(float p_deltaTime);
 	void UpdateVehicleState();
@@ -69,18 +112,26 @@ private:
 	float m_currentDirection[3];
 	float m_currentUp[3];
 
-	LegoAnim* m_walkAnim;
-	LegoROI** m_walkRoiMap;
-	MxU32 m_walkRoiMapSize;
+	// Animation state
+	uint8_t m_walkAnimId;
+	uint8_t m_idleAnimId;
+	AnimCache* m_walkAnimCache;
+	AnimCache* m_idleAnimCache;
 	float m_animTime;
 	float m_idleTime;
+	float m_idleAnimTime;
 	bool m_wasMoving;
 
-	LegoAnim* m_idleAnim;
-	LegoROI** m_idleRoiMap;
-	MxU32 m_idleRoiMapSize;
-	float m_idleAnimTime;
+	// Emote state
+	AnimCache* m_emoteAnimCache;
+	float m_emoteTime;
+	float m_emoteDuration;
+	bool m_emoteActive;
 
+	// ROI map cache: animation name -> cached ROI map (invalidated on world change)
+	std::map<std::string, AnimCache> m_animCacheMap;
+
+	// Ride animation (vehicle-specific, not cached globally)
 	LegoAnim* m_rideAnim;
 	LegoROI** m_rideRoiMap;
 	MxU32 m_rideRoiMapSize;
