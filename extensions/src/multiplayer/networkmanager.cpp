@@ -11,6 +11,9 @@
 #include <SDL3/SDL_stdinc.h>
 #include <SDL3/SDL_timer.h>
 #include <vector>
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
 
 using namespace Multiplayer;
 
@@ -145,6 +148,8 @@ void NetworkManager::OnWorldEnabled(LegoWorld* p_world)
 				}
 			}
 		}
+
+		NotifyPlayerCountChanged();
 	}
 }
 
@@ -160,6 +165,8 @@ void NetworkManager::OnWorldDisabled(LegoWorld* p_world)
 		for (auto& [peerId, player] : m_remotePlayers) {
 			player->SetVisible(false);
 		}
+
+		NotifyPlayerCountChanged();
 	}
 }
 
@@ -338,6 +345,7 @@ void NetworkManager::HandleJoin(const PlayerJoinMsg& p_msg)
 	}
 
 	CreateAndSpawnPlayer(peerId, p_msg.actorId);
+	NotifyPlayerCountChanged();
 }
 
 void NetworkManager::HandleLeave(const PlayerLeaveMsg& p_msg)
@@ -356,6 +364,7 @@ void NetworkManager::HandleState(const PlayerStateMsg& p_msg)
 		}
 
 		CreateAndSpawnPlayer(peerId, p_msg.actorId);
+		NotifyPlayerCountChanged();
 		it = m_remotePlayers.find(peerId);
 	}
 
@@ -367,11 +376,19 @@ void NetworkManager::HandleState(const PlayerStateMsg& p_msg)
 		it = m_remotePlayers.find(peerId);
 	}
 
+	int8_t oldWorldId = it->second->GetWorldId();
+
 	it->second->UpdateFromNetwork(p_msg);
 
 	bool bothInIsle = m_inIsleWorld && (p_msg.worldId == (int8_t) LegoOmni::e_act1);
 	if (it->second->IsSpawned()) {
 		it->second->SetVisible(bothInIsle);
+	}
+
+	bool wasInIsle = (oldWorldId == (int8_t) LegoOmni::e_act1);
+	bool nowInIsle = (p_msg.worldId == (int8_t) LegoOmni::e_act1);
+	if (m_inIsleWorld && wasInIsle != nowInIsle) {
+		NotifyPlayerCountChanged();
 	}
 }
 
@@ -413,12 +430,6 @@ void NetworkManager::SendEmote(uint8_t p_emoteId)
 	SendMessage(msg);
 }
 
-int NetworkManager::GetPlayerCount() const
-{
-	// +1 for the local player
-	return static_cast<int>(m_remotePlayers.size()) + 1;
-}
-
 void NetworkManager::HandleEmote(const EmoteMsg& p_msg)
 {
 	uint32_t peerId = p_msg.header.peerId;
@@ -434,6 +445,7 @@ void NetworkManager::RemoveRemotePlayer(uint32_t p_peerId)
 	if (it != m_remotePlayers.end()) {
 		it->second->Despawn();
 		m_remotePlayers.erase(it);
+		NotifyPlayerCountChanged();
 	}
 }
 
@@ -443,6 +455,32 @@ void NetworkManager::RemoveAllRemotePlayers()
 		player->Despawn();
 	}
 	m_remotePlayers.clear();
+	NotifyPlayerCountChanged();
+}
+
+void NetworkManager::NotifyPlayerCountChanged()
+{
+#ifdef __EMSCRIPTEN__
+	int count = -1;
+	if (m_inIsleWorld) {
+		count = 1; // local player
+		for (auto& [peerId, player] : m_remotePlayers) {
+			if (player->GetWorldId() == (int8_t) LegoOmni::e_act1) {
+				count++;
+			}
+		}
+	}
+	// clang-format off
+	MAIN_THREAD_EM_ASM({
+		var canvas = Module.canvas;
+		if (canvas) {
+			canvas.dispatchEvent(new CustomEvent('playerCountChanged', {
+				detail: { count: $0 < 0 ? null : $0 }
+			}));
+		}
+	}, count);
+	// clang-format on
+#endif
 }
 
 int8_t NetworkManager::DetectLocalVehicleType()

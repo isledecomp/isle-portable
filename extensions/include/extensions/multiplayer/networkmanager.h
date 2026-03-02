@@ -44,7 +44,6 @@ public:
 	void SetWalkAnimation(uint8_t p_index);
 	void SetIdleAnimation(uint8_t p_index);
 	void SendEmote(uint8_t p_emoteId);
-	int GetPlayerCount() const;
 
 	void OnWorldEnabled(LegoWorld* p_world);
 	void OnWorldDisabled(LegoWorld* p_world);
@@ -71,6 +70,7 @@ private:
 	void RemoveRemotePlayer(uint32_t p_peerId);
 	void RemoveAllRemotePlayers();
 
+	void NotifyPlayerCountChanged();
 	int8_t DetectLocalVehicleType();
 
 	// Serialize and send a fixed-size message via the transport
