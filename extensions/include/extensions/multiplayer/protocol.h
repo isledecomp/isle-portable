@@ -81,6 +81,7 @@ struct PlayerStateMsg {
 	float speed;
 	uint8_t walkAnimId; // Index into walk animation table (0 = default)
 	uint8_t idleAnimId; // Index into idle animation table (0 = default)
+	uint8_t displayActorIndex; // Index into g_actorInfoInit (0-65)
 };
 
 // Server -> all: announces which peer is the host
@@ -154,6 +155,8 @@ inline bool IsValidActorId(uint8_t p_actorId)
 {
 	return p_actorId >= 1 && p_actorId <= 5;
 }
+
+static const uint8_t DISPLAY_ACTOR_NONE = 0xFF;
 
 // Parse the message type from a buffer. Returns MSG type or 0 on error.
 inline uint8_t ParseMessageType(const uint8_t* p_data, size_t p_length)

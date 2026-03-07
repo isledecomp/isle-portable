@@ -6,10 +6,13 @@
 #include "extensions/multiplayer/protocol.h"
 #include "islepathactor.h"
 #include "legoactor.h"
+#include "legoactors.h"
 #include "legoentity.h"
 #include "legogamestate.h"
 #include "legopathactor.h"
 #include "misc.h"
+
+#include <SDL3/SDL_stdinc.h>
 
 #ifdef __EMSCRIPTEN__
 #include "extensions/multiplayer/platforms/emscripten/callbacks.h"
@@ -19,6 +22,16 @@
 #endif
 
 using namespace Extensions;
+
+static uint8_t ResolveDisplayActorIndex(const char* p_name)
+{
+	for (int i = 0; i < static_cast<int>(sizeOfArray(g_actorInfoInit)); i++) {
+		if (!SDL_strcasecmp(g_actorInfoInit[i].m_name, p_name)) {
+			return static_cast<uint8_t>(i);
+		}
+	}
+	return Multiplayer::DISPLAY_ACTOR_NONE;
+}
 
 std::map<std::string, std::string> MultiplayerExt::options;
 bool MultiplayerExt::enabled = false;
@@ -42,6 +55,14 @@ void MultiplayerExt::Initialize()
 
 	// Third-person camera enabled by default, toggled via WASM export
 	s_networkManager->GetThirdPersonCamera().Enable();
+
+	std::string actor = options["multiplayer:actor"];
+	if (!actor.empty()) {
+		uint8_t displayIndex = ResolveDisplayActorIndex(actor.c_str());
+		if (displayIndex != Multiplayer::DISPLAY_ACTOR_NONE) {
+			s_networkManager->SetDisplayActorIndex(displayIndex);
+		}
+	}
 
 	if (!relayUrl.empty() && !room.empty()) {
 		s_networkManager->Connect(room.c_str());

@@ -39,6 +39,7 @@ public:
 	void SetWalkAnimId(uint8_t p_id);
 	void SetIdleAnimId(uint8_t p_id);
 	void TriggerEmote(uint8_t p_emoteId);
+	void SetDisplayActorIndex(uint8_t p_index);
 
 	void OnWorldEnabled(LegoWorld* p_world);
 	void OnWorldDisabled(LegoWorld* p_world);
@@ -54,10 +55,20 @@ private:
 	void ApplyIdleFrame0();
 	void ReinitForCharacter();
 
+	bool EnsureDisplayROI();
+	void CreateDisplayClone();
+	void DestroyDisplayClone();
+	bool HasDisplayOverride() const { return m_displayROI != nullptr; }
+
 	bool m_enabled;
 	bool m_active;
 	bool m_roiUnflipped; // True when Disable() flipped the ROI direction; ReinitForCharacter re-applies
 	LegoROI* m_playerROI; // Borrowed, not owned
+
+	// Display actor override
+	uint8_t m_displayActorIndex;
+	LegoROI* m_displayROI;           // Owned clone; nullptr = use native ROI
+	char m_displayUniqueName[32];
 
 	// Walk/idle state (same pattern as RemotePlayer)
 	uint8_t m_walkAnimId;

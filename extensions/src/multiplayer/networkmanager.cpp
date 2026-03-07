@@ -30,7 +30,8 @@ void NetworkManager::SendMessage(const T& p_msg)
 
 NetworkManager::NetworkManager()
 	: m_transport(nullptr), m_callbacks(nullptr), m_localPeerId(0), m_hostPeerId(0), m_sequence(0),
-	  m_lastBroadcastTime(0), m_lastValidActorId(0), m_localWalkAnimId(0), m_localIdleAnimId(0), m_inIsleWorld(false),
+	  m_lastBroadcastTime(0), m_lastValidActorId(0), m_localWalkAnimId(0), m_localIdleAnimId(0),
+	  m_localDisplayActorIndex(DISPLAY_ACTOR_NONE), m_inIsleWorld(false),
 	  m_registered(false), m_pendingToggleThirdPerson(false), m_pendingWalkAnim(-1), m_pendingIdleAnim(-1),
 	  m_pendingEmote(-1)
 {
@@ -265,6 +266,12 @@ void NetworkManager::BroadcastLocalState()
 	msg.walkAnimId = m_localWalkAnimId;
 	msg.idleAnimId = m_localIdleAnimId;
 
+	uint8_t displayIndex = m_localDisplayActorIndex;
+	if (displayIndex == DISPLAY_ACTOR_NONE) {
+		displayIndex = actorId - 1; // actorId already validated above
+	}
+	msg.displayActorIndex = displayIndex;
+
 	SendMessage(msg);
 }
 
@@ -363,9 +370,9 @@ void NetworkManager::UpdateRemotePlayers(float p_deltaTime)
 	}
 }
 
-RemotePlayer* NetworkManager::CreateAndSpawnPlayer(uint32_t p_peerId, uint8_t p_actorId)
+RemotePlayer* NetworkManager::CreateAndSpawnPlayer(uint32_t p_peerId, uint8_t p_actorId, uint8_t p_displayActorIndex)
 {
-	auto player = std::make_unique<RemotePlayer>(p_peerId, p_actorId);
+	auto player = std::make_unique<RemotePlayer>(p_peerId, p_actorId, p_displayActorIndex);
 
 	if (m_inIsleWorld) {
 		LegoWorld* world = CurrentWorld();
@@ -387,7 +394,7 @@ void NetworkManager::HandleJoin(const PlayerJoinMsg& p_msg)
 		return;
 	}
 
-	CreateAndSpawnPlayer(peerId, p_msg.actorId);
+	CreateAndSpawnPlayer(peerId, p_msg.actorId, p_msg.actorId - 1);
 	NotifyPlayerCountChanged();
 }
 
@@ -406,17 +413,20 @@ void NetworkManager::HandleState(const PlayerStateMsg& p_msg)
 			return;
 		}
 
-		CreateAndSpawnPlayer(peerId, p_msg.actorId);
+		CreateAndSpawnPlayer(peerId, p_msg.actorId, p_msg.displayActorIndex);
 		NotifyPlayerCountChanged();
 		it = m_remotePlayers.find(peerId);
 	}
 
-	// Handle actor change (e.g., Pepper -> Nick)
-	if (IsValidActorId(p_msg.actorId) && it->second->GetActorId() != p_msg.actorId) {
+	// Respawn only if display actor changed (not on actorId change)
+	if (it->second->GetDisplayActorIndex() != p_msg.displayActorIndex) {
 		it->second->Despawn();
 		m_remotePlayers.erase(it);
-		CreateAndSpawnPlayer(peerId, p_msg.actorId);
+		CreateAndSpawnPlayer(peerId, p_msg.actorId, p_msg.displayActorIndex);
 		it = m_remotePlayers.find(peerId);
+	}
+	else if (IsValidActorId(p_msg.actorId)) {
+		it->second->SetActorId(p_msg.actorId); // Update for future use, no visual change
 	}
 
 	int8_t oldWorldId = it->second->GetWorldId();
@@ -475,6 +485,12 @@ void NetworkManager::SendEmote(uint8_t p_emoteId)
 	msg.header = {MSG_EMOTE, m_localPeerId, m_sequence++};
 	msg.emoteId = p_emoteId;
 	SendMessage(msg);
+}
+
+void NetworkManager::SetDisplayActorIndex(uint8_t p_index)
+{
+	m_localDisplayActorIndex = p_index;
+	m_thirdPersonCamera.SetDisplayActorIndex(p_index);
 }
 
 void NetworkManager::HandleEmote(const EmoteMsg& p_msg)

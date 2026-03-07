@@ -18,7 +18,7 @@ namespace Multiplayer
 
 class RemotePlayer {
 public:
-	RemotePlayer(uint32_t p_peerId, uint8_t p_actorId);
+	RemotePlayer(uint32_t p_peerId, uint8_t p_actorId, uint8_t p_displayActorIndex);
 	~RemotePlayer();
 
 	void Spawn(LegoWorld* p_isleWorld);
@@ -29,6 +29,8 @@ public:
 
 	uint32_t GetPeerId() const { return m_peerId; }
 	uint8_t GetActorId() const { return m_actorId; }
+	uint8_t GetDisplayActorIndex() const { return m_displayActorIndex; }
+	void SetActorId(uint8_t p_actorId) { m_actorId = p_actorId; }
 	bool IsSpawned() const { return m_spawned; }
 	bool IsVisible() const { return m_visible; }
 	int8_t GetWorldId() const { return m_targetWorldId; }
@@ -41,6 +43,7 @@ private:
 	using AnimCache = AnimUtils::AnimCache;
 
 	AnimCache* GetOrBuildAnimCache(const char* p_animName);
+	const char* GetDisplayActorName() const;
 	void UpdateTransform(float p_deltaTime);
 	void UpdateAnimation(float p_deltaTime);
 	void UpdateVehicleState();
@@ -49,6 +52,7 @@ private:
 
 	uint32_t m_peerId;
 	uint8_t m_actorId;
+	uint8_t m_displayActorIndex;
 	char m_uniqueName[32];
 
 	LegoROI* m_roi;

@@ -47,6 +47,7 @@ public:
 	void SetWalkAnimation(uint8_t p_index);
 	void SetIdleAnimation(uint8_t p_index);
 	void SendEmote(uint8_t p_emoteId);
+	void SetDisplayActorIndex(uint8_t p_index);
 
 	// Thread-safe request methods for cross-thread callers (e.g. WASM exports
 	// running on the browser main thread).  Deferred to the game thread in Tickle().
@@ -71,7 +72,7 @@ private:
 	void ProcessIncomingPackets();
 	void UpdateRemotePlayers(float p_deltaTime);
 
-	RemotePlayer* CreateAndSpawnPlayer(uint32_t p_peerId, uint8_t p_actorId);
+	RemotePlayer* CreateAndSpawnPlayer(uint32_t p_peerId, uint8_t p_actorId, uint8_t p_displayActorIndex);
 
 	void HandleJoin(const PlayerJoinMsg& p_msg);
 	void HandleLeave(const PlayerLeaveMsg& p_msg);
@@ -102,6 +103,7 @@ private:
 	uint8_t m_lastValidActorId;
 	uint8_t m_localWalkAnimId;
 	uint8_t m_localIdleAnimId;
+	uint8_t m_localDisplayActorIndex;
 	bool m_inIsleWorld;
 	bool m_registered;
 

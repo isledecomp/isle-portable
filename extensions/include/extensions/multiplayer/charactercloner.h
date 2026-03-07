@@ -1,10 +1,18 @@
 #pragma once
 
+#include "legoactors.h"
+#include "misc.h"
+
 class LegoCharacterManager;
 class LegoROI;
 
 namespace Multiplayer
 {
+
+inline bool IsValidDisplayActorIndex(uint8_t p_index)
+{
+	return p_index < sizeOfArray(g_actorInfoInit);
+}
 
 class CharacterCloner {
 public:

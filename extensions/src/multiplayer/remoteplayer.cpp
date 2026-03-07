@@ -21,15 +21,17 @@
 
 using namespace Multiplayer;
 
-RemotePlayer::RemotePlayer(uint32_t p_peerId, uint8_t p_actorId)
-	: m_peerId(p_peerId), m_actorId(p_actorId), m_roi(nullptr), m_spawned(false), m_visible(false), m_targetSpeed(0.0f),
-	  m_targetVehicleType(VEHICLE_NONE), m_targetWorldId(-1), m_lastUpdateTime(SDL_GetTicks()),
-	  m_hasReceivedUpdate(false), m_walkAnimId(0), m_idleAnimId(0), m_walkAnimCache(nullptr), m_idleAnimCache(nullptr),
-	  m_animTime(0.0f), m_idleTime(0.0f), m_idleAnimTime(0.0f), m_wasMoving(false), m_emoteAnimCache(nullptr),
-	  m_emoteTime(0.0f), m_emoteDuration(0.0f), m_emoteActive(false), m_rideAnim(nullptr), m_rideRoiMap(nullptr),
-	  m_rideRoiMapSize(0), m_rideVehicleROI(nullptr), m_vehicleROI(nullptr), m_currentVehicleType(VEHICLE_NONE)
+RemotePlayer::RemotePlayer(uint32_t p_peerId, uint8_t p_actorId, uint8_t p_displayActorIndex)
+	: m_peerId(p_peerId), m_actorId(p_actorId), m_displayActorIndex(p_displayActorIndex), m_roi(nullptr),
+	  m_spawned(false), m_visible(false), m_targetSpeed(0.0f), m_targetVehicleType(VEHICLE_NONE), m_targetWorldId(-1),
+	  m_lastUpdateTime(SDL_GetTicks()), m_hasReceivedUpdate(false), m_walkAnimId(0), m_idleAnimId(0),
+	  m_walkAnimCache(nullptr), m_idleAnimCache(nullptr), m_animTime(0.0f), m_idleTime(0.0f), m_idleAnimTime(0.0f),
+	  m_wasMoving(false), m_emoteAnimCache(nullptr), m_emoteTime(0.0f), m_emoteDuration(0.0f), m_emoteActive(false),
+	  m_rideAnim(nullptr), m_rideRoiMap(nullptr), m_rideRoiMapSize(0), m_rideVehicleROI(nullptr), m_vehicleROI(nullptr),
+	  m_currentVehicleType(VEHICLE_NONE)
 {
-	SDL_snprintf(m_uniqueName, sizeof(m_uniqueName), "%s_mp_%u", LegoActor::GetActorName(p_actorId), p_peerId);
+	const char* displayName = GetDisplayActorName();
+	SDL_snprintf(m_uniqueName, sizeof(m_uniqueName), "%s_mp_%u", displayName, p_peerId);
 
 	ZEROVEC3(m_targetPosition);
 	m_targetDirection[0] = 0.0f;
@@ -60,7 +62,7 @@ void RemotePlayer::Spawn(LegoWorld* p_isleWorld)
 		return;
 	}
 
-	const char* actorName = LegoActor::GetActorName(m_actorId);
+	const char* actorName = GetDisplayActorName();
 	if (!actorName) {
 		return;
 	}
@@ -105,6 +107,14 @@ void RemotePlayer::Despawn()
 
 	m_spawned = false;
 	m_visible = false;
+}
+
+const char* RemotePlayer::GetDisplayActorName() const
+{
+	if (IsValidDisplayActorIndex(m_displayActorIndex)) {
+		return CharacterManager()->GetActorName(m_displayActorIndex);
+	}
+	return LegoActor::GetActorName(m_actorId);
 }
 
 void RemotePlayer::UpdateFromNetwork(const PlayerStateMsg& p_msg)
