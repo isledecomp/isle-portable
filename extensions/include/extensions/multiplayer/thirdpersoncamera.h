@@ -30,6 +30,7 @@ public:
 	// Core hooks
 	void OnActorEnter(IslePathActor* p_actor);
 	void OnActorExit(IslePathActor* p_actor);
+	void OnCamAnimEnd(LegoPathActor* p_actor);
 
 	// Called every frame from NetworkManager::Tickle()
 	void Tick(float p_deltaTime);

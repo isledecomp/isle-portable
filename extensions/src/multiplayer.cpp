@@ -124,6 +124,13 @@ void MultiplayerExt::HandleActorExit(IslePathActor* p_actor)
 	}
 }
 
+void MultiplayerExt::HandleCamAnimEnd(LegoPathActor* p_actor)
+{
+	if (s_networkManager) {
+		s_networkManager->GetThirdPersonCamera().OnCamAnimEnd(p_actor);
+	}
+}
+
 MxBool MultiplayerExt::ShouldInvertMovement(LegoPathActor* p_actor)
 {
 	if (s_networkManager && UserActor() == p_actor) {

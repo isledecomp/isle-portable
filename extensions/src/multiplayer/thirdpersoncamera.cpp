@@ -207,6 +207,23 @@ void ThirdPersonCamera::OnActorExit(IslePathActor* p_actor)
 	}
 }
 
+void ThirdPersonCamera::OnCamAnimEnd(LegoPathActor* p_actor)
+{
+	if (!m_active) {
+		return;
+	}
+
+	// FUN_1004b6d0's PlaceActor set the ROI with standard direction
+	// (z = visual forward). The 3rd person camera needs backward-z.
+	// Flip the ROI direction, then re-setup the camera.
+	LegoROI* roi = (m_currentVehicleType == VEHICLE_NONE) ? m_playerROI : p_actor->GetROI();
+	if (roi) {
+		FlipROIDirection(roi);
+	}
+
+	SetupCamera(p_actor);
+}
+
 void ThirdPersonCamera::Tick(float p_deltaTime)
 {
 	if (!m_active) {

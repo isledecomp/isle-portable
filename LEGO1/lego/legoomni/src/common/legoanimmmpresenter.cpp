@@ -3,6 +3,7 @@
 #include "3dmanager/lego3dmanager.h"
 #include "decomp.h"
 #include "define.h"
+#include "extensions/multiplayer.h"
 #include "islepathactor.h"
 #include "legoanimationmanager.h"
 #include "legoanimpresenter.h"
@@ -19,6 +20,8 @@
 #include "mxstreamer.h"
 #include "mxtimer.h"
 #include "mxutilities.h"
+
+using namespace Extensions;
 
 DECOMP_SIZE_ASSERT(LegoAnimMMPresenter, 0x74)
 
@@ -480,6 +483,10 @@ MxBool LegoAnimMMPresenter::FUN_1004b6d0(MxLong p_time)
 		}
 
 		actor->SetActorState(LegoPathActor::c_initial);
+
+		if (m_tranInfo->m_unk0x29) {
+			Extension<MultiplayerExt>::Call(HandleCamAnimEnd, actor);
+		}
 	}
 
 	return TRUE;
