@@ -55,6 +55,7 @@ private:
 
 	bool m_enabled;
 	bool m_active;
+	bool m_roiUnflipped; // True when Disable() flipped the ROI direction; ReinitForCharacter re-applies
 	LegoROI* m_playerROI; // Borrowed, not owned
 
 	// Walk/idle state (same pattern as RemotePlayer)

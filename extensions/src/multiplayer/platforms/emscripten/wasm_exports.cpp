@@ -14,7 +14,7 @@ extern "C"
 	{
 		Multiplayer::NetworkManager* mgr = MultiplayerExt::GetNetworkManager();
 		if (mgr) {
-			mgr->SetWalkAnimation(static_cast<uint8_t>(index));
+			mgr->RequestSetWalkAnimation(static_cast<uint8_t>(index));
 		}
 	}
 
@@ -22,7 +22,7 @@ extern "C"
 	{
 		Multiplayer::NetworkManager* mgr = MultiplayerExt::GetNetworkManager();
 		if (mgr) {
-			mgr->SetIdleAnimation(static_cast<uint8_t>(index));
+			mgr->RequestSetIdleAnimation(static_cast<uint8_t>(index));
 		}
 	}
 
@@ -30,7 +30,7 @@ extern "C"
 	{
 		Multiplayer::NetworkManager* mgr = MultiplayerExt::GetNetworkManager();
 		if (mgr) {
-			mgr->SendEmote(static_cast<uint8_t>(index));
+			mgr->RequestSendEmote(static_cast<uint8_t>(index));
 		}
 	}
 
@@ -38,13 +38,7 @@ extern "C"
 	{
 		Multiplayer::NetworkManager* mgr = MultiplayerExt::GetNetworkManager();
 		if (mgr) {
-			Multiplayer::ThirdPersonCamera& cam = mgr->GetThirdPersonCamera();
-			if (cam.IsEnabled()) {
-				cam.Disable();
-			}
-			else {
-				cam.Enable();
-			}
+			mgr->RequestToggleThirdPerson();
 		}
 	}
 

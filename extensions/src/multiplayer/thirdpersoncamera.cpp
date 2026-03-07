@@ -19,8 +19,21 @@
 
 using namespace Multiplayer;
 
+// Flip the ROI's z-axis direction in place (same operation as IslePathActor::TurnAround).
+static void FlipROIDirection(LegoROI* p_roi)
+{
+	MxMatrix transform(p_roi->GetLocal2World());
+	Vector3 right(transform[0]);
+	Vector3 up(transform[1]);
+	Vector3 direction(transform[2]);
+	direction *= -1.0f;
+	right.EqualsCross(up, direction);
+	p_roi->SetLocal2World(transform);
+	p_roi->WrappedUpdateWorldData();
+}
+
 ThirdPersonCamera::ThirdPersonCamera()
-	: m_enabled(false), m_active(false), m_playerROI(nullptr), m_walkAnimId(0), m_idleAnimId(0),
+	: m_enabled(false), m_active(false), m_roiUnflipped(false), m_playerROI(nullptr), m_walkAnimId(0), m_idleAnimId(0),
 	  m_walkAnimCache(nullptr), m_idleAnimCache(nullptr), m_animTime(0.0f), m_idleTime(0.0f), m_idleAnimTime(0.0f),
 	  m_wasMoving(false), m_emoteAnimCache(nullptr), m_emoteTime(0.0f), m_emoteDuration(0.0f), m_emoteActive(false),
 	  m_currentVehicleType(VEHICLE_NONE), m_rideAnim(nullptr), m_rideRoiMap(nullptr), m_rideRoiMapSize(0),
@@ -31,13 +44,46 @@ ThirdPersonCamera::ThirdPersonCamera()
 void ThirdPersonCamera::Enable()
 {
 	m_enabled = true;
+	ReinitForCharacter();
 }
 
 void ThirdPersonCamera::Disable()
 {
 	m_enabled = false;
+
+	if (m_active && m_playerROI) {
+		LegoPathActor* userActor = UserActor();
+		LegoWorld* world = CurrentWorld();
+
+		// Undo TurnAround so the ROI z-axis points in the visual forward
+		// direction.  This keeps the 1st-person camera facing the same way
+		// as the 3rd-person camera, and ensures the network direction stays
+		// consistent (no 180-degree flip for others).
+		// For walking characters the target is m_playerROI; for vehicles it
+		// is the vehicle actor's ROI (UserActor() returns the vehicle).
+		LegoROI* turnAroundROI =
+			(m_currentVehicleType == VEHICLE_NONE) ? m_playerROI : (userActor ? userActor->GetROI() : nullptr);
+
+		if (turnAroundROI) {
+			FlipROIDirection(turnAroundROI);
+			m_roiUnflipped = true;
+		}
+
+		m_playerROI->SetVisibility(FALSE);
+		VideoManager()->Get3DManager()->Remove(*m_playerROI);
+
+		// Restore vanilla 1st-person camera (eye-height offset, same as ResetWorldTransform).
+		if (userActor && world && world->GetCameraController()) {
+			world->GetCameraController()->SetWorldTransform(
+				Mx3DPointFloat(0.0F, 1.25F, 0.0F),
+				Mx3DPointFloat(0.0F, 0.0F, 1.0F),
+				Mx3DPointFloat(0.0F, 1.0F, 0.0F)
+			);
+			userActor->TransformPointOfView();
+		}
+	}
+
 	m_active = false;
-	m_playerROI = nullptr;
 	ClearRideAnimation();
 	m_animCacheMap.clear();
 	ClearAnimCaches();
@@ -45,12 +91,19 @@ void ThirdPersonCamera::Disable()
 
 void ThirdPersonCamera::OnActorEnter(IslePathActor* p_actor)
 {
-	if (!m_enabled) {
+	LegoPathActor* userActor = UserActor();
+	if (static_cast<LegoPathActor*>(p_actor) != userActor) {
 		return;
 	}
 
-	LegoPathActor* userActor = UserActor();
-	if (static_cast<LegoPathActor*>(p_actor) != userActor) {
+	// Always track vehicle type so OnActorExit can handle exits
+	// even if Enable() was called after entering the vehicle.
+	m_currentVehicleType = DetectVehicleType(userActor);
+
+	// Enter() calls TurnAround(), so any previous undo is superseded.
+	m_roiUnflipped = false;
+
+	if (!m_enabled) {
 		return;
 	}
 
@@ -59,21 +112,14 @@ void ThirdPersonCamera::OnActorEnter(IslePathActor* p_actor)
 		return;
 	}
 
-	// Detect if we're entering a vehicle
-	int8_t vehicleType = DetectVehicleType(userActor);
-
-	if (vehicleType != VEHICLE_NONE) {
-		// Large vehicles and helicopter: stay first-person with dashboard.
-		// Track the vehicle type so OnActorExit can trigger reinit on exit.
-		if (IsLargeVehicle(vehicleType) || vehicleType == VEHICLE_HELICOPTER) {
-			// Hide the walking character ROI that we made visible earlier.
-			// Enter() doesn't call Exit() on the previous actor, so our
-			// OnActorExit never fires for the walking character.
+	if (m_currentVehicleType != VEHICLE_NONE) {
+		// Large vehicles and helicopter: stay first-person.
+		if (IsLargeVehicle(m_currentVehicleType) || m_currentVehicleType == VEHICLE_HELICOPTER) {
+			// Hide walking character ROI (Enter doesn't call Exit on it).
 			if (m_playerROI) {
 				m_playerROI->SetVisibility(FALSE);
 				VideoManager()->Get3DManager()->Remove(*m_playerROI);
 			}
-			m_currentVehicleType = vehicleType;
 			m_active = false;
 			return;
 		}
@@ -83,24 +129,26 @@ void ThirdPersonCamera::OnActorEnter(IslePathActor* p_actor)
 			return;
 		}
 
-		m_currentVehicleType = vehicleType;
-		m_active = true;
+		// Undo Enter()'s TurnAround.  Vehicles are placed with ROI z opposite
+		// to their visual forward (mesh faces -z = forward).  Enter()'s
+		// TurnAround flips ROI z to match the visual forward, which breaks
+		// the backward-z convention the 3rd-person camera relies on.
+		p_actor->TurnAround();
 
+		m_active = true;
 		SetupCamera(userActor);
-		BuildRideAnimation(vehicleType);
+		BuildRideAnimation(m_currentVehicleType);
 		return;
 	}
 
-	// Non-vehicle (walking character) entry
+	// Non-vehicle (walking character) entry — Enter() already called TurnAround.
 	m_playerROI = newROI;
-	m_currentVehicleType = VEHICLE_NONE;
+	m_roiUnflipped = false;
 	m_active = true;
 
-	// Make the player model visible (Enter() hid it for first-person)
 	m_playerROI->SetVisibility(TRUE);
 
-	// SpawnPlayer() removes the ROI from the 3D manager before calling Enter().
-	// Re-add it so the character is actually rendered in third-person mode.
+	// Re-add ROI so it renders in third-person (SpawnPlayer removes it).
 	VideoManager()->Get3DManager()->Remove(*m_playerROI);
 	VideoManager()->Get3DManager()->Add(*m_playerROI);
 
@@ -126,20 +174,27 @@ void ThirdPersonCamera::OnActorExit(IslePathActor* p_actor)
 		return;
 	}
 
-	// The hook fires at the end of Exit(), after UserActor() has been restored
-	// to the walking character. For vehicle exit, p_actor is the vehicle (not
-	// UserActor), so we check m_currentVehicleType instead of comparing actors.
+	// For vehicle exit, p_actor is the vehicle, not UserActor —
+	// check m_currentVehicleType instead.
 	if (m_currentVehicleType != VEHICLE_NONE) {
-		// Exiting a vehicle: reinitialize immediately for the walking character.
+		// When 3rd-person camera is active, movement inversion causes the
+		// vehicle to physically drive opposite to vanilla.  CalculateTransform
+		// re-inverts to keep the ROI z backward.  Exit()'s TurnAround restores
+		// the vanilla convention, but that's wrong for the visual driving
+		// direction.  Flip once more so the parked vehicle faces the way it
+		// was visually driven.
+		if (m_active) {
+			p_actor->TurnAround();
+		}
+
+		// Exiting a vehicle: reinitialize for the walking character.
 		ClearRideAnimation();
 		ClearAnimCaches();
 		m_animCacheMap.clear();
 		ReinitForCharacter();
 	}
 	else if (m_active && static_cast<LegoPathActor*>(p_actor) == UserActor()) {
-		// Exiting on foot (e.g., world transition): full teardown.
-		// Hide the player ROI and remove it from the 3D manager (we added it
-		// in OnActorEnter so the character would render in third-person).
+		// Exiting on foot: full teardown.
 		if (m_playerROI) {
 			m_playerROI->SetVisibility(FALSE);
 			VideoManager()->Get3DManager()->Remove(*m_playerROI);
@@ -179,10 +234,10 @@ void ThirdPersonCamera::Tick(float p_deltaTime)
 				m_animTime += p_deltaTime * 2000.0f;
 			}
 
-			// Use vehicle actor's transform as base (character ROI may be at old position)
+			// Use vehicle actor's transform as base.
 			MxMatrix transform(actor->GetROI()->GetLocal2World());
 
-			// Position character ROI at the vehicle so bones render at the right place
+			// Position character ROI at the vehicle for bone rendering.
 			m_playerROI->WrappedSetLocal2WorldWithWorldDataUpdate(transform);
 			m_playerROI->SetVisibility(TRUE);
 
@@ -268,8 +323,7 @@ void ThirdPersonCamera::Tick(float p_deltaTime)
 			m_idleAnimTime = 0.0f;
 		}
 		else {
-			// Use the saved clean parent transform to prevent scale
-			// accumulation (see TriggerEmote for details).
+			// Use saved clean transform to prevent scale accumulation.
 			MxMatrix transform(m_emoteParentTransform);
 
 			LegoTreeNode* root = m_emoteAnimCache->anim->GetRoot();
@@ -282,8 +336,7 @@ void ThirdPersonCamera::Tick(float p_deltaTime)
 				);
 			}
 
-			// Restore the player ROI's transform — the animation's root
-			// node (ACTOR_01) wrote a scaled value into it.
+			// Restore player ROI transform (animation root overwrote it).
 			m_playerROI->WrappedSetLocal2WorldWithWorldDataUpdate(m_emoteParentTransform);
 		}
 	}
@@ -367,13 +420,8 @@ void ThirdPersonCamera::TriggerEmote(uint8_t p_emoteId)
 	m_emoteDuration = (float) cache->anim->GetDuration();
 	m_emoteActive = true;
 
-	// Save the clean parent transform before the emote starts.
-	// The emote animation's root node (ACTOR_01) maps to the player ROI,
-	// so ApplyAnimationTransformation writes a scaled transform into
-	// m_playerROI->m_local2world each frame.  When the character is
-	// stationary the engine's CalculateTransform does not run, so the ROI
-	// is never reset — causing the scale to compound across frames.
-	// Using the saved clean transform as parent prevents this feedback.
+	// Save clean transform to prevent scale accumulation during emote
+	// (the animation root writes scaled values into the ROI each frame).
 	m_emoteParentTransform = m_playerROI->GetLocal2World();
 }
 
@@ -383,7 +431,7 @@ void ThirdPersonCamera::OnWorldEnabled(LegoWorld* p_world)
 		return;
 	}
 
-	// Clear stale caches (animation presenters may have been recreated)
+	// Animation presenters may have been recreated.
 	m_animCacheMap.clear();
 	ClearAnimCaches();
 
@@ -397,6 +445,7 @@ void ThirdPersonCamera::OnWorldDisabled(LegoWorld* p_world)
 	}
 
 	m_active = false;
+	m_roiUnflipped = false;
 	m_playerROI = nullptr;
 	ClearRideAnimation();
 	m_animCacheMap.clear();
@@ -423,10 +472,8 @@ void ThirdPersonCamera::SetupCamera(LegoPathActor* p_actor)
 		return;
 	}
 
-	// After Enter()'s TurnAround, the ROI direction is negated.
-	// The mesh faces -z (local) = +path_forward (correct visual facing).
-	// +z in ROI-local is the negated direction, i.e. behind the visual model.
-	// Movement inversion is handled by ShouldInvertMovement in CalculateTransform.
+	// Camera behind the character; +z in ROI-local is behind the model
+	// after TurnAround. Movement inversion in CalculateTransform corrects controls.
 	Mx3DPointFloat at(0.0f, 2.5f, 3.0f);
 	Mx3DPointFloat dir(0.0f, -0.3f, -1.0f);
 	Mx3DPointFloat up(0.0f, 1.0f, 0.0f);
@@ -462,7 +509,7 @@ void ThirdPersonCamera::BuildRideAnimation(int8_t p_vehicleType)
 		return;
 	}
 
-	// Create variant ROI from base vehicle name, rename for anim tree matching
+	// Create variant ROI, rename to match animation tree.
 	const char* baseName = g_vehicleROINames[p_vehicleType];
 	m_rideVehicleROI = CharacterManager()->CreateAutoROI("tp_vehicle", baseName, FALSE);
 	if (m_rideVehicleROI) {
@@ -531,6 +578,22 @@ void ThirdPersonCamera::ReinitForCharacter()
 			m_active = false;
 			return;
 		}
+
+		// Undo TurnAround on the vehicle ROI so the backward-z convention
+		// is restored.  This handles both entering from 1st-person (Enter's
+		// TurnAround still in effect) and the Disable→Enable cycle (Disable
+		// re-applied TurnAround).  In both cases ROI z currently matches
+		// the visual forward and needs to be flipped back.
+		{
+			LegoROI* vehicleROI = userActor->GetROI();
+			if (vehicleROI) {
+				FlipROIDirection(vehicleROI);
+			}
+			m_roiUnflipped = false;
+		}
+
+		VideoManager()->Get3DManager()->Remove(*m_playerROI);
+		VideoManager()->Get3DManager()->Add(*m_playerROI);
 		m_active = true;
 		SetupCamera(userActor);
 		BuildRideAnimation(vehicleType);
@@ -539,9 +602,17 @@ void ThirdPersonCamera::ReinitForCharacter()
 
 	// Reinitializing for walking character
 	m_playerROI = roi;
+
+	// Re-apply TurnAround if we undid it in Disable().
+	// Only set the local matrix here; the subsequent Add() will propagate world data.
+	if (m_roiUnflipped) {
+		FlipROIDirection(m_playerROI);
+		m_roiUnflipped = false;
+	}
+
 	m_playerROI->SetVisibility(TRUE);
 
-	// Ensure the ROI is in the 3D manager so it gets rendered
+	// Ensure the ROI is in the 3D manager.
 	VideoManager()->Get3DManager()->Remove(*m_playerROI);
 	VideoManager()->Get3DManager()->Add(*m_playerROI);
 

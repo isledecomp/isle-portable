@@ -9,6 +9,7 @@
 #include "mxcore.h"
 #include "mxtypes.h"
 
+#include <atomic>
 #include <cstdint>
 #include <map>
 #include <memory>
@@ -47,6 +48,13 @@ public:
 	void SetIdleAnimation(uint8_t p_index);
 	void SendEmote(uint8_t p_emoteId);
 
+	// Thread-safe request methods for cross-thread callers (e.g. WASM exports
+	// running on the browser main thread).  Deferred to the game thread in Tickle().
+	void RequestToggleThirdPerson() { m_pendingToggleThirdPerson.store(true, std::memory_order_relaxed); }
+	void RequestSetWalkAnimation(uint8_t p_index) { m_pendingWalkAnim.store(p_index, std::memory_order_relaxed); }
+	void RequestSetIdleAnimation(uint8_t p_index) { m_pendingIdleAnim.store(p_index, std::memory_order_relaxed); }
+	void RequestSendEmote(uint8_t p_emoteId) { m_pendingEmote.store(p_emoteId, std::memory_order_relaxed); }
+
 	void OnWorldEnabled(LegoWorld* p_world);
 	void OnWorldDisabled(LegoWorld* p_world);
 
@@ -71,6 +79,7 @@ private:
 	void HandleHostAssign(const HostAssignMsg& p_msg);
 	void HandleEmote(const EmoteMsg& p_msg);
 
+	void ProcessPendingRequests();
 	void RemoveRemotePlayer(uint32_t p_peerId);
 	void RemoveAllRemotePlayers();
 
@@ -95,6 +104,11 @@ private:
 	uint8_t m_localIdleAnimId;
 	bool m_inIsleWorld;
 	bool m_registered;
+
+	std::atomic<bool> m_pendingToggleThirdPerson;
+	std::atomic<int> m_pendingWalkAnim;
+	std::atomic<int> m_pendingIdleAnim;
+	std::atomic<int> m_pendingEmote;
 
 	static const uint32_t BROADCAST_INTERVAL_MS = 66; // ~15Hz
 	static const uint32_t TIMEOUT_MS = 5000;          // 5 second timeout

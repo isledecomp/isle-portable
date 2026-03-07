@@ -68,15 +68,13 @@ void WorldStateSync::HandleWorldSnapshot(const uint8_t* p_data, size_t p_length)
 
 	const uint8_t* snapshotData = p_data + sizeof(WorldSnapshotMsg);
 
-	// Apply the snapshot using LegoMemory with the existing Read() methods
+	// Apply the snapshot via LegoMemory.
 	LegoMemory memory((void*) snapshotData, header.dataLength);
 
 	PlantManager()->Read(&memory);
 	BuildingManager()->Read(&memory);
 
-	// If we're in the Isle world, update entity visuals after applying the snapshot.
-	// Read() calls AdjustHeight() which updates data arrays, but doesn't update
-	// entity positions. We need to reload world info to refresh visuals.
+	// Read() updates data arrays but not entity positions; reload to refresh.
 	if (m_inIsleWorld) {
 		LegoWorld* world = CurrentWorld();
 		if (world && world->GetWorldId() == LegoOmni::e_act1) {
@@ -87,7 +85,7 @@ void WorldStateSync::HandleWorldSnapshot(const uint8_t* p_data, size_t p_length)
 		}
 	}
 
-	// Apply any world events that were queued between snapshot request and response
+	// Replay events queued while snapshot was in flight.
 	for (const auto& evt : m_pendingWorldEvents) {
 		ApplyWorldEvent(evt.entityType, evt.changeType, evt.entityIndex);
 	}
@@ -183,10 +181,7 @@ void WorldStateSync::SendWorldSnapshot(uint32_t p_targetPeerId)
 		return;
 	}
 
-	// Serialize plant + building state into a buffer using existing Write() methods
-	// Max sizes: 81 plants * (1+4+4+1+1+1) = 81*12 = 972 bytes
-	//            16 buildings * (4+4+1+1) = 16*10 = 160 bytes + 1 byte nextVariant
-	// Total ~1133 bytes. Use 4096 for safety.
+	// Serialize plant + building state (~1133 bytes max, use 4096 for safety).
 	uint8_t stateBuffer[4096];
 	LegoMemory memory(stateBuffer, sizeof(stateBuffer));
 

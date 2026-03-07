@@ -31,7 +31,8 @@ void NetworkManager::SendMessage(const T& p_msg)
 NetworkManager::NetworkManager()
 	: m_transport(nullptr), m_callbacks(nullptr), m_localPeerId(0), m_hostPeerId(0), m_sequence(0),
 	  m_lastBroadcastTime(0), m_lastValidActorId(0), m_localWalkAnimId(0), m_localIdleAnimId(0), m_inIsleWorld(false),
-	  m_registered(false)
+	  m_registered(false), m_pendingToggleThirdPerson(false), m_pendingWalkAnim(-1), m_pendingIdleAnim(-1),
+	  m_pendingEmote(-1)
 {
 }
 
@@ -42,6 +43,7 @@ NetworkManager::~NetworkManager()
 
 MxResult NetworkManager::Tickle()
 {
+	ProcessPendingRequests();
 	m_thirdPersonCamera.Tick(0.016f);
 
 	if (!m_transport) {
@@ -50,9 +52,8 @@ MxResult NetworkManager::Tickle()
 
 	uint32_t now = SDL_GetTicks();
 
-	// Broadcast BEFORE receiving: the Send proxy call gives the main thread a
-	// chance to process incoming WebSocket onmessage events before we drain
-	// the queue with Receive.
+	// Broadcast before receiving so the Send proxy lets the main thread
+	// process WebSocket events before we drain the queue.
 	if (m_transport->IsConnected() && (now - m_lastBroadcastTime) >= BROADCAST_INTERVAL_MS) {
 		BroadcastLocalState();
 		m_lastBroadcastTime = now;
@@ -61,8 +62,7 @@ MxResult NetworkManager::Tickle()
 	ProcessIncomingPackets();
 	UpdateRemotePlayers(0.016f);
 
-	// Re-read time because ProcessIncomingPackets updates player timestamps
-	// via SDL_GetTicks(), which may be newer than the 'now' captured above.
+	// Re-read time; ProcessIncomingPackets may have advanced SDL_GetTicks.
 	uint32_t timeoutNow = SDL_GetTicks();
 	std::vector<uint32_t> timedOut;
 	for (auto& [peerId, player] : m_remotePlayers) {
@@ -180,6 +180,33 @@ MxBool NetworkManager::HandleEntityMutation(LegoEntity* p_entity, MxU8 p_changeT
 	return m_worldSync.HandleEntityMutation(p_entity, p_changeType);
 }
 
+void NetworkManager::ProcessPendingRequests()
+{
+	if (m_pendingToggleThirdPerson.exchange(false, std::memory_order_relaxed)) {
+		if (m_thirdPersonCamera.IsEnabled()) {
+			m_thirdPersonCamera.Disable();
+		}
+		else {
+			m_thirdPersonCamera.Enable();
+		}
+	}
+
+	int walkAnim = m_pendingWalkAnim.exchange(-1, std::memory_order_relaxed);
+	if (walkAnim >= 0) {
+		SetWalkAnimation(static_cast<uint8_t>(walkAnim));
+	}
+
+	int idleAnim = m_pendingIdleAnim.exchange(-1, std::memory_order_relaxed);
+	if (idleAnim >= 0) {
+		SetIdleAnimation(static_cast<uint8_t>(idleAnim));
+	}
+
+	int emote = m_pendingEmote.exchange(-1, std::memory_order_relaxed);
+	if (emote >= 0) {
+		SendEmote(static_cast<uint8_t>(emote));
+	}
+}
+
 void NetworkManager::BroadcastLocalState()
 {
 	if (!m_transport) {
@@ -223,9 +250,10 @@ void NetworkManager::BroadcastLocalState()
 	SDL_memcpy(msg.position, pos, sizeof(msg.position));
 	SDL_memcpy(msg.direction, dir, sizeof(msg.direction));
 
-	// Third-person camera: ROI direction is opposite to actual movement direction
-	// (ShouldInvertMovement preserves TurnAround convention). Negate so remote
-	// players receive the true movement-facing direction.
+	// When 3rd-person camera is active, ShouldInvertMovement causes movement
+	// inversion, and CalculateTransform re-inverts to keep ROI z backward.
+	// Negate to send the visual-forward direction that remote players expect.
+	// RemotePlayer::UpdateTransform negates again to restore backward-z.
 	if (m_thirdPersonCamera.IsActive()) {
 		msg.direction[0] = -msg.direction[0];
 		msg.direction[1] = -msg.direction[1];

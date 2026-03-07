@@ -146,8 +146,7 @@ size_t WebSocketTransport::Receive(std::function<void(const uint8_t*, size_t)> p
 		return 0;
 	}
 
-	// Drain all queued messages in a single proxy call to avoid starving the main thread event loop.
-	// Each message is concatenated as [4-byte LE length][payload...].
+	// Drain queued messages in one proxy call: [4-byte LE length][payload...] each.
 	// clang-format off
 	int totalBytes = MAIN_THREAD_EM_ASM_INT({
 		var socketId = $0;
