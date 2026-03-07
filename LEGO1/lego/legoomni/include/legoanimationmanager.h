@@ -199,6 +199,8 @@ public:
 
 	LEGO1_EXPORT static void configureLegoAnimationManager(MxS32 p_legoAnimationManagerConfig);
 
+	void SetMaxAllowedExtras(MxU32 p_maxAllowedExtras) { m_maxAllowedExtras = p_maxAllowedExtras; }
+
 	// SYNTHETIC: LEGO1 0x1005ed10
 	// LegoAnimationManager::`scalar deleting destructor'
 

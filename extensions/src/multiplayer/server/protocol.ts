@@ -15,8 +15,8 @@ export const MSG_WORLD_EVENT_REQUEST = 8;
 export const MSG_CUSTOMIZE = 10;
 export const MSG_ASSIGN_ID = 0xff;
 
-// AssignIdMsg: compact server-only message — type(1) + peerId(4)
-const ASSIGN_ID_SIZE = 1 + 4;
+// AssignIdMsg: compact server-only message — type(1) + peerId(4) + maxActors(1)
+const ASSIGN_ID_SIZE = 1 + 4 + 1;
 
 // HostAssignMsg: header(9) + hostPeerId(4)
 const HOST_ASSIGN_SIZE = HEADER_SIZE + 4;
@@ -25,11 +25,12 @@ const HOST_ASSIGN_SIZE = HEADER_SIZE + 4;
 export const SNAPSHOT_TARGET_OFFSET = HEADER_SIZE;
 export const SNAPSHOT_MIN_SIZE = HEADER_SIZE + 4 + 2;
 
-export function createAssignIdMsg(peerId: number): ArrayBuffer {
+export function createAssignIdMsg(peerId: number, maxActors: number): ArrayBuffer {
 	const buf = new ArrayBuffer(ASSIGN_ID_SIZE);
 	const view = new DataView(buf);
 	view.setUint8(0, MSG_ASSIGN_ID);
 	view.setUint32(1, peerId, true);
+	view.setUint8(5, maxActors);
 	return buf;
 }
 

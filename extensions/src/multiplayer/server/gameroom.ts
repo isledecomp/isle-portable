@@ -25,6 +25,7 @@ export class GameRoom implements DurableObject {
 	private nextPeerId = 1;
 	private hostPeerId = 0;
 	private maxPlayers = 5;
+	private maxActors = 5;
 
 	constructor(
 		private state: DurableObjectState,
@@ -53,7 +54,7 @@ export class GameRoom implements DurableObject {
 		server.accept();
 		this.connections.set(peerId, server);
 
-		server.send(createAssignIdMsg(peerId));
+		server.send(createAssignIdMsg(peerId, this.maxActors));
 		this.assignHostIfNeeded(peerId, server);
 
 		server.addEventListener("message", (event) =>
@@ -80,6 +81,7 @@ export class GameRoom implements DurableObject {
 			try {
 				const body = (await request.json()) as {
 					maxPlayers?: number;
+					maxActors?: number;
 				};
 				const ceiling = this.env.MAX_PLAYERS_CEILING
 					? Number(this.env.MAX_PLAYERS_CEILING)
@@ -90,11 +92,17 @@ export class GameRoom implements DurableObject {
 						Math.min(body.maxPlayers, ceiling)
 					);
 				}
+				if (body.maxActors !== undefined) {
+					this.maxActors = Math.max(
+						5,
+						Math.min(body.maxActors, 40)
+					);
+				}
 			} catch {
 				// Ignore parse errors, keep defaults
 			}
 			return new Response(
-				JSON.stringify({ maxPlayers: this.maxPlayers }),
+				JSON.stringify({ maxPlayers: this.maxPlayers, maxActors: this.maxActors }),
 				{
 					headers: {
 						"Content-Type": "application/json",
@@ -109,6 +117,7 @@ export class GameRoom implements DurableObject {
 				JSON.stringify({
 					players: this.connections.size,
 					maxPlayers: this.maxPlayers,
+					maxActors: this.maxActors,
 				}),
 				{
 					headers: {

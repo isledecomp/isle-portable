@@ -2,6 +2,7 @@
 
 #include "extensions/multiplayer/charactercloner.h"
 #include "extensions/multiplayer/charactercustomizer.h"
+#include "legoanimationmanager.h"
 #include "legogamestate.h"
 #include "legomain.h"
 #include "legopathactor.h"
@@ -340,6 +341,15 @@ void NetworkManager::ProcessIncomingPackets()
 				SDL_memcpy(&assignedId, data + 1, sizeof(uint32_t));
 				m_localPeerId = assignedId;
 				m_worldSync.SetLocalPeerId(assignedId);
+			}
+			if (length >= 6) {
+				uint8_t maxActors = data[5];
+				if (maxActors >= 5 && maxActors <= 40) {
+					LegoAnimationManager::configureLegoAnimationManager(maxActors);
+					if (AnimationManager()) {
+						AnimationManager()->SetMaxAllowedExtras(maxActors);
+					}
+				}
 			}
 			break;
 		}
