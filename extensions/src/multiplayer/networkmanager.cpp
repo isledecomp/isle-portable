@@ -1,5 +1,6 @@
 #include "extensions/multiplayer/networkmanager.h"
 
+#include "legogamestate.h"
 #include "legomain.h"
 #include "legopathactor.h"
 #include "legoworld.h"
@@ -32,8 +33,8 @@ NetworkManager::NetworkManager()
 	: m_transport(nullptr), m_callbacks(nullptr), m_localPeerId(0), m_hostPeerId(0), m_sequence(0),
 	  m_lastBroadcastTime(0), m_lastValidActorId(0), m_localWalkAnimId(0), m_localIdleAnimId(0),
 	  m_localDisplayActorIndex(DISPLAY_ACTOR_NONE), m_inIsleWorld(false),
-	  m_registered(false), m_pendingToggleThirdPerson(false), m_pendingWalkAnim(-1), m_pendingIdleAnim(-1),
-	  m_pendingEmote(-1)
+	  m_registered(false), m_pendingToggleThirdPerson(false), m_pendingToggleNameBubbles(false),
+	  m_pendingWalkAnim(-1), m_pendingIdleAnim(-1), m_pendingEmote(-1), m_showNameBubbles(true)
 {
 }
 
@@ -149,6 +150,7 @@ void NetworkManager::OnWorldEnabled(LegoWorld* p_world)
 
 				if (player->GetWorldId() == (int8_t) LegoOmni::e_act1) {
 					player->SetVisible(true);
+					player->SetNameBubbleVisible(m_showNameBubbles);
 				}
 			}
 		}
@@ -170,6 +172,7 @@ void NetworkManager::OnWorldDisabled(LegoWorld* p_world)
 		m_worldSync.SetInIsleWorld(false);
 		for (auto& [peerId, player] : m_remotePlayers) {
 			player->SetVisible(false);
+			player->SetNameBubbleVisible(false);
 		}
 
 		NotifyPlayerCountChanged();
@@ -205,6 +208,13 @@ void NetworkManager::ProcessPendingRequests()
 	int emote = m_pendingEmote.exchange(-1, std::memory_order_relaxed);
 	if (emote >= 0) {
 		SendEmote(static_cast<uint8_t>(emote));
+	}
+
+	if (m_pendingToggleNameBubbles.exchange(false, std::memory_order_relaxed)) {
+		m_showNameBubbles = !m_showNameBubbles;
+		for (auto& [peerId, player] : m_remotePlayers) {
+			player->SetNameBubbleVisible(m_showNameBubbles);
+		}
 	}
 }
 
@@ -265,6 +275,26 @@ void NetworkManager::BroadcastLocalState()
 	msg.speed = speed;
 	msg.walkAnimId = m_localWalkAnimId;
 	msg.idleAnimId = m_localIdleAnimId;
+
+	// Convert Username letters (0-25 = A-Z) to ASCII string.
+	// The active player is always at m_players[0] after RegisterPlayer/SwitchPlayer.
+	SDL_memset(msg.name, 0, sizeof(msg.name));
+	LegoGameState* gs = GameState();
+	if (gs && gs->m_playerCount > 0) {
+		const LegoGameState::Username& username = gs->m_players[0];
+		for (int i = 0; i < 7; i++) {
+			MxS16 letter = username.m_letters[i];
+			if (letter < 0) {
+				break;
+			}
+			if (letter <= 25) {
+				msg.name[i] = (char) ('A' + letter);
+			}
+			else {
+				msg.name[i] = '?';
+			}
+		}
+	}
 
 	uint8_t displayIndex = m_localDisplayActorIndex;
 	if (displayIndex == DISPLAY_ACTOR_NONE) {
@@ -436,6 +466,7 @@ void NetworkManager::HandleState(const PlayerStateMsg& p_msg)
 	bool bothInIsle = m_inIsleWorld && (p_msg.worldId == (int8_t) LegoOmni::e_act1);
 	if (it->second->IsSpawned()) {
 		it->second->SetVisible(bothInIsle);
+		it->second->SetNameBubbleVisible(bothInIsle && m_showNameBubbles);
 	}
 
 	bool wasInIsle = (oldWorldId == (int8_t) LegoOmni::e_act1);

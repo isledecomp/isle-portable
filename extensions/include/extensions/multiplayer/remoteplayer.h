@@ -16,6 +16,8 @@ class LegoTreeNode;
 namespace Multiplayer
 {
 
+class NameBubbleRenderer;
+
 class RemotePlayer {
 public:
 	RemotePlayer(uint32_t p_peerId, uint8_t p_actorId, uint8_t p_displayActorIndex);
@@ -35,9 +37,11 @@ public:
 	bool IsVisible() const { return m_visible; }
 	int8_t GetWorldId() const { return m_targetWorldId; }
 	uint32_t GetLastUpdateTime() const { return m_lastUpdateTime; }
-
 	void SetVisible(bool p_visible);
 	void TriggerEmote(uint8_t p_emoteId);
+	void SetNameBubbleVisible(bool p_visible);
+	void CreateNameBubble();
+	void DestroyNameBubble();
 
 private:
 	using AnimCache = AnimUtils::AnimCache;
@@ -54,6 +58,7 @@ private:
 	uint8_t m_actorId;
 	uint8_t m_displayActorIndex;
 	char m_uniqueName[32];
+	char m_displayName[8];
 
 	LegoROI* m_roi;
 	bool m_spawned;
@@ -99,6 +104,8 @@ private:
 
 	LegoROI* m_vehicleROI;
 	int8_t m_currentVehicleType;
+
+	NameBubbleRenderer* m_nameBubble;
 };
 
 } // namespace Multiplayer

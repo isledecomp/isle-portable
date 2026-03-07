@@ -55,6 +55,9 @@ public:
 	void RequestSetWalkAnimation(uint8_t p_index) { m_pendingWalkAnim.store(p_index, std::memory_order_relaxed); }
 	void RequestSetIdleAnimation(uint8_t p_index) { m_pendingIdleAnim.store(p_index, std::memory_order_relaxed); }
 	void RequestSendEmote(uint8_t p_emoteId) { m_pendingEmote.store(p_emoteId, std::memory_order_relaxed); }
+	void RequestToggleNameBubbles() { m_pendingToggleNameBubbles.store(true, std::memory_order_relaxed); }
+
+	bool GetShowNameBubbles() const { return m_showNameBubbles; }
 
 	void OnWorldEnabled(LegoWorld* p_world);
 	void OnWorldDisabled(LegoWorld* p_world);
@@ -108,9 +111,12 @@ private:
 	bool m_registered;
 
 	std::atomic<bool> m_pendingToggleThirdPerson;
+	std::atomic<bool> m_pendingToggleNameBubbles;
 	std::atomic<int> m_pendingWalkAnim;
 	std::atomic<int> m_pendingIdleAnim;
 	std::atomic<int> m_pendingEmote;
+
+	bool m_showNameBubbles;
 
 	static const uint32_t BROADCAST_INTERVAL_MS = 66; // ~15Hz
 	static const uint32_t TIMEOUT_MS = 5000;          // 5 second timeout

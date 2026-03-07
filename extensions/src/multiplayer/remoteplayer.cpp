@@ -1,5 +1,7 @@
 #include "extensions/multiplayer/remoteplayer.h"
 
+#include "extensions/multiplayer/namebubblerenderer.h"
+
 #include "3dmanager/lego3dmanager.h"
 #include "anim/legoanim.h"
 #include "extensions/multiplayer/charactercloner.h"
@@ -14,6 +16,7 @@
 #include "realtime/realtime.h"
 #include "roi/legoroi.h"
 
+#include <SDL3/SDL_log.h>
 #include <SDL3/SDL_stdinc.h>
 #include <SDL3/SDL_timer.h>
 #include <cmath>
@@ -28,8 +31,9 @@ RemotePlayer::RemotePlayer(uint32_t p_peerId, uint8_t p_actorId, uint8_t p_displ
 	  m_walkAnimCache(nullptr), m_idleAnimCache(nullptr), m_animTime(0.0f), m_idleTime(0.0f), m_idleAnimTime(0.0f),
 	  m_wasMoving(false), m_emoteAnimCache(nullptr), m_emoteTime(0.0f), m_emoteDuration(0.0f), m_emoteActive(false),
 	  m_rideAnim(nullptr), m_rideRoiMap(nullptr), m_rideRoiMapSize(0), m_rideVehicleROI(nullptr), m_vehicleROI(nullptr),
-	  m_currentVehicleType(VEHICLE_NONE)
+	  m_currentVehicleType(VEHICLE_NONE), m_nameBubble(nullptr)
 {
+	m_displayName[0] = '\0';
 	const char* displayName = GetDisplayActorName();
 	SDL_snprintf(m_uniqueName, sizeof(m_uniqueName), "%s_mp_%u", displayName, p_peerId);
 
@@ -82,6 +86,11 @@ void RemotePlayer::Spawn(LegoWorld* p_isleWorld)
 	// Build initial walk and idle animation caches
 	m_walkAnimCache = GetOrBuildAnimCache(g_walkAnimNames[m_walkAnimId]);
 	m_idleAnimCache = GetOrBuildAnimCache(g_idleAnimNames[m_idleAnimId]);
+
+	// Create name bubble if we already have a name
+	if (m_displayName[0] != '\0') {
+		CreateNameBubble();
+	}
 }
 
 void RemotePlayer::Despawn()
@@ -90,6 +99,7 @@ void RemotePlayer::Despawn()
 		return;
 	}
 
+	DestroyNameBubble();
 	ExitVehicle();
 
 	if (m_roi) {
@@ -136,6 +146,27 @@ void RemotePlayer::UpdateFromNetwork(const PlayerStateMsg& p_msg)
 		m_hasReceivedUpdate = true;
 	}
 
+	// Update display name (can change when player switches save file)
+	char newName[8];
+	SDL_memcpy(newName, p_msg.name, sizeof(newName));
+	newName[sizeof(newName) - 1] = '\0';
+	if (SDL_strcmp(m_displayName, newName) != 0) {
+		SDL_Log(
+			"RemotePlayer[%u] name changed: '%s' -> '%s' (spawned=%d)",
+			m_peerId,
+			m_displayName,
+			newName,
+			m_spawned
+		);
+		SDL_memcpy(m_displayName, newName, sizeof(m_displayName));
+
+		// Recreate bubble with new name (or create for the first time)
+		if (m_spawned) {
+			DestroyNameBubble();
+			CreateNameBubble();
+		}
+	}
+
 	// Swap walk animation if changed
 	if (p_msg.walkAnimId != m_walkAnimId && p_msg.walkAnimId < g_walkAnimCount) {
 		m_walkAnimId = p_msg.walkAnimId;
@@ -158,6 +189,11 @@ void RemotePlayer::Tick(float p_deltaTime)
 	UpdateVehicleState();
 	UpdateTransform(p_deltaTime);
 	UpdateAnimation(p_deltaTime);
+
+	// Update name bubble position and billboard orientation
+	if (m_nameBubble) {
+		m_nameBubble->Update(m_roi);
+	}
 }
 
 void RemotePlayer::ReAddToScene()
@@ -486,4 +522,29 @@ void RemotePlayer::ExitVehicle()
 	m_currentVehicleType = VEHICLE_NONE;
 	m_animTime = 0.0f;
 	m_wasMoving = false;
+}
+
+void RemotePlayer::CreateNameBubble()
+{
+	if (m_nameBubble || m_displayName[0] == '\0') {
+		return;
+	}
+
+	m_nameBubble = new NameBubbleRenderer();
+	m_nameBubble->Create(m_displayName);
+}
+
+void RemotePlayer::DestroyNameBubble()
+{
+	if (m_nameBubble) {
+		delete m_nameBubble;
+		m_nameBubble = nullptr;
+	}
+}
+
+void RemotePlayer::SetNameBubbleVisible(bool p_visible)
+{
+	if (m_nameBubble) {
+		m_nameBubble->SetVisible(p_visible);
+	}
 }

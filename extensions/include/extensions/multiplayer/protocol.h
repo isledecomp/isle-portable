@@ -81,6 +81,7 @@ struct PlayerStateMsg {
 	float speed;
 	uint8_t walkAnimId; // Index into walk animation table (0 = default)
 	uint8_t idleAnimId; // Index into idle animation table (0 = default)
+	char name[8];       // Player display name (7 chars + null terminator)
 	uint8_t displayActorIndex; // Index into g_actorInfoInit (0-65)
 };
 

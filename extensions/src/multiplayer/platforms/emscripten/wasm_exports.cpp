@@ -42,6 +42,14 @@ extern "C"
 		}
 	}
 
+	EMSCRIPTEN_KEEPALIVE void mp_toggle_name_bubbles()
+	{
+		Multiplayer::NetworkManager* mgr = MultiplayerExt::GetNetworkManager();
+		if (mgr) {
+			mgr->RequestToggleNameBubbles();
+		}
+	}
+
 } // extern "C"
 
 #endif

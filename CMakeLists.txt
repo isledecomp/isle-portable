@@ -534,6 +534,7 @@ if (ISLE_EXTENSIONS)
     extensions/src/multiplayer.cpp
     extensions/src/multiplayer/animutils.cpp
     extensions/src/multiplayer/charactercloner.cpp
+    extensions/src/multiplayer/namebubblerenderer.cpp
     extensions/src/multiplayer/networkmanager.cpp
     extensions/src/multiplayer/protocol.cpp
     extensions/src/multiplayer/remoteplayer.cpp
