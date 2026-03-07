@@ -42,6 +42,8 @@ NetworkManager::~NetworkManager()
 
 MxResult NetworkManager::Tickle()
 {
+	m_thirdPersonCamera.Tick(0.016f);
+
 	if (!m_transport) {
 		return SUCCESS;
 	}
@@ -134,6 +136,8 @@ void NetworkManager::OnWorldEnabled(LegoWorld* p_world)
 		m_registered = true;
 	}
 
+	m_thirdPersonCamera.OnWorldEnabled(p_world);
+
 	if (p_world->GetWorldId() == LegoOmni::e_act1) {
 		m_inIsleWorld = true;
 		m_worldSync.SetInIsleWorld(true);
@@ -157,6 +161,8 @@ void NetworkManager::OnWorldDisabled(LegoWorld* p_world)
 	if (!p_world) {
 		return;
 	}
+
+	m_thirdPersonCamera.OnWorldDisabled(p_world);
 
 	if (p_world->GetWorldId() == LegoOmni::e_act1) {
 		m_inIsleWorld = false;
@@ -213,9 +219,19 @@ void NetworkManager::BroadcastLocalState()
 	msg.header = {MSG_STATE, m_localPeerId, m_sequence++};
 	msg.actorId = actorId;
 	msg.worldId = (int8_t) currentWorld->GetWorldId();
-	msg.vehicleType = DetectLocalVehicleType();
+	msg.vehicleType = DetectVehicleType(userActor);
 	SDL_memcpy(msg.position, pos, sizeof(msg.position));
 	SDL_memcpy(msg.direction, dir, sizeof(msg.direction));
+
+	// Third-person camera: ROI direction is opposite to actual movement direction
+	// (ShouldInvertMovement preserves TurnAround convention). Negate so remote
+	// players receive the true movement-facing direction.
+	if (m_thirdPersonCamera.IsActive()) {
+		msg.direction[0] = -msg.direction[0];
+		msg.direction[1] = -msg.direction[1];
+		msg.direction[2] = -msg.direction[2];
+	}
+
 	SDL_memcpy(msg.up, up, sizeof(msg.up));
 	msg.speed = speed;
 	msg.walkAnimId = m_localWalkAnimId;
@@ -407,6 +423,7 @@ void NetworkManager::SetWalkAnimation(uint8_t p_index)
 {
 	if (p_index < g_walkAnimCount) {
 		m_localWalkAnimId = p_index;
+		m_thirdPersonCamera.SetWalkAnimId(p_index);
 	}
 }
 
@@ -414,6 +431,7 @@ void NetworkManager::SetIdleAnimation(uint8_t p_index)
 {
 	if (p_index < g_idleAnimCount) {
 		m_localIdleAnimId = p_index;
+		m_thirdPersonCamera.SetIdleAnimId(p_index);
 	}
 }
 
@@ -422,6 +440,8 @@ void NetworkManager::SendEmote(uint8_t p_emoteId)
 	if (p_emoteId >= g_emoteAnimCount) {
 		return;
 	}
+
+	m_thirdPersonCamera.TriggerEmote(p_emoteId);
 
 	EmoteMsg msg{};
 	msg.header = {MSG_EMOTE, m_localPeerId, m_sequence++};
@@ -476,31 +496,3 @@ void NetworkManager::NotifyPlayerCountChanged()
 	m_callbacks->OnPlayerCountChanged(count);
 }
 
-int8_t NetworkManager::DetectLocalVehicleType()
-{
-	static const struct {
-		const char* className;
-		int8_t vehicleType;
-	} vehicleMap[] = {
-		{"Helicopter", VEHICLE_HELICOPTER},
-		{"Jetski", VEHICLE_JETSKI},
-		{"DuneBuggy", VEHICLE_DUNEBUGGY},
-		{"Bike", VEHICLE_BIKE},
-		{"SkateBoard", VEHICLE_SKATEBOARD},
-		{"Motorcycle", VEHICLE_MOTOCYCLE},
-		{"TowTrack", VEHICLE_TOWTRACK},
-		{"Ambulance", VEHICLE_AMBULANCE},
-	};
-
-	LegoPathActor* actor = UserActor();
-	if (!actor) {
-		return VEHICLE_NONE;
-	}
-
-	for (const auto& entry : vehicleMap) {
-		if (actor->IsA(entry.className)) {
-			return entry.vehicleType;
-		}
-	}
-	return VEHICLE_NONE;
-}

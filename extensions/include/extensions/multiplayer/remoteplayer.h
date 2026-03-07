@@ -1,5 +1,6 @@
 #pragma once
 
+#include "extensions/multiplayer/animutils.h"
 #include "extensions/multiplayer/protocol.h"
 #include "mxtypes.h"
 
@@ -37,53 +38,8 @@ public:
 	void TriggerEmote(uint8_t p_emoteId);
 
 private:
-	// Cached ROI map entry for an animation
-	struct AnimCache {
-		LegoAnim* anim;
-		LegoROI** roiMap;
-		MxU32 roiMapSize;
+	using AnimCache = AnimUtils::AnimCache;
 
-		AnimCache() : anim(nullptr), roiMap(nullptr), roiMapSize(0) {}
-		~AnimCache()
-		{
-			if (roiMap) {
-				delete[] roiMap;
-			}
-		}
-
-		AnimCache(const AnimCache&) = delete;
-		AnimCache& operator=(const AnimCache&) = delete;
-		AnimCache(AnimCache&& p_other) noexcept
-			: anim(p_other.anim), roiMap(p_other.roiMap), roiMapSize(p_other.roiMapSize)
-		{
-			p_other.roiMap = nullptr;
-			p_other.roiMapSize = 0;
-			p_other.anim = nullptr;
-		}
-		AnimCache& operator=(AnimCache&& p_other) noexcept
-		{
-			if (this != &p_other) {
-				if (roiMap) {
-					delete[] roiMap;
-				}
-				anim = p_other.anim;
-				roiMap = p_other.roiMap;
-				roiMapSize = p_other.roiMapSize;
-				p_other.roiMap = nullptr;
-				p_other.roiMapSize = 0;
-				p_other.anim = nullptr;
-			}
-			return *this;
-		}
-	};
-
-	void BuildROIMap(
-		LegoAnim* p_anim,
-		LegoROI* p_rootROI,
-		LegoROI* p_extraROI,
-		LegoROI**& p_roiMap,
-		MxU32& p_roiMapSize
-	);
 	AnimCache* GetOrBuildAnimCache(const char* p_animName);
 	void UpdateTransform(float p_deltaTime);
 	void UpdateAnimation(float p_deltaTime);

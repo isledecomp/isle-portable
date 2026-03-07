@@ -4,9 +4,11 @@
 #include "extensions/multiplayer/networkmanager.h"
 #include "extensions/multiplayer/networktransport.h"
 #include "extensions/multiplayer/protocol.h"
+#include "islepathactor.h"
 #include "legoactor.h"
 #include "legoentity.h"
 #include "legogamestate.h"
+#include "legopathactor.h"
 #include "misc.h"
 
 #ifdef __EMSCRIPTEN__
@@ -31,10 +33,6 @@ void MultiplayerExt::Initialize()
 	relayUrl = options["multiplayer:relay url"];
 	room = options["multiplayer:room"];
 
-	if (relayUrl.empty() || room.empty()) {
-		return;
-	}
-
 #ifdef __EMSCRIPTEN__
 	s_transport = new Multiplayer::WebSocketTransport(relayUrl);
 	s_callbacks = new Multiplayer::EmscriptenCallbacks();
@@ -42,7 +40,12 @@ void MultiplayerExt::Initialize()
 	s_networkManager = new Multiplayer::NetworkManager();
 	s_networkManager->Initialize(s_transport, s_callbacks);
 
-	s_networkManager->Connect(room.c_str());
+	// Third-person camera enabled by default, toggled via WASM export
+	s_networkManager->GetThirdPersonCamera().Enable();
+
+	if (!relayUrl.empty() && !room.empty()) {
+		s_networkManager->Connect(room.c_str());
+	}
 #endif
 }
 
@@ -105,6 +108,29 @@ MxBool MultiplayerExt::HandleEntityNotify(LegoEntity* p_entity)
 	}
 
 	return s_networkManager->HandleEntityMutation(p_entity, changeType);
+}
+
+void MultiplayerExt::HandleActorEnter(IslePathActor* p_actor)
+{
+	if (s_networkManager) {
+		s_networkManager->GetThirdPersonCamera().OnActorEnter(p_actor);
+	}
+}
+
+void MultiplayerExt::HandleActorExit(IslePathActor* p_actor)
+{
+	if (s_networkManager) {
+		s_networkManager->GetThirdPersonCamera().OnActorExit(p_actor);
+	}
+}
+
+MxBool MultiplayerExt::ShouldInvertMovement(LegoPathActor* p_actor)
+{
+	if (s_networkManager && UserActor() == p_actor) {
+		return s_networkManager->GetThirdPersonCamera().IsActive();
+	}
+
+	return FALSE;
 }
 
 MxBool MultiplayerExt::CheckRejected()

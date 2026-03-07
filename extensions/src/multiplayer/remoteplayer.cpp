@@ -18,23 +18,8 @@
 #include <SDL3/SDL_timer.h>
 #include <cmath>
 #include <vec.h>
-#include <vector>
 
 using namespace Multiplayer;
-
-// LOD names for vehicle models. The helicopter is a compound ROI ("copter")
-// with no standalone LOD; use its body part instead.
-static const char* g_vehicleROINames[VEHICLE_COUNT] =
-	{"chtrbody", "jsuser", "dunebugy", "bike", "board", "moto", "towtk", "ambul"};
-
-static const char* g_rideAnimNames[VEHICLE_COUNT] = {NULL, NULL, NULL, "CNs001Bd", "CNs001sk", "CNs011Ni", NULL, NULL};
-
-static const char* g_rideVehicleROINames[VEHICLE_COUNT] = {NULL, NULL, NULL, "bikebd", "board", "motoni", NULL, NULL};
-
-static bool IsLargeVehicle(int8_t p_vehicleType)
-{
-	return p_vehicleType != VEHICLE_NONE && p_vehicleType < VEHICLE_COUNT && g_rideAnimNames[p_vehicleType] == NULL;
-}
 
 RemotePlayer::RemotePlayer(uint32_t p_peerId, uint8_t p_actorId)
 	: m_peerId(p_peerId), m_actorId(p_actorId), m_roi(nullptr), m_spawned(false), m_visible(false), m_targetSpeed(0.0f),
@@ -213,38 +198,7 @@ void RemotePlayer::SetVisible(bool p_visible)
 
 RemotePlayer::AnimCache* RemotePlayer::GetOrBuildAnimCache(const char* p_animName)
 {
-	if (!p_animName || !m_roi) {
-		return nullptr;
-	}
-
-	// Check if already cached
-	auto it = m_animCacheMap.find(p_animName);
-	if (it != m_animCacheMap.end()) {
-		return &it->second;
-	}
-
-	// Look up the animation presenter in the current world
-	LegoWorld* world = CurrentWorld();
-	if (!world) {
-		return nullptr;
-	}
-
-	MxCore* presenter = world->Find("LegoAnimPresenter", p_animName);
-	if (!presenter) {
-		return nullptr;
-	}
-
-	LegoAnim* anim = static_cast<LegoAnimPresenter*>(presenter)->GetAnimation();
-	if (!anim) {
-		return nullptr;
-	}
-
-	// Build and cache
-	AnimCache& cache = m_animCacheMap[p_animName];
-	cache.anim = anim;
-	BuildROIMap(anim, m_roi, nullptr, cache.roiMap, cache.roiMapSize);
-
-	return &cache;
+	return AnimUtils::GetOrBuildAnimCache(m_animCacheMap, m_roi, p_animName);
 }
 
 void RemotePlayer::TriggerEmote(uint8_t p_emoteId)
@@ -269,83 +223,6 @@ void RemotePlayer::TriggerEmote(uint8_t p_emoteId)
 	m_emoteActive = true;
 }
 
-// Mirrors the game's UpdateStructMapAndROIIndex: assigns ROI indices at runtime
-// via SetROIIndex() since m_roiIndex starts at 0 for all animation nodes.
-static void AssignROIIndices(
-	LegoTreeNode* p_node,
-	LegoROI* p_parentROI,
-	LegoROI* p_rootROI,
-	LegoROI* p_extraROI,
-	MxU32& p_nextIndex,
-	std::vector<LegoROI*>& p_entries
-)
-{
-	LegoROI* roi = p_parentROI;
-	LegoAnimNodeData* data = (LegoAnimNodeData*) p_node->GetData();
-	const char* name = data ? data->GetName() : nullptr;
-
-	if (name != nullptr && *name != '-') {
-		LegoROI* matchedROI = nullptr;
-
-		if (*name == '*' || p_parentROI == nullptr) {
-			roi = p_rootROI;
-			matchedROI = p_rootROI;
-		}
-		else {
-			matchedROI = p_parentROI->FindChildROI(name, p_parentROI);
-			if (matchedROI == nullptr && p_extraROI != nullptr) {
-				matchedROI = p_extraROI->FindChildROI(name, p_extraROI);
-			}
-		}
-
-		if (matchedROI != nullptr) {
-			data->SetROIIndex(p_nextIndex);
-			p_entries.push_back(matchedROI);
-			p_nextIndex++;
-		}
-		else {
-			data->SetROIIndex(0);
-		}
-	}
-
-	for (MxS32 i = 0; i < p_node->GetNumChildren(); i++) {
-		AssignROIIndices(p_node->GetChild(i), roi, p_rootROI, p_extraROI, p_nextIndex, p_entries);
-	}
-}
-
-void RemotePlayer::BuildROIMap(
-	LegoAnim* p_anim,
-	LegoROI* p_rootROI,
-	LegoROI* p_extraROI,
-	LegoROI**& p_roiMap,
-	MxU32& p_roiMapSize
-)
-{
-	if (!p_anim || !p_rootROI) {
-		return;
-	}
-
-	LegoTreeNode* root = p_anim->GetRoot();
-	if (!root) {
-		return;
-	}
-
-	MxU32 nextIndex = 1;
-	std::vector<LegoROI*> entries;
-	AssignROIIndices(root, nullptr, p_rootROI, p_extraROI, nextIndex, entries);
-
-	if (entries.empty()) {
-		return;
-	}
-
-	// 1-indexed; index 0 reserved as NULL
-	p_roiMapSize = entries.size() + 1;
-	p_roiMap = new LegoROI*[p_roiMapSize];
-	p_roiMap[0] = nullptr;
-	for (MxU32 i = 0; i < entries.size(); i++) {
-		p_roiMap[i + 1] = entries[i];
-	}
-}
 
 void RemotePlayer::UpdateTransform(float p_deltaTime)
 {
@@ -394,18 +271,10 @@ void RemotePlayer::UpdateAnimation(float p_deltaTime)
 
 	// Ensure visibility of all mapped ROIs
 	if (walkRoiMap) {
-		for (MxU32 i = 1; i < walkRoiMapSize; i++) {
-			if (walkRoiMap[i] != nullptr) {
-				walkRoiMap[i]->SetVisibility(TRUE);
-			}
-		}
+		AnimUtils::EnsureROIMapVisibility(walkRoiMap, walkRoiMapSize);
 	}
 	if (m_idleAnimCache && m_idleAnimCache->roiMap) {
-		for (MxU32 i = 1; i < m_idleAnimCache->roiMapSize; i++) {
-			if (m_idleAnimCache->roiMap[i] != nullptr) {
-				m_idleAnimCache->roiMap[i]->SetVisibility(TRUE);
-			}
-		}
+		AnimUtils::EnsureROIMapVisibility(m_idleAnimCache->roiMap, m_idleAnimCache->roiMapSize);
 	}
 
 	bool inVehicle = (m_currentVehicleType != VEHICLE_NONE);
@@ -569,7 +438,7 @@ void RemotePlayer::EnterVehicle(int8_t p_vehicleType)
 			m_rideVehicleROI->SetName(vehicleVariantName);
 		}
 
-		BuildROIMap(m_rideAnim, m_roi, m_rideVehicleROI, m_rideRoiMap, m_rideRoiMapSize);
+		AnimUtils::BuildROIMap(m_rideAnim, m_roi, m_rideVehicleROI, m_rideRoiMap, m_rideRoiMapSize);
 	}
 }
 

@@ -4,6 +4,7 @@
 #include "extensions/multiplayer/platformcallbacks.h"
 #include "extensions/multiplayer/protocol.h"
 #include "extensions/multiplayer/remoteplayer.h"
+#include "extensions/multiplayer/thirdpersoncamera.h"
 #include "extensions/multiplayer/worldstatesync.h"
 #include "mxcore.h"
 #include "mxtypes.h"
@@ -49,6 +50,8 @@ public:
 	void OnWorldEnabled(LegoWorld* p_world);
 	void OnWorldDisabled(LegoWorld* p_world);
 
+	ThirdPersonCamera& GetThirdPersonCamera() { return m_thirdPersonCamera; }
+
 	// Called from multiplayer extension when a plant/building entity is clicked.
 	// Returns TRUE if the mutation should be suppressed locally (non-host).
 	MxBool HandleEntityMutation(LegoEntity* p_entity, MxU8 p_changeType);
@@ -72,7 +75,6 @@ private:
 	void RemoveAllRemotePlayers();
 
 	void NotifyPlayerCountChanged();
-	int8_t DetectLocalVehicleType();
 
 	// Serialize and send a fixed-size message via the transport
 	template <typename T>
@@ -81,6 +83,7 @@ private:
 	NetworkTransport* m_transport;
 	PlatformCallbacks* m_callbacks;
 	WorldStateSync m_worldSync;
+	ThirdPersonCamera m_thirdPersonCamera;
 	std::map<uint32_t, std::unique_ptr<RemotePlayer>> m_remotePlayers;
 
 	uint32_t m_localPeerId;

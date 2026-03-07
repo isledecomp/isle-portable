@@ -34,6 +34,20 @@ extern "C"
 		}
 	}
 
+	EMSCRIPTEN_KEEPALIVE void mp_toggle_third_person()
+	{
+		Multiplayer::NetworkManager* mgr = MultiplayerExt::GetNetworkManager();
+		if (mgr) {
+			Multiplayer::ThirdPersonCamera& cam = mgr->GetThirdPersonCamera();
+			if (cam.IsEnabled()) {
+				cam.Disable();
+			}
+			else {
+				cam.Enable();
+			}
+		}
+	}
+
 } // extern "C"
 
 #endif

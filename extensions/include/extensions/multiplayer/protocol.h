@@ -5,6 +5,8 @@
 #include <cstdint>
 #include <type_traits>
 
+class LegoPathActor;
+
 namespace Multiplayer
 {
 
@@ -127,31 +129,25 @@ struct EmoteMsg {
 
 #pragma pack(pop)
 
-// Walk animation table: index -> CNs name
-static const char* const g_walkAnimNames[] = {
-	"CNs001xx", // 0: Normal (default)
-	"CNs002xx", // 1: Joyful
-	"CNs003xx", // 2: Gloomy
-	"CNs005xx", // 3: Leaning
-	"CNs006xx", // 4: Scared
-	"CNs007xx", // 5: Hyper
-};
-static const int g_walkAnimCount = sizeof(g_walkAnimNames) / sizeof(g_walkAnimNames[0]);
+// Animation and vehicle tables (defined in protocol.cpp)
+extern const char* const g_walkAnimNames[];
+extern const int g_walkAnimCount;
 
-// Idle animation table: index -> CNs name
-static const char* const g_idleAnimNames[] = {
-	"CNs008xx", // 0: Sway (default)
-	"CNs009xx", // 1: Groove
-	"CNs010xx", // 2: Excited
-};
-static const int g_idleAnimCount = sizeof(g_idleAnimNames) / sizeof(g_idleAnimNames[0]);
+extern const char* const g_idleAnimNames[];
+extern const int g_idleAnimCount;
 
-// Emote table: index -> CNs name
-static const char* const g_emoteAnimNames[] = {
-	"CNs011xx", // 0: Wave
-	"CNs012xx", // 1: Hat Tip
-};
-static const int g_emoteAnimCount = sizeof(g_emoteAnimNames) / sizeof(g_emoteAnimNames[0]);
+extern const char* const g_emoteAnimNames[];
+extern const int g_emoteAnimCount;
+
+extern const char* const g_vehicleROINames[VEHICLE_COUNT];
+extern const char* const g_rideAnimNames[VEHICLE_COUNT];
+extern const char* const g_rideVehicleROINames[VEHICLE_COUNT];
+
+// Returns true if the vehicle type has no ride animation (model swap instead)
+bool IsLargeVehicle(int8_t p_vehicleType);
+
+// Detect the vehicle type of a given actor, or VEHICLE_NONE if not a vehicle
+int8_t DetectVehicleType(LegoPathActor* p_actor);
 
 // Validate actorId is a playable character (1-5, not brickster)
 inline bool IsValidActorId(uint8_t p_actorId)

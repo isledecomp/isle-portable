@@ -6,7 +6,9 @@
 #include <map>
 #include <string>
 
+class IslePathActor;
 class LegoEntity;
+class LegoPathActor;
 class LegoWorld;
 
 namespace Multiplayer
@@ -34,6 +36,10 @@ public:
 	static std::string relayUrl;
 	static std::string room;
 
+	static void HandleActorEnter(IslePathActor* p_actor);
+	static void HandleActorExit(IslePathActor* p_actor);
+	static MxBool ShouldInvertMovement(LegoPathActor* p_actor);
+
 	// Returns true if the multiplayer connection was rejected (e.g. room full).
 	static MxBool CheckRejected();
 
@@ -51,10 +57,16 @@ LEGO1_EXPORT bool IsMultiplayerRejected();
 
 constexpr auto HandleWorldEnable = &MultiplayerExt::HandleWorldEnable;
 constexpr auto HandleEntityNotify = &MultiplayerExt::HandleEntityNotify;
+constexpr auto HandleActorEnter = &MultiplayerExt::HandleActorEnter;
+constexpr auto HandleActorExit = &MultiplayerExt::HandleActorExit;
+constexpr auto ShouldInvertMovement = &MultiplayerExt::ShouldInvertMovement;
 constexpr auto CheckRejected = &MultiplayerExt::CheckRejected;
 #else
 constexpr decltype(&MultiplayerExt::HandleWorldEnable) HandleWorldEnable = nullptr;
 constexpr decltype(&MultiplayerExt::HandleEntityNotify) HandleEntityNotify = nullptr;
+constexpr decltype(&MultiplayerExt::HandleActorEnter) HandleActorEnter = nullptr;
+constexpr decltype(&MultiplayerExt::HandleActorExit) HandleActorExit = nullptr;
+constexpr decltype(&MultiplayerExt::ShouldInvertMovement) ShouldInvertMovement = nullptr;
 constexpr decltype(&MultiplayerExt::CheckRejected) CheckRejected = nullptr;
 #endif
 
