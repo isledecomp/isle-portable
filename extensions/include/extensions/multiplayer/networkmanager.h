@@ -37,6 +37,7 @@ public:
 	}
 
 	void Initialize(NetworkTransport* p_transport, PlatformCallbacks* p_callbacks);
+	void HandleCreate();
 	void Shutdown();
 
 	void Connect(const char* p_roomId);
@@ -44,20 +45,25 @@ public:
 	bool IsConnected() const;
 	bool WasRejected() const;
 
-	void SetWalkAnimation(uint8_t p_index);
-	void SetIdleAnimation(uint8_t p_index);
+	void SetWalkAnimation(uint8_t p_walkAnimId);
+	void SetIdleAnimation(uint8_t p_idleAnimId);
 	void SendEmote(uint8_t p_emoteId);
-	void SetDisplayActorIndex(uint8_t p_index);
+	void SetDisplayActorIndex(uint8_t p_displayActorIndex);
 
 	// Thread-safe request methods for cross-thread callers (e.g. WASM exports
 	// running on the browser main thread).  Deferred to the game thread in Tickle().
 	void RequestToggleThirdPerson() { m_pendingToggleThirdPerson.store(true, std::memory_order_relaxed); }
-	void RequestSetWalkAnimation(uint8_t p_index) { m_pendingWalkAnim.store(p_index, std::memory_order_relaxed); }
-	void RequestSetIdleAnimation(uint8_t p_index) { m_pendingIdleAnim.store(p_index, std::memory_order_relaxed); }
+	void RequestSetWalkAnimation(uint8_t p_walkAnimId) { m_pendingWalkAnim.store(p_walkAnimId, std::memory_order_relaxed); }
+	void RequestSetIdleAnimation(uint8_t p_idleAnimId) { m_pendingIdleAnim.store(p_idleAnimId, std::memory_order_relaxed); }
 	void RequestSendEmote(uint8_t p_emoteId) { m_pendingEmote.store(p_emoteId, std::memory_order_relaxed); }
 	void RequestToggleNameBubbles() { m_pendingToggleNameBubbles.store(true, std::memory_order_relaxed); }
+	void RequestToggleAllowCustomize() { m_pendingToggleAllowCustomize.store(true, std::memory_order_relaxed); }
 
 	bool GetShowNameBubbles() const { return m_showNameBubbles; }
+
+	RemotePlayer* FindPlayerByROI(LegoROI* roi) const;
+	bool IsClonedCharacter(const char* p_name) const;
+	void SendCustomize(uint32_t p_targetPeerId, uint8_t p_changeType, uint8_t p_partIndex);
 
 	void OnWorldEnabled(LegoWorld* p_world);
 	void OnWorldDisabled(LegoWorld* p_world);
@@ -69,6 +75,7 @@ public:
 	MxBool HandleEntityMutation(LegoEntity* p_entity, MxU8 p_changeType);
 
 	bool IsHost() const { return m_localPeerId != 0 && m_localPeerId == m_hostPeerId; }
+	uint32_t GetLocalPeerId() const { return m_localPeerId; }
 
 private:
 	void BroadcastLocalState();
@@ -82,6 +89,7 @@ private:
 	void HandleState(const PlayerStateMsg& p_msg);
 	void HandleHostAssign(const HostAssignMsg& p_msg);
 	void HandleEmote(const EmoteMsg& p_msg);
+	void HandleCustomize(const CustomizeMsg& p_msg);
 
 	void ProcessPendingRequests();
 	void RemoveRemotePlayer(uint32_t p_peerId);
@@ -98,6 +106,7 @@ private:
 	WorldStateSync m_worldSync;
 	ThirdPersonCamera m_thirdPersonCamera;
 	std::map<uint32_t, std::unique_ptr<RemotePlayer>> m_remotePlayers;
+	std::map<LegoROI*, RemotePlayer*> m_roiToPlayer;
 
 	uint32_t m_localPeerId;
 	uint32_t m_hostPeerId;
@@ -107,6 +116,7 @@ private:
 	uint8_t m_localWalkAnimId;
 	uint8_t m_localIdleAnimId;
 	uint8_t m_localDisplayActorIndex;
+	bool m_localAllowRemoteCustomize;
 	bool m_inIsleWorld;
 	bool m_registered;
 
@@ -115,6 +125,7 @@ private:
 	std::atomic<int> m_pendingWalkAnim;
 	std::atomic<int> m_pendingIdleAnim;
 	std::atomic<int> m_pendingEmote;
+	std::atomic<bool> m_pendingToggleAllowCustomize;
 
 	bool m_showNameBubbles;
 

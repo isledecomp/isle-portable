@@ -1,5 +1,6 @@
 #include "extensions/multiplayer/remoteplayer.h"
 
+#include "extensions/multiplayer/charactercustomizer.h"
 #include "extensions/multiplayer/namebubblerenderer.h"
 
 #include "3dmanager/lego3dmanager.h"
@@ -30,8 +31,9 @@ RemotePlayer::RemotePlayer(uint32_t p_peerId, uint8_t p_actorId, uint8_t p_displ
 	  m_lastUpdateTime(SDL_GetTicks()), m_hasReceivedUpdate(false), m_walkAnimId(0), m_idleAnimId(0),
 	  m_walkAnimCache(nullptr), m_idleAnimCache(nullptr), m_animTime(0.0f), m_idleTime(0.0f), m_idleAnimTime(0.0f),
 	  m_wasMoving(false), m_emoteAnimCache(nullptr), m_emoteTime(0.0f), m_emoteDuration(0.0f), m_emoteActive(false),
-	  m_rideAnim(nullptr), m_rideRoiMap(nullptr), m_rideRoiMapSize(0), m_rideVehicleROI(nullptr), m_vehicleROI(nullptr),
-	  m_currentVehicleType(VEHICLE_NONE), m_nameBubble(nullptr)
+	  m_clickAnimObjectId(0), m_rideAnim(nullptr), m_rideRoiMap(nullptr), m_rideRoiMapSize(0),
+	  m_rideVehicleROI(nullptr), m_vehicleROI(nullptr), m_currentVehicleType(VEHICLE_NONE), m_nameBubble(nullptr),
+	  m_allowRemoteCustomize(true)
 {
 	m_displayName[0] = '\0';
 	const char* displayName = GetDisplayActorName();
@@ -83,6 +85,10 @@ void RemotePlayer::Spawn(LegoWorld* p_isleWorld)
 	m_spawned = true;
 	m_visible = false;
 
+	// Initialize customize state from the display actor's info
+	uint8_t actorInfoIndex = CharacterCustomizer::ResolveActorInfoIndex(m_displayActorIndex, m_actorId);
+	m_customizeState.InitFromActorInfo(actorInfoIndex);
+
 	// Build initial walk and idle animation caches
 	m_walkAnimCache = GetOrBuildAnimCache(g_walkAnimNames[m_walkAnimId]);
 	m_idleAnimCache = GetOrBuildAnimCache(g_idleAnimNames[m_idleAnimId]);
@@ -99,6 +105,7 @@ void RemotePlayer::Despawn()
 		return;
 	}
 
+	StopClickAnimation();
 	DestroyNameBubble();
 	ExitVehicle();
 
@@ -143,6 +150,7 @@ void RemotePlayer::UpdateFromNetwork(const PlayerStateMsg& p_msg)
 		SET3(m_currentPosition, m_targetPosition);
 		SET3(m_currentDirection, m_targetDirection);
 		SET3(m_currentUp, m_targetUp);
+		m_targetSpeed = 0.0f; // No meaningful speed from first sample
 		m_hasReceivedUpdate = true;
 	}
 
@@ -166,6 +174,21 @@ void RemotePlayer::UpdateFromNetwork(const PlayerStateMsg& p_msg)
 			CreateNameBubble();
 		}
 	}
+
+	// Update customize state from packed data
+	CustomizeState newState;
+	newState.Unpack(p_msg.customizeData);
+
+	if (newState != m_customizeState) {
+		uint8_t actorInfoIndex = CharacterCustomizer::ResolveActorInfoIndex(m_displayActorIndex, m_actorId);
+		m_customizeState = newState;
+		if (m_spawned && m_roi) {
+			CharacterCustomizer::ApplyFullState(m_roi, actorInfoIndex, m_customizeState);
+		}
+	}
+
+	// Update allow remote customize flag
+	m_allowRemoteCustomize = (p_msg.customizeFlags & 0x01) != 0;
 
 	// Swap walk animation if changed
 	if (p_msg.walkAnimId != m_walkAnimId && p_msg.walkAnimId < g_walkAnimCount) {
@@ -263,6 +286,8 @@ void RemotePlayer::TriggerEmote(uint8_t p_emoteId)
 		return;
 	}
 
+	StopClickAnimation();
+
 	m_emoteAnimCache = cache;
 	m_emoteTime = 0.0f;
 	m_emoteDuration = (float) cache->anim->GetDuration();
@@ -299,6 +324,7 @@ void RemotePlayer::UpdateTransform(float p_deltaTime)
 void RemotePlayer::UpdateAnimation(float p_deltaTime)
 {
 	if (m_currentVehicleType != VEHICLE_NONE && IsLargeVehicle(m_currentVehicleType)) {
+		StopClickAnimation();
 		return;
 	}
 
@@ -329,10 +355,13 @@ void RemotePlayer::UpdateAnimation(float p_deltaTime)
 	bool inVehicle = (m_currentVehicleType != VEHICLE_NONE);
 	bool isMoving = inVehicle || m_targetSpeed > 0.01f;
 
-	// Movement interrupts emotes
-	if (isMoving && m_emoteActive) {
-		m_emoteActive = false;
-		m_emoteAnimCache = nullptr;
+	// Movement interrupts click animations and emotes
+	if (isMoving) {
+		StopClickAnimation();
+		if (m_emoteActive) {
+			m_emoteActive = false;
+			m_emoteAnimCache = nullptr;
+		}
 	}
 
 	if (isMoving) {
@@ -548,3 +577,12 @@ void RemotePlayer::SetNameBubbleVisible(bool p_visible)
 		m_nameBubble->SetVisible(p_visible);
 	}
 }
+
+void RemotePlayer::StopClickAnimation()
+{
+	if (m_clickAnimObjectId != 0) {
+		CharacterCustomizer::StopClickAnimation(m_clickAnimObjectId);
+		m_clickAnimObjectId = 0;
+	}
+}
+

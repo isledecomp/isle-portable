@@ -17,9 +17,9 @@ public:
 	WorldStateSync();
 
 	void SetTransport(NetworkTransport* p_transport) { m_transport = p_transport; }
-	void SetLocalPeerId(uint32_t p_peerId) { m_localPeerId = p_peerId; }
+	void SetLocalPeerId(uint32_t p_localPeerId) { m_localPeerId = p_localPeerId; }
 	void SetHost(bool p_isHost) { m_isHost = p_isHost; }
-	void SetInIsleWorld(bool p_inIsle) { m_inIsleWorld = p_inIsle; }
+	void SetInIsleWorld(bool p_inIsleWorld) { m_inIsleWorld = p_inIsleWorld; }
 
 	// Called when the host peer changes. Requests a snapshot if we're not host.
 	void OnHostChanged();

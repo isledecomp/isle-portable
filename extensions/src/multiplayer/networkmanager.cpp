@@ -1,5 +1,7 @@
 #include "extensions/multiplayer/networkmanager.h"
 
+#include "extensions/multiplayer/charactercloner.h"
+#include "extensions/multiplayer/charactercustomizer.h"
 #include "legogamestate.h"
 #include "legomain.h"
 #include "legopathactor.h"
@@ -32,9 +34,10 @@ void NetworkManager::SendMessage(const T& p_msg)
 NetworkManager::NetworkManager()
 	: m_transport(nullptr), m_callbacks(nullptr), m_localPeerId(0), m_hostPeerId(0), m_sequence(0),
 	  m_lastBroadcastTime(0), m_lastValidActorId(0), m_localWalkAnimId(0), m_localIdleAnimId(0),
-	  m_localDisplayActorIndex(DISPLAY_ACTOR_NONE), m_inIsleWorld(false),
+	  m_localDisplayActorIndex(DISPLAY_ACTOR_NONE), m_localAllowRemoteCustomize(true), m_inIsleWorld(false),
 	  m_registered(false), m_pendingToggleThirdPerson(false), m_pendingToggleNameBubbles(false),
-	  m_pendingWalkAnim(-1), m_pendingIdleAnim(-1), m_pendingEmote(-1), m_showNameBubbles(true)
+	  m_pendingWalkAnim(-1), m_pendingIdleAnim(-1), m_pendingEmote(-1),
+	  m_pendingToggleAllowCustomize(false), m_showNameBubbles(true)
 {
 }
 
@@ -87,6 +90,14 @@ void NetworkManager::Initialize(NetworkTransport* p_transport, PlatformCallbacks
 	m_worldSync.SetTransport(p_transport);
 }
 
+void NetworkManager::HandleCreate()
+{
+	if (!m_registered) {
+		TickleManager()->RegisterClient(this, 10);
+		m_registered = true;
+	}
+}
+
 void NetworkManager::Shutdown()
 {
 	if (m_transport) {
@@ -133,11 +144,6 @@ void NetworkManager::OnWorldEnabled(LegoWorld* p_world)
 		return;
 	}
 
-	if (!m_registered) {
-		TickleManager()->RegisterClient(this, 10);
-		m_registered = true;
-	}
-
 	m_thirdPersonCamera.OnWorldEnabled(p_world);
 
 	if (p_world->GetWorldId() == LegoOmni::e_act1) {
@@ -147,11 +153,17 @@ void NetworkManager::OnWorldEnabled(LegoWorld* p_world)
 		for (auto& [peerId, player] : m_remotePlayers) {
 			if (player->IsSpawned()) {
 				player->ReAddToScene();
-
-				if (player->GetWorldId() == (int8_t) LegoOmni::e_act1) {
-					player->SetVisible(true);
-					player->SetNameBubbleVisible(m_showNameBubbles);
+			}
+			else {
+				player->Spawn(p_world);
+				if (player->GetROI()) {
+					m_roiToPlayer[player->GetROI()] = player.get();
 				}
+			}
+
+			if (player->IsSpawned() && player->GetWorldId() == (int8_t) LegoOmni::e_act1) {
+				player->SetVisible(true);
+				player->SetNameBubbleVisible(m_showNameBubbles);
 			}
 		}
 
@@ -208,6 +220,10 @@ void NetworkManager::ProcessPendingRequests()
 	int emote = m_pendingEmote.exchange(-1, std::memory_order_relaxed);
 	if (emote >= 0) {
 		SendEmote(static_cast<uint8_t>(emote));
+	}
+
+	if (m_pendingToggleAllowCustomize.exchange(false, std::memory_order_relaxed)) {
+		m_localAllowRemoteCustomize = !m_localAllowRemoteCustomize;
 	}
 
 	if (m_pendingToggleNameBubbles.exchange(false, std::memory_order_relaxed)) {
@@ -302,6 +318,9 @@ void NetworkManager::BroadcastLocalState()
 	}
 	msg.displayActorIndex = displayIndex;
 
+	m_thirdPersonCamera.GetCustomizeState().Pack(msg.customizeData);
+	msg.customizeFlags = m_localAllowRemoteCustomize ? 0x01 : 0x00;
+
 	SendMessage(msg);
 }
 
@@ -387,6 +406,13 @@ void NetworkManager::ProcessIncomingPackets()
 			}
 			break;
 		}
+		case MSG_CUSTOMIZE: {
+			CustomizeMsg msg;
+			if (DeserializeMsg(data, length, msg) && msg.header.type == MSG_CUSTOMIZE) {
+				HandleCustomize(msg);
+			}
+			break;
+		}
 		default:
 			break;
 		}
@@ -413,6 +439,11 @@ RemotePlayer* NetworkManager::CreateAndSpawnPlayer(uint32_t p_peerId, uint8_t p_
 
 	RemotePlayer* ptr = player.get();
 	m_remotePlayers[p_peerId] = std::move(player);
+
+	if (ptr->GetROI()) {
+		m_roiToPlayer[ptr->GetROI()] = ptr;
+	}
+
 	return ptr;
 }
 
@@ -450,6 +481,9 @@ void NetworkManager::HandleState(const PlayerStateMsg& p_msg)
 
 	// Respawn only if display actor changed (not on actorId change)
 	if (it->second->GetDisplayActorIndex() != p_msg.displayActorIndex) {
+		if (it->second->GetROI()) {
+			m_roiToPlayer.erase(it->second->GetROI());
+		}
 		it->second->Despawn();
 		m_remotePlayers.erase(it);
 		CreateAndSpawnPlayer(peerId, p_msg.actorId, p_msg.displayActorIndex);
@@ -488,19 +522,19 @@ void NetworkManager::HandleHostAssign(const HostAssignMsg& p_msg)
 	}
 }
 
-void NetworkManager::SetWalkAnimation(uint8_t p_index)
+void NetworkManager::SetWalkAnimation(uint8_t p_walkAnimId)
 {
-	if (p_index < g_walkAnimCount) {
-		m_localWalkAnimId = p_index;
-		m_thirdPersonCamera.SetWalkAnimId(p_index);
+	if (p_walkAnimId < g_walkAnimCount) {
+		m_localWalkAnimId = p_walkAnimId;
+		m_thirdPersonCamera.SetWalkAnimId(p_walkAnimId);
 	}
 }
 
-void NetworkManager::SetIdleAnimation(uint8_t p_index)
+void NetworkManager::SetIdleAnimation(uint8_t p_idleAnimId)
 {
-	if (p_index < g_idleAnimCount) {
-		m_localIdleAnimId = p_index;
-		m_thirdPersonCamera.SetIdleAnimId(p_index);
+	if (p_idleAnimId < g_idleAnimCount) {
+		m_localIdleAnimId = p_idleAnimId;
+		m_thirdPersonCamera.SetIdleAnimId(p_idleAnimId);
 	}
 }
 
@@ -518,10 +552,10 @@ void NetworkManager::SendEmote(uint8_t p_emoteId)
 	SendMessage(msg);
 }
 
-void NetworkManager::SetDisplayActorIndex(uint8_t p_index)
+void NetworkManager::SetDisplayActorIndex(uint8_t p_displayActorIndex)
 {
-	m_localDisplayActorIndex = p_index;
-	m_thirdPersonCamera.SetDisplayActorIndex(p_index);
+	m_localDisplayActorIndex = p_displayActorIndex;
+	m_thirdPersonCamera.SetDisplayActorIndex(p_displayActorIndex);
 }
 
 void NetworkManager::HandleEmote(const EmoteMsg& p_msg)
@@ -537,6 +571,9 @@ void NetworkManager::RemoveRemotePlayer(uint32_t p_peerId)
 {
 	auto it = m_remotePlayers.find(p_peerId);
 	if (it != m_remotePlayers.end()) {
+		if (it->second->GetROI()) {
+			m_roiToPlayer.erase(it->second->GetROI());
+		}
 		it->second->Despawn();
 		m_remotePlayers.erase(it);
 		NotifyPlayerCountChanged();
@@ -549,6 +586,7 @@ void NetworkManager::RemoveAllRemotePlayers()
 		player->Despawn();
 	}
 	m_remotePlayers.clear();
+	m_roiToPlayer.clear();
 	NotifyPlayerCountChanged();
 }
 
@@ -569,5 +607,101 @@ void NetworkManager::NotifyPlayerCountChanged()
 	}
 
 	m_callbacks->OnPlayerCountChanged(count);
+}
+
+RemotePlayer* NetworkManager::FindPlayerByROI(LegoROI* roi) const
+{
+	auto it = m_roiToPlayer.find(roi);
+	if (it != m_roiToPlayer.end()) {
+		return it->second;
+	}
+	return nullptr;
+}
+
+bool NetworkManager::IsClonedCharacter(const char* p_name) const
+{
+	// Check remote player clones
+	for (auto& it : m_remotePlayers) {
+		if (!SDL_strcasecmp(it.second->GetUniqueName(), p_name)) {
+			return true;
+		}
+	}
+
+	// Check local 3rd-person display actor clone
+	if (m_thirdPersonCamera.GetDisplayROI() != nullptr &&
+		!SDL_strcasecmp(m_thirdPersonCamera.GetDisplayROI()->GetName(), p_name)) {
+		return true;
+	}
+
+	return false;
+}
+
+void NetworkManager::SendCustomize(uint32_t p_targetPeerId, uint8_t p_changeType, uint8_t p_partIndex)
+{
+	CustomizeMsg msg{};
+	msg.header = {MSG_CUSTOMIZE, m_localPeerId, m_sequence++};
+	msg.targetPeerId = p_targetPeerId;
+	msg.changeType = p_changeType;
+	msg.partIndex = p_partIndex;
+	SendMessage(msg);
+}
+
+void NetworkManager::HandleCustomize(const CustomizeMsg& p_msg)
+{
+	uint32_t targetPeerId = p_msg.targetPeerId;
+
+	// Check if the target is a remote player on this client.
+	// Only play effects here — do NOT modify the remote player's customize state.
+	// State changes come exclusively through UpdateFromNetwork (from the target's
+	// authoritative PlayerStateMsg), which prevents flip-flop from stale state messages.
+	// Note: sound/mood feedback uses the old state (before the authoritative update arrives),
+	// so the played sound may lag one step behind. This is an accepted tradeoff.
+	auto it = m_remotePlayers.find(targetPeerId);
+	if (it != m_remotePlayers.end()) {
+		if (it->second->GetROI()) {
+			CharacterCustomizer::PlayClickSound(
+				it->second->GetROI(),
+				it->second->GetCustomizeState(),
+				p_msg.changeType == CHANGE_MOOD
+			);
+			if (!it->second->IsMoving()) {
+				MxU32 clickAnimId =
+					CharacterCustomizer::PlayClickAnimation(it->second->GetROI(), it->second->GetCustomizeState());
+				it->second->SetClickAnimObjectId(clickAnimId);
+			}
+		}
+		return;
+	}
+
+	// Check if the target is the local player
+	if (targetPeerId == m_localPeerId) {
+		// Reject remote customization if not allowed
+		if (p_msg.header.peerId != m_localPeerId && !m_localAllowRemoteCustomize) {
+			return;
+		}
+
+		// ApplyCustomizeChange handles null display ROI (advances state without visual)
+		m_thirdPersonCamera.ApplyCustomizeChange(p_msg.changeType, p_msg.partIndex);
+
+		// Use display ROI for effects in 3rd person, native ROI in 1st person
+		LegoROI* effectROI = m_thirdPersonCamera.GetDisplayROI();
+		if (!effectROI && UserActor()) {
+			effectROI = UserActor()->GetROI();
+		}
+
+		if (effectROI) {
+			CharacterCustomizer::PlayClickSound(
+				effectROI, m_thirdPersonCamera.GetCustomizeState(), p_msg.changeType == CHANGE_MOOD
+			);
+
+			// Only play click animation in 3rd person (not visible in 1st person)
+			if (m_thirdPersonCamera.GetDisplayROI() && !m_thirdPersonCamera.IsInVehicle()) {
+				MxU32 clickAnimId = CharacterCustomizer::PlayClickAnimation(
+					m_thirdPersonCamera.GetDisplayROI(), m_thirdPersonCamera.GetCustomizeState()
+				);
+				m_thirdPersonCamera.SetClickAnimObjectId(clickAnimId);
+			}
+		}
+	}
 }
 

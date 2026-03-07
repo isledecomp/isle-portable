@@ -1,6 +1,7 @@
 #include "legocharactermanager.h"
 
 #include "3dmanager/lego3dmanager.h"
+#include "extensions/multiplayer.h"
 #include "legoactors.h"
 #include "legoanimactor.h"
 #include "legobuildingmanager.h"
@@ -21,6 +22,8 @@
 #include <assert.h>
 #include <stdio.h>
 #include <vec.h>
+
+using namespace Extensions;
 
 DECOMP_SIZE_ASSERT(LegoCharacter, 0x08)
 DECOMP_SIZE_ASSERT(LegoCharacterManager, 0x08)
@@ -279,7 +282,8 @@ LegoROI* LegoCharacterManager::GetActorROI(const char* p_name, MxBool p_createEn
 	}
 
 	if (character != NULL) {
-		if (p_createEntity && character->m_roi->GetEntity() == NULL) {
+		if (p_createEntity && character->m_roi->GetEntity() == NULL &&
+			!Extension<MultiplayerExt>::Call(IsClonedCharacter, p_name).value_or(FALSE)) {
 			LegoExtraActor* actor = new LegoExtraActor();
 
 			actor->SetROI(character->m_roi, FALSE, FALSE);

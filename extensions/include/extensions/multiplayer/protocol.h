@@ -20,6 +20,7 @@ enum MessageType : uint8_t {
 	MSG_WORLD_EVENT = 7,
 	MSG_WORLD_EVENT_REQUEST = 8,
 	MSG_EMOTE = 9,
+	MSG_CUSTOMIZE = 10,
 	MSG_ASSIGN_ID = 0xFF
 };
 
@@ -83,6 +84,8 @@ struct PlayerStateMsg {
 	uint8_t idleAnimId; // Index into idle animation table (0 = default)
 	char name[8];       // Player display name (7 chars + null terminator)
 	uint8_t displayActorIndex; // Index into g_actorInfoInit (0-65)
+	uint8_t customizeData[5]; // Packed CustomizeState
+	uint8_t customizeFlags;   // Bit 0 = allowRemoteCustomize
 };
 
 // Server -> all: announces which peer is the host
@@ -127,6 +130,14 @@ struct WorldEventRequestMsg {
 struct EmoteMsg {
 	MessageHeader header;
 	uint8_t emoteId; // Index into emote table
+};
+
+// Immediate customization change, broadcast to all peers
+struct CustomizeMsg {
+	MessageHeader header;
+	uint32_t targetPeerId; // Who is being customized
+	uint8_t changeType;    // WorldChangeType (VARIANT/SOUND/MOVE/COLOR/MOOD)
+	uint8_t partIndex;     // Body part for color changes (0-9), 0xFF otherwise
 };
 
 #pragma pack(pop)

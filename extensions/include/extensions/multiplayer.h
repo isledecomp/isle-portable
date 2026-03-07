@@ -8,7 +8,9 @@
 
 class IslePathActor;
 class LegoEntity;
+class LegoEventNotificationParam;
 class LegoPathActor;
+class LegoROI;
 class LegoWorld;
 
 namespace Multiplayer
@@ -24,11 +26,15 @@ namespace Extensions
 class MultiplayerExt {
 public:
 	static void Initialize();
+	static void HandleCreate();
 	static MxBool HandleWorldEnable(LegoWorld* p_world, MxBool p_enable);
 
 	// Intercepts click notifications on plants/buildings for multiplayer routing.
 	// Returns TRUE if the click should be suppressed locally (non-host).
 	static MxBool HandleEntityNotify(LegoEntity* p_entity);
+
+	// Handles clicks on entity-less ROIs (remote players, display actor overrides).
+	static MxBool HandleROIClick(LegoROI* p_rootROI, LegoEventNotificationParam& p_param);
 
 	static std::map<std::string, std::string> options;
 	static bool enabled;
@@ -40,6 +46,9 @@ public:
 	static void HandleActorExit(IslePathActor* p_actor);
 	static void HandleCamAnimEnd(LegoPathActor* p_actor);
 	static MxBool ShouldInvertMovement(LegoPathActor* p_actor);
+
+	// Returns TRUE if the name belongs to a multiplayer clone (entity-less ROI).
+	static MxBool IsClonedCharacter(const char* p_name);
 
 	// Returns true if the multiplayer connection was rejected (e.g. room full).
 	static MxBool CheckRejected();
@@ -56,20 +65,26 @@ private:
 #ifdef EXTENSIONS
 LEGO1_EXPORT bool IsMultiplayerRejected();
 
+constexpr auto HandleCreate = &MultiplayerExt::HandleCreate;
 constexpr auto HandleWorldEnable = &MultiplayerExt::HandleWorldEnable;
 constexpr auto HandleEntityNotify = &MultiplayerExt::HandleEntityNotify;
+constexpr auto HandleROIClick = &MultiplayerExt::HandleROIClick;
 constexpr auto HandleActorEnter = &MultiplayerExt::HandleActorEnter;
 constexpr auto HandleActorExit = &MultiplayerExt::HandleActorExit;
 constexpr auto HandleCamAnimEnd = &MultiplayerExt::HandleCamAnimEnd;
 constexpr auto ShouldInvertMovement = &MultiplayerExt::ShouldInvertMovement;
+constexpr auto IsClonedCharacter = &MultiplayerExt::IsClonedCharacter;
 constexpr auto CheckRejected = &MultiplayerExt::CheckRejected;
 #else
+constexpr decltype(&MultiplayerExt::HandleCreate) HandleCreate = nullptr;
 constexpr decltype(&MultiplayerExt::HandleWorldEnable) HandleWorldEnable = nullptr;
 constexpr decltype(&MultiplayerExt::HandleEntityNotify) HandleEntityNotify = nullptr;
+constexpr decltype(&MultiplayerExt::HandleROIClick) HandleROIClick = nullptr;
 constexpr decltype(&MultiplayerExt::HandleActorEnter) HandleActorEnter = nullptr;
 constexpr decltype(&MultiplayerExt::HandleActorExit) HandleActorExit = nullptr;
 constexpr decltype(&MultiplayerExt::HandleCamAnimEnd) HandleCamAnimEnd = nullptr;
 constexpr decltype(&MultiplayerExt::ShouldInvertMovement) ShouldInvertMovement = nullptr;
+constexpr decltype(&MultiplayerExt::IsClonedCharacter) IsClonedCharacter = nullptr;
 constexpr decltype(&MultiplayerExt::CheckRejected) CheckRejected = nullptr;
 #endif
 

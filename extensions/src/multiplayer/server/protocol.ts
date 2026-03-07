@@ -12,6 +12,7 @@ export const MSG_HOST_ASSIGN = 4;
 export const MSG_REQUEST_SNAPSHOT = 5;
 export const MSG_WORLD_SNAPSHOT = 6;
 export const MSG_WORLD_EVENT_REQUEST = 8;
+export const MSG_CUSTOMIZE = 10;
 export const MSG_ASSIGN_ID = 0xff;
 
 // AssignIdMsg: compact server-only message — type(1) + peerId(4)

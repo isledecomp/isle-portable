@@ -50,6 +50,14 @@ extern "C"
 		}
 	}
 
+	EMSCRIPTEN_KEEPALIVE void mp_toggle_allow_customize()
+	{
+		Multiplayer::NetworkManager* mgr = MultiplayerExt::GetNetworkManager();
+		if (mgr) {
+			mgr->RequestToggleAllowCustomize();
+		}
+	}
+
 } // extern "C"
 
 #endif

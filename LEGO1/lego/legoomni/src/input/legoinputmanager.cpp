@@ -1,5 +1,6 @@
 #include "legoinputmanager.h"
 
+#include "extensions/multiplayer.h"
 #include "legocameracontroller.h"
 #include "legocontrolmanager.h"
 #include "legomain.h"
@@ -13,6 +14,8 @@
 #include "roi/legoroi.h"
 
 #include <SDL3/SDL_log.h>
+
+using namespace Extensions;
 
 DECOMP_SIZE_ASSERT(LegoInputManager, 0x338)
 DECOMP_SIZE_ASSERT(LegoNotifyList, 0x18)
@@ -391,6 +394,9 @@ MxBool LegoInputManager::ProcessOneEvent(LegoEventNotificationParam& p_param)
 
 						LegoEntity* entity = roi->GetEntity();
 						if (entity && entity->Notify(p_param) != 0) {
+							return TRUE;
+						}
+						if (Extension<MultiplayerExt>::Call(HandleROIClick, roi, p_param).value_or(FALSE)) {
 							return TRUE;
 						}
 					}

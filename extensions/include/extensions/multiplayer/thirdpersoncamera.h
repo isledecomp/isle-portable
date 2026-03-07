@@ -1,6 +1,7 @@
 #pragma once
 
 #include "extensions/multiplayer/animutils.h"
+#include "extensions/multiplayer/customizestate.h"
 #include "extensions/multiplayer/protocol.h"
 #include "mxgeometry/mxmatrix.h"
 #include "mxtypes.h"
@@ -36,10 +37,18 @@ public:
 	void Tick(float p_deltaTime);
 
 	// Animation selection (forwarded from NetworkManager)
-	void SetWalkAnimId(uint8_t p_id);
-	void SetIdleAnimId(uint8_t p_id);
+	void SetWalkAnimId(uint8_t p_walkAnimId);
+	void SetIdleAnimId(uint8_t p_idleAnimId);
 	void TriggerEmote(uint8_t p_emoteId);
-	void SetDisplayActorIndex(uint8_t p_index);
+	void SetDisplayActorIndex(uint8_t p_displayActorIndex);
+	uint8_t GetDisplayActorIndex() const { return m_displayActorIndex; }
+	LegoROI* GetDisplayROI() const { return m_displayROI; }
+	CustomizeState& GetCustomizeState() { return m_customizeState; }
+
+	void ApplyCustomizeChange(uint8_t p_changeType, uint8_t p_partIndex);
+	void SetClickAnimObjectId(MxU32 p_clickAnimObjectId) { m_clickAnimObjectId = p_clickAnimObjectId; }
+	void StopClickAnimation();
+	bool IsInVehicle() const { return m_currentVehicleType != VEHICLE_NONE; }
 
 	void OnWorldEnabled(LegoWorld* p_world);
 	void OnWorldDisabled(LegoWorld* p_world);
@@ -69,6 +78,7 @@ private:
 	uint8_t m_displayActorIndex;
 	LegoROI* m_displayROI;           // Owned clone; nullptr = use native ROI
 	char m_displayUniqueName[32];
+	CustomizeState m_customizeState;
 
 	// Walk/idle state (same pattern as RemotePlayer)
 	uint8_t m_walkAnimId;
@@ -86,6 +96,9 @@ private:
 	float m_emoteDuration;
 	bool m_emoteActive;
 	MxMatrix m_emoteParentTransform;
+
+	// Click animation tracking (0 = none)
+	MxU32 m_clickAnimObjectId;
 
 	// Vehicle ride state
 	int8_t m_currentVehicleType;

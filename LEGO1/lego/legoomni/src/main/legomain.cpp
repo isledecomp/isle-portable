@@ -1,6 +1,7 @@
 #include "legomain.h"
 
 #include "3dmanager/lego3dmanager.h"
+#include "extensions/multiplayer.h"
 #include "extensions/siloader.h"
 #include "islepathactor.h"
 #include "legoanimationmanager.h"
@@ -355,6 +356,7 @@ MxResult LegoOmni::Create(MxOmniCreateParam& p_param)
 		m_gameState->SetCurrentAct(LegoGameState::e_act1);
 #endif
 
+		Extension<MultiplayerExt>::Call(HandleCreate);
 		result = SUCCESS;
 	}
 	else {

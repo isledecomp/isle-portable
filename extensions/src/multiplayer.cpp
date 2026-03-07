@@ -1,6 +1,6 @@
 #include "extensions/multiplayer.h"
 
-#include "extensions/extensions.h"
+#include "extensions/multiplayer/charactercustomizer.h"
 #include "extensions/multiplayer/networkmanager.h"
 #include "extensions/multiplayer/networktransport.h"
 #include "extensions/multiplayer/protocol.h"
@@ -8,9 +8,11 @@
 #include "legoactor.h"
 #include "legoactors.h"
 #include "legoentity.h"
+#include "legoeventnotificationparam.h"
 #include "legogamestate.h"
 #include "legopathactor.h"
 #include "misc.h"
+#include "roi/legoroi.h"
 
 #include <SDL3/SDL_stdinc.h>
 
@@ -70,6 +72,13 @@ void MultiplayerExt::Initialize()
 #endif
 }
 
+void MultiplayerExt::HandleCreate()
+{
+	if (s_networkManager) {
+		s_networkManager->HandleCreate();
+	}
+}
+
 MxBool MultiplayerExt::HandleWorldEnable(LegoWorld* p_world, MxBool p_enable)
 {
 	if (!s_networkManager) {
@@ -82,6 +91,79 @@ MxBool MultiplayerExt::HandleWorldEnable(LegoWorld* p_world, MxBool p_enable)
 	else {
 		s_networkManager->OnWorldDisabled(p_world);
 	}
+
+	return TRUE;
+}
+
+MxBool MultiplayerExt::HandleROIClick(LegoROI* p_rootROI, LegoEventNotificationParam& p_param)
+{
+	if (!s_networkManager) {
+		return FALSE;
+	}
+
+	Multiplayer::NetworkManager* mgr = s_networkManager;
+
+	// Check if it's a remote player
+	Multiplayer::RemotePlayer* remote = mgr->FindPlayerByROI(p_rootROI);
+
+	// Check if it's our own 3rd-person display actor override
+	bool isSelf = (mgr->GetThirdPersonCamera().GetDisplayROI() != nullptr &&
+				   mgr->GetThirdPersonCamera().GetDisplayROI() == p_rootROI);
+
+	if (!remote && !isSelf) {
+		return FALSE;
+	}
+
+	// Remote player permission check
+	if (remote && !remote->GetAllowRemoteCustomize()) {
+		return TRUE; // Consume click, no effect
+	}
+
+	// Determine change type from clicker's actor ID
+	uint8_t changeType;
+	int partIndex = -1;
+	switch (GameState()->GetActorId()) {
+	case LegoActor::c_pepper:
+		if (GameState()->GetCurrentAct() == LegoGameState::e_act2 ||
+			GameState()->GetCurrentAct() == LegoGameState::e_act3) {
+			return TRUE;
+		}
+		changeType = Multiplayer::CHANGE_VARIANT;
+		break;
+	case LegoActor::c_mama:
+		changeType = Multiplayer::CHANGE_SOUND;
+		break;
+	case LegoActor::c_papa:
+		changeType = Multiplayer::CHANGE_MOVE;
+		break;
+	case LegoActor::c_nick:
+		changeType = Multiplayer::CHANGE_COLOR;
+		if (p_param.GetROI()) {
+			partIndex = Multiplayer::CharacterCustomizer::MapClickedPartIndex(p_param.GetROI()->GetName());
+		}
+		if (partIndex < 0) {
+			return TRUE;
+		}
+		break;
+	case LegoActor::c_laura:
+		changeType = Multiplayer::CHANGE_MOOD;
+		break;
+	case LegoActor::c_brickster:
+		return TRUE;
+	default:
+		return FALSE;
+	}
+
+	// Send a customize request to the server. The server echoes it back to all peers
+	// (including the sender). HandleCustomize then applies the change and plays effects.
+	// For remote targets this avoids flip-flop from stale state messages; for self targets
+	// it keeps the code path uniform.
+	uint32_t targetPeerId = remote ? remote->GetPeerId() : mgr->GetLocalPeerId();
+	mgr->SendCustomize(
+		targetPeerId,
+		changeType,
+		static_cast<uint8_t>(partIndex >= 0 ? partIndex : 0xFF)
+	);
 
 	return TRUE;
 }
@@ -159,6 +241,15 @@ MxBool MultiplayerExt::ShouldInvertMovement(LegoPathActor* p_actor)
 	}
 
 	return FALSE;
+}
+
+MxBool MultiplayerExt::IsClonedCharacter(const char* p_name)
+{
+	if (!s_networkManager) {
+		return FALSE;
+	}
+
+	return s_networkManager->IsClonedCharacter(p_name) ? TRUE : FALSE;
 }
 
 MxBool MultiplayerExt::CheckRejected()

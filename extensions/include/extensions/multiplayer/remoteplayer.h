@@ -1,6 +1,7 @@
 #pragma once
 
 #include "extensions/multiplayer/animutils.h"
+#include "extensions/multiplayer/customizestate.h"
 #include "extensions/multiplayer/protocol.h"
 #include "mxtypes.h"
 
@@ -30,9 +31,11 @@ public:
 	void ReAddToScene();
 
 	uint32_t GetPeerId() const { return m_peerId; }
+	const char* GetUniqueName() const { return m_uniqueName; }
 	uint8_t GetActorId() const { return m_actorId; }
 	uint8_t GetDisplayActorIndex() const { return m_displayActorIndex; }
 	void SetActorId(uint8_t p_actorId) { m_actorId = p_actorId; }
+	LegoROI* GetROI() const { return m_roi; }
 	bool IsSpawned() const { return m_spawned; }
 	bool IsVisible() const { return m_visible; }
 	int8_t GetWorldId() const { return m_targetWorldId; }
@@ -42,6 +45,13 @@ public:
 	void SetNameBubbleVisible(bool p_visible);
 	void CreateNameBubble();
 	void DestroyNameBubble();
+
+	const CustomizeState& GetCustomizeState() const { return m_customizeState; }
+	bool GetAllowRemoteCustomize() const { return m_allowRemoteCustomize; }
+	void SetClickAnimObjectId(MxU32 p_clickAnimObjectId) { m_clickAnimObjectId = p_clickAnimObjectId; }
+	void StopClickAnimation();
+	bool IsInVehicle() const { return m_currentVehicleType != VEHICLE_NONE; }
+	bool IsMoving() const { return m_currentVehicleType != VEHICLE_NONE || m_targetSpeed > 0.01f; }
 
 private:
 	using AnimCache = AnimUtils::AnimCache;
@@ -93,6 +103,9 @@ private:
 	float m_emoteDuration;
 	bool m_emoteActive;
 
+	// Click animation tracking (0 = none)
+	MxU32 m_clickAnimObjectId;
+
 	// ROI map cache: animation name -> cached ROI map (invalidated on world change)
 	std::map<std::string, AnimCache> m_animCacheMap;
 
@@ -106,6 +119,9 @@ private:
 	int8_t m_currentVehicleType;
 
 	NameBubbleRenderer* m_nameBubble;
+
+	CustomizeState m_customizeState;
+	bool m_allowRemoteCustomize;
 };
 
 } // namespace Multiplayer
