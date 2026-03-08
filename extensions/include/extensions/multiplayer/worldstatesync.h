@@ -5,6 +5,7 @@
 #include "mxtypes.h"
 
 #include <cstdint>
+#include <string>
 #include <vector>
 
 class LegoEntity;
@@ -24,6 +25,15 @@ public:
 	// Called when the host peer changes. Requests a snapshot if we're not host.
 	void OnHostChanged();
 
+	// Captures current sky/light state before a save load (for non-host restore).
+	void SaveSkyLightState();
+
+	// Restores previously saved sky/light state (non-host only, prevents flicker).
+	void RestoreSkyLightState();
+
+	// Sends a snapshot to a specific peer, or broadcasts to all if p_targetPeerId is 0.
+	void SendWorldSnapshotTo(uint32_t p_targetPeerId);
+
 	// Incoming message handlers (called from NetworkManager::ProcessIncomingPackets)
 	void HandleRequestSnapshot(const RequestSnapshotMsg& p_msg);
 	void HandleWorldSnapshot(const uint8_t* p_data, size_t p_length);
@@ -34,7 +44,12 @@ public:
 	// Returns TRUE if the mutation should be suppressed locally (non-host).
 	MxBool HandleEntityMutation(LegoEntity* p_entity, MxU8 p_changeType);
 
+	// Called from multiplayer extension when a sky/light control is used.
+	// Returns TRUE if the local action should be suppressed (non-host).
+	MxBool HandleSkyLightMutation(uint8_t p_entityType, uint8_t p_changeType);
+
 private:
+	void ApplySkyLightState(const char* p_skyColor, int p_lightPos);
 	void SendSnapshotRequest();
 	void SendWorldSnapshot(uint32_t p_targetPeerId);
 	void BroadcastWorldEvent(uint8_t p_entityType, uint8_t p_changeType, uint8_t p_entityIndex);
@@ -51,6 +66,10 @@ private:
 	bool m_inIsleWorld;
 	bool m_snapshotRequested;
 	std::vector<WorldEventMsg> m_pendingWorldEvents;
+
+	// Saved sky/light state for non-host restore across save loads.
+	std::string m_savedSkyColor;
+	int m_savedLightPos;
 };
 
 } // namespace Multiplayer

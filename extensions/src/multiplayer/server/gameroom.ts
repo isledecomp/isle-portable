@@ -178,7 +178,12 @@ export class GameRoom implements DurableObject {
 			msgType === MSG_WORLD_SNAPSHOT &&
 			data.length >= SNAPSHOT_MIN_SIZE
 		) {
-			this.sendToTarget(stamped);
+			const targetId = readTargetPeerId(stamped);
+			if (targetId === 0) {
+				this.broadcastExcept(stamped.buffer, peerId);
+			} else {
+				this.sendToTarget(stamped);
+			}
 		} else if (msgType === MSG_CUSTOMIZE) {
 			// Broadcast to all including sender so the clicker sees effects
 			// on the target's clone on their own screen.

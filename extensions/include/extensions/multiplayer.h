@@ -33,6 +33,10 @@ public:
 	// Returns TRUE if the click should be suppressed locally (non-host).
 	static MxBool HandleEntityNotify(LegoEntity* p_entity);
 
+	// Intercepts observatory sky/light controls for multiplayer routing.
+	// Returns TRUE if the local action should be suppressed (non-host).
+	static MxBool HandleSkyLightControl(MxU32 p_controlId);
+
 	// Handles clicks on entity-less ROIs (remote players, display actor overrides).
 	static MxBool HandleROIClick(LegoROI* p_rootROI, LegoEventNotificationParam& p_param);
 
@@ -49,6 +53,12 @@ public:
 
 	// Returns TRUE if the name belongs to a multiplayer clone (entity-less ROI).
 	static MxBool IsClonedCharacter(const char* p_name);
+
+	// Called before a save file is loaded. Captures current sky/light state.
+	static void HandleBeforeSaveLoad();
+
+	// Called after a save file is loaded. Re-syncs world state with multiplayer peers.
+	static void HandleSaveLoaded();
 
 	// Returns true if the multiplayer connection was rejected (e.g. room full).
 	static MxBool CheckRejected();
@@ -68,23 +78,29 @@ LEGO1_EXPORT bool IsMultiplayerRejected();
 constexpr auto HandleCreate = &MultiplayerExt::HandleCreate;
 constexpr auto HandleWorldEnable = &MultiplayerExt::HandleWorldEnable;
 constexpr auto HandleEntityNotify = &MultiplayerExt::HandleEntityNotify;
+constexpr auto HandleSkyLightControl = &MultiplayerExt::HandleSkyLightControl;
 constexpr auto HandleROIClick = &MultiplayerExt::HandleROIClick;
 constexpr auto HandleActorEnter = &MultiplayerExt::HandleActorEnter;
 constexpr auto HandleActorExit = &MultiplayerExt::HandleActorExit;
 constexpr auto HandleCamAnimEnd = &MultiplayerExt::HandleCamAnimEnd;
 constexpr auto ShouldInvertMovement = &MultiplayerExt::ShouldInvertMovement;
 constexpr auto IsClonedCharacter = &MultiplayerExt::IsClonedCharacter;
+constexpr auto HandleBeforeSaveLoad = &MultiplayerExt::HandleBeforeSaveLoad;
+constexpr auto HandleSaveLoaded = &MultiplayerExt::HandleSaveLoaded;
 constexpr auto CheckRejected = &MultiplayerExt::CheckRejected;
 #else
 constexpr decltype(&MultiplayerExt::HandleCreate) HandleCreate = nullptr;
 constexpr decltype(&MultiplayerExt::HandleWorldEnable) HandleWorldEnable = nullptr;
 constexpr decltype(&MultiplayerExt::HandleEntityNotify) HandleEntityNotify = nullptr;
+constexpr decltype(&MultiplayerExt::HandleSkyLightControl) HandleSkyLightControl = nullptr;
 constexpr decltype(&MultiplayerExt::HandleROIClick) HandleROIClick = nullptr;
 constexpr decltype(&MultiplayerExt::HandleActorEnter) HandleActorEnter = nullptr;
 constexpr decltype(&MultiplayerExt::HandleActorExit) HandleActorExit = nullptr;
 constexpr decltype(&MultiplayerExt::HandleCamAnimEnd) HandleCamAnimEnd = nullptr;
 constexpr decltype(&MultiplayerExt::ShouldInvertMovement) ShouldInvertMovement = nullptr;
 constexpr decltype(&MultiplayerExt::IsClonedCharacter) IsClonedCharacter = nullptr;
+constexpr decltype(&MultiplayerExt::HandleBeforeSaveLoad) HandleBeforeSaveLoad = nullptr;
+constexpr decltype(&MultiplayerExt::HandleSaveLoaded) HandleSaveLoaded = nullptr;
 constexpr decltype(&MultiplayerExt::CheckRejected) CheckRejected = nullptr;
 #endif
 

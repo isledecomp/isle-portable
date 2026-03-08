@@ -67,12 +67,18 @@ public:
 
 	void OnWorldEnabled(LegoWorld* p_world);
 	void OnWorldDisabled(LegoWorld* p_world);
+	void OnBeforeSaveLoad();
+	void OnSaveLoaded();
 
 	ThirdPersonCamera& GetThirdPersonCamera() { return m_thirdPersonCamera; }
 
 	// Called from multiplayer extension when a plant/building entity is clicked.
 	// Returns TRUE if the mutation should be suppressed locally (non-host).
 	MxBool HandleEntityMutation(LegoEntity* p_entity, MxU8 p_changeType);
+
+	// Called from multiplayer extension when a sky/light control is used.
+	// Returns TRUE if the local action should be suppressed (non-host).
+	MxBool HandleSkyLightMutation(uint8_t p_entityType, uint8_t p_changeType);
 
 	bool IsHost() const { return m_localPeerId != 0 && m_localPeerId == m_hostPeerId; }
 	uint32_t GetLocalPeerId() const { return m_localPeerId; }

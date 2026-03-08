@@ -192,9 +192,40 @@ void NetworkManager::OnWorldDisabled(LegoWorld* p_world)
 	}
 }
 
+void NetworkManager::OnBeforeSaveLoad()
+{
+	if (m_transport && m_transport->IsConnected() && !IsHost()) {
+		m_worldSync.SaveSkyLightState();
+	}
+}
+
+void NetworkManager::OnSaveLoaded()
+{
+	if (!m_transport || !m_transport->IsConnected()) {
+		return;
+	}
+
+	// After a save file load, the local plant/building/sky/light state comes
+	// from the save file and may diverge from the host's state.
+	// Host broadcasts to all peers (targetPeerId=0); non-host restores the
+	// pre-load sky/light to avoid visual flicker, then requests a fresh snapshot.
+	if (IsHost()) {
+		m_worldSync.SendWorldSnapshotTo(0);
+	}
+	else {
+		m_worldSync.RestoreSkyLightState();
+		m_worldSync.OnHostChanged();
+	}
+}
+
 MxBool NetworkManager::HandleEntityMutation(LegoEntity* p_entity, MxU8 p_changeType)
 {
 	return m_worldSync.HandleEntityMutation(p_entity, p_changeType);
+}
+
+MxBool NetworkManager::HandleSkyLightMutation(uint8_t p_entityType, uint8_t p_changeType)
+{
+	return m_worldSync.HandleSkyLightMutation(p_entityType, p_changeType);
 }
 
 void NetworkManager::ProcessPendingRequests()
@@ -608,7 +639,15 @@ void NetworkManager::NotifyPlayerCountChanged()
 
 	int count = -1;
 	if (m_inIsleWorld) {
-		count = 1; // local player
+		count = 0;
+
+		// Only count the local player if they have a valid actor
+		// (players who enter Isle without selecting a save have no actor).
+		LegoPathActor* userActor = UserActor();
+		if (userActor && IsValidActorId(static_cast<LegoActor*>(userActor)->GetActorId())) {
+			count = 1;
+		}
+
 		for (auto& [peerId, player] : m_remotePlayers) {
 			if (player->GetWorldId() == (int8_t) LegoOmni::e_act1) {
 				count++;

@@ -4,6 +4,7 @@
 #include "extensions/multiplayer/networkmanager.h"
 #include "extensions/multiplayer/networktransport.h"
 #include "extensions/multiplayer/protocol.h"
+#include "isle_actions.h"
 #include "islepathactor.h"
 #include "legoactor.h"
 #include "legoactors.h"
@@ -211,6 +212,57 @@ MxBool MultiplayerExt::HandleEntityNotify(LegoEntity* p_entity)
 	}
 
 	return s_networkManager->HandleEntityMutation(p_entity, changeType);
+}
+
+MxBool MultiplayerExt::HandleSkyLightControl(MxU32 p_controlId)
+{
+	if (!s_networkManager) {
+		return FALSE;
+	}
+
+	uint8_t entityType;
+	uint8_t changeType;
+
+	switch (p_controlId) {
+	case IsleScript::c_Observe_SkyColor_Ctl:
+		entityType = Multiplayer::ENTITY_SKY;
+		changeType = Multiplayer::SKY_TOGGLE_COLOR;
+		break;
+	case IsleScript::c_Observe_Sun_Ctl:
+		entityType = Multiplayer::ENTITY_SKY;
+		changeType = Multiplayer::SKY_DAY;
+		break;
+	case IsleScript::c_Observe_Moon_Ctl:
+		entityType = Multiplayer::ENTITY_SKY;
+		changeType = Multiplayer::SKY_NIGHT;
+		break;
+	case IsleScript::c_Observe_GlobeRArrow_Ctl:
+		entityType = Multiplayer::ENTITY_LIGHT;
+		changeType = Multiplayer::LIGHT_INCREMENT;
+		break;
+	case IsleScript::c_Observe_GlobeLArrow_Ctl:
+		entityType = Multiplayer::ENTITY_LIGHT;
+		changeType = Multiplayer::LIGHT_DECREMENT;
+		break;
+	default:
+		return FALSE;
+	}
+
+	return s_networkManager->HandleSkyLightMutation(entityType, changeType);
+}
+
+void MultiplayerExt::HandleBeforeSaveLoad()
+{
+	if (s_networkManager) {
+		s_networkManager->OnBeforeSaveLoad();
+	}
+}
+
+void MultiplayerExt::HandleSaveLoaded()
+{
+	if (s_networkManager) {
+		s_networkManager->OnSaveLoaded();
+	}
 }
 
 void MultiplayerExt::HandleActorEnter(IslePathActor* p_actor)

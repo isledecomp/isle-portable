@@ -40,7 +40,9 @@ enum VehicleType : int8_t {
 // Entity types for world events
 enum WorldEntityType : uint8_t {
 	ENTITY_PLANT = 0,
-	ENTITY_BUILDING = 1
+	ENTITY_BUILDING = 1,
+	ENTITY_SKY = 2,
+	ENTITY_LIGHT = 3
 };
 
 // Change types for world events (maps to Switch* methods on LegoEntity)
@@ -51,6 +53,19 @@ enum WorldChangeType : uint8_t {
 	CHANGE_COLOR = 3,
 	CHANGE_MOOD = 4,
 	CHANGE_DECREMENT = 5
+};
+
+// Change types for ENTITY_SKY
+enum SkyChangeType : uint8_t {
+	SKY_TOGGLE_COLOR = 0,
+	SKY_DAY = 1,
+	SKY_NIGHT = 2
+};
+
+// Change types for ENTITY_LIGHT
+enum LightChangeType : uint8_t {
+	LIGHT_INCREMENT = 0,
+	LIGHT_DECREMENT = 1
 };
 
 #pragma pack(push, 1)
