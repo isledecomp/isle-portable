@@ -334,25 +334,7 @@ void NetworkManager::BroadcastLocalState()
 	msg.walkAnimId = m_localWalkAnimId;
 	msg.idleAnimId = m_localIdleAnimId;
 
-	// Convert Username letters (0-25 = A-Z) to ASCII string.
-	// The active player is always at m_players[0] after RegisterPlayer/SwitchPlayer.
-	SDL_memset(msg.name, 0, sizeof(msg.name));
-	LegoGameState* gs = GameState();
-	if (gs && gs->m_playerCount > 0) {
-		const LegoGameState::Username& username = gs->m_players[0];
-		for (int i = 0; i < 7; i++) {
-			MxS16 letter = username.m_letters[i];
-			if (letter < 0) {
-				break;
-			}
-			if (letter <= 25) {
-				msg.name[i] = (char) ('A' + letter);
-			}
-			else {
-				msg.name[i] = '?';
-			}
-		}
-	}
+	EncodeUsername(msg.name);
 
 	msg.displayActorIndex = m_localDisplayActorIndex;
 

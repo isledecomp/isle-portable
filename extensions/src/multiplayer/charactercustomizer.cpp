@@ -1,11 +1,10 @@
 #include "extensions/multiplayer/charactercustomizer.h"
 
+#include "3dmanager/lego3dmanager.h"
+#include "3dmanager/lego3dview.h"
 #include "extensions/multiplayer/charactercloner.h"
 #include "extensions/multiplayer/customizestate.h"
 #include "extensions/multiplayer/protocol.h"
-
-#include "3dmanager/lego3dmanager.h"
-#include "3dmanager/lego3dview.h"
 #include "legoactors.h"
 #include "legocharactermanager.h"
 #include "legovideomanager.h"
@@ -19,7 +18,6 @@
 #include "viewmanager/viewmanager.h"
 
 #include <SDL3/SDL_stdinc.h>
-#include <cstdio>
 
 using namespace Multiplayer;
 
@@ -195,20 +193,15 @@ int CharacterCustomizer::MapClickedPartIndex(const char* p_partName)
 	return -1;
 }
 
-void CharacterCustomizer::ApplyFullState(
-	LegoROI* p_rootROI,
-	uint8_t p_actorInfoIndex,
-	const CustomizeState& p_state
-)
+void CharacterCustomizer::ApplyFullState(LegoROI* p_rootROI, uint8_t p_actorInfoIndex, const CustomizeState& p_state)
 {
 	if (p_actorInfoIndex >= sizeOfArray(g_actorInfoInit)) {
 		return;
 	}
 
 	// Apply colors for the 6 independent colorable parts
-	static const int colorableParts[] = {
-		c_infohatPart, c_infogronPart, c_armlftPart, c_armrtPart, c_leglftPart, c_legrtPart
-	};
+	static const int colorableParts[] =
+		{c_infohatPart, c_infogronPart, c_armlftPart, c_armrtPart, c_leglftPart, c_legrtPart};
 
 	for (int i = 0; i < (int) sizeOfArray(colorableParts); i++) {
 		int partIndex = colorableParts[i];
@@ -242,11 +235,7 @@ void CharacterCustomizer::ApplyFullState(
 	}
 }
 
-void CharacterCustomizer::ApplyHatVariant(
-	LegoROI* p_rootROI,
-	uint8_t p_actorInfoIndex,
-	const CustomizeState& p_state
-)
+void CharacterCustomizer::ApplyHatVariant(LegoROI* p_rootROI, uint8_t p_actorInfoIndex, const CustomizeState& p_state)
 {
 	if (p_actorInfoIndex >= sizeOfArray(g_actorInfoInit)) {
 		return;
@@ -266,7 +255,7 @@ void CharacterCustomizer::ApplyHatVariant(
 
 		ViewLODList* lodList = GetViewLODListManager()->Lookup(part.m_partName[partNameIndex]);
 		MxS32 lodSize = lodList->Size();
-		sprintf(lodName, "%s_cv%u", p_rootROI->GetName(), s_variantCounter++);
+		SDL_snprintf(lodName, sizeof(lodName), "%s_cv%u", p_rootROI->GetName(), s_variantCounter++);
 		ViewLODList* dupLodList = GetViewLODListManager()->Create(lodName, lodSize);
 
 		Tgl::Renderer* renderer = VideoManager()->GetRenderer();
@@ -300,8 +289,8 @@ void CharacterCustomizer::ApplyHatVariant(
 
 void CharacterCustomizer::PlayClickSound(LegoROI* p_roi, const CustomizeState& p_state, bool p_basedOnMood)
 {
-	MxU32 objectId = p_basedOnMood ? (p_state.mood + g_characterSoundIdMoodOffset)
-	                               : (p_state.sound + g_characterSoundIdOffset);
+	MxU32 objectId =
+		p_basedOnMood ? (p_state.mood + g_characterSoundIdMoodOffset) : (p_state.sound + g_characterSoundIdOffset);
 
 	if (objectId) {
 		MxDSAction action;

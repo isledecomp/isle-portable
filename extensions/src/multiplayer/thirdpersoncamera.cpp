@@ -4,10 +4,7 @@
 #include "anim/legoanim.h"
 #include "extensions/multiplayer/charactercloner.h"
 #include "extensions/multiplayer/charactercustomizer.h"
-#include "extensions/multiplayer/namebubblerenderer.h"
 #include "islepathactor.h"
-#include "legogamestate.h"
-#include "legoanimpresenter.h"
 #include "legocameracontroller.h"
 #include "legocharactermanager.h"
 #include "legovideomanager.h"
@@ -20,7 +17,6 @@
 #include "roi/legoroi.h"
 
 #include <SDL3/SDL_stdinc.h>
-#include <cmath>
 
 using namespace Multiplayer;
 
@@ -39,13 +35,10 @@ static void FlipROIDirection(LegoROI* p_roi)
 
 ThirdPersonCamera::ThirdPersonCamera()
 	: m_enabled(false), m_active(false), m_roiUnflipped(false), m_playerROI(nullptr),
-	  m_displayActorIndex(DISPLAY_ACTOR_NONE), m_displayROI(nullptr), m_walkAnimId(0), m_idleAnimId(0),
-	  m_walkAnimCache(nullptr), m_idleAnimCache(nullptr), m_animTime(0.0f), m_idleTime(0.0f), m_idleAnimTime(0.0f),
-	  m_wasMoving(false), m_emoteAnimCache(nullptr), m_emoteTime(0.0f), m_emoteDuration(0.0f), m_emoteActive(false),
-	  m_clickAnimObjectId(0), m_currentVehicleType(VEHICLE_NONE), m_rideAnim(nullptr), m_rideRoiMap(nullptr),
-	  m_rideRoiMapSize(0), m_rideVehicleROI(nullptr), m_nameBubble(nullptr), m_showNameBubble(true),
-	  m_orbitYaw(DEFAULT_ORBIT_YAW),
-	  m_orbitPitch(DEFAULT_ORBIT_PITCH), m_orbitDistance(DEFAULT_ORBIT_DISTANCE), m_touch{}
+	  m_displayActorIndex(DISPLAY_ACTOR_NONE), m_displayROI(nullptr),
+	  m_animator(CharacterAnimatorConfig{/*.saveEmoteTransform=*/true}), m_showNameBubble(true),
+	  m_orbitYaw(DEFAULT_ORBIT_YAW), m_orbitPitch(DEFAULT_ORBIT_PITCH), m_orbitDistance(DEFAULT_ORBIT_DISTANCE),
+	  m_touch{}
 {
 	SDL_memset(m_displayUniqueName, 0, sizeof(m_displayUniqueName));
 }
@@ -94,9 +87,8 @@ void ThirdPersonCamera::Disable()
 	m_active = false;
 	DestroyNameBubble();
 	DestroyDisplayClone();
-	ClearRideAnimation();
-	m_animCacheMap.clear();
-	ClearAnimCaches();
+	m_animator.ClearRideAnimation();
+	m_animator.ClearAll();
 
 	ResetOrbitState();
 }
@@ -110,7 +102,7 @@ void ThirdPersonCamera::OnActorEnter(IslePathActor* p_actor)
 
 	// Always track vehicle type so OnActorExit can handle exits
 	// even if Enable() was called after entering the vehicle.
-	m_currentVehicleType = DetectVehicleType(userActor);
+	m_animator.SetCurrentVehicleType(DetectVehicleType(userActor));
 
 	// Enter() calls TurnAround(), so any previous undo is superseded.
 	m_roiUnflipped = false;
@@ -124,9 +116,10 @@ void ThirdPersonCamera::OnActorEnter(IslePathActor* p_actor)
 		return;
 	}
 
-	if (m_currentVehicleType != VEHICLE_NONE) {
+	if (m_animator.GetCurrentVehicleType() != VEHICLE_NONE) {
 		// Large vehicles and helicopter: stay first-person.
-		if (IsLargeVehicle(m_currentVehicleType) || m_currentVehicleType == VEHICLE_HELICOPTER) {
+		if (IsLargeVehicle(m_animator.GetCurrentVehicleType()) ||
+			m_animator.GetCurrentVehicleType() == VEHICLE_HELICOPTER) {
 			// Hide walking character ROI (Enter doesn't call Exit on it).
 			if (m_playerROI) {
 				m_playerROI->SetVisibility(FALSE);
@@ -150,7 +143,7 @@ void ThirdPersonCamera::OnActorEnter(IslePathActor* p_actor)
 
 		m_active = true;
 		SetupCamera(userActor);
-		BuildRideAnimation(m_currentVehicleType);
+		m_animator.BuildRideAnimation(m_animator.GetCurrentVehicleType(), m_playerROI, 0);
 		CreateNameBubble();
 		return;
 	}
@@ -169,18 +162,11 @@ void ThirdPersonCamera::OnActorEnter(IslePathActor* p_actor)
 	VideoManager()->Get3DManager()->Remove(*m_playerROI);
 	VideoManager()->Get3DManager()->Add(*m_playerROI);
 
-	// Build animation caches
-	m_walkAnimCache = GetOrBuildAnimCache(g_walkAnimNames[m_walkAnimId]);
-	m_idleAnimCache = GetOrBuildAnimCache(g_idleAnimNames[m_idleAnimId]);
+	// Build animation caches and reset state
+	m_animator.InitAnimCaches(m_playerROI);
+	m_animator.ResetAnimState();
 
-	// Reset animation state
-	m_animTime = 0.0f;
-	m_idleTime = 0.0f;
-	m_idleAnimTime = 0.0f;
-	m_wasMoving = false;
-	m_emoteActive = false;
-
-	ApplyIdleFrame0();
+	m_animator.ApplyIdleFrame0(m_playerROI);
 
 	SetupCamera(userActor);
 	CreateNameBubble();
@@ -194,7 +180,7 @@ void ThirdPersonCamera::OnActorExit(IslePathActor* p_actor)
 
 	// For vehicle exit, p_actor is the vehicle, not UserActor —
 	// check m_currentVehicleType instead.
-	if (m_currentVehicleType != VEHICLE_NONE) {
+	if (m_animator.GetCurrentVehicleType() != VEHICLE_NONE) {
 		// When 3rd-person camera is active, movement inversion causes the
 		// vehicle to physically drive opposite to vanilla.  CalculateTransform
 		// re-inverts to keep the ROI z backward.  Exit()'s TurnAround restores
@@ -206,9 +192,8 @@ void ThirdPersonCamera::OnActorExit(IslePathActor* p_actor)
 		}
 
 		// Exiting a vehicle: reinitialize for the walking character.
-		ClearRideAnimation();
-		ClearAnimCaches();
-		m_animCacheMap.clear();
+		m_animator.ClearRideAnimation();
+		m_animator.ClearAll();
 		ReinitForCharacter();
 	}
 	else if (m_active && static_cast<LegoPathActor*>(p_actor) == UserActor()) {
@@ -218,9 +203,8 @@ void ThirdPersonCamera::OnActorExit(IslePathActor* p_actor)
 			m_playerROI->SetVisibility(FALSE);
 			VideoManager()->Get3DManager()->Remove(*m_playerROI);
 		}
-		ClearRideAnimation();
-		ClearAnimCaches();
-		m_currentVehicleType = VEHICLE_NONE;
+		m_animator.ClearRideAnimation();
+		m_animator.ClearAll();
 		m_playerROI = nullptr;
 		m_active = false;
 	}
@@ -258,26 +242,24 @@ void ThirdPersonCamera::Tick(float p_deltaTime)
 	// Update orbit camera position each frame so it tracks the player
 	ApplyOrbitCamera();
 
-	if (m_nameBubble) {
-		m_nameBubble->Update(m_playerROI);
-	}
+	m_animator.UpdateNameBubble(m_playerROI);
 
-	// Small vehicle with ride animation (like RemotePlayer)
-	if (m_currentVehicleType != VEHICLE_NONE) {
-		StopClickAnimation();
-		if (m_rideAnim && m_rideRoiMap) {
+	// Small vehicle with ride animation
+	if (m_animator.GetCurrentVehicleType() != VEHICLE_NONE) {
+		m_animator.StopClickAnimation();
+		if (m_animator.GetRideAnim() && m_animator.GetRideRoiMap()) {
 			LegoPathActor* actor = UserActor();
 			if (!actor || !actor->GetROI()) {
 				return;
 			}
 
 			// Force visibility of ride ROI map entries
-			AnimUtils::EnsureROIMapVisibility(m_rideRoiMap, m_rideRoiMapSize);
+			AnimUtils::EnsureROIMapVisibility(m_animator.GetRideRoiMap(), m_animator.GetRideRoiMapSize());
 
 			// Only advance animation time when actually moving
 			float speed = actor->GetWorldSpeed();
-			if (fabsf(speed) > 0.01f) {
-				m_animTime += p_deltaTime * 2000.0f;
+			if (SDL_fabsf(speed) > 0.01f) {
+				m_animator.SetAnimTime(m_animator.GetAnimTime() + p_deltaTime * 2000.0f);
 			}
 
 			// Use vehicle actor's transform as base.
@@ -287,17 +269,18 @@ void ThirdPersonCamera::Tick(float p_deltaTime)
 			m_playerROI->WrappedSetLocal2WorldWithWorldDataUpdate(transform);
 			m_playerROI->SetVisibility(TRUE);
 
-			float duration = (float) m_rideAnim->GetDuration();
+			float duration = (float) m_animator.GetRideAnim()->GetDuration();
 			if (duration > 0.0f) {
-				float timeInCycle = m_animTime - duration * floorf(m_animTime / duration);
+				float timeInCycle =
+					m_animator.GetAnimTime() - duration * SDL_floorf(m_animator.GetAnimTime() / duration);
 
-				LegoTreeNode* root = m_rideAnim->GetRoot();
+				LegoTreeNode* root = m_animator.GetRideAnim()->GetRoot();
 				for (LegoU32 i = 0; i < root->GetNumChildren(); i++) {
 					LegoROI::ApplyAnimationTransformation(
 						root->GetChild(i),
 						transform,
 						(LegoTime) timeInCycle,
-						m_rideRoiMap
+						m_animator.GetRideRoiMap()
 					);
 				}
 			}
@@ -320,170 +303,34 @@ void ThirdPersonCamera::Tick(float p_deltaTime)
 		}
 	}
 
-	// Determine the active walk animation and its ROI map
-	LegoAnim* walkAnim = nullptr;
-	LegoROI** walkRoiMap = nullptr;
-	MxU32 walkRoiMapSize = 0;
-
-	if (m_walkAnimCache && m_walkAnimCache->anim && m_walkAnimCache->roiMap) {
-		walkAnim = m_walkAnimCache->anim;
-		walkRoiMap = m_walkAnimCache->roiMap;
-		walkRoiMapSize = m_walkAnimCache->roiMapSize;
-	}
-
-	// Ensure visibility of all mapped ROIs
-	if (walkRoiMap) {
-		AnimUtils::EnsureROIMapVisibility(walkRoiMap, walkRoiMapSize);
-	}
-	if (m_idleAnimCache && m_idleAnimCache->roiMap) {
-		AnimUtils::EnsureROIMapVisibility(m_idleAnimCache->roiMap, m_idleAnimCache->roiMapSize);
-	}
-
 	float speed = userActor->GetWorldSpeed();
-	bool isMoving = fabsf(speed) > 0.01f;
+	bool isMoving = SDL_fabsf(speed) > 0.01f;
 
-	// Movement interrupts click animations and emotes
-	if (isMoving) {
-		StopClickAnimation();
-		if (m_emoteActive) {
-			m_emoteActive = false;
-			m_emoteAnimCache = nullptr;
-		}
-	}
-
-	if (isMoving) {
-		if (!walkAnim || !walkRoiMap) {
-			return;
-		}
-
-		m_animTime += p_deltaTime * 2000.0f;
-		float duration = (float) walkAnim->GetDuration();
-		if (duration > 0.0f) {
-			float timeInCycle = m_animTime - duration * floorf(m_animTime / duration);
-
-			MxMatrix transform(m_playerROI->GetLocal2World());
-			LegoTreeNode* root = walkAnim->GetRoot();
-			for (LegoU32 i = 0; i < root->GetNumChildren(); i++) {
-				LegoROI::ApplyAnimationTransformation(root->GetChild(i), transform, (LegoTime) timeInCycle, walkRoiMap);
-			}
-		}
-		m_wasMoving = true;
-		m_idleTime = 0.0f;
-		m_idleAnimTime = 0.0f;
-	}
-	else if (m_emoteActive && m_emoteAnimCache && m_emoteAnimCache->anim && m_emoteAnimCache->roiMap) {
-		m_emoteTime += p_deltaTime * 1000.0f;
-
-		if (m_emoteTime >= m_emoteDuration) {
-			m_emoteActive = false;
-			m_emoteAnimCache = nullptr;
-			m_wasMoving = false;
-			m_idleTime = 0.0f;
-			m_idleAnimTime = 0.0f;
-		}
-		else {
-			// Use saved clean transform to prevent scale accumulation.
-			MxMatrix transform(m_emoteParentTransform);
-
-			LegoTreeNode* root = m_emoteAnimCache->anim->GetRoot();
-			for (LegoU32 i = 0; i < root->GetNumChildren(); i++) {
-				LegoROI::ApplyAnimationTransformation(
-					root->GetChild(i),
-					transform,
-					(LegoTime) m_emoteTime,
-					m_emoteAnimCache->roiMap
-				);
-			}
-
-			// Restore player ROI transform (animation root overwrote it).
-			m_playerROI->WrappedSetLocal2WorldWithWorldDataUpdate(m_emoteParentTransform);
-		}
-	}
-	else if (m_idleAnimCache && m_idleAnimCache->anim && m_idleAnimCache->roiMap) {
-		if (m_wasMoving) {
-			m_wasMoving = false;
-			m_idleTime = 0.0f;
-			m_idleAnimTime = 0.0f;
-		}
-
-		m_idleTime += p_deltaTime;
-
-		if (m_idleTime >= 2.5f) {
-			m_idleAnimTime += p_deltaTime * 1000.0f;
-		}
-
-		float duration = (float) m_idleAnimCache->anim->GetDuration();
-		if (duration > 0.0f) {
-			float timeInCycle = m_idleAnimTime - duration * floorf(m_idleAnimTime / duration);
-
-			MxMatrix transform(m_playerROI->GetLocal2World());
-			LegoTreeNode* root = m_idleAnimCache->anim->GetRoot();
-			for (LegoU32 i = 0; i < root->GetNumChildren(); i++) {
-				LegoROI::ApplyAnimationTransformation(
-					root->GetChild(i),
-					transform,
-					(LegoTime) timeInCycle,
-					m_idleAnimCache->roiMap
-				);
-			}
-		}
-	}
+	m_animator.Tick(p_deltaTime, m_playerROI, isMoving);
 }
 
 void ThirdPersonCamera::SetWalkAnimId(uint8_t p_walkAnimId)
 {
-	if (p_walkAnimId >= g_walkAnimCount) {
-		return;
-	}
-
-	if (p_walkAnimId != m_walkAnimId) {
-		m_walkAnimId = p_walkAnimId;
-		if (m_active) {
-			m_walkAnimCache = GetOrBuildAnimCache(g_walkAnimNames[m_walkAnimId]);
-		}
-	}
+	m_animator.SetWalkAnimId(p_walkAnimId, m_active ? m_playerROI : nullptr);
 }
 
 void ThirdPersonCamera::SetIdleAnimId(uint8_t p_idleAnimId)
 {
-	if (p_idleAnimId >= g_idleAnimCount) {
-		return;
-	}
-
-	if (p_idleAnimId != m_idleAnimId) {
-		m_idleAnimId = p_idleAnimId;
-		if (m_active) {
-			m_idleAnimCache = GetOrBuildAnimCache(g_idleAnimNames[m_idleAnimId]);
-		}
-	}
+	m_animator.SetIdleAnimId(p_idleAnimId, m_active ? m_playerROI : nullptr);
 }
 
 void ThirdPersonCamera::TriggerEmote(uint8_t p_emoteId)
 {
-	if (p_emoteId >= g_emoteAnimCount || !m_active) {
+	if (!m_active) {
 		return;
 	}
 
 	LegoPathActor* userActor = UserActor();
-	if (!userActor || fabsf(userActor->GetWorldSpeed()) > 0.01f) {
+	if (!userActor) {
 		return;
 	}
 
-	AnimCache* cache = GetOrBuildAnimCache(g_emoteAnimNames[p_emoteId]);
-	if (!cache || !cache->anim) {
-		return;
-	}
-
-	StopClickAnimation();
-
-	m_emoteAnimCache = cache;
-	m_emoteTime = 0.0f;
-	m_emoteDuration = (float) cache->anim->GetDuration();
-	m_emoteActive = true;
-
-	// Save clean transform to prevent scale accumulation during emote
-	// (the animation root writes scaled values into the ROI each frame).
-	m_emoteParentTransform = m_playerROI->GetLocal2World();
+	m_animator.TriggerEmote(p_emoteId, m_playerROI, SDL_fabsf(userActor->GetWorldSpeed()) > 0.01f);
 }
 
 void ThirdPersonCamera::ApplyCustomizeChange(uint8_t p_changeType, uint8_t p_partIndex)
@@ -495,10 +342,7 @@ void ThirdPersonCamera::ApplyCustomizeChange(uint8_t p_changeType, uint8_t p_par
 
 void ThirdPersonCamera::StopClickAnimation()
 {
-	if (m_clickAnimObjectId != 0) {
-		CharacterCustomizer::StopClickAnimation(m_clickAnimObjectId);
-		m_clickAnimObjectId = 0;
-	}
+	m_animator.StopClickAnimation();
 }
 
 void ThirdPersonCamera::OnWorldEnabled(LegoWorld* p_world)
@@ -508,8 +352,7 @@ void ThirdPersonCamera::OnWorldEnabled(LegoWorld* p_world)
 	}
 
 	// Animation presenters may have been recreated.
-	m_animCacheMap.clear();
-	ClearAnimCaches();
+	m_animator.ClearAll();
 
 	ReinitForCharacter();
 }
@@ -525,22 +368,8 @@ void ThirdPersonCamera::OnWorldDisabled(LegoWorld* p_world)
 	m_playerROI = nullptr;
 	DestroyNameBubble();
 	DestroyDisplayClone();
-	ClearRideAnimation();
-	m_animCacheMap.clear();
-	ClearAnimCaches();
-}
-
-ThirdPersonCamera::AnimCache* ThirdPersonCamera::GetOrBuildAnimCache(const char* p_animName)
-{
-	return AnimUtils::GetOrBuildAnimCache(m_animCacheMap, m_playerROI, p_animName);
-}
-
-void ThirdPersonCamera::ClearAnimCaches()
-{
-	m_walkAnimCache = nullptr;
-	m_idleAnimCache = nullptr;
-	m_emoteAnimCache = nullptr;
-	m_emoteActive = false;
+	m_animator.ClearRideAnimation();
+	m_animator.ClearAll();
 }
 
 void ThirdPersonCamera::SetupCamera(LegoPathActor* p_actor)
@@ -554,44 +383,6 @@ void ThirdPersonCamera::SetupCamera(LegoPathActor* p_actor)
 	ComputeOrbitVectors(at, dir, up);
 	world->GetCameraController()->SetWorldTransform(at, dir, up);
 	p_actor->TransformPointOfView();
-}
-
-void ThirdPersonCamera::BuildRideAnimation(int8_t p_vehicleType)
-{
-	if (p_vehicleType < 0 || p_vehicleType >= VEHICLE_COUNT) {
-		return;
-	}
-
-	const char* rideAnimName = g_rideAnimNames[p_vehicleType];
-	const char* vehicleVariantName = g_rideVehicleROINames[p_vehicleType];
-	if (!rideAnimName || !vehicleVariantName) {
-		return;
-	}
-
-	LegoWorld* world = CurrentWorld();
-	if (!world) {
-		return;
-	}
-
-	MxCore* presenter = world->Find("LegoAnimPresenter", rideAnimName);
-	if (!presenter) {
-		return;
-	}
-
-	m_rideAnim = static_cast<LegoAnimPresenter*>(presenter)->GetAnimation();
-	if (!m_rideAnim) {
-		return;
-	}
-
-	// Create variant ROI, rename to match animation tree.
-	const char* baseName = g_vehicleROINames[p_vehicleType];
-	m_rideVehicleROI = CharacterManager()->CreateAutoROI("tp_vehicle", baseName, FALSE);
-	if (m_rideVehicleROI) {
-		m_rideVehicleROI->SetName(vehicleVariantName);
-	}
-
-	AnimUtils::BuildROIMap(m_rideAnim, m_playerROI, m_rideVehicleROI, m_rideRoiMap, m_rideRoiMapSize);
-	m_animTime = 0.0f;
 }
 
 void ThirdPersonCamera::SetDisplayActorIndex(uint8_t p_displayActorIndex)
@@ -639,7 +430,7 @@ void ThirdPersonCamera::CreateDisplayClone()
 
 void ThirdPersonCamera::DestroyDisplayClone()
 {
-	StopClickAnimation();
+	m_animator.StopClickAnimation();
 	if (m_displayROI) {
 		if (m_playerROI == m_displayROI) {
 			m_playerROI = nullptr;
@@ -652,97 +443,39 @@ void ThirdPersonCamera::DestroyDisplayClone()
 
 void ThirdPersonCamera::CreateNameBubble()
 {
-	if (m_nameBubble) {
-		return;
-	}
-
 	char name[8] = {};
-	LegoGameState* gs = GameState();
-	if (gs && gs->m_playerCount > 0) {
-		const LegoGameState::Username& username = gs->m_players[0];
-		for (int i = 0; i < 7; i++) {
-			MxS16 letter = username.m_letters[i];
-			if (letter < 0) {
-				break;
-			}
-			if (letter <= 25) {
-				name[i] = (char) ('A' + letter);
-			}
-			else {
-				name[i] = '?';
-			}
-		}
-	}
+	EncodeUsername(name);
 
 	if (name[0] == '\0') {
 		return;
 	}
 
-	m_nameBubble = new NameBubbleRenderer();
-	m_nameBubble->Create(name);
+	m_animator.CreateNameBubble(name);
 
 	if (!m_showNameBubble) {
-		m_nameBubble->SetVisible(false);
+		m_animator.SetNameBubbleVisible(false);
 	}
 }
 
 void ThirdPersonCamera::DestroyNameBubble()
 {
-	if (m_nameBubble) {
-		delete m_nameBubble;
-		m_nameBubble = nullptr;
-	}
+	m_animator.DestroyNameBubble();
 }
 
 void ThirdPersonCamera::SetNameBubbleVisible(bool p_visible)
 {
 	m_showNameBubble = p_visible;
-	if (m_nameBubble) {
-		m_nameBubble->SetVisible(p_visible);
-	}
+	m_animator.SetNameBubbleVisible(p_visible);
 }
 
-void ThirdPersonCamera::ClearRideAnimation()
-{
-	if (m_rideRoiMap) {
-		delete[] m_rideRoiMap;
-		m_rideRoiMap = nullptr;
-		m_rideRoiMapSize = 0;
-	}
-	if (m_rideVehicleROI) {
-		VideoManager()->Get3DManager()->Remove(*m_rideVehicleROI);
-		CharacterManager()->ReleaseAutoROI(m_rideVehicleROI);
-		m_rideVehicleROI = nullptr;
-	}
-	m_rideAnim = nullptr;
-	m_currentVehicleType = VEHICLE_NONE;
-}
-
-void ThirdPersonCamera::ApplyIdleFrame0()
-{
-	if (!m_playerROI || !m_idleAnimCache || !m_idleAnimCache->anim || !m_idleAnimCache->roiMap) {
-		return;
-	}
-
-	MxMatrix transform(m_playerROI->GetLocal2World());
-	LegoTreeNode* root = m_idleAnimCache->anim->GetRoot();
-	for (LegoU32 i = 0; i < root->GetNumChildren(); i++) {
-		LegoROI::ApplyAnimationTransformation(root->GetChild(i), transform, (LegoTime) 0.0f, m_idleAnimCache->roiMap);
-	}
-}
-
-void ThirdPersonCamera::ComputeOrbitVectors(
-	Mx3DPointFloat& p_at,
-	Mx3DPointFloat& p_dir,
-	Mx3DPointFloat& p_up
-) const
+void ThirdPersonCamera::ComputeOrbitVectors(Mx3DPointFloat& p_at, Mx3DPointFloat& p_dir, Mx3DPointFloat& p_up) const
 {
 	// Convert spherical coordinates to camera offset in entity-local space.
 	// Entity local Z+ is "behind" (after TurnAround), which is where yaw=0 points.
-	float cosP = cosf(m_orbitPitch);
-	float sinP = sinf(m_orbitPitch);
-	float sinY = sinf(m_orbitYaw);
-	float cosY = cosf(m_orbitYaw);
+	float cosP = SDL_cosf(m_orbitPitch);
+	float sinP = SDL_sinf(m_orbitPitch);
+	float sinY = SDL_sinf(m_orbitYaw);
+	float cosY = SDL_cosf(m_orbitYaw);
 
 	p_at = Mx3DPointFloat(
 		m_orbitDistance * sinY * cosP,
@@ -827,7 +560,7 @@ void ThirdPersonCamera::HandleSDLEvent(SDL_Event* p_event)
 			if (m_touch.count == 2) {
 				float dx = m_touch.x[1] - m_touch.x[0];
 				float dy = m_touch.y[1] - m_touch.y[0];
-				m_touch.initialPinchDist = sqrtf(dx * dx + dy * dy);
+				m_touch.initialPinchDist = SDL_sqrtf(dx * dx + dy * dy);
 			}
 		}
 		break;
@@ -855,7 +588,7 @@ void ThirdPersonCamera::HandleSDLEvent(SDL_Event* p_event)
 			// Pinch zoom
 			float dx = m_touch.x[1] - m_touch.x[0];
 			float dy = m_touch.y[1] - m_touch.y[0];
-			float newDist = sqrtf(dx * dx + dy * dy);
+			float newDist = SDL_sqrtf(dx * dx + dy * dy);
 
 			if (m_touch.initialPinchDist > 0.001f) {
 				float pinchDelta = m_touch.initialPinchDist - newDist;
@@ -921,7 +654,7 @@ void ThirdPersonCamera::ReinitForCharacter()
 		return;
 	}
 
-	m_currentVehicleType = vehicleType;
+	m_animator.SetCurrentVehicleType(vehicleType);
 
 	if (vehicleType != VEHICLE_NONE) {
 		if (!EnsureDisplayROI()) {
@@ -951,7 +684,7 @@ void ThirdPersonCamera::ReinitForCharacter()
 		VideoManager()->Get3DManager()->Add(*m_playerROI);
 		m_active = true;
 		SetupCamera(userActor);
-		BuildRideAnimation(vehicleType);
+		m_animator.BuildRideAnimation(vehicleType, m_playerROI, 0);
 		CreateNameBubble();
 		return;
 	}
@@ -978,17 +711,11 @@ void ThirdPersonCamera::ReinitForCharacter()
 	VideoManager()->Get3DManager()->Remove(*m_playerROI);
 	VideoManager()->Get3DManager()->Add(*m_playerROI);
 
-	m_walkAnimCache = GetOrBuildAnimCache(g_walkAnimNames[m_walkAnimId]);
-	m_idleAnimCache = GetOrBuildAnimCache(g_idleAnimNames[m_idleAnimId]);
-
-	m_animTime = 0.0f;
-	m_idleTime = 0.0f;
-	m_idleAnimTime = 0.0f;
-	m_wasMoving = false;
-	m_emoteActive = false;
+	m_animator.InitAnimCaches(m_playerROI);
+	m_animator.ResetAnimState();
 	m_active = true;
 
-	ApplyIdleFrame0();
+	m_animator.ApplyIdleFrame0(m_playerROI);
 	SetupCamera(userActor);
 	CreateNameBubble();
 }

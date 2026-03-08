@@ -533,6 +533,7 @@ if (ISLE_EXTENSIONS)
     extensions/src/textureloader.cpp
     extensions/src/multiplayer.cpp
     extensions/src/multiplayer/animutils.cpp
+    extensions/src/multiplayer/characteranimator.cpp
     extensions/src/multiplayer/charactercloner.cpp
     extensions/src/multiplayer/charactercustomizer.cpp
     extensions/src/multiplayer/customizestate.cpp

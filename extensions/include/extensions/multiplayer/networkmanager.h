@@ -33,7 +33,7 @@ public:
 
 	MxBool IsA(const char* p_name) const override
 	{
-		return !strcmp(p_name, NetworkManager::ClassName()) || MxCore::IsA(p_name);
+		return !SDL_strcmp(p_name, NetworkManager::ClassName()) || MxCore::IsA(p_name);
 	}
 
 	void Initialize(NetworkTransport* p_transport, PlatformCallbacks* p_callbacks);
@@ -53,8 +53,14 @@ public:
 	// Thread-safe request methods for cross-thread callers (e.g. WASM exports
 	// running on the browser main thread).  Deferred to the game thread in Tickle().
 	void RequestToggleThirdPerson() { m_pendingToggleThirdPerson.store(true, std::memory_order_relaxed); }
-	void RequestSetWalkAnimation(uint8_t p_walkAnimId) { m_pendingWalkAnim.store(p_walkAnimId, std::memory_order_relaxed); }
-	void RequestSetIdleAnimation(uint8_t p_idleAnimId) { m_pendingIdleAnim.store(p_idleAnimId, std::memory_order_relaxed); }
+	void RequestSetWalkAnimation(uint8_t p_walkAnimId)
+	{
+		m_pendingWalkAnim.store(p_walkAnimId, std::memory_order_relaxed);
+	}
+	void RequestSetIdleAnimation(uint8_t p_idleAnimId)
+	{
+		m_pendingIdleAnim.store(p_idleAnimId, std::memory_order_relaxed);
+	}
 	void RequestSendEmote(uint8_t p_emoteId) { m_pendingEmote.store(p_emoteId, std::memory_order_relaxed); }
 	void RequestToggleNameBubbles() { m_pendingToggleNameBubbles.store(true, std::memory_order_relaxed); }
 	void RequestToggleAllowCustomize() { m_pendingToggleAllowCustomize.store(true, std::memory_order_relaxed); }

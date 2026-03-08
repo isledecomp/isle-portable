@@ -11,7 +11,6 @@
 #include "viewmanager/viewlodlist.h"
 
 #include <SDL3/SDL_stdinc.h>
-#include <cstdio>
 #include <vec.h>
 
 using namespace Multiplayer;
@@ -69,7 +68,7 @@ LegoROI* CharacterCloner::Clone(LegoCharacterManager* p_charMgr, const char* p_u
 
 		ViewLODList* lodList = lodManager->Lookup(parentName);
 		MxS32 lodSize = lodList->Size();
-		sprintf(lodName, "%s%d", p_uniqueName, i);
+		SDL_snprintf(lodName, sizeof(lodName), "%s%d", p_uniqueName, i);
 		ViewLODList* dupLodList = lodManager->Create(lodName, lodSize);
 
 		for (MxS32 j = 0; j < lodSize; j++) {

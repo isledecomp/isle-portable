@@ -1,23 +1,18 @@
 #pragma once
 
-#include "extensions/multiplayer/animutils.h"
+#include "extensions/multiplayer/characteranimator.h"
 #include "extensions/multiplayer/customizestate.h"
 #include "extensions/multiplayer/protocol.h"
 #include "mxtypes.h"
 
 #include <cstdint>
-#include <map>
 #include <string>
 
 class LegoROI;
 class LegoWorld;
-class LegoAnim;
-class LegoTreeNode;
 
 namespace Multiplayer
 {
-
-class NameBubbleRenderer;
 
 class RemotePlayer {
 public:
@@ -48,18 +43,14 @@ public:
 
 	const CustomizeState& GetCustomizeState() const { return m_customizeState; }
 	bool GetAllowRemoteCustomize() const { return m_allowRemoteCustomize; }
-	void SetClickAnimObjectId(MxU32 p_clickAnimObjectId) { m_clickAnimObjectId = p_clickAnimObjectId; }
+	void SetClickAnimObjectId(MxU32 p_clickAnimObjectId) { m_animator.SetClickAnimObjectId(p_clickAnimObjectId); }
 	void StopClickAnimation();
-	bool IsInVehicle() const { return m_currentVehicleType != VEHICLE_NONE; }
-	bool IsMoving() const { return m_currentVehicleType != VEHICLE_NONE || m_targetSpeed > 0.01f; }
+	bool IsInVehicle() const { return m_animator.IsInVehicle(); }
+	bool IsMoving() const { return m_animator.IsInVehicle() || m_targetSpeed > 0.01f; }
 
 private:
-	using AnimCache = AnimUtils::AnimCache;
-
-	AnimCache* GetOrBuildAnimCache(const char* p_animName);
 	const char* GetDisplayActorName() const;
 	void UpdateTransform(float p_deltaTime);
-	void UpdateAnimation(float p_deltaTime);
 	void UpdateVehicleState();
 	void EnterVehicle(int8_t p_vehicleType);
 	void ExitVehicle();
@@ -87,38 +78,9 @@ private:
 	float m_currentDirection[3];
 	float m_currentUp[3];
 
-	// Animation state
-	uint8_t m_walkAnimId;
-	uint8_t m_idleAnimId;
-	AnimCache* m_walkAnimCache;
-	AnimCache* m_idleAnimCache;
-	float m_animTime;
-	float m_idleTime;
-	float m_idleAnimTime;
-	bool m_wasMoving;
-
-	// Emote state
-	AnimCache* m_emoteAnimCache;
-	float m_emoteTime;
-	float m_emoteDuration;
-	bool m_emoteActive;
-
-	// Click animation tracking (0 = none)
-	MxU32 m_clickAnimObjectId;
-
-	// ROI map cache: animation name -> cached ROI map (invalidated on world change)
-	std::map<std::string, AnimCache> m_animCacheMap;
-
-	// Ride animation (vehicle-specific, not cached globally)
-	LegoAnim* m_rideAnim;
-	LegoROI** m_rideRoiMap;
-	MxU32 m_rideRoiMapSize;
-	LegoROI* m_rideVehicleROI;
+	CharacterAnimator m_animator;
 
 	LegoROI* m_vehicleROI;
-	int8_t m_currentVehicleType;
-
-	NameBubbleRenderer* m_nameBubble;
 
 	CustomizeState m_customizeState;
 	bool m_allowRemoteCustomize;

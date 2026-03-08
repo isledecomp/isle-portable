@@ -1,27 +1,21 @@
 #pragma once
 
-#include "extensions/multiplayer/animutils.h"
+#include "extensions/multiplayer/characteranimator.h"
 #include "extensions/multiplayer/customizestate.h"
 #include "extensions/multiplayer/protocol.h"
 #include "mxgeometry/mxgeometry3d.h"
-#include "mxgeometry/mxmatrix.h"
 #include "mxtypes.h"
 
 #include <SDL3/SDL_events.h>
 #include <cstdint>
-#include <map>
-#include <string>
 
 class IslePathActor;
 class LegoPathActor;
 class LegoROI;
 class LegoWorld;
-class LegoAnim;
 
 namespace Multiplayer
 {
-
-class NameBubbleRenderer;
 
 class ThirdPersonCamera {
 public:
@@ -50,9 +44,9 @@ public:
 	CustomizeState& GetCustomizeState() { return m_customizeState; }
 
 	void ApplyCustomizeChange(uint8_t p_changeType, uint8_t p_partIndex);
-	void SetClickAnimObjectId(MxU32 p_clickAnimObjectId) { m_clickAnimObjectId = p_clickAnimObjectId; }
+	void SetClickAnimObjectId(MxU32 p_clickAnimObjectId) { m_animator.SetClickAnimObjectId(p_clickAnimObjectId); }
 	void StopClickAnimation();
-	bool IsInVehicle() const { return m_currentVehicleType != VEHICLE_NONE; }
+	bool IsInVehicle() const { return m_animator.IsInVehicle(); }
 
 	void SetNameBubbleVisible(bool p_visible);
 
@@ -70,14 +64,7 @@ private:
 	void ClampPitch();
 	void ClampDistance();
 
-	using AnimCache = AnimUtils::AnimCache;
-
-	AnimCache* GetOrBuildAnimCache(const char* p_animName);
-	void ClearAnimCaches();
 	void SetupCamera(LegoPathActor* p_actor);
-	void BuildRideAnimation(int8_t p_vehicleType);
-	void ClearRideAnimation();
-	void ApplyIdleFrame0();
 	void ReinitForCharacter();
 
 	void CreateNameBubble();
@@ -90,45 +77,17 @@ private:
 
 	bool m_enabled;
 	bool m_active;
-	bool m_roiUnflipped; // True when Disable() flipped the ROI direction; ReinitForCharacter re-applies
+	bool m_roiUnflipped;  // True when Disable() flipped the ROI direction; ReinitForCharacter re-applies
 	LegoROI* m_playerROI; // Borrowed, not owned
 
 	// Display actor override
 	uint8_t m_displayActorIndex;
-	LegoROI* m_displayROI;           // Owned clone; nullptr = use native ROI
+	LegoROI* m_displayROI; // Owned clone; nullptr = use native ROI
 	char m_displayUniqueName[32];
 	CustomizeState m_customizeState;
 
-	// Walk/idle state (same pattern as RemotePlayer)
-	uint8_t m_walkAnimId;
-	uint8_t m_idleAnimId;
-	AnimCache* m_walkAnimCache;
-	AnimCache* m_idleAnimCache;
-	float m_animTime;
-	float m_idleTime;
-	float m_idleAnimTime;
-	bool m_wasMoving;
+	CharacterAnimator m_animator;
 
-	// Emote state
-	AnimCache* m_emoteAnimCache;
-	float m_emoteTime;
-	float m_emoteDuration;
-	bool m_emoteActive;
-	MxMatrix m_emoteParentTransform;
-
-	// Click animation tracking (0 = none)
-	MxU32 m_clickAnimObjectId;
-
-	// Vehicle ride state
-	int8_t m_currentVehicleType;
-	LegoAnim* m_rideAnim;
-	LegoROI** m_rideRoiMap;
-	MxU32 m_rideRoiMapSize;
-	LegoROI* m_rideVehicleROI;
-
-	std::map<std::string, AnimCache> m_animCacheMap;
-
-	NameBubbleRenderer* m_nameBubble;
 	bool m_showNameBubble;
 
 	// Orbit camera state

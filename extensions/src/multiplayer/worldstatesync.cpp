@@ -16,8 +16,6 @@
 #include "mxvariabletable.h"
 
 #include <SDL3/SDL_stdinc.h>
-#include <cstdio>
-#include <cstdlib>
 #include <vector>
 
 extern MxU8 g_counters[];
@@ -49,7 +47,7 @@ void WorldStateSync::SaveSkyLightState()
 {
 	const char* bgValue = GameState()->GetBackgroundColor()->GetValue()->GetData();
 	m_savedSkyColor = bgValue ? bgValue : "set 56 54 68";
-	m_savedLightPos = atoi(VariableTable()->GetVariable("lightposition"));
+	m_savedLightPos = SDL_atoi(VariableTable()->GetVariable("lightposition"));
 }
 
 void WorldStateSync::RestoreSkyLightState()
@@ -64,7 +62,7 @@ void WorldStateSync::ApplySkyLightState(const char* p_skyColor, int p_lightPos)
 	SetLightPosition(p_lightPos);
 
 	char buf[32];
-	sprintf(buf, "%d", p_lightPos);
+	SDL_snprintf(buf, sizeof(buf), "%d", p_lightPos);
 	VariableTable()->SetVariable("lightposition", buf);
 }
 
@@ -118,7 +116,7 @@ void WorldStateSync::HandleWorldSnapshot(const uint8_t* p_data, size_t p_length)
 
 	if (remaining >= 4) {
 		char skyBuffer[32];
-		sprintf(skyBuffer, "set %d %d %d", extraData[0], extraData[1], extraData[2]);
+		SDL_snprintf(skyBuffer, sizeof(skyBuffer), "set %d %d %d", extraData[0], extraData[1], extraData[2]);
 		ApplySkyLightState(skyBuffer, extraData[3]);
 	}
 
@@ -259,10 +257,10 @@ void WorldStateSync::SendWorldSnapshot(uint32_t p_targetPeerId)
 	int skyH = 56, skyS = 54, skyV = 68; // defaults matching "set 56 54 68"
 	const char* bgValue = GameState()->GetBackgroundColor()->GetValue()->GetData();
 	if (bgValue) {
-		sscanf(bgValue, "set %d %d %d", &skyH, &skyS, &skyV);
+		SDL_sscanf(bgValue, "set %d %d %d", &skyH, &skyS, &skyV);
 	}
 
-	int lightPos = atoi(VariableTable()->GetVariable("lightposition"));
+	int lightPos = SDL_atoi(VariableTable()->GetVariable("lightposition"));
 
 	stateBuffer[dataLength++] = (uint8_t) skyH;
 	stateBuffer[dataLength++] = (uint8_t) skyS;

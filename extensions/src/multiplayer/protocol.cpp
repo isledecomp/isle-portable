@@ -1,8 +1,10 @@
 #include "extensions/multiplayer/protocol.h"
 
+#include "legogamestate.h"
 #include "legopathactor.h"
+#include "misc.h"
 
-#include <cstddef>
+#include <SDL3/SDL_stdinc.h>
 
 namespace Multiplayer
 {
@@ -36,12 +38,10 @@ const char* const g_vehicleROINames[VEHICLE_COUNT] =
 	{"chtrbody", "jsuser", "dunebugy", "bike", "board", "moto", "towtk", "ambul"};
 
 // Ride animation names for small vehicles (NULL = large vehicle, no ride anim)
-const char* const g_rideAnimNames[VEHICLE_COUNT] =
-	{NULL, NULL, NULL, "CNs001Bd", "CNs001sk", "CNs011Ni", NULL, NULL};
+const char* const g_rideAnimNames[VEHICLE_COUNT] = {NULL, NULL, NULL, "CNs001Bd", "CNs001sk", "CNs011Ni", NULL, NULL};
 
 // Vehicle variant ROI names used in ride animations
-const char* const g_rideVehicleROINames[VEHICLE_COUNT] =
-	{NULL, NULL, NULL, "bikebd", "board", "motoni", NULL, NULL};
+const char* const g_rideVehicleROINames[VEHICLE_COUNT] = {NULL, NULL, NULL, "bikebd", "board", "motoni", NULL, NULL};
 
 bool IsLargeVehicle(int8_t p_vehicleType)
 {
@@ -74,6 +74,27 @@ int8_t DetectVehicleType(LegoPathActor* p_actor)
 		}
 	}
 	return VEHICLE_NONE;
+}
+
+void EncodeUsername(char p_out[8])
+{
+	SDL_memset(p_out, 0, 8);
+	LegoGameState* gs = GameState();
+	if (gs && gs->m_playerCount > 0) {
+		const LegoGameState::Username& username = gs->m_players[0];
+		for (int i = 0; i < 7; i++) {
+			MxS16 letter = username.m_letters[i];
+			if (letter < 0) {
+				break;
+			}
+			if (letter <= 25) {
+				p_out[i] = (char) ('A' + letter);
+			}
+			else {
+				p_out[i] = '?';
+			}
+		}
+	}
 }
 
 } // namespace Multiplayer

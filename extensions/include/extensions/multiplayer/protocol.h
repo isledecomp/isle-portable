@@ -11,8 +11,8 @@ namespace Multiplayer
 {
 
 // Routing target constants for MessageHeader.target
-const uint32_t TARGET_BROADCAST = 0;          // Broadcast to all except sender
-const uint32_t TARGET_HOST = 0xFFFFFFFF;      // Send to host only
+const uint32_t TARGET_BROADCAST = 0;              // Broadcast to all except sender
+const uint32_t TARGET_HOST = 0xFFFFFFFF;          // Send to host only
 const uint32_t TARGET_BROADCAST_ALL = 0xFFFFFFFE; // Broadcast to all including sender
 
 enum MessageType : uint8_t {
@@ -94,12 +94,12 @@ struct PlayerStateMsg {
 	float direction[3];
 	float up[3];
 	float speed;
-	uint8_t walkAnimId; // Index into walk animation table (0 = default)
-	uint8_t idleAnimId; // Index into idle animation table (0 = default)
-	char name[8];       // Player display name (7 chars + null terminator)
+	uint8_t walkAnimId;        // Index into walk animation table (0 = default)
+	uint8_t idleAnimId;        // Index into idle animation table (0 = default)
+	char name[8];              // Player display name (7 chars + null terminator)
 	uint8_t displayActorIndex; // Index into g_actorInfoInit (0-65)
-	uint8_t customizeData[5]; // Packed CustomizeState
-	uint8_t customizeFlags;   // Bit 0 = allowRemoteCustomize
+	uint8_t customizeData[5];  // Packed CustomizeState
+	uint8_t customizeFlags;    // Bit 0 = allowRemoteCustomize
 };
 
 // Server -> all: announces which peer is the host
@@ -180,6 +180,10 @@ inline bool IsValidActorId(uint8_t p_actorId)
 {
 	return p_actorId >= 1 && p_actorId <= 5;
 }
+
+// Convert LegoGameState::Username letter indices (0-25 = A-Z) to ASCII.
+// Writes up to 7 characters + null terminator into p_out (must be at least 8 bytes).
+void EncodeUsername(char p_out[8]);
 
 static const uint8_t DISPLAY_ACTOR_NONE = 0xFF;
 
