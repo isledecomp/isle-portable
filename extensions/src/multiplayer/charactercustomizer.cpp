@@ -50,17 +50,9 @@ LegoROI* CharacterCustomizer::FindChildROI(LegoROI* p_rootROI, const char* p_nam
 
 // MARK: Public API
 
-uint8_t CharacterCustomizer::ResolveActorInfoIndex(uint8_t p_displayActorIndex, uint8_t p_actorId)
+uint8_t CharacterCustomizer::ResolveActorInfoIndex(uint8_t p_displayActorIndex)
 {
-	if (IsValidDisplayActorIndex(p_displayActorIndex)) {
-		return p_displayActorIndex;
-	}
-
-	if (p_actorId >= 1 && p_actorId <= 5) {
-		return p_actorId - 1;
-	}
-
-	return 0;
+	return p_displayActorIndex;
 }
 
 bool CharacterCustomizer::SwitchColor(

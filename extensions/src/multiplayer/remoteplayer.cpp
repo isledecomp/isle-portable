@@ -6,7 +6,6 @@
 #include "3dmanager/lego3dmanager.h"
 #include "anim/legoanim.h"
 #include "extensions/multiplayer/charactercloner.h"
-#include "legoactor.h"
 #include "legoanimpresenter.h"
 #include "legocharactermanager.h"
 #include "legovideomanager.h"
@@ -86,7 +85,7 @@ void RemotePlayer::Spawn(LegoWorld* p_isleWorld)
 	m_visible = false;
 
 	// Initialize customize state from the display actor's info
-	uint8_t actorInfoIndex = CharacterCustomizer::ResolveActorInfoIndex(m_displayActorIndex, m_actorId);
+	uint8_t actorInfoIndex = CharacterCustomizer::ResolveActorInfoIndex(m_displayActorIndex);
 	m_customizeState.InitFromActorInfo(actorInfoIndex);
 
 	// Build initial walk and idle animation caches
@@ -128,10 +127,7 @@ void RemotePlayer::Despawn()
 
 const char* RemotePlayer::GetDisplayActorName() const
 {
-	if (IsValidDisplayActorIndex(m_displayActorIndex)) {
-		return CharacterManager()->GetActorName(m_displayActorIndex);
-	}
-	return LegoActor::GetActorName(m_actorId);
+	return CharacterManager()->GetActorName(m_displayActorIndex);
 }
 
 void RemotePlayer::UpdateFromNetwork(const PlayerStateMsg& p_msg)
@@ -180,7 +176,7 @@ void RemotePlayer::UpdateFromNetwork(const PlayerStateMsg& p_msg)
 	newState.Unpack(p_msg.customizeData);
 
 	if (newState != m_customizeState) {
-		uint8_t actorInfoIndex = CharacterCustomizer::ResolveActorInfoIndex(m_displayActorIndex, m_actorId);
+		uint8_t actorInfoIndex = CharacterCustomizer::ResolveActorInfoIndex(m_displayActorIndex);
 		m_customizeState = newState;
 		if (m_spawned && m_roi) {
 			CharacterCustomizer::ApplyFullState(m_roi, actorInfoIndex, m_customizeState);

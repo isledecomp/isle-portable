@@ -108,8 +108,9 @@ MxBool MultiplayerExt::HandleROIClick(LegoROI* p_rootROI, LegoEventNotificationP
 	Multiplayer::RemotePlayer* remote = mgr->FindPlayerByROI(p_rootROI);
 
 	// Check if it's our own 3rd-person display actor override
-	bool isSelf = (mgr->GetThirdPersonCamera().GetDisplayROI() != nullptr &&
-				   mgr->GetThirdPersonCamera().GetDisplayROI() == p_rootROI);
+	bool isSelf =
+		(mgr->GetThirdPersonCamera().GetDisplayROI() != nullptr &&
+		 mgr->GetThirdPersonCamera().GetDisplayROI() == p_rootROI);
 
 	if (!remote && !isSelf) {
 		return FALSE;
@@ -160,11 +161,7 @@ MxBool MultiplayerExt::HandleROIClick(LegoROI* p_rootROI, LegoEventNotificationP
 	// For remote targets this avoids flip-flop from stale state messages; for self targets
 	// it keeps the code path uniform.
 	uint32_t targetPeerId = remote ? remote->GetPeerId() : mgr->GetLocalPeerId();
-	mgr->SendCustomize(
-		targetPeerId,
-		changeType,
-		static_cast<uint8_t>(partIndex >= 0 ? partIndex : 0xFF)
-	);
+	mgr->SendCustomize(targetPeerId, changeType, static_cast<uint8_t>(partIndex >= 0 ? partIndex : 0xFF));
 
 	return TRUE;
 }

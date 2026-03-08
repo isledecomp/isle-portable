@@ -13,7 +13,7 @@ struct CustomizeState;
 
 class CharacterCustomizer {
 public:
-	static uint8_t ResolveActorInfoIndex(uint8_t p_displayActorIndex, uint8_t p_actorId);
+	static uint8_t ResolveActorInfoIndex(uint8_t p_displayActorIndex);
 
 	static bool SwitchColor(LegoROI* p_rootROI, uint8_t p_actorInfoIndex,
 	                        CustomizeState& p_state, int p_partIndex);

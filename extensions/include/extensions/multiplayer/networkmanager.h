@@ -97,6 +97,7 @@ private:
 	void HandleEmote(const EmoteMsg& p_msg);
 	void HandleCustomize(const CustomizeMsg& p_msg);
 
+	void DeriveDisplayActorIndex(uint8_t p_actorId);
 	void ProcessPendingRequests();
 	void RemoveRemotePlayer(uint32_t p_peerId);
 	void RemoveAllRemotePlayers();
@@ -122,6 +123,7 @@ private:
 	uint8_t m_localWalkAnimId;
 	uint8_t m_localIdleAnimId;
 	uint8_t m_localDisplayActorIndex;
+	bool m_displayActorFrozen;
 	bool m_localAllowRemoteCustomize;
 	bool m_inIsleWorld;
 	bool m_registered;

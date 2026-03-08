@@ -35,10 +35,10 @@ void NetworkManager::SendMessage(const T& p_msg)
 NetworkManager::NetworkManager()
 	: m_transport(nullptr), m_callbacks(nullptr), m_localPeerId(0), m_hostPeerId(0), m_sequence(0),
 	  m_lastBroadcastTime(0), m_lastValidActorId(0), m_localWalkAnimId(0), m_localIdleAnimId(0),
-	  m_localDisplayActorIndex(DISPLAY_ACTOR_NONE), m_localAllowRemoteCustomize(true), m_inIsleWorld(false),
-	  m_registered(false), m_pendingToggleThirdPerson(false), m_pendingToggleNameBubbles(false),
-	  m_pendingWalkAnim(-1), m_pendingIdleAnim(-1), m_pendingEmote(-1),
-	  m_pendingToggleAllowCustomize(false), m_showNameBubbles(true)
+	  m_localDisplayActorIndex(DISPLAY_ACTOR_NONE), m_displayActorFrozen(false), m_localAllowRemoteCustomize(true),
+	  m_inIsleWorld(false), m_registered(false), m_pendingToggleThirdPerson(false), m_pendingToggleNameBubbles(false),
+	  m_pendingWalkAnim(-1), m_pendingIdleAnim(-1), m_pendingEmote(-1), m_pendingToggleAllowCustomize(false),
+	  m_showNameBubbles(true)
 {
 }
 
@@ -49,6 +49,15 @@ NetworkManager::~NetworkManager()
 
 MxResult NetworkManager::Tickle()
 {
+	// Derive display actor early so it is valid before ProcessPendingRequests
+	// may toggle the 3rd-person camera (which needs a valid display actor index).
+	{
+		LegoPathActor* userActor = UserActor();
+		if (userActor) {
+			DeriveDisplayActorIndex(static_cast<LegoActor*>(userActor)->GetActorId());
+		}
+	}
+
 	ProcessPendingRequests();
 	m_thirdPersonCamera.Tick(0.016f);
 
@@ -345,11 +354,7 @@ void NetworkManager::BroadcastLocalState()
 		}
 	}
 
-	uint8_t displayIndex = m_localDisplayActorIndex;
-	if (displayIndex == DISPLAY_ACTOR_NONE) {
-		displayIndex = actorId - 1; // actorId already validated above
-	}
-	msg.displayActorIndex = displayIndex;
+	msg.displayActorIndex = m_localDisplayActorIndex;
 
 	m_thirdPersonCamera.GetCustomizeState().Pack(msg.customizeData);
 	msg.customizeFlags = m_localAllowRemoteCustomize ? 0x01 : 0x00;
@@ -597,7 +602,20 @@ void NetworkManager::SendEmote(uint8_t p_emoteId)
 void NetworkManager::SetDisplayActorIndex(uint8_t p_displayActorIndex)
 {
 	m_localDisplayActorIndex = p_displayActorIndex;
+	m_displayActorFrozen = true;
 	m_thirdPersonCamera.SetDisplayActorIndex(p_displayActorIndex);
+}
+
+void NetworkManager::DeriveDisplayActorIndex(uint8_t p_actorId)
+{
+	if (m_displayActorFrozen || !IsValidActorId(p_actorId)) {
+		return;
+	}
+	uint8_t derived = p_actorId - 1;
+	if (derived != m_localDisplayActorIndex) {
+		m_localDisplayActorIndex = derived;
+		m_thirdPersonCamera.SetDisplayActorIndex(derived);
+	}
 }
 
 void NetworkManager::HandleEmote(const EmoteMsg& p_msg)
@@ -747,17 +765,19 @@ void NetworkManager::HandleCustomize(const CustomizeMsg& p_msg)
 
 		if (effectROI) {
 			CharacterCustomizer::PlayClickSound(
-				effectROI, m_thirdPersonCamera.GetCustomizeState(), p_msg.changeType == CHANGE_MOOD
+				effectROI,
+				m_thirdPersonCamera.GetCustomizeState(),
+				p_msg.changeType == CHANGE_MOOD
 			);
 
 			// Only play click animation in 3rd person (not visible in 1st person)
 			if (m_thirdPersonCamera.GetDisplayROI() && !m_thirdPersonCamera.IsInVehicle()) {
 				MxU32 clickAnimId = CharacterCustomizer::PlayClickAnimation(
-					m_thirdPersonCamera.GetDisplayROI(), m_thirdPersonCamera.GetCustomizeState()
+					m_thirdPersonCamera.GetDisplayROI(),
+					m_thirdPersonCamera.GetCustomizeState()
 				);
 				m_thirdPersonCamera.SetClickAnimObjectId(clickAnimId);
 			}
 		}
 	}
 }
-

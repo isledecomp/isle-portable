@@ -68,13 +68,9 @@ void ThirdPersonCamera::Disable()
 		// direction.  This keeps the 1st-person camera facing the same way
 		// as the 3rd-person camera, and ensures the network direction stays
 		// consistent (no 180-degree flip for others).
-		// For walking characters the target is m_playerROI; for vehicles it
-		// is the vehicle actor's ROI (UserActor() returns the vehicle).
-		// When a display actor override is active, flip the native ROI (not the
-		// display clone) since TransformPointOfView uses it for the 1st-person camera.
-		LegoROI* turnAroundROI = (m_currentVehicleType == VEHICLE_NONE && !HasDisplayOverride())
-			? m_playerROI
-			: (userActor ? userActor->GetROI() : nullptr);
+		// Flip the native ROI (not the display clone) since TransformPointOfView
+		// uses it for the 1st-person camera.
+		LegoROI* turnAroundROI = userActor ? userActor->GetROI() : nullptr;
 
 		if (turnAroundROI) {
 			FlipROIDirection(turnAroundROI);
@@ -160,14 +156,9 @@ void ThirdPersonCamera::OnActorEnter(IslePathActor* p_actor)
 	}
 
 	// Non-vehicle (walking character) entry — Enter() already called TurnAround.
-	if (IsValidDisplayActorIndex(m_displayActorIndex)) {
-		newROI->SetVisibility(FALSE);
-		if (!EnsureDisplayROI()) {
-			return;
-		}
-	}
-	else {
-		m_playerROI = newROI;
+	newROI->SetVisibility(FALSE);
+	if (!EnsureDisplayROI()) {
+		return;
 	}
 	m_roiUnflipped = false;
 	m_active = true;
@@ -244,9 +235,9 @@ void ThirdPersonCamera::OnCamAnimEnd(LegoPathActor* p_actor)
 	// FUN_1004b6d0's PlaceActor set the ROI with standard direction
 	// (z = visual forward). The 3rd person camera needs backward-z.
 	// Flip the ROI direction, then re-setup the camera.
-	// When a display actor override is active, flip the native ROI (not the
-	// display clone) since Tick() syncs the clone's transform from it.
-	LegoROI* roi = (m_currentVehicleType == VEHICLE_NONE && !HasDisplayOverride()) ? m_playerROI : p_actor->GetROI();
+	// Flip the native ROI (not the display clone) since Tick() syncs the
+	// clone's transform from it.
+	LegoROI* roi = p_actor->GetROI();
 	if (roi) {
 		FlipROIDirection(roi);
 	}
@@ -497,10 +488,7 @@ void ThirdPersonCamera::TriggerEmote(uint8_t p_emoteId)
 
 void ThirdPersonCamera::ApplyCustomizeChange(uint8_t p_changeType, uint8_t p_partIndex)
 {
-	uint8_t actorInfoIndex = CharacterCustomizer::ResolveActorInfoIndex(
-		m_displayActorIndex,
-		GameState() ? GameState()->GetActorId() : 0
-	);
+	uint8_t actorInfoIndex = CharacterCustomizer::ResolveActorInfoIndex(m_displayActorIndex);
 
 	CharacterCustomizer::ApplyChange(m_displayROI, actorInfoIndex, m_customizeState, p_changeType, p_partIndex);
 }
@@ -936,7 +924,7 @@ void ThirdPersonCamera::ReinitForCharacter()
 	m_currentVehicleType = vehicleType;
 
 	if (vehicleType != VEHICLE_NONE) {
-		if (IsValidDisplayActorIndex(m_displayActorIndex) && !EnsureDisplayROI()) {
+		if (!EnsureDisplayROI()) {
 			m_active = false;
 			return;
 		}
@@ -969,23 +957,18 @@ void ThirdPersonCamera::ReinitForCharacter()
 	}
 
 	// Reinitializing for walking character
-	if (IsValidDisplayActorIndex(m_displayActorIndex)) {
-		roi->SetVisibility(FALSE);
-		if (!EnsureDisplayROI()) {
-			m_active = false;
-			return;
-		}
-	}
-	else {
-		m_playerROI = roi;
+	roi->SetVisibility(FALSE);
+	if (!EnsureDisplayROI()) {
+		m_active = false;
+		return;
 	}
 
 	// Re-apply TurnAround if we undid it in Disable().
 	// Only set the local matrix here; the subsequent Add() will propagate world data.
-	// When a display actor override is active, flip the native ROI (not the
-	// display clone) since Tick() syncs the clone's transform from it.
+	// Flip the native ROI (not the display clone) since Tick() syncs the
+	// clone's transform from it.
 	if (m_roiUnflipped) {
-		FlipROIDirection(HasDisplayOverride() ? roi : m_playerROI);
+		FlipROIDirection(roi);
 		m_roiUnflipped = false;
 	}
 
