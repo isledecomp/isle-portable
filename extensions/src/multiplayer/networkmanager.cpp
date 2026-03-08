@@ -641,10 +641,16 @@ void NetworkManager::NotifyPlayerCountChanged()
 	if (m_inIsleWorld) {
 		count = 0;
 
-		// Only count the local player if they have a valid actor
-		// (players who enter Isle without selecting a save have no actor).
+		// Only count the local player if they have a valid actor.
+		// UserActor() can be temporarily NULL during world transitions
+		// (e.g. returning from a race, where LegoRace stashes the actor
+		// and only restores it in its destructor). Fall back to the
+		// GameState actorId which is restored earlier.
 		LegoPathActor* userActor = UserActor();
 		if (userActor && IsValidActorId(static_cast<LegoActor*>(userActor)->GetActorId())) {
+			count = 1;
+		}
+		else if (IsValidActorId(GameState()->GetActorId())) {
 			count = 1;
 		}
 
