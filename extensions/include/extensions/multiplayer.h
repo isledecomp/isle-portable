@@ -67,6 +67,10 @@ public:
 	// Forwards SDL events to the third-person camera for orbit controls.
 	static void HandleSDLEvent(SDL_Event* p_event);
 
+	// Returns TRUE when a multi-touch camera gesture is active and touch
+	// movement input should be suppressed.
+	static MxBool IsTouchInputSuppressed();
+
 	static void SetNetworkManager(Multiplayer::NetworkManager* p_networkManager);
 	static Multiplayer::NetworkManager* GetNetworkManager();
 
@@ -93,6 +97,7 @@ constexpr auto HandleBeforeSaveLoad = &MultiplayerExt::HandleBeforeSaveLoad;
 constexpr auto HandleSaveLoaded = &MultiplayerExt::HandleSaveLoaded;
 constexpr auto CheckRejected = &MultiplayerExt::CheckRejected;
 constexpr auto HandleSDLEvent = &MultiplayerExt::HandleSDLEvent;
+constexpr auto IsTouchInputSuppressed = &MultiplayerExt::IsTouchInputSuppressed;
 #else
 constexpr decltype(&MultiplayerExt::HandleCreate) HandleCreate = nullptr;
 constexpr decltype(&MultiplayerExt::HandleWorldEnable) HandleWorldEnable = nullptr;
@@ -108,6 +113,7 @@ constexpr decltype(&MultiplayerExt::HandleBeforeSaveLoad) HandleBeforeSaveLoad =
 constexpr decltype(&MultiplayerExt::HandleSaveLoaded) HandleSaveLoaded = nullptr;
 constexpr decltype(&MultiplayerExt::CheckRejected) CheckRejected = nullptr;
 constexpr decltype(&MultiplayerExt::HandleSDLEvent) HandleSDLEvent = nullptr;
+constexpr decltype(&MultiplayerExt::IsTouchInputSuppressed) IsTouchInputSuppressed = nullptr;
 #endif
 
 }; // namespace Extensions

@@ -558,6 +558,7 @@ void ThirdPersonCamera::HandleSDLEvent(SDL_Event* p_event)
 			m_touch.count++;
 
 			if (m_touch.count == 2) {
+				m_touchGestureActive = true;
 				float dx = m_touch.x[1] - m_touch.x[0];
 				float dy = m_touch.y[1] - m_touch.y[0];
 				m_touch.initialPinchDist = SDL_sqrtf(dx * dx + dy * dy);
@@ -618,6 +619,9 @@ void ThirdPersonCamera::HandleSDLEvent(SDL_Event* p_event)
 					m_touch.y[0] = m_touch.y[1];
 				}
 				m_touch.count--;
+				if (m_touch.count == 0) {
+					m_touchGestureActive = false;
+				}
 				m_touch.initialPinchDist = 0.0f;
 				break;
 			}

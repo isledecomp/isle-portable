@@ -632,6 +632,15 @@ void LegoInputManager::RemoveJoystick(SDL_JoystickID p_joystickID)
 
 MxBool LegoInputManager::HandleTouchEvent(SDL_Event* p_event, TouchScheme p_touchScheme)
 {
+	static SDL_FingerID g_finger = (SDL_FingerID) 0;
+
+	if (Extension<MultiplayerExt>::Call(IsTouchInputSuppressed).value_or(FALSE)) {
+		g_finger = 0;
+		m_touchVirtualThumb = {0, 0};
+		m_touchFlags.clear();
+		return FALSE;
+	}
+
 	const SDL_TouchFingerEvent& event = p_event->tfinger;
 	m_touchScheme = p_touchScheme;
 
@@ -667,8 +676,6 @@ MxBool LegoInputManager::HandleTouchEvent(SDL_Event* p_event, TouchScheme p_touc
 		}
 		break;
 	case e_gamepad: {
-		static SDL_FingerID g_finger = (SDL_FingerID) 0;
-
 		switch (p_event->type) {
 		case SDL_EVENT_FINGER_DOWN:
 			if (!g_finger) {

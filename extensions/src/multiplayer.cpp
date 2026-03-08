@@ -308,6 +308,15 @@ void MultiplayerExt::HandleSDLEvent(SDL_Event* p_event)
 	}
 }
 
+MxBool MultiplayerExt::IsTouchInputSuppressed()
+{
+	if (s_networkManager && s_networkManager->GetThirdPersonCamera().IsActive()) {
+		return s_networkManager->GetThirdPersonCamera().IsTouchGestureActive() ? TRUE : FALSE;
+	}
+
+	return FALSE;
+}
+
 MxBool MultiplayerExt::CheckRejected()
 {
 	if (s_networkManager && s_networkManager->WasRejected()) {

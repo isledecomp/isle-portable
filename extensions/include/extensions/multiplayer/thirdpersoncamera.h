@@ -55,6 +55,7 @@ public:
 
 	// Free camera input handling
 	void HandleSDLEvent(SDL_Event* p_event);
+	bool IsTouchGestureActive() const { return m_touchGestureActive; }
 
 private:
 	// Orbit camera helpers
@@ -96,6 +97,7 @@ private:
 	float m_orbitDistance;
 
 	// Touch gesture tracking
+	bool m_touchGestureActive = false;
 	struct TouchState {
 		SDL_FingerID id[2];
 		float x[2], y[2];
