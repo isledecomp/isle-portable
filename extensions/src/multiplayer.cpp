@@ -304,6 +304,13 @@ MxBool MultiplayerExt::IsClonedCharacter(const char* p_name)
 	return s_networkManager->IsClonedCharacter(p_name) ? TRUE : FALSE;
 }
 
+void MultiplayerExt::HandleSDLEvent(SDL_Event* p_event)
+{
+	if (s_networkManager && s_networkManager->GetThirdPersonCamera().IsActive()) {
+		s_networkManager->GetThirdPersonCamera().HandleSDLEvent(p_event);
+	}
+}
+
 MxBool MultiplayerExt::CheckRejected()
 {
 	if (s_networkManager && s_networkManager->WasRejected()) {

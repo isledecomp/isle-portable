@@ -42,7 +42,8 @@ ThirdPersonCamera::ThirdPersonCamera()
 	  m_walkAnimCache(nullptr), m_idleAnimCache(nullptr), m_animTime(0.0f), m_idleTime(0.0f), m_idleAnimTime(0.0f),
 	  m_wasMoving(false), m_emoteAnimCache(nullptr), m_emoteTime(0.0f), m_emoteDuration(0.0f), m_emoteActive(false),
 	  m_clickAnimObjectId(0), m_currentVehicleType(VEHICLE_NONE), m_rideAnim(nullptr), m_rideRoiMap(nullptr),
-	  m_rideRoiMapSize(0), m_rideVehicleROI(nullptr)
+	  m_rideRoiMapSize(0), m_rideVehicleROI(nullptr), m_orbitYaw(DEFAULT_ORBIT_YAW),
+	  m_orbitPitch(DEFAULT_ORBIT_PITCH), m_orbitDistance(DEFAULT_ORBIT_DISTANCE), m_touch{}
 {
 	SDL_memset(m_displayUniqueName, 0, sizeof(m_displayUniqueName));
 }
@@ -97,6 +98,8 @@ void ThirdPersonCamera::Disable()
 	ClearRideAnimation();
 	m_animCacheMap.clear();
 	ClearAnimCaches();
+
+	ResetOrbitState();
 }
 
 void ThirdPersonCamera::OnActorEnter(IslePathActor* p_actor)
@@ -253,6 +256,9 @@ void ThirdPersonCamera::Tick(float p_deltaTime)
 	if (!m_playerROI) {
 		return;
 	}
+
+	// Update orbit camera position each frame so it tracks the player
+	ApplyOrbitCamera();
 
 	// Small vehicle with ride animation (like RemotePlayer)
 	if (m_currentVehicleType != VEHICLE_NONE) {
@@ -544,12 +550,8 @@ void ThirdPersonCamera::SetupCamera(LegoPathActor* p_actor)
 		return;
 	}
 
-	// Camera behind the character; +z in ROI-local is behind the model
-	// after TurnAround. Movement inversion in CalculateTransform corrects controls.
-	Mx3DPointFloat at(0.0f, 2.5f, 3.0f);
-	Mx3DPointFloat dir(0.0f, -0.3f, -1.0f);
-	Mx3DPointFloat up(0.0f, 1.0f, 0.0f);
-
+	Mx3DPointFloat at, dir, up;
+	ComputeOrbitVectors(at, dir, up);
 	world->GetCameraController()->SetWorldTransform(at, dir, up);
 	p_actor->TransformPointOfView();
 }
@@ -674,6 +676,172 @@ void ThirdPersonCamera::ApplyIdleFrame0()
 	LegoTreeNode* root = m_idleAnimCache->anim->GetRoot();
 	for (LegoU32 i = 0; i < root->GetNumChildren(); i++) {
 		LegoROI::ApplyAnimationTransformation(root->GetChild(i), transform, (LegoTime) 0.0f, m_idleAnimCache->roiMap);
+	}
+}
+
+void ThirdPersonCamera::ComputeOrbitVectors(
+	Mx3DPointFloat& p_at,
+	Mx3DPointFloat& p_dir,
+	Mx3DPointFloat& p_up
+) const
+{
+	// Convert spherical coordinates to camera offset in entity-local space.
+	// Entity local Z+ is "behind" (after TurnAround), which is where yaw=0 points.
+	float cosP = cosf(m_orbitPitch);
+	float sinP = sinf(m_orbitPitch);
+	float sinY = sinf(m_orbitYaw);
+	float cosY = cosf(m_orbitYaw);
+
+	p_at = Mx3DPointFloat(
+		m_orbitDistance * sinY * cosP,
+		ORBIT_TARGET_HEIGHT + m_orbitDistance * sinP,
+		m_orbitDistance * cosY * cosP
+	);
+
+	// Direction points from camera toward the pivot. Since the camera sits on
+	// a sphere of radius m_orbitDistance, the unit direction is just the
+	// negated spherical unit vector.
+	p_dir = Mx3DPointFloat(-sinY * cosP, -sinP, -cosY * cosP);
+
+	p_up = Mx3DPointFloat(0.0f, 1.0f, 0.0f);
+}
+
+void ThirdPersonCamera::ApplyOrbitCamera()
+{
+	LegoPathActor* actor = UserActor();
+	LegoWorld* world = CurrentWorld();
+	if (!actor || !world || !world->GetCameraController()) {
+		return;
+	}
+
+	Mx3DPointFloat at, dir, up;
+	ComputeOrbitVectors(at, dir, up);
+	world->GetCameraController()->SetWorldTransform(at, dir, up);
+	actor->TransformPointOfView();
+}
+
+void ThirdPersonCamera::ResetOrbitState()
+{
+	m_orbitYaw = DEFAULT_ORBIT_YAW;
+	m_orbitPitch = DEFAULT_ORBIT_PITCH;
+	m_orbitDistance = DEFAULT_ORBIT_DISTANCE;
+	m_touch = {};
+}
+
+void ThirdPersonCamera::ClampPitch()
+{
+	if (m_orbitPitch < MIN_PITCH) {
+		m_orbitPitch = MIN_PITCH;
+	}
+	if (m_orbitPitch > MAX_PITCH) {
+		m_orbitPitch = MAX_PITCH;
+	}
+}
+
+void ThirdPersonCamera::ClampDistance()
+{
+	if (m_orbitDistance < MIN_DISTANCE) {
+		m_orbitDistance = MIN_DISTANCE;
+	}
+	if (m_orbitDistance > MAX_DISTANCE) {
+		m_orbitDistance = MAX_DISTANCE;
+	}
+}
+
+void ThirdPersonCamera::HandleSDLEvent(SDL_Event* p_event)
+{
+	switch (p_event->type) {
+	case SDL_EVENT_MOUSE_WHEEL:
+		m_orbitDistance -= p_event->wheel.y * 0.5f;
+		ClampDistance();
+		break;
+
+	case SDL_EVENT_MOUSE_MOTION:
+		if (p_event->motion.state & SDL_BUTTON_RMASK) {
+			m_orbitYaw += p_event->motion.xrel * 0.005f;
+			m_orbitPitch += p_event->motion.yrel * 0.005f;
+			ClampPitch();
+		}
+		break;
+
+	case SDL_EVENT_FINGER_DOWN: {
+		if (m_touch.count < 2) {
+			int idx = m_touch.count;
+			m_touch.id[idx] = p_event->tfinger.fingerID;
+			m_touch.x[idx] = p_event->tfinger.x;
+			m_touch.y[idx] = p_event->tfinger.y;
+			m_touch.count++;
+
+			if (m_touch.count == 2) {
+				float dx = m_touch.x[1] - m_touch.x[0];
+				float dy = m_touch.y[1] - m_touch.y[0];
+				m_touch.initialPinchDist = sqrtf(dx * dx + dy * dy);
+			}
+		}
+		break;
+	}
+
+	case SDL_EVENT_FINGER_MOTION: {
+		if (m_touch.count == 2) {
+			// Find which finger moved
+			int idx = -1;
+			for (int i = 0; i < 2; i++) {
+				if (m_touch.id[i] == p_event->tfinger.fingerID) {
+					idx = i;
+					break;
+				}
+			}
+			if (idx < 0) {
+				break;
+			}
+
+			float oldX = m_touch.x[idx];
+			float oldY = m_touch.y[idx];
+			m_touch.x[idx] = p_event->tfinger.x;
+			m_touch.y[idx] = p_event->tfinger.y;
+
+			// Pinch zoom
+			float dx = m_touch.x[1] - m_touch.x[0];
+			float dy = m_touch.y[1] - m_touch.y[0];
+			float newDist = sqrtf(dx * dx + dy * dy);
+
+			if (m_touch.initialPinchDist > 0.001f) {
+				float pinchDelta = m_touch.initialPinchDist - newDist;
+				m_orbitDistance += pinchDelta * 15.0f;
+				ClampDistance();
+				m_touch.initialPinchDist = newDist;
+			}
+
+			// Two-finger drag for orbit
+			float moveX = m_touch.x[idx] - oldX;
+			float moveY = m_touch.y[idx] - oldY;
+			m_orbitYaw -= moveX * 2.0f;
+			m_orbitPitch += moveY * 2.0f;
+			ClampPitch();
+		}
+		break;
+	}
+
+	case SDL_EVENT_FINGER_UP:
+	case SDL_EVENT_FINGER_CANCELED: {
+		for (int i = 0; i < m_touch.count; i++) {
+			if (m_touch.id[i] == p_event->tfinger.fingerID) {
+				// Shift remaining finger down
+				if (i == 0 && m_touch.count == 2) {
+					m_touch.id[0] = m_touch.id[1];
+					m_touch.x[0] = m_touch.x[1];
+					m_touch.y[0] = m_touch.y[1];
+				}
+				m_touch.count--;
+				m_touch.initialPinchDist = 0.0f;
+				break;
+			}
+		}
+		break;
+	}
+
+	default:
+		break;
 	}
 }
 

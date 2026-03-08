@@ -805,6 +805,8 @@ void LegoInputManager::InitializeHaptics()
 
 void LegoInputManager::UpdateLastInputMethod(SDL_Event* p_event)
 {
+	Extension<MultiplayerExt>::Call(HandleSDLEvent, p_event);
+
 	switch (p_event->type) {
 	case SDL_EVENT_KEY_DOWN:
 	case SDL_EVENT_KEY_UP:

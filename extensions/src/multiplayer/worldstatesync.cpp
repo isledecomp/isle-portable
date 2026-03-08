@@ -13,6 +13,7 @@
 #include "misc/legostorage.h"
 #include "mxmisc.h"
 #include "mxvariable.h"
+#include "mxvariabletable.h"
 
 #include <SDL3/SDL_stdinc.h>
 #include <cstdio>

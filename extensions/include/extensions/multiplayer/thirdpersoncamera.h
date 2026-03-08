@@ -3,9 +3,11 @@
 #include "extensions/multiplayer/animutils.h"
 #include "extensions/multiplayer/customizestate.h"
 #include "extensions/multiplayer/protocol.h"
+#include "mxgeometry/mxgeometry3d.h"
 #include "mxgeometry/mxmatrix.h"
 #include "mxtypes.h"
 
+#include <SDL3/SDL_events.h>
 #include <cstdint>
 #include <map>
 #include <string>
@@ -53,7 +55,17 @@ public:
 	void OnWorldEnabled(LegoWorld* p_world);
 	void OnWorldDisabled(LegoWorld* p_world);
 
+	// Free camera input handling
+	void HandleSDLEvent(SDL_Event* p_event);
+
 private:
+	// Orbit camera helpers
+	void ComputeOrbitVectors(Mx3DPointFloat& p_at, Mx3DPointFloat& p_dir, Mx3DPointFloat& p_up) const;
+	void ApplyOrbitCamera();
+	void ResetOrbitState();
+	void ClampPitch();
+	void ClampDistance();
+
 	using AnimCache = AnimUtils::AnimCache;
 
 	AnimCache* GetOrBuildAnimCache(const char* p_animName);
@@ -108,6 +120,28 @@ private:
 	LegoROI* m_rideVehicleROI;
 
 	std::map<std::string, AnimCache> m_animCacheMap;
+
+	// Orbit camera state
+	float m_orbitYaw;
+	float m_orbitPitch;
+	float m_orbitDistance;
+
+	// Touch gesture tracking
+	struct TouchState {
+		SDL_FingerID id[2];
+		float x[2], y[2];
+		int count;
+		float initialPinchDist;
+	} m_touch;
+
+	static constexpr float DEFAULT_ORBIT_YAW = 0.0f;
+	static constexpr float DEFAULT_ORBIT_PITCH = 0.3f;
+	static constexpr float DEFAULT_ORBIT_DISTANCE = 3.5f;
+	static constexpr float ORBIT_TARGET_HEIGHT = 1.5f;
+	static constexpr float MIN_PITCH = 0.05f;
+	static constexpr float MAX_PITCH = 1.4f;
+	static constexpr float MIN_DISTANCE = 1.5f;
+	static constexpr float MAX_DISTANCE = 15.0f;
 };
 
 } // namespace Multiplayer
