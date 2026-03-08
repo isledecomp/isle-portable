@@ -232,7 +232,7 @@ MxBool WorldStateSync::HandleSkyLightMutation(uint8_t p_entityType, uint8_t p_ch
 void WorldStateSync::SendSnapshotRequest()
 {
 	RequestSnapshotMsg msg{};
-	msg.header = {MSG_REQUEST_SNAPSHOT, m_localPeerId, m_sequence++};
+	msg.header = {MSG_REQUEST_SNAPSHOT, m_localPeerId, m_sequence++, TARGET_HOST};
 	SendMessage(msg);
 
 	m_snapshotRequested = true;
@@ -270,8 +270,7 @@ void WorldStateSync::SendWorldSnapshot(uint32_t p_targetPeerId)
 	stateBuffer[dataLength++] = (uint8_t) lightPos;
 
 	WorldSnapshotMsg msg{};
-	msg.header = {MSG_WORLD_SNAPSHOT, m_localPeerId, m_sequence++};
-	msg.targetPeerId = p_targetPeerId;
+	msg.header = {MSG_WORLD_SNAPSHOT, m_localPeerId, m_sequence++, p_targetPeerId};
 	msg.dataLength = (uint16_t) dataLength;
 
 	std::vector<uint8_t> msgBuf(sizeof(WorldSnapshotMsg) + dataLength);
@@ -284,7 +283,7 @@ void WorldStateSync::SendWorldSnapshot(uint32_t p_targetPeerId)
 void WorldStateSync::BroadcastWorldEvent(uint8_t p_entityType, uint8_t p_changeType, uint8_t p_entityIndex)
 {
 	WorldEventMsg msg{};
-	msg.header = {MSG_WORLD_EVENT, m_localPeerId, m_sequence++};
+	msg.header = {MSG_WORLD_EVENT, m_localPeerId, m_sequence++, TARGET_BROADCAST};
 	msg.entityType = p_entityType;
 	msg.changeType = p_changeType;
 	msg.entityIndex = p_entityIndex;
@@ -294,7 +293,7 @@ void WorldStateSync::BroadcastWorldEvent(uint8_t p_entityType, uint8_t p_changeT
 void WorldStateSync::SendWorldEventRequest(uint8_t p_entityType, uint8_t p_changeType, uint8_t p_entityIndex)
 {
 	WorldEventRequestMsg msg{};
-	msg.header = {MSG_WORLD_EVENT_REQUEST, m_localPeerId, m_sequence++};
+	msg.header = {MSG_WORLD_EVENT_REQUEST, m_localPeerId, m_sequence++, TARGET_HOST};
 	msg.entityType = p_entityType;
 	msg.changeType = p_changeType;
 	msg.entityIndex = p_entityIndex;

@@ -10,8 +10,12 @@ class LegoPathActor;
 namespace Multiplayer
 {
 
+// Routing target constants for MessageHeader.target
+const uint32_t TARGET_BROADCAST = 0;          // Broadcast to all except sender
+const uint32_t TARGET_HOST = 0xFFFFFFFF;      // Send to host only
+const uint32_t TARGET_BROADCAST_ALL = 0xFFFFFFFE; // Broadcast to all including sender
+
 enum MessageType : uint8_t {
-	MSG_JOIN = 1,
 	MSG_LEAVE = 2,
 	MSG_STATE = 3,
 	MSG_HOST_ASSIGN = 4,
@@ -74,12 +78,7 @@ struct MessageHeader {
 	uint8_t type;
 	uint32_t peerId;
 	uint32_t sequence;
-};
-
-struct PlayerJoinMsg {
-	MessageHeader header;
-	uint8_t actorId;
-	char name[20];
+	uint32_t target;
 };
 
 struct PlayerLeaveMsg {
@@ -115,10 +114,9 @@ struct RequestSnapshotMsg {
 };
 
 // Host -> specific client: full world state blob (variable length)
-// Relay reads targetPeerId at offset 9 and routes to that peer only.
+// Relay reads header.target and routes to that peer only.
 struct WorldSnapshotMsg {
 	MessageHeader header;
-	uint32_t targetPeerId;
 	uint16_t dataLength;
 	// Followed by dataLength bytes of serialized plant + building state
 };

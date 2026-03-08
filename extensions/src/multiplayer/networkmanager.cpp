@@ -312,7 +312,7 @@ void NetworkManager::BroadcastLocalState()
 	}
 
 	PlayerStateMsg msg{};
-	msg.header = {MSG_STATE, m_localPeerId, m_sequence++};
+	msg.header = {MSG_STATE, m_localPeerId, m_sequence++, TARGET_BROADCAST};
 	msg.actorId = actorId;
 	msg.worldId = (int8_t) currentWorld->GetWorldId();
 	msg.vehicleType = DetectVehicleType(userActor);
@@ -394,16 +394,6 @@ void NetworkManager::ProcessIncomingPackets()
 			HostAssignMsg msg;
 			if (DeserializeMsg(data, length, msg) && msg.header.type == MSG_HOST_ASSIGN) {
 				HandleHostAssign(msg);
-			}
-			break;
-		}
-		case MSG_JOIN: {
-			PlayerJoinMsg msg;
-			if (DeserializeMsg(data, length, msg) && msg.header.type == MSG_JOIN) {
-				msg.name[sizeof(msg.name) - 1] = '\0';
-				if (IsValidActorId(msg.actorId)) {
-					HandleJoin(msg);
-				}
 			}
 			break;
 		}
@@ -494,18 +484,6 @@ RemotePlayer* NetworkManager::CreateAndSpawnPlayer(uint32_t p_peerId, uint8_t p_
 	return ptr;
 }
 
-void NetworkManager::HandleJoin(const PlayerJoinMsg& p_msg)
-{
-	uint32_t peerId = p_msg.header.peerId;
-
-	if (m_remotePlayers.count(peerId)) {
-		return;
-	}
-
-	CreateAndSpawnPlayer(peerId, p_msg.actorId, p_msg.actorId - 1);
-	NotifyPlayerCountChanged();
-}
-
 void NetworkManager::HandleLeave(const PlayerLeaveMsg& p_msg)
 {
 	RemoveRemotePlayer(p_msg.header.peerId);
@@ -594,7 +572,7 @@ void NetworkManager::SendEmote(uint8_t p_emoteId)
 	m_thirdPersonCamera.TriggerEmote(p_emoteId);
 
 	EmoteMsg msg{};
-	msg.header = {MSG_EMOTE, m_localPeerId, m_sequence++};
+	msg.header = {MSG_EMOTE, m_localPeerId, m_sequence++, TARGET_BROADCAST};
 	msg.emoteId = p_emoteId;
 	SendMessage(msg);
 }
@@ -713,7 +691,7 @@ bool NetworkManager::IsClonedCharacter(const char* p_name) const
 void NetworkManager::SendCustomize(uint32_t p_targetPeerId, uint8_t p_changeType, uint8_t p_partIndex)
 {
 	CustomizeMsg msg{};
-	msg.header = {MSG_CUSTOMIZE, m_localPeerId, m_sequence++};
+	msg.header = {MSG_CUSTOMIZE, m_localPeerId, m_sequence++, TARGET_BROADCAST_ALL};
 	msg.targetPeerId = p_targetPeerId;
 	msg.changeType = p_changeType;
 	msg.partIndex = p_partIndex;

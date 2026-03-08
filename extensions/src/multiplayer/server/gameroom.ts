@@ -1,14 +1,12 @@
 import {
 	HEADER_SIZE,
-	MSG_CUSTOMIZE,
-	MSG_REQUEST_SNAPSHOT,
-	MSG_WORLD_EVENT_REQUEST,
-	MSG_WORLD_SNAPSHOT,
-	SNAPSHOT_MIN_SIZE,
+	TARGET_BROADCAST,
+	TARGET_HOST,
+	TARGET_BROADCAST_ALL,
 	createAssignIdMsg,
 	createHostAssignMsg,
 	createLeaveMsg,
-	readTargetPeerId,
+	readTarget,
 	stampSender,
 } from "./protocol";
 import type { Env } from "./relay";
@@ -166,30 +164,17 @@ export class GameRoom implements DurableObject {
 			return;
 		}
 
-		const msgType = data[0];
 		const stamped = stampSender(data, peerId);
+		const target = readTarget(stamped);
 
-		if (
-			msgType === MSG_REQUEST_SNAPSHOT ||
-			msgType === MSG_WORLD_EVENT_REQUEST
-		) {
+		if (target === TARGET_BROADCAST) {
+			this.broadcastExcept(stamped.buffer, peerId);
+		} else if (target === TARGET_HOST) {
 			this.sendToHost(stamped);
-		} else if (
-			msgType === MSG_WORLD_SNAPSHOT &&
-			data.length >= SNAPSHOT_MIN_SIZE
-		) {
-			const targetId = readTargetPeerId(stamped);
-			if (targetId === 0) {
-				this.broadcastExcept(stamped.buffer, peerId);
-			} else {
-				this.sendToTarget(stamped);
-			}
-		} else if (msgType === MSG_CUSTOMIZE) {
-			// Broadcast to all including sender so the clicker sees effects
-			// on the target's clone on their own screen.
+		} else if (target === TARGET_BROADCAST_ALL) {
 			this.broadcast(stamped.buffer);
 		} else {
-			this.broadcastExcept(stamped.buffer, peerId);
+			this.sendToTarget(stamped, target);
 		}
 	}
 
@@ -200,8 +185,7 @@ export class GameRoom implements DurableObject {
 		}
 	}
 
-	private sendToTarget(data: Uint8Array): void {
-		const targetId = readTargetPeerId(data);
+	private sendToTarget(data: Uint8Array, targetId: number): void {
 		const targetWs = this.connections.get(targetId);
 		if (targetWs) {
 			if (!this.trySend(targetWs, data.buffer)) {

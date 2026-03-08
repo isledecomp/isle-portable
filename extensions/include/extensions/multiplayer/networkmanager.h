@@ -90,7 +90,6 @@ private:
 
 	RemotePlayer* CreateAndSpawnPlayer(uint32_t p_peerId, uint8_t p_actorId, uint8_t p_displayActorIndex);
 
-	void HandleJoin(const PlayerJoinMsg& p_msg);
 	void HandleLeave(const PlayerLeaveMsg& p_msg);
 	void HandleState(const PlayerStateMsg& p_msg);
 	void HandleHostAssign(const HostAssignMsg& p_msg);
