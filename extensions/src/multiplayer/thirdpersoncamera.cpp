@@ -4,6 +4,7 @@
 #include "anim/legoanim.h"
 #include "extensions/multiplayer/charactercloner.h"
 #include "extensions/multiplayer/charactercustomizer.h"
+#include "extensions/multiplayer/namebubblerenderer.h"
 #include "islepathactor.h"
 #include "legogamestate.h"
 #include "legoanimpresenter.h"
@@ -42,7 +43,8 @@ ThirdPersonCamera::ThirdPersonCamera()
 	  m_walkAnimCache(nullptr), m_idleAnimCache(nullptr), m_animTime(0.0f), m_idleTime(0.0f), m_idleAnimTime(0.0f),
 	  m_wasMoving(false), m_emoteAnimCache(nullptr), m_emoteTime(0.0f), m_emoteDuration(0.0f), m_emoteActive(false),
 	  m_clickAnimObjectId(0), m_currentVehicleType(VEHICLE_NONE), m_rideAnim(nullptr), m_rideRoiMap(nullptr),
-	  m_rideRoiMapSize(0), m_rideVehicleROI(nullptr), m_orbitYaw(DEFAULT_ORBIT_YAW),
+	  m_rideRoiMapSize(0), m_rideVehicleROI(nullptr), m_nameBubble(nullptr), m_showNameBubble(true),
+	  m_orbitYaw(DEFAULT_ORBIT_YAW),
 	  m_orbitPitch(DEFAULT_ORBIT_PITCH), m_orbitDistance(DEFAULT_ORBIT_DISTANCE), m_touch{}
 {
 	SDL_memset(m_displayUniqueName, 0, sizeof(m_displayUniqueName));
@@ -94,6 +96,7 @@ void ThirdPersonCamera::Disable()
 	}
 
 	m_active = false;
+	DestroyNameBubble();
 	DestroyDisplayClone();
 	ClearRideAnimation();
 	m_animCacheMap.clear();
@@ -133,6 +136,7 @@ void ThirdPersonCamera::OnActorEnter(IslePathActor* p_actor)
 				m_playerROI->SetVisibility(FALSE);
 				VideoManager()->Get3DManager()->Remove(*m_playerROI);
 			}
+			DestroyNameBubble();
 			m_active = false;
 			return;
 		}
@@ -151,6 +155,7 @@ void ThirdPersonCamera::OnActorEnter(IslePathActor* p_actor)
 		m_active = true;
 		SetupCamera(userActor);
 		BuildRideAnimation(m_currentVehicleType);
+		CreateNameBubble();
 		return;
 	}
 
@@ -187,6 +192,7 @@ void ThirdPersonCamera::OnActorEnter(IslePathActor* p_actor)
 	ApplyIdleFrame0();
 
 	SetupCamera(userActor);
+	CreateNameBubble();
 }
 
 void ThirdPersonCamera::OnActorExit(IslePathActor* p_actor)
@@ -216,6 +222,7 @@ void ThirdPersonCamera::OnActorExit(IslePathActor* p_actor)
 	}
 	else if (m_active && static_cast<LegoPathActor*>(p_actor) == UserActor()) {
 		// Exiting on foot: full teardown.
+		DestroyNameBubble();
 		if (m_playerROI) {
 			m_playerROI->SetVisibility(FALSE);
 			VideoManager()->Get3DManager()->Remove(*m_playerROI);
@@ -259,6 +266,10 @@ void ThirdPersonCamera::Tick(float p_deltaTime)
 
 	// Update orbit camera position each frame so it tracks the player
 	ApplyOrbitCamera();
+
+	if (m_nameBubble) {
+		m_nameBubble->Update(m_playerROI);
+	}
 
 	// Small vehicle with ride animation (like RemotePlayer)
 	if (m_currentVehicleType != VEHICLE_NONE) {
@@ -524,6 +535,7 @@ void ThirdPersonCamera::OnWorldDisabled(LegoWorld* p_world)
 	m_active = false;
 	m_roiUnflipped = false;
 	m_playerROI = nullptr;
+	DestroyNameBubble();
 	DestroyDisplayClone();
 	ClearRideAnimation();
 	m_animCacheMap.clear();
@@ -647,6 +659,58 @@ void ThirdPersonCamera::DestroyDisplayClone()
 		VideoManager()->Get3DManager()->Remove(*m_displayROI);
 		CharacterManager()->ReleaseActor(m_displayUniqueName);
 		m_displayROI = nullptr;
+	}
+}
+
+void ThirdPersonCamera::CreateNameBubble()
+{
+	if (m_nameBubble) {
+		return;
+	}
+
+	char name[8] = {};
+	LegoGameState* gs = GameState();
+	if (gs && gs->m_playerCount > 0) {
+		const LegoGameState::Username& username = gs->m_players[0];
+		for (int i = 0; i < 7; i++) {
+			MxS16 letter = username.m_letters[i];
+			if (letter < 0) {
+				break;
+			}
+			if (letter <= 25) {
+				name[i] = (char) ('A' + letter);
+			}
+			else {
+				name[i] = '?';
+			}
+		}
+	}
+
+	if (name[0] == '\0') {
+		return;
+	}
+
+	m_nameBubble = new NameBubbleRenderer();
+	m_nameBubble->Create(name);
+
+	if (!m_showNameBubble) {
+		m_nameBubble->SetVisible(false);
+	}
+}
+
+void ThirdPersonCamera::DestroyNameBubble()
+{
+	if (m_nameBubble) {
+		delete m_nameBubble;
+		m_nameBubble = nullptr;
+	}
+}
+
+void ThirdPersonCamera::SetNameBubbleVisible(bool p_visible)
+{
+	m_showNameBubble = p_visible;
+	if (m_nameBubble) {
+		m_nameBubble->SetVisible(p_visible);
 	}
 }
 
@@ -847,6 +911,8 @@ void ThirdPersonCamera::HandleSDLEvent(SDL_Event* p_event)
 
 void ThirdPersonCamera::ReinitForCharacter()
 {
+	DestroyNameBubble();
+
 	LegoPathActor* userActor = UserActor();
 	if (!userActor) {
 		m_active = false;
@@ -898,6 +964,7 @@ void ThirdPersonCamera::ReinitForCharacter()
 		m_active = true;
 		SetupCamera(userActor);
 		BuildRideAnimation(vehicleType);
+		CreateNameBubble();
 		return;
 	}
 
@@ -940,4 +1007,5 @@ void ThirdPersonCamera::ReinitForCharacter()
 
 	ApplyIdleFrame0();
 	SetupCamera(userActor);
+	CreateNameBubble();
 }

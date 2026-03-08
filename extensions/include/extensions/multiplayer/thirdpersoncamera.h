@@ -21,6 +21,8 @@ class LegoAnim;
 namespace Multiplayer
 {
 
+class NameBubbleRenderer;
+
 class ThirdPersonCamera {
 public:
 	ThirdPersonCamera();
@@ -52,6 +54,8 @@ public:
 	void StopClickAnimation();
 	bool IsInVehicle() const { return m_currentVehicleType != VEHICLE_NONE; }
 
+	void SetNameBubbleVisible(bool p_visible);
+
 	void OnWorldEnabled(LegoWorld* p_world);
 	void OnWorldDisabled(LegoWorld* p_world);
 
@@ -75,6 +79,9 @@ private:
 	void ClearRideAnimation();
 	void ApplyIdleFrame0();
 	void ReinitForCharacter();
+
+	void CreateNameBubble();
+	void DestroyNameBubble();
 
 	bool EnsureDisplayROI();
 	void CreateDisplayClone();
@@ -120,6 +127,9 @@ private:
 	LegoROI* m_rideVehicleROI;
 
 	std::map<std::string, AnimCache> m_animCacheMap;
+
+	NameBubbleRenderer* m_nameBubble;
+	bool m_showNameBubble;
 
 	// Orbit camera state
 	float m_orbitYaw;

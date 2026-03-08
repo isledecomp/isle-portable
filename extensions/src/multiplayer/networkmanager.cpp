@@ -263,6 +263,7 @@ void NetworkManager::ProcessPendingRequests()
 		for (auto& [peerId, player] : m_remotePlayers) {
 			player->SetNameBubbleVisible(m_showNameBubbles);
 		}
+		m_thirdPersonCamera.SetNameBubbleVisible(m_showNameBubbles);
 	}
 }
 
