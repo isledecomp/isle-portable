@@ -366,7 +366,7 @@ void NetworkManager::ProcessIncomingPackets()
 				if (maxActors >= 5 && maxActors <= 40) {
 					LegoAnimationManager::configureLegoAnimationManager(maxActors);
 					if (AnimationManager()) {
-						AnimationManager()->SetMaxAllowedExtras(maxActors);
+						AnimationManager()->m_maxAllowedExtras = maxActors;
 					}
 				}
 			}

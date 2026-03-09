@@ -20,6 +20,10 @@ class LegoROIList;
 struct LegoOrientedEdge;
 class LegoWorld;
 class MxDSAction;
+namespace Multiplayer
+{
+class NetworkManager;
+}
 
 // SIZE 0x30
 struct ModelInfo {
@@ -199,12 +203,12 @@ public:
 
 	LEGO1_EXPORT static void configureLegoAnimationManager(MxS32 p_legoAnimationManagerConfig);
 
-	void SetMaxAllowedExtras(MxU32 p_maxAllowedExtras) { m_maxAllowedExtras = p_maxAllowedExtras; }
-
 	// SYNTHETIC: LEGO1 0x1005ed10
 	// LegoAnimationManager::`scalar deleting destructor'
 
 private:
+	friend class Multiplayer::NetworkManager;
+
 	void Init();
 	MxResult FUN_100605e0(
 		MxU32 p_index,
