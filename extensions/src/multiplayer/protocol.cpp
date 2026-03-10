@@ -26,11 +26,14 @@ const char* const g_idleAnimNames[] = {
 };
 const int g_idleAnimCount = sizeof(g_idleAnimNames) / sizeof(g_idleAnimNames[0]);
 
-const char* const g_emoteAnimNames[] = {
-	"CNs011xx", // 0: Wave
-	"CNs012xx", // 1: Hat Tip
+// Emote animation table. Each entry is {phase1, phase2}.
+// phase2 is nullptr for one-shot emotes; non-null makes it a multi-part stateful emote.
+const char* const g_emoteAnims[][2] = {
+	{"CNs011xx", nullptr},   // 0: Wave (one-shot)
+	{"CNs012xx", nullptr},   // 1: Hat Tip (one-shot)
+	{"BNsDis01", "BNsAss01"}, // 2: Disassemble / Reassemble (multi-part)
 };
-const int g_emoteAnimCount = sizeof(g_emoteAnimNames) / sizeof(g_emoteAnimNames[0]);
+const int g_emoteAnimCount = sizeof(g_emoteAnims) / sizeof(g_emoteAnims[0]);
 
 // Vehicle model names (LOD names). The helicopter is a compound ROI ("copter")
 // with no standalone LOD; use its body part instead.

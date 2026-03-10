@@ -38,6 +38,8 @@ public:
 	void SetWalkAnimId(uint8_t p_walkAnimId);
 	void SetIdleAnimId(uint8_t p_idleAnimId);
 	void TriggerEmote(uint8_t p_emoteId);
+	bool IsInMultiPartEmote() const;
+	int8_t GetFrozenEmoteId() const;
 	void SetDisplayActorIndex(uint8_t p_displayActorIndex);
 	uint8_t GetDisplayActorIndex() const { return m_displayActorIndex; }
 	LegoROI* GetDisplayROI() const { return m_displayROI; }

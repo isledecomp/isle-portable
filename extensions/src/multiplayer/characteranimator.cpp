@@ -20,7 +20,8 @@ using namespace Multiplayer;
 CharacterAnimator::CharacterAnimator(const CharacterAnimatorConfig& p_config)
 	: m_config(p_config), m_walkAnimId(0), m_idleAnimId(0), m_walkAnimCache(nullptr), m_idleAnimCache(nullptr),
 	  m_animTime(0.0f), m_idleTime(0.0f), m_idleAnimTime(0.0f), m_wasMoving(false), m_emoteAnimCache(nullptr),
-	  m_emoteTime(0.0f), m_emoteDuration(0.0f), m_emoteActive(false), m_clickAnimObjectId(0), m_rideAnim(nullptr),
+	  m_emoteTime(0.0f), m_emoteDuration(0.0f), m_emoteActive(false), m_currentEmoteId(0), m_frozenEmoteId(-1),
+	  m_frozenAnimCache(nullptr), m_frozenAnimDuration(0.0f), m_clickAnimObjectId(0), m_rideAnim(nullptr),
 	  m_rideRoiMap(nullptr), m_rideRoiMapSize(0), m_rideVehicleROI(nullptr), m_currentVehicleType(VEHICLE_NONE),
 	  m_nameBubble(nullptr)
 {
@@ -71,10 +72,10 @@ void CharacterAnimator::Tick(float p_deltaTime, LegoROI* p_roi, bool p_isMoving)
 	bool inVehicle = (m_currentVehicleType != VEHICLE_NONE);
 	bool isMoving = inVehicle || p_isMoving;
 
-	// Movement interrupts click animations and emotes
-	if (isMoving) {
+	// Movement interrupts click animations and emotes (but not multi-part emotes)
+	if (isMoving && m_frozenEmoteId < 0) {
 		StopClickAnimation();
-		if (m_emoteActive) {
+		if (m_emoteActive && !IsMultiPartEmote(m_currentEmoteId)) {
 			m_emoteActive = false;
 			m_emoteAnimCache = nullptr;
 		}
@@ -104,16 +105,32 @@ void CharacterAnimator::Tick(float p_deltaTime, LegoROI* p_roi, bool p_isMoving)
 		m_idleAnimTime = 0.0f;
 	}
 	else if (m_emoteActive && m_emoteAnimCache && m_emoteAnimCache->anim && m_emoteAnimCache->roiMap) {
-		// Emote playback (one-shot)
+		// Emote playback
 		m_emoteTime += p_deltaTime * 1000.0f;
 
 		if (m_emoteTime >= m_emoteDuration) {
-			// Emote completed -- return to stationary flow
-			m_emoteActive = false;
-			m_emoteAnimCache = nullptr;
-			m_wasMoving = false;
-			m_idleTime = 0.0f;
-			m_idleAnimTime = 0.0f;
+			if (IsMultiPartEmote(m_currentEmoteId) && m_frozenEmoteId < 0) {
+				// Phase 1 completed -> freeze at last frame
+				m_frozenEmoteId = (int8_t) m_currentEmoteId;
+				m_frozenAnimCache = m_emoteAnimCache;
+				m_frozenAnimDuration = m_emoteDuration;
+				m_emoteActive = false;
+				if (m_config.saveEmoteTransform) {
+					m_frozenParentTransform = m_emoteParentTransform;
+				}
+			}
+			else {
+				if (IsMultiPartEmote(m_currentEmoteId) && m_frozenEmoteId >= 0) {
+					// Phase 2 completed -> unfreeze
+					ClearFrozenState();
+				}
+				// Emote completed -- return to stationary flow
+				m_emoteActive = false;
+				m_emoteAnimCache = nullptr;
+				m_wasMoving = false;
+				m_idleTime = 0.0f;
+				m_idleAnimTime = 0.0f;
+			}
 		}
 		else {
 			MxMatrix transform(m_config.saveEmoteTransform ? m_emoteParentTransform : p_roi->GetLocal2World());
@@ -132,6 +149,24 @@ void CharacterAnimator::Tick(float p_deltaTime, LegoROI* p_roi, bool p_isMoving)
 			if (m_config.saveEmoteTransform) {
 				p_roi->WrappedSetLocal2WorldWithWorldDataUpdate(m_emoteParentTransform);
 			}
+		}
+	}
+	else if (m_frozenEmoteId >= 0 && m_frozenAnimCache && m_frozenAnimCache->anim && m_frozenAnimCache->roiMap) {
+		// Frozen at last frame of a multi-part emote's phase-1 animation
+		MxMatrix transform(m_config.saveEmoteTransform ? m_frozenParentTransform : p_roi->GetLocal2World());
+
+		LegoTreeNode* root = m_frozenAnimCache->anim->GetRoot();
+		for (LegoU32 i = 0; i < root->GetNumChildren(); i++) {
+			LegoROI::ApplyAnimationTransformation(
+				root->GetChild(i),
+				transform,
+				(LegoTime) m_frozenAnimDuration,
+				m_frozenAnimCache->roiMap
+			);
+		}
+
+		if (m_config.saveEmoteTransform) {
+			p_roi->WrappedSetLocal2WorldWithWorldDataUpdate(m_frozenParentTransform);
 		}
 	}
 	else if (m_idleAnimCache && m_idleAnimCache->anim && m_idleAnimCache->roiMap) {
@@ -199,18 +234,48 @@ void CharacterAnimator::TriggerEmote(uint8_t p_emoteId, LegoROI* p_roi, bool p_i
 		return;
 	}
 
-	// Only play emotes when stationary
-	if (p_isMoving) {
-		return;
+	if (IsMultiPartEmote(p_emoteId)) {
+		if (m_frozenEmoteId == (int8_t) p_emoteId) {
+			// Phase 2: play the recovery animation to unfreeze
+			AnimCache* cache = GetOrBuildAnimCache(p_roi, g_emoteAnims[p_emoteId][1]);
+			if (!cache || !cache->anim) {
+				return;
+			}
+
+			StopClickAnimation();
+
+			m_currentEmoteId = p_emoteId;
+			m_emoteAnimCache = cache;
+			m_emoteTime = 0.0f;
+			m_emoteDuration = (float) cache->anim->GetDuration();
+			m_emoteActive = true;
+
+			if (m_config.saveEmoteTransform) {
+				m_emoteParentTransform = m_frozenParentTransform;
+			}
+			return;
+		}
+		else if (m_frozenEmoteId >= 0) {
+			// Already frozen in a different emote, ignore
+			return;
+		}
+		// Phase 1: fall through to play the primary animation
+	}
+	else {
+		// One-shot emote: block if moving or frozen in any multi-part emote
+		if (p_isMoving || m_frozenEmoteId >= 0) {
+			return;
+		}
 	}
 
-	AnimCache* cache = GetOrBuildAnimCache(p_roi, g_emoteAnimNames[p_emoteId]);
+	AnimCache* cache = GetOrBuildAnimCache(p_roi, g_emoteAnims[p_emoteId][0]);
 	if (!cache || !cache->anim) {
 		return;
 	}
 
 	StopClickAnimation();
 
+	m_currentEmoteId = p_emoteId;
 	m_emoteAnimCache = cache;
 	m_emoteTime = 0.0f;
 	m_emoteDuration = (float) cache->anim->GetDuration();
@@ -295,6 +360,36 @@ void CharacterAnimator::InitAnimCaches(LegoROI* p_roi)
 {
 	m_walkAnimCache = GetOrBuildAnimCache(p_roi, g_walkAnimNames[m_walkAnimId]);
 	m_idleAnimCache = GetOrBuildAnimCache(p_roi, g_idleAnimNames[m_idleAnimId]);
+
+	// Rebuild frozen emote cache if the frozen state was set before the ROI was available
+	// (e.g. state message arrived before world was ready, or world was re-enabled).
+	if (m_frozenEmoteId >= 0 && !m_frozenAnimCache) {
+		SetFrozenEmoteId(m_frozenEmoteId, p_roi);
+	}
+}
+
+void CharacterAnimator::SetFrozenEmoteId(int8_t p_emoteId, LegoROI* p_roi)
+{
+	if (p_emoteId >= 0 && p_emoteId < g_emoteAnimCount && IsMultiPartEmote((uint8_t) p_emoteId)) {
+		AnimCache* cache = p_roi ? GetOrBuildAnimCache(p_roi, g_emoteAnims[p_emoteId][0]) : nullptr;
+		m_frozenEmoteId = p_emoteId;
+		m_frozenAnimCache = cache;
+		m_frozenAnimDuration = (cache && cache->anim) ? (float) cache->anim->GetDuration() : 0.0f;
+		m_emoteActive = false;
+		if (m_config.saveEmoteTransform && p_roi) {
+			m_frozenParentTransform = p_roi->GetLocal2World();
+		}
+	}
+	else {
+		ClearFrozenState();
+	}
+}
+
+void CharacterAnimator::ClearFrozenState()
+{
+	m_frozenEmoteId = -1;
+	m_frozenAnimCache = nullptr;
+	m_frozenAnimDuration = 0.0f;
 }
 
 void CharacterAnimator::ClearAnimCaches()
@@ -303,6 +398,7 @@ void CharacterAnimator::ClearAnimCaches()
 	m_idleAnimCache = nullptr;
 	m_emoteAnimCache = nullptr;
 	m_emoteActive = false;
+	ClearFrozenState();
 }
 
 void CharacterAnimator::ClearAll()
@@ -318,6 +414,7 @@ void CharacterAnimator::ResetAnimState()
 	m_idleAnimTime = 0.0f;
 	m_wasMoving = false;
 	m_emoteActive = false;
+	ClearFrozenState();
 }
 
 void CharacterAnimator::ApplyIdleFrame0(LegoROI* p_roi)

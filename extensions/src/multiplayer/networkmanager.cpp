@@ -330,6 +330,18 @@ void NetworkManager::BroadcastLocalState()
 	m_thirdPersonCamera.GetCustomizeState().Pack(msg.customizeData);
 	msg.customizeFlags = m_localAllowRemoteCustomize ? 0x01 : 0x00;
 
+	// Encode multi-part emote frozen state (0x02 = frozen, emote ID in bits 2-4, max 8 emotes)
+	int8_t frozenId = m_thirdPersonCamera.GetFrozenEmoteId();
+	if (frozenId >= 0) {
+		msg.customizeFlags |= 0x02;
+		msg.customizeFlags |= (frozenId & 0x07) << 2;
+	}
+
+	// Zero speed when in any phase of a multi-part emote
+	if (m_thirdPersonCamera.IsInMultiPartEmote()) {
+		msg.speed = 0.0f;
+	}
+
 	SendMessage(msg);
 }
 
@@ -687,7 +699,7 @@ void NetworkManager::HandleCustomize(const CustomizeMsg& p_msg)
 				it->second->GetCustomizeState(),
 				p_msg.changeType == CHANGE_MOOD
 			);
-			if (!it->second->IsMoving()) {
+			if (!it->second->IsMoving() && !it->second->IsInMultiPartEmote()) {
 				MxU32 clickAnimId =
 					CharacterCustomizer::PlayClickAnimation(it->second->GetROI(), it->second->GetCustomizeState());
 				it->second->SetClickAnimObjectId(clickAnimId);
@@ -719,8 +731,9 @@ void NetworkManager::HandleCustomize(const CustomizeMsg& p_msg)
 				p_msg.changeType == CHANGE_MOOD
 			);
 
-			// Only play click animation in 3rd person (not visible in 1st person)
-			if (m_thirdPersonCamera.GetDisplayROI() && !m_thirdPersonCamera.IsInVehicle()) {
+			// Only play click animation in 3rd person (not visible in 1st person or multi-part emote)
+			if (m_thirdPersonCamera.GetDisplayROI() && !m_thirdPersonCamera.IsInVehicle() &&
+				!m_thirdPersonCamera.IsInMultiPartEmote()) {
 				MxU32 clickAnimId = CharacterCustomizer::PlayClickAnimation(
 					m_thirdPersonCamera.GetDisplayROI(),
 					m_thirdPersonCamera.GetCustomizeState()

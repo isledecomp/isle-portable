@@ -162,8 +162,15 @@ extern const int g_walkAnimCount;
 extern const char* const g_idleAnimNames[];
 extern const int g_idleAnimCount;
 
-extern const char* const g_emoteAnimNames[];
+// Emote animation table: [emoteId][phase]. Phase 0 = primary, phase 1 = phase-2 (nullptr for one-shot).
+extern const char* const g_emoteAnims[][2];
 extern const int g_emoteAnimCount;
+
+// Returns true if the emote is a multi-part stateful emote (has a phase-2 animation).
+inline bool IsMultiPartEmote(uint8_t p_emoteId)
+{
+	return p_emoteId < g_emoteAnimCount && g_emoteAnims[p_emoteId][1] != nullptr;
+}
 
 extern const char* const g_vehicleROINames[VEHICLE_COUNT];
 extern const char* const g_rideAnimNames[VEHICLE_COUNT];

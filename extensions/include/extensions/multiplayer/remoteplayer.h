@@ -47,6 +47,7 @@ public:
 	void StopClickAnimation();
 	bool IsInVehicle() const { return m_animator.IsInVehicle(); }
 	bool IsMoving() const { return m_animator.IsInVehicle() || m_targetSpeed > 0.01f; }
+	bool IsInMultiPartEmote() const { return m_animator.IsInMultiPartEmote(); }
 
 private:
 	const char* GetDisplayActorName() const;

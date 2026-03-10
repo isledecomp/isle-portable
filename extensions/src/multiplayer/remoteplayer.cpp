@@ -172,6 +172,13 @@ void RemotePlayer::UpdateFromNetwork(const PlayerStateMsg& p_msg)
 	// Update allow remote customize flag
 	m_allowRemoteCustomize = (p_msg.customizeFlags & 0x01) != 0;
 
+	// Sync multi-part emote frozen state from remote
+	bool isFrozen = (p_msg.customizeFlags & 0x02) != 0;
+	int8_t frozenEmoteId = isFrozen ? (int8_t) ((p_msg.customizeFlags >> 2) & 0x07) : -1;
+	if (frozenEmoteId != m_animator.GetFrozenEmoteId()) {
+		m_animator.SetFrozenEmoteId(frozenEmoteId, m_roi);
+	}
+
 	// Swap walk animation if changed
 	if (p_msg.walkAnimId != m_animator.GetWalkAnimId() && p_msg.walkAnimId < g_walkAnimCount) {
 		m_animator.SetWalkAnimId(p_msg.walkAnimId, m_roi);
@@ -191,7 +198,12 @@ void RemotePlayer::Tick(float p_deltaTime)
 
 	UpdateVehicleState();
 	UpdateTransform(p_deltaTime);
-	m_animator.Tick(p_deltaTime, m_roi, m_targetSpeed > 0.01f);
+
+	bool isMoving = m_targetSpeed > 0.01f;
+	if (m_animator.IsInMultiPartEmote()) {
+		isMoving = false;
+	}
+	m_animator.Tick(p_deltaTime, m_roi, isMoving);
 
 	// Update name bubble position and billboard orientation
 	m_animator.UpdateNameBubble(m_roi);
@@ -249,7 +261,11 @@ void RemotePlayer::TriggerEmote(uint8_t p_emoteId)
 		return;
 	}
 
-	m_animator.TriggerEmote(p_emoteId, m_roi, m_targetSpeed > 0.01f);
+	bool isMoving = m_targetSpeed > 0.01f;
+	if (m_animator.IsInMultiPartEmote()) {
+		isMoving = false;
+	}
+	m_animator.TriggerEmote(p_emoteId, m_roi, isMoving);
 }
 
 void RemotePlayer::UpdateTransform(float p_deltaTime)

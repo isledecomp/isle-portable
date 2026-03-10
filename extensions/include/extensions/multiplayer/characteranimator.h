@@ -75,6 +75,12 @@ public:
 	// Emote state accessors
 	bool IsEmoteActive() const { return m_emoteActive; }
 
+	// Multi-part emote state. Returns true when the player is in any phase of a multi-part
+	// emote (playing phase 1, frozen at last frame, or playing phase 2). Movement is blocked.
+	bool IsInMultiPartEmote() const { return m_frozenEmoteId >= 0 || (m_emoteActive && IsMultiPartEmote(m_currentEmoteId)); }
+	int8_t GetFrozenEmoteId() const { return m_frozenEmoteId; }
+	void SetFrozenEmoteId(int8_t p_emoteId, LegoROI* p_roi);
+
 	// Animation time (needed for vehicle ride tick in ThirdPersonCamera)
 	float GetAnimTime() const { return m_animTime; }
 	void SetAnimTime(float p_time) { m_animTime = p_time; }
@@ -84,6 +90,7 @@ private:
 	using AnimCache = AnimUtils::AnimCache;
 
 	AnimCache* GetOrBuildAnimCache(LegoROI* p_roi, const char* p_animName);
+	void ClearFrozenState();
 
 	CharacterAnimatorConfig m_config;
 
@@ -102,7 +109,14 @@ private:
 	float m_emoteTime;
 	float m_emoteDuration;
 	bool m_emoteActive;
+	uint8_t m_currentEmoteId;
 	MxMatrix m_emoteParentTransform;
+
+	// Multi-part emote frozen state (-1 = not frozen)
+	int8_t m_frozenEmoteId;
+	AnimCache* m_frozenAnimCache;
+	float m_frozenAnimDuration;
+	MxMatrix m_frozenParentTransform;
 
 	// Click animation tracking (0 = none)
 	MxU32 m_clickAnimObjectId;
