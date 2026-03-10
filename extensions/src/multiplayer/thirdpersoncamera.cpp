@@ -7,6 +7,7 @@
 #include "islepathactor.h"
 #include "legocameracontroller.h"
 #include "legocharactermanager.h"
+#include "legopathactor.h"
 #include "legovideomanager.h"
 #include "legoworld.h"
 #include "misc.h"
@@ -14,27 +15,26 @@
 #include "mxgeometry/mxgeometry3d.h"
 #include "mxgeometry/mxmatrix.h"
 #include "realtime/realtime.h"
+#include "realtime/vector.h"
 #include "roi/legoroi.h"
 
 #include <SDL3/SDL_stdinc.h>
 
 using namespace Multiplayer;
 
-// Flip the ROI's z-axis direction in place (same operation as IslePathActor::TurnAround).
-static void FlipROIDirection(LegoROI* p_roi)
+// Flip a matrix from forward-z to backward-z (or vice versa) in place.
+// Same operation as IslePathActor::TurnAround: negate z, recompute right.
+static void FlipMatrixDirection(MxMatrix& p_mat)
 {
-	MxMatrix transform(p_roi->GetLocal2World());
-	Vector3 right(transform[0]);
-	Vector3 up(transform[1]);
-	Vector3 direction(transform[2]);
+	Vector3 right(p_mat[0]);
+	Vector3 up(p_mat[1]);
+	Vector3 direction(p_mat[2]);
 	direction *= -1.0f;
 	right.EqualsCross(up, direction);
-	p_roi->SetLocal2World(transform);
-	p_roi->WrappedUpdateWorldData();
 }
 
 ThirdPersonCamera::ThirdPersonCamera()
-	: m_enabled(false), m_active(false), m_roiUnflipped(false), m_playerROI(nullptr),
+	: m_enabled(false), m_active(false), m_pendingWorldTransition(false), m_playerROI(nullptr),
 	  m_displayActorIndex(DISPLAY_ACTOR_NONE), m_displayROI(nullptr),
 	  m_animator(CharacterAnimatorConfig{/*.saveEmoteTransform=*/true}), m_showNameBubble(true),
 	  m_orbitYaw(DEFAULT_ORBIT_YAW), m_orbitPitch(DEFAULT_ORBIT_PITCH), m_orbitDistance(DEFAULT_ORBIT_DISTANCE),
@@ -57,19 +57,6 @@ void ThirdPersonCamera::Disable()
 		LegoPathActor* userActor = UserActor();
 		LegoWorld* world = CurrentWorld();
 
-		// Undo TurnAround so the ROI z-axis points in the visual forward
-		// direction.  This keeps the 1st-person camera facing the same way
-		// as the 3rd-person camera, and ensures the network direction stays
-		// consistent (no 180-degree flip for others).
-		// Flip the native ROI (not the display clone) since TransformPointOfView
-		// uses it for the 1st-person camera.
-		LegoROI* turnAroundROI = userActor ? userActor->GetROI() : nullptr;
-
-		if (turnAroundROI) {
-			FlipROIDirection(turnAroundROI);
-			m_roiUnflipped = true;
-		}
-
 		m_playerROI->SetVisibility(FALSE);
 		VideoManager()->Get3DManager()->Remove(*m_playerROI);
 
@@ -85,6 +72,7 @@ void ThirdPersonCamera::Disable()
 	}
 
 	m_active = false;
+	m_pendingWorldTransition = false;
 	DestroyNameBubble();
 	DestroyDisplayClone();
 	m_animator.ClearRideAnimation();
@@ -104,10 +92,15 @@ void ThirdPersonCamera::OnActorEnter(IslePathActor* p_actor)
 	// even if Enable() was called after entering the vehicle.
 	m_animator.SetCurrentVehicleType(DetectVehicleType(userActor));
 
-	// Enter() calls TurnAround(), so any previous undo is superseded.
-	m_roiUnflipped = false;
-
 	if (!m_enabled) {
+		return;
+	}
+
+	// During a world transition, the ROI position is stale (PlaceActor hasn't
+	// run yet).  Skip camera setup — the stale orbit view would freeze on
+	// screen during the ~500ms world load.  ApplyOrbitCamera in the first
+	// Tick after PlaceActor handles camera setup naturally.
+	if (m_pendingWorldTransition && m_active) {
 		return;
 	}
 
@@ -135,12 +128,6 @@ void ThirdPersonCamera::OnActorEnter(IslePathActor* p_actor)
 			return;
 		}
 
-		// Undo Enter()'s TurnAround.  Vehicles are placed with ROI z opposite
-		// to their visual forward (mesh faces -z = forward).  Enter()'s
-		// TurnAround flips ROI z to match the visual forward, which breaks
-		// the backward-z convention the 3rd-person camera relies on.
-		p_actor->TurnAround();
-
 		m_active = true;
 		SetupCamera(userActor);
 		m_animator.BuildRideAnimation(m_animator.GetCurrentVehicleType(), m_playerROI, 0);
@@ -148,12 +135,11 @@ void ThirdPersonCamera::OnActorEnter(IslePathActor* p_actor)
 		return;
 	}
 
-	// Non-vehicle (walking character) entry — Enter() already called TurnAround.
+	// Walking character entry.
 	newROI->SetVisibility(FALSE);
 	if (!EnsureDisplayROI()) {
 		return;
 	}
-	m_roiUnflipped = false;
 	m_active = true;
 
 	m_playerROI->SetVisibility(TRUE);
@@ -181,16 +167,6 @@ void ThirdPersonCamera::OnActorExit(IslePathActor* p_actor)
 	// For vehicle exit, p_actor is the vehicle, not UserActor —
 	// check m_currentVehicleType instead.
 	if (m_animator.GetCurrentVehicleType() != VEHICLE_NONE) {
-		// When 3rd-person camera is active, movement inversion causes the
-		// vehicle to physically drive opposite to vanilla.  CalculateTransform
-		// re-inverts to keep the ROI z backward.  Exit()'s TurnAround restores
-		// the vanilla convention, but that's wrong for the visual driving
-		// direction.  Flip once more so the parked vehicle faces the way it
-		// was visually driven.
-		if (m_active) {
-			p_actor->TurnAround();
-		}
-
 		// Exiting a vehicle: reinitialize for the walking character.
 		m_animator.ClearRideAnimation();
 		m_animator.ClearAll();
@@ -212,20 +188,14 @@ void ThirdPersonCamera::OnActorExit(IslePathActor* p_actor)
 
 void ThirdPersonCamera::OnCamAnimEnd(LegoPathActor* p_actor)
 {
+	m_pendingWorldTransition = false;
+
 	if (!m_active) {
 		return;
 	}
 
-	// FUN_1004b6d0's PlaceActor set the ROI with standard direction
-	// (z = visual forward). The 3rd person camera needs backward-z.
-	// Flip the ROI direction, then re-setup the camera.
-	// Flip the native ROI (not the display clone) since Tick() syncs the
-	// clone's transform from it.
-	LegoROI* roi = p_actor->GetROI();
-	if (roi) {
-		FlipROIDirection(roi);
-	}
-
+	// Cam anim end placed the actor via PlaceActor (forward-z).
+	// Restore the orbit camera.
 	SetupCamera(p_actor);
 }
 
@@ -239,8 +209,23 @@ void ThirdPersonCamera::Tick(float p_deltaTime)
 		return;
 	}
 
-	// Update orbit camera position each frame so it tracks the player
-	ApplyOrbitCamera();
+	// After a world transition, PlaceActor has now run and set the ROI to
+	// the correct position.  Clear the flag so subsequent OnActorEnter calls
+	// work normally.  ApplyOrbitCamera below handles the camera setup.
+	if (m_pendingWorldTransition) {
+		m_pendingWorldTransition = false;
+	}
+
+	// While a cam anim locks the player (actor state c_disabled), calling
+	// ApplyOrbitCamera would fight the cam anim each frame and, critically,
+	// if the cam anim is interrupted (space bar), its end handler reads
+	// ViewROI position to place the actor.  Our orbit camera position
+	// (elevated, behind player) would cause the actor to be placed in the
+	// air.  Once the player is released (first interruption resets actor
+	// state to c_initial), the orbit camera resumes immediately.
+	if (!UserActor() || UserActor()->GetActorState() != LegoPathActor::c_disabled) {
+		ApplyOrbitCamera();
+	}
 
 	m_animator.UpdateNameBubble(m_playerROI);
 
@@ -262,8 +247,10 @@ void ThirdPersonCamera::Tick(float p_deltaTime)
 				m_animator.SetAnimTime(m_animator.GetAnimTime() + p_deltaTime * 2000.0f);
 			}
 
-			// Use vehicle actor's transform as base.
+			// Use vehicle actor's transform as base, flipped to backward-z
+			// so the character mesh (which faces -z) renders correctly.
 			MxMatrix transform(actor->GetROI()->GetLocal2World());
+			FlipMatrixDirection(transform);
 
 			// Position character ROI at the vehicle for bone rendering.
 			m_playerROI->WrappedSetLocal2WorldWithWorldDataUpdate(transform);
@@ -298,6 +285,8 @@ void ThirdPersonCamera::Tick(float p_deltaTime)
 		LegoROI* nativeROI = userActor->GetROI();
 		if (nativeROI) {
 			MxMatrix mat(nativeROI->GetLocal2World());
+			// Native ROI uses forward-z; flip to backward-z for the mesh.
+			FlipMatrixDirection(mat);
 			m_displayROI->WrappedSetLocal2WorldWithWorldDataUpdate(mat);
 			VideoManager()->Get3DManager()->Moved(*m_displayROI);
 		}
@@ -347,12 +336,25 @@ void ThirdPersonCamera::StopClickAnimation()
 
 void ThirdPersonCamera::OnWorldEnabled(LegoWorld* p_world)
 {
-	if (!m_enabled || !p_world) {
+	if (!p_world) {
+		return;
+	}
+
+	if (!m_enabled) {
 		return;
 	}
 
 	// Animation presenters may have been recreated.
 	m_animator.ClearAll();
+
+	// Reset orbit to default position behind the character.
+	ResetOrbitState();
+
+	// ReinitForCharacter runs BEFORE SpawnPlayer/PlaceActor, so the ROI
+	// position is stale.  Set the flag so OnActorEnter and ReinitForCharacter
+	// defer camera setup.  The first Tick after PlaceActor clears it, and
+	// ApplyOrbitCamera handles the camera naturally.
+	m_pendingWorldTransition = true;
 
 	ReinitForCharacter();
 }
@@ -362,9 +364,8 @@ void ThirdPersonCamera::OnWorldDisabled(LegoWorld* p_world)
 	if (!p_world) {
 		return;
 	}
-
 	m_active = false;
-	m_roiUnflipped = false;
+	m_pendingWorldTransition = false;
 	m_playerROI = nullptr;
 	DestroyNameBubble();
 	DestroyDisplayClone();
@@ -471,7 +472,8 @@ void ThirdPersonCamera::SetNameBubbleVisible(bool p_visible)
 void ThirdPersonCamera::ComputeOrbitVectors(Mx3DPointFloat& p_at, Mx3DPointFloat& p_dir, Mx3DPointFloat& p_up) const
 {
 	// Convert spherical coordinates to camera offset in entity-local space.
-	// Entity local Z+ is "behind" (after TurnAround), which is where yaw=0 points.
+	// The ROI uses forward-z (Z+ = visual forward).  The camera orbits
+	// behind the character, so at yaw=0 it sits at local -Z.
 	float cosP = SDL_cosf(m_orbitPitch);
 	float sinP = SDL_sinf(m_orbitPitch);
 	float sinY = SDL_sinf(m_orbitYaw);
@@ -480,13 +482,11 @@ void ThirdPersonCamera::ComputeOrbitVectors(Mx3DPointFloat& p_at, Mx3DPointFloat
 	p_at = Mx3DPointFloat(
 		m_orbitDistance * sinY * cosP,
 		ORBIT_TARGET_HEIGHT + m_orbitDistance * sinP,
-		m_orbitDistance * cosY * cosP
+		-m_orbitDistance * cosY * cosP
 	);
 
-	// Direction points from camera toward the pivot. Since the camera sits on
-	// a sphere of radius m_orbitDistance, the unit direction is just the
-	// negated spherical unit vector.
-	p_dir = Mx3DPointFloat(-sinY * cosP, -sinP, -cosY * cosP);
+	// Direction points from camera toward the pivot (the character).
+	p_dir = Mx3DPointFloat(-sinY * cosP, -sinP, cosY * cosP);
 
 	p_up = Mx3DPointFloat(0.0f, 1.0f, 0.0f);
 }
@@ -543,7 +543,7 @@ void ThirdPersonCamera::HandleSDLEvent(SDL_Event* p_event)
 
 	case SDL_EVENT_MOUSE_MOTION:
 		if (p_event->motion.state & SDL_BUTTON_RMASK) {
-			m_orbitYaw += p_event->motion.xrel * 0.005f;
+			m_orbitYaw -= p_event->motion.xrel * 0.005f;
 			m_orbitPitch += p_event->motion.yrel * 0.005f;
 			ClampPitch();
 		}
@@ -601,7 +601,7 @@ void ThirdPersonCamera::HandleSDLEvent(SDL_Event* p_event)
 			// Two-finger drag for orbit
 			float moveX = m_touch.x[idx] - oldX;
 			float moveY = m_touch.y[idx] - oldY;
-			m_orbitYaw -= moveX * 2.0f;
+			m_orbitYaw += moveX * 2.0f;
 			m_orbitPitch += moveY * 2.0f;
 			ClampPitch();
 		}
@@ -655,6 +655,7 @@ void ThirdPersonCamera::ReinitForCharacter()
 	// Large vehicles and helicopter: stay first-person
 	if (vehicleType == VEHICLE_HELICOPTER || (vehicleType != VEHICLE_NONE && IsLargeVehicle(vehicleType))) {
 		m_active = false;
+		m_pendingWorldTransition = false;
 		return;
 	}
 
@@ -671,18 +672,7 @@ void ThirdPersonCamera::ReinitForCharacter()
 			return;
 		}
 
-		// Undo TurnAround on the vehicle ROI so the backward-z convention
-		// is restored.  This handles both entering from 1st-person (Enter's
-		// TurnAround still in effect) and the Disable→Enable cycle (Disable
-		// re-applied TurnAround).  In both cases ROI z currently matches
-		// the visual forward and needs to be flipped back.
-		{
-			LegoROI* vehicleROI = userActor->GetROI();
-			if (vehicleROI) {
-				FlipROIDirection(vehicleROI);
-			}
-			m_roiUnflipped = false;
-		}
+		m_pendingWorldTransition = false;
 
 		VideoManager()->Get3DManager()->Remove(*m_playerROI);
 		VideoManager()->Get3DManager()->Add(*m_playerROI);
@@ -700,15 +690,6 @@ void ThirdPersonCamera::ReinitForCharacter()
 		return;
 	}
 
-	// Re-apply TurnAround if we undid it in Disable().
-	// Only set the local matrix here; the subsequent Add() will propagate world data.
-	// Flip the native ROI (not the display clone) since Tick() syncs the
-	// clone's transform from it.
-	if (m_roiUnflipped) {
-		FlipROIDirection(roi);
-		m_roiUnflipped = false;
-	}
-
 	m_playerROI->SetVisibility(TRUE);
 
 	// Ensure the ROI is in the 3D manager.
@@ -720,6 +701,12 @@ void ThirdPersonCamera::ReinitForCharacter()
 	m_active = true;
 
 	m_animator.ApplyIdleFrame0(m_playerROI);
-	SetupCamera(userActor);
+
+	// During a world transition, PlaceActor hasn't run yet — the ROI is at
+	// a stale position.  Defer camera setup; ApplyOrbitCamera in the first
+	// Tick after PlaceActor handles it.
+	if (!m_pendingWorldTransition) {
+		SetupCamera(userActor);
+	}
 	CreateNameBubble();
 }

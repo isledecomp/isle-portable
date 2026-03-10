@@ -258,10 +258,8 @@ void RemotePlayer::UpdateTransform(float p_deltaTime)
 	LERP3(m_currentDirection, m_currentDirection, m_targetDirection, 0.2f);
 	LERP3(m_currentUp, m_currentUp, m_targetUp, 0.2f);
 
-	// Negate the received direction to restore the backward-z ROI convention.
-	// BroadcastLocalState sends visual-forward; negating here gives ROI z =
-	// backward, so mesh faces -z = forward (matching the sender's visual).
-	// See also: BroadcastLocalState in networkmanager.cpp.
+	// The network sends forward-z (visual forward).  Character meshes face -z,
+	// so negate to get backward-z for the ROI (mesh faces the correct way).
 	Mx3DPointFloat pos(m_currentPosition[0], m_currentPosition[1], m_currentPosition[2]);
 	Mx3DPointFloat dir(-m_currentDirection[0], -m_currentDirection[1], -m_currentDirection[2]);
 	Mx3DPointFloat up(m_currentUp[0], m_currentUp[1], m_currentUp[2]);

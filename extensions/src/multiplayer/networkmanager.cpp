@@ -318,17 +318,6 @@ void NetworkManager::BroadcastLocalState()
 	msg.vehicleType = DetectVehicleType(userActor);
 	SDL_memcpy(msg.position, pos, sizeof(msg.position));
 	SDL_memcpy(msg.direction, dir, sizeof(msg.direction));
-
-	// When 3rd-person camera is active, ShouldInvertMovement causes movement
-	// inversion, and CalculateTransform re-inverts to keep ROI z backward.
-	// Negate to send the visual-forward direction that remote players expect.
-	// RemotePlayer::UpdateTransform negates again to restore backward-z.
-	if (m_thirdPersonCamera.IsActive()) {
-		msg.direction[0] = -msg.direction[0];
-		msg.direction[1] = -msg.direction[1];
-		msg.direction[2] = -msg.direction[2];
-	}
-
 	SDL_memcpy(msg.up, up, sizeof(msg.up));
 	msg.speed = speed;
 	msg.walkAnimId = m_localWalkAnimId;

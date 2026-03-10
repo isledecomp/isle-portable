@@ -283,15 +283,6 @@ void MultiplayerExt::HandleCamAnimEnd(LegoPathActor* p_actor)
 	}
 }
 
-MxBool MultiplayerExt::ShouldInvertMovement(LegoPathActor* p_actor)
-{
-	if (s_networkManager && UserActor() == p_actor) {
-		return s_networkManager->GetThirdPersonCamera().IsActive();
-	}
-
-	return FALSE;
-}
-
 MxBool MultiplayerExt::IsClonedCharacter(const char* p_name)
 {
 	if (!s_networkManager) {
