@@ -26,6 +26,11 @@ class LegoCameraController;
 class LegoControlManager;
 class LegoWorld;
 
+namespace Extensions
+{
+class MultiplayerExt;
+}
+
 extern MxS32 g_clickedObjectId;
 extern const char* g_clickedAtom;
 
@@ -178,6 +183,8 @@ public:
 	// SYNTHETIC: LEGO1 0x1005b8d0
 	// LegoInputManager::`scalar deleting destructor'
 
+	friend class Extensions::MultiplayerExt;
+
 private:
 	void InitializeHaptics();
 
@@ -204,6 +211,7 @@ private:
 	TouchScheme m_touchScheme = e_none;
 	SDL_Point m_touchVirtualThumb = {0, 0};
 	SDL_FPoint m_touchVirtualThumbOrigin;
+	SDL_FingerID m_touchFinger = 0;
 	std::map<SDL_FingerID, MxU32> m_touchFlags;
 	std::map<SDL_KeyboardID, std::pair<void*, void*>> m_keyboards;
 	std::map<SDL_MouseID, std::pair<void*, SDL_Haptic*>> m_mice;

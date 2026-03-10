@@ -11,6 +11,7 @@
 #include "legoentity.h"
 #include "legoeventnotificationparam.h"
 #include "legogamestate.h"
+#include "legoinputmanager.h"
 #include "legopathactor.h"
 #include "misc.h"
 #include "roi/legoroi.h"
@@ -299,10 +300,24 @@ void MultiplayerExt::HandleSDLEvent(SDL_Event* p_event)
 	}
 }
 
-MxBool MultiplayerExt::IsTouchInputSuppressed()
+MxBool MultiplayerExt::IsThirdPersonCameraActive()
 {
 	if (s_networkManager && s_networkManager->GetThirdPersonCamera().IsActive()) {
-		return s_networkManager->GetThirdPersonCamera().IsTouchGestureActive() ? TRUE : FALSE;
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
+MxBool MultiplayerExt::HandleTouchInput()
+{
+	if (s_networkManager && s_networkManager->GetThirdPersonCamera().IsActive() &&
+		s_networkManager->GetThirdPersonCamera().IsTouchGestureActive()) {
+		LegoInputManager* im = InputManager();
+		im->m_touchFinger = 0;
+		im->m_touchVirtualThumb = {0, 0};
+		im->m_touchFlags.clear();
+		return TRUE;
 	}
 
 	return FALSE;

@@ -323,6 +323,12 @@ MxBool LegoInputManager::ProcessOneEvent(LegoEventNotificationParam& p_param)
 	}
 	else {
 		if (!Lego()->IsPaused()) {
+			if ((p_param.GetModifier() & LegoEventNotificationParam::c_rButtonState) &&
+				!(p_param.GetModifier() & LegoEventNotificationParam::c_lButtonState) &&
+				Extension<MultiplayerExt>::Call(IsThirdPersonCameraActive).value_or(FALSE)) {
+				return FALSE;
+			}
+
 			processRoi = TRUE;
 
 			if (m_unk0x335 != 0) {
@@ -632,12 +638,7 @@ void LegoInputManager::RemoveJoystick(SDL_JoystickID p_joystickID)
 
 MxBool LegoInputManager::HandleTouchEvent(SDL_Event* p_event, TouchScheme p_touchScheme)
 {
-	static SDL_FingerID g_finger = (SDL_FingerID) 0;
-
-	if (Extension<MultiplayerExt>::Call(IsTouchInputSuppressed).value_or(FALSE)) {
-		g_finger = 0;
-		m_touchVirtualThumb = {0, 0};
-		m_touchFlags.clear();
+	if (Extension<MultiplayerExt>::Call(HandleTouchInput).value_or(FALSE)) {
 		return FALSE;
 	}
 
@@ -678,22 +679,22 @@ MxBool LegoInputManager::HandleTouchEvent(SDL_Event* p_event, TouchScheme p_touc
 	case e_gamepad: {
 		switch (p_event->type) {
 		case SDL_EVENT_FINGER_DOWN:
-			if (!g_finger) {
-				g_finger = event.fingerID;
+			if (!m_touchFinger) {
+				m_touchFinger = event.fingerID;
 				m_touchVirtualThumb = {0, 0};
 				m_touchVirtualThumbOrigin = {event.x, event.y};
 			}
 			break;
 		case SDL_EVENT_FINGER_UP:
 		case SDL_EVENT_FINGER_CANCELED:
-			if (event.fingerID == g_finger) {
-				g_finger = 0;
+			if (event.fingerID == m_touchFinger) {
+				m_touchFinger = 0;
 				m_touchVirtualThumb = {0, 0};
 				m_touchVirtualThumbOrigin = {0, 0};
 			}
 			break;
 		case SDL_EVENT_FINGER_MOTION:
-			if (event.fingerID == g_finger) {
+			if (event.fingerID == m_touchFinger) {
 				const float thumbstickRadius = 0.25f;
 				const float deltaX =
 					SDL_clamp(event.x - m_touchVirtualThumbOrigin.x, -thumbstickRadius, thumbstickRadius);
