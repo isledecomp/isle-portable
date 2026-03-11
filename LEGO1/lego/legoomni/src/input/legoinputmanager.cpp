@@ -638,7 +638,7 @@ void LegoInputManager::RemoveJoystick(SDL_JoystickID p_joystickID)
 
 MxBool LegoInputManager::HandleTouchEvent(SDL_Event* p_event, TouchScheme p_touchScheme)
 {
-	if (Extension<MultiplayerExt>::Call(HandleTouchInput).value_or(FALSE)) {
+	if (Extension<MultiplayerExt>::Call(HandleTouchInput, p_event).value_or(FALSE)) {
 		return FALSE;
 	}
 

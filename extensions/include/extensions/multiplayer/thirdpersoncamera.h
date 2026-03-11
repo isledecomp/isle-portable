@@ -68,7 +68,13 @@ public:
 
 	// Free camera input handling
 	void HandleSDLEvent(SDL_Event* p_event);
-	bool IsTouchGestureActive() const { return m_touchGestureActive; }
+
+	// Finger-claiming API for split-screen touch zones (left=movement, right=camera)
+	bool TryClaimFinger(const SDL_TouchFingerEvent& event);
+	bool TryReleaseFinger(SDL_FingerID id);
+	bool IsFingerTracked(SDL_FingerID id) const;
+
+	static constexpr float CAMERA_ZONE_X = 0.5f;
 
 private:
 	// Orbit camera helpers
@@ -114,7 +120,6 @@ private:
 	float m_smoothedSpeed; // Extension-managed velocity for smooth acceleration/deceleration
 
 	// Touch gesture tracking
-	bool m_touchGestureActive = false;
 	struct TouchState {
 		SDL_FingerID id[2];
 		float x[2], y[2];

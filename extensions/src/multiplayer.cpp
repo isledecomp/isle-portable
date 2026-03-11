@@ -11,7 +11,6 @@
 #include "legoentity.h"
 #include "legoeventnotificationparam.h"
 #include "legogamestate.h"
-#include "legoinputmanager.h"
 #include "legonavcontroller.h"
 #include "legopathactor.h"
 #include "misc.h"
@@ -310,18 +309,37 @@ MxBool MultiplayerExt::IsThirdPersonCameraActive()
 	return FALSE;
 }
 
-MxBool MultiplayerExt::HandleTouchInput()
+MxBool MultiplayerExt::HandleTouchInput(SDL_Event* p_event)
 {
-	if (s_networkManager && s_networkManager->GetThirdPersonCamera().IsActive() &&
-		s_networkManager->GetThirdPersonCamera().IsTouchGestureActive()) {
-		LegoInputManager* im = InputManager();
-		im->m_touchFinger = 0;
-		im->m_touchVirtualThumb = {0, 0};
-		im->m_touchFlags.clear();
-		return TRUE;
+	if (!s_networkManager || !s_networkManager->GetThirdPersonCamera().IsActive()) {
+		return FALSE;
 	}
 
-	return FALSE;
+	Multiplayer::ThirdPersonCamera& cam = s_networkManager->GetThirdPersonCamera();
+
+	switch (p_event->type) {
+	case SDL_EVENT_FINGER_DOWN:
+		if (cam.TryClaimFinger(p_event->tfinger)) {
+			return TRUE;
+		}
+		return FALSE;
+
+	case SDL_EVENT_FINGER_MOTION:
+		if (cam.IsFingerTracked(p_event->tfinger.fingerID)) {
+			return TRUE;
+		}
+		return FALSE;
+
+	case SDL_EVENT_FINGER_UP:
+	case SDL_EVENT_FINGER_CANCELED:
+		if (cam.TryReleaseFinger(p_event->tfinger.fingerID)) {
+			return TRUE;
+		}
+		return FALSE;
+
+	default:
+		return FALSE;
+	}
 }
 
 MxBool MultiplayerExt::HandleNavOverride(

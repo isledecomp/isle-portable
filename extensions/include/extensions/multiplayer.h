@@ -71,9 +71,9 @@ public:
 	// Returns TRUE when the third-person camera is active.
 	static MxBool IsThirdPersonCameraActive();
 
-	// Suppresses touch input when a multi-touch camera gesture is active.
-	// Returns TRUE if the caller should return early.
-	static MxBool HandleTouchInput();
+	// Routes touch events by screen zone: right half → camera, left half → movement.
+	// Returns TRUE if the event was consumed by the camera (caller should skip movement).
+	static MxBool HandleTouchInput(SDL_Event* p_event);
 
 	// Overrides nav controller movement for camera-relative 3rd person controls.
 	// Returns TRUE if the hook handled movement (caller should return early).

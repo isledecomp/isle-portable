@@ -758,6 +758,55 @@ MxBool ThirdPersonCamera::HandleCameraRelativeMovement(
 	return TRUE;
 }
 
+bool ThirdPersonCamera::TryClaimFinger(const SDL_TouchFingerEvent& event)
+{
+	if (!m_active || m_touch.count >= 2 || event.x < CAMERA_ZONE_X) {
+		return false;
+	}
+
+	int idx = m_touch.count;
+	m_touch.id[idx] = event.fingerID;
+	m_touch.x[idx] = event.x;
+	m_touch.y[idx] = event.y;
+	m_touch.count++;
+
+	if (m_touch.count == 2) {
+		float dx = m_touch.x[1] - m_touch.x[0];
+		float dy = m_touch.y[1] - m_touch.y[0];
+		m_touch.initialPinchDist = SDL_sqrtf(dx * dx + dy * dy);
+	}
+
+	return true;
+}
+
+bool ThirdPersonCamera::TryReleaseFinger(SDL_FingerID id)
+{
+	for (int i = 0; i < m_touch.count; i++) {
+		if (m_touch.id[i] == id) {
+			// Shift remaining finger down
+			if (i == 0 && m_touch.count == 2) {
+				m_touch.id[0] = m_touch.id[1];
+				m_touch.x[0] = m_touch.x[1];
+				m_touch.y[0] = m_touch.y[1];
+			}
+			m_touch.count--;
+			m_touch.initialPinchDist = 0.0f;
+			return true;
+		}
+	}
+	return false;
+}
+
+bool ThirdPersonCamera::IsFingerTracked(SDL_FingerID id) const
+{
+	for (int i = 0; i < m_touch.count; i++) {
+		if (m_touch.id[i] == id) {
+			return true;
+		}
+	}
+	return false;
+}
+
 void ThirdPersonCamera::HandleSDLEvent(SDL_Event* p_event)
 {
 	switch (p_event->type) {
@@ -784,7 +833,10 @@ void ThirdPersonCamera::HandleSDLEvent(SDL_Event* p_event)
 	}
 
 	case SDL_EVENT_FINGER_DOWN: {
-		if (m_touch.count < 2) {
+		// Finger may already be claimed via TryClaimFinger (called from HandleTouchInput).
+		// Only register if not already tracked and in the camera zone.
+		if (!IsFingerTracked(p_event->tfinger.fingerID) && m_touch.count < 2 &&
+			p_event->tfinger.x >= CAMERA_ZONE_X) {
 			int idx = m_touch.count;
 			m_touch.id[idx] = p_event->tfinger.fingerID;
 			m_touch.x[idx] = p_event->tfinger.x;
@@ -792,7 +844,6 @@ void ThirdPersonCamera::HandleSDLEvent(SDL_Event* p_event)
 			m_touch.count++;
 
 			if (m_touch.count == 2) {
-				m_touchGestureActive = true;
 				float dx = m_touch.x[1] - m_touch.x[0];
 				float dy = m_touch.y[1] - m_touch.y[0];
 				m_touch.initialPinchDist = SDL_sqrtf(dx * dx + dy * dy);
@@ -802,7 +853,22 @@ void ThirdPersonCamera::HandleSDLEvent(SDL_Event* p_event)
 	}
 
 	case SDL_EVENT_FINGER_MOTION: {
-		if (m_touch.count == 2) {
+		if (m_touch.count == 1) {
+			// Single-finger drag: apply yaw/pitch rotation
+			if (m_touch.id[0] == p_event->tfinger.fingerID) {
+				float oldX = m_touch.x[0];
+				float oldY = m_touch.y[0];
+				m_touch.x[0] = p_event->tfinger.x;
+				m_touch.y[0] = p_event->tfinger.y;
+
+				float moveX = m_touch.x[0] - oldX;
+				float moveY = m_touch.y[0] - oldY;
+				m_absoluteYaw -= moveX * 2.0f;
+				m_orbitPitch += moveY * 2.0f;
+				ClampPitch();
+			}
+		}
+		else if (m_touch.count == 2) {
 			// Find which finger moved
 			int idx = -1;
 			for (int i = 0; i < 2; i++) {
@@ -835,7 +901,7 @@ void ThirdPersonCamera::HandleSDLEvent(SDL_Event* p_event)
 			// Two-finger drag for orbit
 			float moveX = m_touch.x[idx] - oldX;
 			float moveY = m_touch.y[idx] - oldY;
-			m_absoluteYaw += moveX * 2.0f;
+			m_absoluteYaw -= moveX * 2.0f;
 			m_orbitPitch += moveY * 2.0f;
 			ClampPitch();
 		}
@@ -844,22 +910,7 @@ void ThirdPersonCamera::HandleSDLEvent(SDL_Event* p_event)
 
 	case SDL_EVENT_FINGER_UP:
 	case SDL_EVENT_FINGER_CANCELED: {
-		for (int i = 0; i < m_touch.count; i++) {
-			if (m_touch.id[i] == p_event->tfinger.fingerID) {
-				// Shift remaining finger down
-				if (i == 0 && m_touch.count == 2) {
-					m_touch.id[0] = m_touch.id[1];
-					m_touch.x[0] = m_touch.x[1];
-					m_touch.y[0] = m_touch.y[1];
-				}
-				m_touch.count--;
-				if (m_touch.count == 0) {
-					m_touchGestureActive = false;
-				}
-				m_touch.initialPinchDist = 0.0f;
-				break;
-			}
-		}
+		TryReleaseFinger(p_event->tfinger.fingerID);
 		break;
 	}
 
