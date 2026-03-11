@@ -232,7 +232,7 @@ void CharacterAnimator::SetIdleAnimId(uint8_t p_idleAnimId, LegoROI* p_roi)
 
 void CharacterAnimator::TriggerEmote(uint8_t p_emoteId, LegoROI* p_roi, bool p_isMoving)
 {
-	if (p_emoteId >= g_emoteAnimCount || !p_roi) {
+	if (p_emoteId >= g_emoteAnimCount || !p_roi || m_currentVehicleType != VEHICLE_NONE) {
 		return;
 	}
 
