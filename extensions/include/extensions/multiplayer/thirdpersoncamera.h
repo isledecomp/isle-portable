@@ -2,7 +2,6 @@
 
 #include "extensions/multiplayer/characteranimator.h"
 #include "extensions/multiplayer/customizestate.h"
-#include "extensions/multiplayer/protocol.h"
 #include "mxgeometry/mxgeometry3d.h"
 #include "mxtypes.h"
 

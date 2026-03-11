@@ -5,7 +5,9 @@
 #include "extensions/multiplayer/charactercustomizer.h"
 #include "extensions/multiplayer/namebubblerenderer.h"
 #include "legoanimpresenter.h"
+#include "legocachesoundmanager.h"
 #include "legocharactermanager.h"
+#include "legosoundmanager.h"
 #include "legovideomanager.h"
 #include "legoworld.h"
 #include "misc.h"
@@ -237,7 +239,7 @@ void CharacterAnimator::TriggerEmote(uint8_t p_emoteId, LegoROI* p_roi, bool p_i
 	if (IsMultiPartEmote(p_emoteId)) {
 		if (m_frozenEmoteId == (int8_t) p_emoteId) {
 			// Phase 2: play the recovery animation to unfreeze
-			AnimCache* cache = GetOrBuildAnimCache(p_roi, g_emoteAnims[p_emoteId][1]);
+			AnimCache* cache = GetOrBuildAnimCache(p_roi, g_emoteEntries[p_emoteId].phases[1].anim);
 			if (!cache || !cache->anim) {
 				return;
 			}
@@ -249,6 +251,11 @@ void CharacterAnimator::TriggerEmote(uint8_t p_emoteId, LegoROI* p_roi, bool p_i
 			m_emoteTime = 0.0f;
 			m_emoteDuration = (float) cache->anim->GetDuration();
 			m_emoteActive = true;
+
+			const char* sound = g_emoteEntries[p_emoteId].phases[1].sound;
+			if (sound) {
+				SoundManager()->GetCacheSoundManager()->Play(sound, p_roi->GetName(), FALSE);
+			}
 
 			if (m_config.saveEmoteTransform) {
 				m_emoteParentTransform = m_frozenParentTransform;
@@ -268,7 +275,7 @@ void CharacterAnimator::TriggerEmote(uint8_t p_emoteId, LegoROI* p_roi, bool p_i
 		}
 	}
 
-	AnimCache* cache = GetOrBuildAnimCache(p_roi, g_emoteAnims[p_emoteId][0]);
+	AnimCache* cache = GetOrBuildAnimCache(p_roi, g_emoteEntries[p_emoteId].phases[0].anim);
 	if (!cache || !cache->anim) {
 		return;
 	}
@@ -280,6 +287,11 @@ void CharacterAnimator::TriggerEmote(uint8_t p_emoteId, LegoROI* p_roi, bool p_i
 	m_emoteTime = 0.0f;
 	m_emoteDuration = (float) cache->anim->GetDuration();
 	m_emoteActive = true;
+
+	const char* sound = g_emoteEntries[p_emoteId].phases[0].sound;
+	if (sound) {
+		SoundManager()->GetCacheSoundManager()->Play(sound, p_roi->GetName(), FALSE);
+	}
 
 	// Save clean transform to prevent scale accumulation during emote
 	if (m_config.saveEmoteTransform) {
@@ -371,7 +383,7 @@ void CharacterAnimator::InitAnimCaches(LegoROI* p_roi)
 void CharacterAnimator::SetFrozenEmoteId(int8_t p_emoteId, LegoROI* p_roi)
 {
 	if (p_emoteId >= 0 && p_emoteId < g_emoteAnimCount && IsMultiPartEmote((uint8_t) p_emoteId)) {
-		AnimCache* cache = p_roi ? GetOrBuildAnimCache(p_roi, g_emoteAnims[p_emoteId][0]) : nullptr;
+		AnimCache* cache = p_roi ? GetOrBuildAnimCache(p_roi, g_emoteEntries[p_emoteId].phases[0].anim) : nullptr;
 		m_frozenEmoteId = p_emoteId;
 		m_frozenAnimCache = cache;
 		m_frozenAnimDuration = (cache && cache->anim) ? (float) cache->anim->GetDuration() : 0.0f;

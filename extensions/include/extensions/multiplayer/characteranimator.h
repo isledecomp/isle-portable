@@ -1,7 +1,7 @@
 #pragma once
 
+#include "extensions/multiplayer/animdata.h"
 #include "extensions/multiplayer/animutils.h"
-#include "extensions/multiplayer/protocol.h"
 #include "mxgeometry/mxmatrix.h"
 #include "mxtypes.h"
 
