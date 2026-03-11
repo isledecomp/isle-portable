@@ -7,6 +7,10 @@
 
 struct LegoLocation;
 class Vector3;
+namespace Multiplayer
+{
+class ThirdPersonCamera;
+}
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -122,6 +126,8 @@ public:
 	// LegoNavController::`scalar deleting destructor'
 
 protected:
+	friend class Multiplayer::ThirdPersonCamera;
+
 	float CalculateNewVel(float p_targetVel, float p_currentVel, float p_accel, float p_time);
 	float CalculateNewTargetVel(int p_pos, int p_center, float p_max);
 	float CalculateNewAccel(int p_pos, int p_center, float p_max, int p_min);

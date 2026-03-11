@@ -12,6 +12,7 @@
 #include "legoeventnotificationparam.h"
 #include "legogamestate.h"
 #include "legoinputmanager.h"
+#include "legonavcontroller.h"
 #include "legopathactor.h"
 #include "misc.h"
 #include "roi/legoroi.h"
@@ -323,6 +324,27 @@ MxBool MultiplayerExt::HandleTouchInput()
 	return FALSE;
 }
 
+MxBool MultiplayerExt::HandleNavOverride(
+	LegoNavController* p_nav,
+	const Vector3& p_curPos,
+	const Vector3& p_curDir,
+	Vector3& p_newPos,
+	Vector3& p_newDir,
+	float p_deltaTime
+)
+{
+	if (!s_networkManager) {
+		return FALSE;
+	}
+
+	Multiplayer::ThirdPersonCamera& cam = s_networkManager->GetThirdPersonCamera();
+	if (!cam.IsActive()) {
+		return FALSE;
+	}
+
+	return cam.HandleCameraRelativeMovement(p_nav, p_curPos, p_curDir, p_newPos, p_newDir, p_deltaTime);
+}
+
 MxBool MultiplayerExt::CheckRejected()
 {
 	if (s_networkManager && s_networkManager->WasRejected()) {
@@ -345,4 +367,9 @@ Multiplayer::NetworkManager* MultiplayerExt::GetNetworkManager()
 bool Extensions::IsMultiplayerRejected()
 {
 	return Extension<MultiplayerExt>::Call(CheckRejected).value_or(FALSE);
+}
+
+void Extensions::HandleMultiplayerSDLEvent(SDL_Event* p_event)
+{
+	Extension<MultiplayerExt>::Call(HandleSDLEvent, p_event);
 }

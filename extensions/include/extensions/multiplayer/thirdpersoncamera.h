@@ -9,9 +9,11 @@
 #include <cstdint>
 
 class IslePathActor;
+class LegoNavController;
 class LegoPathActor;
 class LegoROI;
 class LegoWorld;
+class Vector3;
 
 namespace Multiplayer
 {
@@ -54,17 +56,30 @@ public:
 	void OnWorldEnabled(LegoWorld* p_world);
 	void OnWorldDisabled(LegoWorld* p_world);
 
+	// Camera-relative movement override (called from nav controller hook)
+	MxBool HandleCameraRelativeMovement(
+		LegoNavController* p_nav,
+		const Vector3& p_curPos,
+		const Vector3& p_curDir,
+		Vector3& p_newPos,
+		Vector3& p_newDir,
+		float p_deltaTime
+	);
+
 	// Free camera input handling
 	void HandleSDLEvent(SDL_Event* p_event);
 	bool IsTouchGestureActive() const { return m_touchGestureActive; }
 
 private:
 	// Orbit camera helpers
-	void ComputeOrbitVectors(Mx3DPointFloat& p_at, Mx3DPointFloat& p_dir, Mx3DPointFloat& p_up) const;
+	void ComputeOrbitVectors(float p_yaw, Mx3DPointFloat& p_at, Mx3DPointFloat& p_dir, Mx3DPointFloat& p_up) const;
 	void ApplyOrbitCamera();
 	void ResetOrbitState();
 	void ClampPitch();
 	void ClampDistance();
+
+	float GetLocalYaw(LegoROI* p_roi) const;
+	void InitAbsoluteYaw(LegoROI* p_roi);
 
 	void SetupCamera(LegoPathActor* p_actor);
 	void ReinitForCharacter();
@@ -93,9 +108,10 @@ private:
 	bool m_showNameBubble;
 
 	// Orbit camera state
-	float m_orbitYaw;
 	float m_orbitPitch;
 	float m_orbitDistance;
+	float m_absoluteYaw;  // Camera yaw in world space (decoupled from player facing)
+	float m_smoothedSpeed; // Extension-managed velocity for smooth acceleration/deceleration
 
 	// Touch gesture tracking
 	bool m_touchGestureActive = false;
