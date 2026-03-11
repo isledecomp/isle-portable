@@ -700,6 +700,7 @@ void NetworkManager::HandleCustomize(const CustomizeMsg& p_msg)
 				p_msg.changeType == CHANGE_MOOD
 			);
 			if (!it->second->IsMoving() && !it->second->IsInMultiPartEmote()) {
+				it->second->StopClickAnimation();
 				MxU32 clickAnimId =
 					CharacterCustomizer::PlayClickAnimation(it->second->GetROI(), it->second->GetCustomizeState());
 				it->second->SetClickAnimObjectId(clickAnimId);
@@ -734,6 +735,7 @@ void NetworkManager::HandleCustomize(const CustomizeMsg& p_msg)
 			// Only play click animation in 3rd person (not visible in 1st person or multi-part emote)
 			if (m_thirdPersonCamera.GetDisplayROI() && !m_thirdPersonCamera.IsInVehicle() &&
 				!m_thirdPersonCamera.IsInMultiPartEmote()) {
+				m_thirdPersonCamera.StopClickAnimation();
 				MxU32 clickAnimId = CharacterCustomizer::PlayClickAnimation(
 					m_thirdPersonCamera.GetDisplayROI(),
 					m_thirdPersonCamera.GetCustomizeState()
