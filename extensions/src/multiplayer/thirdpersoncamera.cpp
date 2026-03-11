@@ -606,7 +606,7 @@ MxBool ThirdPersonCamera::HandleCameraRelativeMovement(
 	float p_deltaTime
 )
 {
-	// Read keyboard state
+	// Read keyboard and touch/joystick state
 	LegoInputManager* inputManager = InputManager();
 	MxU32 keyFlags = 0;
 	if (!inputManager || inputManager->GetNavigationKeyStates(keyFlags) == FAILURE) {
@@ -638,6 +638,27 @@ MxBool ThirdPersonCamera::HandleCameraRelativeMovement(
 	if (keyFlags & LegoInputManager::c_right) {
 		moveDirX += camRightX;
 		moveDirZ += camRightZ;
+	}
+
+	// Mirror CalculateNewPosDir priority: only read joystick/virtual thumbstick
+	// when no keyboard or e_arrowKeys touch input is active.
+	if (keyFlags == 0 && inputManager) {
+		MxU32 joystickX, joystickY, povPosition;
+		if (inputManager->GetJoystickState(&joystickX, &joystickY, &povPosition) == SUCCESS) {
+			// Convert 0-100 range (center=50) to -1..1, applying deadzone
+			float jx = (joystickX - 50.0f) / 50.0f;
+			float jy = -(joystickY - 50.0f) / 50.0f; // negate: low Y = forward
+
+			if (SDL_fabsf(jx) < 0.1f) {
+				jx = 0.0f;
+			}
+			if (SDL_fabsf(jy) < 0.1f) {
+				jy = 0.0f;
+			}
+
+			moveDirX += camForwardX * jy + camRightX * jx;
+			moveDirZ += camForwardZ * jy + camRightZ * jx;
+		}
 	}
 
 	// Normalize movement direction
