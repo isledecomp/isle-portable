@@ -11,7 +11,6 @@
 #include "realtime/realtime.h"
 #include "roi/legoroi.h"
 
-#include <SDL3/SDL_log.h>
 #include <SDL3/SDL_stdinc.h>
 #include <SDL3/SDL_timer.h>
 #include <vec.h>
@@ -141,13 +140,6 @@ void RemotePlayer::UpdateFromNetwork(const PlayerStateMsg& p_msg)
 	SDL_memcpy(newName, p_msg.name, sizeof(newName));
 	newName[sizeof(newName) - 1] = '\0';
 	if (SDL_strcmp(m_displayName, newName) != 0) {
-		SDL_Log(
-			"RemotePlayer[%u] name changed: '%s' -> '%s' (spawned=%d)",
-			m_peerId,
-			m_displayName,
-			newName,
-			m_spawned
-		);
 		SDL_memcpy(m_displayName, newName, sizeof(m_displayName));
 
 		// Recreate bubble with new name (or create for the first time)

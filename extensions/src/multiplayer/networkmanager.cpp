@@ -1,5 +1,6 @@
 #include "extensions/multiplayer/networkmanager.h"
 
+#include "extensions/multiplayer/animdata.h"
 #include "extensions/multiplayer/charactercloner.h"
 #include "extensions/multiplayer/charactercustomizer.h"
 #include "legoanimationmanager.h"
@@ -549,6 +550,12 @@ void NetworkManager::SetIdleAnimation(uint8_t p_idleAnimId)
 void NetworkManager::SendEmote(uint8_t p_emoteId)
 {
 	if (p_emoteId >= g_emoteAnimCount) {
+		return;
+	}
+
+	// Multi-part emotes require 3rd person camera to be active (they need the display clone).
+	// In 1st person mode, skip them entirely to avoid broadcasting an emote the local player can't play.
+	if (!m_thirdPersonCamera.IsActive() && IsMultiPartEmote(p_emoteId)) {
 		return;
 	}
 

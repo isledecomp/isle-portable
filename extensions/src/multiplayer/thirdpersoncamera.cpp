@@ -664,6 +664,13 @@ MxBool ThirdPersonCamera::HandleCameraRelativeMovement(
 	// Normalize movement direction
 	float moveDirLen = SDL_sqrtf(moveDirX * moveDirX + moveDirZ * moveDirZ);
 	bool hasInput = moveDirLen > 0.001f;
+
+	// Block translation during multi-part emotes (rotation/pan/zoom handled separately)
+	if (m_animator.IsInMultiPartEmote()) {
+		hasInput = false;
+		m_smoothedSpeed = 0.0f;
+	}
+
 	if (hasInput) {
 		moveDirX /= moveDirLen;
 		moveDirZ /= moveDirLen;

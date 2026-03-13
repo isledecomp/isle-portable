@@ -186,6 +186,12 @@ void Lego3DSound::FUN_10011a60(ma_sound* p_sound, const char* p_name)
 		}
 	}
 	else {
+		// Reset ownership flags before reassigning. Reset() only clears m_roi
+		// but not these flags, so stale values from a previous actor-backed play
+		// would cause an incorrect ReleaseActor call for non-actor ROIs
+		m_isActor = FALSE;
+		m_enabled = FALSE;
+
 		if (CharacterManager()->IsActor(p_name)) {
 			m_roi = CharacterManager()->GetActorROI(p_name, TRUE);
 			m_enabled = m_isActor = TRUE;
