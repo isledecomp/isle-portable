@@ -6,9 +6,12 @@
 #include "extensions/thirdpersoncamera.h"
 #include "extensions/thirdpersoncamera/controller.h"
 #include "legoanimationmanager.h"
+#include "legocharactermanager.h"
+#include "legoextraactor.h"
 #include "legogamestate.h"
 #include "legomain.h"
 #include "legopathactor.h"
+#include "legopathcontroller.h"
 #include "legoworld.h"
 #include "misc.h"
 #include "mxmisc.h"
@@ -41,9 +44,9 @@ void NetworkManager::SendMessage(const T& p_msg)
 NetworkManager::NetworkManager()
 	: m_transport(nullptr), m_callbacks(nullptr), m_localNameBubble(nullptr), m_localPeerId(0), m_hostPeerId(0),
 	  m_sequence(0), m_lastBroadcastTime(0), m_lastValidActorId(0), m_localAllowRemoteCustomize(true),
-	  m_inIsleWorld(false), m_registered(false), m_pendingToggleThirdPerson(false),
-	  m_pendingToggleNameBubbles(false), m_pendingWalkAnim(-1), m_pendingIdleAnim(-1), m_pendingEmote(-1),
-	  m_pendingToggleAllowCustomize(false), m_showNameBubbles(true), m_lastCameraEnabled(false)
+	  m_inIsleWorld(false), m_registered(false), m_pendingToggleThirdPerson(false), m_pendingToggleNameBubbles(false),
+	  m_pendingWalkAnim(-1), m_pendingIdleAnim(-1), m_pendingEmote(-1), m_pendingToggleAllowCustomize(false),
+	  m_disableAllNPCs(false), m_showNameBubbles(true), m_lastCameraEnabled(false)
 {
 }
 
@@ -60,6 +63,10 @@ static ThirdPersonCamera::Controller* GetCamera()
 MxResult NetworkManager::Tickle()
 {
 	ProcessPendingRequests();
+
+	if (m_disableAllNPCs) {
+		EnforceDisableNPCs();
+	}
 
 	// Detect camera state changes for platform notification
 	ThirdPersonCamera::Controller* cam = GetCamera();
@@ -202,6 +209,10 @@ void NetworkManager::OnWorldEnabled(LegoWorld* p_world)
 		}
 
 		NotifyPlayerCountChanged();
+
+		if (m_disableAllNPCs) {
+			EnforceDisableNPCs();
+		}
 	}
 }
 
@@ -265,6 +276,36 @@ MxBool NetworkManager::HandleEntityMutation(LegoEntity* p_entity, MxU8 p_changeT
 MxBool NetworkManager::HandleSkyLightMutation(uint8_t p_entityType, uint8_t p_changeType)
 {
 	return m_worldSync.HandleSkyLightMutation(p_entityType, p_changeType);
+}
+
+void NetworkManager::EnforceDisableNPCs()
+{
+	LegoAnimationManager* am = AnimationManager();
+	if (!am) {
+		return;
+	}
+
+	am->m_numAllowedExtras = 0;
+	am->m_enableCamAnims = FALSE;
+	am->m_unk0x400 = FALSE;
+
+	// Purge all extras including ambient NPCs (mama, papa, brickster)
+	// that are spawned by camera path triggers via FUN_10064380.
+	// PurgeExtra(TRUE) deliberately skips mama/papa, so we purge manually.
+	for (MxS32 i = 0; i < (MxS32) sizeOfArray(am->m_extras); i++) {
+		if (am->m_extras[i].m_roi != NULL) {
+			LegoPathActor* actor = CharacterManager()->GetExtraActor(am->m_extras[i].m_roi->GetName());
+			if (actor != NULL && actor->GetController() != NULL) {
+				actor->GetController()->RemoveActor(actor);
+				actor->SetController(NULL);
+			}
+
+			CharacterManager()->ReleaseActor(am->m_extras[i].m_roi);
+			am->m_extras[i].m_roi = NULL;
+			am->m_extras[i].m_characterId = -1;
+			am->m_unk0x414--;
+		}
+	}
 }
 
 void NetworkManager::ProcessPendingRequests()
@@ -409,10 +450,16 @@ void NetworkManager::ProcessIncomingPackets()
 			}
 			if (length >= 6) {
 				uint8_t maxActors = data[5];
-				if (maxActors >= 5 && maxActors <= 40) {
+				if (maxActors <= 40) {
 					LegoAnimationManager::configureLegoAnimationManager(maxActors);
 					if (AnimationManager()) {
 						AnimationManager()->m_maxAllowedExtras = maxActors;
+						AnimationManager()->m_numAllowedExtras =
+							SDL_min(AnimationManager()->m_numAllowedExtras, (MxU32) maxActors);
+					}
+					m_disableAllNPCs = (maxActors == 0);
+					if (m_disableAllNPCs) {
+						EnforceDisableNPCs();
 					}
 				}
 			}

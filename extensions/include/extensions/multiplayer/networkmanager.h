@@ -115,6 +115,7 @@ private:
 	void RemoveAllRemotePlayers();
 
 	void NotifyPlayerCountChanged();
+	void EnforceDisableNPCs();
 
 	// Serialize and send a fixed-size message via the transport
 	template <typename T>
@@ -143,6 +144,7 @@ private:
 	std::atomic<int> m_pendingEmote;
 	std::atomic<bool> m_pendingToggleAllowCustomize;
 
+	bool m_disableAllNPCs;
 	bool m_showNameBubbles;
 	bool m_lastCameraEnabled;
 

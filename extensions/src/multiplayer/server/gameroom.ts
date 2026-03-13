@@ -90,7 +90,7 @@ export class GameRoom implements DurableObject {
 				}
 				if (body.maxActors !== undefined) {
 					this.maxActors = Math.max(
-						5,
+						0,
 						Math.min(body.maxActors, 40)
 					);
 				}
