@@ -295,8 +295,25 @@ MxBool MultiplayerExt::IsClonedCharacter(const char* p_name)
 
 void MultiplayerExt::HandleSDLEvent(SDL_Event* p_event)
 {
-	if (s_networkManager && s_networkManager->GetThirdPersonCamera().IsActive()) {
-		s_networkManager->GetThirdPersonCamera().HandleSDLEvent(p_event);
+	if (!s_networkManager || !s_networkManager->IsInIsleWorld()) {
+		return;
+	}
+
+	Multiplayer::ThirdPersonCamera& camera = s_networkManager->GetThirdPersonCamera();
+
+	camera.HandleSDLEvent(p_event);
+
+	// Auto-switch 3rd → 1st: zoom-in past minimum distance
+	if (camera.ConsumeAutoDisable()) {
+		camera.Disable();
+		s_networkManager->NotifyThirdPersonChanged(false);
+	}
+	// Auto-switch 1st → 3rd: zoom-out from 1st person
+	else if (camera.ConsumeAutoEnable()) {
+		camera.ResetTouchState();
+		camera.SetOrbitDistance(Multiplayer::ThirdPersonCamera::MIN_DISTANCE);
+		camera.Enable();
+		s_networkManager->NotifyThirdPersonChanged(true);
 	}
 }
 

@@ -6,6 +6,7 @@
 #include "extensions/multiplayer/namebubblerenderer.h"
 #include "legoanimpresenter.h"
 #include "legocachesoundmanager.h"
+#include "legocachsound.h"
 #include "legocharactermanager.h"
 #include "legosoundmanager.h"
 #include "legovideomanager.h"
@@ -74,10 +75,10 @@ void CharacterAnimator::Tick(float p_deltaTime, LegoROI* p_roi, bool p_isMoving)
 	bool inVehicle = (m_currentVehicleType != VEHICLE_NONE);
 	bool isMoving = inVehicle || p_isMoving;
 
-	// Movement interrupts click animations and emotes (but not multi-part emotes)
+	// Movement interrupts click animations and emotes (but not frozen multi-part emotes)
 	if (isMoving && m_frozenEmoteId < 0) {
 		StopClickAnimation();
-		if (m_emoteActive && !IsMultiPartEmote(m_currentEmoteId)) {
+		if (m_emoteActive) {
 			m_emoteActive = false;
 			m_emoteAnimCache = nullptr;
 		}
@@ -254,7 +255,7 @@ void CharacterAnimator::TriggerEmote(uint8_t p_emoteId, LegoROI* p_roi, bool p_i
 
 			const char* sound = g_emoteEntries[p_emoteId].phases[1].sound;
 			if (sound) {
-				SoundManager()->GetCacheSoundManager()->Play(sound, p_roi->GetName(), FALSE);
+				PlayROISound(sound, p_roi);
 			}
 
 			if (m_config.saveEmoteTransform) {
@@ -290,7 +291,7 @@ void CharacterAnimator::TriggerEmote(uint8_t p_emoteId, LegoROI* p_roi, bool p_i
 
 	const char* sound = g_emoteEntries[p_emoteId].phases[0].sound;
 	if (sound) {
-		SoundManager()->GetCacheSoundManager()->Play(sound, p_roi->GetName(), FALSE);
+		PlayROISound(sound, p_roi);
 	}
 
 	// Save clean transform to prevent scale accumulation during emote
@@ -305,6 +306,23 @@ void CharacterAnimator::StopClickAnimation()
 		CharacterCustomizer::StopClickAnimation(m_clickAnimObjectId);
 		m_clickAnimObjectId = 0;
 	}
+}
+
+void CharacterAnimator::PlayROISound(const char* p_key, LegoROI* p_roi)
+{
+	LegoCacheSound* sound = SoundManager()->GetCacheSoundManager()->Play(p_key, p_roi->GetName(), FALSE);
+	if (sound) {
+		m_ROISounds.push_back(sound);
+	}
+}
+
+void CharacterAnimator::StopROISounds()
+{
+	LegoCacheSoundManager* mgr = SoundManager()->GetCacheSoundManager();
+	for (LegoCacheSound* sound : m_ROISounds) {
+		mgr->Stop(sound);
+	}
+	m_ROISounds.clear();
 }
 
 void CharacterAnimator::BuildRideAnimation(int8_t p_vehicleType, LegoROI* p_playerROI, uint32_t p_vehicleSuffix)
@@ -410,6 +428,7 @@ void CharacterAnimator::ClearAnimCaches()
 	m_idleAnimCache = nullptr;
 	m_emoteAnimCache = nullptr;
 	m_emoteActive = false;
+	StopROISounds();
 	ClearFrozenState();
 }
 

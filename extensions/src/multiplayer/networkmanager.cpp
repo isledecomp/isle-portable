@@ -155,9 +155,8 @@ void NetworkManager::OnWorldEnabled(LegoWorld* p_world)
 		return;
 	}
 
-	m_thirdPersonCamera.OnWorldEnabled(p_world);
-
 	if (p_world->GetWorldId() == LegoOmni::e_act1) {
+		m_thirdPersonCamera.OnWorldEnabled(p_world);
 		m_inIsleWorld = true;
 		m_worldSync.SetInIsleWorld(true);
 
@@ -188,9 +187,8 @@ void NetworkManager::OnWorldDisabled(LegoWorld* p_world)
 		return;
 	}
 
-	m_thirdPersonCamera.OnWorldDisabled(p_world);
-
 	if (p_world->GetWorldId() == LegoOmni::e_act1) {
+		m_thirdPersonCamera.OnWorldDisabled(p_world);
 		m_inIsleWorld = false;
 		m_worldSync.SetInIsleWorld(false);
 		for (auto& [peerId, player] : m_remotePlayers) {
@@ -247,6 +245,7 @@ void NetworkManager::ProcessPendingRequests()
 		else {
 			m_thirdPersonCamera.Enable();
 		}
+		NotifyThirdPersonChanged(m_thirdPersonCamera.IsEnabled());
 	}
 
 	int walkAnim = m_pendingWalkAnim.exchange(-1, std::memory_order_relaxed);
@@ -266,6 +265,7 @@ void NetworkManager::ProcessPendingRequests()
 
 	if (m_pendingToggleAllowCustomize.exchange(false, std::memory_order_relaxed)) {
 		m_localAllowRemoteCustomize = !m_localAllowRemoteCustomize;
+		NotifyAllowCustomizeChanged(m_localAllowRemoteCustomize);
 	}
 
 	if (m_pendingToggleNameBubbles.exchange(false, std::memory_order_relaxed)) {
@@ -274,6 +274,7 @@ void NetworkManager::ProcessPendingRequests()
 			player->SetNameBubbleVisible(m_showNameBubbles);
 		}
 		m_thirdPersonCamera.SetNameBubbleVisible(m_showNameBubbles);
+		NotifyNameBubblesChanged(m_showNameBubbles);
 	}
 }
 
@@ -649,6 +650,33 @@ void NetworkManager::NotifyPlayerCountChanged()
 	}
 
 	m_callbacks->OnPlayerCountChanged(count);
+}
+
+void NetworkManager::NotifyThirdPersonChanged(bool p_enabled)
+{
+	if (!m_callbacks) {
+		return;
+	}
+
+	m_callbacks->OnThirdPersonChanged(p_enabled);
+}
+
+void NetworkManager::NotifyNameBubblesChanged(bool p_enabled)
+{
+	if (!m_callbacks) {
+		return;
+	}
+
+	m_callbacks->OnNameBubblesChanged(p_enabled);
+}
+
+void NetworkManager::NotifyAllowCustomizeChanged(bool p_enabled)
+{
+	if (!m_callbacks) {
+		return;
+	}
+
+	m_callbacks->OnAllowCustomizeChanged(p_enabled);
 }
 
 RemotePlayer* NetworkManager::FindPlayerByROI(LegoROI* roi) const

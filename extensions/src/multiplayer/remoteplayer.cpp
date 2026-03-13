@@ -192,7 +192,7 @@ void RemotePlayer::Tick(float p_deltaTime)
 	UpdateTransform(p_deltaTime);
 
 	bool isMoving = m_targetSpeed > 0.01f;
-	if (m_animator.IsInMultiPartEmote()) {
+	if (m_animator.GetFrozenEmoteId() >= 0) {
 		isMoving = false;
 	}
 	m_animator.Tick(p_deltaTime, m_roi, isMoving);
@@ -254,7 +254,7 @@ void RemotePlayer::TriggerEmote(uint8_t p_emoteId)
 	}
 
 	bool isMoving = m_targetSpeed > 0.01f;
-	if (m_animator.IsInMultiPartEmote()) {
+	if (m_animator.GetFrozenEmoteId() >= 0) {
 		isMoving = false;
 	}
 	m_animator.TriggerEmote(p_emoteId, m_roi, isMoving);

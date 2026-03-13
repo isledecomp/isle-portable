@@ -65,6 +65,7 @@ public:
 	void RequestToggleNameBubbles() { m_pendingToggleNameBubbles.store(true, std::memory_order_relaxed); }
 	void RequestToggleAllowCustomize() { m_pendingToggleAllowCustomize.store(true, std::memory_order_relaxed); }
 
+	bool IsInIsleWorld() const { return m_inIsleWorld; }
 	bool GetShowNameBubbles() const { return m_showNameBubbles; }
 
 	RemotePlayer* FindPlayerByROI(LegoROI* roi) const;
@@ -77,6 +78,10 @@ public:
 	void OnSaveLoaded();
 
 	ThirdPersonCamera& GetThirdPersonCamera() { return m_thirdPersonCamera; }
+
+	void NotifyThirdPersonChanged(bool p_enabled);
+	void NotifyNameBubblesChanged(bool p_enabled);
+	void NotifyAllowCustomizeChanged(bool p_enabled);
 
 	// Called from multiplayer extension when a plant/building entity is clicked.
 	// Returns TRUE if the mutation should be suppressed locally (non-host).

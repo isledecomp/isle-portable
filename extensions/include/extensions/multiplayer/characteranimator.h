@@ -8,7 +8,9 @@
 #include <cstdint>
 #include <map>
 #include <string>
+#include <vector>
 
+class LegoCacheSound;
 class LegoROI;
 class LegoAnim;
 
@@ -48,6 +50,11 @@ public:
 	void SetClickAnimObjectId(MxU32 p_clickAnimObjectId) { m_clickAnimObjectId = p_clickAnimObjectId; }
 	void StopClickAnimation();
 
+	// Stop all sounds that were played against the character ROI.
+	// Must be called before the ROI is destroyed to prevent use-after-free
+	// in the sound system's 3D position update.
+	void StopROISounds();
+
 	// Vehicle ride animation
 	void BuildRideAnimation(int8_t p_vehicleType, LegoROI* p_playerROI, uint32_t p_vehicleSuffix);
 	void ClearRideAnimation();
@@ -77,7 +84,10 @@ public:
 
 	// Multi-part emote state. Returns true when the player is in any phase of a multi-part
 	// emote (playing phase 1, frozen at last frame, or playing phase 2). Movement is blocked.
-	bool IsInMultiPartEmote() const { return m_frozenEmoteId >= 0 || (m_emoteActive && IsMultiPartEmote(m_currentEmoteId)); }
+	bool IsInMultiPartEmote() const
+	{
+		return m_frozenEmoteId >= 0 || (m_emoteActive && IsMultiPartEmote(m_currentEmoteId));
+	}
 	int8_t GetFrozenEmoteId() const { return m_frozenEmoteId; }
 	void SetFrozenEmoteId(int8_t p_emoteId, LegoROI* p_roi);
 
@@ -91,6 +101,7 @@ private:
 
 	AnimCache* GetOrBuildAnimCache(LegoROI* p_roi, const char* p_animName);
 	void ClearFrozenState();
+	void PlayROISound(const char* p_key, LegoROI* p_roi);
 
 	CharacterAnimatorConfig m_config;
 
@@ -120,6 +131,10 @@ private:
 
 	// Click animation tracking (0 = none)
 	MxU32 m_clickAnimObjectId;
+
+	// Sounds played against the character ROI, tracked so they can be
+	// stopped before the ROI is destroyed.
+	std::vector<LegoCacheSound*> m_ROISounds;
 
 	// ROI map cache: animation name -> cached ROI map
 	std::map<std::string, AnimCache> m_animCacheMap;

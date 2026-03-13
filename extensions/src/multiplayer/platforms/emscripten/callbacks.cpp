@@ -21,6 +21,35 @@ void EmscriptenCallbacks::OnPlayerCountChanged(int p_count)
 	// clang-format on
 }
 
+// clang-format off
+static void DispatchBoolEvent(const char* p_name, bool p_value)
+{
+	MAIN_THREAD_EM_ASM({
+		var canvas = Module.canvas;
+		if (canvas) {
+			canvas.dispatchEvent(new CustomEvent(UTF8ToString($0), {
+				detail: { enabled: !!$1 }
+			}));
+		}
+	}, p_name, p_value ? 1 : 0);
+}
+// clang-format on
+
+void EmscriptenCallbacks::OnThirdPersonChanged(bool p_enabled)
+{
+	DispatchBoolEvent("thirdPersonChanged", p_enabled);
+}
+
+void EmscriptenCallbacks::OnNameBubblesChanged(bool p_enabled)
+{
+	DispatchBoolEvent("nameBubblesChanged", p_enabled);
+}
+
+void EmscriptenCallbacks::OnAllowCustomizeChanged(bool p_enabled)
+{
+	DispatchBoolEvent("allowCustomizeChanged", p_enabled);
+}
+
 } // namespace Multiplayer
 
 #endif // __EMSCRIPTEN__

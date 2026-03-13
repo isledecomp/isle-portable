@@ -21,6 +21,7 @@
 #include "roi/legoroi.h"
 
 #include <SDL3/SDL_stdinc.h>
+#include <utility>
 
 using namespace Multiplayer;
 
@@ -41,8 +42,8 @@ ThirdPersonCamera::ThirdPersonCamera()
 	: m_enabled(false), m_active(false), m_pendingWorldTransition(false), m_playerROI(nullptr),
 	  m_displayActorIndex(DISPLAY_ACTOR_NONE), m_displayROI(nullptr),
 	  m_animator(CharacterAnimatorConfig{/*.saveEmoteTransform=*/true}), m_showNameBubble(true),
-	  m_orbitPitch(DEFAULT_ORBIT_PITCH), m_orbitDistance(DEFAULT_ORBIT_DISTANCE),
-	  m_absoluteYaw(DEFAULT_ORBIT_YAW), m_smoothedSpeed(0.0f), m_touch{}
+	  m_orbitPitch(DEFAULT_ORBIT_PITCH), m_orbitDistance(DEFAULT_ORBIT_DISTANCE), m_absoluteYaw(DEFAULT_ORBIT_YAW),
+	  m_smoothedSpeed(0.0f), m_touch{}, m_wantsAutoDisable(false), m_wantsAutoEnable(false)
 {
 	SDL_memset(m_displayUniqueName, 0, sizeof(m_displayUniqueName));
 }
@@ -78,6 +79,7 @@ void ThirdPersonCamera::Disable()
 	m_active = false;
 	m_pendingWorldTransition = false;
 	DestroyNameBubble();
+	m_animator.StopROISounds();
 	DestroyDisplayClone();
 	m_animator.ClearRideAnimation();
 	m_animator.ClearAll();
@@ -396,6 +398,7 @@ void ThirdPersonCamera::OnWorldDisabled(LegoWorld* p_world)
 	m_pendingWorldTransition = false;
 	m_playerROI = nullptr;
 	DestroyNameBubble();
+	m_animator.StopROISounds();
 	DestroyDisplayClone();
 	m_animator.ClearRideAnimation();
 	m_animator.ClearAll();
@@ -814,15 +817,38 @@ bool ThirdPersonCamera::IsFingerTracked(SDL_FingerID id) const
 	return false;
 }
 
+bool ThirdPersonCamera::ConsumeAutoDisable()
+{
+	return std::exchange(m_wantsAutoDisable, false);
+}
+
+bool ThirdPersonCamera::ConsumeAutoEnable()
+{
+	return std::exchange(m_wantsAutoEnable, false);
+}
+
 void ThirdPersonCamera::HandleSDLEvent(SDL_Event* p_event)
 {
 	switch (p_event->type) {
 	case SDL_EVENT_MOUSE_WHEEL:
+		if (!m_active) {
+			if (p_event->wheel.y < 0) {
+				m_wantsAutoEnable = true;
+			}
+			break;
+		}
+		if (m_orbitDistance <= MIN_DISTANCE && p_event->wheel.y > 0) {
+			m_wantsAutoDisable = true;
+			break;
+		}
 		m_orbitDistance -= p_event->wheel.y * 0.5f;
 		ClampDistance();
 		break;
 
 	case SDL_EVENT_MOUSE_MOTION:
+		if (!m_active) {
+			break;
+		}
 		if (p_event->motion.state & SDL_BUTTON_RMASK) {
 			m_absoluteYaw -= p_event->motion.xrel * 0.005f;
 			m_orbitPitch += p_event->motion.yrel * 0.005f;
@@ -832,6 +858,9 @@ void ThirdPersonCamera::HandleSDLEvent(SDL_Event* p_event)
 
 	case SDL_EVENT_MOUSE_BUTTON_DOWN:
 	case SDL_EVENT_MOUSE_BUTTON_UP: {
+		if (!m_active) {
+			break;
+		}
 		SDL_Window* window = SDL_GetWindowFromID(p_event->button.windowID);
 		if (window) {
 			SDL_SetWindowRelativeMouseMode(window, SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_RMASK);
@@ -842,8 +871,7 @@ void ThirdPersonCamera::HandleSDLEvent(SDL_Event* p_event)
 	case SDL_EVENT_FINGER_DOWN: {
 		// Finger may already be claimed via TryClaimFinger (called from HandleTouchInput).
 		// Only register if not already tracked and in the camera zone.
-		if (!IsFingerTracked(p_event->tfinger.fingerID) && m_touch.count < 2 &&
-			p_event->tfinger.x >= CAMERA_ZONE_X) {
+		if (!IsFingerTracked(p_event->tfinger.fingerID) && m_touch.count < 2 && p_event->tfinger.x >= CAMERA_ZONE_X) {
 			int idx = m_touch.count;
 			m_touch.id[idx] = p_event->tfinger.fingerID;
 			m_touch.x[idx] = p_event->tfinger.x;
@@ -861,6 +889,9 @@ void ThirdPersonCamera::HandleSDLEvent(SDL_Event* p_event)
 
 	case SDL_EVENT_FINGER_MOTION: {
 		if (m_touch.count == 1) {
+			if (!m_active) {
+				break;
+			}
 			// Single-finger drag: apply yaw/pitch rotation
 			if (m_touch.id[0] == p_event->tfinger.fingerID) {
 				float oldX = m_touch.x[0];
@@ -900,12 +931,29 @@ void ThirdPersonCamera::HandleSDLEvent(SDL_Event* p_event)
 
 			if (m_touch.initialPinchDist > 0.001f) {
 				float pinchDelta = m_touch.initialPinchDist - newDist;
+
+				if (!m_active) {
+					// Pinch together (zoom out) from 1st person → auto-enable 3rd person
+					if (pinchDelta > 0) {
+						m_wantsAutoEnable = true;
+					}
+					m_touch.initialPinchDist = newDist;
+					break;
+				}
+
+				// Spread apart (zoom in) past min distance → auto-disable to 1st person
+				if (m_orbitDistance <= MIN_DISTANCE && pinchDelta < 0) {
+					m_wantsAutoDisable = true;
+					m_touch.initialPinchDist = newDist;
+					break;
+				}
+
 				m_orbitDistance += pinchDelta * 15.0f;
 				ClampDistance();
 				m_touch.initialPinchDist = newDist;
 			}
 
-			// Two-finger drag for orbit
+			// Two-finger drag for orbit (only when active)
 			float moveX = m_touch.x[idx] - oldX;
 			float moveY = m_touch.y[idx] - oldY;
 			m_absoluteYaw -= moveX * 2.0f;
