@@ -2,6 +2,7 @@
 #define LEGOPLANTMANAGER_H
 
 #include "decomp.h"
+#include "extensions/fwd.h"
 #include "legomain.h"
 #include "mxcore.h"
 
@@ -11,10 +12,6 @@ struct LegoPlantInfo;
 class LegoROI;
 class LegoStorage;
 class LegoWorld;
-namespace Multiplayer
-{
-class WorldStateSync;
-}
 
 // VTABLE: LEGO1 0x100d6758
 // SIZE 0x2c

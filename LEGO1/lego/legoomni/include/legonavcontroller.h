@@ -2,18 +2,12 @@
 #define __LEGONAVCONTROLLER_H
 
 #include "decomp.h"
+#include "extensions/fwd.h"
 #include "mxcore.h"
 #include "mxtypes.h"
 
 struct LegoLocation;
 class Vector3;
-namespace Extensions
-{
-namespace ThirdPersonCamera
-{
-class OrbitCamera;
-}
-} // namespace Extensions
 
 //////////////////////////////////////////////////////////////////////////////
 //

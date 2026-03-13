@@ -92,8 +92,6 @@
 #include <psp2/kernel/clib.h>
 #endif
 
-using namespace Extensions;
-
 DECOMP_SIZE_ASSERT(IsleApp, 0x8c)
 
 // GLOBAL: ISLE 0x410030

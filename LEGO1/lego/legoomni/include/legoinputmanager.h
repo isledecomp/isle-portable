@@ -2,6 +2,7 @@
 #define LEGOINPUTMANAGER_H
 
 #include "decomp.h"
+#include "extensions/fwd.h"
 #include "lego1_export.h"
 #include "legoeventnotificationparam.h"
 #include "mxlist.h"
@@ -25,11 +26,6 @@
 class LegoCameraController;
 class LegoControlManager;
 class LegoWorld;
-
-namespace Extensions
-{
-class MultiplayerExt;
-}
 
 extern MxS32 g_clickedObjectId;
 extern const char* g_clickedAtom;

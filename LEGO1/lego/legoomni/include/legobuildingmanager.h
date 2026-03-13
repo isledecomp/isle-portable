@@ -2,6 +2,7 @@
 #define LEGOBUILDINGMANAGER_H
 
 #include "decomp.h"
+#include "extensions/fwd.h"
 #include "lego1_export.h"
 #include "misc/legotypes.h"
 #include "mxcore.h"
@@ -12,10 +13,6 @@ class LegoStorage;
 class LegoWorld;
 class LegoCacheSound;
 class LegoPathBoundary;
-namespace Multiplayer
-{
-class WorldStateSync;
-}
 
 // SIZE 0x2c
 struct LegoBuildingInfo {

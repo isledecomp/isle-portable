@@ -2,6 +2,7 @@
 #define ISLE_H
 
 #include "actionsfwd.h"
+#include "extensions/fwd.h"
 #include "legogamestate.h"
 #include "legonamedplane.h"
 #include "legostate.h"
@@ -22,11 +23,6 @@ class Pizzeria;
 class RaceCar;
 class SkateBoard;
 class TowTrack;
-
-namespace Multiplayer
-{
-class WorldStateSync;
-}
 
 // VTABLE: LEGO1 0x100d7028
 // VTABLE: BETA10 0x101b9d40

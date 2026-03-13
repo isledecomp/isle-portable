@@ -2,6 +2,7 @@
 #define LEGOANIMATIONMANAGER_H
 
 #include "decomp.h"
+#include "extensions/fwd.h"
 #include "lego1_export.h"
 #include "legolocations.h"
 #include "legomain.h"
@@ -20,10 +21,6 @@ class LegoROIList;
 struct LegoOrientedEdge;
 class LegoWorld;
 class MxDSAction;
-namespace Multiplayer
-{
-class NetworkManager;
-}
 
 // SIZE 0x30
 struct ModelInfo {

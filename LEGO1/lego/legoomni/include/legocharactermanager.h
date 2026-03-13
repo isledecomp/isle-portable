@@ -2,6 +2,7 @@
 #define LEGOCHARACTERMANAGER_H
 
 #include "decomp.h"
+#include "extensions/fwd.h"
 #include "mxstl/stlcompat.h"
 #include "mxtypes.h"
 #include "mxvariable.h"
@@ -13,13 +14,6 @@ class LegoActor;
 class LegoExtraActor;
 class LegoStorage;
 class LegoROI;
-namespace Extensions
-{
-namespace Common
-{
-class CharacterCloner;
-}
-} // namespace Extensions
 
 #pragma warning(disable : 4237)
 
