@@ -21,6 +21,9 @@ const char* const g_idleAnimNames[] = {
 	"CNs008xx", // 0: Sway (default)
 	"CNs009xx", // 1: Groove
 	"CNs010xx", // 2: Excited
+	"CNs008Pa", // 3: Wobbly
+	"CNs009Pa", // 4: Peppy
+	"CNs012Br", // 5: Brickster
 };
 const int g_idleAnimCount = sizeof(g_idleAnimNames) / sizeof(g_idleAnimNames[0]);
 
@@ -30,6 +33,9 @@ const EmoteEntry g_emoteEntries[] = {
 	{{{"CNs011xx", nullptr}, {nullptr, nullptr}}},     // 0: Wave (one-shot)
 	{{{"CNs012xx", nullptr}, {nullptr, nullptr}}},     // 1: Hat Tip (one-shot)
 	{{{"BNsDis01", "crash5"}, {"BNsAss01", nullptr}}}, // 2: Disassemble / Reassemble (multi-part)
+	{{{"CNs008Br", nullptr}, {nullptr, nullptr}}},     // 3: Look Around (one-shot)
+	{{{"CNs014Br", nullptr}, {nullptr, nullptr}}},     // 4: Headless (one-shot)
+	{{{"CNs013Pa", nullptr}, {nullptr, nullptr}}},     // 5: Toss (one-shot)
 };
 const int g_emoteAnimCount = sizeof(g_emoteEntries) / sizeof(g_emoteEntries[0]);
 

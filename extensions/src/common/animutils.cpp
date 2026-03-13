@@ -19,7 +19,8 @@ static void AssignROIIndices(
 	LegoROI* p_rootROI,
 	LegoROI* p_extraROI,
 	MxU32& p_nextIndex,
-	std::vector<LegoROI*>& p_entries
+	std::vector<LegoROI*>& p_entries,
+	bool& p_rootClaimed
 )
 {
 	LegoROI* roi = p_parentROI;
@@ -31,7 +32,10 @@ static void AssignROIIndices(
 
 		if (*name == '*' || p_parentROI == nullptr) {
 			roi = p_rootROI;
-			matchedROI = p_rootROI;
+			if (!p_rootClaimed) {
+				matchedROI = p_rootROI;
+				p_rootClaimed = true;
+			}
 		}
 		else {
 			matchedROI = p_parentROI->FindChildROI(name, p_parentROI);
@@ -51,7 +55,7 @@ static void AssignROIIndices(
 	}
 
 	for (MxS32 i = 0; i < p_node->GetNumChildren(); i++) {
-		AssignROIIndices(p_node->GetChild(i), roi, p_rootROI, p_extraROI, p_nextIndex, p_entries);
+		AssignROIIndices(p_node->GetChild(i), roi, p_rootROI, p_extraROI, p_nextIndex, p_entries, p_rootClaimed);
 	}
 }
 
@@ -74,7 +78,8 @@ void AnimUtils::BuildROIMap(
 
 	MxU32 nextIndex = 1;
 	std::vector<LegoROI*> entries;
-	AssignROIIndices(root, nullptr, p_rootROI, p_extraROI, nextIndex, entries);
+	bool rootClaimed = false;
+	AssignROIIndices(root, nullptr, p_rootROI, p_extraROI, nextIndex, entries, rootClaimed);
 
 	if (entries.empty()) {
 		return;
