@@ -159,8 +159,6 @@ void WorldStateSync::HandleWorldEventRequest(const WorldEventRequestMsg& p_msg)
 	BroadcastWorldEvent(p_msg.entityType, p_msg.changeType, p_msg.entityIndex);
 }
 
-// ---- Entity mutation routing ----
-
 template <typename TInfo>
 static int FindEntityIndex(TInfo* p_infoArray, MxS32 p_count, LegoEntity* p_entity)
 {
@@ -224,8 +222,6 @@ MxBool WorldStateSync::HandleSkyLightMutation(uint8_t p_entityType, uint8_t p_ch
 		return TRUE;
 	}
 }
-
-// ---- Send helpers ----
 
 void WorldStateSync::SendSnapshotRequest()
 {
@@ -297,8 +293,6 @@ void WorldStateSync::SendWorldEventRequest(uint8_t p_entityType, uint8_t p_chang
 	msg.entityIndex = p_entityIndex;
 	SendMessage(msg);
 }
-
-// ---- Apply world events ----
 
 // Dispatch Switch*() calls shared by all entity types.
 // Returns true if the change was handled, false for type-specific changes.

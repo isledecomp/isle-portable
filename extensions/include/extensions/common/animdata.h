@@ -1,12 +1,14 @@
 #pragma once
 
-#include "extensions/multiplayer/protocol.h"
+#include "extensions/common/constants.h"
 
 #include <cstdint>
 
 class LegoPathActor;
 
-namespace Multiplayer
+namespace Extensions
+{
+namespace Common
 {
 
 // Animation and vehicle tables (defined in animdata.cpp)
@@ -46,4 +48,5 @@ bool IsLargeVehicle(int8_t p_vehicleType);
 // Detect the vehicle type of a given actor, or VEHICLE_NONE if not a vehicle
 int8_t DetectVehicleType(LegoPathActor* p_actor);
 
-} // namespace Multiplayer
+} // namespace Common
+} // namespace Extensions

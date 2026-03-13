@@ -2,7 +2,9 @@
 
 #include <cstdint>
 
-namespace Multiplayer
+namespace Extensions
+{
+namespace Common
 {
 
 struct CustomizeState {
@@ -19,4 +21,5 @@ struct CustomizeState {
 	bool operator!=(const CustomizeState& p_other) const { return !(*this == p_other); }
 };
 
-} // namespace Multiplayer
+} // namespace Common
+} // namespace Extensions

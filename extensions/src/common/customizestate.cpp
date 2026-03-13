@@ -1,11 +1,11 @@
-#include "extensions/multiplayer/customizestate.h"
+#include "extensions/common/customizestate.h"
 
 #include "legoactors.h"
 #include "misc.h"
 
 #include <SDL3/SDL_stdinc.h>
 
-using namespace Multiplayer;
+using namespace Extensions::Common;
 
 void CustomizeState::InitFromActorInfo(uint8_t p_actorInfoIndex)
 {

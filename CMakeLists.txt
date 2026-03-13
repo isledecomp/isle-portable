@@ -531,18 +531,28 @@ if (ISLE_EXTENSIONS)
     extensions/src/extensions.cpp
     extensions/src/siloader.cpp
     extensions/src/textureloader.cpp
+
+    # Common shared code
+    extensions/src/common/animdata.cpp
+    extensions/src/common/animutils.cpp
+    extensions/src/common/characteranimator.cpp
+    extensions/src/common/charactercloner.cpp
+    extensions/src/common/charactercustomizer.cpp
+    extensions/src/common/customizestate.cpp
+
+    # Third person camera extension
+    extensions/src/thirdpersoncamera.cpp
+    extensions/src/thirdpersoncamera/controller.cpp
+    extensions/src/thirdpersoncamera/orbitcamera.cpp
+    extensions/src/thirdpersoncamera/inputhandler.cpp
+    extensions/src/thirdpersoncamera/displayactor.cpp
+
+    # Multiplayer extension
     extensions/src/multiplayer.cpp
-    extensions/src/multiplayer/animdata.cpp
-    extensions/src/multiplayer/animutils.cpp
-    extensions/src/multiplayer/characteranimator.cpp
-    extensions/src/multiplayer/charactercloner.cpp
-    extensions/src/multiplayer/charactercustomizer.cpp
-    extensions/src/multiplayer/customizestate.cpp
     extensions/src/multiplayer/namebubblerenderer.cpp
     extensions/src/multiplayer/networkmanager.cpp
     extensions/src/multiplayer/protocol.cpp
     extensions/src/multiplayer/remoteplayer.cpp
-    extensions/src/multiplayer/thirdpersoncamera.cpp
     extensions/src/multiplayer/worldstatesync.cpp
   )
   if(EMSCRIPTEN)

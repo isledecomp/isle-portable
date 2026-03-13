@@ -1,8 +1,10 @@
-#include "extensions/multiplayer/animdata.h"
+#include "extensions/common/animdata.h"
 
 #include "legopathactor.h"
 
-namespace Multiplayer
+namespace Extensions
+{
+namespace Common
 {
 
 const char* const g_walkAnimNames[] = {
@@ -75,4 +77,5 @@ int8_t DetectVehicleType(LegoPathActor* p_actor)
 	return VEHICLE_NONE;
 }
 
-} // namespace Multiplayer
+} // namespace Common
+} // namespace Extensions

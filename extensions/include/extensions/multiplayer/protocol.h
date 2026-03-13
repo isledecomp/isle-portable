@@ -5,6 +5,8 @@
 #include <cstdint>
 #include <type_traits>
 
+#include "extensions/common/constants.h"
+
 namespace Multiplayer
 {
 
@@ -26,18 +28,17 @@ enum MessageType : uint8_t {
 	MSG_ASSIGN_ID = 0xFF
 };
 
-enum VehicleType : int8_t {
-	VEHICLE_NONE = -1,
-	VEHICLE_HELICOPTER = 0,
-	VEHICLE_JETSKI = 1,
-	VEHICLE_DUNEBUGGY = 2,
-	VEHICLE_BIKE = 3,
-	VEHICLE_SKATEBOARD = 4,
-	VEHICLE_MOTOCYCLE = 5,
-	VEHICLE_TOWTRACK = 6,
-	VEHICLE_AMBULANCE = 7,
-	VEHICLE_COUNT = 8
-};
+using Extensions::Common::VehicleType;
+using Extensions::Common::VEHICLE_NONE;
+using Extensions::Common::VEHICLE_HELICOPTER;
+using Extensions::Common::VEHICLE_JETSKI;
+using Extensions::Common::VEHICLE_DUNEBUGGY;
+using Extensions::Common::VEHICLE_BIKE;
+using Extensions::Common::VEHICLE_SKATEBOARD;
+using Extensions::Common::VEHICLE_MOTOCYCLE;
+using Extensions::Common::VEHICLE_TOWTRACK;
+using Extensions::Common::VEHICLE_AMBULANCE;
+using Extensions::Common::VEHICLE_COUNT;
 
 // Entity types for world events
 enum WorldEntityType : uint8_t {
@@ -47,15 +48,13 @@ enum WorldEntityType : uint8_t {
 	ENTITY_LIGHT = 3
 };
 
-// Change types for world events (maps to Switch* methods on LegoEntity)
-enum WorldChangeType : uint8_t {
-	CHANGE_VARIANT = 0,
-	CHANGE_SOUND = 1,
-	CHANGE_MOVE = 2,
-	CHANGE_COLOR = 3,
-	CHANGE_MOOD = 4,
-	CHANGE_DECREMENT = 5
-};
+using Extensions::Common::WorldChangeType;
+using Extensions::Common::CHANGE_VARIANT;
+using Extensions::Common::CHANGE_SOUND;
+using Extensions::Common::CHANGE_MOVE;
+using Extensions::Common::CHANGE_COLOR;
+using Extensions::Common::CHANGE_MOOD;
+using Extensions::Common::CHANGE_DECREMENT;
 
 // Change types for ENTITY_SKY
 enum SkyChangeType : uint8_t {
@@ -153,17 +152,13 @@ struct CustomizeMsg {
 
 #pragma pack(pop)
 
-// Validate actorId is a playable character (1-5, not brickster)
-inline bool IsValidActorId(uint8_t p_actorId)
-{
-	return p_actorId >= 1 && p_actorId <= 5;
-}
+using Extensions::Common::IsValidActorId;
 
 // Convert LegoGameState::Username letter indices (0-25 = A-Z) to ASCII.
 // Writes up to 7 characters + null terminator into p_out (must be at least 8 bytes).
 void EncodeUsername(char p_out[8]);
 
-static const uint8_t DISPLAY_ACTOR_NONE = 0xFF;
+using Extensions::Common::DISPLAY_ACTOR_NONE;
 
 // Parse the message type from a buffer. Returns MSG type or 0 on error.
 inline uint8_t ParseMessageType(const uint8_t* p_data, size_t p_length)

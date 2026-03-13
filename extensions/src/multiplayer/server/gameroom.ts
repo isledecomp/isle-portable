@@ -66,8 +66,6 @@ export class GameRoom implements DurableObject {
 		return new Response(null, { status: 101, webSocket: client });
 	}
 
-	// ---- HTTP API ----
-
 	private async handleHttpRequest(request: Request): Promise<Response> {
 		const method = request.method.toUpperCase();
 
@@ -132,8 +130,6 @@ export class GameRoom implements DurableObject {
 		});
 	}
 
-	// ---- Connection lifecycle ----
-
 	private assignHostIfNeeded(peerId: number, ws: WebSocket): void {
 		if (this.hostPeerId === 0 || !this.connections.has(this.hostPeerId)) {
 			this.hostPeerId = peerId;
@@ -151,8 +147,6 @@ export class GameRoom implements DurableObject {
 			this.electNewHost();
 		}
 	}
-
-	// ---- Message routing ----
 
 	private handleMessage(event: MessageEvent, peerId: number): void {
 		if (!(event.data instanceof ArrayBuffer)) {
@@ -194,8 +188,6 @@ export class GameRoom implements DurableObject {
 		}
 	}
 
-	// ---- Broadcasting ----
-
 	private broadcast(msg: ArrayBuffer): void {
 		for (const ws of this.connections.values()) {
 			this.trySend(ws, msg);
@@ -220,8 +212,6 @@ export class GameRoom implements DurableObject {
 			return false;
 		}
 	}
-
-	// ---- Host election ----
 
 	private electNewHost(): void {
 		this.hostPeerId = 0;

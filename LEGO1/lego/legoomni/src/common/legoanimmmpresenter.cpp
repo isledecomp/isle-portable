@@ -3,7 +3,7 @@
 #include "3dmanager/lego3dmanager.h"
 #include "decomp.h"
 #include "define.h"
-#include "extensions/multiplayer.h"
+#include "extensions/thirdpersoncamera.h"
 #include "islepathactor.h"
 #include "legoanimationmanager.h"
 #include "legoanimpresenter.h"
@@ -485,7 +485,7 @@ MxBool LegoAnimMMPresenter::FUN_1004b6d0(MxLong p_time)
 		actor->SetActorState(LegoPathActor::c_initial);
 
 		if (m_tranInfo->m_unk0x29) {
-			Extension<MultiplayerExt>::Call(HandleCamAnimEnd, actor);
+			Extension<ThirdPersonCameraExt>::Call(TP::HandleCamAnimEnd, actor);
 		}
 	}
 

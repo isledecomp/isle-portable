@@ -1,4 +1,4 @@
-#include "extensions/multiplayer/charactercloner.h"
+#include "extensions/common/charactercloner.h"
 
 #include "legoactors.h"
 #include "legocharactermanager.h"
@@ -13,7 +13,7 @@
 #include <SDL3/SDL_stdinc.h>
 #include <vec.h>
 
-using namespace Multiplayer;
+using namespace Extensions::Common;
 
 LegoROI* CharacterCloner::Clone(LegoCharacterManager* p_charMgr, const char* p_uniqueName, const char* p_characterType)
 {

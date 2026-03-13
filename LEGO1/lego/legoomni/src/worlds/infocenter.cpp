@@ -342,8 +342,9 @@ MxLong Infocenter::HandleEndAction(MxEndActionNotificationParam& p_param)
 
 	MxLong result = m_radio.Notify(p_param);
 
-	if (result || (action->GetAtomId() != m_atomId && action->GetAtomId() != *g_introScript &&
-				   !Extension<SiLoader>::Call(ReplacedIn, *action, m_atomId, *g_introScript).value_or(std::nullopt))) {
+	if (result ||
+		(action->GetAtomId() != m_atomId && action->GetAtomId() != *g_introScript &&
+		 !Extension<SiLoaderExt>::Call(SI::ReplacedIn, *action, m_atomId, *g_introScript).value_or(std::nullopt))) {
 		return result;
 	}
 

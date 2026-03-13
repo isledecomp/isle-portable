@@ -1,0 +1,210 @@
+#include "extensions/thirdpersoncamera/inputhandler.h"
+
+#include "extensions/thirdpersoncamera/orbitcamera.h"
+
+#include <SDL3/SDL_stdinc.h>
+#include <utility>
+
+using namespace Extensions::ThirdPersonCamera;
+
+InputHandler::InputHandler() : m_touch{}, m_wantsAutoDisable(false), m_wantsAutoEnable(false)
+{
+}
+
+bool InputHandler::TryClaimFinger(const SDL_TouchFingerEvent& p_event, bool p_active)
+{
+	if (!p_active || m_touch.count >= 2 || p_event.x < CAMERA_ZONE_X) {
+		return false;
+	}
+
+	int idx = m_touch.count;
+	m_touch.id[idx] = p_event.fingerID;
+	m_touch.x[idx] = p_event.x;
+	m_touch.y[idx] = p_event.y;
+	m_touch.count++;
+
+	if (m_touch.count == 2) {
+		float dx = m_touch.x[1] - m_touch.x[0];
+		float dy = m_touch.y[1] - m_touch.y[0];
+		m_touch.initialPinchDist = SDL_sqrtf(dx * dx + dy * dy);
+	}
+
+	return true;
+}
+
+bool InputHandler::TryReleaseFinger(SDL_FingerID p_id)
+{
+	for (int i = 0; i < m_touch.count; i++) {
+		if (m_touch.id[i] == p_id) {
+			if (i == 0 && m_touch.count == 2) {
+				m_touch.id[0] = m_touch.id[1];
+				m_touch.x[0] = m_touch.x[1];
+				m_touch.y[0] = m_touch.y[1];
+			}
+			m_touch.count--;
+			m_touch.initialPinchDist = 0.0f;
+			return true;
+		}
+	}
+	return false;
+}
+
+bool InputHandler::IsFingerTracked(SDL_FingerID p_id) const
+{
+	for (int i = 0; i < m_touch.count; i++) {
+		if (m_touch.id[i] == p_id) {
+			return true;
+		}
+	}
+	return false;
+}
+
+bool InputHandler::ConsumeAutoDisable()
+{
+	return std::exchange(m_wantsAutoDisable, false);
+}
+
+bool InputHandler::ConsumeAutoEnable()
+{
+	return std::exchange(m_wantsAutoEnable, false);
+}
+
+void InputHandler::HandleSDLEvent(SDL_Event* p_event, OrbitCamera& p_orbit, bool p_active)
+{
+	switch (p_event->type) {
+	case SDL_EVENT_MOUSE_WHEEL:
+		if (!p_active) {
+			if (p_event->wheel.y < 0) {
+				m_wantsAutoEnable = true;
+			}
+			break;
+		}
+		if (p_orbit.GetOrbitDistance() <= OrbitCamera::MIN_DISTANCE && p_event->wheel.y > 0) {
+			m_wantsAutoDisable = true;
+			break;
+		}
+		p_orbit.AdjustDistance(-p_event->wheel.y * 0.5f);
+		p_orbit.ClampDistance();
+		break;
+
+	case SDL_EVENT_MOUSE_MOTION:
+		if (!p_active) {
+			break;
+		}
+		if (p_event->motion.state & SDL_BUTTON_RMASK) {
+			p_orbit.AdjustYaw(-p_event->motion.xrel * 0.005f);
+			p_orbit.AdjustPitch(p_event->motion.yrel * 0.005f);
+			p_orbit.ClampPitch();
+		}
+		break;
+
+	case SDL_EVENT_MOUSE_BUTTON_DOWN:
+	case SDL_EVENT_MOUSE_BUTTON_UP: {
+		if (!p_active) {
+			break;
+		}
+		SDL_Window* window = SDL_GetWindowFromID(p_event->button.windowID);
+		if (window) {
+			SDL_SetWindowRelativeMouseMode(window, SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_RMASK);
+		}
+		break;
+	}
+
+	case SDL_EVENT_FINGER_DOWN: {
+		if (!IsFingerTracked(p_event->tfinger.fingerID) && m_touch.count < 2 &&
+			p_event->tfinger.x >= CAMERA_ZONE_X) {
+			int idx = m_touch.count;
+			m_touch.id[idx] = p_event->tfinger.fingerID;
+			m_touch.x[idx] = p_event->tfinger.x;
+			m_touch.y[idx] = p_event->tfinger.y;
+			m_touch.count++;
+
+			if (m_touch.count == 2) {
+				float dx = m_touch.x[1] - m_touch.x[0];
+				float dy = m_touch.y[1] - m_touch.y[0];
+				m_touch.initialPinchDist = SDL_sqrtf(dx * dx + dy * dy);
+			}
+		}
+		break;
+	}
+
+	case SDL_EVENT_FINGER_MOTION: {
+		if (m_touch.count == 1) {
+			if (!p_active) {
+				break;
+			}
+			if (m_touch.id[0] == p_event->tfinger.fingerID) {
+				float oldX = m_touch.x[0];
+				float oldY = m_touch.y[0];
+				m_touch.x[0] = p_event->tfinger.x;
+				m_touch.y[0] = p_event->tfinger.y;
+
+				float moveX = m_touch.x[0] - oldX;
+				float moveY = m_touch.y[0] - oldY;
+				p_orbit.AdjustYaw(-moveX * 2.0f);
+				p_orbit.AdjustPitch(moveY * 2.0f);
+				p_orbit.ClampPitch();
+			}
+		}
+		else if (m_touch.count == 2) {
+			int idx = -1;
+			for (int i = 0; i < 2; i++) {
+				if (m_touch.id[i] == p_event->tfinger.fingerID) {
+					idx = i;
+					break;
+				}
+			}
+			if (idx < 0) {
+				break;
+			}
+
+			float oldX = m_touch.x[idx];
+			float oldY = m_touch.y[idx];
+			m_touch.x[idx] = p_event->tfinger.x;
+			m_touch.y[idx] = p_event->tfinger.y;
+
+			float dx = m_touch.x[1] - m_touch.x[0];
+			float dy = m_touch.y[1] - m_touch.y[0];
+			float newDist = SDL_sqrtf(dx * dx + dy * dy);
+
+			if (m_touch.initialPinchDist > 0.001f) {
+				float pinchDelta = m_touch.initialPinchDist - newDist;
+
+				if (!p_active) {
+					if (pinchDelta > 0) {
+						m_wantsAutoEnable = true;
+					}
+					m_touch.initialPinchDist = newDist;
+					break;
+				}
+
+				if (p_orbit.GetOrbitDistance() <= OrbitCamera::MIN_DISTANCE && pinchDelta < 0) {
+					m_wantsAutoDisable = true;
+					m_touch.initialPinchDist = newDist;
+					break;
+				}
+
+				p_orbit.AdjustDistance(pinchDelta * 15.0f);
+				p_orbit.ClampDistance();
+				m_touch.initialPinchDist = newDist;
+			}
+
+			float moveX = m_touch.x[idx] - oldX;
+			float moveY = m_touch.y[idx] - oldY;
+			p_orbit.AdjustYaw(-moveX * 2.0f);
+			p_orbit.AdjustPitch(moveY * 2.0f);
+			p_orbit.ClampPitch();
+		}
+		break;
+	}
+
+	case SDL_EVENT_FINGER_UP:
+	case SDL_EVENT_FINGER_CANCELED: {
+		TryReleaseFinger(p_event->tfinger.fingerID);
+		break;
+	}
+
+	default:
+		break;
+	}
+}

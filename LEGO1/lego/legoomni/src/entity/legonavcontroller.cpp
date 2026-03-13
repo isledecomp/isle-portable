@@ -2,7 +2,7 @@
 
 #include "3dmanager/lego3dmanager.h"
 #include "act3.h"
-#include "extensions/multiplayer.h"
+#include "extensions/thirdpersoncamera.h"
 #include "infocenter.h"
 #include "legoanimationmanager.h"
 #include "legocameracontroller.h"
@@ -351,7 +351,8 @@ MxBool LegoNavController::CalculateNewPosDir(
 		ProcessJoystickInput(rotatedY);
 	}
 
-	if (Extension<MultiplayerExt>::Call(HandleNavOverride, this, p_curPos, p_curDir, p_newPos, p_newDir, deltaTime)
+	if (Extension<
+			ThirdPersonCameraExt>::Call(TP::HandleNavOverride, this, p_curPos, p_curDir, p_newPos, p_newDir, deltaTime)
 			.value_or(FALSE)) {
 		return TRUE;
 	}

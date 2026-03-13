@@ -1,4 +1,4 @@
-#include "extensions/multiplayer/animutils.h"
+#include "extensions/common/animutils.h"
 
 #include "anim/legoanim.h"
 #include "legoanimpresenter.h"
@@ -9,7 +9,7 @@
 
 #include <vector>
 
-using namespace Multiplayer;
+using namespace Extensions::Common;
 
 // Mirrors the game's UpdateStructMapAndROIIndex: assigns ROI indices at runtime
 // via SetROIIndex() since m_roiIndex starts at 0 for all animation nodes.

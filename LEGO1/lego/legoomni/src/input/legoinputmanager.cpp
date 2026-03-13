@@ -1,6 +1,7 @@
 #include "legoinputmanager.h"
 
 #include "extensions/multiplayer.h"
+#include "extensions/thirdpersoncamera.h"
 #include "legocameracontroller.h"
 #include "legocontrolmanager.h"
 #include "legomain.h"
@@ -325,7 +326,7 @@ MxBool LegoInputManager::ProcessOneEvent(LegoEventNotificationParam& p_param)
 		if (!Lego()->IsPaused()) {
 			if ((p_param.GetModifier() & LegoEventNotificationParam::c_rButtonState) &&
 				!(p_param.GetModifier() & LegoEventNotificationParam::c_lButtonState) &&
-				Extension<MultiplayerExt>::Call(IsThirdPersonCameraActive).value_or(FALSE)) {
+				Extension<ThirdPersonCameraExt>::Call(TP::IsThirdPersonCameraActive).value_or(FALSE)) {
 				return FALSE;
 			}
 
@@ -402,7 +403,8 @@ MxBool LegoInputManager::ProcessOneEvent(LegoEventNotificationParam& p_param)
 						if (entity && entity->Notify(p_param) != 0) {
 							return TRUE;
 						}
-						if (Extension<MultiplayerExt>::Call(HandleROIClick, roi, p_param).value_or(FALSE)) {
+						if (Extension<MultiplayerExt>::Call(MP::HandleROIClick, roi, p_param).value_or(FALSE) ||
+							Extension<ThirdPersonCameraExt>::Call(TP::HandleROIClick, roi, p_param).value_or(FALSE)) {
 							return TRUE;
 						}
 					}
@@ -638,7 +640,7 @@ void LegoInputManager::RemoveJoystick(SDL_JoystickID p_joystickID)
 
 MxBool LegoInputManager::HandleTouchEvent(SDL_Event* p_event, TouchScheme p_touchScheme)
 {
-	if (Extension<MultiplayerExt>::Call(HandleTouchInput, p_event).value_or(FALSE)) {
+	if (Extension<ThirdPersonCameraExt>::Call(TP::HandleTouchInput, p_event).value_or(FALSE)) {
 		return FALSE;
 	}
 

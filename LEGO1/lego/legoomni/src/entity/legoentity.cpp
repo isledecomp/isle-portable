@@ -486,7 +486,7 @@ MxLong LegoEntity::Notify(MxParam& p_param)
 		InvokeAction(m_actionType, MxAtomId(m_siFile, e_lowerCase2), m_targetEntityId, this);
 	}
 	else {
-		if (Extension<MultiplayerExt>::Call(HandleEntityNotify, this).value_or(FALSE)) {
+		if (Extension<MultiplayerExt>::Call(MP::HandleEntityNotify, this).value_or(FALSE)) {
 			return 1;
 		}
 

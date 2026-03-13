@@ -6,7 +6,9 @@
 
 class LegoROI;
 
-namespace Multiplayer
+namespace Extensions
+{
+namespace Common
 {
 
 struct CustomizeState;
@@ -31,10 +33,16 @@ public:
 	static MxU32 PlayClickAnimation(LegoROI* p_roi, const CustomizeState& p_state);
 	static void StopClickAnimation(MxU32 p_objectId);
 
+	// Resolves the current actor's click to a change type and optional part index.
+	// Returns false if the click should be consumed with no effect (Pepper in act2/3, Brickster)
+	// or if the actor is unknown.
+	static bool ResolveClickChangeType(uint8_t& p_changeType, int& p_partIndex, LegoROI* p_clickedROI);
+
 private:
 	static LegoROI* FindChildROI(LegoROI* p_rootROI, const char* p_name);
 	static void ApplyHatVariant(LegoROI* p_rootROI, uint8_t p_actorInfoIndex,
 	                            const CustomizeState& p_state);
 };
 
-} // namespace Multiplayer
+} // namespace Common
+} // namespace Extensions

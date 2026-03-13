@@ -13,38 +13,38 @@ using namespace Extensions;
 
 const char prependedMarker[] = ";;prepended;;";
 
-std::map<std::string, std::string> SiLoader::options;
-std::vector<std::string> SiLoader::files;
-std::vector<std::string> SiLoader::directives;
-std::vector<std::pair<SiLoader::StreamObject, SiLoader::StreamObject>> SiLoader::startWith;
-std::vector<std::pair<SiLoader::StreamObject, SiLoader::StreamObject>> SiLoader::removeWith;
-std::vector<std::pair<SiLoader::StreamObject, SiLoader::StreamObject>> SiLoader::replace;
-std::vector<std::pair<SiLoader::StreamObject, SiLoader::StreamObject>> SiLoader::prepend;
-std::vector<SiLoader::StreamObject> SiLoader::fullScreenMovie;
-std::vector<SiLoader::StreamObject> SiLoader::disable3d;
-bool SiLoader::enabled = false;
+std::map<std::string, std::string> SiLoaderExt::options;
+std::vector<std::string> SiLoaderExt::files;
+std::vector<std::string> SiLoaderExt::directives;
+std::vector<std::pair<SiLoaderExt::StreamObject, SiLoaderExt::StreamObject>> SiLoaderExt::startWith;
+std::vector<std::pair<SiLoaderExt::StreamObject, SiLoaderExt::StreamObject>> SiLoaderExt::removeWith;
+std::vector<std::pair<SiLoaderExt::StreamObject, SiLoaderExt::StreamObject>> SiLoaderExt::replace;
+std::vector<std::pair<SiLoaderExt::StreamObject, SiLoaderExt::StreamObject>> SiLoaderExt::prepend;
+std::vector<SiLoaderExt::StreamObject> SiLoaderExt::fullScreenMovie;
+std::vector<SiLoaderExt::StreamObject> SiLoaderExt::disable3d;
+bool SiLoaderExt::enabled = false;
 
-void SiLoader::Initialize()
+void SiLoaderExt::Initialize()
 {
 	char* files = SDL_strdup(options["si loader:files"].c_str());
 	char* saveptr;
 
 	for (char* file = SDL_strtok_r(files, ",\n\r ", &saveptr); file; file = SDL_strtok_r(NULL, ",\n\r ", &saveptr)) {
-		SiLoader::files.emplace_back(file);
+		SiLoaderExt::files.emplace_back(file);
 	}
 
 	char* directives = SDL_strdup(options["si loader:directives"].c_str());
 
 	for (char* directive = SDL_strtok_r(directives, ",\n\r ", &saveptr); directive;
 		 directive = SDL_strtok_r(NULL, ",\n\r ", &saveptr)) {
-		SiLoader::directives.emplace_back(directive);
+		SiLoaderExt::directives.emplace_back(directive);
 	}
 
 	SDL_free(files);
 	SDL_free(directives);
 }
 
-bool SiLoader::Load()
+bool SiLoaderExt::Load()
 {
 	for (const auto& file : files) {
 		LoadFile(file.c_str());
@@ -57,7 +57,7 @@ bool SiLoader::Load()
 	return true;
 }
 
-std::optional<MxCore*> SiLoader::HandleFind(StreamObject p_object, LegoWorld* world)
+std::optional<MxCore*> SiLoaderExt::HandleFind(StreamObject p_object, LegoWorld* world)
 {
 	for (const auto& key : replace) {
 		if (key.first == p_object) {
@@ -68,7 +68,7 @@ std::optional<MxCore*> SiLoader::HandleFind(StreamObject p_object, LegoWorld* wo
 	return std::nullopt;
 }
 
-std::optional<MxResult> SiLoader::HandleStart(MxDSAction& p_action)
+std::optional<MxResult> SiLoaderExt::HandleStart(MxDSAction& p_action)
 {
 	StreamObject object{p_action.GetAtomId(), p_action.GetObjectId()};
 	auto start = [](const StreamObject& p_object, MxDSAction& p_in, MxDSAction& p_out) -> MxResult {
@@ -130,7 +130,7 @@ std::optional<MxResult> SiLoader::HandleStart(MxDSAction& p_action)
 	return std::nullopt;
 }
 
-MxBool SiLoader::HandleWorld(LegoWorld* p_world)
+MxBool SiLoaderExt::HandleWorld(LegoWorld* p_world)
 {
 	StreamObject object{p_world->GetAtomId(), p_world->GetEntityId()};
 	auto start = [](const StreamObject& p_object, MxDSAction& p_out) {
@@ -154,7 +154,7 @@ MxBool SiLoader::HandleWorld(LegoWorld* p_world)
 	return TRUE;
 }
 
-std::optional<MxBool> SiLoader::HandleRemove(StreamObject p_object, LegoWorld* world)
+std::optional<MxBool> SiLoaderExt::HandleRemove(StreamObject p_object, LegoWorld* world)
 {
 	for (const auto& key : removeWith) {
 		if (key.first == p_object) {
@@ -171,7 +171,7 @@ std::optional<MxBool> SiLoader::HandleRemove(StreamObject p_object, LegoWorld* w
 	return std::nullopt;
 }
 
-std::optional<MxBool> SiLoader::HandleDelete(MxDSAction& p_action)
+std::optional<MxBool> SiLoaderExt::HandleDelete(MxDSAction& p_action)
 {
 	StreamObject object{p_action.GetAtomId(), p_action.GetObjectId()};
 	auto deleteObject = [](const StreamObject& p_object, MxDSAction& p_in, MxDSAction& p_out) {
@@ -202,7 +202,7 @@ std::optional<MxBool> SiLoader::HandleDelete(MxDSAction& p_action)
 	return std::nullopt;
 }
 
-MxBool SiLoader::HandleEndAction(MxEndActionNotificationParam& p_param)
+MxBool SiLoaderExt::HandleEndAction(MxEndActionNotificationParam& p_param)
 {
 	StreamObject object{p_param.GetAction()->GetAtomId(), p_param.GetAction()->GetObjectId()};
 	auto start = [](const StreamObject& p_object, MxDSAction& p_in, MxDSAction& p_out) -> MxResult {
@@ -235,7 +235,7 @@ MxBool SiLoader::HandleEndAction(MxEndActionNotificationParam& p_param)
 	return TRUE;
 }
 
-bool SiLoader::LoadFile(const char* p_file)
+bool SiLoaderExt::LoadFile(const char* p_file)
 {
 	si::Interleaf si;
 	MxStreamController* controller;
@@ -245,8 +245,7 @@ bool SiLoader::LoadFile(const char* p_file)
 	if (si.Read(path.GetData(), si::Interleaf::ObjectsOnly) != si::Interleaf::ERROR_SUCCESS) {
 		path = MxString(MxOmni::GetCD()) + p_file;
 		path.MapPathToFilesystem();
-		if (si.Read(path.GetData(), si::Interleaf::ObjectsOnly) !=
-			si::Interleaf::ERROR_SUCCESS) {
+		if (si.Read(path.GetData(), si::Interleaf::ObjectsOnly) != si::Interleaf::ERROR_SUCCESS) {
 			SDL_Log("Could not parse SI file %s", p_file);
 			return false;
 		}
@@ -260,7 +259,7 @@ bool SiLoader::LoadFile(const char* p_file)
 	return true;
 }
 
-bool SiLoader::LoadDirective(const char* p_directive)
+bool SiLoaderExt::LoadDirective(const char* p_directive)
 {
 	char originAtom[256], targetAtom[256];
 	uint32_t originId, targetId;
@@ -306,7 +305,7 @@ bool SiLoader::LoadDirective(const char* p_directive)
 	return true;
 }
 
-MxStreamController* SiLoader::OpenStream(const char* p_file)
+MxStreamController* SiLoaderExt::OpenStream(const char* p_file)
 {
 	MxStreamController* controller;
 
@@ -318,7 +317,7 @@ MxStreamController* SiLoader::OpenStream(const char* p_file)
 	return controller;
 }
 
-void SiLoader::ParseExtra(const MxAtomId& p_atom, si::Core* p_core)
+void SiLoaderExt::ParseExtra(const MxAtomId& p_atom, si::Core* p_core)
 {
 	for (si::Core* child : p_core->GetChildren()) {
 		if (si::Object* object = dynamic_cast<si::Object*>(child)) {
@@ -378,7 +377,7 @@ void SiLoader::ParseExtra(const MxAtomId& p_atom, si::Core* p_core)
 	}
 }
 
-bool SiLoader::IsWorld(const StreamObject& p_object)
+bool SiLoaderExt::IsWorld(const StreamObject& p_object)
 {
 	// The convention in LEGO Island is that world objects are always at ID 0
 	if (p_object.second == 0) {

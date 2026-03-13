@@ -1,12 +1,14 @@
-#include "extensions/multiplayer/charactercustomizer.h"
+#include "extensions/common/charactercustomizer.h"
 
 #include "3dmanager/lego3dmanager.h"
 #include "3dmanager/lego3dview.h"
-#include "extensions/multiplayer/charactercloner.h"
-#include "extensions/multiplayer/customizestate.h"
-#include "extensions/multiplayer/protocol.h"
+#include "extensions/common/charactercloner.h"
+#include "extensions/common/customizestate.h"
+#include "extensions/common/constants.h"
+#include "legoactor.h"
 #include "legoactors.h"
 #include "legocharactermanager.h"
+#include "legogamestate.h"
 #include "legovideomanager.h"
 #include "misc.h"
 #include "mxatom.h"
@@ -19,7 +21,7 @@
 
 #include <SDL3/SDL_stdinc.h>
 
-using namespace Multiplayer;
+using namespace Extensions::Common;
 
 static const MxU32 g_characterSoundIdOffset = 50;
 static const MxU32 g_characterSoundIdMoodOffset = 66;
@@ -325,4 +327,43 @@ void CharacterCustomizer::StopClickAnimation(MxU32 p_objectId)
 	action.SetAtomId(MxAtomId(LegoCharacterManager::GetCustomizeAnimFile(), e_lowerCase2));
 	action.SetObjectId(p_objectId);
 	DeleteObject(action);
+}
+
+bool CharacterCustomizer::ResolveClickChangeType(uint8_t& p_changeType, int& p_partIndex, LegoROI* p_clickedROI)
+{
+	p_partIndex = -1;
+
+	switch (GameState()->GetActorId()) {
+	case LegoActor::c_pepper:
+		if (GameState()->GetCurrentAct() == LegoGameState::e_act2 ||
+			GameState()->GetCurrentAct() == LegoGameState::e_act3) {
+			return false;
+		}
+		p_changeType = CHANGE_VARIANT;
+		break;
+	case LegoActor::c_mama:
+		p_changeType = CHANGE_SOUND;
+		break;
+	case LegoActor::c_papa:
+		p_changeType = CHANGE_MOVE;
+		break;
+	case LegoActor::c_nick:
+		p_changeType = CHANGE_COLOR;
+		if (p_clickedROI) {
+			p_partIndex = MapClickedPartIndex(p_clickedROI->GetName());
+		}
+		if (p_partIndex < 0) {
+			return false;
+		}
+		break;
+	case LegoActor::c_laura:
+		p_changeType = CHANGE_MOOD;
+		break;
+	case LegoActor::c_brickster:
+		return false;
+	default:
+		return false;
+	}
+
+	return true;
 }

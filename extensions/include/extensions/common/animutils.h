@@ -1,6 +1,8 @@
 #pragma once
 
 #include "mxtypes.h"
+#include "mxgeometry/mxmatrix.h"
+#include "realtime/vector.h"
 #include "roi/legoroi.h"
 
 #include <map>
@@ -8,7 +10,9 @@
 
 class LegoAnim;
 
-namespace Multiplayer
+namespace Extensions
+{
+namespace Common
 {
 
 namespace AnimUtils
@@ -77,6 +81,17 @@ inline void EnsureROIMapVisibility(LegoROI** p_roiMap, MxU32 p_roiMapSize)
 	}
 }
 
+// Flip a matrix from forward-z to backward-z (or vice versa) in place.
+inline void FlipMatrixDirection(MxMatrix& p_mat)
+{
+	Vector3 right(p_mat[0]);
+	Vector3 up(p_mat[1]);
+	Vector3 direction(p_mat[2]);
+	direction *= -1.0f;
+	right.EqualsCross(up, direction);
+}
+
 } // namespace AnimUtils
 
-} // namespace Multiplayer
+} // namespace Common
+} // namespace Extensions

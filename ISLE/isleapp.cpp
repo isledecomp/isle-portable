@@ -38,6 +38,7 @@
 
 #include <array>
 #include <extensions/multiplayer.h>
+#include <extensions/thirdpersoncamera.h>
 #include <miniwin/miniwindevice.h>
 #include <type_traits>
 #include <vec.h>
@@ -878,7 +879,7 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 	}
 
 #ifdef EXTENSIONS
-	Extensions::HandleMultiplayerSDLEvent(event);
+	Extensions::ThirdPersonCameraExt::HandleSDLEvent(event);
 #endif
 
 	return SDL_APP_CONTINUE;

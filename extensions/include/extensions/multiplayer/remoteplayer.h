@@ -1,7 +1,7 @@
 #pragma once
 
-#include "extensions/multiplayer/characteranimator.h"
-#include "extensions/multiplayer/customizestate.h"
+#include "extensions/common/characteranimator.h"
+#include "extensions/common/customizestate.h"
 #include "extensions/multiplayer/protocol.h"
 #include "mxtypes.h"
 
@@ -13,6 +13,8 @@ class LegoWorld;
 
 namespace Multiplayer
 {
+
+class NameBubbleRenderer;
 
 class RemotePlayer {
 public:
@@ -41,7 +43,7 @@ public:
 	void CreateNameBubble();
 	void DestroyNameBubble();
 
-	const CustomizeState& GetCustomizeState() const { return m_customizeState; }
+	const Extensions::Common::CustomizeState& GetCustomizeState() const { return m_customizeState; }
 	bool GetAllowRemoteCustomize() const { return m_allowRemoteCustomize; }
 	void SetClickAnimObjectId(MxU32 p_clickAnimObjectId) { m_animator.SetClickAnimObjectId(p_clickAnimObjectId); }
 	void StopClickAnimation();
@@ -79,11 +81,13 @@ private:
 	float m_currentDirection[3];
 	float m_currentUp[3];
 
-	CharacterAnimator m_animator;
+	Extensions::Common::CharacterAnimator m_animator;
 
 	LegoROI* m_vehicleROI;
 
-	CustomizeState m_customizeState;
+	NameBubbleRenderer* m_nameBubble;
+
+	Extensions::Common::CustomizeState m_customizeState;
 	bool m_allowRemoteCustomize;
 };
 

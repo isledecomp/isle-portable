@@ -1,7 +1,7 @@
 #include "islepathactor.h"
 
 #include "3dmanager/lego3dmanager.h"
-#include "extensions/multiplayer.h"
+#include "extensions/thirdpersoncamera.h"
 #include "isle_actions.h"
 #include "jukebox_actions.h"
 #include "legoanimationmanager.h"
@@ -99,7 +99,7 @@ void IslePathActor::Enter()
 		TransformPointOfView();
 	}
 
-	Extension<MultiplayerExt>::Call(HandleActorEnter, this);
+	Extension<ThirdPersonCameraExt>::Call(TP::HandleActorEnter, this);
 }
 
 // FUNCTION: LEGO1 0x1001a3f0
@@ -160,7 +160,7 @@ void IslePathActor::Exit()
 	TransformPointOfView();
 	ResetViewVelocity();
 
-	Extension<MultiplayerExt>::Call(HandleActorExit, this);
+	Extension<ThirdPersonCameraExt>::Call(TP::HandleActorExit, this);
 }
 
 // GLOBAL: LEGO1 0x10102b28

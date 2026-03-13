@@ -367,7 +367,7 @@ MxResult LegoGameState::DeleteState()
 // FUNCTION: BETA10 0x10084329
 MxResult LegoGameState::Load(MxULong p_slot)
 {
-	Extension<MultiplayerExt>::Call(HandleBeforeSaveLoad);
+	Extension<MultiplayerExt>::Call(MP::HandleBeforeSaveLoad);
 
 	MxResult result = FAILURE;
 	LegoFile storage;
@@ -461,7 +461,7 @@ MxResult LegoGameState::Load(MxULong p_slot)
 	result = SUCCESS;
 	m_isDirty = FALSE;
 
-	Extension<MultiplayerExt>::Call(HandleSaveLoaded);
+	Extension<MultiplayerExt>::Call(MP::HandleSaveLoaded);
 
 done:
 	if (result != SUCCESS) {

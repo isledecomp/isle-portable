@@ -1,9 +1,8 @@
-#include "extensions/multiplayer/characteranimator.h"
+#include "extensions/common/characteranimator.h"
 
 #include "3dmanager/lego3dmanager.h"
 #include "anim/legoanim.h"
-#include "extensions/multiplayer/charactercustomizer.h"
-#include "extensions/multiplayer/namebubblerenderer.h"
+#include "extensions/common/charactercustomizer.h"
 #include "legoanimpresenter.h"
 #include "legocachesoundmanager.h"
 #include "legocachsound.h"
@@ -18,21 +17,19 @@
 
 #include <SDL3/SDL_stdinc.h>
 
-using namespace Multiplayer;
+using namespace Extensions::Common;
 
 CharacterAnimator::CharacterAnimator(const CharacterAnimatorConfig& p_config)
 	: m_config(p_config), m_walkAnimId(0), m_idleAnimId(0), m_walkAnimCache(nullptr), m_idleAnimCache(nullptr),
 	  m_animTime(0.0f), m_idleTime(0.0f), m_idleAnimTime(0.0f), m_wasMoving(false), m_emoteAnimCache(nullptr),
 	  m_emoteTime(0.0f), m_emoteDuration(0.0f), m_emoteActive(false), m_currentEmoteId(0), m_frozenEmoteId(-1),
 	  m_frozenAnimCache(nullptr), m_frozenAnimDuration(0.0f), m_clickAnimObjectId(0), m_rideAnim(nullptr),
-	  m_rideRoiMap(nullptr), m_rideRoiMapSize(0), m_rideVehicleROI(nullptr), m_currentVehicleType(VEHICLE_NONE),
-	  m_nameBubble(nullptr)
+	  m_rideRoiMap(nullptr), m_rideRoiMapSize(0), m_rideVehicleROI(nullptr), m_currentVehicleType(VEHICLE_NONE)
 {
 }
 
 CharacterAnimator::~CharacterAnimator()
 {
-	DestroyNameBubble();
 	ClearRideAnimation();
 }
 
@@ -458,37 +455,5 @@ void CharacterAnimator::ApplyIdleFrame0(LegoROI* p_roi)
 	LegoTreeNode* root = m_idleAnimCache->anim->GetRoot();
 	for (LegoU32 i = 0; i < root->GetNumChildren(); i++) {
 		LegoROI::ApplyAnimationTransformation(root->GetChild(i), transform, (LegoTime) 0.0f, m_idleAnimCache->roiMap);
-	}
-}
-
-void CharacterAnimator::CreateNameBubble(const char* p_name)
-{
-	if (m_nameBubble || !p_name || p_name[0] == '\0') {
-		return;
-	}
-
-	m_nameBubble = new NameBubbleRenderer();
-	m_nameBubble->Create(p_name);
-}
-
-void CharacterAnimator::DestroyNameBubble()
-{
-	if (m_nameBubble) {
-		delete m_nameBubble;
-		m_nameBubble = nullptr;
-	}
-}
-
-void CharacterAnimator::SetNameBubbleVisible(bool p_visible)
-{
-	if (m_nameBubble) {
-		m_nameBubble->SetVisible(p_visible);
-	}
-}
-
-void CharacterAnimator::UpdateNameBubble(LegoROI* p_roi)
-{
-	if (m_nameBubble) {
-		m_nameBubble->Update(p_roi);
 	}
 }

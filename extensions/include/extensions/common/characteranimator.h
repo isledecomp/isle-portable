@@ -1,7 +1,7 @@
 #pragma once
 
-#include "extensions/multiplayer/animdata.h"
-#include "extensions/multiplayer/animutils.h"
+#include "extensions/common/animdata.h"
+#include "extensions/common/animutils.h"
 #include "mxgeometry/mxmatrix.h"
 #include "mxtypes.h"
 
@@ -14,21 +14,21 @@ class LegoCacheSound;
 class LegoROI;
 class LegoAnim;
 
-namespace Multiplayer
+namespace Extensions
 {
-
-class NameBubbleRenderer;
+namespace Common
+{
 
 // Configuration for CharacterAnimator behavior that differs between consumers.
 struct CharacterAnimatorConfig {
 	// When true, save/restore the parent ROI transform during emote playback
-	// to prevent scale accumulation (needed for ThirdPersonCamera's display clone).
+	// to prevent scale accumulation (needed for ThirdPersonCameraExt's display clone).
 	bool saveEmoteTransform;
 };
 
-// Unified character animation component used by both RemotePlayer and ThirdPersonCamera.
-// Handles walk/idle/emote animation playback, vehicle ride animations, click animation
-// tracking, and name bubble management.
+// Unified character animation component used by both RemotePlayer and ThirdPersonCameraExt.
+// Handles walk/idle/emote animation playback, vehicle ride animations, and click animation
+// tracking.
 class CharacterAnimator {
 public:
 	explicit CharacterAnimator(const CharacterAnimatorConfig& p_config);
@@ -72,13 +72,6 @@ public:
 	void ClearAll();
 	void ApplyIdleFrame0(LegoROI* p_roi);
 
-	// Name bubble management
-	void CreateNameBubble(const char* p_name);
-	void DestroyNameBubble();
-	void SetNameBubbleVisible(bool p_visible);
-	void UpdateNameBubble(LegoROI* p_roi);
-	NameBubbleRenderer* GetNameBubble() const { return m_nameBubble; }
-
 	// Emote state accessors
 	bool IsEmoteActive() const { return m_emoteActive; }
 
@@ -91,7 +84,7 @@ public:
 	int8_t GetFrozenEmoteId() const { return m_frozenEmoteId; }
 	void SetFrozenEmoteId(int8_t p_emoteId, LegoROI* p_roi);
 
-	// Animation time (needed for vehicle ride tick in ThirdPersonCamera)
+	// Animation time (needed for vehicle ride tick in ThirdPersonCameraExt)
 	float GetAnimTime() const { return m_animTime; }
 	void SetAnimTime(float p_time) { m_animTime = p_time; }
 	void ResetAnimState();
@@ -146,8 +139,7 @@ private:
 	LegoROI* m_rideVehicleROI;
 
 	int8_t m_currentVehicleType;
-
-	NameBubbleRenderer* m_nameBubble;
 };
 
-} // namespace Multiplayer
+} // namespace Common
+} // namespace Extensions

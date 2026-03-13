@@ -1,17 +1,19 @@
 #include "extensions/multiplayer.h"
 
-#include "extensions/multiplayer/charactercustomizer.h"
+#include "extensions/common/charactercloner.h"
+#include "extensions/common/charactercustomizer.h"
+#include "extensions/common/constants.h"
 #include "extensions/multiplayer/networkmanager.h"
 #include "extensions/multiplayer/networktransport.h"
 #include "extensions/multiplayer/protocol.h"
+#include "extensions/thirdpersoncamera.h"
+#include "extensions/thirdpersoncamera/controller.h"
 #include "isle_actions.h"
-#include "islepathactor.h"
 #include "legoactor.h"
 #include "legoactors.h"
 #include "legoentity.h"
 #include "legoeventnotificationparam.h"
 #include "legogamestate.h"
-#include "legonavcontroller.h"
 #include "legopathactor.h"
 #include "misc.h"
 #include "roi/legoroi.h"
@@ -27,49 +29,48 @@
 
 using namespace Extensions;
 
-static uint8_t ResolveDisplayActorIndex(const char* p_name)
-{
-	for (int i = 0; i < static_cast<int>(sizeOfArray(g_actorInfoInit)); i++) {
-		if (!SDL_strcasecmp(g_actorInfoInit[i].m_name, p_name)) {
-			return static_cast<uint8_t>(i);
-		}
-	}
-	return Multiplayer::DISPLAY_ACTOR_NONE;
-}
-
 std::map<std::string, std::string> MultiplayerExt::options;
 bool MultiplayerExt::enabled = false;
-std::string MultiplayerExt::relayUrl;
-std::string MultiplayerExt::room;
+std::string MultiplayerExt::s_relayUrl;
+std::string MultiplayerExt::s_room;
 Multiplayer::NetworkManager* MultiplayerExt::s_networkManager = nullptr;
 Multiplayer::NetworkTransport* MultiplayerExt::s_transport = nullptr;
 Multiplayer::PlatformCallbacks* MultiplayerExt::s_callbacks = nullptr;
 
 void MultiplayerExt::Initialize()
 {
-	relayUrl = options["multiplayer:relay url"];
-	room = options["multiplayer:room"];
+	// Multiplayer depends on camera - ensure it's enabled
+	if (!ThirdPersonCameraExt::enabled) {
+		ThirdPersonCameraExt::enabled = true;
+		ThirdPersonCameraExt::Initialize();
+	}
+
+	s_relayUrl = options["multiplayer:relay url"];
+	s_room = options["multiplayer:room"];
 
 #ifdef __EMSCRIPTEN__
-	s_transport = new Multiplayer::WebSocketTransport(relayUrl);
+	s_transport = new Multiplayer::WebSocketTransport(s_relayUrl);
 	s_callbacks = new Multiplayer::EmscriptenCallbacks();
 
 	s_networkManager = new Multiplayer::NetworkManager();
 	s_networkManager->Initialize(s_transport, s_callbacks);
 
-	// Third-person camera enabled by default, toggled via WASM export
-	s_networkManager->GetThirdPersonCamera().Enable();
+	ThirdPersonCamera::Controller* cam = ThirdPersonCameraExt::GetCamera();
+	if (cam) {
+		cam->Enable();
+	}
 
 	std::string actor = options["multiplayer:actor"];
 	if (!actor.empty()) {
-		uint8_t displayIndex = ResolveDisplayActorIndex(actor.c_str());
-		if (displayIndex != Multiplayer::DISPLAY_ACTOR_NONE) {
-			s_networkManager->SetDisplayActorIndex(displayIndex);
+		uint8_t displayIndex = Common::ResolveDisplayActorIndex(actor.c_str());
+		if (displayIndex != Common::DISPLAY_ACTOR_NONE && cam) {
+			cam->SetDisplayActorIndex(displayIndex);
+			cam->FreezeDisplayActor();
 		}
 	}
 
-	if (!relayUrl.empty() && !room.empty()) {
-		s_networkManager->Connect(room.c_str());
+	if (!s_relayUrl.empty() && !s_room.empty()) {
+		s_networkManager->Connect(s_room.c_str());
 	}
 #endif
 }
@@ -108,10 +109,8 @@ MxBool MultiplayerExt::HandleROIClick(LegoROI* p_rootROI, LegoEventNotificationP
 	// Check if it's a remote player
 	Multiplayer::RemotePlayer* remote = mgr->FindPlayerByROI(p_rootROI);
 
-	// Check if it's our own 3rd-person display actor override
-	bool isSelf =
-		(mgr->GetThirdPersonCamera().GetDisplayROI() != nullptr &&
-		 mgr->GetThirdPersonCamera().GetDisplayROI() == p_rootROI);
+	ThirdPersonCamera::Controller* cam = ThirdPersonCameraExt::GetCamera();
+	bool isSelf = (cam && cam->GetDisplayROI() != nullptr && cam->GetDisplayROI() == p_rootROI);
 
 	if (!remote && !isSelf) {
 		return FALSE;
@@ -124,37 +123,9 @@ MxBool MultiplayerExt::HandleROIClick(LegoROI* p_rootROI, LegoEventNotificationP
 
 	// Determine change type from clicker's actor ID
 	uint8_t changeType;
-	int partIndex = -1;
-	switch (GameState()->GetActorId()) {
-	case LegoActor::c_pepper:
-		if (GameState()->GetCurrentAct() == LegoGameState::e_act2 ||
-			GameState()->GetCurrentAct() == LegoGameState::e_act3) {
-			return TRUE;
-		}
-		changeType = Multiplayer::CHANGE_VARIANT;
-		break;
-	case LegoActor::c_mama:
-		changeType = Multiplayer::CHANGE_SOUND;
-		break;
-	case LegoActor::c_papa:
-		changeType = Multiplayer::CHANGE_MOVE;
-		break;
-	case LegoActor::c_nick:
-		changeType = Multiplayer::CHANGE_COLOR;
-		if (p_param.GetROI()) {
-			partIndex = Multiplayer::CharacterCustomizer::MapClickedPartIndex(p_param.GetROI()->GetName());
-		}
-		if (partIndex < 0) {
-			return TRUE;
-		}
-		break;
-	case LegoActor::c_laura:
-		changeType = Multiplayer::CHANGE_MOOD;
-		break;
-	case LegoActor::c_brickster:
+	int partIndex;
+	if (!Common::CharacterCustomizer::ResolveClickChangeType(changeType, partIndex, p_param.GetROI())) {
 		return TRUE;
-	default:
-		return FALSE;
 	}
 
 	// Send a customize request to the server. The server echoes it back to all peers
@@ -263,27 +234,6 @@ void MultiplayerExt::HandleSaveLoaded()
 	}
 }
 
-void MultiplayerExt::HandleActorEnter(IslePathActor* p_actor)
-{
-	if (s_networkManager) {
-		s_networkManager->GetThirdPersonCamera().OnActorEnter(p_actor);
-	}
-}
-
-void MultiplayerExt::HandleActorExit(IslePathActor* p_actor)
-{
-	if (s_networkManager) {
-		s_networkManager->GetThirdPersonCamera().OnActorExit(p_actor);
-	}
-}
-
-void MultiplayerExt::HandleCamAnimEnd(LegoPathActor* p_actor)
-{
-	if (s_networkManager) {
-		s_networkManager->GetThirdPersonCamera().OnCamAnimEnd(p_actor);
-	}
-}
-
 MxBool MultiplayerExt::IsClonedCharacter(const char* p_name)
 {
 	if (!s_networkManager) {
@@ -291,93 +241,6 @@ MxBool MultiplayerExt::IsClonedCharacter(const char* p_name)
 	}
 
 	return s_networkManager->IsClonedCharacter(p_name) ? TRUE : FALSE;
-}
-
-void MultiplayerExt::HandleSDLEvent(SDL_Event* p_event)
-{
-	if (!s_networkManager || !s_networkManager->IsInIsleWorld()) {
-		return;
-	}
-
-	Multiplayer::ThirdPersonCamera& camera = s_networkManager->GetThirdPersonCamera();
-
-	camera.HandleSDLEvent(p_event);
-
-	// Auto-switch 3rd → 1st: zoom-in past minimum distance
-	if (camera.ConsumeAutoDisable()) {
-		camera.Disable();
-		s_networkManager->NotifyThirdPersonChanged(false);
-	}
-	// Auto-switch 1st → 3rd: zoom-out from 1st person
-	else if (camera.ConsumeAutoEnable()) {
-		camera.ResetTouchState();
-		camera.SetOrbitDistance(Multiplayer::ThirdPersonCamera::MIN_DISTANCE);
-		camera.Enable();
-		s_networkManager->NotifyThirdPersonChanged(true);
-	}
-}
-
-MxBool MultiplayerExt::IsThirdPersonCameraActive()
-{
-	if (s_networkManager && s_networkManager->GetThirdPersonCamera().IsActive()) {
-		return TRUE;
-	}
-
-	return FALSE;
-}
-
-MxBool MultiplayerExt::HandleTouchInput(SDL_Event* p_event)
-{
-	if (!s_networkManager || !s_networkManager->GetThirdPersonCamera().IsActive()) {
-		return FALSE;
-	}
-
-	Multiplayer::ThirdPersonCamera& cam = s_networkManager->GetThirdPersonCamera();
-
-	switch (p_event->type) {
-	case SDL_EVENT_FINGER_DOWN:
-		if (cam.TryClaimFinger(p_event->tfinger)) {
-			return TRUE;
-		}
-		return FALSE;
-
-	case SDL_EVENT_FINGER_MOTION:
-		if (cam.IsFingerTracked(p_event->tfinger.fingerID)) {
-			return TRUE;
-		}
-		return FALSE;
-
-	case SDL_EVENT_FINGER_UP:
-	case SDL_EVENT_FINGER_CANCELED:
-		if (cam.TryReleaseFinger(p_event->tfinger.fingerID)) {
-			return TRUE;
-		}
-		return FALSE;
-
-	default:
-		return FALSE;
-	}
-}
-
-MxBool MultiplayerExt::HandleNavOverride(
-	LegoNavController* p_nav,
-	const Vector3& p_curPos,
-	const Vector3& p_curDir,
-	Vector3& p_newPos,
-	Vector3& p_newDir,
-	float p_deltaTime
-)
-{
-	if (!s_networkManager) {
-		return FALSE;
-	}
-
-	Multiplayer::ThirdPersonCamera& cam = s_networkManager->GetThirdPersonCamera();
-	if (!cam.IsActive()) {
-		return FALSE;
-	}
-
-	return cam.HandleCameraRelativeMovement(p_nav, p_curPos, p_curDir, p_newPos, p_newDir, p_deltaTime);
 }
 
 MxBool MultiplayerExt::CheckRejected()
@@ -389,11 +252,6 @@ MxBool MultiplayerExt::CheckRejected()
 	return FALSE;
 }
 
-void MultiplayerExt::SetNetworkManager(Multiplayer::NetworkManager* p_networkManager)
-{
-	s_networkManager = p_networkManager;
-}
-
 Multiplayer::NetworkManager* MultiplayerExt::GetNetworkManager()
 {
 	return s_networkManager;
@@ -401,10 +259,5 @@ Multiplayer::NetworkManager* MultiplayerExt::GetNetworkManager()
 
 bool Extensions::IsMultiplayerRejected()
 {
-	return Extension<MultiplayerExt>::Call(CheckRejected).value_or(FALSE);
-}
-
-void Extensions::HandleMultiplayerSDLEvent(SDL_Event* p_event)
-{
-	Extension<MultiplayerExt>::Call(HandleSDLEvent, p_event);
+	return Extension<MultiplayerExt>::Call(MP::CheckRejected).value_or(FALSE);
 }
