@@ -18,6 +18,7 @@ public:
 	virtual void Disconnect() = 0;
 	virtual bool IsConnected() const = 0;
 	virtual bool WasDisconnected() const = 0;
+	virtual bool WasRejected() const = 0;
 
 	// Send binary data to all peers via relay
 	virtual void Send(const uint8_t* p_data, size_t p_length) = 0;

@@ -182,12 +182,14 @@ MxBool WorldStateSync::HandleEntityMutation(LegoEntity* p_entity, MxU8 p_changeT
 	if (p_entity->GetType() == LegoEntity::e_plant) {
 		entityType = ENTITY_PLANT;
 		MxS32 count;
-		idx = FindEntityIndex(PlantManager()->GetInfoArray(count), count, p_entity);
+		LegoPlantInfo* info = PlantManager()->GetInfoArray(count);
+		idx = FindEntityIndex(info, count, p_entity);
 	}
 	else if (p_entity->GetType() == LegoEntity::e_building) {
 		entityType = ENTITY_BUILDING;
 		MxS32 count;
-		idx = FindEntityIndex(BuildingManager()->GetInfoArray(count), count, p_entity);
+		LegoBuildingInfo* info = BuildingManager()->GetInfoArray(count);
+		idx = FindEntityIndex(info, count, p_entity);
 	}
 	else {
 		return FALSE;

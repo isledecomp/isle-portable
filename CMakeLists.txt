@@ -56,6 +56,7 @@ option(ISLE_WERROR "Treat warnings as errors" OFF)
 cmake_dependent_option(ISLE_USE_DX5 "Build with internal DirectX 5 SDK" "${NOT_MINGW}" "WIN32;CMAKE_SIZEOF_VOID_P EQUAL 4" OFF)
 cmake_dependent_option(ISLE_MINIWIN "Use miniwin" ON "NOT ISLE_USE_DX5" OFF)
 cmake_dependent_option(ISLE_EXTENSIONS "Use extensions" ON "NOT ISLE_USE_DX5;NOT WINDOWS_STORE" OFF)
+cmake_dependent_option(ISLE_USE_LWS "Use libwebsockets for native multiplayer" ON "ISLE_EXTENSIONS;NOT EMSCRIPTEN;NOT NINTENDO_3DS;NOT NINTENDO_SWITCH;NOT VITA" OFF)
 cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "MSVC OR ISLE_MINIWIN;NOT NINTENDO_3DS;NOT NINTENDO_SWITCH;NOT WINDOWS_STORE;NOT VITA" OFF)
 cmake_dependent_option(ISLE_COMPILE_SHADERS "Compile shaders" ON "SDL_SHADERCROSS_BIN;TARGET Python3::Interpreter" OFF)
 cmake_dependent_option(CMAKE_POSITION_INDEPENDENT_CODE "Build with -fPIC" ON "NOT VITA" OFF)
@@ -560,6 +561,19 @@ if (ISLE_EXTENSIONS)
       extensions/src/multiplayer/platforms/emscripten/websockettransport.cpp
       extensions/src/multiplayer/platforms/emscripten/callbacks.cpp
     )
+  elseif(ISLE_USE_LWS)
+    target_sources(lego1 PRIVATE
+      extensions/src/multiplayer/platforms/native/lwstransport.cpp
+      extensions/src/multiplayer/platforms/native/nativecallbacks.cpp
+    )
+    # Skip precompiled headers for native transport files to avoid miniwin/windows.h conflicts
+    set_source_files_properties(
+      extensions/src/multiplayer/platforms/native/lwstransport.cpp
+      extensions/src/multiplayer/platforms/native/nativecallbacks.cpp
+      PROPERTIES SKIP_PRECOMPILE_HEADERS ON
+    )
+    target_compile_definitions(lego1 PRIVATE ISLE_USE_LWS)
+    target_link_libraries(lego1 PRIVATE websockets)
   endif()
 endif()
 

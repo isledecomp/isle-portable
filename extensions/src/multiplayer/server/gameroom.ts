@@ -23,7 +23,7 @@ export class GameRoom implements DurableObject {
 	private nextPeerId = 1;
 	private hostPeerId = 0;
 	private maxPlayers = 5;
-	private maxActors = 5;
+	private maxActors = 0;
 
 	constructor(
 		private state: DurableObjectState,

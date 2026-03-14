@@ -42,6 +42,9 @@ private:
 
 	bool m_wantsAutoDisable;
 	bool m_wantsAutoEnable;
+	bool m_rightButtonHeld;
+	float m_savedMouseX;
+	float m_savedMouseY;
 };
 
 } // namespace ThirdPersonCamera

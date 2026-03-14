@@ -7,7 +7,9 @@
 
 using namespace Extensions::ThirdPersonCamera;
 
-InputHandler::InputHandler() : m_touch{}, m_wantsAutoDisable(false), m_wantsAutoEnable(false)
+InputHandler::InputHandler()
+	: m_touch{}, m_wantsAutoDisable(false), m_wantsAutoEnable(false), m_rightButtonHeld(false), m_savedMouseX(0.0f),
+	  m_savedMouseY(0.0f)
 {
 }
 
@@ -103,7 +105,7 @@ void InputHandler::HandleSDLEvent(SDL_Event* p_event, OrbitCamera& p_orbit, bool
 		if (!p_active) {
 			break;
 		}
-		if (p_event->motion.state & SDL_BUTTON_RMASK) {
+		if (m_rightButtonHeld) {
 			p_orbit.AdjustYaw(-p_event->motion.xrel * 0.005f);
 			p_orbit.AdjustPitch(p_event->motion.yrel * 0.005f);
 			p_orbit.ClampPitch();
@@ -112,19 +114,28 @@ void InputHandler::HandleSDLEvent(SDL_Event* p_event, OrbitCamera& p_orbit, bool
 
 	case SDL_EVENT_MOUSE_BUTTON_DOWN:
 	case SDL_EVENT_MOUSE_BUTTON_UP: {
-		if (!p_active) {
-			break;
-		}
-		SDL_Window* window = SDL_GetWindowFromID(p_event->button.windowID);
-		if (window) {
-			SDL_SetWindowRelativeMouseMode(window, SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_RMASK);
+		if (p_event->button.button == SDL_BUTTON_RIGHT) {
+			m_rightButtonHeld = p_event->button.down;
+			if (!p_active) {
+				break;
+			}
+			SDL_Window* window = SDL_GetWindowFromID(p_event->button.windowID);
+			if (window) {
+				if (m_rightButtonHeld) {
+					SDL_GetMouseState(&m_savedMouseX, &m_savedMouseY);
+					SDL_SetWindowRelativeMouseMode(window, true);
+				}
+				else {
+					SDL_SetWindowRelativeMouseMode(window, false);
+					SDL_WarpMouseInWindow(window, m_savedMouseX, m_savedMouseY);
+				}
+			}
 		}
 		break;
 	}
 
 	case SDL_EVENT_FINGER_DOWN: {
-		if (!IsFingerTracked(p_event->tfinger.fingerID) && m_touch.count < 2 &&
-			p_event->tfinger.x >= CAMERA_ZONE_X) {
+		if (!IsFingerTracked(p_event->tfinger.fingerID) && m_touch.count < 2 && p_event->tfinger.x >= CAMERA_ZONE_X) {
 			int idx = m_touch.count;
 			m_touch.id[idx] = p_event->tfinger.fingerID;
 			m_touch.x[idx] = p_event->tfinger.x;

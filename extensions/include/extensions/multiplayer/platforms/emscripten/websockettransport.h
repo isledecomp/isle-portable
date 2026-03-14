@@ -18,6 +18,7 @@ public:
 	void Disconnect() override;
 	bool IsConnected() const override;
 	bool WasDisconnected() const override;
+	bool WasRejected() const override;
 	void Send(const uint8_t* p_data, size_t p_length) override;
 	size_t Receive(std::function<void(const uint8_t*, size_t)> p_callback) override;
 

@@ -121,6 +121,11 @@ bool WebSocketTransport::WasDisconnected() const
 	return m_disconnectedFlag != 0;
 }
 
+bool WebSocketTransport::WasRejected() const
+{
+	return m_disconnectedFlag != 0 && m_wasEverConnected == 0;
+}
+
 void WebSocketTransport::Send(const uint8_t* p_data, size_t p_length)
 {
 	if (m_socketId <= 0 || !m_connectedFlag) {
