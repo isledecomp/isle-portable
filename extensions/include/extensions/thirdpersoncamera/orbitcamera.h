@@ -1,6 +1,7 @@
 #pragma once
 
 #include "mxgeometry/mxgeometry3d.h"
+#include "mxtypes.h"
 
 #include <SDL3/SDL_stdinc.h>
 
