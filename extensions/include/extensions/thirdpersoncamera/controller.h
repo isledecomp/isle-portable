@@ -26,7 +26,7 @@ public:
 	Controller();
 
 	void Enable();
-	void Disable();
+	void Disable(bool p_preserveTouch = false);
 	bool IsEnabled() const { return m_enabled; }
 	bool IsActive() const { return m_active; }
 
@@ -77,10 +77,13 @@ public:
 	float GetOrbitDistance() const { return m_orbit.GetOrbitDistance(); }
 	void SetOrbitDistance(float p_distance) { m_orbit.SetOrbitDistance(p_distance); }
 	void ResetTouchState() { m_input.ResetTouchState(); }
+	void SuppressGestures() { m_input.SuppressGestures(); }
 
 	bool TryClaimFinger(const SDL_TouchFingerEvent& event) { return m_input.TryClaimFinger(event, m_active); }
 	bool TryReleaseFinger(SDL_FingerID id) { return m_input.TryReleaseFinger(id); }
 	bool IsFingerTracked(SDL_FingerID id) const { return m_input.IsFingerTracked(id); }
+	int GetTouchCount() const { return m_input.GetTouchCount(); }
+	SDL_FingerID GetFingerID(int idx) const { return m_input.GetFingerID(idx); }
 
 	void FreezeDisplayActor() { m_display.FreezeDisplayActor(); }
 	void UnfreezeDisplayActor() { m_display.UnfreezeDisplayActor(); }

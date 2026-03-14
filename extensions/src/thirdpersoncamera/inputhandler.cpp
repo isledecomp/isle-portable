@@ -21,12 +21,14 @@ bool InputHandler::TryClaimFinger(const SDL_TouchFingerEvent& p_event, bool p_ac
 	m_touch.id[idx] = p_event.fingerID;
 	m_touch.x[idx] = p_event.x;
 	m_touch.y[idx] = p_event.y;
+	m_touch.synced[idx] = true;
 	m_touch.count++;
 
 	if (m_touch.count == 2) {
 		float dx = m_touch.x[1] - m_touch.x[0];
 		float dy = m_touch.y[1] - m_touch.y[0];
 		m_touch.initialPinchDist = SDL_sqrtf(dx * dx + dy * dy);
+		m_touch.gesturePinchDist = m_touch.initialPinchDist;
 	}
 
 	return true;
@@ -40,9 +42,11 @@ bool InputHandler::TryReleaseFinger(SDL_FingerID p_id)
 				m_touch.id[0] = m_touch.id[1];
 				m_touch.x[0] = m_touch.x[1];
 				m_touch.y[0] = m_touch.y[1];
+				m_touch.synced[0] = m_touch.synced[1];
 			}
 			m_touch.count--;
 			m_touch.initialPinchDist = 0.0f;
+			m_touch.gesturePinchDist = 0.0f;
 			return true;
 		}
 	}
@@ -67,6 +71,14 @@ bool InputHandler::ConsumeAutoDisable()
 bool InputHandler::ConsumeAutoEnable()
 {
 	return std::exchange(m_wantsAutoEnable, false);
+}
+
+void InputHandler::SuppressGestures()
+{
+	m_touch.synced[0] = false;
+	m_touch.synced[1] = false;
+	m_touch.initialPinchDist = 0.0f;
+	m_touch.gesturePinchDist = 0.0f;
 }
 
 void InputHandler::HandleSDLEvent(SDL_Event* p_event, OrbitCamera& p_orbit, bool p_active)
@@ -117,12 +129,14 @@ void InputHandler::HandleSDLEvent(SDL_Event* p_event, OrbitCamera& p_orbit, bool
 			m_touch.id[idx] = p_event->tfinger.fingerID;
 			m_touch.x[idx] = p_event->tfinger.x;
 			m_touch.y[idx] = p_event->tfinger.y;
+			m_touch.synced[idx] = true;
 			m_touch.count++;
 
 			if (m_touch.count == 2) {
 				float dx = m_touch.x[1] - m_touch.x[0];
 				float dy = m_touch.y[1] - m_touch.y[0];
 				m_touch.initialPinchDist = SDL_sqrtf(dx * dx + dy * dy);
+				m_touch.gesturePinchDist = m_touch.initialPinchDist;
 			}
 		}
 		break;
@@ -134,6 +148,13 @@ void InputHandler::HandleSDLEvent(SDL_Event* p_event, OrbitCamera& p_orbit, bool
 				break;
 			}
 			if (m_touch.id[0] == p_event->tfinger.fingerID) {
+				if (!m_touch.synced[0]) {
+					m_touch.x[0] = p_event->tfinger.x;
+					m_touch.y[0] = p_event->tfinger.y;
+					m_touch.synced[0] = true;
+					break;
+				}
+
 				float oldX = m_touch.x[0];
 				float oldY = m_touch.y[0];
 				m_touch.x[0] = p_event->tfinger.x;
@@ -158,6 +179,20 @@ void InputHandler::HandleSDLEvent(SDL_Event* p_event, OrbitCamera& p_orbit, bool
 				break;
 			}
 
+			if (!m_touch.synced[idx]) {
+				m_touch.x[idx] = p_event->tfinger.x;
+				m_touch.y[idx] = p_event->tfinger.y;
+				m_touch.synced[idx] = true;
+
+				if (m_touch.synced[0] && m_touch.synced[1]) {
+					float dx = m_touch.x[1] - m_touch.x[0];
+					float dy = m_touch.y[1] - m_touch.y[0];
+					m_touch.initialPinchDist = SDL_sqrtf(dx * dx + dy * dy);
+					m_touch.gesturePinchDist = m_touch.initialPinchDist;
+				}
+				break;
+			}
+
 			float oldX = m_touch.x[idx];
 			float oldY = m_touch.y[idx];
 			m_touch.x[idx] = p_event->tfinger.x;
@@ -171,20 +206,26 @@ void InputHandler::HandleSDLEvent(SDL_Event* p_event, OrbitCamera& p_orbit, bool
 				float pinchDelta = m_touch.initialPinchDist - newDist;
 
 				if (!p_active) {
-					if (pinchDelta > 0) {
+					float totalDelta = m_touch.gesturePinchDist - newDist;
+					if (totalDelta > PINCH_TRANSITION_THRESHOLD) {
 						m_wantsAutoEnable = true;
+						m_touch.gesturePinchDist = newDist;
 					}
 					m_touch.initialPinchDist = newDist;
 					break;
 				}
 
-				if (p_orbit.GetOrbitDistance() <= OrbitCamera::MIN_DISTANCE && pinchDelta < 0) {
-					m_wantsAutoDisable = true;
-					m_touch.initialPinchDist = newDist;
-					break;
+				if (p_orbit.GetOrbitDistance() <= OrbitCamera::MIN_DISTANCE) {
+					float totalDelta = newDist - m_touch.gesturePinchDist;
+					if (totalDelta > PINCH_TRANSITION_THRESHOLD) {
+						m_wantsAutoDisable = true;
+						m_touch.initialPinchDist = newDist;
+						m_touch.gesturePinchDist = newDist;
+						break;
+					}
 				}
 
-				p_orbit.AdjustDistance(pinchDelta * 15.0f);
+				p_orbit.AdjustDistance(pinchDelta * 6.0f);
 				p_orbit.ClampDistance();
 				m_touch.initialPinchDist = newDist;
 			}

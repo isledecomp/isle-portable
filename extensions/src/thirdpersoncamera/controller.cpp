@@ -39,7 +39,7 @@ void Controller::Enable()
 	ReinitForCharacter();
 }
 
-void Controller::Disable()
+void Controller::Disable(bool p_preserveTouch)
 {
 	m_enabled = false;
 
@@ -60,7 +60,9 @@ void Controller::Disable()
 	m_animator.ClearAll();
 
 	m_orbit.ResetOrbitState();
-	m_input.ResetTouchState();
+	if (!p_preserveTouch) {
+		m_input.ResetTouchState();
+	}
 }
 
 void Controller::OnActorEnter(IslePathActor* p_actor)

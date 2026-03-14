@@ -4,6 +4,7 @@
 namespace Extensions
 {
 class MultiplayerExt;
+class ThirdPersonCameraExt;
 namespace Common
 {
 class CharacterCloner;

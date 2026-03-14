@@ -4,6 +4,7 @@
 #include "extensions/thirdpersoncamera/controller.h"
 #include "islepathactor.h"
 #include "legoeventnotificationparam.h"
+#include "legoinputmanager.h"
 #include "legonavcontroller.h"
 #include "legopathactor.h"
 #include "legovideomanager.h"
@@ -118,10 +119,29 @@ void ThirdPersonCameraExt::OnSDLEvent(SDL_Event* p_event)
 	s_camera->HandleSDLEventImpl(p_event);
 
 	if (s_camera->ConsumeAutoDisable()) {
-		s_camera->Disable();
+		s_camera->Disable(/*p_preserveTouch=*/true);
 	}
 	else if (s_camera->ConsumeAutoEnable()) {
-		s_camera->ResetTouchState();
+		// Clear the movement system's touch state for camera-owned fingers only,
+		// so any virtual thumbstick input from 1st-person mode is zeroed while
+		// leaving a left-side movement finger intact.
+		LegoInputManager* im = InputManager();
+		if (im) {
+			for (int i = 0; i < s_camera->GetTouchCount(); i++) {
+				SDL_FingerID fid = s_camera->GetFingerID(i);
+				if (im->m_touchFinger == fid) {
+					im->m_touchFinger = 0;
+					im->m_touchVirtualThumb = {0, 0};
+					im->m_touchVirtualThumbOrigin = {0, 0};
+				}
+				im->m_touchFlags.erase(fid);
+			}
+		}
+
+		// Suppress camera gestures until finger positions re-sync to avoid
+		// a camera jump from stale positions carried through the transition.
+		s_camera->SuppressGestures();
+
 		s_camera->SetOrbitDistance(ThirdPersonCamera::Controller::MIN_DISTANCE);
 		s_camera->Enable();
 	}

@@ -75,6 +75,15 @@ MxResult NetworkManager::Tickle()
 		if (cameraEnabled != m_lastCameraEnabled) {
 			m_lastCameraEnabled = cameraEnabled;
 			NotifyThirdPersonChanged(cameraEnabled);
+
+			if (m_localNameBubble) {
+				if (!cameraEnabled) {
+					m_localNameBubble->SetVisible(false);
+				}
+				else if (m_showNameBubbles) {
+					m_localNameBubble->SetVisible(true);
+				}
+			}
 		}
 
 		// Create local name bubble when display ROI becomes available

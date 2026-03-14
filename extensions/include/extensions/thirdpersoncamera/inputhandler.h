@@ -18,20 +18,26 @@ public:
 	bool TryClaimFinger(const SDL_TouchFingerEvent& p_event, bool p_active);
 	bool TryReleaseFinger(SDL_FingerID p_id);
 	bool IsFingerTracked(SDL_FingerID p_id) const;
+	int GetTouchCount() const { return m_touch.count; }
+	SDL_FingerID GetFingerID(int p_idx) const { return m_touch.id[p_idx]; }
 
 	bool ConsumeAutoDisable();
 	bool ConsumeAutoEnable();
 
 	void ResetTouchState() { m_touch = {}; }
+	void SuppressGestures();
 
 	static constexpr float CAMERA_ZONE_X = 0.5f;
+	static constexpr float PINCH_TRANSITION_THRESHOLD = 0.03f;
 
 private:
 	struct TouchState {
 		SDL_FingerID id[2];
 		float x[2], y[2];
+		bool synced[2];
 		int count;
 		float initialPinchDist;
+		float gesturePinchDist;
 	} m_touch;
 
 	bool m_wantsAutoDisable;
