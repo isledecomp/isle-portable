@@ -91,7 +91,7 @@ void InputHandler::HandleSDLEvent(SDL_Event* p_event, OrbitCamera& p_orbit, bool
 			}
 			break;
 		}
-		if (p_orbit.GetOrbitDistance() <= OrbitCamera::MIN_DISTANCE && p_event->wheel.y > 0) {
+		if (p_orbit.GetOrbitDistance() <= OrbitCamera::SWITCH_TO_FIRST_PERSON_DISTANCE && p_event->wheel.y > 0) {
 			m_wantsAutoDisable = true;
 			break;
 		}
@@ -215,7 +215,7 @@ void InputHandler::HandleSDLEvent(SDL_Event* p_event, OrbitCamera& p_orbit, bool
 					break;
 				}
 
-				if (p_orbit.GetOrbitDistance() <= OrbitCamera::MIN_DISTANCE) {
+				if (p_orbit.GetOrbitDistance() <= OrbitCamera::SWITCH_TO_FIRST_PERSON_DISTANCE) {
 					float totalDelta = newDist - m_touch.gesturePinchDist;
 					if (totalDelta > PINCH_TRANSITION_THRESHOLD) {
 						m_wantsAutoDisable = true;

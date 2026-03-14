@@ -54,6 +54,7 @@ public:
 	static constexpr float MIN_PITCH = 0.05f;
 	static constexpr float MAX_PITCH = 1.4f;
 	static constexpr float MIN_DISTANCE = 1.5f;
+	static constexpr float SWITCH_TO_FIRST_PERSON_DISTANCE = 0.5f;
 	static constexpr float MAX_DISTANCE = 15.0f;
 
 private:

@@ -117,8 +117,8 @@ void OrbitCamera::ClampPitch()
 
 void OrbitCamera::ClampDistance()
 {
-	if (m_orbitDistance < MIN_DISTANCE) {
-		m_orbitDistance = MIN_DISTANCE;
+	if (m_orbitDistance < SWITCH_TO_FIRST_PERSON_DISTANCE) {
+		m_orbitDistance = SWITCH_TO_FIRST_PERSON_DISTANCE;
 	}
 	if (m_orbitDistance > MAX_DISTANCE) {
 		m_orbitDistance = MAX_DISTANCE;
