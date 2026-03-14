@@ -243,9 +243,9 @@ MxBool MultiplayerExt::IsClonedCharacter(const char* p_name)
 	return s_networkManager->IsClonedCharacter(p_name) ? TRUE : FALSE;
 }
 
-MxBool MultiplayerExt::CheckRejected()
+MxBool MultiplayerExt::CheckDisconnected()
 {
-	if (s_networkManager && s_networkManager->WasRejected()) {
+	if (s_networkManager && s_networkManager->WasDisconnected()) {
 		return TRUE;
 	}
 
@@ -257,7 +257,7 @@ Multiplayer::NetworkManager* MultiplayerExt::GetNetworkManager()
 	return s_networkManager;
 }
 
-bool Extensions::IsMultiplayerRejected()
+bool Extensions::IsMultiplayerDisconnected()
 {
-	return Extension<MultiplayerExt>::Call(MP::CheckRejected).value_or(FALSE);
+	return Extension<MultiplayerExt>::Call(MP::CheckDisconnected).value_or(FALSE);
 }

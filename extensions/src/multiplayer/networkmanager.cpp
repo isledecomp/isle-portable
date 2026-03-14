@@ -185,9 +185,9 @@ bool NetworkManager::IsConnected() const
 	return m_transport && m_transport->IsConnected();
 }
 
-bool NetworkManager::WasRejected() const
+bool NetworkManager::WasDisconnected() const
 {
-	return m_transport && m_transport->WasRejected();
+	return m_transport && m_transport->WasDisconnected();
 }
 
 void NetworkManager::OnWorldEnabled(LegoWorld* p_world)

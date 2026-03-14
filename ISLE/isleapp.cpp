@@ -1300,7 +1300,7 @@ inline bool IsleApp::Tick()
 	}
 
 #ifdef EXTENSIONS
-	if (Extensions::IsMultiplayerRejected()) {
+	if (Extensions::IsMultiplayerDisconnected()) {
 		g_closed = TRUE;
 		return true;
 	}
