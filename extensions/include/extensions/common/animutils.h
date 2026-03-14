@@ -1,12 +1,13 @@
 #pragma once
 
-#include "mxtypes.h"
 #include "mxgeometry/mxmatrix.h"
+#include "mxtypes.h"
 #include "realtime/vector.h"
 #include "roi/legoroi.h"
 
 #include <map>
 #include <string>
+#include <vector>
 
 class LegoAnim;
 
@@ -34,8 +35,7 @@ struct AnimCache {
 
 	AnimCache(const AnimCache&) = delete;
 	AnimCache& operator=(const AnimCache&) = delete;
-	AnimCache(AnimCache&& p_other) noexcept
-		: anim(p_other.anim), roiMap(p_other.roiMap), roiMapSize(p_other.roiMapSize)
+	AnimCache(AnimCache&& p_other) noexcept : anim(p_other.anim), roiMap(p_other.roiMap), roiMapSize(p_other.roiMapSize)
 	{
 		p_other.roiMap = nullptr;
 		p_other.roiMapSize = 0;
@@ -61,16 +61,15 @@ struct AnimCache {
 void BuildROIMap(
 	LegoAnim* p_anim,
 	LegoROI* p_rootROI,
-	LegoROI* p_extraROI,
+	LegoROI** p_extraROIs,
+	int p_extraROICount,
 	LegoROI**& p_roiMap,
 	MxU32& p_roiMapSize
 );
 
-AnimCache* GetOrBuildAnimCache(
-	std::map<std::string, AnimCache>& p_cacheMap,
-	LegoROI* p_roi,
-	const char* p_animName
-);
+void CollectUnmatchedNodes(LegoAnim* p_anim, LegoROI* p_rootROI, std::vector<std::string>& p_unmatchedNames);
+
+AnimCache* GetOrBuildAnimCache(std::map<std::string, AnimCache>& p_cacheMap, LegoROI* p_roi, const char* p_animName);
 
 inline void EnsureROIMapVisibility(LegoROI** p_roiMap, MxU32 p_roiMapSize)
 {

@@ -23,13 +23,13 @@ CharacterAnimator::CharacterAnimator(const CharacterAnimatorConfig& p_config)
 	: m_config(p_config), m_walkAnimId(0), m_idleAnimId(0), m_walkAnimCache(nullptr), m_idleAnimCache(nullptr),
 	  m_animTime(0.0f), m_idleTime(0.0f), m_idleAnimTime(0.0f), m_wasMoving(false), m_emoteAnimCache(nullptr),
 	  m_emoteTime(0.0f), m_emoteDuration(0.0f), m_emoteActive(false), m_currentEmoteId(0), m_frozenEmoteId(-1),
-	  m_frozenAnimCache(nullptr), m_frozenAnimDuration(0.0f), m_clickAnimObjectId(0), m_rideAnim(nullptr),
-	  m_rideRoiMap(nullptr), m_rideRoiMapSize(0), m_rideVehicleROI(nullptr), m_currentVehicleType(VEHICLE_NONE)
+	  m_frozenAnimCache(nullptr), m_frozenAnimDuration(0.0f), m_clickAnimObjectId(0), m_currentVehicleType(VEHICLE_NONE)
 {
 }
 
 CharacterAnimator::~CharacterAnimator()
 {
+	ClearPropGroup(m_emotePropGroup);
 	ClearRideAnimation();
 }
 
@@ -50,10 +50,10 @@ void CharacterAnimator::Tick(float p_deltaTime, LegoROI* p_roi, bool p_isMoving)
 	LegoROI** walkRoiMap = nullptr;
 	MxU32 walkRoiMapSize = 0;
 
-	if (m_currentVehicleType != VEHICLE_NONE && m_rideAnim && m_rideRoiMap) {
-		walkAnim = m_rideAnim;
-		walkRoiMap = m_rideRoiMap;
-		walkRoiMapSize = m_rideRoiMapSize;
+	if (m_currentVehicleType != VEHICLE_NONE && m_ridePropGroup.anim && m_ridePropGroup.roiMap) {
+		walkAnim = m_ridePropGroup.anim;
+		walkRoiMap = m_ridePropGroup.roiMap;
+		walkRoiMapSize = m_ridePropGroup.roiMapSize;
 	}
 	else if (m_walkAnimCache && m_walkAnimCache->anim && m_walkAnimCache->roiMap) {
 		walkAnim = m_walkAnimCache->anim;
@@ -78,6 +78,7 @@ void CharacterAnimator::Tick(float p_deltaTime, LegoROI* p_roi, bool p_isMoving)
 		if (m_emoteActive) {
 			m_emoteActive = false;
 			m_emoteAnimCache = nullptr;
+			ClearPropGroup(m_emotePropGroup);
 		}
 	}
 
@@ -127,12 +128,15 @@ void CharacterAnimator::Tick(float p_deltaTime, LegoROI* p_roi, bool p_isMoving)
 				// Emote completed -- return to stationary flow
 				m_emoteActive = false;
 				m_emoteAnimCache = nullptr;
+				ClearPropGroup(m_emotePropGroup);
 				m_wasMoving = false;
 				m_idleTime = 0.0f;
 				m_idleAnimTime = 0.0f;
 			}
 		}
 		else {
+			LegoROI** emoteRoiMap =
+				m_emotePropGroup.roiMap != nullptr ? m_emotePropGroup.roiMap : m_emoteAnimCache->roiMap;
 			MxMatrix transform(m_config.saveEmoteTransform ? m_emoteParentTransform : p_roi->GetLocal2World());
 
 			LegoTreeNode* root = m_emoteAnimCache->anim->GetRoot();
@@ -141,7 +145,7 @@ void CharacterAnimator::Tick(float p_deltaTime, LegoROI* p_roi, bool p_isMoving)
 					root->GetChild(i),
 					transform,
 					(LegoTime) m_emoteTime,
-					m_emoteAnimCache->roiMap
+					emoteRoiMap
 				);
 			}
 
@@ -243,12 +247,15 @@ void CharacterAnimator::TriggerEmote(uint8_t p_emoteId, LegoROI* p_roi, bool p_i
 			}
 
 			StopClickAnimation();
+			ClearPropGroup(m_emotePropGroup);
 
 			m_currentEmoteId = p_emoteId;
 			m_emoteAnimCache = cache;
 			m_emoteTime = 0.0f;
 			m_emoteDuration = (float) cache->anim->GetDuration();
 			m_emoteActive = true;
+
+			BuildEmoteProps(m_emotePropGroup, cache->anim, p_roi);
 
 			const char* sound = g_emoteEntries[p_emoteId].phases[1].sound;
 			if (sound) {
@@ -279,12 +286,15 @@ void CharacterAnimator::TriggerEmote(uint8_t p_emoteId, LegoROI* p_roi, bool p_i
 	}
 
 	StopClickAnimation();
+	ClearPropGroup(m_emotePropGroup);
 
 	m_currentEmoteId = p_emoteId;
 	m_emoteAnimCache = cache;
 	m_emoteTime = 0.0f;
 	m_emoteDuration = (float) cache->anim->GetDuration();
 	m_emoteActive = true;
+
+	BuildEmoteProps(m_emotePropGroup, cache->anim, p_roi);
 
 	const char* sound = g_emoteEntries[p_emoteId].phases[0].sound;
 	if (sound) {
@@ -344,8 +354,8 @@ void CharacterAnimator::BuildRideAnimation(int8_t p_vehicleType, LegoROI* p_play
 		return;
 	}
 
-	m_rideAnim = static_cast<LegoAnimPresenter*>(presenter)->GetAnimation();
-	if (!m_rideAnim) {
+	m_ridePropGroup.anim = static_cast<LegoAnimPresenter*>(presenter)->GetAnimation();
+	if (!m_ridePropGroup.anim) {
 		return;
 	}
 
@@ -358,28 +368,28 @@ void CharacterAnimator::BuildRideAnimation(int8_t p_vehicleType, LegoROI* p_play
 	else {
 		SDL_snprintf(variantName, sizeof(variantName), "tp_vehicle");
 	}
-	m_rideVehicleROI = CharacterManager()->CreateAutoROI(variantName, baseName, FALSE);
-	if (m_rideVehicleROI) {
-		m_rideVehicleROI->SetName(vehicleVariantName);
+	LegoROI* vehicleROI = CharacterManager()->CreateAutoROI(variantName, baseName, FALSE);
+	if (vehicleROI) {
+		vehicleROI->SetName(vehicleVariantName);
+		m_ridePropGroup.propROIs = new LegoROI*[1];
+		m_ridePropGroup.propROIs[0] = vehicleROI;
+		m_ridePropGroup.propCount = 1;
 	}
 
-	AnimUtils::BuildROIMap(m_rideAnim, p_playerROI, m_rideVehicleROI, m_rideRoiMap, m_rideRoiMapSize);
+	AnimUtils::BuildROIMap(
+		m_ridePropGroup.anim,
+		p_playerROI,
+		m_ridePropGroup.propROIs,
+		m_ridePropGroup.propCount,
+		m_ridePropGroup.roiMap,
+		m_ridePropGroup.roiMapSize
+	);
 	m_animTime = 0.0f;
 }
 
 void CharacterAnimator::ClearRideAnimation()
 {
-	if (m_rideRoiMap) {
-		delete[] m_rideRoiMap;
-		m_rideRoiMap = nullptr;
-		m_rideRoiMapSize = 0;
-	}
-	if (m_rideVehicleROI) {
-		VideoManager()->Get3DManager()->Remove(*m_rideVehicleROI);
-		CharacterManager()->ReleaseAutoROI(m_rideVehicleROI);
-		m_rideVehicleROI = nullptr;
-	}
-	m_rideAnim = nullptr;
+	ClearPropGroup(m_ridePropGroup);
 	m_currentVehicleType = VEHICLE_NONE;
 }
 
@@ -417,6 +427,89 @@ void CharacterAnimator::ClearFrozenState()
 	m_frozenEmoteId = -1;
 	m_frozenAnimCache = nullptr;
 	m_frozenAnimDuration = 0.0f;
+	ClearPropGroup(m_emotePropGroup);
+}
+
+void CharacterAnimator::ClearPropGroup(PropGroup& p_group)
+{
+	delete[] p_group.roiMap;
+	p_group.roiMap = nullptr;
+	p_group.roiMapSize = 0;
+
+	for (uint8_t i = 0; i < p_group.propCount; i++) {
+		if (p_group.propROIs[i]) {
+			VideoManager()->Get3DManager()->Remove(*p_group.propROIs[i]);
+			CharacterManager()->ReleaseAutoROI(p_group.propROIs[i]);
+		}
+	}
+	delete[] p_group.propROIs;
+	p_group.propROIs = nullptr;
+	p_group.propCount = 0;
+	p_group.anim = nullptr;
+}
+
+// Maps animation tree node names to actual LOD names when they differ.
+static const char* ResolvePropLODName(const char* p_nodeName)
+{
+	static const struct {
+		const char* nodePrefix;
+		const char* lodName;
+	} mappings[] = {
+		{"popmug", "pizpie"},
+	};
+
+	for (const auto& m : mappings) {
+		if (!SDL_strncasecmp(p_nodeName, m.nodePrefix, SDL_strlen(m.nodePrefix))) {
+			return m.lodName;
+		}
+	}
+	return p_nodeName;
+}
+
+void CharacterAnimator::BuildEmoteProps(PropGroup& p_group, LegoAnim* p_anim, LegoROI* p_playerROI)
+{
+	std::vector<std::string> unmatchedNames;
+	AnimUtils::CollectUnmatchedNodes(p_anim, p_playerROI, unmatchedNames);
+	if (unmatchedNames.empty()) {
+		return;
+	}
+
+	std::vector<LegoROI*> createdROIs;
+	for (const std::string& name : unmatchedNames) {
+		char uniqueName[64];
+		if (m_config.propSuffix != 0) {
+			SDL_snprintf(uniqueName, sizeof(uniqueName), "%s_mp_%u", name.c_str(), m_config.propSuffix);
+		}
+		else {
+			SDL_snprintf(uniqueName, sizeof(uniqueName), "tp_prop_%s", name.c_str());
+		}
+
+		const char* lodName = ResolvePropLODName(name.c_str());
+		LegoROI* propROI = CharacterManager()->CreateAutoROI(uniqueName, lodName, FALSE);
+		if (propROI) {
+			propROI->SetName(name.c_str());
+			createdROIs.push_back(propROI);
+		}
+	}
+
+	if (createdROIs.empty()) {
+		return;
+	}
+
+	p_group.propCount = (uint8_t) createdROIs.size();
+	p_group.propROIs = new LegoROI*[p_group.propCount];
+	for (uint8_t i = 0; i < p_group.propCount; i++) {
+		p_group.propROIs[i] = createdROIs[i];
+	}
+
+	AnimUtils::BuildROIMap(
+		p_anim,
+		p_playerROI,
+		p_group.propROIs,
+		p_group.propCount,
+		p_group.roiMap,
+		p_group.roiMapSize
+	);
 }
 
 void CharacterAnimator::ClearAnimCaches()

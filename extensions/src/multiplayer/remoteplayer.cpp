@@ -28,8 +28,8 @@ RemotePlayer::RemotePlayer(uint32_t p_peerId, uint8_t p_actorId, uint8_t p_displ
 	: m_peerId(p_peerId), m_actorId(p_actorId), m_displayActorIndex(p_displayActorIndex), m_roi(nullptr),
 	  m_spawned(false), m_visible(false), m_targetSpeed(0.0f), m_targetVehicleType(VEHICLE_NONE), m_targetWorldId(-1),
 	  m_lastUpdateTime(SDL_GetTicks()), m_hasReceivedUpdate(false),
-	  m_animator(Common::CharacterAnimatorConfig{/*.saveEmoteTransform=*/false}), m_vehicleROI(nullptr),
-	  m_nameBubble(nullptr), m_allowRemoteCustomize(true)
+	  m_animator(Common::CharacterAnimatorConfig{/*.saveEmoteTransform=*/false, /*.propSuffix=*/p_peerId}),
+	  m_vehicleROI(nullptr), m_nameBubble(nullptr), m_allowRemoteCustomize(true)
 {
 	m_displayName[0] = '\0';
 	const char* displayName = GetDisplayActorName();

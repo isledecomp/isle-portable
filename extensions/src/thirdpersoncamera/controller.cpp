@@ -28,8 +28,8 @@ using namespace Extensions::Common;
 using namespace Extensions::ThirdPersonCamera;
 
 Controller::Controller()
-	: m_animator(CharacterAnimatorConfig{/*.saveEmoteTransform=*/true}), m_enabled(false), m_active(false),
-	  m_pendingWorldTransition(false), m_playerROI(nullptr)
+	: m_animator(CharacterAnimatorConfig{/*.saveEmoteTransform=*/true, /*.propSuffix=*/0}), m_enabled(false),
+	  m_active(false), m_pendingWorldTransition(false), m_playerROI(nullptr)
 {
 }
 

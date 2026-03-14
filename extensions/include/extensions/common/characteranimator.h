@@ -24,6 +24,19 @@ struct CharacterAnimatorConfig {
 	// When true, save/restore the parent ROI transform during emote playback
 	// to prevent scale accumulation (needed for ThirdPersonCameraExt's display clone).
 	bool saveEmoteTransform;
+
+	// Suffix used for unique naming of prop ROIs.
+	// Remote players use m_peerId, local player uses 0.
+	uint32_t propSuffix;
+};
+
+// A group of dynamically-created prop ROIs for an animation (ride or emote).
+struct PropGroup {
+	LegoAnim* anim = nullptr;
+	LegoROI** roiMap = nullptr;
+	MxU32 roiMapSize = 0;
+	LegoROI** propROIs = nullptr;
+	uint8_t propCount = 0;
 };
 
 // Unified character animation component used by both RemotePlayer and ThirdPersonCameraExt.
@@ -61,10 +74,10 @@ public:
 	int8_t GetCurrentVehicleType() const { return m_currentVehicleType; }
 	void SetCurrentVehicleType(int8_t p_vehicleType) { m_currentVehicleType = p_vehicleType; }
 	bool IsInVehicle() const { return m_currentVehicleType != VEHICLE_NONE; }
-	LegoROI* GetRideVehicleROI() const { return m_rideVehicleROI; }
-	LegoAnim* GetRideAnim() const { return m_rideAnim; }
-	LegoROI** GetRideRoiMap() const { return m_rideRoiMap; }
-	MxU32 GetRideRoiMapSize() const { return m_rideRoiMapSize; }
+	LegoROI* GetRideVehicleROI() const { return m_ridePropGroup.propCount > 0 ? m_ridePropGroup.propROIs[0] : nullptr; }
+	LegoAnim* GetRideAnim() const { return m_ridePropGroup.anim; }
+	LegoROI** GetRideRoiMap() const { return m_ridePropGroup.roiMap; }
+	MxU32 GetRideRoiMapSize() const { return m_ridePropGroup.roiMapSize; }
 
 	// Animation cache management
 	void InitAnimCaches(LegoROI* p_roi);
@@ -94,6 +107,8 @@ private:
 
 	AnimCache* GetOrBuildAnimCache(LegoROI* p_roi, const char* p_animName);
 	void ClearFrozenState();
+	void ClearPropGroup(PropGroup& p_group);
+	void BuildEmoteProps(PropGroup& p_group, LegoAnim* p_anim, LegoROI* p_playerROI);
 	void PlayROISound(const char* p_key, LegoROI* p_roi);
 
 	CharacterAnimatorConfig m_config;
@@ -133,12 +148,11 @@ private:
 	std::map<std::string, AnimCache> m_animCacheMap;
 
 	// Ride animation (vehicle-specific)
-	LegoAnim* m_rideAnim;
-	LegoROI** m_rideRoiMap;
-	MxU32 m_rideRoiMapSize;
-	LegoROI* m_rideVehicleROI;
-
+	PropGroup m_ridePropGroup;
 	int8_t m_currentVehicleType;
+
+	// Emote prop animation (dynamically-created props for emotes like Toss)
+	PropGroup m_emotePropGroup;
 };
 
 } // namespace Common
