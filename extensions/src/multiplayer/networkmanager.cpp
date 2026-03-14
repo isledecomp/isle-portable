@@ -1,6 +1,7 @@
 #include "extensions/multiplayer/networkmanager.h"
 
 #include "extensions/common/animdata.h"
+#include "extensions/common/arearestriction.h"
 #include "extensions/common/charactercustomizer.h"
 #include "extensions/multiplayer/namebubblerenderer.h"
 #include "extensions/thirdpersoncamera.h"
@@ -26,6 +27,8 @@ using namespace Extensions;
 using namespace Multiplayer;
 using Common::DetectVehicleType;
 using Common::IsMultiPartEmote;
+using Common::IsRestrictedArea;
+using Common::WORLD_NOT_VISIBLE;
 
 template <typename T>
 void NetworkManager::SendMessage(const T& p_msg)
@@ -407,7 +410,8 @@ void NetworkManager::BroadcastLocalState()
 	PlayerStateMsg msg{};
 	msg.header = {MSG_STATE, m_localPeerId, m_sequence++, TARGET_BROADCAST};
 	msg.actorId = actorId;
-	msg.worldId = (int8_t) currentWorld->GetWorldId();
+	msg.worldId =
+		IsRestrictedArea(GameState()->m_currentArea) ? WORLD_NOT_VISIBLE : (int8_t) currentWorld->GetWorldId();
 	msg.vehicleType = DetectVehicleType(userActor);
 	SDL_memcpy(msg.position, pos, sizeof(msg.position));
 	SDL_memcpy(msg.direction, dir, sizeof(msg.direction));
@@ -714,17 +718,16 @@ void NetworkManager::NotifyPlayerCountChanged()
 	if (m_inIsleWorld) {
 		count = 0;
 
-		// Only count the local player if they have a valid actor.
-		// UserActor() can be temporarily NULL during world transitions
-		// (e.g. returning from a race, where LegoRace stashes the actor
-		// and only restores it in its destructor). Fall back to the
-		// GameState actorId which is restored earlier.
-		LegoPathActor* userActor = UserActor();
-		if (userActor && IsValidActorId(static_cast<LegoActor*>(userActor)->GetActorId())) {
-			count = 1;
-		}
-		else if (IsValidActorId(GameState()->GetActorId())) {
-			count = 1;
+		// Only count the local player if they have a valid actor and
+		// are not in a restricted overlay area (elevator, observatory, etc.).
+		if (!IsRestrictedArea(GameState()->m_currentArea)) {
+			LegoPathActor* userActor = UserActor();
+			if (userActor && IsValidActorId(static_cast<LegoActor*>(userActor)->GetActorId())) {
+				count = 1;
+			}
+			else if (IsValidActorId(GameState()->GetActorId())) {
+				count = 1;
+			}
 		}
 
 		for (auto& [peerId, player] : m_remotePlayers) {

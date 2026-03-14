@@ -3,6 +3,7 @@
 #include "3dmanager/lego3dmanager.h"
 #include "anim/legoanim.h"
 #include "extensions/common/animutils.h"
+#include "extensions/common/arearestriction.h"
 #include "extensions/common/charactercustomizer.h"
 #include "extensions/common/constants.h"
 #include "islepathactor.h"
@@ -42,11 +43,17 @@ void Controller::Enable()
 void Controller::Disable(bool p_preserveTouch)
 {
 	m_enabled = false;
+	Deactivate();
+	if (!p_preserveTouch) {
+		m_input.ResetTouchState();
+	}
+}
 
+void Controller::Deactivate()
+{
 	if (m_active && m_playerROI) {
 		m_playerROI->SetVisibility(FALSE);
 		VideoManager()->Get3DManager()->Remove(*m_playerROI);
-
 		m_orbit.RestoreFirstPersonCamera();
 	}
 
@@ -58,11 +65,7 @@ void Controller::Disable(bool p_preserveTouch)
 	m_playerROI = nullptr;
 	m_animator.ClearRideAnimation();
 	m_animator.ClearAll();
-
 	m_orbit.ResetOrbitState();
-	if (!p_preserveTouch) {
-		m_input.ResetTouchState();
-	}
 }
 
 void Controller::OnActorEnter(IslePathActor* p_actor)
@@ -74,7 +77,7 @@ void Controller::OnActorEnter(IslePathActor* p_actor)
 
 	m_animator.SetCurrentVehicleType(DetectVehicleType(userActor));
 
-	if (!m_enabled) {
+	if (!m_enabled || IsRestrictedArea(GameState()->m_currentArea)) {
 		return;
 	}
 
@@ -164,6 +167,10 @@ void Controller::OnCamAnimEnd(LegoPathActor* p_actor)
 
 void Controller::Tick(float p_deltaTime)
 {
+	if (IsRestrictedArea(GameState()->m_currentArea)) {
+		return;
+	}
+
 	if (!m_display.IsDisplayActorFrozen()) {
 		LegoPathActor* userActor = UserActor();
 		if (userActor) {
@@ -312,6 +319,12 @@ void Controller::OnWorldEnabled(LegoWorld* p_world)
 		return;
 	}
 
+	if (IsRestrictedArea(GameState()->m_currentArea)) {
+		Deactivate();
+		m_input.ResetTouchState();
+		return;
+	}
+
 	m_animator.ClearAll();
 
 	m_orbit.ResetOrbitState();
@@ -363,6 +376,11 @@ void Controller::HandleSDLEventImpl(SDL_Event* p_event)
 
 void Controller::ReinitForCharacter()
 {
+	if (IsRestrictedArea(GameState()->m_currentArea)) {
+		m_active = false;
+		return;
+	}
+
 	LegoPathActor* userActor = UserActor();
 	if (!userActor) {
 		m_active = false;

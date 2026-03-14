@@ -1,5 +1,6 @@
 #include "extensions/thirdpersoncamera.h"
 
+#include "extensions/common/arearestriction.h"
 #include "extensions/common/charactercustomizer.h"
 #include "extensions/thirdpersoncamera/controller.h"
 #include "islepathactor.h"
@@ -112,7 +113,7 @@ void ThirdPersonCameraExt::HandleCamAnimEnd(LegoPathActor* p_actor)
 
 void ThirdPersonCameraExt::OnSDLEvent(SDL_Event* p_event)
 {
-	if (!s_camera || !s_inIsleWorld) {
+	if (!s_camera || !s_inIsleWorld || IsRestrictedArea(GameState()->m_currentArea)) {
 		return;
 	}
 

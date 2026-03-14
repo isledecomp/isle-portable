@@ -95,6 +95,7 @@ public:
 	static constexpr float MIN_DISTANCE = OrbitCamera::MIN_DISTANCE;
 
 private:
+	void Deactivate();
 	void ReinitForCharacter();
 
 	OrbitCamera m_orbit;
