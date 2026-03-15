@@ -147,6 +147,7 @@ private:
 	bool m_disableAllNPCs;
 	bool m_showNameBubbles;
 	bool m_lastCameraEnabled;
+	bool m_wasInRestrictedArea;
 
 	static const uint32_t BROADCAST_INTERVAL_MS = 66; // ~15Hz
 	static const uint32_t TIMEOUT_MS = 5000;          // 5 second timeout

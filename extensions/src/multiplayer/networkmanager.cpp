@@ -49,7 +49,7 @@ NetworkManager::NetworkManager()
 	  m_sequence(0), m_lastBroadcastTime(0), m_lastValidActorId(0), m_localAllowRemoteCustomize(true),
 	  m_inIsleWorld(false), m_registered(false), m_pendingToggleThirdPerson(false), m_pendingToggleNameBubbles(false),
 	  m_pendingWalkAnim(-1), m_pendingIdleAnim(-1), m_pendingEmote(-1), m_pendingToggleAllowCustomize(false),
-	  m_disableAllNPCs(false), m_showNameBubbles(true), m_lastCameraEnabled(false)
+	  m_disableAllNPCs(false), m_showNameBubbles(true), m_lastCameraEnabled(false), m_wasInRestrictedArea(false)
 {
 }
 
@@ -201,6 +201,7 @@ void NetworkManager::OnWorldEnabled(LegoWorld* p_world)
 
 	if (p_world->GetWorldId() == LegoOmni::e_act1) {
 		m_inIsleWorld = true;
+		m_wasInRestrictedArea = IsRestrictedArea(GameState()->m_currentArea);
 		m_worldSync.SetInIsleWorld(true);
 
 		for (auto& [peerId, player] : m_remotePlayers) {
@@ -236,6 +237,7 @@ void NetworkManager::OnWorldDisabled(LegoWorld* p_world)
 
 	if (p_world->GetWorldId() == LegoOmni::e_act1) {
 		m_inIsleWorld = false;
+		m_wasInRestrictedArea = false;
 		m_worldSync.SetInIsleWorld(false);
 
 		// Destroy local name bubble (ROI is about to be destroyed)
@@ -407,11 +409,16 @@ void NetworkManager::BroadcastLocalState()
 
 	ThirdPersonCamera::Controller* cam = GetCamera();
 
+	bool inRestrictedArea = IsRestrictedArea(GameState()->m_currentArea);
+	if (m_inIsleWorld && m_wasInRestrictedArea != inRestrictedArea) {
+		m_wasInRestrictedArea = inRestrictedArea;
+		NotifyPlayerCountChanged();
+	}
+
 	PlayerStateMsg msg{};
 	msg.header = {MSG_STATE, m_localPeerId, m_sequence++, TARGET_BROADCAST};
 	msg.actorId = actorId;
-	msg.worldId =
-		IsRestrictedArea(GameState()->m_currentArea) ? WORLD_NOT_VISIBLE : (int8_t) currentWorld->GetWorldId();
+	msg.worldId = inRestrictedArea ? WORLD_NOT_VISIBLE : (int8_t) currentWorld->GetWorldId();
 	msg.vehicleType = DetectVehicleType(userActor);
 	SDL_memcpy(msg.position, pos, sizeof(msg.position));
 	SDL_memcpy(msg.direction, dir, sizeof(msg.direction));
