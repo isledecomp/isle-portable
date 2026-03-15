@@ -418,7 +418,7 @@ void LegoRaceCar::Animate(float p_time)
 		UpdateMapLocatorPosition();
 
 		if (!m_userNavFlag) {
-			FUN_10080590(p_time);
+			UpdateWorldSpeed(p_time);
 			return;
 		}
 
@@ -620,7 +620,7 @@ void LegoJetski::Animate(float p_time)
 		UpdateMapLocatorPosition();
 
 		if (!m_userNavFlag) {
-			FUN_10080590(p_time);
+			UpdateWorldSpeed(p_time);
 			return;
 		}
 

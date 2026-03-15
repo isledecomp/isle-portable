@@ -96,11 +96,13 @@ void RotateY(LegoROI* p_roi, MxFloat p_angle)
 }
 
 // FUNCTION: LEGO1 0x1003de80
+// FUNCTION: BETA10 0x100d3684
 MxBool SpheresIntersect(const BoundingSphere& p_sphere1, const BoundingSphere& p_sphere2)
 {
 	// This doesn't look clean, but it matches.
 	// p_sphere1.Center().GetData() doesn't work out
-	return sqrt(DISTSQRD3(&p_sphere1.Center()[0], &p_sphere2.Center()[0])) < p_sphere1.Radius() + p_sphere2.Radius();
+	float distance = DISTSQRD3(p_sphere1.Center(), p_sphere2.Center());
+	return sqrt(distance) < p_sphere1.Radius() + p_sphere2.Radius();
 }
 
 // FUNCTION: LEGO1 0x1003ded0
@@ -392,7 +394,7 @@ void SetCameraControllerFromIsle()
 }
 
 // FUNCTION: LEGO1 0x1003eae0
-void ConvertHSVToRGB(float p_h, float p_s, float p_v, float* p_rOut, float* p_bOut, float* p_gOut)
+void ConvertHSVToRGB(float p_h, float p_s, float p_v, float* p_rOut, float* p_gOut, float* p_bOut)
 {
 	double calc;
 	double p;
@@ -410,8 +412,8 @@ void ConvertHSVToRGB(float p_h, float p_s, float p_v, float* p_rOut, float* p_bO
 		calc = (p_v + 1.0) * sDbl;
 	}
 	if (calc <= 0.0) {
-		*p_gOut = 0.0f;
 		*p_bOut = 0.0f;
+		*p_gOut = 0.0f;
 		*p_rOut = 0.0f;
 		return;
 	}
@@ -423,38 +425,38 @@ void ConvertHSVToRGB(float p_h, float p_s, float p_v, float* p_rOut, float* p_bO
 	switch (hueIndex) {
 	case 0:
 		*p_rOut = calc;
-		*p_bOut = v12;
-		*p_gOut = p;
+		*p_gOut = v12;
+		*p_bOut = p;
 		break;
 	case 1:
 		*p_rOut = v13;
-		*p_bOut = calc;
-		*p_gOut = p;
+		*p_gOut = calc;
+		*p_bOut = p;
 		break;
 	case 2:
 		*p_rOut = p;
-		*p_bOut = calc;
-		*p_gOut = v12;
+		*p_gOut = calc;
+		*p_bOut = v12;
 		break;
 	case 3:
 		*p_rOut = p;
-		*p_bOut = v13;
-		*p_gOut = calc;
+		*p_gOut = v13;
+		*p_bOut = calc;
 		break;
 	case 4:
 		*p_rOut = v12;
-		*p_bOut = p;
-		*p_gOut = calc;
+		*p_gOut = p;
+		*p_bOut = calc;
 		break;
 	case 5:
 		*p_rOut = calc;
-		*p_bOut = p;
-		*p_gOut = v13;
+		*p_gOut = p;
+		*p_bOut = v13;
 		break;
 	case 6:
 		*p_rOut = calc;
-		*p_bOut = p;
-		*p_gOut = v13;
+		*p_gOut = p;
+		*p_bOut = v13;
 		break;
 	default:
 		return;

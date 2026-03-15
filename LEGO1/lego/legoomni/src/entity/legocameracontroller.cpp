@@ -190,6 +190,7 @@ void LegoCameraController::TransformPointOfView(const Matrix4& p_transform, MxU3
 }
 
 // FUNCTION: LEGO1 0x10012740
+// FUNCTION: BETA10 0x10069c35
 Mx3DPointFloat LegoCameraController::GetWorldUp()
 {
 	if (m_lego3DView && m_lego3DView->GetPointOfView()) {
@@ -203,6 +204,7 @@ Mx3DPointFloat LegoCameraController::GetWorldUp()
 }
 
 // FUNCTION: LEGO1 0x100127f0
+// FUNCTION: BETA10 0x10069cea
 Mx3DPointFloat LegoCameraController::GetWorldLocation()
 {
 	if (m_lego3DView && m_lego3DView->GetPointOfView()) {
@@ -216,6 +218,7 @@ Mx3DPointFloat LegoCameraController::GetWorldLocation()
 }
 
 // FUNCTION: LEGO1 0x100128a0
+// FUNCTION: BETA10 0x10069daa
 Mx3DPointFloat LegoCameraController::GetWorldDirection()
 {
 	if (m_lego3DView && m_lego3DView->GetPointOfView()) {
