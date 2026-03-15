@@ -376,7 +376,7 @@ void Controller::HandleSDLEventImpl(SDL_Event* p_event)
 
 void Controller::ReinitForCharacter()
 {
-	if (IsRestrictedArea(GameState()->m_currentArea)) {
+	if (!GameState() || IsRestrictedArea(GameState()->m_currentArea)) {
 		m_active = false;
 		return;
 	}
