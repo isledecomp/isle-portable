@@ -66,6 +66,15 @@ void WorldStateSync::ApplySkyLightState(const char* p_skyColor, int p_lightPos)
 	VariableTable()->SetVariable("lightposition", buf);
 }
 
+void WorldStateSync::ResetForReconnect()
+{
+	m_localPeerId = 0;
+	m_sequence = 0;
+	m_isHost = false;
+	m_snapshotRequested = false;
+	m_pendingWorldEvents.clear();
+}
+
 void WorldStateSync::OnHostChanged()
 {
 	if (!m_isHost) {

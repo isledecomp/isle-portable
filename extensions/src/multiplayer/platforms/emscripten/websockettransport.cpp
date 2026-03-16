@@ -44,8 +44,6 @@ void WebSocketTransport::Connect(const char* p_roomId)
 		var connPtr = $1;
 		var discPtr = $2;
 		var everConnPtr = $3;
-		var exitRoomFull = $4;
-		var exitConnLost = $5;
 		var socketId = Module._mpNextSocketId++;
 		Module._mpMessageQueues[socketId] = [];
 
@@ -66,10 +64,8 @@ void WebSocketTransport::Connect(const char* p_roomId)
 			};
 
 			ws.onclose = function() {
-				var wasEverConnected = Atomics.load(HEAP32, everConnPtr >> 2);
 				Atomics.store(HEAP32, connPtr >> 2, 0);
 				Atomics.store(HEAP32, discPtr >> 2, 1);
-				Module._exitCode = wasEverConnected ? exitConnLost : exitRoomFull;
 			};
 
 			ws.onerror = function() {
@@ -83,7 +79,7 @@ void WebSocketTransport::Connect(const char* p_roomId)
 		}
 
 		return socketId;
-	}, url.c_str(), &m_connectedFlag, &m_disconnectedFlag, &m_wasEverConnected, EXIT_ROOM_FULL, EXIT_CONNECTION_LOST);
+	}, url.c_str(), &m_connectedFlag, &m_disconnectedFlag, &m_wasEverConnected);
 	// clang-format on
 
 	if (m_socketId <= 0) {

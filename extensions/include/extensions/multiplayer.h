@@ -45,7 +45,7 @@ public:
 	static MxBool IsClonedCharacter(const char* p_name);
 	static void HandleBeforeSaveLoad();
 	static void HandleSaveLoaded();
-	static MxBool CheckDisconnected();
+	static MxBool CheckRejected();
 
 	static Multiplayer::NetworkManager* GetNetworkManager();
 
@@ -58,7 +58,7 @@ private:
 };
 
 #ifdef EXTENSIONS
-LEGO1_EXPORT bool IsMultiplayerDisconnected();
+LEGO1_EXPORT bool IsMultiplayerRejected();
 #endif
 
 namespace MP
@@ -72,7 +72,7 @@ constexpr auto HandleROIClick = &MultiplayerExt::HandleROIClick;
 constexpr auto IsClonedCharacter = &MultiplayerExt::IsClonedCharacter;
 constexpr auto HandleBeforeSaveLoad = &MultiplayerExt::HandleBeforeSaveLoad;
 constexpr auto HandleSaveLoaded = &MultiplayerExt::HandleSaveLoaded;
-constexpr auto CheckDisconnected = &MultiplayerExt::CheckDisconnected;
+constexpr auto CheckRejected = &MultiplayerExt::CheckRejected;
 #else
 constexpr decltype(&MultiplayerExt::HandleCreate) HandleCreate = nullptr;
 constexpr decltype(&MultiplayerExt::HandleWorldEnable) HandleWorldEnable = nullptr;
@@ -82,7 +82,7 @@ constexpr decltype(&MultiplayerExt::HandleROIClick) HandleROIClick = nullptr;
 constexpr decltype(&MultiplayerExt::IsClonedCharacter) IsClonedCharacter = nullptr;
 constexpr decltype(&MultiplayerExt::HandleBeforeSaveLoad) HandleBeforeSaveLoad = nullptr;
 constexpr decltype(&MultiplayerExt::HandleSaveLoaded) HandleSaveLoaded = nullptr;
-constexpr decltype(&MultiplayerExt::CheckDisconnected) CheckDisconnected = nullptr;
+constexpr decltype(&MultiplayerExt::CheckRejected) CheckRejected = nullptr;
 #endif
 } // namespace MP
 

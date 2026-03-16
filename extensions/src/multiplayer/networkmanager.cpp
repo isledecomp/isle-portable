@@ -49,7 +49,9 @@ NetworkManager::NetworkManager()
 	  m_sequence(0), m_lastBroadcastTime(0), m_lastValidActorId(0), m_localAllowRemoteCustomize(true),
 	  m_inIsleWorld(false), m_registered(false), m_pendingToggleThirdPerson(false), m_pendingToggleNameBubbles(false),
 	  m_pendingWalkAnim(-1), m_pendingIdleAnim(-1), m_pendingEmote(-1), m_pendingToggleAllowCustomize(false),
-	  m_disableAllNPCs(false), m_showNameBubbles(true), m_lastCameraEnabled(false), m_wasInRestrictedArea(false)
+	  m_disableAllNPCs(false), m_showNameBubbles(true), m_lastCameraEnabled(false), m_wasInRestrictedArea(false),
+	  m_connectionState(STATE_DISCONNECTED), m_wasRejected(false), m_reconnectAttempt(0), m_reconnectDelay(0),
+	  m_nextReconnectTime(0)
 {
 }
 
@@ -66,6 +68,7 @@ static ThirdPersonCamera::Controller* GetCamera()
 MxResult NetworkManager::Tickle()
 {
 	ProcessPendingRequests();
+	CheckConnectionState();
 
 	if (m_disableAllNPCs) {
 		EnforceDisableNPCs();
@@ -171,12 +174,15 @@ void NetworkManager::Shutdown()
 void NetworkManager::Connect(const char* p_roomId)
 {
 	if (m_transport) {
+		m_roomId = p_roomId;
 		m_transport->Connect(p_roomId);
+		m_connectionState = STATE_CONNECTED;
 	}
 }
 
 void NetworkManager::Disconnect()
 {
+	m_connectionState = STATE_DISCONNECTED;
 	if (m_transport) {
 		m_transport->Disconnect();
 	}
@@ -188,9 +194,9 @@ bool NetworkManager::IsConnected() const
 	return m_transport && m_transport->IsConnected();
 }
 
-bool NetworkManager::WasDisconnected() const
+bool NetworkManager::WasRejected() const
 {
-	return m_transport && m_transport->WasDisconnected();
+	return m_wasRejected;
 }
 
 void NetworkManager::OnWorldEnabled(LegoWorld* p_world)
@@ -320,6 +326,88 @@ void NetworkManager::EnforceDisableNPCs()
 			am->m_unk0x414--;
 		}
 	}
+}
+
+void NetworkManager::CheckConnectionState()
+{
+	if (!m_transport || m_connectionState == STATE_DISCONNECTED) {
+		return;
+	}
+
+	if (m_connectionState == STATE_CONNECTED) {
+		if (!m_transport->WasDisconnected()) {
+			return;
+		}
+
+		if (m_transport->WasRejected()) {
+			// Room full on initial connect - flag for game loop to exit
+			m_wasRejected = true;
+			m_connectionState = STATE_DISCONNECTED;
+
+			if (m_callbacks) {
+				m_callbacks->OnConnectionStatusChanged(CONNECTION_STATUS_REJECTED);
+			}
+			return;
+		}
+
+		// Connection lost - enter reconnection
+		m_connectionState = STATE_RECONNECTING;
+		RemoveAllRemotePlayers();
+		m_reconnectAttempt = 0;
+		m_reconnectDelay = RECONNECT_INITIAL_DELAY_MS;
+		m_nextReconnectTime = SDL_GetTicks() + m_reconnectDelay;
+
+		if (m_callbacks) {
+			m_callbacks->OnConnectionStatusChanged(CONNECTION_STATUS_RECONNECTING);
+		}
+		return;
+	}
+
+	// STATE_RECONNECTING
+	if (m_transport->IsConnected()) {
+		ResetStateAfterReconnect();
+		m_connectionState = STATE_CONNECTED;
+
+		if (m_callbacks) {
+			m_callbacks->OnConnectionStatusChanged(CONNECTION_STATUS_CONNECTED);
+		}
+		return;
+	}
+
+	uint32_t now = SDL_GetTicks();
+	if (now < m_nextReconnectTime) {
+		return;
+	}
+
+	if (m_reconnectAttempt >= RECONNECT_MAX_ATTEMPTS) {
+		// Give up - stay alive but without multiplayer
+		m_connectionState = STATE_DISCONNECTED;
+
+		if (m_callbacks) {
+			m_callbacks->OnConnectionStatusChanged(CONNECTION_STATUS_FAILED);
+		}
+		return;
+	}
+
+	AttemptReconnect();
+}
+
+void NetworkManager::AttemptReconnect()
+{
+	m_reconnectAttempt++;
+	m_transport->Disconnect();
+	m_transport->Connect(m_roomId.c_str());
+	m_reconnectDelay = SDL_min(m_reconnectDelay * 2, RECONNECT_MAX_DELAY_MS);
+	m_nextReconnectTime = SDL_GetTicks() + m_reconnectDelay;
+}
+
+void NetworkManager::ResetStateAfterReconnect()
+{
+	m_localPeerId = 0;
+	m_hostPeerId = 0;
+	m_sequence = 0;
+	m_lastBroadcastTime = 0;
+	m_worldSync.ResetForReconnect();
 }
 
 void NetworkManager::ProcessPendingRequests()

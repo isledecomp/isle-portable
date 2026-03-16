@@ -13,6 +13,7 @@ public:
 	void OnThirdPersonChanged(bool p_enabled) override;
 	void OnNameBubblesChanged(bool p_enabled) override;
 	void OnAllowCustomizeChanged(bool p_enabled) override;
+	void OnConnectionStatusChanged(int p_status) override;
 };
 
 } // namespace Multiplayer

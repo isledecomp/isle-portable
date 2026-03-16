@@ -50,6 +50,20 @@ void EmscriptenCallbacks::OnAllowCustomizeChanged(bool p_enabled)
 	DispatchBoolEvent("allowCustomizeChanged", p_enabled);
 }
 
+void EmscriptenCallbacks::OnConnectionStatusChanged(int p_status)
+{
+	// clang-format off
+	MAIN_THREAD_EM_ASM({
+		var canvas = Module.canvas;
+		if (canvas) {
+			canvas.dispatchEvent(new CustomEvent('connectionStatusChanged', {
+				detail: { status: $0 }
+			}));
+		}
+	}, p_status);
+	// clang-format on
+}
+
 } // namespace Multiplayer
 
 #endif // __EMSCRIPTEN__

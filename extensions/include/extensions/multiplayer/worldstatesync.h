@@ -48,6 +48,9 @@ public:
 	// Returns TRUE if the local action should be suppressed (non-host).
 	MxBool HandleSkyLightMutation(uint8_t p_entityType, uint8_t p_changeType);
 
+	// Resets session state for reconnection (peer ID, sequence, host, pending events).
+	void ResetForReconnect();
+
 private:
 	void ApplySkyLightState(const char* p_skyColor, int p_lightPos);
 	void SendSnapshotRequest();

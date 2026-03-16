@@ -30,6 +30,12 @@ class NameBubbleRenderer;
 
 class NetworkManager : public MxCore {
 public:
+	enum ConnectionState {
+		STATE_DISCONNECTED,
+		STATE_CONNECTED,
+		STATE_RECONNECTING
+	};
+
 	NetworkManager();
 	~NetworkManager() override;
 
@@ -49,7 +55,7 @@ public:
 	void Connect(const char* p_roomId);
 	void Disconnect();
 	bool IsConnected() const;
-	bool WasDisconnected() const;
+	bool WasRejected() const;
 
 	void SetWalkAnimation(uint8_t p_walkAnimId);
 	void SetIdleAnimation(uint8_t p_idleAnimId);
@@ -114,6 +120,10 @@ private:
 	void RemoveRemotePlayer(uint32_t p_peerId);
 	void RemoveAllRemotePlayers();
 
+	void CheckConnectionState();
+	void AttemptReconnect();
+	void ResetStateAfterReconnect();
+
 	void NotifyPlayerCountChanged();
 	void EnforceDisableNPCs();
 
@@ -149,8 +159,18 @@ private:
 	bool m_lastCameraEnabled;
 	bool m_wasInRestrictedArea;
 
-	static const uint32_t BROADCAST_INTERVAL_MS = 66; // ~15Hz
-	static const uint32_t TIMEOUT_MS = 5000;          // 5 second timeout
+	ConnectionState m_connectionState;
+	bool m_wasRejected;
+	std::string m_roomId;
+	uint32_t m_reconnectAttempt;
+	uint32_t m_reconnectDelay;
+	uint32_t m_nextReconnectTime;
+
+	static const uint32_t BROADCAST_INTERVAL_MS = 66;       // ~15Hz
+	static const uint32_t TIMEOUT_MS = 5000;                // 5 second timeout
+	static const uint32_t RECONNECT_INITIAL_DELAY_MS = 1000;
+	static const uint32_t RECONNECT_MAX_DELAY_MS = 30000;
+	static const uint32_t RECONNECT_MAX_ATTEMPTS = 10;
 };
 
 } // namespace Multiplayer

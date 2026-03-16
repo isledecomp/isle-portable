@@ -32,6 +32,26 @@ void NativeCallbacks::OnAllowCustomizeChanged(bool p_enabled)
 	SDL_Log("[Multiplayer] Allow customization: %s", p_enabled ? "enabled" : "disabled");
 }
 
+void NativeCallbacks::OnConnectionStatusChanged(int p_status)
+{
+	const char* statusStr = "unknown";
+	switch (p_status) {
+	case CONNECTION_STATUS_CONNECTED:
+		statusStr = "connected";
+		break;
+	case CONNECTION_STATUS_RECONNECTING:
+		statusStr = "reconnecting";
+		break;
+	case CONNECTION_STATUS_FAILED:
+		statusStr = "failed";
+		break;
+	case CONNECTION_STATUS_REJECTED:
+		statusStr = "rejected (room full)";
+		break;
+	}
+	SDL_Log("[Multiplayer] Connection status: %s", statusStr);
+}
+
 } // namespace Multiplayer
 
 #endif // !__EMSCRIPTEN__

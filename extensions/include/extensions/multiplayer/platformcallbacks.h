@@ -3,6 +3,11 @@
 namespace Multiplayer
 {
 
+static const int CONNECTION_STATUS_CONNECTED = 0;
+static const int CONNECTION_STATUS_RECONNECTING = 1;
+static const int CONNECTION_STATUS_FAILED = 2;
+static const int CONNECTION_STATUS_REJECTED = 3;
+
 class PlatformCallbacks {
 public:
 	virtual ~PlatformCallbacks() = default;
@@ -19,6 +24,9 @@ public:
 
 	// Called when the allow-customization setting changes.
 	virtual void OnAllowCustomizeChanged(bool p_enabled) = 0;
+
+	// Called when the connection status changes (connected, reconnecting, failed).
+	virtual void OnConnectionStatusChanged(int p_status) = 0;
 };
 
 } // namespace Multiplayer
