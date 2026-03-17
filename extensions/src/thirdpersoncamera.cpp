@@ -119,8 +119,15 @@ void ThirdPersonCameraExt::OnSDLEvent(SDL_Event* p_event)
 
 	s_camera->HandleSDLEventImpl(p_event);
 
+	if (p_event->type == SDL_EVENT_MOUSE_BUTTON_UP && p_event->button.button == SDL_BUTTON_LEFT) {
+		s_camera->SetLmbForwardEngaged(false);
+	}
+
 	if (s_camera->ConsumeAutoDisable()) {
 		s_camera->Disable(/*p_preserveTouch=*/true);
+		if (s_camera->IsLeftButtonHeld()) {
+			s_camera->SetLmbForwardEngaged(true);
+		}
 	}
 	else if (s_camera->ConsumeAutoEnable()) {
 		// Clear the movement system's touch state for camera-owned fingers only,
@@ -145,6 +152,9 @@ void ThirdPersonCameraExt::OnSDLEvent(SDL_Event* p_event)
 
 		s_camera->SetOrbitDistance(ThirdPersonCamera::Controller::MIN_DISTANCE);
 		s_camera->Enable();
+		if (s_camera->IsLeftButtonHeld()) {
+			s_camera->SetLmbForwardEngaged(true);
+		}
 	}
 }
 
@@ -202,6 +212,9 @@ MxBool ThirdPersonCameraExt::HandleNavOverride(
 	}
 
 	if (!s_camera->IsActive()) {
+		if (s_camera->IsLmbForwardEngaged()) {
+			return s_camera->HandleFirstPersonForward(p_nav, p_curPos, p_curDir, p_newPos, p_newDir, p_deltaTime);
+		}
 		return FALSE;
 	}
 

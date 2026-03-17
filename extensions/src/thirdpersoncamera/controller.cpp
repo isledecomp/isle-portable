@@ -30,7 +30,7 @@ using namespace Extensions::ThirdPersonCamera;
 
 Controller::Controller()
 	: m_animator(CharacterAnimatorConfig{/*.saveEmoteTransform=*/true, /*.propSuffix=*/0}), m_enabled(false),
-	  m_active(false), m_pendingWorldTransition(false), m_playerROI(nullptr)
+	  m_active(false), m_pendingWorldTransition(false), m_lmbForwardEngaged(false), m_playerROI(nullptr)
 {
 }
 
@@ -59,6 +59,7 @@ void Controller::Deactivate()
 
 	m_active = false;
 	m_pendingWorldTransition = false;
+	m_lmbForwardEngaged = false;
 	m_animator.StopROISounds();
 	m_animator.StopClickAnimation();
 	m_display.DestroyDisplayClone();
@@ -365,13 +366,39 @@ MxBool Controller::HandleCameraRelativeMovement(
 		p_newPos,
 		p_newDir,
 		p_deltaTime,
-		m_animator.IsInMultiPartEmote()
+		m_animator.IsInMultiPartEmote(),
+		m_input.IsLeftButtonHeld()
 	);
 }
 
 void Controller::HandleSDLEventImpl(SDL_Event* p_event)
 {
 	m_input.HandleSDLEvent(p_event, m_orbit, m_active);
+}
+
+MxBool Controller::HandleFirstPersonForward(
+	LegoNavController* p_nav,
+	const Vector3& p_curPos,
+	const Vector3& p_curDir,
+	Vector3& p_newPos,
+	Vector3& p_newDir,
+	float p_deltaTime
+)
+{
+	float accel = p_nav->m_maxLinearAccel;
+	p_nav->m_linearVel += accel * p_deltaTime;
+	if (p_nav->m_linearVel > p_nav->m_maxLinearVel) {
+		p_nav->m_linearVel = p_nav->m_maxLinearVel;
+	}
+
+	float speed = p_nav->m_linearVel * p_deltaTime;
+	p_newPos[0] = p_curPos[0] + p_curDir[0] * speed;
+	p_newPos[1] = p_curPos[1] + p_curDir[1] * speed;
+	p_newPos[2] = p_curPos[2] + p_curDir[2] * speed;
+	p_newDir = p_curDir;
+
+	p_nav->m_rotationalVel = 0.0f;
+	return TRUE;
 }
 
 void Controller::ReinitForCharacter()

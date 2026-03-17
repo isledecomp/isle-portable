@@ -147,7 +147,8 @@ MxBool OrbitCamera::HandleCameraRelativeMovement(
 	Vector3& p_newPos,
 	Vector3& p_newDir,
 	float p_deltaTime,
-	bool p_isInMultiPartEmote
+	bool p_isInMultiPartEmote,
+	bool p_lmbHeld
 )
 {
 	LegoInputManager* inputManager = InputManager();
@@ -180,8 +181,12 @@ MxBool OrbitCamera::HandleCameraRelativeMovement(
 		moveDirX += camRightX;
 		moveDirZ += camRightZ;
 	}
+	if (p_lmbHeld) {
+		moveDirX += camForwardX;
+		moveDirZ += camForwardZ;
+	}
 
-	if (keyFlags == 0 && inputManager) {
+	if (keyFlags == 0 && !p_lmbHeld && inputManager) {
 		MxU32 joystickX, joystickY, povPosition;
 		if (inputManager->GetJoystickState(&joystickX, &joystickY, &povPosition) == SUCCESS) {
 			float jx = (joystickX - 50.0f) / 50.0f;

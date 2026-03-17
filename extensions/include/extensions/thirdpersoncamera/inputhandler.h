@@ -21,6 +21,8 @@ public:
 	int GetTouchCount() const { return m_touch.count; }
 	SDL_FingerID GetFingerID(int p_idx) const { return m_touch.id[p_idx]; }
 
+	bool IsLeftButtonHeld() const { return m_leftButtonHeld; }
+
 	bool ConsumeAutoDisable();
 	bool ConsumeAutoEnable();
 
@@ -43,6 +45,7 @@ private:
 	bool m_wantsAutoDisable;
 	bool m_wantsAutoEnable;
 	bool m_rightButtonHeld;
+	bool m_leftButtonHeld;
 	float m_savedMouseX;
 	float m_savedMouseY;
 };

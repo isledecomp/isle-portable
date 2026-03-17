@@ -11,6 +11,7 @@ class CharacterCloner;
 }
 namespace ThirdPersonCamera
 {
+class Controller;
 class OrbitCamera;
 }
 } // namespace Extensions

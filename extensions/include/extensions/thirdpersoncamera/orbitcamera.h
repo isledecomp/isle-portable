@@ -36,7 +36,8 @@ public:
 		Vector3& p_newPos,
 		Vector3& p_newDir,
 		float p_deltaTime,
-		bool p_isInMultiPartEmote
+		bool p_isInMultiPartEmote,
+		bool p_lmbHeld
 	);
 
 	void AdjustYaw(float p_delta) { m_absoluteYaw += p_delta; }

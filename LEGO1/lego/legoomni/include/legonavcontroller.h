@@ -124,6 +124,7 @@ public:
 
 protected:
 	friend class Extensions::ThirdPersonCamera::OrbitCamera;
+	friend class Extensions::ThirdPersonCamera::Controller;
 
 	float CalculateNewVel(float p_targetVel, float p_currentVel, float p_accel, float p_time);
 	float CalculateNewTargetVel(int p_pos, int p_center, float p_max);
