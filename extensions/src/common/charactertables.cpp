@@ -1,4 +1,4 @@
-#include "extensions/common/animdata.h"
+#include "extensions/common/charactertables.h"
 
 #include "legopathactor.h"
 

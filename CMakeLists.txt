@@ -534,12 +534,13 @@ if (ISLE_EXTENSIONS)
     extensions/src/textureloader.cpp
 
     # Common shared code
-    extensions/src/common/animdata.cpp
+    extensions/src/common/charactertables.cpp
     extensions/src/common/animutils.cpp
     extensions/src/common/characteranimator.cpp
     extensions/src/common/charactercloner.cpp
     extensions/src/common/charactercustomizer.cpp
     extensions/src/common/customizestate.cpp
+    extensions/src/common/pathutils.cpp
 
     # Third person camera extension
     extensions/src/thirdpersoncamera.cpp
@@ -549,6 +550,14 @@ if (ISLE_EXTENSIONS)
     extensions/src/thirdpersoncamera/displayactor.cpp
 
     # Multiplayer extension
+    extensions/src/multiplayer/animation/catalog.cpp
+    extensions/src/multiplayer/animation/coordinator.cpp
+    extensions/src/multiplayer/animation/loader.cpp
+    extensions/src/multiplayer/animation/locationproximity.cpp
+    extensions/src/multiplayer/animation/sceneplayer.cpp
+    extensions/src/multiplayer/animation/sessionhost.cpp
+    extensions/src/multiplayer/animation/audioplayer.cpp
+    extensions/src/multiplayer/animation/phonemeplayer.cpp
     extensions/src/multiplayer.cpp
     extensions/src/multiplayer/namebubblerenderer.cpp
     extensions/src/multiplayer/networkmanager.cpp

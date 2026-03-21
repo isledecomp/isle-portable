@@ -30,7 +30,9 @@ using namespace Extensions::ThirdPersonCamera;
 
 Controller::Controller()
 	: m_animator(CharacterAnimatorConfig{/*.saveEmoteTransform=*/true, /*.propSuffix=*/0}), m_enabled(false),
-	  m_active(false), m_pendingWorldTransition(false), m_lmbForwardEngaged(false), m_playerROI(nullptr)
+	  m_active(false), m_pendingWorldTransition(false), m_animPlaying(false), m_animLockDisplay(false),
+	  m_lmbForwardEngaged(false),
+	  m_playerROI(nullptr)
 {
 }
 
@@ -51,6 +53,15 @@ void Controller::Disable(bool p_preserveTouch)
 
 void Controller::Deactivate()
 {
+	// Stop external animation before destroying the display ROI
+	if (m_animPlaying) {
+		if (m_animStopCallback) {
+			m_animStopCallback();
+		}
+		m_animPlaying = false;
+		m_animStopCallback = nullptr;
+	}
+
 	if (m_active && m_playerROI) {
 		m_playerROI->SetVisibility(FALSE);
 		VideoManager()->Get3DManager()->Remove(*m_playerROI);
@@ -201,12 +212,13 @@ void Controller::Tick(float p_deltaTime)
 		}
 	}
 
-	if (!UserActor() || UserActor()->GetActorState() != LegoPathActor::c_disabled) {
+	if (!m_animPlaying && (!UserActor() || UserActor()->GetActorState() != LegoPathActor::c_disabled)) {
 		m_orbit.ApplyOrbitCamera();
 	}
 
-	// Small vehicle with ride animation
-	if (m_animator.GetCurrentVehicleType() != VEHICLE_NONE) {
+	// Small vehicle with ride animation (skip when external animation is active —
+	// the animation controller handles positioning the player and vehicle ROI)
+	if (m_animator.GetCurrentVehicleType() != VEHICLE_NONE && !m_animPlaying) {
 		m_animator.StopClickAnimation();
 		if (m_animator.GetRideAnim() && m_animator.GetRideRoiMap()) {
 			LegoPathActor* actor = UserActor();
@@ -232,15 +244,7 @@ void Controller::Tick(float p_deltaTime)
 				float timeInCycle =
 					m_animator.GetAnimTime() - duration * SDL_floorf(m_animator.GetAnimTime() / duration);
 
-				LegoTreeNode* root = m_animator.GetRideAnim()->GetRoot();
-				for (LegoU32 i = 0; i < root->GetNumChildren(); i++) {
-					LegoROI::ApplyAnimationTransformation(
-						root->GetChild(i),
-						transform,
-						(LegoTime) timeInCycle,
-						m_animator.GetRideRoiMap()
-					);
-				}
+				AnimUtils::ApplyTree(m_animator.GetRideAnim(), transform, (LegoTime) timeInCycle, m_animator.GetRideRoiMap());
 			}
 		}
 		return;
@@ -249,6 +253,17 @@ void Controller::Tick(float p_deltaTime)
 	LegoPathActor* userActor = UserActor();
 	if (!userActor) {
 		return;
+	}
+
+	// When an external animation is playing, prevent movement.
+	// If the display ROI is being driven by the animation (performer), skip everything.
+	// If the local player is spectating, still sync + idle animate.
+	if (m_animPlaying) {
+		userActor->SetWorldSpeed(0.0f);
+		NavController()->SetLinearVel(0.0f);
+		if (m_animLockDisplay) {
+			return;
+		}
 	}
 
 	// Sync display clone position from native ROI
@@ -340,6 +355,16 @@ void Controller::OnWorldDisabled(LegoWorld* p_world)
 	if (!p_world) {
 		return;
 	}
+
+	// Stop external animation before destroying the display ROI
+	if (m_animPlaying) {
+		if (m_animStopCallback) {
+			m_animStopCallback();
+		}
+		m_animPlaying = false;
+		m_animStopCallback = nullptr;
+	}
+
 	m_active = false;
 	m_pendingWorldTransition = false;
 	m_playerROI = nullptr;
@@ -366,7 +391,7 @@ MxBool Controller::HandleCameraRelativeMovement(
 		p_newPos,
 		p_newDir,
 		p_deltaTime,
-		m_animator.IsInMultiPartEmote(),
+		m_animator.IsInMultiPartEmote() || m_animPlaying,
 		m_input.IsLeftButtonHeld()
 	);
 }

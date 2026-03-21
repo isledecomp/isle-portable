@@ -52,6 +52,11 @@ void NativeCallbacks::OnConnectionStatusChanged(int p_status)
 	SDL_Log("[Multiplayer] Connection status: %s", statusStr);
 }
 
+void NativeCallbacks::OnAnimationsAvailable(const char* p_json)
+{
+	(void) p_json;
+}
+
 } // namespace Multiplayer
 
 #endif // !__EMSCRIPTEN__

@@ -1,5 +1,6 @@
 #include "extensions/siloader.h"
 
+#include "extensions/common/pathutils.h"
 #include "legovideomanager.h"
 #include "misc.h"
 #include "mxdsaction.h"
@@ -240,15 +241,11 @@ bool SiLoaderExt::LoadFile(const char* p_file)
 	si::Interleaf si;
 	MxStreamController* controller;
 
-	MxString path = MxString(MxOmni::GetHD()) + p_file;
-	path.MapPathToFilesystem();
-	if (si.Read(path.GetData(), si::Interleaf::ObjectsOnly) != si::Interleaf::ERROR_SUCCESS) {
-		path = MxString(MxOmni::GetCD()) + p_file;
-		path.MapPathToFilesystem();
-		if (si.Read(path.GetData(), si::Interleaf::ObjectsOnly) != si::Interleaf::ERROR_SUCCESS) {
-			SDL_Log("Could not parse SI file %s", p_file);
-			return false;
-		}
+	MxString path;
+	if (!Common::ResolveGamePath(p_file, path) ||
+		si.Read(path.GetData(), si::Interleaf::ObjectsOnly) != si::Interleaf::ERROR_SUCCESS) {
+		SDL_Log("Could not parse SI file %s", p_file);
+		return false;
 	}
 
 	if (!(controller = OpenStream(p_file))) {

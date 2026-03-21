@@ -11,7 +11,7 @@ namespace Extensions
 namespace Common
 {
 
-// Animation and vehicle tables (defined in animdata.cpp)
+// Animation and vehicle tables (defined in charactertables.cpp)
 extern const char* const g_walkAnimNames[];
 extern const int g_walkAnimCount;
 

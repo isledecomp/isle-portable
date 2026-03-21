@@ -7,6 +7,7 @@
 #include "misc/legotree.h"
 #include "roi/legoroi.h"
 
+#include <SDL3/SDL_stdinc.h>
 #include <algorithm>
 #include <vector>
 
@@ -14,12 +15,33 @@ using namespace Extensions::Common;
 
 // Mirrors the game's UpdateStructMapAndROIIndex: assigns ROI indices at runtime
 // via SetROIIndex() since m_roiIndex starts at 0 for all animation nodes.
+//
+// Intentional divergences from LegoAnimPresenter::BuildROIMap (legoanimpresenter.cpp:413-530):
+// 1. No variable substitution -- we bypass the streaming pipeline, so the variable
+//    table lacks our entries. Direct name comparison instead.
+// 2. *-prefixed nodes search extraROIs -- the original's GetActorName() depends on
+//    presenter action context (m_action->GetUnknown24()). We search created extra
+//    ROIs directly.
+// 3. No LegoAnimStructMap dedup -- sequential indices, functionally correct.
+// Look up an animation node name in the alias map (case-insensitive).
+static LegoROI* FindAlias(const char* p_name, const AnimUtils::ROIAlias* p_aliases, int p_aliasCount)
+{
+	for (int i = 0; i < p_aliasCount; i++) {
+		if (p_aliases[i].animName && !SDL_strcasecmp(p_name, p_aliases[i].animName)) {
+			return p_aliases[i].roi;
+		}
+	}
+	return nullptr;
+}
+
 static void AssignROIIndices(
 	LegoTreeNode* p_node,
 	LegoROI* p_parentROI,
 	LegoROI* p_rootROI,
 	LegoROI** p_extraROIs,
 	int p_extraROICount,
+	const AnimUtils::ROIAlias* p_aliases,
+	int p_aliasCount,
 	MxU32& p_nextIndex,
 	std::vector<LegoROI*>& p_entries,
 	bool& p_rootClaimed
@@ -34,32 +56,85 @@ static void AssignROIIndices(
 
 		if (*name == '*' || p_parentROI == nullptr) {
 			roi = p_rootROI;
-			if (!p_rootClaimed) {
-				matchedROI = p_rootROI;
+
+			const char* searchName = (*name == '*') ? name + 1 : name;
+			bool matchedExtra = false;
+
+			// Check aliases first (participant ROIs mapped by character name).
+			// Claiming root prevents subsequent sibling nodes from also claiming it.
+			matchedROI = FindAlias(searchName, p_aliases, p_aliasCount);
+			if (matchedROI) {
+				roi = matchedROI;
+				matchedExtra = true;
 				p_rootClaimed = true;
 			}
-			else if (*name == '*' && p_extraROICount > 0) {
-				// Subsequent *-prefixed node: search extra ROIs by stripped name.
-				// FindChildROI checks self first, then children recursively.
-				const char* stripped = name + 1;
+
+			// Then check extra ROIs by name.
+			// This handles cases like BIKESY appearing before SY in the tree:
+			// BIKESY should match the vehicle extra, not claim the root.
+			if (!matchedExtra && p_extraROICount > 0) {
 				for (int e = 0; e < p_extraROICount; e++) {
-					matchedROI = p_extraROIs[e]->FindChildROI(stripped, p_extraROIs[e]);
+					matchedROI = p_extraROIs[e]->FindChildROI(searchName, p_extraROIs[e]);
 					if (matchedROI != nullptr) {
+						roi = matchedROI;
+						matchedExtra = true;
 						break;
 					}
+				}
+			}
+
+			if (!matchedExtra) {
+				if (!p_rootClaimed) {
+					matchedROI = p_rootROI;
+					p_rootClaimed = true;
 				}
 			}
 		}
 		else {
 			matchedROI = p_parentROI->FindChildROI(name, p_parentROI);
 			if (matchedROI == nullptr) {
-				// FindChildROI checks self first, so this handles both
-				// direct name matches and child searches on extra ROIs.
+				// Check aliases — also update roi so children resolve against the alias ROI
+				matchedROI = FindAlias(name, p_aliases, p_aliasCount);
+				if (matchedROI) {
+					roi = matchedROI;
+				}
+			}
+			if (matchedROI == nullptr) {
 				for (int e = 0; e < p_extraROICount; e++) {
 					matchedROI = p_extraROIs[e]->FindChildROI(name, p_extraROIs[e]);
 					if (matchedROI != nullptr) {
 						break;
 					}
+				}
+			}
+			// Mirrors original game (legoanimpresenter.cpp:486-490):
+			// If FindChildROI fails, the node might be a top-level actor that isn't
+			// a child of the current parent. Re-run this node with p_parentROI=NULL
+			// so it enters the root-claiming / top-level search path instead.
+			if (matchedROI == nullptr) {
+				bool isTopLevel = false;
+				// Check aliases for top-level match
+				if (FindAlias(name, p_aliases, p_aliasCount) != nullptr) {
+					isTopLevel = true;
+				}
+				if (!isTopLevel && !p_rootClaimed && p_rootROI->GetName() &&
+					!SDL_strcasecmp(name, p_rootROI->GetName())) {
+					isTopLevel = true;
+				}
+				if (!isTopLevel) {
+					for (int e = 0; e < p_extraROICount; e++) {
+						if (p_extraROIs[e]->GetName() && !SDL_strcasecmp(name, p_extraROIs[e]->GetName())) {
+							isTopLevel = true;
+							break;
+						}
+					}
+				}
+				if (isTopLevel) {
+					AssignROIIndices(
+						p_node, nullptr, p_rootROI, p_extraROIs, p_extraROICount,
+						p_aliases, p_aliasCount, p_nextIndex, p_entries, p_rootClaimed
+					);
+					return;
 				}
 			}
 		}
@@ -81,6 +156,8 @@ static void AssignROIIndices(
 			p_rootROI,
 			p_extraROIs,
 			p_extraROICount,
+			p_aliases,
+			p_aliasCount,
 			p_nextIndex,
 			p_entries,
 			p_rootClaimed
@@ -94,7 +171,9 @@ void AnimUtils::BuildROIMap(
 	LegoROI** p_extraROIs,
 	int p_extraROICount,
 	LegoROI**& p_roiMap,
-	MxU32& p_roiMapSize
+	MxU32& p_roiMapSize,
+	const ROIAlias* p_aliases,
+	int p_aliasCount
 )
 {
 	if (!p_anim || !p_rootROI) {
@@ -109,7 +188,7 @@ void AnimUtils::BuildROIMap(
 	MxU32 nextIndex = 1;
 	std::vector<LegoROI*> entries;
 	bool rootClaimed = false;
-	AssignROIIndices(root, nullptr, p_rootROI, p_extraROIs, p_extraROICount, nextIndex, entries, rootClaimed);
+	AssignROIIndices(root, nullptr, p_rootROI, p_extraROIs, p_extraROICount, p_aliases, p_aliasCount, nextIndex, entries, rootClaimed);
 
 	if (entries.empty()) {
 		return;
@@ -222,4 +301,44 @@ void AnimUtils::CollectUnmatchedNodes(LegoAnim* p_anim, LegoROI* p_rootROI, std:
 
 	bool rootClaimed = false;
 	CollectUnmatchedNodesRecursive(root, nullptr, p_rootROI, p_unmatchedNames, rootClaimed);
+}
+
+void AnimUtils::ApplyTree(LegoAnim* p_anim, MxMatrix& p_transform, LegoTime p_time, LegoROI** p_roiMap)
+{
+	LegoTreeNode* root = p_anim->GetRoot();
+	for (LegoU32 i = 0; i < root->GetNumChildren(); i++) {
+		LegoROI::ApplyAnimationTransformation(root->GetChild(i), p_transform, p_time, p_roiMap);
+	}
+}
+
+std::string AnimUtils::TrimLODSuffix(const std::string& p_name)
+{
+	std::string result(p_name);
+	while (result.size() > 1) {
+		char c = result.back();
+		if ((c >= '0' && c <= '9') || c == '_') {
+			result.pop_back();
+		}
+		else {
+			break;
+		}
+	}
+	return result;
+}
+
+const char* AnimUtils::ResolvePropLODName(const char* p_nodeName)
+{
+	static const struct {
+		const char* nodePrefix;
+		const char* lodName;
+	} mappings[] = {
+		{"popmug", "pizpie"},
+	};
+
+	for (const auto& m : mappings) {
+		if (!SDL_strncasecmp(p_nodeName, m.nodePrefix, SDL_strlen(m.nodePrefix))) {
+			return m.lodName;
+		}
+	}
+	return p_nodeName;
 }

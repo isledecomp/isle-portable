@@ -205,6 +205,7 @@ public:
 
 private:
 	friend class Multiplayer::NetworkManager;
+	friend class Multiplayer::Animation::Catalog;
 
 	void Init();
 	MxResult FUN_100605e0(

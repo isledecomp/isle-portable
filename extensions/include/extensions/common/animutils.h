@@ -58,13 +58,23 @@ struct AnimCache {
 	}
 };
 
+// Maps an animation character name to an ROI without renaming the ROI.
+// Used for participant ROIs whose real names (e.g. "tp_display") differ
+// from the animation tree node names (e.g. "pepper").
+struct ROIAlias {
+	const char* animName; // name in animation tree (lowercased)
+	LegoROI* roi;         // actual ROI to use
+};
+
 void BuildROIMap(
 	LegoAnim* p_anim,
 	LegoROI* p_rootROI,
 	LegoROI** p_extraROIs,
 	int p_extraROICount,
 	LegoROI**& p_roiMap,
-	MxU32& p_roiMapSize
+	MxU32& p_roiMapSize,
+	const ROIAlias* p_aliases = nullptr,
+	int p_aliasCount = 0
 );
 
 void CollectUnmatchedNodes(LegoAnim* p_anim, LegoROI* p_rootROI, std::vector<std::string>& p_unmatchedNames);
@@ -79,6 +89,16 @@ inline void EnsureROIMapVisibility(LegoROI** p_roiMap, MxU32 p_roiMapSize)
 		}
 	}
 }
+
+// Apply animation transformation to all root children of an animation tree.
+void ApplyTree(LegoAnim* p_anim, MxMatrix& p_transform, LegoTime p_time, LegoROI** p_roiMap);
+
+// Strip trailing digits and underscores from a name to get the LOD base name.
+// Mirrors the digit-trimming in LegoAnimPresenter::CreateManagedActors/CreateSceneROIs.
+std::string TrimLODSuffix(const std::string& p_name);
+
+// Maps animation tree node names to actual LOD names when they differ.
+const char* ResolvePropLODName(const char* p_nodeName);
 
 // Flip a matrix from forward-z to backward-z (or vice versa) in place.
 inline void FlipMatrixDirection(MxMatrix& p_mat)

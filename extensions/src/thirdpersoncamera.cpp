@@ -123,7 +123,7 @@ void ThirdPersonCameraExt::OnSDLEvent(SDL_Event* p_event)
 		s_camera->SetLmbForwardEngaged(false);
 	}
 
-	if (s_camera->ConsumeAutoDisable()) {
+	if (s_camera->ConsumeAutoDisable() && !s_camera->IsAnimPlaying()) {
 		s_camera->Disable(/*p_preserveTouch=*/true);
 		if (s_camera->IsLeftButtonHeld()) {
 			s_camera->SetLmbForwardEngaged(true);

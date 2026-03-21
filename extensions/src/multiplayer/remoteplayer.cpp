@@ -29,9 +29,9 @@ using Common::WORLD_NOT_VISIBLE;
 RemotePlayer::RemotePlayer(uint32_t p_peerId, uint8_t p_actorId, uint8_t p_displayActorIndex)
 	: m_peerId(p_peerId), m_actorId(p_actorId), m_displayActorIndex(p_displayActorIndex), m_roi(nullptr),
 	  m_spawned(false), m_visible(false), m_targetSpeed(0.0f), m_targetVehicleType(VEHICLE_NONE),
-	  m_targetWorldId(WORLD_NOT_VISIBLE), m_lastUpdateTime(SDL_GetTicks()), m_hasReceivedUpdate(false),
+	  m_targetWorldId(WORLD_NOT_VISIBLE), m_lastUpdateTime(SDL_GetTicks()), m_hasReceivedUpdate(false), m_nearestLocation(-1),
 	  m_animator(Common::CharacterAnimatorConfig{/*.saveEmoteTransform=*/false, /*.propSuffix=*/p_peerId}),
-	  m_vehicleROI(nullptr), m_nameBubble(nullptr), m_allowRemoteCustomize(true)
+	  m_vehicleROI(nullptr), m_nameBubble(nullptr), m_allowRemoteCustomize(true), m_animationLocked(false)
 {
 	m_displayName[0] = '\0';
 	const char* displayName = GetDisplayActorName();
@@ -194,6 +194,15 @@ void RemotePlayer::UpdateFromNetwork(const PlayerStateMsg& p_msg)
 void RemotePlayer::Tick(float p_deltaTime)
 {
 	if (!m_spawned || !m_visible) {
+		return;
+	}
+
+	// During animation playback, skip transform/animation updates (ScenePlayer drives
+	// our ROI), but still update the name bubble so it follows the animated position.
+	if (m_animationLocked) {
+		if (m_nameBubble) {
+			m_nameBubble->Update(m_roi);
+		}
 		return;
 	}
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "extensions/common/animdata.h"
 #include "extensions/common/animutils.h"
+#include "extensions/common/charactertables.h"
 #include "mxgeometry/mxmatrix.h"
 #include "mxtypes.h"
 

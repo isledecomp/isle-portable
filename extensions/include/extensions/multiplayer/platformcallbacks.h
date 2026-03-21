@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 namespace Multiplayer
 {
 
@@ -27,6 +29,10 @@ public:
 
 	// Called when the connection status changes (connected, reconnecting, failed).
 	virtual void OnConnectionStatusChanged(int p_status) = 0;
+
+	// Called when animation eligibility state changes (location change, player join/leave, etc.).
+	// p_json = JSON payload with location, coordinator state, and per-animation slot fill status.
+	virtual void OnAnimationsAvailable(const char* p_json) = 0;
 };
 
 } // namespace Multiplayer

@@ -36,6 +36,8 @@ public:
 	bool IsSpawned() const { return m_spawned; }
 	bool IsVisible() const { return m_visible; }
 	int8_t GetWorldId() const { return m_targetWorldId; }
+	int16_t GetNearestLocation() const { return m_nearestLocation; }
+	void SetNearestLocation(int16_t p_location) { m_nearestLocation = p_location; }
 	uint32_t GetLastUpdateTime() const { return m_lastUpdateTime; }
 	void SetVisible(bool p_visible);
 	void TriggerEmote(uint8_t p_emoteId);
@@ -48,8 +50,12 @@ public:
 	void SetClickAnimObjectId(MxU32 p_clickAnimObjectId) { m_animator.SetClickAnimObjectId(p_clickAnimObjectId); }
 	void StopClickAnimation();
 	bool IsInVehicle() const { return m_animator.IsInVehicle(); }
+	LegoROI* GetRideVehicleROI() const { return m_animator.GetRideVehicleROI(); }
 	bool IsMoving() const { return m_animator.IsInVehicle() || m_targetSpeed > 0.01f; }
 	bool IsInMultiPartEmote() const { return m_animator.IsInMultiPartEmote(); }
+
+	void SetAnimationLocked(bool p_locked) { m_animationLocked = p_locked; }
+	bool IsAnimationLocked() const { return m_animationLocked; }
 
 private:
 	const char* GetDisplayActorName() const;
@@ -76,6 +82,7 @@ private:
 	int8_t m_targetWorldId;
 	uint32_t m_lastUpdateTime;
 	bool m_hasReceivedUpdate;
+	int16_t m_nearestLocation;
 
 	float m_currentPosition[3];
 	float m_currentDirection[3];
@@ -89,6 +96,7 @@ private:
 
 	Extensions::Common::CustomizeState m_customizeState;
 	bool m_allowRemoteCustomize;
+	bool m_animationLocked;
 };
 
 } // namespace Multiplayer

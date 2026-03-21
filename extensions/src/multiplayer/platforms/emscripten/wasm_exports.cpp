@@ -58,6 +58,22 @@ extern "C"
 		}
 	}
 
+	EMSCRIPTEN_KEEPALIVE void mp_set_anim_interest(int animIndex)
+	{
+		Multiplayer::NetworkManager* mgr = MultiplayerExt::GetNetworkManager();
+		if (mgr) {
+			mgr->RequestSetAnimInterest(static_cast<int32_t>(animIndex));
+		}
+	}
+
+	EMSCRIPTEN_KEEPALIVE void mp_cancel_anim_interest()
+	{
+		Multiplayer::NetworkManager* mgr = MultiplayerExt::GetNetworkManager();
+		if (mgr) {
+			mgr->RequestCancelAnimInterest();
+		}
+	}
+
 } // extern "C"
 
 #endif

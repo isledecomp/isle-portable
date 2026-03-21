@@ -1,5 +1,10 @@
 #pragma once
 
+#include "extensions/multiplayer/animation/catalog.h"
+#include "extensions/multiplayer/animation/coordinator.h"
+#include "extensions/multiplayer/animation/locationproximity.h"
+#include "extensions/multiplayer/animation/sceneplayer.h"
+#include "extensions/multiplayer/animation/sessionhost.h"
 #include "extensions/multiplayer/networktransport.h"
 #include "extensions/multiplayer/platformcallbacks.h"
 #include "extensions/multiplayer/protocol.h"
@@ -75,6 +80,11 @@ public:
 	void RequestSendEmote(uint8_t p_emoteId) { m_pendingEmote.store(p_emoteId, std::memory_order_relaxed); }
 	void RequestToggleNameBubbles() { m_pendingToggleNameBubbles.store(true, std::memory_order_relaxed); }
 	void RequestToggleAllowCustomize() { m_pendingToggleAllowCustomize.store(true, std::memory_order_relaxed); }
+	void RequestSetAnimInterest(int32_t p_animIndex)
+	{
+		m_pendingAnimInterest.store(p_animIndex, std::memory_order_relaxed);
+	}
+	void RequestCancelAnimInterest() { m_pendingAnimCancel.store(true, std::memory_order_relaxed); }
 
 	bool IsInIsleWorld() const { return m_inIsleWorld; }
 	bool GetShowNameBubbles() const { return m_showNameBubbles; }
@@ -82,6 +92,10 @@ public:
 	RemotePlayer* FindPlayerByROI(LegoROI* roi) const;
 	bool IsClonedCharacter(const char* p_name) const;
 	void SendCustomize(uint32_t p_targetPeerId, uint8_t p_changeType, uint8_t p_partIndex);
+
+	// Stop any playing animation and release its resources.
+	// Must be called before the display ROI is destroyed.
+	void StopAnimation();
 
 	void OnWorldEnabled(LegoWorld* p_world);
 	void OnWorldDisabled(LegoWorld* p_world);
@@ -116,6 +130,26 @@ private:
 	void HandleEmote(const EmoteMsg& p_msg);
 	void HandleCustomize(const CustomizeMsg& p_msg);
 
+	// Animation coordination handlers
+	void HandleAnimInterest(uint32_t p_peerId, uint16_t p_animIndex, uint8_t p_displayActorIndex);
+	void HandleAnimCancel(uint32_t p_peerId);
+	void HandleAnimUpdate(const AnimUpdateMsg& p_msg);
+	void HandleAnimStart(const AnimStartMsg& p_msg);
+	void HandleAnimStartLocally(uint16_t p_animIndex, bool p_localInSession);
+	AnimUpdateMsg BuildAnimUpdateMsg(uint16_t p_animIndex, uint32_t p_target);
+	void BroadcastAnimUpdate(uint16_t p_animIndex);
+	void SendAnimUpdateToPlayer(uint16_t p_animIndex, uint32_t p_targetPeerId);
+	void BroadcastAnimStart(uint16_t p_animIndex);
+	int16_t GetPeerLocation(uint32_t p_peerId) const;
+	bool GetPeerPosition(uint32_t p_peerId, float& p_x, float& p_z) const;
+	bool IsPeerNearby(uint32_t p_peerId, float p_refX, float p_refZ) const;
+	bool ValidateSessionLocations(uint16_t p_animIndex);
+
+	void ResetAnimationState();
+	void CancelLocalAnimInterest();
+	void BroadcastChangedSessions(const std::vector<uint16_t>& p_changedAnims);
+	void TickHostSessions();
+
 	void ProcessPendingRequests();
 	void RemoveRemotePlayer(uint32_t p_peerId);
 	void RemoveAllRemotePlayers();
@@ -126,6 +160,7 @@ private:
 
 	void NotifyPlayerCountChanged();
 	void EnforceDisableNPCs();
+	void PushAnimationState();
 
 	// Serialize and send a fixed-size message via the transport
 	template <typename T>
@@ -153,11 +188,30 @@ private:
 	std::atomic<int> m_pendingIdleAnim;
 	std::atomic<int> m_pendingEmote;
 	std::atomic<bool> m_pendingToggleAllowCustomize;
+	std::atomic<int32_t> m_pendingAnimInterest;
+	std::atomic<bool> m_pendingAnimCancel;
 
 	bool m_disableAllNPCs;
 	bool m_showNameBubbles;
 	bool m_lastCameraEnabled;
 	bool m_wasInRestrictedArea;
+
+	// NPC animation playback
+	Multiplayer::Animation::Catalog m_animCatalog;
+	Multiplayer::Animation::ScenePlayer m_scenePlayer;
+	Multiplayer::Animation::LocationProximity m_locationProximity;
+	Multiplayer::Animation::Coordinator m_animCoordinator;
+	Multiplayer::Animation::SessionHost m_animSessionHost;
+	int32_t m_localPendingAnimInterest;
+	uint16_t m_playingAnimIndex;
+
+	void TickAnimation();
+	void StopScenePlayback(bool p_unlockRemotes);
+
+	// Animation state push
+	bool m_animStateDirty;
+	bool m_animInterestDirty;
+	uint32_t m_lastAnimPushTime;
 
 	ConnectionState m_connectionState;
 	bool m_wasRejected;
@@ -166,11 +220,12 @@ private:
 	uint32_t m_reconnectDelay;
 	uint32_t m_nextReconnectTime;
 
-	static const uint32_t BROADCAST_INTERVAL_MS = 66;       // ~15Hz
-	static const uint32_t TIMEOUT_MS = 5000;                // 5 second timeout
+	static const uint32_t BROADCAST_INTERVAL_MS = 66; // ~15Hz
+	static const uint32_t TIMEOUT_MS = 5000;          // 5 second timeout
 	static const uint32_t RECONNECT_INITIAL_DELAY_MS = 1000;
 	static const uint32_t RECONNECT_MAX_DELAY_MS = 30000;
 	static const uint32_t RECONNECT_MAX_ATTEMPTS = 10;
+	static const uint32_t ANIM_PUSH_COOLDOWN_MS = 250; // max ~4Hz for movement-based changes
 };
 
 } // namespace Multiplayer

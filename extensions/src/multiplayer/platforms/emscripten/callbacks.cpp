@@ -64,6 +64,20 @@ void EmscriptenCallbacks::OnConnectionStatusChanged(int p_status)
 	// clang-format on
 }
 
+void EmscriptenCallbacks::OnAnimationsAvailable(const char* p_json)
+{
+	// clang-format off
+	MAIN_THREAD_EM_ASM({
+		var canvas = Module.canvas;
+		if (canvas) {
+			canvas.dispatchEvent(new CustomEvent('animationsAvailable', {
+				detail: { json: UTF8ToString($0) }
+			}));
+		}
+	}, p_json);
+	// clang-format on
+}
+
 } // namespace Multiplayer
 
 #endif // __EMSCRIPTEN__

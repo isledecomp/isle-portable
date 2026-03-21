@@ -1,5 +1,6 @@
 #include "extensions/textureloader.h"
 
+#include "extensions/common/pathutils.h"
 #include "legovideomanager.h"
 #include "misc.h"
 #include "mxdirectx/mxdirect3d.h"
@@ -115,16 +116,13 @@ SDL_Surface* TextureLoaderExt::FindTexture(const char* p_name)
 		return nullptr;
 	}
 
-	SDL_Surface* surface;
 	const char* texturePath = options["texture loader:texture path"].c_str();
-	MxString path = MxString(MxOmni::GetHD()) + texturePath + "/" + p_name + ".bmp";
+	MxString relativePath = MxString(texturePath) + "/" + p_name + ".bmp";
 
-	path.MapPathToFilesystem();
-	if (!(surface = SDL_LoadBMP(path.GetData()))) {
-		path = MxString(MxOmni::GetCD()) + texturePath + "/" + p_name + ".bmp";
-		path.MapPathToFilesystem();
-		surface = SDL_LoadBMP(path.GetData());
+	MxString path;
+	if (!Common::ResolveGamePath(relativePath.GetData(), path)) {
+		return nullptr;
 	}
 
-	return surface;
+	return SDL_LoadBMP(path.GetData());
 }

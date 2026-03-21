@@ -25,6 +25,10 @@ enum MessageType : uint8_t {
 	MSG_WORLD_EVENT_REQUEST = 8,
 	MSG_EMOTE = 9,
 	MSG_CUSTOMIZE = 10,
+	MSG_ANIM_INTEREST = 11,
+	MSG_ANIM_CANCEL = 12,
+	MSG_ANIM_UPDATE = 13,
+	MSG_ANIM_START = 14,
 	MSG_ASSIGN_ID = 0xFF
 };
 
@@ -148,6 +152,39 @@ struct CustomizeMsg {
 	uint32_t targetPeerId; // Who is being customized
 	uint8_t changeType;    // WorldChangeType (VARIANT/SOUND/MOVE/COLOR/MOOD)
 	uint8_t partIndex;     // Body part for color changes (0-9), 0xFF otherwise
+};
+
+// Client -> Host: express interest in an animation slot
+struct AnimInterestMsg {
+	MessageHeader header;
+	uint16_t animIndex;
+	uint8_t displayActorIndex;
+};
+
+// Client -> Host: cancel interest in current animation
+struct AnimCancelMsg {
+	MessageHeader header;
+};
+
+// Per-slot assignment in AnimUpdateMsg
+struct AnimSlotAssignment {
+	uint32_t peerId; // 0 = unfilled
+};
+
+// Host -> All: authoritative session state update
+struct AnimUpdateMsg {
+	MessageHeader header;
+	uint16_t animIndex;
+	uint8_t state;            // CoordinationState (0=cleared, 1=gathering, 2=countdown, 3=playing)
+	uint16_t countdownMs;     // Remaining countdown ms (0 if not counting)
+	uint8_t slotCount;        // Number of valid slot entries
+	AnimSlotAssignment slots[8]; // peerId per slot (0 = unfilled)
+};
+
+// Host -> All: animation playback trigger
+struct AnimStartMsg {
+	MessageHeader header;
+	uint16_t animIndex;
 };
 
 #pragma pack(pop)

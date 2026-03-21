@@ -8,6 +8,7 @@
 
 #include <SDL3/SDL_events.h>
 #include <cstdint>
+#include <functional>
 
 class IslePathActor;
 class LegoNavController;
@@ -56,6 +57,23 @@ public:
 	void SetClickAnimObjectId(MxU32 p_clickAnimObjectId) { m_animator.SetClickAnimObjectId(p_clickAnimObjectId); }
 	void StopClickAnimation();
 	bool IsInVehicle() const { return m_animator.IsInVehicle(); }
+	LegoROI* GetRideVehicleROI() const { return m_animator.GetRideVehicleROI(); }
+
+	// Signal that an external animation is active.
+	// p_lockDisplay: true if the display ROI is being driven by the animation (performer),
+	//                false if the local player is just spectating (idle anim continues).
+	// p_onStop is called before the display ROI is destroyed (Deactivate/OnWorldDisabled).
+	void SetAnimPlaying(
+		bool p_animPlaying,
+		bool p_lockDisplay = true,
+		std::function<void()> p_animStopCallback = nullptr
+	)
+	{
+		m_animPlaying = p_animPlaying;
+		m_animLockDisplay = p_animPlaying && p_lockDisplay;
+		m_animStopCallback = p_animPlaying ? std::move(p_animStopCallback) : nullptr;
+	}
+	bool IsAnimPlaying() const { return m_animPlaying; }
 
 	void OnWorldEnabled(LegoWorld* p_world);
 	void OnWorldDisabled(LegoWorld* p_world);
@@ -119,6 +137,9 @@ private:
 	bool m_enabled;
 	bool m_active;
 	bool m_pendingWorldTransition;
+	bool m_animPlaying;
+	bool m_animLockDisplay;
+	std::function<void()> m_animStopCallback;
 	bool m_lmbForwardEngaged;
 	LegoROI* m_playerROI;
 };

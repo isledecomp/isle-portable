@@ -96,10 +96,7 @@ void CharacterAnimator::Tick(float p_deltaTime, LegoROI* p_roi, bool p_isMoving)
 			float timeInCycle = m_animTime - duration * SDL_floorf(m_animTime / duration);
 
 			MxMatrix transform(p_roi->GetLocal2World());
-			LegoTreeNode* root = walkAnim->GetRoot();
-			for (LegoU32 i = 0; i < root->GetNumChildren(); i++) {
-				LegoROI::ApplyAnimationTransformation(root->GetChild(i), transform, (LegoTime) timeInCycle, walkRoiMap);
-			}
+			AnimUtils::ApplyTree(walkAnim, transform, (LegoTime) timeInCycle, walkRoiMap);
 		}
 		m_wasMoving = true;
 		m_idleTime = 0.0f;
@@ -139,15 +136,7 @@ void CharacterAnimator::Tick(float p_deltaTime, LegoROI* p_roi, bool p_isMoving)
 				m_emotePropGroup.roiMap != nullptr ? m_emotePropGroup.roiMap : m_emoteAnimCache->roiMap;
 			MxMatrix transform(m_config.saveEmoteTransform ? m_emoteParentTransform : p_roi->GetLocal2World());
 
-			LegoTreeNode* root = m_emoteAnimCache->anim->GetRoot();
-			for (LegoU32 i = 0; i < root->GetNumChildren(); i++) {
-				LegoROI::ApplyAnimationTransformation(
-					root->GetChild(i),
-					transform,
-					(LegoTime) m_emoteTime,
-					emoteRoiMap
-				);
-			}
+			AnimUtils::ApplyTree(m_emoteAnimCache->anim, transform, (LegoTime) m_emoteTime, emoteRoiMap);
 
 			// Restore player ROI transform (animation root overwrote it).
 			if (m_config.saveEmoteTransform) {
@@ -159,15 +148,12 @@ void CharacterAnimator::Tick(float p_deltaTime, LegoROI* p_roi, bool p_isMoving)
 		// Frozen at last frame of a multi-part emote's phase-1 animation
 		MxMatrix transform(m_config.saveEmoteTransform ? m_frozenParentTransform : p_roi->GetLocal2World());
 
-		LegoTreeNode* root = m_frozenAnimCache->anim->GetRoot();
-		for (LegoU32 i = 0; i < root->GetNumChildren(); i++) {
-			LegoROI::ApplyAnimationTransformation(
-				root->GetChild(i),
-				transform,
-				(LegoTime) m_frozenAnimDuration,
-				m_frozenAnimCache->roiMap
-			);
-		}
+		AnimUtils::ApplyTree(
+			m_frozenAnimCache->anim,
+			transform,
+			(LegoTime) m_frozenAnimDuration,
+			m_frozenAnimCache->roiMap
+		);
 
 		if (m_config.saveEmoteTransform) {
 			p_roi->WrappedSetLocal2WorldWithWorldDataUpdate(m_frozenParentTransform);
@@ -193,15 +179,7 @@ void CharacterAnimator::Tick(float p_deltaTime, LegoROI* p_roi, bool p_isMoving)
 			float timeInCycle = m_idleAnimTime - duration * SDL_floorf(m_idleAnimTime / duration);
 
 			MxMatrix transform(p_roi->GetLocal2World());
-			LegoTreeNode* root = m_idleAnimCache->anim->GetRoot();
-			for (LegoU32 i = 0; i < root->GetNumChildren(); i++) {
-				LegoROI::ApplyAnimationTransformation(
-					root->GetChild(i),
-					transform,
-					(LegoTime) timeInCycle,
-					m_idleAnimCache->roiMap
-				);
-			}
+			AnimUtils::ApplyTree(m_idleAnimCache->anim, transform, (LegoTime) timeInCycle, m_idleAnimCache->roiMap);
 		}
 	}
 }
@@ -448,24 +426,6 @@ void CharacterAnimator::ClearPropGroup(PropGroup& p_group)
 	p_group.anim = nullptr;
 }
 
-// Maps animation tree node names to actual LOD names when they differ.
-static const char* ResolvePropLODName(const char* p_nodeName)
-{
-	static const struct {
-		const char* nodePrefix;
-		const char* lodName;
-	} mappings[] = {
-		{"popmug", "pizpie"},
-	};
-
-	for (const auto& m : mappings) {
-		if (!SDL_strncasecmp(p_nodeName, m.nodePrefix, SDL_strlen(m.nodePrefix))) {
-			return m.lodName;
-		}
-	}
-	return p_nodeName;
-}
-
 void CharacterAnimator::BuildEmoteProps(PropGroup& p_group, LegoAnim* p_anim, LegoROI* p_playerROI)
 {
 	std::vector<std::string> unmatchedNames;
@@ -484,7 +444,7 @@ void CharacterAnimator::BuildEmoteProps(PropGroup& p_group, LegoAnim* p_anim, Le
 			SDL_snprintf(uniqueName, sizeof(uniqueName), "tp_prop_%s", name.c_str());
 		}
 
-		const char* lodName = ResolvePropLODName(name.c_str());
+		const char* lodName = AnimUtils::ResolvePropLODName(name.c_str());
 		LegoROI* propROI = CharacterManager()->CreateAutoROI(uniqueName, lodName, FALSE);
 		if (propROI) {
 			propROI->SetName(name.c_str());
@@ -545,8 +505,5 @@ void CharacterAnimator::ApplyIdleFrame0(LegoROI* p_roi)
 	}
 
 	MxMatrix transform(p_roi->GetLocal2World());
-	LegoTreeNode* root = m_idleAnimCache->anim->GetRoot();
-	for (LegoU32 i = 0; i < root->GetNumChildren(); i++) {
-		LegoROI::ApplyAnimationTransformation(root->GetChild(i), transform, (LegoTime) 0.0f, m_idleAnimCache->roiMap);
-	}
+	AnimUtils::ApplyTree(m_idleAnimCache->anim, transform, (LegoTime) 0.0f, m_idleAnimCache->roiMap);
 }

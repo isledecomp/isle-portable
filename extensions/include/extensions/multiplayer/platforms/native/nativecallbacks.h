@@ -14,6 +14,7 @@ public:
 	void OnNameBubblesChanged(bool p_enabled) override;
 	void OnAllowCustomizeChanged(bool p_enabled) override;
 	void OnConnectionStatusChanged(int p_status) override;
+	void OnAnimationsAvailable(const char* p_json) override;
 };
 
 } // namespace Multiplayer
