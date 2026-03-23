@@ -16,18 +16,17 @@ export const MSG_LEAVE = 2;
 export const MSG_HOST_ASSIGN = 4;
 export const MSG_ASSIGN_ID = 0xff;
 
-// AssignIdMsg: compact server-only message — type(1) + peerId(4) + maxActors(1)
-const ASSIGN_ID_SIZE = 1 + 4 + 1;
+// AssignIdMsg: compact server-only message — type(1) + peerId(4)
+const ASSIGN_ID_SIZE = 1 + 4;
 
 // HostAssignMsg: header(13) + hostPeerId(4)
 const HOST_ASSIGN_SIZE = HEADER_SIZE + 4;
 
-export function createAssignIdMsg(peerId: number, maxActors: number): ArrayBuffer {
+export function createAssignIdMsg(peerId: number): ArrayBuffer {
 	const buf = new ArrayBuffer(ASSIGN_ID_SIZE);
 	const view = new DataView(buf);
 	view.setUint8(0, MSG_ASSIGN_ID);
 	view.setUint32(1, peerId, true);
-	view.setUint8(5, maxActors);
 	return buf;
 }
 

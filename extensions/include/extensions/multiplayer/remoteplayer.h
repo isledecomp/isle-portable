@@ -54,6 +54,8 @@ public:
 	bool IsMoving() const { return m_animator.IsInVehicle() || m_targetSpeed > 0.01f; }
 	bool IsInMultiPartEmote() const { return m_animator.IsInMultiPartEmote(); }
 
+	const char* GetDisplayName() const { return m_displayName; }
+
 	void SetAnimationLocked(bool p_locked) { m_animationLocked = p_locked; }
 	bool IsAnimationLocked() const { return m_animationLocked; }
 

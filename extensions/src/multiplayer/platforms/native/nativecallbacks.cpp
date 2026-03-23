@@ -57,6 +57,11 @@ void NativeCallbacks::OnAnimationsAvailable(const char* p_json)
 	(void) p_json;
 }
 
+void NativeCallbacks::OnAnimationCompleted(const char* p_json)
+{
+	SDL_Log("[Multiplayer] Animation completed: %s", p_json);
+}
+
 } // namespace Multiplayer
 
 #endif // !__EMSCRIPTEN__

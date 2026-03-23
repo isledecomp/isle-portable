@@ -33,6 +33,11 @@ public:
 	// Called when animation eligibility state changes (location change, player join/leave, etc.).
 	// p_json = JSON payload with location, coordinator state, and per-animation slot fill status.
 	virtual void OnAnimationsAvailable(const char* p_json) = 0;
+
+	// Called when an animation completes successfully (natural completion, not cancellation).
+	// Only fired for actual participants, not observers.
+	// p_json = JSON with eventId, animIndex, and participant details (charIndex, displayName).
+	virtual void OnAnimationCompleted(const char* p_json) = 0;
 };
 
 } // namespace Multiplayer

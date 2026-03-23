@@ -140,6 +140,8 @@ private:
 	void BroadcastAnimUpdate(uint16_t p_animIndex);
 	void SendAnimUpdateToPlayer(uint16_t p_animIndex, uint32_t p_targetPeerId);
 	void BroadcastAnimStart(uint16_t p_animIndex);
+	void BroadcastAnimComplete(uint16_t p_animIndex);
+	void HandleAnimComplete(const AnimCompleteMsg& p_msg);
 	int16_t GetPeerLocation(uint32_t p_peerId) const;
 	bool GetPeerPosition(uint32_t p_peerId, float& p_x, float& p_z) const;
 	bool IsPeerNearby(uint32_t p_peerId, float p_refX, float p_refZ) const;
@@ -191,7 +193,6 @@ private:
 	std::atomic<int32_t> m_pendingAnimInterest;
 	std::atomic<bool> m_pendingAnimCancel;
 
-	bool m_disableAllNPCs;
 	bool m_showNameBubbles;
 	bool m_lastCameraEnabled;
 	bool m_wasInRestrictedArea;

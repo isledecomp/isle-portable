@@ -87,6 +87,14 @@ void Controller::OnActorEnter(IslePathActor* p_actor)
 		return;
 	}
 
+	// Prevent the previous actor from wandering on the path system with stale
+	// spline state while the player is in a vehicle. Exit() will later call
+	// SetBoundary() without updating m_destEdge, so any non-user-nav animation
+	// with the old spline would use a mismatched boundary/edge pair.
+	if (p_actor->m_previousActor) {
+		p_actor->m_previousActor->SetWorldSpeed(0);
+	}
+
 	m_animator.SetCurrentVehicleType(DetectVehicleType(userActor));
 
 	if (!m_enabled || IsRestrictedArea(GameState()->m_currentArea)) {
@@ -392,7 +400,7 @@ MxBool Controller::HandleCameraRelativeMovement(
 		p_newDir,
 		p_deltaTime,
 		m_animator.IsInMultiPartEmote() || m_animPlaying,
-		m_input.IsLeftButtonHeld()
+		m_input.IsLmbHeldForMovement()
 	);
 }
 

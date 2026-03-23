@@ -68,10 +68,10 @@ NetworkManager::NetworkManager()
 	  m_inIsleWorld(false), m_registered(false), m_pendingToggleThirdPerson(false), m_pendingToggleNameBubbles(false),
 	  m_pendingWalkAnim(-1), m_pendingIdleAnim(-1), m_pendingEmote(-1), m_pendingToggleAllowCustomize(false),
 	  m_pendingAnimInterest(-1), m_pendingAnimCancel(false), m_localPendingAnimInterest(-1),
-	  m_playingAnimIndex(Animation::ANIM_INDEX_NONE), m_disableAllNPCs(false), m_showNameBubbles(true),
-	  m_lastCameraEnabled(false), m_wasInRestrictedArea(false), m_animStateDirty(false), m_animInterestDirty(false),
-	  m_lastAnimPushTime(0), m_connectionState(STATE_DISCONNECTED), m_wasRejected(false), m_reconnectAttempt(0),
-	  m_reconnectDelay(0), m_nextReconnectTime(0)
+	  m_playingAnimIndex(Animation::ANIM_INDEX_NONE), m_showNameBubbles(true), m_lastCameraEnabled(false),
+	  m_wasInRestrictedArea(false), m_animStateDirty(false), m_animInterestDirty(false), m_lastAnimPushTime(0),
+	  m_connectionState(STATE_DISCONNECTED), m_wasRejected(false), m_reconnectAttempt(0), m_reconnectDelay(0),
+	  m_nextReconnectTime(0)
 {
 }
 
@@ -90,9 +90,7 @@ MxResult NetworkManager::Tickle()
 	ProcessPendingRequests();
 	CheckConnectionState();
 
-	if (m_disableAllNPCs) {
-		EnforceDisableNPCs();
-	}
+	EnforceDisableNPCs();
 
 	// Detect camera state changes for platform notification
 	ThirdPersonCamera::Controller* cam = GetCamera();
@@ -354,10 +352,7 @@ void NetworkManager::OnWorldEnabled(LegoWorld* p_world)
 		}
 
 		NotifyPlayerCountChanged();
-
-		if (m_disableAllNPCs) {
-			EnforceDisableNPCs();
-		}
+		EnforceDisableNPCs();
 
 		// Refresh animation catalog from the animation manager
 		if (AnimationManager()) {
@@ -752,21 +747,13 @@ void NetworkManager::ProcessIncomingPackets()
 				m_localPeerId = assignedId;
 				m_worldSync.SetLocalPeerId(assignedId);
 				m_animCoordinator.SetLocalPeerId(assignedId);
-			}
-			if (length >= 6) {
-				uint8_t maxActors = data[5];
-				if (maxActors <= 40) {
-					LegoAnimationManager::configureLegoAnimationManager(maxActors);
-					if (AnimationManager()) {
-						AnimationManager()->m_maxAllowedExtras = maxActors;
-						AnimationManager()->m_numAllowedExtras =
-							SDL_min(AnimationManager()->m_numAllowedExtras, (MxU32) maxActors);
-					}
-					m_disableAllNPCs = (maxActors == 0);
-					if (m_disableAllNPCs) {
-						EnforceDisableNPCs();
-					}
+
+				LegoAnimationManager::configureLegoAnimationManager(0);
+				if (AnimationManager()) {
+					AnimationManager()->m_maxAllowedExtras = 0;
+					AnimationManager()->m_numAllowedExtras = 0;
 				}
+				EnforceDisableNPCs();
 			}
 			break;
 		}
@@ -855,6 +842,13 @@ void NetworkManager::ProcessIncomingPackets()
 			AnimStartMsg msg;
 			if (DeserializeMsg(data, length, msg) && msg.header.type == MSG_ANIM_START) {
 				HandleAnimStart(msg);
+			}
+			break;
+		}
+		case MSG_ANIM_COMPLETE: {
+			AnimCompleteMsg msg;
+			if (DeserializeMsg(data, length, msg) && msg.header.type == MSG_ANIM_COMPLETE) {
+				HandleAnimComplete(msg);
 			}
 			break;
 		}
@@ -1224,6 +1218,7 @@ void NetworkManager::TickAnimation()
 		}
 
 		if (IsHost() && m_playingAnimIndex != Animation::ANIM_INDEX_NONE) {
+			BroadcastAnimComplete(m_playingAnimIndex); // Must fire before EraseSession destroys participant data
 			m_animSessionHost.EraseSession(m_playingAnimIndex);
 			BroadcastAnimUpdate(m_playingAnimIndex); // Broadcast cleared state
 		}
@@ -1577,6 +1572,136 @@ void NetworkManager::BroadcastAnimStart(uint16_t p_animIndex)
 
 	// Also update local coordinator
 	m_animCoordinator.ApplyAnimStart(p_animIndex);
+}
+
+void NetworkManager::BroadcastAnimComplete(uint16_t p_animIndex)
+{
+	const Animation::AnimSession* session = m_animSessionHost.FindSession(p_animIndex);
+	if (!session) {
+		return;
+	}
+
+	const AnimInfo* animInfo = m_animCatalog.GetAnimInfo(p_animIndex);
+	if (!animInfo) {
+		return;
+	}
+
+	AnimCompleteMsg msg{};
+	msg.header = {MSG_ANIM_COMPLETE, m_localPeerId, m_sequence++, TARGET_BROADCAST};
+	msg.eventId = (static_cast<uint64_t>(SDL_rand_bits()) << 32) | static_cast<uint64_t>(SDL_rand_bits());
+	msg.objectId = animInfo->m_objectId;
+	msg.participantCount = 0;
+
+	char localName[8];
+	EncodeUsername(localName);
+
+	for (const auto& slot : session->slots) {
+		if (slot.peerId == 0 || msg.participantCount >= 8) {
+			continue;
+		}
+
+		AnimCompletionParticipant& p = msg.participants[msg.participantCount];
+		p.peerId = slot.peerId;
+
+		if (slot.IsSpectator()) {
+			// Resolve spectator's actual character from their display actor
+			if (slot.peerId == m_localPeerId) {
+				ThirdPersonCamera::Controller* cam = GetCamera();
+				p.charIndex = cam ? Animation::Catalog::DisplayActorToCharacterIndex(cam->GetDisplayActorIndex()) : -1;
+			}
+			else {
+				auto it = m_remotePlayers.find(slot.peerId);
+				p.charIndex = it != m_remotePlayers.end()
+								  ? Animation::Catalog::DisplayActorToCharacterIndex(it->second->GetDisplayActorIndex())
+								  : -1;
+			}
+		}
+		else {
+			p.charIndex = slot.charIndex;
+		}
+
+		if (slot.peerId == m_localPeerId) {
+			SDL_memcpy(p.displayName, localName, sizeof(p.displayName));
+		}
+		else {
+			auto it = m_remotePlayers.find(slot.peerId);
+			if (it != m_remotePlayers.end()) {
+				SDL_memcpy(p.displayName, it->second->GetDisplayName(), sizeof(p.displayName));
+			}
+			else {
+				p.displayName[0] = '\0';
+			}
+		}
+
+		msg.participantCount++;
+	}
+
+	SendMessage(msg);
+
+	// Also handle locally on the host (message sent to TARGET_BROADCAST excludes sender)
+	HandleAnimComplete(msg);
+}
+
+void NetworkManager::HandleAnimComplete(const AnimCompleteMsg& p_msg)
+{
+	// Only fire callback for actual participants, not observers
+	int localIdx = -1;
+	for (uint8_t i = 0; i < p_msg.participantCount; i++) {
+		if (p_msg.participants[i].peerId == m_localPeerId) {
+			localIdx = i;
+			break;
+		}
+	}
+
+	if (localIdx < 0 || !m_callbacks) {
+		return;
+	}
+
+	// Build JSON for frontend
+	char eventIdHex[17];
+	SDL_snprintf(
+		eventIdHex,
+		sizeof(eventIdHex),
+		"%08x%08x",
+		static_cast<uint32_t>(p_msg.eventId >> 32),
+		static_cast<uint32_t>(p_msg.eventId & 0xFFFFFFFF)
+	);
+
+	std::string json = "{\"eventId\":\"";
+	json += eventIdHex;
+	json += "\",\"objectId\":";
+	json += std::to_string(p_msg.objectId);
+	json += ",\"participants\":[";
+
+	// Emit local player first so frontend can rely on participants[0] being self
+	bool first = true;
+	auto appendParticipant = [&](uint8_t i) {
+		if (!first) {
+			json += ',';
+		}
+		first = false;
+		const AnimCompletionParticipant& p = p_msg.participants[i];
+		// Ensure null-termination safety for displayName (protocol uses fixed char[8])
+		char name[8];
+		SDL_memcpy(name, p.displayName, sizeof(name));
+		name[7] = '\0';
+		json += "{\"charIndex\":";
+		json += std::to_string(static_cast<int>(p.charIndex));
+		json += ",\"displayName\":\"";
+		json += name;
+		json += "\"}";
+	};
+
+	appendParticipant(static_cast<uint8_t>(localIdx));
+	for (uint8_t i = 0; i < p_msg.participantCount; i++) {
+		if (i != static_cast<uint8_t>(localIdx)) {
+			appendParticipant(i);
+		}
+	}
+
+	json += "]}";
+
+	m_callbacks->OnAnimationCompleted(json.c_str());
 }
 
 int16_t NetworkManager::GetPeerLocation(uint32_t p_peerId) const
