@@ -6,7 +6,8 @@ preview_urls = false
 
 [durable_objects]
 bindings = [
-  { name = "GAME_ROOM", class_name = "GameRoom" }
+  { name = "GAME_ROOM", class_name = "GameRoom" },
+  { name = "ROOM_REGISTRY", class_name = "RoomRegistry" }
 ]
 
 [vars]
@@ -15,3 +16,7 @@ MAX_PLAYERS_CEILING = 64
 [[migrations]]
 tag = "v1"
 new_classes = ["GameRoom"]
+
+[[migrations]]
+tag = "v2"
+new_classes = ["RoomRegistry"]

@@ -10,26 +10,41 @@ import {
 	stampSender,
 } from "./protocol";
 import type { Env } from "./relay";
-
-const CORS_HEADERS: Record<string, string> = {
-	"Access-Control-Allow-Origin": "*",
-	"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-	"Access-Control-Allow-Headers": "Content-Type",
-	"Cross-Origin-Resource-Policy": "cross-origin",
-};
+import { CORS_HEADERS } from "./cors";
 
 export class GameRoom implements DurableObject {
 	private connections = new Map<number, WebSocket>();
 	private nextPeerId = 1;
 	private hostPeerId = 0;
 	private maxPlayers = 5;
+	private isPublic = true;
+	private roomId: string | null = null;
 
 	constructor(
 		private state: DurableObjectState,
 		private env: Env
-	) {}
+	) {
+		state.blockConcurrencyWhile(async () => {
+			this.isPublic =
+				(await state.storage.get<boolean>("isPublic")) ?? true;
+			this.roomId =
+				(await state.storage.get<string>("roomId")) ?? null;
+			this.maxPlayers =
+				(await state.storage.get<number>("maxPlayers")) ?? 5;
+		});
+	}
 
 	async fetch(request: Request): Promise<Response> {
+		// Extract roomId from URL path if not yet known
+		if (!this.roomId) {
+			const url = new URL(request.url);
+			const parts = url.pathname.split("/").filter(Boolean);
+			if (parts.length === 2 && parts[0] === "room") {
+				this.roomId = parts[1];
+				await this.state.storage.put("roomId", this.roomId);
+			}
+		}
+
 		// Handle non-WebSocket requests (HTTP API)
 		if (request.headers.get("Upgrade") !== "websocket") {
 			return this.handleHttpRequest(request);
@@ -50,6 +65,7 @@ export class GameRoom implements DurableObject {
 
 		server.accept();
 		this.connections.set(peerId, server);
+		this.notifyRegistry().catch(() => {});
 
 		server.send(createAssignIdMsg(peerId));
 		this.assignHostIfNeeded(peerId, server);
@@ -68,14 +84,11 @@ export class GameRoom implements DurableObject {
 	private async handleHttpRequest(request: Request): Promise<Response> {
 		const method = request.method.toUpperCase();
 
-		if (method === "OPTIONS") {
-			return new Response(null, { status: 204, headers: CORS_HEADERS });
-		}
-
 		if (method === "POST") {
 			try {
 				const body = (await request.json()) as {
 					maxPlayers?: number;
+					isPublic?: boolean;
 				};
 				const ceiling = this.env.MAX_PLAYERS_CEILING
 					? Number(this.env.MAX_PLAYERS_CEILING)
@@ -85,10 +98,22 @@ export class GameRoom implements DurableObject {
 						2,
 						Math.min(body.maxPlayers, ceiling)
 					);
+					await this.state.storage.put(
+						"maxPlayers",
+						this.maxPlayers
+					);
+				}
+				if (body.isPublic !== undefined) {
+					this.isPublic = body.isPublic;
+					await this.state.storage.put(
+						"isPublic",
+						this.isPublic
+					);
 				}
 			} catch {
 				// Ignore parse errors, keep defaults
 			}
+			this.notifyRegistry().catch(() => {});
 			return new Response(
 				JSON.stringify({ maxPlayers: this.maxPlayers }),
 				{
@@ -105,6 +130,7 @@ export class GameRoom implements DurableObject {
 				JSON.stringify({
 					players: this.connections.size,
 					maxPlayers: this.maxPlayers,
+					isPublic: this.isPublic,
 				}),
 				{
 					headers: {
@@ -133,6 +159,7 @@ export class GameRoom implements DurableObject {
 	private handleDisconnect(peerId: number): void {
 		this.connections.delete(peerId);
 		this.broadcast(createLeaveMsg(peerId));
+		this.notifyRegistry().catch(() => {});
 
 		if (peerId === this.hostPeerId) {
 			this.electNewHost();
@@ -216,5 +243,22 @@ export class GameRoom implements DurableObject {
 		if (this.hostPeerId > 0) {
 			this.broadcast(createHostAssignMsg(this.hostPeerId));
 		}
+	}
+
+	private async notifyRegistry(): Promise<void> {
+		if (!this.isPublic || !this.roomId) return;
+		const id = this.env.ROOM_REGISTRY.idFromName("global");
+		const registry = this.env.ROOM_REGISTRY.get(id);
+		await registry.fetch(
+			new Request("https://registry/", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					roomId: this.roomId,
+					players: this.connections.size,
+					maxPlayers: this.maxPlayers,
+				}),
+			})
+		);
 	}
 }
