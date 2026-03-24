@@ -15,8 +15,8 @@ MAX_PLAYERS_CEILING = 64
 
 [[migrations]]
 tag = "v1"
-new_classes = ["GameRoom"]
+new_sqlite_classes = ["GameRoom"]
 
 [[migrations]]
 tag = "v2"
-new_classes = ["RoomRegistry"]
+new_sqlite_classes = ["RoomRegistry"]
