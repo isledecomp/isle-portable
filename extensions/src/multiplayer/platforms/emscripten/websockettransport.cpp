@@ -52,8 +52,10 @@ void WebSocketTransport::Connect(const char* p_roomId)
 			ws.binaryType = 'arraybuffer';
 
 			ws.onopen = function() {
-				Atomics.store(HEAP32, connPtr >> 2, 1);
-				Atomics.store(HEAP32, everConnPtr >> 2, 1);
+				if (Module._mpSockets[socketId] === ws) {
+					Atomics.store(HEAP32, connPtr >> 2, 1);
+					Atomics.store(HEAP32, everConnPtr >> 2, 1);
+				}
 			};
 
 			ws.onmessage = function(event) {
@@ -64,12 +66,16 @@ void WebSocketTransport::Connect(const char* p_roomId)
 			};
 
 			ws.onclose = function() {
-				Atomics.store(HEAP32, connPtr >> 2, 0);
-				Atomics.store(HEAP32, discPtr >> 2, 1);
+				if (Module._mpSockets[socketId] === ws) {
+					Atomics.store(HEAP32, connPtr >> 2, 0);
+					Atomics.store(HEAP32, discPtr >> 2, 1);
+				}
 			};
 
 			ws.onerror = function() {
-				Atomics.store(HEAP32, connPtr >> 2, 0);
+				if (Module._mpSockets[socketId] === ws) {
+					Atomics.store(HEAP32, connPtr >> 2, 0);
+				}
 			};
 
 			Module._mpSockets[socketId] = ws;
