@@ -9,8 +9,8 @@
 using namespace Extensions::ThirdPersonCamera;
 
 InputHandler::InputHandler()
-	: m_touch{}, m_wantsAutoDisable(false), m_wantsAutoEnable(false), m_rightButtonHeld(false),
-	  m_leftButtonHeld(false), m_leftButtonDownTime(0), m_savedMouseX(0.0f), m_savedMouseY(0.0f)
+	: m_touch{}, m_wantsAutoDisable(false), m_wantsAutoEnable(false), m_rightButtonHeld(false), m_leftButtonHeld(false),
+	  m_leftButtonDownTime(0), m_savedMouseX(0.0f), m_savedMouseY(0.0f)
 {
 }
 
@@ -79,7 +79,7 @@ bool InputHandler::ConsumeAutoEnable()
 bool InputHandler::IsLmbHeldForMovement() const
 {
 	return m_leftButtonHeld && m_leftButtonDownTime > 0 &&
-		   (SDL_GetTicks() - m_leftButtonDownTime) >= LMB_HOLD_THRESHOLD_MS;
+		   (m_rightButtonHeld || (SDL_GetTicks() - m_leftButtonDownTime) >= LMB_HOLD_THRESHOLD_MS);
 }
 
 void InputHandler::SuppressGestures()
