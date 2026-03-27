@@ -145,20 +145,33 @@ std::vector<EligibilityInfo> Coordinator::ComputeEligibility(
 	return result;
 }
 
-void Coordinator::OnLocationChanged(int16_t p_location, const Catalog* p_catalog)
+void Coordinator::OnLocationChanged(const std::vector<int16_t>& p_locations, const Catalog* p_catalog)
 {
 	if (m_state != CoordinationState::e_interested || !p_catalog) {
 		return;
 	}
 
-	auto anims = p_catalog->GetAnimationsAtLocation(p_location);
-	for (const auto* e : anims) {
-		if (e->animIndex == m_currentAnimIndex) {
-			return; // still available
+	// Check if the currently interested animation is still available at any of the locations
+	for (int16_t loc : p_locations) {
+		auto anims = p_catalog->GetAnimationsAtLocation(loc);
+		for (const auto* e : anims) {
+			if (e->animIndex == m_currentAnimIndex) {
+				return; // still available at this location
+			}
 		}
 	}
 
-	// Animation not at new location — clear interest
+	// Also check NPC anims when at no location
+	if (p_locations.empty()) {
+		auto anims = p_catalog->GetAnimationsAtLocation(-1);
+		for (const auto* e : anims) {
+			if (e->animIndex == m_currentAnimIndex) {
+				return;
+			}
+		}
+	}
+
+	// Animation not at any current location — clear interest
 	m_state = CoordinationState::e_idle;
 	m_currentAnimIndex = ANIM_INDEX_NONE;
 	m_cancelPending = true;

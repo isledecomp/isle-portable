@@ -15,6 +15,7 @@
 
 #include <SDL3/SDL_stdinc.h>
 #include <SDL3/SDL_timer.h>
+#include <algorithm>
 #include <vec.h>
 
 using namespace Extensions;
@@ -29,7 +30,7 @@ using Common::WORLD_NOT_VISIBLE;
 RemotePlayer::RemotePlayer(uint32_t p_peerId, uint8_t p_actorId, uint8_t p_displayActorIndex)
 	: m_peerId(p_peerId), m_actorId(p_actorId), m_displayActorIndex(p_displayActorIndex), m_roi(nullptr),
 	  m_spawned(false), m_visible(false), m_targetSpeed(0.0f), m_targetVehicleType(VEHICLE_NONE),
-	  m_targetWorldId(WORLD_NOT_VISIBLE), m_lastUpdateTime(SDL_GetTicks()), m_hasReceivedUpdate(false), m_nearestLocation(-1),
+	  m_targetWorldId(WORLD_NOT_VISIBLE), m_lastUpdateTime(SDL_GetTicks()), m_hasReceivedUpdate(false),
 	  m_animator(Common::CharacterAnimatorConfig{/*.saveEmoteTransform=*/false, /*.propSuffix=*/p_peerId}),
 	  m_vehicleROI(nullptr), m_nameBubble(nullptr), m_allowRemoteCustomize(true), m_animationLocked(false)
 {
@@ -53,6 +54,11 @@ RemotePlayer::RemotePlayer(uint32_t p_peerId, uint8_t p_actorId, uint8_t p_displ
 RemotePlayer::~RemotePlayer()
 {
 	Despawn();
+}
+
+bool RemotePlayer::IsAtLocation(int16_t p_location) const
+{
+	return std::find(m_locations.begin(), m_locations.end(), p_location) != m_locations.end();
 }
 
 void RemotePlayer::Spawn(LegoWorld* p_isleWorld)

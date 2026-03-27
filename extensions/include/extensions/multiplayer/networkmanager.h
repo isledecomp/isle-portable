@@ -142,7 +142,7 @@ private:
 	void BroadcastAnimStart(uint16_t p_animIndex);
 	void BroadcastAnimComplete(uint16_t p_animIndex);
 	void HandleAnimComplete(const AnimCompleteMsg& p_msg);
-	int16_t GetPeerLocation(uint32_t p_peerId) const;
+	bool IsPeerAtLocation(uint32_t p_peerId, int16_t p_location) const;
 	bool GetPeerPosition(uint32_t p_peerId, float& p_x, float& p_z) const;
 	bool IsPeerNearby(uint32_t p_peerId, float p_refX, float p_refZ) const;
 	bool ValidateSessionLocations(uint16_t p_animIndex);

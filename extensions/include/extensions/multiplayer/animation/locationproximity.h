@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <vector>
 
 namespace Multiplayer::Animation
 {
@@ -11,23 +12,22 @@ class LocationProximity {
 public:
 	LocationProximity();
 
-	// Returns true if nearest location changed since last call
+	// Returns true if location set changed since last call
 	bool Update(float p_x, float p_z);
 
-	int16_t GetNearestLocation() const { return m_nearestLocation; }
-	float GetNearestDistance() const { return m_nearestDistance; }
+	// All locations within radius (sorted by index for stable comparison)
+	const std::vector<int16_t>& GetLocations() const { return m_locations; }
+	bool IsAtLocation(int16_t p_location) const;
 
-	void SetRadius(float p_radius) { m_radius = p_radius; }
 	float GetRadius() const { return m_radius; }
 	void Reset();
 
-	// Static version for computing any position's nearest location
-	static int16_t ComputeNearest(float p_x, float p_z, float p_radius);
+	// Static version returning all locations within radius (sorted by index)
+	static std::vector<int16_t> ComputeAll(float p_x, float p_z, float p_radius);
 
 private:
-	int16_t m_nearestLocation;
-	float m_nearestDistance;
 	float m_radius;
+	std::vector<int16_t> m_locations;
 };
 
 } // namespace Multiplayer::Animation

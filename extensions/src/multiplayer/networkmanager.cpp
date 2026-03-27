@@ -22,6 +22,8 @@
 
 #include <SDL3/SDL_stdinc.h>
 #include <SDL3/SDL_timer.h>
+#include <algorithm>
+#include <set>
 #include <vector>
 
 using namespace Extensions;
@@ -39,7 +41,7 @@ static constexpr float NPC_ANIM_NEARBY_RADIUS_SQ =
 	(Animation::NPC_ANIM_PROXIMITY + 5.0f) * (Animation::NPC_ANIM_PROXIMITY + 5.0f);
 
 static const char* IDLE_ANIM_STATE_JSON =
-	"{\"location\":-1,\"state\":0,\"currentAnimIndex\":65535,\"pendingInterest\":-1,\"animations\":[]}";
+	"{\"locations\":[],\"state\":0,\"currentAnimIndex\":65535,\"pendingInterest\":-1,\"animations\":[]}";
 
 static void ExtractSlotPeerIds(const AnimUpdateMsg& p_msg, uint32_t p_out[8])
 {
@@ -137,11 +139,10 @@ MxResult NetworkManager::Tickle()
 		if (userActor && userActor->GetROI()) {
 			const float* pos = userActor->GetROI()->GetWorldPosition();
 			if (m_locationProximity.Update(pos[0], pos[2])) {
-				int16_t loc = m_locationProximity.GetNearestLocation();
 				m_animStateDirty = true;
 
 				Animation::CoordinationState oldState = m_animCoordinator.GetState();
-				m_animCoordinator.OnLocationChanged(loc, &m_animCatalog);
+				m_animCoordinator.OnLocationChanged(m_locationProximity.GetLocations(), &m_animCatalog);
 
 				// Location change cleared interest — send cancel to host
 				if (oldState != Animation::CoordinationState::e_idle &&
@@ -861,23 +862,29 @@ void NetworkManager::ProcessIncomingPackets()
 void NetworkManager::UpdateRemotePlayers(float p_deltaTime)
 {
 	float radius = m_locationProximity.GetRadius();
-	int16_t localLoc = m_locationProximity.GetNearestLocation();
+	const auto& localLocs = m_locationProximity.GetLocations();
 	bool anyInIsle = false;
 
 	for (auto& [peerId, player] : m_remotePlayers) {
 		player->Tick(p_deltaTime);
 
-		// Derive nearest location from remote player's current position
+		// Derive locations from remote player's current position
 		// Skip players not in the isle world — their position is stale
 		if (player->IsSpawned() && player->GetROI() && player->GetWorldId() == (int8_t) LegoOmni::e_act1) {
 			anyInIsle = true;
 
-			int16_t oldLoc = player->GetNearestLocation();
+			auto oldLocs = player->GetLocations();
 			const float* pos = player->GetROI()->GetWorldPosition();
-			int16_t newLoc = Animation::LocationProximity::ComputeNearest(pos[0], pos[2], radius);
-			player->SetNearestLocation(newLoc);
-			if (oldLoc != newLoc && (oldLoc == localLoc || newLoc == localLoc)) {
-				m_animStateDirty = true;
+			auto newLocs = Animation::LocationProximity::ComputeAll(pos[0], pos[2], radius);
+			player->SetLocations(std::move(newLocs));
+			if (oldLocs != player->GetLocations()) {
+				// Dirty if remote's locations changed and any overlap with local player's locations
+				for (int16_t loc : localLocs) {
+					if (player->IsAtLocation(loc) || std::find(oldLocs.begin(), oldLocs.end(), loc) != oldLocs.end()) {
+						m_animStateDirty = true;
+						break;
+					}
+				}
 			}
 		}
 	}
@@ -1058,8 +1065,12 @@ void NetworkManager::RemoveRemotePlayer(uint32_t p_peerId)
 {
 	auto it = m_remotePlayers.find(p_peerId);
 	if (it != m_remotePlayers.end()) {
-		if (it->second->GetNearestLocation() == m_locationProximity.GetNearestLocation()) {
-			m_animStateDirty = true;
+		const auto& localLocs = m_locationProximity.GetLocations();
+		for (int16_t loc : it->second->GetLocations()) {
+			if (std::find(localLocs.begin(), localLocs.end(), loc) != localLocs.end()) {
+				m_animStateDirty = true;
+				break;
+			}
 		}
 		if (it->second->GetROI()) {
 			m_roiToPlayer.erase(it->second->GetROI());
@@ -1251,7 +1262,7 @@ void NetworkManager::TickHostSessions()
 		if (entry && entry->location >= 0) {
 			std::vector<uint32_t> toRemove;
 			for (const auto& slot : session->slots) {
-				if (slot.peerId != 0 && GetPeerLocation(slot.peerId) != entry->location) {
+				if (slot.peerId != 0 && !IsPeerAtLocation(slot.peerId, entry->location)) {
 					toRemove.push_back(slot.peerId);
 				}
 			}
@@ -1311,7 +1322,7 @@ void NetworkManager::HandleAnimInterest(uint32_t p_peerId, uint16_t p_animIndex,
 	// For location-bound animations, player must be at that location
 	const Animation::CatalogEntry* entry = m_animCatalog.FindEntry(p_animIndex);
 	if (entry && entry->location >= 0) {
-		if (GetPeerLocation(p_peerId) != entry->location) {
+		if (!IsPeerAtLocation(p_peerId, entry->location)) {
 			return;
 		}
 	}
@@ -1704,16 +1715,16 @@ void NetworkManager::HandleAnimComplete(const AnimCompleteMsg& p_msg)
 	m_callbacks->OnAnimationCompleted(json.c_str());
 }
 
-int16_t NetworkManager::GetPeerLocation(uint32_t p_peerId) const
+bool NetworkManager::IsPeerAtLocation(uint32_t p_peerId, int16_t p_location) const
 {
 	if (p_peerId == m_localPeerId) {
-		return m_locationProximity.GetNearestLocation();
+		return m_locationProximity.IsAtLocation(p_location);
 	}
 	auto it = m_remotePlayers.find(p_peerId);
 	if (it != m_remotePlayers.end()) {
-		return it->second->GetNearestLocation();
+		return it->second->IsAtLocation(p_location);
 	}
-	return -1;
+	return false;
 }
 
 bool NetworkManager::GetPeerPosition(uint32_t p_peerId, float& p_x, float& p_z) const
@@ -1775,8 +1786,7 @@ bool NetworkManager::ValidateSessionLocations(uint16_t p_animIndex)
 			if (slot.peerId == 0) {
 				continue;
 			}
-			int16_t loc = GetPeerLocation(slot.peerId);
-			if (loc >= 0 && loc != entry->location) {
+			if (!IsPeerAtLocation(slot.peerId, entry->location)) {
 				return false;
 			}
 		}
@@ -1978,7 +1988,7 @@ void NetworkManager::PushAnimationState()
 		return;
 	}
 
-	int16_t location = m_locationProximity.GetNearestLocation();
+	const auto& locations = m_locationProximity.GetLocations();
 	uint8_t displayActorIndex = cam->GetDisplayActorIndex();
 	int8_t localCharIndex = Animation::Catalog::DisplayActorToCharacterIndex(displayActorIndex);
 
@@ -1992,21 +2002,13 @@ void NetworkManager::PushAnimationState()
 	const float* localPos = userActor->GetROI()->GetWorldPosition();
 	float localX = localPos[0], localZ = localPos[2];
 
-	// Build two sets of character indices:
-	// - locationCharIndices: players at the same location (for cam anims)
-	// - proximityCharIndices: players within NPC_ANIM_PROXIMITY (for NPC anims)
-	std::vector<int8_t> locationCharIndices;
+	// Build proximity character indices (for NPC anims — position-based, not location-based)
 	std::vector<int8_t> proximityCharIndices;
-	locationCharIndices.push_back(localCharIndex);
 	proximityCharIndices.push_back(localCharIndex);
 
 	for (const auto& [peerId, player] : m_remotePlayers) {
 		if (!player->IsSpawned() || !player->GetROI() || player->GetWorldId() != (int8_t) LegoOmni::e_act1) {
 			continue;
-		}
-		int8_t charIdx = Animation::Catalog::DisplayActorToCharacterIndex(player->GetDisplayActorIndex());
-		if (player->GetNearestLocation() == location) {
-			locationCharIndices.push_back(charIdx);
 		}
 		// Exact NPC_ANIM_PROXIMITY radius for triggering eligibility
 		// (tighter than IsPeerNearby's NPC_ANIM_NEARBY_RADIUS_SQ used for session visibility)
@@ -2014,24 +2016,61 @@ void NetworkManager::PushAnimationState()
 		float dx = rpos[0] - localX;
 		float dz = rpos[2] - localZ;
 		if ((dx * dx + dz * dz) <= (Animation::NPC_ANIM_PROXIMITY * Animation::NPC_ANIM_PROXIMITY)) {
+			int8_t charIdx = Animation::Catalog::DisplayActorToCharacterIndex(player->GetDisplayActorIndex());
 			proximityCharIndices.push_back(charIdx);
 		}
 	}
 
-	auto eligibility = m_animCoordinator.ComputeEligibility(
-		location,
-		locationCharIndices.data(),
-		static_cast<uint8_t>(locationCharIndices.size()),
-		proximityCharIndices.data(),
-		static_cast<uint8_t>(proximityCharIndices.size())
-	);
+	// Compute eligibility across all overlapping locations.
+	// Each call returns NPC anims + cam anims for that specific location.
+	// NPC anims are identical across calls (same proximityChars), so we deduplicate by animIndex.
+	std::vector<Animation::EligibilityInfo> eligibility;
+	std::set<uint16_t> seenAnimIndices;
+
+	// If at no location, still process once with -1 to get NPC anims
+	std::vector<int16_t> locationsToProcess = locations.empty() ? std::vector<int16_t>{int16_t(-1)} : locations;
+
+	for (int16_t loc : locationsToProcess) {
+		// Build per-location character indices (for cam anims at this location)
+		std::vector<int8_t> locationCharIndices;
+		locationCharIndices.push_back(localCharIndex);
+
+		for (const auto& [peerId, player] : m_remotePlayers) {
+			if (!player->IsSpawned() || !player->GetROI() || player->GetWorldId() != (int8_t) LegoOmni::e_act1) {
+				continue;
+			}
+			if (player->IsAtLocation(loc)) {
+				int8_t charIdx = Animation::Catalog::DisplayActorToCharacterIndex(player->GetDisplayActorIndex());
+				locationCharIndices.push_back(charIdx);
+			}
+		}
+
+		auto locEligibility = m_animCoordinator.ComputeEligibility(
+			loc,
+			locationCharIndices.data(),
+			static_cast<uint8_t>(locationCharIndices.size()),
+			proximityCharIndices.data(),
+			static_cast<uint8_t>(proximityCharIndices.size())
+		);
+
+		for (auto& info : locEligibility) {
+			if (seenAnimIndices.insert(info.animIndex).second) {
+				eligibility.push_back(std::move(info));
+			}
+		}
+	}
 
 	// Build JSON
 	std::string json;
 	json.reserve(2048);
-	json += "{\"location\":";
-	json += std::to_string(location);
-	json += ",\"state\":";
+	json += "{\"locations\":[";
+	for (size_t i = 0; i < locations.size(); i++) {
+		if (i > 0) {
+			json += ',';
+		}
+		json += std::to_string(locations[i]);
+	}
+	json += "],\"state\":";
 	json += std::to_string(static_cast<uint8_t>(m_animCoordinator.GetState()));
 	json += ",\"currentAnimIndex\":";
 	json += std::to_string(m_animCoordinator.GetCurrentAnimIndex());

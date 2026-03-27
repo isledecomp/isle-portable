@@ -65,8 +65,8 @@ public:
 		uint8_t p_proximityCount
 	) const;
 
-	// Auto-clear interest if current animation is not available at the new location.
-	void OnLocationChanged(int16_t p_location, const Catalog* p_catalog);
+	// Auto-clear interest if current animation is not available at any of the new locations.
+	void OnLocationChanged(const std::vector<int16_t>& p_locations, const Catalog* p_catalog);
 
 	void Reset();
 
