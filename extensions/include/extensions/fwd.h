@@ -22,6 +22,7 @@ class NetworkManager;
 class WorldStateSync;
 namespace Animation
 {
+class AudioPlayer;
 class Catalog;
 class Controller;
 } // namespace Animation

@@ -13,6 +13,11 @@ void AudioPlayer::Init(const std::vector<SceneAnimData::AudioTrack>& p_tracks)
 		MxWavePresenter::WaveFormat format = audioTrack.format;
 		if (sound->Create(format, mediaSrcPath, audioTrack.volume, audioTrack.pcmData, audioTrack.pcmDataSize) ==
 			SUCCESS) {
+			// Disable Doppler on extension-created sounds. Camera animations drive high
+			// listener velocities via CalculateWorldVelocity, and miniaudio's default
+			// dopplerFactor of 1.0 shifts the pitch/speed of spatialized sounds.
+			ma_sound_set_doppler_factor(sound->m_cacheSound, 0);
+
 			ActiveSound active;
 			active.sound = sound;
 			active.timeOffset = audioTrack.timeOffset;
