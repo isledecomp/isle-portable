@@ -69,6 +69,8 @@ public:
 	void OnLocationChanged(const std::vector<int16_t>& p_locations, const Catalog* p_catalog);
 
 	void Reset();
+	void ResetLocalState();
+	void RemoveSession(uint16_t p_animIndex);
 
 	// Apply authoritative session state from host
 	void ApplySessionUpdate(

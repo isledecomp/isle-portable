@@ -33,12 +33,13 @@ public:
 		uint32_t p_peerId,
 		uint16_t p_animIndex,
 		uint8_t p_displayActorIndex,
-		std::vector<uint16_t>& p_changedAnims);
+		std::vector<uint16_t>& p_changedAnims
+	);
 	bool HandleCancel(uint32_t p_peerId, std::vector<uint16_t>& p_changedAnims);
 	bool HandlePlayerRemoved(uint32_t p_peerId, std::vector<uint16_t>& p_changedAnims);
 
-	// Returns animIndex of session ready to play, or ANIM_INDEX_NONE
-	uint16_t Tick(uint32_t p_now);
+	// Returns animIndices of all sessions ready to play
+	std::vector<uint16_t> Tick(uint32_t p_now);
 
 	void StartCountdown(uint16_t p_animIndex);
 	void RevertCountdown(uint16_t p_animIndex);
@@ -66,7 +67,8 @@ private:
 	void RemovePlayerFromSessions(
 		uint32_t p_peerId,
 		bool p_includePlayingSessions,
-		std::vector<uint16_t>& p_changedAnims);
+		std::vector<uint16_t>& p_changedAnims
+	);
 
 	const Catalog* m_catalog = nullptr;
 	std::map<uint16_t, AnimSession> m_sessions;

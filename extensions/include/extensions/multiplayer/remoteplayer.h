@@ -2,6 +2,7 @@
 
 #include "extensions/common/characteranimator.h"
 #include "extensions/common/customizestate.h"
+#include "extensions/multiplayer/animation/catalog.h"
 #include "extensions/multiplayer/protocol.h"
 #include "mxtypes.h"
 
@@ -58,8 +59,15 @@ public:
 
 	const char* GetDisplayName() const { return m_displayName; }
 
-	void SetAnimationLocked(bool p_locked) { m_animationLocked = p_locked; }
-	bool IsAnimationLocked() const { return m_animationLocked; }
+	void LockForAnimation(uint16_t p_animIndex) { m_lockedForAnimIndex = p_animIndex; }
+	void UnlockFromAnimation(uint16_t p_animIndex)
+	{
+		if (m_lockedForAnimIndex == p_animIndex) {
+			m_lockedForAnimIndex = Animation::ANIM_INDEX_NONE;
+		}
+	}
+	void ForceUnlockAnimation() { m_lockedForAnimIndex = Animation::ANIM_INDEX_NONE; }
+	bool IsAnimationLocked() const { return m_lockedForAnimIndex != Animation::ANIM_INDEX_NONE; }
 
 private:
 	const char* GetDisplayActorName() const;
@@ -100,7 +108,7 @@ private:
 
 	Extensions::Common::CustomizeState m_customizeState;
 	bool m_allowRemoteCustomize;
-	bool m_animationLocked;
+	uint16_t m_lockedForAnimIndex;
 };
 
 } // namespace Multiplayer

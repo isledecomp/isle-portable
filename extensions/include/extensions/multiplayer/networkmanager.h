@@ -199,15 +199,19 @@ private:
 
 	// NPC animation playback
 	Multiplayer::Animation::Catalog m_animCatalog;
-	Multiplayer::Animation::ScenePlayer m_scenePlayer;
+	Multiplayer::Animation::Loader m_animLoader;
 	Multiplayer::Animation::LocationProximity m_locationProximity;
 	Multiplayer::Animation::Coordinator m_animCoordinator;
 	Multiplayer::Animation::SessionHost m_animSessionHost;
 	int32_t m_localPendingAnimInterest;
-	uint16_t m_playingAnimIndex;
+
+	// Concurrent animation playback: one ScenePlayer per playing animation
+	std::map<uint16_t, std::unique_ptr<Multiplayer::Animation::ScenePlayer>> m_playingAnims;
 
 	void TickAnimation();
-	void StopScenePlayback(bool p_unlockRemotes);
+	void StopScenePlayback(uint16_t p_animIndex, bool p_unlockRemotes);
+	void StopAllPlayback();
+	void UnlockRemotesForAnim(uint16_t p_animIndex);
 
 	// Animation state push
 	bool m_animStateDirty;

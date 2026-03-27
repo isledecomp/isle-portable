@@ -45,8 +45,9 @@ public:
 	void Tick();
 	void Stop();
 	bool IsPlaying() const { return m_playing; }
+	bool IsObserverMode() const { return m_observerMode; }
 
-	void PreloadAsync(uint32_t p_objectId) { m_loader.PreloadAsync(p_objectId); }
+	void SetLoader(Loader* p_loader) { m_loader = p_loader; }
 
 private:
 	void ComputeRebaseMatrix();
@@ -56,7 +57,7 @@ private:
 	void CleanupProps();
 
 	// Sub-components
-	Loader m_loader;
+	Loader* m_loader;
 	AudioPlayer m_audioPlayer;
 	PhonemePlayer m_phonemePlayer;
 

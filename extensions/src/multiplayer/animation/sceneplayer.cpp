@@ -61,9 +61,9 @@ static bool MatchesCharacter(const std::string& p_actorName, int8_t p_charIndex)
 }
 
 ScenePlayer::ScenePlayer()
-	: m_playing(false), m_rebaseComputed(false), m_startTime(0), m_currentData(nullptr), m_category(e_npcAnim),
-	  m_animRootROI(nullptr), m_vehicleROI(nullptr), m_hiddenVehicleROI(nullptr), m_roiMap(nullptr), m_roiMapSize(0),
-	  m_hasCamAnim(false), m_observerMode(false), m_hideOnStop(false)
+	: m_loader(nullptr), m_playing(false), m_rebaseComputed(false), m_startTime(0), m_currentData(nullptr),
+	  m_category(e_npcAnim), m_animRootROI(nullptr), m_vehicleROI(nullptr), m_hiddenVehicleROI(nullptr),
+	  m_roiMap(nullptr), m_roiMapSize(0), m_hasCamAnim(false), m_observerMode(false), m_hideOnStop(false)
 {
 }
 
@@ -264,7 +264,7 @@ void ScenePlayer::Play(
 		return;
 	}
 
-	SceneAnimData* data = m_loader.EnsureCached(p_animInfo->m_objectId);
+	SceneAnimData* data = m_loader->EnsureCached(p_animInfo->m_objectId);
 	if (!data || !data->anim) {
 		return;
 	}

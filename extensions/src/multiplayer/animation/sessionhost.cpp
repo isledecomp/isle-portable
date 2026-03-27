@@ -221,16 +221,16 @@ void SessionHost::RevertCountdown(uint16_t p_animIndex)
 	}
 }
 
-uint16_t SessionHost::Tick(uint32_t p_now)
+std::vector<uint16_t> SessionHost::Tick(uint32_t p_now)
 {
+	std::vector<uint16_t> ready;
 	for (auto& [animIndex, session] : m_sessions) {
 		if (session.state == CoordinationState::e_countdown && p_now >= session.countdownEndTime) {
 			session.state = CoordinationState::e_playing;
-			return animIndex;
+			ready.push_back(animIndex);
 		}
 	}
-
-	return ANIM_INDEX_NONE;
+	return ready;
 }
 
 void SessionHost::Reset()

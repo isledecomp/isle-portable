@@ -185,6 +185,18 @@ void Coordinator::Reset()
 	m_cancelPending = false;
 }
 
+void Coordinator::ResetLocalState()
+{
+	m_state = CoordinationState::e_idle;
+	m_currentAnimIndex = ANIM_INDEX_NONE;
+	m_cancelPending = false;
+}
+
+void Coordinator::RemoveSession(uint16_t p_animIndex)
+{
+	m_sessions.erase(p_animIndex);
+}
+
 void Coordinator::ApplySessionUpdate(
 	uint16_t p_animIndex,
 	uint8_t p_state,
