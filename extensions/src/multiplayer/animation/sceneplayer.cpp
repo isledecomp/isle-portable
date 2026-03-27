@@ -299,12 +299,6 @@ void ScenePlayer::Play(
 	m_hasCamAnim = (!m_observerMode && m_category == e_camAnim && m_currentData->anim->GetCamAnim() != nullptr);
 
 	if (m_category == e_camAnim && !m_observerMode) {
-		for (auto& p : m_participants) {
-			if (p.IsSpectator()) {
-				p.roi->SetVisibility(FALSE);
-			}
-		}
-
 		// Hide the player's ride vehicle — it would remain visible at the
 		// pre-animation position while the player is teleported
 		LegoROI* localVehicle = m_participants[0].vehicleROI;
