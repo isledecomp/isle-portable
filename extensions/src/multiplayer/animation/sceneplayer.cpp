@@ -11,6 +11,7 @@
 #include "legoworld.h"
 #include "misc.h"
 #include "misc/legotree.h"
+#include "mxbackgroundaudiomanager.h"
 #include "mxgeometry/mxgeometry3d.h"
 #include "realtime/realtime.h"
 #include "roi/legoroi.h"
@@ -85,6 +86,7 @@ void ScenePlayer::SetupROIs(const AnimInfo* p_animInfo)
 	auto addAlias = [&](const std::string& p_name, LegoROI* p_roi) {
 		aliasNames.push_back(p_name);
 		aliases.push_back({aliasNames.back().c_str(), p_roi});
+		m_actorAliases.push_back({p_name, p_roi});
 	};
 
 	auto createProp = [&](const std::string& p_name, const char* p_lodName) -> LegoROI* {
@@ -292,7 +294,7 @@ void ScenePlayer::Play(
 	}
 
 	ResolvePtAtCamROIs();
-	m_phonemePlayer.Init(data->phonemeTracks, m_roiMap, m_roiMapSize);
+	m_phonemePlayer.Init(data->phonemeTracks, m_roiMap, m_roiMapSize, m_actorAliases);
 	m_audioPlayer.Init(data->audioTracks);
 
 	// Observers don't get camera control — they watch the animation from their own viewpoint
@@ -310,6 +312,8 @@ void ScenePlayer::Play(
 
 	m_startTime = 0;
 	m_playing = true;
+
+	BackgroundAudioManager()->LowerVolume();
 }
 
 void ScenePlayer::ComputeRebaseMatrix()
@@ -547,7 +551,10 @@ void ScenePlayer::Stop()
 	}
 	m_participants.clear();
 
+	BackgroundAudioManager()->RaiseVolume();
+
 	m_ptAtCamROIs.clear();
+	m_actorAliases.clear();
 	m_playing = false;
 	m_rebaseComputed = false;
 	m_currentData = nullptr;

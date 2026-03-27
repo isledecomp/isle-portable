@@ -22,7 +22,12 @@ struct PhonemeState {
 
 class PhonemePlayer {
 public:
-	void Init(const std::vector<SceneAnimData::PhonemeTrack>& p_tracks, LegoROI** p_roiMap, MxU32 p_roiMapSize);
+	void Init(
+		const std::vector<SceneAnimData::PhonemeTrack>& p_tracks,
+		LegoROI** p_roiMap,
+		MxU32 p_roiMapSize,
+		const std::vector<std::pair<std::string, LegoROI*>>& p_actorAliases
+	);
 	void Tick(float p_elapsedMs, const std::vector<SceneAnimData::PhonemeTrack>& p_tracks);
 	void Cleanup();
 

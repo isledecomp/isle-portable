@@ -12,11 +12,24 @@
 
 using namespace Multiplayer::Animation;
 
-// Find the ROI matching a phoneme track's roiName in the roiMap.
-static LegoROI* FindTrackROI(const std::string& p_roiName, LegoROI** p_roiMap, MxU32 p_roiMapSize)
+// Find the ROI matching a phoneme track's roiName.
+// Check actor aliases first (participant ROIs whose names differ from animation actor names),
+// then fall back to a direct name search in the roiMap.
+static LegoROI* FindTrackROI(
+	const std::string& p_roiName,
+	LegoROI** p_roiMap,
+	MxU32 p_roiMapSize,
+	const std::vector<std::pair<std::string, LegoROI*>>& p_actorAliases
+)
 {
 	if (p_roiName.empty() || !p_roiMap) {
 		return nullptr;
+	}
+
+	for (const auto& alias : p_actorAliases) {
+		if (!SDL_strcasecmp(p_roiName.c_str(), alias.first.c_str())) {
+			return alias.second;
+		}
 	}
 
 	for (MxU32 i = 1; i < p_roiMapSize; i++) {
@@ -27,7 +40,12 @@ static LegoROI* FindTrackROI(const std::string& p_roiName, LegoROI** p_roiMap, M
 	return nullptr;
 }
 
-void PhonemePlayer::Init(const std::vector<SceneAnimData::PhonemeTrack>& p_tracks, LegoROI** p_roiMap, MxU32 p_roiMapSize)
+void PhonemePlayer::Init(
+	const std::vector<SceneAnimData::PhonemeTrack>& p_tracks,
+	LegoROI** p_roiMap,
+	MxU32 p_roiMapSize,
+	const std::vector<std::pair<std::string, LegoROI*>>& p_actorAliases
+)
 {
 	for (auto& track : p_tracks) {
 		PhonemeState state;
@@ -37,8 +55,8 @@ void PhonemePlayer::Init(const std::vector<SceneAnimData::PhonemeTrack>& p_track
 		state.bitmap = nullptr;
 		state.currentFrame = -1;
 
-		// Resolve the target ROI from the track's roiName via the roiMap
-		LegoROI* targetROI = FindTrackROI(track.roiName, p_roiMap, p_roiMapSize);
+		// Resolve the target ROI from the track's roiName via aliases or roiMap
+		LegoROI* targetROI = FindTrackROI(track.roiName, p_roiMap, p_roiMapSize, p_actorAliases);
 		if (!targetROI) {
 			m_states.push_back(state);
 			continue;

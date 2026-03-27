@@ -85,6 +85,9 @@ private:
 	LegoROI** m_roiMap;
 	MxU32 m_roiMapSize;
 
+	// Actor name → ROI aliases (participant ROIs whose names differ from animation actor names)
+	std::vector<std::pair<std::string, LegoROI*>> m_actorAliases;
+
 	// Props created for the animation (cloned characters and prop models)
 	std::vector<LegoROI*> m_propROIs;
 
