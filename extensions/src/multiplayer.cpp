@@ -152,6 +152,11 @@ MxBool MultiplayerExt::HandleEntityNotify(LegoEntity* p_entity)
 		return FALSE;
 	}
 
+	// Suppress pizzeria clicks entirely in multiplayer
+	if (p_entity->IsA("Pizzeria") && s_networkManager->IsConnected()) {
+		return TRUE;
+	}
+
 	// Only intercept plants and buildings
 	MxU8 type = p_entity->GetType();
 	if (type != LegoEntity::e_plant && type != LegoEntity::e_building) {
