@@ -191,7 +191,7 @@ struct AnimStartMsg {
 // Per-participant data in AnimCompleteMsg
 struct AnimCompletionParticipant {
 	uint32_t peerId;
-	int8_t charIndex;    // Participant's character (g_characters index)
+	int8_t charIndex;    // Participant's character (g_actorInfoInit index)
 	char displayName[8]; // 7 chars + null
 };
 

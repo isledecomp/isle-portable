@@ -4,6 +4,7 @@
 #include "anim/legoanim.h"
 #include "extensions/common/animutils.h"
 #include "extensions/common/charactercloner.h"
+#include "legoactors.h"
 #include "legoanimationmanager.h"
 #include "legocameracontroller.h"
 #include "legocharactermanager.h"
@@ -28,9 +29,6 @@ using namespace Multiplayer::Animation;
 namespace AnimUtils = Extensions::Common::AnimUtils;
 using Extensions::Common::CharacterCloner;
 
-// Defined in legoanimationmanager.cpp
-extern LegoAnimationManager::Character g_characters[47];
-
 enum VehicleCategory {
 	e_bike,
 	e_motorcycle,
@@ -54,10 +52,10 @@ static VehicleCategory GetVehicleCategory(MxU32 p_vehicleIdx)
 
 static bool MatchesCharacter(const std::string& p_actorName, int8_t p_charIndex)
 {
-	if (p_charIndex < 0 || p_charIndex >= (int8_t) sizeOfArray(g_characters)) {
+	if (p_charIndex < 0 || p_charIndex >= (int8_t) sizeOfArray(g_actorInfoInit)) {
 		return false;
 	}
-	return !SDL_strcasecmp(p_actorName.c_str(), g_characters[p_charIndex].m_name);
+	return !SDL_strcasecmp(p_actorName.c_str(), g_actorInfoInit[p_charIndex].m_name);
 }
 
 ScenePlayer::ScenePlayer()

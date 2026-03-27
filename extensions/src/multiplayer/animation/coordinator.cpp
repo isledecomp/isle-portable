@@ -1,14 +1,11 @@
 #include "extensions/multiplayer/animation/coordinator.h"
 
 #include "extensions/multiplayer/animation/catalog.h"
-#include "legoanimationmanager.h"
+#include "legoactors.h"
 
 #include <SDL3/SDL_timer.h>
 
 using namespace Multiplayer::Animation;
-
-// Defined in legoanimationmanager.cpp
-extern LegoAnimationManager::Character g_characters[47];
 
 Coordinator::Coordinator()
 	: m_catalog(nullptr), m_state(CoordinationState::e_idle), m_currentAnimIndex(ANIM_INDEX_NONE), m_localPeerId(0),
@@ -59,8 +56,8 @@ static void BuildSlots(
 	// One slot per performer bit in performerMask
 	for (int8_t i : GetPerformerIndices(p_entry->performerMask)) {
 		SlotInfo slot;
-		if (i < (int8_t) sizeOfArray(g_characters)) {
-			slot.names.push_back(g_characters[i].m_name);
+		if (i < (int8_t) sizeOfArray(g_actorInfoInit)) {
+			slot.names.push_back(g_actorInfoInit[i].m_name);
 		}
 		slot.filled = (p_filledPerformers & (uint64_t(1) << i)) != 0;
 		p_slots.push_back(std::move(slot));
@@ -74,7 +71,7 @@ static void BuildSlots(
 	else {
 		for (int8_t i = 0; i < CORE_CHARACTER_COUNT; i++) {
 			if ((p_entry->spectatorMask >> i) & 1) {
-				spectatorSlot.names.push_back(g_characters[i].m_name);
+				spectatorSlot.names.push_back(g_actorInfoInit[i].m_name);
 			}
 		}
 	}

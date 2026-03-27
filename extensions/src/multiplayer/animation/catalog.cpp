@@ -1,25 +1,23 @@
 #include "extensions/multiplayer/animation/catalog.h"
 
 #include "decomp.h"
+#include "legoactors.h"
 #include "legoanimationmanager.h"
-#include "legocharactermanager.h"
 #include "misc.h"
 
 #include <SDL3/SDL_stdinc.h>
 
 using namespace Multiplayer::Animation;
 
-// Defined in legoanimationmanager.cpp
-extern LegoAnimationManager::Character g_characters[47];
-
-// Exact-match a model name against g_characters[].m_name.
+// Exact-match a model name against g_actorInfoInit[].m_name.
 // The engine's LegoAnimationManager::GetCharacterIndex uses 2-char prefix matching,
 // which causes false positives (e.g. "ladder" matching "laura"). We need exact
 // matching to correctly identify character performers vs props.
+// Capped at 64 because performerMask is uint64_t.
 static int8_t GetCharacterIndex(const char* p_name)
 {
-	for (int8_t i = 0; i < (int8_t) sizeOfArray(g_characters); i++) {
-		if (!SDL_strcasecmp(p_name, g_characters[i].m_name)) {
+	for (int8_t i = 0; i < (int8_t) SDL_min(sizeOfArray(g_actorInfoInit), (size_t) 64); i++) {
+		if (!SDL_strcasecmp(p_name, g_actorInfoInit[i].m_name)) {
 			return i;
 		}
 	}
@@ -77,7 +75,7 @@ void Catalog::Refresh(LegoAnimationManager* p_am)
 			entry.category = e_camAnim;
 		}
 
-		// Compute performerMask by matching models against g_characters[].m_name
+		// Compute performerMask by matching models against g_actorInfoInit[].m_name
 		entry.performerMask = 0;
 		for (uint8_t m = 0; m < entry.modelCount; m++) {
 			if (m_animsBase[i].m_models && m_animsBase[i].m_models[m].m_name) {
@@ -107,12 +105,10 @@ const AnimInfo* Catalog::GetAnimInfo(uint16_t p_animIndex) const
 
 int8_t Catalog::DisplayActorToCharacterIndex(uint8_t p_displayActorIndex)
 {
-	const char* actorName = CharacterManager()->GetActorName(p_displayActorIndex);
-	if (!actorName) {
+	if (p_displayActorIndex >= SDL_min(sizeOfArray(g_actorInfoInit), (size_t) 64)) {
 		return -1;
 	}
-
-	return GetCharacterIndex(actorName);
+	return static_cast<int8_t>(p_displayActorIndex);
 }
 
 const CatalogEntry* Catalog::FindEntry(uint16_t p_animIndex) const

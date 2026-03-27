@@ -33,9 +33,6 @@ using Common::IsMultiPartEmote;
 using Common::IsRestrictedArea;
 using Common::WORLD_NOT_VISIBLE;
 
-// Defined in legoanimationmanager.cpp
-extern LegoAnimationManager::Character g_characters[47];
-
 // Slightly larger than NPC_ANIM_PROXIMITY to catch transitions
 static constexpr float NPC_ANIM_NEARBY_RADIUS_SQ =
 	(Animation::NPC_ANIM_PROXIMITY + 5.0f) * (Animation::NPC_ANIM_PROXIMITY + 5.0f);
