@@ -105,6 +105,16 @@ void Controller::OnActorEnter(IslePathActor* p_actor)
 		return;
 	}
 
+	// Stop external animation before modifying ride/display state —
+	// the ScenePlayer may hold a reference to the ride vehicle ROI.
+	if (m_animPlaying) {
+		if (m_animStopCallback) {
+			m_animStopCallback();
+		}
+		m_animPlaying = false;
+		m_animStopCallback = nullptr;
+	}
+
 	LegoROI* newROI = userActor->GetROI();
 	if (!newROI) {
 		return;
@@ -155,6 +165,16 @@ void Controller::OnActorExit(IslePathActor* p_actor)
 {
 	if (!m_enabled) {
 		return;
+	}
+
+	// Stop external animation before clearing ride animation state —
+	// the ScenePlayer may hold a reference to the ride vehicle ROI.
+	if (m_animPlaying) {
+		if (m_animStopCallback) {
+			m_animStopCallback();
+		}
+		m_animPlaying = false;
+		m_animStopCallback = nullptr;
 	}
 
 	if (m_animator.GetCurrentVehicleType() != VEHICLE_NONE) {

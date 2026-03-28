@@ -1,10 +1,10 @@
 // Protocol constants — must stay in sync with protocol.h
 
-// MessageHeader binary layout: type(1) + peerId(4) + sequence(4) + target(4) = 13 bytes
-export const HEADER_SIZE = 13;
-export const PEER_ID_OFFSET = 1;
-export const SEQUENCE_OFFSET = 5;
-export const TARGET_OFFSET = 9;
+// MessageHeader binary layout: type(1) + _pad(1) + peerId(4) + sequence(4) + target(4) = 14 bytes
+export const HEADER_SIZE = 14;
+export const PEER_ID_OFFSET = 2;
+export const SEQUENCE_OFFSET = 6;
+export const TARGET_OFFSET = 10;
 
 // Routing target constants
 export const TARGET_BROADCAST = 0;
@@ -19,7 +19,7 @@ export const MSG_ASSIGN_ID = 0xff;
 // AssignIdMsg: compact server-only message — type(1) + peerId(4)
 const ASSIGN_ID_SIZE = 1 + 4;
 
-// HostAssignMsg: header(13) + hostPeerId(4)
+// HostAssignMsg: header(14) + hostPeerId(4)
 const HOST_ASSIGN_SIZE = HEADER_SIZE + 4;
 
 export function createAssignIdMsg(peerId: number): ArrayBuffer {

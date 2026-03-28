@@ -78,6 +78,7 @@ enum LightChangeType : uint8_t {
 
 struct MessageHeader {
 	uint8_t type;
+	uint8_t _pad;
 	uint32_t peerId;
 	uint32_t sequence;
 	uint32_t target;

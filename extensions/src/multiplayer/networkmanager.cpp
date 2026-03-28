@@ -175,7 +175,7 @@ MxResult NetworkManager::Tickle()
 					}
 					else if (IsConnected()) {
 						AnimCancelMsg cancelMsg{};
-						cancelMsg.header = {MSG_ANIM_CANCEL, m_localPeerId, m_sequence++, TARGET_HOST};
+						cancelMsg.header = {MSG_ANIM_CANCEL, 0, m_localPeerId, m_sequence++, TARGET_HOST};
 						SendMessage(cancelMsg);
 					}
 					m_localPendingAnimInterest = -1;
@@ -326,7 +326,7 @@ void NetworkManager::CancelLocalAnimInterest()
 	}
 	else if (IsConnected()) {
 		AnimCancelMsg msg{};
-		msg.header = {MSG_ANIM_CANCEL, m_localPeerId, m_sequence++, TARGET_HOST};
+		msg.header = {MSG_ANIM_CANCEL, 0, m_localPeerId, m_sequence++, TARGET_HOST};
 		SendMessage(msg);
 	}
 
@@ -638,7 +638,7 @@ void NetworkManager::ProcessPendingRequests()
 			}
 			else if (IsConnected()) {
 				AnimInterestMsg msg{};
-				msg.header = {MSG_ANIM_INTEREST, m_localPeerId, m_sequence++, TARGET_HOST};
+				msg.header = {MSG_ANIM_INTEREST, 0, m_localPeerId, m_sequence++, TARGET_HOST};
 				msg.animIndex = animIndex;
 				ThirdPersonCamera::Controller* animCam = GetCamera();
 				msg.displayActorIndex = animCam ? animCam->GetDisplayActorIndex() : 0;
@@ -715,7 +715,7 @@ void NetworkManager::BroadcastLocalState()
 	}
 
 	PlayerStateMsg msg{};
-	msg.header = {MSG_STATE, m_localPeerId, m_sequence++, TARGET_BROADCAST};
+	msg.header = {MSG_STATE, 0, m_localPeerId, m_sequence++, TARGET_BROADCAST};
 	msg.actorId = actorId;
 	msg.worldId = inRestrictedArea ? WORLD_NOT_VISIBLE : (int8_t) currentWorld->GetWorldId();
 	msg.vehicleType = DetectVehicleType(userActor);
@@ -1066,7 +1066,7 @@ void NetworkManager::SendEmote(uint8_t p_emoteId)
 	cam->TriggerEmote(p_emoteId);
 
 	EmoteMsg msg{};
-	msg.header = {MSG_EMOTE, m_localPeerId, m_sequence++, TARGET_BROADCAST};
+	msg.header = {MSG_EMOTE, 0, m_localPeerId, m_sequence++, TARGET_BROADCAST};
 	msg.emoteId = p_emoteId;
 	SendMessage(msg);
 }
@@ -1201,7 +1201,7 @@ bool NetworkManager::IsClonedCharacter(const char* p_name) const
 void NetworkManager::SendCustomize(uint32_t p_targetPeerId, uint8_t p_changeType, uint8_t p_partIndex)
 {
 	CustomizeMsg msg{};
-	msg.header = {MSG_CUSTOMIZE, m_localPeerId, m_sequence++, TARGET_BROADCAST_ALL};
+	msg.header = {MSG_CUSTOMIZE, 0, m_localPeerId, m_sequence++, TARGET_BROADCAST_ALL};
 	msg.targetPeerId = p_targetPeerId;
 	msg.changeType = p_changeType;
 	msg.partIndex = p_partIndex;
@@ -1664,7 +1664,7 @@ void NetworkManager::HandleAnimStartLocally(uint16_t p_animIndex, bool p_localIn
 AnimUpdateMsg NetworkManager::BuildAnimUpdateMsg(uint16_t p_animIndex, uint32_t p_target)
 {
 	AnimUpdateMsg msg{};
-	msg.header = {MSG_ANIM_UPDATE, m_localPeerId, m_sequence++, p_target};
+	msg.header = {MSG_ANIM_UPDATE, 0, m_localPeerId, m_sequence++, p_target};
 	msg.animIndex = p_animIndex;
 
 	const Animation::AnimSession* session = m_animSessionHost.FindSession(p_animIndex);
@@ -1699,7 +1699,7 @@ void NetworkManager::SendAnimUpdateToPlayer(uint16_t p_animIndex, uint32_t p_tar
 void NetworkManager::BroadcastAnimStart(uint16_t p_animIndex)
 {
 	AnimStartMsg msg{};
-	msg.header = {MSG_ANIM_START, m_localPeerId, m_sequence++, TARGET_BROADCAST};
+	msg.header = {MSG_ANIM_START, 0, m_localPeerId, m_sequence++, TARGET_BROADCAST};
 	msg.animIndex = p_animIndex;
 	SendMessage(msg);
 
@@ -1720,7 +1720,7 @@ void NetworkManager::BroadcastAnimComplete(uint16_t p_animIndex)
 	}
 
 	AnimCompleteMsg msg{};
-	msg.header = {MSG_ANIM_COMPLETE, m_localPeerId, m_sequence++, TARGET_BROADCAST};
+	msg.header = {MSG_ANIM_COMPLETE, 0, m_localPeerId, m_sequence++, TARGET_BROADCAST};
 	msg.eventId = (static_cast<uint64_t>(SDL_rand_bits()) << 32) | static_cast<uint64_t>(SDL_rand_bits());
 	msg.objectId = animInfo->m_objectId;
 	msg.participantCount = 0;
