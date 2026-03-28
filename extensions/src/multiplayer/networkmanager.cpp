@@ -10,6 +10,7 @@
 #include "legoactor.h"
 #include "legoanimationmanager.h"
 #include "legocachsound.h"
+#include "legocarbuild.h"
 #include "legocharactermanager.h"
 #include "legoextraactor.h"
 #include "legogamestate.h"
@@ -485,6 +486,18 @@ void NetworkManager::EnforceDisableNPCs()
 	am->m_numAllowedExtras = 0;
 	am->m_enableCamAnims = FALSE;
 	am->m_unk0x400 = FALSE;
+
+	// Suppress build exit camera animations (triggered via FUN_10060dc0,
+	// which bypasses the m_enableCamAnims check)
+	static const char* buildStateNames[] =
+		{"LegoCopterBuildState", "LegoDuneCarBuildState", "LegoJetskiBuildState", "LegoRaceCarBuildState"};
+
+	for (const char* name : buildStateNames) {
+		LegoVehicleBuildState* state = (LegoVehicleBuildState*) GameState()->GetState(name);
+		if (state != NULL) {
+			state->m_playedExitScript = TRUE;
+		}
+	}
 
 	// Purge all extras including ambient NPCs (mama, papa, brickster)
 	// that are spawned by camera path triggers via FUN_10064380.
