@@ -154,8 +154,20 @@ MxResult NetworkManager::Tickle()
 		}
 
 		// Update local name bubble position
-		if (m_localNameBubble && cam->GetDisplayROI()) {
-			m_localNameBubble->Update(cam->GetDisplayROI());
+		if (m_localNameBubble) {
+			LegoROI* bubbleROI = cam->GetDisplayROI();
+
+			// In large vehicles the display ROI is frozen; use the actual actor ROI instead
+			if (cam->IsInVehicle() && !cam->IsActive()) {
+				LegoPathActor* userActor = UserActor();
+				if (userActor) {
+					bubbleROI = userActor->GetROI();
+				}
+			}
+
+			if (bubbleROI) {
+				m_localNameBubble->Update(bubbleROI);
+			}
 		}
 	}
 
