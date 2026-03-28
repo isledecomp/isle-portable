@@ -145,6 +145,7 @@ private:
 	bool IsPeerAtLocation(uint32_t p_peerId, int16_t p_location) const;
 	bool GetPeerPosition(uint32_t p_peerId, float& p_x, float& p_z) const;
 	bool IsPeerNearby(uint32_t p_peerId, float p_refX, float p_refZ) const;
+	uint8_t GetPeerVehicleState(uint32_t p_peerId, int8_t p_charIndex) const;
 	bool ValidateSessionLocations(uint16_t p_animIndex);
 
 	void ResetAnimationState();
@@ -195,6 +196,8 @@ private:
 
 	bool m_showNameBubbles;
 	bool m_lastCameraEnabled;
+	uint8_t m_lastVehicleState;
+	bool m_vehicleFilterLogPending; // TODO(vehicle-filter): Remove after verification
 	bool m_wasInRestrictedArea;
 
 	// NPC animation playback

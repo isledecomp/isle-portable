@@ -57,11 +57,14 @@ public:
 	// Compute eligibility for animations at a location.
 	// p_locationChars: local player + remote players at the same location (for cam anims).
 	// p_proximityChars: local player + remote players within proximity (for NPC anims).
+	// p_locationVehicles/p_proximityVehicles: parallel bool arrays indicating vehicle riding state.
 	std::vector<EligibilityInfo> ComputeEligibility(
 		int16_t p_location,
 		const int8_t* p_locationChars,
+		const uint8_t* p_locationVehicles,
 		uint8_t p_locationCount,
 		const int8_t* p_proximityChars,
+		const uint8_t* p_proximityVehicles,
 		uint8_t p_proximityCount
 	) const;
 

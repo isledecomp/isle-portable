@@ -82,8 +82,10 @@ static void BuildSlots(
 std::vector<EligibilityInfo> Coordinator::ComputeEligibility(
 	int16_t p_location,
 	const int8_t* p_locationChars,
+	const uint8_t* p_locationVehicles,
 	uint8_t p_locationCount,
 	const int8_t* p_proximityChars,
+	const uint8_t* p_proximityVehicles,
 	uint8_t p_proximityCount
 ) const
 {
@@ -101,9 +103,18 @@ std::vector<EligibilityInfo> Coordinator::ComputeEligibility(
 			continue;
 		}
 
+		// Vehicle eligibility: only filter if the local player would be a performer.
+		// Spectator-only roles remain visible so players on vehicles can still watch nearby scenes.
+		if ((entry->performerMask >> p_locationChars[0]) & 1) {
+			if (!Catalog::CheckVehicleEligibility(entry, p_locationChars[0], p_locationVehicles[0])) {
+				continue;
+			}
+		}
+
 		// NPC anims (location == -1): use proximity characters
 		// Cam anims (location >= 0): use location characters
 		const int8_t* chars = (entry->location == -1) ? p_proximityChars : p_locationChars;
+		const uint8_t* vehicles = (entry->location == -1) ? p_proximityVehicles : p_locationVehicles;
 		uint8_t count = (entry->location == -1) ? p_proximityCount : p_locationCount;
 
 		EligibilityInfo info;
@@ -117,7 +128,7 @@ std::vector<EligibilityInfo> Coordinator::ComputeEligibility(
 		bool spectatorFilled = false;
 
 		if (atLoc) {
-			info.eligible = m_catalog->CanTrigger(entry, chars, count, &filledPerformers, &spectatorFilled);
+			info.eligible = m_catalog->CanTrigger(entry, chars, vehicles, count, &filledPerformers, &spectatorFilled);
 		}
 		else {
 			info.eligible = false;

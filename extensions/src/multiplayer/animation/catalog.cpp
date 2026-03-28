@@ -5,10 +5,35 @@
 #include "legoactors.h"
 #include "legoanimationmanager.h"
 #include "misc.h"
+#include "roi/legoroi.h"
 
 #include <SDL3/SDL_stdinc.h>
 
 using namespace Multiplayer::Animation;
+
+// Static mapping of character index to g_vehicles[] index.
+// Mirrors g_characters[].m_vehicleId for characters that own a vehicle.
+static int8_t GetCharacterVehicleId(int8_t p_charIndex)
+{
+	switch (p_charIndex) {
+	case 0:
+		return 6; // pepper -> board (skateboard)
+	case 3:
+		return 4; // nick -> motoni (motorcycle)
+	case 4:
+		return 5; // laura -> motola (motorcycle)
+	case 36:
+		return 2; // rd -> bikerd
+	case 37:
+		return 1; // pg -> bikepg
+	case 38:
+		return 0; // bd -> bikebd
+	case 39:
+		return 3; // sy -> bikesy
+	default:
+		return -1;
+	}
+}
 
 // Exact-match a model name against g_actorInfoInit[].m_name.
 // The engine's LegoAnimationManager::GetCharacterIndex uses 2-char prefix matching,
@@ -74,6 +99,16 @@ void Catalog::Refresh(LegoAnimationManager* p_am)
 				if (charIdx >= 0) {
 					entry.performerMask |= (uint64_t(1) << charIdx);
 				}
+			}
+		}
+
+		// Compute vehicleMask from the pre-populated vehicle list (m_unk0x2a).
+		// Each entry is a g_vehicles[] index set during LoadWorldInfo for models
+		// with m_unk0x2c=1 that match a known vehicle name.
+		entry.vehicleMask = 0;
+		for (int k = 0; k < 3; k++) {
+			if (m_animsBase[i].m_unk0x2a[k] >= 0 && m_animsBase[i].m_unk0x2a[k] < 8) {
+				entry.vehicleMask |= (1 << m_animsBase[i].m_unk0x2a[k]);
 			}
 		}
 
@@ -178,6 +213,65 @@ bool Catalog::CheckSpectatorMask(const CatalogEntry* p_entry, int8_t p_charIndex
 	return p_entry->spectatorMask == ALL_CORE_ACTORS_MASK;
 }
 
+bool Catalog::CheckVehicleEligibility(const CatalogEntry* p_entry, int8_t p_charIndex, uint8_t p_vehicleState)
+{
+	int8_t vehicleId = GetCharacterVehicleId(p_charIndex);
+	if (vehicleId < 0) {
+		return true; // Character has no vehicle — no constraint (Mama, Papa, NPCs)
+	}
+
+	bool animUsesVehicle = (p_entry->vehicleMask >> vehicleId) & 1;
+
+	switch (p_vehicleState) {
+	case e_onOwnVehicle:
+		return animUsesVehicle; // Only animations that use this character's vehicle
+	case e_onOtherVehicle:
+		return false; // On a foreign vehicle — no animations eligible
+	default: // e_onFoot
+		return !animUsesVehicle; // Only animations that don't use this character's vehicle
+	}
+}
+
+// Vehicle category grouping (matches ScenePlayer::GetVehicleCategory)
+static int8_t GetVehicleCategory(int8_t p_vehicleIdx)
+{
+	if (p_vehicleIdx >= 0 && p_vehicleIdx <= 3) {
+		return 0; // bike
+	}
+	if (p_vehicleIdx >= 4 && p_vehicleIdx <= 5) {
+		return 1; // motorcycle
+	}
+	if (p_vehicleIdx == 6) {
+		return 2; // skateboard
+	}
+	return -1;
+}
+
+Catalog::VehicleState Catalog::GetVehicleState(int8_t p_charIndex, LegoROI* p_vehicleROI)
+{
+	if (!p_vehicleROI || !p_vehicleROI->GetName()) {
+		return e_onFoot;
+	}
+
+	int8_t charVehicleId = GetCharacterVehicleId(p_charIndex);
+	if (charVehicleId < 0) {
+		return e_onFoot; // Character has no vehicle — treat any ride as irrelevant
+	}
+
+	MxU32 rideVehicleIdx;
+	if (!AnimationManager()->FindVehicle(p_vehicleROI->GetName(), rideVehicleIdx)) {
+		return e_onOtherVehicle; // Unknown vehicle — treat as foreign
+	}
+
+	// Compare by category — the ride system uses representative names (bikebd/motoni/board)
+	// that may differ from the character's specific vehicle index but share the same category.
+	if (GetVehicleCategory((int8_t) rideVehicleIdx) == GetVehicleCategory(charVehicleId)) {
+		return e_onOwnVehicle;
+	}
+
+	return e_onOtherVehicle;
+}
+
 bool Catalog::CanParticipateChar(const CatalogEntry* p_entry, int8_t p_charIndex)
 {
 	if (p_charIndex < 0) {
@@ -201,6 +295,7 @@ bool Catalog::CanParticipate(const CatalogEntry* p_entry, uint8_t p_displayActor
 bool Catalog::CanTrigger(
 	const CatalogEntry* p_entry,
 	const int8_t* p_charIndices,
+	const uint8_t* p_onVehicle,
 	uint8_t p_count,
 	uint64_t* p_filledPerformers,
 	bool* p_spectatorFilled
@@ -220,6 +315,10 @@ bool Catalog::CanTrigger(
 
 		uint64_t charBit = uint64_t(1) << charIndex;
 		if ((p_entry->performerMask & charBit) && !(*p_filledPerformers & charBit)) {
+			if (p_onVehicle && !CheckVehicleEligibility(p_entry, charIndex, p_onVehicle[i])) {
+				continue;
+			}
+
 			*p_filledPerformers |= charBit;
 			assignedAsPerformer[i] = true;
 		}

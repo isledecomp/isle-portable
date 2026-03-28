@@ -20,6 +20,7 @@
 #include "mxticklemanager.h"
 #include "roi/legoroi.h"
 
+#include <SDL3/SDL_log.h>
 #include <SDL3/SDL_stdinc.h>
 #include <SDL3/SDL_timer.h>
 #include <algorithm>
@@ -67,9 +68,10 @@ NetworkManager::NetworkManager()
 	  m_inIsleWorld(false), m_registered(false), m_pendingToggleThirdPerson(false), m_pendingToggleNameBubbles(false),
 	  m_pendingWalkAnim(-1), m_pendingIdleAnim(-1), m_pendingEmote(-1), m_pendingToggleAllowCustomize(false),
 	  m_pendingAnimInterest(-1), m_pendingAnimCancel(false), m_localPendingAnimInterest(-1), m_showNameBubbles(true),
-	  m_lastCameraEnabled(false), m_wasInRestrictedArea(false), m_animStateDirty(false), m_animInterestDirty(false),
-	  m_lastAnimPushTime(0), m_connectionState(STATE_DISCONNECTED), m_wasRejected(false), m_reconnectAttempt(0),
-	  m_reconnectDelay(0), m_nextReconnectTime(0)
+	  m_lastCameraEnabled(false), m_lastVehicleState(0), m_vehicleFilterLogPending(false),
+	  m_wasInRestrictedArea(false), m_animStateDirty(false),
+	  m_animInterestDirty(false), m_lastAnimPushTime(0), m_connectionState(STATE_DISCONNECTED), m_wasRejected(false),
+	  m_reconnectAttempt(0), m_reconnectDelay(0), m_nextReconnectTime(0)
 {
 }
 
@@ -114,6 +116,31 @@ MxResult NetworkManager::Tickle()
 				}
 				else if (m_showNameBubbles) {
 					m_localNameBubble->SetVisible(true);
+				}
+			}
+		}
+
+		// Detect vehicle state changes for animation eligibility refresh.
+		// Tracks three states: on foot, on own vehicle, on foreign vehicle.
+		int8_t localChar = Animation::Catalog::DisplayActorToCharacterIndex(cam->GetDisplayActorIndex());
+		uint8_t vehicleState = Animation::Catalog::GetVehicleState(localChar, cam->GetRideVehicleROI());
+		if (vehicleState != m_lastVehicleState) {
+			m_lastVehicleState = vehicleState;
+			m_animStateDirty = true;
+			m_vehicleFilterLogPending = true;
+
+			// Cancel active session if the current animation is no longer eligible.
+			// Only cancel if the local player is a performer — spectators aren't vehicle-constrained.
+			if (m_animCoordinator.GetState() != Animation::CoordinationState::e_idle) {
+				uint16_t currentAnim = m_animCoordinator.GetCurrentAnimIndex();
+				if (currentAnim != Animation::ANIM_INDEX_NONE) {
+					const Animation::CatalogEntry* entry = m_animCatalog.FindEntry(currentAnim);
+					if (entry && (entry->performerMask >> localChar) & 1) {
+						if (!Animation::Catalog::CheckVehicleEligibility(entry, localChar, vehicleState)) {
+							CancelLocalAnimInterest();
+							StopScenePlayback(currentAnim, false);
+						}
+					}
 				}
 			}
 		}
@@ -1323,6 +1350,29 @@ void NetworkManager::TickHostSessions()
 			}
 		}
 
+		// Auto-remove participants whose vehicle state no longer matches
+		if (entry && entry->vehicleMask) {
+			std::vector<uint32_t> toRemove;
+			for (const auto& slot : session->slots) {
+				if (slot.peerId != 0 && !slot.IsSpectator()) {
+					int8_t charIdx = slot.charIndex;
+					uint8_t onVehicle = GetPeerVehicleState(slot.peerId, charIdx);
+					if (!Animation::Catalog::CheckVehicleEligibility(entry, charIdx, onVehicle)) {
+						toRemove.push_back(slot.peerId);
+					}
+				}
+			}
+			for (uint32_t pid : toRemove) {
+				std::vector<uint16_t> changed;
+				m_animSessionHost.HandleCancel(pid, changed);
+				BroadcastChangedSessions(changed);
+			}
+			session = m_animSessionHost.FindSession(animIndex);
+			if (!session) {
+				continue;
+			}
+		}
+
 		bool allFilled = m_animSessionHost.AreAllSlotsFilled(animIndex);
 		bool coLocated = allFilled && ValidateSessionLocations(animIndex);
 
@@ -1370,6 +1420,17 @@ void NetworkManager::HandleAnimInterest(uint32_t p_peerId, uint16_t p_animIndex,
 	if (entry && entry->location >= 0) {
 		if (!IsPeerAtLocation(p_peerId, entry->location)) {
 			return;
+		}
+	}
+
+	// Validate vehicle eligibility if the joining player would be a performer
+	if (entry) {
+		int8_t charIndex = Animation::Catalog::DisplayActorToCharacterIndex(p_displayActorIndex);
+		if ((entry->performerMask >> charIndex) & 1) {
+			uint8_t onVehicle = GetPeerVehicleState(p_peerId, charIndex);
+			if (!Animation::Catalog::CheckVehicleEligibility(entry, charIndex, onVehicle)) {
+				return;
+			}
 		}
 	}
 
@@ -1832,6 +1893,20 @@ bool NetworkManager::IsPeerNearby(uint32_t p_peerId, float p_refX, float p_refZ)
 	return (dx * dx + dz * dz) <= NPC_ANIM_NEARBY_RADIUS_SQ;
 }
 
+uint8_t NetworkManager::GetPeerVehicleState(uint32_t p_peerId, int8_t p_charIndex) const
+{
+	if (p_peerId == m_localPeerId) {
+		ThirdPersonCamera::Controller* cam = GetCamera();
+		return cam ? Animation::Catalog::GetVehicleState(p_charIndex, cam->GetRideVehicleROI())
+				   : Animation::Catalog::e_onFoot;
+	}
+	auto it = m_remotePlayers.find(p_peerId);
+	if (it == m_remotePlayers.end() || !it->second->IsSpawned()) {
+		return Animation::Catalog::e_onFoot;
+	}
+	return Animation::Catalog::GetVehicleState(p_charIndex, it->second->GetRideVehicleROI());
+}
+
 bool NetworkManager::ValidateSessionLocations(uint16_t p_animIndex)
 {
 	const Animation::AnimSession* session = m_animSessionHost.FindSession(p_animIndex);
@@ -2066,9 +2141,11 @@ void NetworkManager::PushAnimationState()
 	const float* localPos = userActor->GetROI()->GetWorldPosition();
 	float localX = localPos[0], localZ = localPos[2];
 
-	// Build proximity character indices (for NPC anims — position-based, not location-based)
+	// Build proximity character indices and vehicle state (for NPC anims — position-based, not location-based)
 	std::vector<int8_t> proximityCharIndices;
+	std::vector<uint8_t> proximityVehicleState;
 	proximityCharIndices.push_back(localCharIndex);
+	proximityVehicleState.push_back(Animation::Catalog::GetVehicleState(localCharIndex, cam->GetRideVehicleROI()));
 
 	for (const auto& [peerId, player] : m_remotePlayers) {
 		if (!player->IsSpawned() || !player->GetROI() || player->GetWorldId() != (int8_t) LegoOmni::e_act1) {
@@ -2082,6 +2159,7 @@ void NetworkManager::PushAnimationState()
 		if ((dx * dx + dz * dz) <= (Animation::NPC_ANIM_PROXIMITY * Animation::NPC_ANIM_PROXIMITY)) {
 			int8_t charIdx = Animation::Catalog::DisplayActorToCharacterIndex(player->GetDisplayActorIndex());
 			proximityCharIndices.push_back(charIdx);
+			proximityVehicleState.push_back(Animation::Catalog::GetVehicleState(charIdx, player->GetRideVehicleROI()));
 		}
 	}
 
@@ -2095,9 +2173,11 @@ void NetworkManager::PushAnimationState()
 	std::vector<int16_t> locationsToProcess = locations.empty() ? std::vector<int16_t>{int16_t(-1)} : locations;
 
 	for (int16_t loc : locationsToProcess) {
-		// Build per-location character indices (for cam anims at this location)
+		// Build per-location character indices and vehicle state (for cam anims at this location)
 		std::vector<int8_t> locationCharIndices;
+		std::vector<uint8_t> locationVehicleState;
 		locationCharIndices.push_back(localCharIndex);
+		locationVehicleState.push_back(Animation::Catalog::GetVehicleState(localCharIndex, cam->GetRideVehicleROI()));
 
 		for (const auto& [peerId, player] : m_remotePlayers) {
 			if (!player->IsSpawned() || !player->GetROI() || player->GetWorldId() != (int8_t) LegoOmni::e_act1) {
@@ -2106,14 +2186,17 @@ void NetworkManager::PushAnimationState()
 			if (player->IsAtLocation(loc)) {
 				int8_t charIdx = Animation::Catalog::DisplayActorToCharacterIndex(player->GetDisplayActorIndex());
 				locationCharIndices.push_back(charIdx);
+				locationVehicleState.push_back(Animation::Catalog::GetVehicleState(charIdx, player->GetRideVehicleROI()));
 			}
 		}
 
 		auto locEligibility = m_animCoordinator.ComputeEligibility(
 			loc,
 			locationCharIndices.data(),
+			locationVehicleState.data(),
 			static_cast<uint8_t>(locationCharIndices.size()),
 			proximityCharIndices.data(),
+			proximityVehicleState.data(),
 			static_cast<uint8_t>(proximityCharIndices.size())
 		);
 
@@ -2121,6 +2204,37 @@ void NetworkManager::PushAnimationState()
 			if (seenAnimIndices.insert(info.animIndex).second) {
 				eligibility.push_back(std::move(info));
 			}
+		}
+	}
+
+	// TODO(vehicle-filter): Remove this logging block after verification
+	if (m_vehicleFilterLogPending) {
+		m_vehicleFilterLogPending = false;
+		uint8_t vehState = Animation::Catalog::GetVehicleState(localCharIndex, cam->GetRideVehicleROI());
+		const char* stateNames[] = {"onFoot", "onOwnVehicle", "onOtherVehicle"};
+		SDL_Log(
+			"[VehicleFilter] Vehicle state changed: char=%d state=%s — %zu eligible animations",
+			localCharIndex,
+			stateNames[vehState < 3 ? vehState : 0],
+			eligibility.size()
+		);
+		uint32_t vehicleAnimCount = 0;
+		for (const auto& info : eligibility) {
+			const AnimInfo* ai = m_animCatalog.GetAnimInfo(info.animIndex);
+			if (ai && info.entry && info.entry->vehicleMask) {
+				vehicleAnimCount++;
+				SDL_Log(
+					"  [%u] %s (objId=%u loc=%d vmask=0x%02x)",
+					info.animIndex,
+					ai->m_name,
+					ai->m_objectId,
+					ai->m_location,
+					info.entry->vehicleMask
+				);
+			}
+		}
+		if (vehicleAnimCount == 0) {
+			SDL_Log("  (no vehicle animations in eligible set)");
 		}
 	}
 

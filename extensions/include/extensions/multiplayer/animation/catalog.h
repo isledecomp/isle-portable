@@ -36,6 +36,7 @@ struct CatalogEntry {
 	int16_t location;       // -1 = anywhere, >= 0 = specific location
 	int8_t characterIndex;  // Primary character index into g_characters[]
 	uint8_t modelCount;     // Number of models in animation
+	uint8_t vehicleMask;    // Bitmask of g_vehicles[] indices required (bit0=bikebd..bit6=board)
 };
 
 class Catalog {
@@ -56,11 +57,13 @@ public:
 	static bool CanParticipateChar(const CatalogEntry* p_entry, int8_t p_charIndex);
 
 	// Check if a set of character indices can collectively trigger this animation.
+	// p_onVehicle: parallel array indicating if each player is riding their vehicle (nullable).
 	// p_filledPerformers: bitmask of which performer bits in performerMask are covered.
 	// p_spectatorFilled: whether a valid spectator was found among unassigned players.
 	bool CanTrigger(
 		const CatalogEntry* p_entry,
 		const int8_t* p_charIndices,
+		const uint8_t* p_onVehicle,
 		uint8_t p_count,
 		uint64_t* p_filledPerformers,
 		bool* p_spectatorFilled
@@ -69,6 +72,19 @@ public:
 	// Check if the spectator mask allows this character to spectate.
 	// Does NOT check performer exclusion — caller must do that if needed.
 	static bool CheckSpectatorMask(const CatalogEntry* p_entry, int8_t p_charIndex);
+
+	// Vehicle riding state for eligibility checks.
+	enum VehicleState : uint8_t {
+		e_onFoot = 0,         // Not riding anything
+		e_onOwnVehicle = 1,   // Riding character's own vehicle (e.g. Pepper on skateboard)
+		e_onOtherVehicle = 2  // Riding a vehicle that isn't the character's own
+	};
+
+	// Check if a player's vehicle state is compatible with the animation's vehicle requirements.
+	static bool CheckVehicleEligibility(const CatalogEntry* p_entry, int8_t p_charIndex, uint8_t p_vehicleState);
+
+	// Determine the vehicle state for a character given their current ride vehicle ROI.
+	static VehicleState GetVehicleState(int8_t p_charIndex, class LegoROI* p_vehicleROI);
 
 	// Convert a display actor index to the g_characters[] index used by animations.
 	// Returns -1 if no match.
