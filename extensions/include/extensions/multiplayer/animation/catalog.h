@@ -5,6 +5,7 @@
 #include <vector>
 
 class LegoAnimationManager;
+class LegoROI;
 struct AnimInfo;
 
 namespace Multiplayer::Animation
@@ -83,7 +84,7 @@ public:
 	static bool CheckVehicleEligibility(const CatalogEntry* p_entry, int8_t p_charIndex, uint8_t p_vehicleState);
 
 	// Determine the vehicle state for a character given their current ride vehicle ROI.
-	static VehicleState GetVehicleState(int8_t p_charIndex, class LegoROI* p_vehicleROI);
+	static VehicleState GetVehicleState(int8_t p_charIndex, LegoROI* p_vehicleROI);
 
 	// Classify a g_vehicles[] index into a vehicle category.
 	// Returns 0=bike, 1=motorcycle, 2=skateboard, -1=invalid.
