@@ -102,10 +102,15 @@ public:
 	void SetAnimTime(float p_time) { m_animTime = p_time; }
 	void ResetAnimState();
 
+	static constexpr float ANIM_TIME_SCALE = 2000.0f;
+	static constexpr float EMOTE_TIME_SCALE = 1000.0f;
+	static constexpr float IDLE_DELAY_SECONDS = 2.5f;
+
 private:
 	using AnimCache = AnimUtils::AnimCache;
 
 	AnimCache* GetOrBuildAnimCache(LegoROI* p_roi, const char* p_animName);
+	void StartEmotePhase(uint8_t p_emoteId, int p_phaseIndex, AnimCache* p_cache, LegoROI* p_roi);
 	void ClearFrozenState();
 	void ClearPropGroup(PropGroup& p_group);
 	void BuildEmoteProps(PropGroup& p_group, LegoAnim* p_anim, LegoROI* p_playerROI);

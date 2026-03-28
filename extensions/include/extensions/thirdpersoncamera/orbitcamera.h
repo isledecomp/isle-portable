@@ -57,6 +57,10 @@ public:
 	static constexpr float MIN_DISTANCE = 1.5f;
 	static constexpr float SWITCH_TO_FIRST_PERSON_DISTANCE = 0.5f;
 	static constexpr float MAX_DISTANCE = 15.0f;
+	static constexpr float CHARACTER_TURN_RATE = 10.0f;
+	static constexpr float JOYSTICK_CENTER = 50.0f;
+	static constexpr float JOYSTICK_DEAD_ZONE = 0.1f;
+	static constexpr float MOVEMENT_DIR_EPSILON = 0.001f;
 
 private:
 	void ComputeOrbitVectors(float p_yaw, Mx3DPointFloat& p_at, Mx3DPointFloat& p_dir, Mx3DPointFloat& p_up) const;

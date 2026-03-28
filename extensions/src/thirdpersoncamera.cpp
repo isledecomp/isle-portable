@@ -2,6 +2,7 @@
 
 #include "extensions/common/arearestriction.h"
 #include "extensions/common/charactercustomizer.h"
+#include "extensions/common/constants.h"
 #include "extensions/thirdpersoncamera/controller.h"
 #include "islepathactor.h"
 #include "legoeventnotificationparam.h"
@@ -39,7 +40,7 @@ public:
 	MxResult Tickle() override
 	{
 		if (m_camera) {
-			m_camera->Tick(0.016f);
+			m_camera->Tick(FIXED_TICK_DELTA);
 		}
 		return SUCCESS;
 	}

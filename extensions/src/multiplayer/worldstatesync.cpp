@@ -26,15 +26,7 @@ using namespace Multiplayer;
 template <typename T>
 void WorldStateSync::SendMessage(const T& p_msg)
 {
-	if (!m_transport || !m_transport->IsConnected()) {
-		return;
-	}
-
-	uint8_t buf[sizeof(T)];
-	size_t len = SerializeMsg(buf, sizeof(buf), p_msg);
-	if (len > 0) {
-		m_transport->Send(buf, len);
-	}
+	SendFixedMessage(m_transport, p_msg);
 }
 
 WorldStateSync::WorldStateSync()

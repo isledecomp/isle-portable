@@ -16,7 +16,7 @@ InputHandler::InputHandler()
 
 bool InputHandler::TryClaimFinger(const SDL_TouchFingerEvent& p_event, bool p_active)
 {
-	if (!p_active || m_touch.count >= 2 || p_event.x < CAMERA_ZONE_X) {
+	if (!p_active || m_touch.count >= 2 || p_event.x < CAMERA_ZONE_X || IsFingerTracked(p_event.fingerID)) {
 		return false;
 	}
 
@@ -104,7 +104,7 @@ void InputHandler::HandleSDLEvent(SDL_Event* p_event, OrbitCamera& p_orbit, bool
 			m_wantsAutoDisable = true;
 			break;
 		}
-		p_orbit.AdjustDistance(-p_event->wheel.y * 0.5f);
+		p_orbit.AdjustDistance(-p_event->wheel.y * MOUSE_WHEEL_ZOOM_STEP);
 		p_orbit.ClampDistance();
 		break;
 
@@ -113,8 +113,8 @@ void InputHandler::HandleSDLEvent(SDL_Event* p_event, OrbitCamera& p_orbit, bool
 			break;
 		}
 		if (m_rightButtonHeld) {
-			p_orbit.AdjustYaw(-p_event->motion.xrel * 0.005f);
-			p_orbit.AdjustPitch(p_event->motion.yrel * 0.005f);
+			p_orbit.AdjustYaw(-p_event->motion.xrel * MOUSE_SENSITIVITY);
+			p_orbit.AdjustPitch(p_event->motion.yrel * MOUSE_SENSITIVITY);
 			p_orbit.ClampPitch();
 		}
 		break;
@@ -144,24 +144,9 @@ void InputHandler::HandleSDLEvent(SDL_Event* p_event, OrbitCamera& p_orbit, bool
 		break;
 	}
 
-	case SDL_EVENT_FINGER_DOWN: {
-		if (!IsFingerTracked(p_event->tfinger.fingerID) && m_touch.count < 2 && p_event->tfinger.x >= CAMERA_ZONE_X) {
-			int idx = m_touch.count;
-			m_touch.id[idx] = p_event->tfinger.fingerID;
-			m_touch.x[idx] = p_event->tfinger.x;
-			m_touch.y[idx] = p_event->tfinger.y;
-			m_touch.synced[idx] = true;
-			m_touch.count++;
-
-			if (m_touch.count == 2) {
-				float dx = m_touch.x[1] - m_touch.x[0];
-				float dy = m_touch.y[1] - m_touch.y[0];
-				m_touch.initialPinchDist = SDL_sqrtf(dx * dx + dy * dy);
-				m_touch.gesturePinchDist = m_touch.initialPinchDist;
-			}
-		}
+	case SDL_EVENT_FINGER_DOWN:
+		TryClaimFinger(p_event->tfinger, p_active);
 		break;
-	}
 
 	case SDL_EVENT_FINGER_MOTION: {
 		if (m_touch.count == 1) {
@@ -183,8 +168,8 @@ void InputHandler::HandleSDLEvent(SDL_Event* p_event, OrbitCamera& p_orbit, bool
 
 				float moveX = m_touch.x[0] - oldX;
 				float moveY = m_touch.y[0] - oldY;
-				p_orbit.AdjustYaw(-moveX * 2.0f);
-				p_orbit.AdjustPitch(moveY * 2.0f);
+				p_orbit.AdjustYaw(-moveX * TOUCH_YAW_PITCH_SCALE);
+				p_orbit.AdjustPitch(moveY * TOUCH_YAW_PITCH_SCALE);
 				p_orbit.ClampPitch();
 			}
 		}
@@ -246,15 +231,15 @@ void InputHandler::HandleSDLEvent(SDL_Event* p_event, OrbitCamera& p_orbit, bool
 					}
 				}
 
-				p_orbit.AdjustDistance(pinchDelta * 6.0f);
+				p_orbit.AdjustDistance(pinchDelta * PINCH_ZOOM_SCALE);
 				p_orbit.ClampDistance();
 				m_touch.initialPinchDist = newDist;
 			}
 
 			float moveX = m_touch.x[idx] - oldX;
 			float moveY = m_touch.y[idx] - oldY;
-			p_orbit.AdjustYaw(-moveX * 2.0f);
-			p_orbit.AdjustPitch(moveY * 2.0f);
+			p_orbit.AdjustYaw(-moveX * TOUCH_YAW_PITCH_SCALE);
+			p_orbit.AdjustPitch(moveY * TOUCH_YAW_PITCH_SCALE);
 			p_orbit.ClampPitch();
 		}
 		break;

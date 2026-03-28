@@ -28,6 +28,14 @@ using namespace Extensions;
 using namespace Extensions::Common;
 using namespace Extensions::ThirdPersonCamera;
 
+static constexpr float SPEED_EPSILON = 0.01f;
+
+static void ReaddROI(LegoROI& p_roi)
+{
+	VideoManager()->Get3DManager()->Remove(p_roi);
+	VideoManager()->Get3DManager()->Add(p_roi);
+}
+
 Controller::Controller()
 	: m_animator(CharacterAnimatorConfig{/*.saveEmoteTransform=*/true, /*.propSuffix=*/0}), m_enabled(false),
 	  m_active(false), m_pendingWorldTransition(false), m_animPlaying(false), m_animLockDisplay(false),
@@ -51,9 +59,8 @@ void Controller::Disable(bool p_preserveTouch)
 	}
 }
 
-void Controller::Deactivate()
+void Controller::CancelExternalAnim()
 {
-	// Stop external animation before destroying the display ROI
 	if (m_animPlaying) {
 		if (m_animStopCallback) {
 			m_animStopCallback();
@@ -61,6 +68,12 @@ void Controller::Deactivate()
 		m_animPlaying = false;
 		m_animStopCallback = nullptr;
 	}
+}
+
+void Controller::Deactivate()
+{
+	// Stop external animation before destroying the display ROI
+	CancelExternalAnim();
 
 	if (m_active && m_playerROI) {
 		m_playerROI->SetVisibility(FALSE);
@@ -107,13 +120,7 @@ void Controller::OnActorEnter(IslePathActor* p_actor)
 
 	// Stop external animation before modifying ride/display state —
 	// the ScenePlayer may hold a reference to the ride vehicle ROI.
-	if (m_animPlaying) {
-		if (m_animStopCallback) {
-			m_animStopCallback();
-		}
-		m_animPlaying = false;
-		m_animStopCallback = nullptr;
-	}
+	CancelExternalAnim();
 
 	LegoROI* newROI = userActor->GetROI();
 	if (!newROI) {
@@ -150,8 +157,7 @@ void Controller::OnActorEnter(IslePathActor* p_actor)
 
 	m_playerROI->SetVisibility(TRUE);
 
-	VideoManager()->Get3DManager()->Remove(*m_playerROI);
-	VideoManager()->Get3DManager()->Add(*m_playerROI);
+	ReaddROI(*m_playerROI);
 
 	m_animator.InitAnimCaches(m_playerROI);
 	m_animator.ResetAnimState();
@@ -169,13 +175,7 @@ void Controller::OnActorExit(IslePathActor* p_actor)
 
 	// Stop external animation before clearing ride animation state —
 	// the ScenePlayer may hold a reference to the ride vehicle ROI.
-	if (m_animPlaying) {
-		if (m_animStopCallback) {
-			m_animStopCallback();
-		}
-		m_animPlaying = false;
-		m_animStopCallback = nullptr;
-	}
+	CancelExternalAnim();
 
 	if (m_animator.GetCurrentVehicleType() != VEHICLE_NONE) {
 		m_animator.ClearRideAnimation();
@@ -257,8 +257,8 @@ void Controller::Tick(float p_deltaTime)
 			AnimUtils::EnsureROIMapVisibility(m_animator.GetRideRoiMap(), m_animator.GetRideRoiMapSize());
 
 			float speed = actor->GetWorldSpeed();
-			if (SDL_fabsf(speed) > 0.01f) {
-				m_animator.SetAnimTime(m_animator.GetAnimTime() + p_deltaTime * 2000.0f);
+			if (SDL_fabsf(speed) > SPEED_EPSILON) {
+				m_animator.SetAnimTime(m_animator.GetAnimTime() + p_deltaTime * CharacterAnimator::ANIM_TIME_SCALE);
 			}
 
 			MxMatrix transform(actor->GetROI()->GetLocal2World());
@@ -300,7 +300,7 @@ void Controller::Tick(float p_deltaTime)
 	}
 
 	float speed = userActor->GetWorldSpeed();
-	bool isMoving = SDL_fabsf(speed) > 0.01f;
+	bool isMoving = SDL_fabsf(speed) > SPEED_EPSILON;
 	if (m_animator.IsInMultiPartEmote()) {
 		isMoving = false;
 		userActor->SetWorldSpeed(0.0f);
@@ -341,7 +341,7 @@ void Controller::TriggerEmote(uint8_t p_emoteId)
 		return;
 	}
 
-	bool isMoving = SDL_fabsf(userActor->GetWorldSpeed()) > 0.01f;
+	bool isMoving = SDL_fabsf(userActor->GetWorldSpeed()) > SPEED_EPSILON;
 	if (m_animator.IsInMultiPartEmote()) {
 		isMoving = false;
 	}
@@ -385,13 +385,7 @@ void Controller::OnWorldDisabled(LegoWorld* p_world)
 	}
 
 	// Stop external animation before destroying the display ROI
-	if (m_animPlaying) {
-		if (m_animStopCallback) {
-			m_animStopCallback();
-		}
-		m_animPlaying = false;
-		m_animStopCallback = nullptr;
-	}
+	CancelExternalAnim();
 
 	m_active = false;
 	m_pendingWorldTransition = false;
@@ -497,8 +491,7 @@ void Controller::ReinitForCharacter()
 
 		m_pendingWorldTransition = false;
 
-		VideoManager()->Get3DManager()->Remove(*m_playerROI);
-		VideoManager()->Get3DManager()->Add(*m_playerROI);
+		ReaddROI(*m_playerROI);
 		m_active = true;
 		m_orbit.SetupCamera(userActor);
 		m_animator.BuildRideAnimation(vehicleType, m_playerROI, 0);
@@ -514,8 +507,7 @@ void Controller::ReinitForCharacter()
 
 	m_playerROI->SetVisibility(TRUE);
 
-	VideoManager()->Get3DManager()->Remove(*m_playerROI);
-	VideoManager()->Get3DManager()->Add(*m_playerROI);
+	ReaddROI(*m_playerROI);
 
 	m_animator.InitAnimCaches(m_playerROI);
 	m_animator.ResetAnimState();

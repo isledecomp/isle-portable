@@ -126,6 +126,7 @@ public:
 	static constexpr float MIN_DISTANCE = OrbitCamera::MIN_DISTANCE;
 
 private:
+	void CancelExternalAnim();
 	void Deactivate();
 	void ReinitForCharacter();
 

@@ -33,6 +33,10 @@ public:
 	static constexpr float CAMERA_ZONE_X = 0.5f;
 	static constexpr float PINCH_TRANSITION_THRESHOLD = 0.03f;
 	static constexpr Uint64 LMB_HOLD_THRESHOLD_MS = 300;
+	static constexpr float MOUSE_SENSITIVITY = 0.005f;
+	static constexpr float MOUSE_WHEEL_ZOOM_STEP = 0.5f;
+	static constexpr float TOUCH_YAW_PITCH_SCALE = 2.0f;
+	static constexpr float PINCH_ZOOM_SCALE = 6.0f;
 
 private:
 	struct TouchState {

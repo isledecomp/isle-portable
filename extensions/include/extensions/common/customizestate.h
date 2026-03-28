@@ -19,6 +19,9 @@ struct CustomizeState {
 	void Unpack(const uint8_t p_in[5]);
 	bool operator==(const CustomizeState& p_other) const;
 	bool operator!=(const CustomizeState& p_other) const { return !(*this == p_other); }
+
+private:
+	void DeriveDependentIndices();
 };
 
 } // namespace Common

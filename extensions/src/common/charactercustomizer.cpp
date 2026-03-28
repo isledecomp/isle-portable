@@ -29,6 +29,7 @@ static const MxU32 g_characterAnimationId = 10;
 static const MxU32 g_maxSound = 9;
 static const MxU32 g_maxMove = 4;
 
+static constexpr int COLORABLE_PARTS_COUNT = 10;
 static uint32_t s_variantCounter = 10000;
 
 // MARK: Private helpers
@@ -62,7 +63,7 @@ bool CharacterCustomizer::SwitchColor(
 	int p_partIndex
 )
 {
-	if (p_partIndex < 0 || p_partIndex >= 10) {
+	if (p_partIndex < 0 || p_partIndex >= COLORABLE_PARTS_COUNT) {
 		return false;
 	}
 
@@ -187,7 +188,7 @@ void CharacterCustomizer::ApplyChange(
 
 int CharacterCustomizer::MapClickedPartIndex(const char* p_partName)
 {
-	for (int i = 0; i < 10; i++) {
+	for (int i = 0; i < COLORABLE_PARTS_COUNT; i++) {
 		if (!SDL_strcasecmp(p_partName, g_actorLODs[i + 1].m_name)) {
 			return i;
 		}

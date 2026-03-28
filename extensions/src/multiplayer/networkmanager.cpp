@@ -53,15 +53,7 @@ static void ExtractSlotPeerIds(const AnimUpdateMsg& p_msg, uint32_t p_out[8])
 template <typename T>
 void NetworkManager::SendMessage(const T& p_msg)
 {
-	if (!m_transport || !m_transport->IsConnected()) {
-		return;
-	}
-
-	uint8_t buf[sizeof(T)];
-	size_t len = SerializeMsg(buf, sizeof(buf), p_msg);
-	if (len > 0) {
-		m_transport->Send(buf, len);
-	}
+	SendFixedMessage(m_transport, p_msg);
 }
 
 NetworkManager::NetworkManager()
@@ -148,7 +140,7 @@ MxResult NetworkManager::Tickle()
 
 		// Create local name bubble when display ROI becomes available
 		if (m_showNameBubbles && !m_localNameBubble && cam->GetDisplayROI()) {
-			char name[8];
+			char name[USERNAME_BUFFER_SIZE];
 			EncodeUsername(name);
 			m_localNameBubble = new NameBubbleRenderer();
 			m_localNameBubble->Create(name);
@@ -221,7 +213,7 @@ MxResult NetworkManager::Tickle()
 	}
 
 	ProcessIncomingPackets();
-	UpdateRemotePlayers(0.016f);
+	UpdateRemotePlayers(Common::FIXED_TICK_DELTA);
 	TickAnimation();
 
 	// Re-read time; ProcessIncomingPackets may have advanced SDL_GetTicks.
@@ -765,11 +757,11 @@ void NetworkManager::BroadcastLocalState()
 		msg.displayActorIndex = cam->GetDisplayActorIndex();
 		cam->GetCustomizeState().Pack(msg.customizeData);
 
-		// Encode multi-part emote frozen state (0x02 = frozen, emote ID in bits 2-4, max 8 emotes)
+		// Encode multi-part emote frozen state
 		int8_t frozenId = cam->GetFrozenEmoteId();
 		if (frozenId >= 0) {
-			msg.customizeFlags |= 0x02;
-			msg.customizeFlags |= (frozenId & 0x07) << 2;
+			msg.customizeFlags |= CUSTOMIZE_FLAG_FROZEN;
+			msg.customizeFlags |= (frozenId & CUSTOMIZE_FLAG_FROZEN_EMOTE_MASK) << CUSTOMIZE_FLAG_FROZEN_EMOTE_SHIFT;
 		}
 
 		// Zero speed when in any phase of a multi-part emote or animation playback
@@ -778,7 +770,7 @@ void NetworkManager::BroadcastLocalState()
 		}
 	}
 
-	msg.customizeFlags |= m_localAllowRemoteCustomize ? 0x01 : 0x00;
+	msg.customizeFlags |= m_localAllowRemoteCustomize ? CUSTOMIZE_FLAG_ALLOW_REMOTE : 0x00;
 
 	SendMessage(msg);
 }
@@ -1960,10 +1952,10 @@ void NetworkManager::HandleAnimComplete(const AnimCompleteMsg& p_msg)
 		}
 		first = false;
 		const AnimCompletionParticipant& p = p_msg.participants[i];
-		// Ensure null-termination safety for displayName (protocol uses fixed char[8])
-		char name[8];
+		// Ensure null-termination safety for displayName
+		char name[USERNAME_BUFFER_SIZE];
 		SDL_memcpy(name, p.displayName, sizeof(name));
-		name[7] = '\0';
+		name[USERNAME_BUFFER_SIZE - 1] = '\0';
 		json += "{\"charIndex\":";
 		json += std::to_string(static_cast<int>(p.charIndex));
 		json += ",\"displayName\":\"";

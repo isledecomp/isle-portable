@@ -81,7 +81,7 @@ private:
 	uint8_t m_actorId;
 	uint8_t m_displayActorIndex;
 	char m_uniqueName[32];
-	char m_displayName[8];
+	char m_displayName[USERNAME_BUFFER_SIZE];
 
 	LegoROI* m_roi;
 	bool m_spawned;

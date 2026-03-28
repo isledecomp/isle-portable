@@ -28,6 +28,9 @@ using Common::g_walkAnimCount;
 using Common::IsLargeVehicle;
 using Common::WORLD_NOT_VISIBLE;
 
+static constexpr float REMOTE_SPEED_THRESHOLD = 0.01f;
+static constexpr float POSITION_LERP_FACTOR = 0.2f;
+
 RemotePlayer::RemotePlayer(uint32_t p_peerId, uint8_t p_actorId, uint8_t p_displayActorIndex)
 	: m_peerId(p_peerId), m_actorId(p_actorId), m_displayActorIndex(p_displayActorIndex), m_roi(nullptr),
 	  m_spawned(false), m_visible(false), m_targetSpeed(0.0f), m_targetVehicleType(VEHICLE_NONE),
@@ -139,7 +142,7 @@ void RemotePlayer::UpdateFromNetwork(const PlayerStateMsg& p_msg)
 	SET3(m_targetPosition, p_msg.position);
 	SET3(m_targetDirection, p_msg.direction);
 	SET3(m_targetUp, p_msg.up);
-	m_targetSpeed = posDelta > 0.01f ? posDelta : 0.0f;
+	m_targetSpeed = posDelta > REMOTE_SPEED_THRESHOLD ? posDelta : 0.0f;
 	m_targetVehicleType = p_msg.vehicleType;
 	m_targetWorldId = p_msg.worldId;
 	m_lastUpdateTime = SDL_GetTicks();
@@ -153,9 +156,9 @@ void RemotePlayer::UpdateFromNetwork(const PlayerStateMsg& p_msg)
 	}
 
 	// Update display name (can change when player switches save file)
-	char newName[8];
+	char newName[USERNAME_BUFFER_SIZE];
 	SDL_memcpy(newName, p_msg.name, sizeof(newName));
-	newName[sizeof(newName) - 1] = '\0';
+	newName[USERNAME_BUFFER_SIZE - 1] = '\0';
 	if (SDL_strcmp(m_displayName, newName) != 0) {
 		SDL_memcpy(m_displayName, newName, sizeof(m_displayName));
 
@@ -179,11 +182,13 @@ void RemotePlayer::UpdateFromNetwork(const PlayerStateMsg& p_msg)
 	}
 
 	// Update allow remote customize flag
-	m_allowRemoteCustomize = (p_msg.customizeFlags & 0x01) != 0;
+	m_allowRemoteCustomize = (p_msg.customizeFlags & CUSTOMIZE_FLAG_ALLOW_REMOTE) != 0;
 
 	// Sync multi-part emote frozen state from remote
-	bool isFrozen = (p_msg.customizeFlags & 0x02) != 0;
-	int8_t frozenEmoteId = isFrozen ? (int8_t) ((p_msg.customizeFlags >> 2) & 0x07) : -1;
+	bool isFrozen = (p_msg.customizeFlags & CUSTOMIZE_FLAG_FROZEN) != 0;
+	int8_t frozenEmoteId =
+		isFrozen ? (int8_t) ((p_msg.customizeFlags >> CUSTOMIZE_FLAG_FROZEN_EMOTE_SHIFT) & CUSTOMIZE_FLAG_FROZEN_EMOTE_MASK)
+				 : -1;
 	if (frozenEmoteId != m_animator.GetFrozenEmoteId()) {
 		m_animator.SetFrozenEmoteId(frozenEmoteId, m_roi);
 	}
@@ -217,7 +222,7 @@ void RemotePlayer::Tick(float p_deltaTime)
 	UpdateVehicleState();
 	UpdateTransform(p_deltaTime);
 
-	bool isMoving = m_targetSpeed > 0.01f;
+	bool isMoving = m_targetSpeed > REMOTE_SPEED_THRESHOLD;
 	if (m_animator.GetFrozenEmoteId() >= 0) {
 		isMoving = false;
 	}
@@ -281,7 +286,7 @@ void RemotePlayer::TriggerEmote(uint8_t p_emoteId)
 		return;
 	}
 
-	bool isMoving = m_targetSpeed > 0.01f;
+	bool isMoving = m_targetSpeed > REMOTE_SPEED_THRESHOLD;
 	if (m_animator.GetFrozenEmoteId() >= 0) {
 		isMoving = false;
 	}
@@ -290,9 +295,9 @@ void RemotePlayer::TriggerEmote(uint8_t p_emoteId)
 
 void RemotePlayer::UpdateTransform(float p_deltaTime)
 {
-	LERP3(m_currentPosition, m_currentPosition, m_targetPosition, 0.2f);
-	LERP3(m_currentDirection, m_currentDirection, m_targetDirection, 0.2f);
-	LERP3(m_currentUp, m_currentUp, m_targetUp, 0.2f);
+	LERP3(m_currentPosition, m_currentPosition, m_targetPosition, POSITION_LERP_FACTOR);
+	LERP3(m_currentDirection, m_currentDirection, m_targetDirection, POSITION_LERP_FACTOR);
+	LERP3(m_currentUp, m_currentUp, m_targetUp, POSITION_LERP_FACTOR);
 
 	// The network sends forward-z (visual forward).  Character meshes face -z,
 	// so negate to get backward-z for the ROI (mesh faces the correct way).

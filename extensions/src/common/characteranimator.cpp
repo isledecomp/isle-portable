@@ -89,7 +89,7 @@ void CharacterAnimator::Tick(float p_deltaTime, LegoROI* p_roi, bool p_isMoving)
 		}
 
 		if (p_isMoving) {
-			m_animTime += p_deltaTime * 2000.0f;
+			m_animTime += p_deltaTime * ANIM_TIME_SCALE;
 		}
 		float duration = (float) walkAnim->GetDuration();
 		if (duration > 0.0f) {
@@ -104,7 +104,7 @@ void CharacterAnimator::Tick(float p_deltaTime, LegoROI* p_roi, bool p_isMoving)
 	}
 	else if (m_emoteActive && m_emoteAnimCache && m_emoteAnimCache->anim && m_emoteAnimCache->roiMap) {
 		// Emote playback
-		m_emoteTime += p_deltaTime * 1000.0f;
+		m_emoteTime += p_deltaTime * EMOTE_TIME_SCALE;
 
 		if (m_emoteTime >= m_emoteDuration) {
 			if (IsMultiPartEmote(m_currentEmoteId) && m_frozenEmoteId < 0) {
@@ -169,8 +169,8 @@ void CharacterAnimator::Tick(float p_deltaTime, LegoROI* p_roi, bool p_isMoving)
 
 		m_idleTime += p_deltaTime;
 
-		// Hold standing pose for 2.5s, then loop breathing/swaying
-		if (m_idleTime >= 2.5f) {
+		// Hold standing pose, then loop breathing/swaying
+		if (m_idleTime >= IDLE_DELAY_SECONDS) {
 			m_idleAnimTime += p_deltaTime * 1000.0f;
 		}
 
@@ -210,6 +210,25 @@ void CharacterAnimator::SetIdleAnimId(uint8_t p_idleAnimId, LegoROI* p_roi)
 	}
 }
 
+void CharacterAnimator::StartEmotePhase(uint8_t p_emoteId, int p_phaseIndex, AnimCache* p_cache, LegoROI* p_roi)
+{
+	StopClickAnimation();
+	ClearPropGroup(m_emotePropGroup);
+
+	m_currentEmoteId = p_emoteId;
+	m_emoteAnimCache = p_cache;
+	m_emoteTime = 0.0f;
+	m_emoteDuration = (float) p_cache->anim->GetDuration();
+	m_emoteActive = true;
+
+	BuildEmoteProps(m_emotePropGroup, p_cache->anim, p_roi);
+
+	const char* sound = g_emoteEntries[p_emoteId].phases[p_phaseIndex].sound;
+	if (sound) {
+		PlayROISound(sound, p_roi);
+	}
+}
+
 void CharacterAnimator::TriggerEmote(uint8_t p_emoteId, LegoROI* p_roi, bool p_isMoving)
 {
 	if (p_emoteId >= g_emoteAnimCount || !p_roi || m_currentVehicleType != VEHICLE_NONE) {
@@ -224,21 +243,7 @@ void CharacterAnimator::TriggerEmote(uint8_t p_emoteId, LegoROI* p_roi, bool p_i
 				return;
 			}
 
-			StopClickAnimation();
-			ClearPropGroup(m_emotePropGroup);
-
-			m_currentEmoteId = p_emoteId;
-			m_emoteAnimCache = cache;
-			m_emoteTime = 0.0f;
-			m_emoteDuration = (float) cache->anim->GetDuration();
-			m_emoteActive = true;
-
-			BuildEmoteProps(m_emotePropGroup, cache->anim, p_roi);
-
-			const char* sound = g_emoteEntries[p_emoteId].phases[1].sound;
-			if (sound) {
-				PlayROISound(sound, p_roi);
-			}
+			StartEmotePhase(p_emoteId, 1, cache, p_roi);
 
 			if (m_config.saveEmoteTransform) {
 				m_emoteParentTransform = m_frozenParentTransform;
@@ -263,21 +268,7 @@ void CharacterAnimator::TriggerEmote(uint8_t p_emoteId, LegoROI* p_roi, bool p_i
 		return;
 	}
 
-	StopClickAnimation();
-	ClearPropGroup(m_emotePropGroup);
-
-	m_currentEmoteId = p_emoteId;
-	m_emoteAnimCache = cache;
-	m_emoteTime = 0.0f;
-	m_emoteDuration = (float) cache->anim->GetDuration();
-	m_emoteActive = true;
-
-	BuildEmoteProps(m_emotePropGroup, cache->anim, p_roi);
-
-	const char* sound = g_emoteEntries[p_emoteId].phases[0].sound;
-	if (sound) {
-		PlayROISound(sound, p_roi);
-	}
+	StartEmotePhase(p_emoteId, 0, cache, p_roi);
 
 	// Save clean transform to prevent scale accumulation during emote
 	if (m_config.saveEmoteTransform) {

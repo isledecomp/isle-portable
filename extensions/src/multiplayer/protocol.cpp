@@ -8,9 +8,9 @@
 namespace Multiplayer
 {
 
-void EncodeUsername(char p_out[8])
+void EncodeUsername(char p_out[USERNAME_BUFFER_SIZE])
 {
-	SDL_memset(p_out, 0, 8);
+	SDL_memset(p_out, 0, USERNAME_BUFFER_SIZE);
 	LegoGameState* gs = GameState();
 	if (gs && gs->m_playerCount > 0) {
 		const LegoGameState::Username& username = gs->m_players[0];

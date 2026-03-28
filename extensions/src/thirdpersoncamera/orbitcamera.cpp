@@ -13,8 +13,6 @@
 
 using namespace Extensions::ThirdPersonCamera;
 
-static constexpr float TURN_RATE = 10.0f;
-
 OrbitCamera::OrbitCamera()
 	: m_orbitPitch(DEFAULT_ORBIT_PITCH), m_orbitDistance(DEFAULT_ORBIT_DISTANCE),
 	  m_absoluteYaw(DEFAULT_ORBIT_YAW), m_smoothedSpeed(0.0f)
@@ -131,11 +129,10 @@ void OrbitCamera::RestoreFirstPersonCamera()
 	LegoWorld* world = CurrentWorld();
 
 	if (userActor && world && world->GetCameraController()) {
-		world->GetCameraController()->SetWorldTransform(
-			Mx3DPointFloat(0.0F, 1.25F, 0.0F),
-			Mx3DPointFloat(0.0F, 0.0F, 1.0F),
-			Mx3DPointFloat(0.0F, 1.0F, 0.0F)
-		);
+		static const Mx3DPointFloat eyeOffset(0.0f, 1.25f, 0.0f);
+		static const Mx3DPointFloat forward(0.0f, 0.0f, 1.0f);
+		static const Mx3DPointFloat up(0.0f, 1.0f, 0.0f);
+		world->GetCameraController()->SetWorldTransform(eyeOffset, forward, up);
 		userActor->TransformPointOfView();
 	}
 }
@@ -189,13 +186,13 @@ MxBool OrbitCamera::HandleCameraRelativeMovement(
 	if (keyFlags == 0 && !p_lmbHeld && inputManager) {
 		MxU32 joystickX, joystickY, povPosition;
 		if (inputManager->GetJoystickState(&joystickX, &joystickY, &povPosition) == SUCCESS) {
-			float jx = (joystickX - 50.0f) / 50.0f;
-			float jy = -(joystickY - 50.0f) / 50.0f;
+			float jx = (joystickX - JOYSTICK_CENTER) / JOYSTICK_CENTER;
+			float jy = -(joystickY - JOYSTICK_CENTER) / JOYSTICK_CENTER;
 
-			if (SDL_fabsf(jx) < 0.1f) {
+			if (SDL_fabsf(jx) < JOYSTICK_DEAD_ZONE) {
 				jx = 0.0f;
 			}
-			if (SDL_fabsf(jy) < 0.1f) {
+			if (SDL_fabsf(jy) < JOYSTICK_DEAD_ZONE) {
 				jy = 0.0f;
 			}
 
@@ -205,7 +202,7 @@ MxBool OrbitCamera::HandleCameraRelativeMovement(
 	}
 
 	float moveDirLen = SDL_sqrtf(moveDirX * moveDirX + moveDirZ * moveDirZ);
-	bool hasInput = moveDirLen > 0.001f;
+	bool hasInput = moveDirLen > MOVEMENT_DIR_EPSILON;
 
 	if (p_isInMultiPartEmote) {
 		hasInput = false;
@@ -256,7 +253,7 @@ MxBool OrbitCamera::HandleCameraRelativeMovement(
 				angleDiff += 2.0f * SDL_PI_F;
 			}
 
-			float maxTurn = TURN_RATE * p_deltaTime;
+			float maxTurn = CHARACTER_TURN_RATE * p_deltaTime;
 			if (SDL_fabsf(angleDiff) > maxTurn) {
 				angleDiff = angleDiff > 0 ? maxTurn : -maxTurn;
 			}

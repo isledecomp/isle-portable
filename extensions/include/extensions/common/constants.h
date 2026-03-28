@@ -32,6 +32,8 @@ enum WorldChangeType : uint8_t {
 
 static const uint8_t DISPLAY_ACTOR_NONE = 0xFF;
 
+static constexpr float FIXED_TICK_DELTA = 0.016f; // ~60 Hz
+
 // Validate actorId is a playable character (1-5, not brickster)
 inline bool IsValidActorId(uint8_t p_actorId)
 {

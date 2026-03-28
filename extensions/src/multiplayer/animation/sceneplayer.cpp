@@ -22,6 +22,7 @@
 #include <SDL3/SDL_timer.h>
 #include <algorithm>
 #include <cmath>
+#include <functional>
 #include <deque>
 #include <vector>
 

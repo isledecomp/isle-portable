@@ -23,11 +23,7 @@ void CustomizeState::InitFromActorInfo(uint8_t p_actorInfoIndex)
 	colorIndices[c_leglftPart] = info.m_parts[c_leglftPart].m_nameIndex;
 	colorIndices[c_legrtPart] = info.m_parts[c_legrtPart].m_nameIndex;
 
-	// Derive dependent parts (must match Unpack derivation rules)
-	colorIndices[c_bodyPart] = colorIndices[c_infogronPart];
-	colorIndices[c_headPart] = colorIndices[c_infohatPart];
-	colorIndices[c_clawlftPart] = colorIndices[c_armlftPart];
-	colorIndices[c_clawrtPart] = colorIndices[c_armrtPart];
+	DeriveDependentIndices();
 
 	hatVariantIndex = info.m_parts[c_infohatPart].m_partNameIndex;
 	sound = (uint8_t) info.m_sound;
@@ -75,7 +71,11 @@ void CustomizeState::Unpack(const uint8_t p_in[5])
 	colorIndices[c_leglftPart] = p_in[4] & 0x0F;
 	colorIndices[c_legrtPart] = (p_in[4] >> 4) & 0x0F;
 
-	// Derive non-independent parts
+	DeriveDependentIndices();
+}
+
+void CustomizeState::DeriveDependentIndices()
+{
 	colorIndices[c_bodyPart] = colorIndices[c_infogronPart];
 	colorIndices[c_headPart] = colorIndices[c_infohatPart];
 	colorIndices[c_clawlftPart] = colorIndices[c_armlftPart];

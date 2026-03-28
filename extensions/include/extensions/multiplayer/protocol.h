@@ -1,6 +1,7 @@
 #pragma once
 
 #include "extensions/common/constants.h"
+#include "extensions/multiplayer/networktransport.h"
 
 #include <SDL3/SDL_stdinc.h>
 #include <cstddef>
@@ -9,6 +10,8 @@
 
 namespace Multiplayer
 {
+
+static constexpr size_t USERNAME_BUFFER_SIZE = 8; // 7 chars + null terminator
 
 // Routing target constants for MessageHeader.target
 const uint32_t TARGET_BROADCAST = 0;              // Broadcast to all except sender
@@ -100,7 +103,7 @@ struct PlayerStateMsg {
 	float speed;
 	uint8_t walkAnimId;        // Index into walk animation table (0 = default)
 	uint8_t idleAnimId;        // Index into idle animation table (0 = default)
-	char name[8];              // Player display name (7 chars + null terminator)
+	char name[USERNAME_BUFFER_SIZE]; // Player display name (7 chars + null terminator)
 	uint8_t displayActorIndex; // Index into g_actorInfoInit (0-65)
 	uint8_t customizeData[5];  // Packed CustomizeState
 	uint8_t customizeFlags;    // Bit 0 = allowRemoteCustomize
@@ -200,7 +203,7 @@ struct AnimStartMsg {
 struct AnimCompletionParticipant {
 	uint32_t peerId;
 	int8_t charIndex;    // Participant's character (g_actorInfoInit index)
-	char displayName[8]; // 7 chars + null
+	char displayName[USERNAME_BUFFER_SIZE]; // 7 chars + null
 };
 
 // Host -> All: animation completed successfully (natural completion only, not cancellation)
@@ -214,11 +217,17 @@ struct AnimCompleteMsg {
 
 #pragma pack(pop)
 
+// Bitmask constants for PlayerStateMsg::customizeFlags
+static constexpr uint8_t CUSTOMIZE_FLAG_ALLOW_REMOTE = 0x01;
+static constexpr uint8_t CUSTOMIZE_FLAG_FROZEN = 0x02;
+static constexpr uint8_t CUSTOMIZE_FLAG_FROZEN_EMOTE_SHIFT = 2;
+static constexpr uint8_t CUSTOMIZE_FLAG_FROZEN_EMOTE_MASK = 0x07;
+
 using Extensions::Common::IsValidActorId;
 
 // Convert LegoGameState::Username letter indices (0-25 = A-Z) to ASCII.
 // Writes up to 7 characters + null terminator into p_out (must be at least 8 bytes).
-void EncodeUsername(char p_out[8]);
+void EncodeUsername(char p_out[USERNAME_BUFFER_SIZE]);
 
 using Extensions::Common::DISPLAY_ACTOR_NONE;
 
@@ -253,6 +262,21 @@ inline bool DeserializeMsg(const uint8_t* p_data, size_t p_length, T& p_out)
 	}
 	SDL_memcpy(&p_out, p_data, sizeof(T));
 	return true;
+}
+
+// Serialize and send a fixed-size message via the transport.
+template <typename T>
+inline void SendFixedMessage(NetworkTransport* p_transport, const T& p_msg)
+{
+	if (!p_transport || !p_transport->IsConnected()) {
+		return;
+	}
+
+	uint8_t buf[sizeof(T)];
+	size_t len = SerializeMsg(buf, sizeof(buf), p_msg);
+	if (len > 0) {
+		p_transport->Send(buf, len);
+	}
 }
 
 } // namespace Multiplayer
