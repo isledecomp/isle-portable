@@ -1,11 +1,11 @@
 #pragma once
 
+#include "extensions/common/constants.h"
+
 #include <SDL3/SDL_stdinc.h>
 #include <cstddef>
 #include <cstdint>
 #include <type_traits>
-
-#include "extensions/common/constants.h"
 
 namespace Multiplayer
 {
@@ -30,20 +30,21 @@ enum MessageType : uint8_t {
 	MSG_ANIM_UPDATE = 13,
 	MSG_ANIM_START = 14,
 	MSG_ANIM_COMPLETE = 15,
+	MSG_HORN = 16,
 	MSG_ASSIGN_ID = 0xFF
 };
 
-using Extensions::Common::VehicleType;
-using Extensions::Common::VEHICLE_NONE;
+using Extensions::Common::VEHICLE_AMBULANCE;
+using Extensions::Common::VEHICLE_BIKE;
+using Extensions::Common::VEHICLE_COUNT;
+using Extensions::Common::VEHICLE_DUNEBUGGY;
 using Extensions::Common::VEHICLE_HELICOPTER;
 using Extensions::Common::VEHICLE_JETSKI;
-using Extensions::Common::VEHICLE_DUNEBUGGY;
-using Extensions::Common::VEHICLE_BIKE;
-using Extensions::Common::VEHICLE_SKATEBOARD;
 using Extensions::Common::VEHICLE_MOTOCYCLE;
+using Extensions::Common::VEHICLE_NONE;
+using Extensions::Common::VEHICLE_SKATEBOARD;
 using Extensions::Common::VEHICLE_TOWTRACK;
-using Extensions::Common::VEHICLE_AMBULANCE;
-using Extensions::Common::VEHICLE_COUNT;
+using Extensions::Common::VehicleType;
 
 // Entity types for world events
 enum WorldEntityType : uint8_t {
@@ -53,13 +54,13 @@ enum WorldEntityType : uint8_t {
 	ENTITY_LIGHT = 3
 };
 
-using Extensions::Common::WorldChangeType;
-using Extensions::Common::CHANGE_VARIANT;
-using Extensions::Common::CHANGE_SOUND;
-using Extensions::Common::CHANGE_MOVE;
 using Extensions::Common::CHANGE_COLOR;
-using Extensions::Common::CHANGE_MOOD;
 using Extensions::Common::CHANGE_DECREMENT;
+using Extensions::Common::CHANGE_MOOD;
+using Extensions::Common::CHANGE_MOVE;
+using Extensions::Common::CHANGE_SOUND;
+using Extensions::Common::CHANGE_VARIANT;
+using Extensions::Common::WorldChangeType;
 
 // Change types for ENTITY_SKY
 enum SkyChangeType : uint8_t {
@@ -177,9 +178,9 @@ struct AnimSlotAssignment {
 struct AnimUpdateMsg {
 	MessageHeader header;
 	uint16_t animIndex;
-	uint8_t state;            // CoordinationState (0=cleared, 1=gathering, 2=countdown, 3=playing)
-	uint16_t countdownMs;     // Remaining countdown ms (0 if not counting)
-	uint8_t slotCount;        // Number of valid slot entries
+	uint8_t state;               // CoordinationState (0=cleared, 1=gathering, 2=countdown, 3=playing)
+	uint16_t countdownMs;        // Remaining countdown ms (0 if not counting)
+	uint8_t slotCount;           // Number of valid slot entries
 	AnimSlotAssignment slots[8]; // peerId per slot (0 = unfilled)
 };
 
@@ -196,11 +197,17 @@ struct AnimCompletionParticipant {
 	char displayName[8]; // 7 chars + null
 };
 
+// One-shot horn sound trigger, broadcast to all peers
+struct HornMsg {
+	MessageHeader header;
+	uint8_t vehicleType; // VehicleType enum value
+};
+
 // Host -> All: animation completed successfully (natural completion only, not cancellation)
 struct AnimCompleteMsg {
 	MessageHeader header;
-	uint64_t eventId;            // Random 64-bit ID unique to this completion event
-	uint32_t objectId;           // SI file object ID (stable, used as frontend key)
+	uint64_t eventId;  // Random 64-bit ID unique to this completion event
+	uint32_t objectId; // SI file object ID (stable, used as frontend key)
 	uint8_t participantCount;
 	AnimCompletionParticipant participants[8];
 };

@@ -65,6 +65,7 @@ public:
 	void SetWalkAnimation(uint8_t p_walkAnimId);
 	void SetIdleAnimation(uint8_t p_idleAnimId);
 	void SendEmote(uint8_t p_emoteId);
+	void SendHorn(int8_t p_vehicleType);
 
 	// Thread-safe request methods for cross-thread callers (e.g. WASM exports
 	// running on the browser main thread).  Deferred to the game thread in Tickle().
@@ -128,6 +129,7 @@ private:
 	void HandleState(const PlayerStateMsg& p_msg);
 	void HandleHostAssign(const HostAssignMsg& p_msg);
 	void HandleEmote(const EmoteMsg& p_msg);
+	void HandleHorn(const HornMsg& p_msg);
 	void HandleCustomize(const CustomizeMsg& p_msg);
 
 	// Animation coordination handlers
@@ -215,6 +217,10 @@ private:
 	void StopAllPlayback();
 	void UnlockRemotesForAnim(uint16_t p_animIndex);
 
+	// Horn sound synchronization
+	void PreloadHornSounds();
+	void CleanupHornSounds();
+
 	// Animation state push
 	bool m_animStateDirty;
 	bool m_animInterestDirty;
@@ -233,6 +239,11 @@ private:
 	static const uint32_t RECONNECT_MAX_DELAY_MS = 30000;
 	static const uint32_t RECONNECT_MAX_ATTEMPTS = 10;
 	static const uint32_t ANIM_PUSH_COOLDOWN_MS = 250; // max ~4Hz for movement-based changes
+
+	// Horn sound data
+	static const int HORN_VEHICLE_COUNT = 4;
+	class LegoCacheSound* m_hornTemplates[HORN_VEHICLE_COUNT];
+	std::vector<class LegoCacheSound*> m_activeHorns;
 };
 
 } // namespace Multiplayer

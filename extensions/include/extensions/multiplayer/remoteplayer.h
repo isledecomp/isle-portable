@@ -4,6 +4,7 @@
 #include "extensions/common/customizestate.h"
 #include "extensions/multiplayer/animation/catalog.h"
 #include "extensions/multiplayer/protocol.h"
+#include "mxgeometry/mxmatrix.h"
 #include "mxtypes.h"
 
 #include <cstdint>
@@ -103,6 +104,8 @@ private:
 	Extensions::Common::CharacterAnimator m_animator;
 
 	LegoROI* m_vehicleROI;
+	bool m_vehicleROICloned;
+	std::vector<MxMatrix> m_vehicleChildOffsets; // child-to-parent local offsets for cloned hierarchical ROIs
 
 	NameBubbleRenderer* m_nameBubble;
 

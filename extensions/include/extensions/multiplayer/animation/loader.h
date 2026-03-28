@@ -81,6 +81,10 @@ public:
 	SceneAnimData* EnsureCached(uint32_t p_objectId);
 	void PreloadAsync(uint32_t p_objectId);
 
+	// Extract just the first WAV audio track from a composite SI object.
+	// Used for horn sounds from dashboard composites (which have no animation).
+	SceneAnimData::AudioTrack* EnsureHornCached(uint32_t p_objectId);
+
 private:
 	class PreloadThread : public MxThread {
 	public:
@@ -104,6 +108,7 @@ private:
 	si::Interleaf* m_interleaf;
 	bool m_siReady;
 	std::map<uint32_t, SceneAnimData> m_cache;
+	std::map<uint32_t, SceneAnimData::AudioTrack> m_hornCache;
 	MxCriticalSection m_cacheCS;
 
 	PreloadThread* m_preloadThread;

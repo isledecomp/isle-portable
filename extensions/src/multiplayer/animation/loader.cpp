@@ -104,6 +104,9 @@ Loader::Loader()
 Loader::~Loader()
 {
 	CleanupPreloadThread();
+	for (auto& [id, track] : m_hornCache) {
+		delete[] track.pcmData;
+	}
 	delete m_interleaf;
 	delete m_siFile;
 }
@@ -439,4 +442,47 @@ MxResult Loader::PreloadThread::Run()
 	delete siFile;
 
 	return MxThread::Run();
+}
+
+SceneAnimData::AudioTrack* Loader::EnsureHornCached(uint32_t p_objectId)
+{
+	{
+		AUTOLOCK(m_cacheCS);
+		auto it = m_hornCache.find(p_objectId);
+		if (it != m_hornCache.end()) {
+			return &it->second;
+		}
+	}
+
+	if (!OpenSI()) {
+		return nullptr;
+	}
+
+	if (!ReadObject(p_objectId)) {
+		return nullptr;
+	}
+
+	si::Object* composite = static_cast<si::Object*>(m_interleaf->GetChildAt(p_objectId));
+
+	// Find the first WAV child in the composite (the horn sound)
+	for (size_t i = 0; i < composite->GetChildCount(); i++) {
+		si::Object* child = static_cast<si::Object*>(composite->GetChildAt(i));
+
+		if (child->filetype() == si::MxOb::WAV) {
+			SceneAnimData data;
+			if (ParseSoundChild(child, data)) {
+				// Take ownership of the PCM buffer before data's destructor frees it.
+				// AudioTrack has a raw pointer, so std::move alone doesn't transfer ownership.
+				SceneAnimData::AudioTrack track = data.audioTracks[0];
+				data.audioTracks[0].pcmData = nullptr;
+
+				AUTOLOCK(m_cacheCS);
+				auto result = m_hornCache.emplace(p_objectId, track);
+				return &result.first->second;
+			}
+			break;
+		}
+	}
+
+	return nullptr;
 }

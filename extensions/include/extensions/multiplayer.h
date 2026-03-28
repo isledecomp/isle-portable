@@ -42,6 +42,7 @@ public:
 	static std::map<std::string, std::string> options;
 	static bool enabled;
 
+	static void HandleHornPressed(MxU32 p_controlId);
 	static MxBool IsClonedCharacter(const char* p_name);
 	static void HandleBeforeSaveLoad();
 	static void HandleSaveLoaded();
@@ -69,6 +70,7 @@ constexpr auto HandleWorldEnable = &MultiplayerExt::HandleWorldEnable;
 constexpr auto HandleEntityNotify = &MultiplayerExt::HandleEntityNotify;
 constexpr auto HandleSkyLightControl = &MultiplayerExt::HandleSkyLightControl;
 constexpr auto HandleROIClick = &MultiplayerExt::HandleROIClick;
+constexpr auto HandleHornPressed = &MultiplayerExt::HandleHornPressed;
 constexpr auto IsClonedCharacter = &MultiplayerExt::IsClonedCharacter;
 constexpr auto HandleBeforeSaveLoad = &MultiplayerExt::HandleBeforeSaveLoad;
 constexpr auto HandleSaveLoaded = &MultiplayerExt::HandleSaveLoaded;
@@ -79,6 +81,7 @@ constexpr decltype(&MultiplayerExt::HandleWorldEnable) HandleWorldEnable = nullp
 constexpr decltype(&MultiplayerExt::HandleEntityNotify) HandleEntityNotify = nullptr;
 constexpr decltype(&MultiplayerExt::HandleSkyLightControl) HandleSkyLightControl = nullptr;
 constexpr decltype(&MultiplayerExt::HandleROIClick) HandleROIClick = nullptr;
+constexpr decltype(&MultiplayerExt::HandleHornPressed) HandleHornPressed = nullptr;
 constexpr decltype(&MultiplayerExt::IsClonedCharacter) IsClonedCharacter = nullptr;
 constexpr decltype(&MultiplayerExt::HandleBeforeSaveLoad) HandleBeforeSaveLoad = nullptr;
 constexpr decltype(&MultiplayerExt::HandleSaveLoaded) HandleSaveLoaded = nullptr;

@@ -60,6 +60,7 @@ public:
 
 private:
 	friend class Multiplayer::Animation::AudioPlayer;
+	friend class Multiplayer::NetworkManager;
 
 	void Init();
 	void CopyData(MxU8* p_data, MxU32 p_dataSize);

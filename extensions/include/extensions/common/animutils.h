@@ -97,6 +97,14 @@ void ApplyTree(LegoAnim* p_anim, MxMatrix& p_transform, LegoTime p_time, LegoROI
 // Each clone gets its own transform, safe for concurrent animation playback.
 LegoROI* DeepCloneROI(LegoROI* p_source, const char* p_name);
 
+// Compute child-to-parent local offsets for a hierarchical ROI.
+// Returns one MxMatrix per compound child: offset = inverse(parent) * child.
+std::vector<MxMatrix> ComputeChildOffsets(LegoROI* p_parent);
+
+// Apply a new parent transform to a hierarchical ROI, positioning children
+// using precomputed local offsets: child_world = parent_world * offset.
+void ApplyHierarchyTransform(LegoROI* p_parent, const MxMatrix& p_transform, const std::vector<MxMatrix>& p_offsets);
+
 // Strip trailing digits and underscores from a name to get the LOD base name.
 // Mirrors the digit-trimming in LegoAnimPresenter::CreateManagedActors/CreateSceneROIs.
 std::string TrimLODSuffix(const std::string& p_name);

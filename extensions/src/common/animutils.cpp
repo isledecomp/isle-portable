@@ -328,6 +328,7 @@ LegoROI* AnimUtils::DeepCloneROI(LegoROI* p_source, const char* p_name)
 
 	clone->SetName(p_name);
 	clone->SetBoundingSphere(p_source->GetBoundingSphere());
+	clone->WrappedSetLocal2WorldWithWorldDataUpdate(p_source->GetLocal2World());
 
 	const CompoundObject* children = p_source->GetComp();
 	if (children && !children->empty()) {
@@ -344,6 +345,62 @@ LegoROI* AnimUtils::DeepCloneROI(LegoROI* p_source, const char* p_name)
 	}
 
 	return clone;
+}
+
+// Inverse of an orthonormal affine matrix (rotation + translation).
+// R^-1 = R^T, t^-1 = -R^T * t.
+static void InvertOrthonormal(MxMatrix& p_out, const MxMatrix& p_in)
+{
+	p_out.SetIdentity();
+	for (int r = 0; r < 3; r++) {
+		for (int c = 0; c < 3; c++) {
+			p_out[r][c] = p_in[c][r];
+		}
+	}
+	for (int c = 0; c < 3; c++) {
+		p_out[3][c] = -(p_in[3][0] * p_out[0][c] + p_in[3][1] * p_out[1][c] + p_in[3][2] * p_out[2][c]);
+	}
+}
+
+std::vector<MxMatrix> AnimUtils::ComputeChildOffsets(LegoROI* p_parent)
+{
+	std::vector<MxMatrix> offsets;
+	const CompoundObject* children = p_parent->GetComp();
+	if (!children) {
+		return offsets;
+	}
+
+	MxMatrix parentInv;
+	InvertOrthonormal(parentInv, p_parent->GetLocal2World());
+
+	for (auto it = children->begin(); it != children->end(); it++) {
+		MxMatrix offset;
+		offset.Product(parentInv, ((LegoROI*) *it)->GetLocal2World());
+		offsets.push_back(offset);
+	}
+
+	return offsets;
+}
+
+void AnimUtils::ApplyHierarchyTransform(
+	LegoROI* p_parent,
+	const MxMatrix& p_transform,
+	const std::vector<MxMatrix>& p_offsets
+)
+{
+	p_parent->WrappedSetLocal2WorldWithWorldDataUpdate(p_transform);
+
+	const CompoundObject* children = p_parent->GetComp();
+	if (!children) {
+		return;
+	}
+
+	size_t i = 0;
+	for (auto it = children->begin(); it != children->end() && i < p_offsets.size(); it++, i++) {
+		MxMatrix childWorld;
+		childWorld.Product(p_transform, p_offsets[i]);
+		((LegoROI*) *it)->WrappedSetLocal2WorldWithWorldDataUpdate(childWorld);
+	}
 }
 
 std::string AnimUtils::TrimLODSuffix(const std::string& p_name)

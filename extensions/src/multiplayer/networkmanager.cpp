@@ -1,5 +1,6 @@
 #include "extensions/multiplayer/networkmanager.h"
 
+#include "actions/isle_actions.h"
 #include "extensions/common/arearestriction.h"
 #include "extensions/common/charactercustomizer.h"
 #include "extensions/common/charactertables.h"
@@ -8,6 +9,7 @@
 #include "extensions/thirdpersoncamera/controller.h"
 #include "legoactor.h"
 #include "legoanimationmanager.h"
+#include "legocachsound.h"
 #include "legocharactermanager.h"
 #include "legoextraactor.h"
 #include "legogamestate.h"
@@ -69,7 +71,7 @@ NetworkManager::NetworkManager()
 	  m_pendingAnimInterest(-1), m_pendingAnimCancel(false), m_localPendingAnimInterest(-1), m_showNameBubbles(true),
 	  m_lastCameraEnabled(false), m_lastVehicleState(0), m_wasInRestrictedArea(false), m_animStateDirty(false),
 	  m_animInterestDirty(false), m_lastAnimPushTime(0), m_connectionState(STATE_DISCONNECTED), m_wasRejected(false),
-	  m_reconnectAttempt(0), m_reconnectDelay(0), m_nextReconnectTime(0)
+	  m_reconnectAttempt(0), m_reconnectDelay(0), m_nextReconnectTime(0), m_hornTemplates{}, m_activeHorns()
 {
 }
 
@@ -263,6 +265,8 @@ void NetworkManager::Shutdown()
 		m_worldSync.SetTransport(nullptr);
 	}
 
+	CleanupHornSounds();
+
 	delete m_localNameBubble;
 	m_localNameBubble = nullptr;
 
@@ -379,6 +383,7 @@ void NetworkManager::OnWorldEnabled(LegoWorld* p_world)
 		}
 
 		m_locationProximity.Reset();
+		PreloadHornSounds();
 	}
 }
 
@@ -392,6 +397,8 @@ void NetworkManager::OnWorldDisabled(LegoWorld* p_world)
 		m_inIsleWorld = false;
 		m_wasInRestrictedArea = false;
 		m_worldSync.SetInIsleWorld(false);
+
+		CleanupHornSounds();
 
 		// Stop animation before ROIs are destroyed (calls ResetAnimationState)
 		StopAnimation();
@@ -830,6 +837,13 @@ void NetworkManager::ProcessIncomingPackets()
 			}
 			break;
 		}
+		case MSG_HORN: {
+			HornMsg msg;
+			if (DeserializeMsg(data, length, msg) && msg.header.type == MSG_HORN) {
+				HandleHorn(msg);
+			}
+			break;
+		}
 		case MSG_CUSTOMIZE: {
 			CustomizeMsg msg;
 			if (DeserializeMsg(data, length, msg) && msg.header.type == MSG_CUSTOMIZE) {
@@ -1077,6 +1091,105 @@ void NetworkManager::HandleEmote(const EmoteMsg& p_msg)
 	auto it = m_remotePlayers.find(peerId);
 	if (it != m_remotePlayers.end()) {
 		it->second->TriggerEmote(p_msg.emoteId);
+	}
+}
+
+void NetworkManager::SendHorn(int8_t p_vehicleType)
+{
+	if (!IsConnected() || !m_inIsleWorld) {
+		return;
+	}
+
+	HornMsg msg{};
+	msg.header = {MSG_HORN, 0, m_localPeerId, m_sequence++, TARGET_BROADCAST};
+	msg.vehicleType = static_cast<uint8_t>(p_vehicleType);
+	SendMessage(msg);
+}
+
+void NetworkManager::HandleHorn(const HornMsg& p_msg)
+{
+	// Sweep finished horn sounds
+	for (auto it = m_activeHorns.begin(); it != m_activeHorns.end();) {
+		if (!ma_sound_is_playing((*it)->m_cacheSound)) {
+			(*it)->Stop();
+			delete *it;
+			it = m_activeHorns.erase(it);
+		}
+		else {
+			++it;
+		}
+	}
+
+	uint32_t peerId = p_msg.header.peerId;
+	auto it = m_remotePlayers.find(peerId);
+	if (it == m_remotePlayers.end()) {
+		return;
+	}
+
+	// Map vehicle type to horn template index
+	static const int8_t hornVehicles[] = {VEHICLE_BIKE, VEHICLE_AMBULANCE, VEHICLE_TOWTRACK, VEHICLE_DUNEBUGGY};
+	int templateIdx = -1;
+	for (int i = 0; i < HORN_VEHICLE_COUNT; i++) {
+		if (hornVehicles[i] == static_cast<int8_t>(p_msg.vehicleType)) {
+			templateIdx = i;
+			break;
+		}
+	}
+
+	if (templateIdx < 0 || !m_hornTemplates[templateIdx]) {
+		return;
+	}
+
+	LegoCacheSound* horn = m_hornTemplates[templateIdx]->Clone();
+	if (horn) {
+		ma_sound_set_doppler_factor(horn->m_cacheSound, 0);
+		horn->Play(it->second->GetUniqueName(), FALSE);
+		m_activeHorns.push_back(horn);
+	}
+}
+
+// Dashboard composite IDs that contain horn WAV children
+static const uint32_t g_hornDashboardIds[4] = {
+	IsleScript::c_BikeDashboard,
+	IsleScript::c_AmbulanceDashboard,
+	IsleScript::c_TowTrackDashboard,
+	IsleScript::c_DuneCarDashboard,
+};
+
+void NetworkManager::PreloadHornSounds()
+{
+	for (int i = 0; i < HORN_VEHICLE_COUNT; i++) {
+		m_hornTemplates[i] = nullptr;
+
+		Animation::SceneAnimData::AudioTrack* track = m_animLoader.EnsureHornCached(g_hornDashboardIds[i]);
+		if (!track) {
+			continue;
+		}
+
+		LegoCacheSound* sound = new LegoCacheSound();
+		MxString mediaSrcPath(track->mediaSrcPath.c_str());
+		MxWavePresenter::WaveFormat format = track->format;
+		if (sound->Create(format, mediaSrcPath, track->volume, track->pcmData, track->pcmDataSize) == SUCCESS) {
+			ma_sound_set_doppler_factor(sound->m_cacheSound, 0);
+			m_hornTemplates[i] = sound;
+		}
+		else {
+			delete sound;
+		}
+	}
+}
+
+void NetworkManager::CleanupHornSounds()
+{
+	for (auto* horn : m_activeHorns) {
+		horn->Stop();
+		delete horn;
+	}
+	m_activeHorns.clear();
+
+	for (int i = 0; i < HORN_VEHICLE_COUNT; i++) {
+		delete m_hornTemplates[i];
+		m_hornTemplates[i] = nullptr;
 	}
 }
 
@@ -2185,7 +2298,8 @@ void NetworkManager::PushAnimationState()
 			if (player->IsAtLocation(loc)) {
 				int8_t charIdx = Animation::Catalog::DisplayActorToCharacterIndex(player->GetDisplayActorIndex());
 				locationCharIndices.push_back(charIdx);
-				locationVehicleState.push_back(Animation::Catalog::GetVehicleState(charIdx, player->GetRideVehicleROI()));
+				locationVehicleState.push_back(Animation::Catalog::GetVehicleState(charIdx, player->GetRideVehicleROI())
+				);
 			}
 		}
 

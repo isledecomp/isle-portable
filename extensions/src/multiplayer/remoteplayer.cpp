@@ -1,6 +1,7 @@
 #include "extensions/multiplayer/remoteplayer.h"
 
 #include "3dmanager/lego3dmanager.h"
+#include "extensions/common/animutils.h"
 #include "extensions/common/arearestriction.h"
 #include "extensions/common/charactercloner.h"
 #include "extensions/common/charactercustomizer.h"
@@ -32,7 +33,7 @@ RemotePlayer::RemotePlayer(uint32_t p_peerId, uint8_t p_actorId, uint8_t p_displ
 	  m_spawned(false), m_visible(false), m_targetSpeed(0.0f), m_targetVehicleType(VEHICLE_NONE),
 	  m_targetWorldId(WORLD_NOT_VISIBLE), m_lastUpdateTime(SDL_GetTicks()), m_hasReceivedUpdate(false),
 	  m_animator(Common::CharacterAnimatorConfig{/*.saveEmoteTransform=*/false, /*.propSuffix=*/p_peerId}),
-	  m_vehicleROI(nullptr), m_nameBubble(nullptr), m_allowRemoteCustomize(true),
+	  m_vehicleROI(nullptr), m_vehicleROICloned(false), m_nameBubble(nullptr), m_allowRemoteCustomize(true),
 	  m_lockedForAnimIndex(Animation::ANIM_INDEX_NONE)
 {
 	m_displayName[0] = '\0';
@@ -307,7 +308,12 @@ void RemotePlayer::UpdateTransform(float p_deltaTime)
 
 	if (m_vehicleROI && m_animator.GetCurrentVehicleType() != VEHICLE_NONE &&
 		IsLargeVehicle(m_animator.GetCurrentVehicleType())) {
-		m_vehicleROI->WrappedSetLocal2WorldWithWorldDataUpdate(mat);
+		if (m_vehicleROICloned && !m_vehicleChildOffsets.empty()) {
+			Common::AnimUtils::ApplyHierarchyTransform(m_vehicleROI, mat, m_vehicleChildOffsets);
+		}
+		else {
+			m_vehicleROI->WrappedSetLocal2WorldWithWorldDataUpdate(mat);
+		}
 		VideoManager()->Get3DManager()->Moved(*m_vehicleROI);
 	}
 }
@@ -338,10 +344,30 @@ void RemotePlayer::EnterVehicle(int8_t p_vehicleType)
 		SDL_snprintf(vehicleName, sizeof(vehicleName), "%s_mp_%u", g_vehicleROINames[p_vehicleType], m_peerId);
 
 		m_vehicleROI = CharacterManager()->CreateAutoROI(vehicleName, g_vehicleROINames[p_vehicleType], FALSE);
+
+		if (!m_vehicleROI) {
+			// Fallback for hierarchical models whose root has 0 LODs
+			// and cannot be created via CreateAutoROI. Deep-clone the world's existing ROI.
+			LegoROI* source = FindROI(g_vehicleROINames[p_vehicleType]);
+			if (source) {
+				m_vehicleROI = Common::AnimUtils::DeepCloneROI(source, vehicleName);
+				if (m_vehicleROI) {
+					VideoManager()->Get3DManager()->Add(*m_vehicleROI);
+					m_vehicleROICloned = true;
+				}
+			}
+		}
+
 		if (m_vehicleROI) {
 			m_roi->SetVisibility(FALSE);
 			MxMatrix mat(m_roi->GetLocal2World());
-			m_vehicleROI->WrappedSetLocal2WorldWithWorldDataUpdate(mat);
+			if (m_vehicleROICloned) {
+				m_vehicleChildOffsets = Common::AnimUtils::ComputeChildOffsets(m_vehicleROI);
+				Common::AnimUtils::ApplyHierarchyTransform(m_vehicleROI, mat, m_vehicleChildOffsets);
+			}
+			else {
+				m_vehicleROI->WrappedSetLocal2WorldWithWorldDataUpdate(mat);
+			}
 			m_vehicleROI->SetVisibility(m_visible ? TRUE : FALSE);
 		}
 	}
@@ -358,8 +384,15 @@ void RemotePlayer::ExitVehicle()
 
 	if (m_vehicleROI) {
 		VideoManager()->Get3DManager()->Remove(*m_vehicleROI);
-		CharacterManager()->ReleaseAutoROI(m_vehicleROI);
+		if (m_vehicleROICloned) {
+			delete m_vehicleROI;
+		}
+		else {
+			CharacterManager()->ReleaseAutoROI(m_vehicleROI);
+		}
 		m_vehicleROI = nullptr;
+		m_vehicleROICloned = false;
+		m_vehicleChildOffsets.clear();
 	}
 
 	m_animator.ClearRideAnimation();

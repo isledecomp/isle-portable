@@ -265,6 +265,33 @@ MxBool MultiplayerExt::CheckRejected()
 	return FALSE;
 }
 
+void MultiplayerExt::HandleHornPressed(MxU32 p_controlId)
+{
+	if (!s_networkManager) {
+		return;
+	}
+
+	int8_t vehicleType;
+	switch (p_controlId) {
+	case IsleScript::c_BikeHorn_Ctl:
+		vehicleType = Multiplayer::VEHICLE_BIKE;
+		break;
+	case IsleScript::c_AmbulanceHorn_Ctl:
+		vehicleType = Multiplayer::VEHICLE_AMBULANCE;
+		break;
+	case IsleScript::c_TowHorn_Ctl:
+		vehicleType = Multiplayer::VEHICLE_TOWTRACK;
+		break;
+	case IsleScript::c_DuneCarHorn_Ctl:
+		vehicleType = Multiplayer::VEHICLE_DUNEBUGGY;
+		break;
+	default:
+		return;
+	}
+
+	s_networkManager->SendHorn(vehicleType);
+}
+
 Multiplayer::NetworkManager* MultiplayerExt::GetNetworkManager()
 {
 	return s_networkManager;
