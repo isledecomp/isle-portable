@@ -16,7 +16,7 @@ enum AnimCategory : uint8_t {
 	e_otherAnim // no named character performers (ambient/prop-only)
 };
 
-// Number of core playable characters (Pepper, Mama, Papa, Nick, Laura) = g_characters indices 0-4
+// Number of core playable characters (Pepper, Mama, Papa, Nick, Laura) = g_actorInfoInit indices 0-4
 static const int8_t CORE_CHARACTER_COUNT = 5;
 
 // Spectator mask with all core characters enabled
@@ -32,9 +32,8 @@ struct CatalogEntry {
 	uint16_t animIndex; // Index into LegoAnimationManager::m_anims[]
 	AnimCategory category;
 	uint8_t spectatorMask;  // Which core actors can trigger (bit0=Pepper..bit4=Laura)
-	uint64_t performerMask; // Bitmask of g_characters[] indices that appear as character models
+	uint64_t performerMask; // Bitmask of g_actorInfoInit[] indices that appear as character models
 	int16_t location;       // -1 = anywhere, >= 0 = specific location
-	int8_t characterIndex;  // Primary character index into g_characters[]
 	uint8_t modelCount;     // Number of models in animation
 	uint8_t vehicleMask;    // Bitmask of g_vehicles[] indices required (bit0=bikebd..bit6=board)
 };
@@ -50,10 +49,10 @@ public:
 	std::vector<const CatalogEntry*> GetAnimationsAtLocation(int16_t p_location) const;
 
 	// Check if a player can fill any role (spectator or participant) in this animation.
-	// Accepts a display actor index (converted to g_characters index internally).
+	// Accepts a display actor index (converted to g_actorInfoInit index internally).
 	bool CanParticipate(const CatalogEntry* p_entry, uint8_t p_displayActorIndex) const;
 
-	// Same check but using a g_characters index directly.
+	// Same check but using a g_actorInfoInit index directly.
 	static bool CanParticipateChar(const CatalogEntry* p_entry, int8_t p_charIndex);
 
 	// Check if a set of character indices can collectively trigger this animation.
@@ -86,7 +85,11 @@ public:
 	// Determine the vehicle state for a character given their current ride vehicle ROI.
 	static VehicleState GetVehicleState(int8_t p_charIndex, class LegoROI* p_vehicleROI);
 
-	// Convert a display actor index to the g_characters[] index used by animations.
+	// Classify a g_vehicles[] index into a vehicle category.
+	// Returns 0=bike, 1=motorcycle, 2=skateboard, -1=invalid.
+	static int8_t GetVehicleCategory(int8_t p_vehicleIdx);
+
+	// Convert a display actor index to the g_actorInfoInit[] index used by animations.
 	// Returns -1 if no match.
 	static int8_t DisplayActorToCharacterIndex(uint8_t p_displayActorIndex);
 

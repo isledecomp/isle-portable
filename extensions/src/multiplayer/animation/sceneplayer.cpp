@@ -29,27 +29,6 @@ using namespace Multiplayer::Animation;
 namespace AnimUtils = Extensions::Common::AnimUtils;
 using Extensions::Common::CharacterCloner;
 
-enum VehicleCategory {
-	e_bike,
-	e_motorcycle,
-	e_skateboard,
-	e_unknownVehicle
-};
-
-static VehicleCategory GetVehicleCategory(MxU32 p_vehicleIdx)
-{
-	if (p_vehicleIdx <= 3) {
-		return e_bike;
-	}
-	if (p_vehicleIdx <= 5) {
-		return e_motorcycle;
-	}
-	if (p_vehicleIdx == 6) {
-		return e_skateboard;
-	}
-	return e_unknownVehicle;
-}
-
 static bool MatchesCharacter(const std::string& p_actorName, int8_t p_charIndex)
 {
 	if (p_charIndex < 0 || p_charIndex >= (int8_t) sizeOfArray(g_actorInfoInit)) {
@@ -200,7 +179,8 @@ void ScenePlayer::SetupROIs(const AnimInfo* p_animInfo)
 
 						MxU32 perfVehicleIdx;
 						if (AnimationManager()->FindVehicle(m_participants[p].vehicleROI->GetName(), perfVehicleIdx)) {
-							if (GetVehicleCategory(animVehicleIdx) == GetVehicleCategory(perfVehicleIdx)) {
+							if (Catalog::GetVehicleCategory((int8_t) animVehicleIdx) ==
+								Catalog::GetVehicleCategory((int8_t) perfVehicleIdx)) {
 								m_vehicleROI = m_participants[p].vehicleROI;
 								addAlias(lowered, m_vehicleROI);
 								roi = m_vehicleROI;

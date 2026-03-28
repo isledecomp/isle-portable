@@ -13,7 +13,7 @@ enum class CoordinationState : uint8_t;
 
 struct SessionSlot {
 	uint32_t peerId;  // 0 = unfilled
-	int8_t charIndex; // g_characters index, or -1 for spectator
+	int8_t charIndex; // g_actorInfoInit index, or -1 for spectator
 
 	bool IsSpectator() const { return charIndex < 0; }
 };

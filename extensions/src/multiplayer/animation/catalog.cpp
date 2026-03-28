@@ -11,28 +11,28 @@
 
 using namespace Multiplayer::Animation;
 
-// Static mapping of character index to g_vehicles[] index.
-// Mirrors g_characters[].m_vehicleId for characters that own a vehicle.
-static int8_t GetCharacterVehicleId(int8_t p_charIndex)
+// Defined in legoanimationmanager.cpp — not exported in headers.
+extern LegoAnimationManager::Character g_characters[47];
+extern LegoAnimationManager::Vehicle g_vehicles[7];
+
+// Look up the g_vehicles[] index for a character's owned vehicle.
+// p_actorInfoIndex is an index into g_actorInfoInit[].
+// Returns -1 if the character has no vehicle.
+static int8_t GetCharacterVehicleId(int8_t p_actorInfoIndex)
 {
-	switch (p_charIndex) {
-	case 0:
-		return 6; // pepper -> board (skateboard)
-	case 3:
-		return 4; // nick -> motoni (motorcycle)
-	case 4:
-		return 5; // laura -> motola (motorcycle)
-	case 36:
-		return 2; // rd -> bikerd
-	case 37:
-		return 1; // pg -> bikepg
-	case 38:
-		return 0; // bd -> bikebd
-	case 39:
-		return 3; // sy -> bikesy
-	default:
+	if (p_actorInfoIndex < 0 || p_actorInfoIndex >= (int8_t) SDL_min(sizeOfArray(g_actorInfoInit), (size_t) 64)) {
 		return -1;
 	}
+	const char* name = g_actorInfoInit[p_actorInfoIndex].m_name;
+	if (!name) {
+		return -1;
+	}
+	for (int i = 0; i < (int) sizeOfArray(g_characters); i++) {
+		if (!SDL_strcasecmp(name, g_characters[i].m_name)) {
+			return g_characters[i].m_vehicleId;
+		}
+	}
+	return -1;
 }
 
 // Exact-match a model name against g_actorInfoInit[].m_name.
@@ -88,7 +88,6 @@ void Catalog::Refresh(LegoAnimationManager* p_am)
 		entry.animIndex = i;
 		entry.spectatorMask = m_animsBase[i].m_unk0x0c;
 		entry.location = m_animsBase[i].m_location;
-		entry.characterIndex = m_animsBase[i].m_characterIndex;
 		entry.modelCount = m_animsBase[i].m_modelCount;
 
 		// Compute performerMask by matching models against g_actorInfoInit[].m_name
@@ -107,7 +106,7 @@ void Catalog::Refresh(LegoAnimationManager* p_am)
 		// with m_unk0x2c=1 that match a known vehicle name.
 		entry.vehicleMask = 0;
 		for (int k = 0; k < 3; k++) {
-			if (m_animsBase[i].m_unk0x2a[k] >= 0 && m_animsBase[i].m_unk0x2a[k] < 8) {
+			if (m_animsBase[i].m_unk0x2a[k] >= 0 && m_animsBase[i].m_unk0x2a[k] < (int8_t) sizeOfArray(g_vehicles)) {
 				entry.vehicleMask |= (1 << m_animsBase[i].m_unk0x2a[k]);
 			}
 		}
@@ -232,17 +231,16 @@ bool Catalog::CheckVehicleEligibility(const CatalogEntry* p_entry, int8_t p_char
 	}
 }
 
-// Vehicle category grouping (matches ScenePlayer::GetVehicleCategory)
-static int8_t GetVehicleCategory(int8_t p_vehicleIdx)
+int8_t Catalog::GetVehicleCategory(int8_t p_vehicleIdx)
 {
 	if (p_vehicleIdx >= 0 && p_vehicleIdx <= 3) {
-		return 0; // bike
+		return 0; // bike (bikebd, bikepg, bikerd, bikesy)
 	}
 	if (p_vehicleIdx >= 4 && p_vehicleIdx <= 5) {
-		return 1; // motorcycle
+		return 1; // motorcycle (motoni, motola)
 	}
 	if (p_vehicleIdx == 6) {
-		return 2; // skateboard
+		return 2; // skateboard (board)
 	}
 	return -1;
 }

@@ -23,7 +23,7 @@ struct ParticipantROI {
 	LegoROI* vehicleROI; // Ride vehicle ROI (bike/board/moto), or nullptr
 	MxMatrix savedTransform;
 	std::string savedName;
-	int8_t charIndex; // g_characters[] index, or -1 for spectator
+	int8_t charIndex; // g_actorInfoInit[] index, or -1 for spectator
 
 	bool IsSpectator() const { return charIndex < 0; }
 };

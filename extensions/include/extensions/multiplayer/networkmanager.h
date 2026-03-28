@@ -197,7 +197,6 @@ private:
 	bool m_showNameBubbles;
 	bool m_lastCameraEnabled;
 	uint8_t m_lastVehicleState;
-	bool m_vehicleFilterLogPending; // TODO(vehicle-filter): Remove after verification
 	bool m_wasInRestrictedArea;
 
 	// NPC animation playback
