@@ -16,13 +16,13 @@
 #include "mxgeometry/mxgeometry3d.h"
 #include "realtime/realtime.h"
 #include "roi/legoroi.h"
+#include "viewmanager/viewmanager.h"
 
 #include <SDL3/SDL_stdinc.h>
 #include <SDL3/SDL_timer.h>
 #include <algorithm>
 #include <cmath>
 #include <deque>
-#include <functional>
 #include <vector>
 
 using namespace Multiplayer::Animation;
@@ -81,12 +81,16 @@ void ScenePlayer::SetupROIs(const AnimInfo* p_animInfo)
 
 	std::vector<bool> participantMatched(m_participants.size(), false);
 
+	// Register an alias mapping an animation actor name to an ROI whose actual
+	// name differs (e.g. a participant's unique name, or a cloned scene ROI).
 	auto addAlias = [&](const std::string& p_name, LegoROI* p_roi) {
 		aliasNames.push_back(p_name);
 		aliases.push_back({aliasNames.back().c_str(), p_roi});
 		m_actorAliases.push_back({p_name, p_roi});
 	};
 
+	// Create a prop ROI from a registered LOD name. Returns nullptr if the
+	// LOD isn't in the ViewLODListManager.
 	auto createProp = [&](const std::string& p_name, const char* p_lodName) -> LegoROI* {
 		char uniqueName[64];
 		SDL_snprintf(uniqueName, sizeof(uniqueName), "npc_prop_%s", p_name.c_str());
@@ -96,6 +100,32 @@ void ScenePlayer::SetupROIs(const AnimInfo* p_animInfo)
 			createdROIs.push_back(roi);
 		}
 		return roi;
+	};
+
+	// Clone a scene ROI by name. Creates an independent deep copy (shared LOD
+	// geometry via refcount) with a unique name and an alias for the ROI map.
+	auto cloneSceneROI = [&](const std::string& p_name) -> LegoROI* {
+		const CompoundObject& sceneROIs = VideoManager()->Get3DManager()->GetLego3DView()->GetViewManager()->GetROIs();
+		for (CompoundObject::const_iterator it = sceneROIs.begin(); it != sceneROIs.end(); it++) {
+			LegoROI* source = (LegoROI*) *it;
+			if (!source->GetName() || SDL_strcasecmp(source->GetName(), p_name.c_str())) {
+				continue;
+			}
+
+			static uint32_t s_counter = 0;
+			char uniqueName[64];
+			SDL_snprintf(uniqueName, sizeof(uniqueName), "npc_scene_%s_%u", p_name.c_str(), s_counter++);
+
+			LegoROI* clone = AnimUtils::DeepCloneROI(source, uniqueName);
+			if (clone) {
+				clone->SetVisibility(FALSE);
+				VideoManager()->Get3DManager()->Add(*clone);
+				m_clonedSceneROIs.push_back(clone);
+				addAlias(p_name, clone);
+			}
+			return clone;
+		}
+		return nullptr;
 	};
 
 	for (LegoU32 i = 0; i < numActors; i++) {
@@ -111,6 +141,7 @@ void ScenePlayer::SetupROIs(const AnimInfo* p_animInfo)
 		std::transform(lowered.begin(), lowered.end(), lowered.begin(), ::tolower);
 
 		if (actorType == LegoAnimActorEntry::e_managedLegoActor) {
+			// Character actor: match to a participant or clone as NPC
 			bool matched = false;
 
 			for (size_t p = 0; p < m_participants.size(); p++) {
@@ -126,18 +157,15 @@ void ScenePlayer::SetupROIs(const AnimInfo* p_animInfo)
 				}
 			}
 
-			if (matched) {
-				continue;
-			}
-
-			// No participant matched — create a clone
-			char uniqueName[64];
-			SDL_snprintf(uniqueName, sizeof(uniqueName), "npc_char_%s", lowered.c_str());
-			LegoROI* roi = CharacterCloner::Clone(CharacterManager(), uniqueName, lowered.c_str());
-			if (roi) {
-				roi->SetName(lowered.c_str());
-				VideoManager()->Get3DManager()->Add(*roi);
-				createdROIs.push_back(roi);
+			if (!matched) {
+				char uniqueName[64];
+				SDL_snprintf(uniqueName, sizeof(uniqueName), "npc_char_%s", lowered.c_str());
+				LegoROI* roi = CharacterCloner::Clone(CharacterManager(), uniqueName, lowered.c_str());
+				if (roi) {
+					roi->SetName(lowered.c_str());
+					VideoManager()->Get3DManager()->Add(*roi);
+					createdROIs.push_back(roi);
+				}
 			}
 		}
 		else if (actorType == LegoAnimActorEntry::e_managedInvisibleRoiTrimmed || actorType == LegoAnimActorEntry::e_sceneRoi1 || actorType == LegoAnimActorEntry::e_sceneRoi2) {
@@ -147,10 +175,11 @@ void ScenePlayer::SetupROIs(const AnimInfo* p_animInfo)
 			createProp(lowered, lowered.c_str());
 		}
 		else {
-			// Type 0/1: check if this is a vehicle actor via ModelInfo flag
+			// Type 0/1: scene actor, vehicle, or prop
 			LegoROI* roi = nullptr;
-			bool isVehicleActor = false;
 
+			// Check if this is a vehicle actor via ModelInfo flag
+			bool isVehicleActor = false;
 			for (uint8_t m = 0; m < p_animInfo->m_modelCount; m++) {
 				if (p_animInfo->m_models[m].m_name &&
 					!SDL_strcasecmp(lowered.c_str(), p_animInfo->m_models[m].m_name) &&
@@ -182,9 +211,15 @@ void ScenePlayer::SetupROIs(const AnimInfo* p_animInfo)
 				}
 			}
 
-			// Try creating as prop
+			// Try creating from a registered LOD
 			if (!roi) {
 				roi = createProp(lowered, AnimUtils::TrimLODSuffix(lowered).c_str());
+			}
+
+			// Fallback: clone an existing scene ROI (for models like BIRD
+			// whose LOD data is embedded in the world, not registered separately)
+			if (!roi) {
+				roi = cloneSceneROI(lowered);
 			}
 
 			// Final fallback: borrow local player's vehicle via alias
@@ -225,6 +260,9 @@ void ScenePlayer::SetupROIs(const AnimInfo* p_animInfo)
 	}
 	for (auto* propROI : m_propROIs) {
 		extras.push_back(propROI);
+	}
+	for (auto* clonedROI : m_clonedSceneROIs) {
+		extras.push_back(clonedROI);
 	}
 	if (m_vehicleROI) {
 		extras.push_back(m_vehicleROI);
@@ -571,4 +609,12 @@ void ScenePlayer::CleanupProps()
 		}
 	}
 	m_propROIs.clear();
+
+	for (auto* clonedROI : m_clonedSceneROIs) {
+		if (clonedROI) {
+			VideoManager()->Get3DManager()->Remove(*clonedROI);
+			delete clonedROI;
+		}
+	}
+	m_clonedSceneROIs.clear();
 }

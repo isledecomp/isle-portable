@@ -1,5 +1,6 @@
 #include "extensions/multiplayer/animation/catalog.h"
 
+#include "actions/isle_actions.h"
 #include "decomp.h"
 #include "legoactors.h"
 #include "legoanimationmanager.h"
@@ -85,7 +86,18 @@ void Catalog::Refresh(LegoAnimationManager* p_am)
 		static const uint64_t NAMED_CHARACTER_MASK = ((uint64_t(1) << 48) - 1) | (uint64_t(0xF) << 54);
 		bool hasNamedPerformer = (entry.performerMask & NAMED_CHARACTER_MASK) != 0;
 
-		if (!hasNamedPerformer) {
+		// Manual overrides for prop-only animations that have no character
+		// performers but are valid scene animations with spectator-only slots.
+		MxU32 objectId = m_animsBase[i].m_objectId;
+		if (objectId == IsleScript::c_snsx31sh_RunAnim || objectId == IsleScript::c_fpz166p1_RunAnim ||
+			objectId == IsleScript::c_nic002pr_RunAnim || objectId == IsleScript::c_nic003pr_RunAnim ||
+			objectId == IsleScript::c_nic004pr_RunAnim || objectId == IsleScript::c_prp101pr_RunAnim) {
+			if (objectId == IsleScript::c_prp101pr_RunAnim) {
+				entry.location = 11; // Hospital
+			}
+			entry.category = e_camAnim;
+		}
+		else if (!hasNamedPerformer) {
 			entry.category = e_otherAnim;
 		}
 		else if (entry.location == -1) {

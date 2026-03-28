@@ -143,6 +143,7 @@ public:
 
 	// FUNCTION: BETA10 0x10027110
 	const CompoundObject* GetComp() const { return comp; }
+	void SetComp(CompoundObject* p_comp) { comp = p_comp; }
 
 	// FUNCTION: BETA10 0x10049e10
 	unsigned char GetVisibility() { return m_visible; }

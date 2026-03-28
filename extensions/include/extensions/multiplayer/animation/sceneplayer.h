@@ -92,6 +92,9 @@ private:
 	// Props created for the animation (cloned characters and prop models)
 	std::vector<LegoROI*> m_propROIs;
 
+	// ROIs cloned from scene (created by sharing LOD data, not registered in CharacterManager)
+	std::vector<LegoROI*> m_clonedSceneROIs;
+
 	bool m_hasCamAnim;
 	bool m_observerMode;
 	std::vector<LegoROI*> m_ptAtCamROIs;

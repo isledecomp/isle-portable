@@ -93,6 +93,10 @@ inline void EnsureROIMapVisibility(LegoROI** p_roiMap, MxU32 p_roiMapSize)
 // Apply animation transformation to all root children of an animation tree.
 void ApplyTree(LegoAnim* p_anim, MxMatrix& p_transform, LegoTime p_time, LegoROI** p_roiMap);
 
+// Deep-clone a ROI hierarchy, sharing LOD geometry via refcount.
+// Each clone gets its own transform, safe for concurrent animation playback.
+LegoROI* DeepCloneROI(LegoROI* p_source, const char* p_name);
+
 // Strip trailing digits and underscores from a name to get the LOD base name.
 // Mirrors the digit-trimming in LegoAnimPresenter::CreateManagedActors/CreateSceneROIs.
 std::string TrimLODSuffix(const std::string& p_name);

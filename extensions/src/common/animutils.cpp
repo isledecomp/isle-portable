@@ -2,10 +2,12 @@
 
 #include "anim/legoanim.h"
 #include "legoanimpresenter.h"
+#include "legovideomanager.h"
 #include "legoworld.h"
 #include "misc.h"
 #include "misc/legotree.h"
 #include "roi/legoroi.h"
+#include "viewmanager/viewlodlist.h"
 
 #include <SDL3/SDL_stdinc.h>
 #include <algorithm>
@@ -309,6 +311,39 @@ void AnimUtils::ApplyTree(LegoAnim* p_anim, MxMatrix& p_transform, LegoTime p_ti
 	for (LegoU32 i = 0; i < root->GetNumChildren(); i++) {
 		LegoROI::ApplyAnimationTransformation(root->GetChild(i), p_transform, p_time, p_roiMap);
 	}
+}
+
+LegoROI* AnimUtils::DeepCloneROI(LegoROI* p_source, const char* p_name)
+{
+	Tgl::Renderer* renderer = VideoManager()->GetRenderer();
+	ViewLODList* lodList = reinterpret_cast<ViewLODList*>(const_cast<LODListBase*>(p_source->GetLODs()));
+
+	LegoROI* clone;
+	if (lodList && lodList->Size() > 0) {
+		clone = new LegoROI(renderer, lodList);
+	}
+	else {
+		clone = new LegoROI(renderer);
+	}
+
+	clone->SetName(p_name);
+	clone->SetBoundingSphere(p_source->GetBoundingSphere());
+
+	const CompoundObject* children = p_source->GetComp();
+	if (children && !children->empty()) {
+		CompoundObject* clonedChildren = new CompoundObject();
+		for (CompoundObject::const_iterator it = children->begin(); it != children->end(); it++) {
+			LegoROI* childSource = (LegoROI*) *it;
+			const char* childName = childSource->GetName() ? childSource->GetName() : "";
+			LegoROI* childClone = DeepCloneROI(childSource, childName);
+			if (childClone) {
+				clonedChildren->push_back(childClone);
+			}
+		}
+		clone->SetComp(clonedChildren);
+	}
+
+	return clone;
 }
 
 std::string AnimUtils::TrimLODSuffix(const std::string& p_name)
