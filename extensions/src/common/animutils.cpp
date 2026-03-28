@@ -375,7 +375,7 @@ std::vector<MxMatrix> AnimUtils::ComputeChildOffsets(LegoROI* p_parent)
 
 	for (auto it = children->begin(); it != children->end(); it++) {
 		MxMatrix offset;
-		offset.Product(parentInv, ((LegoROI*) *it)->GetLocal2World());
+		offset.Product(((LegoROI*) *it)->GetLocal2World(), parentInv);
 		offsets.push_back(offset);
 	}
 
@@ -398,7 +398,7 @@ void AnimUtils::ApplyHierarchyTransform(
 	size_t i = 0;
 	for (auto it = children->begin(); it != children->end() && i < p_offsets.size(); it++, i++) {
 		MxMatrix childWorld;
-		childWorld.Product(p_transform, p_offsets[i]);
+		childWorld.Product(p_offsets[i], p_transform);
 		((LegoROI*) *it)->WrappedSetLocal2WorldWithWorldDataUpdate(childWorld);
 	}
 }
