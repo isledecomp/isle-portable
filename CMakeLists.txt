@@ -563,6 +563,7 @@ if (ISLE_EXTENSIONS)
     extensions/src/multiplayer/networkmanager.cpp
     extensions/src/multiplayer/protocol.cpp
     extensions/src/multiplayer/remoteplayer.cpp
+    extensions/src/multiplayer/sireader.cpp
     extensions/src/multiplayer/worldstatesync.cpp
   )
   if(EMSCRIPTEN)

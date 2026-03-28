@@ -1,14 +1,11 @@
 #include "extensions/multiplayer/animation/loader.h"
 
 #include "anim/legoanim.h"
-#include "extensions/common/pathutils.h"
 #include "flic.h"
 #include "misc/legostorage.h"
 #include "mxautolock.h"
-#include "mxwavepresenter.h"
 
 #include <SDL3/SDL_stdinc.h>
-#include <file.h>
 #include <interleaf.h>
 
 using namespace Multiplayer::Animation;
@@ -95,77 +92,13 @@ SceneAnimData& SceneAnimData::operator=(SceneAnimData&& p_other) noexcept
 	return *this;
 }
 
-Loader::Loader()
-	: m_siFile(nullptr), m_interleaf(nullptr), m_siReady(false), m_preloadThread(nullptr), m_preloadObjectId(0),
-	  m_preloadDone(false)
+Loader::Loader() : m_reader(nullptr), m_preloadThread(nullptr), m_preloadObjectId(0), m_preloadDone(false)
 {
 }
 
 Loader::~Loader()
 {
 	CleanupPreloadThread();
-	for (auto& [id, track] : m_hornCache) {
-		delete[] track.pcmData;
-	}
-	delete m_interleaf;
-	delete m_siFile;
-}
-
-bool Loader::OpenSIHeaderOnly(const char* p_siPath, si::File*& p_file, si::Interleaf*& p_interleaf)
-{
-	p_file = new si::File();
-
-	MxString path;
-	if (!Extensions::Common::ResolveGamePath(p_siPath, path) || !p_file->Open(path.GetData(), si::File::Read)) {
-		delete p_file;
-		p_file = nullptr;
-		return false;
-	}
-
-	p_interleaf = new si::Interleaf();
-	if (p_interleaf->Read(p_file, si::Interleaf::HeaderOnly) != si::Interleaf::ERROR_SUCCESS) {
-		delete p_interleaf;
-		p_interleaf = nullptr;
-		p_file->Close();
-		delete p_file;
-		p_file = nullptr;
-		return false;
-	}
-
-	return true;
-}
-
-bool Loader::OpenSI()
-{
-	if (m_siReady) {
-		return true;
-	}
-
-	if (!OpenSIHeaderOnly("\\lego\\scripts\\isle\\isle.si", m_siFile, m_interleaf)) {
-		return false;
-	}
-
-	m_siReady = true;
-	return true;
-}
-
-bool Loader::ReadObject(uint32_t p_objectId)
-{
-	if (!m_siReady) {
-		return false;
-	}
-
-	size_t childCount = m_interleaf->GetChildCount();
-	if (p_objectId >= childCount) {
-		return false;
-	}
-
-	si::Object* obj = static_cast<si::Object*>(m_interleaf->GetChildAt(p_objectId));
-	if (obj->type() != si::MxOb::Null) {
-		return true;
-	}
-
-	return m_interleaf->ReadObject(m_siFile, p_objectId) == si::Interleaf::ERROR_SUCCESS;
 }
 
 bool Loader::ParseAnimationChild(si::Object* p_child, SceneAnimData& p_data)
@@ -209,49 +142,6 @@ bool Loader::ParseAnimationChild(si::Object* p_child, SceneAnimData& p_data)
 	}
 
 	p_data.duration = (float) p_data.anim->GetDuration();
-	return true;
-}
-
-bool Loader::ParseSoundChild(si::Object* p_child, SceneAnimData& p_data)
-{
-	auto& chunks = p_child->data_;
-	if (chunks.size() < 2) {
-		return false;
-	}
-
-	// data_[0] = WaveFormat header, data_[1..N] = raw PCM blocks
-	const auto& header = chunks[0];
-	if (header.size() < sizeof(MxWavePresenter::WaveFormat)) {
-		return false;
-	}
-
-	SceneAnimData::AudioTrack track;
-	SDL_memcpy(&track.format, header.data(), sizeof(MxWavePresenter::WaveFormat));
-	track.pcmData = nullptr;
-	track.pcmDataSize = 0;
-	track.volume = (int32_t) p_child->volume_;
-	track.timeOffset = p_child->time_offset_;
-	track.mediaSrcPath = p_child->filename_;
-
-	MxU32 totalPcm = 0;
-	for (size_t i = 1; i < chunks.size(); i++) {
-		totalPcm += (MxU32) chunks[i].size();
-	}
-
-	if (totalPcm == 0) {
-		return false;
-	}
-
-	track.pcmData = new MxU8[totalPcm];
-	track.pcmDataSize = totalPcm;
-	track.format.m_dataSize = totalPcm;
-	MxU32 offset = 0;
-	for (size_t i = 1; i < chunks.size(); i++) {
-		SDL_memcpy(track.pcmData + offset, chunks[i].data(), chunks[i].size());
-		offset += (MxU32) chunks[i].size();
-	}
-
-	p_data.audioTracks.push_back(std::move(track));
 	return true;
 }
 
@@ -333,7 +223,10 @@ bool Loader::ParseComposite(si::Object* p_composite, SceneAnimData& p_data)
 			}
 		}
 		else if (child->filetype() == si::MxOb::WAV) {
-			ParseSoundChild(child, p_data);
+			Multiplayer::AudioTrack track;
+			if (SIReader::ExtractAudioTrack(child, track)) {
+				p_data.audioTracks.push_back(std::move(track));
+			}
 		}
 	}
 
@@ -362,15 +255,18 @@ SceneAnimData* Loader::EnsureCached(uint32_t p_objectId)
 		// Preload failed — fall through to synchronous load
 	}
 
-	if (!OpenSI()) {
+	if (!m_reader || !m_reader->Open()) {
 		return nullptr;
 	}
 
-	if (!ReadObject(p_objectId)) {
+	if (!m_reader->ReadObject(p_objectId)) {
 		return nullptr;
 	}
 
-	si::Object* composite = static_cast<si::Object*>(m_interleaf->GetChildAt(p_objectId));
+	si::Object* composite = m_reader->GetObject(p_objectId);
+	if (!composite) {
+		return nullptr;
+	}
 
 	SceneAnimData data;
 	if (!ParseComposite(composite, data)) {
@@ -420,7 +316,7 @@ MxResult Loader::PreloadThread::Run()
 	si::File* siFile = nullptr;
 	si::Interleaf* interleaf = nullptr;
 
-	if (!OpenSIHeaderOnly("\\lego\\scripts\\isle\\isle.si", siFile, interleaf)) {
+	if (!SIReader::OpenHeaderOnly("\\lego\\scripts\\isle\\isle.si", siFile, interleaf)) {
 		m_loader->m_preloadDone = true;
 		return MxThread::Run();
 	}
@@ -442,47 +338,4 @@ MxResult Loader::PreloadThread::Run()
 	delete siFile;
 
 	return MxThread::Run();
-}
-
-SceneAnimData::AudioTrack* Loader::EnsureHornCached(uint32_t p_objectId)
-{
-	{
-		AUTOLOCK(m_cacheCS);
-		auto it = m_hornCache.find(p_objectId);
-		if (it != m_hornCache.end()) {
-			return &it->second;
-		}
-	}
-
-	if (!OpenSI()) {
-		return nullptr;
-	}
-
-	if (!ReadObject(p_objectId)) {
-		return nullptr;
-	}
-
-	si::Object* composite = static_cast<si::Object*>(m_interleaf->GetChildAt(p_objectId));
-
-	// Find the first WAV child in the composite (the horn sound)
-	for (size_t i = 0; i < composite->GetChildCount(); i++) {
-		si::Object* child = static_cast<si::Object*>(composite->GetChildAt(i));
-
-		if (child->filetype() == si::MxOb::WAV) {
-			SceneAnimData data;
-			if (ParseSoundChild(child, data)) {
-				// Take ownership of the PCM buffer before data's destructor frees it.
-				// AudioTrack has a raw pointer, so std::move alone doesn't transfer ownership.
-				SceneAnimData::AudioTrack track = data.audioTracks[0];
-				data.audioTracks[0].pcmData = nullptr;
-
-				AUTOLOCK(m_cacheCS);
-				auto result = m_hornCache.emplace(p_objectId, track);
-				return &result.first->second;
-			}
-			break;
-		}
-	}
-
-	return nullptr;
 }

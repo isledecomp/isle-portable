@@ -73,6 +73,7 @@ NetworkManager::NetworkManager()
 	  m_animInterestDirty(false), m_lastAnimPushTime(0), m_connectionState(STATE_DISCONNECTED), m_wasRejected(false),
 	  m_reconnectAttempt(0), m_reconnectDelay(0), m_nextReconnectTime(0), m_hornTemplates{}, m_activeHorns()
 {
+	m_animLoader.SetSIReader(&m_siReader);
 }
 
 NetworkManager::~NetworkManager()
@@ -1106,6 +1107,19 @@ void NetworkManager::SendHorn(int8_t p_vehicleType)
 	SendMessage(msg);
 }
 
+// Vehicle type and dashboard composite ID for each horn-capable vehicle
+struct HornVehicleInfo {
+	int8_t vehicleType;
+	uint32_t dashboardObjectId;
+};
+
+static const HornVehicleInfo g_hornVehicles[] = {
+	{VEHICLE_BIKE, IsleScript::c_BikeDashboard},
+	{VEHICLE_AMBULANCE, IsleScript::c_AmbulanceDashboard},
+	{VEHICLE_TOWTRACK, IsleScript::c_TowTrackDashboard},
+	{VEHICLE_DUNEBUGGY, IsleScript::c_DuneCarDashboard},
+};
+
 void NetworkManager::HandleHorn(const HornMsg& p_msg)
 {
 	// Sweep finished horn sounds
@@ -1126,11 +1140,10 @@ void NetworkManager::HandleHorn(const HornMsg& p_msg)
 		return;
 	}
 
-	// Map vehicle type to horn template index
-	static const int8_t hornVehicles[] = {VEHICLE_BIKE, VEHICLE_AMBULANCE, VEHICLE_TOWTRACK, VEHICLE_DUNEBUGGY};
+	// Find horn template for this vehicle type
 	int templateIdx = -1;
 	for (int i = 0; i < HORN_VEHICLE_COUNT; i++) {
-		if (hornVehicles[i] == static_cast<int8_t>(p_msg.vehicleType)) {
+		if (g_hornVehicles[i].vehicleType == static_cast<int8_t>(p_msg.vehicleType)) {
 			templateIdx = i;
 			break;
 		}
@@ -1148,20 +1161,12 @@ void NetworkManager::HandleHorn(const HornMsg& p_msg)
 	}
 }
 
-// Dashboard composite IDs that contain horn WAV children
-static const uint32_t g_hornDashboardIds[4] = {
-	IsleScript::c_BikeDashboard,
-	IsleScript::c_AmbulanceDashboard,
-	IsleScript::c_TowTrackDashboard,
-	IsleScript::c_DuneCarDashboard,
-};
-
 void NetworkManager::PreloadHornSounds()
 {
 	for (int i = 0; i < HORN_VEHICLE_COUNT; i++) {
 		m_hornTemplates[i] = nullptr;
 
-		Animation::SceneAnimData::AudioTrack* track = m_animLoader.EnsureHornCached(g_hornDashboardIds[i]);
+		AudioTrack* track = m_siReader.ExtractFirstAudio(g_hornVehicles[i].dashboardObjectId);
 		if (!track) {
 			continue;
 		}
@@ -1176,6 +1181,9 @@ void NetworkManager::PreloadHornSounds()
 		else {
 			delete sound;
 		}
+
+		delete[] track->pcmData;
+		delete track;
 	}
 }
 

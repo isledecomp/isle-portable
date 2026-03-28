@@ -9,6 +9,7 @@
 #include "extensions/multiplayer/platformcallbacks.h"
 #include "extensions/multiplayer/protocol.h"
 #include "extensions/multiplayer/remoteplayer.h"
+#include "extensions/multiplayer/sireader.h"
 #include "extensions/multiplayer/worldstatesync.h"
 #include "mxcore.h"
 #include "mxtypes.h"
@@ -200,6 +201,9 @@ private:
 	bool m_lastCameraEnabled;
 	uint8_t m_lastVehicleState;
 	bool m_wasInRestrictedArea;
+
+	// SI file reader (shared with animation loader)
+	SIReader m_siReader;
 
 	// NPC animation playback
 	Multiplayer::Animation::Catalog m_animCatalog;

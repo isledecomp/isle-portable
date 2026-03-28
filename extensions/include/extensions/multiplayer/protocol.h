@@ -149,6 +149,12 @@ struct EmoteMsg {
 	uint8_t emoteId; // Index into emote table
 };
 
+// One-shot horn sound trigger, broadcast to all peers
+struct HornMsg {
+	MessageHeader header;
+	uint8_t vehicleType; // VehicleType enum value
+};
+
 // Immediate customization change, broadcast to all peers
 struct CustomizeMsg {
 	MessageHeader header;
@@ -195,12 +201,6 @@ struct AnimCompletionParticipant {
 	uint32_t peerId;
 	int8_t charIndex;    // Participant's character (g_actorInfoInit index)
 	char displayName[8]; // 7 chars + null
-};
-
-// One-shot horn sound trigger, broadcast to all peers
-struct HornMsg {
-	MessageHeader header;
-	uint8_t vehicleType; // VehicleType enum value
 };
 
 // Host -> All: animation completed successfully (natural completion only, not cancellation)
