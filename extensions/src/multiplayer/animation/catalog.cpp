@@ -65,16 +65,6 @@ void Catalog::Refresh(LegoAnimationManager* p_am)
 		entry.characterIndex = m_animsBase[i].m_characterIndex;
 		entry.modelCount = m_animsBase[i].m_modelCount;
 
-		if (entry.characterIndex < 0) {
-			entry.category = e_otherAnim;
-		}
-		else if (entry.location == -1) {
-			entry.category = e_npcAnim;
-		}
-		else {
-			entry.category = e_camAnim;
-		}
-
 		// Compute performerMask by matching models against g_actorInfoInit[].m_name
 		entry.performerMask = 0;
 		for (uint8_t m = 0; m < entry.modelCount; m++) {
@@ -86,13 +76,31 @@ void Catalog::Refresh(LegoAnimationManager* p_am)
 			}
 		}
 
+		// Categorize based on whether the animation has named character performers.
+		// g_actorInfoInit layout:
+		//   0-47:  named characters (pepper through jk)
+		//   48-53: ghosts
+		//   54-57: named characters (hg, pntgy, pep, cop01)
+		//   58-65: generic extras (actor_01-05, vehicle riders)
+		static const uint64_t NAMED_CHARACTER_MASK = ((uint64_t(1) << 48) - 1) | (uint64_t(0xF) << 54);
+		bool hasNamedPerformer = (entry.performerMask & NAMED_CHARACTER_MASK) != 0;
+
+		if (!hasNamedPerformer) {
+			entry.category = e_otherAnim;
+		}
+		else if (entry.location == -1) {
+			entry.category = e_npcAnim;
+		}
+		else {
+			entry.category = e_camAnim;
+		}
+
 		size_t idx = m_entries.size();
 		m_entries.push_back(entry);
 
 		// Build location index
 		m_locationIndex[entry.location].push_back(idx);
 	}
-
 }
 
 const AnimInfo* Catalog::GetAnimInfo(uint16_t p_animIndex) const

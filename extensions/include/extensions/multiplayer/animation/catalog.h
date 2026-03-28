@@ -11,9 +11,9 @@ namespace Multiplayer::Animation
 {
 
 enum AnimCategory : uint8_t {
-	e_npcAnim,  // characterIndex >= 0 && location == -1
-	e_camAnim,  // characterIndex >= 0 && location >= 0
-	e_otherAnim // characterIndex < 0 (ambient, non-character)
+	e_npcAnim,  // has named character performer && location == -1
+	e_camAnim,  // has named character performer && location >= 0
+	e_otherAnim // no named character performers (ambient/prop-only)
 };
 
 // Number of core playable characters (Pepper, Mama, Papa, Nick, Laura) = g_characters indices 0-4
