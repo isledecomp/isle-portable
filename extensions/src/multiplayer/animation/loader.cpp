@@ -26,9 +26,15 @@ static void ParseExtraDirectives(const si::bytearray& p_extra, SceneAnimData& p_
 		p_data.hideOnStop = true;
 	}
 
-	size_t pos = extra.find("PTATCAM=");
+	size_t pos = extra.find("PTATCAM");
 	if (pos != std::string::npos) {
-		pos += 8;
+		pos += 7;
+		// Skip the key-value separator (colon, comma, space, etc. — same set as KeyValueStringParse)
+		if (pos < extra.size() &&
+			(extra[pos] == ':' || extra[pos] == ',' || extra[pos] == ' ' || extra[pos] == '\t' ||
+			 extra[pos] == '=')) {
+			pos++;
+		}
 		size_t end = extra.find(' ', pos);
 		std::string value = (end != std::string::npos) ? extra.substr(pos, end - pos) : extra.substr(pos);
 
