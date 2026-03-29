@@ -101,12 +101,12 @@ struct PlayerStateMsg {
 	float direction[3];
 	float up[3];
 	float speed;
-	uint8_t walkAnimId;        // Index into walk animation table (0 = default)
-	uint8_t idleAnimId;        // Index into idle animation table (0 = default)
+	uint8_t walkAnimId;              // Index into walk animation table (0 = default)
+	uint8_t idleAnimId;              // Index into idle animation table (0 = default)
 	char name[USERNAME_BUFFER_SIZE]; // Player display name (7 chars + null terminator)
-	uint8_t displayActorIndex; // Index into g_actorInfoInit (0-65)
-	uint8_t customizeData[5];  // Packed CustomizeState
-	uint8_t customizeFlags;    // Bit 0 = allowRemoteCustomize
+	uint8_t displayActorIndex;       // Index into g_actorInfoInit (0-65)
+	uint8_t customizeData[5];        // Packed CustomizeState
+	uint8_t customizeFlags;          // Bit 0 = allowRemoteCustomize
 };
 
 // Server -> all: announces which peer is the host
@@ -202,15 +202,15 @@ struct AnimStartMsg {
 // Per-participant data in AnimCompleteMsg
 struct AnimCompletionParticipant {
 	uint32_t peerId;
-	int8_t charIndex;    // Participant's character (g_actorInfoInit index)
+	int8_t charIndex;                       // Participant's character (g_actorInfoInit index)
 	char displayName[USERNAME_BUFFER_SIZE]; // 7 chars + null
 };
 
 // Host -> All: animation completed successfully (natural completion only, not cancellation)
 struct AnimCompleteMsg {
 	MessageHeader header;
-	uint64_t eventId;  // Random 64-bit ID unique to this completion event
-	uint32_t objectId; // SI file object ID (stable, used as frontend key)
+	uint64_t eventId;   // Random 64-bit ID unique to this completion event
+	uint16_t animIndex; // World-encoded animation index (globally unique key)
 	uint8_t participantCount;
 	AnimCompletionParticipant participants[8];
 };

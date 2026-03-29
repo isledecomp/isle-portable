@@ -381,12 +381,10 @@ void NetworkManager::OnWorldEnabled(LegoWorld* p_world)
 		NotifyPlayerCountChanged();
 		EnforceDisableNPCs();
 
-		// Refresh animation catalog from the animation manager
-		if (AnimationManager()) {
-			m_animCatalog.Refresh(AnimationManager());
-			m_animCoordinator.SetCatalog(&m_animCatalog);
-			m_animSessionHost.SetCatalog(&m_animCatalog);
-		}
+		// Refresh animation catalog from DTA files for all supported worlds
+		m_animCatalog.Refresh();
+		m_animCoordinator.SetCatalog(&m_animCatalog);
+		m_animSessionHost.SetCatalog(&m_animCatalog);
 
 		m_locationProximity.Reset();
 		PreloadHornSounds();
@@ -1515,9 +1513,10 @@ void NetworkManager::TickHostSessions()
 			m_animSessionHost.StartCountdown(animIndex);
 
 			if (m_animCoordinator.IsLocalPlayerInSession(animIndex)) {
-				const AnimInfo* ai = m_animCatalog.GetAnimInfo(animIndex);
+				const Animation::CatalogEntry* ce = m_animCatalog.FindEntry(animIndex);
+				const AnimInfo* ai = ce ? m_animCatalog.GetAnimInfo(animIndex) : nullptr;
 				if (ai) {
-					m_animLoader.PreloadAsync(ai->m_objectId);
+					m_animLoader.PreloadAsync(ce->worldId, ai->m_objectId);
 				}
 			}
 
@@ -1644,9 +1643,10 @@ void NetworkManager::HandleAnimUpdate(const AnimUpdateMsg& p_msg)
 	m_animCoordinator.ApplySessionUpdate(p_msg.animIndex, p_msg.state, p_msg.countdownMs, slots, p_msg.slotCount);
 
 	if (p_msg.state == static_cast<uint8_t>(Animation::CoordinationState::e_countdown)) {
-		const AnimInfo* ai = m_animCatalog.GetAnimInfo(p_msg.animIndex);
+		const Animation::CatalogEntry* ce = m_animCatalog.FindEntry(p_msg.animIndex);
+		const AnimInfo* ai = ce ? m_animCatalog.GetAnimInfo(p_msg.animIndex) : nullptr;
 		if (ai) {
-			m_animLoader.PreloadAsync(ai->m_objectId);
+			m_animLoader.PreloadAsync(ce->worldId, ai->m_objectId);
 		}
 	}
 
@@ -1783,7 +1783,14 @@ void NetworkManager::HandleAnimStartLocally(uint16_t p_animIndex, bool p_localIn
 		});
 	}
 
-	scenePlayer->Play(animInfo, entry->category, participants.data(), (uint8_t) participants.size(), observerMode);
+	scenePlayer->Play(
+		animInfo,
+		entry->worldId,
+		entry->category,
+		participants.data(),
+		(uint8_t) participants.size(),
+		observerMode
+	);
 
 	if (!scenePlayer->IsPlaying()) {
 		if (!observerMode) {
@@ -1860,7 +1867,7 @@ void NetworkManager::BroadcastAnimComplete(uint16_t p_animIndex)
 	AnimCompleteMsg msg{};
 	msg.header = {MSG_ANIM_COMPLETE, 0, m_localPeerId, m_sequence++, TARGET_BROADCAST};
 	msg.eventId = (static_cast<uint64_t>(SDL_rand_bits()) << 32) | static_cast<uint64_t>(SDL_rand_bits());
-	msg.objectId = animInfo->m_objectId;
+	msg.animIndex = p_animIndex;
 	msg.participantCount = 0;
 
 	char localName[8];
@@ -1940,8 +1947,8 @@ void NetworkManager::HandleAnimComplete(const AnimCompleteMsg& p_msg)
 
 	std::string json = "{\"eventId\":\"";
 	json += eventIdHex;
-	json += "\",\"objectId\":";
-	json += std::to_string(p_msg.objectId);
+	json += "\",\"animIndex\":";
+	json += std::to_string(p_msg.animIndex);
 	json += ",\"participants\":[";
 
 	// Emit local player first so frontend can rely on participants[0] being self
@@ -2189,8 +2196,6 @@ static void BuildAnimationJson(
 	p_json += std::to_string(p_info.animIndex);
 	p_json += ",\"name\":";
 	JsonAppendString(p_json, p_animInfo->m_name ? p_animInfo->m_name : "");
-	p_json += ",\"objectId\":";
-	p_json += std::to_string(p_animInfo->m_objectId);
 	p_json += ",\"category\":";
 	p_json += std::to_string(static_cast<uint8_t>(p_info.entry->category));
 	p_json += ",\"eligible\":";

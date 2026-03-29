@@ -149,7 +149,7 @@ AudioTrack* SIReader::ExtractFirstAudio(uint32_t p_objectId)
 	for (size_t i = 0; i < composite->GetChildCount(); i++) {
 		si::Object* child = static_cast<si::Object*>(composite->GetChildAt(i));
 
-		if (child->filetype() == si::MxOb::WAV) {
+		if (child->presenter_.find("MxWavePresenter") != std::string::npos) {
 			AudioTrack* track = new AudioTrack();
 			if (ExtractAudioTrack(child, *track)) {
 				return track;

@@ -1,6 +1,7 @@
 #ifndef LEGOMODELPRESENTER_H
 #define LEGOMODELPRESENTER_H
 
+#include "extensions/fwd.h"
 #include "lego1_export.h"
 #include "mxvideopresenter.h"
 
@@ -62,6 +63,8 @@ protected:
 	void Destroy(MxBool p_fromDestructor);
 
 private:
+	friend class Multiplayer::Animation::Catalog;
+
 	LegoROI* m_roi;       // 0x64
 	MxBool m_addedToView; // 0x68
 

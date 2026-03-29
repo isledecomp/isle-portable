@@ -23,7 +23,7 @@ MxResult ModelDbModel::Read(SDL_IOStream* p_file)
 		return FAILURE;
 	}
 
-	m_modelName = new char[len];
+	m_modelName = new char[((len + 3) & ~3u)];
 	if (SDL_ReadIO(p_file, m_modelName, len) != len) {
 		return FAILURE;
 	}
@@ -38,7 +38,7 @@ MxResult ModelDbModel::Read(SDL_IOStream* p_file)
 		return FAILURE;
 	}
 
-	m_presenterName = new char[len];
+	m_presenterName = new char[((len + 3) & ~3u)];
 	if (SDL_ReadIO(p_file, m_presenterName, len) != len) {
 		return FAILURE;
 	}

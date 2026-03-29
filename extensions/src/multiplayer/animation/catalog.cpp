@@ -2,11 +2,23 @@
 
 #include "actions/isle_actions.h"
 #include "decomp.h"
+#include "extensions/common/pathutils.h"
 #include "legoactors.h"
 #include "legoanimationmanager.h"
+#include "legomain.h"
+#include "legomodelpresenter.h"
+#include "legopartpresenter.h"
+#include "legovideomanager.h"
 #include "misc.h"
+#include "misc/legostorage.h"
+#include "modeldb/modeldb.h"
+#include "mxdsaction.h"
+#include "mxdschunk.h"
 #include "roi/legoroi.h"
+#include "viewmanager/viewlodlist.h"
 
+#include <SDL3/SDL_iostream.h>
+#include <SDL3/SDL_log.h>
 #include <SDL3/SDL_stdinc.h>
 
 using namespace Multiplayer::Animation;
@@ -61,40 +73,161 @@ std::vector<int8_t> Multiplayer::Animation::GetPerformerIndices(uint64_t p_perfo
 	return indices;
 }
 
-void Catalog::Refresh(LegoAnimationManager* p_am)
+uint8_t Catalog::WorldIdToSlot(int8_t p_worldId)
+{
+	switch (p_worldId) {
+	case LegoOmni::e_act1:
+		return WORLD_SLOT_ACT1;
+	case LegoOmni::e_act2:
+		return WORLD_SLOT_ACT2;
+	case LegoOmni::e_act3:
+		return WORLD_SLOT_ACT3;
+	default:
+		return 0xFF;
+	}
+}
+
+Catalog::~Catalog()
+{
+	Cleanup();
+}
+
+void Catalog::Cleanup()
 {
 	m_entries.clear();
 	m_locationIndex.clear();
-	m_animsBase = nullptr;
-	m_animCount = 0;
 
-	if (!p_am) {
+	for (auto& wd : m_worldData) {
+		FreeAnimInfo(wd.anims, wd.animCount);
+	}
+	m_worldData.clear();
+
+	for (auto* roi : m_modelROIs) {
+		VideoManager()->Get3DManager()->Remove(*roi);
+		delete roi;
+	}
+	m_modelROIs.clear();
+}
+
+void Catalog::FreeAnimInfo(AnimInfo* p_anims, uint16_t p_count)
+{
+	if (!p_anims) {
 		return;
 	}
 
-	m_animCount = p_am->m_animCount;
-	m_animsBase = p_am->m_anims;
+	for (uint16_t i = 0; i < p_count; i++) {
+		delete[] p_anims[i].m_name;
+		if (p_anims[i].m_models) {
+			for (uint8_t j = 0; j < p_anims[i].m_modelCount; j++) {
+				delete[] p_anims[i].m_models[j].m_name;
+			}
+			delete[] p_anims[i].m_models;
+		}
+	}
+	delete[] p_anims;
+}
 
-	if (!m_animsBase || m_animCount == 0) {
+bool Catalog::ParseDTAFile(int8_t p_worldId, AnimInfo*& p_outAnims, uint16_t& p_outCount)
+{
+	p_outAnims = nullptr;
+	p_outCount = 0;
+
+	const char* worldName = Lego()->GetWorldName((LegoOmni::World) p_worldId);
+	if (!worldName) {
+		return false;
+	}
+
+	char relativePath[128];
+	SDL_snprintf(relativePath, sizeof(relativePath), "\\lego\\data\\%sinf.dta", worldName);
+
+	MxString path;
+	if (!Extensions::Common::ResolveGamePath(relativePath, path)) {
+		return false;
+	}
+
+	LegoFile storage;
+	if (storage.Open(path.GetData(), LegoStorage::c_read) != SUCCESS) {
+		return false;
+	}
+
+	MxU32 version;
+	if (storage.Read(&version, sizeof(MxU32)) != SUCCESS) {
+		return false;
+	}
+
+	if (version != 3) {
+		SDL_Log("DTA version mismatch for world %s: expected 3, got %u", worldName, version);
+		return false;
+	}
+
+	MxU16 animCount;
+	if (storage.Read(&animCount, sizeof(MxU16)) != SUCCESS) {
+		return false;
+	}
+
+	if (animCount == 0) {
+		return false;
+	}
+
+	AnimInfo* anims = new AnimInfo[animCount];
+	SDL_memset(anims, 0, animCount * sizeof(AnimInfo));
+
+	for (uint16_t i = 0; i < animCount; i++) {
+		if (AnimationManager()->ReadAnimInfo(&storage, &anims[i]) != SUCCESS) {
+			goto fail;
+		}
+
+		// Compute derived fields (mirrors LoadWorldInfo logic)
+		anims[i].m_characterIndex = -1;
+		anims[i].m_unk0x29 = FALSE;
+		for (int k = 0; k < 3; k++) {
+			anims[i].m_unk0x2a[k] = -1;
+		}
+
+		// Compute vehicle indices from model names
+		int vehicleCount = 0;
+		for (uint8_t m = 0; m < anims[i].m_modelCount && vehicleCount < 3; m++) {
+			MxU32 vehicleIdx;
+			if (AnimationManager()->FindVehicle(anims[i].m_models[m].m_name, vehicleIdx) &&
+				anims[i].m_models[m].m_unk0x2c) {
+				anims[i].m_unk0x2a[vehicleCount++] = (MxS8) vehicleIdx;
+			}
+		}
+	}
+
+	p_outAnims = anims;
+	p_outCount = animCount;
+	return true;
+
+fail:
+	FreeAnimInfo(anims, animCount);
+	return false;
+}
+
+void Catalog::BuildEntries(const WorldAnimData& p_world)
+{
+	if (!p_world.anims || p_world.animCount == 0) {
 		return;
 	}
 
-	for (uint16_t i = 0; i < m_animCount; i++) {
-		if (!m_animsBase[i].m_name || m_animsBase[i].m_objectId == 0) {
+	for (uint16_t i = 0; i < p_world.animCount; i++) {
+		const AnimInfo& animInfo = p_world.anims[i];
+		if (!animInfo.m_name || animInfo.m_objectId == 0) {
 			continue;
 		}
 
 		CatalogEntry entry;
-		entry.animIndex = i;
-		entry.spectatorMask = m_animsBase[i].m_unk0x0c;
-		entry.location = m_animsBase[i].m_location;
-		entry.modelCount = m_animsBase[i].m_modelCount;
+		entry.animIndex = WorldAnimIndex(p_world.worldSlot, i);
+		entry.worldId = p_world.worldId;
+		entry.spectatorMask = animInfo.m_unk0x0c;
+		entry.location = animInfo.m_location;
+		entry.modelCount = animInfo.m_modelCount;
 
 		// Compute performerMask by matching models against g_actorInfoInit[].m_name
 		entry.performerMask = 0;
 		for (uint8_t m = 0; m < entry.modelCount; m++) {
-			if (m_animsBase[i].m_models && m_animsBase[i].m_models[m].m_name) {
-				int8_t charIdx = GetCharacterIndex(m_animsBase[i].m_models[m].m_name);
+			if (animInfo.m_models && animInfo.m_models[m].m_name) {
+				int8_t charIdx = GetCharacterIndex(animInfo.m_models[m].m_name);
 				if (charIdx >= 0) {
 					entry.performerMask |= (uint64_t(1) << charIdx);
 				}
@@ -102,12 +235,10 @@ void Catalog::Refresh(LegoAnimationManager* p_am)
 		}
 
 		// Compute vehicleMask from the pre-populated vehicle list (m_unk0x2a).
-		// Each entry is a g_vehicles[] index set during LoadWorldInfo for models
-		// with m_unk0x2c=1 that match a known vehicle name.
 		entry.vehicleMask = 0;
 		for (int k = 0; k < 3; k++) {
-			if (m_animsBase[i].m_unk0x2a[k] >= 0 && m_animsBase[i].m_unk0x2a[k] < (int8_t) sizeOfArray(g_vehicles)) {
-				entry.vehicleMask |= (1 << m_animsBase[i].m_unk0x2a[k]);
+			if (animInfo.m_unk0x2a[k] >= 0 && animInfo.m_unk0x2a[k] < (int8_t) sizeOfArray(g_vehicles)) {
+				entry.vehicleMask |= (1 << animInfo.m_unk0x2a[k]);
 			}
 		}
 
@@ -122,23 +253,31 @@ void Catalog::Refresh(LegoAnimationManager* p_am)
 
 		// Manual overrides for prop-only animations that have no character
 		// performers but are valid scene animations with spectator-only slots.
-		MxU32 objectId = m_animsBase[i].m_objectId;
-		if (objectId == IsleScript::c_snsx31sh_RunAnim || objectId == IsleScript::c_fpz166p1_RunAnim ||
-			objectId == IsleScript::c_nic002pr_RunAnim || objectId == IsleScript::c_nic003pr_RunAnim ||
-			objectId == IsleScript::c_nic004pr_RunAnim || objectId == IsleScript::c_prp101pr_RunAnim) {
-			if (objectId == IsleScript::c_prp101pr_RunAnim) {
-				entry.location = 11; // Hospital
+		// These are Isle-specific (ACT1) object IDs.
+		bool overridden = false;
+		if (p_world.worldId == LegoOmni::e_act1) {
+			MxU32 objectId = animInfo.m_objectId;
+			if (objectId == IsleScript::c_snsx31sh_RunAnim || objectId == IsleScript::c_fpz166p1_RunAnim ||
+				objectId == IsleScript::c_nic002pr_RunAnim || objectId == IsleScript::c_nic003pr_RunAnim ||
+				objectId == IsleScript::c_nic004pr_RunAnim || objectId == IsleScript::c_prp101pr_RunAnim) {
+				if (objectId == IsleScript::c_prp101pr_RunAnim) {
+					entry.location = 11; // Hospital
+				}
+				entry.category = e_camAnim;
+				overridden = true;
 			}
-			entry.category = e_camAnim;
 		}
-		else if (!hasNamedPerformer) {
-			entry.category = e_otherAnim;
-		}
-		else if (entry.location == -1) {
-			entry.category = e_npcAnim;
-		}
-		else {
-			entry.category = e_camAnim;
+
+		if (!overridden) {
+			if (!hasNamedPerformer) {
+				entry.category = e_otherAnim;
+			}
+			else if (entry.location == -1) {
+				entry.category = e_npcAnim;
+			}
+			else {
+				entry.category = e_camAnim;
+			}
 		}
 
 		size_t idx = m_entries.size();
@@ -149,12 +288,56 @@ void Catalog::Refresh(LegoAnimationManager* p_am)
 	}
 }
 
+void Catalog::Refresh()
+{
+	Cleanup();
+
+	static const int8_t worldIds[] = {
+		(int8_t) LegoOmni::e_act1,
+		(int8_t) LegoOmni::e_act2,
+		(int8_t) LegoOmni::e_act3,
+	};
+
+	for (int w = 0; w < (int) sizeOfArray(worldIds); w++) {
+		int8_t worldId = worldIds[w];
+		uint8_t slot = WorldIdToSlot(worldId);
+		if (slot == 0xFF) {
+			continue;
+		}
+
+		AnimInfo* anims = nullptr;
+		uint16_t count = 0;
+		if (!ParseDTAFile(worldId, anims, count)) {
+			continue;
+		}
+
+		WorldAnimData wd;
+		wd.worldId = worldId;
+		wd.worldSlot = slot;
+		wd.anims = anims;
+		wd.animCount = count;
+		m_worldData.push_back(wd);
+
+		BuildEntries(wd);
+	}
+
+	LoadWorldParts();
+}
+
 const AnimInfo* Catalog::GetAnimInfo(uint16_t p_animIndex) const
 {
-	if (!m_animsBase || p_animIndex >= m_animCount) {
-		return nullptr;
+	uint8_t slot = GetWorldSlot(p_animIndex);
+	uint16_t localIndex = GetLocalIndex(p_animIndex);
+
+	for (const auto& wd : m_worldData) {
+		if (wd.worldSlot == slot) {
+			if (localIndex < wd.animCount) {
+				return &wd.anims[localIndex];
+			}
+			return nullptr;
+		}
 	}
-	return &m_animsBase[p_animIndex];
+	return nullptr;
 }
 
 int8_t Catalog::DisplayActorToCharacterIndex(uint8_t p_displayActorIndex)
@@ -225,8 +408,8 @@ bool Catalog::CheckVehicleEligibility(const CatalogEntry* p_entry, int8_t p_char
 	case e_onOwnVehicle:
 		return animUsesVehicle; // Only animations that use this character's vehicle
 	case e_onOtherVehicle:
-		return false; // On a foreign vehicle — no animations eligible
-	default: // e_onFoot
+		return false;            // On a foreign vehicle — no animations eligible
+	default:                     // e_onFoot
 		return !animUsesVehicle; // Only animations that don't use this character's vehicle
 	}
 }
@@ -338,4 +521,113 @@ bool Catalog::CanTrigger(
 	}
 
 	return allPerformersCovered && *p_spectatorFilled;
+}
+
+void Catalog::LoadWorldParts()
+{
+	MxString wdbPath;
+	if (!Extensions::Common::ResolveGamePath("\\lego\\data\\world.wdb", wdbPath)) {
+		return;
+	}
+
+	SDL_IOStream* wdbFile = SDL_IOFromFile(wdbPath.GetData(), "rb");
+	if (!wdbFile) {
+		return;
+	}
+
+	ModelDbWorld* worlds = nullptr;
+	MxS32 numWorlds = 0;
+	ReadModelDbWorlds(wdbFile, worlds, numWorlds);
+
+	if (!worlds || numWorlds == 0) {
+		SDL_CloseIO(wdbFile);
+		return;
+	}
+
+	// Skip the global textures + parts section (same offset cached by the game)
+	// We need to read it if the game hasn't already (g_wdbSkipGlobalPartsOffset == 0),
+	// but the game always loads before us, so just skip past it.
+	// The game's LoadWorld() sets g_wdbSkipGlobalPartsOffset after reading globals.
+
+	for (MxS32 i = 0; i < numWorlds; i++) {
+		// Load parts from all worlds (skip check: Lookup returns non-null if already registered)
+		ModelDbPartListCursor cursor(worlds[i].m_partList);
+		ModelDbPart* part;
+
+		while (cursor.Next(part)) {
+			ViewLODList* existing = GetViewLODListManager()->Lookup(part->m_roiName.GetData());
+			if (existing) {
+				existing->Release();
+				continue;
+			}
+
+			MxU8* buff = new MxU8[part->m_partDataLength];
+			SDL_SeekIO(wdbFile, part->m_partDataOffset, SDL_IO_SEEK_SET);
+			if (SDL_ReadIO(wdbFile, buff, part->m_partDataLength) != part->m_partDataLength) {
+				delete[] buff;
+				continue;
+			}
+
+			MxDSChunk chunk;
+			chunk.SetLength(part->m_partDataLength);
+			chunk.SetData(buff);
+
+			LegoPartPresenter partPresenter;
+			if (partPresenter.Read(chunk) == SUCCESS) {
+				partPresenter.Store();
+			}
+
+			delete[] buff;
+		}
+
+		// Load models whose LODs aren't registered yet
+		for (MxS32 j = 0; j < worlds[i].m_numModels; j++) {
+			ModelDbModel& model = worlds[i].m_models[j];
+			if (!model.m_modelName) {
+				continue;
+			}
+
+			// Only load models that aren't already available as LODs
+			char loweredName[256];
+			SDL_strlcpy(loweredName, model.m_modelName, sizeof(loweredName));
+			SDL_strlwr(loweredName);
+
+			ViewLODList* existing = GetViewLODListManager()->Lookup(loweredName);
+			if (existing) {
+				existing->Release();
+				continue;
+			}
+
+			MxU8* buff = new MxU8[model.m_modelDataLength];
+			SDL_SeekIO(wdbFile, model.m_modelDataOffset, SDL_IO_SEEK_SET);
+			if (SDL_ReadIO(wdbFile, buff, model.m_modelDataLength) != model.m_modelDataLength) {
+				delete[] buff;
+				continue;
+			}
+
+			MxDSChunk chunk;
+			chunk.SetLength(model.m_modelDataLength);
+			chunk.SetData(buff);
+
+			// Use friend access to LegoModelPresenter's private CreateROI + m_roi
+			LegoModelPresenter modelPresenter;
+			MxDSAction action;
+			modelPresenter.SetAction(&action);
+
+			if (modelPresenter.CreateROI(&chunk) == SUCCESS && modelPresenter.m_roi) {
+				// Add to 3D scene (hidden) so ScenePlayer::cloneSceneROI can find it
+				modelPresenter.m_roi->SetVisibility(FALSE);
+				VideoManager()->Get3DManager()->Add(*modelPresenter.m_roi);
+
+				// Steal the ROI to keep it alive (Destroy() just nulls m_roi)
+				m_modelROIs.push_back(modelPresenter.m_roi);
+				modelPresenter.m_roi = nullptr;
+			}
+
+			delete[] buff;
+		}
+	}
+
+	FreeModelDbWorlds(worlds, numWorlds);
+	SDL_CloseIO(wdbFile);
 }

@@ -37,6 +37,7 @@ public:
 	// When p_observerMode is true, participants are only remote performers (no local player).
 	void Play(
 		const AnimInfo* p_animInfo,
+		int8_t p_worldId,
 		AnimCategory p_category,
 		const ParticipantROI* p_participants,
 		uint8_t p_participantCount,

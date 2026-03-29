@@ -47,7 +47,8 @@ void PhonemePlayer::Init(
 	const std::vector<std::pair<std::string, LegoROI*>>& p_actorAliases
 )
 {
-	for (auto& track : p_tracks) {
+	for (size_t trackIdx = 0; trackIdx < p_tracks.size(); trackIdx++) {
+		auto& track = p_tracks[trackIdx];
 		PhonemeState state;
 		state.targetROI = nullptr;
 		state.originalTexture = nullptr;
@@ -62,6 +63,25 @@ void PhonemePlayer::Init(
 			continue;
 		}
 		state.targetROI = targetROI;
+
+		// If a previous track already set up a cached texture for this ROI, reuse it.
+		// Otherwise the second track's "original" would be the first track's cached texture,
+		// causing a use-after-free during cleanup.
+		PhonemeState* existing = nullptr;
+		for (size_t j = 0; j < m_states.size(); j++) {
+			if (m_states[j].targetROI == targetROI && m_states[j].cachedTexture) {
+				existing = &m_states[j];
+				break;
+			}
+		}
+
+		if (existing) {
+			state.cachedTexture = existing->cachedTexture;
+			state.bitmap = new MxBitmap();
+			state.bitmap->SetSize(track.width, track.height, NULL, FALSE);
+			m_states.push_back(state);
+			continue;
+		}
 
 		LegoROI* head = targetROI->FindChildROI("head", targetROI);
 		if (!head) {
@@ -173,11 +193,13 @@ void PhonemePlayer::Cleanup()
 	for (size_t i = 0; i < m_states.size(); i++) {
 		auto& state = m_states[i];
 
+		// Only the state that owns the original texture (i.e. performed the initial setup)
+		// should restore and erase. Other states sharing the same cachedTexture are secondary.
 		if (state.targetROI && state.originalTexture) {
 			CharacterManager()->SetHeadTexture(state.targetROI, state.originalTexture);
 		}
 
-		if (state.cachedTexture) {
+		if (state.originalTexture && state.cachedTexture) {
 			TextureContainer()->EraseCached(state.cachedTexture);
 		}
 

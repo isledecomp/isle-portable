@@ -4,7 +4,6 @@
 #include <map>
 #include <vector>
 
-class LegoAnimationManager;
 class LegoROI;
 struct AnimInfo;
 
@@ -26,11 +25,35 @@ static const uint8_t ALL_CORE_ACTORS_MASK = (1 << CORE_CHARACTER_COUNT) - 1;
 // Sentinel value for "no animation selected"
 static const uint16_t ANIM_INDEX_NONE = 0xFFFF;
 
+// World slot constants for animIndex encoding (top 2 bits)
+static const uint8_t WORLD_SLOT_ACT1 = 0;
+static const uint8_t WORLD_SLOT_ACT2 = 1;
+static const uint8_t WORLD_SLOT_ACT3 = 2;
+
+// Compose a globally unique animIndex from a world slot and a local index within that world's AnimInfo array.
+static constexpr uint16_t WorldAnimIndex(uint8_t p_worldSlot, uint16_t p_localIndex)
+{
+	return (uint16_t(p_worldSlot) << 14) | (p_localIndex & 0x3FFF);
+}
+
+// Extract the world slot (0-2) from a world-encoded animIndex.
+static constexpr uint8_t GetWorldSlot(uint16_t p_animIndex)
+{
+	return p_animIndex >> 14;
+}
+
+// Extract the local index (0-16383) from a world-encoded animIndex.
+static constexpr uint16_t GetLocalIndex(uint16_t p_animIndex)
+{
+	return p_animIndex & 0x3FFF;
+}
+
 // Extract the character indices from a performer bitmask.
 std::vector<int8_t> GetPerformerIndices(uint64_t p_performerMask);
 
 struct CatalogEntry {
-	uint16_t animIndex; // Index into LegoAnimationManager::m_anims[]
+	uint16_t animIndex; // World-encoded index: top 2 bits = world slot, bottom 14 = local index
+	int8_t worldId;     // LegoOmni::World enum value for this animation's source world
 	AnimCategory category;
 	uint8_t spectatorMask;  // Which core actors can trigger (bit0=Pepper..bit4=Laura)
 	uint64_t performerMask; // Bitmask of g_actorInfoInit[] indices that appear as character models
@@ -41,7 +64,10 @@ struct CatalogEntry {
 
 class Catalog {
 public:
-	void Refresh(LegoAnimationManager* p_am);
+	~Catalog();
+
+	// Parse DTA files for all supported worlds and build the catalog.
+	void Refresh();
 
 	const AnimInfo* GetAnimInfo(uint16_t p_animIndex) const;
 	const CatalogEntry* FindEntry(uint16_t p_animIndex) const;
@@ -75,9 +101,9 @@ public:
 
 	// Vehicle riding state for eligibility checks.
 	enum VehicleState : uint8_t {
-		e_onFoot = 0,         // Not riding anything
-		e_onOwnVehicle = 1,   // Riding character's own vehicle (e.g. Pepper on skateboard)
-		e_onOtherVehicle = 2  // Riding a vehicle that isn't the character's own
+		e_onFoot = 0,        // Not riding anything
+		e_onOwnVehicle = 1,  // Riding character's own vehicle (e.g. Pepper on skateboard)
+		e_onOtherVehicle = 2 // Riding a vehicle that isn't the character's own
 	};
 
 	// Check if a player's vehicle state is compatible with the animation's vehicle requirements.
@@ -94,11 +120,29 @@ public:
 	// Returns -1 if no match.
 	static int8_t DisplayActorToCharacterIndex(uint8_t p_displayActorIndex);
 
+	// Map a LegoOmni::World enum value to a world slot index (0-2).
+	// Returns 0xFF if the world is not supported.
+	static uint8_t WorldIdToSlot(int8_t p_worldId);
+
 private:
+	struct WorldAnimData {
+		int8_t worldId;
+		uint8_t worldSlot;
+		AnimInfo* anims;
+		uint16_t animCount;
+	};
+
+	bool ParseDTAFile(int8_t p_worldId, AnimInfo*& p_outAnims, uint16_t& p_outCount);
+	void BuildEntries(const WorldAnimData& p_world);
+	void LoadWorldParts();
+	void Cleanup();
+
+	static void FreeAnimInfo(AnimInfo* p_anims, uint16_t p_count);
+
 	std::vector<CatalogEntry> m_entries;
 	std::map<int16_t, std::vector<size_t>> m_locationIndex; // location ID → indices into m_entries
-	AnimInfo* m_animsBase;
-	uint16_t m_animCount;
+	std::vector<WorldAnimData> m_worldData;
+	std::vector<LegoROI*> m_modelROIs; // keep model ROIs alive to preserve LOD refcounts
 };
 
 } // namespace Multiplayer::Animation

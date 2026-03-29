@@ -2,6 +2,7 @@
 
 #include "anim/legoanim.h"
 #include "flic.h"
+#include "legomain.h"
 #include "misc/legostorage.h"
 #include "mxautolock.h"
 
@@ -92,13 +93,98 @@ SceneAnimData& SceneAnimData::operator=(SceneAnimData&& p_other) noexcept
 	return *this;
 }
 
-Loader::Loader() : m_reader(nullptr), m_preloadThread(nullptr), m_preloadObjectId(0), m_preloadDone(false)
+Loader::Loader()
+	: m_reader(nullptr), m_preloadThread(nullptr), m_preloadWorldId(0), m_preloadObjectId(0), m_preloadDone(false)
 {
 }
 
 Loader::~Loader()
 {
 	CleanupPreloadThread();
+
+	for (auto& pair : m_extraSI) {
+		delete pair.second.interleaf;
+		delete pair.second.file;
+	}
+}
+
+const char* Loader::GetSIPath(int8_t p_worldId)
+{
+	switch (p_worldId) {
+	case LegoOmni::e_act1:
+		return "\\lego\\scripts\\isle\\isle.si";
+	case LegoOmni::e_act2:
+		return "\\lego\\scripts\\act2\\act2main.si";
+	case LegoOmni::e_act3:
+		return "\\lego\\scripts\\act3\\act3.si";
+	default:
+		return nullptr;
+	}
+}
+
+bool Loader::OpenWorldSI(int8_t p_worldId)
+{
+	// Act1 uses the external SIReader
+	if (p_worldId == LegoOmni::e_act1) {
+		return m_reader && m_reader->Open();
+	}
+
+	auto it = m_extraSI.find(p_worldId);
+	if (it != m_extraSI.end() && it->second.ready) {
+		return true;
+	}
+
+	const char* siPath = GetSIPath(p_worldId);
+	if (!siPath) {
+		return false;
+	}
+
+	SIHandle handle = {nullptr, nullptr, false};
+	if (!SIReader::OpenHeaderOnly(siPath, handle.file, handle.interleaf)) {
+		return false;
+	}
+
+	handle.ready = true;
+	m_extraSI[p_worldId] = handle;
+	return true;
+}
+
+bool Loader::ReadWorldObject(int8_t p_worldId, uint32_t p_objectId, si::Object*& p_outObj)
+{
+	p_outObj = nullptr;
+
+	if (p_worldId == LegoOmni::e_act1) {
+		// Act1: use external SIReader
+		if (!m_reader || !m_reader->ReadObject(p_objectId)) {
+			return false;
+		}
+		p_outObj = m_reader->GetObject(p_objectId);
+		return p_outObj != nullptr;
+	}
+
+	auto it = m_extraSI.find(p_worldId);
+	if (it == m_extraSI.end() || !it->second.ready) {
+		return false;
+	}
+
+	si::Interleaf* interleaf = it->second.interleaf;
+	si::File* file = it->second.file;
+
+	size_t childCount = interleaf->GetChildCount();
+	if (p_objectId >= childCount) {
+		return false;
+	}
+
+	si::Object* obj = static_cast<si::Object*>(interleaf->GetChildAt(p_objectId));
+	if (obj->type() == si::MxOb::Null) {
+		if (interleaf->ReadObject(file, p_objectId) != si::Interleaf::ERROR_SUCCESS) {
+			return false;
+		}
+		obj = static_cast<si::Object*>(interleaf->GetChildAt(p_objectId));
+	}
+
+	p_outObj = obj;
+	return true;
 }
 
 bool Loader::ParseAnimationChild(si::Object* p_child, SceneAnimData& p_data)
@@ -233,38 +319,36 @@ bool Loader::ParseComposite(si::Object* p_composite, SceneAnimData& p_data)
 	return hasAnim;
 }
 
-SceneAnimData* Loader::EnsureCached(uint32_t p_objectId)
+SceneAnimData* Loader::EnsureCached(int8_t p_worldId, uint32_t p_objectId)
 {
+	uint64_t key = CacheKey(p_worldId, p_objectId);
+
 	{
 		AUTOLOCK(m_cacheCS);
-		auto it = m_cache.find(p_objectId);
+		auto it = m_cache.find(key);
 		if (it != m_cache.end()) {
 			return &it->second;
 		}
 	}
 
 	// If a preload is in progress for this object, wait for it to finish
-	if (m_preloadThread && m_preloadObjectId == p_objectId) {
+	if (m_preloadThread && m_preloadWorldId == p_worldId && m_preloadObjectId == p_objectId) {
 		CleanupPreloadThread();
 
 		AUTOLOCK(m_cacheCS);
-		auto it = m_cache.find(p_objectId);
+		auto it = m_cache.find(key);
 		if (it != m_cache.end()) {
 			return &it->second;
 		}
 		// Preload failed — fall through to synchronous load
 	}
 
-	if (!m_reader || !m_reader->Open()) {
+	if (!OpenWorldSI(p_worldId)) {
 		return nullptr;
 	}
 
-	if (!m_reader->ReadObject(p_objectId)) {
-		return nullptr;
-	}
-
-	si::Object* composite = m_reader->GetObject(p_objectId);
-	if (!composite) {
+	si::Object* composite = nullptr;
+	if (!ReadWorldObject(p_worldId, p_objectId, composite)) {
 		return nullptr;
 	}
 
@@ -274,7 +358,7 @@ SceneAnimData* Loader::EnsureCached(uint32_t p_objectId)
 	}
 
 	AUTOLOCK(m_cacheCS);
-	auto result = m_cache.emplace(p_objectId, std::move(data));
+	auto result = m_cache.emplace(key, std::move(data));
 	return &result.first->second;
 }
 
@@ -286,37 +370,47 @@ void Loader::CleanupPreloadThread()
 	}
 }
 
-void Loader::PreloadAsync(uint32_t p_objectId)
+void Loader::PreloadAsync(int8_t p_worldId, uint32_t p_objectId)
 {
+	uint64_t key = CacheKey(p_worldId, p_objectId);
+
 	{
 		AUTOLOCK(m_cacheCS);
-		if (m_cache.find(p_objectId) != m_cache.end()) {
+		if (m_cache.find(key) != m_cache.end()) {
 			return;
 		}
 	}
 
-	if (m_preloadThread && m_preloadObjectId == p_objectId && !m_preloadDone) {
+	if (m_preloadThread && m_preloadWorldId == p_worldId && m_preloadObjectId == p_objectId && !m_preloadDone) {
 		return;
 	}
 
 	CleanupPreloadThread();
 
+	m_preloadWorldId = p_worldId;
 	m_preloadObjectId = p_objectId;
 	m_preloadDone = false;
-	m_preloadThread = new PreloadThread(this, p_objectId);
+	m_preloadThread = new PreloadThread(this, p_worldId, p_objectId);
 	m_preloadThread->Start(0x1000, 0);
 }
 
-Loader::PreloadThread::PreloadThread(Loader* p_loader, uint32_t p_objectId) : m_loader(p_loader), m_objectId(p_objectId)
+Loader::PreloadThread::PreloadThread(Loader* p_loader, int8_t p_worldId, uint32_t p_objectId)
+	: m_loader(p_loader), m_worldId(p_worldId), m_objectId(p_objectId)
 {
 }
 
 MxResult Loader::PreloadThread::Run()
 {
+	const char* siPath = GetSIPath(m_worldId);
+	if (!siPath) {
+		m_loader->m_preloadDone = true;
+		return MxThread::Run();
+	}
+
 	si::File* siFile = nullptr;
 	si::Interleaf* interleaf = nullptr;
 
-	if (!SIReader::OpenHeaderOnly("\\lego\\scripts\\isle\\isle.si", siFile, interleaf)) {
+	if (!SIReader::OpenHeaderOnly(siPath, siFile, interleaf)) {
 		m_loader->m_preloadDone = true;
 		return MxThread::Run();
 	}
@@ -327,8 +421,9 @@ MxResult Loader::PreloadThread::Run()
 
 		SceneAnimData data;
 		if (ParseComposite(composite, data)) {
+			uint64_t key = CacheKey(m_worldId, m_objectId);
 			AUTOLOCK(m_loader->m_cacheCS);
-			m_loader->m_cache.emplace(m_objectId, std::move(data));
+			m_loader->m_cache.emplace(key, std::move(data));
 		}
 	}
 

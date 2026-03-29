@@ -22,8 +22,8 @@
 #include <SDL3/SDL_timer.h>
 #include <algorithm>
 #include <cmath>
-#include <functional>
 #include <deque>
+#include <functional>
 #include <vector>
 
 using namespace Multiplayer::Animation;
@@ -267,6 +267,7 @@ void ScenePlayer::SetupROIs(const AnimInfo* p_animInfo)
 
 void ScenePlayer::Play(
 	const AnimInfo* p_animInfo,
+	int8_t p_worldId,
 	AnimCategory p_category,
 	const ParticipantROI* p_participants,
 	uint8_t p_participantCount,
@@ -281,7 +282,7 @@ void ScenePlayer::Play(
 		return;
 	}
 
-	SceneAnimData* data = m_loader->EnsureCached(p_animInfo->m_objectId);
+	SceneAnimData* data = m_loader->EnsureCached(p_worldId, p_animInfo->m_objectId);
 	if (!data || !data->anim) {
 		return;
 	}
