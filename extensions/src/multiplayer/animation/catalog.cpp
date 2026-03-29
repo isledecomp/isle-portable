@@ -9,6 +9,7 @@
 #include "legomodelpresenter.h"
 #include "legopartpresenter.h"
 #include "legovideomanager.h"
+#include "3dmanager/lego3dmanager.h"
 #include "misc.h"
 #include "misc/legostorage.h"
 #include "modeldb/modeldb.h"
