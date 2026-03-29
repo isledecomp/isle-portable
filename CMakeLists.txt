@@ -531,6 +531,22 @@ if (ISLE_EXTENSIONS)
     extensions/src/extensions.cpp
     extensions/src/siloader.cpp
     extensions/src/textureloader.cpp
+
+    # Common shared code
+    extensions/src/common/charactertables.cpp
+    extensions/src/common/animutils.cpp
+    extensions/src/common/characteranimator.cpp
+    extensions/src/common/charactercloner.cpp
+    extensions/src/common/charactercustomizer.cpp
+    extensions/src/common/customizestate.cpp
+    extensions/src/common/pathutils.cpp
+
+    # Third person camera extension
+    extensions/src/thirdpersoncamera.cpp
+    extensions/src/thirdpersoncamera/controller.cpp
+    extensions/src/thirdpersoncamera/orbitcamera.cpp
+    extensions/src/thirdpersoncamera/inputhandler.cpp
+    extensions/src/thirdpersoncamera/displayactor.cpp
   )
 endif()
 

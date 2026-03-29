@@ -59,7 +59,7 @@ LegoTextureInfo* LegoTextureInfo::Create(const char* p_name, LegoTexture* p_text
 		strcpy(textureInfo->m_name, p_name);
 	}
 
-	if (Extension<TextureLoader>::Call(PatchTexture, textureInfo).value_or(false)) {
+	if (Extension<TextureLoaderExt>::Call(TL::PatchTexture, textureInfo).value_or(false)) {
 		return textureInfo;
 	}
 

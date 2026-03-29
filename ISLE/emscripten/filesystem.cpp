@@ -89,10 +89,10 @@ void Emscripten_SetupFilesystem()
 	}
 
 #ifdef EXTENSIONS
-	if (Extensions::TextureLoader::enabled) {
+	if (Extensions::TextureLoaderExt::enabled) {
 		MxString directory =
-			MxString("/LEGO") + Extensions::TextureLoader::options["texture loader:texture path"].c_str();
-		Extensions::TextureLoader::options["texture loader:texture path"] = directory.GetData();
+			MxString("/LEGO") + Extensions::TextureLoaderExt::options["texture loader:texture path"].c_str();
+		Extensions::TextureLoaderExt::options["texture loader:texture path"] = directory.GetData();
 		wasmfs_create_directory(directory.GetData(), 0644, fetchfs);
 
 		MxU32 i = 0;
@@ -102,17 +102,17 @@ void Emscripten_SetupFilesystem()
 			registerFile(path.GetData());
 
 			if (!preloadFile(path.GetData())) {
-				Extensions::TextureLoader::excludedFiles.emplace_back(file);
+				Extensions::TextureLoaderExt::AddExcludedFile(file);
 			}
 
 			Emscripten_SendExtensionProgress("HD Textures", (++i * 100) / sizeOfArray(g_textures));
 		}
 	}
 
-	if (Extensions::SiLoader::enabled) {
+	if (Extensions::SiLoaderExt::enabled) {
 		wasmfs_create_directory("/LEGO/extra", 0644, fetchfs);
 
-		for (const auto& file : Extensions::SiLoader::files) {
+		for (const auto& file : Extensions::SiLoaderExt::GetFiles()) {
 			registerFile(file.c_str());
 		}
 	}

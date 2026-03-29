@@ -15,7 +15,7 @@ class Core;
 
 namespace Extensions
 {
-class SiLoader {
+class SiLoaderExt {
 public:
 	typedef std::pair<MxAtomId, MxU32> StreamObject;
 
@@ -31,12 +31,14 @@ public:
 	template <typename... Args>
 	static std::optional<StreamObject> ReplacedIn(MxDSAction& p_action, Args... p_args);
 
+	static const std::vector<std::string>& GetFiles() { return files; }
+
 	static std::map<std::string, std::string> options;
-	static std::vector<std::string> files;
-	static std::vector<std::string> directives;
 	static bool enabled;
 
 private:
+	static std::vector<std::string> files;
+	static std::vector<std::string> directives;
 	static std::vector<std::pair<StreamObject, StreamObject>> startWith;
 	static std::vector<std::pair<StreamObject, StreamObject>> removeWith;
 	static std::vector<std::pair<StreamObject, StreamObject>> replace;
@@ -53,7 +55,7 @@ private:
 
 #ifdef EXTENSIONS
 template <typename... Args>
-std::optional<SiLoader::StreamObject> SiLoader::ReplacedIn(MxDSAction& p_action, Args... p_args)
+std::optional<SiLoaderExt::StreamObject> SiLoaderExt::ReplacedIn(MxDSAction& p_action, Args... p_args)
 {
 	StreamObject object{p_action.GetAtomId(), p_action.GetObjectId()};
 	auto checkAtomId = [&p_action, &object](const auto& p_atomId) -> std::optional<StreamObject> {
@@ -70,26 +72,34 @@ std::optional<SiLoader::StreamObject> SiLoader::ReplacedIn(MxDSAction& p_action,
 	((void) (!result.has_value() && (result = checkAtomId(p_args), true)), ...);
 	return result;
 }
+#endif
 
-constexpr auto Load = &SiLoader::Load;
-constexpr auto HandleFind = &SiLoader::HandleFind;
-constexpr auto HandleStart = &SiLoader::HandleStart;
-constexpr auto HandleWorld = &SiLoader::HandleWorld;
-constexpr auto HandleRemove = &SiLoader::HandleRemove;
-constexpr auto HandleDelete = &SiLoader::HandleDelete;
-constexpr auto HandleEndAction = &SiLoader::HandleEndAction;
-constexpr auto ReplacedIn = [](auto&&... args) { return SiLoader::ReplacedIn(std::forward<decltype(args)>(args)...); };
+namespace SI
+{
+#ifdef EXTENSIONS
+constexpr auto Load = &SiLoaderExt::Load;
+constexpr auto HandleFind = &SiLoaderExt::HandleFind;
+constexpr auto HandleStart = &SiLoaderExt::HandleStart;
+constexpr auto HandleWorld = &SiLoaderExt::HandleWorld;
+constexpr auto HandleRemove = &SiLoaderExt::HandleRemove;
+constexpr auto HandleDelete = &SiLoaderExt::HandleDelete;
+constexpr auto HandleEndAction = &SiLoaderExt::HandleEndAction;
+constexpr auto ReplacedIn = [](auto&&... args) {
+	return SiLoaderExt::ReplacedIn(std::forward<decltype(args)>(args)...);
+};
 #else
-constexpr decltype(&SiLoader::Load) Load = nullptr;
-constexpr decltype(&SiLoader::HandleFind) HandleFind = nullptr;
-constexpr decltype(&SiLoader::HandleStart) HandleStart = nullptr;
-constexpr decltype(&SiLoader::HandleWorld) HandleWorld = nullptr;
-constexpr decltype(&SiLoader::HandleRemove) HandleRemove = nullptr;
-constexpr decltype(&SiLoader::HandleDelete) HandleDelete = nullptr;
-constexpr decltype(&SiLoader::HandleEndAction) HandleEndAction = nullptr;
-constexpr auto ReplacedIn = [](auto&&... args) -> std::optional<SiLoader::StreamObject> {
+constexpr decltype(&SiLoaderExt::Load) Load = nullptr;
+constexpr decltype(&SiLoaderExt::HandleFind) HandleFind = nullptr;
+constexpr decltype(&SiLoaderExt::HandleStart) HandleStart = nullptr;
+constexpr decltype(&SiLoaderExt::HandleWorld) HandleWorld = nullptr;
+constexpr decltype(&SiLoaderExt::HandleRemove) HandleRemove = nullptr;
+constexpr decltype(&SiLoaderExt::HandleDelete) HandleDelete = nullptr;
+constexpr decltype(&SiLoaderExt::HandleEndAction) HandleEndAction = nullptr;
+constexpr auto ReplacedIn = [](auto&&... args) -> std::optional<SiLoaderExt::StreamObject> {
 	((void) args, ...);
 	return std::nullopt;
 };
 #endif
+} // namespace SI
+
 }; // namespace Extensions

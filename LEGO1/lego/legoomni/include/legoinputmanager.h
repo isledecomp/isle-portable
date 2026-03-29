@@ -2,6 +2,7 @@
 #define LEGOINPUTMANAGER_H
 
 #include "decomp.h"
+#include "extensions/fwd.h"
 #include "lego1_export.h"
 #include "legoeventnotificationparam.h"
 #include "mxlist.h"
@@ -179,6 +180,8 @@ public:
 	// LegoInputManager::`scalar deleting destructor'
 
 private:
+	friend class Extensions::ThirdPersonCameraExt;
+
 	void InitializeHaptics();
 
 	MxCriticalSection m_criticalSection;  // 0x58
@@ -204,6 +207,7 @@ private:
 	TouchScheme m_touchScheme = e_none;
 	SDL_Point m_touchVirtualThumb = {0, 0};
 	SDL_FPoint m_touchVirtualThumbOrigin;
+	SDL_FingerID m_touchFinger = 0;
 	std::map<SDL_FingerID, MxU32> m_touchFlags;
 	std::map<SDL_KeyboardID, std::pair<void*, void*>> m_keyboards;
 	std::map<SDL_MouseID, std::pair<void*, SDL_Haptic*>> m_mice;

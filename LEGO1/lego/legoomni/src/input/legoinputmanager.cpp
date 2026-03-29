@@ -1,5 +1,6 @@
 #include "legoinputmanager.h"
 
+#include "extensions/thirdpersoncamera.h"
 #include "legocameracontroller.h"
 #include "legocontrolmanager.h"
 #include "legomain.h"
@@ -13,6 +14,8 @@
 #include "roi/legoroi.h"
 
 #include <SDL3/SDL_log.h>
+
+using namespace Extensions;
 
 DECOMP_SIZE_ASSERT(LegoInputManager, 0x338)
 DECOMP_SIZE_ASSERT(LegoNotifyList, 0x18)
@@ -320,6 +323,12 @@ MxBool LegoInputManager::ProcessOneEvent(LegoEventNotificationParam& p_param)
 	}
 	else {
 		if (!Lego()->IsPaused()) {
+			if ((p_param.GetModifier() & LegoEventNotificationParam::c_rButtonState) &&
+				!(p_param.GetModifier() & LegoEventNotificationParam::c_lButtonState) &&
+				Extension<ThirdPersonCameraExt>::Call(TP::IsThirdPersonCameraActive).value_or(FALSE)) {
+				return FALSE;
+			}
+
 			processRoi = TRUE;
 
 			if (m_unk0x335 != 0) {
@@ -391,6 +400,9 @@ MxBool LegoInputManager::ProcessOneEvent(LegoEventNotificationParam& p_param)
 
 						LegoEntity* entity = roi->GetEntity();
 						if (entity && entity->Notify(p_param) != 0) {
+							return TRUE;
+						}
+						if (Extension<ThirdPersonCameraExt>::Call(TP::HandleROIClick, roi, p_param).value_or(FALSE)) {
 							return TRUE;
 						}
 					}
@@ -626,6 +638,10 @@ void LegoInputManager::RemoveJoystick(SDL_JoystickID p_joystickID)
 
 MxBool LegoInputManager::HandleTouchEvent(SDL_Event* p_event, TouchScheme p_touchScheme)
 {
+	if (Extension<ThirdPersonCameraExt>::Call(TP::HandleTouchInput, p_event).value_or(FALSE)) {
+		return FALSE;
+	}
+
 	const SDL_TouchFingerEvent& event = p_event->tfinger;
 	m_touchScheme = p_touchScheme;
 
@@ -661,26 +677,24 @@ MxBool LegoInputManager::HandleTouchEvent(SDL_Event* p_event, TouchScheme p_touc
 		}
 		break;
 	case e_gamepad: {
-		static SDL_FingerID g_finger = (SDL_FingerID) 0;
-
 		switch (p_event->type) {
 		case SDL_EVENT_FINGER_DOWN:
-			if (!g_finger) {
-				g_finger = event.fingerID;
+			if (!m_touchFinger) {
+				m_touchFinger = event.fingerID;
 				m_touchVirtualThumb = {0, 0};
 				m_touchVirtualThumbOrigin = {event.x, event.y};
 			}
 			break;
 		case SDL_EVENT_FINGER_UP:
 		case SDL_EVENT_FINGER_CANCELED:
-			if (event.fingerID == g_finger) {
-				g_finger = 0;
+			if (event.fingerID == m_touchFinger) {
+				m_touchFinger = 0;
 				m_touchVirtualThumb = {0, 0};
 				m_touchVirtualThumbOrigin = {0, 0};
 			}
 			break;
 		case SDL_EVENT_FINGER_MOTION:
-			if (event.fingerID == g_finger) {
+			if (event.fingerID == m_touchFinger) {
 				const float thumbstickRadius = 0.25f;
 				const float deltaX =
 					SDL_clamp(event.x - m_touchVirtualThumbOrigin.x, -thumbstickRadius, thumbstickRadius);

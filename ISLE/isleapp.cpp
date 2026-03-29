@@ -37,7 +37,7 @@
 #include "viewmanager/viewmanager.h"
 
 #include <array>
-#include <extensions/extensions.h>
+#include <extensions/thirdpersoncamera.h>
 #include <miniwin/miniwindevice.h>
 #include <type_traits>
 #include <vec.h>
@@ -874,6 +874,10 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 			break;
 		}
 	}
+
+#ifdef EXTENSIONS
+	Extensions::ThirdPersonCameraExt::HandleSDLEvent(event);
+#endif
 
 	return SDL_APP_CONTINUE;
 }

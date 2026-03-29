@@ -9,13 +9,13 @@
 
 namespace Extensions
 {
-class TextureLoader {
+class TextureLoaderExt {
 public:
 	static void Initialize();
 	static bool PatchTexture(LegoTextureInfo* p_textureInfo);
+	static void AddExcludedFile(const std::string& p_file);
 
 	static std::map<std::string, std::string> options;
-	static std::vector<std::string> excludedFiles;
 	static bool enabled;
 
 	static constexpr std::array<std::pair<std::string_view, std::string_view>, 1> defaults = {
@@ -23,12 +23,17 @@ public:
 	};
 
 private:
+	static std::vector<std::string> excludedFiles;
 	static SDL_Surface* FindTexture(const char* p_name);
 };
 
+namespace TL
+{
 #ifdef EXTENSIONS
-constexpr auto PatchTexture = &TextureLoader::PatchTexture;
+constexpr auto PatchTexture = &TextureLoaderExt::PatchTexture;
 #else
-constexpr decltype(&TextureLoader::PatchTexture) PatchTexture = nullptr;
+constexpr decltype(&TextureLoaderExt::PatchTexture) PatchTexture = nullptr;
 #endif
+} // namespace TL
+
 }; // namespace Extensions

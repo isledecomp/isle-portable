@@ -1,4 +1,6 @@
 #include "extensions/textureloader.h"
+
+#include "extensions/common/pathutils.h"
 #include "legovideomanager.h"
 #include "misc.h"
 #include "mxdirectx/mxdirect3d.h"
@@ -7,11 +9,11 @@
 
 using namespace Extensions;
 
-std::map<std::string, std::string> TextureLoader::options;
-std::vector<std::string> TextureLoader::excludedFiles;
-bool TextureLoader::enabled = false;
+std::map<std::string, std::string> TextureLoaderExt::options;
+std::vector<std::string> TextureLoaderExt::excludedFiles;
+bool TextureLoaderExt::enabled = false;
 
-void TextureLoader::Initialize()
+void TextureLoaderExt::Initialize()
 {
 	for (const auto& option : defaults) {
 		if (!options.count(option.first.data())) {
@@ -20,7 +22,12 @@ void TextureLoader::Initialize()
 	}
 }
 
-bool TextureLoader::PatchTexture(LegoTextureInfo* p_textureInfo)
+void TextureLoaderExt::AddExcludedFile(const std::string& p_file)
+{
+	excludedFiles.emplace_back(p_file);
+}
+
+bool TextureLoaderExt::PatchTexture(LegoTextureInfo* p_textureInfo)
 {
 	SDL_Surface* surface = FindTexture(p_textureInfo->m_name);
 	if (!surface) {
@@ -103,22 +110,19 @@ bool TextureLoader::PatchTexture(LegoTextureInfo* p_textureInfo)
 	return true;
 }
 
-SDL_Surface* TextureLoader::FindTexture(const char* p_name)
+SDL_Surface* TextureLoaderExt::FindTexture(const char* p_name)
 {
 	if (std::find(excludedFiles.begin(), excludedFiles.end(), p_name) != excludedFiles.end()) {
 		return nullptr;
 	}
 
-	SDL_Surface* surface;
 	const char* texturePath = options["texture loader:texture path"].c_str();
-	MxString path = MxString(MxOmni::GetHD()) + texturePath + "/" + p_name + ".bmp";
+	MxString relativePath = MxString(texturePath) + "/" + p_name + ".bmp";
 
-	path.MapPathToFilesystem();
-	if (!(surface = SDL_LoadBMP(path.GetData()))) {
-		path = MxString(MxOmni::GetCD()) + texturePath + "/" + p_name + ".bmp";
-		path.MapPathToFilesystem();
-		surface = SDL_LoadBMP(path.GetData());
+	MxString path;
+	if (!Common::ResolveGamePath(relativePath.GetData(), path)) {
+		return nullptr;
 	}
 
-	return surface;
+	return SDL_LoadBMP(path.GetData());
 }

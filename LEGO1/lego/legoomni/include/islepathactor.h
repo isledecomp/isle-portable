@@ -1,6 +1,7 @@
 #ifndef ISLEPATHACTOR_H
 #define ISLEPATHACTOR_H
 
+#include "extensions/fwd.h"
 #include "legogamestate.h"
 #include "legopathactor.h"
 #include "mxtypes.h"
@@ -139,6 +140,8 @@ public:
 	// IslePathActor::`scalar deleting destructor'
 
 protected:
+	friend class Extensions::ThirdPersonCamera::Controller;
+
 	LegoWorld* m_world;             // 0x154
 	LegoPathActor* m_previousActor; // 0x158
 	MxFloat m_previousVel;          // 0x15c
