@@ -110,7 +110,7 @@ MxResult MxNotificationManager::Tickle()
 			m_sendList->pop_front();
 
 			if (notif->GetParam()->GetNotification() == c_notificationEndAction) {
-				Extension<SiLoader>::Call(HandleEndAction, (MxEndActionNotificationParam&) *notif->GetParam());
+				Extension<SiLoaderExt>::Call(SI::HandleEndAction, (MxEndActionNotificationParam&) *notif->GetParam());
 			}
 
 			notif->GetTarget()->Notify(*notif->GetParam());
@@ -169,7 +169,7 @@ void MxNotificationManager::FlushPending(MxCore* p_listener)
 		pending.pop_front();
 
 		if (notif->GetParam()->GetNotification() == c_notificationEndAction) {
-			Extension<SiLoader>::Call(HandleEndAction, (MxEndActionNotificationParam&) *notif->GetParam());
+			Extension<SiLoaderExt>::Call(SI::HandleEndAction, (MxEndActionNotificationParam&) *notif->GetParam());
 		}
 
 		notif->GetTarget()->Notify(*notif->GetParam());

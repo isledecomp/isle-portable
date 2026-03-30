@@ -2,6 +2,7 @@
 
 #include "3dmanager/lego3dmanager.h"
 #include "act3.h"
+#include "extensions/thirdpersoncamera.h"
 #include "infocenter.h"
 #include "legoanimationmanager.h"
 #include "legocameracontroller.h"
@@ -28,6 +29,8 @@
 
 #include <SDL3/SDL_stdinc.h>
 #include <vec.h>
+
+using namespace Extensions;
 
 DECOMP_SIZE_ASSERT(LegoNavController, 0x70)
 
@@ -346,6 +349,12 @@ MxBool LegoNavController::CalculateNewPosDir(
 
 	if (ProcessKeyboardInput() == FAILURE) {
 		ProcessJoystickInput(rotatedY);
+	}
+
+	if (Extension<
+			ThirdPersonCameraExt>::Call(TP::HandleNavOverride, this, p_curPos, p_curDir, p_newPos, p_newDir, deltaTime)
+			.value_or(FALSE)) {
+		return TRUE;
 	}
 
 	if (m_useRotationalVel) {

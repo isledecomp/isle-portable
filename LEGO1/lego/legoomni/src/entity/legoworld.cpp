@@ -2,6 +2,7 @@
 
 #include "anim/legoanim.h"
 #include "extensions/siloader.h"
+#include "extensions/thirdpersoncamera.h"
 #include "legoanimationmanager.h"
 #include "legoanimpresenter.h"
 #include "legobuildingmanager.h"
@@ -639,8 +640,8 @@ MxCore* LegoWorld::Find(const char* p_class, const char* p_name)
 // FUNCTION: BETA10 0x100db3de
 MxCore* LegoWorld::Find(const MxAtomId& p_atom, MxS32 p_entityId)
 {
-	auto result =
-		Extension<SiLoader>::Call(HandleFind, SiLoader::StreamObject{p_atom, p_entityId}, this).value_or(std::nullopt);
+	auto result = Extension<SiLoaderExt>::Call(SI::HandleFind, SiLoaderExt::StreamObject{p_atom, p_entityId}, this)
+					  .value_or(std::nullopt);
 	if (result) {
 		return result.value();
 	}
@@ -753,6 +754,8 @@ void LegoWorld::Enable(MxBool p_enable)
 #ifndef BETA10
 		SetIsWorldActive(TRUE);
 #endif
+
+		Extension<ThirdPersonCameraExt>::Call(TP::HandleWorldEnable, this, TRUE);
 	}
 	else if (!p_enable && m_disabledObjects.size() == 0) {
 		MxPresenter* presenter;
@@ -815,6 +818,8 @@ void LegoWorld::Enable(MxBool p_enable)
 		}
 
 		GetViewManager()->RemoveAll(NULL);
+
+		Extension<ThirdPersonCameraExt>::Call(TP::HandleWorldEnable, this, FALSE);
 	}
 }
 

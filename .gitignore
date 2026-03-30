@@ -14,8 +14,7 @@ VENV/
 env.bak/
 venv.bak/
 local.properties
-/build/
-/build_debug/
+/build*/
 /legobin/
 *.swp
 LEGO1PROGRESS.*
