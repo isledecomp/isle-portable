@@ -46,7 +46,7 @@ LegoROI* CharacterCustomizer::FindChildROI(LegoROI* p_rootROI, const char* p_nam
 		}
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 // MARK: Public API
@@ -253,7 +253,7 @@ void CharacterCustomizer::ApplyHatVariant(LegoROI* p_rootROI, uint8_t p_actorInf
 
 	LegoROI* childROI = FindChildROI(p_rootROI, g_actorLODs[c_infohatLOD].m_name);
 
-	if (childROI != NULL) {
+	if (childROI != nullptr) {
 		char lodName[256];
 
 		ViewLODList* lodList = GetViewLODListManager()->Lookup(part.m_partName[partNameIndex]);

@@ -18,7 +18,7 @@ using namespace Extensions::Common;
 LegoROI* CharacterCloner::Clone(LegoCharacterManager* p_charMgr, const char* p_uniqueName, const char* p_characterType)
 {
 	MxBool success = FALSE;
-	LegoROI* roi = NULL;
+	LegoROI* roi = nullptr;
 	BoundingSphere boundingSphere;
 	BoundingBox boundingBox;
 	MxMatrix mat;
@@ -30,7 +30,7 @@ LegoROI* CharacterCloner::Clone(LegoCharacterManager* p_charMgr, const char* p_u
 	LegoTextureContainer* textureContainer = TextureContainer();
 	LegoActorInfo* info = p_charMgr->GetActorInfo(p_characterType);
 
-	if (info == NULL) {
+	if (info == nullptr) {
 		goto done;
 	}
 
@@ -115,7 +115,7 @@ LegoROI* CharacterCloner::Clone(LegoCharacterManager* p_charMgr, const char* p_u
 
 			LegoTextureInfo* textureInfo = textureContainer->Get(part.m_names[part.m_nameIndices[part.m_nameIndex]]);
 
-			if (textureInfo != NULL) {
+			if (textureInfo != nullptr) {
 				childROI->SetTextureInfo(textureInfo);
 				childROI->SetLodColor(1.0F, 1.0F, 1.0F, 0.0F);
 			}
@@ -147,9 +147,9 @@ LegoROI* CharacterCloner::Clone(LegoCharacterManager* p_charMgr, const char* p_u
 	success = TRUE;
 
 done:
-	if (!success && roi != NULL) {
+	if (!success && roi != nullptr) {
 		delete roi;
-		roi = NULL;
+		roi = nullptr;
 	}
 
 	return roi;

@@ -2,6 +2,7 @@
 #define LEGOPLANTMANAGER_H
 
 #include "decomp.h"
+#include "extensions/fwd.h"
 #include "legomain.h"
 #include "mxcore.h"
 
@@ -67,6 +68,8 @@ public:
 	// LegoPlantManager::`scalar deleting destructor'
 
 private:
+	friend class Multiplayer::WorldStateSync;
+
 	void RemovePlant(MxS32 p_index, LegoOmni::World p_worldId);
 	void AdjustHeight(MxS32 p_index);
 	LegoPlantInfo* GetInfo(LegoEntity* p_entity);

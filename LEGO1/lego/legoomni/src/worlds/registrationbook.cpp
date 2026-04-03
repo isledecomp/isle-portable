@@ -356,6 +356,8 @@ void RegistrationBook::LoadSave(MxS16 p_checkMarkIndex)
 		break;
 	}
 
+	EmitGameEvent(e_saveStateChanged);
+
 	m_infocenterState->m_state = InfocenterState::e_selectedSave;
 	if (m_vehiclesToPosition == 0 && !m_awaitLoad) {
 		DeleteObjects(&m_atomId, RegbookScript::c_iic006in_RunAnim, RegbookScript::c_iic008in_PlayWav);

@@ -32,15 +32,15 @@ const int g_idleAnimCount = sizeof(g_idleAnimNames) / sizeof(g_idleAnimNames[0])
 const char* const g_vehicleROINames[VEHICLE_COUNT] =
 	{"chtrbody", "jsuser", "dunebugy", "bike", "board", "moto", "towtk", "ambul"};
 
-// Ride animation names for small vehicles (NULL = large vehicle, no ride anim)
-const char* const g_rideAnimNames[VEHICLE_COUNT] = {NULL, NULL, NULL, "CNs001Bd", "CNs001sk", "CNs011Ni", NULL, NULL};
+// Ride animation names for small vehicles (nullptr = large vehicle, no ride anim)
+const char* const g_rideAnimNames[VEHICLE_COUNT] = {nullptr, nullptr, nullptr, "CNs001Bd", "CNs001sk", "CNs011Ni", nullptr, nullptr};
 
 // Vehicle variant ROI names used in ride animations
-const char* const g_rideVehicleROINames[VEHICLE_COUNT] = {NULL, NULL, NULL, "bikebd", "board", "motoni", NULL, NULL};
+const char* const g_rideVehicleROINames[VEHICLE_COUNT] = {nullptr, nullptr, nullptr, "bikebd", "board", "motoni", nullptr, nullptr};
 
 bool IsLargeVehicle(int8_t p_vehicleType)
 {
-	return p_vehicleType != VEHICLE_NONE && p_vehicleType < VEHICLE_COUNT && g_rideAnimNames[p_vehicleType] == NULL;
+	return p_vehicleType != VEHICLE_NONE && p_vehicleType < VEHICLE_COUNT && g_rideAnimNames[p_vehicleType] == nullptr;
 }
 
 int8_t DetectVehicleType(LegoPathActor* p_actor)

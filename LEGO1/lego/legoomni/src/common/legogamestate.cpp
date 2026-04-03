@@ -12,6 +12,7 @@
 #include "dunebuggy.h"
 #include "dunecar_actions.h"
 #include "elevbott_actions.h"
+#include "extensions/multiplayer.h"
 #include "garage_actions.h"
 #include "helicopter.h"
 #include "histbook_actions.h"
@@ -63,6 +64,8 @@
 #include <SDL3/SDL_stdinc.h>
 #include <assert.h>
 #include <stdio.h>
+
+using namespace Extensions;
 
 DECOMP_SIZE_ASSERT(LegoGameState::Username, 0x0e)
 DECOMP_SIZE_ASSERT(LegoGameState::ScoreItem, 0x2c)
@@ -333,6 +336,8 @@ MxResult LegoGameState::Save(MxULong p_slot)
 	SerializeScoreHistory(LegoFile::c_write);
 	m_isDirty = FALSE;
 
+	EmitGameEvent(e_saveSlotWritten, (void*) (intptr_t) p_slot);
+
 done:
 	return result;
 }
@@ -364,6 +369,8 @@ MxResult LegoGameState::DeleteState()
 // FUNCTION: BETA10 0x10084329
 MxResult LegoGameState::Load(MxULong p_slot)
 {
+	Extension<MultiplayerExt>::Call(MP::HandleBeforeSaveLoad);
+
 	MxResult result = FAILURE;
 	LegoFile storage;
 	MxVariableTable* variableTable = VariableTable();
@@ -455,6 +462,8 @@ MxResult LegoGameState::Load(MxULong p_slot)
 
 	result = SUCCESS;
 	m_isDirty = FALSE;
+
+	Extension<MultiplayerExt>::Call(MP::HandleSaveLoaded);
 
 done:
 	if (result != SUCCESS) {

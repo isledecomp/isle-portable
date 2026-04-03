@@ -52,7 +52,7 @@ bool TextureLoaderExt::PatchTexture(LegoTextureInfo* p_textureInfo)
 	desc.ddpfPixelFormat.dwRGBAlphaBitMask = details->Amask;
 
 	LPDIRECTDRAW pDirectDraw = VideoManager()->GetDirect3D()->DirectDraw();
-	if (pDirectDraw->CreateSurface(&desc, &p_textureInfo->m_surface, NULL) != DD_OK) {
+	if (pDirectDraw->CreateSurface(&desc, &p_textureInfo->m_surface, nullptr) != DD_OK) {
 		SDL_DestroySurface(surface);
 		return false;
 	}
@@ -60,7 +60,7 @@ bool TextureLoaderExt::PatchTexture(LegoTextureInfo* p_textureInfo)
 	memset(&desc, 0, sizeof(desc));
 	desc.dwSize = sizeof(desc);
 
-	if (p_textureInfo->m_surface->Lock(NULL, &desc, DDLOCK_SURFACEMEMORYPTR | DDLOCK_WRITEONLY, NULL) != DD_OK) {
+	if (p_textureInfo->m_surface->Lock(nullptr, &desc, DDLOCK_SURFACEMEMORYPTR | DDLOCK_WRITEONLY, nullptr) != DD_OK) {
 		SDL_DestroySurface(surface);
 		return false;
 	}
@@ -85,7 +85,7 @@ bool TextureLoaderExt::PatchTexture(LegoTextureInfo* p_textureInfo)
 		}
 
 		LPDIRECTDRAWPALETTE ddPalette = nullptr;
-		if (pDirectDraw->CreatePalette(DDPCAPS_8BIT | DDPCAPS_ALLOW256, entries, &ddPalette, NULL) != DD_OK) {
+		if (pDirectDraw->CreatePalette(DDPCAPS_8BIT | DDPCAPS_ALLOW256, entries, &ddPalette, nullptr) != DD_OK) {
 			p_textureInfo->m_surface->Unlock(desc.lpSurface);
 			SDL_DestroySurface(surface);
 			return false;
@@ -97,7 +97,7 @@ bool TextureLoaderExt::PatchTexture(LegoTextureInfo* p_textureInfo)
 
 	memcpy(dst, srcPixels, surface->pitch * surface->h);
 	p_textureInfo->m_surface->Unlock(desc.lpSurface);
-	p_textureInfo->m_palette = NULL;
+	p_textureInfo->m_palette = nullptr;
 
 	if (((TglImpl::RendererImpl*) VideoManager()->GetRenderer())
 			->CreateTextureFromSurface(p_textureInfo->m_surface, &p_textureInfo->m_texture) != D3DRM_OK) {

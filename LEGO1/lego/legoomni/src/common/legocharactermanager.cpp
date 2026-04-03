@@ -1,6 +1,7 @@
 #include "legocharactermanager.h"
 
 #include "3dmanager/lego3dmanager.h"
+#include "extensions/multiplayer.h"
 #include "extensions/thirdpersoncamera.h"
 #include "legoactors.h"
 #include "legoanimactor.h"
@@ -283,7 +284,8 @@ LegoROI* LegoCharacterManager::GetActorROI(const char* p_name, MxBool p_createEn
 
 	if (character != NULL) {
 		if (p_createEntity && character->m_roi->GetEntity() == NULL &&
-			!Extension<ThirdPersonCameraExt>::Call(TP::IsClonedCharacter, p_name).value_or(FALSE)) {
+			!Extension<ThirdPersonCameraExt>::Call(TP::IsClonedCharacter, p_name).value_or(FALSE) &&
+			!Extension<MultiplayerExt>::Call(MP::IsClonedCharacter, p_name).value_or(FALSE)) {
 			LegoExtraActor* actor = new LegoExtraActor();
 
 			actor->SetROI(character->m_roi, FALSE, FALSE);

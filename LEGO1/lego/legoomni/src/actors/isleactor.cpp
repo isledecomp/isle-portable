@@ -1,10 +1,13 @@
 #include "isleactor.h"
 
+#include "extensions/multiplayer.h"
 #include "legoentity.h"
 #include "legoworld.h"
 #include "misc.h"
 #include "mxnotificationparam.h"
 #include "scripts.h"
+
+using namespace Extensions;
 
 DECOMP_SIZE_ASSERT(IsleActor, 0x7c)
 
@@ -45,7 +48,12 @@ MxLong IsleActor::Notify(MxParam& p_param)
 		result = HandleButtonDown((LegoControlManagerNotificationParam&) p_param);
 		break;
 	case c_notificationClick:
-		result = HandleClick();
+		if (Extension<MultiplayerExt>::Call(MP::HandleEntityNotify, (LegoEntity*) this).value_or(FALSE)) {
+			result = 1;
+		}
+		else {
+			result = HandleClick();
+		}
 		break;
 	case c_notificationEndAnim:
 		result = HandleEndAnim();

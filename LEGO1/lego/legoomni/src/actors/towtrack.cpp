@@ -1,5 +1,6 @@
 #include "towtrack.h"
 
+#include "extensions/multiplayer.h"
 #include "isle.h"
 #include "isle_actions.h"
 #include "jukebox_actions.h"
@@ -21,6 +22,8 @@
 #include "mxvariabletable.h"
 
 #include <stdio.h>
+
+using namespace Extensions;
 
 DECOMP_SIZE_ASSERT(TowTrack, 0x180)
 DECOMP_SIZE_ASSERT(TowTrackMissionState, 0x28)
@@ -502,6 +505,7 @@ MxLong TowTrack::HandleControl(LegoControlManagerNotificationParam& p_param)
 		case IsleScript::c_TowHorn_Ctl:
 			MxSoundPresenter* presenter = (MxSoundPresenter*) CurrentWorld()->Find("MxSoundPresenter", "TowHorn_Sound");
 			presenter->Enable(p_param.m_enabledChild);
+			Extension<MultiplayerExt>::Call(MP::HandleHornPressed, (MxU32) p_param.m_clickedObjectId);
 			break;
 		}
 	}

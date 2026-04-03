@@ -1,6 +1,7 @@
 #include "legoworld.h"
 
 #include "anim/legoanim.h"
+#include "extensions/multiplayer.h"
 #include "extensions/siloader.h"
 #include "extensions/thirdpersoncamera.h"
 #include "legoanimationmanager.h"
@@ -756,6 +757,7 @@ void LegoWorld::Enable(MxBool p_enable)
 #endif
 
 		Extension<ThirdPersonCameraExt>::Call(TP::HandleWorldEnable, this, TRUE);
+		Extension<MultiplayerExt>::Call(MP::HandleWorldEnable, this, TRUE);
 	}
 	else if (!p_enable && m_disabledObjects.size() == 0) {
 		MxPresenter* presenter;
@@ -820,6 +822,7 @@ void LegoWorld::Enable(MxBool p_enable)
 		GetViewManager()->RemoveAll(NULL);
 
 		Extension<ThirdPersonCameraExt>::Call(TP::HandleWorldEnable, this, FALSE);
+		Extension<MultiplayerExt>::Call(MP::HandleWorldEnable, this, FALSE);
 	}
 }
 

@@ -44,3 +44,15 @@ void Emscripten_SendExtensionProgress(const char* p_extension, MxU32 p_progress)
 
 	Emscripten_SendEvent("extensionProgress", buf);
 }
+
+void Emscripten_SendSaveSlotWritten(MxS32 p_slot)
+{
+	char buf[32];
+	SDL_snprintf(buf, sizeof(buf), "{\"slot\": %d}", p_slot);
+	Emscripten_SendEvent("saveSlotWritten", buf);
+}
+
+void Emscripten_SendSaveStateChanged()
+{
+	Emscripten_SendEvent("saveStateChanged", NULL);
+}

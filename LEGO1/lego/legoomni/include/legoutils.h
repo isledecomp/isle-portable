@@ -37,7 +37,9 @@ enum GameEvent {
 	e_skeletonKick,
 	e_raceFinished,
 	e_badEnding,
-	e_goodEnding
+	e_goodEnding,
+	e_saveSlotWritten,
+	e_saveStateChanged
 };
 
 class BoundingSphere;
@@ -84,7 +86,7 @@ LegoNamedTexture* ReadNamedTexture(LegoStorage* p_storage);
 void WriteDefaultTexture(LegoStorage* p_storage, const char* p_name);
 void WriteNamedTexture(LegoStorage* p_storage, LegoNamedTexture* p_namedTexture);
 void LoadFromNamedTexture(LegoNamedTexture* p_namedTexture);
-void EmitGameEvent(GameEvent p_event);
+void EmitGameEvent(GameEvent p_event, void* p_data = NULL);
 
 // FUNCTION: BETA10 0x100260a0
 inline void StartIsleAction(IsleScript::Script p_objectId)

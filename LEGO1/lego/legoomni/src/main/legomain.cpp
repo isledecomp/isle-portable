@@ -1,6 +1,7 @@
 #include "legomain.h"
 
 #include "3dmanager/lego3dmanager.h"
+#include "extensions/multiplayer.h"
 #include "extensions/siloader.h"
 #include "extensions/thirdpersoncamera.h"
 #include "islepathactor.h"
@@ -357,6 +358,7 @@ MxResult LegoOmni::Create(MxOmniCreateParam& p_param)
 #endif
 
 		Extension<ThirdPersonCameraExt>::Call(TP::HandleCreate);
+		Extension<MultiplayerExt>::Call(MP::HandleCreate);
 		result = SUCCESS;
 	}
 	else {

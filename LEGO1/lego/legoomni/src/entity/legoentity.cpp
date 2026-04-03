@@ -2,6 +2,7 @@
 
 #include "3dmanager/lego3dmanager.h"
 #include "define.h"
+#include "extensions/multiplayer.h"
 #include "legoanimationmanager.h"
 #include "legobuildingmanager.h"
 #include "legocameracontroller.h"
@@ -19,6 +20,8 @@
 #include "realtime/realtime.h"
 
 #include <stdio.h>
+
+using namespace Extensions;
 
 DECOMP_SIZE_ASSERT(LegoEntity, 0x68)
 
@@ -486,6 +489,10 @@ MxLong LegoEntity::Notify(MxParam& p_param)
 		InvokeAction(m_actionType, MxAtomId(m_siFile, e_lowerCase2), m_targetEntityId, this);
 	}
 	else {
+		if (Extension<MultiplayerExt>::Call(MP::HandleEntityNotify, this).value_or(FALSE)) {
+			return 1;
+		}
+
 		switch (GameState()->GetActorId()) {
 		case LegoActor::c_pepper:
 			if (GameState()->GetCurrentAct() != LegoGameState::e_act2 &&
