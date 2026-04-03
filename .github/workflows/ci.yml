@@ -302,6 +302,12 @@ jobs:
             cmake --build build --verbose --config Release
             cd build && cpack .
 
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: 'FreeBSD'
+          path: build/dist/isle-*
+
   flatpak:
     name: "Flatpak (${{ matrix.arch }})"
     runs-on: ${{ matrix.os }}
