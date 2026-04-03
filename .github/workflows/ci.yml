@@ -291,7 +291,7 @@ jobs:
           release: "15.0"
           usesh: true
           prepare: |
-            pkg install -y cmake ninja qt6-base
+            pkg install -y cmake ninja qt6-base git
           run: |
             cmake -S . -B build -G Ninja \
               -DCMAKE_BUILD_TYPE=Release \
