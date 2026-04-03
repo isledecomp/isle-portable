@@ -279,6 +279,29 @@ jobs:
             build/dist/*.apk
             build/dist/*.vpk
 
+  freebsd:
+    name: 'FreeBSD'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build on FreeBSD
+        uses: vmactions/freebsd-vm@v1
+        with:
+          release: "15.0"
+          usesh: true
+          prepare: |
+            pkg install -y cmake ninja qt6-base
+          run: |
+            cmake -S . -B build -G Ninja \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DISLE_USE_DX5=false \
+              -DISLE_BUILD_CONFIG=true \
+              -DISLE_WERROR=true \
+              -Werror=dev
+            cmake --build build --verbose --config Release
+            cd build && cpack .
+
   flatpak:
     name: "Flatpak (${{ matrix.arch }})"
     runs-on: ${{ matrix.os }}
@@ -353,6 +376,7 @@ jobs:
     needs:
       - build
       - flatpak
+      - freebsd
     steps:
       - name: Download All Artifacts
         uses: actions/download-artifact@main
