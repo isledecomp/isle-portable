@@ -421,8 +421,17 @@ void ScenePlayer::ApplyPtAtCam()
 		return;
 	}
 
-	LegoWorld* world = CurrentWorld();
-	if (!world || !world->GetCameraController()) {
+	// Find the spectator participant — PTATCAM tracks the spectator's position
+	// instead of the camera so the actor faces the same target for all players.
+	LegoROI* spectatorROI = nullptr;
+	for (const auto& p : m_participants) {
+		if (p.IsSpectator() && p.roi) {
+			spectatorROI = p.roi;
+			break;
+		}
+	}
+
+	if (!spectatorROI) {
 		return;
 	}
 
@@ -444,7 +453,7 @@ void ScenePlayer::ApplyPtAtCam()
 		float upsqr = sqrt(up.LenSquared());
 
 		up = und;
-		up -= world->GetCameraController()->GetWorldLocation();
+		up -= spectatorROI->GetWorldPosition();
 		dir /= dirsqr;
 		pos.EqualsCross(dir, up);
 		pos.Unitize();
