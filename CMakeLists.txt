@@ -18,10 +18,32 @@ if (EMSCRIPTEN)
   set(SDL_PTHREADS ON CACHE BOOL "Enable SDL pthreads" FORCE)
   find_program(LLVM_OBJCOPY_BIN NAMES llvm-objcopy HINTS "${EMSCRIPTEN_ROOT_PATH}/../bin" REQUIRED)
   set(ISLE_EMSCRIPTEN_VERSION_DIR "${CMAKE_BINARY_DIR}/generated")
-  add_custom_target(emscripten_version ALL
+
+  # Resolve git HEAD to find file dependencies for change detection.
+  # .git/HEAD changes on branch switch; the ref file it points to changes on commit.
+  set(_git_head "${CMAKE_SOURCE_DIR}/.git/HEAD")
+  set(_git_deps "${_git_head}")
+  if(EXISTS "${_git_head}")
+    file(READ "${_git_head}" _head_ref)
+    string(STRIP "${_head_ref}" _head_ref)
+    if(_head_ref MATCHES "^ref: (.+)$")
+      set(_git_ref "${CMAKE_SOURCE_DIR}/.git/${CMAKE_MATCH_1}")
+      if(EXISTS "${_git_ref}")
+        list(APPEND _git_deps "${_git_ref}")
+      endif()
+    endif()
+  endif()
+
+  add_custom_command(
+    OUTPUT ${ISLE_EMSCRIPTEN_VERSION_DIR}/version.js ${ISLE_EMSCRIPTEN_VERSION_DIR}/sourceMappingURL
     COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR=${CMAKE_SOURCE_DIR} -DOUTPUT_DIR=${ISLE_EMSCRIPTEN_VERSION_DIR}
       -P ${CMAKE_SOURCE_DIR}/CMake/EmscriptenVersion.cmake
-    BYPRODUCTS ${ISLE_EMSCRIPTEN_VERSION_DIR}/version.js ${ISLE_EMSCRIPTEN_VERSION_DIR}/sourceMappingURL
+    DEPENDS ${_git_deps}
+    COMMENT "Generating emscripten version files"
+  )
+  add_custom_target(emscripten_version DEPENDS
+    ${ISLE_EMSCRIPTEN_VERSION_DIR}/version.js
+    ${ISLE_EMSCRIPTEN_VERSION_DIR}/sourceMappingURL
   )
 endif()
 
