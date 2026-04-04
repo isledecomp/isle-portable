@@ -1889,9 +1889,8 @@ std::string NetworkManager::BuildCompletionJson(uint16_t p_animIndex, uint64_t p
 	}
 
 	std::vector<int8_t> slotChars = Animation::SessionHost::ComputeSlotCharIndices(entry);
-	uint8_t count = view->slotCount < static_cast<uint8_t>(slotChars.size())
-						? view->slotCount
-						: static_cast<uint8_t>(slotChars.size());
+	uint8_t count = view->slotCount < static_cast<uint8_t>(slotChars.size()) ? view->slotCount
+																			 : static_cast<uint8_t>(slotChars.size());
 
 	char eventIdHex[17];
 	SDL_snprintf(
@@ -2198,8 +2197,10 @@ void NetworkManager::HandleCustomize(const CustomizeMsg& p_msg)
 				p_msg.changeType == CHANGE_MOOD
 			);
 
-			// Only play click animation in 3rd person (not during multi-part emote or animation playback)
-			if (cam->GetDisplayROI() && !cam->IsInVehicle() && !cam->IsExtraAnimBlocking() && !cam->IsAnimPlaying()) {
+			// Only play click animation in 3rd person (not during multi-part emote or animation performance; spectators
+			// allowed)
+			if (cam->GetDisplayROI() && !cam->IsInVehicle() && !cam->IsExtraAnimBlocking() &&
+				!(cam->IsAnimPlaying() && cam->IsAnimLockDisplay())) {
 				cam->StopClickAnimation();
 				MxU32 clickAnimId =
 					Common::CharacterCustomizer::PlayClickAnimation(cam->GetDisplayROI(), cam->GetCustomizeState());

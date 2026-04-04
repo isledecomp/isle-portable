@@ -75,6 +75,7 @@ public:
 		m_animStopCallback = p_animPlaying ? std::move(p_animStopCallback) : nullptr;
 	}
 	bool IsAnimPlaying() const { return m_animPlaying; }
+	bool IsAnimLockDisplay() const { return m_animLockDisplay; }
 
 	void OnWorldEnabled(LegoWorld* p_world);
 	void OnWorldDisabled(LegoWorld* p_world);
