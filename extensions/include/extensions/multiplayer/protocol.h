@@ -32,7 +32,6 @@ enum MessageType : uint8_t {
 	MSG_ANIM_CANCEL = 12,
 	MSG_ANIM_UPDATE = 13,
 	MSG_ANIM_START = 14,
-	MSG_ANIM_COMPLETE = 15,
 	MSG_HORN = 16,
 	MSG_ASSIGN_ID = 0xFF
 };
@@ -197,22 +196,7 @@ struct AnimUpdateMsg {
 struct AnimStartMsg {
 	MessageHeader header;
 	uint16_t animIndex;
-};
-
-// Per-participant data in AnimCompleteMsg
-struct AnimCompletionParticipant {
-	uint32_t peerId;
-	int8_t charIndex;                       // Participant's character (g_actorInfoInit index)
-	char displayName[USERNAME_BUFFER_SIZE]; // 7 chars + null
-};
-
-// Host -> All: animation completed successfully (natural completion only, not cancellation)
-struct AnimCompleteMsg {
-	MessageHeader header;
-	uint64_t eventId;   // Random 64-bit ID unique to this completion event
-	uint16_t animIndex; // World-encoded animation index (globally unique key)
-	uint8_t participantCount;
-	AnimCompletionParticipant participants[8];
+	uint64_t eventId; // Random 64-bit ID for the completion event (host-generated, same for all clients)
 };
 
 #pragma pack(pop)

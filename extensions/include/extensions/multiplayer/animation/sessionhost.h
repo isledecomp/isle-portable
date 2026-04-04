@@ -15,7 +15,8 @@ struct SessionSlot {
 	uint32_t peerId;  // 0 = unfilled
 	int8_t charIndex; // g_actorInfoInit index, or -1 for spectator
 
-	bool IsSpectator() const { return charIndex < 0; }
+	bool IsSpectator() const { return IsSpectatorCharIndex(charIndex); }
+	static bool IsSpectatorCharIndex(int8_t p_charIndex) { return p_charIndex < 0; }
 };
 
 struct AnimSession {

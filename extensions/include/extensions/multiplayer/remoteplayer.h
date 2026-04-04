@@ -43,6 +43,12 @@ public:
 	const std::vector<int16_t>& GetLocations() const { return m_locations; }
 	void SetLocations(std::vector<int16_t> p_locations) { m_locations = std::move(p_locations); }
 	bool IsAtLocation(int16_t p_location) const;
+	bool HasReceivedUpdate() const { return m_hasReceivedUpdate; }
+	void GetTargetPosition(float& p_x, float& p_z) const
+	{
+		p_x = m_targetPosition[0];
+		p_z = m_targetPosition[2];
+	}
 	uint32_t GetLastUpdateTime() const { return m_lastUpdateTime; }
 	void SetVisible(bool p_visible);
 	void TriggerExtraAnim(uint8_t p_emoteId);

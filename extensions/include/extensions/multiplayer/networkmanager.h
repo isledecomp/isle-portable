@@ -137,13 +137,11 @@ private:
 	void HandleAnimCancel(uint32_t p_peerId);
 	void HandleAnimUpdate(const AnimUpdateMsg& p_msg);
 	void HandleAnimStart(const AnimStartMsg& p_msg);
-	void HandleAnimStartLocally(uint16_t p_animIndex, bool p_localInSession);
+	void HandleAnimStartLocally(uint16_t p_animIndex, bool p_localInSession, uint64_t p_eventId);
 	AnimUpdateMsg BuildAnimUpdateMsg(uint16_t p_animIndex, uint32_t p_target);
 	void BroadcastAnimUpdate(uint16_t p_animIndex);
 	void SendAnimUpdateToPlayer(uint16_t p_animIndex, uint32_t p_targetPeerId);
-	void BroadcastAnimStart(uint16_t p_animIndex);
-	void BroadcastAnimComplete(uint16_t p_animIndex);
-	void HandleAnimComplete(const AnimCompleteMsg& p_msg);
+	void BroadcastAnimStart(uint16_t p_animIndex, uint64_t p_eventId);
 	bool IsPeerAtLocation(uint32_t p_peerId, int16_t p_location) const;
 	bool GetPeerPosition(uint32_t p_peerId, float& p_x, float& p_z) const;
 	bool IsPeerNearby(uint32_t p_peerId, float p_refX, float p_refZ) const;
@@ -215,6 +213,11 @@ private:
 
 	// Concurrent animation playback: one ScenePlayer per playing animation
 	std::map<uint16_t, std::unique_ptr<Multiplayer::Animation::ScenePlayer>> m_playingAnims;
+
+	// Pre-built completion JSON per playing animation (non-observer participants only).
+	// Cached at animation start so it survives host migration/dropout.
+	std::map<uint16_t, std::string> m_pendingCompletionJson;
+	std::string BuildCompletionJson(uint16_t p_animIndex, uint64_t p_eventId);
 
 	void TickAnimation();
 	void StopScenePlayback(uint16_t p_animIndex, bool p_unlockRemotes);
