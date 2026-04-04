@@ -188,6 +188,15 @@ void PhonemePlayer::Tick(float p_elapsedMs, const std::vector<SceneAnimData::Pho
 	}
 }
 
+void PhonemePlayer::NotifyROIDestroyed(LegoROI* p_roi)
+{
+	for (auto& state : m_states) {
+		if (state.targetROI == p_roi) {
+			state.targetROI = nullptr;
+		}
+	}
+}
+
 void PhonemePlayer::Cleanup()
 {
 	for (size_t i = 0; i < m_states.size(); i++) {

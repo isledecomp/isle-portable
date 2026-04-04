@@ -45,6 +45,7 @@ public:
 	);
 	void Tick();
 	void Stop();
+	void NotifyROIDestroyed(LegoROI* p_roi);
 	bool IsPlaying() const { return m_playing; }
 	bool IsObserverMode() const { return m_observerMode; }
 

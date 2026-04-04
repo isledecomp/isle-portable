@@ -222,6 +222,7 @@ private:
 	void TickAnimation();
 	void StopScenePlayback(uint16_t p_animIndex, bool p_unlockRemotes);
 	void StopAllPlayback();
+	void NotifyAnimationsROIDestroyed(RemotePlayer* p_player);
 	void UnlockRemotesForAnim(uint16_t p_animIndex);
 
 	// Horn sound synchronization

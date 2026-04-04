@@ -30,6 +30,7 @@ public:
 	);
 	void Tick(float p_elapsedMs, const std::vector<SceneAnimData::PhonemeTrack>& p_tracks);
 	void Cleanup();
+	void NotifyROIDestroyed(LegoROI* p_roi);
 
 private:
 	std::vector<PhonemeState> m_states;

@@ -1029,6 +1029,7 @@ void NetworkManager::HandleState(const PlayerStateMsg& p_msg)
 
 	// Respawn only if display actor changed (not on actorId change)
 	if (it->second->GetDisplayActorIndex() != p_msg.displayActorIndex) {
+		NotifyAnimationsROIDestroyed(it->second.get());
 		if (it->second->GetROI()) {
 			m_roiToPlayer.erase(it->second->GetROI());
 		}
@@ -1261,6 +1262,7 @@ void NetworkManager::RemoveRemotePlayer(uint32_t p_peerId)
 				break;
 			}
 		}
+		NotifyAnimationsROIDestroyed(it->second.get());
 		if (it->second->GetROI()) {
 			m_roiToPlayer.erase(it->second->GetROI());
 		}
@@ -1280,6 +1282,7 @@ void NetworkManager::RemoveRemotePlayer(uint32_t p_peerId)
 void NetworkManager::RemoveAllRemotePlayers()
 {
 	for (auto& [peerId, player] : m_remotePlayers) {
+		NotifyAnimationsROIDestroyed(player.get());
 		player->Despawn();
 	}
 	m_remotePlayers.clear();
@@ -1425,6 +1428,21 @@ void NetworkManager::StopAllPlayback()
 	ThirdPersonCamera::Controller* cam = GetCamera();
 	if (cam) {
 		cam->SetAnimPlaying(false);
+	}
+}
+
+void NetworkManager::NotifyAnimationsROIDestroyed(RemotePlayer* p_player)
+{
+	LegoROI* roi = p_player->GetROI();
+	LegoROI* vehicleROI = p_player->GetRideVehicleROI();
+
+	for (auto& [animIndex, scenePlayer] : m_playingAnims) {
+		if (roi) {
+			scenePlayer->NotifyROIDestroyed(roi);
+		}
+		if (vehicleROI) {
+			scenePlayer->NotifyROIDestroyed(vehicleROI);
+		}
 	}
 }
 

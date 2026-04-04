@@ -567,8 +567,10 @@ void ScenePlayer::Stop()
 	m_roiMapSize = 0;
 
 	for (auto& p : m_participants) {
-		p.roi->WrappedSetLocal2WorldWithWorldDataUpdate(p.savedTransform);
-		p.roi->SetVisibility(TRUE);
+		if (p.roi) {
+			p.roi->WrappedSetLocal2WorldWithWorldDataUpdate(p.savedTransform);
+			p.roi->SetVisibility(TRUE);
+		}
 	}
 	m_participants.clear();
 
@@ -584,6 +586,46 @@ void ScenePlayer::Stop()
 	m_observerMode = false;
 	m_startTime = 0;
 	m_hideOnStop = false;
+}
+
+void ScenePlayer::NotifyROIDestroyed(LegoROI* p_roi)
+{
+	if (!m_playing || !p_roi) {
+		return;
+	}
+
+	for (auto& p : m_participants) {
+		if (p.roi == p_roi) {
+			p.roi = nullptr;
+		}
+		if (p.vehicleROI == p_roi) {
+			p.vehicleROI = nullptr;
+		}
+	}
+
+	if (m_roiMap) {
+		for (MxU32 i = 0; i < m_roiMapSize; i++) {
+			if (m_roiMap[i] == p_roi) {
+				m_roiMap[i] = nullptr;
+			}
+		}
+	}
+
+	for (auto& roi : m_ptAtCamROIs) {
+		if (roi == p_roi) {
+			roi = nullptr;
+		}
+	}
+
+	if (m_animRootROI == p_roi) {
+		m_animRootROI = nullptr;
+	}
+
+	if (m_vehicleROI == p_roi) {
+		m_vehicleROI = nullptr;
+	}
+
+	m_phonemePlayer.NotifyROIDestroyed(p_roi);
 }
 
 void ScenePlayer::CleanupProps()
