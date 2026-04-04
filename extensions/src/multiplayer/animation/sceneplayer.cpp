@@ -62,6 +62,14 @@ void ScenePlayer::SetupROIs(const AnimInfo* p_animInfo)
 
 	std::vector<bool> participantMatched(m_participants.size(), false);
 
+	static uint32_t s_roiCounter = 0;
+
+	// Generate a unique ROI name to avoid collisions in the character manager
+	// and ViewManager. The counter is global so names stay unique across calls.
+	auto makeUniqueName = [](char* p_buf, size_t p_size, const char* p_prefix, const char* p_name) {
+		SDL_snprintf(p_buf, p_size, "%s_%s_%u", p_prefix, p_name, s_roiCounter++);
+	};
+
 	// Register an alias mapping an animation actor name to an ROI whose actual
 	// name differs (e.g. a participant's unique name, or a cloned scene ROI).
 	auto addAlias = [&](const std::string& p_name, LegoROI* p_roi) {
@@ -74,7 +82,7 @@ void ScenePlayer::SetupROIs(const AnimInfo* p_animInfo)
 	// LOD isn't in the ViewLODListManager.
 	auto createProp = [&](const std::string& p_name, const char* p_lodName) -> LegoROI* {
 		char uniqueName[64];
-		SDL_snprintf(uniqueName, sizeof(uniqueName), "npc_prop_%s", p_name.c_str());
+		makeUniqueName(uniqueName, sizeof(uniqueName), "npc_prop", p_name.c_str());
 		LegoROI* roi = CharacterManager()->CreateAutoROI(uniqueName, p_lodName, FALSE);
 		if (roi) {
 			roi->SetName(p_name.c_str());
@@ -93,9 +101,8 @@ void ScenePlayer::SetupROIs(const AnimInfo* p_animInfo)
 				continue;
 			}
 
-			static uint32_t s_counter = 0;
 			char uniqueName[64];
-			SDL_snprintf(uniqueName, sizeof(uniqueName), "npc_scene_%s_%u", p_name.c_str(), s_counter++);
+			makeUniqueName(uniqueName, sizeof(uniqueName), "npc_scene", p_name.c_str());
 
 			LegoROI* clone = Multiplayer::DeepCloneROI(source, uniqueName);
 			if (clone) {
@@ -140,10 +147,10 @@ void ScenePlayer::SetupROIs(const AnimInfo* p_animInfo)
 
 			if (!matched) {
 				char uniqueName[64];
-				SDL_snprintf(uniqueName, sizeof(uniqueName), "npc_char_%s", lowered.c_str());
+				makeUniqueName(uniqueName, sizeof(uniqueName), "npc_char", lowered.c_str());
 				LegoROI* roi = CharacterCloner::Clone(CharacterManager(), uniqueName, lowered.c_str());
 				if (roi) {
-					roi->SetName(lowered.c_str());
+					addAlias(lowered, roi);
 					VideoManager()->Get3DManager()->Add(*roi);
 					createdROIs.push_back(roi);
 				}
