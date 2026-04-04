@@ -594,38 +594,66 @@ void ScenePlayer::NotifyROIDestroyed(LegoROI* p_roi)
 		return;
 	}
 
-	for (auto& p : m_participants) {
-		if (p.roi == p_roi) {
-			p.roi = nullptr;
-		}
-		if (p.vehicleROI == p_roi) {
-			p.vehicleROI = nullptr;
-		}
-	}
+	// Walk the m_roiMap once to find p_roi and all its descendants (child ROIs
+	// are destroyed together with their parent). Collect them so every other
+	// field can be cleaned with simple pointer equality — the ancestor walk
+	// happens in exactly one place.
+	std::vector<LegoROI*> destroyed;
+	destroyed.push_back(p_roi);
 
 	if (m_roiMap) {
 		for (MxU32 i = 0; i < m_roiMapSize; i++) {
-			if (m_roiMap[i] == p_roi) {
-				m_roiMap[i] = nullptr;
+			if (!m_roiMap[i]) {
+				continue;
+			}
+
+			for (OrientableROI* cur = m_roiMap[i]; cur != nullptr; cur = cur->GetParentROI()) {
+				if (cur == p_roi) {
+					if (m_roiMap[i] != p_roi) {
+						destroyed.push_back(m_roiMap[i]);
+					}
+					m_roiMap[i] = nullptr;
+					break;
+				}
 			}
 		}
 	}
 
+	auto isDestroyed = [&destroyed](LegoROI* roi) {
+		for (LegoROI* d : destroyed) {
+			if (roi == d) {
+				return true;
+			}
+		}
+		return false;
+	};
+
+	for (auto& p : m_participants) {
+		if (p.roi && isDestroyed(p.roi)) {
+			p.roi = nullptr;
+		}
+		if (p.vehicleROI && isDestroyed(p.vehicleROI)) {
+			p.vehicleROI = nullptr;
+		}
+	}
+
 	for (auto& roi : m_ptAtCamROIs) {
-		if (roi == p_roi) {
+		if (roi && isDestroyed(roi)) {
 			roi = nullptr;
 		}
 	}
 
-	if (m_animRootROI == p_roi) {
+	if (m_animRootROI && isDestroyed(m_animRootROI)) {
 		m_animRootROI = nullptr;
 	}
 
-	if (m_vehicleROI == p_roi) {
+	if (m_vehicleROI && isDestroyed(m_vehicleROI)) {
 		m_vehicleROI = nullptr;
 	}
 
-	m_phonemePlayer.NotifyROIDestroyed(p_roi);
+	for (LegoROI* d : destroyed) {
+		m_phonemePlayer.NotifyROIDestroyed(d);
+	}
 }
 
 void ScenePlayer::CleanupProps()
