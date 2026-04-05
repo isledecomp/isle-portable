@@ -164,7 +164,11 @@ jobs:
         run: |
           echo "${{ secrets.keystore }}" | base64 -d > release.keystore
           cd android-project
-          ./gradlew $([ -n "$SIGNING_KEY_ALIAS" ] && echo packageRelease || echo assembleDebug ) \
+          TASKS="assembleDebug"
+          if [ -n "$SIGNING_KEY_ALIAS" ]; then
+            TASKS="assembleDebug packageRelease"
+          fi
+          ./gradlew $TASKS \
             --info \
             -PcmakeArgs="-DCMAKE_BUILD_TYPE=Release \
               -DISLE_USE_DX5=${{ !!matrix.dx5 }} \
