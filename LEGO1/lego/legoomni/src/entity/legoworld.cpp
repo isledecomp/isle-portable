@@ -751,6 +751,8 @@ void LegoWorld::Enable(MxBool p_enable)
 			AnimationManager()->Resume();
 		}
 
+		Extension<Extensions::SiLoaderExt>::Call(Extensions::SI::HandleEnable, this, TRUE);
+
 		GameState()->ResetROI();
 #ifndef BETA10
 		SetIsWorldActive(TRUE);
@@ -760,6 +762,8 @@ void LegoWorld::Enable(MxBool p_enable)
 		Extension<MultiplayerExt>::Call(MP::HandleWorldEnable, this, TRUE);
 	}
 	else if (!p_enable && m_disabledObjects.size() == 0) {
+		Extension<Extensions::SiLoaderExt>::Call(Extensions::SI::HandleEnable, this, FALSE);
+
 		MxPresenter* presenter;
 		LegoPathController* controller;
 		LegoPathActor* actor = UserActor();

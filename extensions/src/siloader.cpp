@@ -19,10 +19,12 @@ std::vector<std::string> SiLoaderExt::files;
 std::vector<std::string> SiLoaderExt::directives;
 std::vector<std::pair<SiLoaderExt::StreamObject, SiLoaderExt::StreamObject>> SiLoaderExt::startWith;
 std::vector<std::pair<SiLoaderExt::StreamObject, SiLoaderExt::StreamObject>> SiLoaderExt::removeWith;
+std::vector<std::pair<SiLoaderExt::StreamObject, SiLoaderExt::StreamObject>> SiLoaderExt::enableWith;
 std::vector<std::pair<SiLoaderExt::StreamObject, SiLoaderExt::StreamObject>> SiLoaderExt::replace;
 std::vector<std::pair<SiLoaderExt::StreamObject, SiLoaderExt::StreamObject>> SiLoaderExt::prepend;
 std::vector<SiLoaderExt::StreamObject> SiLoaderExt::fullScreenMovie;
 std::vector<SiLoaderExt::StreamObject> SiLoaderExt::disable3d;
+std::vector<SiLoaderExt::StreamObject> SiLoaderExt::firedPrepend;
 bool SiLoaderExt::enabled = false;
 
 void SiLoaderExt::Initialize()
@@ -108,6 +110,10 @@ std::optional<MxResult> SiLoaderExt::HandleStart(MxDSAction& p_action)
 	if (p_action.GetExtraLength() == 0 || !SDL_strstr(p_action.GetExtraData(), prependedMarker)) {
 		for (const auto& key : prepend) {
 			if (key.first == object) {
+					auto it = std::find(firedPrepend.begin(), firedPrepend.end(), key.second);
+				if (it != firedPrepend.end()) {
+					firedPrepend.erase(it);
+				}
 				MxDSAction action;
 				MxResult result = start(key.second, p_action, action);
 
@@ -149,6 +155,46 @@ MxBool SiLoaderExt::HandleWorld(LegoWorld* p_world)
 		if (key.first == object) {
 			MxDSAction action;
 			start(key.second, action);
+		}
+	}
+
+	return TRUE;
+}
+
+MxBool SiLoaderExt::HandleEnable(LegoWorld* p_world, MxBool p_enable)
+{
+	StreamObject object{p_world->GetAtomId(), p_world->GetEntityId()};
+
+	if (p_enable) {
+		firedPrepend.clear();
+
+		auto start = [](const StreamObject& p_object, MxDSAction& p_out) {
+			if (!OpenStream(p_object.first.GetInternal())) {
+				return;
+			}
+
+			p_out.SetAtomId(p_object.first);
+			p_out.SetObjectId(p_object.second);
+			p_out.SetUnknown24(-1);
+			Start(&p_out);
+		};
+
+		for (const auto& key : enableWith) {
+			if (key.first == object) {
+				MxDSAction action;
+				start(key.second, action);
+			}
+		}
+	}
+	else {
+		for (const auto& key : enableWith) {
+			if (key.first == object) {
+				MxDSAction action;
+				action.SetAtomId(key.second.first);
+				action.SetObjectId(key.second.second);
+				action.SetUnknown24(-1);
+				DeleteObject(action);
+			}
 		}
 	}
 
@@ -226,7 +272,9 @@ MxBool SiLoaderExt::HandleEndAction(MxEndActionNotificationParam& p_param)
 
 	if (!p_param.GetSender() || !p_param.GetSender()->IsA("MxCompositePresenter")) {
 		for (const auto& key : prepend) {
-			if (key.second == object) {
+			if (key.second == object &&
+				std::find(firedPrepend.begin(), firedPrepend.end(), object) == firedPrepend.end()) {
+				firedPrepend.push_back(object);
 				MxDSAction action;
 				start(key.first, *p_param.GetAction(), action);
 			}
@@ -276,6 +324,12 @@ bool SiLoaderExt::LoadDirective(const char* p_directive)
 	}
 	else if (SDL_sscanf(p_directive, "RemoveWith:%255[^:;]%*[:;]%u%*[:;]%255[^:;]%*[:;]%u", originAtom, &originId, targetAtom, &targetId) == 4) {
 		removeWith.emplace_back(
+			StreamObject{MxAtomId{originAtom, e_lowerCase2}, originId},
+			StreamObject{MxAtomId{targetAtom, e_lowerCase2}, targetId}
+		);
+	}
+	else if (SDL_sscanf(p_directive, "EnableWith:%255[^:;]%*[:;]%u%*[:;]%255[^:;]%*[:;]%u", originAtom, &originId, targetAtom, &targetId) == 4) {
+		enableWith.emplace_back(
 			StreamObject{MxAtomId{originAtom, e_lowerCase2}, originId},
 			StreamObject{MxAtomId{targetAtom, e_lowerCase2}, targetId}
 		);
@@ -336,6 +390,15 @@ void SiLoaderExt::ParseExtra(const MxAtomId& p_atom, si::Core* p_core)
 				if ((directive = SDL_strstr(extra.c_str(), "RemoveWith:"))) {
 					if (SDL_sscanf(directive, "RemoveWith:%255[^:;]%*[:;]%u", atom, &id) == 2) {
 						removeWith.emplace_back(
+							StreamObject{MxAtomId{atom, e_lowerCase2}, id},
+							StreamObject{p_atom, object->id_}
+						);
+					}
+				}
+
+				if ((directive = SDL_strstr(extra.c_str(), "EnableWith:"))) {
+					if (SDL_sscanf(directive, "EnableWith:%255[^:;]%*[:;]%u", atom, &id) == 2) {
+						enableWith.emplace_back(
 							StreamObject{MxAtomId{atom, e_lowerCase2}, id},
 							StreamObject{p_atom, object->id_}
 						);

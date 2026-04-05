@@ -6,6 +6,22 @@
 #include <interleaf.h>
 #include <object.h>
 
+void ZeroInitObject(si::Object* o)
+{
+	o->unknown1_ = 0;
+	o->flags_ = 0;
+	o->unknown4_ = 0;
+	o->duration_ = 0;
+	o->loops_ = 0;
+	o->unknown26_ = 0;
+	o->unknown27_ = 0;
+	o->unknown28_ = 0;
+	o->unknown29_ = 0;
+	o->unknown30_ = 0;
+	o->volume_ = 0;
+	o->time_offset_ = 0;
+}
+
 si::Interleaf::Version version = si::Interleaf::Version2_2;
 uint32_t bufferSize = 65536;
 uint32_t bufferCount = 8;
@@ -293,6 +309,106 @@ void CreateBadEnd()
 	si.Write(result.c_str());
 }
 
+void CreateRabbits()
+{
+	std::string result = out + "/rabbits.si";
+
+	si::Interleaf si;
+	mxHd.seek(0, si::MemoryBuffer::SeekStart);
+	si.Read(&mxHd);
+
+	// Object 0 (id=0): Blaubart model (fire-and-forget, loaded by chained Prepend)
+	si::Object* blaubart = new si::Object;
+	ZeroInitObject(blaubart);
+	std::string file = std::string("rabbits/blaubart.mod");
+	std::string extra = "Prepend:/lego/extra/rabbits;1";
+	blaubart->id_ = 0;
+	blaubart->type_ = si::MxOb::Object;
+	blaubart->presenter_ = "LegoModelPresenter";
+	blaubart->name_ = "blaubart";
+	blaubart->flags_ = MxDSAction::c_enabled;
+	blaubart->filetype_ = si::MxOb::OBJ;
+	blaubart->loops_ = 1;
+	blaubart->unknown28_ = 1;
+	blaubart->unknown29_ = 1;
+	blaubart->location_ = si::Vector3(-65.5f, 14.0f, 23.5f);
+	blaubart->direction_ = si::Vector3(0, 0, 1);
+	blaubart->up_ = si::Vector3(0, 1, 0);
+	blaubart->extra_ = si::bytearray(extra.c_str(), extra.length() + 1);
+	if (!blaubart->ReplaceWithFile(file.c_str())) {
+		abort();
+	}
+
+	si.AppendChild(blaubart);
+	depfile << result << ": " << (std::filesystem::current_path() / file).string() << std::endl;
+
+	// Object 1 (id=1): Fluse model (fire-and-forget, loaded by chained Prepend from Blaubart)
+	si::Object* fluse = new si::Object;
+	ZeroInitObject(fluse);
+	file = std::string("rabbits/fluse.mod");
+	fluse->id_ = 1;
+	fluse->type_ = si::MxOb::Object;
+	fluse->presenter_ = "LegoModelPresenter";
+	fluse->name_ = "fluse";
+	fluse->flags_ = MxDSAction::c_enabled;
+	fluse->filetype_ = si::MxOb::OBJ;
+	fluse->loops_ = 1;
+	fluse->unknown28_ = 1;
+	fluse->unknown29_ = 1;
+	fluse->location_ = si::Vector3(-62.0f, 14.0f, 28.0f);
+	fluse->direction_ = si::Vector3(0, 0, 1);
+	fluse->up_ = si::Vector3(0, 1, 0);
+	if (!fluse->ReplaceWithFile(file.c_str())) {
+		abort();
+	}
+
+	si.AppendChild(fluse);
+	depfile << result << ": " << (std::filesystem::current_path() / file).string() << std::endl;
+
+	// Object 2 (id=2): LegoAnimMMPresenter (composite)
+	// EnableWith triggers when Isle world becomes active
+	// Prepend chains: loads Blaubart model (id=0), which chains to Fluse model (id=1)
+	si::Object* composite = new si::Object;
+	ZeroInitObject(composite);
+	extra = "EnableWith:\\Lego\\Scripts\\Isle\\Isle;0, Prepend:/lego/extra/rabbits;0";
+	composite->id_ = 2;
+	composite->type_ = si::MxOb::Presenter;
+	composite->presenter_ = "LegoAnimMMPresenter";
+	composite->flags_ = MxDSAction::c_enabled | MxDSAction::c_bit3;
+	composite->loops_ = 1;
+	composite->extra_ = si::bytearray(extra.c_str(), extra.length() + 1);
+	composite->name_ = "rabbits_composite";
+	composite->direction_ = si::Vector3(0, 0, 1);
+	composite->up_ = si::Vector3(0, 1, 0);
+	si.AppendChild(composite);
+
+	// Child (id=3): Combined animation (both rabbits in one anim tree)
+	si::Object* anim = new si::Object;
+	ZeroInitObject(anim);
+	file = std::string("rabbits/rabbits.ani");
+	anim->id_ = 3;
+	anim->type_ = si::MxOb::Object;
+	anim->presenter_ = "LegoLoopingAnimPresenter";
+	anim->name_ = "rabbits_anim";
+	anim->flags_ = MxDSAction::c_enabled | si::MxOb::NoLoop;
+	anim->filetype_ = si::MxOb::OBJ;
+	anim->duration_ = -1;
+	anim->loops_ = 1;
+	anim->unknown28_ = 1;
+	anim->unknown29_ = 1;
+	anim->location_ = si::Vector3(0, 0, 0);
+	anim->direction_ = si::Vector3(0, 0, 1);
+	anim->up_ = si::Vector3(0, 1, 0);
+	if (!anim->ReplaceWithFile(file.c_str())) {
+		abort();
+	}
+
+	composite->AppendChild(anim);
+	depfile << result << ": " << (std::filesystem::current_path() / file).string() << std::endl;
+
+	si.Write(result.c_str());
+}
+
 int main(int argc, char* argv[])
 {
 	out = argv[1];
@@ -307,5 +423,6 @@ int main(int argc, char* argv[])
 	CreateWidescreen();
 	CreateHDMusic();
 	CreateBadEnd();
+	CreateRabbits();
 	return 0;
 }

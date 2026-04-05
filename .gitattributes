@@ -11,3 +11,4 @@
 **/*.desktop text eol=lf
 assets/widescreen/** filter=lfs diff=lfs merge=lfs -text
 assets/hdmusic/** filter=lfs diff=lfs merge=lfs -text
+assets/rabbits/** filter=lfs diff=lfs merge=lfs -text
