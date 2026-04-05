@@ -1,5 +1,6 @@
 #include "legoinputmanager.h"
 
+#include "extensions/multiplayer.h"
 #include "extensions/thirdpersoncamera.h"
 #include "legocameracontroller.h"
 #include "legocontrolmanager.h"
@@ -402,7 +403,8 @@ MxBool LegoInputManager::ProcessOneEvent(LegoEventNotificationParam& p_param)
 						if (entity && entity->Notify(p_param) != 0) {
 							return TRUE;
 						}
-						if (Extension<ThirdPersonCameraExt>::Call(TP::HandleROIClick, roi, p_param).value_or(FALSE)) {
+						if (Extension<MultiplayerExt>::Call(MP::HandleROIClick, roi, p_param).value_or(FALSE) ||
+							Extension<ThirdPersonCameraExt>::Call(TP::HandleROIClick, roi, p_param).value_or(FALSE)) {
 							return TRUE;
 						}
 					}

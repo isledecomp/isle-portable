@@ -1,5 +1,6 @@
 #include "extensions/extensions.h"
 
+#include "extensions/multiplayer.h"
 #include "extensions/siloader.h"
 #include "extensions/textureloader.h"
 #include "extensions/thirdpersoncamera.h"
@@ -29,9 +30,16 @@ static void InitThirdPersonCamera(std::map<std::string, std::string> p_options)
 	ThirdPersonCameraExt::Initialize();
 }
 
+static void InitMultiplayer(std::map<std::string, std::string> p_options)
+{
+	MultiplayerExt::options = std::move(p_options);
+	MultiplayerExt::enabled = true;
+	MultiplayerExt::Initialize();
+}
+
 using InitFn = void (*)(std::map<std::string, std::string>);
 
-static const InitFn extensionInits[] = {InitTextureLoader, InitSiLoader, InitThirdPersonCamera};
+static const InitFn extensionInits[] = {InitTextureLoader, InitSiLoader, InitThirdPersonCamera, InitMultiplayer};
 
 void Extensions::Enable(const char* p_key, std::map<std::string, std::string> p_options)
 {

@@ -2,6 +2,7 @@
 #define LEGOANIMATIONMANAGER_H
 
 #include "decomp.h"
+#include "extensions/fwd.h"
 #include "lego1_export.h"
 #include "legolocations.h"
 #include "legomain.h"
@@ -203,6 +204,9 @@ public:
 	// LegoAnimationManager::`scalar deleting destructor'
 
 private:
+	friend class Multiplayer::NetworkManager;
+	friend class Multiplayer::Animation::Catalog;
+
 	void Init();
 	MxResult FUN_100605e0(
 		MxU32 p_index,

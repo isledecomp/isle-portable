@@ -2,6 +2,7 @@
 #define ISLE_H
 
 #include "actionsfwd.h"
+#include "extensions/fwd.h"
 #include "legogamestate.h"
 #include "legonamedplane.h"
 #include "legostate.h"
@@ -164,6 +165,7 @@ public:
 	void SwitchToInfocenter();
 
 	friend class Act1State;
+	friend class Multiplayer::WorldStateSync;
 
 	// SYNTHETIC: LEGO1 0x10030a30
 	// Isle::`scalar deleting destructor'

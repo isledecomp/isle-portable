@@ -13,9 +13,38 @@ if (WINDOWS_STORE)
 endif()
 
 if (EMSCRIPTEN)
-  add_compile_options(-pthread)
-  add_link_options(-sUSE_WEBGL2=1 -sMIN_WEBGL_VERSION=2 -sALLOW_MEMORY_GROWTH=1 -sMAXIMUM_MEMORY=2gb -sUSE_PTHREADS=1 -sPROXY_TO_PTHREAD=1 -sOFFSCREENCANVAS_SUPPORT=1 -sPTHREAD_POOL_SIZE_STRICT=0 -sFORCE_FILESYSTEM=1 -sWASMFS=1 -sEXIT_RUNTIME=1)
+  add_compile_options(-pthread -gsource-map)
+  add_link_options(-sUSE_WEBGL2=1 -sMIN_WEBGL_VERSION=2 -sALLOW_MEMORY_GROWTH=1 -sMAXIMUM_MEMORY=2gb -sUSE_PTHREADS=1 -sPROXY_TO_PTHREAD=1 -sOFFSCREENCANVAS_SUPPORT=1 -sPTHREAD_POOL_SIZE_STRICT=0 -sFORCE_FILESYSTEM=1 -sWASMFS=1 -sEXIT_RUNTIME=1 -sABORT_ON_WASM_EXCEPTIONS=1 -gsource-map)
   set(SDL_PTHREADS ON CACHE BOOL "Enable SDL pthreads" FORCE)
+  find_program(LLVM_OBJCOPY_BIN NAMES llvm-objcopy HINTS "${EMSCRIPTEN_ROOT_PATH}/../bin" REQUIRED)
+  set(ISLE_EMSCRIPTEN_VERSION_DIR "${CMAKE_BINARY_DIR}/generated")
+
+  # Resolve git HEAD to find file dependencies for change detection.
+  # .git/HEAD changes on branch switch; the ref file it points to changes on commit.
+  set(_git_head "${CMAKE_SOURCE_DIR}/.git/HEAD")
+  set(_git_deps "${_git_head}")
+  if(EXISTS "${_git_head}")
+    file(READ "${_git_head}" _head_ref)
+    string(STRIP "${_head_ref}" _head_ref)
+    if(_head_ref MATCHES "^ref: (.+)$")
+      set(_git_ref "${CMAKE_SOURCE_DIR}/.git/${CMAKE_MATCH_1}")
+      if(EXISTS "${_git_ref}")
+        list(APPEND _git_deps "${_git_ref}")
+      endif()
+    endif()
+  endif()
+
+  add_custom_command(
+    OUTPUT ${ISLE_EMSCRIPTEN_VERSION_DIR}/version.js ${ISLE_EMSCRIPTEN_VERSION_DIR}/sourceMappingURL
+    COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR=${CMAKE_SOURCE_DIR} -DOUTPUT_DIR=${ISLE_EMSCRIPTEN_VERSION_DIR}
+      -P ${CMAKE_SOURCE_DIR}/CMake/EmscriptenVersion.cmake
+    DEPENDS ${_git_deps}
+    COMMENT "Generating emscripten version files"
+  )
+  add_custom_target(emscripten_version DEPENDS
+    ${ISLE_EMSCRIPTEN_VERSION_DIR}/version.js
+    ${ISLE_EMSCRIPTEN_VERSION_DIR}/sourceMappingURL
+  )
 endif()
 
 if (NINTENDO_SWITCH)
@@ -56,6 +85,7 @@ option(ISLE_WERROR "Treat warnings as errors" OFF)
 cmake_dependent_option(ISLE_USE_DX5 "Build with internal DirectX 5 SDK" "${NOT_MINGW}" "WIN32;CMAKE_SIZEOF_VOID_P EQUAL 4" OFF)
 cmake_dependent_option(ISLE_MINIWIN "Use miniwin" ON "NOT ISLE_USE_DX5" OFF)
 cmake_dependent_option(ISLE_EXTENSIONS "Use extensions" ON "NOT ISLE_USE_DX5;NOT WINDOWS_STORE" OFF)
+cmake_dependent_option(ISLE_USE_LWS "Use libwebsockets for native multiplayer" ON "ISLE_EXTENSIONS;NOT EMSCRIPTEN;NOT NINTENDO_3DS;NOT NINTENDO_SWITCH;NOT VITA" OFF)
 cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "MSVC OR ISLE_MINIWIN;NOT NINTENDO_3DS;NOT NINTENDO_SWITCH;NOT WINDOWS_STORE;NOT VITA" OFF)
 cmake_dependent_option(ISLE_COMPILE_SHADERS "Compile shaders" ON "SDL_SHADERCROSS_BIN;TARGET Python3::Interpreter" OFF)
 cmake_dependent_option(CMAKE_POSITION_INDEPENDENT_CODE "Build with -fPIC" ON "NOT VITA" OFF)
@@ -544,10 +574,48 @@ if (ISLE_EXTENSIONS)
     # Third person camera extension
     extensions/src/thirdpersoncamera.cpp
     extensions/src/thirdpersoncamera/controller.cpp
-    extensions/src/thirdpersoncamera/orbitcamera.cpp
-    extensions/src/thirdpersoncamera/inputhandler.cpp
     extensions/src/thirdpersoncamera/displayactor.cpp
+    extensions/src/thirdpersoncamera/inputhandler.cpp
+    extensions/src/thirdpersoncamera/orbitcamera.cpp
+
+    # Multiplayer extension
+    extensions/src/multiplayer.cpp
+    extensions/src/multiplayer/animation/audioplayer.cpp
+    extensions/src/multiplayer/animation/catalog.cpp
+    extensions/src/multiplayer/animation/coordinator.cpp
+    extensions/src/multiplayer/animation/loader.cpp
+    extensions/src/multiplayer/animation/locationproximity.cpp
+    extensions/src/multiplayer/animation/phonemeplayer.cpp
+    extensions/src/multiplayer/animation/sceneplayer.cpp
+    extensions/src/multiplayer/animation/sessionhost.cpp
+    extensions/src/multiplayer/emoteanimhandler.cpp
+    extensions/src/multiplayer/mputils.cpp
+    extensions/src/multiplayer/namebubblerenderer.cpp
+    extensions/src/multiplayer/networkmanager.cpp
+    extensions/src/multiplayer/protocol.cpp
+    extensions/src/multiplayer/remoteplayer.cpp
+    extensions/src/multiplayer/sireader.cpp
+    extensions/src/multiplayer/worldstatesync.cpp
   )
+  if(EMSCRIPTEN)
+    target_sources(lego1 PRIVATE
+      extensions/src/multiplayer/platforms/emscripten/callbacks.cpp
+      extensions/src/multiplayer/platforms/emscripten/websockettransport.cpp
+    )
+  elseif(ISLE_USE_LWS)
+    target_sources(lego1 PRIVATE
+      extensions/src/multiplayer/platforms/native/lwstransport.cpp
+      extensions/src/multiplayer/platforms/native/nativecallbacks.cpp
+    )
+    # Skip precompiled headers for native transport files to avoid miniwin/windows.h conflicts
+    set_source_files_properties(
+      extensions/src/multiplayer/platforms/native/lwstransport.cpp
+      extensions/src/multiplayer/platforms/native/nativecallbacks.cpp
+      PROPERTIES SKIP_PRECOMPILE_HEADERS ON
+    )
+    target_compile_definitions(lego1 PRIVATE ISLE_USE_LWS)
+    target_link_libraries(lego1 PRIVATE websockets)
+  endif()
 endif()
 
 if (ISLE_BUILD_APP)
@@ -603,7 +671,21 @@ if (ISLE_BUILD_APP)
       ISLE/emscripten/messagebox.cpp
       ISLE/emscripten/window.cpp
     )
+    if(ISLE_EXTENSIONS)
+      target_sources(isle PRIVATE
+        extensions/src/multiplayer/platforms/emscripten/wasm_exports.cpp
+      )
+    endif()
     target_compile_definitions(isle PRIVATE "ISLE_EMSCRIPTEN_HOST=\"${ISLE_EMSCRIPTEN_HOST}\"")
+    add_dependencies(isle emscripten_version)
+    target_link_options(isle PRIVATE --post-js ${ISLE_EMSCRIPTEN_VERSION_DIR}/version.js)
+    set_property(TARGET isle PROPERTY LINK_DEPENDS ${ISLE_EMSCRIPTEN_VERSION_DIR}/version.js)
+    add_custom_command(TARGET isle POST_BUILD
+      COMMAND ${LLVM_OBJCOPY_BIN} --remove-section=sourceMappingURL
+        --add-section=sourceMappingURL=${ISLE_EMSCRIPTEN_VERSION_DIR}/sourceMappingURL
+        $<TARGET_FILE_DIR:isle>/isle.wasm
+      COMMENT "Patching sourceMappingURL with build-time git hash"
+    )
     set_property(TARGET isle PROPERTY SUFFIX ".html")
   endif()
   if(NINTENDO_3DS)

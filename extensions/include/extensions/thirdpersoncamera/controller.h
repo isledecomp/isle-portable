@@ -62,19 +62,20 @@ public:
 
 	// Signal that an external animation is active.
 	// p_lockDisplay: true if the display ROI is being driven by the animation (performer),
-	//                false if just spectating (idle anim continues).
+	//                false if just spectating (free to move).
 	// p_onStop is called before the display ROI is destroyed (Deactivate/OnWorldDisabled).
 	void SetAnimPlaying(
 		bool p_animPlaying,
-		bool p_lockDisplay = true,
+		bool p_animLockDisplay = true,
 		std::function<void()> p_animStopCallback = nullptr
 	)
 	{
 		m_animPlaying = p_animPlaying;
-		m_animLockDisplay = p_animPlaying && p_lockDisplay;
+		m_animLockDisplay = p_animPlaying && p_animLockDisplay;
 		m_animStopCallback = p_animPlaying ? std::move(p_animStopCallback) : nullptr;
 	}
 	bool IsAnimPlaying() const { return m_animPlaying; }
+	bool IsAnimLockDisplay() const { return m_animLockDisplay; }
 
 	void OnWorldEnabled(LegoWorld* p_world);
 	void OnWorldDisabled(LegoWorld* p_world);
@@ -95,7 +96,7 @@ public:
 
 	bool IsLeftButtonHeld() const { return m_input.IsLeftButtonHeld(); }
 	bool IsLmbForwardEngaged() const { return m_lmbForwardEngaged; }
-	void SetLmbForwardEngaged(bool p_engaged) { m_lmbForwardEngaged = p_engaged; }
+	void SetLmbForwardEngaged(bool p_lmbForwardEngaged) { m_lmbForwardEngaged = p_lmbForwardEngaged; }
 
 	MxBool HandleFirstPersonForward(
 		LegoNavController* p_nav,
@@ -111,11 +112,11 @@ public:
 	void ResetTouchState() { m_input.ResetTouchState(); }
 	void SuppressGestures() { m_input.SuppressGestures(); }
 
-	bool TryClaimFinger(const SDL_TouchFingerEvent& event) { return m_input.TryClaimFinger(event); }
-	bool TryReleaseFinger(SDL_FingerID id) { return m_input.TryReleaseFinger(id); }
-	bool IsFingerTracked(SDL_FingerID id) const { return m_input.IsFingerTracked(id); }
+	bool TryClaimFinger(const SDL_TouchFingerEvent& p_event) { return m_input.TryClaimFinger(p_event); }
+	bool TryReleaseFinger(SDL_FingerID p_id) { return m_input.TryReleaseFinger(p_id); }
+	bool IsFingerTracked(SDL_FingerID p_id) const { return m_input.IsFingerTracked(p_id); }
 	int GetTouchCount() const { return m_input.GetTouchCount(); }
-	SDL_FingerID GetFingerID(int idx) const { return m_input.GetFingerID(idx); }
+	SDL_FingerID GetFingerID(int p_idx) const { return m_input.GetFingerID(p_idx); }
 
 	void FreezeDisplayActor() { m_display.FreezeDisplayActor(); }
 	void UnfreezeDisplayActor() { m_display.UnfreezeDisplayActor(); }
@@ -129,7 +130,7 @@ public:
 private:
 	void CancelExternalAnim();
 	void Deactivate();
-	void ReinitForCharacter();
+	void ReinitForCharacter(bool p_preserveCamera = false);
 
 	OrbitCamera m_orbit;
 	InputHandler m_input;

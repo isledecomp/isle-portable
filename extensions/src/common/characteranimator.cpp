@@ -214,23 +214,29 @@ void CharacterAnimator::SetIdleAnimId(uint8_t p_idleAnimId, LegoROI* p_roi)
 	}
 }
 
-void CharacterAnimator::StartExtraAnimPhase(uint8_t p_id, int p_phaseIndex, AnimCache* p_cache, LegoROI* p_roi)
+void CharacterAnimator::StartExtraAnimPhase(
+	uint8_t p_currentExtraAnimId,
+	int p_phaseIndex,
+	AnimCache* p_extraAnimCache,
+	LegoROI* p_roi
+)
 {
 	StopClickAnimation();
 	ClearPropGroup(m_extraAnimPropGroup);
 
-	m_currentExtraAnimId = p_id;
-	m_extraAnimCache = p_cache;
+	m_currentExtraAnimId = p_currentExtraAnimId;
+	m_extraAnimCache = p_extraAnimCache;
 	m_extraAnimTime = 0.0f;
-	m_extraAnimDuration = (float) p_cache->anim->GetDuration();
+	m_extraAnimDuration = (float) p_extraAnimCache->anim->GetDuration();
 	m_extraAnimActive = true;
 
 	if (m_config.extraAnimHandler) {
-		m_config.extraAnimHandler->BuildProps(m_extraAnimPropGroup, p_cache->anim, p_roi, m_config.propSuffix);
+		m_config.extraAnimHandler->BuildProps(m_extraAnimPropGroup, p_extraAnimCache->anim, p_roi, m_config.propSuffix);
 	}
 
-	const char* sound =
-		m_config.extraAnimHandler ? m_config.extraAnimHandler->GetSoundName(p_id, p_phaseIndex) : nullptr;
+	const char* sound = m_config.extraAnimHandler
+							? m_config.extraAnimHandler->GetSoundName(p_currentExtraAnimId, p_phaseIndex)
+							: nullptr;
 	if (sound) {
 		PlayROISound(sound, p_roi);
 	}
@@ -388,13 +394,14 @@ void CharacterAnimator::InitAnimCaches(LegoROI* p_roi)
 	}
 }
 
-void CharacterAnimator::SetFrozenExtraAnimId(int8_t p_id, LegoROI* p_roi)
+void CharacterAnimator::SetFrozenExtraAnimId(int8_t p_frozenExtraAnimId, LegoROI* p_roi)
 {
-	if (m_config.extraAnimHandler && p_id >= 0 && m_config.extraAnimHandler->IsValid((uint8_t) p_id) &&
-		m_config.extraAnimHandler->IsMultiPart((uint8_t) p_id)) {
-		const char* animName = m_config.extraAnimHandler->GetAnimName((uint8_t) p_id, 0);
+	if (m_config.extraAnimHandler && p_frozenExtraAnimId >= 0 &&
+		m_config.extraAnimHandler->IsValid((uint8_t) p_frozenExtraAnimId) &&
+		m_config.extraAnimHandler->IsMultiPart((uint8_t) p_frozenExtraAnimId)) {
+		const char* animName = m_config.extraAnimHandler->GetAnimName((uint8_t) p_frozenExtraAnimId, 0);
 		AnimCache* cache = (p_roi && animName) ? GetOrBuildAnimCache(p_roi, animName) : nullptr;
-		m_frozenExtraAnimId = p_id;
+		m_frozenExtraAnimId = p_frozenExtraAnimId;
 		m_frozenAnimCache = cache;
 		m_frozenAnimDuration = (cache && cache->anim) ? (float) cache->anim->GetDuration() : 0.0f;
 		m_extraAnimActive = false;

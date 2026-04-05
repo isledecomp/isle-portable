@@ -2,6 +2,7 @@
 #define LEGOBUILDINGMANAGER_H
 
 #include "decomp.h"
+#include "extensions/fwd.h"
 #include "lego1_export.h"
 #include "misc/legotypes.h"
 #include "mxcore.h"
@@ -98,6 +99,8 @@ public:
 	// LegoBuildingManager::`scalar deleting destructor'
 
 private:
+	friend class Multiplayer::WorldStateSync;
+
 	static char* g_customizeAnimFile;
 	static MxS32 g_maxMove[16];
 	static MxU32 g_maxSound;

@@ -37,6 +37,7 @@
 #include "viewmanager/viewmanager.h"
 
 #include <array>
+#include <extensions/multiplayer.h>
 #include <extensions/thirdpersoncamera.h>
 #include <miniwin/miniwindevice.h>
 #include <type_traits>
@@ -872,6 +873,14 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		case e_badEnding:
 			rumble(1.0f, 1.0f, 1.0f, 3000);
 			break;
+#ifdef __EMSCRIPTEN__
+		case e_saveSlotWritten:
+			Emscripten_SendSaveSlotWritten((MxS32) (intptr_t) event->user.data1);
+			break;
+		case e_saveStateChanged:
+			Emscripten_SendSaveStateChanged();
+			break;
+#endif
 		}
 	}
 
@@ -1297,6 +1306,14 @@ inline bool IsleApp::Tick()
 	if (!Lego()) {
 		return true;
 	}
+
+#ifdef EXTENSIONS
+	if (Extensions::IsMultiplayerRejected()) {
+		g_closed = TRUE;
+		return true;
+	}
+#endif
+
 	if (!TickleManager()) {
 		return true;
 	}

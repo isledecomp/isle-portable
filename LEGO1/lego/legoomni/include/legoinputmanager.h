@@ -180,6 +180,7 @@ public:
 	// LegoInputManager::`scalar deleting destructor'
 
 private:
+	friend class Extensions::MultiplayerExt;
 	friend class Extensions::ThirdPersonCameraExt;
 
 	void InitializeHaptics();

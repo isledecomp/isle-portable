@@ -2,6 +2,7 @@
 #define LEGOCACHSOUND_H
 
 #include "decomp.h"
+#include "extensions/fwd.h"
 #include "lego3dsound.h"
 #include "mxcore.h"
 #include "mxstring.h"
@@ -58,6 +59,9 @@ public:
 	// LegoCacheSound::`scalar deleting destructor'
 
 private:
+	friend class Multiplayer::Animation::AudioPlayer;
+	friend class Multiplayer::NetworkManager;
+
 	void Init();
 	void CopyData(MxU8* p_data, MxU32 p_dataSize);
 	MxString GetBaseFilename(MxString& p_path);

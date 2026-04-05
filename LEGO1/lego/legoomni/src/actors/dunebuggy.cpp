@@ -1,6 +1,7 @@
 #include "dunebuggy.h"
 
 #include "decomp.h"
+#include "extensions/multiplayer.h"
 #include "isle.h"
 #include "isle_actions.h"
 #include "jukebox_actions.h"
@@ -20,6 +21,8 @@
 
 #include <SDL3/SDL_stdinc.h>
 #include <stdio.h>
+
+using namespace Extensions;
 
 DECOMP_SIZE_ASSERT(DuneBuggy, 0x16c)
 
@@ -141,6 +144,7 @@ MxLong DuneBuggy::HandleControl(LegoControlManagerNotificationParam& p_param)
 			MxSoundPresenter* presenter =
 				(MxSoundPresenter*) CurrentWorld()->Find("MxSoundPresenter", "DuneCarHorn_Sound");
 			presenter->Enable(p_param.m_enabledChild);
+			Extension<MultiplayerExt>::Call(MP::HandleHornPressed, (MxU32) p_param.m_clickedObjectId);
 			break;
 		}
 	}

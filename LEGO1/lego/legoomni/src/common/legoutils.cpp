@@ -807,10 +807,11 @@ void LoadFromNamedTexture(LegoNamedTexture* p_namedTexture)
 	}
 }
 
-void EmitGameEvent(GameEvent p_event)
+void EmitGameEvent(GameEvent p_event, void* p_data)
 {
-	SDL_Event event;
+	SDL_Event event = {};
 	event.user.type = g_legoSdlEvents.m_gameEvent;
 	event.user.code = p_event;
+	event.user.data1 = p_data;
 	SDL_PushEvent(&event);
 }

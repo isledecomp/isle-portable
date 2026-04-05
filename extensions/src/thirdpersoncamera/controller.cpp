@@ -119,7 +119,7 @@ void Controller::OnActorEnter(IslePathActor* p_actor)
 	}
 
 	// Stop external animation before modifying ride/display state —
-	// the ScenePlayer may hold a reference to the ride vehicle ROI.
+	// the animation caller may hold a reference to the ride vehicle ROI.
 	CancelExternalAnim();
 
 	LegoROI* newROI = userActor->GetROI();
@@ -143,7 +143,8 @@ void Controller::OnActorEnter(IslePathActor* p_actor)
 		}
 
 		m_active = true;
-		m_orbit.SetupCamera(userActor);
+		m_orbit.ResetSmoothedSpeed();
+		m_orbit.ApplyOrbitCamera();
 		m_animator.BuildRideAnimation(m_animator.GetCurrentVehicleType(), m_playerROI);
 		return;
 	}
@@ -174,13 +175,13 @@ void Controller::OnActorExit(IslePathActor* p_actor)
 	}
 
 	// Stop external animation before clearing ride animation state —
-	// the ScenePlayer may hold a reference to the ride vehicle ROI.
+	// the animation caller may hold a reference to the ride vehicle ROI.
 	CancelExternalAnim();
 
 	if (m_animator.GetCurrentVehicleType() != VEHICLE_NONE) {
 		m_animator.ClearRideAnimation();
 		m_animator.ClearAll();
-		ReinitForCharacter();
+		ReinitForCharacter(/*p_preserveCamera=*/true);
 	}
 	else if (m_active && static_cast<LegoPathActor*>(p_actor) == UserActor()) {
 		if (m_playerROI) {
@@ -240,7 +241,8 @@ void Controller::Tick(float p_deltaTime)
 		}
 	}
 
-	if (!m_animPlaying && (!UserActor() || UserActor()->GetActorState() != LegoPathActor::c_disabled)) {
+	if ((!m_animPlaying || !m_animLockDisplay) &&
+		(!UserActor() || UserActor()->GetActorState() != LegoPathActor::c_disabled)) {
 		m_orbit.ApplyOrbitCamera();
 	}
 
@@ -288,15 +290,12 @@ void Controller::Tick(float p_deltaTime)
 		return;
 	}
 
-	// When an external animation is playing, prevent movement.
-	// If the display ROI is being driven by the animation (performer), skip everything.
-	// If spectating, still sync + idle animate.
-	if (m_animPlaying) {
+	// When performing in an external animation, prevent movement and skip display updates
+	// (the animation drives positioning). Spectators are free to move.
+	if (m_animPlaying && m_animLockDisplay) {
 		userActor->SetWorldSpeed(0.0f);
 		NavController()->SetLinearVel(0.0f);
-		if (m_animLockDisplay) {
-			return;
-		}
+		return;
 	}
 
 	// Sync display clone position from native ROI
@@ -418,7 +417,7 @@ MxBool Controller::HandleCameraRelativeMovement(
 		p_newPos,
 		p_newDir,
 		p_deltaTime,
-		m_animator.IsExtraAnimBlocking() || m_animPlaying,
+		m_animator.IsExtraAnimBlocking() || (m_animPlaying && m_animLockDisplay),
 		m_input.IsLmbHeldForMovement()
 	);
 }
@@ -453,7 +452,7 @@ MxBool Controller::HandleFirstPersonForward(
 	return TRUE;
 }
 
-void Controller::ReinitForCharacter()
+void Controller::ReinitForCharacter(bool p_preserveCamera)
 {
 	if (!GameState() || IsRestrictedArea(GameState()->m_currentArea)) {
 		m_active = false;
@@ -521,6 +520,12 @@ void Controller::ReinitForCharacter()
 	m_animator.ApplyIdleFrame0(m_playerROI);
 
 	if (!m_pendingWorldTransition) {
-		m_orbit.SetupCamera(userActor);
+		if (p_preserveCamera) {
+			m_orbit.ResetSmoothedSpeed();
+			m_orbit.ApplyOrbitCamera();
+		}
+		else {
+			m_orbit.SetupCamera(userActor);
+		}
 	}
 }

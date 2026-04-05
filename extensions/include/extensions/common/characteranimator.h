@@ -99,7 +99,7 @@ public:
 	void BuildRideAnimation(int8_t p_vehicleType, LegoROI* p_playerROI);
 	void ClearRideAnimation();
 	int8_t GetCurrentVehicleType() const { return m_currentVehicleType; }
-	void SetCurrentVehicleType(int8_t p_vehicleType) { m_currentVehicleType = p_vehicleType; }
+	void SetCurrentVehicleType(int8_t p_currentVehicleType) { m_currentVehicleType = p_currentVehicleType; }
 	bool IsInVehicle() const { return m_currentVehicleType != VEHICLE_NONE; }
 	LegoROI* GetRideVehicleROI() const { return m_ridePropGroup.propCount > 0 ? m_ridePropGroup.propROIs[0] : nullptr; }
 	LegoAnim* GetRideAnim() const { return m_ridePropGroup.anim; }
@@ -123,11 +123,11 @@ public:
 				(m_extraAnimActive && m_config.extraAnimHandler->IsMultiPart(m_currentExtraAnimId)));
 	}
 	int8_t GetFrozenExtraAnimId() const { return m_frozenExtraAnimId; }
-	void SetFrozenExtraAnimId(int8_t p_id, LegoROI* p_roi);
+	void SetFrozenExtraAnimId(int8_t p_frozenExtraAnimId, LegoROI* p_roi);
 
 	// Animation time (needed for vehicle ride tick in ThirdPersonCameraExt)
 	float GetAnimTime() const { return m_animTime; }
-	void SetAnimTime(float p_time) { m_animTime = p_time; }
+	void SetAnimTime(float p_animTime) { m_animTime = p_animTime; }
 	void ResetAnimState();
 
 	static constexpr float ANIM_TIME_SCALE = 2000.0f;
@@ -138,7 +138,12 @@ private:
 	using AnimCache = AnimUtils::AnimCache;
 
 	AnimCache* GetOrBuildAnimCache(LegoROI* p_roi, const char* p_animName);
-	void StartExtraAnimPhase(uint8_t p_id, int p_phaseIndex, AnimCache* p_cache, LegoROI* p_roi);
+	void StartExtraAnimPhase(
+		uint8_t p_currentExtraAnimId,
+		int p_phaseIndex,
+		AnimCache* p_extraAnimCache,
+		LegoROI* p_roi
+	);
 	void ClearFrozenState();
 	void ClearPropGroup(PropGroup& p_group);
 	void PlayROISound(const char* p_key, LegoROI* p_roi);

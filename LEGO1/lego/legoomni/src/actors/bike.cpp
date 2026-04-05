@@ -1,5 +1,6 @@
 #include "bike.h"
 
+#include "extensions/multiplayer.h"
 #include "isle.h"
 #include "isle_actions.h"
 #include "jukebox_actions.h"
@@ -12,6 +13,8 @@
 #include "mxsoundpresenter.h"
 #include "mxtransitionmanager.h"
 #include "scripts.h"
+
+using namespace Extensions;
 
 DECOMP_SIZE_ASSERT(Bike, 0x164)
 
@@ -98,6 +101,7 @@ MxLong Bike::HandleControl(LegoControlManagerNotificationParam& p_param)
 			MxSoundPresenter* presenter =
 				(MxSoundPresenter*) CurrentWorld()->Find("MxSoundPresenter", "BikeHorn_Sound");
 			presenter->Enable(p_param.m_enabledChild);
+			Extension<MultiplayerExt>::Call(MP::HandleHornPressed, (MxU32) p_param.m_clickedObjectId);
 			break;
 		}
 	}

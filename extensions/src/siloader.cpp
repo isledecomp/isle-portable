@@ -30,14 +30,14 @@ void SiLoaderExt::Initialize()
 	char* files = SDL_strdup(options["si loader:files"].c_str());
 	char* saveptr;
 
-	for (char* file = SDL_strtok_r(files, ",\n\r ", &saveptr); file; file = SDL_strtok_r(NULL, ",\n\r ", &saveptr)) {
+	for (char* file = SDL_strtok_r(files, ",\n\r ", &saveptr); file; file = SDL_strtok_r(nullptr, ",\n\r ", &saveptr)) {
 		SiLoaderExt::files.emplace_back(file);
 	}
 
 	char* directives = SDL_strdup(options["si loader:directives"].c_str());
 
 	for (char* directive = SDL_strtok_r(directives, ",\n\r ", &saveptr); directive;
-		 directive = SDL_strtok_r(NULL, ",\n\r ", &saveptr)) {
+		 directive = SDL_strtok_r(nullptr, ",\n\r ", &saveptr)) {
 		SiLoaderExt::directives.emplace_back(directive);
 	}
 
@@ -58,11 +58,11 @@ bool SiLoaderExt::Load()
 	return true;
 }
 
-std::optional<MxCore*> SiLoaderExt::HandleFind(StreamObject p_object, LegoWorld* world)
+std::optional<MxCore*> SiLoaderExt::HandleFind(StreamObject p_object, LegoWorld* p_world)
 {
 	for (const auto& key : replace) {
 		if (key.first == p_object) {
-			return world->Find(key.second.first, key.second.second);
+			return p_world->Find(key.second.first, key.second.second);
 		}
 	}
 
@@ -155,17 +155,17 @@ MxBool SiLoaderExt::HandleWorld(LegoWorld* p_world)
 	return TRUE;
 }
 
-std::optional<MxBool> SiLoaderExt::HandleRemove(StreamObject p_object, LegoWorld* world)
+std::optional<MxBool> SiLoaderExt::HandleRemove(StreamObject p_object, LegoWorld* p_world)
 {
 	for (const auto& key : removeWith) {
 		if (key.first == p_object) {
-			RemoveFromWorld(key.second.first, key.second.second, world->GetAtomId(), world->GetEntityId());
+			RemoveFromWorld(key.second.first, key.second.second, p_world->GetAtomId(), p_world->GetEntityId());
 		}
 	}
 
 	for (const auto& key : replace) {
 		if (key.first == p_object) {
-			return RemoveFromWorld(key.second.first, key.second.second, world->GetAtomId(), world->GetEntityId());
+			return RemoveFromWorld(key.second.first, key.second.second, p_world->GetAtomId(), p_world->GetEntityId());
 		}
 	}
 
@@ -361,11 +361,11 @@ void SiLoaderExt::ParseExtra(const MxAtomId& p_atom, si::Core* p_core)
 				}
 
 				if ((directive = SDL_strstr(extra.c_str(), "FullScreenMovie"))) {
-					fullScreenMovie.emplace_back(StreamObject{MxAtomId{atom, e_lowerCase2}, id});
+					fullScreenMovie.emplace_back(StreamObject{p_atom, object->id_});
 				}
 
 				if ((directive = SDL_strstr(extra.c_str(), "Disable3d"))) {
-					disable3d.emplace_back(StreamObject{MxAtomId{atom, e_lowerCase2}, id});
+					disable3d.emplace_back(StreamObject{p_atom, object->id_});
 				}
 			}
 		}

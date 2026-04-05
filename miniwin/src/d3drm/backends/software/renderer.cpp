@@ -465,54 +465,62 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 			Uint8* pixelAddr = pixels + y * pitch + x * m_bytesPerPixel;
 			Uint32 finalColor;
 
-			if (appearance.color.a == 255) {
-				zref = z;
+			Uint8 alpha = appearance.color.a;
 
-				if (texels) {
-					// Perspective correct interpolate texture coords
-					float one_over_w = left.one_over_w + t * (right.one_over_w - left.one_over_w);
-					float u_over_w = left.u_over_w + t * (right.u_over_w - left.u_over_w);
-					float v_over_w = left.v_over_w + t * (right.v_over_w - left.v_over_w);
+			if (texels) {
+				// Perspective correct interpolate texture coords
+				float one_over_w = left.one_over_w + t * (right.one_over_w - left.one_over_w);
+				float u_over_w = left.u_over_w + t * (right.u_over_w - left.u_over_w);
+				float v_over_w = left.v_over_w + t * (right.v_over_w - left.v_over_w);
 
-					float inv_w = 1.0f / one_over_w;
-					float u = u_over_w * inv_w;
-					float v = v_over_w * inv_w;
+				float inv_w = 1.0f / one_over_w;
+				float u = u_over_w * inv_w;
+				float v = v_over_w * inv_w;
 
-					// Tile textures
-					u -= std::floor(u);
-					v -= std::floor(v);
+				// Tile textures
+				u -= std::floor(u);
+				v -= std::floor(v);
 
-					int texX = static_cast<int>(u * texWidthScale);
-					int texY = static_cast<int>(v * texHeightScale);
+				int texX = static_cast<int>(u * texWidthScale);
+				int texY = static_cast<int>(v * texHeightScale);
 
-					Uint8* texelAddr = texels + texY * texturePitch + texX * m_bytesPerPixel;
+				Uint8* texelAddr = texels + texY * texturePitch + texX * m_bytesPerPixel;
 
-					Uint32 texelColor;
-					switch (m_bytesPerPixel) {
-					case 1:
-						texelColor = *texelAddr;
-						break;
-					case 2:
-						texelColor = *(Uint16*) texelAddr;
-						break;
-					case 4:
-						texelColor = *(Uint32*) texelAddr;
-						break;
-					}
-
-					Uint8 tr, tg, tb, ta;
-					SDL_GetRGBA(texelColor, m_format, m_palette, &tr, &tg, &tb, &ta);
-
-					// Multiply vertex color by texel color
-					r = (r * tr + 127) / 255;
-					g = (g * tg + 127) / 255;
-					b = (b * tb + 127) / 255;
+				Uint32 texelColor;
+				switch (m_bytesPerPixel) {
+				case 1:
+					texelColor = *texelAddr;
+					break;
+				case 2:
+					texelColor = *(Uint16*) texelAddr;
+					break;
+				case 4:
+					texelColor = *(Uint32*) texelAddr;
+					break;
 				}
 
+				Uint8 tr, tg, tb, ta;
+				SDL_GetRGBA(texelColor, m_format, m_palette, &tr, &tg, &tb, &ta);
+
+				// Multiply vertex color by texel color
+				r = (r * tr + 127) / 255;
+				g = (g * tg + 127) / 255;
+				b = (b * tb + 127) / 255;
+
+				// Use texel alpha for per-pixel transparency
+				alpha = ta;
+			}
+
+			if (alpha == 0) {
+				continue;
+			}
+
+			if (alpha == 255) {
+				zref = z;
 				finalColor = SDL_MapRGBA(m_format, m_palette, r, g, b, 255);
 			}
 			else {
-				finalColor = BlendPixel(pixelAddr, r, g, b, appearance.color.a);
+				finalColor = BlendPixel(pixelAddr, r, g, b, alpha);
 			}
 
 			switch (m_bytesPerPixel) {

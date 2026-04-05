@@ -21,10 +21,10 @@ public:
 
 	static void Initialize();
 	static bool Load();
-	static std::optional<MxCore*> HandleFind(StreamObject p_object, LegoWorld* world);
+	static std::optional<MxCore*> HandleFind(StreamObject p_object, LegoWorld* p_world);
 	static std::optional<MxResult> HandleStart(MxDSAction& p_action);
 	static MxBool HandleWorld(LegoWorld* p_world);
-	static std::optional<MxBool> HandleRemove(StreamObject p_object, LegoWorld* world);
+	static std::optional<MxBool> HandleRemove(StreamObject p_object, LegoWorld* p_world);
 	static std::optional<MxBool> HandleDelete(MxDSAction& p_action);
 	static MxBool HandleEndAction(MxEndActionNotificationParam& p_param);
 
