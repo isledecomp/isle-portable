@@ -358,6 +358,7 @@ void LegoCharacterManager::ReleaseActor(const char* p_name)
 
 			if (info != NULL) {
 				if (info->m_actor != NULL) {
+					info->m_actor->SetROI(NULL, FALSE, FALSE);
 					info->m_actor->ClearFlag(LegoEntity::c_managerOwned);
 					delete info->m_actor;
 				}
@@ -400,6 +401,7 @@ void LegoCharacterManager::ReleaseActor(LegoROI* p_roi)
 
 				if (info != NULL) {
 					if (info->m_actor != NULL) {
+						info->m_actor->SetROI(NULL, FALSE, FALSE);
 						info->m_actor->ClearFlag(LegoEntity::c_managerOwned);
 						delete info->m_actor;
 					}
