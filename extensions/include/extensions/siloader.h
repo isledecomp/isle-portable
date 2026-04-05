@@ -27,6 +27,7 @@ public:
 	static std::optional<MxBool> HandleRemove(StreamObject p_object, LegoWorld* p_world);
 	static std::optional<MxBool> HandleDelete(MxDSAction& p_action);
 	static MxBool HandleEndAction(MxEndActionNotificationParam& p_param);
+	static MxBool HandleEnable(LegoWorld* p_world, MxBool p_enable);
 
 	template <typename... Args>
 	static std::optional<StreamObject> ReplacedIn(MxDSAction& p_action, Args... p_args);
@@ -41,10 +42,12 @@ private:
 	static std::vector<std::string> directives;
 	static std::vector<std::pair<StreamObject, StreamObject>> startWith;
 	static std::vector<std::pair<StreamObject, StreamObject>> removeWith;
+	static std::vector<std::pair<StreamObject, StreamObject>> enableWith;
 	static std::vector<std::pair<StreamObject, StreamObject>> replace;
 	static std::vector<std::pair<StreamObject, StreamObject>> prepend;
 	static std::vector<StreamObject> fullScreenMovie;
 	static std::vector<StreamObject> disable3d;
+	static std::vector<StreamObject> firedPrepend;
 
 	static bool LoadFile(const char* p_file);
 	static bool LoadDirective(const char* p_directive);
@@ -84,6 +87,7 @@ constexpr auto HandleWorld = &SiLoaderExt::HandleWorld;
 constexpr auto HandleRemove = &SiLoaderExt::HandleRemove;
 constexpr auto HandleDelete = &SiLoaderExt::HandleDelete;
 constexpr auto HandleEndAction = &SiLoaderExt::HandleEndAction;
+constexpr auto HandleEnable = &SiLoaderExt::HandleEnable;
 constexpr auto ReplacedIn = [](auto&&... args) {
 	return SiLoaderExt::ReplacedIn(std::forward<decltype(args)>(args)...);
 };
@@ -95,6 +99,7 @@ constexpr decltype(&SiLoaderExt::HandleWorld) HandleWorld = nullptr;
 constexpr decltype(&SiLoaderExt::HandleRemove) HandleRemove = nullptr;
 constexpr decltype(&SiLoaderExt::HandleDelete) HandleDelete = nullptr;
 constexpr decltype(&SiLoaderExt::HandleEndAction) HandleEndAction = nullptr;
+constexpr decltype(&SiLoaderExt::HandleEnable) HandleEnable = nullptr;
 constexpr auto ReplacedIn = [](auto&&... args) -> std::optional<SiLoaderExt::StreamObject> {
 	((void) args, ...);
 	return std::nullopt;
