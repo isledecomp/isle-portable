@@ -22,8 +22,9 @@ if (EMSCRIPTEN)
   # Resolve git HEAD to find file dependencies for change detection.
   # .git/HEAD changes on branch switch; the ref file it points to changes on commit.
   set(_git_head "${CMAKE_SOURCE_DIR}/.git/HEAD")
-  set(_git_deps "${_git_head}")
+  set(_git_deps)
   if(EXISTS "${_git_head}")
+    list(APPEND _git_deps "${_git_head}")
     file(READ "${_git_head}" _head_ref)
     string(STRIP "${_head_ref}" _head_ref)
     if(_head_ref MATCHES "^ref: (.+)$")
