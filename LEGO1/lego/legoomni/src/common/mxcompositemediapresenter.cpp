@@ -127,7 +127,9 @@ void MxCompositeMediaPresenter::StartingTickle()
 			if (!(*it)->GetAction()->GetStartTime() && ((MxMediaPresenter*) *it)->CurrentChunk() &&
 				!((*it)->GetAction()->GetFlags() & MxDSAction::c_bit9)) {
 				(*it)->Tickle();
-				(*it)->GetAction()->SetFlags((*it)->GetAction()->GetFlags() | MxDSAction::c_bit9);
+				if ((*it)->GetAction()) {
+					(*it)->GetAction()->SetFlags((*it)->GetAction()->GetFlags() | MxDSAction::c_bit9);
+				}
 				m_remainingChildren--;
 			}
 		}
