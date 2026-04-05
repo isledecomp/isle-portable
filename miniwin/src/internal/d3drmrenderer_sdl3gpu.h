@@ -120,19 +120,15 @@ private:
 
 inline static void Direct3DRMSDL3GPU_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
-#ifdef __APPLE__
-	SDL_GPUDevice* device = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_MSL, false, nullptr);
+	SDL_GPUDevice* device = SDL_CreateGPUDevice(
+		SDL_GPU_SHADERFORMAT_SPIRV | SDL_GPU_SHADERFORMAT_DXBC | SDL_GPU_SHADERFORMAT_DXIL | SDL_GPU_SHADERFORMAT_MSL,
+		false,
+		nullptr
+	);
 	if (!device) {
 		return;
 	}
 	SDL_DestroyGPUDevice(device);
-#else
-	Direct3DRMRenderer* device = Direct3DRMSDL3GPURenderer::Create(640, 480);
-	if (!device) {
-		return;
-	}
-	device->Release();
-#endif
 
 	D3DDEVICEDESC halDesc = {};
 	halDesc.dcmColorModel = D3DCOLOR_RGB;
