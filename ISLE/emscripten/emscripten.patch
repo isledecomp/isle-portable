@@ -184,7 +184,7 @@ index 572694517..44e65c823 100644
 +    console.log("disableOpfs: " + Module["disableOpfs"]);
 +  })();
 +
-+  Module["disableOffscreenCanvases"] ||= !document.createElement('canvas').getContext('webgl');
++  Module["disableOffscreenCanvases"] ||= !document.createElement('canvas').getContext('webgl2');
 +  console.log("disableOffscreenCanvases: " + Module["disableOffscreenCanvases"]);
 +}
 +
