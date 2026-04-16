@@ -115,7 +115,7 @@ jobs:
           xcodebuild -downloadPlatform iOS
 
       - name: Setup Emscripten
-        uses: mymindstorm/setup-emsdk@master
+        uses: emscripten-core/setup-emsdk@v15
         if: ${{ matrix.emsdk }}
 
       - name: Setup ninja
