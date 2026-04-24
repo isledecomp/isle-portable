@@ -5,6 +5,7 @@
 
 #include <math.h>
 #include <memory.h>
+#include <string.h>
 
 // FUNCTION: LEGO1 0x10001f80
 // FUNCTION: BETA10 0x10010a20

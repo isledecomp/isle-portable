@@ -69,6 +69,10 @@ if(NOT (VITA OR WINDOWS_STORE))
   endif()
 endif()
 
+if(DOS)
+  list(REMOVE_ITEM GRAPHICS_BACKENDS USE_SDL_GPU USE_OPENGL1 USE_OPENGLES2) #USE_SDL_GPU
+endif()
+
 if(NINTENDO_SWITCH)
   # Remove USE_OPENGL1 as incompatible.
   # Remove everything else as not needed.
