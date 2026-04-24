@@ -64,14 +64,14 @@ void Direct3DRMSoftwareRenderer::ClearZBuffer()
 	const float inf = std::numeric_limits<float>::infinity();
 	size_t i = 0;
 
-#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
+#if (defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)) && defined(__SSE2__)
 	if (SDL_HasSSE2()) {
 		__m128 inf4 = _mm_set1_ps(inf);
 		for (; i + 4 <= size; i += 4) {
 			_mm_storeu_ps(&m_zBuffer[i], inf4);
 		}
 	}
-#if defined(__i386__) || defined(_M_IX86)
+#if (defined(__i386__) || defined(_M_IX86)) && defined(__MMX__)
 	else if (SDL_HasMMX()) {
 		const __m64 mm_inf = _mm_set_pi32(0x7F800000, 0x7F800000);
 		for (; i + 2 <= size; i += 2) {
