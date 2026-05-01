@@ -155,11 +155,19 @@ IsleApp::IsleApp()
 	m_using8bit = FALSE;
 	m_using16bit = TRUE;
 	m_hasLightSupport = FALSE;
+#ifdef __DJGPP__
+	m_drawCursor = TRUE;
+#else
 	m_drawCursor = FALSE;
+#endif
 	m_use3dSound = TRUE;
 	m_useMusic = TRUE;
 	m_wideViewAngle = TRUE;
+#ifdef __DJGPP__
+	m_islandQuality = 1;
+#else
 	m_islandQuality = 2;
+#endif
 	m_islandTexture = 1;
 	m_gameStarted = FALSE;
 	m_frameDelta = 10;
@@ -191,14 +199,22 @@ IsleApp::IsleApp()
 	m_mediaPath = NULL;
 	m_iniPath = NULL;
 	m_maxLod = RealtimeView::GetUserMaxLOD();
+#ifdef __DJGPP__
+	m_maxLod = 1.0f;
+#endif
 	m_maxAllowedExtras = m_islandQuality <= 1 ? 10 : 20;
 	m_transitionType = MxTransitionManager::e_mosaic;
 	m_cursorSensitivity = 4;
 	m_touchScheme = LegoInputManager::e_gamepad;
 	m_haptic = TRUE;
 	m_wasd = FALSE;
+#ifdef __DJGPP__
+	m_xRes = 320;
+	m_yRes = 200;
+#else
 	m_xRes = 640;
 	m_yRes = 480;
+#endif
 	m_exclusiveXRes = m_xRes;
 	m_exclusiveYRes = m_yRes;
 	m_exclusiveFrameRate = 60.00f;
@@ -242,6 +258,10 @@ void IsleApp::Close()
 		Lego()->DeleteObject(ds);
 		TransitionManager()->SetWaitIndicator(NULL);
 		Lego()->Resume();
+
+		if (BackgroundAudioManager()) {
+			BackgroundAudioManager()->Stop();
+		}
 
 		while (Streamer()->Close(NULL) == SUCCESS) {
 		}
@@ -324,8 +344,16 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 
 	SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
 	SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
+#ifdef __DJGPP__
+	SDL_SetHint("SDL_DOS_ALLOW_DIRECT_FRAMEBUFFER", "1");
+#endif
 
-	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD | SDL_INIT_HAPTIC)) {
+	Uint32 initFlags = SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD;
+#ifndef __DJGPP__
+	initFlags |= SDL_INIT_HAPTIC;
+#endif
+
+	if (!SDL_Init(initFlags)) {
 		char buffer[256];
 		SDL_snprintf(
 			buffer,
@@ -717,11 +745,17 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		g_lastMouseX = event->motion.x;
 		g_lastMouseY = event->motion.y;
 
+#ifdef __DJGPP__
+		if (VideoManager()) {
+			VideoManager()->MoveCursor(Min((MxS32) g_lastMouseX, 639), Min((MxS32) g_lastMouseY, 479));
+		}
+#else
 		SDL_ShowCursor();
 		g_isle->SetDrawCursor(FALSE);
 		if (VideoManager()) {
 			VideoManager()->SetCursorBitmap(NULL);
 		}
+#endif
 		break;
 	case SDL_EVENT_FINGER_MOTION: {
 		g_mousemoved = TRUE;
@@ -924,6 +958,9 @@ MxResult IsleApp::SetupWindow()
 		return FAILURE;
 	}
 
+	g_targetWidth = m_xRes;
+	g_targetHeight = m_yRes;
+
 	SetupVideoFlags(
 		m_fullScreen,
 		m_flipSurfaces,
@@ -954,7 +991,7 @@ MxResult IsleApp::SetupWindow()
 	SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, g_targetHeight);
 	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_FULLSCREEN_BOOLEAN, m_fullScreen);
 	SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, WINDOW_TITLE);
-#if defined(MINIWIN) && !defined(__3DS__) && !defined(WINDOWS_STORE) && !defined(__vita__)
+#if defined(MINIWIN) && !defined(__3DS__) && !defined(WINDOWS_STORE) && !defined(__vita__) && !defined(__DJGPP__)
 	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
@@ -969,6 +1006,17 @@ MxResult IsleApp::SetupWindow()
 
 	SDL_SetPointerProperty(SDL_GetWindowProperties(window), ISLE_PROP_WINDOW_CREATE_VIDEO_PARAM, &m_videoParam);
 
+#ifdef __DJGPP__
+	// DOS: request an 8-bit (INDEX8) fullscreen mode so the VESA
+	// framebuffer is paletted and we can blit INDEX8 surfaces directly.
+	{
+		SDL_DisplayMode mode = {};
+		mode.w = g_targetWidth;
+		mode.h = g_targetHeight;
+		mode.format = SDL_PIXELFORMAT_INDEX8;
+		SDL_SetWindowFullscreenMode(window, &mode);
+	}
+#else
 	if (m_exclusiveFullScreen && m_fullScreen) {
 		SDL_DisplayMode closestMode;
 		SDL_DisplayID displayID = SDL_GetDisplayForWindow(window);
@@ -983,6 +1031,7 @@ MxResult IsleApp::SetupWindow()
 			SDL_SetWindowFullscreenMode(window, &closestMode);
 		}
 	}
+#endif
 
 #ifdef MINIWIN
 	m_windowHandle = reinterpret_cast<HWND>(window);

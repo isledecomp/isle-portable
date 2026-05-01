@@ -77,6 +77,10 @@ void MxBackgroundAudioManager::DestroyMusic()
 		Streamer()->Close(m_script.GetInternal());
 		m_enabled = FALSE;
 	}
+
+	m_activePresenter = NULL;
+	m_pendingPresenter = NULL;
+	m_tickleState = MxPresenter::e_idle;
 }
 
 // FUNCTION: LEGO1 0x1007ee40

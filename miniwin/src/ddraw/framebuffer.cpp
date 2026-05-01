@@ -9,7 +9,11 @@
 FrameBufferImpl::FrameBufferImpl(DWORD virtualWidth, DWORD virtualHeight)
 	: m_virtualWidth(virtualWidth), m_virtualHeight(virtualHeight)
 {
+#ifdef __DJGPP__
+	m_transferBuffer = new DirectDrawSurfaceImpl(m_virtualWidth, m_virtualHeight, SDL_PIXELFORMAT_INDEX8);
+#else
 	m_transferBuffer = new DirectDrawSurfaceImpl(m_virtualWidth, m_virtualHeight, SDL_PIXELFORMAT_RGBA32);
+#endif
 }
 
 FrameBufferImpl::~FrameBufferImpl()
@@ -49,7 +53,7 @@ HRESULT FrameBufferImpl::Blt(
 		return DDERR_GENERIC;
 	}
 
-	if (dynamic_cast<FrameBufferImpl*>(lpDDSrcSurface) == this) {
+	if (dynamic_cast<FrameBufferImpl*>(lpDDSrcSurface)) {
 		return Flip(nullptr, DDFLIP_WAIT);
 	}
 
@@ -103,7 +107,11 @@ HRESULT FrameBufferImpl::BltFast(
 	int height = lpSrcRect ? (lpSrcRect->bottom - lpSrcRect->top) : surface->m_surface->h;
 	RECT destRect = {(int) dwX, (int) dwY, (int) (dwX + width), (int) (dwY + height)};
 
-	return Blt(&destRect, lpDDSrcSurface, lpSrcRect, DDBLT_NONE, nullptr);
+	DDBltFlags flags = DDBLT_NONE;
+	if ((dwTrans & DDBLTFAST_SRCCOLORKEY) == DDBLTFAST_SRCCOLORKEY) {
+		flags = flags | DDBLT_KEYSRC;
+	}
+	return Blt(&destRect, lpDDSrcSurface, lpSrcRect, flags, nullptr);
 }
 
 HRESULT FrameBufferImpl::Flip(LPDIRECTDRAWSURFACE lpDDSurfaceTargetOverride, DDFlipFlags dwFlags)
@@ -210,8 +218,13 @@ HRESULT FrameBufferImpl::SetColorKey(DDColorKeyFlags dwFlags, LPDDCOLORKEY lpDDC
 
 HRESULT FrameBufferImpl::SetPalette(LPDIRECTDRAWPALETTE lpDDPalette)
 {
-	if (m_transferBuffer->m_surface->format != SDL_PIXELFORMAT_INDEX8) {
-		MINIWIN_NOT_IMPLEMENTED();
+	// If the transfer buffer is not INDEX8 yet, recreate it — but only when
+	// the renderer actually works with paletted surfaces (palette SW / DOS).
+	// GL-based renderers use RGBA32 transfer buffers and convert on upload.
+	if (m_transferBuffer->m_surface->format != SDL_PIXELFORMAT_INDEX8 && DDRenderer &&
+		DDRenderer->UsesPalettedSurfaces()) {
+		m_transferBuffer->Release();
+		m_transferBuffer = new DirectDrawSurfaceImpl(m_virtualWidth, m_virtualHeight, SDL_PIXELFORMAT_INDEX8);
 	}
 
 	lpDDPalette->AddRef();
@@ -222,6 +235,11 @@ HRESULT FrameBufferImpl::SetPalette(LPDIRECTDRAWPALETTE lpDDPalette)
 
 	m_palette = lpDDPalette;
 	SDL_SetSurfacePalette(m_transferBuffer->m_surface, ((DirectDrawPaletteImpl*) m_palette)->m_palette);
+
+	if (DDRenderer) {
+		DDRenderer->SetPalette(((DirectDrawPaletteImpl*) m_palette)->m_palette);
+	}
+
 	return DD_OK;
 }
 

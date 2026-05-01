@@ -76,6 +76,7 @@ public:
 	void SetRender3D(MxBool p_render3d) { m_render3d = p_render3d; }
 
 	void SetUnk0x554(MxBool p_unk0x554) { m_unk0x554 = p_unk0x554; }
+	MxBool GetDrawCursor() { return m_drawCursor; }
 
 	// SYNTHETIC: LEGO1 0x1007ab20
 	// SYNTHETIC: BETA10 0x100d8040
@@ -87,9 +88,6 @@ private:
 	void DrawFPS();
 
 	inline void DrawCursor();
-
-	void DrawDigitToBuffer32(uint8_t* p_dst, int p_pitch, int p_x, int p_y, int p_digit, uint32_t p_color);
-	void DrawTextToSurface32(uint8_t* p_dst, int p_pitch, int p_x, int p_y, const char* p_text, uint32_t p_color);
 
 	Tgl::Renderer* m_renderer;            // 0x64
 	Lego3DManager* m_3dManager;           // 0x68

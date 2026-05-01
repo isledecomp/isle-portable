@@ -96,6 +96,15 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}" CACHE PATH "Directory w
 set(ISLE_EMSCRIPTEN_HOST "" CACHE STRING "Host URL for Emscripten streaming (e.g., https://test.com)")
 cmake_dependent_option(BUILD_SHARED_LIBS "Build lego1 as a shared library" ON "NOT DOS;NOT EMSCRIPTEN;NOT VITA" OFF)
 
+if(DOS)
+  # DJGPP targets i386 by default.  We use i486 rather than i586 because i586
+  # enables cmpxchg8b which GCC uses for 64-bit atomics (lock cmpxchg8b) —
+  # an instruction DOSBox does not support.  The missing __atomic_*_8 helpers
+  # (normally in libatomic, which DJGPP doesn't ship) are provided as simple
+  # non-atomic stubs in 3rdparty/djgpp_atomic64.c since DOS is single-threaded.
+  add_compile_options(-march=i486)
+endif()
+
 message(STATUS "Isle app:               ${ISLE_BUILD_APP}")
 message(STATUS "Config app:             ${ISLE_BUILD_CONFIG}")
 message(STATUS "Internal DirectX5 SDK:  ${ISLE_USE_DX5}")
