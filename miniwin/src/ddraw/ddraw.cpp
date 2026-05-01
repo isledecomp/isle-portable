@@ -245,7 +245,12 @@ HRESULT DirectDrawImpl::GetDisplayMode(LPDDSURFACEDESC lpDDSurfaceDesc)
 #ifdef MINIWIN_PIXELFORMAT
 	format = MINIWIN_PIXELFORMAT;
 #else
-	format = mode->format;
+	if (m_virtualBPP == 8 || (m_frameBuffer && m_frameBuffer->IsIndex8())) {
+		format = SDL_PIXELFORMAT_INDEX8;
+	}
+	else {
+		format = mode->format;
+	}
 #endif
 
 	const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(format);
@@ -308,6 +313,7 @@ HRESULT DirectDrawImpl::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWORD dwBP
 {
 	m_virtualWidth = dwWidth;
 	m_virtualHeight = dwHeight;
+	m_virtualBPP = dwBPP;
 	return DD_OK;
 }
 

@@ -8,15 +8,15 @@
 #include <cstddef>
 #include <vector>
 
-DEFINE_GUID(SOFTWARE_GUID, 0x682656F3, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02);
+DEFINE_GUID(PALETTE_SW_GUID, 0x682656F3, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07);
 
-struct TextureCache {
+struct PaletteTextureCache {
 	Direct3DRMTextureImpl* texture;
 	Uint8 version;
 	SDL_Surface* cached;
 };
 
-struct MeshCache {
+struct PaletteMeshCache {
 	const MeshGroup* meshGroup;
 	int version;
 	bool flat;
@@ -24,10 +24,10 @@ struct MeshCache {
 	std::vector<uint16_t> indices;
 };
 
-class Direct3DRMSoftwareRenderer : public Direct3DRMRenderer {
+class Direct3DRMPaletteSWRenderer : public Direct3DRMRenderer {
 public:
-	Direct3DRMSoftwareRenderer(DWORD width, DWORD height);
-	~Direct3DRMSoftwareRenderer() override;
+	Direct3DRMPaletteSWRenderer(DWORD width, DWORD height);
+	~Direct3DRMPaletteSWRenderer() override;
 	void PushLights(const SceneLight* vertices, size_t count) override;
 	Uint32 GetTextureId(IDirect3DRMTexture* texture, bool isUI, float scaleX, float scaleY) override;
 	Uint32 GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup) override;
@@ -51,6 +51,7 @@ public:
 	void Download(SDL_Surface* target) override;
 	void SetDither(bool dither) override;
 	void SetPalette(SDL_Palette* palette) override;
+	bool UsesPalettedSurfaces() const override { return true; }
 
 private:
 	void ClearZBuffer();
@@ -62,20 +63,19 @@ private:
 	);
 	void DrawTriangleClipped(const D3DRMVERTEX (&v)[3], const Appearance& appearance);
 	void ProjectVertex(const D3DVECTOR& v, D3DRMVECTOR4D& p) const;
-	Uint32 BlendPixel(Uint8* pixelAddr, Uint8 r, Uint8 g, Uint8 b, Uint8 a);
-	SDL_Color ApplyLighting(const D3DVECTOR& position, const D3DVECTOR& normal, const Appearance& appearance);
+	Uint8 ApplyLighting(const D3DVECTOR& position, const D3DVECTOR& normal, const Appearance& appearance, Uint8 texel);
+	void BuildLightingLUT();
+	void BuildBlendLUT();
 	void AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture);
 	void AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh);
 
 	SDL_Surface* m_renderedImage = nullptr;
-	SDL_Palette* m_palette;
-	SDL_Texture* m_uploadBuffer = nullptr;
-	SDL_Renderer* m_renderer;
-	const SDL_PixelFormatDetails* m_format;
-	int m_bytesPerPixel;
+	SDL_Palette* m_palette = nullptr;
+	SDL_Palette* m_flipPalette = nullptr; // Palette snapshot taken at Flip time (the correct one)
+	bool m_flipPaletteDirty = false;
 	std::vector<SceneLight> m_lights;
-	std::vector<TextureCache> m_textures;
-	std::vector<MeshCache> m_meshs;
+	std::vector<PaletteTextureCache> m_textures;
+	std::vector<PaletteMeshCache> m_meshes;
 	D3DVALUE m_front;
 	D3DVALUE m_back;
 	Matrix3x3 m_normalMatrix;
@@ -83,20 +83,34 @@ private:
 	std::vector<float> m_zBuffer;
 	std::vector<D3DRMVERTEX> m_transformedVerts;
 	Plane m_frustumPlanes[6];
+
+	// Lighting LUT: for each of 256 palette entries x 32 brightness levels,
+	// store the best-matching palette index.
+	// Usage: m_lightLUT[paletteIndex * 32 + brightnessLevel]
+	static constexpr int LIGHT_LEVELS = 32;
+	Uint8 m_lightLUT[256 * LIGHT_LEVELS];
+
+	// Blend LUT: for any two palette indices, the pre-computed 50/50 blend
+	// result mapped to the nearest palette colour.
+	// Usage: m_blendLUT[srcIndex * 256 + dstIndex]
+	Uint8 m_blendLUT[256 * 256];
+
+	bool m_lightLUTDirty = true;
+	bool m_transparencyEnabled = false;
 };
 
-inline static void Direct3DRMSoftware_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
+inline static void Direct3DRMPaletteSW_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
 	D3DDEVICEDESC halDesc = {};
 
 	D3DDEVICEDESC helDesc = {};
 	helDesc.dcmColorModel = D3DCOLOR_RGB;
 	helDesc.dwFlags = D3DDD_DEVICEZBUFFERBITDEPTH;
-	helDesc.dwDeviceZBufferBitDepth = DDBD_32;
-	helDesc.dwDeviceRenderBitDepth = DDBD_32;
+	helDesc.dwDeviceZBufferBitDepth = DDBD_16;
+	helDesc.dwDeviceRenderBitDepth = DDBD_8;
 	helDesc.dpcTriCaps.dwTextureCaps = D3DPTEXTURECAPS_PERSPECTIVE;
 	helDesc.dpcTriCaps.dwShadeCaps = D3DPSHADECAPS_ALPHAFLATBLEND;
 	helDesc.dpcTriCaps.dwTextureFilterCaps = D3DPTFILTERCAPS_LINEAR;
 
-	EnumDevice(cb, ctx, "Miniwin Emulation", &halDesc, &helDesc, SOFTWARE_GUID);
+	EnumDevice(cb, ctx, "Miniwin Paletted Software", &halDesc, &helDesc, PALETTE_SW_GUID);
 }

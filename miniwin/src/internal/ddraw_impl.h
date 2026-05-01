@@ -61,9 +61,10 @@ struct DirectDrawImpl : public IDirectDraw2, public IDirect3D2, public IDirect3D
 	float GetAnisotropic() const override { return m_anisotropic; }
 
 private:
-	FrameBufferImpl* m_frameBuffer;
+	FrameBufferImpl* m_frameBuffer = nullptr;
 	int m_virtualWidth = 0;
 	int m_virtualHeight = 0;
+	int m_virtualBPP = 0;
 	DWORD m_msaaSamples = 0;
 	float m_anisotropic = 0.0f;
 };

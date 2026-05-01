@@ -826,6 +826,13 @@ void Direct3DRMSoftwareRenderer::SetDither(bool dither)
 {
 }
 
+void Direct3DRMSoftwareRenderer::SetPalette(SDL_Palette* palette)
+{
+	if (m_renderedImage) {
+		SDL_SetSurfacePalette(m_renderedImage, palette);
+	}
+}
+
 void Direct3DRMSoftwareRenderer::Download(SDL_Surface* target)
 {
 	SDL_Rect srcRect = {

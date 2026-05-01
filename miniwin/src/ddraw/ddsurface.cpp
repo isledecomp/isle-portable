@@ -53,13 +53,20 @@ HRESULT DirectDrawSurfaceImpl::Blt(
 )
 {
 	if ((dwFlags & DDBLT_COLORFILL) == DDBLT_COLORFILL) {
-		Uint8 a = (lpDDBltFx->dwFillColor >> 24) & 0xFF;
-		Uint8 r = (lpDDBltFx->dwFillColor >> 16) & 0xFF;
-		Uint8 g = (lpDDBltFx->dwFillColor >> 8) & 0xFF;
-		Uint8 b = lpDDBltFx->dwFillColor & 0xFF;
+		Uint32 color;
+		if (m_surface->format == SDL_PIXELFORMAT_INDEX8) {
+			// For INDEX8 surfaces the fill color is a palette index, not RGBA.
+			color = lpDDBltFx->dwFillColor & 0xFF;
+		}
+		else {
+			Uint8 a = (lpDDBltFx->dwFillColor >> 24) & 0xFF;
+			Uint8 r = (lpDDBltFx->dwFillColor >> 16) & 0xFF;
+			Uint8 g = (lpDDBltFx->dwFillColor >> 8) & 0xFF;
+			Uint8 b = lpDDBltFx->dwFillColor & 0xFF;
 
-		const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(m_surface->format);
-		Uint32 color = SDL_MapRGBA(details, nullptr, r, g, b, a);
+			const SDL_PixelFormatDetails* details = SDL_GetPixelFormatDetails(m_surface->format);
+			color = SDL_MapRGBA(details, nullptr, r, g, b, a);
+		}
 		if (lpDestRect) {
 			SDL_Rect dstRect = ConvertRect(lpDestRect);
 			SDL_FillSurfaceRect(m_surface, &dstRect, color);

@@ -1499,7 +1499,7 @@ void Infocenter::StartCredits()
 	GetViewManager()->RemoveAll(NULL);
 
 	InvokeAction(Extra::e_opendisk, *g_creditsScript, CreditsScript::c_LegoCredits, NULL);
-	SetAppCursor(e_cursorArrow);
+	SetAppCursor(VideoManager()->GetDrawCursor() ? e_cursorNone : e_cursorArrow);
 }
 
 // FUNCTION: LEGO1 0x10071250

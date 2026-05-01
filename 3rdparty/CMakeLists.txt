@@ -34,6 +34,12 @@ target_compile_definitions(miniaudio PUBLIC
     MA_NO_RUNTIME_LINKING
 )
 
+if(DJGPP)
+    # DOS is single-threaded so we provide non-atomic __atomic_*_8 stubs
+    # (see CMakeLists.txt top-level comment about -march=i486).
+    target_sources(miniaudio PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/djgpp_atomic64.c")
+endif()
+
 if(DOWNLOAD_DEPENDENCIES)
     include(FetchContent)
     FetchContent_Declare(
