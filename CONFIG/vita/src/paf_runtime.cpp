@@ -1,3 +1,4 @@
+#include <limits>
 #include <paf.h>
 #include <psp2/kernel/clib.h>
 #include <psp2/kernel/modulemgr.h>
