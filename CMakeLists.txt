@@ -90,6 +90,7 @@ cmake_dependent_option(ISLE_USE_LWS "Use libwebsockets for native multiplayer" O
 cmake_dependent_option(ISLE_BUILD_CONFIG "Build CONFIG.EXE application" ON "MSVC OR ISLE_MINIWIN;NOT DOS;NOT NINTENDO_3DS;NOT NINTENDO_SWITCH;NOT WINDOWS_STORE;NOT VITA" OFF)
 cmake_dependent_option(ISLE_COMPILE_SHADERS "Compile shaders" ON "SDL_SHADERCROSS_BIN;TARGET Python3::Interpreter" OFF)
 cmake_dependent_option(CMAKE_POSITION_INDEPENDENT_CODE "Build with -fPIC" ON "NOT DOS;NOT VITA" OFF)
+cmake_dependent_option(ISLE_USE_GLIDE "Build with 3dfx Glide support (Voodoo)" OFF "DOS" OFF)
 option(ENABLE_CLANG_TIDY "Enable clang-tidy")
 option(DOWNLOAD_DEPENDENCIES "Download dependencies" ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}" CACHE PATH "Directory where to put executables and dll")
@@ -103,6 +104,126 @@ if(DOS)
   # (normally in libatomic, which DJGPP doesn't ship) are provided as simple
   # non-atomic stubs in 3rdparty/djgpp_atomic64.c since DOS is single-threaded.
   add_compile_options(-march=i486)
+
+  if(ISLE_USE_GLIDE)
+    # 3dfx Glide support for Voodoo cards.
+    # See: https://federicotech.wordpress.com/2024/12/19/compiling-3dfx-glide-2-and-3-in-ms-dos-with-djgpp/
+    set(GLIDE_VERSION "3" CACHE STRING "Glide API version: 2 or 3")
+    set_property(CACHE GLIDE_VERSION PROPERTY STRINGS 2 3)
+    set(GLIDE_HW "sst1" CACHE STRING "Target Glide hardware: sst1 (Voodoo1), sst96 (Rush), cvg (Voodoo2), h3 (Banshee), h5 (Voodoo3/4/5)")
+    set_property(CACHE GLIDE_HW PROPERTY STRINGS sst1 sst96 cvg h3 h5)
+
+    include(FetchContent)
+    FetchContent_Declare(
+      glide
+      GIT_REPOSITORY "https://github.com/sezero/glide.git"
+      GIT_TAG "glide-devel-sezero"
+    )
+    FetchContent_MakeAvailable(glide)
+    set(GLIDE_SRC_DIR "${glide_SOURCE_DIR}")
+    if(GLIDE_VERSION STREQUAL "3")
+      set(GLIDE_ROOT "${GLIDE_SRC_DIR}/glide3x")
+    else()
+      set(GLIDE_ROOT "${GLIDE_SRC_DIR}/glide2x")
+    endif()
+
+    # Copy swlibs into glide dir (required by the build system)
+    if(NOT EXISTS "${GLIDE_ROOT}/swlibs")
+      file(COPY "${GLIDE_SRC_DIR}/swlibs" DESTINATION "${GLIDE_ROOT}")
+    endif()
+
+    # Patch fxglide.h for h3/h5 builds: the P6 fence inline asm check
+    # fails when HOST_CC is x86_64 gcc (no __i386__ defined).
+    foreach(_glide_hw_dir h3 h5)
+      set(_fxglide "${GLIDE_ROOT}/${_glide_hw_dir}/glide/src/fxglide.h")
+      if(EXISTS "${_fxglide}")
+        file(READ "${_fxglide}" _fxglide_content)
+        string(FIND "${_fxglide_content}" "defined(__x86_64__)" _already_patched)
+        if(_already_patched EQUAL -1)
+          string(REPLACE
+            "defined(__GNUC__) && defined(__i386__)"
+            "defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__))"
+            _fxglide_content "${_fxglide_content}")
+          file(WRITE "${_fxglide}" "${_fxglide_content}")
+        endif()
+      endif()
+    endforeach()
+
+    # Determine include and lib paths based on hardware target
+    set(_glide_subdir "glide")
+    if(GLIDE_VERSION STREQUAL "3")
+      set(_glide_subdir "glide3")
+    endif()
+
+    if(GLIDE_HW STREQUAL "sst1" OR GLIDE_HW STREQUAL "sst96")
+      set(GLIDE_INCLUDE_DIR
+        "${GLIDE_ROOT}/swlibs/fxmisc"
+        "${GLIDE_ROOT}/sst1/${_glide_subdir}/src"
+        "${GLIDE_ROOT}/sst1/init"
+      )
+      set(GLIDE_LIB_DIR "${GLIDE_ROOT}/sst1/lib/${GLIDE_HW}")
+    elseif(GLIDE_HW STREQUAL "cvg")
+      set(GLIDE_INCLUDE_DIR
+        "${GLIDE_ROOT}/swlibs/fxmisc"
+        "${GLIDE_ROOT}/cvg/${_glide_subdir}/src"
+        "${GLIDE_ROOT}/cvg/incsrc"
+      )
+      set(GLIDE_LIB_DIR "${GLIDE_ROOT}/cvg/lib")
+    elseif(GLIDE_HW STREQUAL "h3")
+      set(GLIDE_INCLUDE_DIR
+        "${GLIDE_ROOT}/swlibs/fxmisc"
+        "${GLIDE_ROOT}/h3/${_glide_subdir}/src"
+        "${GLIDE_ROOT}/h3/incsrc"
+      )
+      set(GLIDE_LIB_DIR "${GLIDE_ROOT}/h3/lib")
+    elseif(GLIDE_HW STREQUAL "h5")
+      set(GLIDE_INCLUDE_DIR
+        "${GLIDE_ROOT}/swlibs/fxmisc"
+        "${GLIDE_ROOT}/h5/${_glide_subdir}/src"
+        "${GLIDE_ROOT}/h5/incsrc"
+      )
+      set(GLIDE_LIB_DIR "${GLIDE_ROOT}/h5/lib")
+    endif()
+
+    # Build Glide using its native DJGPP Makefile.
+    # We pass CC and AR from the CMake toolchain so it uses the correct cross-compiler.
+    if(GLIDE_VERSION STREQUAL "3")
+      set(_glide_lib_name "libgld3x.a")
+      set(_glide_lib_var "GLIDE_LIB=libgld3x.a")
+      set(_glide_imp_var "GLIDE_IMP=libgld3i.a")
+    else()
+      set(_glide_lib_name "libgld2x.a")
+      set(_glide_lib_var "GLIDE_LIB=libgld2x.a")
+      set(_glide_imp_var "GLIDE_IMP=libgld2i.a")
+    endif()
+    set(GLIDE_LIB_FILE "${GLIDE_LIB_DIR}/${_glide_lib_name}")
+    if(NOT EXISTS "${GLIDE_LIB_FILE}")
+      message(STATUS "Building 3dfx Glide ${GLIDE_VERSION}.x for ${GLIDE_HW}...")
+      execute_process(
+        COMMAND make
+          ${_glide_lib_var}
+          ${_glide_imp_var}
+          FX_GLIDE_HW=${GLIDE_HW}
+          CC=${CMAKE_C_COMPILER}
+          AR=${CMAKE_AR}
+          HOST_CC=gcc
+          -f Makefile.DJ
+        WORKING_DIRECTORY "${GLIDE_ROOT}"
+        RESULT_VARIABLE GLIDE_BUILD_RESULT
+      )
+      if(NOT GLIDE_BUILD_RESULT EQUAL 0)
+        message(FATAL_ERROR "Failed to build Glide library. "
+          "You may need to build manually: cd ${GLIDE_ROOT} && make ${_glide_lib_var} FX_GLIDE_HW=${GLIDE_HW} CC=${CMAKE_C_COMPILER} AR=${CMAKE_AR} -f Makefile.DJ")
+      endif()
+    endif()
+
+    if(NOT EXISTS "${GLIDE_LIB_FILE}")
+      message(FATAL_ERROR "Glide library not found at ${GLIDE_LIB_FILE} after build.")
+    endif()
+
+    set(GLIDE_LIBRARY "${GLIDE_LIB_FILE}")
+    message(STATUS "3dfx Glide:             ${GLIDE_HW} (${GLIDE_LIBRARY})")
+  endif()
 endif()
 
 message(STATUS "Isle app:               ${ISLE_BUILD_APP}")

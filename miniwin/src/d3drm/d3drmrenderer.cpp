@@ -26,6 +26,9 @@
 #ifdef USE_GXM
 #include "d3drmrenderer_gxm.h"
 #endif
+#ifdef USE_GLIDE
+#include "d3drmrenderer_glide.h"
+#endif
 
 Direct3DRMRenderer* CreateDirect3DRMRenderer(
 	const IDirect3DMiniwin* d3d,
@@ -78,6 +81,11 @@ Direct3DRMRenderer* CreateDirect3DRMRenderer(
 		return GXMRenderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight, d3d->GetMSAASamples());
 	}
 #endif
+#ifdef USE_GLIDE
+	if (SDL_memcmp(guid, &GLIDE_GUID, sizeof(GUID)) == 0) {
+		return new Direct3DRMGlideRenderer(DDSDesc.dwWidth, DDSDesc.dwHeight);
+	}
+#endif
 #ifdef USE_PALETTE_SW_RENDER
 	if (SDL_memcmp(guid, &PALETTE_SW_GUID, sizeof(GUID)) == 0) {
 		return new Direct3DRMPaletteSWRenderer(DDSDesc.dwWidth, DDSDesc.dwHeight);
@@ -111,6 +119,9 @@ void Direct3DRMRenderer_EnumDevices(const IDirect3DMiniwin* d3d, LPD3DENUMDEVICE
 #endif
 #ifdef USE_PALETTE_SW_RENDER
 	Direct3DRMPaletteSW_EnumDevice(cb, ctx);
+#endif
+#ifdef USE_GLIDE
+	Direct3DRMGlide_EnumDevice(cb, ctx);
 #endif
 #ifdef USE_GXM
 	GXMRenderer_EnumDevice(cb, ctx);
