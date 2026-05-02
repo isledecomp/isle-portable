@@ -5,8 +5,8 @@ if(DOWNLOAD_DEPENDENCIES)
     include(FetchContent)
     FetchContent_Declare(
         miniaudio
-        URL https://github.com/mackron/miniaudio/archive/refs/tags/0.11.24.tar.gz
-        URL_MD5 19e8eb21223c56a4a2d167d04decddc9
+        URL https://github.com/mackron/miniaudio/archive/refs/tags/0.11.25.tar.gz
+        URL_HASH MD5=6fae6da8f30afb3ddcba26fcaa64f540
     )
     block()
         set(BUILD_SHARED_LIBS OFF)
@@ -33,6 +33,12 @@ target_compile_definitions(miniaudio PUBLIC
     MA_NO_THREADING
     MA_NO_RUNTIME_LINKING
 )
+
+if(DJGPP)
+    # DOS is single-threaded so we provide non-atomic __atomic_*_8 stubs
+    # (see CMakeLists.txt top-level comment about -march=i486).
+    target_sources(miniaudio PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/djgpp_atomic64.c")
+endif()
 
 if(DOWNLOAD_DEPENDENCIES)
     include(FetchContent)

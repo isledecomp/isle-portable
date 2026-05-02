@@ -305,6 +305,7 @@ void MxDisplaySurface::Destroy()
 // FUNCTION: BETA10 0x1013fe15
 void MxDisplaySurface::SetPalette(MxPalette* p_palette)
 {
+#ifndef MINIWIN
 	if ((m_surfaceDesc.ddpfPixelFormat.dwFlags & DDPF_PALETTEINDEXED8) == DDPF_PALETTEINDEXED8) {
 		m_ddSurface1->SetPalette(p_palette->CreateNativePalette());
 		m_ddSurface2->SetPalette(p_palette->CreateNativePalette());
@@ -326,8 +327,10 @@ void MxDisplaySurface::SetPalette(MxPalette* p_palette)
 			DeleteObject(hpal);
 		}
 	}
+#else
+	m_ddSurface1->SetPalette(p_palette->CreateNativePalette());
+	m_ddSurface2->SetPalette(p_palette->CreateNativePalette());
 
-#ifndef MINIWIN
 	MxS32 bitCount = m_surfaceDesc.ddpfPixelFormat.dwRGBBitCount;
 	if (bitCount == 8) {
 		return;
@@ -449,17 +452,6 @@ void MxDisplaySurface::VTable0x28(
 	}
 #endif
 
-	if (m_surfaceDesc.ddpfPixelFormat.dwRGBBitCount != 32) {
-		DDCOLORKEY colorKey;
-		if (m_surfaceDesc.ddpfPixelFormat.dwRGBBitCount == 8) {
-			colorKey.dwColorSpaceLowValue = colorKey.dwColorSpaceHighValue = 0x10;
-		}
-		else {
-			colorKey.dwColorSpaceLowValue = colorKey.dwColorSpaceHighValue = RGB555_CREATE(0x1f, 0, 0x1f);
-		}
-		tempSurface->SetColorKey(DDCKEY_SRCBLT, &colorKey);
-	}
-
 	DDSURFACEDESC tempDesc;
 	memset(&tempDesc, 0, sizeof(tempDesc));
 	tempDesc.dwSize = sizeof(tempDesc);
@@ -511,10 +503,10 @@ void MxDisplaySurface::VTable0x28(
 
 	if (m_videoParam.Flags().GetDoubleScaling()) {
 		RECT destRect = {p_right, p_bottom, p_right + p_width * 2, p_bottom + p_height * 2};
-		m_ddSurface2->Blt(&destRect, tempSurface, NULL, DDBLT_WAIT | DDBLT_KEYSRC, NULL);
+		m_ddSurface2->Blt(&destRect, tempSurface, NULL, DDBLT_WAIT, NULL);
 	}
 	else {
-		m_ddSurface2->BltFast(p_right, p_bottom, tempSurface, NULL, DDBLTFAST_WAIT | DDBLTFAST_SRCCOLORKEY);
+		m_ddSurface2->BltFast(p_right, p_bottom, tempSurface, NULL, DDBLTFAST_WAIT);
 	}
 
 	tempSurface->Release();
@@ -1080,10 +1072,6 @@ LPDIRECTDRAWSURFACE MxDisplaySurface::FUN_100bc8b0(MxS32 p_width, MxS32 p_height
 	surfaceDesc.dwSize = sizeof(surfaceDesc);
 
 	if (ddraw->GetDisplayMode(&surfaceDesc) != DD_OK) {
-		return NULL;
-	}
-
-	if (surfaceDesc.ddpfPixelFormat.dwRGBBitCount == 8) {
 		return NULL;
 	}
 

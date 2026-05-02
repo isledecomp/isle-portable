@@ -238,7 +238,9 @@ inline void ViewManager::ManageVisibilityAndDetailRecursively(ViewROI* p_from, i
 		const CompoundObject* comp = p_from->GetComp();
 
 		if (p_lodLevel == ViewROI::c_lodLevelUnset) {
-			if (p_from->GetWorldBoundingSphere().Radius() > 0.001F) {
+			// FIX: Use 0.002 threshold to avoid x87 extended precision boundary
+			// issues where 0.001 sentinel radius compares as > 0.001F on x87.
+			if (p_from->GetWorldBoundingSphere().Radius() > 0.002F) {
 				float projectedSize = ProjectedSize(p_from->GetWorldBoundingSphere());
 
 				if (RealtimeView::GetUserMaxLOD() <= 5.0f && projectedSize < seconds_allowed * g_viewDistance) {

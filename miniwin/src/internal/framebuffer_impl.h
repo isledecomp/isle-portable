@@ -36,6 +36,8 @@ struct FrameBufferImpl : public IDirectDrawSurface3 {
 	HRESULT SetPalette(LPDIRECTDRAWPALETTE lpDDPalette) override;
 	HRESULT Unlock(LPVOID lpSurfaceData) override;
 
+	bool IsIndex8() const { return m_transferBuffer->m_surface->format == SDL_PIXELFORMAT_INDEX8; }
+
 private:
 	uint32_t m_virtualWidth;
 	uint32_t m_virtualHeight;
