@@ -1,6 +1,9 @@
+// clang-format off
+#include <limits> // must precede paf headers (paf/std/ngp/vector uses std::numeric_limits without including <limits>)
+// clang-format on
+
 #include <app_settings.h>
 #include <iniparser.h>
-#include <limits>
 #include <paf.h>
 #include <psp2/appmgr.h>
 #include <psp2/io/fcntl.h>
