@@ -69,6 +69,12 @@ if(NOT (VITA OR WINDOWS_STORE))
   endif()
 endif()
 
+if(DOS)
+  list(REMOVE_ITEM GRAPHICS_BACKENDS USE_SDL_GPU USE_OPENGL1 USE_OPENGLES2) #USE_SDL_GPU
+endif()
+
+list(APPEND GRAPHICS_BACKENDS USE_PALETTE_SW_RENDER)
+
 if(NINTENDO_SWITCH)
   # Remove USE_OPENGL1 as incompatible.
   # Remove everything else as not needed.
@@ -136,6 +142,12 @@ endif()
 if(USE_SOFTWARE_RENDER IN_LIST GRAPHICS_BACKENDS)
   target_sources(miniwin PRIVATE
     src/d3drm/backends/software/renderer.cpp
+  )
+endif()
+
+if(USE_PALETTE_SW_RENDER IN_LIST GRAPHICS_BACKENDS)
+  target_sources(miniwin PRIVATE
+    src/d3drm/backends/palettesw/renderer.cpp
   )
 endif()
 

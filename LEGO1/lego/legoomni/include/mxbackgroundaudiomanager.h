@@ -49,7 +49,7 @@ public:
 
 	void Init();
 	void Update(MxS32 p_targetVolume, MxS32 p_speed, MxPresenter::TickleState p_tickleState);
-	void Stop();
+	LEGO1_EXPORT void Stop();
 	void LowerVolume();
 	void RaiseVolume();
 	MxResult SetPendingPresenter(MxPresenter* p_presenter, MxS32 p_speed, MxPresenter::TickleState p_tickleState);

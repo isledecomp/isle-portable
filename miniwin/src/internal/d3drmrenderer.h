@@ -55,6 +55,8 @@ public:
 	virtual void Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect, FColor color) = 0;
 	virtual void Download(SDL_Surface* target) = 0;
 	virtual void SetDither(bool dither) = 0;
+	virtual void SetPalette(SDL_Palette* palette) {}
+	virtual bool UsesPalettedSurfaces() const { return false; }
 
 protected:
 	int m_width, m_height;
