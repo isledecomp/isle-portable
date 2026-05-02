@@ -1,5 +1,6 @@
 #include <app_settings.h>
 #include <iniparser.h>
+#include <limits>
 #include <paf.h>
 #include <psp2/appmgr.h>
 #include <psp2/io/fcntl.h>
