@@ -77,7 +77,7 @@ tasks.register('compileSDL3AndroidArchive', Exec) {
 
     def sdl3Dir = "build/_deps/sdl3-src"
     commandLine 'python', "${sdl3Dir}/build-scripts/build-release.py",
-            '--actions', 'android',
+            '--actions', 'download', 'android',
             '--fast', '--force',
             "--root=${sdl3Dir}", "--android-api=${android.defaultConfig.minSdk}"
 
