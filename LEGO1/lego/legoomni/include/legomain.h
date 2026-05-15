@@ -72,6 +72,7 @@ public:
 		WorldContainer()
 		{
 			m_id = e_undefined;
+			m_key[0] = '\0';
 			m_atomId = NULL;
 		}
 
