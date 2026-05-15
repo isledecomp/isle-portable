@@ -130,6 +130,7 @@ LegoCarBuild::LegoCarBuild()
 	m_destLocation = LegoGameState::e_undefined;
 	m_playingActorScript = DS_NOT_A_STREAM;
 	m_alreadyFinished = 0;
+	m_lastActorScript = 0;
 	NotificationManager()->Register(this);
 }
 

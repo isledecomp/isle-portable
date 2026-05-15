@@ -439,10 +439,11 @@ void LegoWorldPresenter::ParseExtra()
 		extraCopy[extraLength] = '\0';
 
 		char output[1024];
+		output[0] = '\0';
 		if (KeyValueStringParse(output, g_strWORLD, extraCopy)) {
 			char* worldKey = strtok(output, g_parseExtraTokens);
-			LoadWorld(worldKey, (LegoWorld*) m_entity);
-			((LegoWorld*) m_entity)->SetWorldId(Lego()->GetWorldId(worldKey));
+			LoadWorld(worldKey, static_cast<LegoWorld*>(m_entity));
+			static_cast<LegoWorld*>(m_entity)->SetWorldId(Lego()->GetWorldId(worldKey));
 		}
 	}
 }

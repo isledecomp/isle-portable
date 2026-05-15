@@ -84,10 +84,10 @@ private:
 	SDL_GLContext m_context;
 	float m_anisotropic;
 	GLuint m_fbo;
-	GLuint m_colorTarget;
-	GLuint m_depthTarget;
-	GLuint m_shaderProgram;
-	GLuint m_dummyTexture;
+	GLuint m_colorTarget = 0;
+	GLuint m_depthTarget = 0;
+	GLuint m_shaderProgram = 0;
+	GLuint m_dummyTexture = 0;
 	GLint m_posLoc;
 	GLint m_normLoc;
 	GLint m_texLoc;

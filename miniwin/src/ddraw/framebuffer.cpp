@@ -234,10 +234,10 @@ HRESULT FrameBufferImpl::SetPalette(LPDIRECTDRAWPALETTE lpDDPalette)
 	}
 
 	m_palette = lpDDPalette;
-	SDL_SetSurfacePalette(m_transferBuffer->m_surface, ((DirectDrawPaletteImpl*) m_palette)->m_palette);
+	SDL_SetSurfacePalette(m_transferBuffer->m_surface, static_cast<DirectDrawPaletteImpl*>(m_palette)->m_palette);
 
 	if (DDRenderer) {
-		DDRenderer->SetPalette(((DirectDrawPaletteImpl*) m_palette)->m_palette);
+		DDRenderer->SetPalette(static_cast<DirectDrawPaletteImpl*>(m_palette)->m_palette);
 	}
 
 	return DD_OK;

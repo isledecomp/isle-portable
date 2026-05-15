@@ -80,9 +80,9 @@ MxResult Hospital::Create(MxDSAction& p_dsAction)
 
 	SetIsWorldActive(FALSE);
 
-	m_hospitalState = (HospitalState*) GameState()->GetState("HospitalState");
+	m_hospitalState = static_cast<HospitalState*>(GameState()->GetState("HospitalState"));
 	if (!m_hospitalState) {
-		m_hospitalState = (HospitalState*) GameState()->CreateState("HospitalState");
+		m_hospitalState = static_cast<HospitalState*>(GameState()->CreateState("HospitalState"));
 		m_hospitalState->m_state = HospitalState::e_newState;
 	}
 	else if (m_hospitalState->m_state == HospitalState::e_unknown4) {
@@ -676,6 +676,7 @@ MxBool Hospital::Escape()
 // FUNCTION: LEGO1 0x10076370
 HospitalState::HospitalState()
 {
+	m_state = e_newState;
 	m_stateActor = 0;
 	m_statePepper = 0;
 	m_stateMama = 0;

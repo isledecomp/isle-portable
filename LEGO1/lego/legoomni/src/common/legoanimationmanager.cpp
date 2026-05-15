@@ -331,6 +331,8 @@ LegoAnimationManager::LegoAnimationManager()
 	m_animState = NULL;
 	m_unk0x424 = NULL;
 
+	::memset(m_extras, 0, sizeof(m_extras));
+
 	Init();
 
 	NotificationManager()->Register(this);
