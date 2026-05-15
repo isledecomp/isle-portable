@@ -200,7 +200,7 @@ public:
 		quit.type = SDL_EVENT_QUIT;
 		quit.timestamp = SDL_GetTicksNS();
 
-		SDL_Event event;
+		SDL_Event event = {};
 		event.quit = quit;
 
 		SDL_PushEvent(&event);

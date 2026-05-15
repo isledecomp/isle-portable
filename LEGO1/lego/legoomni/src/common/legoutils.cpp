@@ -592,7 +592,7 @@ void EnableAnimations(MxBool p_enable)
 // FUNCTION: LEGO1 0x1003ef40
 void SetAppCursor(Cursor p_cursor)
 {
-	SDL_Event event;
+	SDL_Event event = {};
 	event.user.type = g_legoSdlEvents.m_windowsMessage;
 	event.user.code = WM_ISLE_SETCURSOR;
 	event.user.data1 = (void*) p_cursor;

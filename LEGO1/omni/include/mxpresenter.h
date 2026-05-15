@@ -66,7 +66,7 @@ protected:
 		m_previousTickleStates |= 1 << (MxU8) m_currentTickleState;
 		m_currentTickleState = p_tickleState;
 
-		SDL_Event event;
+		SDL_Event event = {};
 		event.user.type = g_legoSdlEvents.m_presenterProgress;
 		event.user.code = m_currentTickleState;
 		event.user.data1 = (void*) m_action;
