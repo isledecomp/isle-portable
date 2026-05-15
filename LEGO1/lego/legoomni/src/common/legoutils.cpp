@@ -803,6 +803,17 @@ void LoadFromNamedTexture(LegoNamedTexture* p_namedTexture)
 	LegoTextureInfo* textureInfo = TextureContainer()->Get(p_namedTexture->GetName()->GetData());
 
 	if (textureInfo != NULL) {
+		DDSURFACEDESC desc;
+		memset(&desc, 0, sizeof(desc));
+		desc.dwSize = sizeof(desc);
+
+		if (textureInfo->m_surface->GetSurfaceDesc(&desc) == DD_OK) {
+			LegoImage* image = p_namedTexture->GetTexture()->GetImage();
+			if (image->GetWidth() != desc.dwWidth || image->GetHeight() != desc.dwHeight) {
+				image->Resize(desc.dwWidth, desc.dwHeight);
+			}
+		}
+
 		textureInfo->LoadBits(p_namedTexture->GetTexture()->GetImage()->GetBits());
 	}
 }

@@ -179,3 +179,37 @@ LegoResult LegoImage::Write(LegoStorage* p_storage)
 	}
 	return SUCCESS;
 }
+
+LegoResult LegoImage::Resize(LegoU32 p_width, LegoU32 p_height)
+{
+	if (m_surface == NULL) {
+		return FAILURE;
+	}
+	if (m_surface->w == (int) p_width && m_surface->h == (int) p_height) {
+		return SUCCESS;
+	}
+
+	SDL_Surface* newSurface = SDL_CreateSurface(p_width, p_height, SDL_PIXELFORMAT_INDEX8);
+	if (newSurface == NULL) {
+		return FAILURE;
+	}
+
+	LegoU32 srcW = m_surface->w;
+	LegoU32 srcH = m_surface->h;
+	const LegoU8* src = (const LegoU8*) m_surface->pixels;
+	LegoU8* dst = (LegoU8*) newSurface->pixels;
+
+	for (LegoU32 dy = 0; dy < p_height; dy++) {
+		LegoU32 sy = dy * srcH / p_height;
+		const LegoU8* srcRow = src + sy * srcW;
+		LegoU8* dstRow = dst + dy * p_width;
+		for (LegoU32 dx = 0; dx < p_width; dx++) {
+			LegoU32 sx = dx * srcW / p_width;
+			dstRow[dx] = srcRow[sx];
+		}
+	}
+
+	SDL_DestroySurface(m_surface);
+	m_surface = newSurface;
+	return SUCCESS;
+}

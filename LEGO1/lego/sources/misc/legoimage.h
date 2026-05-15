@@ -49,6 +49,7 @@ public:
 	LegoU8* GetBits() const { return (LegoU8*) m_surface->pixels; }
 	LegoResult Read(LegoStorage* p_storage, LegoU32 p_square);
 	LegoResult Write(LegoStorage* p_storage);
+	LegoResult Resize(LegoU32 p_width, LegoU32 p_height);
 
 protected:
 	SDL_Surface* m_surface;
