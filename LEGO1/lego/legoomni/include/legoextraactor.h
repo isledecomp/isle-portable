@@ -49,6 +49,7 @@ public:
 	) override;                                                                                    // vtable+0x6c
 	void Animate(float p_time) override;                                                           // vtable+0x70
 	void ApplyTransform(Matrix4& p_transform) override;                                            // vtable+0x74
+	void ClearMaps() override;                                                                     // vtable+0x84
 	MxU32 StepState(float p_time, Matrix4& p_matrix) override;                                     // vtable+0x90
 	MxResult HitActor(LegoPathActor* p_actor, MxBool p_bool) override;                             // vtable+0x94
 	MxResult CalculateSpline() override;                                                           // vtable+0x9c

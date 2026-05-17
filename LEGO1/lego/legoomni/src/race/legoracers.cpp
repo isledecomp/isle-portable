@@ -736,3 +736,10 @@ MxResult LegoJetski::HitActor(LegoPathActor* p_actor, MxBool p_bool)
 
 	return SUCCESS;
 }
+
+void LegoRaceCar::ClearMaps()
+{
+	m_skelKick1Anim = NULL;
+	m_skelKick2Anim = NULL;
+	LegoAnimActor::ClearMaps();
+}

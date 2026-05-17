@@ -9,6 +9,8 @@ class LegoAnim;
 // SIZE 0x20
 struct LegoAnimActorStruct {
 	LegoAnimActorStruct(float p_worldSpeed, LegoAnim* p_AnimTreePtr, LegoROI** p_roiMap, MxU32 p_numROIs);
+	LegoAnimActorStruct(const LegoAnimActorStruct& p_other);
+	LegoAnimActorStruct& operator=(const LegoAnimActorStruct&) = delete;
 	~LegoAnimActorStruct();
 
 	float GetDuration();

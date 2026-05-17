@@ -1231,3 +1231,22 @@ void Act3Shark::ParseAction(char* p_extra)
 	m_unk0x38->SetVisibility(FALSE);
 	m_world->PlaceActor(this);
 }
+
+void Act3Cop::ClearMaps()
+{
+	m_eatAnim = NULL;
+	Act3Actor::ClearMaps();
+}
+
+void Act3Brickster::ClearMaps()
+{
+	m_shootAnim = NULL;
+	Act3Actor::ClearMaps();
+}
+
+void Act3Shark::ClearMaps()
+{
+	m_unk0x34 = NULL;
+	m_unk0x38 = NULL;
+	LegoAnimActor::ClearMaps();
+}

@@ -437,11 +437,14 @@ void LegoAnimationManager::Suspend()
 			LegoROI* roi = m_extras[i].m_roi;
 
 			if (roi != NULL) {
-				LegoPathActor* actor = CharacterManager()->GetExtraActor(roi->GetName());
+				LegoExtraActor* actor = CharacterManager()->GetExtraActor(roi->GetName());
 
-				if (actor != NULL && actor->GetController() != NULL) {
-					actor->GetController()->RemoveActor(actor);
-					actor->SetController(NULL);
+				if (actor != NULL) {
+					if (actor->GetController() != NULL) {
+						actor->GetController()->RemoveActor(actor);
+						actor->SetController(NULL);
+					}
+					actor->ClearMaps();
 				}
 
 				CharacterManager()->ReleaseActor(roi);
@@ -464,6 +467,18 @@ void LegoAnimationManager::Suspend()
 			m_extras[i].m_roi = NULL;
 			m_extras[i].m_characterId = -1;
 			m_extras[i].m_speed = -1.0f;
+		}
+
+		// Catch dormant actors too: despawn paths null m_extras[i].m_roi
+		// without ClearMaps, leaving stale m_AnimTreePtr behind.
+		for (i = 0; i < (MxS32) CharacterManager()->GetNumActors(); i++) {
+			const char* name = CharacterManager()->GetActorName(i);
+			if (name != NULL) {
+				LegoExtraActor* extraActor = CharacterManager()->GetExtraActor(name);
+				if (extraActor != NULL) {
+					extraActor->ClearMaps();
+				}
+			}
 		}
 
 		m_unk0x18 = 0;

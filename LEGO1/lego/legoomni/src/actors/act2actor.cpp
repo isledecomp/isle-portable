@@ -877,3 +877,9 @@ LegoEntity* Act2Actor::GetNextEntity(MxBool* p_isBuilding)
 
 	return result;
 }
+
+void Act2Actor::ClearMaps()
+{
+	m_shootAnim = NULL;
+	LegoAnimActor::ClearMaps();
+}

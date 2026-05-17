@@ -19,6 +19,7 @@ public:
 
 	void ParseAction(char*) override;    // vtable+0x20
 	void Animate(float p_time) override; // vtable+0x70
+	void ClearMaps() override;           // vtable+0x84
 
 	// LegoAnimActor vtable
 	virtual MxResult EatPizza(Act3Ammo* p_ammo); // vtable+0x10
@@ -104,6 +105,7 @@ public:
 
 	void ParseAction(char* p_extra) override;           // vtable+0x20
 	void Animate(float p_time) override;                // vtable+0x70
+	void ClearMaps() override;                          // vtable+0x84
 	MxResult HitActor(LegoPathActor*, MxBool) override; // vtable+0x94
 	MxResult CalculateSpline() override;                // vtable+0x9c
 
@@ -137,6 +139,7 @@ public:
 
 	void ParseAction(char* p_extra) override;                          // vtable+0x20
 	void Animate(float p_time) override;                               // vtable+0x70
+	void ClearMaps() override;                                         // vtable+0x84
 	MxResult HitActor(LegoPathActor* p_actor, MxBool p_bool) override; // vtable+0x94
 	void SwitchBoundary(
 		LegoPathBoundary*& p_boundary,

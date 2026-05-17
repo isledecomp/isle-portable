@@ -96,6 +96,9 @@ LegoROI::LegoROI(Tgl::Renderer* p_renderer, ViewLODList* p_lodList) : ViewROI(p_
 // FUNCTION: BETA10 0x10189a42
 LegoROI::~LegoROI()
 {
+	for (LegoROI** slot : m_slotRefs) {
+		*slot = NULL;
+	}
 	if (comp) {
 		CompoundObject::iterator iterator;
 

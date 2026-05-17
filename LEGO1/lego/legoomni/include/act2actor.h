@@ -39,6 +39,7 @@ public:
 	} // vtable+0x68
 
 	void Animate(float p_time) override;                // vtable+0x70
+	void ClearMaps() override;                          // vtable+0x84
 	MxResult HitActor(LegoPathActor*, MxBool) override; // vtable+0x94
 	MxResult CalculateSpline() override;                // vtable+0x9c
 	MxS32 NextTargetLocation() override;                // vtable+0xa0

@@ -22,13 +22,39 @@ LegoAnimActorStruct::LegoAnimActorStruct(
 {
 	m_worldSpeed = p_worldSpeed;
 	m_AnimTreePtr = p_AnimTreePtr;
-	m_roiMap = p_roiMap;
 	m_numROIs = p_numROIs;
+	// Deep copy: source array's owner may outlive or rebuild it independently.
+	m_roiMap = new LegoROI*[p_numROIs + 1];
+	memcpy(m_roiMap, p_roiMap, (p_numROIs + 1) * sizeof(LegoROI*));
+	for (MxU32 i = 0; i <= p_numROIs; i++) {
+		if (m_roiMap[i]) {
+			m_roiMap[i]->RegisterSlotRef(&m_roiMap[i]);
+		}
+	}
+}
+
+LegoAnimActorStruct::LegoAnimActorStruct(const LegoAnimActorStruct& p_other)
+	: m_worldSpeed(p_other.m_worldSpeed), m_AnimTreePtr(p_other.m_AnimTreePtr), m_numROIs(p_other.m_numROIs),
+	  m_unk0x10(p_other.m_unk0x10)
+{
+	m_roiMap = new LegoROI*[m_numROIs + 1];
+	memcpy(m_roiMap, p_other.m_roiMap, (m_numROIs + 1) * sizeof(LegoROI*));
+	for (MxU32 i = 0; i <= m_numROIs; i++) {
+		if (m_roiMap[i]) {
+			m_roiMap[i]->RegisterSlotRef(&m_roiMap[i]);
+		}
+	}
 }
 
 // FUNCTION: LEGO1 0x1001c0a0
 LegoAnimActorStruct::~LegoAnimActorStruct()
 {
+	for (MxU32 i = 0; i <= m_numROIs; i++) {
+		if (m_roiMap[i]) {
+			m_roiMap[i]->UnregisterSlotRef(&m_roiMap[i]);
+		}
+	}
+	delete[] m_roiMap;
 	for (MxU16 i = 0; i < m_unk0x10.size(); i++) {
 		delete m_unk0x10[i];
 	}

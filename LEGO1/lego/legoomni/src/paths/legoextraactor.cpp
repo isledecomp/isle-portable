@@ -536,3 +536,12 @@ inline MxU32 LegoExtraActor::CheckPresenterAndActorIntersections(
 
 	return 0;
 }
+
+void LegoExtraActor::ClearMaps()
+{
+	delete m_assAnim;
+	m_assAnim = NULL;
+	delete m_disAnim;
+	m_disAnim = NULL;
+	LegoAnimActor::ClearMaps();
+}

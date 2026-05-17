@@ -86,6 +86,11 @@ void LegoAnimPresenter::Destroy(MxBool p_fromDestructor)
 		}
 
 		if (m_roiMap != NULL) {
+			for (MxU32 i = 0; i <= m_roiMapSize; i++) {
+				if (m_roiMap[i]) {
+					m_roiMap[i]->UnregisterSlotRef(&m_roiMap[i]);
+				}
+			}
 			delete[] m_roiMap;
 		}
 
@@ -126,6 +131,11 @@ void LegoAnimPresenter::Destroy(MxBool p_fromDestructor)
 		}
 
 		if (m_ptAtCamROI != NULL) {
+			for (MxS32 i = 0; i < m_ptAtCamCount; i++) {
+				if (m_ptAtCamROI[i]) {
+					m_ptAtCamROI[i]->UnregisterSlotRef(&m_ptAtCamROI[i]);
+				}
+			}
 			delete[] m_ptAtCamROI;
 		}
 
@@ -415,12 +425,22 @@ void LegoAnimPresenter::BuildROIMap()
 	LegoAnimStructMap anims;
 
 	if (m_ptAtCamROI != NULL) {
+		for (MxS32 i = 0; i < m_ptAtCamCount; i++) {
+			if (m_ptAtCamROI[i]) {
+				m_ptAtCamROI[i]->UnregisterSlotRef(&m_ptAtCamROI[i]);
+			}
+		}
 		memset(m_ptAtCamROI, 0, m_ptAtCamCount * sizeof(*m_ptAtCamROI));
 	}
 
 	UpdateStructMapAndROIIndex(anims, m_anim->GetRoot(), NULL);
 
 	if (m_roiMap != NULL) {
+		for (MxU32 i = 0; i <= m_roiMapSize; i++) {
+			if (m_roiMap[i]) {
+				m_roiMap[i]->UnregisterSlotRef(&m_roiMap[i]);
+			}
+		}
 		delete[] m_roiMap;
 		m_roiMapSize = 0;
 	}
@@ -432,12 +452,14 @@ void LegoAnimPresenter::BuildROIMap()
 	for (LegoAnimStructMap::iterator it = anims.begin(); it != anims.end();) {
 		MxU32 index = (*it).second.m_index;
 		m_roiMap[index] = (*it).second.m_roi;
+		m_roiMap[index]->RegisterSlotRef(&m_roiMap[index]);
 
 		if (m_roiMap[index]->GetName() != NULL) {
 			for (MxS32 i = 0; i < m_ptAtCamCount; i++) {
 				if (m_ptAtCamROI[i] == NULL && m_ptAtCamNames[i] != NULL) {
 					if (!SDL_strcasecmp(m_ptAtCamNames[i], m_roiMap[index]->GetName())) {
 						m_ptAtCamROI[i] = m_roiMap[index];
+						m_ptAtCamROI[i]->RegisterSlotRef(&m_ptAtCamROI[i]);
 						break;
 					}
 				}
@@ -1025,6 +1047,11 @@ void LegoAnimPresenter::ParseExtra()
 			}
 
 			if (m_ptAtCamROI != NULL) {
+				for (MxS32 i = 0; i < m_ptAtCamCount; i++) {
+					if (m_ptAtCamROI[i]) {
+						m_ptAtCamROI[i]->UnregisterSlotRef(&m_ptAtCamROI[i]);
+					}
+				}
 				delete[] m_ptAtCamROI;
 				m_ptAtCamROI = NULL;
 			}
@@ -1447,6 +1474,13 @@ void LegoLocomotionAnimPresenter::CreateROIAndBuildMap(LegoAnimActor* p_actor, M
 	if (m_roiMap != NULL) {
 		m_roiMapList->Append(m_roiMap);
 		p_actor->CreateAnimActorStruct(m_anim, p_worldSpeed, m_roiMap, m_roiMapSize);
+
+		for (MxU32 i = 0; i <= m_roiMapSize; i++) {
+			if (m_roiMap[i]) {
+				m_roiMap[i]->UnregisterSlotRef(&m_roiMap[i]);
+			}
+		}
+
 		m_roiMap = NULL;
 	}
 

@@ -5,6 +5,9 @@
 #include "misc/legotypes.h"
 #include "viewmanager/viewroi.h"
 
+#include <algorithm>
+#include <vector>
+
 typedef unsigned char (*ColorOverride)(const char*, char*, unsigned int);
 typedef unsigned char (*TextureHandler)(const char*, unsigned char*, unsigned int);
 
@@ -99,6 +102,15 @@ public:
 	void SetBoundingSphere(const BoundingSphere& p_sphere) { m_sphere = m_world_bounding_sphere = p_sphere; }
 	void SetBoundingBox(const BoundingBox& p_box) { m_bounding_box = p_box; }
 
+	void RegisterSlotRef(LegoROI** p_slot) { m_slotRefs.push_back(p_slot); }
+	void UnregisterSlotRef(LegoROI** p_slot)
+	{
+		std::vector<LegoROI**>::iterator it = std::find(m_slotRefs.begin(), m_slotRefs.end(), p_slot);
+		if (it != m_slotRefs.end()) {
+			m_slotRefs.erase(it);
+		}
+	}
+
 	// SYNTHETIC: LEGO1 0x100a82b0
 	// SYNTHETIC: BETA10 0x1018c490
 	// LegoROI::`scalar deleting destructor'
@@ -108,6 +120,7 @@ private:
 	BoundingSphere m_sphere;  // 0xe8
 	LegoBool m_sharedLodList; // 0x100
 	LegoEntity* m_entity;     // 0x104
+	std::vector<LegoROI**> m_slotRefs;
 };
 
 // VTABLE: LEGO1 0x100dbea8
