@@ -10,18 +10,25 @@
 #include <cmath>
 #include <cstring>
 #include <limits>
-#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
-#include <xmmintrin.h>
-#if defined(__i386__) || defined(_M_IX86)
-#include <xmmintrin.h>
-#endif
-#endif
-#if defined(__arm__) || defined(__aarch64__)
-#include <arm_neon.h>
-#endif
-#if defined(__wasm_simd128__)
-#include <wasm_simd128.h>
-#endif
+
+// Perspective-correct UVs are computed exactly every PERSP_STEP pixels and
+// interpolated affinely in between.  8 pixels keeps the error well below a
+// texel at the resolutions this renderer runs at.
+static constexpr int PERSP_STEP = 8;
+
+// Reciprocals for perspective-block lengths 0..PERSP_STEP, so the affine
+// step inside a block needs no division.
+static const float SW_BLOCK_INV[PERSP_STEP + 1] = {
+	0.0f,
+	1.0f / 1.0f,
+	1.0f / 2.0f,
+	1.0f / 3.0f,
+	1.0f / 4.0f,
+	1.0f / 5.0f,
+	1.0f / 6.0f,
+	1.0f / 7.0f,
+	1.0f / 8.0f,
+};
 
 Direct3DRMSoftwareRenderer::Direct3DRMSoftwareRenderer(DWORD width, DWORD height)
 {
@@ -43,7 +50,35 @@ Direct3DRMSoftwareRenderer::~Direct3DRMSoftwareRenderer()
 
 void Direct3DRMSoftwareRenderer::PushLights(const SceneLight* lights, size_t count)
 {
-	m_lights.assign(lights, lights + count);
+	// Fold ambient lights into a single base color and pre-normalize the
+	// directional light vectors so per-vertex lighting does no sqrt for them.
+	m_preparedLights.clear();
+	m_ambientR = 0.0f;
+	m_ambientG = 0.0f;
+	m_ambientB = 0.0f;
+
+	for (size_t i = 0; i < count; ++i) {
+		const SceneLight& light = lights[i];
+
+		if (light.positional == 0.0f && light.directional == 0.0f) {
+			m_ambientR += light.color.r;
+			m_ambientG += light.color.g;
+			m_ambientB += light.color.b;
+			continue;
+		}
+
+		PreparedLight prepared;
+		prepared.color = light.color;
+		if (light.directional == 1.0f) {
+			prepared.positional = false;
+			prepared.vec = Normalize({-light.direction.x, -light.direction.y, -light.direction.z});
+		}
+		else {
+			prepared.positional = true;
+			prepared.vec = light.position;
+		}
+		m_preparedLights.push_back(prepared);
+	}
 }
 
 void Direct3DRMSoftwareRenderer::SetFrustumPlanes(const Plane* frustumPlanes)
@@ -60,44 +95,10 @@ void Direct3DRMSoftwareRenderer::SetProjection(const D3DRMMATRIX4D& projection, 
 
 void Direct3DRMSoftwareRenderer::ClearZBuffer()
 {
-	const size_t size = m_zBuffer.size();
-	const float inf = std::numeric_limits<float>::infinity();
-	size_t i = 0;
-
-#if (defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)) && defined(__SSE2__)
-	if (SDL_HasSSE2()) {
-		__m128 inf4 = _mm_set1_ps(inf);
-		for (; i + 4 <= size; i += 4) {
-			_mm_storeu_ps(&m_zBuffer[i], inf4);
-		}
-	}
-#if (defined(__i386__) || defined(_M_IX86)) && defined(__MMX__)
-	else if (SDL_HasMMX()) {
-		const __m64 mm_inf = _mm_set_pi32(0x7F800000, 0x7F800000);
-		for (; i + 2 <= size; i += 2) {
-			*reinterpret_cast<__m64*>(&m_zBuffer[i]) = mm_inf;
-		}
-		_mm_empty();
-	}
-#endif
-#elif (defined(__arm__) || defined(__aarch64__)) && !defined(__3DS__)
-	if (SDL_HasNEON()) {
-		float32x4_t inf4 = vdupq_n_f32(inf);
-		for (; i + 4 <= size; i += 4) {
-			vst1q_f32(&m_zBuffer[i], inf4);
-		}
-	}
-#elif defined(__wasm_simd128__)
-	const size_t simdWidth = 4;
-	v128_t infVec = wasm_f32x4_splat(inf);
-	for (; i + simdWidth <= size; i += simdWidth) {
-		wasm_v128_store(&m_zBuffer[i], infVec);
-	}
-#endif
-
-	for (; i < size; ++i) {
-		m_zBuffer[i] = inf;
-	}
+	// 0x7F7F7F7F interpreted as a float is ~3.4e38 — far beyond any depth
+	// value we produce, so a byte-pattern memset (vectorized in libc on
+	// every platform) is a valid "infinitely far" fill.
+	memset(m_zBuffer.data(), 0x7F, m_zBuffer.size() * sizeof(float));
 }
 
 void Direct3DRMSoftwareRenderer::ProjectVertex(const D3DVECTOR& v, D3DRMVECTOR4D& p) const
@@ -123,7 +124,7 @@ void Direct3DRMSoftwareRenderer::ProjectVertex(const D3DVECTOR& v, D3DRMVECTOR4D
 	p.z = pz;
 }
 
-D3DRMVERTEX SplitEdge(D3DRMVERTEX a, const D3DRMVERTEX& b, float plane)
+static SWLitVertex SplitEdge(SWLitVertex a, const SWLitVertex& b, float plane)
 {
 	float t = (plane - a.position.z) / (b.position.z - a.position.z);
 	a.position.x += t * (b.position.x - a.position.x);
@@ -133,16 +134,15 @@ D3DRMVERTEX SplitEdge(D3DRMVERTEX a, const D3DRMVERTEX& b, float plane)
 	a.texCoord.u += t * (b.texCoord.u - a.texCoord.u);
 	a.texCoord.v += t * (b.texCoord.v - a.texCoord.v);
 
-	a.normal.x += t * (b.normal.x - a.normal.x);
-	a.normal.y += t * (b.normal.y - a.normal.y);
-	a.normal.z += t * (b.normal.z - a.normal.z);
-
-	a.normal = Normalize(a.normal);
+	a.color.r = static_cast<Uint8>(a.color.r + t * (b.color.r - a.color.r));
+	a.color.g = static_cast<Uint8>(a.color.g + t * (b.color.g - a.color.g));
+	a.color.b = static_cast<Uint8>(a.color.b + t * (b.color.b - a.color.b));
+	a.color.a = static_cast<Uint8>(a.color.a + t * (b.color.a - a.color.a));
 
 	return a;
 }
 
-bool IsTriangleOutsideViewCone(
+static bool IsTriangleOutsideViewCone(
 	const D3DVECTOR& v0,
 	const D3DVECTOR& v1,
 	const D3DVECTOR& v2,
@@ -163,7 +163,7 @@ bool IsTriangleOutsideViewCone(
 	return false;
 }
 
-void Direct3DRMSoftwareRenderer::DrawTriangleClipped(const D3DRMVERTEX (&v)[3], const Appearance& appearance)
+void Direct3DRMSoftwareRenderer::DrawTriangleClipped(const SWLitVertex (&v)[3], const Appearance& appearance)
 {
 	bool in0 = v[0].position.z >= m_front;
 	bool in1 = v[1].position.z >= m_front;
@@ -182,7 +182,7 @@ void Direct3DRMSoftwareRenderer::DrawTriangleClipped(const D3DRMVERTEX (&v)[3], 
 		DrawTriangleProjected(v[0], v[1], v[2], appearance);
 	}
 	else if (insideCount == 2) {
-		D3DRMVERTEX split;
+		SWLitVertex split;
 		if (!in0) {
 			split = SplitEdge(v[2], v[0], m_front);
 			DrawTriangleProjected(v[1], v[2], split, appearance);
@@ -210,33 +210,17 @@ void Direct3DRMSoftwareRenderer::DrawTriangleClipped(const D3DRMVERTEX (&v)[3], 
 	}
 }
 
-Uint32 Direct3DRMSoftwareRenderer::BlendPixel(Uint8* pixelAddr, Uint8 r, Uint8 g, Uint8 b, Uint8 a)
+// The render surface and all cached textures are SDL_PIXELFORMAT_RGBA32
+// (bytes R,G,B,A in memory regardless of endianness), so pixels are accessed
+// directly instead of through SDL_GetRGBA/SDL_MapRGBA calls per pixel.
+inline static void BlendRGBA(Uint8* p, int r, int g, int b, int a)
 {
-	Uint32 dstPixel;
-	switch (m_bytesPerPixel) {
-	case 1:
-		dstPixel = *pixelAddr;
-		break;
-	case 2:
-		dstPixel = *(Uint16*) pixelAddr;
-		break;
-	case 4:
-		dstPixel = *(Uint32*) pixelAddr;
-		break;
-	}
-
-	Uint8 dstR, dstG, dstB, dstA;
-	SDL_GetRGBA(dstPixel, m_format, m_palette, &dstR, &dstG, &dstB, &dstA);
-
-	float alpha = a / 255.0f;
-	float invAlpha = 1.0f - alpha;
-
-	Uint8 outR = static_cast<Uint8>(r * alpha + dstR * invAlpha);
-	Uint8 outG = static_cast<Uint8>(g * alpha + dstG * invAlpha);
-	Uint8 outB = static_cast<Uint8>(b * alpha + dstB * invAlpha);
-	Uint8 outA = static_cast<Uint8>(a + dstA * invAlpha);
-
-	return SDL_MapRGBA(m_format, m_palette, outR, outG, outB, outA);
+	int inv = 255 - a;
+	p[0] = static_cast<Uint8>((r * a + p[0] * inv + 127) / 255);
+	p[1] = static_cast<Uint8>((g * a + p[1] * inv + 127) / 255);
+	p[2] = static_cast<Uint8>((b * a + p[2] * inv + 127) / 255);
+	int outA = a + (p[3] * inv + 127) / 255;
+	p[3] = static_cast<Uint8>(outA > 255 ? 255 : outA);
 }
 
 SDL_Color Direct3DRMSoftwareRenderer::ApplyLighting(
@@ -246,49 +230,43 @@ SDL_Color Direct3DRMSoftwareRenderer::ApplyLighting(
 )
 {
 	FColor specular = {0, 0, 0, 0};
-	FColor diffuse = {0, 0, 0, 0};
+	FColor diffuse = {m_ambientR, m_ambientG, m_ambientB, 0};
 
 	D3DVECTOR normal = Normalize(TransformNormal(oNormal, m_normalMatrix));
 
-	for (const auto& light : m_lights) {
-		FColor lightColor = light.color;
+	bool haveViewVec = false;
+	D3DVECTOR viewVec;
 
-		if (light.positional == 0.0f && light.directional == 0.0f) {
-			// Ambient light
-			diffuse.r += lightColor.r;
-			diffuse.g += lightColor.g;
-			diffuse.b += lightColor.b;
-			continue;
-		}
-
-		// TODO lightVec only has to be calculated once per frame for directional lights
+	for (const auto& light : m_preparedLights) {
 		D3DVECTOR lightVec;
-		if (light.directional == 1.0f) {
-			lightVec = {-light.direction.x, -light.direction.y, -light.direction.z};
+		if (light.positional) {
+			lightVec = Normalize({light.vec.x - position.x, light.vec.y - position.y, light.vec.z - position.z});
 		}
-		else if (light.positional == 1.0f) {
-			lightVec = {light.position.x - position.x, light.position.y - position.y, light.position.z - position.z};
+		else {
+			lightVec = light.vec;
 		}
-		lightVec = Normalize(lightVec);
 
 		float dotNL = DotProduct(normal, lightVec);
 		if (dotNL > 0.0f) {
 			// Diffuse contribution
-			diffuse.r += dotNL * lightColor.r;
-			diffuse.g += dotNL * lightColor.g;
-			diffuse.b += dotNL * lightColor.b;
+			diffuse.r += dotNL * light.color.r;
+			diffuse.g += dotNL * light.color.g;
+			diffuse.b += dotNL * light.color.b;
 
 			// Specular
-			if (appearance.shininess > 0.0f && light.directional == 1.0f) {
-				D3DVECTOR viewVec = Normalize({-position.x, -position.y, -position.z});
+			if (appearance.shininess > 0.0f && !light.positional) {
+				if (!haveViewVec) {
+					viewVec = Normalize({-position.x, -position.y, -position.z});
+					haveViewVec = true;
+				}
 				D3DVECTOR H = Normalize({lightVec.x + viewVec.x, lightVec.y + viewVec.y, lightVec.z + viewVec.z});
 
 				float dotNH = std::max(DotProduct(normal, H), 0.0f);
 				float spec = std::pow(dotNH, appearance.shininess);
 
-				specular.r += spec * lightColor.r;
-				specular.g += spec * lightColor.g;
-				specular.b += spec * lightColor.b;
+				specular.r += spec * light.color.r;
+				specular.g += spec * light.color.g;
+				specular.b += spec * light.color.b;
 			}
 		}
 	}
@@ -299,36 +277,6 @@ SDL_Color Direct3DRMSoftwareRenderer::ApplyLighting(
 		static_cast<Uint8>(std::min(255.0f, diffuse.b * appearance.color.b + specular.b * 255.0f)),
 		appearance.color.a
 	};
-}
-
-struct VertexXY {
-	float x, y, z, w;
-	SDL_Color color;
-	float u_over_w, v_over_w;
-	float one_over_w;
-};
-
-VertexXY InterpolateVertex(float y, const VertexXY& v0, const VertexXY& v1)
-{
-	float dy = v1.y - v0.y;
-	if (fabsf(dy) < 1e-6f) {
-		dy = 1e-6f;
-	}
-	float t = (y - v0.y) / dy;
-	VertexXY r;
-	r.x = v0.x + t * (v1.x - v0.x);
-	r.z = v0.z + t * (v1.z - v0.z);
-	r.w = v0.w + t * (v1.w - v0.w);
-	r.color.r = static_cast<Uint8>(v0.color.r + t * (v1.color.r - v0.color.r));
-	r.color.g = static_cast<Uint8>(v0.color.g + t * (v1.color.g - v0.color.g));
-	r.color.b = static_cast<Uint8>(v0.color.b + t * (v1.color.b - v0.color.b));
-	r.color.a = static_cast<Uint8>(v0.color.a + t * (v1.color.a - v0.color.a));
-
-	r.u_over_w = v0.u_over_w + t * (v1.u_over_w - v0.u_over_w);
-	r.v_over_w = v0.v_over_w + t * (v1.v_over_w - v0.v_over_w);
-	r.one_over_w = v0.one_over_w + t * (v1.one_over_w - v0.one_over_w);
-
-	return r;
 }
 
 inline D3DVECTOR Subtract(const D3DVECTOR& a, const D3DVECTOR& b)
@@ -343,14 +291,102 @@ inline bool IsBackface(const D3DVECTOR& v0, const D3DVECTOR& v1, const D3DVECTOR
 	return DotProduct(normal, v0) >= 0.0f;
 }
 
+// Rasterizer vertex: screen position, vertex color and perspective UVs.
+struct SWVertexXY {
+	float x, y, z;
+	float r, g, b;
+	float u_over_w, v_over_w, one_over_w;
+};
+
+// Interpolated values along a triangle edge, stepped once per scanline.
+struct SWEdge {
+	float x, z, r, g, b, uw, vw, ow;
+};
+
+inline static void SWSetupEdge(const SWVertexXY& a, const SWVertexXY& b, int startY, SWEdge& e, SWEdge& step)
+{
+	float dy = b.y - a.y;
+	float invDy = (dy != 0.0f) ? 1.0f / dy : 0.0f;
+	float t0 = (startY - a.y) * invDy;
+	e.x = a.x + t0 * (b.x - a.x);
+	e.z = a.z + t0 * (b.z - a.z);
+	e.r = a.r + t0 * (b.r - a.r);
+	e.g = a.g + t0 * (b.g - a.g);
+	e.b = a.b + t0 * (b.b - a.b);
+	e.uw = a.u_over_w + t0 * (b.u_over_w - a.u_over_w);
+	e.vw = a.v_over_w + t0 * (b.v_over_w - a.v_over_w);
+	e.ow = a.one_over_w + t0 * (b.one_over_w - a.one_over_w);
+	step.x = (b.x - a.x) * invDy;
+	step.z = (b.z - a.z) * invDy;
+	step.r = (b.r - a.r) * invDy;
+	step.g = (b.g - a.g) * invDy;
+	step.b = (b.b - a.b) * invDy;
+	step.uw = (b.u_over_w - a.u_over_w) * invDy;
+	step.vw = (b.v_over_w - a.v_over_w) * invDy;
+	step.ow = (b.one_over_w - a.one_over_w) * invDy;
+}
+
+inline static void SWStepEdge(SWEdge& e, const SWEdge& s)
+{
+	e.x += s.x;
+	e.z += s.z;
+	e.r += s.r;
+	e.g += s.g;
+	e.b += s.b;
+	e.uw += s.uw;
+	e.vw += s.vw;
+	e.ow += s.ow;
+}
+
+inline static float SWClampChannel(float c)
+{
+	return c < 0.0f ? 0.0f : (c > 255.0f ? 255.0f : c);
+}
+
 void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
-	const D3DRMVERTEX& v0,
-	const D3DRMVERTEX& v1,
-	const D3DRMVERTEX& v2,
+	const SWLitVertex& v0,
+	const SWLitVertex& v1,
+	const SWLitVertex& v2,
 	const Appearance& appearance
 )
 {
-	if (IsBackface(v0.position, v1.position, v2.position)) {
+	const Uint8 triAlpha = appearance.color.a;
+
+	Uint32 textureId = appearance.textureId;
+	int texturePitch = 0;
+	Uint8* texels = nullptr;
+	int texWidthScale = 0;
+	int texHeightScale = 0;
+	// Power-of-two textures (the normal case) are sampled with integer
+	// 16.16 coordinates and shift+mask wrapping.
+	bool fastTex = false;
+	int uMask = 0, vMask = 0, pitchShift = 0;
+	float texWFix = 0.0f, texHFix = 0.0f;
+
+	if (textureId != NO_TEXTURE_ID) {
+		SDL_Surface* texture = m_textures[textureId].cached;
+		if (texture) {
+			texturePitch = texture->pitch;
+			texels = static_cast<Uint8*>(texture->pixels);
+			int tw = texture->w;
+			int th = texture->h;
+			texWidthScale = tw - 1;
+			texHeightScale = th - 1;
+			if ((tw & (tw - 1)) == 0 && (th & (th - 1)) == 0 && (texturePitch & (texturePitch - 1)) == 0) {
+				fastTex = true;
+				uMask = tw - 1;
+				vMask = th - 1;
+				while ((1 << pitchShift) < texturePitch) {
+					++pitchShift;
+				}
+				texWFix = static_cast<float>(tw) * 65536.0f;
+				texHFix = static_cast<float>(th) * 65536.0f;
+			}
+		}
+	}
+
+	if (!texels && triAlpha == 0) {
+		// Fully transparent material — nothing to draw.
 		return;
 	}
 
@@ -359,37 +395,13 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 	ProjectVertex(v1.position, p1);
 	ProjectVertex(v2.position, p2);
 
-	Uint8 r, g, b;
-	SDL_Color c0 = ApplyLighting(v0.position, v0.normal, appearance);
-	SDL_Color c1 = {}, c2 = {};
-	if (!appearance.flat) {
-		c1 = ApplyLighting(v1.position, v1.normal, appearance);
-		c2 = ApplyLighting(v2.position, v2.normal, appearance);
-	}
-
-	Uint8* pixels = (Uint8*) m_renderedImage->pixels;
-	int pitch = m_renderedImage->pitch;
-
-	VertexXY verts[3] = {
-		{p0.x, p0.y, p0.z, p0.w, c0, v0.texCoord.u, v0.texCoord.v},
-		{p1.x, p1.y, p1.z, p1.w, c1, v1.texCoord.u, v1.texCoord.v},
-		{p2.x, p2.y, p2.z, p2.w, c2, v2.texCoord.u, v2.texCoord.v}
+	SWVertexXY verts[3] = {
+		{p0.x, p0.y, p0.z, (float) v0.color.r, (float) v0.color.g, (float) v0.color.b, 0, 0, 0},
+		{p1.x, p1.y, p1.z, (float) v1.color.r, (float) v1.color.g, (float) v1.color.b, 0, 0, 0},
+		{p2.x, p2.y, p2.z, (float) v2.color.r, (float) v2.color.g, (float) v2.color.b, 0, 0, 0},
 	};
 
-	Uint32 textureId = appearance.textureId;
-	int texturePitch;
-	Uint8* texels = nullptr;
-	int texWidthScale;
-	int texHeightScale;
-	if (textureId != NO_TEXTURE_ID) {
-		SDL_Surface* texture = m_textures[textureId].cached;
-		if (texture) {
-			texturePitch = texture->pitch;
-			texels = static_cast<Uint8*>(texture->pixels);
-			texWidthScale = texture->w - 1;
-			texHeightScale = texture->h - 1;
-		}
-
+	if (texels) {
 		verts[0].u_over_w = v0.texCoord.u / p0.w;
 		verts[0].v_over_w = v0.texCoord.v / p0.w;
 		verts[0].one_over_w = 1.0f / p0.w;
@@ -416,125 +428,209 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 
 	int minY = std::max(0, (int) std::ceil(verts[0].y));
 	int maxY = std::min((int) m_height - 1, (int) std::floor(verts[2].y));
+	if (minY > maxY) {
+		return;
+	}
+
+	Uint8* pixels = (Uint8*) m_renderedImage->pixels;
+	int pitch = m_renderedImage->pitch;
+
+	// Incremental edge walking: interpolate along the long edge (0->2) and
+	// the two short segments (0->1, 1->2), stepping once per scanline
+	// instead of re-interpolating every attribute per pixel.
+	SWEdge longEdge, longStep;
+	SWSetupEdge(verts[0], verts[2], minY, longEdge, longStep);
+
+	SWEdge shortEdge, shortStep;
+	int midY = static_cast<int>(std::ceil(verts[1].y));
+	bool pastMid = (minY >= midY);
+	if (pastMid) {
+		SWSetupEdge(verts[1], verts[2], minY, shortEdge, shortStep);
+	}
+	else {
+		SWSetupEdge(verts[0], verts[1], minY, shortEdge, shortStep);
+	}
 
 	for (int y = minY; y <= maxY; ++y) {
-		VertexXY left, right;
-		if (y < verts[1].y) {
-			left = InterpolateVertex(y, verts[0], verts[1]);
-			right = InterpolateVertex(y, verts[0], verts[2]);
-		}
-		else {
-			left = InterpolateVertex(y, verts[1], verts[2]);
-			right = InterpolateVertex(y, verts[0], verts[2]);
+		if (!pastMid && y >= midY) {
+			pastMid = true;
+			SWSetupEdge(verts[1], verts[2], y, shortEdge, shortStep);
 		}
 
-		if (left.x > right.x) {
-			std::swap(left, right);
-		}
+		const SWEdge& left = (shortEdge.x <= longEdge.x) ? shortEdge : longEdge;
+		const SWEdge& right = (shortEdge.x <= longEdge.x) ? longEdge : shortEdge;
 
 		int startX = std::max(0, (int) std::ceil(left.x));
 		int endX = std::min((int) m_width - 1, (int) std::floor(right.x));
 
 		float span = right.x - left.x;
-		if (span == 0.0f) {
+		if (span <= 0.0f || startX > endX) {
+			SWStepEdge(shortEdge, shortStep);
+			SWStepEdge(longEdge, longStep);
 			continue;
 		}
 
-		for (int x = startX; x <= endX; ++x) {
-			float t = (x - left.x) / span;
-			float z = left.z + t * (right.z - left.z);
+		float invSpan = 1.0f / span;
+		float startT = (startX - left.x) * invSpan;
 
-			int zidx = y * m_width + x;
-			float& zref = m_zBuffer[zidx];
-			if (z >= zref) {
-				continue;
-			}
+		float z = left.z + startT * (right.z - left.z);
+		float zStep = (right.z - left.z) * invSpan;
 
-			Uint8 r, g, b;
-			if (appearance.flat) {
-				r = c0.r;
-				g = c0.g;
-				b = c0.b;
-			}
-			else {
-				r = static_cast<Uint8>(left.color.r + t * (right.color.r - left.color.r));
-				g = static_cast<Uint8>(left.color.g + t * (right.color.g - left.color.g));
-				b = static_cast<Uint8>(left.color.b + t * (right.color.b - left.color.b));
-			}
+		// Clamp colors at the span endpoints; interpolated values stay
+		// inside, so the pixel loops need no per-pixel clamp.
+		float lr = SWClampChannel(left.r), lg = SWClampChannel(left.g), lb = SWClampChannel(left.b);
+		float rr = SWClampChannel(right.r), rg = SWClampChannel(right.g), rb = SWClampChannel(right.b);
 
-			Uint8* pixelAddr = pixels + y * pitch + x * m_bytesPerPixel;
-			Uint32 finalColor;
+		// Vertex colors in 8.8 fixed point, stepped with integer adds.
+		int rFix = static_cast<int>((lr + startT * (rr - lr)) * 256.0f);
+		int gFix = static_cast<int>((lg + startT * (rg - lg)) * 256.0f);
+		int bFix = static_cast<int>((lb + startT * (rb - lb)) * 256.0f);
+		int rStep = static_cast<int>((rr - lr) * invSpan * 256.0f);
+		int gStep = static_cast<int>((rg - lg) * invSpan * 256.0f);
+		int bStep = static_cast<int>((rb - lb) * invSpan * 256.0f);
 
-			Uint8 alpha = appearance.color.a;
+		Uint8* row = pixels + y * pitch;
+		float* zPtr = &m_zBuffer[y * m_width + startX];
 
-			if (texels) {
-				// Perspective correct interpolate texture coords
-				float one_over_w = left.one_over_w + t * (right.one_over_w - left.one_over_w);
-				float u_over_w = left.u_over_w + t * (right.u_over_w - left.u_over_w);
-				float v_over_w = left.v_over_w + t * (right.v_over_w - left.v_over_w);
+		if (texels) {
+			float uow = left.uw + startT * (right.uw - left.uw);
+			float vow = left.vw + startT * (right.vw - left.vw);
+			float oow = left.ow + startT * (right.ow - left.ow);
+			float uowStep = (right.uw - left.uw) * invSpan;
+			float vowStep = (right.vw - left.vw) * invSpan;
+			float oowStep = (right.ow - left.ow) * invSpan;
 
-				float inv_w = 1.0f / one_over_w;
-				float u = u_over_w * inv_w;
-				float v = v_over_w * inv_w;
+			// Perspective-correct UV at the span start; carried block to
+			// block so each block costs a single divide.
+			float invW = 1.0f / oow;
+			float u0 = uow * invW;
+			float vv0 = vow * invW;
 
-				// Tile textures
-				u -= std::floor(u);
-				v -= std::floor(v);
+			int x = startX;
+			while (x <= endX) {
+				int remaining = endX - x + 1;
+				int blockLen = (remaining > PERSP_STEP) ? PERSP_STEP : remaining;
 
-				int texX = static_cast<int>(u * texWidthScale);
-				int texY = static_cast<int>(v * texHeightScale);
+				uow += uowStep * blockLen;
+				vow += vowStep * blockLen;
+				oow += oowStep * blockLen;
+				invW = 1.0f / oow;
+				float u1 = uow * invW;
+				float vv1 = vow * invW;
 
-				Uint8* texelAddr = texels + texY * texturePitch + texX * m_bytesPerPixel;
+				float invBlock = SW_BLOCK_INV[blockLen];
 
-				Uint32 texelColor;
-				switch (m_bytesPerPixel) {
-				case 1:
-					texelColor = *texelAddr;
-					break;
-				case 2:
-					texelColor = *(Uint16*) texelAddr;
-					break;
-				case 4:
-					texelColor = *(Uint32*) texelAddr;
-					break;
+				if (fastTex) {
+					Sint32 uFix = static_cast<Sint32>(u0 * texWFix);
+					Sint32 vFix = static_cast<Sint32>(vv0 * texHFix);
+					Sint32 uStepFix = static_cast<Sint32>((u1 - u0) * invBlock * texWFix);
+					Sint32 vStepFix = static_cast<Sint32>((vv1 - vv0) * invBlock * texHFix);
+
+					for (int i = 0; i < blockLen; ++i, ++x) {
+						if (z < *zPtr) {
+							const Uint8* t =
+								texels + ((((vFix >> 16) & vMask) << pitchShift) | (((uFix >> 16) & uMask) << 2));
+							int ta = t[3];
+							if (ta != 0) {
+								int cr = ((rFix >> 8) * t[0] + 127) / 255;
+								int cg = ((gFix >> 8) * t[1] + 127) / 255;
+								int cb = ((bFix >> 8) * t[2] + 127) / 255;
+								Uint8* p = row + x * 4;
+								if (ta == 255) {
+									*zPtr = z;
+									p[0] = static_cast<Uint8>(cr);
+									p[1] = static_cast<Uint8>(cg);
+									p[2] = static_cast<Uint8>(cb);
+									p[3] = 255;
+								}
+								else {
+									BlendRGBA(p, cr, cg, cb, ta);
+								}
+							}
+						}
+						z += zStep;
+						rFix += rStep;
+						gFix += gStep;
+						bFix += bStep;
+						uFix += uStepFix;
+						vFix += vStepFix;
+						++zPtr;
+					}
+				}
+				else {
+					// Non-power-of-two texture fallback: affine float UVs
+					float uAffStep = (u1 - u0) * invBlock;
+					float vAffStep = (vv1 - vv0) * invBlock;
+					float uAff = u0;
+					float vAff = vv0;
+
+					for (int i = 0; i < blockLen; ++i, ++x) {
+						if (z < *zPtr) {
+							float u = uAff - std::floor(uAff);
+							float v = vAff - std::floor(vAff);
+
+							int texX = static_cast<int>(u * texWidthScale);
+							int texY = static_cast<int>(v * texHeightScale);
+
+							const Uint8* t = texels + texY * texturePitch + texX * 4;
+							int ta = t[3];
+							if (ta != 0) {
+								int cr = ((rFix >> 8) * t[0] + 127) / 255;
+								int cg = ((gFix >> 8) * t[1] + 127) / 255;
+								int cb = ((bFix >> 8) * t[2] + 127) / 255;
+								Uint8* p = row + x * 4;
+								if (ta == 255) {
+									*zPtr = z;
+									p[0] = static_cast<Uint8>(cr);
+									p[1] = static_cast<Uint8>(cg);
+									p[2] = static_cast<Uint8>(cb);
+									p[3] = 255;
+								}
+								else {
+									BlendRGBA(p, cr, cg, cb, ta);
+								}
+							}
+						}
+						z += zStep;
+						rFix += rStep;
+						gFix += gStep;
+						bFix += bStep;
+						uAff += uAffStep;
+						vAff += vAffStep;
+						++zPtr;
+					}
 				}
 
-				Uint8 tr, tg, tb, ta;
-				SDL_GetRGBA(texelColor, m_format, m_palette, &tr, &tg, &tb, &ta);
-
-				// Multiply vertex color by texel color
-				r = (r * tr + 127) / 255;
-				g = (g * tg + 127) / 255;
-				b = (b * tb + 127) / 255;
-
-				// Use texel alpha for per-pixel transparency
-				alpha = ta;
-			}
-
-			if (alpha == 0) {
-				continue;
-			}
-
-			if (alpha == 255) {
-				zref = z;
-				finalColor = SDL_MapRGBA(m_format, m_palette, r, g, b, 255);
-			}
-			else {
-				finalColor = BlendPixel(pixelAddr, r, g, b, alpha);
-			}
-
-			switch (m_bytesPerPixel) {
-			case 1:
-				*pixelAddr = static_cast<Uint8>(finalColor);
-				break;
-			case 2:
-				*reinterpret_cast<Uint16*>(pixelAddr) = static_cast<Uint16>(finalColor);
-				break;
-			case 4:
-				*reinterpret_cast<Uint32*>(pixelAddr) = finalColor;
-				break;
+				u0 = u1;
+				vv0 = vv1;
 			}
 		}
+		else if (triAlpha == 255) {
+			// Opaque untextured span
+			for (int x = startX; x <= endX; ++x, ++zPtr, z += zStep, rFix += rStep, gFix += gStep, bFix += bStep) {
+				if (z >= *zPtr) {
+					continue;
+				}
+				*zPtr = z;
+				Uint8* p = row + x * 4;
+				p[0] = static_cast<Uint8>(rFix >> 8);
+				p[1] = static_cast<Uint8>(gFix >> 8);
+				p[2] = static_cast<Uint8>(bFix >> 8);
+				p[3] = 255;
+			}
+		}
+		else {
+			// Alpha-blended untextured span (does not write depth)
+			for (int x = startX; x <= endX; ++x, ++zPtr, z += zStep, rFix += rStep, gFix += gStep, bFix += bStep) {
+				if (z >= *zPtr) {
+					continue;
+				}
+				BlendRGBA(row + x * 4, rFix >> 8, gFix >> 8, bFix >> 8, triAlpha);
+			}
+		}
+
+		SWStepEdge(shortEdge, shortStep);
+		SWStepEdge(longEdge, longStep);
 	}
 }
 
@@ -681,7 +777,6 @@ HRESULT Direct3DRMSoftwareRenderer::BeginFrame()
 
 	m_format = SDL_GetPixelFormatDetails(m_renderedImage->format);
 	m_palette = SDL_GetSurfacePalette(m_renderedImage);
-	m_bytesPerPixel = m_format->bits_per_pixel / 8;
 
 	return DD_OK;
 }
@@ -702,25 +797,67 @@ void Direct3DRMSoftwareRenderer::SubmitDraw(
 	memcpy(m_normalMatrix, normalMatrix, sizeof(Matrix3x3));
 
 	auto& mesh = m_meshs[meshId];
+	const size_t vertexCount = mesh.vertices.size();
 
-	// Pre-transform all vertex positions and normals
-	m_transformedVerts.clear();
-	m_transformedVerts.reserve(mesh.vertices.size());
-	for (const auto& src : mesh.vertices) {
-		D3DRMVERTEX& dst = m_transformedVerts.emplace_back();
-		dst.position = TransformPoint(src.position, modelViewMatrix);
-		dst.normal = src.normal;
-		dst.texCoord = src.texCoord;
+	// Pre-transform all vertex positions
+	m_transformedPositions.resize(vertexCount);
+	for (size_t i = 0; i < vertexCount; ++i) {
+		m_transformedPositions[i] = TransformPoint(mesh.vertices[i].position, modelViewMatrix);
 	}
+
+	// Lighting is computed lazily, once per unique vertex, and only for
+	// vertices of triangles that survive backface culling.  Shared vertices
+	// previously got re-lit for every triangle that used them.
+	m_vertexColors.resize(vertexCount);
+	m_vertexLit.assign(vertexCount, 0);
+
+	const bool flat = appearance.flat;
 
 	// Assemble triangles using index buffer
 	for (size_t i = 0; i + 2 < mesh.indices.size(); i += 3) {
-		DrawTriangleClipped(
-			{m_transformedVerts[mesh.indices[i]],
-			 m_transformedVerts[mesh.indices[i + 1]],
-			 m_transformedVerts[mesh.indices[i + 2]]},
-			appearance
-		);
+		const uint16_t i0 = mesh.indices[i];
+		const uint16_t i1 = mesh.indices[i + 1];
+		const uint16_t i2 = mesh.indices[i + 2];
+		const D3DVECTOR& p0 = m_transformedPositions[i0];
+		const D3DVECTOR& p1 = m_transformedPositions[i1];
+		const D3DVECTOR& p2 = m_transformedPositions[i2];
+
+		// Cull before lighting and clipping; sub-triangles produced by the
+		// near-plane clip are coplanar with the original, so this test is
+		// equivalent to the old per-projected-triangle one.
+		if (IsBackface(p0, p1, p2)) {
+			continue;
+		}
+
+		if (!m_vertexLit[i0]) {
+			m_vertexLit[i0] = 1;
+			m_vertexColors[i0] = ApplyLighting(p0, mesh.vertices[i0].normal, appearance);
+		}
+		SDL_Color c0 = m_vertexColors[i0];
+		SDL_Color c1, c2;
+		if (flat) {
+			c1 = c0;
+			c2 = c0;
+		}
+		else {
+			if (!m_vertexLit[i1]) {
+				m_vertexLit[i1] = 1;
+				m_vertexColors[i1] = ApplyLighting(p1, mesh.vertices[i1].normal, appearance);
+			}
+			if (!m_vertexLit[i2]) {
+				m_vertexLit[i2] = 1;
+				m_vertexColors[i2] = ApplyLighting(p2, mesh.vertices[i2].normal, appearance);
+			}
+			c1 = m_vertexColors[i1];
+			c2 = m_vertexColors[i2];
+		}
+
+		SWLitVertex tri[3] = {
+			{p0, mesh.vertices[i0].texCoord, c0},
+			{p1, mesh.vertices[i1].texCoord, c1},
+			{p2, mesh.vertices[i2].texCoord, c2},
+		};
+		DrawTriangleClipped(tri, appearance);
 	}
 }
 

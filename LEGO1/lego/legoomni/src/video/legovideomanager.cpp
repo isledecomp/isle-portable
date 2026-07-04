@@ -465,9 +465,15 @@ void LegoVideoManager::DrawFPS()
 			if (m_unk0x528->Lock(NULL, &surfaceDesc, DDLOCK_WAIT, NULL) == DD_OK) {
 				memset(surfaceDesc.lpSurface, 0, surfaceDesc.lPitch * surfaceDesc.dwHeight);
 
-				// 8-bit bitmap font for FPS display
+				// Bitmap font for FPS display.  The surface uses the display
+				// pixel format, so each set pixel is written as bytesPerPixel
+				// bytes of 0xFF (white in any RGB format).
 				uint8_t* dst = (uint8_t*) surfaceDesc.lpSurface;
 				int pitch = surfaceDesc.lPitch;
+				int bytesPerPixel = surfaceDesc.ddpfPixelFormat.dwRGBBitCount / 8;
+				if (bytesPerPixel < 1) {
+					bytesPerPixel = 1;
+				}
 				const char* p = buffer;
 				int px = 0;
 				static const uint8_t g_digitFont[5][10] = {
@@ -486,7 +492,11 @@ void LegoVideoManager::DrawFPS()
 								if (bits & (1 << (4 - col))) {
 									for (int dy = 0; dy < 2; ++dy) {
 										for (int dx = 0; dx < 2; ++dx) {
-											dst[(row * 2 + dy) * pitch + (px + col * 2 + dx)] = 0xff;
+											memset(
+												dst + (row * 2 + dy) * pitch + (px + col * 2 + dx) * bytesPerPixel,
+												0xff,
+												bytesPerPixel
+											);
 										}
 									}
 								}
@@ -497,7 +507,7 @@ void LegoVideoManager::DrawFPS()
 					else if (*p == '.') {
 						for (int dy = 0; dy < 2; ++dy) {
 							for (int dx = 0; dx < 2; ++dx) {
-								dst[(10 + dy) * pitch + (px + 2 + dx)] = 0xff;
+								memset(dst + (10 + dy) * pitch + (px + 2 + dx) * bytesPerPixel, 0xff, bytesPerPixel);
 							}
 						}
 						px += 4;
