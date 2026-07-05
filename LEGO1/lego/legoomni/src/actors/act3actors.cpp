@@ -378,6 +378,19 @@ MxResult Act3Cop::FUN_10040360()
 				Mx3DPointFloat localec(local88);
 				localec -= local2c;
 
+				// If the cop is already inside the donut's bounding sphere, the per-frame
+				// collision ray can never hit it (a ray starting inside a sphere misses in
+				// LegoROI::Intersect), so pathing to it softlocks the cop in a retarget
+				// loop on top of the donut. Eat it directly instead, like HitActor would.
+				float pickupRadius = proi->GetWorldBoundingSphere().Radius();
+				if (localec.LenSquared() <= pickupRadius * pickupRadius) {
+					a3->EatDonut(i);
+					m_unk0x20 = m_transformTime + 2000;
+					SetWorldSpeed(6.0);
+					SoundManager()->GetCacheSoundManager()->Play("eatdn", NULL, FALSE);
+					continue;
+				}
+
 				LegoPathEdgeContainer* r2 = new LegoPathEdgeContainer();
 				assert(r2);
 
@@ -813,6 +826,18 @@ MxResult Act3Brickster::FUN_100417c0()
 				Vector3 local88(locald0[3]);
 				Mx3DPointFloat localec(local88);
 				localec -= local28;
+
+				// Same softlock as Act3Cop with donuts: a pizza inside the brickster's
+				// collision sphere can never be hit by his movement ray. Eat it directly.
+				float pickupRadius = proi->GetWorldBoundingSphere().Radius();
+				if (localec.LenSquared() <= pickupRadius * pickupRadius) {
+					a3->EatPizza(i);
+					m_unk0x58++;
+					m_unk0x20 = m_transformTime + 2000.0f;
+					SetWorldSpeed(3.0f);
+					SoundManager()->GetCacheSoundManager()->Play("eatpz", NULL, FALSE);
+					continue;
+				}
 
 				if (localec.LenSquared() > 1600.0f) {
 					((Act3*) m_world)->m_shark->EatPizza(pizza);
