@@ -31,7 +31,7 @@ COPY --chown=emscripten:emscripten packaging/ ./packaging/
 COPY --chown=emscripten:emscripten extensions/ ./extensions/
 COPY --chown=emscripten:emscripten CMakeLists.txt .
 
-RUN emcmake cmake -S . -B build -DISLE_BUILD_CONFIG=OFF -DISLE_DEBUG=OFF -DCMAKE_BUILD_TYPE=Release && \
+RUN emcmake cmake -S . -B build -DISLE_BUILD_CONFIG=OFF -DCMAKE_BUILD_TYPE=Release && \
     emmake cmake --build build -j 32
 
 RUN echo "Fetching isle.pizza frontend..."; \

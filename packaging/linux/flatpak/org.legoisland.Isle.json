@@ -21,8 +21,7 @@
             "name": "isle",
             "buildsystem": "cmake-ninja",
             "config-opts": [
-                "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
-                "-DISLE_DEBUG=OFF"
+                "-DCMAKE_BUILD_TYPE=RelWithDebInfo"
             ],
             "sources": [
                 {

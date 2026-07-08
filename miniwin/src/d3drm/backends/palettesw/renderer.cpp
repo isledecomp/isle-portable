@@ -13,12 +13,42 @@
 
 struct PalVertexXY {
 	float x, y, z, w;
-	Uint8 brightness; // 0..LIGHT_LEVELS-1
+	float brightness; // 0..LIGHT_LEVELS-1
 	float u_over_w, v_over_w;
 	float one_over_w;
 };
 
 static constexpr int PERSP_STEP = 16;
+
+// Fixed-point scales for the all-integer inner loops.  On the DOS target
+// (i486, x87 only) every float->int conversion costs a control-word swap and
+// float compares go through fnstsw, so the per-pixel work is done entirely in
+// integers: depth in 1.7.24, texture coords in 16.16 texel space, brightness
+// in 8.8.  Depth after projection lies in [0, ~1.1], so 24 fractional bits
+// leave ample headroom in a Sint32.
+static constexpr float Z_ONE = 16777216.0f; // 1 << 24
+
+// Reciprocals for perspective-block lengths 0..PERSP_STEP, so the affine
+// UV step inside a block needs no division.
+static const float PAL_BLOCK_INV[PERSP_STEP + 1] = {
+	0.0f,
+	1.0f / 1.0f,
+	1.0f / 2.0f,
+	1.0f / 3.0f,
+	1.0f / 4.0f,
+	1.0f / 5.0f,
+	1.0f / 6.0f,
+	1.0f / 7.0f,
+	1.0f / 8.0f,
+	1.0f / 9.0f,
+	1.0f / 10.0f,
+	1.0f / 11.0f,
+	1.0f / 12.0f,
+	1.0f / 13.0f,
+	1.0f / 14.0f,
+	1.0f / 15.0f,
+	1.0f / 16.0f,
+};
 
 inline static D3DVECTOR PalSubtract(const D3DVECTOR& a, const D3DVECTOR& b)
 {
@@ -38,6 +68,7 @@ Direct3DRMPaletteSWRenderer::Direct3DRMPaletteSWRenderer(DWORD width, DWORD heig
 
 	memset(m_lightLUT, 0, sizeof(m_lightLUT));
 	memset(m_blendLUT, 0, sizeof(m_blendLUT));
+	memset(m_blendRowValid, 0, sizeof(m_blendRowValid));
 	ViewportTransform viewportTransform = {1.0f, 0.0f, 0.0f};
 	Resize(width, height, viewportTransform);
 }
@@ -92,6 +123,12 @@ void Direct3DRMPaletteSWRenderer::BuildLightingLUT()
 		}
 
 		for (int lev = 0; lev < LIGHT_LEVELS; ++lev) {
+			// Full brightness maps to the entry itself — skip the search.
+			if (lev == LIGHT_LEVELS - 1 && idx < ncolors) {
+				m_lightLUT[idx * LIGHT_LEVELS + lev] = static_cast<Uint8>(idx);
+				continue;
+			}
+
 			// Target colour at this brightness
 			int tr = (sr * lev) / (LIGHT_LEVELS - 1);
 			int tg = (sg * lev) / (LIGHT_LEVELS - 1);
@@ -122,70 +159,95 @@ void Direct3DRMPaletteSWRenderer::BuildLightingLUT()
 	m_lightLUTDirty = false;
 }
 
-void Direct3DRMPaletteSWRenderer::BuildBlendLUT()
+// Build one row of the 50/50 blend LUT on demand.  A full 256x256 rebuild
+// costs seconds on a 486; individual rows are a few milliseconds and only
+// the palette indices actually drawn transparently ever get built.
+void Direct3DRMPaletteSWRenderer::BuildBlendRow(Uint8 srcIdx)
 {
 	SDL_Palette* pal = m_flipPalette ? m_flipPalette : m_palette;
+	Uint8* row = &m_blendLUT[srcIdx * 256];
+	m_blendRowValid[srcIdx] = 1;
 	if (!pal) {
-		memset(m_blendLUT, 0, sizeof(m_blendLUT));
+		memset(row, 0, 256);
 		return;
 	}
 
 	const SDL_Color* colors = pal->colors;
 	const int ncolors = pal->ncolors;
 
-	for (int a = 0; a < 256; ++a) {
-		int ar, ag, ab;
-		if (a < ncolors) {
-			ar = colors[a].r;
-			ag = colors[a].g;
-			ab = colors[a].b;
+	int ar = 0, ag = 0, ab = 0;
+	if (srcIdx < ncolors) {
+		ar = colors[srcIdx].r;
+		ag = colors[srcIdx].g;
+		ab = colors[srcIdx].b;
+	}
+
+	for (int b = 0; b < 256; ++b) {
+		int br, bg, bb;
+		if (b < ncolors) {
+			br = colors[b].r;
+			bg = colors[b].g;
+			bb = colors[b].b;
 		}
 		else {
-			ar = ag = ab = 0;
+			br = bg = bb = 0;
 		}
 
-		for (int b = 0; b < 256; ++b) {
-			int br, bg, bb;
-			if (b < ncolors) {
-				br = colors[b].r;
-				bg = colors[b].g;
-				bb = colors[b].b;
-			}
-			else {
-				br = bg = bb = 0;
-			}
+		// 50/50 blend
+		int tr = (ar + br) >> 1;
+		int tg = (ag + bg) >> 1;
+		int tb = (ab + bb) >> 1;
 
-			// 50/50 blend
-			int tr = (ar + br) >> 1;
-			int tg = (ag + bg) >> 1;
-			int tb = (ab + bb) >> 1;
-
-			// Find nearest palette entry
-			int bestDist = INT_MAX;
-			Uint8 bestIdx = 0;
-			for (int c = 0; c < ncolors; ++c) {
-				int dr = colors[c].r - tr;
-				int dg = colors[c].g - tg;
-				int db = colors[c].b - tb;
-				int rmean = (tr + colors[c].r) / 2;
-				int dist = ((512 + rmean) * dr * dr >> 8) + 4 * dg * dg + ((767 - rmean) * db * db >> 8);
-				if (dist < bestDist) {
-					bestDist = dist;
-					bestIdx = static_cast<Uint8>(c);
-					if (dist == 0) {
-						break;
-					}
+		// Find nearest palette entry
+		int bestDist = INT_MAX;
+		Uint8 bestIdx = 0;
+		for (int c = 0; c < ncolors; ++c) {
+			int dr = colors[c].r - tr;
+			int dg = colors[c].g - tg;
+			int db = colors[c].b - tb;
+			int rmean = (tr + colors[c].r) / 2;
+			int dist = ((512 + rmean) * dr * dr >> 8) + 4 * dg * dg + ((767 - rmean) * db * db >> 8);
+			if (dist < bestDist) {
+				bestDist = dist;
+				bestIdx = static_cast<Uint8>(c);
+				if (dist == 0) {
+					break;
 				}
 			}
-
-			m_blendLUT[a * 256 + b] = bestIdx;
 		}
+
+		row[b] = bestIdx;
 	}
 }
 
 void Direct3DRMPaletteSWRenderer::PushLights(const SceneLight* lights, size_t count)
 {
-	m_lights.assign(lights, lights + count);
+	// Fold ambient lights into a single base intensity and pre-normalize the
+	// directional light vectors so per-vertex lighting does no sqrt for them.
+	m_preparedLights.clear();
+	m_ambientLum = 0.0f;
+
+	for (size_t i = 0; i < count; ++i) {
+		const SceneLight& light = lights[i];
+		float lum = light.color.r * 0.299f + light.color.g * 0.587f + light.color.b * 0.114f;
+
+		if (light.positional == 0.0f && light.directional == 0.0f) {
+			m_ambientLum += lum;
+			continue;
+		}
+
+		PreparedLight prepared;
+		prepared.lum = lum;
+		if (light.directional == 1.0f) {
+			prepared.positional = false;
+			prepared.vec = Normalize({-light.direction.x, -light.direction.y, -light.direction.z});
+		}
+		else {
+			prepared.positional = true;
+			prepared.vec = light.position;
+		}
+		m_preparedLights.push_back(prepared);
+	}
 }
 
 void Direct3DRMPaletteSWRenderer::SetFrustumPlanes(const Plane* frustumPlanes)
@@ -202,12 +264,9 @@ void Direct3DRMPaletteSWRenderer::SetProjection(const D3DRMMATRIX4D& projection,
 
 void Direct3DRMPaletteSWRenderer::ClearZBuffer()
 {
-	static_assert(sizeof(float) == sizeof(uint32_t), "float must be 32-bit");
-	const size_t size = m_zBuffer.size();
-	uint32_t* dst = reinterpret_cast<uint32_t*>(m_zBuffer.data());
-	for (size_t i = 0; i < size; ++i) {
-		dst[i] = 0x7F800000u;
-	}
+	// 0x7F7F7F7F is far beyond any Z_ONE-scaled depth, so a byte-pattern
+	// memset (rep stos) is a valid "infinitely far" fill.
+	memset(m_zBuffer.data(), 0x7F, m_zBuffer.size() * sizeof(Sint32));
 }
 
 void Direct3DRMPaletteSWRenderer::ProjectVertex(const D3DVECTOR& v, D3DRMVECTOR4D& p) const
@@ -264,47 +323,39 @@ inline static float FastPow(float base, float exponent)
 Uint8 Direct3DRMPaletteSWRenderer::ApplyLighting(
 	const D3DVECTOR& position,
 	const D3DVECTOR& normal,
-	const Appearance& appearance,
-	Uint8 texel
+	const Appearance& appearance
 )
 {
-	(void) texel; // brightness is independent of the palette index
-
-	float intensity = 0.0f;
+	float intensity = m_ambientLum;
 
 	D3DVECTOR n = Normalize(TransformNormal(normal, m_normalMatrix));
 
-	for (const auto& light : m_lights) {
-		if (light.positional == 0.0f && light.directional == 0.0f) {
-			// Ambient
-			float lum = light.color.r * 0.299f + light.color.g * 0.587f + light.color.b * 0.114f;
-			intensity += lum;
-			continue;
-		}
+	bool haveViewVec = false;
+	D3DVECTOR viewVec;
 
-		// Precompute luminance once per light (avoids redundant multiplies)
-		float lum = light.color.r * 0.299f + light.color.g * 0.587f + light.color.b * 0.114f;
-
+	for (const auto& light : m_preparedLights) {
 		D3DVECTOR lightVec;
-		if (light.directional == 1.0f) {
-			lightVec = {-light.direction.x, -light.direction.y, -light.direction.z};
+		if (light.positional) {
+			lightVec = Normalize({light.vec.x - position.x, light.vec.y - position.y, light.vec.z - position.z});
 		}
 		else {
-			lightVec = {light.position.x - position.x, light.position.y - position.y, light.position.z - position.z};
+			lightVec = light.vec;
 		}
-		lightVec = Normalize(lightVec);
 
 		float dotNL = DotProduct(n, lightVec);
 		if (dotNL > 0.0f) {
-			intensity += dotNL * lum;
+			intensity += dotNL * light.lum;
 
 			// Specular — use fast integer pow instead of std::pow
-			if (appearance.shininess > 0.0f && light.directional == 1.0f) {
-				D3DVECTOR viewVec = Normalize({-position.x, -position.y, -position.z});
+			if (appearance.shininess > 0.0f && !light.positional) {
+				if (!haveViewVec) {
+					viewVec = Normalize({-position.x, -position.y, -position.z});
+					haveViewVec = true;
+				}
 				D3DVECTOR H = Normalize({lightVec.x + viewVec.x, lightVec.y + viewVec.y, lightVec.z + viewVec.z});
 				float dotNH = std::max(DotProduct(n, H), 0.0f);
 				float spec = FastPow(dotNH, appearance.shininess);
-				intensity += spec * lum;
+				intensity += spec * light.lum;
 			}
 		}
 	}
@@ -320,7 +371,7 @@ Uint8 Direct3DRMPaletteSWRenderer::ApplyLighting(
 	return static_cast<Uint8>(level);
 }
 
-static D3DRMVERTEX PalSplitEdge(D3DRMVERTEX a, const D3DRMVERTEX& b, float plane)
+static PalLitVertex PalSplitEdge(PalLitVertex a, const PalLitVertex& b, float plane)
 {
 	float t = (plane - a.position.z) / (b.position.z - a.position.z);
 	a.position.x += t * (b.position.x - a.position.x);
@@ -330,11 +381,7 @@ static D3DRMVERTEX PalSplitEdge(D3DRMVERTEX a, const D3DRMVERTEX& b, float plane
 	a.texCoord.u += t * (b.texCoord.u - a.texCoord.u);
 	a.texCoord.v += t * (b.texCoord.v - a.texCoord.v);
 
-	a.normal.x += t * (b.normal.x - a.normal.x);
-	a.normal.y += t * (b.normal.y - a.normal.y);
-	a.normal.z += t * (b.normal.z - a.normal.z);
-
-	a.normal = Normalize(a.normal);
+	a.brightness += t * (b.brightness - a.brightness);
 
 	return a;
 }
@@ -360,7 +407,7 @@ static bool PalIsTriangleOutsideViewCone(
 	return false;
 }
 
-void Direct3DRMPaletteSWRenderer::DrawTriangleClipped(const D3DRMVERTEX (&v)[3], const Appearance& appearance)
+void Direct3DRMPaletteSWRenderer::DrawTriangleClipped(const PalLitVertex (&v)[3], const Appearance& appearance)
 {
 	bool in0 = v[0].position.z >= m_front;
 	bool in1 = v[1].position.z >= m_front;
@@ -379,7 +426,7 @@ void Direct3DRMPaletteSWRenderer::DrawTriangleClipped(const D3DRMVERTEX (&v)[3],
 		DrawTriangleProjected(v[0], v[1], v[2], appearance);
 	}
 	else if (insideCount == 2) {
-		D3DRMVERTEX split;
+		PalLitVertex split;
 		if (!in0) {
 			split = PalSplitEdge(v[2], v[0], m_front);
 			DrawTriangleProjected(v[1], v[2], split, appearance);
@@ -407,36 +454,59 @@ void Direct3DRMPaletteSWRenderer::DrawTriangleClipped(const D3DRMVERTEX (&v)[3],
 	}
 }
 
+// Nearest palette entry for a material colour, memoized — consecutive
+// triangles (and usually consecutive draws) reuse the same colour, so the
+// 256-entry search runs once per colour change instead of once per triangle.
+Uint8 Direct3DRMPaletteSWRenderer::GetMaterialPaletteIndex(const SDL_Color& color)
+{
+	if (m_materialCacheValid && m_cachedMaterialColor.r == color.r && m_cachedMaterialColor.g == color.g &&
+		m_cachedMaterialColor.b == color.b) {
+		return m_cachedMaterialIdx;
+	}
+
+	Uint8 bestIdx = 0;
+	if (m_palette) {
+		int bestDist = INT_MAX;
+		for (int c = 0; c < m_palette->ncolors; ++c) {
+			int dr = m_palette->colors[c].r - color.r;
+			int dg = m_palette->colors[c].g - color.g;
+			int db = m_palette->colors[c].b - color.b;
+			int dist = dr * dr + dg * dg + db * db;
+			if (dist < bestDist) {
+				bestDist = dist;
+				bestIdx = static_cast<Uint8>(c);
+				if (dist == 0) {
+					break;
+				}
+			}
+		}
+	}
+
+	m_cachedMaterialColor = color;
+	m_cachedMaterialIdx = bestIdx;
+	m_materialCacheValid = true;
+	return bestIdx;
+}
+
 void Direct3DRMPaletteSWRenderer::DrawTriangleProjected(
-	const D3DRMVERTEX& v0,
-	const D3DRMVERTEX& v1,
-	const D3DRMVERTEX& v2,
+	const PalLitVertex& v0,
+	const PalLitVertex& v1,
+	const PalLitVertex& v2,
 	const Appearance& appearance
 )
 {
-	if (PalIsBackface(v0.position, v1.position, v2.position)) {
-		return;
-	}
-
 	D3DRMVECTOR4D p0, p1, p2;
 	ProjectVertex(v0.position, p0);
 	ProjectVertex(v1.position, p1);
 	ProjectVertex(v2.position, p2);
 
-	Uint8 b0 = ApplyLighting(v0.position, v0.normal, appearance, 0);
-	Uint8 b1 = b0, b2 = b0;
-	if (!appearance.flat) {
-		b1 = ApplyLighting(v1.position, v1.normal, appearance, 0);
-		b2 = ApplyLighting(v2.position, v2.normal, appearance, 0);
-	}
-
 	Uint8* pixels = static_cast<Uint8*>(m_renderedImage->pixels);
 	int pitch = m_renderedImage->pitch;
 
 	PalVertexXY verts[3] = {
-		{p0.x, p0.y, p0.z, p0.w, b0, 0, 0, 0},
-		{p1.x, p1.y, p1.z, p1.w, b1, 0, 0, 0},
-		{p2.x, p2.y, p2.z, p2.w, b2, 0, 0, 0},
+		{p0.x, p0.y, p0.z, p0.w, v0.brightness, 0, 0, 0},
+		{p1.x, p1.y, p1.z, p1.w, v1.brightness, 0, 0, 0},
+		{p2.x, p2.y, p2.z, p2.w, v2.brightness, 0, 0, 0},
 	};
 
 	Uint32 textureId = appearance.textureId;
@@ -444,14 +514,31 @@ void Direct3DRMPaletteSWRenderer::DrawTriangleProjected(
 	Uint8* texels = nullptr;
 	int texWidthScale = 0;
 	int texHeightScale = 0;
+	// Power-of-two textures (the normal case) take an all-integer sampling
+	// path: 16.16 texel coordinates, wrap via shift+mask.
+	bool fastTex = false;
+	int uMask = 0, vMask = 0, pitchShift = 0;
+	float texWFix = 0.0f, texHFix = 0.0f;
 
 	if (textureId != NO_TEXTURE_ID) {
 		SDL_Surface* texture = m_textures[textureId].cached;
 		if (texture) {
 			texturePitch = texture->pitch;
 			texels = static_cast<Uint8*>(texture->pixels);
-			texWidthScale = texture->w - 1;
-			texHeightScale = texture->h - 1;
+			int tw = texture->w;
+			int th = texture->h;
+			texWidthScale = tw - 1;
+			texHeightScale = th - 1;
+			if ((tw & (tw - 1)) == 0 && (th & (th - 1)) == 0 && (texturePitch & (texturePitch - 1)) == 0) {
+				fastTex = true;
+				uMask = tw - 1;
+				vMask = th - 1;
+				while ((1 << pitchShift) < texturePitch) {
+					++pitchShift;
+				}
+				texWFix = static_cast<float>(tw) * 65536.0f;
+				texHFix = static_cast<float>(th) * 65536.0f;
+			}
 		}
 
 		verts[0].u_over_w = v0.texCoord.u / p0.w;
@@ -481,30 +568,14 @@ void Direct3DRMPaletteSWRenderer::DrawTriangleProjected(
 	int minY = std::max(0, static_cast<int>(std::ceil(verts[0].y)));
 	int maxY = std::min(m_height - 1, static_cast<int>(std::floor(verts[2].y)));
 
-	// For untextured triangles, find the nearest palette entry for the
-	// material colour so we can use the LUT.
 	Uint8 materialPalIdx = 0;
-	if (!texels && m_palette) {
-		Uint8 mr = appearance.color.r;
-		Uint8 mg = appearance.color.g;
-		Uint8 mb = appearance.color.b;
-		int bestDist = INT_MAX;
-		for (int c = 0; c < m_palette->ncolors; ++c) {
-			int dr = m_palette->colors[c].r - mr;
-			int dg = m_palette->colors[c].g - mg;
-			int db = m_palette->colors[c].b - mb;
-			int dist = dr * dr + dg * dg + db * db;
-			if (dist < bestDist) {
-				bestDist = dist;
-				materialPalIdx = static_cast<Uint8>(c);
-				if (dist == 0) {
-					break;
-				}
-			}
+	if (!texels) {
+		if (appearance.color.a == 0) {
+			// Fully transparent material — nothing to draw.
+			return;
 		}
+		materialPalIdx = GetMaterialPaletteIndex(appearance.color);
 	}
-
-	Uint8 alpha = appearance.color.a;
 
 	// --- Set up incremental edge stepping ---
 	// Long edge: verts[0] -> verts[2] (always the "right" side before swap)
@@ -595,6 +666,7 @@ void Direct3DRMPaletteSWRenderer::DrawTriangleProjected(
 
 	// Precompute material LUT row pointer for untextured triangles
 	const Uint8* materialLightRow = texels ? nullptr : &m_lightLUT[materialPalIdx * LIGHT_LEVELS];
+	const bool transparent = m_transparencyEnabled;
 
 	for (int y = minY; y <= maxY; ++y) {
 		// Switch to second short edge segment at midpoint
@@ -669,18 +741,24 @@ void Direct3DRMPaletteSWRenderer::DrawTriangleProjected(
 		}
 
 		float invSpan = 1.0f / span;
-
-		// Precompute per-pixel step values
-		float zStep = (rz - lz) * invSpan;
 		float startT = (startX - lx) * invSpan;
-		float z = lz + startT * (rz - lz);
+
+		// Clamp brightness at the span endpoints; interpolated values stay
+		// inside, so the pixel loops need no per-pixel clamp.
+		float clBri = lBri < 0.0f ? 0.0f : (lBri > LIGHT_LEVELS - 1 ? static_cast<float>(LIGHT_LEVELS - 1) : lBri);
+		float crBri = rBri < 0.0f ? 0.0f : (rBri > LIGHT_LEVELS - 1 ? static_cast<float>(LIGHT_LEVELS - 1) : rBri);
 
 		// Integer brightness with 8-bit fractional part for stepping
-		int briFix = static_cast<int>((lBri + startT * (rBri - lBri)) * 256.0f);
-		int briStepFix = static_cast<int>((rBri - lBri) * invSpan * 256.0f);
+		int briFix = static_cast<int>((clBri + startT * (crBri - clBri)) * 256.0f);
+		int briStepFix = static_cast<int>((crBri - clBri) * invSpan * 256.0f);
+
+		// Depth in integer fixed point: two conversions per scanline instead
+		// of an x87 compare per pixel.
+		Sint32 zFix = static_cast<Sint32>((lz + startT * (rz - lz)) * Z_ONE);
+		Sint32 zStepFix = static_cast<Sint32>((rz - lz) * invSpan * Z_ONE);
 
 		Uint8* row = pixels + y * pitch;
-		float* zPtr = &m_zBuffer[y * m_width + startX];
+		Sint32* zPtr = &m_zBuffer[y * m_width + startX];
 
 		if (texels) {
 			// --- Textured scanline with periodic perspective correction ---
@@ -691,117 +769,131 @@ void Direct3DRMPaletteSWRenderer::DrawTriangleProjected(
 			float vowStep = (rVW - lVW) * invSpan;
 			float oowStep = (rOW - lOW) * invSpan;
 
+			// Perspective-correct UV at the span start; carried block to
+			// block so each block costs a single divide.
+			float invW = 1.0f / oow;
+			float u0 = uow * invW;
+			float v0 = vow * invW;
+
 			int x = startX;
 			while (x <= endX) {
-				// Perspective correction at this point
-				float inv_w0 = 1.0f / oow;
-				float u0 = uow * inv_w0;
-				float v0 = vow * inv_w0;
-
 				int remaining = endX - x + 1;
 				int blockLen = (remaining > PERSP_STEP) ? PERSP_STEP : remaining;
 
 				// Compute end-of-block perspective-correct UVs
-				float uowEnd = uow + uowStep * blockLen;
-				float vowEnd = vow + vowStep * blockLen;
-				float oowEnd = oow + oowStep * blockLen;
+				uow += uowStep * blockLen;
+				vow += vowStep * blockLen;
+				oow += oowStep * blockLen;
+				invW = 1.0f / oow;
+				float u1 = uow * invW;
+				float v1 = vow * invW;
 
-				float inv_w1 = 1.0f / oowEnd;
-				float u1 = uowEnd * inv_w1;
-				float v1 = vowEnd * inv_w1;
+				float invBlock = PAL_BLOCK_INV[blockLen];
 
-				// Affine step within this block
-				float invBlock = (blockLen > 1) ? (1.0f / blockLen) : 0.0f;
-				float uAffStep = (u1 - u0) * invBlock;
-				float vAffStep = (v1 - v0) * invBlock;
-				float uAff = u0;
-				float vAff = v0;
+				if (fastTex) {
+					// 16.16 texel-space coordinates; arithmetic shift + mask
+					// wraps correctly for negative UVs too.  No FPU in the
+					// pixel loop.
+					Sint32 uFix = static_cast<Sint32>(u0 * texWFix);
+					Sint32 vFix = static_cast<Sint32>(v0 * texHFix);
+					Sint32 uStepFix = static_cast<Sint32>((u1 - u0) * invBlock * texWFix);
+					Sint32 vStepFix = static_cast<Sint32>((v1 - v0) * invBlock * texHFix);
 
-				float zLocal = z;
-				int briLocal = briFix;
-				float* zP = zPtr;
-
-				for (int i = 0; i < blockLen; ++i, ++x) {
-					if (zLocal < *zP) {
-						int bri = briLocal >> 8;
-						if (bri < 0) {
-							bri = 0;
-						}
-						else if (bri >= LIGHT_LEVELS) {
-							bri = LIGHT_LEVELS - 1;
-						}
-
-						// Fast UV tile: wrap to [0,1)
-						float uTile = uAff;
-						float vTile = vAff;
-						int ui = static_cast<int>(uTile);
-						int vi = static_cast<int>(vTile);
-						uTile -= ui;
-						vTile -= vi;
-						if (uTile < 0.0f) {
-							uTile += 1.0f;
-						}
-						if (vTile < 0.0f) {
-							vTile += 1.0f;
-						}
-
-						int texX = static_cast<int>(uTile * texWidthScale);
-						int texY = static_cast<int>(vTile * texHeightScale);
-
-						Uint8 texel = texels[texY * texturePitch + texX];
-
-						Uint8 palIdx = m_lightLUT[texel * LIGHT_LEVELS + bri];
-						if (m_transparencyEnabled) {
-							row[x] = m_blendLUT[palIdx * 256 + row[x]];
-						}
-						else {
-							*zP = zLocal;
-							row[x] = palIdx;
+					if (transparent) {
+						for (int i = 0; i < blockLen; ++i, ++x) {
+							if (zFix < *zPtr) {
+								Uint8 texel = texels[(((vFix >> 16) & vMask) << pitchShift) | ((uFix >> 16) & uMask)];
+								Uint8 palIdx = m_lightLUT[texel * LIGHT_LEVELS + (briFix >> 8)];
+								row[x] = GetBlendRow(palIdx)[row[x]];
+							}
+							zFix += zStepFix;
+							briFix += briStepFix;
+							uFix += uStepFix;
+							vFix += vStepFix;
+							++zPtr;
 						}
 					}
-					zLocal += zStep;
-					briLocal += briStepFix;
-					uAff += uAffStep;
-					vAff += vAffStep;
-					++zP;
+					else {
+						for (int i = 0; i < blockLen; ++i, ++x) {
+							if (zFix < *zPtr) {
+								Uint8 texel = texels[(((vFix >> 16) & vMask) << pitchShift) | ((uFix >> 16) & uMask)];
+								*zPtr = zFix;
+								row[x] = m_lightLUT[texel * LIGHT_LEVELS + (briFix >> 8)];
+							}
+							zFix += zStepFix;
+							briFix += briStepFix;
+							uFix += uStepFix;
+							vFix += vStepFix;
+							++zPtr;
+						}
+					}
+				}
+				else {
+					// Non-power-of-two texture fallback: affine float UVs
+					float uAffStep = (u1 - u0) * invBlock;
+					float vAffStep = (v1 - v0) * invBlock;
+					float uAff = u0;
+					float vAff = v0;
+
+					for (int i = 0; i < blockLen; ++i, ++x) {
+						if (zFix < *zPtr) {
+							// Fast UV tile: wrap to [0,1)
+							float uTile = uAff;
+							float vTile = vAff;
+							int ui = static_cast<int>(uTile);
+							int vi = static_cast<int>(vTile);
+							uTile -= ui;
+							vTile -= vi;
+							if (uTile < 0.0f) {
+								uTile += 1.0f;
+							}
+							if (vTile < 0.0f) {
+								vTile += 1.0f;
+							}
+
+							int texX = static_cast<int>(uTile * texWidthScale);
+							int texY = static_cast<int>(vTile * texHeightScale);
+
+							Uint8 texel = texels[texY * texturePitch + texX];
+							Uint8 palIdx = m_lightLUT[texel * LIGHT_LEVELS + (briFix >> 8)];
+							if (transparent) {
+								row[x] = GetBlendRow(palIdx)[row[x]];
+							}
+							else {
+								*zPtr = zFix;
+								row[x] = palIdx;
+							}
+						}
+						zFix += zStepFix;
+						briFix += briStepFix;
+						uAff += uAffStep;
+						vAff += vAffStep;
+						++zPtr;
+					}
 				}
 
-				z = zLocal;
-				briFix = briLocal;
-				zPtr = zP;
-				uow = uowEnd;
-				vow = vowEnd;
-				oow = oowEnd;
+				u0 = u1;
+				v0 = v1;
 			}
 		}
 		else {
-			// --- Untextured scanline ---
-			if (alpha == 0) {
-				// Fully transparent material, skip entire scanline
-			}
-			else {
-				for (int x = startX; x <= endX; ++x, ++zPtr, z += zStep, briFix += briStepFix) {
-					if (z >= *zPtr) {
+			// --- Untextured scanline (fully integer) ---
+			if (transparent) {
+				for (int x = startX; x <= endX; ++x, ++zPtr, zFix += zStepFix, briFix += briStepFix) {
+					if (zFix >= *zPtr) {
 						continue;
 					}
-
-					int bri = briFix >> 8;
-					if (bri < 0) {
-						bri = 0;
+					Uint8 palIdx = materialLightRow[briFix >> 8];
+					row[x] = GetBlendRow(palIdx)[row[x]];
+				}
+			}
+			else {
+				for (int x = startX; x <= endX; ++x, ++zPtr, zFix += zStepFix, briFix += briStepFix) {
+					if (zFix >= *zPtr) {
+						continue;
 					}
-					else if (bri >= LIGHT_LEVELS) {
-						bri = LIGHT_LEVELS - 1;
-					}
-
-					Uint8 palIdx = materialLightRow[bri];
-
-					if (m_transparencyEnabled) {
-						row[x] = m_blendLUT[palIdx * 256 + row[x]];
-					}
-					else {
-						*zPtr = z;
-						row[x] = palIdx;
-					}
+					*zPtr = zFix;
+					row[x] = materialLightRow[briFix >> 8];
 				}
 			}
 		}
@@ -1073,11 +1165,11 @@ HRESULT Direct3DRMPaletteSWRenderer::BeginFrame()
 		return DDERR_GENERIC;
 	}
 
-	// Rebuild lighting LUT if palette changed
+	bool paletteChanged = false;
+
 	if (m_lightLUTDirty) {
 		m_palette = SDL_GetSurfacePalette(m_renderedImage);
-		BuildLightingLUT();
-		BuildBlendLUT();
+		paletteChanged = true;
 	}
 
 	// Use the palette snapshot from the previous Flip (m_flipPalette) for
@@ -1085,15 +1177,7 @@ HRESULT Direct3DRMPaletteSWRenderer::BeginFrame()
 	// (i.e. on scene transitions), not every frame.
 	if (m_flipPalette && m_flipPaletteDirty) {
 		m_flipPaletteDirty = false;
-
-		int grassGreens = 0;
-		for (int i = 0; i < m_flipPalette->ncolors; ++i) {
-			SDL_Color c = m_flipPalette->colors[i];
-			if (c.g >= 60 && c.g <= 125 && c.r >= 35 && c.r <= 95 && c.b >= 20 && c.b <= 65 && c.g > c.r) {
-				grassGreens++;
-			}
-		}
-		int invalidated = 0;
+		paletteChanged = true;
 
 		// Invalidate all cached 3D textures so they get re-remapped
 		// against the new palette on next use in GetTextureId.
@@ -1110,12 +1194,14 @@ HRESULT Direct3DRMPaletteSWRenderer::BeginFrame()
 			SDL_DestroySurface(texRef.cached);
 			texRef.cached = nullptr;
 			texRef.version = 0;
-			invalidated++;
 		}
+	}
 
-		// Rebuild lighting/blend LUTs for the new palette
+	if (paletteChanged) {
 		BuildLightingLUT();
-		BuildBlendLUT();
+		// Blend rows are rebuilt lazily on first transparent use.
+		memset(m_blendRowValid, 0, sizeof(m_blendRowValid));
+		m_materialCacheValid = false;
 	}
 
 	ClearZBuffer();
@@ -1140,25 +1226,67 @@ void Direct3DRMPaletteSWRenderer::SubmitDraw(
 	memcpy(m_normalMatrix, normalMatrix, sizeof(Matrix3x3));
 
 	auto& mesh = m_meshes[meshId];
+	const size_t vertexCount = mesh.vertices.size();
 
-	// Pre-transform all vertex positions and normals
-	m_transformedVerts.clear();
-	m_transformedVerts.reserve(mesh.vertices.size());
-	for (const auto& src : mesh.vertices) {
-		D3DRMVERTEX& dst = m_transformedVerts.emplace_back();
-		dst.position = TransformPoint(src.position, modelViewMatrix);
-		dst.normal = src.normal;
-		dst.texCoord = src.texCoord;
+	// Pre-transform all vertex positions
+	m_transformedPositions.resize(vertexCount);
+	for (size_t i = 0; i < vertexCount; ++i) {
+		m_transformedPositions[i] = TransformPoint(mesh.vertices[i].position, modelViewMatrix);
 	}
+
+	// Lighting is computed lazily, once per unique vertex, and only for
+	// vertices of triangles that survive backface culling.  Shared vertices
+	// previously got re-lit for every triangle that used them.
+	m_vertexBrightness.resize(vertexCount);
+	m_vertexLit.assign(vertexCount, 0);
+
+	const bool flat = appearance.flat;
 
 	// Assemble triangles using index buffer
 	for (size_t i = 0; i + 2 < mesh.indices.size(); i += 3) {
-		DrawTriangleClipped(
-			{m_transformedVerts[mesh.indices[i]],
-			 m_transformedVerts[mesh.indices[i + 1]],
-			 m_transformedVerts[mesh.indices[i + 2]]},
-			appearance
-		);
+		const uint16_t i0 = mesh.indices[i];
+		const uint16_t i1 = mesh.indices[i + 1];
+		const uint16_t i2 = mesh.indices[i + 2];
+		const D3DVECTOR& p0 = m_transformedPositions[i0];
+		const D3DVECTOR& p1 = m_transformedPositions[i1];
+		const D3DVECTOR& p2 = m_transformedPositions[i2];
+
+		// Cull before lighting and clipping; sub-triangles produced by the
+		// near-plane clip are coplanar with the original, so this test is
+		// equivalent to the old per-projected-triangle one.
+		if (PalIsBackface(p0, p1, p2)) {
+			continue;
+		}
+
+		if (!m_vertexLit[i0]) {
+			m_vertexLit[i0] = 1;
+			m_vertexBrightness[i0] = ApplyLighting(p0, mesh.vertices[i0].normal, appearance);
+		}
+		float b0 = m_vertexBrightness[i0];
+		float b1, b2;
+		if (flat) {
+			b1 = b0;
+			b2 = b0;
+		}
+		else {
+			if (!m_vertexLit[i1]) {
+				m_vertexLit[i1] = 1;
+				m_vertexBrightness[i1] = ApplyLighting(p1, mesh.vertices[i1].normal, appearance);
+			}
+			if (!m_vertexLit[i2]) {
+				m_vertexLit[i2] = 1;
+				m_vertexBrightness[i2] = ApplyLighting(p2, mesh.vertices[i2].normal, appearance);
+			}
+			b1 = m_vertexBrightness[i1];
+			b2 = m_vertexBrightness[i2];
+		}
+
+		PalLitVertex tri[3] = {
+			{p0, mesh.vertices[i0].texCoord, b0},
+			{p1, mesh.vertices[i1].texCoord, b1},
+			{p2, mesh.vertices[i2].texCoord, b2},
+		};
+		DrawTriangleClipped(tri, appearance);
 	}
 }
 
@@ -1211,27 +1339,8 @@ void Direct3DRMPaletteSWRenderer::Clear(float r, float g, float b)
 		return;
 	}
 
-	// Find nearest palette entry
-	Uint8 tr = static_cast<Uint8>(r * 255);
-	Uint8 tg = static_cast<Uint8>(g * 255);
-	Uint8 tb = static_cast<Uint8>(b * 255);
-	int bestDist = INT_MAX;
-	Uint8 bestIdx = 0;
-	for (int c = 0; c < m_palette->ncolors; ++c) {
-		int dr = m_palette->colors[c].r - tr;
-		int dg = m_palette->colors[c].g - tg;
-		int db = m_palette->colors[c].b - tb;
-		int dist = dr * dr + dg * dg + db * db;
-		if (dist < bestDist) {
-			bestDist = dist;
-			bestIdx = static_cast<Uint8>(c);
-			if (dist == 0) {
-				break;
-			}
-		}
-	}
-
-	SDL_FillSurfaceRect(m_renderedImage, nullptr, bestIdx);
+	SDL_Color color = {static_cast<Uint8>(r * 255), static_cast<Uint8>(g * 255), static_cast<Uint8>(b * 255), 255};
+	SDL_FillSurfaceRect(m_renderedImage, nullptr, GetMaterialPaletteIndex(color));
 }
 
 void Direct3DRMPaletteSWRenderer::Flip()
@@ -1265,14 +1374,13 @@ void Direct3DRMPaletteSWRenderer::Flip()
 			for (int row = 0; row < m_height; ++row) {
 				Uint8* srcRow = src + row * srcPitch;
 				Uint8* dstRow0 = dst + (row * 2) * dstPitch;
-				Uint8* dstRow1 = dstRow0 + dstPitch;
 				for (int col = 0; col < m_width; ++col) {
 					Uint8 px = srcRow[col];
 					dstRow0[col * 2] = px;
 					dstRow0[col * 2 + 1] = px;
-					dstRow1[col * 2] = px;
-					dstRow1[col * 2 + 1] = px;
 				}
+				// Second output row is identical — bulk copy beats a second pixel loop
+				memcpy(dstRow0 + dstPitch, dstRow0, m_width * 2);
 			}
 		}
 		else {
@@ -1330,25 +1438,13 @@ void Direct3DRMPaletteSWRenderer::Draw2DImage(
 	if (textureId == NO_TEXTURE_ID) {
 		// Fill with nearest palette colour
 		if (m_palette) {
-			Uint8 tr = static_cast<Uint8>(color.r * 255);
-			Uint8 tg = static_cast<Uint8>(color.g * 255);
-			Uint8 tb = static_cast<Uint8>(color.b * 255);
-			int bestDist = INT_MAX;
-			Uint8 bestIdx = 0;
-			for (int c = 0; c < m_palette->ncolors; ++c) {
-				int dr = m_palette->colors[c].r - tr;
-				int dg = m_palette->colors[c].g - tg;
-				int db = m_palette->colors[c].b - tb;
-				int dist = dr * dr + dg * dg + db * db;
-				if (dist < bestDist) {
-					bestDist = dist;
-					bestIdx = static_cast<Uint8>(c);
-					if (dist == 0) {
-						break;
-					}
-				}
-			}
-			SDL_FillSurfaceRect(m_renderedImage, &centeredRect, bestIdx);
+			SDL_Color fill = {
+				static_cast<Uint8>(color.r * 255),
+				static_cast<Uint8>(color.g * 255),
+				static_cast<Uint8>(color.b * 255),
+				255,
+			};
+			SDL_FillSurfaceRect(m_renderedImage, &centeredRect, GetMaterialPaletteIndex(fill));
 		}
 		else {
 			SDL_FillSurfaceRect(m_renderedImage, &centeredRect, 0);
@@ -1411,29 +1507,27 @@ void Direct3DRMPaletteSWRenderer::Draw2DImage(
 			}
 		}
 	}
-	else if (!hasColorKey) {
-		// Scaled blit, no color key
+	else if (dstX0 < dstX1 && dstY0 < dstY1) {
+		// Scaled blit — 16.16 fixed-point source stepping instead of a
+		// multiply+divide per pixel.
+		Sint32 sxStep = static_cast<Sint32>((static_cast<Sint64>(srcRect.w) << 16) / centeredRect.w);
+		Sint32 sxStart = (srcRect.x << 16) + (dstX0 - centeredRect.x) * sxStep;
 		for (int dy = dstY0; dy < dstY1; ++dy) {
 			int sy = srcRect.y + (dy - centeredRect.y) * srcRect.h / centeredRect.h;
 			Uint8* dstRow = dst + dy * dstPitch;
 			Uint8* srcRow = src + sy * srcPitch;
-			for (int dx = dstX0; dx < dstX1; ++dx) {
-				int sx = srcRect.x + (dx - centeredRect.x) * srcRect.w / centeredRect.w;
-				dstRow[dx] = srcRow[sx];
+			Sint32 sxFix = sxStart;
+			if (!hasColorKey) {
+				for (int dx = dstX0; dx < dstX1; ++dx, sxFix += sxStep) {
+					dstRow[dx] = srcRow[sxFix >> 16];
+				}
 			}
-		}
-	}
-	else {
-		// Scaled blit with color key
-		for (int dy = dstY0; dy < dstY1; ++dy) {
-			int sy = srcRect.y + (dy - centeredRect.y) * srcRect.h / centeredRect.h;
-			Uint8* dstRow = dst + dy * dstPitch;
-			Uint8* srcRow = src + sy * srcPitch;
-			for (int dx = dstX0; dx < dstX1; ++dx) {
-				int sx = srcRect.x + (dx - centeredRect.x) * srcRect.w / centeredRect.w;
-				Uint8 px = srcRow[sx];
-				if (px != ckByte) {
-					dstRow[dx] = px;
+			else {
+				for (int dx = dstX0; dx < dstX1; ++dx, sxFix += sxStep) {
+					Uint8 px = srcRow[sxFix >> 16];
+					if (px != ckByte) {
+						dstRow[dx] = px;
+					}
 				}
 			}
 		}
@@ -1452,6 +1546,7 @@ void Direct3DRMPaletteSWRenderer::SetPalette(SDL_Palette* palette)
 {
 	m_palette = palette;
 	m_lightLUTDirty = true;
+	m_materialCacheValid = false;
 	if (m_renderedImage) {
 		SDL_SetSurfacePalette(m_renderedImage, palette);
 	}
