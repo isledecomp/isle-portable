@@ -44,8 +44,10 @@ MxLong InfoCenterEntity::HandleClick(LegoEventNotificationParam& p_param)
 {
 	switch (GameState()->GetCurrentAct()) {
 	case LegoGameState::Act::e_act1: {
-		if (UserActor()->GetActorId() != GameState()->GetActorId()) {
-			((IslePathActor*) UserActor())->Exit();
+		if (UserActor()) {
+			if (UserActor()->GetActorId() != GameState()->GetActorId()) {
+				((IslePathActor*) UserActor())->Exit();
+			}
 		}
 
 		Isle* isle = (Isle*) FindWorld(*g_isleScript, IsleScript::c__Isle);
@@ -86,8 +88,10 @@ MxLong GasStationEntity::HandleClick(LegoEventNotificationParam& p_param)
 		if (state->GetState() != Act1State::e_towtrack) {
 			state->SetState(Act1State::e_none);
 
-			if (UserActor()->GetActorId() != GameState()->GetActorId()) {
-				((IslePathActor*) UserActor())->Exit();
+			if (UserActor()) {
+				if (UserActor()->GetActorId() != GameState()->GetActorId()) {
+					((IslePathActor*) UserActor())->Exit();
+				}
 			}
 
 			Isle* isle = (Isle*) FindWorld(*g_isleScript, IsleScript::c__Isle);
@@ -110,8 +114,10 @@ MxLong HospitalEntity::HandleClick(LegoEventNotificationParam& p_param)
 		if (act1State->GetState() != Act1State::e_ambulance) {
 			act1State->SetState(Act1State::e_none);
 
-			if (UserActor()->GetActorId() != GameState()->GetActorId()) {
-				((IslePathActor*) UserActor())->Exit();
+			if (UserActor()) {
+				if (UserActor()->GetActorId() != GameState()->GetActorId()) {
+					((IslePathActor*) UserActor())->Exit();
+				}
 			}
 
 			Isle* isle = (Isle*) FindWorld(*g_isleScript, IsleScript::c__Isle);
@@ -134,8 +140,10 @@ MxLong PoliceEntity::HandleClick(LegoEventNotificationParam& p_param)
 		if (state->GetState() != Act1State::e_ambulance) {
 			state->SetState(Act1State::e_none);
 
-			if (UserActor()->GetActorId() != GameState()->GetActorId()) {
-				((IslePathActor*) UserActor())->Exit();
+			if (UserActor()) {
+				if (UserActor()->GetActorId() != GameState()->GetActorId()) {
+					((IslePathActor*) UserActor())->Exit();
+				}
 			}
 
 			Isle* isle = (Isle*) FindWorld(*g_isleScript, IsleScript::c__Isle);

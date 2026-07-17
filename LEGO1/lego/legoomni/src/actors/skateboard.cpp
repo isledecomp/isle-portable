@@ -73,7 +73,7 @@ void SkateBoard::Exit()
 // FUNCTION: LEGO1 0x100100e0
 MxLong SkateBoard::HandleClick()
 {
-	if (m_roi == NULL) {
+	if (m_roi == NULL || UserActor() == NULL) {
 		return 1;
 	}
 

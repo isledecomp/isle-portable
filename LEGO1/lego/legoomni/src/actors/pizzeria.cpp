@@ -70,9 +70,11 @@ void Pizzeria::CreateState()
 MxLong Pizzeria::HandleClick()
 {
 	if (CanExit() && m_pizzaMissionState->m_state == PizzaMissionState::e_none) {
-		if (UserActor()->GetActorId() != GameState()->GetActorId()) {
-			if (!UserActor()->IsA("SkateBoard")) {
-				((IslePathActor*) UserActor())->Exit();
+		if (UserActor()) {
+			if (UserActor()->GetActorId() != GameState()->GetActorId()) {
+				if (!UserActor()->IsA("SkateBoard")) {
+					((IslePathActor*) UserActor())->Exit();
+				}
 			}
 		}
 
