@@ -59,7 +59,6 @@
 #include "emscripten/haptic.h"
 #include "emscripten/messagebox.h"
 #include "emscripten/window.h"
-#include "extensions/instrumentation/roi_uaf_log.h"
 #endif
 
 #ifdef __3DS__
@@ -431,10 +430,6 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 		},
 		NULL
 	);
-
-	// Wrap Module.onAbort so any future wasm trap carries the ROI UAF release
-	// and access ring-buffer dumps. Safe to call once; second call is a no-op.
-	roi_uaf_log_install();
 #endif
 #ifdef __3DS__
 	N3DS_SetupAptHooks();

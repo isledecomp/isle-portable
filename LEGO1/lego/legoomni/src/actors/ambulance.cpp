@@ -1,7 +1,6 @@
 #include "ambulance.h"
 
 #include "decomp.h"
-#include "extensions/instrumentation/roi_uaf_log.h"
 #include "extensions/multiplayer.h"
 #include "isle.h"
 #include "isle_actions.h"
@@ -57,21 +56,6 @@ Ambulance::Ambulance()
 // FUNCTION: BETA10 0x100228fe
 Ambulance::~Ambulance()
 {
-	// Bug C v3 instrumentation: catches Ambulance instance death (the
-	// player ambulance is a single long-lived IslePathActor; if its
-	// m_motocycle-style slot shows NULL m_roi we want to know whether
-	// the underlying instance was destroyed or just decoupled).
-	{
-		char site[64];
-		std::snprintf(
-			site,
-			sizeof site,
-			"~Ambulance m_roi=0x%08x",
-			(unsigned) reinterpret_cast<uintptr_t>(m_roi)
-		);
-		roi_uaf_log_release(this, "Ambulance", site);
-	}
-
 	ControlManager()->Unregister(this);
 	TickleManager()->UnregisterClient(this);
 }

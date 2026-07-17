@@ -10,7 +10,6 @@
 class Bike : public IslePathActor {
 public:
 	Bike();
-	~Bike() override;
 
 	// FUNCTION: LEGO1 0x100766f0
 	// FUNCTION: BETA10 0x10024bd0

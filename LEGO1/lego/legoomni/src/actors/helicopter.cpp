@@ -2,7 +2,6 @@
 
 #include "act3.h"
 #include "act3_actions.h"
-#include "extensions/instrumentation/roi_uaf_log.h"
 #include "isle.h"
 #include "isle_actions.h"
 #include "jukebox.h"
@@ -19,8 +18,6 @@
 #include "mxtimer.h"
 #include "mxtransitionmanager.h"
 #include "scripts.h"
-
-#include <cstdio>
 
 DECOMP_SIZE_ASSERT(Helicopter, 0x230)
 DECOMP_SIZE_ASSERT(HelicopterState, 0x0c)
@@ -42,21 +39,6 @@ Helicopter::Helicopter()
 // FUNCTION: LEGO1 0x10003230
 Helicopter::~Helicopter()
 {
-	// Bug C v3 instrumentation: log BEFORE IslePathActor::Destroy(TRUE)
-	// runs, since Destroy will go through LegoEntity::Init() and clear
-	// m_roi via the ACC-logged path. This captures the m_roi state at
-	// the start of helicopter death.
-	{
-		char site[64];
-		std::snprintf(
-			site,
-			sizeof site,
-			"~Helicopter m_roi=0x%08x",
-			(unsigned) reinterpret_cast<uintptr_t>(m_roi)
-		);
-		roi_uaf_log_release(this, "Helicopter", site);
-	}
-
 	ControlManager()->Unregister(this);
 	IslePathActor::Destroy(TRUE);
 }

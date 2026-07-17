@@ -2,7 +2,6 @@
 
 #include "3dmanager/lego3dmanager.h"
 #include "anim/legoanim.h"
-#include "extensions/instrumentation/roi_uaf_log.h"
 #include "extensions/siloader.h"
 #include "isle.h"
 #include "isle_actions.h"
@@ -519,7 +518,6 @@ MxBool RemoveFromCurrentWorld(const MxAtomId& p_atomId, MxS32 p_id)
 			world->Remove(object);
 
 			if (!object->IsA("MxPresenter")) {
-				roi_uaf_log_release(object, object->ClassName(), "RemoveFromCurrentWorld");
 				delete object;
 			}
 			else {
@@ -561,7 +559,6 @@ MxBool RemoveFromWorld(
 			world->Remove(object);
 
 			if (!object->IsA("MxPresenter")) {
-				roi_uaf_log_release(object, object->ClassName(), "RemoveFromWorld");
 				delete object;
 			}
 			else {

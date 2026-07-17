@@ -27,11 +27,6 @@ public:
 		}
 	}
 
-	// Number of slots currently registered. Used by instrumentation to record,
-	// at an object's death, how many back-refs it nulls — distinguishing a
-	// "never registered" slot from an "array mismatch" when a stale slot is hit.
-	unsigned GetSlotRefCount() const { return (unsigned) m_slotRefs.size(); }
-
 protected:
 	// Protected non-virtual: only destructible via a derived class.
 	// Fires automatically during the derived destructor chain.

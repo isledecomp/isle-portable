@@ -12,7 +12,6 @@ class LegoControlManagerNotificationParam;
 class Jetski : public IslePathActor {
 public:
 	Jetski();
-	~Jetski() override;
 
 	// FUNCTION: LEGO1 0x1007e430
 	// FUNCTION: BETA10 0x10037910

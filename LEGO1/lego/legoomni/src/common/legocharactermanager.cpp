@@ -1,7 +1,6 @@
 #include "legocharactermanager.h"
 
 #include "3dmanager/lego3dmanager.h"
-#include "extensions/instrumentation/roi_uaf_log.h"
 #include "extensions/multiplayer.h"
 #include "extensions/thirdpersoncamera.h"
 #include "legoactors.h"
@@ -343,17 +342,6 @@ void LegoCharacterManager::ReleaseActor(const char* p_name)
 		character = (*it).second;
 
 		if (character->RemoveRef() == 0) {
-			// Bug C v3 instrumentation: refcount hit zero, ROI is about to
-			// be released. Logs at the destruction point (after refcount
-			// drop) — paired with the entity->SetROI(NULL) call that
-			// follows. Note: if entity->m_roi back-pointer was already
-			// cleared elsewhere, the SetROI(NULL) at line 349 is skipped.
-			roi_uaf_log_release(
-				character->m_roi,
-				character->m_roi ? character->m_roi->GetName() : "?",
-				"CharMgr::ReleaseActor(name)"
-			);
-
 			LegoActorInfo* info = GetActorInfo(p_name);
 			LegoEntity* entity = character->m_roi->GetEntity();
 
@@ -397,16 +385,6 @@ void LegoCharacterManager::ReleaseActor(LegoROI* p_roi)
 
 		if (character->m_roi == p_roi) {
 			if (character->RemoveRef() == 0) {
-				// Bug C v3 instrumentation: refcount-zero release. This is
-				// the path LegoEntity::Destroy takes when c_bit1 is set on
-				// the entity (the IslePathActor-typical case). Pair with
-				// the LegoEntity::Destroy ACC event for full lifecycle.
-				roi_uaf_log_release(
-					p_roi,
-					p_roi ? p_roi->GetName() : "?",
-					"CharMgr::ReleaseActor(roi)"
-				);
-
 				LegoActorInfo* info = GetActorInfo(character->m_roi->GetName());
 				LegoEntity* entity = character->m_roi->GetEntity();
 

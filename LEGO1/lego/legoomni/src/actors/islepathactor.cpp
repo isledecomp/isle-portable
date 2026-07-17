@@ -1,7 +1,6 @@
 #include "islepathactor.h"
 
 #include "3dmanager/lego3dmanager.h"
-#include "extensions/instrumentation/roi_uaf_log.h"
 #include "extensions/thirdpersoncamera.h"
 #include "isle_actions.h"
 #include "jukebox_actions.h"
@@ -17,9 +16,6 @@
 #include "mxnotificationparam.h"
 #include "scripts.h"
 #include "viewmanager/viewmanager.h"
-
-#include <cstdint>
-#include <cstdio>
 
 using namespace Extensions;
 
@@ -55,21 +51,6 @@ MxLong IslePathActor::Notify(MxParam& p_param)
 {
 	MxLong result = 0;
 	MxNotificationParam& param = (MxNotificationParam&) p_param;
-
-	{
-		// Do not call virtual methods on `this` here: a stale-vtable scenario
-		// (sub-pattern C, #1293 Bike::HandleControl) would crash inside the
-		// log helper itself and lose the event. Encode only field reads.
-		char site[96];
-		std::snprintf(
-			site,
-			sizeof site,
-			"IslePathActor::Notify n=%d roi=0x%08x",
-			(int) param.GetNotification(),
-			(unsigned) reinterpret_cast<uintptr_t>(m_roi)
-		);
-		roi_uaf_log_access(this, site);
-	}
 
 	switch (param.GetNotification()) {
 	case c_notificationType0:
@@ -129,19 +110,6 @@ void IslePathActor::Enter()
 // FUNCTION: BETA10 0x1003669f
 void IslePathActor::Exit()
 {
-	{
-		// Sub-pattern D (#1331 Ambulance::Leave → IslePathActor::Exit) — fires
-		// before m_roi is dereferenced below. No virtual calls on `this`.
-		char site[96];
-		std::snprintf(
-			site,
-			sizeof site,
-			"IslePathActor::Exit roi=0x%08x",
-			(unsigned) reinterpret_cast<uintptr_t>(m_roi)
-		);
-		roi_uaf_log_access(this, site);
-	}
-
 	SetActorState(c_initial);
 	m_roi->SetVisibility(TRUE);
 
@@ -559,19 +527,6 @@ void IslePathActor::RegisterSpawnLocations()
 // FUNCTION: BETA10 0x100369c6
 void IslePathActor::SpawnPlayer(LegoGameState::Area p_area, MxBool p_enter, MxU8 p_flags)
 {
-	{
-		// No virtual calls on `this` — see IslePathActor::Notify comment.
-		char site[96];
-		std::snprintf(
-			site,
-			sizeof site,
-			"IslePathActor::SpawnPlayer roi=0x%08x area=%d",
-			(unsigned) reinterpret_cast<uintptr_t>(m_roi),
-			(int) p_area
-		);
-		roi_uaf_log_access(this, site);
-	}
-
 	MxS16 i;
 
 	for (i = 0; i < c_LOCATIONS_NUM && g_spawnLocations[i].m_area != p_area; i++) {

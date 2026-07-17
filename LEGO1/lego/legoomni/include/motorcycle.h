@@ -10,7 +10,6 @@
 class Motocycle : public IslePathActor {
 public:
 	Motocycle();
-	~Motocycle() override;
 
 	// FUNCTION: LEGO1 0x10035840
 	// FUNCTION: BETA10 0x100e83c0

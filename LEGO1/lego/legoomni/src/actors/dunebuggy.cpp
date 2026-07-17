@@ -1,7 +1,6 @@
 #include "dunebuggy.h"
 
 #include "decomp.h"
-#include "extensions/instrumentation/roi_uaf_log.h"
 #include "extensions/multiplayer.h"
 #include "isle.h"
 #include "isle_actions.h"
@@ -36,21 +35,6 @@ DuneBuggy::DuneBuggy()
 {
 	m_maxLinearVel = 25.0;
 	m_fuel = 1.0;
-}
-
-// Bug C v3 instrumentation: DuneBuggy has no original dtor; this dtor
-// exists only to capture death-time m_roi state for the slot-divergence
-// analysis.
-DuneBuggy::~DuneBuggy()
-{
-	char site[64];
-	std::snprintf(
-		site,
-		sizeof site,
-		"~DuneBuggy m_roi=0x%08x",
-		(unsigned) reinterpret_cast<uintptr_t>(m_roi)
-	);
-	roi_uaf_log_release(this, "DuneBuggy", site);
 }
 
 // FUNCTION: LEGO1 0x10067e30

@@ -10,7 +10,6 @@
 class DuneBuggy : public IslePathActor {
 public:
 	DuneBuggy();
-	~DuneBuggy() override;
 
 	// FUNCTION: LEGO1 0x10067c30
 	// FUNCTION: BETA10 0x100278a0

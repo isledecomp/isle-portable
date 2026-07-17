@@ -1,6 +1,5 @@
 #include "towtrack.h"
 
-#include "extensions/instrumentation/roi_uaf_log.h"
 #include "extensions/multiplayer.h"
 #include "isle.h"
 #include "isle_actions.h"
@@ -49,18 +48,6 @@ TowTrack::TowTrack()
 // FUNCTION: LEGO1 0x1004c970
 TowTrack::~TowTrack()
 {
-	// Bug C v3 instrumentation: paired with the other vehicle dtors.
-	{
-		char site[64];
-		std::snprintf(
-			site,
-			sizeof site,
-			"~TowTrack m_roi=0x%08x",
-			(unsigned) reinterpret_cast<uintptr_t>(m_roi)
-		);
-		roi_uaf_log_release(this, "TowTrack", site);
-	}
-
 	ControlManager()->Unregister(this);
 }
 

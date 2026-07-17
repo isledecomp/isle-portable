@@ -1,7 +1,6 @@
 #include "skateboard.h"
 
 #include "decomp.h"
-#include "extensions/instrumentation/roi_uaf_log.h"
 #include "isle.h"
 #include "isle_actions.h"
 #include "jukebox_actions.h"
@@ -15,9 +14,6 @@
 #include "mxtransitionmanager.h"
 #include "pizza.h"
 #include "scripts.h"
-
-#include <cstdint>
-#include <cstdio>
 
 DECOMP_SIZE_ASSERT(SkateBoard, 0x168)
 
@@ -35,16 +31,6 @@ SkateBoard::SkateBoard()
 // FUNCTION: LEGO1 0x1000ff80
 SkateBoard::~SkateBoard()
 {
-	// Bug C instrumentation: paired with ~Bike / ~Motocycle.
-	char site[64];
-	std::snprintf(
-		site,
-		sizeof site,
-		"~SkateBoard m_roi=0x%08x",
-		(unsigned) reinterpret_cast<uintptr_t>(m_roi)
-	);
-	roi_uaf_log_release(this, "SkateBoard", site);
-
 	ControlManager()->Unregister(this);
 	NotificationManager()->Unregister(this);
 }

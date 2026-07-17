@@ -1,7 +1,6 @@
 #include "legopathactor.h"
 
 #include "define.h"
-#include "extensions/instrumentation/roi_uaf_log.h"
 #include "geom/legoorientededge.h"
 #include "legocachesoundmanager.h"
 #include "legocameracontroller.h"
@@ -18,7 +17,6 @@
 #include "mxvariabletable.h"
 
 #include <SDL3/SDL.h>
-#include <cstdio>
 #include <mxdebug.h>
 #include <vec.h>
 
@@ -110,22 +108,6 @@ MxResult LegoPathActor::SetTransformAndDestinationFromEdge(
 	float p_destScale
 )
 {
-	// Bug C v3 instrumentation: this is the function that crashes at line
-	// 156 (m_roi->UpdateTransformationRelativeToParent) when m_roi is NULL
-	// or dangling. Log m_roi here as the last ACC entry before the crash —
-	// confirms the value the placement chain just passed in matches what
-	// World::PlaceActor / PathCtrl::PlaceActor observed.
-	{
-		char site[96];
-		std::snprintf(
-			site,
-			sizeof site,
-			"Path::SetXformEdge m_roi=0x%08x",
-			(unsigned) reinterpret_cast<uintptr_t>(m_roi)
-		);
-		roi_uaf_log_access(this, site);
-	}
-
 	Vector3* v1 = p_srcEdge.CWVertex(*p_boundary);
 	Vector3* v2 = p_srcEdge.CCWVertex(*p_boundary);
 	Vector3* v3 = p_destEdge.CWVertex(*p_boundary);

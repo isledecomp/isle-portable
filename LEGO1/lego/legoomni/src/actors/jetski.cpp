@@ -1,7 +1,6 @@
 #include "jetski.h"
 
 #include "dunebuggy.h"
-#include "extensions/instrumentation/roi_uaf_log.h"
 #include "isle.h"
 #include "isle_actions.h"
 #include "jukebox_actions.h"
@@ -38,20 +37,6 @@ Jetski::Jetski()
 	m_maxLinearVel = 25.0;
 	m_linearRotationRatio = 2.0;
 	m_canRotate = 1;
-}
-
-// Bug C v3 instrumentation: Jetski has no original dtor; this dtor exists
-// only to capture death-time m_roi state for the slot-divergence analysis.
-Jetski::~Jetski()
-{
-	char site[64];
-	std::snprintf(
-		site,
-		sizeof site,
-		"~Jetski m_roi=0x%08x",
-		(unsigned) reinterpret_cast<uintptr_t>(m_roi)
-	);
-	roi_uaf_log_release(this, "Jetski", site);
 }
 
 // FUNCTION: LEGO1 0x1007e630

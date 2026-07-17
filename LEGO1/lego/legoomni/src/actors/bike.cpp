@@ -1,6 +1,5 @@
 #include "bike.h"
 
-#include "extensions/instrumentation/roi_uaf_log.h"
 #include "extensions/multiplayer.h"
 #include "isle.h"
 #include "isle_actions.h"
@@ -15,9 +14,6 @@
 #include "mxtransitionmanager.h"
 #include "scripts.h"
 
-#include <cstdint>
-#include <cstdio>
-
 using namespace Extensions;
 
 DECOMP_SIZE_ASSERT(Bike, 0x164)
@@ -28,22 +24,6 @@ Bike::Bike()
 	m_maxLinearVel = 20.0;
 	m_linearRotationRatio = 3.0;
 	m_canRotate = 1;
-}
-
-// Bug C instrumentation: fires at the most-derived destruction point. If we
-// never see `~Bike` in the REL ring, the Bike entity holding a dangling m_roi
-// was never destroyed in the visible window. Captures m_roi value at the
-// moment of destruction (before LegoEntity::Destroy clears it via Init()).
-Bike::~Bike()
-{
-	char site[64];
-	std::snprintf(
-		site,
-		sizeof site,
-		"~Bike m_roi=0x%08x",
-		(unsigned) reinterpret_cast<uintptr_t>(m_roi)
-	);
-	roi_uaf_log_release(this, "Bike", site);
 }
 
 // FUNCTION: LEGO1 0x100768f0

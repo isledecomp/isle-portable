@@ -2,7 +2,6 @@
 
 #include "3dmanager/lego3dmanager.h"
 #include "define.h"
-#include "extensions/instrumentation/roi_uaf_log.h"
 #include "extensions/multiplayer.h"
 #include "legoanimationmanager.h"
 #include "legobuildingmanager.h"
@@ -20,7 +19,6 @@
 #include "mxutilities.h"
 #include "realtime/realtime.h"
 
-#include <cstdint>
 #include <stdio.h>
 
 using namespace Extensions;
@@ -30,32 +28,6 @@ DECOMP_SIZE_ASSERT(LegoEntity, 0x68)
 // FUNCTION: LEGO1 0x100105f0
 void LegoEntity::Init()
 {
-	// Bug C v3 instrumentation: Init() is the *only* path that clears m_roi
-	// without going through SetROI. It's called from LegoEntity::Destroy
-	// after the ROI has been freed (or released via CharacterManager). If an
-	// IslePathActor descendant survives a soft-Destroy(FALSE) call (the
-	// non-dtor variant), Init() leaves m_roi=NULL on a still-live object —
-	// the exact pre-condition for #1520. Log BEFORE the clear so we see the
-	// outgoing m_roi value.
-	//
-	// Order matters: IsA() check first. Init() is also called from
-	// LegoEntity::LegoEntity() before m_roi is initialized, and reading
-	// uninitialized memory is UB. During construction the vtable is still
-	// LegoEntity::LegoEntity (virtual dispatch returns base behavior), so
-	// IsA("IslePathActor") is FALSE and we short-circuit before touching
-	// m_roi.
-	if (IsA("IslePathActor") && m_roi != NULL) {
-		char site[96];
-		std::snprintf(
-			site,
-			sizeof site,
-			"Init cls=%-16s prev=0x%08x",
-			ClassName(),
-			(unsigned) reinterpret_cast<uintptr_t>(m_roi)
-		);
-		roi_uaf_log_access(this, site);
-	}
-
 	m_worldLocation.Fill(0);
 	m_worldDirection.Fill(0);
 	m_worldSpeed = 0;
@@ -126,25 +98,6 @@ MxResult LegoEntity::Create(MxDSAction& p_dsAction)
 // FUNCTION: BETA10 0x1007e5b9
 void LegoEntity::Destroy(MxBool p_fromDestructor)
 {
-	// Bug C v3 instrumentation: capture which branch is taken (c_bit1 →
-	// CharacterManager::ReleaseActor refcount path; else → direct delete).
-	// fromDtor=0 indicates a soft-destroy call from outside the destructor,
-	// the path that leaves the LegoEntity instance alive with m_roi=NULL via
-	// the trailing Init().
-	if (IsA("IslePathActor")) {
-		char site[96];
-		std::snprintf(
-			site,
-			sizeof site,
-			"Destroy cls=%-16s m_roi=0x%08x fromDtor=%d b1=%d",
-			ClassName(),
-			(unsigned) reinterpret_cast<uintptr_t>(m_roi),
-			p_fromDestructor ? 1 : 0,
-			(m_flags & c_bit1) ? 1 : 0
-		);
-		roi_uaf_log_access(this, site);
-	}
-
 	if (m_roi) {
 		if (m_flags & c_bit1) {
 			if (m_roi->GetEntity() == this) {
@@ -179,24 +132,6 @@ void LegoEntity::SetWorld()
 // FUNCTION: BETA10 0x1007e724
 void LegoEntity::SetROI(LegoROI* p_roi, MxBool p_bool1, MxBool p_updateTransform)
 {
-	// Bug C instrumentation: track SetROI on IslePathActor descendants (Bike,
-	// Motocycle, SkateBoard, Ambulance, TowTrack, Helicopter, Jetski,
-	// DuneBuggy, RaceCar). Captures old/new m_roi and the bool1 flag which
-	// drives c_bit1 (CharacterManager-managed vs direct-delete cleanup path).
-	if (IsA("IslePathActor")) {
-		char site[96];
-		std::snprintf(
-			site,
-			sizeof site,
-			"SetROI cls=%-16s old=0x%08x new=0x%08x b1=%d",
-			ClassName(),
-			(unsigned) reinterpret_cast<uintptr_t>(m_roi),
-			(unsigned) reinterpret_cast<uintptr_t>(p_roi),
-			p_bool1 ? 1 : 0
-		);
-		roi_uaf_log_access(this, site);
-	}
-
 	m_roi = p_roi;
 
 	if (m_roi != NULL) {

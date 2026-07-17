@@ -1,6 +1,5 @@
 #include "racecar.h"
 
-#include "extensions/instrumentation/roi_uaf_log.h"
 #include "isle.h"
 #include "isle_actions.h"
 #include "legocontrolmanager.h"
@@ -8,8 +7,6 @@
 #include "legoworld.h"
 #include "misc.h"
 #include "mxtransitionmanager.h"
-
-#include <cstdio>
 
 DECOMP_SIZE_ASSERT(RaceCar, 0x164)
 
@@ -22,20 +19,6 @@ RaceCar::RaceCar()
 // FUNCTION: LEGO1 0x10028420
 RaceCar::~RaceCar()
 {
-	// Bug C v3 instrumentation: log BEFORE Exit() to capture pre-exit
-	// m_roi state. Exit() may further modify the actor's path-controller
-	// state.
-	{
-		char site[64];
-		std::snprintf(
-			site,
-			sizeof site,
-			"~RaceCar m_roi=0x%08x",
-			(unsigned) reinterpret_cast<uintptr_t>(m_roi)
-		);
-		roi_uaf_log_release(this, "RaceCar", site);
-	}
-
 	ControlManager()->Unregister(this);
 	Exit();
 }
