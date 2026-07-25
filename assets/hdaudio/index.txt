@@ -220,6 +220,7 @@ Act3/ACT3.SI	566	wav/offscreen/cl/sns63xcl.wav
 Act3/ACT3.SI	567	wav/offscreen/en/sns64xen.wav
 Act3/ACT3.SI	568	wav/offscreen/re/sns65xre.wav
 Act3/ACT3.SI	569	wav/offscreen/sl/sns66xsl.wav
+Act3/ACT3.SI	570	wav/offscreen/ml/sns67xml.wav
 Act3/ACT3.SI	571	wav/offscreen/bu/sns68xbu.wav
 Act3/ACT3.SI	572	wav/offscreen/sn/sns69xsn.wav
 Act3/ACT3.SI	573	wav/offscreen/ni/sns70xni.wav
@@ -235,12 +236,15 @@ Act3/ACT3.SI	582	wav/offscreen/js/sns77xjs.wav
 Act3/ACT3.SI	583	wav/offscreen/ni/tns069ni.wav
 Act3/ACT3.SI	584	wav/offscreen/br/tns070br.wav
 Act3/ACT3.SI	585	wav/offscreen/ni/tns071ni.wav
+Act3/ACT3.SI	586	wav/offscreen/br/tns072br.wav
 Act3/ACT3.SI	587	wav/offscreen/ni/tns073ni.wav
 Act3/ACT3.SI	588	wav/offscreen/ni/tns074ni.wav
+Act3/ACT3.SI	589	wav/offscreen/br/tns075br.wav
 Act3/ACT3.SI	590	wav/offscreen/la/tns076la.wav
 Act3/ACT3.SI	591	wav/offscreen/br/tns077br.wav
 Act3/ACT3.SI	593	wav/offscreen/la/tns079la.wav
 Act3/ACT3.SI	594	wav/offscreen/ni/tns081ni.wav
+Act3/ACT3.SI	595	wav/offscreen/br/tns082br.wav
 Act3/ACT3.SI	596	wav/offscreen/br/tns080br.wav
 Act3/ACT3.SI	597	wav/onscreen/br/tns007br_s1.wav
 Act3/ACT3.SI	599	wav/onscreen/br/snsx27br_s1.wav
@@ -256,16 +260,19 @@ Build/DUNECAR.SI	148	wav/onscreen/d3/igs002d3.wav
 Build/DUNECAR.SI	152	wav/onscreen/d3/igs003d3.wav
 Build/DUNECAR.SI	164	wav/onscreen/d3/igs004d3.wav
 Build/DUNECAR.SI	172	wav/onscreen/d3/igs005d3.wav
+Build/JETSKI.SI	153	wav/onscreen/d4/ijs001d4.wav
 Build/JETSKI.SI	155	wav/onscreen/d4/ijs002d4.wav
 Build/JETSKI.SI	184	wav/onscreen/d4/ijs003d4.wav
 Build/JETSKI.SI	189	wav/onscreen/d4/ijs004d4.wav
 Build/JETSKI.SI	198	wav/onscreen/d4/ijs005d4.wav
 Build/JETSKI.SI	214	wav/onscreen/d4/ijs006d4.wav
 Build/JETSKI.SI	234	wav/onscreen/d4/ijs007d4.wav
+Build/RACECAR.SI	149	wav/onscreen/d1/irt001d1.wav
 Build/RACECAR.SI	158	wav/onscreen/d1/irt002d1.wav
 Build/RACECAR.SI	164	wav/onscreen/d1/irt003d1.wav
 Build/RACECAR.SI	175	wav/onscreen/d1/irt004d1.wav
 Build/RACECAR.SI	193	wav/onscreen/d1/irt005d1.wav
+Garage/GARAGE.SI	21	wav/onscreen/nu/wgs002nu.wav
 Garage/GARAGE.SI	26	wav/onscreen/nu/wgs003nu.wav
 Garage/GARAGE.SI	32	wav/onscreen/nu/wgs004nu.wav
 Garage/GARAGE.SI	36	wav/onscreen/nu/wgs006nu.wav
@@ -324,8 +331,10 @@ Infocntr/INFODOOR.SI	503	wav/onscreen/in/iic007in.wav
 Infocntr/INFOMAIN.SI	132	wav/onscreen/in/iic005in.wav
 Infocntr/INFOMAIN.SI	134	wav/onscreen/in/iic004in_s1.wav
 Infocntr/INFOMAIN.SI	136	wav/onscreen/in/iic002in_s1.wav
+Infocntr/INFOMAIN.SI	162	wav/onscreen/in/iic017in_s2.wav
 Infocntr/INFOMAIN.SI	164	wav/onscreen/in/iic016in.wav
 Infocntr/INFOMAIN.SI	181	wav/onscreen/in/iic017in_s1.wav
+Infocntr/INFOMAIN.SI	185	wav/onscreen/in/iic018in.wav
 Infocntr/INFOMAIN.SI	206	wav/onscreen/in/iic019in.wav
 Infocntr/INFOMAIN.SI	214	wav/onscreen/in/iic020in.wav
 Infocntr/INFOMAIN.SI	223	wav/onscreen/in/iic021in.wav
@@ -353,6 +362,7 @@ Infocntr/INFOMAIN.SI	410	wav/onscreen/in/iic055in.wav
 Infocntr/INFOMAIN.SI	418	wav/onscreen/in/iic056in.wav
 Infocntr/INFOMAIN.SI	429	wav/onscreen/in/iic057in.wav
 Infocntr/INFOMAIN.SI	436	wav/onscreen/in/iic058in.wav
+Infocntr/INFOMAIN.SI	447	wav/onscreen/in/iicb28in_s1.wav
 Infocntr/INFOMAIN.SI	453	wav/onscreen/in/iicc28in.wav
 Infocntr/INFOMAIN.SI	461	wav/onscreen/in/tic089in.wav
 Infocntr/INFOMAIN.SI	467	wav/onscreen/in/tic092in.wav
@@ -385,6 +395,7 @@ Infocntr/REGBOOK.SI	143	wav/onscreen/in/iic014in.wav
 Infocntr/REGBOOK.SI	504	wav/onscreen/in/iic009in.wav
 Infocntr/REGBOOK.SI	505	wav/onscreen/in/iic007in.wav
 Infocntr/REGBOOK.SI	506	wav/onscreen/in/iic008in.wav
+Isle/ISLE.SI	347	wav/onscreen/bu/sba001bu.wav
 Isle/ISLE.SI	352	wav/onscreen/bu/sba002bu.wav
 Isle/ISLE.SI	357	wav/onscreen/bu/sba003bu.wav
 Isle/ISLE.SI	379	wav/onscreen/la/fns017la.wav
@@ -393,6 +404,7 @@ Isle/ISLE.SI	398	wav/onscreen/na/igs005na.wav
 Isle/ISLE.SI	430	wav/onscreen/na/igs001na.wav
 Isle/ISLE.SI	432	wav/onscreen/na/igs003na.wav
 Isle/ISLE.SI	453	wav/onscreen/nu/sns003nu.wav
+Isle/ISLE.SI	460	wav/onscreen/na/sgs001na_s1.wav
 Isle/ISLE.SI	466	wav/onscreen/nu/sns001nu.wav
 Isle/ISLE.SI	472	wav/onscreen/nu/sns002nu.wav
 Isle/ISLE.SI	479	wav/onscreen/na/sgs002na.wav
@@ -419,6 +431,7 @@ Isle/ISLE.SI	884	wav/offscreen/ra/sns013ra.wav
 Isle/ISLE.SI	885	wav/offscreen/js/snsa01js_s1.wav
 Isle/ISLE.SI	886	wav/offscreen/js/snsb01js_s1.wav
 Isle/ISLE.SI	887	wav/offscreen/js/snsc01js_s1.wav
+Isle/ISLE.SI	888	wav/offscreen/cl/ham033cl.wav
 Isle/ISLE.SI	889	wav/offscreen/ra/ham034ra.wav
 Isle/ISLE.SI	890	wav/offscreen/ra/ham035ra.wav
 Isle/ISLE.SI	891	wav/offscreen/ra/ham036ra.wav
@@ -428,6 +441,7 @@ Isle/ISLE.SI	894	wav/offscreen/cl/ham041cl.wav
 Isle/ISLE.SI	895	wav/offscreen/cl/ham042cl.wav
 Isle/ISLE.SI	896	wav/offscreen/cl/ham043cl.wav
 Isle/ISLE.SI	897	wav/offscreen/cl/ham044cl.wav
+Isle/ISLE.SI	898	wav/offscreen/cl/ham045cl.wav
 Isle/ISLE.SI	899	wav/offscreen/cl/ham046cl.wav
 Isle/ISLE.SI	900	wav/offscreen/cl/ham075cl.wav
 Isle/ISLE.SI	901	wav/offscreen/cl/ham076cl.wav
@@ -440,6 +454,7 @@ Isle/ISLE.SI	907	wav/offscreen/cl/ham115cl.wav
 Isle/ISLE.SI	908	wav/offscreen/ma/hpz037ma.wav
 Isle/ISLE.SI	909	wav/offscreen/pa/sns078pa.wav
 Isle/ISLE.SI	910	wav/offscreen/pa/sns079pa.wav
+Isle/ISLE.SI	911	wav/offscreen/nu/wgs032nu.wav
 Isle/ISLE.SI	912	wav/offscreen/na/wns033na.wav
 Isle/ISLE.SI	913	wav/offscreen/na/wns034na.wav
 Isle/ISLE.SI	914	wav/offscreen/na/wns035na.wav
@@ -641,6 +656,7 @@ Isle/ISLE.SI	2269	wav/onscreen/ni/sps003ni.wav
 Isle/ISLE.SI	2274	wav/onscreen/la/sns017la.wav
 Isle/ISLE.SI	2279	wav/onscreen/la/sps001la.wav
 Isle/ISLE.SI	2283	wav/onscreen/la/sps002la.wav
+Isle/ISLE.SI	2291	wav/onscreen/ml/sns001ml.wav
 Isle/ISLE.SI	2297	wav/onscreen/mg/sns002mg.wav
 Isle/ISLE.SI	2300	wav/onscreen/p1/wns050p1_s1.wav
 Isle/ISLE.SI	2301	wav/onscreen/p1/wns050p1_s1.wav
@@ -665,6 +681,7 @@ Isle/ISLE.SI	2379	wav/onscreen/rd/ppz029rd.wav
 Isle/ISLE.SI	2384	wav/onscreen/sy/sns007sy.wav
 Isle/ISLE.SI	2390	wav/onscreen/sn/ijs006sn.wav
 Isle/ISLE.SI	2403	wav/onscreen/na/igs008na.wav
+Isle/ISLE.SI	2408	wav/onscreen/in/irt007in_s1.wav
 Isle/ISLE.SI	2417	wav/onscreen/ro/ips002ro.wav
 Isle/ISLE.SI	2424	wav/onscreen/cl/hho142cl.wav
 Isle/ISLE.SI	2445	wav/onscreen/cl/hho143cl.wav
@@ -874,6 +891,10 @@ Isle/ISLE.SI	3479	wav/onscreen/jk/wrt081jk.wav
 Isle/ISLE.SI	3481	wav/onscreen/bm/wrt080bm.wav
 Isle/ISLE.SI	3490	wav/onscreen/jk/wrt081jk.wav
 Isle/ISLE.SI	3492	wav/onscreen/bm/wrt080bm.wav
+Isle/ISLE.SI	3583	wav/onscreen/in/sjs007in.wav
+Isle/ISLE.SI	3588	wav/onscreen/in/sns005in.wav
+Isle/ISLE.SI	3593	wav/onscreen/in/sns006in.wav
+Isle/ISLE.SI	3600	wav/onscreen/in/sns008in.wav
 Isle/ISLE.SI	3607	wav/onscreen/in/sjs012in.wav
 Isle/ISLE.SI	3615	wav/onscreen/in/sjs013in.wav
 Isle/ISLE.SI	3622	wav/onscreen/in/sjs014in.wav
