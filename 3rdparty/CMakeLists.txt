@@ -61,8 +61,8 @@ if(DOWNLOAD_DEPENDENCIES)
     include(FetchContent)
     FetchContent_Populate(
         libweaver
-        URL https://github.com/isledecomp/SIEdit/archive/17c7736a6ff31413f1e74ab4e989011b545b6926.tar.gz
-        URL_MD5 04edbc974df8884f283d920ded10f1f6
+        URL https://github.com/isledecomp/SIEdit/archive/abb6d47139d7a03c5c1bad9b89e2267849e27904.tar.gz
+        URL_MD5 d786156fd9a2c5c755e27fd5c5a9ee28
     )
     add_library(libweaver STATIC
         ${libweaver_SOURCE_DIR}/lib/core.cpp
