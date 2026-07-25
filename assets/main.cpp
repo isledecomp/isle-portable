@@ -1,10 +1,14 @@
 #include "mxdsaction.h"
 
+#include <cstring>
 #include <file.h>
 #include <filesystem>
 #include <fstream>
 #include <interleaf.h>
+#include <map>
 #include <object.h>
+#include <othertypes.h>
+#include <vector>
 
 void ZeroInitObject(si::Object* o)
 {
@@ -205,6 +209,12 @@ void CreateHDMusic()
 		{"InfoCenter_3rd_Floor_Music_HD",
 		 "Replace:\\Lego\\Scripts\\Isle\\Jukebox;61",
 		 114520,
+		 10000,
+		 MxDSAction::c_enabled | MxDSAction::c_bit3},
+		{"MusicTheme1_HD", "Replace:\\Lego\\Scripts\\Isle\\Jukebox;0", 128282, 1, MxDSAction::c_enabled},
+		{"PizzaMission_Music_HD",
+		 "Replace:\\Lego\\Scripts\\Isle\\Jukebox;63",
+		 122078,
 		 10000,
 		 MxDSAction::c_enabled | MxDSAction::c_bit3}
 	};
@@ -409,6 +419,146 @@ void CreateRabbits()
 	si.Write(result.c_str());
 }
 
+struct HDAudioEntry {
+	std::string si;
+	uint32_t id;
+	std::string wav;
+};
+
+std::vector<HDAudioEntry> ParseHDAudioIndex(const std::string& p_path)
+{
+	std::vector<HDAudioEntry> entries;
+	std::ifstream in(p_path);
+	if (!in) {
+		abort();
+	}
+
+	std::string line;
+	while (std::getline(in, line)) {
+		if (line.empty() || line[0] == '#') {
+			continue;
+		}
+
+		size_t a = line.find('\t');
+		size_t b = line.find('\t', a + 1);
+		if (a == std::string::npos || b == std::string::npos) {
+			abort();
+		}
+
+		HDAudioEntry entry;
+		entry.si = line.substr(0, a);
+		entry.id = std::stoul(line.substr(a + 1, b - a - 1));
+		entry.wav = line.substr(b + 1);
+		entries.push_back(entry);
+	}
+
+	return entries;
+}
+
+void ReplaceWavAndFixup(si::Object* object, const std::string& file)
+{
+	if (object->data_.empty() || object->data_[0].size() != sizeof(si::WAVFmt)) {
+		abort();
+	}
+
+	si::WAVFmt oldFmt = *object->data_[0].cast<si::WAVFmt>();
+	uint64_t oldBody = object->GetFileBodySize();
+	uint32_t oldPerLoop = (uint32_t) ((oldBody * 1000 + oldFmt.ByteRate - 1) / oldFmt.ByteRate);
+
+	if (!object->ReplaceWithFile(file.c_str())) {
+		abort();
+	}
+
+	// ReplaceWithFile stores the source fmt chunk verbatim; the engine expects
+	// the 24-byte layout with DataSize (used to size cache sound buffers)
+	if (object->data_[0].size() < 16) {
+		abort();
+	}
+
+	si::WAVFmt fmt = *object->data_[0].cast<si::WAVFmt>();
+	uint16_t blockAlign = fmt.Channels * (fmt.BitsPerSample / 8);
+	uint32_t byteRate = fmt.SampleRate * blockAlign;
+	uint64_t body = object->GetFileBodySize();
+
+	si::bytearray header(sizeof(si::WAVFmt));
+	si::WAVFmt* h = header.cast<si::WAVFmt>();
+	h->Format = fmt.Format;
+	h->Channels = fmt.Channels;
+	h->SampleRate = fmt.SampleRate;
+	h->ByteRate = byteRate;
+	h->BlockAlign = blockAlign;
+	h->BitsPerSample = fmt.BitsPerSample;
+	h->DataSize = (uint32_t) body;
+	h->Flags = oldFmt.Flags;
+	object->data_[0] = header;
+
+	uint32_t loops = object->loops_ ? object->loops_ : 1;
+	uint32_t perLoop = (uint32_t) ((body * 1000 + byteRate - 1) / byteRate);
+
+	// Recompute audio-driven durations; padded durations are kept unless the
+	// new audio outgrows them (looping buffers are sized from duration/loops)
+	if (object->duration_ != (uint32_t) -1 &&
+		(object->duration_ <= (oldPerLoop + 50) * loops || object->duration_ < perLoop * loops)) {
+		object->duration_ = perLoop * loops;
+	}
+}
+
+void CreateHDAudio()
+{
+	std::vector<HDAudioEntry> entries = ParseHDAudioIndex("hdaudio/index.txt");
+	std::map<std::string, std::vector<const HDAudioEntry*>> bySi;
+	for (const HDAudioEntry& entry : entries) {
+		bySi[entry.si].push_back(&entry);
+	}
+
+	for (const auto& pair : bySi) {
+		std::string orig = "hdaudio/orig/" + pair.first;
+
+		char magic[4] = {};
+		std::ifstream check(orig, std::ios::binary);
+		check.read(magic, sizeof(magic));
+		if (memcmp(magic, "RIFF", sizeof(magic)) != 0) {
+			fprintf(stderr, "%s is not an SI file (missing `git lfs pull`?)\n", orig.c_str());
+			abort();
+		}
+
+		si::Interleaf si;
+		if (si.Read(orig.c_str(), si::Interleaf::IncludeData) != si::Interleaf::ERROR_SUCCESS) {
+			abort();
+		}
+
+		std::string result = out + "/hdaudio/LEGO/Scripts/" + pair.first;
+
+		for (const HDAudioEntry* entry : pair.second) {
+			si::Object* object = NULL;
+			for (size_t i = 0; i < si.GetChildCount() && !object; i++) {
+				si::Object* child = static_cast<si::Object*>(si.GetChildAt(i));
+				if (child->type_ == si::MxOb::Null) {
+					continue;
+				}
+				object = child->FindSubObjectWithID(entry->id);
+			}
+
+			if (!object || object->filetype_ != si::MxOb::WAV) {
+				abort();
+			}
+
+			std::string file = "hdaudio/" + entry->wav;
+			ReplaceWavAndFixup(object, file);
+			depfile << result << ": " << (std::filesystem::current_path() / file).string() << std::endl;
+		}
+
+		std::filesystem::create_directories(std::filesystem::path(result).parent_path());
+		std::filesystem::remove(result);
+		if (si.Write(result.c_str()) != si::Interleaf::ERROR_SUCCESS) {
+			abort();
+		}
+
+		depfile << result << ": " << (std::filesystem::current_path() / orig).string() << std::endl;
+		depfile << result << ": " << (std::filesystem::current_path() / "hdaudio/index.txt").string() << std::endl;
+	}
+}
+
 int main(int argc, char* argv[])
 {
 	out = argv[1];
@@ -424,5 +574,6 @@ int main(int argc, char* argv[])
 	CreateHDMusic();
 	CreateBadEnd();
 	CreateRabbits();
+	CreateHDAudio();
 	return 0;
 }

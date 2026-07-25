@@ -269,7 +269,9 @@ jobs:
 
       - name: Package Assets Separately
         if: matrix.build-assets
-        run: (cd build/assets && zip -r ../dist/isle-assets.zip .)
+        run: |
+          (cd build/assets && zip -r ../dist/isle-assets.zip . -x "hdaudio/*")
+          (cd build/assets/hdaudio && zip -r ../../dist/isle-hdaudio.zip .)
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v7
