@@ -167,7 +167,7 @@ void CreateHDMusic()
 		 MxDSAction::c_enabled | MxDSAction::c_bit3},
 		{"InformationCenter_Music_HD",
 		 "Replace:\\Lego\\Scripts\\Isle\\Jukebox;11",
-		 154510,
+		 150625,
 		 10000,
 		 MxDSAction::c_enabled | MxDSAction::c_bit3},
 		{"PoliceStation_Music_HD",
