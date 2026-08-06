@@ -409,7 +409,8 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 		Any_ShowSimpleMessageBox(
 			SDL_MESSAGEBOX_ERROR,
 			"LEGO® Island Error",
-			"\"LEGO® Island\" failed to start.\nPlease quit all other applications and try again.",
+			"\"LEGO® Island\" failed to start.\nPlease quit all other applications and try again."
+			"\nFailed to initialize; see logs for details",
 			window
 		);
 		return SDL_APP_FAILURE;

@@ -120,6 +120,18 @@ private:
 
 inline static void Direct3DRMSDL3GPU_EnumDevice(LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
+#ifdef SDL_PLATFORM_ANDROID
+	// [library:3d]
+	// On Android, SDL binds an EGLSurface to the window's ANativeWindow as soon as the window is
+	// created with SDL_WINDOW_OPENGL. vkCreateAndroidSurfaceKHR then fails with
+	// VK_ERROR_NATIVE_WINDOW_IN_USE_KHR for that same window, so SDL_ClaimWindowForGPUDevice() can
+	// never succeed. Do not advertise a device we would not be able to render into: the game picks
+	// the first enumerated device it considers usable and does not fall back to another one.
+	if (!DDWindow || (SDL_GetWindowFlags(DDWindow) & SDL_WINDOW_OPENGL)) {
+		return;
+	}
+#endif
+
 	SDL_GPUDevice* device = SDL_CreateGPUDevice(
 		SDL_GPU_SHADERFORMAT_SPIRV | SDL_GPU_SHADERFORMAT_DXBC | SDL_GPU_SHADERFORMAT_DXIL | SDL_GPU_SHADERFORMAT_MSL,
 		false,

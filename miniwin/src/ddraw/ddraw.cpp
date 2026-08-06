@@ -330,7 +330,7 @@ HRESULT DirectDrawImpl::CreateDevice(
 
 	DDRenderer = CreateDirect3DRMRenderer(this, DDSDesc, &guid);
 	if (!DDRenderer) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Device GUID not recognized");
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create a renderer for the selected device GUID");
 		return E_NOINTERFACE;
 	}
 	*ppDirect3DDevice = static_cast<IDirect3DDevice2*>(DDRenderer);
