@@ -948,6 +948,35 @@ The game will gradually increase the number of actors until this maximum is reac
             </layout>
            </widget>
           </item>
+          <item>
+           <widget class="QGroupBox" name="lightingModelBox">
+            <property name="toolTip">
+             <string>Selects which DirectX runtime's lighting the renderer reproduces.</string>
+            </property>
+            <property name="title">
+             <string>Lighting Model</string>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_lighting">
+             <item>
+              <widget class="QComboBox" name="lightingModelComboBox">
+               <property name="currentIndex">
+                <number>0</number>
+               </property>
+               <item>
+                <property name="text">
+                 <string>DirectX 5</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>DirectX 8</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
          </layout>
         </widget>
         <widget class="QWidget" name="controlsTab">

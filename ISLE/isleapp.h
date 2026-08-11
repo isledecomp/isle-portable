@@ -118,6 +118,7 @@ private:
 	MxBool m_exclusiveFullScreen;
 	MxU32 m_msaaSamples;
 	MxFloat m_anisotropic;
+	MxU32 m_lightingModel;
 	MxBool m_activeInBackground;
 };
 
