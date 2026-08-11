@@ -95,6 +95,7 @@ CMainDialog::CMainDialog(QWidget* pParent) : QDialog(pParent)
 
 	connect(m_ui->msaaSlider, &QSlider::valueChanged, this, &CMainDialog::MSAAChanged);
 	connect(m_ui->msaaSlider, &QSlider::sliderMoved, this, &CMainDialog::MSAAChanged);
+	connect(m_ui->lightingModelComboBox, &QComboBox::currentIndexChanged, this, &CMainDialog::LightingModelChanged);
 	connect(m_ui->AFSlider, &QSlider::valueChanged, this, &CMainDialog::AFChanged);
 	connect(m_ui->AFSlider, &QSlider::sliderMoved, this, &CMainDialog::AFChanged);
 
@@ -350,6 +351,7 @@ void CMainDialog::UpdateInterface()
 	m_ui->msaaNum->setNum(currentConfigApp->m_msaa);
 	m_ui->AFSlider->setValue(log2(currentConfigApp->m_anisotropy));
 	m_ui->AFNum->setNum(currentConfigApp->m_anisotropy);
+	m_ui->lightingModelComboBox->setCurrentIndex(currentConfigApp->m_lighting_model);
 }
 
 // FUNCTION: CONFIG 0x004045e0
@@ -589,6 +591,13 @@ void CMainDialog::MaxActorsChanged(int value)
 void CMainDialog::MSAAChanged(int value)
 {
 	currentConfigApp->m_msaa = exp2(value);
+	m_modified = true;
+	UpdateInterface();
+}
+
+void CMainDialog::LightingModelChanged(int index)
+{
+	currentConfigApp->m_lighting_model = index;
 	m_modified = true;
 	UpdateInterface();
 }

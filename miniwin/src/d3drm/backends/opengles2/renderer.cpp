@@ -50,7 +50,12 @@ struct SceneLightGLES2 {
 	float direction[4];
 };
 
-Direct3DRMRenderer* OpenGLES2Renderer::Create(DWORD width, DWORD height, float anisotropic)
+Direct3DRMRenderer* OpenGLES2Renderer::Create(
+	DWORD width,
+	DWORD height,
+	float anisotropic,
+	D3DLightingModel lightingModel
+)
 {
 	// We have to reset the attributes here after having enumerated the
 	// OpenGL ES 2.0 renderer, or else SDL gets very confused by SDL_GL_DEPTH_SIZE
@@ -84,6 +89,12 @@ Direct3DRMRenderer* OpenGLES2Renderer::Create(DWORD width, DWORD height, float a
 	glFrontFace(GL_CW);
 
 	const char* vertexShaderSource = R"(
+		struct SceneLight {
+			vec4 color;
+			vec4 position;
+			vec4 direction;
+		};
+
 		attribute vec3 a_position;
 		attribute vec3 a_normal;
 		attribute vec2 a_texCoord;
@@ -91,47 +102,35 @@ Direct3DRMRenderer* OpenGLES2Renderer::Create(DWORD width, DWORD height, float a
 		uniform mat4 u_modelViewMatrix;
 		uniform mat3 u_normalMatrix;
 		uniform mat4 u_projectionMatrix;
+		uniform mat4 u_worldMatrix;
+		uniform vec3 u_cameraPos;
+		uniform SceneLight u_lights[3];
+		uniform int u_lightCount;
+		uniform int u_lightingModel;
+		uniform float u_shininess;
+		uniform vec4 u_color;
 
-		varying vec3 v_viewPos;
-		varying vec3 v_normal;
+		varying vec4 v_color;
+		varying vec3 v_specular;
 		varying vec2 v_texCoord;
 
 		void main() {
 			vec4 viewPos = u_modelViewMatrix * vec4(a_position, 1.0);
 			gl_Position = u_projectionMatrix * viewPos;
-			v_viewPos = viewPos.xyz;
-			v_normal = normalize(u_normalMatrix * a_normal);
-			v_texCoord = a_texCoord;
-		}
-	)";
 
-	const char* fragmentShaderSource = R"(
-		precision mediump float;
+			vec3 worldPos = (u_worldMatrix * vec4(a_position, 1.0)).xyz;
+			vec3 normal = normalize(u_normalMatrix * a_normal);
 
-		struct SceneLight {
-			vec4 color;
-			vec4 position;
-			vec4 direction;
-		};
+			vec3 modelOrigin = u_worldMatrix[3].xyz;
+			vec3 camDir = normalize(u_cameraPos - modelOrigin);
 
-		uniform SceneLight u_lights[3];
-		uniform int u_lightCount;
-
-		varying vec3 v_viewPos;
-		varying vec3 v_normal;
-		varying vec2 v_texCoord;
-
-		uniform float u_shininess;
-		uniform vec4 u_color;
-		uniform int u_useTexture;
-		uniform sampler2D u_texture;
-
-		void main() {
 			vec3 diffuse = vec3(0.0);
 			vec3 specular = vec3(0.0);
 
 			for (int i = 0; i < 3; ++i) {
-				if (i >= u_lightCount) break;
+				if (i >= u_lightCount) {
+					break;
+				}
 
 				vec3 lightColor = u_lights[i].color.rgb;
 
@@ -145,33 +144,54 @@ Direct3DRMRenderer* OpenGLES2Renderer::Create(DWORD width, DWORD height, float a
 					lightVec = -normalize(u_lights[i].direction.xyz);
 				}
 				else {
-					lightVec = u_lights[i].position.xyz - v_viewPos;
+					lightVec = normalize(u_lights[i].position.xyz - worldPos);
 				}
-				lightVec = normalize(lightVec);
 
-				float dotNL = max(dot(v_normal, lightVec), 0.0);
+				float dotNL = dot(normal, lightVec);
 				if (dotNL > 0.0) {
-					// Diffuse contribution
 					diffuse += dotNL * lightColor;
 
-					// Specular
-					if (u_shininess > 0.0 && u_lights[i].direction.w == 1.0) {
-						vec3 viewVec = normalize(-v_viewPos);
-						vec3 H = normalize(lightVec + viewVec);
-						float dotNH = max(dot(v_normal, H), 0.0);
-						float spec = pow(dotNH, u_shininess);
-						specular += spec * lightColor;
+					if (u_lightingModel == 0 && u_shininess > 0.0) {
+						vec3 towardLight;
+						if (u_lights[i].direction.w == 1.0) {
+							towardLight = lightVec;
+						}
+						else {
+							towardLight = normalize(u_lights[i].position.xyz - modelOrigin);
+						}
+						vec3 H = normalize(camDir + towardLight);
+						float dotNH = dot(normal, H);
+						if (dotNH > 0.0) {
+							specular += pow(dotNH, u_shininess) * lightColor;
+						}
 					}
 				}
 			}
 
-			vec4 finalColor = u_color;
-			finalColor.rgb = clamp(diffuse * u_color.rgb + specular, 0.0, 1.0);
+			v_color = vec4(clamp(diffuse * u_color.rgb, 0.0, 1.0), u_color.a);
+			v_specular = clamp(specular, 0.0, 1.0);
+			v_texCoord = a_texCoord;
+		}
+	)";
+
+	const char* fragmentShaderSource = R"(
+		precision mediump float;
+
+		varying vec4 v_color;
+		varying vec3 v_specular;
+		varying vec2 v_texCoord;
+
+		uniform int u_useTexture;
+		uniform sampler2D u_texture;
+
+		void main() {
+			vec4 finalColor = v_color;
 			if (u_useTexture != 0) {
 				vec4 texel = texture2D(u_texture, v_texCoord);
-				finalColor.rgb = clamp(texel.rgb * finalColor.rgb, 0.0, 1.0);
+				finalColor.rgb = texel.rgb * finalColor.rgb;
 				finalColor.a = texel.a;
 			}
+			finalColor.rgb = clamp(finalColor.rgb + v_specular, 0.0, 1.0);
 
 			gl_FragColor = finalColor;
 		}
@@ -190,7 +210,7 @@ Direct3DRMRenderer* OpenGLES2Renderer::Create(DWORD width, DWORD height, float a
 	glDeleteShader(vs);
 	glDeleteShader(fs);
 
-	return new OpenGLES2Renderer(width, height, anisotropic, context, shaderProgram);
+	return new OpenGLES2Renderer(width, height, anisotropic, lightingModel, context, shaderProgram);
 }
 
 GLES2MeshCacheEntry GLES2UploadMesh(const MeshGroup& meshGroup, bool forceUV = false)
@@ -301,10 +321,11 @@ OpenGLES2Renderer::OpenGLES2Renderer(
 	DWORD width,
 	DWORD height,
 	float anisotropic,
+	D3DLightingModel lightingModel,
 	SDL_GLContext context,
 	GLuint shaderProgram
 )
-	: m_context(context), m_shaderProgram(shaderProgram), m_anisotropic(anisotropic)
+	: m_context(context), m_shaderProgram(shaderProgram), m_anisotropic(anisotropic), m_lightingModel(lightingModel)
 {
 	glGenFramebuffers(1, &m_fbo);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
@@ -324,6 +345,8 @@ OpenGLES2Renderer::OpenGLES2Renderer(
 		m_anisotropic,
 		maxAniso
 	);
+
+	SDL_Log("Lighting model: %s", m_lightingModel == D3DLightingModel::DirectX8 ? "DirectX 8" : "DirectX 5");
 
 	m_virtualWidth = width;
 	m_virtualHeight = height;
@@ -368,6 +391,9 @@ OpenGLES2Renderer::OpenGLES2Renderer(
 	m_modelViewMatrixLoc = glGetUniformLocation(m_shaderProgram, "u_modelViewMatrix");
 	m_normalMatrixLoc = glGetUniformLocation(m_shaderProgram, "u_normalMatrix");
 	m_projectionMatrixLoc = glGetUniformLocation(m_shaderProgram, "u_projectionMatrix");
+	m_worldMatrixLoc = glGetUniformLocation(m_shaderProgram, "u_worldMatrix");
+	m_cameraPosLoc = glGetUniformLocation(m_shaderProgram, "u_cameraPos");
+	m_lightingModelLoc = glGetUniformLocation(m_shaderProgram, "u_lightingModel");
 
 	m_uiMesh.vertices = {
 		{{0.0f, 0.0f, 0.0f}, {0, 0, -1}, {0.0f, 0.0f}},
@@ -379,6 +405,7 @@ OpenGLES2Renderer::OpenGLES2Renderer(
 	m_uiMeshCache = GLES2UploadMesh(m_uiMesh, true);
 
 	glUseProgram(m_shaderProgram);
+	glUniform1i(m_lightingModelLoc, static_cast<GLint>(m_lightingModel));
 }
 
 OpenGLES2Renderer::~OpenGLES2Renderer()
@@ -568,6 +595,7 @@ HRESULT OpenGLES2Renderer::BeginFrame()
 		glUniform4fv(u_lightLocs[i][2], 1, lightData[i].direction);
 	}
 	glUniform1i(m_lightCountLoc, lightCount);
+	glUniform1i(m_lightingModelLoc, static_cast<GLint>(m_lightingModel));
 	return DD_OK;
 }
 
@@ -592,6 +620,17 @@ void OpenGLES2Renderer::SubmitDraw(
 	glUniformMatrix4fv(m_modelViewMatrixLoc, 1, GL_FALSE, &modelViewMatrix[0][0]);
 	glUniformMatrix3fv(m_normalMatrixLoc, 1, GL_FALSE, &normalMatrix[0][0]);
 	glUniformMatrix4fv(m_projectionMatrixLoc, 1, GL_FALSE, &m_projection[0][0]);
+	glUniformMatrix4fv(m_worldMatrixLoc, 1, GL_FALSE, &worldMatrix[0][0]);
+
+	float cameraPos[3] = {
+		-(viewMatrix[3][0] * viewMatrix[0][0] + viewMatrix[3][1] * viewMatrix[0][1] +
+		  viewMatrix[3][2] * viewMatrix[0][2]),
+		-(viewMatrix[3][0] * viewMatrix[1][0] + viewMatrix[3][1] * viewMatrix[1][1] +
+		  viewMatrix[3][2] * viewMatrix[1][2]),
+		-(viewMatrix[3][0] * viewMatrix[2][0] + viewMatrix[3][1] * viewMatrix[2][1] +
+		  viewMatrix[3][2] * viewMatrix[2][2])
+	};
+	glUniform3fv(m_cameraPosLoc, 1, cameraPos);
 
 	glUniform4f(
 		m_colorLoc,
@@ -750,6 +789,9 @@ void OpenGLES2Renderer::Flip()
 		{0.0f, (float) m_height, 0.0f, 1.0f}
 	};
 	glUniformMatrix4fv(m_modelViewMatrixLoc, 1, GL_FALSE, &modelViewMatrix[0][0]);
+	glUniformMatrix4fv(m_worldMatrixLoc, 1, GL_FALSE, &modelViewMatrix[0][0]);
+	float cameraPos[3] = {0.f, 0.f, 0.f};
+	glUniform3fv(m_cameraPosLoc, 1, cameraPos);
 	Matrix3x3 identity = {{1.f, 0.f, 0.f}, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}};
 	glUniformMatrix3fv(m_normalMatrixLoc, 1, GL_FALSE, &identity[0][0]);
 	CreateOrthographicProjection((float) m_width, (float) m_height, projection);
@@ -833,6 +875,9 @@ void OpenGLES2Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, c
 	);
 
 	glUniformMatrix4fv(m_modelViewMatrixLoc, 1, GL_FALSE, &modelView[0][0]);
+	glUniformMatrix4fv(m_worldMatrixLoc, 1, GL_FALSE, &modelView[0][0]);
+	float cameraPos[3] = {0.f, 0.f, 0.f};
+	glUniform3fv(m_cameraPosLoc, 1, cameraPos);
 	Matrix3x3 identity = {{1.f, 0.f, 0.f}, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}};
 	glUniformMatrix3fv(m_normalMatrixLoc, 1, GL_FALSE, &identity[0][0]);
 	CreateOrthographicProjection((float) m_width, (float) m_height, projection);

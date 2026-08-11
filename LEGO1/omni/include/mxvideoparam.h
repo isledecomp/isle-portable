@@ -59,6 +59,9 @@ public:
 	void SetAnisotropic(MxFloat p_anisotropic) { m_anisotropic = p_anisotropic; }
 	MxFloat GetAnisotropic() { return m_anisotropic; }
 
+	void SetLightingModel(MxU32 p_lightingModel) { m_lightingModel = p_lightingModel; }
+	MxU32 GetLightingModel() { return m_lightingModel; }
+
 private:
 	MxRect32 m_rect;           // 0x00
 	MxPalette* m_palette;      // 0x10
@@ -68,6 +71,7 @@ private:
 	char* m_deviceId;          // 0x20
 	MxU32 m_msaaSamples;
 	MxFloat m_anisotropic;
+	MxU32 m_lightingModel;
 };
 
 #endif // MXVIDEOPARAM_H

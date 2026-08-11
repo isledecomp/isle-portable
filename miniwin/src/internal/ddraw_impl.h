@@ -59,6 +59,12 @@ struct DirectDrawImpl : public IDirectDraw2, public IDirect3D2, public IDirect3D
 		return DD_OK;
 	}
 	float GetAnisotropic() const override { return m_anisotropic; }
+	HRESULT RequestLightingModel(D3DLightingModel lightingModel) override
+	{
+		m_lightingModel = lightingModel;
+		return DD_OK;
+	}
+	D3DLightingModel GetLightingModel() const override { return m_lightingModel; }
 
 private:
 	FrameBufferImpl* m_frameBuffer = nullptr;
@@ -67,6 +73,7 @@ private:
 	int m_virtualBPP = 0;
 	DWORD m_msaaSamples = 0;
 	float m_anisotropic = 0.0f;
+	D3DLightingModel m_lightingModel = D3DLightingModel::DirectX5;
 };
 
 HRESULT DirectDrawEnumerate(LPDDENUMCALLBACKA cb, void* context);

@@ -86,6 +86,7 @@ bool CConfigApp::InitInstance()
 	m_display_bit_depth = 16;
 	m_msaa = 1;
 	m_anisotropy = 1;
+	m_lighting_model = 0;
 	m_haptic = TRUE;
 	m_wasd = FALSE;
 	m_touch_scheme = 2;
@@ -189,6 +190,7 @@ bool CConfigApp::ReadRegisterSettings()
 	m_max_lod = iniparser_getdouble(dict, "isle:Max LOD", m_max_lod);
 	m_max_actors = iniparser_getint(dict, "isle:Max Allowed Extras", m_max_actors);
 	m_msaa = iniparser_getint(dict, "isle:MSAA", m_msaa);
+	m_lighting_model = iniparser_getint(dict, "isle:Lighting Model", m_lighting_model);
 	m_anisotropy = iniparser_getint(dict, "isle:Anisotropic", m_anisotropy);
 	m_texture_load = iniparser_getboolean(dict, "extensions:texture loader", m_texture_load);
 	m_texture_path = iniparser_getstring(dict, "texture loader:texture path", m_texture_path.c_str());
@@ -275,6 +277,10 @@ bool CConfigApp::ValidateSettings()
 	}
 	if (m_exclusive_full_screen && !m_full_screen) {
 		m_full_screen = TRUE;
+		is_modified = TRUE;
+	}
+	if (m_lighting_model < 0 || m_lighting_model > 1) {
+		m_lighting_model = 0;
 		is_modified = TRUE;
 	}
 	if (!(m_msaa & (m_msaa - 1))) {         // Check if MSAA is power of 2 (1, 2, 4, 8, etc)
@@ -382,6 +388,7 @@ void CConfigApp::WriteRegisterSettings() const
 
 	SetIniInt(dict, "isle:Display Bit Depth", m_display_bit_depth);
 	SetIniInt(dict, "isle:MSAA", m_msaa);
+	SetIniInt(dict, "isle:Lighting Model", m_lighting_model);
 	SetIniInt(dict, "isle:Anisotropic", m_anisotropy);
 	SetIniBool(dict, "isle:Flip Surfaces", m_flip_surfaces);
 	SetIniBool(dict, "isle:Full Screen", m_full_screen);

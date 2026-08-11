@@ -52,13 +52,19 @@ Direct3DRMRenderer* CreateDirect3DRMRenderer(
 			DDSDesc.dwWidth,
 			DDSDesc.dwHeight,
 			d3d->GetMSAASamples(),
-			d3d->GetAnisotropic()
+			d3d->GetAnisotropic(),
+			d3d->GetLightingModel()
 		);
 	}
 #endif
 #ifdef USE_OPENGLES2
 	if (SDL_memcmp(guid, &OpenGLES2_GUID, sizeof(GUID)) == 0) {
-		return OpenGLES2Renderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight, d3d->GetAnisotropic());
+		return OpenGLES2Renderer::Create(
+			DDSDesc.dwWidth,
+			DDSDesc.dwHeight,
+			d3d->GetAnisotropic(),
+			d3d->GetLightingModel()
+		);
 	}
 #endif
 #ifdef USE_OPENGL1

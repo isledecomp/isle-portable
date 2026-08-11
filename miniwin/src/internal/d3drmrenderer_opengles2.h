@@ -41,8 +41,15 @@ struct GLES2MeshCacheEntry {
 
 class OpenGLES2Renderer : public Direct3DRMRenderer {
 public:
-	static Direct3DRMRenderer* Create(DWORD width, DWORD height, float anisotropic);
-	OpenGLES2Renderer(DWORD width, DWORD height, float anisotropic, SDL_GLContext context, GLuint shaderProgram);
+	static Direct3DRMRenderer* Create(DWORD width, DWORD height, float anisotropic, D3DLightingModel lightingModel);
+	OpenGLES2Renderer(
+		DWORD width,
+		DWORD height,
+		float anisotropic,
+		D3DLightingModel lightingModel,
+		SDL_GLContext context,
+		GLuint shaderProgram
+	);
 	~OpenGLES2Renderer() override;
 
 	void PushLights(const SceneLight* lightsArray, size_t count) override;
@@ -83,6 +90,7 @@ private:
 	std::vector<SceneLight> m_lights;
 	SDL_GLContext m_context;
 	float m_anisotropic;
+	D3DLightingModel m_lightingModel;
 	GLuint m_fbo;
 	GLuint m_colorTarget = 0;
 	GLuint m_depthTarget = 0;
@@ -100,12 +108,15 @@ private:
 	GLint m_modelViewMatrixLoc;
 	GLint m_normalMatrixLoc;
 	GLint m_projectionMatrixLoc;
+	GLint m_worldMatrixLoc;
+	GLint m_cameraPosLoc;
+	GLint m_lightingModelLoc;
 	ViewportTransform m_viewportTransform;
 };
 
 inline static void OpenGLES2Renderer_EnumDevice(const IDirect3DMiniwin* d3d, LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
-	Direct3DRMRenderer* device = OpenGLES2Renderer::Create(640, 480, d3d->GetAnisotropic());
+	Direct3DRMRenderer* device = OpenGLES2Renderer::Create(640, 480, d3d->GetAnisotropic(), d3d->GetLightingModel());
 	if (!device) {
 		return;
 	}
