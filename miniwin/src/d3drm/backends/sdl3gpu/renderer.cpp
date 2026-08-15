@@ -736,12 +736,12 @@ void Direct3DRMSDL3GPURenderer::StartRenderPass(float r, float g, float b, bool 
 	SDL_GPUColorTargetInfo colorTargetInfo = {};
 	colorTargetInfo.texture = m_transferTexture;
 	colorTargetInfo.clear_color = {r, g, b, 1.0f};
-	colorTargetInfo.load_op = clear ? SDL_GPU_LOADOP_CLEAR : SDL_GPU_LOADOP_DONT_CARE;
+	colorTargetInfo.load_op = clear ? SDL_GPU_LOADOP_CLEAR : SDL_GPU_LOADOP_LOAD;
 
 	SDL_GPUDepthStencilTargetInfo depthStencilTargetInfo = {};
 	depthStencilTargetInfo.texture = m_depthTexture;
 	depthStencilTargetInfo.clear_depth = 0.0f;
-	depthStencilTargetInfo.load_op = clear ? SDL_GPU_LOADOP_CLEAR : SDL_GPU_LOADOP_DONT_CARE;
+	depthStencilTargetInfo.load_op = clear ? SDL_GPU_LOADOP_CLEAR : SDL_GPU_LOADOP_LOAD;
 	depthStencilTargetInfo.store_op = SDL_GPU_STOREOP_STORE;
 
 	m_renderPass = SDL_BeginGPURenderPass(m_cmdbuf, &colorTargetInfo, 1, &depthStencilTargetInfo);
