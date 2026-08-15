@@ -1530,6 +1530,7 @@ MxResult IsleApp::VerifyFilesystem()
 	for (const char* file : g_files) {
 		const char* searchPaths[] = {".", m_hdPath, m_cdPath};
 		bool found = false;
+		MxString attempts;
 
 		for (const char* base : searchPaths) {
 			MxString path(base);
@@ -1540,6 +1541,12 @@ MxResult IsleApp::VerifyFilesystem()
 				found = true;
 				break;
 			}
+
+			attempts += "\n";
+			attempts += path.GetData();
+			attempts += " (";
+			attempts += SDL_GetError();
+			attempts += ")";
 		}
 
 		if (!found) {
@@ -1548,11 +1555,12 @@ MxResult IsleApp::VerifyFilesystem()
 				buffer,
 				sizeof(buffer),
 				"\"LEGO® Island\" failed to start.\nPlease make sure the file %s is located in either diskpath or "
-				"cdpath.\nSDL error: %s",
+				"cdpath.%s",
 				file,
-				SDL_GetError()
+				attempts.GetData()
 			);
 
+			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s", buffer);
 			Any_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "LEGO® Island Error", buffer, NULL);
 			return FAILURE;
 		}
