@@ -322,7 +322,6 @@ Hospital/HOSPITAL.SI	118	wav/onscreen/en/hho012en.wav
 Hospital/HOSPITAL.SI	120	wav/onscreen/en/hho011en.wav
 Hospital/HOSPITAL.SI	122	wav/onscreen/re/hho011re.wav
 Hospital/HOSPITAL.SI	124	wav/onscreen/cl/hho008cl.wav
-INTRO.SI	11	wav/music/lawrence/theme2_s1.wav
 Infocntr/ELEVBOTT.SI	500	wav/onscreen/in/iica31in.wav
 Infocntr/INFODOOR.SI	500	wav/onscreen/in/iic037in.wav
 Infocntr/INFODOOR.SI	501	wav/onscreen/in/iic038in.wav
