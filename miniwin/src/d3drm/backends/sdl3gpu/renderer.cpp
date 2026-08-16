@@ -400,6 +400,18 @@ void Direct3DRMSDL3GPURenderer::SetProjection(const D3DRMMATRIX4D& projection, D
 	m_front = front;
 	m_back = back;
 	memcpy(&m_projection, projection, sizeof(D3DRMMATRIX4D));
+
+	// The fragment shader writes 1 / clip.w to SV_Depth. Scale the clip-space output so that
+	// this becomes front / viewZ, which stays within SV_Depth's [0, 1] clamp range for the
+	// entire [front, back] frustum instead of saturating at 1.0 for geometry closer than one
+	// world unit. Uniformly scaling all four clip components leaves the NDC unchanged.
+	if (front > 0.0f) {
+		for (int row = 0; row < 4; ++row) {
+			for (int col = 0; col < 4; ++col) {
+				m_projection[row][col] /= front;
+			}
+		}
+	}
 }
 
 void Direct3DRMSDL3GPURenderer::WaitForPendingUpload()
