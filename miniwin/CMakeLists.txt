@@ -27,8 +27,14 @@ target_compile_definitions(miniwin PRIVATE
     $<$<CONFIG:Debug>:DEBUG>
 )
 
-list(APPEND GRAPHICS_BACKENDS USE_SOFTWARE_RENDER)
-list(APPEND GRAPHICS_BACKENDS USE_SDL_GPU)
+option(ISLE_RENDERER_SOFTWARE "Build the software (SDL_Renderer) backend" ON)
+option(ISLE_RENDERER_SDLGPU "Build the SDL GPU backend" ON)
+if(ISLE_RENDERER_SOFTWARE)
+  list(APPEND GRAPHICS_BACKENDS USE_SOFTWARE_RENDER)
+endif()
+if(ISLE_RENDERER_SDLGPU)
+  list(APPEND GRAPHICS_BACKENDS USE_SDL_GPU)
+endif()
 
 if(NOT (VITA OR WINDOWS_STORE))
   find_package(OpenGL)
