@@ -129,7 +129,7 @@ jobs:
           export VITASDK=$HOME/vitasdk
           export VDPM_NONINTERACTIVE=1
           ./bootstrap-vitasdk.sh
-          ./vdpm install taihen
+          "$VITASDK/bin/vdpm" install taihen
           echo "VITASDK=$VITASDK" >> $GITHUB_ENV
           echo "$VITASDK/bin" >> $GITHUB_PATH
 
