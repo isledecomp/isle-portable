@@ -573,7 +573,7 @@ MxResult RegistrationBook::Tickle()
 		if (g_checkboxBlinkTimer + 500 <= time) {
 			g_checkboxBlinkTimer = time;
 
-			if (m_checkboxHilite) {
+			if (m_checkboxHilite && m_checkboxSurface && m_checkboxNormal) {
 				DDBLTFX op;
 				op.dwSize = sizeof(op);
 				op.dwROP = SRCCOPY;
@@ -586,6 +586,9 @@ MxResult RegistrationBook::Tickle()
 				}
 			}
 			else {
+				// The three surfaces stream in separately; blink only
+				// once all of them exist (slow machines can tickle in
+				// between).
 				CreateSurface();
 			}
 
