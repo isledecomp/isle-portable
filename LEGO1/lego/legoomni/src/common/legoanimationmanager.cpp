@@ -2595,6 +2595,12 @@ MxBool LegoAnimationManager::FUN_10064120(LegoLocation::Boundary* p_boundary, Mx
 		}
 	}
 
+	if (local50 == NULL) {
+		// No edge faces the actor's direction (possible while the actor's
+		// orientation is still degenerate right after spawning).
+		return FALSE;
+	}
+
 	e = local50;
 	do {
 		e = (LegoOrientedEdge*) e->GetCounterclockwiseEdge(*boundary);
