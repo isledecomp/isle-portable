@@ -8,6 +8,7 @@
 #include "mxutilities.h"
 #include "mxvideomanager.h"
 
+#include <SDL3/SDL_error.h>
 #include <SDL3/SDL_log.h>
 #include <assert.h>
 #ifdef MINIWIN
@@ -716,6 +717,7 @@ LPDIRECTDRAWSURFACE MxDisplaySurface::VTable0x44(
 	ddsd.dwSize = sizeof(ddsd);
 
 	if (draw->GetDisplayMode(&ddsd)) {
+		SDL_Log("MxDisplaySurface::VTable0x44: GetDisplayMode failed");
 		return NULL;
 	}
 
@@ -748,6 +750,9 @@ LPDIRECTDRAWSURFACE MxDisplaySurface::VTable0x44(
 		else {
 			surface = NULL;
 		}
+		if (!surface) {
+			SDL_Log("MxDisplaySurface::VTable0x44: CreateSurface failed: %s", SDL_GetError());
+		}
 	}
 
 	if (surface) {
@@ -778,6 +783,7 @@ LPDIRECTDRAWSURFACE MxDisplaySurface::VTable0x44(
 		ddsd.dwSize = sizeof(ddsd);
 
 		if (surface->Lock(NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, 0) != DD_OK) {
+			SDL_Log("MxDisplaySurface::VTable0x44: Lock failed: %s", SDL_GetError());
 			surface->Release();
 			surface = NULL;
 		}
