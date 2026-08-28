@@ -219,8 +219,6 @@ inline MxS32 MxVideoPresenter::PrepareRects(RECT& p_rectDest, RECT& p_rectSrc)
 void MxVideoPresenter::PutFrame()
 {
 	if (!m_surface && !m_frameBitmap) {
-		// Neither a surface nor a decoded frame exists; every branch below
-		// would dereference one of them.
 		return;
 	}
 

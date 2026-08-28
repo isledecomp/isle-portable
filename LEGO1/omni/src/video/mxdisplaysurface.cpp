@@ -751,7 +751,7 @@ LPDIRECTDRAWSURFACE MxDisplaySurface::VTable0x44(
 			surface = NULL;
 		}
 		if (!surface) {
-			SDL_Log("MxDisplaySurface::VTable0x44: CreateSurface failed: %s", SDL_GetError());
+			SDL_Log("MxDisplaySurface::VTable0x44: CreateSurface failed");
 		}
 	}
 
