@@ -180,6 +180,7 @@ MxDSObject* MxDSObjectList::FindInternal(MxDSObject* p_action, MxBool p_delete)
 	// DECOMP ALPHA 0x1008b99d ?
 
 	MxDSObject* found = NULL;
+	iterator foundIt;
 
 #ifdef COMPAT_MODE
 	iterator it;
@@ -191,6 +192,7 @@ MxDSObject* MxDSObjectList::FindInternal(MxDSObject* p_action, MxBool p_delete)
 			if (p_action->GetUnknown24() == -2 || p_action->GetUnknown24() == -3 ||
 				p_action->GetUnknown24() == (*it)->GetUnknown24()) {
 				found = *it;
+				foundIt = it;
 				if (p_action->GetUnknown24() != -3) {
 					break;
 				}
@@ -199,7 +201,7 @@ MxDSObject* MxDSObjectList::FindInternal(MxDSObject* p_action, MxBool p_delete)
 	}
 
 	if (p_delete && found != NULL) {
-		erase(it);
+		erase(foundIt);
 	}
 
 	return found;

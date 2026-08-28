@@ -2,6 +2,7 @@
 
 #include "mathutils.h"
 
+#include <SDL3/SDL_log.h>
 #include <tuple>
 #include <unordered_map>
 
@@ -52,6 +53,19 @@ void FlattenSurfaces(
 	newIndices.reserve(indexCount);
 
 	for (size_t i = 0; i < indexCount; i += 3) {
+		if (i + 2 >= indexCount || indices[i] >= vertexCount || indices[i + 1] >= vertexCount ||
+			indices[i + 2] >= vertexCount) {
+			SDL_Log(
+				"FlattenSurfaces: triangle %u/%u has out-of-range index (%u %u %u of %u verts), skipping",
+				(unsigned) i,
+				(unsigned) indexCount,
+				(unsigned) indices[i],
+				i + 1 < indexCount ? (unsigned) indices[i + 1] : 0u,
+				i + 2 < indexCount ? (unsigned) indices[i + 2] : 0u,
+				(unsigned) vertexCount
+			);
+			continue;
+		}
 		D3DRMVERTEX v0 = vertices[indices[i + 0]];
 		D3DRMVERTEX v1 = vertices[indices[i + 1]];
 		D3DRMVERTEX v2 = vertices[indices[i + 2]];
