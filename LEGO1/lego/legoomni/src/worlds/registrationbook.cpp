@@ -586,9 +586,6 @@ MxResult RegistrationBook::Tickle()
 				}
 			}
 			else {
-				// The three surfaces stream in separately; blink only
-				// once all of them exist (slow machines can tickle in
-				// between).
 				CreateSurface();
 			}
 
