@@ -218,6 +218,10 @@ inline MxS32 MxVideoPresenter::PrepareRects(RECT& p_rectDest, RECT& p_rectSrc)
 // FUNCTION: LEGO1 0x100b2a70
 void MxVideoPresenter::PutFrame()
 {
+	if (!m_surface && !m_frameBitmap) {
+		return;
+	}
+
 	MxDisplaySurface* displaySurface = MVideoManager()->GetDisplaySurface();
 	MxRegion* region = MVideoManager()->GetRegion();
 	MxRect32 rect(MxPoint32(0, 0), MxSize32(GetWidth(), GetHeight()));
