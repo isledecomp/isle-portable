@@ -72,6 +72,7 @@ public:
 	int m_display_bit_depth;
 	int m_msaa;
 	int m_anisotropy;
+	int m_lighting_model;
 	bool m_flip_surfaces;
 	bool m_full_screen;
 	bool m_exclusive_full_screen;

@@ -157,6 +157,7 @@ void Direct3DRMDevice2Impl::Resize()
 	m_windowWidth = 320; // We are on the lower screen
 	m_windowHeight = 240;
 #endif
+	SDL_Log("Render resolution: %dx%d", m_windowWidth, m_windowHeight);
 	m_viewportTransform = CalculateViewportTransform(m_virtualWidth, m_virtualHeight, m_windowWidth, m_windowHeight);
 	m_renderer->Resize(m_windowWidth, m_windowHeight, m_viewportTransform);
 	m_renderer->Clear(0, 0, 0);
@@ -171,20 +172,25 @@ void Direct3DRMDevice2Impl::Resize()
 
 bool Direct3DRMDevice2Impl::ConvertEventToRenderCoordinates(SDL_Event* event)
 {
+	float density = SDL_GetWindowPixelDensity(DDWindow);
+	if (density == 0.0f) {
+		density = 1.0f;
+	}
+
 	switch (event->type) {
 	case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED: {
 		Resize();
 		break;
 	}
 	case SDL_EVENT_MOUSE_MOTION: {
-		event->motion.x = (event->motion.x - m_viewportTransform.offsetX) / m_viewportTransform.scale;
-		event->motion.y = (event->motion.y - m_viewportTransform.offsetY) / m_viewportTransform.scale;
+		event->motion.x = (event->motion.x * density - m_viewportTransform.offsetX) / m_viewportTransform.scale;
+		event->motion.y = (event->motion.y * density - m_viewportTransform.offsetY) / m_viewportTransform.scale;
 		break;
 	}
 	case SDL_EVENT_MOUSE_BUTTON_DOWN:
 	case SDL_EVENT_MOUSE_BUTTON_UP: {
-		event->button.x = (event->button.x - m_viewportTransform.offsetX) / m_viewportTransform.scale;
-		event->button.y = (event->button.y - m_viewportTransform.offsetY) / m_viewportTransform.scale;
+		event->button.x = (event->button.x * density - m_viewportTransform.offsetX) / m_viewportTransform.scale;
+		event->button.y = (event->button.y * density - m_viewportTransform.offsetY) / m_viewportTransform.scale;
 		break;
 	}
 	case SDL_EVENT_FINGER_MOTION:
@@ -204,8 +210,13 @@ bool Direct3DRMDevice2Impl::ConvertEventToRenderCoordinates(SDL_Event* event)
 
 bool Direct3DRMDevice2Impl::ConvertRenderToWindowCoordinates(Sint32 inX, Sint32 inY, Sint32& outX, Sint32& outY)
 {
-	outX = static_cast<Sint32>(inX * m_viewportTransform.scale + m_viewportTransform.offsetX);
-	outY = static_cast<Sint32>(inY * m_viewportTransform.scale + m_viewportTransform.offsetY);
+	float density = SDL_GetWindowPixelDensity(DDWindow);
+	if (density == 0.0f) {
+		density = 1.0f;
+	}
+
+	outX = static_cast<Sint32>((inX * m_viewportTransform.scale + m_viewportTransform.offsetX) / density);
+	outY = static_cast<Sint32>((inY * m_viewportTransform.scale + m_viewportTransform.offsetY) / density);
 
 	return true;
 }

@@ -65,6 +65,7 @@ private slots:
 	void MaxActorsChanged(int value);
 	void MSAAChanged(int value);
 	void AFChanged(int value);
+	void LightingModelChanged(int index);
 	void SelectTexturePathDialog();
 	void TexturePathEdited();
 	void AddCustomAssetPath();

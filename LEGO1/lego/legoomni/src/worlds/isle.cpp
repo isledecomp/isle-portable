@@ -1360,6 +1360,11 @@ Act1State::Act1State()
 	Reset();
 }
 
+Act1State::~Act1State()
+{
+	Reset();
+}
+
 // FUNCTION: LEGO1 0x10033ac0
 // FUNCTION: BETA10 0x1003524f
 MxResult Act1State::Serialize(LegoStorage* p_storage)

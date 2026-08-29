@@ -838,11 +838,15 @@ if (ISLE_BUILD_APP)
   if (IOS)
     target_sources(isle PRIVATE
       ISLE/ios/config.cpp
+      ISLE/ios/filepicker.mm
     )
+    set_source_files_properties(ISLE/ios/filepicker.mm PROPERTIES COMPILE_OPTIONS "-fobjc-arc")
+    target_link_libraries(isle PRIVATE "-framework UIKit" "-weak_framework UniformTypeIdentifiers")
   endif()
   if (ANDROID)
     target_sources(isle PRIVATE
             ISLE/android/config.cpp
+            ISLE/android/filepicker.cpp
     )
   endif()
   if(VITA)

@@ -138,7 +138,7 @@ HRESULT Direct3DRMImpl::CreateDeviceFromSurface(
 
 	DDRenderer = CreateDirect3DRMRenderer(miniwind3d, DDSDesc, guid);
 	if (!DDRenderer) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Device GUID not recognized");
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create a renderer for the selected device GUID");
 		return E_NOINTERFACE;
 	}
 	*outDevice =

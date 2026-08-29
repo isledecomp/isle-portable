@@ -78,10 +78,12 @@
 
 #ifdef IOS
 #include "ios/config.h"
+#include "ios/filepicker.h"
 #endif
 
 #ifdef ANDROID
 #include "android/config.h"
+#include "android/filepicker.h"
 #endif
 
 #ifdef __vita__
@@ -105,6 +107,8 @@ MxU8 g_mousemoved = FALSE;
 
 // GLOBAL: ISLE 0x41003c
 MxS32 g_closed = FALSE;
+
+static MxBool g_startupErrorShown = FALSE;
 
 // GLOBAL: ISLE 0x410050
 MxS32 g_rmDisabled = FALSE;
@@ -222,6 +226,7 @@ IsleApp::IsleApp()
 	m_exclusiveFullScreen = FALSE;
 	m_msaaSamples = 0;
 	m_anisotropic = 16.0f;
+	m_lightingModel = 0;
 	m_activeInBackground = FALSE;
 }
 
@@ -406,12 +411,15 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 
 	// Create window
 	if (g_isle->SetupWindow() != SUCCESS) {
-		Any_ShowSimpleMessageBox(
-			SDL_MESSAGEBOX_ERROR,
-			"LEGO® Island Error",
-			"\"LEGO® Island\" failed to start.\nPlease quit all other applications and try again.",
-			window
-		);
+		if (!g_startupErrorShown) {
+			Any_ShowSimpleMessageBox(
+				SDL_MESSAGEBOX_ERROR,
+				"LEGO® Island Error",
+				"\"LEGO® Island\" failed to start.\nPlease quit all other applications and try again."
+				"\nFailed to initialize; see logs for details",
+				window
+			);
+		}
 		return SDL_APP_FAILURE;
 	}
 
@@ -1004,7 +1012,11 @@ MxResult IsleApp::SetupWindow()
 	SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, g_targetHeight);
 	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_FULLSCREEN_BOOLEAN, m_fullScreen);
 	SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, WINDOW_TITLE);
-#if defined(MINIWIN) && !defined(__3DS__) && !defined(WINDOWS_STORE) && !defined(__vita__) && !defined(__DJGPP__)
+#ifndef __EMSCRIPTEN__
+	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_HIGH_PIXEL_DENSITY_BOOLEAN, true);
+#endif
+#if defined(MINIWIN) && (defined(USE_OPENGL1) || defined(USE_OPENGLES2) || defined(USE_OPENGLES3)) &&                  \
+	!defined(__3DS__) && !defined(WINDOWS_STORE) && !defined(__vita__) && !defined(__DJGPP__)
 	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
@@ -1231,6 +1243,7 @@ bool IsleApp::LoadConfig()
 		iniparser_set(dict, "isle:Frame Delta", SDL_itoa(m_frameDelta, buf, 10));
 		iniparser_set(dict, "isle:MSAA", SDL_itoa(m_msaaSamples, buf, 10));
 		iniparser_set(dict, "isle:Anisotropic", SDL_itoa(m_anisotropic, buf, 10));
+		iniparser_set(dict, "isle:Lighting Model", SDL_itoa(m_lightingModel, buf, 10));
 		iniparser_set(dict, "isle:Active in background", m_activeInBackground ? "true" : "false");
 
 #ifdef EXTENSIONS
@@ -1266,6 +1279,12 @@ bool IsleApp::LoadConfig()
 
 #ifdef __EMSCRIPTEN__
 	Emscripten_SetupDefaultConfigOverrides(dict);
+#endif
+#ifdef IOS
+	// [library:config]
+	// iOS relocates both the app bundle and the data container on every app update,
+	// so absolute paths stored in the config go stale. Re-derive them on every launch.
+	IOS_SetupDefaultConfigOverrides(dict);
 #endif
 
 	MxOmni::SetHD((m_hdPath = SDL_strdup(iniparser_getstring(dict, "isle:diskpath", SDL_GetBasePath()))));
@@ -1316,6 +1335,7 @@ bool IsleApp::LoadConfig()
 	m_frameDelta = static_cast<int>(iniparser_getdouble(dict, "isle:Frame Delta", m_frameDelta));
 	m_videoParam.SetMSAASamples((m_msaaSamples = iniparser_getint(dict, "isle:MSAA", m_msaaSamples)));
 	m_videoParam.SetAnisotropic((m_anisotropic = iniparser_getdouble(dict, "isle:Anisotropic", m_anisotropic)));
+	m_videoParam.SetLightingModel((m_lightingModel = iniparser_getint(dict, "isle:Lighting Model", m_lightingModel)));
 	m_activeInBackground = iniparser_getboolean(dict, "isle:Active in Background", m_activeInBackground);
 
 	const char* deviceId = iniparser_getstring(dict, "isle:3D Device ID", NULL);
@@ -1526,6 +1546,7 @@ MxResult IsleApp::VerifyFilesystem()
 	for (const char* file : g_files) {
 		const char* searchPaths[] = {".", m_hdPath, m_cdPath};
 		bool found = false;
+		MxString attempts;
 
 		for (const char* base : searchPaths) {
 			MxString path(base);
@@ -1536,20 +1557,43 @@ MxResult IsleApp::VerifyFilesystem()
 				found = true;
 				break;
 			}
+
+			attempts += "\n";
+			attempts += path.GetData();
+			attempts += " (";
+			attempts += SDL_GetError();
+			attempts += ")";
 		}
 
 		if (!found) {
+#ifdef ANDROID
+			if (Android_TryImportGameFiles(reinterpret_cast<SDL_Window*>(m_windowHandle), m_iniPath, &m_hdPath)) {
+				MxOmni::SetHD(m_hdPath);
+				MxOmni::SetCD(m_cdPath);
+				return VerifyFilesystem();
+			}
+#endif
+#ifdef IOS
+			if (IOS_TryImportGameFiles(reinterpret_cast<SDL_Window*>(m_windowHandle), m_hdPath)) {
+				MxOmni::SetHD(m_hdPath);
+				MxOmni::SetCD(m_cdPath);
+				return VerifyFilesystem();
+			}
+#endif
+
 			char buffer[1024];
 			SDL_snprintf(
 				buffer,
 				sizeof(buffer),
 				"\"LEGO® Island\" failed to start.\nPlease make sure the file %s is located in either diskpath or "
-				"cdpath.\nSDL error: %s",
+				"cdpath.%s",
 				file,
-				SDL_GetError()
+				attempts.GetData()
 			);
 
+			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s", buffer);
 			Any_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "LEGO® Island Error", buffer, NULL);
+			g_startupErrorShown = TRUE;
 			return FAILURE;
 		}
 	}

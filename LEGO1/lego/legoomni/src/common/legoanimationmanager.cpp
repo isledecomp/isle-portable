@@ -2595,6 +2595,10 @@ MxBool LegoAnimationManager::FUN_10064120(LegoLocation::Boundary* p_boundary, Mx
 		}
 	}
 
+	if (local50 == NULL) {
+		return FALSE;
+	}
+
 	e = local50;
 	do {
 		e = (LegoOrientedEdge*) e->GetCounterclockwiseEdge(*boundary);

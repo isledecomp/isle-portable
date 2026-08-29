@@ -440,25 +440,51 @@ void MxOmni::Resume()
 	}
 }
 
+static SDL_EnumerationResult SDLCALL CollectDirectoryEntries(void* p_userdata, const char*, const char* p_fname)
+{
+	static_cast<vector<MxString>*>(p_userdata)->emplace_back(p_fname);
+	return SDL_ENUM_CONTINUE;
+}
+
 vector<MxString> MxOmni::GlobIsleFiles(const MxString& p_path)
 {
-	int count;
-	char** files = SDL_GlobDirectory(p_path.GetData(), NULL, 0, &count);
 	vector<MxString> result;
+	vector<MxString> entries;
 
-	if (files == NULL) {
+	if (!SDL_EnumerateDirectory(p_path.GetData(), CollectDirectoryEntries, &entries)) {
 		SDL_Log("Error enumerating files for path %s (%s)", p_path.GetData(), SDL_GetError());
 		return result;
 	}
 
-	for (int i = 0; i < count; i++) {
-		if (!SDL_strncasecmp(files[i], "lego", 4)) {
-			result.emplace_back(files[i]);
+	vector<MxString> pending;
+	for (const MxString& entry : entries) {
+		if (!SDL_strncasecmp(entry.GetData(), "lego", 4)) {
+			pending.push_back(entry);
 		}
 	}
 
-	SDL_Log("Found %d game files in %s", count, p_path.GetData());
+	while (!pending.empty()) {
+		MxString relative = pending.back();
+		pending.pop_back();
+		result.push_back(relative);
 
-	SDL_free(files);
+		MxString absolute = p_path + "/" + relative.GetData();
+		SDL_PathInfo info;
+		if (!SDL_GetPathInfo(absolute.GetData(), &info) || info.type != SDL_PATHTYPE_DIRECTORY) {
+			continue;
+		}
+
+		vector<MxString> children;
+		if (!SDL_EnumerateDirectory(absolute.GetData(), CollectDirectoryEntries, &children)) {
+			SDL_Log("Error enumerating files for path %s (%s)", absolute.GetData(), SDL_GetError());
+			continue;
+		}
+
+		for (const MxString& child : children) {
+			pending.push_back(relative + "/" + child.GetData());
+		}
+	}
+
+	SDL_Log("Found %d game files in %s", (int) result.size(), p_path.GetData());
 	return result;
 }
