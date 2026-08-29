@@ -1275,6 +1275,12 @@ bool IsleApp::LoadConfig()
 #ifdef __EMSCRIPTEN__
 	Emscripten_SetupDefaultConfigOverrides(dict);
 #endif
+#ifdef IOS
+	// [library:config]
+	// iOS relocates both the app bundle and the data container on every app update,
+	// so absolute paths stored in the config go stale. Re-derive them on every launch.
+	IOS_SetupDefaultConfigOverrides(dict);
+#endif
 
 	MxOmni::SetHD((m_hdPath = SDL_strdup(iniparser_getstring(dict, "isle:diskpath", SDL_GetBasePath()))));
 	MxOmni::SetCD((m_cdPath = SDL_strdup(iniparser_getstring(dict, "isle:cdpath", MxOmni::GetCD()))));
