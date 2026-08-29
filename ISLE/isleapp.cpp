@@ -78,6 +78,7 @@
 
 #ifdef IOS
 #include "ios/config.h"
+#include "ios/filepicker.h"
 #endif
 
 #ifdef ANDROID
@@ -1567,6 +1568,13 @@ MxResult IsleApp::VerifyFilesystem()
 		if (!found) {
 #ifdef ANDROID
 			if (Android_TryImportGameFiles(reinterpret_cast<SDL_Window*>(m_windowHandle), m_iniPath, &m_hdPath)) {
+				MxOmni::SetHD(m_hdPath);
+				MxOmni::SetCD(m_cdPath);
+				return VerifyFilesystem();
+			}
+#endif
+#ifdef IOS
+			if (IOS_TryImportGameFiles(reinterpret_cast<SDL_Window*>(m_windowHandle), m_hdPath)) {
 				MxOmni::SetHD(m_hdPath);
 				MxOmni::SetCD(m_cdPath);
 				return VerifyFilesystem();
