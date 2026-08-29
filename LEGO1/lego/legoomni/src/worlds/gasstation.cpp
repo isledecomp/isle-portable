@@ -135,7 +135,10 @@ void GasStation::ReadyWorld()
 	PlayMusic(JukeboxScript::c_JBMusic2);
 
 	m_trackLedBitmap = (MxStillPresenter*) Find("MxStillPresenter", "TrackLed_Bitmap");
-	m_currentActorId = UserActor()->GetActorId();
+
+	if (UserActor()) {
+		m_currentActorId = UserActor()->GetActorId();
+	}
 
 	switch (m_currentActorId) {
 	case LegoActor::c_pepper:
