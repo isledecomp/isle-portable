@@ -107,6 +107,8 @@ MxU8 g_mousemoved = FALSE;
 // GLOBAL: ISLE 0x41003c
 MxS32 g_closed = FALSE;
 
+static MxBool g_startupErrorShown = FALSE;
+
 // GLOBAL: ISLE 0x410050
 MxS32 g_rmDisabled = FALSE;
 
@@ -408,13 +410,15 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 
 	// Create window
 	if (g_isle->SetupWindow() != SUCCESS) {
-		Any_ShowSimpleMessageBox(
-			SDL_MESSAGEBOX_ERROR,
-			"LEGO® Island Error",
-			"\"LEGO® Island\" failed to start.\nPlease quit all other applications and try again."
-			"\nFailed to initialize; see logs for details",
-			window
-		);
+		if (!g_startupErrorShown) {
+			Any_ShowSimpleMessageBox(
+				SDL_MESSAGEBOX_ERROR,
+				"LEGO® Island Error",
+				"\"LEGO® Island\" failed to start.\nPlease quit all other applications and try again."
+				"\nFailed to initialize; see logs for details",
+				window
+			);
+		}
 		return SDL_APP_FAILURE;
 	}
 
@@ -1581,6 +1585,7 @@ MxResult IsleApp::VerifyFilesystem()
 
 			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s", buffer);
 			Any_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "LEGO® Island Error", buffer, NULL);
+			g_startupErrorShown = TRUE;
 			return FAILURE;
 		}
 	}
