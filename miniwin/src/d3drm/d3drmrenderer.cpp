@@ -120,11 +120,11 @@ void Direct3DRMRenderer_EnumDevices(const IDirect3DMiniwin* d3d, LPD3DENUMDEVICE
 #ifdef USE_DIRECTX9
 	DirectX9Renderer_EnumDevice(cb, ctx);
 #endif
-#ifdef USE_SOFTWARE_RENDER
-	Direct3DRMSoftware_EnumDevice(cb, ctx);
-#endif
 #ifdef USE_PALETTE_SW_RENDER
 	Direct3DRMPaletteSW_EnumDevice(cb, ctx);
+#endif
+#ifdef USE_SOFTWARE_RENDER
+	Direct3DRMSoftware_EnumDevice(cb, ctx);
 #endif
 #ifdef USE_GLIDE
 	Direct3DRMGlide_EnumDevice(cb, ctx);
