@@ -192,7 +192,7 @@ MxResult LegoInputManager::GetJoystickState(MxU32* p_joystickX, MxU32* p_joystic
 		return FAILURE;
 	}
 
-	MxS16 xPos, yPos = 0;
+	MxS16 xPos = 0, yPos = 0;
 	for (const auto& [id, joystick] : m_joysticks) {
 		xPos = SDL_GetGamepadAxis(joystick.first, SDL_GAMEPAD_AXIS_LEFTX);
 		yPos = SDL_GetGamepadAxis(joystick.first, SDL_GAMEPAD_AXIS_LEFTY);
