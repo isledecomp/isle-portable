@@ -51,6 +51,7 @@ public:
 	};
 
 	Act1State();
+	~Act1State() override;
 
 	// FUNCTION: LEGO1 0x100338a0
 	// FUNCTION: BETA10 0x10036040
