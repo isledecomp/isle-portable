@@ -2,6 +2,7 @@
 
 #include "legopathactor.h"
 #include "legopathedgecontainer.h"
+#include "misc.h"
 #include "misc/legostorage.h"
 #include "mxmisc.h"
 #include "mxticklemanager.h"
@@ -146,6 +147,23 @@ void LegoPathController::Destroy()
 {
 	TickleManager()->UnregisterClient(this);
 
+	for (LegoPathActorSet::iterator itpa = m_actors.begin(); itpa != m_actors.end(); itpa++) {
+		if ((*itpa)->GetController() == this) {
+			(*itpa)->SetController(NULL);
+			(*itpa)->SetBoundary(NULL);
+		}
+	}
+	m_actors.clear();
+
+	LegoPathActor* userActor = UserActor();
+	if (userActor != NULL && m_boundaries != NULL && userActor->GetBoundary() >= m_boundaries &&
+		userActor->GetBoundary() < m_boundaries + m_numL) {
+		userActor->SetBoundary(NULL);
+		if (userActor->GetController() == this) {
+			userActor->SetController(NULL);
+		}
+	}
+
 	if (m_boundaries != NULL) {
 		delete[] m_boundaries;
 	}
@@ -215,10 +233,6 @@ MxResult LegoPathController::PlaceActor(
 	float p_destScale
 )
 {
-	// LegoROI is attached asynchronously by LegoModelPresenter::ReadyTickle when the
-	// model's stream chunk arrives. If Isle::Enable → Act1State::PlaceActors runs before
-	// that completes (race lost), m_roi is still NULL — dereferencing it in
-	// SetTransformAndDestinationFromEdge crashes at orientableroi.cpp:61.
 	if (p_actor->GetROI() == NULL) {
 		return FAILURE;
 	}
@@ -359,6 +373,10 @@ MxResult LegoPathController::RemoveActor(LegoPathActor* p_actor)
 		if (m_boundaries[i].RemoveActor(p_actor) == SUCCESS) {
 			result = SUCCESS;
 		}
+	}
+
+	if (p_actor->GetController() == this) {
+		p_actor->SetController(NULL);
 	}
 
 	return result;

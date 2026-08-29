@@ -7,6 +7,7 @@
 #include "legonamedplane.h"
 #include "legonavcontroller.h"
 #include "legopathboundary.h"
+#include "legopathcontroller.h"
 #include "legopathedgecontainer.h"
 #include "legosoundmanager.h"
 #include "legoworld.h"
@@ -63,6 +64,10 @@ LegoPathActor::LegoPathActor()
 // FUNCTION: BETA10 0x100ae80e
 LegoPathActor::~LegoPathActor()
 {
+	if (m_pathController) {
+		m_pathController->RemoveActor(this);
+	}
+
 	if (m_grec) {
 		delete m_grec;
 	}
