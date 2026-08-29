@@ -26,20 +26,14 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>@MACOSX_BUNDLE_BUNDLE_VERSION@</string>
-	<key>UILaunchStoryboardName</key>
-	<string/>
-	<key>NSHighResolutionCapable</key>
-	<true/>
-	<key>CSResourcesFileMapped</key>
-	<true/>
+	<key>UILaunchScreen</key>
+	<dict/>
 	<key>LSRequires@MACOSX_BUNDLE_REQUIRED_PLATFORM@</key>
 	<true/>
 	<key>NSHumanReadableCopyright</key>
 	<string>@MACOSX_BUNDLE_COPYRIGHT@</string>
 	<key>SDL_FILESYSTEM_BASE_DIR_TYPE</key>
 	<string>resource</string>
-	<key>NSSupportsAutomaticGraphicsSwitching</key>
-	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
@@ -54,6 +48,8 @@
 		<integer>2</integer>
 	</array>
 	<key>UIRequiresFullScreen</key>
+	<true/>
+	<key>UIDesignRequiresCompatibility</key>
 	<true/>
 	<key>UIStatusBarHidden</key>
 	<true/>
@@ -71,6 +67,18 @@
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
 		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneConfigurationName</key>
+					<string>SDLSceneConfiguration</string>
+					<key>UISceneDelegateClassName</key>
+					<string>SDLUIKitSceneDelegate</string>
+				</dict>
+			</array>
+		</dict>
 	</dict>
 	<key>CFBundleAllowMixedLocalizations</key>
 	<true/>
@@ -78,9 +86,5 @@
 	<string>public.app-category.games</string>
 	<key>DTPlatformName</key>
 	<string>iphoneos</string>
-	<key>UIFileSharingEnabled</key>
-	<true/>
-	<key>LSSupportsOpeningDocumentsInPlace</key>
-	<true/>
 </dict>
 </plist>
