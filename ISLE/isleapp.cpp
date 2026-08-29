@@ -82,6 +82,7 @@
 
 #ifdef ANDROID
 #include "android/config.h"
+#include "android/filepicker.h"
 #endif
 
 #ifdef __vita__
@@ -1554,6 +1555,14 @@ MxResult IsleApp::VerifyFilesystem()
 		}
 
 		if (!found) {
+#ifdef ANDROID
+			if (Android_TryImportGameFiles(reinterpret_cast<SDL_Window*>(m_windowHandle), m_iniPath, &m_hdPath)) {
+				MxOmni::SetHD(m_hdPath);
+				MxOmni::SetCD(m_cdPath);
+				return VerifyFilesystem();
+			}
+#endif
+
 			char buffer[1024];
 			SDL_snprintf(
 				buffer,
