@@ -22,4 +22,6 @@ void IOS_SetupDefaultConfigOverrides(dictionary* p_dictionary)
 
 	iniparser_set(p_dictionary, "isle:diskpath", documentFolder.GetData());
 	iniparser_set(p_dictionary, "isle:cdpath", documentFolder.GetData());
+	iniparser_set(p_dictionary, "isle:mediapath", SDL_GetBasePath());
+	iniparser_set(p_dictionary, "isle:savepath", SDL_GetUserFolder(SDL_FOLDER_DOCUMENTS));
 }
