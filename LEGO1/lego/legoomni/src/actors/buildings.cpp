@@ -164,8 +164,10 @@ MxLong BeachHouseEntity::HandleClick(LegoEventNotificationParam& p_param)
 		Act1State* state = (Act1State*) GameState()->GetState("Act1State");
 		state->SetState(Act1State::e_none);
 
-		if (UserActor()->GetActorId() != GameState()->GetActorId()) {
-			((IslePathActor*) UserActor())->Exit();
+		if (UserActor()) {
+			if (UserActor()->GetActorId() != GameState()->GetActorId()) {
+				((IslePathActor*) UserActor())->Exit();
+			}
 		}
 
 		Isle* isle = (Isle*) FindWorld(*g_isleScript, IsleScript::c__Isle);
@@ -185,8 +187,10 @@ MxLong RaceStandsEntity::HandleClick(LegoEventNotificationParam& p_param)
 		Act1State* state = (Act1State*) GameState()->GetState("Act1State");
 		state->SetState(Act1State::e_none);
 
-		if (UserActor()->GetActorId() != GameState()->GetActorId()) {
-			((IslePathActor*) UserActor())->Exit();
+		if (UserActor()) {
+			if (UserActor()->GetActorId() != GameState()->GetActorId()) {
+				((IslePathActor*) UserActor())->Exit();
+			}
 		}
 
 		Isle* isle = (Isle*) FindWorld(*g_isleScript, IsleScript::c__Isle);
