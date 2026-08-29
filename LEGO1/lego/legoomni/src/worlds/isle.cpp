@@ -1569,6 +1569,7 @@ MxBool Act1State::Reset()
 
 	if (m_jetski) {
 		delete m_jetski;
+		m_jetski = NULL;
 	}
 
 	m_dunebuggyPlane.m_name = "";
@@ -1579,6 +1580,7 @@ MxBool Act1State::Reset()
 
 	if (m_dunebuggy) {
 		delete m_dunebuggy;
+		m_dunebuggy = NULL;
 	}
 
 	m_racecarPlane.m_name = "";
@@ -1599,6 +1601,7 @@ MxBool Act1State::Reset()
 
 	if (m_racecar) {
 		delete m_racecar;
+		m_racecar = NULL;
 	}
 
 	return TRUE;
@@ -1660,7 +1663,6 @@ void Act1State::RemoveActors()
 void Act1State::PlaceActors()
 {
 	Isle* isle = (Isle*) FindWorld(*g_isleScript, IsleScript::c__Isle);
-
 
 	if (isle->m_motocycle != NULL) {
 		if (m_motocyclePlane.IsPresent()) {
