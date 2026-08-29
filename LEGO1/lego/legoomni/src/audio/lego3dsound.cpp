@@ -1,5 +1,6 @@
 #include "lego3dsound.h"
 
+#include "extensions/slot_ref_tracker.h"
 #include "legoactor.h"
 #include "legocharactermanager.h"
 #include "legosoundmanager.h"
@@ -10,6 +11,8 @@
 #include <vec.h>
 
 DECOMP_SIZE_ASSERT(Lego3DSound, 0x30)
+
+using namespace Extensions;
 
 // FUNCTION: LEGO1 0x10011630
 Lego3DSound::Lego3DSound()
@@ -55,15 +58,15 @@ MxResult Lego3DSound::Create(ma_sound* p_sound, const char* p_name, MxS32 p_volu
 	}
 
 	if (CharacterManager()->IsActor(p_name)) {
-		m_roi = CharacterManager()->GetActorROI(p_name, TRUE);
+		BindSlot(m_roi, CharacterManager()->GetActorROI(p_name, TRUE));
 		m_enabled = m_isActor = TRUE;
 	}
 	else {
-		m_roi = FindROI(p_name);
+		BindSlot(m_roi, FindROI(p_name));
 	}
 
 	if (m_roi == NULL) {
-		m_roi = CharacterManager()->CreateAutoROI(NULL, p_name, TRUE);
+		BindSlot(m_roi, CharacterManager()->CreateAutoROI(NULL, p_name, TRUE));
 
 		if (m_roi != NULL) {
 			m_enabled = TRUE;
@@ -75,10 +78,10 @@ MxResult Lego3DSound::Create(ma_sound* p_sound, const char* p_name, MxS32 p_volu
 	}
 
 	if (m_isActor) {
-		m_positionROI = m_roi->FindChildROI("head", m_roi);
+		BindSlot(m_positionROI, m_roi->FindChildROI("head", m_roi));
 	}
 	else {
-		m_positionROI = m_roi;
+		BindSlot(m_positionROI, m_roi);
 	}
 
 	if (MxOmni::IsSound3D()) {
@@ -115,6 +118,9 @@ void Lego3DSound::Destroy()
 			CharacterManager()->ReleaseAutoROI(m_roi);
 		}
 	}
+
+	ClearSlot(m_roi);
+	ClearSlot(m_positionROI);
 
 	Init();
 }
@@ -163,7 +169,7 @@ MxU32 Lego3DSound::UpdatePosition(ma_sound* p_sound)
 		updated = TRUE;
 	}
 
-	if (m_actor != NULL) {
+	if (m_actor != NULL && m_roi != NULL) {
 		if (abs(m_frequencyFactor - m_actor->GetSoundFrequencyFactor()) > 0.0001) {
 			m_frequencyFactor = m_actor->GetSoundFrequencyFactor();
 			ma_sound_set_pitch(p_sound, m_frequencyFactor);
@@ -192,15 +198,15 @@ void Lego3DSound::FUN_10011a60(ma_sound* p_sound, const char* p_name)
 		m_enabled = m_isActor = FALSE;
 
 		if (CharacterManager()->IsActor(p_name)) {
-			m_roi = CharacterManager()->GetActorROI(p_name, TRUE);
+			BindSlot(m_roi, CharacterManager()->GetActorROI(p_name, TRUE));
 			m_enabled = m_isActor = TRUE;
 		}
 		else {
-			m_roi = FindROI(p_name);
+			BindSlot(m_roi, FindROI(p_name));
 		}
 
 		if (m_roi == NULL) {
-			m_roi = CharacterManager()->CreateAutoROI(NULL, p_name, TRUE);
+			BindSlot(m_roi, CharacterManager()->CreateAutoROI(NULL, p_name, TRUE));
 
 			if (m_roi != NULL) {
 				m_enabled = TRUE;
@@ -212,10 +218,10 @@ void Lego3DSound::FUN_10011a60(ma_sound* p_sound, const char* p_name)
 		}
 
 		if (m_isActor) {
-			m_positionROI = m_roi->FindChildROI("head", m_roi);
+			BindSlot(m_positionROI, m_roi->FindChildROI("head", m_roi));
 		}
 		else {
-			m_positionROI = m_roi;
+			BindSlot(m_positionROI, m_roi);
 		}
 
 		if (m_sound != NULL) {
@@ -277,8 +283,8 @@ void Lego3DSound::Reset()
 		}
 	}
 
-	m_roi = NULL;
-	m_positionROI = NULL;
+	ClearSlot(m_roi);
+	ClearSlot(m_positionROI);
 	m_actor = NULL;
 }
 
