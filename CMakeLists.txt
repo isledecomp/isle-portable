@@ -843,6 +843,7 @@ if (ISLE_BUILD_APP)
   if (ANDROID)
     target_sources(isle PRIVATE
             ISLE/android/config.cpp
+            ISLE/android/filepicker.cpp
     )
   endif()
   if(VITA)
