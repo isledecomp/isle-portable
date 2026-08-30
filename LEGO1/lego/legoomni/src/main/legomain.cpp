@@ -94,7 +94,9 @@ void LegoOmni::Destroy()
 {
 	AUTOLOCK(m_criticalSection);
 
-	m_notificationManager->Unregister(this);
+	if (m_notificationManager) {
+		m_notificationManager->Unregister(this);
+	}
 
 	if (m_worldList) {
 		delete m_worldList;

@@ -1192,8 +1192,20 @@ bool IsleApp::LoadConfig()
 		iniparser_freedict(dict);
 
 		if (m_iniPath) {
+#ifdef __EMSCRIPTEN__
+			SDL_Log("Invalid config path '%s', falling back to defaults", m_iniPath);
+			m_iniPath = NULL;
+			if (prefPath) {
+				iniConfig = prefPath;
+				iniConfig += "isle.ini";
+			}
+			else {
+				iniConfig = "isle.ini";
+			}
+#else
 			SDL_Log("Invalid config path '%s'", m_iniPath);
 			return false;
+#endif
 		}
 
 		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Loading sane defaults");
