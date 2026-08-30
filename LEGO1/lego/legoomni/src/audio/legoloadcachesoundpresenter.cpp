@@ -26,6 +26,7 @@ LegoLoadCacheSoundPresenter::~LegoLoadCacheSoundPresenter()
 // FUNCTION: LEGO1 0x100184e0
 void LegoLoadCacheSoundPresenter::Init()
 {
+	m_cacheSound = NULL;
 	m_data = NULL;
 	m_dataSize = 0;
 	m_unk0x7c = FALSE;
@@ -101,7 +102,9 @@ MxResult LegoLoadCacheSoundPresenter::PutData()
 	ENTER(m_criticalSection);
 
 	if (m_currentTickleState == e_done) {
-		m_cacheSound = SoundManager()->GetCacheSoundManager()->ManageSoundEntry(m_cacheSound);
+		if (m_cacheSound != NULL) {
+			m_cacheSound = SoundManager()->GetCacheSoundManager()->ManageSoundEntry(m_cacheSound);
+		}
 		m_unk0x7c = TRUE;
 	}
 
