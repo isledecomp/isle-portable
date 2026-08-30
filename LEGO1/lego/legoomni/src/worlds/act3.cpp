@@ -262,8 +262,8 @@ Act3::Act3()
 // FUNCTION: BETA10 0x100155da
 Act3::~Act3()
 {
-	ClearSlot(m_copter);
 	Destroy(TRUE);
+	ClearSlot(m_copter);
 	NotificationManager()->Unregister(this);
 	TickleManager()->UnregisterClient(this);
 }
