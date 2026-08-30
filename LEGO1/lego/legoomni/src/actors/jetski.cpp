@@ -92,8 +92,10 @@ MxLong Jetski::HandleClick()
 	((Isle*) CurrentWorld())->SetDestLocation(LegoGameState::Area::e_jetski);
 	TransitionManager()->StartTransition(MxTransitionManager::e_mosaic, 50, FALSE, TRUE);
 
-	if (GameState()->GetActorId() != UserActor()->GetActorId()) {
-		((IslePathActor*) UserActor())->Exit();
+	if (UserActor()) {
+		if (GameState()->GetActorId() != UserActor()->GetActorId()) {
+			((IslePathActor*) UserActor())->Exit();
+		}
 	}
 #endif
 
@@ -108,8 +110,10 @@ MxLong Jetski::HandleClick()
 	InvokeAction(Extra::ActionType::e_start, *g_isleScript, IsleScript::c_JetskiDashboard, NULL);
 
 #ifdef BETA10
-	if (UserActor()->GetActorId() != GameState()->GetActorId()) {
-		((IslePathActor*) UserActor())->Exit();
+	if (UserActor()) {
+		if (UserActor()->GetActorId() != GameState()->GetActorId()) {
+			((IslePathActor*) UserActor())->Exit();
+		}
 	}
 	Enter();
 	ControlManager()->Register(this);
