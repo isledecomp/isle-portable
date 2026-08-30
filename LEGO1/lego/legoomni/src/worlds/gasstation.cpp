@@ -136,7 +136,10 @@ void GasStation::ReadyWorld()
 
 	m_trackLedBitmap = (MxStillPresenter*) Find("MxStillPresenter", "TrackLed_Bitmap");
 
-	if (UserActor()) {
+	if (UserActor() == NULL) {
+		m_currentActorId = LegoActor::c_laura;
+	}
+	else {
 		m_currentActorId = UserActor()->GetActorId();
 	}
 
