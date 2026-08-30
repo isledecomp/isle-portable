@@ -68,7 +68,7 @@ jobs:
             ${{ matrix.msys-env }}-cmake
             ${{ matrix.msys-env }}-ninja
             ${{ matrix.msys-env }}-clang-tools-extra
-            ${{ (matrix.config && format('{0}-qt6-base', matrix.msys-env)) || '' }}
+            ${{ (matrix.config && format('{0}-qt6-static {0}-freetype {0}-harfbuzz {0}-graphite2 {0}-libpng {0}-libjpeg-turbo {0}-libtiff {0}-libwebp {0}-pcre2 {0}-zlib {0}-brotli {0}-bzip2', matrix.msys-env)) || '' }}
       - name: Install Qt
         if: ${{ !!matrix.msvc && matrix.config }}
         uses: jurplel/install-qt-action@v4

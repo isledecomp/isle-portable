@@ -894,7 +894,19 @@ if (ISLE_BUILD_APP)
 endif()
 
 if (ISLE_BUILD_CONFIG)
+  # Prefer MSYS2's static Qt6 when available so isle-config does not depend on Qt DLLs.
+  # Restrict library resolution to static archives while Qt and its third-party
+  # dependencies are located, so import libraries (.dll.a) are not picked up.
+  if(MINGW AND EXISTS "$ENV{MSYSTEM_PREFIX}/qt6-static")
+    set(ISLE_QT_STATIC ON)
+    list(APPEND CMAKE_PREFIX_PATH "$ENV{MSYSTEM_PREFIX}/qt6-static")
+    set(ISLE_SAVED_FIND_LIBRARY_SUFFIXES "${CMAKE_FIND_LIBRARY_SUFFIXES}")
+    set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+  endif()
   find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
+  if(ISLE_QT_STATIC)
+    set(CMAKE_FIND_LIBRARY_SUFFIXES "${ISLE_SAVED_FIND_LIBRARY_SUFFIXES}")
+  endif()
   qt_standard_project_setup()
   qt_add_executable(isle-config WIN32
     LEGO1/mxdirectx/mxdirectxinfo.cpp
@@ -907,6 +919,10 @@ if (ISLE_BUILD_CONFIG)
     CONFIG/qt/res/config.qrc
   )
   target_link_libraries(isle-config PRIVATE Qt6::Core Qt6::Widgets)
+  if(ISLE_QT_STATIC)
+    # Keep the static link lean: the dialog only uses PNG (built into QtGui) and SVG resources
+    qt_import_plugins(isle-config EXCLUDE_BY_TYPE imageformats EXCLUDE_BY_TYPE networkinformation EXCLUDE_BY_TYPE tls)
+  endif()
   set_property(TARGET isle-config PROPERTY AUTOMOC ON)
   set_property(TARGET isle-config PROPERTY AUTORCC ON)
   set_property(TARGET isle-config PROPERTY AUTOUIC ON)
@@ -1056,7 +1072,8 @@ if (NOT (NINTENDO_3DS OR WINDOWS_STORE OR VITA))
   endif()
 endif()
 if (ISLE_BUILD_CONFIG)
-  if(WIN32)
+  get_target_property(ISLE_QT6_CORE_TYPE Qt6::Core TYPE)
+  if(WIN32 AND NOT ISLE_QT6_CORE_TYPE STREQUAL "STATIC_LIBRARY")
     find_program(WINDEPLOYQT_EXECUTABLE windeployqt)
     if(WINDEPLOYQT_EXECUTABLE)
       install(CODE "message(STATUS \"Running windeployqt with minimal dependencies\")
