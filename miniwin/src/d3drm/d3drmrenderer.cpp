@@ -30,6 +30,16 @@
 #include "d3drmrenderer_glide.h"
 #endif
 
+void Miniwin_SetupWindowCreateProperties(SDL_PropertiesID props)
+{
+#if (defined(USE_OPENGL1) || defined(USE_OPENGLES2) || defined(USE_OPENGLES3)) && !defined(__3DS__) &&                 \
+	!defined(WINDOWS_STORE) && !defined(__vita__) && !defined(__DJGPP__)
+	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
+	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+#endif
+}
+
 Direct3DRMRenderer* CreateDirect3DRMRenderer(
 	const IDirect3DMiniwin* d3d,
 	const DDSURFACEDESC& DDSDesc,
