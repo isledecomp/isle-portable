@@ -953,7 +953,9 @@ MxResult Act3Brickster::FUN_100417c0()
 				}
 
 				grec = NULL;
+#ifdef BETA10
 				assert(0);
+#endif
 			}
 		}
 		else {
