@@ -193,6 +193,7 @@ MxResult LegoInputManager::GetJoystickState(MxU32* p_joystickX, MxU32* p_joystic
 	}
 
 	MxS16 xPos = 0, yPos = 0;
+#ifndef __3DS__
 	for (const auto& [id, joystick] : m_joysticks) {
 		xPos = SDL_GetGamepadAxis(joystick.first, SDL_GAMEPAD_AXIS_LEFTX);
 		yPos = SDL_GetGamepadAxis(joystick.first, SDL_GAMEPAD_AXIS_LEFTY);
@@ -207,6 +208,7 @@ MxResult LegoInputManager::GetJoystickState(MxU32* p_joystickX, MxU32* p_joystic
 			break;
 		}
 	}
+#endif
 
 	if (!xPos && !yPos) {
 		xPos = m_touchVirtualThumb.x;

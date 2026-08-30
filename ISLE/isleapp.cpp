@@ -716,13 +716,38 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 			// Ignore small axis values
 			axisValue = event->gaxis.value;
 		}
+#ifdef __3DS__
+		// The circle pad (left stick) doubles as a cursor stick since only
+		// New 3DS models have a C-stick; both contribute to cursor movement
+		static MxS32 g_cpadX = 0, g_cpadY = 0, g_cstickX = 0, g_cstickY = 0;
+		switch (event->gaxis.axis) {
+		case SDL_GAMEPAD_AXIS_LEFTX:
+			g_cpadX = axisValue;
+			break;
+		case SDL_GAMEPAD_AXIS_LEFTY:
+			g_cpadY = axisValue;
+			break;
+		case SDL_GAMEPAD_AXIS_RIGHTX:
+			g_cstickX = axisValue;
+			break;
+		case SDL_GAMEPAD_AXIS_RIGHTY:
+			g_cstickY = axisValue;
+			break;
+		}
+		MxS32 combinedX = SDL_clamp(g_cpadX + g_cstickX, -SDL_JOYSTICK_AXIS_MAX, SDL_JOYSTICK_AXIS_MAX);
+		MxS32 combinedY = SDL_clamp(g_cpadY + g_cstickY, -SDL_JOYSTICK_AXIS_MAX, SDL_JOYSTICK_AXIS_MAX);
+		g_lastJoystickMouseX = ((MxFloat) combinedX) / SDL_JOYSTICK_AXIS_MAX * g_isle->GetCursorSensitivity();
+		g_lastJoystickMouseY = ((MxFloat) combinedY) / SDL_JOYSTICK_AXIS_MAX * g_isle->GetCursorSensitivity();
+#endif
+#ifndef __3DS__
 		if (event->gaxis.axis == SDL_GAMEPAD_AXIS_RIGHTX) {
 			g_lastJoystickMouseX = ((MxFloat) axisValue) / SDL_JOYSTICK_AXIS_MAX * g_isle->GetCursorSensitivity();
 		}
 		else if (event->gaxis.axis == SDL_GAMEPAD_AXIS_RIGHTY) {
 			g_lastJoystickMouseY = ((MxFloat) axisValue) / SDL_JOYSTICK_AXIS_MAX * g_isle->GetCursorSensitivity();
 		}
-		else if (event->gaxis.axis == SDL_GAMEPAD_AXIS_RIGHT_TRIGGER) {
+#endif
+		if (event->gaxis.axis == SDL_GAMEPAD_AXIS_RIGHT_TRIGGER) {
 			if (axisValue != 0 && !g_mousedown) {
 				g_mousedown = TRUE;
 
