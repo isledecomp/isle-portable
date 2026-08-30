@@ -1,5 +1,10 @@
 #include "resource.h"
 
+#ifdef __MINGW32__
+#include "winuser.h"
+1 RT_MANIFEST "isle.exe.manifest"
+#endif
+
 ISLE_ARROW 	CURSOR 	"arrow.cur"
 ISLE_NO 		CURSOR 	"no.cur"
 ISLE_BUSY 	CURSOR 	"busy.cur"

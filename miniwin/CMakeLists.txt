@@ -178,7 +178,7 @@ target_link_libraries(miniwin PUBLIC miniwin-headers)
 
 target_link_libraries(miniwin PRIVATE SDL3::SDL3)
 
-target_compile_definitions(miniwin PUBLIC ${GRAPHICS_BACKENDS})
+target_compile_definitions(miniwin PRIVATE ${GRAPHICS_BACKENDS})
 
 
 # Shader stuff

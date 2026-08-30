@@ -108,7 +108,7 @@ MxU8 g_mousemoved = FALSE;
 // GLOBAL: ISLE 0x41003c
 MxS32 g_closed = FALSE;
 
-static MxBool g_startupErrorShown = FALSE;
+static char g_startupError[1024] = "";
 
 // GLOBAL: ISLE 0x410050
 MxS32 g_rmDisabled = FALSE;
@@ -234,7 +234,9 @@ IsleApp::IsleApp()
 IsleApp::~IsleApp()
 {
 	if (LegoOmni::GetInstance()) {
-		Close();
+		if (m_gameStarted) {
+			Close();
+		}
 		MxOmni::DestroyInstance();
 	}
 
@@ -332,6 +334,19 @@ void IsleApp::SetupVideoFlags(
 	}
 }
 
+static void ShowFatalError(const char* p_message)
+{
+	if (g_isle) {
+		delete g_isle;
+		g_isle = NULL;
+	}
+	if (window) {
+		SDL_DestroyWindow(window);
+		window = NULL;
+	}
+	Any_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "LEGO® Island Error", p_message, NULL);
+}
+
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 {
 	*appstate = NULL;
@@ -346,6 +361,8 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 			SDL_GetRevision()
 		);
 	}
+
+	SDL_SetAppMetadata("Isle Portable", NULL, "org.legoisland.Isle");
 
 	SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
 	SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
@@ -411,15 +428,12 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 
 	// Create window
 	if (g_isle->SetupWindow() != SUCCESS) {
-		if (!g_startupErrorShown) {
-			Any_ShowSimpleMessageBox(
-				SDL_MESSAGEBOX_ERROR,
-				"LEGO® Island Error",
-				"\"LEGO® Island\" failed to start.\nPlease quit all other applications and try again."
-				"\nFailed to initialize; see logs for details",
-				window
-			);
-		}
+		ShowFatalError(
+			g_startupError[0] != '\0'
+				? g_startupError
+				: "\"LEGO® Island\" failed to start.\nPlease quit all other applications and try again."
+				  "\nFailed to initialize; see logs for details"
+		);
 		return SDL_APP_FAILURE;
 	}
 
@@ -452,13 +466,8 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 	}
 
 	if (!g_isle->Tick()) {
-		Any_ShowSimpleMessageBox(
-			SDL_MESSAGEBOX_ERROR,
-			"LEGO® Island Error",
-			"\"LEGO® Island\" failed to start.\nPlease quit all other applications and try again."
-			"\nFailed to initialize; see logs for details",
-			NULL
-		);
+		ShowFatalError("\"LEGO® Island\" failed to start.\nPlease quit all other applications and try again."
+					   "\nFailed to initialize; see logs for details");
 		return SDL_APP_FAILURE;
 	}
 
@@ -476,13 +485,8 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 
 		if (g_mousedown && g_mousemoved && g_isle) {
 			if (!g_isle->Tick()) {
-				Any_ShowSimpleMessageBox(
-					SDL_MESSAGEBOX_ERROR,
-					"LEGO® Island Error",
-					"\"LEGO® Island\" failed to start.\nPlease quit all other applications and try again."
-					"\nFailed to initialize; see logs for details",
-					NULL
-				);
+				ShowFatalError("\"LEGO® Island\" failed to start.\nPlease quit all other applications and try again."
+							   "\nFailed to initialize; see logs for details");
 				return SDL_APP_FAILURE;
 			}
 		}
@@ -935,8 +939,9 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 
 void SDL_AppQuit(void* appstate, SDL_AppResult result)
 {
-	if (appstate != NULL) {
-		SDL_DestroyWindow((SDL_Window*) appstate);
+	if (window) {
+		SDL_DestroyWindow(window);
+		window = NULL;
 	}
 
 	SDL_Quit();
@@ -1015,11 +1020,11 @@ MxResult IsleApp::SetupWindow()
 #ifndef __EMSCRIPTEN__
 	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_HIGH_PIXEL_DENSITY_BOOLEAN, true);
 #endif
-#if defined(MINIWIN) && (defined(USE_OPENGL1) || defined(USE_OPENGLES2) || defined(USE_OPENGLES3)) &&                  \
-	!defined(__3DS__) && !defined(WINDOWS_STORE) && !defined(__vita__) && !defined(__DJGPP__)
-	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
-	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+#if defined(MINIWIN) && !defined(__EMSCRIPTEN__)
+	SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_RESIZABLE_BOOLEAN, true);
+#endif
+#ifdef MINIWIN
+	Miniwin_SetupWindowCreateProperties(props);
 #endif
 
 	window = SDL_CreateWindowWithProperties(props);
@@ -1187,8 +1192,20 @@ bool IsleApp::LoadConfig()
 		iniparser_freedict(dict);
 
 		if (m_iniPath) {
+#ifdef __EMSCRIPTEN__
+			SDL_Log("Invalid config path '%s', falling back to defaults", m_iniPath);
+			m_iniPath = NULL;
+			if (prefPath) {
+				iniConfig = prefPath;
+				iniConfig += "isle.ini";
+			}
+			else {
+				iniConfig = "isle.ini";
+			}
+#else
 			SDL_Log("Invalid config path '%s'", m_iniPath);
 			return false;
+#endif
 		}
 
 		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Loading sane defaults");
@@ -1592,8 +1609,7 @@ MxResult IsleApp::VerifyFilesystem()
 			);
 
 			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s", buffer);
-			Any_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "LEGO® Island Error", buffer, NULL);
-			g_startupErrorShown = TRUE;
+			SDL_strlcpy(g_startupError, buffer, sizeof(g_startupError));
 			return FAILURE;
 		}
 	}
