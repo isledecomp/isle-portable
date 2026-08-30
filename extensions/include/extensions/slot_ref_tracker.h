@@ -17,6 +17,10 @@ public:
 	// the right cast target. Subclasses inherit this typedef.
 	using SlotType = T;
 
+	SlotRefTracker() = default;
+	SlotRefTracker(const SlotRefTracker&) = delete;
+	SlotRefTracker& operator=(const SlotRefTracker&) = delete;
+
 	void RegisterSlotRef(T** p_slot) { m_slotRefs.push_back(p_slot); }
 
 	void UnregisterSlotRef(T** p_slot)
