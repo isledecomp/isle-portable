@@ -766,6 +766,9 @@ if (ISLE_BUILD_APP)
     ${CMAKE_SOURCE_DIR}/ISLE/res/no_bmp.h
   )
   list(APPEND isle_targets isle)
+  if (MSVC AND NOT WINDOWS_STORE)
+    target_sources(isle PRIVATE ISLE/res/isle.exe.manifest)
+  endif()
   if (WIN32)
     add_custom_command(TARGET isle POST_BUILD
       COMMAND "${CMAKE_COMMAND}" -E copy $<TARGET_RUNTIME_DLLS:isle> "$<TARGET_FILE_DIR:isle>"
