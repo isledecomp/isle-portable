@@ -902,6 +902,14 @@ if (ISLE_BUILD_CONFIG)
     list(APPEND CMAKE_PREFIX_PATH "$ENV{MSYSTEM_PREFIX}/qt6-static")
     set(ISLE_SAVED_FIND_LIBRARY_SUFFIXES "${CMAKE_FIND_LIBRARY_SUFFIXES}")
     set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+    # MSYS2's harfbuzz CMake package resolves to the import library; disable it so
+    # Qt's fallback (find_library, which honors the suffix override) is used instead
+    set(CMAKE_DISABLE_FIND_PACKAGE_harfbuzz TRUE)
+    # The static freetype and harfbuzz depend on each other and on brotli/bz2/graphite2,
+    # which Qt's link interface does not carry; resolve them at the end of the link line
+    string(APPEND CMAKE_CXX_STANDARD_LIBRARIES
+      " -Wl,--start-group -lfreetype -lharfbuzz -lgraphite2 -lbrotlidec -lbrotlicommon -lbz2 -Wl,--end-group -lrpcrt4"
+    )
   endif()
   find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
   if(ISLE_QT_STATIC)
@@ -922,6 +930,7 @@ if (ISLE_BUILD_CONFIG)
   if(ISLE_QT_STATIC)
     # Keep the static link lean: the dialog only uses PNG (built into QtGui) and SVG resources
     qt_import_plugins(isle-config EXCLUDE_BY_TYPE imageformats EXCLUDE_BY_TYPE networkinformation EXCLUDE_BY_TYPE tls)
+    target_link_options(isle-config PRIVATE -s)
   endif()
   set_property(TARGET isle-config PROPERTY AUTOMOC ON)
   set_property(TARGET isle-config PROPERTY AUTORCC ON)
