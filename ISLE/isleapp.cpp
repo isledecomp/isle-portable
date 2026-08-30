@@ -347,6 +347,8 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 		);
 	}
 
+	SDL_SetAppMetadata("Isle Portable", NULL, "org.legoisland.Isle");
+
 	SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
 	SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
 #ifdef __DJGPP__

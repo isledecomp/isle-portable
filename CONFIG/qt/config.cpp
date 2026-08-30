@@ -470,6 +470,7 @@ CConfigApp g_theApp;
 int main(int argc, char* argv[])
 {
 	QApplication app(argc, argv);
+	QGuiApplication::setDesktopFileName("org.legoisland.Isle");
 	QCoreApplication::setApplicationName("Isle-Config");
 	QCoreApplication::setApplicationVersion("2.0");
 
