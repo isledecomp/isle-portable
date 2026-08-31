@@ -7,8 +7,30 @@
 #include "vshader_shbin.h"
 
 #include <cstring>
+#include <vector>
 
 static bool g_rendering = false;
+
+// C3D_FrameEnd only queues the frame; the GPU keeps reading vertex buffers and
+// textures asynchronously until C3D_FrameBegin drains the queue on the next
+// frame. Anything released in between (mesh/texture destruction runs from game
+// logic in exactly that window) must therefore be kept alive until the next
+// frame begins, or the in-flight frame samples freed and possibly reused
+// memory.
+static std::vector<void*> g_pendingBufferFrees;
+static std::vector<C3D_Tex> g_pendingTexDeletes;
+
+static void FlushDeferredDestroys()
+{
+	for (void* vbo : g_pendingBufferFrees) {
+		linearFree(vbo);
+	}
+	g_pendingBufferFrees.clear();
+	for (C3D_Tex& tex : g_pendingTexDeletes) {
+		C3D_TexDelete(&tex);
+	}
+	g_pendingTexDeletes.clear();
+}
 
 // While the home menu (or sleep mode) holds the GPU right, P3D/PPF completion
 // interrupts are no longer delivered to the application, so any queued frame
@@ -96,6 +118,7 @@ Citro3DRenderer::~Citro3DRenderer()
 	if (!g_gpuRightLost) {
 		C3D_Fini();
 	}
+	FlushDeferredDestroys();
 }
 
 void Citro3DRenderer::PushLights(const SceneLight* lights, size_t count)
@@ -125,7 +148,7 @@ void Citro3DRenderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* t
 			auto* ctx = static_cast<Citro3DCacheDestroyContext*>(arg);
 			auto& entry = ctx->renderer->m_textures[ctx->id];
 			if (entry.texture) {
-				C3D_TexDelete(&entry.c3dTex);
+				g_pendingTexDeletes.push_back(entry.c3dTex);
 				entry.texture = nullptr;
 			}
 			delete ctx;
@@ -290,7 +313,7 @@ Uint32 Citro3DRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUI, fl
 		auto& tex = m_textures[i];
 		if (tex.texture == texture) {
 			if (tex.version != texture->m_version) {
-				C3D_TexDelete(&tex.c3dTex);
+				g_pendingTexDeletes.push_back(tex.c3dTex);
 				if (!ConvertAndUploadTexture(
 						&tex.c3dTex,
 						originalSurface,
@@ -386,7 +409,8 @@ void Citro3DRenderer::AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh)
 			auto& cacheEntry = ctx->renderer->m_meshs[ctx->id];
 			if (cacheEntry.meshGroup) {
 				cacheEntry.meshGroup = nullptr;
-				linearFree(cacheEntry.vbo);
+				g_pendingBufferFrees.push_back(cacheEntry.vbo);
+				cacheEntry.vbo = nullptr;
 				cacheEntry.vertexCount = 0;
 			}
 			delete ctx;
@@ -401,6 +425,9 @@ Uint32 Citro3DRenderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGr
 		auto& cache = m_meshs[i];
 		if (cache.meshGroup == meshGroup) {
 			if (cache.version != meshGroup->version) {
+				if (cache.vbo) {
+					g_pendingBufferFrees.push_back(cache.vbo);
+				}
 				cache = std::move(C3DUploadMesh(*meshGroup));
 			}
 			return i;
@@ -429,6 +456,7 @@ void Citro3DRenderer::StartFrame()
 		return;
 	}
 	C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
+	FlushDeferredDestroys();
 	C3D_FrameDrawOn(m_renderTarget);
 	g_rendering = true;
 }
