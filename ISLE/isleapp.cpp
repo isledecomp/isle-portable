@@ -1730,6 +1730,7 @@ void IsleApp::MoveVirtualMouseViaJoystick()
 	float dpadX = 0.0f;
 	float dpadY = 0.0f;
 
+#ifndef __3DS__
 	if (g_dpadLeft) {
 		dpadX -= m_cursorSensitivity;
 	}
@@ -1742,6 +1743,7 @@ void IsleApp::MoveVirtualMouseViaJoystick()
 	if (g_dpadDown) {
 		dpadY += m_cursorSensitivity;
 	}
+#endif
 
 	// Use joystick axis if non-zero, else fall back to dpad
 	float moveX = ((g_lastJoystickMouseX != 0) ? g_lastJoystickMouseX : dpadX) * frames;
