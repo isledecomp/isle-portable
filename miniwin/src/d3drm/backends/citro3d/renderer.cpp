@@ -194,11 +194,21 @@ static bool ConvertAndUploadTexture(C3D_Tex* tex, SDL_Surface* originalSurface, 
 	int width = resized->w;
 	int height = resized->h;
 
+	// The PICA200 cannot address mipmap levels smaller than 8x8, and
+	// C3D_TexGenerateMipmap leaves such levels untouched, so clamp the
+	// mipmap chain to levels of at least 8x8
+	int maxLevel = 0;
+	if (!isUI) {
+		while (maxLevel < 4 && (width >> (maxLevel + 1)) >= 8 && (height >> (maxLevel + 1)) >= 8) {
+			maxLevel++;
+		}
+	}
+
 	C3D_TexInitParams params = {};
 	params.width = width;
 	params.height = height;
 	params.format = GPU_RGBA8;
-	params.maxLevel = isUI ? 0 : 4;
+	params.maxLevel = maxLevel;
 	params.type = GPU_TEX_2D;
 	if (!C3D_TexInitWithParams(tex, nullptr, params)) {
 		if (resized != originalSurface) {
@@ -553,7 +563,14 @@ void Citro3DRenderer::Flip()
 
 void Citro3DRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect, FColor color)
 {
-	C3D_AlphaBlend(GPU_BLEND_ADD, GPU_BLEND_ADD, GPU_ONE, GPU_ONE_MINUS_SRC_ALPHA, GPU_ONE, GPU_ONE_MINUS_SRC_ALPHA);
+	C3D_AlphaBlend(
+		GPU_BLEND_ADD,
+		GPU_BLEND_ADD,
+		GPU_SRC_ALPHA,
+		GPU_ONE_MINUS_SRC_ALPHA,
+		GPU_SRC_ALPHA,
+		GPU_ONE_MINUS_SRC_ALPHA
+	);
 	StartFrame();
 	C3D_DepthTest(false, GPU_GREATER, GPU_WRITE_COLOR);
 
