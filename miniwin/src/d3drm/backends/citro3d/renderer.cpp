@@ -10,6 +10,31 @@
 
 static bool g_rendering = false;
 
+// While the home menu (or sleep mode) holds the GPU right, P3D/PPF completion
+// interrupts are no longer delivered to the application, so any queued frame
+// would never finish and C3D would block waiting for it. Track the right via
+// APT hooks and stop touching the GPU while it is lost; on exit it is never
+// reacquired, which would otherwise hang the console on "Closing software..."
+static volatile bool g_gpuRightLost = false;
+static aptHookCookie g_gpuRightHookCookie;
+
+static void HandleAptHook(APT_HookType hookType, void* param)
+{
+	switch (hookType) {
+	case APTHOOK_ONSUSPEND:
+	case APTHOOK_ONSLEEP:
+	case APTHOOK_ONEXIT:
+		g_gpuRightLost = true;
+		break;
+	case APTHOOK_ONRESTORE:
+	case APTHOOK_ONWAKEUP:
+		g_gpuRightLost = false;
+		break;
+	default:
+		break;
+	}
+}
+
 static DVLB_s* vshader_dvlb;
 static shaderProgram_s program;
 static int uLoc_projection;
@@ -59,13 +84,18 @@ Citro3DRenderer::Citro3DRenderer(DWORD width, DWORD height)
 	AttrInfo_AddLoader(attrInfo, 0, GPU_FLOAT, 3); // v0=position
 	AttrInfo_AddLoader(attrInfo, 1, GPU_FLOAT, 3); // v2=normal
 	AttrInfo_AddLoader(attrInfo, 2, GPU_FLOAT, 2); // v1=texcoord
+
+	aptHook(&g_gpuRightHookCookie, HandleAptHook, nullptr);
 }
 
 Citro3DRenderer::~Citro3DRenderer()
 {
+	aptUnhook(&g_gpuRightHookCookie);
 	shaderProgramFree(&program);
 	DVLB_Free(vshader_dvlb);
-	C3D_Fini();
+	if (!g_gpuRightLost) {
+		C3D_Fini();
+	}
 }
 
 void Citro3DRenderer::PushLights(const SceneLight* lights, size_t count)
@@ -395,7 +425,7 @@ Uint32 Citro3DRenderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGr
 
 void Citro3DRenderer::StartFrame()
 {
-	if (g_rendering) {
+	if (g_rendering || g_gpuRightLost) {
 		return;
 	}
 	C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
@@ -419,6 +449,9 @@ void ConvertPerspective(const D3DRMMATRIX4D in, C3D_Mtx* out)
 
 HRESULT Citro3DRenderer::BeginFrame()
 {
+	if (g_gpuRightLost) {
+		return S_OK;
+	}
 	StartFrame();
 	C3D_DepthTest(true, GPU_GREATER, GPU_WRITE_ALL);
 
@@ -509,6 +542,9 @@ void Citro3DRenderer::SubmitDraw(
 	const Appearance& appearance
 )
 {
+	if (g_gpuRightLost) {
+		return;
+	}
 	C3D_Mtx modelView;
 	ConvertMatrix(modelViewMatrix, &modelView);
 	C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER, uLoc_modelView, &modelView);
@@ -547,6 +583,9 @@ void Citro3DRenderer::Resize(int width, int height, const ViewportTransform& vie
 
 void Citro3DRenderer::Clear(float r, float g, float b)
 {
+	if (g_gpuRightLost) {
+		return;
+	}
 	StartFrame();
 	u32 color =
 		(static_cast<u32>(r * 255) << 24) | (static_cast<u32>(g * 255) << 16) | (static_cast<u32>(b * 255) << 8) | 255;
@@ -555,6 +594,10 @@ void Citro3DRenderer::Clear(float r, float g, float b)
 
 void Citro3DRenderer::Flip()
 {
+	if (g_gpuRightLost) {
+		g_rendering = false;
+		return;
+	}
 	C3D_FrameEnd(0);
 	gfxFlushBuffers();
 	gspWaitForVBlank();
@@ -563,6 +606,9 @@ void Citro3DRenderer::Flip()
 
 void Citro3DRenderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, const SDL_Rect& dstRect, FColor color)
 {
+	if (g_gpuRightLost) {
+		return;
+	}
 	C3D_AlphaBlend(
 		GPU_BLEND_ADD,
 		GPU_BLEND_ADD,
