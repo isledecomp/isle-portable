@@ -112,7 +112,6 @@
     box-shadow: inset -1px -1px #fff, inset 1px 1px var(--shadow), inset -2px -2px var(--face), inset 2px 2px #0a0a0a;
   }
   .listbox .item { padding: 0 3px; white-space: nowrap; }
-  .listbox { padding-left: 3px; }
   .listbox .item.sel { background: var(--highlight); color: #fff; }
   .listbox:focus .item.sel { outline: 1px dotted #ffff00; outline-offset: -1px; }
   .listbox .item .tag { color: var(--shadow); }
@@ -985,6 +984,28 @@
       }
       return out.join(' ');
     }
+    // Any box that clips must keep at least 2 stage px between its padding edge and its text,
+    // otherwise a fractional zoom can round the clip edge onto the first glyph column.
+    function clipRisk() {
+      var out = [], els = $('stage').querySelectorAll('*');
+      for (var i = 0; i < els.length; i++) {
+        var el = els[i], cs = getComputedStyle(el);
+        if (el.hidden || el.closest('[hidden]') || (cs.overflowX === 'visible' && cs.overflowY === 'visible')) continue;
+        var box = el.getBoundingClientRect();
+        var padLeft = box.left + el.clientLeft, padTop = box.top + el.clientTop;
+        var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT), node;
+        while ((node = walker.nextNode())) {
+          if (!node.nodeValue.trim()) continue;
+          var r = document.createRange(); r.selectNodeContents(node);
+          var rc = r.getBoundingClientRect();
+          if (!rc.width) continue;
+          if (rc.left - padLeft < 2 * scale - 0.01 || rc.top - padTop < 1 * scale - 0.01) {
+            out.push(' CLIPRISK(' + (el.id || el.className) + ':' + node.nodeValue.trim().slice(0, 12) + ')'); break;
+          }
+        }
+      }
+      return out.join('');
+    }
     var canvas = document.createElement('canvas').getContext('2d');
     canvas.font = '11px "Pixelated MS Sans Serif"';
     report.push('welcome-line2-width ' + canvas.measureText('Press the Next button to start the installation. You can press the').width);
@@ -993,7 +1014,7 @@
       state.platform = PLATFORMS[pi];
       state.page = 'ready'; render();
       var b = $('body');
-      report.push(state.platform.id + ' ready ' + b.scrollHeight + '/' + b.clientHeight + (b.scrollHeight > b.clientHeight ? ' OVERFLOW' : '') + (b.scrollWidth > b.clientWidth + 2 ? ' WIDE' : '') + ' ' + orphans(b));
+      report.push(state.platform.id + ' ready ' + b.scrollHeight + '/' + b.clientHeight + (b.scrollHeight > b.clientHeight ? ' OVERFLOW' : '') + (b.scrollWidth > b.clientWidth + 2 ? ' WIDE' : '') + ' ' + orphans(b) + clipRisk());
       for (var si = 0; si < state.platform.steps.length; si++) {
         state.page = 'install'; state.step = si; render();
         var sb = $('step-body'), sp = $('step-path');
@@ -1013,7 +1034,9 @@
       for (si = 0; si < state.platform.steps.length; si++) {
         state.page = 'install'; state.step = si; render();
         sb = $('step-body');
-        report.push('portrait ' + state.platform.id + ' step' + si + ' ' + sb.scrollHeight + '/' + sb.clientHeight + (sb.scrollHeight > sb.clientHeight ? ' OVERFLOW' : '') + (sb.scrollWidth > sb.clientWidth + 2 ? ' WIDE' : '') + ' ' + orphans(sb));
+        var hp = $('installing').querySelector('.hdr');
+        report.push('portrait ' + state.platform.id + ' step' + si + ' ' + sb.scrollHeight + '/' + sb.clientHeight + (sb.scrollHeight > sb.clientHeight ? ' OVERFLOW' : '') + (sb.scrollWidth > sb.clientWidth + 2 ? ' WIDE' : '') +
+                    (hp.scrollWidth > hp.clientWidth + 2 ? ' PATH-CLIPPED' : '') + ' ' + orphans(sb) + clipRisk());
       }
     }
     state.page = 'welcome'; render(); report.push('portrait welcome ' + orphans($('body')));
