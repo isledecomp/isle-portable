@@ -858,8 +858,19 @@
   var useZoom = 'zoom' in document.documentElement.style;
   var scale = 1, portrait = false, stageW = 640, stageH = 480;
   var stagePos = $('stagepos'), stage = $('stage');
+  // The visual viewport is what the user actually sees (Safari's toolbars and a stale
+  // innerHeight right after launching from another app are excluded); the window size is
+  // the fallback when the page is pinch-zoomed or the visual viewport is not available.
+  function viewportSize() {
+    var vv = window.visualViewport, w = window.innerWidth, h = window.innerHeight;
+    if (vv && vv.width > 0 && vv.height > 0 && Math.abs((vv.scale || 1) - 1) < 0.01) { w = vv.width; h = vv.height; }
+    return { w: Math.round(w), h: Math.round(h) };
+  }
+  var lastFit = '';
   function fit() {
-    var vw = +query.vw || window.innerWidth, vh = +query.vh || window.innerHeight, dpr = +query.dpr || window.devicePixelRatio || 1;
+    var vp = viewportSize();
+    var vw = +query.vw || vp.w, vh = +query.vh || vp.h, dpr = +query.dpr || window.devicePixelRatio || 1;
+    lastFit = vw + 'x' + vh + '@' + dpr;
     function crispScale(L) {
       var k = Math.floor(Math.min(vw / (L.x1 - L.x0), vh / (L.y1 - L.y0)) * dpr);
       return k / dpr;
@@ -892,7 +903,21 @@
     raf(function () { fitPending = false; fit(); });
   }
   window.addEventListener('resize', scheduleFit);
-  if (window.visualViewport) window.visualViewport.addEventListener('resize', scheduleFit);
+  window.addEventListener('orientationchange', scheduleFit);
+  window.addEventListener('pageshow', scheduleFit);
+  window.addEventListener('focus', scheduleFit);
+  document.addEventListener('visibilitychange', scheduleFit);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', scheduleFit);
+    window.visualViewport.addEventListener('scroll', scheduleFit);
+  }
+  // Mobile browsers can settle their viewport after load without firing resize (Safari opened
+  // from another app), so re-fit whenever the measured size changes during the first seconds.
+  (function settle(ticks) {
+    var vp = viewportSize();
+    if (vp.w + 'x' + vp.h + '@' + (window.devicePixelRatio || 1) !== lastFit && !query.vw && !query.vh) fit();
+    if (ticks > 0) setTimeout(function () { settle(ticks - 1); }, 250);
+  })(16);
 
   // Windows can be dragged around by their title bar, like the real thing.
   (function () {
