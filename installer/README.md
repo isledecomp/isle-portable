@@ -32,6 +32,18 @@ Useful URL parameters while editing:
   so the link can be shared).
 * `?page=welcome|select|ready|install|complete&step=N` jumps to a page.
 * `?help=1` opens the help box, `?exit=1` the exit confirmation.
+* `?vw=412&vh=915&dpr=2.625` pretends the viewport has that size and pixel
+  density (headless Chrome cannot go below 500px wide), which is how the
+  portrait phone layout is tested. `?keytest=1` and `?dragtest=1` exercise the
+  keyboard mnemonics and window dragging with synthetic events and print the
+  result in a `<pre>`.
+
+Layout notes: the 640×480 scene is scaled by whole device pixels whenever the
+dialogs fit (cropping only the background margins) so the bitmap font stays
+crisp; phones in portrait get a narrower single-column variant of the same
+dialogs (`#stage.portrait`) filled to the screen width. Windows are draggable
+by their title bar; underlined letters work as Windows-style mnemonics, Esc is
+Cancel, Enter is the default button, F1 is help.
 * `?check=1` renders every page of every platform and appends a report
   (`<pre id="check">`) of any text that would overflow its box or leave a
   lone short word on its last line. Run it in a fresh (incognito) headless

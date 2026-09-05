@@ -149,6 +149,33 @@
   #helpbox .btn-issues { left: 83px; top: 152px; width: 116px; }
   #helpbox .btn-close { left: 205px; top: 152px; width: 116px; }
 
+  /* ---- portrait layout for phones: same dialogs, narrower, without the side bitmap ---- */
+  #stage.portrait { width: 320px; height: 640px; }
+  #stage.portrait .bg { width: 853px; height: 640px; left: -266px; image-rendering: auto; }
+  #stage.portrait #wizard { left: 10px; top: 120px; width: 300px; height: 386px; }
+  #stage.portrait #wizard .bitmap { display: none; }
+  #stage.portrait #wizard h1 { left: 17px; top: 28px; width: 266px; font-size: 20px; line-height: 24px; }
+  #stage.portrait #wizard .body, #stage.portrait #wizard .body.complete, #stage.portrait #wizard .body.welcome { left: 17px; top: 70px; width: 266px; height: 262px; }
+  #stage.portrait .sep { top: 338px; width: 266px; }
+  #stage.portrait #wizard .btn-back { left: 52px; top: 356px; }
+  #stage.portrait #wizard .btn-next { left: 131px; top: 356px; }
+  #stage.portrait #wizard .btn-cancel { left: 210px; top: 356px; }
+  #stage.portrait #wizard .btn-wide { left: 62px; top: 356px; }
+  #stage.portrait fieldset.group { width: 266px; }
+  #stage.portrait #installing { left: 10px; top: 120px; width: 300px; height: 386px; }
+  #stage.portrait #installing .hdr { width: 276px; }
+  #stage.portrait #installing .stepbody { width: 276px; height: 236px; }
+  #stage.portrait #installing .progress { top: 321px; width: 276px; }
+  #stage.portrait #installing .btn-back { left: 52px; top: 356px; }
+  #stage.portrait #installing .btn-next { left: 131px; top: 356px; }
+  #stage.portrait #installing .btn-cancel { left: 210px; top: 356px; }
+  #stage.portrait #helpbox { left: 10px; top: 180px; width: 300px; height: 232px; }
+  #stage.portrait #helpbox .icon { left: 12px; }
+  #stage.portrait #helpbox .msg { left: 56px; width: 232px; }
+  #stage.portrait #helpbox .btn-issues { left: 31px; top: 198px; }
+  #stage.portrait #helpbox .btn-close { left: 153px; top: 198px; }
+  #stage.portrait #exitbox { left: 10px; top: 260px; }
+
   [hidden] { display: none !important; }
   .sr { position: absolute; left: -9999px; }
 </style>
@@ -190,9 +217,9 @@
         <div class="pct back" id="pct-back">0%</div>
         <div class="pct front" id="pct-front">0%</div>
       </div>
-      <button class="btn btn-back" data-act="back" accesskey="b">&lt; <u>B</u>ack</button>
-      <button class="btn btn-next default" data-act="next" accesskey="n"><u>N</u>ext &gt;</button>
-      <button class="btn btn-cancel" data-act="cancel" accesskey="c"><u>C</u>ancel</button>
+      <button class="btn btn-back" data-act="back">&lt; <u>B</u>ack</button>
+      <button class="btn btn-next default" data-act="next"><u>N</u>ext &gt;</button>
+      <button class="btn btn-cancel" data-act="cancel"><u>C</u>ancel</button>
     </div>
 
     <!-- exit confirmation -->
@@ -211,8 +238,8 @@
         <path d="M13 9h6v1h1v1h1v1h-1v-1h-1v-1h-6v1h-1v1h-1v-1h1v-1h1z" fill="#8080ff"/>
       </svg>
       <div class="msg">Are you sure you want to exit the installation?</div>
-      <button class="btn btn-yes" data-act="exit-yes" accesskey="y"><u>Y</u>es</button>
-      <button class="btn btn-no default" data-act="exit-no" accesskey="n"><u>N</u>o</button>
+      <button class="btn btn-yes" data-act="exit-yes"><u>Y</u>es</button>
+      <button class="btn btn-no default" data-act="exit-no"><u>N</u>o</button>
     </div>
 
     <!-- help message box -->
@@ -238,8 +265,8 @@
         </p>
         <p class="small">Tip: press F1 at any time to open this window.</p>
       </div>
-      <button class="btn btn-issues default" data-act="help-issues" accesskey="o"><u>O</u>pen GitHub Issues</button>
-      <button class="btn btn-close" data-act="help-close" accesskey="l">C<u>l</u>ose</button>
+      <button class="btn btn-issues default" data-act="help-issues"><u>O</u>pen GitHub Issues</button>
+      <button class="btn btn-close" data-act="help-close"><u>C</u>lose</button>
     </div>
   </div></div>
 </div>
@@ -325,7 +352,7 @@
       steps: [
         { what: 'Downloading LEGO Island for macOS:', path: 'isle-0.1-Darwin-arm64.dmg', href: REL + 'isle-0.1-Darwin-arm64.dmg',
           body: '<p>Download the build for your Mac:</p><ul>' +
-                '<li>' + dl('isle-0.1-Darwin-arm64.dmg', 'Apple silicon') + ' (about 23 MB) \u2014 for Macs with an M1, M2, M3 or M4 chip.</li>' +
+                '<li>' + dl('isle-0.1-Darwin-arm64.dmg', 'Apple silicon') + ' (about 23 MB) \u2014 for Macs with an M-series chip (M1 and later).</li>' +
                 '<li>' + dl('isle-0.1-Darwin-x64.dmg', 'Intel') + ' (about 24 MB) \u2014 for Intel-based Macs.</li></ul>' +
                 '<p>Not sure which one? Click the Apple menu \u2192 <b>About This Mac</b>. If the <b>Chip</b> line starts with \u201cApple\u201d, pick Apple silicon.</p>' },
         { what: 'Installing:', path: '/Applications/Isle Portable.app',
@@ -412,7 +439,7 @@
     {
       id: 'ios', name: 'iPhone & iPad', tag: 'iOS',
       requires: [
-        'An iPhone or iPad running iOS 12 or later, plus a Mac or PC with a sideloading tool such as AltStore or Sideloadly and a free Apple ID.',
+        'An iPhone or iPad running iOS 12 or later, plus a Mac or PC with a free Apple ID and a sideloading tool such as AltStore or Sideloadly.',
         DISC + ' You also need a computer to prepare the game files.',
         'About 1 GB of free storage while importing (about 500 MB once you delete the copy you transferred).'
       ],
@@ -603,9 +630,9 @@
     }
   }
   function stdButtons(backDisabled) {
-    return '<button class="btn btn-back" data-act="back" accesskey="b"' + (backDisabled ? ' disabled' : '') + '>&lt; <u>B</u>ack</button>' +
-           '<button class="btn btn-next default" data-act="next" accesskey="n"><u>N</u>ext &gt;</button>' +
-           '<button class="btn btn-cancel" data-act="cancel" accesskey="c"><u>C</u>ancel</button>';
+    return '<button class="btn btn-back" data-act="back"' + (backDisabled ? ' disabled' : '') + '>&lt; <u>B</u>ack</button>' +
+           '<button class="btn btn-next default" data-act="next"><u>N</u>ext &gt;</button>' +
+           '<button class="btn btn-cancel" data-act="cancel"><u>C</u>ancel</button>';
   }
 
   function render() {
@@ -675,8 +702,8 @@
         '<p>LEGO Island installation is complete</p>' +
         '<p>LEGO Island was created in 1997 by Mindscape. MattKC\u2019s feature-length documentary \u201cThe Making of LEGO Island\u201d tells the story of the people who built it.</p>' +
         '<p>Press the Watch Documentary button to watch the documentary on YouTube, or Cancel to exit.</p>';
-      buttons('<button class="btn btn-wide default" data-act="documentary" accesskey="w"><u>W</u>atch Documentary</button>' +
-              '<button class="btn btn-cancel" data-act="cancel" accesskey="c"><u>C</u>ancel</button>');
+      buttons('<button class="btn btn-wide default" data-act="documentary"><u>W</u>atch Documentary</button>' +
+              '<button class="btn btn-cancel" data-act="cancel"><u>C</u>ancel</button>');
     }
 
     keepTogether(body);
@@ -775,6 +802,7 @@
     if (modal) {
       if (e.key === 'Escape') { e.preventDefault(); hideBox(); }
       else if (e.key === 'Enter' && !(document.activeElement && document.activeElement.tagName === 'BUTTON')) { e.preventDefault(); modal.querySelector('button.default').click(); }
+      else mnemonic(e, modal);
       return;
     }
     if (e.target.closest && e.target.closest('.listbox')) {
@@ -796,8 +824,33 @@
       if (def && document.activeElement !== def && !(document.activeElement && document.activeElement.tagName === 'BUTTON')) {
         e.preventDefault(); def.click();
       }
+      return;
     }
+    if (e.key === 'Escape') { e.preventDefault(); cancel(); return; }
+    mnemonic(e, state.page === 'install' ? installing : wizard);
   });
+
+  // Underlined letters work like Windows mnemonics: the plain key when focus is not in a list,
+  // Alt+key always. In the platform list a plain letter jumps to the next matching platform.
+  function mnemonic(e, dlg) {
+    if (e.ctrlKey || e.metaKey || e.key.length !== 1 || !/[a-z]/i.test(e.key)) return false;
+    var key = e.key.toLowerCase();
+    if (!e.altKey && e.target.closest && e.target.closest('.listbox')) {
+      var idx = PLATFORMS.indexOf(state.platform), n = PLATFORMS.length;
+      for (var i = 1; i <= n; i++) {
+        var cand = PLATFORMS[(idx + i) % n];
+        if (cand.name.toLowerCase().charAt(0) === key) { state.platform = cand; render(); $('listbox').focus({ preventScroll: true }); break; }
+      }
+      e.preventDefault();
+      return true;
+    }
+    var buttons = dlg.querySelectorAll('button');
+    for (var b = 0; b < buttons.length; b++) {
+      var u = buttons[b].querySelector('u');
+      if (u && !buttons[b].disabled && u.textContent.toLowerCase() === key) { e.preventDefault(); buttons[b].click(); return true; }
+    }
+    return false;
+  }
 
   window.addEventListener('hashchange', function () {
     var p = findPlatform((location.hash || '').replace('#', '').toLowerCase());
@@ -810,23 +863,33 @@
   // The stage is scaled by a whole number of device pixels per stage pixel whenever the
   // dialogs fit, so the bitmap font and the pixel art stay crisp; the background may be
   // cropped to make that possible. Very small screens fall back to a fractional scale.
-  var ESSENTIAL = { x0: 75, y0: 96, x1: 564, y1: 480 };   // the dialogs plus a small margin
+  var LANDSCAPE = { w: 640, h: 480, x0: 75, y0: 96, x1: 564, y1: 480 };   // scene size and the dialogs plus a small margin
+  var PORTRAIT = { w: 320, h: 640, x0: 0, y0: 108, x1: 320, y1: 518 };
   var useZoom = 'zoom' in document.documentElement.style;
-  var scale = 1;
+  var scale = 1, portrait = false, stageW = 640, stageH = 480;
   function fit() {
-    var vw = window.innerWidth, vh = window.innerHeight, dpr = window.devicePixelRatio || 1;
-    var ew = ESSENTIAL.x1 - ESSENTIAL.x0, eh = ESSENTIAL.y1 - ESSENTIAL.y0;
-    var k = Math.floor(Math.min(vw / ew, vh / eh) * dpr);
-    var s = k / dpr;
-    if (s < 0.8) s = Math.max(0.5, Math.min(vw / (ew + 12), vh / eh));   // small screens: readability over crispness
+    var vw = +query.vw || window.innerWidth, vh = +query.vh || window.innerHeight, dpr = +query.dpr || window.devicePixelRatio || 1;
+    function crispScale(L) {
+      var k = Math.floor(Math.min(vw / (L.x1 - L.x0), vh / (L.y1 - L.y0)) * dpr);
+      return k / dpr;
+    }
+    var L = LANDSCAPE, s = crispScale(L);
+    if (s < 0.8) s = Math.max(0.5, Math.min(vw / (L.x1 - L.x0 + 12), vh / (L.y1 - L.y0)));   // small screens: readability over crispness
+    portrait = vw < vh && s < 1;
+    if (portrait) {   // phones: narrow layout, filled to the width of the screen
+      L = PORTRAIT;
+      s = Math.max(0.5, Math.min(vw / (L.x1 - L.x0), vh / (L.y1 - L.y0)));
+    }
+    stageW = L.w; stageH = L.h;
     function offset(v, size, e0, e1) {
       var o = (v - size) / 2;
-      if (size > v) o = Math.min(Math.max(o, -e0 * s), v - e1 * s);
+      if (size > v) o = (e1 - e0) * s <= v ? Math.min(Math.max(o, -e0 * s), v - e1 * s) : (v - (e0 + e1) * s) / 2;
       return Math.round(o * dpr) / dpr;
     }
     var pos = $('stagepos'), stage = $('stage');
-    pos.style.left = offset(vw, 640 * s, ESSENTIAL.x0, ESSENTIAL.x1) + 'px';
-    pos.style.top = offset(vh, 480 * s, ESSENTIAL.y0, ESSENTIAL.y1) + 'px';
+    stage.classList.toggle('portrait', portrait);
+    pos.style.left = offset(vw, L.w * s, L.x0, L.x1) + 'px';
+    pos.style.top = offset(vh, L.h * s, L.y0, L.y1) + 'px';
     if (useZoom) stage.style.zoom = s;
     else stage.style.transform = 'scale(' + s + ')';
     scale = s;
@@ -848,8 +911,8 @@
       if (!drag || e.pointerId !== drag.id) return;
       var dx = (e.clientX - drag.x) / scale, dy = (e.clientY - drag.y) / scale;
       var w = drag.dlg.offsetWidth, h = drag.dlg.offsetHeight;
-      var left = Math.max(-w + 60, Math.min(640 - 60, drag.left + dx));
-      var top = Math.max(0, Math.min(480 - 21, drag.top + dy));
+      var left = Math.max(-w + 60, Math.min(stageW - 60, drag.left + dx));
+      var top = Math.max(0, Math.min(stageH - 21, drag.top + dy));
       drag.dlg.style.left = Math.round(left) + 'px';
       drag.dlg.style.top = Math.round(top) + 'px';
     });
@@ -863,6 +926,20 @@
   render();
   if (query.help === '1') showHelp();
   if (query.exit === '1') showBox(exitbox);
+  if (query.keytest === '1') {
+    var log = [];
+    function key(k, alt) { document.dispatchEvent(new KeyboardEvent('keydown', { key: k, altKey: !!alt, bubbles: true, cancelable: true })); }
+    key('n'); log.push('n->' + state.page);
+    key('b'); log.push('b->' + state.page);
+    key('N', true); log.push('altN->' + state.page);
+    key('Escape'); log.push('esc->exitbox:' + !exitbox.hidden);
+    key('n'); log.push('no->exitbox:' + !exitbox.hidden + ',page:' + state.page);
+    key('F1'); log.push('f1->help:' + !helpbox.hidden);
+    key('c'); log.push('c->help:' + !helpbox.hidden);
+    state.page = 'select'; state.platform = PLATFORMS[0]; render(); $('listbox').focus(); key('n'); log.push('list n->' + state.platform.id + ',page:' + state.page);
+    var pre = document.createElement('pre'); pre.id = 'keytest'; pre.textContent = log.join(' | ');
+    document.body.appendChild(pre);
+  }
   if (query.dragtest === '1') {
     var bar = wizard.querySelector('.title-bar'), before = wizard.offsetLeft + ',' + wizard.offsetTop;
     function pe(type, x, y) { bar.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 1, button: 0 })); }
@@ -920,6 +997,21 @@
     state.page = 'welcome'; render(); report.push('welcome ' + orphans($('body')));
     state.page = 'complete'; render(); report.push('complete ' + orphans($('body')));
     report.push('help ' + orphans($('help-msg')));
+    $('stage').classList.add('portrait');
+    for (pi = 0; pi < PLATFORMS.length; pi++) {
+      state.platform = PLATFORMS[pi];
+      state.page = 'ready'; render();
+      b = $('body');
+      report.push('portrait ' + state.platform.id + ' ready ' + b.scrollHeight + '/' + b.clientHeight + (b.scrollHeight > b.clientHeight ? ' OVERFLOW' : '') + ' ' + orphans(b));
+      for (si = 0; si < state.platform.steps.length; si++) {
+        state.page = 'install'; state.step = si; render();
+        sb = $('step-body');
+        report.push('portrait ' + state.platform.id + ' step' + si + ' ' + sb.scrollHeight + '/' + sb.clientHeight + (sb.scrollHeight > sb.clientHeight ? ' OVERFLOW' : '') + ' ' + orphans(sb));
+      }
+    }
+    state.page = 'welcome'; render(); report.push('portrait welcome ' + orphans($('body')));
+    state.page = 'complete'; render(); report.push('portrait complete ' + orphans($('body')));
+    $('stage').classList.remove('portrait');
     var pre = document.createElement('pre'); pre.id = 'check'; pre.textContent = report.join('\n');
     document.body.appendChild(pre);
   });
