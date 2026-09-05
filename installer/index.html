@@ -32,8 +32,8 @@
     transform-origin: 0 0;
     font-family: "Pixelated MS Sans Serif", "MS Sans Serif", Arial, sans-serif;
     font-size: 11px; line-height: 13px; color: #000;
-    -webkit-font-smoothing: none;
   }
+  #stage.pixelfont { -webkit-font-smoothing: none; }
   #stage img { image-rendering: pixelated; image-rendering: crisp-edges; }
   #stage .bg { position: absolute; left: 0; top: 0; width: 640px; height: 480px; }
 
@@ -927,6 +927,9 @@
   if (window.visualViewport) window.visualViewport.addEventListener('resize', fit);
   fit();
   render();
+  (document.fonts ? document.fonts.ready : Promise.resolve()).then(function () {
+    if (!document.fonts || document.fonts.check('11px "Pixelated MS Sans Serif"')) $('stage').classList.add('pixelfont');
+  });
   if (query.help === '1') showHelp();
   if (query.exit === '1') showBox(exitbox);
   if (query.keytest === '1') {
@@ -985,6 +988,7 @@
     var canvas = document.createElement('canvas').getContext('2d');
     canvas.font = '11px "Pixelated MS Sans Serif"';
     report.push('welcome-line2-width ' + canvas.measureText('Press the Next button to start the installation. You can press the').width);
+    if (document.fonts) { var faces = []; document.fonts.forEach(function (f) { faces.push(f.family + '/' + f.weight + ':' + f.status); }); report.push('fonts ' + faces.join(' ')); }
     for (var pi = 0; pi < PLATFORMS.length; pi++) {
       state.platform = PLATFORMS[pi];
       state.page = 'ready'; render();

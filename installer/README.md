@@ -13,9 +13,11 @@ with all asset paths relative, so it works under any sub-path).
   the bitmaps embedded in the original installer (`INSTALL.EXE`, a Wise
   Installation System package on the LEGO Island 1.0 CD-ROM). They were
   inflated from the Wise overlay and converted losslessly to indexed PNG.
-* `98.css` and the `ms_sans_serif*` web fonts come from
-  [98.css](https://github.com/jdan/98.css) (MIT, see `LICENSE.98.css`) and
-  provide the Windows 9x widget styling and the pixel-accurate MS Sans Serif.
+* `98.css` comes from [98.css](https://github.com/jdan/98.css) (MIT, see
+  `LICENSE.98.css`) and provides the Windows 9x widget styling and the
+  pixel-accurate MS Sans Serif. The two woff2 fonts are embedded in it as data
+  URIs (our only change to the file) so the page also works when opened
+  straight from disk via `file://`, where Chrome refuses to load fonts.
 * `favicon.png` is the game's own icon (`ISLE/res/isle.ico`).
 
 ## Working on it
