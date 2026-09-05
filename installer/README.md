@@ -33,8 +33,8 @@ python3 -m http.server -d installer 8000
 
 Useful URL parameters while editing:
 
-* `#windows`, `#switch`, ... preselects a platform (also written back as you go,
-  so the link can be shared).
+* `#windows`, `#switch`, ... preselects a platform, so a platform-specific link
+  can be shared. The wizard never writes to the URL itself.
 * `?page=welcome|select|ready|install|complete&step=N` jumps to a page.
 * `?help=1` opens the help box, `?exit=1` the exit confirmation.
 * `?vw=412&vh=915&dpr=2.625` pretends the viewport has that size and pixel

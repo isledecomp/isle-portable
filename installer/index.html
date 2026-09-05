@@ -84,6 +84,7 @@
   #wizard .btn-next { left: 266px; top: 325px; }
   #wizard .btn-cancel { left: 372px; top: 325px; }
   #wizard .btn-wide { left: 211px; top: 325px; width: 140px; }
+  #wizard .btn-restart { left: 130px; top: 325px; }
 
   .body, .stepbody, #helpbox .msg { text-wrap: pretty; overflow-wrap: anywhere; }
   .nb { white-space: nowrap; }
@@ -139,11 +140,11 @@
   #exitbox .btn-no { left: 153px; top: 78px; }
 
   /* ---- help message box ---- */
-  #helpbox { left: 118px; top: 150px; width: 404px; height: 186px; }
+  #helpbox { left: 118px; top: 143px; width: 404px; height: 199px; }
   #helpbox .icon { position: absolute; left: 14px; top: 34px; width: 32px; height: 32px; }
   #helpbox .msg { position: absolute; left: 60px; top: 33px; width: 330px; }
-  #helpbox .btn-issues { left: 83px; top: 152px; width: 116px; }
-  #helpbox .btn-close { left: 205px; top: 152px; width: 116px; }
+  #helpbox .btn-issues { left: 83px; top: 165px; width: 116px; }
+  #helpbox .btn-close { left: 205px; top: 165px; width: 116px; }
 
   /* ---- portrait layout for phones: same dialogs, narrower, without the side bitmap ---- */
   #stage.portrait { width: 320px; height: 640px; }
@@ -156,7 +157,8 @@
   #stage.portrait #wizard .btn-back { left: 52px; top: 356px; }
   #stage.portrait #wizard .btn-next { left: 131px; top: 356px; }
   #stage.portrait #wizard .btn-cancel { left: 210px; top: 356px; }
-  #stage.portrait #wizard .btn-wide { left: 62px; top: 356px; }
+  #stage.portrait #wizard .btn-wide { left: 98px; top: 356px; width: 110px; }
+  #stage.portrait #wizard .btn-restart { left: 17px; top: 356px; }
   #stage.portrait fieldset.group { width: 266px; }
   #stage.portrait #installing { left: 10px; top: 120px; width: 300px; height: 386px; }
   #stage.portrait #installing .hdr { width: 276px; }
@@ -165,11 +167,11 @@
   #stage.portrait #installing .btn-back { left: 52px; top: 356px; }
   #stage.portrait #installing .btn-next { left: 131px; top: 356px; }
   #stage.portrait #installing .btn-cancel { left: 210px; top: 356px; }
-  #stage.portrait #helpbox { left: 10px; top: 180px; width: 300px; height: 232px; }
+  #stage.portrait #helpbox { left: 10px; top: 174px; width: 300px; height: 245px; }
   #stage.portrait #helpbox .icon { left: 12px; }
   #stage.portrait #helpbox .msg { left: 56px; width: 232px; }
-  #stage.portrait #helpbox .btn-issues { left: 31px; top: 198px; }
-  #stage.portrait #helpbox .btn-close { left: 153px; top: 198px; }
+  #stage.portrait #helpbox .btn-issues { left: 31px; top: 211px; }
+  #stage.portrait #helpbox .btn-close { left: 153px; top: 211px; }
   #stage.portrait #exitbox { left: 10px; top: 260px; }
   #stage.portrait .nb { white-space: normal; }
 
@@ -256,12 +258,13 @@
       <div class="msg" id="help-msg">
         <p><b>Need help?</b> If something does not work, a step is unclear, or your device is not listed, ask the isle-portable team and community.</p>
         <p>
-          <a href="https://github.com/isledecomp/isle-portable/issues" target="_blank" rel="noopener">Report a problem or ask a question</a> (GitHub Issues)<br>
+          <a href="https://github.com/isledecomp/isle-portable/discussions" target="_blank" rel="noopener">Ask a question or get help</a> (GitHub Discussions)<br>
+          <a href="https://github.com/isledecomp/isle-portable/issues" target="_blank" rel="noopener">Report a bug</a> (GitHub Issues)<br>
           <a href="https://matrix.to/#/#isledecomp:matrix.org" target="_blank" rel="noopener">Chat with the community on Matrix</a>
         </p>
         <p class="small">Tip: press F1 at any time to open this window.</p>
       </div>
-      <button class="btn btn-issues default" data-act="help-issues"><u>O</u>pen GitHub Issues</button>
+      <button class="btn btn-issues default" data-act="help-discuss"><u>O</u>pen Discussions</button>
       <button class="btn btn-close" data-act="help-close"><u>C</u>lose</button>
     </div>
   </div></div>
@@ -275,6 +278,7 @@
   var LINKS = {
     releases: 'https://github.com/isledecomp/isle-portable/releases/tag/continuous',
     issues: 'https://github.com/isledecomp/isle-portable/issues',
+    discussions: 'https://github.com/isledecomp/isle-portable/discussions',
     docker: 'https://github.com/isledecomp/isle-portable/tree/master/docker/emscripten',
     home: 'https://legoisland.org/',
     documentary: 'https://www.youtube.com/watch?v=bG55COe_f8I',
@@ -698,7 +702,8 @@
           '<p>LEGO Island installation is complete</p>' +
           '<p>LEGO Island was created in 1997 by Mindscape. MattKC’s feature-length documentary “The Making of LEGO Island” tells the story of the people who built it.</p>' +
           '<p>Press the Watch Documentary button to watch the documentary on YouTube, or Cancel to exit.</p>';
-        buttons('<button class="btn btn-wide default" data-act="documentary"><u>W</u>atch Documentary</button>' +
+        buttons('<button class="btn btn-restart" data-act="restart"><u>S</u>tart Over</button>' +
+                '<button class="btn btn-wide default" data-act="documentary"><u>W</u>atch Documentary</button>' +
                 '<button class="btn btn-cancel" data-act="cancel"><u>C</u>ancel</button>');
       }
       keepTogether(bodyEl);
@@ -710,8 +715,6 @@
       var sel = $('listbox').querySelector('.sel');
       if (sel) sel.scrollIntoView({ block: 'nearest' });
     }
-    var hash = '#' + state.platform.id;
-    if (location.hash !== hash) { try { history.replaceState(null, '', hash); } catch (e) { /* file:// */ } }
   }
 
   // Navigation -----------------------------------------------------------
@@ -768,7 +771,8 @@
       else if (act === 'back') back();
       else if (act === 'cancel') cancel();
       else if (act === 'help') showHelp();
-      else if (act === 'help-issues') { window.open(LINKS.issues, '_blank', 'noopener'); hideBox(); }
+      else if (act === 'help-discuss') { window.open(LINKS.discussions, '_blank', 'noopener'); hideBox(); }
+      else if (act === 'restart') { state.page = 'welcome'; state.step = 0; render(); }
       else if (act === 'documentary') window.open(LINKS.documentary, '_blank', 'noopener');
       return;
     }

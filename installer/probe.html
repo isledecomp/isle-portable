@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>viewport probe</title>
+<style>
+  /* Same layout model as installer/index.html. The html background is MAGENTA on purpose:
+     any magenta on screen is the browser painting the PAGE's background outside the document. */
+  html, body { height: 100%; margin: 0; overflow: hidden; background: #ff00ff; }
+  body { touch-action: manipulation; }
+  #fixed { position: fixed; top: 0; right: 0; bottom: 0; left: 0; inset: 0; overflow: hidden; background: #10203a; color: #fff;
+           font: 14px/1.3 -apple-system, Helvetica, Arial, sans-serif; }
+  #ruler { position: absolute; left: 0; top: 0; width: 64px; height: 100%; }
+  #ruler div { position: absolute; left: 0; width: 64px; border-top: 2px solid #ffd400; color: #ffd400; font: bold 12px/14px monospace; padding-left: 2px; }
+  #ruler div.big { border-top-width: 3px; }
+  #topbar { position: absolute; left: 0; right: 0; top: 0; height: 26px; background: #2ecc40; color: #000; font-weight: bold; text-align: center; line-height: 26px; }
+  #botbar { position: absolute; left: 0; right: 0; bottom: 0; height: 26px; background: #ff851b; color: #000; font-weight: bold; text-align: center; line-height: 26px; }
+  #docbot { position: absolute; left: 0; right: 0; top: calc(100% - 26px); height: 26px; background: #f012be; color: #fff; font-weight: bold; text-align: center; line-height: 26px; }
+  #out { position: absolute; left: 70px; right: 6px; top: 132px; bottom: 32px; white-space: pre-wrap; word-break: break-all;
+         font: 12.5px/1.25 ui-monospace, Menlo, monospace; overflow: hidden; }
+  #btns { position: absolute; right: 6px; bottom: 30px; display: flex; flex-direction: column; gap: 4px; }
+  #btns button { font: 13px -apple-system, sans-serif; padding: 6px 8px; }
+  .warn { color: #ff6b6b; font-weight: bold; }
+  .ok { color: #7bed9f; }
+</style>
+</head>
+<body>
+<!-- #docbot is a normal (non-fixed) element at the bottom of the DOCUMENT; #botbar is the bottom of the FIXED element. -->
+<div id="docbot">DOC BOTTOM (absolute, top: 100% - 26px)</div>
+<div id="fixed">
+  <div id="topbar">FIXED TOP (position:fixed; inset:0)</div>
+  <div id="ruler"></div>
+  <div id="out">loading…</div>
+  <div id="btns">
+    <button id="b0">scrollTo(0,0)</button>
+    <button id="b1">scrollTo(0,1)</button>
+    <button id="b2">measure now</button>
+    <button id="b3">reload</button>
+  </div>
+  <div id="botbar">FIXED BOTTOM (inset:0)</div>
+</div>
+<script>
+(function () {
+  var t0 = performance.now();
+  var q = {}; location.search.replace(/[?&]([^=&]+)=([^&]*)/g, function (_, k, v) { q[k] = decodeURIComponent(v); });
+  var ruler = document.getElementById('ruler');
+  for (var y = 0; y <= 1400; y += 50) {
+    var d = document.createElement('div'); d.style.top = y + 'px'; d.textContent = y; if (y % 100 === 0) d.className = 'big'; ruler.appendChild(d);
+  }
+  var probeEl = document.createElement('div');
+  probeEl.style.cssText = 'position:absolute;left:0;top:0;width:1px;visibility:hidden;pointer-events:none';
+  document.body.appendChild(probeEl);
+  function unit(u) { probeEl.style.height = '100' + u; var h = probeEl.getBoundingClientRect().height; return h ? Math.round(h * 10) / 10 : 'n/a'; }
+  var fixed = document.getElementById('fixed'), out = document.getElementById('out');
+  var events = [], last = '', changes = 0, history = [];
+  function r1(v) { return Math.round(v * 10) / 10; }
+  function measure() {
+    var fr = fixed.getBoundingClientRect(), dr = document.documentElement.getBoundingClientRect();
+    var vv = window.visualViewport;
+    var m = {
+      t: Math.round(performance.now() - t0),
+      innerW: innerWidth, innerH: innerHeight, outerW: outerWidth, outerH: outerHeight,
+      clientW: document.documentElement.clientWidth, clientH: document.documentElement.clientHeight,
+      scrollX: r1(scrollX), scrollY: r1(scrollY), docScrollTop: r1(document.documentElement.scrollTop), bodyScrollTop: r1(document.body.scrollTop),
+      vvW: vv ? r1(vv.width) : 'n/a', vvH: vv ? r1(vv.height) : 'n/a', vvOffTop: vv ? r1(vv.offsetTop) : 'n/a', vvPageTop: vv ? r1(vv.pageTop) : 'n/a', vvScale: vv ? r1(vv.scale) : 'n/a',
+      fixedTop: r1(fr.top), fixedH: r1(fr.height), docTop: r1(dr.top), docH: r1(dr.height),
+      vh: unit('vh'), dvh: unit('dvh'), svh: unit('svh'), lvh: unit('lvh'),
+      screenH: screen.height, availH: screen.availHeight, dpr: devicePixelRatio,
+      vis: document.visibilityState, hasFocus: document.hasFocus()
+    };
+    return m;
+  }
+  function render(m) {
+    var lines = [];
+    lines.push('If the ruler\'s 0 mark is not visible right under the address bar, the browser paints the viewport in the wrong place (JS cannot see it).');
+    lines.push('t=+' + m.t + 'ms  ' + navigator.userAgent.replace(/^Mozilla\/5\.0 \(/, '('));
+    lines.push('inner ' + m.innerW + 'x' + m.innerH + '  outer ' + m.outerW + 'x' + m.outerH + '  client ' + m.clientW + 'x' + m.clientH);
+    lines.push('visualViewport ' + m.vvW + 'x' + m.vvH + '  offsetTop ' + m.vvOffTop + '  pageTop ' + m.vvPageTop + '  scale ' + m.vvScale);
+    lines.push('scrollY ' + m.scrollY + '  docEl.scrollTop ' + m.docScrollTop + '  body.scrollTop ' + m.bodyScrollTop);
+    lines.push('fixed rect top ' + m.fixedTop + ' h ' + m.fixedH + '   html rect top ' + m.docTop + ' h ' + m.docH);
+    lines.push('100vh ' + m.vh + '  100dvh ' + m.dvh + '  100svh ' + m.svh + '  100lvh ' + m.lvh + '  screen.h ' + m.screenH + ' avail ' + m.availH + ' dpr ' + m.dpr);
+    lines.push('visibility ' + m.vis + '  focus ' + m.hasFocus + '  changes ' + changes);
+    var verdict = [];
+    if (Math.abs(m.scrollY) > 0.5 || Math.abs(m.fixedTop) > 0.5 || (m.vvPageTop !== 'n/a' && Math.abs(m.vvPageTop) > 0.5))
+      verdict.push('<span class="warn">OVER-SCROLLED: scroll position / fixed rect are not 0 → scrollTo(0,0) should heal</span>');
+    else verdict.push('<span class="ok">JS geometry is self-consistent (all offsets 0)</span>');
+    if (m.outerH && m.outerH !== m.innerH) verdict.push('outerHeight (' + m.outerH + ') != innerHeight (' + m.innerH + ')');
+    lines.push(verdict.join('\n'));
+    lines.push('--- events ---');
+    lines.push(events.slice(-8).join('\n'));
+    lines.push('--- changes ---');
+    lines.push(history.slice(-6).join('\n'));
+    out.innerHTML = lines.join('\n');
+  }
+  function tick(tag) {
+    var m = measure();
+    var key = [m.innerW, m.innerH, m.outerH, m.clientH, m.scrollY, m.vvH, m.vvOffTop, m.vvPageTop, m.fixedTop, m.fixedH, m.docTop, m.dvh, m.svh].join(',');
+    if (key !== last) { changes++; history.push('+' + m.t + 'ms ' + (tag || 'poll') + ': innerH ' + m.innerH + ' outerH ' + m.outerH + ' scrollY ' + m.scrollY + ' vvPageTop ' + m.vvPageTop + ' fixedTop ' + m.fixedTop + ' dvh ' + m.dvh + ' svh ' + m.svh); last = key; }
+    render(m);
+  }
+  ['resize', 'scroll', 'pageshow', 'focus', 'blur', 'orientationchange', 'load'].forEach(function (n) {
+    window.addEventListener(n, function () { events.push('+' + Math.round(performance.now() - t0) + 'ms window.' + n); tick(n); });
+  });
+  document.addEventListener('visibilitychange', function () { events.push('+' + Math.round(performance.now() - t0) + 'ms visibilitychange ' + document.visibilityState); tick('vis'); });
+  if (window.visualViewport) ['resize', 'scroll'].forEach(function (n) {
+    visualViewport.addEventListener(n, function () { events.push('+' + Math.round(performance.now() - t0) + 'ms visualViewport.' + n + ' h=' + r1(visualViewport.height) + ' pageTop=' + r1(visualViewport.pageTop)); tick('vv.' + n); });
+  });
+  document.getElementById('b0').onclick = function () { window.scrollTo(0, 0); events.push('+' + Math.round(performance.now() - t0) + 'ms scrollTo(0,0)'); setTimeout(tick, 100); };
+  document.getElementById('b1').onclick = function () { window.scrollTo(0, 1); events.push('+' + Math.round(performance.now() - t0) + 'ms scrollTo(0,1)'); setTimeout(tick, 100); };
+  document.getElementById('b2').onclick = function () { tick('manual'); };
+  document.getElementById('b3').onclick = function () { location.reload(); };
+  // ?fix=0 | ?fix=1 runs scrollTo(0,0) / scrollTo(0,1) automatically after ?at=<ms> (default 1500) without touching the screen.
+  if (q.fix !== undefined) setTimeout(function () {
+    var y = q.fix === '1' ? 1 : 0; window.scrollTo(0, y);
+    events.push('+' + Math.round(performance.now() - t0) + 'ms auto scrollTo(0,' + y + ')'); setTimeout(tick, 100);
+  }, +q.at || 1500);
+  tick('init');
+  setInterval(tick, 250);
+})();
+</script>
+</body>
+</html>
