@@ -79,7 +79,7 @@
     font: italic bold 25px/30px "Times New Roman", Times, "Liberation Serif", "Tinos", serif;
     white-space: nowrap;
   }
-  #wizard .body { position: absolute; left: 153px; top: 89px; width: 294px; height: 222px; overflow: auto; }
+  #wizard .body { position: absolute; left: 153px; top: 89px; width: 294px; height: 222px; overflow-x: hidden; overflow-y: auto; }
   #wizard .body.selectpage { overflow: visible; }
   #wizard .body.welcome { width: 272px; }
   #wizard .body.complete { top: 128px; left: 155px; width: 277px; height: 185px; }
@@ -88,7 +88,7 @@
   #wizard .btn-cancel { left: 372px; top: 325px; }
   #wizard .btn-wide { left: 211px; top: 325px; width: 140px; }
 
-  .body, .stepbody, #helpbox .msg { text-wrap: pretty; }
+  .body, .stepbody, #helpbox .msg { text-wrap: pretty; overflow-wrap: anywhere; }
   .nb { white-space: nowrap; }
   .body p, .stepbody p { margin: 0 0 13px 0; }
   .body p:last-child, .stepbody p:last-child { margin-bottom: 0; }
@@ -121,7 +121,7 @@
   #installing { left: 100px; top: 189px; width: 440px; height: 279px; }
   #installing .hdr { position: absolute; left: 12px; top: 36px; width: 416px; height: 26px; white-space: nowrap; overflow: hidden; }
   #installing .hdr .path { overflow: hidden; text-overflow: ellipsis; }
-  #installing .stepbody { position: absolute; left: 12px; top: 77px; width: 416px; height: 132px; overflow: auto; }
+  #installing .stepbody { position: absolute; left: 12px; top: 77px; width: 416px; height: 132px; overflow-x: hidden; overflow-y: auto; }
   #installing .btn-back { left: 165px; top: 249px; }
   #installing .btn-next { left: 244px; top: 249px; }
   #installing .btn-cancel { left: 350px; top: 249px; }
@@ -175,6 +175,7 @@
   #stage.portrait #helpbox .btn-issues { left: 31px; top: 198px; }
   #stage.portrait #helpbox .btn-close { left: 153px; top: 198px; }
   #stage.portrait #exitbox { left: 10px; top: 260px; }
+  #stage.portrait .nb { white-space: normal; }
 
   [hidden] { display: none !important; }
   .sr { position: absolute; left: -9999px; }
@@ -707,6 +708,8 @@
     }
 
     keepTogether(body);
+    body.scrollLeft = 0; body.scrollTop = 0;
+    $('step-body').scrollLeft = 0;
     var focusTarget = (state.page === 'install' ? installing : wizard).querySelector('button.default');
     if (focusTarget) focusTarget.focus({ preventScroll: true });
     if (state.page === 'select') {
@@ -986,11 +989,11 @@
       state.platform = PLATFORMS[pi];
       state.page = 'ready'; render();
       var b = $('body');
-      report.push(state.platform.id + ' ready ' + b.scrollHeight + '/' + b.clientHeight + (b.scrollHeight > b.clientHeight ? ' OVERFLOW' : '') + ' ' + orphans(b));
+      report.push(state.platform.id + ' ready ' + b.scrollHeight + '/' + b.clientHeight + (b.scrollHeight > b.clientHeight ? ' OVERFLOW' : '') + (b.scrollWidth > b.clientWidth + 2 ? ' WIDE' : '') + ' ' + orphans(b));
       for (var si = 0; si < state.platform.steps.length; si++) {
         state.page = 'install'; state.step = si; render();
         var sb = $('step-body'), sp = $('step-path');
-        report.push(state.platform.id + ' step' + si + ' ' + sb.scrollHeight + '/' + sb.clientHeight + (sb.scrollHeight > sb.clientHeight ? ' OVERFLOW' : '') +
+        report.push(state.platform.id + ' step' + si + ' ' + sb.scrollHeight + '/' + sb.clientHeight + (sb.scrollHeight > sb.clientHeight ? ' OVERFLOW' : '') + (sb.scrollWidth > sb.clientWidth + 2 ? ' WIDE' : '') +
                     (sp.scrollWidth > sp.clientWidth ? ' PATH-CLIPPED' : '') + ' ' + orphans(sb));
       }
     }
@@ -1002,11 +1005,11 @@
       state.platform = PLATFORMS[pi];
       state.page = 'ready'; render();
       b = $('body');
-      report.push('portrait ' + state.platform.id + ' ready ' + b.scrollHeight + '/' + b.clientHeight + (b.scrollHeight > b.clientHeight ? ' OVERFLOW' : '') + ' ' + orphans(b));
+      report.push('portrait ' + state.platform.id + ' ready ' + b.scrollHeight + '/' + b.clientHeight + (b.scrollHeight > b.clientHeight ? ' OVERFLOW' : '') + (b.scrollWidth > b.clientWidth + 2 ? ' WIDE' : '') + ' ' + orphans(b));
       for (si = 0; si < state.platform.steps.length; si++) {
         state.page = 'install'; state.step = si; render();
         sb = $('step-body');
-        report.push('portrait ' + state.platform.id + ' step' + si + ' ' + sb.scrollHeight + '/' + sb.clientHeight + (sb.scrollHeight > sb.clientHeight ? ' OVERFLOW' : '') + ' ' + orphans(sb));
+        report.push('portrait ' + state.platform.id + ' step' + si + ' ' + sb.scrollHeight + '/' + sb.clientHeight + (sb.scrollHeight > sb.clientHeight ? ' OVERFLOW' : '') + (sb.scrollWidth > sb.clientWidth + 2 ? ' WIDE' : '') + ' ' + orphans(sb));
       }
     }
     state.page = 'welcome'; render(); report.push('portrait welcome ' + orphans($('body')));
