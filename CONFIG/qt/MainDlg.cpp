@@ -517,16 +517,38 @@ void CMainDialog::SelectDataPathDialog()
 	);
 
 	if (!data_path.isEmpty()) {
-		QDir data_dir = QDir(data_path);
-		if (data_dir.exists()) {
-			currentConfigApp->m_cd_path = data_dir.absolutePath().toStdString();
-			data_dir.cd(QString("DATA"));
-			data_dir.cd(QString("disk"));
-			currentConfigApp->m_base_path = data_dir.absolutePath().toStdString();
-			m_modified = true;
-		}
+		SetDataPath(data_path);
 	}
 	UpdateInterface();
+}
+
+static bool EnterDirectory(QDir& p_dir, const QString& p_name)
+{
+	if (p_dir.cd(p_name)) {
+		return true;
+	}
+
+	for (const QString& entry : p_dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot)) {
+		if (entry.compare(p_name, Qt::CaseInsensitive) == 0) {
+			return p_dir.cd(entry);
+		}
+	}
+
+	return false;
+}
+
+void CMainDialog::SetDataPath(const QString& p_path)
+{
+	QDir data_dir = QDir(p_path);
+	if (!data_dir.exists()) {
+		return;
+	}
+
+	currentConfigApp->m_cd_path = data_dir.absolutePath().toStdString();
+	EnterDirectory(data_dir, QString("DATA"));
+	EnterDirectory(data_dir, QString("disk"));
+	currentConfigApp->m_base_path = data_dir.absolutePath().toStdString();
+	m_modified = true;
 }
 
 void CMainDialog::SelectSavePathDialog()
@@ -551,15 +573,7 @@ void CMainDialog::SelectSavePathDialog()
 
 void CMainDialog::DataPathEdited()
 {
-	QDir data_dir = QDir(m_ui->dataPath->text());
-
-	if (data_dir.exists()) {
-		currentConfigApp->m_cd_path = data_dir.absolutePath().toStdString();
-		data_dir.cd(QString("DATA"));
-		data_dir.cd(QString("disk"));
-		currentConfigApp->m_base_path = data_dir.absolutePath().toStdString();
-		m_modified = true;
-	}
+	SetDataPath(m_ui->dataPath->text());
 	UpdateInterface();
 }
 

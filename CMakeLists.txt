@@ -1212,7 +1212,7 @@ if(VITA)
   add_subdirectory(CONFIG/vita)
 
   set(ISLE_PACKAGE_NAME "vita-isle")
-  set(VITA_APP_NAME "Lego Island")
+  set(VITA_APP_NAME "LEGO Island")
   set(VITA_TITLEID  "LEGO00001")
   set(VITA_VERSION  "01.00")
 
