@@ -31,7 +31,7 @@ We are actively working to support more platforms. If you have experience with a
 
 As it stands, builds provided in the [Releases tab](https://github.com/isledecomp/isle-portable/releases/tag/continuous) are mainly for developers; as such, they may not work properly for all end-users. Work is currently ongoing to create workable release builds ready for gameplay and general use by end-users. If you are technically inclined, you may find it easiest to compile the project yourself to get it running at this current point in time.
 
-[Installation instructions](https://github.com/isledecomp/isle-portable/wiki/Installation) for some ports can be found in our Wiki.
+The [guided installer](https://isledecomp.github.io/isle-portable/) walks you through the installation on every supported platform, step by step. Its source lives in [`installer/`](/installer) and is deployed to GitHub Pages from `master`.
 
 ## Library substitutions
 
