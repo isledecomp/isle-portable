@@ -43,7 +43,11 @@ Useful URL parameters while editing:
 Layout notes: the 640×480 scene is scaled by whole device pixels whenever the
 dialogs fit (cropping only the background margins) so the bitmap font stays
 crisp; phones in portrait get a narrower single-column variant of the same
-dialogs (`#stage.portrait`) filled to the screen width. Windows are draggable
+dialogs (`#stage.portrait`) filled to the screen width. Text areas must not
+use `overflow` clipping: under a fractional `zoom` Chrome rounds the clip
+edge and the first glyph column differently and cuts the column off. Any box
+that does clip must keep 2px between its edge and its text; `?check=1`
+reports violations as `CLIPRISK`. Windows are draggable
 by their title bar; underlined letters work as Windows-style mnemonics, Esc is
 Cancel, Enter is the default button, F1 is help.
 * `?check=1` renders every page of every platform and appends a report
