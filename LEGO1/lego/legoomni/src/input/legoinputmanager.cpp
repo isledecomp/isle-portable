@@ -193,6 +193,7 @@ MxResult LegoInputManager::GetJoystickState(MxU32* p_joystickX, MxU32* p_joystic
 	}
 
 	MxS16 xPos = 0, yPos = 0;
+#ifndef __3DS__
 	for (const auto& [id, joystick] : m_joysticks) {
 		xPos = SDL_GetGamepadAxis(joystick.first, SDL_GAMEPAD_AXIS_LEFTX);
 		yPos = SDL_GetGamepadAxis(joystick.first, SDL_GAMEPAD_AXIS_LEFTY);
@@ -207,6 +208,29 @@ MxResult LegoInputManager::GetJoystickState(MxU32* p_joystickX, MxU32* p_joystic
 			break;
 		}
 	}
+#else
+	// The circle pad doubles as the cursor stick, so the d-pad is used for
+	// direct movement instead
+	for (const auto& [id, joystick] : m_joysticks) {
+		if (SDL_GetGamepadButton(joystick.first, SDL_GAMEPAD_BUTTON_DPAD_LEFT)) {
+			xPos = SDL_JOYSTICK_AXIS_MIN;
+		}
+		else if (SDL_GetGamepadButton(joystick.first, SDL_GAMEPAD_BUTTON_DPAD_RIGHT)) {
+			xPos = SDL_JOYSTICK_AXIS_MAX;
+		}
+
+		if (SDL_GetGamepadButton(joystick.first, SDL_GAMEPAD_BUTTON_DPAD_UP)) {
+			yPos = SDL_JOYSTICK_AXIS_MIN;
+		}
+		else if (SDL_GetGamepadButton(joystick.first, SDL_GAMEPAD_BUTTON_DPAD_DOWN)) {
+			yPos = SDL_JOYSTICK_AXIS_MAX;
+		}
+
+		if (xPos || yPos) {
+			break;
+		}
+	}
+#endif
 
 	if (!xPos && !yPos) {
 		xPos = m_touchVirtualThumb.x;

@@ -501,6 +501,15 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 	return SDL_APP_CONTINUE;
 }
 
+static SDL_GamepadButton GetGamepadClickButton(SDL_JoystickID p_joystickID)
+{
+	SDL_Gamepad* gamepad = SDL_GetGamepadFromID(p_joystickID);
+	if (gamepad && SDL_GetGamepadButtonLabel(gamepad, SDL_GAMEPAD_BUTTON_EAST) == SDL_GAMEPAD_BUTTON_LABEL_A) {
+		return SDL_GAMEPAD_BUTTON_EAST;
+	}
+	return SDL_GAMEPAD_BUTTON_SOUTH;
+}
+
 SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 {
 	if (!g_isle) {
@@ -634,33 +643,37 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 			g_dpadRight = true;
 			break;
 		case SDL_GAMEPAD_BUTTON_EAST:
-			g_mousedown = TRUE;
-			if (InputManager()) {
-				InputManager()->QueueEvent(
-					c_notificationButtonDown,
-					LegoEventNotificationParam::c_lButtonState,
-					g_lastMouseX,
-					g_lastMouseY,
-					0
-				);
-			}
-			break;
-
 		case SDL_GAMEPAD_BUTTON_SOUTH:
-			if (InputManager()) {
+			if (event->gbutton.button == GetGamepadClickButton(event->gbutton.which)) {
+				g_mousedown = TRUE;
+				if (InputManager()) {
+					InputManager()->QueueEvent(
+						c_notificationButtonDown,
+						LegoEventNotificationParam::c_lButtonState,
+						g_lastMouseX,
+						g_lastMouseY,
+						0
+					);
+				}
+			}
+			else if (InputManager()) {
 				InputManager()->QueueEvent(c_notificationKeyPress, SDLK_SPACE, 0, 0, SDLK_SPACE);
 			}
 			break;
 
-#ifdef __vita__ // conflicts with screenshot button combination
 		case SDL_GAMEPAD_BUTTON_BACK:
-#else
-		case SDL_GAMEPAD_BUTTON_START:
-#endif
 			if (InputManager()) {
 				InputManager()->QueueEvent(c_notificationKeyPress, SDLK_ESCAPE, 0, 0, SDLK_ESCAPE);
 			}
 			break;
+
+#ifndef __vita__ // conflicts with screenshot button combination
+		case SDL_GAMEPAD_BUTTON_START:
+			if (InputManager()) {
+				InputManager()->QueueEvent(c_notificationKeyPress, 0, 0, 0, SDLK_PAUSE);
+			}
+			break;
+#endif
 		}
 		break;
 	}
@@ -680,15 +693,18 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 			g_dpadRight = false;
 			break;
 		case SDL_GAMEPAD_BUTTON_EAST:
-			g_mousedown = FALSE;
-			if (InputManager()) {
-				InputManager()->QueueEvent(
-					c_notificationButtonUp,
-					LegoEventNotificationParam::c_lButtonState,
-					g_lastMouseX,
-					g_lastMouseY,
-					0
-				);
+		case SDL_GAMEPAD_BUTTON_SOUTH:
+			if (event->gbutton.button == GetGamepadClickButton(event->gbutton.which)) {
+				g_mousedown = FALSE;
+				if (InputManager()) {
+					InputManager()->QueueEvent(
+						c_notificationButtonUp,
+						LegoEventNotificationParam::c_lButtonState,
+						g_lastMouseX,
+						g_lastMouseY,
+						0
+					);
+				}
 			}
 			break;
 		}
@@ -700,13 +716,38 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 			// Ignore small axis values
 			axisValue = event->gaxis.value;
 		}
+#ifdef __3DS__
+		// The circle pad (left stick) doubles as a cursor stick since only
+		// New 3DS models have a C-stick; both contribute to cursor movement
+		static MxS32 g_cpadX = 0, g_cpadY = 0, g_cstickX = 0, g_cstickY = 0;
+		switch (event->gaxis.axis) {
+		case SDL_GAMEPAD_AXIS_LEFTX:
+			g_cpadX = axisValue;
+			break;
+		case SDL_GAMEPAD_AXIS_LEFTY:
+			g_cpadY = axisValue;
+			break;
+		case SDL_GAMEPAD_AXIS_RIGHTX:
+			g_cstickX = axisValue;
+			break;
+		case SDL_GAMEPAD_AXIS_RIGHTY:
+			g_cstickY = axisValue;
+			break;
+		}
+		MxS32 combinedX = SDL_clamp(g_cpadX + g_cstickX, -SDL_JOYSTICK_AXIS_MAX, SDL_JOYSTICK_AXIS_MAX);
+		MxS32 combinedY = SDL_clamp(g_cpadY + g_cstickY, -SDL_JOYSTICK_AXIS_MAX, SDL_JOYSTICK_AXIS_MAX);
+		g_lastJoystickMouseX = ((MxFloat) combinedX) / SDL_JOYSTICK_AXIS_MAX * g_isle->GetCursorSensitivity();
+		g_lastJoystickMouseY = ((MxFloat) combinedY) / SDL_JOYSTICK_AXIS_MAX * g_isle->GetCursorSensitivity();
+#endif
+#ifndef __3DS__
 		if (event->gaxis.axis == SDL_GAMEPAD_AXIS_RIGHTX) {
 			g_lastJoystickMouseX = ((MxFloat) axisValue) / SDL_JOYSTICK_AXIS_MAX * g_isle->GetCursorSensitivity();
 		}
 		else if (event->gaxis.axis == SDL_GAMEPAD_AXIS_RIGHTY) {
 			g_lastJoystickMouseY = ((MxFloat) axisValue) / SDL_JOYSTICK_AXIS_MAX * g_isle->GetCursorSensitivity();
 		}
-		else if (event->gaxis.axis == SDL_GAMEPAD_AXIS_RIGHT_TRIGGER) {
+#endif
+		if (event->gaxis.axis == SDL_GAMEPAD_AXIS_RIGHT_TRIGGER) {
 			if (axisValue != 0 && !g_mousedown) {
 				g_mousedown = TRUE;
 
@@ -1677,9 +1718,19 @@ IDirect3DRMMiniwinDevice* GetD3DRMMiniwinDevice()
 
 void IsleApp::MoveVirtualMouseViaJoystick()
 {
+	// Cursor sensitivity is expressed in pixels per 60 Hz frame
+	static Uint64 g_lastMoveTime = 0;
+	Uint64 now = SDL_GetTicksNS();
+	float frames = 1.0f;
+	if (g_lastMoveTime != 0) {
+		frames = SDL_min((float) (now - g_lastMoveTime), SDL_NS_PER_SECOND / 10.0f) * (60.0f / SDL_NS_PER_SECOND);
+	}
+	g_lastMoveTime = now;
+
 	float dpadX = 0.0f;
 	float dpadY = 0.0f;
 
+#ifndef __3DS__
 	if (g_dpadLeft) {
 		dpadX -= m_cursorSensitivity;
 	}
@@ -1692,10 +1743,11 @@ void IsleApp::MoveVirtualMouseViaJoystick()
 	if (g_dpadDown) {
 		dpadY += m_cursorSensitivity;
 	}
+#endif
 
 	// Use joystick axis if non-zero, else fall back to dpad
-	float moveX = (g_lastJoystickMouseX != 0) ? g_lastJoystickMouseX : dpadX;
-	float moveY = (g_lastJoystickMouseY != 0) ? g_lastJoystickMouseY : dpadY;
+	float moveX = ((g_lastJoystickMouseX != 0) ? g_lastJoystickMouseX : dpadX) * frames;
+	float moveY = ((g_lastJoystickMouseY != 0) ? g_lastJoystickMouseY : dpadY) * frames;
 
 	if (moveX != 0 || moveY != 0) {
 		g_mousemoved = TRUE;
