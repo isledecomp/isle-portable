@@ -58,6 +58,7 @@ private slots:
 	void reject() override;
 	void launch();
 	void SelectDataPathDialog();
+	void SetDataPath(const QString& p_path);
 	void SelectSavePathDialog();
 	void DataPathEdited();
 	void SavePathEdited();

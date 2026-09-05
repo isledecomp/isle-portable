@@ -29,9 +29,9 @@ We are actively working to support more platforms. If you have experience with a
 
 **An existing copy of LEGO Island is required to use this project.**
 
-As it stands, builds provided in the [Releases tab](https://github.com/isledecomp/isle-portable/releases/tag/continuous) are mainly for developers; as such, they may not work properly for all end-users. Work is currently ongoing to create workable release builds ready for gameplay and general use by end-users. If you are technically inclined, you may find it easiest to compile the project yourself to get it running at this current point in time.
+The [guided installer](https://isledecomp.github.io/isle-portable/) walks you through the installation on every supported platform, step by step, using the builds from the [Releases tab](https://github.com/isledecomp/isle-portable/releases/tag/continuous). These are continuous builds of the latest `master`, so an occasional regression is possible; if something does not work for you, please [open an issue](https://github.com/isledecomp/isle-portable/issues). Developers can also build the project from source, see below.
 
-[Installation instructions](https://github.com/isledecomp/isle-portable/wiki/Installation) for some ports can be found in our Wiki.
+The installer's source lives in [`installer/`](/installer) and is deployed to GitHub Pages from `master`.
 
 ## Library substitutions
 
