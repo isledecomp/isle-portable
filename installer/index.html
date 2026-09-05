@@ -79,10 +79,10 @@
     font: italic bold 25px/30px "Times New Roman", Times, "Liberation Serif", "Tinos", serif;
     white-space: nowrap;
   }
-  #wizard .body { position: absolute; left: 153px; top: 89px; width: 294px; height: 222px; overflow-x: hidden; overflow-y: auto; }
+  #wizard .body { position: absolute; left: 151px; top: 88px; width: 294px; height: 223px; padding: 1px 0 0 2px; overflow: visible; }
   #wizard .body.selectpage { overflow: visible; }
   #wizard .body.welcome { width: 272px; }
-  #wizard .body.complete { top: 128px; left: 155px; width: 277px; height: 185px; }
+  #wizard .body.complete { top: 127px; left: 153px; width: 277px; height: 186px; }
   #wizard .btn-back { left: 187px; top: 325px; }
   #wizard .btn-next { left: 266px; top: 325px; }
   #wizard .btn-cancel { left: 372px; top: 325px; }
@@ -102,7 +102,7 @@
 
   /* group box + list box on the platform page */
   fieldset.group {
-    position: absolute; left: 0; top: 35px; width: 294px; height: 182px; box-sizing: border-box;
+    position: absolute; left: 2px; top: 36px; width: 294px; height: 182px; box-sizing: border-box;
     margin: 0; padding: 8px;
     border-image: none; border: none;
     box-shadow: inset -1px -1px #fff, inset 1px 1px var(--shadow), inset -2px -2px var(--shadow), inset 2px 2px #fff;
@@ -111,7 +111,8 @@
     box-sizing: border-box; height: 164px; background: #fff; padding: 2px; overflow-y: auto; outline: none; cursor: default;
     box-shadow: inset -1px -1px #fff, inset 1px 1px var(--shadow), inset -2px -2px var(--face), inset 2px 2px #0a0a0a;
   }
-  .listbox .item { padding: 0 3px; white-space: nowrap; overflow: hidden; }
+  .listbox .item { padding: 0 3px; white-space: nowrap; }
+  .listbox { padding-left: 3px; }
   .listbox .item.sel { background: var(--highlight); color: #fff; }
   .listbox:focus .item.sel { outline: 1px dotted #ffff00; outline-offset: -1px; }
   .listbox .item .tag { color: var(--shadow); }
@@ -119,9 +120,8 @@
 
   /* ---- "Installing" progress dialog ---- */
   #installing { left: 100px; top: 189px; width: 440px; height: 279px; }
-  #installing .hdr { position: absolute; left: 12px; top: 36px; width: 416px; height: 26px; white-space: nowrap; overflow: hidden; }
-  #installing .hdr .path { overflow: hidden; text-overflow: ellipsis; }
-  #installing .stepbody { position: absolute; left: 12px; top: 77px; width: 416px; height: 132px; overflow-x: hidden; overflow-y: auto; }
+  #installing .hdr { position: absolute; left: 10px; top: 35px; width: 416px; height: 27px; padding: 1px 0 0 2px; white-space: nowrap; }
+  #installing .stepbody { position: absolute; left: 10px; top: 76px; width: 416px; height: 133px; padding: 1px 0 0 2px; overflow: visible; }
   #installing .btn-back { left: 165px; top: 249px; }
   #installing .btn-next { left: 244px; top: 249px; }
   #installing .btn-cancel { left: 350px; top: 249px; }
@@ -155,7 +155,7 @@
   #stage.portrait #wizard { left: 10px; top: 120px; width: 300px; height: 386px; }
   #stage.portrait #wizard .bitmap { display: none; }
   #stage.portrait #wizard h1 { left: 17px; top: 28px; width: 266px; font-size: 20px; line-height: 24px; }
-  #stage.portrait #wizard .body, #stage.portrait #wizard .body.complete, #stage.portrait #wizard .body.welcome { left: 17px; top: 70px; width: 266px; height: 262px; }
+  #stage.portrait #wizard .body, #stage.portrait #wizard .body.complete, #stage.portrait #wizard .body.welcome { left: 15px; top: 69px; width: 266px; height: 263px; }
   #stage.portrait .sep { top: 338px; width: 266px; }
   #stage.portrait #wizard .btn-back { left: 52px; top: 356px; }
   #stage.portrait #wizard .btn-next { left: 131px; top: 356px; }
