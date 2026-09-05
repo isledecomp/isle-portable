@@ -13,7 +13,6 @@
   :root {
     --face: #d4d0c8;          /* Windows 2000 "3D Objects" colour, as in the original screenshots */
     --shadow: #808080;
-    --light: #ffffff;
     --dark: #404040;
     --caption-a: #0a246a;     /* active title bar gradient */
     --caption-b: #a6caf0;
@@ -25,7 +24,7 @@
   body { touch-action: manipulation; }
 
   /* ---- 640x480 stage, scaled to the viewport ---- */
-  #viewport { position: fixed; inset: 0; overflow: hidden; }
+  #viewport { position: fixed; top: 0; right: 0; bottom: 0; left: 0; inset: 0; overflow: hidden; }
   #stagepos { position: absolute; left: 0; top: 0; }
   #stage {
     position: relative; width: 640px; height: 480px;
@@ -53,7 +52,6 @@
   .title-bar-text { font-size: 11px; line-height: 13px; }
   .title-bar-controls button { width: 16px; height: 14px; min-width: 16px; min-height: 14px; margin-left: 2px; }
   .title-bar-controls button[aria-label="Help"] { margin-left: 0; }
-  .dlg .title-bar-controls button:focus { outline: none; }
 
   .dlg button.btn {
     position: absolute; box-sizing: border-box; width: 79px; height: 23px; min-width: 0; min-height: 0;
@@ -80,7 +78,6 @@
     white-space: nowrap;
   }
   #wizard .body { position: absolute; left: 151px; top: 88px; width: 294px; height: 223px; padding: 1px 0 0 2px; overflow: visible; }
-  #wizard .body.selectpage { overflow: visible; }
   #wizard .body.welcome { width: 272px; }
   #wizard .body.complete { top: 127px; left: 153px; width: 277px; height: 186px; }
   #wizard .btn-back { left: 187px; top: 325px; }
@@ -177,7 +174,6 @@
   #stage.portrait .nb { white-space: normal; }
 
   [hidden] { display: none !important; }
-  .sr { position: absolute; left: -9999px; }
 </style>
 </head>
 <body>
@@ -210,12 +206,12 @@
           <button aria-label="Close" data-act="cancel" title="Close"></button>
         </div>
       </div>
-      <div class="hdr"><div class="what" id="step-what"></div><div class="path" id="step-path"></div></div>
+      <div class="hdr"><div id="step-what"></div><div id="step-path"></div></div>
       <div class="stepbody" id="step-body"></div>
-      <div class="progress" aria-live="polite">
+      <div class="progress" id="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
         <div class="fill" id="fill"></div>
-        <div class="pct back" id="pct-back">0%</div>
-        <div class="pct front" id="pct-front">0%</div>
+        <div class="pct back" id="pct-back" aria-hidden="true">0%</div>
+        <div class="pct front" id="pct-front" aria-hidden="true">0%</div>
       </div>
       <button class="btn btn-back" data-act="back">&lt; <u>B</u>ack</button>
       <button class="btn btn-next default" data-act="next"><u>N</u>ext &gt;</button>
@@ -223,7 +219,7 @@
     </div>
 
     <!-- exit confirmation -->
-    <div id="exitbox" class="dlg window" role="alertdialog" aria-labelledby="exit-title" hidden>
+    <div id="exitbox" class="dlg window" role="alertdialog" aria-modal="true" aria-labelledby="exit-title" hidden>
       <div class="title-bar">
         <div class="title-bar-text" id="exit-title">LEGO Island Installation</div>
         <div class="title-bar-controls">
@@ -243,7 +239,7 @@
     </div>
 
     <!-- help message box -->
-    <div id="helpbox" class="dlg window" role="alertdialog" aria-labelledby="help-title" hidden>
+    <div id="helpbox" class="dlg window" role="alertdialog" aria-modal="true" aria-labelledby="help-title" hidden>
       <div class="title-bar">
         <div class="title-bar-text" id="help-title">LEGO Island Installation</div>
         <div class="title-bar-controls">
@@ -605,11 +601,13 @@
 
   // State ----------------------------------------------------------------
   var query = {};
+  function dec(v) { try { return decodeURIComponent(v); } catch (e) { return v; } }
   (location.search || '').replace(/^\?/, '').split('&').forEach(function (kv) {
-    var p = kv.split('='); if (p[0]) query[decodeURIComponent(p[0])] = decodeURIComponent(p[1] || '');
+    var p = kv.split('='); if (p[0]) query[dec(p[0])] = dec(p.slice(1).join('='));
   });
+  var ORDER = ['welcome', 'select', 'ready', 'install', 'complete'];
   var state = {
-    page: /^(welcome|select|ready|install|complete)$/.test(query.page || '') ? query.page : 'welcome',
+    page: ORDER.indexOf(query.page) >= 0 ? query.page : 'welcome',
     platform: findPlatform((location.hash || '').replace('#', '').toLowerCase()) || findPlatform(detectPlatform()) || PLATFORMS[0],
     step: Math.max(0, parseInt(query.step || '0', 10) || 0)
   };
@@ -617,14 +615,20 @@
 
   var $ = function (id) { return document.getElementById(id); };
   var wizard = $('wizard'), installing = $('installing'), helpbox = $('helpbox'), exitbox = $('exitbox');
+  var bodyEl = $('body'), bitmap = $('bitmap'), heading = $('heading'), wizTitle = $('wizard-title'),
+      stepWhat = $('step-what'), stepPath = $('step-path'), stepBody = $('step-body'),
+      fill = $('fill'), pctBack = $('pct-back'), pctFront = $('pct-front'), progress = $('progress');
   function openModal() { return !helpbox.hidden ? helpbox : (!exitbox.hidden ? exitbox : null); }
+  function activeDlg() { return state.page === 'install' ? installing : wizard; }
+  function focusList() { var lb = $('listbox'); if (lb) lb.focus({ preventScroll: true }); }
 
-  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-
+  function esc(v) { return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
   function buttons(html) { $('buttons').innerHTML = html; }
+  // Short file names, paths and commands stay on one line; hand-marked .nb spans are left to the CSS.
   function keepTogether(container) {
     var els = container.querySelectorAll('b, a');
     for (var i = 0; i < els.length; i++) {
+      if (els[i].classList.contains('nb')) continue;
       var t = els[i].textContent;
       if (t.length <= 34 && /[-\\\/.:]/.test(t) && (t.match(/ /g) || []).length <= 2) els[i].style.whiteSpace = 'nowrap';
     }
@@ -634,150 +638,136 @@
            '<button class="btn btn-next default" data-act="next"><u>N</u>ext &gt;</button>' +
            '<button class="btn btn-cancel" data-act="cancel"><u>C</u>ancel</button>';
   }
+  var HEADINGS = { welcome: 'Welcome!', select: 'Select Destination Platform', ready: 'Ready to Install!', complete: 'Installation Completed!' };
 
   function render() {
-    var body = $('body');
-    body.className = 'body';
-    wizard.hidden = state.page === 'install';
-    installing.hidden = state.page !== 'install';
-    $('wizard-title').textContent = state.page === 'complete' ? 'LEGO Island' : 'LEGO Island Installation';
+    var page = state.page;
+    wizard.hidden = page === 'install';
+    installing.hidden = page !== 'install';
+    wizTitle.textContent = page === 'complete' ? 'LEGO Island' : 'LEGO Island Installation';
 
-    if (state.page === 'welcome') {
-      $('bitmap').src = 'assets/welcome.png';
-      $('heading').textContent = 'Welcome!';
-      body.className = 'body welcome';
-      body.innerHTML =
-        '<p>This installation program will install the LEGO Island.</p>' +
-        '<p>Press the Next button to start the installation. You can press the Cancel button now if you do not want to install the LEGO Island at this time.</p>';
-      buttons(stdButtons(true));
-    }
-    else if (state.page === 'select') {
-      $('bitmap').src = 'assets/select.png';
-      $('heading').textContent = 'Select Destination Platform';
-      var items = '';
-      for (var i = 0; i < PLATFORMS.length; i++) {
-        var p = PLATFORMS[i];
-        items += '<div class="item' + (p === state.platform ? ' sel' : '') + '" id="opt-' + p.id + '" data-id="' + p.id + '" role="option" aria-selected="' + (p === state.platform) + '">' +
-                 esc(p.name) + (p.tag ? ' <span class="tag">(' + esc(p.tag) + ')</span>' : '') + '</div>';
-      }
-      body.className = 'body selectpage';
-      body.innerHTML =
-        '<p>Please select the platform where the LEGO Island files are to be installed.</p>' +
-        '<fieldset class="group"><div class="listbox" id="listbox" tabindex="0" role="listbox" aria-label="Platform" aria-activedescendant="opt-' + state.platform.id + '">' + items + '</div></fieldset>';
-      buttons(stdButtons(false));
-    }
-    else if (state.page === 'ready') {
-      var pl = state.platform;
-      $('bitmap').src = 'assets/ready.png';
-      $('heading').textContent = 'Ready to Install!';
-      var req = '', needed = 0, optional = 0;
-      for (var r = 0; r < pl.requires.length; r++) req += '<li>' + pl.requires[r] + '</li>';
-      for (var q = 0; q < pl.steps.length; q++) { if (pl.steps[q].optional) optional++; else needed++; }
-      var words = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
-      var count = needed === 1 ? 'The installation takes one short step' : 'The installation takes ' + (words[needed] || needed) + ' short steps';
-      if (optional) count += ', followed by ' + (optional === 1 ? 'one optional step' : (words[optional] || optional) + ' optional steps');
-      body.innerHTML =
-        '<p>You are now ready to install the LEGO Island on <b>' + esc(pl.on || pl.name) + '</b>. You will need:</p>' +
-        '<ul>' + req + '</ul>' +
-        '<p>' + count + '. Press the Next button to begin the installation or the Back button to reenter the installation information.</p>';
-      buttons(stdButtons(false));
-    }
-    else if (state.page === 'install') {
+    if (page === 'install') {
       var st = state.platform.steps[state.step], n = state.platform.steps.length;
-      $('step-what').textContent = st.what;
-      $('step-path').innerHTML = st.href ? '<a href="' + st.href + '"' + (/^https?:/.test(st.href) && st.href.indexOf(REL) !== 0 ? ' target="_blank" rel="noopener"' : '') + '>' + st.path + '</a>' : st.path;
-      $('step-body').innerHTML = st.body;
-      keepTogether($('step-body'));
-      $('step-body').scrollTop = 0;
+      stepWhat.textContent = st.what;
+      stepPath.innerHTML = st.href ? '<a href="' + st.href + '"' + (/^https?:/.test(st.href) && st.href.indexOf(REL) !== 0 ? ' target="_blank" rel="noopener"' : '') + '>' + st.path + '</a>' : st.path;
+      stepBody.innerHTML = st.body;
+      keepTogether(stepBody);
       var pct = Math.round((state.step + 1) / n * 100);
-      $('fill').style.width = 'calc((100% - 4px) * ' + (pct / 100) + ')';
-      $('pct-back').textContent = $('pct-front').textContent = pct + '%';
-      $('pct-front').style.clipPath = 'inset(0 ' + (100 - pct) + '% 0 0)';
+      fill.style.width = 'calc((100% - 4px) * ' + (pct / 100) + ')';
+      pctBack.textContent = pctFront.textContent = pct + '%';
+      pctFront.style.clipPath = 'inset(0 ' + (100 - pct) + '% 0 0)';
+      progress.setAttribute('aria-valuenow', pct);
     }
-    else if (state.page === 'complete') {
-      $('bitmap').src = 'assets/complete.png';
-      $('heading').textContent = 'Installation Completed!';
-      body.className = 'body complete';
-      body.innerHTML =
-        '<p>LEGO Island installation is complete</p>' +
-        '<p>LEGO Island was created in 1997 by Mindscape. MattKC\u2019s feature-length documentary \u201cThe Making of LEGO Island\u201d tells the story of the people who built it.</p>' +
-        '<p>Press the Watch Documentary button to watch the documentary on YouTube, or Cancel to exit.</p>';
-      buttons('<button class="btn btn-wide default" data-act="documentary"><u>W</u>atch Documentary</button>' +
-              '<button class="btn btn-cancel" data-act="cancel"><u>C</u>ancel</button>');
+    else {
+      bodyEl.className = 'body' + (page === 'welcome' || page === 'complete' ? ' ' + page : '');
+      bitmap.src = 'assets/' + page + '.png';
+      heading.textContent = HEADINGS[page];
+      if (page === 'welcome') {
+        bodyEl.innerHTML =
+          '<p>This installation program will install the LEGO Island.</p>' +
+          '<p>Press the Next button to start the installation. You can press the Cancel button now if you do not want to install the LEGO Island at this time.</p>';
+        buttons(stdButtons(true));
+      }
+      else if (page === 'select') {
+        var items = '';
+        for (var i = 0; i < PLATFORMS.length; i++) {
+          var p = PLATFORMS[i];
+          items += '<div class="item' + (p === state.platform ? ' sel' : '') + '" id="opt-' + p.id + '" data-id="' + p.id + '" role="option" aria-selected="' + (p === state.platform) + '">' +
+                   esc(p.name) + (p.tag ? ' <span class="tag">(' + esc(p.tag) + ')</span>' : '') + '</div>';
+        }
+        bodyEl.innerHTML =
+          '<p>Please select the platform where the LEGO Island files are to be installed.</p>' +
+          '<fieldset class="group"><div class="listbox" id="listbox" tabindex="0" role="listbox" aria-label="Platform" aria-activedescendant="opt-' + state.platform.id + '">' + items + '</div></fieldset>';
+        buttons(stdButtons(false));
+      }
+      else if (page === 'ready') {
+        var pl = state.platform, req = '', needed = 0, optional = 0;
+        for (var r = 0; r < pl.requires.length; r++) req += '<li>' + pl.requires[r] + '</li>';
+        for (var q = 0; q < pl.steps.length; q++) { if (pl.steps[q].optional) optional++; else needed++; }
+        var words = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
+        var count = needed === 1 ? 'The installation takes one short step' : 'The installation takes ' + (words[needed] || needed) + ' short steps';
+        if (optional) count += ', followed by ' + (optional === 1 ? 'one optional step' : (words[optional] || optional) + ' optional steps');
+        bodyEl.innerHTML =
+          '<p>You are now ready to install the LEGO Island on <b>' + esc(pl.on || pl.name) + '</b>. You will need:</p>' +
+          '<ul>' + req + '</ul>' +
+          '<p>' + count + '. Press the Next button to begin the installation or the Back button to reenter the installation information.</p>';
+        buttons(stdButtons(false));
+      }
+      else {
+        bodyEl.innerHTML =
+          '<p>LEGO Island installation is complete</p>' +
+          '<p>LEGO Island was created in 1997 by Mindscape. MattKC’s feature-length documentary “The Making of LEGO Island” tells the story of the people who built it.</p>' +
+          '<p>Press the Watch Documentary button to watch the documentary on YouTube, or Cancel to exit.</p>';
+        buttons('<button class="btn btn-wide default" data-act="documentary"><u>W</u>atch Documentary</button>' +
+                '<button class="btn btn-cancel" data-act="cancel"><u>C</u>ancel</button>');
+      }
+      keepTogether(bodyEl);
     }
 
-    keepTogether(body);
-    body.scrollLeft = 0; body.scrollTop = 0;
-    $('step-body').scrollLeft = 0;
-    var focusTarget = (state.page === 'install' ? installing : wizard).querySelector('button.default');
+    var focusTarget = activeDlg().querySelector('button.default');
     if (focusTarget) focusTarget.focus({ preventScroll: true });
-    if (state.page === 'select') {
-      var lb = $('listbox'); var sel = lb.querySelector('.sel');
+    if (page === 'select') {
+      var sel = $('listbox').querySelector('.sel');
       if (sel) sel.scrollIntoView({ block: 'nearest' });
     }
-    try { history.replaceState(null, '', '#' + state.platform.id); } catch (e) { /* ignore */ }
+    var hash = '#' + state.platform.id;
+    if (location.hash !== hash) { try { history.replaceState(null, '', hash); } catch (e) { /* file:// */ } }
   }
 
   // Navigation -----------------------------------------------------------
-  function next() {
-    if (state.page === 'welcome') state.page = 'select';
-    else if (state.page === 'select') state.page = 'ready';
-    else if (state.page === 'ready') { state.page = 'install'; state.step = 0; }
-    else if (state.page === 'install') {
-      if (state.step < state.platform.steps.length - 1) state.step++;
-      else state.page = 'complete';
+  function go(dir) {
+    if (state.page === 'install') {
+      var last = state.platform.steps.length - 1;
+      if (dir > 0 ? state.step < last : state.step > 0) { state.step += dir; render(); return; }
     }
+    var i = ORDER.indexOf(state.page);
+    state.page = ORDER[Math.max(0, Math.min(ORDER.length - 1, i + dir))];
+    if (state.page === 'install') state.step = dir > 0 ? 0 : state.platform.steps.length - 1;
     render();
   }
-  function back() {
-    if (state.page === 'select') state.page = 'welcome';
-    else if (state.page === 'ready') state.page = 'select';
-    else if (state.page === 'install') {
-      if (state.step > 0) state.step--;
-      else state.page = 'ready';
-    }
-    else if (state.page === 'complete') { state.page = 'install'; state.step = state.platform.steps.length - 1; }
-    render();
-  }
+  function next() { go(1); }
+  function back() { go(-1); }
   function exit() {
     var dlgs = document.querySelectorAll('.dlg');
     for (var i = 0; i < dlgs.length; i++) dlgs[i].hidden = true;
     location.href = LINKS.home;
   }
-  window.addEventListener('pageshow', function (e) {
-    if (e.persisted) { hideBox(); wizard.hidden = state.page === 'install'; installing.hidden = state.page !== 'install'; }
-  });
+  window.addEventListener('pageshow', function (e) { if (e.persisted) hideBox(); });
   function cancel() {
-    if (state.page === 'complete') { exit(); return; }
-    showBox(exitbox);
+    if (state.page === 'complete') exit();
+    else showBox(exitbox);
   }
 
+  function setInert(on) {
+    [wizard, installing].forEach(function (d) {
+      if ('inert' in d) d.inert = on; else d.setAttribute('aria-hidden', on ? 'true' : 'false');
+    });
+  }
   function showBox(box) {
     box.hidden = false;
     wizard.classList.add('inactive'); installing.classList.add('inactive');
+    setInert(true);
     box.querySelector('button.default').focus({ preventScroll: true });
   }
   function hideBox() {
     helpbox.hidden = true; exitbox.hidden = true;
     wizard.classList.remove('inactive'); installing.classList.remove('inactive');
+    setInert(false);
     render();
   }
   function showHelp() { showBox(helpbox); }
-  function hideHelp() { hideBox(); }
 
   document.addEventListener('click', function (e) {
     var btn = e.target.closest('[data-act]');
     if (btn) {
-      var act = btn.getAttribute('data-act');
-      var modal = openModal();
-      if (modal && !btn.closest('#' + modal.id)) return;
+      var act = btn.getAttribute('data-act'), modal = openModal();
+      if (modal && !modal.contains(btn)) return;
       if (act === 'exit-yes') exit();
-      else if (act === 'exit-no') hideBox();
+      else if (act === 'exit-no' || act === 'help-close') hideBox();
       else if (act === 'next') next();
       else if (act === 'back') back();
       else if (act === 'cancel') cancel();
       else if (act === 'help') showHelp();
-      else if (act === 'help-close') hideHelp();
       else if (act === 'help-issues') { window.open(LINKS.issues, '_blank', 'noopener'); hideBox(); }
       else if (act === 'documentary') window.open(LINKS.documentary, '_blank', 'noopener');
       return;
@@ -786,19 +776,19 @@
     if (item) {
       state.platform = findPlatform(item.getAttribute('data-id')) || state.platform;
       render();
-      $('listbox').focus({ preventScroll: true });
+      focusList();
     }
   });
   document.addEventListener('dblclick', function (e) {
     if (e.target.closest('.listbox .item') && !openModal()) next();
   });
   document.addEventListener('mousedown', function (e) {
-    // clicking the wizard while the help box is open just beeps in Windows; here it does nothing.
     var modal = openModal();
-    if (modal && !e.target.closest('#' + modal.id)) e.preventDefault();
+    if (modal && !modal.contains(e.target)) e.preventDefault();
   });
 
   document.addEventListener('keydown', function (e) {
+    var target = e.target && e.target.closest ? e.target : (document.activeElement || document.body);
     if (e.key === 'F1') { e.preventDefault(); if (!exitbox.hidden) return; if (helpbox.hidden) showHelp(); else hideBox(); return; }
     var modal = openModal();
     if (modal) {
@@ -807,7 +797,7 @@
       else mnemonic(e, modal);
       return;
     }
-    if (e.target.closest && e.target.closest('.listbox')) {
+    if (target.closest('.listbox')) {
       var idx = PLATFORMS.indexOf(state.platform);
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Home' || e.key === 'End') {
         e.preventDefault();
@@ -817,39 +807,39 @@
         else idx = PLATFORMS.length - 1;
         state.platform = PLATFORMS[idx];
         render();
-        $('listbox').focus({ preventScroll: true });
+        focusList();
         return;
       }
     }
-    if (e.key === 'Enter' && !(e.target.tagName === 'A')) {
-      var def = (state.page === 'install' ? installing : wizard).querySelector('button.default');
+    if (e.key === 'Enter' && target.tagName !== 'A') {
+      var def = activeDlg().querySelector('button.default');
       if (def && document.activeElement !== def && !(document.activeElement && document.activeElement.tagName === 'BUTTON')) {
         e.preventDefault(); def.click();
       }
       return;
     }
     if (e.key === 'Escape') { e.preventDefault(); cancel(); return; }
-    mnemonic(e, state.page === 'install' ? installing : wizard);
+    mnemonic(e, activeDlg());
   });
 
   // Underlined letters work like Windows mnemonics: the plain key when focus is not in a list,
   // Alt+key always. In the platform list a plain letter jumps to the next matching platform.
   function mnemonic(e, dlg) {
     if (e.ctrlKey || e.metaKey || e.key.length !== 1 || !/[a-z]/i.test(e.key)) return false;
-    var key = e.key.toLowerCase();
-    if (!e.altKey && e.target.closest && e.target.closest('.listbox')) {
+    var key = e.key.toLowerCase(), target = e.target && e.target.closest ? e.target : (document.activeElement || document.body);
+    if (!e.altKey && target.closest('.listbox')) {
       var idx = PLATFORMS.indexOf(state.platform), n = PLATFORMS.length;
       for (var i = 1; i <= n; i++) {
         var cand = PLATFORMS[(idx + i) % n];
-        if (cand.name.toLowerCase().charAt(0) === key) { state.platform = cand; render(); $('listbox').focus({ preventScroll: true }); break; }
+        if (cand.name.toLowerCase().charAt(0) === key) { state.platform = cand; render(); focusList(); break; }
       }
       e.preventDefault();
       return true;
     }
-    var buttons = dlg.querySelectorAll('button');
-    for (var b = 0; b < buttons.length; b++) {
-      var u = buttons[b].querySelector('u');
-      if (u && !buttons[b].disabled && u.textContent.toLowerCase() === key) { e.preventDefault(); buttons[b].click(); return true; }
+    var btns = dlg.querySelectorAll('button');
+    for (var b = 0; b < btns.length; b++) {
+      var u = btns[b].querySelector('u');
+      if (u && !btns[b].disabled && u.textContent.toLowerCase() === key) { e.preventDefault(); btns[b].click(); return true; }
     }
     return false;
   }
@@ -859,16 +849,15 @@
     if (p && p !== state.platform) { state.platform = p; if (state.page === 'install') state.step = 0; render(); }
   });
 
-  // Scaling: the 640x480 stage is scaled to fit the viewport. Integer scales keep the
-  // pixel art and the bitmap font crisp; on small screens the wizard dialog gets priority
-  // and the background is cropped.
-  // The stage is scaled by a whole number of device pixels per stage pixel whenever the
-  // dialogs fit, so the bitmap font and the pixel art stay crisp; the background may be
-  // cropped to make that possible. Very small screens fall back to a fractional scale.
+  // Scaling: the scene is scaled by a whole number of device pixels per stage pixel whenever
+  // the dialogs fit, so the bitmap font and the pixel art stay crisp; the background may be
+  // cropped to make that possible. Phones in portrait get the narrow layout, filled to the
+  // width of the screen, and very small screens fall back to a fractional scale.
   var LANDSCAPE = { w: 640, h: 480, x0: 75, y0: 96, x1: 564, y1: 480 };   // scene size and the dialogs plus a small margin
   var PORTRAIT = { w: 320, h: 640, x0: 0, y0: 108, x1: 320, y1: 518 };
   var useZoom = 'zoom' in document.documentElement.style;
   var scale = 1, portrait = false, stageW = 640, stageH = 480;
+  var stagePos = $('stagepos'), stage = $('stage');
   function fit() {
     var vw = +query.vw || window.innerWidth, vh = +query.vh || window.innerHeight, dpr = +query.dpr || window.devicePixelRatio || 1;
     function crispScale(L) {
@@ -878,7 +867,7 @@
     var L = LANDSCAPE, s = crispScale(L);
     if (s < 0.8) s = Math.max(0.5, Math.min(vw / (L.x1 - L.x0 + 12), vh / (L.y1 - L.y0)));   // small screens: readability over crispness
     portrait = vw < vh && s < 1;
-    if (portrait) {   // phones: narrow layout, filled to the width of the screen
+    if (portrait) {
       L = PORTRAIT;
       s = Math.max(0.5, Math.min(vw / (L.x1 - L.x0), vh / (L.y1 - L.y0)));
     }
@@ -888,163 +877,74 @@
       if (size > v) o = (e1 - e0) * s <= v ? Math.min(Math.max(o, -e0 * s), v - e1 * s) : (v - (e0 + e1) * s) / 2;
       return Math.round(o * dpr) / dpr;
     }
-    var pos = $('stagepos'), stage = $('stage');
     stage.classList.toggle('portrait', portrait);
-    pos.style.left = offset(vw, L.w * s, L.x0, L.x1) + 'px';
-    pos.style.top = offset(vh, L.h * s, L.y0, L.y1) + 'px';
-    if (useZoom) stage.style.zoom = s;
+    stagePos.style.left = offset(vw, L.w * s, L.x0, L.x1) + 'px';
+    stagePos.style.top = offset(vh, L.h * s, L.y0, L.y1) + 'px';
+    if (useZoom) stage.style.zoom = String(s);
     else stage.style.transform = 'scale(' + s + ')';
     scale = s;
   }
+  var raf = window.requestAnimationFrame || function (f) { return setTimeout(f, 16); };
+  var fitPending = false;
+  function scheduleFit() {
+    if (fitPending) return;
+    fitPending = true;
+    raf(function () { fitPending = false; fit(); });
+  }
+  window.addEventListener('resize', scheduleFit);
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', scheduleFit);
 
   // Windows can be dragged around by their title bar, like the real thing.
   (function () {
     var drag = null;
+    function move(e) {
+      if (e.pointerId !== drag.id) return;
+      var dx = (e.clientX - drag.x) / scale, dy = (e.clientY - drag.y) / scale;
+      drag.dlg.style.left = Math.round(Math.max(-drag.w + 60, Math.min(stageW - 60, drag.left + dx))) + 'px';
+      drag.dlg.style.top = Math.round(Math.max(0, Math.min(stageH - 21, drag.top + dy))) + 'px';
+    }
+    function stop(e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      drag = null;
+      document.removeEventListener('pointermove', move);
+      document.removeEventListener('pointerup', stop);
+      document.removeEventListener('pointercancel', stop);
+    }
     document.addEventListener('pointerdown', function (e) {
       var bar = e.target.closest('.title-bar');
       if (!bar || e.target.closest('button') || e.button !== 0) return;
       var dlg = bar.parentNode;
       if (dlg.classList.contains('inactive')) return;
-      drag = { dlg: dlg, x: e.clientX, y: e.clientY, left: dlg.offsetLeft, top: dlg.offsetTop, id: e.pointerId };
+      drag = { dlg: dlg, x: e.clientX, y: e.clientY, left: dlg.offsetLeft, top: dlg.offsetTop, w: dlg.offsetWidth, id: e.pointerId };
+      document.addEventListener('pointermove', move);
+      document.addEventListener('pointerup', stop);
+      document.addEventListener('pointercancel', stop);
       try { bar.setPointerCapture(e.pointerId); } catch (err) { /* synthetic events */ }
       e.preventDefault();
     });
-    document.addEventListener('pointermove', function (e) {
-      if (!drag || e.pointerId !== drag.id) return;
-      var dx = (e.clientX - drag.x) / scale, dy = (e.clientY - drag.y) / scale;
-      var w = drag.dlg.offsetWidth, h = drag.dlg.offsetHeight;
-      var left = Math.max(-w + 60, Math.min(stageW - 60, drag.left + dx));
-      var top = Math.max(0, Math.min(stageH - 21, drag.top + dy));
-      drag.dlg.style.left = Math.round(left) + 'px';
-      drag.dlg.style.top = Math.round(top) + 'px';
-    });
-    function stop(e) { if (drag && e.pointerId === drag.id) drag = null; }
-    document.addEventListener('pointerup', stop);
-    document.addEventListener('pointercancel', stop);
   })();
-  window.addEventListener('resize', fit);
-  if (window.visualViewport) window.visualViewport.addEventListener('resize', fit);
+
   fit();
   render();
-  (document.fonts ? document.fonts.ready : Promise.resolve()).then(function () {
-    if (!document.fonts || document.fonts.check('11px "Pixelated MS Sans Serif"')) $('stage').classList.add('pixelfont');
-  });
+  function markPixelFont() {
+    if (!document.fonts || document.fonts.check('11px "Pixelated MS Sans Serif"')) stage.classList.add('pixelfont');
+  }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(markPixelFont); else markPixelFont();
+  ['select', 'ready', 'complete'].forEach(function (name) { new Image().src = 'assets/' + name + '.png'; });
   if (query.help === '1') showHelp();
   if (query.exit === '1') showBox(exitbox);
-  if (query.keytest === '1') {
-    var log = [];
-    function key(k, alt) { document.dispatchEvent(new KeyboardEvent('keydown', { key: k, altKey: !!alt, bubbles: true, cancelable: true })); }
-    key('n'); log.push('n->' + state.page);
-    key('b'); log.push('b->' + state.page);
-    key('N', true); log.push('altN->' + state.page);
-    key('Escape'); log.push('esc->exitbox:' + !exitbox.hidden);
-    key('n'); log.push('no->exitbox:' + !exitbox.hidden + ',page:' + state.page);
-    key('F1'); log.push('f1->help:' + !helpbox.hidden);
-    key('c'); log.push('c->help:' + !helpbox.hidden);
-    state.page = 'select'; state.platform = PLATFORMS[0]; render(); $('listbox').focus(); key('n'); log.push('list n->' + state.platform.id + ',page:' + state.page);
-    var pre = document.createElement('pre'); pre.id = 'keytest'; pre.textContent = log.join(' | ');
-    document.body.appendChild(pre);
-  }
-  if (query.dragtest === '1') {
-    var bar = wizard.querySelector('.title-bar'), before = wizard.offsetLeft + ',' + wizard.offsetTop;
-    function pe(type, x, y) { bar.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 1, button: 0 })); }
-    pe('pointerdown', 300, 300); pe('pointermove', 340, 360); pe('pointerup', 340, 360);
-    var pre = document.createElement('pre'); pre.id = 'dragtest';
-    pre.textContent = 'scale ' + scale + ' before ' + before + ' after ' + wizard.offsetLeft + ',' + wizard.offsetTop;
-    document.body.appendChild(pre);
-  }
 
-  // ?check=1 renders every page for every platform and reports text that would overflow.
-  if (query.check === '1') (document.fonts ? document.fonts.ready : Promise.resolve()).then(function () {
-    var report = [];
-    var scale = $('stage').getBoundingClientRect().width / 640;
-    function orphans(container) {
-      // word-level line detection: flag blocks whose last line holds a single short word
-      var out = [], els = container.querySelectorAll('p, li');
-      for (var i = 0; i < els.length; i++) {
-        var walker = document.createTreeWalker(els[i], NodeFilter.SHOW_TEXT), node, words = [];
-        while ((node = walker.nextNode())) {
-          var text = node.nodeValue, re = /\S+/g, m;
-          while ((m = re.exec(text))) {
-            var r = document.createRange(); r.setStart(node, m.index); r.setEnd(node, m.index + m[0].length);
-            var rc = r.getBoundingClientRect();
-            if (rc.width) words.push({ top: Math.round(rc.top / scale / 13), w: rc.width / scale, t: m[0] });
-          }
-        }
-        if (words.length < 2) continue;
-        var lastTop = words[words.length - 1].top, first = words[0].top;
-        if (lastTop === first) continue;
-        var lastWords = words.filter(function (w) { return w.top === lastTop; });
-        var width = lastWords.reduce(function (a, w) { return a + w.w; }, 0);
-        if ((lastWords.length === 1 && lastWords[0].t.length <= 20) || width < 40) {
-          var byLine = {};
-          words.forEach(function (w) { byLine[w.top] = (byLine[w.top] || []).concat(w.t); });
-          out.push('ORPHAN "' + lastWords.map(function (w) { return w.t; }).join(' ') + '" LINES=' + JSON.stringify(byLine));
-        }
-      }
-      return out.join(' ');
-    }
-    // Any box that clips must keep at least 2 stage px between its padding edge and its text,
-    // otherwise a fractional zoom can round the clip edge onto the first glyph column.
-    function clipRisk() {
-      var out = [], els = $('stage').querySelectorAll('*');
-      for (var i = 0; i < els.length; i++) {
-        var el = els[i], cs = getComputedStyle(el);
-        if (el.hidden || el.closest('[hidden]') || (cs.overflowX === 'visible' && cs.overflowY === 'visible')) continue;
-        var box = el.getBoundingClientRect();
-        var padLeft = box.left + el.clientLeft, padTop = box.top + el.clientTop;
-        var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT), node;
-        while ((node = walker.nextNode())) {
-          if (!node.nodeValue.trim()) continue;
-          var r = document.createRange(); r.selectNodeContents(node);
-          var rc = r.getBoundingClientRect();
-          if (!rc.width) continue;
-          if (rc.left - padLeft < 2 * scale - 0.01 || rc.top - padTop < 1 * scale - 0.01) {
-            out.push(' CLIPRISK(' + (el.id || el.className) + ':' + node.nodeValue.trim().slice(0, 12) + ')'); break;
-          }
-        }
-      }
-      return out.join('');
-    }
-    var canvas = document.createElement('canvas').getContext('2d');
-    canvas.font = '11px "Pixelated MS Sans Serif"';
-    report.push('welcome-line2-width ' + canvas.measureText('Press the Next button to start the installation. You can press the').width);
-    if (document.fonts) { var faces = []; document.fonts.forEach(function (f) { faces.push(f.family + '/' + f.weight + ':' + f.status); }); report.push('fonts ' + faces.join(' ')); }
-    for (var pi = 0; pi < PLATFORMS.length; pi++) {
-      state.platform = PLATFORMS[pi];
-      state.page = 'ready'; render();
-      var b = $('body');
-      report.push(state.platform.id + ' ready ' + b.scrollHeight + '/' + b.clientHeight + (b.scrollHeight > b.clientHeight ? ' OVERFLOW' : '') + (b.scrollWidth > b.clientWidth + 2 ? ' WIDE' : '') + ' ' + orphans(b) + clipRisk());
-      for (var si = 0; si < state.platform.steps.length; si++) {
-        state.page = 'install'; state.step = si; render();
-        var sb = $('step-body'), sp = $('step-path');
-        report.push(state.platform.id + ' step' + si + ' ' + sb.scrollHeight + '/' + sb.clientHeight + (sb.scrollHeight > sb.clientHeight ? ' OVERFLOW' : '') + (sb.scrollWidth > sb.clientWidth + 2 ? ' WIDE' : '') +
-                    (sp.scrollWidth > sp.clientWidth ? ' PATH-CLIPPED' : '') + ' ' + orphans(sb));
-      }
-    }
-    state.page = 'welcome'; render(); report.push('welcome ' + orphans($('body')));
-    state.page = 'complete'; render(); report.push('complete ' + orphans($('body')));
-    report.push('help ' + orphans($('help-msg')));
-    $('stage').classList.add('portrait');
-    for (pi = 0; pi < PLATFORMS.length; pi++) {
-      state.platform = PLATFORMS[pi];
-      state.page = 'ready'; render();
-      b = $('body');
-      report.push('portrait ' + state.platform.id + ' ready ' + b.scrollHeight + '/' + b.clientHeight + (b.scrollHeight > b.clientHeight ? ' OVERFLOW' : '') + (b.scrollWidth > b.clientWidth + 2 ? ' WIDE' : '') + ' ' + orphans(b));
-      for (si = 0; si < state.platform.steps.length; si++) {
-        state.page = 'install'; state.step = si; render();
-        sb = $('step-body');
-        var hp = $('installing').querySelector('.hdr');
-        report.push('portrait ' + state.platform.id + ' step' + si + ' ' + sb.scrollHeight + '/' + sb.clientHeight + (sb.scrollHeight > sb.clientHeight ? ' OVERFLOW' : '') + (sb.scrollWidth > sb.clientWidth + 2 ? ' WIDE' : '') +
-                    (hp.scrollWidth > hp.clientWidth + 2 ? ' PATH-CLIPPED' : '') + ' ' + orphans(sb) + clipRisk());
-      }
-    }
-    state.page = 'welcome'; render(); report.push('portrait welcome ' + orphans($('body')));
-    state.page = 'complete'; render(); report.push('portrait complete ' + orphans($('body')));
-    $('stage').classList.remove('portrait');
-    var pre = document.createElement('pre'); pre.id = 'check'; pre.textContent = report.join('\n');
-    document.body.appendChild(pre);
-  });
+  // Test hooks (?check=1, ?keytest=1, ?dragtest=1) live in assets/selfcheck.js.
+  if (query.check || query.keytest || query.dragtest) {
+    window.__isleTest = {
+      query: query, state: state, render: render, $: $, PLATFORMS: PLATFORMS, stage: stage,
+      wizard: wizard, installing: installing, helpbox: helpbox, exitbox: exitbox,
+      scale: function () { return scale; }
+    };
+    var test = document.createElement('script');
+    test.src = 'assets/selfcheck.js';
+    document.head.appendChild(test);
+  }
 })();
 </script>
 </body>

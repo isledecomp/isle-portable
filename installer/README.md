@@ -18,7 +18,10 @@ with all asset paths relative, so it works under any sub-path).
   pixel-accurate MS Sans Serif. The two woff2 fonts are embedded in it as data
   URIs (our only change to the file) so the page also works when opened
   straight from disk via `file://`, where Chrome refuses to load fonts.
-* `favicon.png` is the game's own icon (`ISLE/res/isle.ico`).
+* `favicon.png`, `favicon.svg` and `apple-touch-icon.png` are the same icons
+  isle.pizza uses.
+* `selfcheck.js` holds the test hooks below; it is only loaded when one of the
+  test URL parameters is present, so visitors never download it.
 
 ## Working on it
 
