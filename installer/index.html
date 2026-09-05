@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LEGO Island Installation</title>
+<meta name="description" content="A guided installer that walks you through setting up LEGO Island (1997) with isle-portable on Windows, macOS, Linux, the web, phones, tablets and consoles.">
+<link rel="icon" href="assets/favicon.png">
+<link rel="stylesheet" href="assets/98.css">
+<style>
+  :root {
+    --face: #d4d0c8;          /* Windows 2000 "3D Objects" colour, as in the original screenshots */
+    --shadow: #808080;
+    --light: #ffffff;
+    --dark: #404040;
+    --caption-a: #0a246a;     /* active title bar gradient */
+    --caption-b: #a6caf0;
+    --highlight: #0a246a;
+    --progress: #000080;
+    --link: #0000ff;
+  }
+  html, body { height: 100%; margin: 0; overflow: hidden; background: #000; }
+  body { touch-action: manipulation; }
+
+  /* ---- 640x480 stage, scaled to the viewport ---- */
+  #viewport { position: fixed; inset: 0; overflow: hidden; }
+  #stage {
+    position: absolute; left: 50%; top: 50%; width: 640px; height: 480px;
+    transform-origin: 0 0;
+    font-family: "Pixelated MS Sans Serif", "MS Sans Serif", Arial, sans-serif;
+    font-size: 11px; line-height: 13px; color: #000;
+    -webkit-font-smoothing: none;
+  }
+  #stage img { image-rendering: pixelated; image-rendering: crisp-edges; }
+  #stage .bg { position: absolute; left: 0; top: 0; width: 640px; height: 480px; }
+
+  /* ---- dialogs ---- */
+  .dlg {
+    position: absolute; box-sizing: border-box; padding: 0;
+    background: var(--face);
+    box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px var(--face), inset -2px -2px var(--shadow), inset 2px 2px #fff;
+  }
+  .dlg .title-bar {
+    position: absolute; left: 3px; top: 3px; right: 3px; height: 18px; box-sizing: border-box;
+    padding: 0 2px 0 3px; margin: 0;
+    background: linear-gradient(90deg, var(--caption-a), var(--caption-b));
+  }
+  .dlg.inactive .title-bar { background: linear-gradient(90deg, #808080, #c0c0c0); }
+  .dlg.inactive .title-bar-text { color: var(--face); }
+  .title-bar-text { font-size: 11px; line-height: 13px; }
+  .title-bar-controls button { width: 16px; height: 14px; min-width: 16px; min-height: 14px; margin-left: 2px; }
+  .title-bar-controls button[aria-label="Help"] { margin-left: 0; }
+  .dlg .title-bar-controls button:focus { outline: none; }
+
+  .dlg button.btn {
+    position: absolute; box-sizing: border-box; width: 79px; height: 23px; min-width: 0; min-height: 0;
+    padding: 0; margin: 0; font-size: 11px; line-height: 13px; background: var(--face);
+  }
+  .dlg button.btn.default {
+    box-shadow: inset 0 0 0 1px #000, inset 2px 2px #fff, inset -2px -2px var(--shadow);
+  }
+  .dlg button.btn.default:not(:disabled):active {
+    box-shadow: inset 0 0 0 1px #000, inset 2px 2px var(--shadow), inset -2px -2px #fff;
+  }
+  .dlg button.btn:disabled { color: var(--shadow); text-shadow: 1px 1px 0 #fff; }
+  .dlg button.btn u { text-decoration: underline; }
+
+  .sep { position: absolute; left: 17px; top: 314px; width: 434px; height: 2px;
+         border-top: 1px solid var(--shadow); border-bottom: 1px solid #fff; box-sizing: border-box; }
+
+  /* ---- wizard dialog (465x355 @ 87,108, exactly like the Wise dialogs) ---- */
+  #wizard { left: 87px; top: 108px; width: 465px; height: 355px; }
+  #wizard .bitmap { position: absolute; left: 17px; top: 37px; width: 122px; height: 262px; }
+  #wizard h1 {
+    position: absolute; left: 153px; top: 30px; width: 301px; margin: 0;
+    font: italic bold 25px/30px "Times New Roman", Times, "Liberation Serif", "Tinos", serif;
+    white-space: nowrap;
+  }
+  #wizard .body { position: absolute; left: 153px; top: 89px; width: 294px; height: 222px; overflow: auto; }
+  #wizard .body.selectpage { overflow: visible; }
+  #wizard .body.welcome { width: 272px; }
+  #wizard .body.complete { top: 128px; left: 155px; width: 277px; height: 185px; }
+  #wizard .btn-back { left: 187px; top: 325px; }
+  #wizard .btn-next { left: 266px; top: 325px; }
+  #wizard .btn-cancel { left: 372px; top: 325px; }
+  #wizard .btn-wide { left: 211px; top: 323px; width: 140px; height: 26px; }
+
+  .body p { margin: 0 0 13px 0; }
+  .body p:last-child { margin-bottom: 0; }
+  .body ul { margin: 0 0 13px 0; padding: 0 0 0 11px; list-style: none; }
+  .body li { position: relative; margin: 0; }
+  .body li::before { content: "\2022"; position: absolute; left: -9px; }
+  a { color: var(--link); }
+  a:visited { color: #800080; }
+  b { font-weight: bold; }
+  .small { color: var(--dark); }
+
+  /* group box + list box on the platform page */
+  fieldset.group {
+    position: absolute; left: 0; top: 35px; width: 298px; height: 182px; box-sizing: border-box;
+    margin: 0; padding: 8px;
+    border-image: none; border: none;
+    box-shadow: inset -1px -1px #fff, inset 1px 1px var(--shadow), inset -2px -2px var(--shadow), inset 2px 2px #fff;
+  }
+  .listbox {
+    box-sizing: border-box; height: 164px; background: #fff; padding: 2px; overflow-y: auto; outline: none; cursor: default;
+    box-shadow: inset -1px -1px #fff, inset 1px 1px var(--shadow), inset -2px -2px var(--face), inset 2px 2px #0a0a0a;
+  }
+  .listbox .item { padding: 0 3px; white-space: nowrap; overflow: hidden; }
+  .listbox .item.sel { background: var(--highlight); color: #fff; }
+  .listbox:focus .item.sel { outline: 1px dotted #ffff00; outline-offset: -1px; }
+  .listbox .item .tag { color: var(--shadow); }
+  .listbox .item.sel .tag { color: var(--face); }
+
+  /* ---- "Installing" progress dialog ---- */
+  #installing { left: 100px; top: 189px; width: 440px; height: 279px; }
+  #installing .hdr { position: absolute; left: 12px; top: 36px; width: 416px; height: 26px; white-space: nowrap; overflow: hidden; }
+  #installing .hdr .path { overflow: hidden; text-overflow: ellipsis; }
+  #installing .stepbody { position: absolute; left: 12px; top: 66px; width: 416px; height: 143px; overflow: auto; }
+  #installing .btn-back { left: 165px; top: 249px; }
+  #installing .btn-next { left: 244px; top: 249px; }
+  #installing .btn-cancel { left: 350px; top: 249px; }
+  .progress {
+    position: absolute; left: 12px; top: 217px; width: 416px; height: 22px; box-sizing: border-box; padding: 2px;
+    background: #fff;
+    box-shadow: inset -1px -1px #fff, inset 1px 1px var(--shadow), inset -2px -2px var(--face), inset 2px 2px #0a0a0a;
+  }
+  .progress .fill { position: absolute; left: 2px; top: 2px; bottom: 2px; width: 0; background: var(--progress); }
+  .progress .pct { position: absolute; left: 2px; right: 2px; top: 2px; bottom: 2px; text-align: center; line-height: 18px; font-weight: bold; }
+  .progress .pct.back { color: var(--progress); }
+  .progress .pct.front { color: #fff; }
+
+  /* ---- help message box ---- */
+  #helpbox { left: 118px; top: 150px; width: 404px; height: 186px; }
+  #helpbox .icon { position: absolute; left: 14px; top: 34px; width: 32px; height: 32px; }
+  #helpbox .msg { position: absolute; left: 60px; top: 33px; width: 330px; }
+  #helpbox .btn-issues { left: 96px; top: 152px; width: 128px; }
+  #helpbox .btn-close { left: 230px; top: 152px; }
+
+  [hidden] { display: none !important; }
+  .sr { position: absolute; left: -9999px; }
+</style>
+</head>
+<body>
+<div id="viewport">
+  <div id="stage">
+    <img class="bg" src="assets/background.png" alt="" width="640" height="480">
+
+    <!-- main wizard dialog -->
+    <div id="wizard" class="dlg window" role="dialog" aria-labelledby="wizard-title">
+      <div class="title-bar">
+        <div class="title-bar-text" id="wizard-title">LEGO Island Installation</div>
+        <div class="title-bar-controls">
+          <button aria-label="Help" data-act="help" title="Help (F1)"></button>
+          <button aria-label="Close" data-act="cancel" title="Close"></button>
+        </div>
+      </div>
+      <img class="bitmap" id="bitmap" src="assets/welcome.png" alt="" width="122" height="262">
+      <h1 id="heading">Welcome!</h1>
+      <div class="body" id="body"></div>
+      <div class="sep"></div>
+      <div id="buttons"></div>
+    </div>
+
+    <!-- step-by-step "Installing" dialog -->
+    <div id="installing" class="dlg window" role="dialog" aria-labelledby="installing-title" hidden>
+      <div class="title-bar">
+        <div class="title-bar-text" id="installing-title">Installing</div>
+        <div class="title-bar-controls">
+          <button aria-label="Help" data-act="help" title="Help (F1)"></button>
+          <button aria-label="Close" data-act="cancel" title="Close"></button>
+        </div>
+      </div>
+      <div class="hdr"><div class="what" id="step-what"></div><div class="path" id="step-path"></div></div>
+      <div class="stepbody" id="step-body"></div>
+      <div class="progress" aria-live="polite">
+        <div class="fill" id="fill"></div>
+        <div class="pct back" id="pct-back">0%</div>
+        <div class="pct front" id="pct-front">0%</div>
+      </div>
+      <button class="btn btn-back" data-act="back" accesskey="b">&lt; <u>B</u>ack</button>
+      <button class="btn btn-next default" data-act="next" accesskey="n"><u>N</u>ext &gt;</button>
+      <button class="btn btn-cancel" data-act="cancel" accesskey="c"><u>C</u>ancel</button>
+    </div>
+
+    <!-- help message box -->
+    <div id="helpbox" class="dlg window" role="alertdialog" aria-labelledby="help-title" hidden>
+      <div class="title-bar">
+        <div class="title-bar-text" id="help-title">LEGO Island Installation</div>
+        <div class="title-bar-controls">
+          <button aria-label="Close" data-act="help-close" title="Close"></button>
+        </div>
+      </div>
+      <svg class="icon" viewBox="0 0 32 32" shape-rendering="crispEdges" aria-hidden="true">
+        <path d="M6 2h20v1h2v1h1v1h1v2h1v14h-1v2h-1v1h-1v1h-2v1h-9v1h-1v1h-1v1h-1v1h-1v1h-1v1h-1v1h-1v-1h-1v-1h-1v-1h-1v-1h-1v-1h-1v-1h-1v-1h-1v-2h-1v-2h-1v-2h-1v-14h1v-2h1v-1h1v-1h2v-1z" fill="#000"/>
+        <path d="M6 3h20v1h2v1h1v2h1v13h-1v2h-1v1h-1v1h-2v1h-9v1h-1v1h-1v1h-1v1h-1v1h-1v1h-1v-1h-1v-1h-1v-1h-1v-1h-1v-2h-1v-2h-1v-2h-1v-13h1v-2h1v-1h1v-1h2v-1z" fill="#fff"/>
+        <path d="M13 8h6v1h2v1h1v1h1v4h-1v1h-1v1h-1v1h-1v1h-1v2h-4v-3h1v-1h1v-1h1v-1h1v-1h1v-2h-1v-1h-2v1h-1v1h-3v-2h1v-1h1v-1z" fill="#000080"/>
+        <path d="M14 21h4v3h-4z" fill="#000080"/>
+        <path d="M13 9h6v1h1v1h1v1h-1v-1h-1v-1h-6v1h-1v1h-1v-1h1v-1h1z" fill="#8080ff"/>
+      </svg>
+      <div class="msg" id="help-msg">
+        <p><b>Need help?</b> If something does not work, a step is unclear, or your device is not listed, ask the isle-portable team and community on GitHub.</p>
+        <p>
+          <a href="https://github.com/isledecomp/isle-portable/issues" target="_blank" rel="noopener">Report a problem or ask a question</a> (GitHub Issues)<br>
+          <a href="https://matrix.to/#/#isledecomp:matrix.org" target="_blank" rel="noopener">Chat with the community on Matrix</a>
+        </p>
+        <p class="small">Tip: press F1 at any time to open this window.</p>
+      </div>
+      <button class="btn btn-issues default" data-act="help-issues"><u>O</u>pen GitHub Issues</button>
+      <button class="btn btn-close" data-act="help-close"><u>C</u>lose</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var REL = 'https://github.com/isledecomp/isle-portable/releases/download/continuous/';
+  var LINKS = {
+    releases: 'https://github.com/isledecomp/isle-portable/releases/tag/continuous',
+    issues: 'https://github.com/isledecomp/isle-portable/issues',
+    docker: 'https://github.com/isledecomp/isle-portable/tree/master/docker/emscripten',
+    home: 'https://legoisland.org/',
+    documentary: 'https://www.youtube.com/watch?v=bG55COe_f8I',
+    pizza: 'https://isle.pizza/'
+  };
+
+  function dl(file, label) {
+    return '<a href="' + REL + file + '">' + (label || file) + '</a>';
+  }
+  function ext(url, label) {
+    return '<a href="' + url + '" target="_blank" rel="noopener">' + label + '</a>';
+  }
+
+  // Shared wording -------------------------------------------------------
+  var DISC = 'Your LEGO Island CD-ROM (1997), or a disc image (.iso) made from it. Any retail version works, 1.0 or 1.1, in any language.';
+  var MERGE = 'On a computer, create a new folder named <b>LEGO</b>. Copy everything from the disc\u2019s <b>LEGO</b> folder into it, ' +
+              'then also copy the <b>DATA</b> folder that sits inside the disc\u2019s <b>DATA\\DISK\\LEGO</b> folder into it. ' +
+              'When you are done, your LEGO folder contains two folders, <b>SCRIPTS</b> and <b>DATA</b> (about 450 MB). ' +
+              'Keep the name LEGO in capital letters.';
+  var WHOLE_DISC = function (where) {
+    return 'Insert your LEGO Island CD, or double-click your .iso file to mount it. Select <b>everything</b> on the disc and copy it into a new folder ' +
+           'named <b>CD</b> inside ' + where + ' (about 450 MB). The disc is not needed after this.';
+  };
+  var CONFIG_TOOL = function (name) {
+    return 'On the <b>Game</b> tab, click <b>Browse</b> next to <b>Data Path</b> and choose the <b>CD</b> folder you just created. ' +
+           'The other tabs let you pick the screen resolution, renderer and controls, but the defaults are fine. ' +
+           'Click <b>Save and Launch</b> \u2014 the island awaits.';
+  };
+  var EXTRAS = { what: 'Adding extras (optional):', path: 'isle-hdaudio.zip', href: REL + 'isle-hdaudio.zip',
+    body: '<p>Two optional packs:</p><ul>' +
+          '<li>' + dl('isle-hdaudio.zip', 'HD audio pack') + ' (about 300 MB) \u2014 speech, music and sound effects from the original studio masters.</li>' +
+          '<li>' + dl('isle-assets.zip', 'Custom asset pack') + ' (about 450 MB) \u2014 widescreen fixes and other enhancements.</li></ul>' +
+          '<p>Unzip them into your <b>CD</b> folder. In the settings tool, open <b>Extensions</b>, tick <b>Enabled</b> under <b>Custom Assets</b> and add the .si files you want.</p>' };
+
+  // Platforms ------------------------------------------------------------
+  var PLATFORMS = [
+    {
+      id: 'windows', name: 'Windows', tag: '',
+      requires: [
+        'A PC running Windows 10 or 11. Windows on ARM and 32-bit Windows are covered as well.',
+        DISC,
+        'About 500 MB of free disk space.'
+      ],
+      steps: [
+        { what: 'Downloading LEGO Island for Windows:', path: 'isle-0.1-Windows-x64.zip', href: REL + 'isle-0.1-Windows-x64.zip',
+          body: '<p>Download the build that matches your PC:</p><ul>' +
+                '<li>' + dl('isle-0.1-Windows-x64.zip', 'Windows 64-bit') + ' (about 21 MB) \u2014 for almost every PC with Windows 10 or 11.</li>' +
+                '<li>' + dl('isle-0.1-Windows-arm64.zip', 'Windows on ARM') + ' \u2014 for ARM laptops such as the Surface Pro X.</li>' +
+                '<li>' + dl('isle-0.1-Windows-x86.zip', 'Windows 32-bit') + ' \u2014 for 32-bit versions of Windows.</li></ul>' +
+                '<p>Your browser may warn that the file is not commonly downloaded \u2014 that is expected, keep it.</p>' },
+        { what: 'Extracting files:', path: 'C:\\Games\\LEGO Island\\',
+          body: '<p>Right-click the downloaded .zip file and choose <b>Extract All\u2026</b>, then pick a folder you will remember, for example <b>C:\\Games\\LEGO Island</b>.</p>' +
+                '<p>Inside the extracted folder, open <b>bin</b>. It contains <b>isle.exe</b> (the game) and <b>isle-config.exe</b> (the settings tool).</p>' },
+        { what: 'Copying game files:', path: 'C:\\Games\\LEGO Island\\CD\\',
+          body: '<p>' + WHOLE_DISC('your <b>LEGO Island</b> folder') + '</p>' },
+        { what: 'Configuring:', path: 'isle-config.exe',
+          body: '<p>Run <b>isle-config.exe</b>. ' + CONFIG_TOOL() + '</p>' +
+                '<p>No isle-config (ARM or 32-bit build)? Create a folder named <b>LEGO</b> next to isle.exe. Copy the contents of the disc\u2019s <b>LEGO</b> folder into it, then also copy the <b>DATA</b> folder from the disc\u2019s <b>DATA\\DISK\\LEGO</b> folder into it. The game finds it automatically.</p>' },
+        { what: 'Launching:', path: 'isle.exe',
+          body: '<p>From now on, simply run <b>isle.exe</b> to play.</p><p>If Windows SmartScreen says \u201cWindows protected your PC\u201d, click <b>More info</b>, then <b>Run anyway</b> \u2014 the builds are not signed, but they come straight from the project\u2019s GitHub.</p>' },
+        EXTRAS
+      ]
+    },
+    {
+      id: 'macos', name: 'macOS', tag: '',
+      requires: [
+        'A Mac with Apple silicon (M1 or later) or an Intel processor, running a recent version of macOS.',
+        DISC,
+        'About 500 MB of free disk space.'
+      ],
+      steps: [
+        { what: 'Downloading LEGO Island for macOS:', path: 'isle-0.1-Darwin-arm64.dmg', href: REL + 'isle-0.1-Darwin-arm64.dmg',
+          body: '<p>Download the build for your Mac:</p><ul>' +
+                '<li>' + dl('isle-0.1-Darwin-arm64.dmg', 'Apple silicon') + ' (about 23 MB) \u2014 for Macs with an M1, M2, M3 or M4 chip.</li>' +
+                '<li>' + dl('isle-0.1-Darwin-x64.dmg', 'Intel') + ' \u2014 for Intel-based Macs.</li></ul>' +
+                '<p>Not sure which one? Click the Apple menu \u2192 <b>About This Mac</b>. If the <b>Chip</b> line starts with \u201cApple\u201d, pick Apple silicon.</p>' },
+        { what: 'Installing:', path: '/Applications/Isle Portable.app',
+          body: '<p>Open the downloaded .dmg. It contains two apps: <b>Isle Portable</b> (the game) and <b>Configure Isle Portable</b> (the settings tool). Drag both into your <b>Applications</b> folder (open a second Finder window and choose Go \u2192 Applications), then eject the disk image.</p>' },
+        { what: 'Copying game files:', path: '~/LEGO Island/CD/',
+          body: '<p>' + WHOLE_DISC('a new <b>LEGO Island</b> folder in your home folder') + '</p>' },
+        { what: 'Configuring:', path: 'Configure Isle Portable',
+          body: '<p>Open <b>Configure Isle Portable</b>. Because the apps are not notarized by Apple, macOS blocks them the first time: Control-click the app, choose <b>Open</b>, then <b>Open</b> again. On macOS Sequoia (15) and later, go to System Settings \u2192 <b>Privacy &amp; Security</b> instead, scroll down and click <b>Open Anyway</b>.</p>' +
+                '<p>' + CONFIG_TOOL() + '</p>' },
+        { what: 'Launching:', path: 'Isle Portable',
+          body: '<p>From now on, open <b>Isle Portable</b> to play (Control-click \u2192 Open the first time, same as above). Use <b>Configure Isle Portable</b> whenever you want to change the resolution, renderer or controls.</p>' },
+        EXTRAS
+      ]
+    },
+    {
+      id: 'linux', name: 'Linux', tag: 'incl. Steam Deck',
+      requires: [
+        'A 64-bit Linux PC (x86_64), or an ARM64 device with Flatpak. The Steam Deck works too.',
+        DISC,
+        'About 500 MB of free disk space.'
+      ],
+      steps: [
+        { what: 'Downloading LEGO Island for Linux:', path: 'Isle_Portable-x86_64.AppImage', href: REL + 'Isle_Portable-x86_64.AppImage',
+          body: '<p>Pick the package that suits you:</p><ul>' +
+                '<li>' + dl('Isle_Portable-x86_64.AppImage', 'AppImage') + ' (about 31 MB) \u2014 runs on any distribution, nothing to install. Recommended.</li>' +
+                '<li>' + dl('org.legoisland.Isle.x86_64.flatpak', 'Flatpak for x86_64') + ' or ' + dl('org.legoisland.Isle.aarch64.flatpak', 'ARM64') + ' \u2014 for Flatpak users, including the Steam Deck.</li>' +
+                '<li>' + dl('isle-0.1-Linux-x64.tar.gz', 'Tarball') + ' \u2014 plain binaries; the settings tool needs Qt 6 installed on your system.</li></ul>' },
+        { what: 'Installing:', path: '~/Games/Isle_Portable-x86_64.AppImage',
+          body: '<p><b>AppImage:</b> move the file somewhere permanent, then allow it to run: right-click \u2192 Properties \u2192 Permissions \u2192 <b>Allow executing file as program</b>, or run <b>chmod +x Isle_Portable-x86_64.AppImage</b> in a terminal.</p>' +
+                '<p><b>Flatpak:</b> open the .flatpak file with your software center (Discover, GNOME Software), or run <b>flatpak install ./org.legoisland.Isle.x86_64.flatpak</b>. On a Steam Deck, switch to Desktop Mode first.</p>' },
+        { what: 'Copying game files:', path: '~/Games/LEGO Island/CD/',
+          body: '<p>Insert your LEGO Island CD or open your .iso (most file managers mount it with a double-click, otherwise use Disk Image Mounter). Select <b>everything</b> on the disc and copy it into a new folder, for example <b>~/Games/LEGO Island/CD</b> (about 450 MB).</p>' },
+        { what: 'Configuring:', path: 'isle-config',
+          body: '<p><b>AppImage:</b> double-click it \u2014 it opens the settings tool first. <b>Flatpak:</b> right-click <b>LEGO Island</b> in your app menu and choose <b>Configure Settings</b>, or run <b>flatpak run --command=isle-config org.legoisland.Isle</b>. <b>Tarball:</b> run <b>bin/isle-config</b>.</p>' +
+                '<p>' + CONFIG_TOOL() + '</p>' },
+        { what: 'Launching:', path: 'Play Game',
+          body: '<p><b>AppImage:</b> run it and click <b>Save and Launch</b>. <b>Flatpak:</b> start <b>LEGO Island</b> from your app menu, or run <b>flatpak run org.legoisland.Isle</b>. <b>Tarball:</b> run <b>bin/isle</b>.</p>' +
+                '<p><b>Steam Deck:</b> in Desktop Mode, add the game to Steam (Games \u2192 Add a Non-Steam Game) so you can play it in Gaming Mode with the controller.</p>' },
+        EXTRAS
+      ]
+    },
+    {
+      id: 'web', name: 'Web browser', tag: 'isle.pizza',
+      requires: [
+        'A modern browser: Chrome, Edge, Firefox or Safari \u2014 on a computer, phone or tablet.',
+        'No download and no game disc required. The game files are provided by the website.'
+      ],
+      steps: [
+        { what: 'Opening:', path: 'https://isle.pizza', href: LINKS.pizza,
+          body: '<p>Go to ' + ext(LINKS.pizza, 'isle.pizza') + ' and click <b>Play</b>. That is it \u2014 the game runs right in your browser, no download and no disc needed. The game is streamed while you play, so the first start takes a moment.</p>' },
+        { what: 'Configuring:', path: 'isle.pizza \u2192 Configure',
+          body: '<p>Optional: on the <b>Configure</b> page you can choose the game version and language (English 1.0 or 1.1, plus other languages), the renderer and resolution, and your controls \u2014 keyboard and mouse, gamepad, or touch controls on phones and tablets.</p>' },
+        { what: 'Installing for offline play:', path: 'Configure \u2192 Extras \u2192 Offline Play',
+          body: '<p>Optional: to play without an internet connection, open <b>Configure \u2192 Extras \u2192 Offline Play</b> and install the game files (about 550 MB) in your browser. You can also add isle.pizza to your home screen or install it as an app from your browser\u2019s menu. Offline play works in Chromium-based browsers and Safari; Firefox is not supported yet.</p>' },
+        { what: 'Hosting it yourself (advanced):', path: 'ghcr.io/isledecomp/isle-portable-emscripten:master',
+          body: '<p>Optional: run the web version on your own computer or server with your own game files using Docker:</p>' +
+                '<p><b>docker run -p 6931:6931 -v /path/to/cd:/assets ghcr.io/isledecomp/isle-portable-emscripten:master</b></p>' +
+                '<p>Then open <b>http://localhost:6931</b>. Replace /path/to/cd with the folder holding a copy of your disc. An HTTPS example with Docker Compose is in the ' + ext(LINKS.docker, 'repository') + '.</p>' }
+      ]
+    },
+    {
+      id: 'android', name: 'Android', tag: '',
+      requires: [
+        'An Android phone or tablet (Android 5 or later).',
+        DISC + ' You also need a computer to prepare the game files.',
+        'About 500 MB of free storage.'
+      ],
+      steps: [
+        { what: 'Downloading LEGO Island for Android:', path: 'app-release.apk', href: REL + 'app-release.apk',
+          body: '<p>On your phone or tablet, download ' + dl('app-release.apk') + ' (about 12 MB). Your browser may warn that this type of file can harm your device \u2014 that is normal for apps from outside the Play Store. Keep the file.</p>' },
+        { what: 'Installing:', path: 'LEGO Island',
+          body: '<p>Open the downloaded file. If Android asks, allow your browser to install unknown apps, then tap <b>Install</b>. Do not open the game just yet.</p>' },
+        { what: 'Copying game files:', path: 'Download/LEGO/',
+          body: '<p>' + MERGE + '</p><p>Transfer this LEGO folder to your device \u2014 with a USB cable or through a cloud drive \u2014 into an ordinary folder such as <b>Download</b>.</p>' },
+        { what: 'Importing:', path: 'Select folder',
+          body: '<p>Open <b>LEGO Island</b>. Because it cannot find the game files yet, it asks you to pick a folder: tap <b>Select folder</b>, browse to your LEGO folder and confirm. The files are copied into the app\u2019s own storage, which takes a minute. Afterwards you can delete the copy in Download.</p>' },
+        { what: 'Launching:', path: 'LEGO Island',
+          body: '<p>Tap the LEGO Island icon to play. Touch controls are on by default \u2014 slide your finger to move and turn \u2014 and Bluetooth gamepads work as well.</p>' }
+      ]
+    },
+    {
+      id: 'ios', name: 'iPhone & iPad', tag: 'iOS',
+      requires: [
+        'An iPhone or iPad, plus a Mac or PC with a sideloading tool such as AltStore or Sideloadly and a free Apple ID.',
+        DISC + ' You also need a computer to prepare the game files.',
+        'About 500 MB of free storage.'
+      ],
+      steps: [
+        { what: 'Downloading LEGO Island for iOS:', path: 'isle-0.1-iOS-arm64.ipa', href: REL + 'isle-0.1-iOS-arm64.ipa',
+          body: '<p>On the computer you will sideload from, download ' + dl('isle-0.1-iOS-arm64.ipa') + ' (about 2 MB). LEGO Island is not on the App Store, so it has to be sideloaded.</p>' },
+        { what: 'Sideloading:', path: 'AltStore / Sideloadly',
+          body: '<p>Install ' + ext('https://altstore.io/', 'AltStore') + ' or ' + ext('https://sideloadly.io/', 'Sideloadly') + ' on your computer, connect your iPhone or iPad with a cable and sideload the .ipa. With a free Apple ID the app has to be re-signed every 7 days \u2014 AltStore does this automatically when your device is near your computer.</p>' +
+                '<p>Open <b>Isle Portable</b> once so it can create its folders, then close it.</p>' },
+        { what: 'Copying game files:', path: 'Files \u2192 iCloud Drive \u2192 LEGO',
+          body: '<p>' + MERGE + '</p><p>Put the LEGO folder where your device can reach it in the <b>Files</b> app \u2014 for example in iCloud Drive \u2014 or AirDrop it to your device.</p>' },
+        { what: 'Importing:', path: 'Select folder',
+          body: '<p>Open <b>Isle Portable</b>. Because it cannot find the game files yet, it offers to import them: tap <b>Select folder</b> and choose your LEGO folder. The files are copied into the app (Files \u2192 On My iPhone \u2192 Isle Portable \u2192 isle); you can delete the original afterwards.</p>' },
+        { what: 'Launching:', path: 'Isle Portable',
+          body: '<p>Tap <b>Isle Portable</b> to play. Touch controls are on by default, and Bluetooth or MFi game controllers work as well. Settings live in <b>isle.ini</b> inside the Isle Portable folder in Files.</p>' }
+      ]
+    },
+    {
+      id: 'switch', name: 'Nintendo Switch', tag: '',
+      requires: [
+        'A Nintendo Switch with the Atmosph\u00e8re custom firmware and the Homebrew Menu (tested with Atmosph\u00e8re 1.10.1 on firmware 21.0.0).',
+        DISC + ' You also need a computer to prepare the game files.',
+        'About 500 MB free on the microSD card.'
+      ],
+      steps: [
+        { what: 'Downloading LEGO Island for Switch:', path: 'isle.nro', href: REL + 'isle.nro',
+          body: '<p>Download ' + dl('isle.nro') + ' (about 9 MB) on your computer.</p>' },
+        { what: 'Installing:', path: 'sd:/switch/isle.nro',
+          body: '<p>Put the microSD card into your computer (or connect with an FTP homebrew) and copy <b>isle.nro</b> into the <b>switch</b> folder on the card.</p>' },
+        { what: 'Copying game files:', path: 'sd:/switch/isle/LEGO/',
+          body: '<p>' + MERGE + '</p><p>Create a folder named <b>isle</b> inside the <b>switch</b> folder and copy your LEGO folder into it, so that you end up with <b>sd:/switch/isle/LEGO/SCRIPTS</b> and <b>sd:/switch/isle/LEGO/DATA</b>. Folder names are case-sensitive here.</p>' },
+        { what: 'Launching:', path: 'Homebrew Menu (hold R)',
+          body: '<p>Important: start the Homebrew Menu by <b>holding R while launching any installed game</b> (title override). Started from the Album, the game gets too little memory and shows a black screen or crashes.</p>' +
+                '<p>In the Homebrew Menu, select <b>LEGO Island</b>.</p>' }
+      ]
+    },
+    {
+      id: '3ds', name: 'Nintendo 3DS', tag: '',
+      requires: [
+        'A Nintendo 3DS or 2DS family system with the Luma3DS custom firmware. Follow the written guide at ' + ext('https://3ds.hacks.guide/', '3ds.hacks.guide') + ' \u2014 never video guides.',
+        DISC + ' You also need a computer to prepare the game files.',
+        'About 500 MB free on the SD card.'
+      ],
+      steps: [
+        { what: 'Downloading LEGO Island for 3DS:', path: 'isle.3dsx', href: REL + 'isle.3dsx',
+          body: '<p>Download ' + dl('isle.3dsx') + ' (about 3 MB) on your computer. Prefer an icon on the HOME Menu? Download ' + dl('isle.cia') + ' instead and install it with FBI.</p>' },
+        { what: 'Installing:', path: 'sd:/3ds/isle.3dsx',
+          body: '<p>Put the SD card into your computer and copy <b>isle.3dsx</b> into the <b>3ds</b> folder on the card. (For the .cia: copy it anywhere on the card and install it with FBI.)</p>' },
+        { what: 'Copying game files:', path: 'sd:/3ds/isle/LEGO/',
+          body: '<p>' + MERGE + '</p><p>Create a folder named <b>isle</b> inside the <b>3ds</b> folder and copy your LEGO folder into it, so that you end up with <b>sd:/3ds/isle/LEGO/SCRIPTS</b> and <b>sd:/3ds/isle/LEGO/DATA</b>.</p>' },
+        { what: 'Launching:', path: 'Homebrew Launcher \u2192 LEGO Island',
+          body: '<p>Open the Homebrew Launcher and start <b>LEGO Island</b> (or tap its HOME Menu icon if you installed the .cia). The touch screen works as the mouse; the Circle Pad and D-Pad move you around.</p>' }
+      ]
+    },
+    {
+      id: 'vita', name: 'PlayStation Vita', tag: 'and PS TV',
+      requires: [
+        'A PlayStation Vita or PlayStation TV with the HENkaku / h-encore custom firmware (see ' + ext('https://vita.hacks.guide/', 'vita.hacks.guide') + ') and VitaShell.',
+        DISC + ' You also need a computer to copy the game files.',
+        'About 500 MB free on the memory card.'
+      ],
+      steps: [
+        { what: 'Downloading LEGO Island for Vita:', path: 'isle.vpk', href: REL + 'isle.vpk',
+          body: '<p>Download ' + dl('isle.vpk') + ' (about 7 MB) on your computer.</p>' },
+        { what: 'Installing:', path: 'ux0:/isle.vpk',
+          body: '<p>In VitaShell, press <b>SELECT</b> to start a USB or FTP connection and copy <b>isle.vpk</b> anywhere on your memory card. Then browse to it in VitaShell, press <b>X</b> and confirm the installation.</p>' },
+        { what: 'Copying game files:', path: 'ux0:/data/isledecomp/isle/',
+          body: '<p>Over the same connection, copy two folders from your disc:</p><ul>' +
+                '<li>the disc\u2019s <b>LEGO</b> folder to <b>ux0:/data/isledecomp/isle/cd/LEGO</b></li>' +
+                '<li>the <b>LEGO</b> folder inside the disc\u2019s <b>DATA\\DISK</b> folder to <b>ux0:/data/isledecomp/isle/disk/LEGO</b></li></ul>' +
+                '<p>Create the <b>isledecomp/isle/cd</b> and <b>disk</b> folders first if they do not exist yet (about 450 MB in total).</p>' },
+        { what: 'Launching:', path: 'LiveArea \u2192 LEGO Island',
+          body: '<p>Start <b>LEGO Island</b> from the LiveArea. The <b>Configure</b> item on its LiveArea page opens the settings, where you can also change the game file folders.</p>' }
+      ]
+    },
+    {
+      id: 'xbox', name: 'Xbox One / Series X|S', tag: '',
+      requires: [
+        'An Xbox One or Xbox Series X|S with Developer Mode activated (a one-time fee of about $19 through the Xbox Dev Mode Activation app \u2014 see ' + ext('https://learn.microsoft.com/windows/uwp/xbox-apps/devkit-activation', 'Microsoft\u2019s guide') + ').',
+        'A PC or Mac on the same network as the console.',
+        DISC + ' You also need a computer to prepare the game files.'
+      ],
+      steps: [
+        { what: 'Downloading LEGO Island for Xbox:', path: 'isle-0.1-Xbox_One_Series_XS-x64.zip', href: REL + 'isle-0.1-Xbox_One_Series_XS-x64.zip',
+          body: '<p>Download ' + dl('isle-0.1-Xbox_One_Series_XS-x64.zip') + ' (about 2 MB) on your PC and extract it. Inside <b>bin\\isle_0.1.0.0_x64_Test</b> you will find <b>isle_0.1.0.0_x64.msix</b> (the game) and a <b>Dependencies\\x64</b> folder with <b>Microsoft.VCLibs.x64.14.00.appx</b>.</p>' },
+        { what: 'Preparing the console:', path: 'Dev Home \u2192 Remote Access',
+          body: '<p>Switch your console to Developer Mode, open <b>Dev Home</b> and enable <b>Remote Access</b>. Note the Device Portal address shown in the panel at the bottom right \u2014 it looks like <b>https://192.168.1.20:11443</b>.</p>' },
+        { what: 'Installing:', path: 'Xbox Device Portal \u2192 My games &amp; apps \u2192 Add',
+          body: '<p>On your PC, open that address in a browser and continue past the certificate warning. Under <b>My games &amp; apps</b>, click <b>Add</b>, choose the .msix and click <b>Next</b>. When asked for dependencies, choose the .appx from <b>Dependencies\\x64</b> and click <b>Start</b>.</p>' },
+        { what: 'Preparing game files:', path: 'LEGO\\',
+          body: '<p>' + MERGE + '</p>' },
+        { what: 'Copying game files:', path: '\\\\&lt;xbox-ip&gt;\\DevelopmentFiles\\isle\\LEGO\\',
+          body: '<p>In Device Portal, open <b>File Explorer</b> and click <b>Browse</b>; it shows how to connect over SMB. On Windows, type <b>\\\\&lt;xbox-ip&gt;\\DevelopmentFiles</b> into File Explorer (on a Mac: Finder \u2192 Go \u2192 Connect to Server \u2192 <b>smb://&lt;xbox-ip&gt;/DevelopmentFiles</b>). Create a folder named <b>isle</b> there and copy your LEGO folder into it.</p>' },
+        { what: 'Launching:', path: 'My games &amp; apps \u2192 LEGO Island',
+          body: '<p>Start <b>LEGO Island</b> from My games &amp; apps. To update later, simply add the new .msix the same way \u2014 your game files stay in place.</p>' }
+      ]
+    },
+    {
+      id: 'freebsd', name: 'FreeBSD', tag: '',
+      requires: [
+        'A PC running FreeBSD 15 or later (the build is made on FreeBSD 15.0) on x86_64.',
+        DISC,
+        'About 500 MB of free disk space.'
+      ],
+      steps: [
+        { what: 'Downloading LEGO Island for FreeBSD:', path: 'isle-0.1-FreeBSD-x64.tar.gz', href: REL + 'isle-0.1-FreeBSD-x64.tar.gz',
+          body: '<p>Download ' + dl('isle-0.1-FreeBSD-x64.tar.gz') + ' (about 3 MB).</p>' },
+        { what: 'Extracting files:', path: '~/isle-0.1-FreeBSD-x64/',
+          body: '<p>Run <b>tar xzf isle-0.1-FreeBSD-x64.tar.gz</b>. The settings tool uses Qt 6, so install it once as root: <b>pkg install qt6-base</b>.</p>' },
+        { what: 'Copying game files:', path: '~/lego-island/CD/',
+          body: '<p>Copy <b>everything</b> on your disc into a new folder, for example <b>~/lego-island/CD</b> (about 450 MB). To mount an .iso: <b>mdconfig -a -t vnode -f LEGO_ISLAND.iso -u 0</b>, then <b>mount -t cd9660 /dev/md0 /mnt</b>.</p>' },
+        { what: 'Configuring:', path: 'bin/isle-config',
+          body: '<p>Run <b>bin/isle-config</b>. ' + CONFIG_TOOL() + '</p>' },
+        { what: 'Launching:', path: 'bin/isle',
+          body: '<p>From now on, run <b>bin/isle</b> to play, or <b>bin/isle-config</b> to change settings.</p>' },
+        EXTRAS
+      ]
+    },
+    {
+      id: 'dos', name: 'MS-DOS', tag: '',
+      requires: [
+        'A PC running MS-DOS 6, FreeDOS or Windows 9x DOS mode (real hardware, or an emulator such as DOSBox-X or 86Box) with a 486 or better and a VESA-compatible VGA card. 3dfx Voodoo cards are supported through Glide.',
+        DISC + ' You also need a modern computer to extract the download.',
+        'About 500 MB of free disk space.'
+      ],
+      steps: [
+        { what: 'Downloading LEGO Island for DOS:', path: 'isle-0.1-DOS-x86.tar.gz', href: REL + 'isle-0.1-DOS-x86.tar.gz',
+          body: '<p>Download ' + dl('isle-0.1-DOS-x86.tar.gz') + ' (about 2 MB). It contains a single 32-bit DOS program, <b>ISLE.EXE</b>, built with DJGPP.</p>' },
+        { what: 'Extracting files:', path: 'C:\\ISLE\\ISLE.EXE',
+          body: '<p>Extract the archive on a modern computer (7-Zip on Windows, or <b>tar xzf</b>) and copy <b>ISLE.EXE</b> into a folder on your DOS machine, for example <b>C:\\ISLE</b>.</p>' +
+                '<p>If the game reports that no DPMI server is available, download ' + ext('https://sandmann.dotster.com/cwsdpmi/', 'CWSDPMI') + ' and put <b>CWSDPMI.EXE</b> in the same folder \u2014 ISLE.EXE loads it automatically.</p>' },
+        { what: 'Copying game files:', path: 'C:\\ISLE\\LEGO\\',
+          body: '<p>Create <b>C:\\ISLE\\LEGO</b>. Copy the contents of the disc\u2019s <b>LEGO</b> folder into it (giving you C:\\ISLE\\LEGO\\SCRIPTS), then copy the <b>DATA</b> folder from the disc\u2019s <b>DATA\\DISK\\LEGO</b> folder into it as well (C:\\ISLE\\LEGO\\DATA). About 450 MB.</p>' },
+        { what: 'Launching:', path: 'C:\\ISLE&gt; ISLE.EXE',
+          body: '<p>Change to <b>C:\\ISLE</b> and run <b>ISLE.EXE</b>. On the first start the game writes an <b>isle.ini</b> text file with its settings; open it with EDIT to change them.</p>' }
+      ]
+    }
+  ];
+
+  // Platform auto-detection ---------------------------------------------
+  function detectPlatform() {
+    var ua = navigator.userAgent || '';
+    var plat = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '';
+    if (/Xbox/i.test(ua)) return 'xbox';
+    if (/Nintendo Switch/i.test(ua)) return 'switch';
+    if (/Nintendo 3DS/i.test(ua)) return '3ds';
+    if (/PlayStation Vita/i.test(ua)) return 'vita';
+    if (/Android/i.test(ua)) return 'android';
+    if (/iPhone|iPad|iPod/i.test(ua) || (/Mac/i.test(plat) && navigator.maxTouchPoints > 1)) return 'ios';
+    if (/Windows/i.test(ua) || /Win/i.test(plat)) return 'windows';
+    if (/Mac OS X|Macintosh/i.test(ua) || /Mac/i.test(plat)) return 'macos';
+    if (/FreeBSD/i.test(ua)) return 'freebsd';
+    if (/CrOS/i.test(ua)) return 'web';
+    if (/Linux|X11/i.test(ua)) return 'linux';
+    return 'web';
+  }
+  function findPlatform(id) {
+    for (var i = 0; i < PLATFORMS.length; i++) if (PLATFORMS[i].id === id) return PLATFORMS[i];
+    return null;
+  }
+
+  // State ----------------------------------------------------------------
+  var query = {};
+  (location.search || '').replace(/^\?/, '').split('&').forEach(function (kv) {
+    var p = kv.split('='); if (p[0]) query[decodeURIComponent(p[0])] = decodeURIComponent(p[1] || '');
+  });
+  var state = {
+    page: /^(welcome|select|ready|install|complete)$/.test(query.page || '') ? query.page : 'welcome',
+    platform: findPlatform((location.hash || '').replace('#', '').toLowerCase()) || findPlatform(detectPlatform()) || PLATFORMS[0],
+    step: Math.max(0, parseInt(query.step || '0', 10) || 0)
+  };
+  state.step = Math.min(state.step, state.platform.steps.length - 1);
+
+  var $ = function (id) { return document.getElementById(id); };
+  var wizard = $('wizard'), installing = $('installing'), helpbox = $('helpbox');
+
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+  function buttons(html) { $('buttons').innerHTML = html; }
+  function stdButtons(backDisabled) {
+    return '<button class="btn btn-back" data-act="back" accesskey="b"' + (backDisabled ? ' disabled' : '') + '>&lt; <u>B</u>ack</button>' +
+           '<button class="btn btn-next default" data-act="next" accesskey="n"><u>N</u>ext &gt;</button>' +
+           '<button class="btn btn-cancel" data-act="cancel" accesskey="c"><u>C</u>ancel</button>';
+  }
+
+  function render() {
+    var body = $('body');
+    body.className = 'body';
+    wizard.hidden = state.page === 'install';
+    installing.hidden = state.page !== 'install';
+    $('wizard-title').textContent = state.page === 'complete' ? 'LEGO Island' : 'LEGO Island Installation';
+
+    if (state.page === 'welcome') {
+      $('bitmap').src = 'assets/welcome.png';
+      $('heading').textContent = 'Welcome!';
+      body.className = 'body welcome';
+      body.innerHTML =
+        '<p>This installation program will install the LEGO Island.</p>' +
+        '<p>Press the Next button to start the installation. You can press the Cancel button now if you do not want to install the LEGO Island at this time.</p>';
+      buttons(stdButtons(true));
+    }
+    else if (state.page === 'select') {
+      $('bitmap').src = 'assets/select.png';
+      $('heading').textContent = 'Select Destination Platform';
+      var items = '';
+      for (var i = 0; i < PLATFORMS.length; i++) {
+        var p = PLATFORMS[i];
+        items += '<div class="item' + (p === state.platform ? ' sel' : '') + '" data-id="' + p.id + '" role="option" aria-selected="' + (p === state.platform) + '">' +
+                 esc(p.name) + (p.tag ? ' <span class="tag">(' + esc(p.tag) + ')</span>' : '') + '</div>';
+      }
+      body.className = 'body selectpage';
+      body.innerHTML =
+        '<p>Please select the platform where the LEGO Island files are to be installed.</p>' +
+        '<fieldset class="group"><div class="listbox" id="listbox" tabindex="0" role="listbox" aria-label="Platform">' + items + '</div></fieldset>';
+      buttons(stdButtons(false));
+    }
+    else if (state.page === 'ready') {
+      var pl = state.platform;
+      $('bitmap').src = 'assets/ready.png';
+      $('heading').textContent = 'Ready to Install!';
+      var req = '';
+      for (var r = 0; r < pl.requires.length; r++) req += '<li>' + pl.requires[r] + '</li>';
+      body.innerHTML =
+        '<p>You are now ready to install the LEGO Island on <b>' + esc(pl.name) + '</b>. You will need:</p>' +
+        '<ul>' + req + '</ul>' +
+        '<p>The installation takes ' + pl.steps.length + ' short steps. Press the Next button to begin the installation or the Back button to reenter the installation information.</p>';
+      buttons(stdButtons(false));
+    }
+    else if (state.page === 'install') {
+      var st = state.platform.steps[state.step], n = state.platform.steps.length;
+      $('step-what').textContent = st.what;
+      $('step-path').innerHTML = st.href ? '<a href="' + st.href + '"' + (/^https?:/.test(st.href) && st.href.indexOf(REL) !== 0 ? ' target="_blank" rel="noopener"' : '') + '>' + st.path + '</a>' : st.path;
+      $('step-body').innerHTML = st.body;
+      $('step-body').scrollTop = 0;
+      var pct = Math.round((state.step + 1) / n * 100);
+      $('fill').style.width = 'calc((100% - 4px) * ' + (pct / 100) + ')';
+      $('pct-back').textContent = $('pct-front').textContent = pct + '%';
+      $('pct-front').style.clipPath = 'inset(0 ' + (100 - pct) + '% 0 0)';
+      installing.querySelector('.btn-next').innerHTML = state.step === n - 1 ? '<u>N</u>ext &gt;' : '<u>N</u>ext &gt;';
+    }
+    else if (state.page === 'complete') {
+      $('bitmap').src = 'assets/complete.png';
+      $('heading').textContent = 'Installation Completed!';
+      body.className = 'body complete';
+      body.innerHTML =
+        '<p>LEGO Island installation is complete</p>' +
+        '<p>LEGO Island was made in 1997 by a small team at Mindscape. MattKC\u2019s feature-length documentary \u201cThe Making of LEGO Island\u201d tells the story of the people who built it.</p>' +
+        '<p>Press the Watch Documentary button to watch the documentary on YouTube, or Cancel to exit.</p>';
+      buttons('<button class="btn btn-wide default" data-act="documentary" accesskey="w"><u>W</u>atch Documentary</button>' +
+              '<button class="btn btn-cancel" data-act="cancel" accesskey="c"><u>C</u>ancel</button>');
+    }
+
+    var focusTarget = (state.page === 'install' ? installing : wizard).querySelector('button.default');
+    if (focusTarget) focusTarget.focus({ preventScroll: true });
+    if (state.page === 'select') {
+      var lb = $('listbox'); var sel = lb.querySelector('.sel');
+      if (sel) sel.scrollIntoView({ block: 'nearest' });
+    }
+    try { history.replaceState(null, '', '#' + state.platform.id); } catch (e) { /* ignore */ }
+  }
+
+  // Navigation -----------------------------------------------------------
+  function next() {
+    if (state.page === 'welcome') state.page = 'select';
+    else if (state.page === 'select') state.page = 'ready';
+    else if (state.page === 'ready') { state.page = 'install'; state.step = 0; }
+    else if (state.page === 'install') {
+      if (state.step < state.platform.steps.length - 1) state.step++;
+      else state.page = 'complete';
+    }
+    render();
+  }
+  function back() {
+    if (state.page === 'select') state.page = 'welcome';
+    else if (state.page === 'ready') state.page = 'select';
+    else if (state.page === 'install') {
+      if (state.step > 0) state.step--;
+      else state.page = 'ready';
+    }
+    else if (state.page === 'complete') { state.page = 'install'; state.step = state.platform.steps.length - 1; }
+    render();
+  }
+  function cancel() { location.href = LINKS.home; }
+
+  function showHelp() {
+    helpbox.hidden = false;
+    wizard.classList.add('inactive'); installing.classList.add('inactive');
+    helpbox.querySelector('button.default').focus({ preventScroll: true });
+  }
+  function hideHelp() {
+    helpbox.hidden = true;
+    wizard.classList.remove('inactive'); installing.classList.remove('inactive');
+    render();
+  }
+
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-act]');
+    if (btn) {
+      var act = btn.getAttribute('data-act');
+      if (!helpbox.hidden && act !== 'help-close' && act !== 'help-issues') return;
+      if (act === 'next') next();
+      else if (act === 'back') back();
+      else if (act === 'cancel') cancel();
+      else if (act === 'help') showHelp();
+      else if (act === 'help-close') hideHelp();
+      else if (act === 'help-issues') { window.open(LINKS.issues, '_blank', 'noopener'); hideHelp(); }
+      else if (act === 'documentary') window.open(LINKS.documentary, '_blank', 'noopener');
+      return;
+    }
+    var item = e.target.closest('.listbox .item');
+    if (item) {
+      state.platform = findPlatform(item.getAttribute('data-id')) || state.platform;
+      render();
+      $('listbox').focus({ preventScroll: true });
+    }
+  });
+  document.addEventListener('dblclick', function (e) {
+    if (e.target.closest('.listbox .item') && helpbox.hidden) next();
+  });
+  document.addEventListener('mousedown', function (e) {
+    // clicking the wizard while the help box is open just beeps in Windows; here it does nothing.
+    if (!helpbox.hidden && !e.target.closest('#helpbox')) e.preventDefault();
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'F1') { e.preventDefault(); if (helpbox.hidden) showHelp(); else hideHelp(); return; }
+    if (!helpbox.hidden) {
+      if (e.key === 'Escape') { e.preventDefault(); hideHelp(); }
+      return;
+    }
+    if (e.target.closest && e.target.closest('.listbox')) {
+      var idx = PLATFORMS.indexOf(state.platform);
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Home' || e.key === 'End') {
+        e.preventDefault();
+        if (e.key === 'ArrowDown') idx = Math.min(PLATFORMS.length - 1, idx + 1);
+        else if (e.key === 'ArrowUp') idx = Math.max(0, idx - 1);
+        else if (e.key === 'Home') idx = 0;
+        else idx = PLATFORMS.length - 1;
+        state.platform = PLATFORMS[idx];
+        render();
+        $('listbox').focus({ preventScroll: true });
+        return;
+      }
+    }
+    if (e.key === 'Enter' && !(e.target.tagName === 'A')) {
+      var def = (state.page === 'install' ? installing : wizard).querySelector('button.default');
+      if (def && document.activeElement !== def && !(document.activeElement && document.activeElement.tagName === 'BUTTON')) {
+        e.preventDefault(); def.click();
+      }
+    }
+  });
+
+  window.addEventListener('hashchange', function () {
+    var p = findPlatform((location.hash || '').replace('#', '').toLowerCase());
+    if (p && p !== state.platform) { state.platform = p; if (state.page === 'install') state.step = 0; render(); }
+  });
+
+  // Scaling: the 640x480 stage is scaled to fit the viewport. Integer scales keep the
+  // pixel art and the bitmap font crisp; on small screens the wizard dialog gets priority
+  // and the background is cropped.
+  function fit() {
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var s = Math.min(vw / 640, vh / 480);          // whole scene fits
+    if (s >= 1) {
+      var f = Math.floor(s);
+      if (f / s >= 0.75) s = f;                     // prefer crisp integer scaling
+    } else {
+      s = Math.max(0.5, Math.min(vw / 478, vh / 480, 1));   // small screens: the dialog gets priority, background is cropped
+    }
+    var stage = $('stage');
+    stage.style.transform = 'translate(' + (-320 * s) + 'px, ' + (-240 * s) + 'px) scale(' + s + ')';
+  }
+  window.addEventListener('resize', fit);
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', fit);
+  fit();
+  render();
+  if (query.help === '1') showHelp();
+
+  // ?check=1 renders every page for every platform and reports text that would overflow.
+  if (query.check === '1') {
+    var report = [];
+    var canvas = document.createElement('canvas').getContext('2d');
+    canvas.font = '11px "Pixelated MS Sans Serif"';
+    report.push('welcome-line2-width ' + canvas.measureText('Press the Next button to start the installation. You can press the').width);
+    for (var pi = 0; pi < PLATFORMS.length; pi++) {
+      state.platform = PLATFORMS[pi];
+      state.page = 'ready'; render();
+      var b = $('body');
+      report.push(state.platform.id + ' ready ' + b.scrollHeight + '/' + b.clientHeight + (b.scrollHeight > b.clientHeight ? ' OVERFLOW' : ''));
+      for (var si = 0; si < state.platform.steps.length; si++) {
+        state.page = 'install'; state.step = si; render();
+        var sb = $('step-body'), sp = $('step-path');
+        report.push(state.platform.id + ' step' + si + ' ' + sb.scrollHeight + '/' + sb.clientHeight + (sb.scrollHeight > sb.clientHeight ? ' OVERFLOW' : '') +
+                    (sp.scrollWidth > sp.clientWidth ? ' PATH-CLIPPED' : ''));
+      }
+    }
+    var pre = document.createElement('pre'); pre.id = 'check'; pre.textContent = report.join('\n');
+    document.body.appendChild(pre);
+  }
+})();
+</script>
+</body>
+</html>
