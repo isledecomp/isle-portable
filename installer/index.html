@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>LEGO Island Installation</title>
 <meta name="description" content="A guided installer that walks you through setting up LEGO Island (1997) with isle-portable on Windows, macOS, Linux, the web, phones, tablets and consoles.">
-<link rel="icon" href="assets/favicon.png">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="stylesheet" href="assets/98.css">
 <style>
   :root {
@@ -24,8 +26,9 @@
 
   /* ---- 640x480 stage, scaled to the viewport ---- */
   #viewport { position: fixed; inset: 0; overflow: hidden; }
+  #stagepos { position: absolute; left: 0; top: 0; }
   #stage {
-    position: absolute; left: 50%; top: 50%; width: 640px; height: 480px;
+    position: relative; width: 640px; height: 480px;
     transform-origin: 0 0;
     font-family: "Pixelated MS Sans Serif", "MS Sans Serif", Arial, sans-serif;
     font-size: 11px; line-height: 13px; color: #000;
@@ -42,7 +45,7 @@
   }
   .dlg .title-bar {
     position: absolute; left: 3px; top: 3px; right: 3px; height: 18px; box-sizing: border-box;
-    padding: 0 2px 0 3px; margin: 0;
+    padding: 0 2px 0 3px; margin: 0; cursor: default; user-select: none; -webkit-user-select: none; touch-action: none;
     background: linear-gradient(90deg, var(--caption-a), var(--caption-b));
   }
   .dlg.inactive .title-bar { background: linear-gradient(90deg, #808080, #c0c0c0); }
@@ -152,7 +155,7 @@
 </head>
 <body>
 <div id="viewport">
-  <div id="stage">
+  <div id="stagepos"><div id="stage">
     <img class="bg" src="assets/background.png" alt="" width="640" height="480">
 
     <!-- main wizard dialog -->
@@ -238,7 +241,7 @@
       <button class="btn btn-issues default" data-act="help-issues" accesskey="o"><u>O</u>pen GitHub Issues</button>
       <button class="btn btn-close" data-act="help-close" accesskey="l">C<u>l</u>ose</button>
     </div>
-  </div>
+  </div></div>
 </div>
 
 <script>
@@ -707,7 +710,14 @@
     else if (state.page === 'complete') { state.page = 'install'; state.step = state.platform.steps.length - 1; }
     render();
   }
-  function exit() { location.href = LINKS.home; }
+  function exit() {
+    var dlgs = document.querySelectorAll('.dlg');
+    for (var i = 0; i < dlgs.length; i++) dlgs[i].hidden = true;
+    location.href = LINKS.home;
+  }
+  window.addEventListener('pageshow', function (e) {
+    if (e.persisted) { hideBox(); wizard.hidden = state.page === 'install'; installing.hidden = state.page !== 'install'; }
+  });
   function cancel() {
     if (state.page === 'complete') { exit(); return; }
     showBox(exitbox);
@@ -797,24 +807,70 @@
   // Scaling: the 640x480 stage is scaled to fit the viewport. Integer scales keep the
   // pixel art and the bitmap font crisp; on small screens the wizard dialog gets priority
   // and the background is cropped.
+  // The stage is scaled by a whole number of device pixels per stage pixel whenever the
+  // dialogs fit, so the bitmap font and the pixel art stay crisp; the background may be
+  // cropped to make that possible. Very small screens fall back to a fractional scale.
+  var ESSENTIAL = { x0: 75, y0: 96, x1: 564, y1: 480 };   // the dialogs plus a small margin
+  var useZoom = 'zoom' in document.documentElement.style;
+  var scale = 1;
   function fit() {
-    var vw = window.innerWidth, vh = window.innerHeight;
-    var s = Math.min(vw / 640, vh / 480);          // whole scene fits
-    if (s >= 1) {
-      var f = Math.floor(s);
-      if (f / s >= 0.75) s = f;                     // prefer crisp integer scaling
-    } else {
-      s = Math.max(0.5, Math.min(vw / 478, vh / 480, 1));   // small screens: the dialog gets priority, background is cropped
+    var vw = window.innerWidth, vh = window.innerHeight, dpr = window.devicePixelRatio || 1;
+    var ew = ESSENTIAL.x1 - ESSENTIAL.x0, eh = ESSENTIAL.y1 - ESSENTIAL.y0;
+    var k = Math.floor(Math.min(vw / ew, vh / eh) * dpr);
+    var s = k / dpr;
+    if (s < 0.8) s = Math.max(0.5, Math.min(vw / (ew + 12), vh / eh));   // small screens: readability over crispness
+    function offset(v, size, e0, e1) {
+      var o = (v - size) / 2;
+      if (size > v) o = Math.min(Math.max(o, -e0 * s), v - e1 * s);
+      return Math.round(o * dpr) / dpr;
     }
-    var stage = $('stage');
-    stage.style.transform = 'translate(' + (-320 * s) + 'px, ' + (-240 * s) + 'px) scale(' + s + ')';
+    var pos = $('stagepos'), stage = $('stage');
+    pos.style.left = offset(vw, 640 * s, ESSENTIAL.x0, ESSENTIAL.x1) + 'px';
+    pos.style.top = offset(vh, 480 * s, ESSENTIAL.y0, ESSENTIAL.y1) + 'px';
+    if (useZoom) stage.style.zoom = s;
+    else stage.style.transform = 'scale(' + s + ')';
+    scale = s;
   }
+
+  // Windows can be dragged around by their title bar, like the real thing.
+  (function () {
+    var drag = null;
+    document.addEventListener('pointerdown', function (e) {
+      var bar = e.target.closest('.title-bar');
+      if (!bar || e.target.closest('button') || e.button !== 0) return;
+      var dlg = bar.parentNode;
+      if (dlg.classList.contains('inactive')) return;
+      drag = { dlg: dlg, x: e.clientX, y: e.clientY, left: dlg.offsetLeft, top: dlg.offsetTop, id: e.pointerId };
+      try { bar.setPointerCapture(e.pointerId); } catch (err) { /* synthetic events */ }
+      e.preventDefault();
+    });
+    document.addEventListener('pointermove', function (e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      var dx = (e.clientX - drag.x) / scale, dy = (e.clientY - drag.y) / scale;
+      var w = drag.dlg.offsetWidth, h = drag.dlg.offsetHeight;
+      var left = Math.max(-w + 60, Math.min(640 - 60, drag.left + dx));
+      var top = Math.max(0, Math.min(480 - 21, drag.top + dy));
+      drag.dlg.style.left = Math.round(left) + 'px';
+      drag.dlg.style.top = Math.round(top) + 'px';
+    });
+    function stop(e) { if (drag && e.pointerId === drag.id) drag = null; }
+    document.addEventListener('pointerup', stop);
+    document.addEventListener('pointercancel', stop);
+  })();
   window.addEventListener('resize', fit);
   if (window.visualViewport) window.visualViewport.addEventListener('resize', fit);
   fit();
   render();
   if (query.help === '1') showHelp();
   if (query.exit === '1') showBox(exitbox);
+  if (query.dragtest === '1') {
+    var bar = wizard.querySelector('.title-bar'), before = wizard.offsetLeft + ',' + wizard.offsetTop;
+    function pe(type, x, y) { bar.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 1, button: 0 })); }
+    pe('pointerdown', 300, 300); pe('pointermove', 340, 360); pe('pointerup', 340, 360);
+    var pre = document.createElement('pre'); pre.id = 'dragtest';
+    pre.textContent = 'scale ' + scale + ' before ' + before + ' after ' + wizard.offsetLeft + ',' + wizard.offsetTop;
+    document.body.appendChild(pre);
+  }
 
   // ?check=1 renders every page for every platform and reports text that would overflow.
   if (query.check === '1') (document.fonts ? document.fonts.ready : Promise.resolve()).then(function () {
