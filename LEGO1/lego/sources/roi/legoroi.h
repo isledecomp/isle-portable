@@ -1,12 +1,10 @@
 #ifndef LEGOROI_H
 #define LEGOROI_H
 
+#include "extensions/slot_ref_tracker.h"
 #include "lego1_export.h"
 #include "misc/legotypes.h"
 #include "viewmanager/viewroi.h"
-
-#include <algorithm>
-#include <vector>
 
 typedef unsigned char (*ColorOverride)(const char*, char*, unsigned int);
 typedef unsigned char (*TextureHandler)(const char*, unsigned char*, unsigned int);
@@ -23,7 +21,7 @@ struct LegoAnimActorEntry;
 // VTABLE: LEGO1 0x100dbe38
 // VTABLE: BETA10 0x101c3898
 // SIZE 0x108
-class LegoROI : public ViewROI {
+class LegoROI : public ViewROI, public Extensions::SlotRefTracker<LegoROI> {
 public:
 	LegoROI(Tgl::Renderer* p_renderer);
 	LegoROI(Tgl::Renderer* p_renderer, ViewLODList* p_lodList);
@@ -102,15 +100,6 @@ public:
 	void SetBoundingSphere(const BoundingSphere& p_sphere) { m_sphere = m_world_bounding_sphere = p_sphere; }
 	void SetBoundingBox(const BoundingBox& p_box) { m_bounding_box = p_box; }
 
-	void RegisterSlotRef(LegoROI** p_slot) { m_slotRefs.push_back(p_slot); }
-	void UnregisterSlotRef(LegoROI** p_slot)
-	{
-		std::vector<LegoROI**>::iterator it = std::find(m_slotRefs.begin(), m_slotRefs.end(), p_slot);
-		if (it != m_slotRefs.end()) {
-			m_slotRefs.erase(it);
-		}
-	}
-
 	// SYNTHETIC: LEGO1 0x100a82b0
 	// SYNTHETIC: BETA10 0x1018c490
 	// LegoROI::`scalar deleting destructor'
@@ -120,7 +109,6 @@ private:
 	BoundingSphere m_sphere;  // 0xe8
 	LegoBool m_sharedLodList; // 0x100
 	LegoEntity* m_entity;     // 0x104
-	std::vector<LegoROI**> m_slotRefs;
 };
 
 // VTABLE: LEGO1 0x100dbea8

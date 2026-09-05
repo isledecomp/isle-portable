@@ -2,6 +2,8 @@
 #define ACT3_H
 
 #include "act3ammo.h"
+#include "extensions/slot_ref_tracker.h"
+#include "helicopter.h"
 #include "legogamestate.h"
 #include "legostate.h"
 #include "legoworld.h"
@@ -129,7 +131,7 @@ public:
 	MxBool Escape() override;                         // vtable+0x64
 	void Enable(MxBool p_enable) override;            // vtable+0x68
 
-	void SetHelicopter(Helicopter* p_copter) { m_copter = p_copter; }
+	void SetHelicopter(Helicopter* p_copter) { Extensions::BindSlot(m_copter, p_copter); }
 	void SetShark(Act3Shark* p_shark) { m_shark = p_shark; }
 	void SetDestLocation(LegoGameState::Area p_destLocation) { m_destLocation = p_destLocation; }
 

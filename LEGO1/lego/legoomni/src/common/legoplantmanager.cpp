@@ -228,6 +228,11 @@ LegoEntity* LegoPlantManager::CreatePlant(MxS32 p_index, LegoWorld* p_world, Leg
 
 				LegoROI* roi = CharacterManager()->CreateAutoROI(name, lodName, TRUE);
 				assert(roi != NULL);
+
+				if (roi == NULL) {
+					return NULL;
+				}
+
 				roi->SetVisibility(TRUE);
 
 				entity = roi->GetEntity();

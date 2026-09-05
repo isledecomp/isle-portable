@@ -77,6 +77,16 @@ Isle::Isle()
 // FUNCTION: LEGO1 0x10030a50
 Isle::~Isle()
 {
+	ClearSlot(m_towtrack);
+	ClearSlot(m_ambulance);
+	ClearSlot(m_helicopter);
+	ClearSlot(m_bike);
+	ClearSlot(m_dunebuggy);
+	ClearSlot(m_motocycle);
+	ClearSlot(m_skateboard);
+	ClearSlot(m_racecar);
+	ClearSlot(m_jetski);
+
 	TransitionManager()->SetWaitIndicator(NULL);
 	ControlManager()->Unregister(this);
 
@@ -1144,34 +1154,34 @@ void Isle::Add(MxCore* p_object)
 		m_pizzeria = (Pizzeria*) p_object;
 	}
 	else if (p_object->IsA("TowTrack")) {
-		m_towtrack = (TowTrack*) p_object;
+		BindSlot(m_towtrack, p_object);
 	}
 	else if (p_object->IsA("Ambulance")) {
-		m_ambulance = (Ambulance*) p_object;
+		BindSlot(m_ambulance, p_object);
 	}
 	else if (p_object->IsA("JukeBoxEntity")) {
 		m_jukebox = (JukeBoxEntity*) p_object;
 	}
 	else if (p_object->IsA("Helicopter")) {
-		m_helicopter = (Helicopter*) p_object;
+		BindSlot(m_helicopter, p_object);
 	}
 	else if (p_object->IsA("Bike")) {
-		m_bike = (Bike*) p_object;
+		BindSlot(m_bike, p_object);
 	}
 	else if (p_object->IsA("DuneBuggy")) {
-		m_dunebuggy = (DuneBuggy*) p_object;
+		BindSlot(m_dunebuggy, p_object);
 	}
 	else if (p_object->IsA("Motorcycle")) {
-		m_motocycle = (Motocycle*) p_object;
+		BindSlot(m_motocycle, p_object);
 	}
 	else if (p_object->IsA("SkateBoard")) {
-		m_skateboard = (SkateBoard*) p_object;
+		BindSlot(m_skateboard, p_object);
 	}
 	else if (p_object->IsA("Jetski")) {
-		m_jetski = (Jetski*) p_object;
+		BindSlot(m_jetski, p_object);
 	}
 	else if (p_object->IsA("RaceCar")) {
-		m_racecar = (RaceCar*) p_object;
+		BindSlot(m_racecar, p_object);
 	}
 }
 
@@ -1181,16 +1191,16 @@ void Isle::RemoveVehicle(LegoPathActor* p_actor)
 	LegoWorld::Remove(p_actor);
 
 	if (p_actor->IsA("Helicopter")) {
-		m_helicopter = NULL;
+		ClearSlot(m_helicopter);
 	}
 	else if (p_actor->IsA("DuneBuggy")) {
-		m_dunebuggy = NULL;
+		ClearSlot(m_dunebuggy);
 	}
 	else if (p_actor->IsA("Jetski")) {
-		m_jetski = NULL;
+		ClearSlot(m_jetski);
 	}
 	else if (p_actor->IsA("RaceCar")) {
-		m_racecar = NULL;
+		ClearSlot(m_racecar);
 	}
 }
 
@@ -1602,13 +1612,19 @@ void Act1State::RemoveActors()
 {
 	Isle* isle = (Isle*) FindWorld(*g_isleScript, IsleScript::c__Isle);
 
-	isle->m_motocycle->UpdatePlane(m_motocyclePlane);
-	isle->m_bike->UpdatePlane(m_bikePlane);
-	isle->m_skateboard->UpdatePlane(m_skateboardPlane);
+	if (isle->m_motocycle != NULL) {
+		isle->m_motocycle->UpdatePlane(m_motocyclePlane);
+	}
+	if (isle->m_bike != NULL) {
+		isle->m_bike->UpdatePlane(m_bikePlane);
+	}
+	if (isle->m_skateboard != NULL) {
+		isle->m_skateboard->UpdatePlane(m_skateboardPlane);
+	}
 
 	if (isle->m_helicopter != NULL) {
 		isle->m_helicopter->UpdatePlane(m_helicopterPlane);
-		m_helicopter = isle->m_helicopter;
+		BindSlot(m_helicopter, isle->m_helicopter);
 		isle->RemoveActor(m_helicopter);
 		isle->RemoveVehicle(m_helicopter);
 		m_helicopter->SetBoundary(NULL);
@@ -1617,7 +1633,7 @@ void Act1State::RemoveActors()
 
 	if (isle->m_jetski != NULL) {
 		isle->m_jetski->UpdatePlane(m_jetskiPlane);
-		m_jetski = isle->m_jetski;
+		BindSlot(m_jetski, isle->m_jetski);
 		isle->RemoveActor(m_jetski);
 		isle->RemoveVehicle(m_jetski);
 		m_jetski->SetBoundary(NULL);
@@ -1626,7 +1642,7 @@ void Act1State::RemoveActors()
 
 	if (isle->m_dunebuggy != NULL) {
 		isle->m_dunebuggy->UpdatePlane(m_dunebuggyPlane);
-		m_dunebuggy = isle->m_dunebuggy;
+		BindSlot(m_dunebuggy, isle->m_dunebuggy);
 		isle->RemoveActor(m_dunebuggy);
 		isle->RemoveVehicle(m_dunebuggy);
 		m_dunebuggy->SetBoundary(NULL);
@@ -1635,7 +1651,7 @@ void Act1State::RemoveActors()
 
 	if (isle->m_racecar != NULL) {
 		isle->m_racecar->UpdatePlane(m_racecarPlane);
-		m_racecar = isle->m_racecar;
+		BindSlot(m_racecar, isle->m_racecar);
 		isle->RemoveActor(m_racecar);
 		isle->RemoveVehicle(m_racecar);
 		m_racecar->SetBoundary(NULL);
@@ -1648,25 +1664,31 @@ void Act1State::PlaceActors()
 {
 	Isle* isle = (Isle*) FindWorld(*g_isleScript, IsleScript::c__Isle);
 
-	if (m_motocyclePlane.IsPresent()) {
-		isle->m_motocycle->PlaceActor(m_motocyclePlane);
-	}
-	else {
-		isle->PlaceActor(isle->m_motocycle, "INT43", 4, 0.5f, 1, 0.5f);
-	}
-
-	if (m_bikePlane.IsPresent()) {
-		isle->m_bike->PlaceActor(m_bikePlane);
-	}
-	else {
-		isle->PlaceActor(isle->m_bike, "INT44", 2, 0.5f, 0, 0.5f);
+	if (isle->m_motocycle != NULL) {
+		if (m_motocyclePlane.IsPresent()) {
+			isle->m_motocycle->PlaceActor(m_motocyclePlane);
+		}
+		else {
+			isle->PlaceActor(isle->m_motocycle, "INT43", 4, 0.5f, 1, 0.5f);
+		}
 	}
 
-	if (m_skateboardPlane.IsPresent()) {
-		isle->m_skateboard->PlaceActor(m_skateboardPlane);
+	if (isle->m_bike != NULL) {
+		if (m_bikePlane.IsPresent()) {
+			isle->m_bike->PlaceActor(m_bikePlane);
+		}
+		else {
+			isle->PlaceActor(isle->m_bike, "INT44", 2, 0.5f, 0, 0.5f);
+		}
 	}
-	else {
-		isle->PlaceActor(isle->m_skateboard, "EDG02_84", 4, 0.5f, 0, 0.5f);
+
+	if (isle->m_skateboard != NULL) {
+		if (m_skateboardPlane.IsPresent()) {
+			isle->m_skateboard->PlaceActor(m_skateboardPlane);
+		}
+		else {
+			isle->PlaceActor(isle->m_skateboard, "EDG02_84", 4, 0.5f, 0, 0.5f);
+		}
 	}
 
 	if (m_helicopter != NULL) {
@@ -1688,7 +1710,7 @@ void Act1State::PlaceActors()
 		GetViewManager()->Add(m_helicopter->GetROI());
 		m_helicopter->GetROI()->SetVisibility(TRUE);
 		m_helicopterPlane.Reset();
-		m_helicopter = NULL;
+		ClearSlot(m_helicopter);
 
 		if (m_helicopterWindshield != NULL) {
 			LoadFromNamedTexture(m_helicopterWindshield);
@@ -1724,7 +1746,7 @@ void Act1State::PlaceActors()
 		GetViewManager()->Add(m_jetski->GetROI());
 		m_jetski->GetROI()->SetVisibility(TRUE);
 		m_jetskiPlane.Reset();
-		m_jetski = NULL;
+		ClearSlot(m_jetski);
 
 		if (m_jetskiFront != NULL) {
 			LoadFromNamedTexture(m_jetskiFront);
@@ -1758,7 +1780,7 @@ void Act1State::PlaceActors()
 		GetViewManager()->Add(m_dunebuggy->GetROI());
 		m_dunebuggy->GetROI()->SetVisibility(TRUE);
 		m_dunebuggyPlane.Reset();
-		m_dunebuggy = NULL;
+		ClearSlot(m_dunebuggy);
 
 		if (m_dunebuggyFront != NULL) {
 			LoadFromNamedTexture(m_dunebuggyFront);
@@ -1786,7 +1808,7 @@ void Act1State::PlaceActors()
 		GetViewManager()->Add(m_racecar->GetROI());
 		m_racecar->GetROI()->SetVisibility(TRUE);
 		m_racecarPlane.Reset();
-		m_racecar = NULL;
+		ClearSlot(m_racecar);
 
 		if (m_racecarFront != NULL) {
 			LoadFromNamedTexture(m_racecarFront);

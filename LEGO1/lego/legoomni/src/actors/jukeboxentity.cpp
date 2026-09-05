@@ -40,8 +40,10 @@ MxLong JukeBoxEntity::Notify(MxParam& p_param)
 			return 1;
 		}
 
-		if (UserActor()->GetActorId() != GameState()->GetActorId()) {
-			((IslePathActor*) UserActor())->Exit();
+		if (UserActor()) {
+			if (UserActor()->GetActorId() != GameState()->GetActorId()) {
+				((IslePathActor*) UserActor())->Exit();
+			}
 		}
 
 		((Isle*) FindWorld(*g_isleScript, IsleScript::c__Isle))->SetDestLocation(LegoGameState::e_jukeboxw);

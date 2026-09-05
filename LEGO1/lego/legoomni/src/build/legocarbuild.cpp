@@ -3,6 +3,7 @@
 #include "copter_actions.h"
 #include "dunebuggy.h"
 #include "dunecar_actions.h"
+#include "extensions/slot_ref_tracker.h"
 #include "helicopter.h"
 #include "isle_actions.h"
 #include "jetski.h"
@@ -46,6 +47,8 @@
 DECOMP_SIZE_ASSERT(LegoCarBuild, 0x34c)
 DECOMP_SIZE_ASSERT(LegoVehicleBuildState, 0x50)
 DECOMP_SIZE_ASSERT(LegoCarBuild::LookupTableActions, 0x1c);
+
+using namespace Extensions;
 
 // These four structs can be matched to the vehicle types using BETA10 0x10070520
 
@@ -1183,7 +1186,7 @@ MxLong LegoCarBuild::HandleType0Notification(MxNotificationParam* p_param)
 					delete gameState->m_helicopter;
 				}
 
-				gameState->m_helicopter = (Helicopter*) entity;
+				BindSlot(gameState->m_helicopter, entity);
 				gameState->m_helicopterPlane.Reset();
 				break;
 			case LegoGameState::e_dunecarbuild:
@@ -1191,7 +1194,7 @@ MxLong LegoCarBuild::HandleType0Notification(MxNotificationParam* p_param)
 					delete gameState->m_dunebuggy;
 				}
 
-				gameState->m_dunebuggy = (DuneBuggy*) entity;
+				BindSlot(gameState->m_dunebuggy, entity);
 				gameState->m_dunebuggyPlane.Reset();
 				break;
 			case LegoGameState::e_jetskibuild:
@@ -1199,7 +1202,7 @@ MxLong LegoCarBuild::HandleType0Notification(MxNotificationParam* p_param)
 					delete gameState->m_jetski;
 				}
 
-				gameState->m_jetski = (Jetski*) entity;
+				BindSlot(gameState->m_jetski, entity);
 				gameState->m_jetskiPlane.Reset();
 				break;
 			case LegoGameState::e_racecarbuild:
@@ -1207,7 +1210,7 @@ MxLong LegoCarBuild::HandleType0Notification(MxNotificationParam* p_param)
 					delete gameState->m_racecar;
 				}
 
-				gameState->m_racecar = (RaceCar*) entity;
+				BindSlot(gameState->m_racecar, entity);
 				gameState->m_racecarPlane.Reset();
 				break;
 			}

@@ -362,7 +362,7 @@ void LegoExtraActor::Animate(float p_time)
 		}
 	}
 
-	if (laas) {
+	if (laas && laas->m_numROIs != 0) {
 		float duration2, duration;
 		duration = laas->GetDuration();
 		duration2 = p_time - (m_scheduledTime - duration);

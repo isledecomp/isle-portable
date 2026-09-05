@@ -31,6 +31,8 @@ DECOMP_SIZE_ASSERT(Act3State, 0x0c)
 DECOMP_SIZE_ASSERT(Act3ListElement, 0x0c)
 DECOMP_SIZE_ASSERT(Act3List, 0x10)
 
+using namespace Extensions;
+
 // GLOBAL: LEGO1 0x100d94f8
 Act3Script::Script g_pizzaHitSounds[] = {
 	Act3Script::c_sns02xni_PlayWav,
@@ -261,6 +263,7 @@ Act3::Act3()
 Act3::~Act3()
 {
 	Destroy(TRUE);
+	ClearSlot(m_copter);
 	NotificationManager()->Unregister(this);
 	TickleManager()->UnregisterClient(this);
 }

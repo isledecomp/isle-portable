@@ -3,6 +3,7 @@
 #include "copter_actions.h"
 #include "dunebuggy.h"
 #include "dunecar_actions.h"
+#include "extensions/slot_ref_tracker.h"
 #include "helicopter.h"
 #include "infocenter.h"
 #include "isle.h"
@@ -32,6 +33,8 @@
 #include <SDL3/SDL_log.h>
 
 DECOMP_SIZE_ASSERT(RegistrationBook, 0x2d0)
+
+using namespace Extensions;
 
 // GLOBAL: LEGO1 0x100d9924
 // GLOBAL: BETA10 0x101bfb3c
@@ -621,7 +624,7 @@ MxLong RegistrationBook::HandlePathStruct(LegoPathStructNotificationParam& p_par
 	switch (p_param.GetData()) {
 	case CopterScript::c_Helicopter_Actor:
 		actor = (LegoPathActor*) Find(m_atomId, CopterScript::c_Helicopter_Actor);
-		act1state->m_helicopter = (Helicopter*) actor;
+		BindSlot(act1state->m_helicopter, actor);
 		if (actor != NULL) {
 			actor->SetAtomId(*g_copterScript);
 			actor->SetEntityId(CopterScript::c_Helicopter_Actor);
@@ -629,7 +632,7 @@ MxLong RegistrationBook::HandlePathStruct(LegoPathStructNotificationParam& p_par
 		break;
 	case DunecarScript::c_DuneBugy_Actor:
 		actor = (LegoPathActor*) Find(m_atomId, DunecarScript::c_DuneBugy_Actor);
-		act1state->m_dunebuggy = (DuneBuggy*) actor;
+		BindSlot(act1state->m_dunebuggy, actor);
 		if (actor != NULL) {
 			actor->SetAtomId(*g_dunecarScript);
 			actor->SetEntityId(DunecarScript::c_DuneBugy_Actor);
@@ -637,7 +640,7 @@ MxLong RegistrationBook::HandlePathStruct(LegoPathStructNotificationParam& p_par
 		break;
 	case JetskiScript::c_Jetski_Actor:
 		actor = (LegoPathActor*) Find(m_atomId, JetskiScript::c_Jetski_Actor);
-		act1state->m_jetski = (Jetski*) actor;
+		BindSlot(act1state->m_jetski, actor);
 		if (actor != NULL) {
 			actor->SetAtomId(*g_jetskiScript);
 			actor->SetEntityId(JetskiScript::c_Jetski_Actor);
@@ -645,7 +648,7 @@ MxLong RegistrationBook::HandlePathStruct(LegoPathStructNotificationParam& p_par
 		break;
 	case RacecarScript::c_RaceCar_Actor:
 		actor = (LegoPathActor*) Find(m_atomId, RacecarScript::c_RaceCar_Actor);
-		act1state->m_racecar = (RaceCar*) actor;
+		BindSlot(act1state->m_racecar, actor);
 		if (actor != NULL) {
 			actor->SetAtomId(*g_racecarScript);
 			actor->SetEntityId(RacecarScript::c_RaceCar_Actor);

@@ -3,8 +3,10 @@
 
 #include "actionsfwd.h"
 #include "decomp.h"
+#include "extensions/slot_ref_tracker.h"
 #include "isleactor.h"
 #include "legostate.h"
+#include "skateboard.h"
 
 #include <limits.h>
 
@@ -206,7 +208,7 @@ public:
 	void StopActions();
 	void PlayAction(MxU32 p_objectId, MxBool p_param7);
 
-	void SetSkateboard(SkateBoard* p_skateBoard) { m_skateBoard = p_skateBoard; }
+	void SetSkateboard(SkateBoard* p_skateBoard) { Extensions::BindSlot(m_skateBoard, p_skateBoard); }
 
 	// SYNTHETIC: LEGO1 0x100380e0
 	// Pizza::`scalar deleting destructor'

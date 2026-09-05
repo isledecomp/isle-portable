@@ -370,6 +370,10 @@ MxLong Ambulance::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 // FUNCTION: BETA10 0x10023506
 MxLong Ambulance::HandleClick()
 {
+	if (UserActor() == NULL) {
+		return 1;
+	}
+
 	if (((Act1State*) GameState()->GetState("Act1State"))->m_state != Act1State::e_ambulance) {
 		return 1;
 	}

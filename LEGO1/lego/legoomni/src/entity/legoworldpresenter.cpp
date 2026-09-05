@@ -12,6 +12,7 @@
 #include "legotexturepresenter.h"
 #include "legovideomanager.h"
 #include "legoworld.h"
+#include "legoworldlist.h"
 #include "misc.h"
 #include "modeldb/modeldb.h"
 #include "mxactionnotificationparam.h"
@@ -54,7 +55,21 @@ LegoWorldPresenter::LegoWorldPresenter()
 LegoWorldPresenter::~LegoWorldPresenter()
 {
 	MxBool result = FALSE;
-	if (m_entity) {
+	MxBool worldExists = FALSE;
+
+	if (m_entity && Lego() && Lego()->GetWorldList()) {
+		LegoWorldListCursor cursor(Lego()->GetWorldList());
+		LegoWorld* world;
+
+		while (cursor.Next(world)) {
+			if (world == (LegoWorld*) m_entity) {
+				worldExists = TRUE;
+				break;
+			}
+		}
+	}
+
+	if (worldExists) {
 		LegoOmni::World worldId = ((LegoWorld*) m_entity)->GetWorldId();
 		PlantManager()->LoadWorldInfo(worldId);
 		AnimationManager()->LoadWorldInfo(worldId);
@@ -66,7 +81,7 @@ LegoWorldPresenter::~LegoWorldPresenter()
 		Disable(FALSE, LegoOmni::c_disableInput | LegoOmni::c_disable3d | LegoOmni::c_clearScreen);
 	}
 
-	if (m_entity) {
+	if (worldExists) {
 		NotificationManager()->Send(m_entity, MxNotificationParam(c_notificationNewPresenter, NULL));
 	}
 }

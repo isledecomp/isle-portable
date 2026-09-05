@@ -9,6 +9,7 @@
 #include "legoanimationmanager.h"
 #include "legoanimpresenter.h"
 #include "legocachesoundmanager.h"
+#include "legocharactermanager.h"
 #include "legogamestate.h"
 #include "legoinputmanager.h"
 #include "legomain.h"
@@ -104,6 +105,14 @@ LegoAct2::~LegoAct2()
 	InputManager()->UnRegister(this);
 	if (UserActor()) {
 		Remove(UserActor());
+	}
+
+	for (MxS32 i = 0; i < (MxS32) sizeOfArray(m_bricks); i++) {
+		if (m_bricks[i].GetROI() != NULL) {
+			m_bricks[i].StopWhistleSound();
+			Remove(&m_bricks[i]);
+			CharacterManager()->ReleaseActor(m_bricks[i].GetROI()->GetName());
+		}
 	}
 
 	NotificationManager()->Unregister(this);

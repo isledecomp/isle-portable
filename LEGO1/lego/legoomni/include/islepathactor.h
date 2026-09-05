@@ -2,6 +2,7 @@
 #define ISLEPATHACTOR_H
 
 #include "extensions/fwd.h"
+#include "extensions/slot_ref_tracker.h"
 #include "legogamestate.h"
 #include "legopathactor.h"
 #include "mxtypes.h"
@@ -15,7 +16,7 @@ class LegoPathStructNotificationParam;
 // VTABLE: LEGO1 0x100d4398
 // VTABLE: BETA10 0x101b9090
 // SIZE 0x160
-class IslePathActor : public LegoPathActor {
+class IslePathActor : public LegoPathActor, public Extensions::SlotRefTracker<IslePathActor> {
 public:
 	enum {
 		c_LOCATIONS_NUM = 29

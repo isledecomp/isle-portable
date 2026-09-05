@@ -73,6 +73,10 @@ void SkateBoard::Exit()
 // FUNCTION: LEGO1 0x100100e0
 MxLong SkateBoard::HandleClick()
 {
+	if (m_roi == NULL || UserActor() == NULL) {
+		return 1;
+	}
+
 	Act1State* state = (Act1State*) GameState()->GetState("Act1State");
 
 	if (!CanExit() && state->m_state != Act1State::e_pizza) {

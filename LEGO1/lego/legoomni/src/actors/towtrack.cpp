@@ -409,6 +409,10 @@ MxLong TowTrack::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 // FUNCTION: LEGO1 0x1004d690
 MxLong TowTrack::HandleClick()
 {
+	if (UserActor() == NULL) {
+		return 1;
+	}
+
 	if (((Act1State*) GameState()->GetState("Act1State"))->m_state != Act1State::e_towtrack) {
 		return 1;
 	}

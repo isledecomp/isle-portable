@@ -163,8 +163,10 @@ MxResult LegoAnimActor::AnimateWithTransform(float p_time, Matrix4& p_transform)
 				}
 			}
 
-			for (MxS32 j = 0; j < n->GetNumChildren(); j++) {
-				LegoROI::ApplyAnimationTransformation(n->GetChild(j), p_transform, p_time, roiMap);
+			if (numROIs != 0) {
+				for (MxS32 j = 0; j < n->GetNumChildren(); j++) {
+					LegoROI::ApplyAnimationTransformation(n->GetChild(j), p_transform, p_time, roiMap);
+				}
 			}
 
 			if (m_cameraFlag) {

@@ -226,6 +226,10 @@ void PoliceState::StartAnimation()
 		return;
 	}
 
+	if (UserActor() == NULL) {
+		return;
+	}
+
 	switch (UserActor()->GetActorId()) {
 	case LegoActor::c_nick:
 		policeScript = PoliceScript::c_nps002la_RunAnim;

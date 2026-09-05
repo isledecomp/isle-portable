@@ -1,5 +1,6 @@
 #include "pizza.h"
 
+#include "extensions/slot_ref_tracker.h"
 #include "isle.h"
 #include "isle_actions.h"
 #include "jukebox_actions.h"
@@ -25,6 +26,8 @@
 DECOMP_SIZE_ASSERT(Pizza, 0x9c)
 DECOMP_SIZE_ASSERT(PizzaMissionState, 0xb4)
 DECOMP_SIZE_ASSERT(PizzaMissionState::Mission, 0x20)
+
+using namespace Extensions;
 
 // Flags used in isle.cpp
 extern MxU32 g_isleFlags;
@@ -144,6 +147,7 @@ Pizza::Pizza()
 // FUNCTION: LEGO1 0x10038100
 Pizza::~Pizza()
 {
+	ClearSlot(m_skateBoard);
 	TickleManager()->UnregisterClient(this);
 }
 
@@ -154,7 +158,7 @@ MxResult Pizza::Create(MxDSAction& p_dsAction)
 
 	if (result == SUCCESS) {
 		CreateState();
-		m_skateBoard = (SkateBoard*) m_world->Find(m_atomId, IsleScript::c_SkateBoard_Actor);
+		BindSlot(m_skateBoard, m_world->Find(m_atomId, IsleScript::c_SkateBoard_Actor));
 	}
 
 	return result;
@@ -248,7 +252,7 @@ MxLong Pizza::HandleClick()
 		m_act1state->m_state = Act1State::e_pizza;
 
 		if (m_skateBoard == NULL) {
-			m_skateBoard = (SkateBoard*) m_world->Find(m_atomId, IsleScript::c_SkateBoard_Actor);
+			BindSlot(m_skateBoard, m_world->Find(m_atomId, IsleScript::c_SkateBoard_Actor));
 			assert(m_skateBoard);
 		}
 

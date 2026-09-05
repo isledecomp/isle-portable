@@ -69,10 +69,16 @@ void Pizzeria::CreateState()
 // FUNCTION: BETA10 0x100efc91
 MxLong Pizzeria::HandleClick()
 {
+	if (GameState()->GetActorId() < LegoActor::c_pepper || GameState()->GetActorId() > LegoActor::c_laura) {
+		return 1;
+	}
+
 	if (CanExit() && m_pizzaMissionState->m_state == PizzaMissionState::e_none) {
-		if (UserActor()->GetActorId() != GameState()->GetActorId()) {
-			if (!UserActor()->IsA("SkateBoard")) {
-				((IslePathActor*) UserActor())->Exit();
+		if (UserActor()) {
+			if (UserActor()->GetActorId() != GameState()->GetActorId()) {
+				if (!UserActor()->IsA("SkateBoard")) {
+					((IslePathActor*) UserActor())->Exit();
+				}
 			}
 		}
 
