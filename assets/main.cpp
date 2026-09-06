@@ -431,7 +431,7 @@ void CreateRabbits()
 	composite->id_ = 2;
 	composite->type_ = si::MxOb::Presenter;
 	composite->presenter_ = "LegoAnimMMPresenter";
-	composite->flags_ = MxDSAction::c_enabled | MxDSAction::c_bit3;
+	composite->flags_ = MxDSAction::c_enabled;
 	composite->loops_ = 1;
 	composite->extra_ = si::bytearray(extra.c_str(), extra.length() + 1);
 	composite->name_ = "rabbits_composite";
