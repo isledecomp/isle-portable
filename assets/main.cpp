@@ -77,7 +77,54 @@ void CreateWidescreen()
 		{"PoliDoor_Background_Wide",
 		 "World:\\Lego\\Scripts\\Isle\\Isle;0, StartWith:\\Lego\\Scripts\\Isle\\Isle;1150, "
 		 "RemoveWith:\\Lego\\Scripts\\Isle\\Isle;1151",
-		 -10}
+		 -10},
+		{"InfoScor_Background_Wide",
+		 "World:\\Lego\\Scripts\\Infocntr\\INFOSCOR;0, StartWith:\\Lego\\Scripts\\Infocntr\\INFOSCOR;0, "
+		 "RemoveWith:\\Lego\\Scripts\\Infocntr\\INFOSCOR;0",
+		 10},
+		{"RegBook_Background_Wide",
+		 "World:\\Lego\\Scripts\\Infocntr\\REGBOOK;0, StartWith:\\Lego\\Scripts\\Infocntr\\REGBOOK;0, "
+		 "RemoveWith:\\Lego\\Scripts\\Infocntr\\REGBOOK;0",
+		 10},
+		{"HistBook_Background_Wide",
+		 "StartWith:\\Lego\\Scripts\\Infocntr\\HISTBOOK;0, RemoveWith:\\Lego\\Scripts\\Infocntr\\HISTBOOK;0",
+		 10},
+		{"InfoMain_Background_Wide",
+		 "World:\\Lego\\Scripts\\Infocntr\\INFOMAIN;0, StartWith:\\Lego\\Scripts\\Infocntr\\INFOMAIN;0, "
+		 "RemoveWith:\\Lego\\Scripts\\Infocntr\\INFOMAIN;0",
+		 10},
+		{"InfoMain_BackgroundRed_Wide", "Visibility:FALSE", 10},
+		{"ElevBott_Background_Wide",
+		 "World:\\Lego\\Scripts\\Infocntr\\ELEVBOTT;0, StartWith:\\Lego\\Scripts\\Infocntr\\ELEVBOTT;0, "
+		 "RemoveWith:\\Lego\\Scripts\\Infocntr\\ELEVBOTT;0",
+		 10},
+		{"InfoDoor_Background_Wide",
+		 "World:\\Lego\\Scripts\\Infocntr\\INFODOOR;0, StartWith:\\Lego\\Scripts\\Infocntr\\INFODOOR;0, "
+		 "RemoveWith:\\Lego\\Scripts\\Infocntr\\INFODOOR;0",
+		 10},
+		{"RaceCar_Background_Wide",
+		 "World:\\Lego\\Scripts\\Build\\RACECAR;0, StartWith:\\Lego\\Scripts\\Build\\RACECAR;0, "
+		 "RemoveWith:\\Lego\\Scripts\\Build\\RACECAR;0",
+		 10},
+		{"DuneCar_Background_Wide",
+		 "World:\\Lego\\Scripts\\Build\\DUNECAR;0, StartWith:\\Lego\\Scripts\\Build\\DUNECAR;0, "
+		 "RemoveWith:\\Lego\\Scripts\\Build\\DUNECAR;0",
+		 10},
+		{"Copter_Background_Wide",
+		 "World:\\Lego\\Scripts\\Build\\COPTER;0, StartWith:\\Lego\\Scripts\\Build\\COPTER;0, "
+		 "RemoveWith:\\Lego\\Scripts\\Build\\COPTER;0",
+		 10},
+		{"JetSki_Background_Wide",
+		 "World:\\Lego\\Scripts\\Build\\JETSKI;0, StartWith:\\Lego\\Scripts\\Build\\JETSKI;0, "
+		 "RemoveWith:\\Lego\\Scripts\\Build\\JETSKI;0",
+		 10},
+		{"Garage_Background_Wide",
+		 "World:\\Lego\\Scripts\\Garage\\GARAGE;0, StartWith:\\Lego\\Scripts\\Garage\\GARAGE;0, "
+		 "RemoveWith:\\Lego\\Scripts\\Garage\\GARAGE;0",
+		 10},
+		{"JukeBox_Background_Wide",
+		 "StartWith:\\Lego\\Scripts\\Isle\\JUKEBOXW;0, RemoveWith:\\Lego\\Scripts\\Isle\\JUKEBOXW;0",
+		 10}
 	};
 
 	si::Interleaf si;
@@ -98,7 +145,7 @@ void CreateWidescreen()
 		object->presenter_ = "MxStillPresenter";
 		object->name_ = asset.name;
 		object->filetype_ = si::MxOb::STL;
-		object->location_ = si::Vector3(-240, 0.0, asset.z);
+		object->location_ = si::Vector3(-240, -528, asset.z);
 		object->direction_ = si::Vector3(0, 0, 0);
 		object->up_ = si::Vector3(0, 1, 0);
 
@@ -561,6 +608,10 @@ void CreateHDAudio()
 
 int main(int argc, char* argv[])
 {
+	if (argc < 3 || argc > 4 || (argc == 4 && strcmp(argv[3], "--widescreen-only") != 0)) {
+		fprintf(stderr, "Usage: %s <output-directory> <depfile> [--widescreen-only]\n", argv[0]);
+		return 1;
+	}
 	out = argv[1];
 	depfile = std::ofstream(argv[2]);
 
@@ -571,6 +622,9 @@ int main(int argc, char* argv[])
 	mxHd.WriteU32(bufferCount);
 
 	CreateWidescreen();
+	if (argc == 4) {
+		return 0;
+	}
 	CreateHDMusic();
 	CreateBadEnd();
 	CreateRabbits();
