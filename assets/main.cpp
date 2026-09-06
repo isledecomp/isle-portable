@@ -608,10 +608,6 @@ void CreateHDAudio()
 
 int main(int argc, char* argv[])
 {
-	if (argc < 3 || argc > 4 || (argc == 4 && strcmp(argv[3], "--widescreen-only") != 0)) {
-		fprintf(stderr, "Usage: %s <output-directory> <depfile> [--widescreen-only]\n", argv[0]);
-		return 1;
-	}
 	out = argv[1];
 	depfile = std::ofstream(argv[2]);
 
@@ -622,9 +618,6 @@ int main(int argc, char* argv[])
 	mxHd.WriteU32(bufferCount);
 
 	CreateWidescreen();
-	if (argc == 4) {
-		return 0;
-	}
 	CreateHDMusic();
 	CreateBadEnd();
 	CreateRabbits();
