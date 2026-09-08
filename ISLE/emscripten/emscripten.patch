@@ -2,7 +2,7 @@ diff --git a/src/lib/libhtml5.js b/src/lib/libhtml5.js
 index da08765e7..24e5da22e 100644
 --- a/src/lib/libhtml5.js
 +++ b/src/lib/libhtml5.js
-@@ -1182,6 +1182,7 @@ var LibraryHTML5 = {
+@@ -1182,6 +1182,7 @@
  
    $registerRestoreOldStyle__deps: ['$getCanvasElementSize', '$setCanvasElementSize', '$currentFullscreenStrategy'],
    $registerRestoreOldStyle: (canvas) => {
@@ -10,7 +10,7 @@ index da08765e7..24e5da22e 100644
      var canvasSize = getCanvasElementSize(canvas);
      var oldWidth = canvasSize[0];
      var oldHeight = canvasSize[1];
-@@ -1326,9 +1327,9 @@ var LibraryHTML5 = {
+@@ -1326,9 +1327,9 @@
      var topMargin;
  
      if (inAspectRatioFixedFullscreenMode) {
@@ -23,6 +23,15 @@ index da08765e7..24e5da22e 100644
      }
  
      if (inPixelPerfectFullscreenMode) {
+@@ -2196,7 +2197,7 @@
+       if (canvas.GLctxObject?.GLctx) {
+         var prevViewport = canvas.GLctxObject.GLctx.getParameter(0xBA2 /* GL_VIEWPORT */);
+         // TODO: Perhaps autoResizeViewport should only be true if FBO 0 is currently active?
+-        autoResizeViewport = (prevViewport[0] === 0 && prevViewport[1] === 0 && prevViewport[2] === canvas.width && prevViewport[3] === canvas.height);
++        autoResizeViewport = !!prevViewport && (prevViewport[0] === 0 && prevViewport[1] === 0 && prevViewport[2] === canvas.width && prevViewport[3] === canvas.height);
+ #if GL_DEBUG
+         dbg(`Resizing canvas from ${canvas.width}x${canvas.height} to ${width}x${height}. Previous GL viewport size was ${prevViewport}, so autoResizeViewport=${autoResizeViewport}`);
+ #endif
 diff --git a/src/lib/libpthread.js b/src/lib/libpthread.js
 index 6d979627e..97e3f8684 100644
 --- a/src/lib/libpthread.js
@@ -184,7 +193,7 @@ diff --git a/src/preamble.js b/src/preamble.js
 index 572694517..44e65c823 100644
 --- a/src/preamble.js
 +++ b/src/preamble.js
-@@ -1062,3 +1062,19 @@ function getCompilerSetting(name) {
+@@ -1015,3 +1015,37 @@
  // dynamic linker as symbols are loaded.
  var asyncifyStubs = {};
  #endif
@@ -202,5 +211,23 @@ index 572694517..44e65c823 100644
 +
 +  Module["disableOffscreenCanvases"] ||= !document.createElement('canvas').getContext('webgl2');
 +  console.log("disableOffscreenCanvases: " + Module["disableOffscreenCanvases"]);
++
++  if (!Module["disableOffscreenCanvases"] && typeof Worker !== "undefined" && typeof OffscreenCanvas !== "undefined") {
++    try {
++      const probe = new Worker(URL.createObjectURL(new Blob([
++        "try { postMessage(!!new OffscreenCanvas(1, 1).getContext('webgl2')); } catch (e) { postMessage(false); }"
++      ], { type: "text/javascript" })));
++      const disable = () => {
++        probe.terminate();
++        Module["disableOffscreenCanvases"] = true;
++        console.log("disableOffscreenCanvases: true (no WebGL2 in workers)");
++      };
++      probe.onmessage = (e) => e.data ? probe.terminate() : disable();
++      probe.onerror = disable;
++    } catch (e) {
++      Module["disableOffscreenCanvases"] = true;
++      console.log("disableOffscreenCanvases: true (worker probe failed)");
++    }
++  }
 +}
 +

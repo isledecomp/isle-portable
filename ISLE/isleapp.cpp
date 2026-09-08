@@ -59,6 +59,8 @@
 #include "emscripten/haptic.h"
 #include "emscripten/messagebox.h"
 #include "emscripten/window.h"
+
+#include <emscripten/threading.h>
 #endif
 
 #ifdef __3DS__
@@ -512,6 +514,11 @@ static SDL_GamepadButton GetGamepadClickButton(SDL_JoystickID p_joystickID)
 
 SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 {
+#ifdef __EMSCRIPTEN__
+	if (emscripten_is_main_browser_thread()) {
+		return SDL_APP_CONTINUE;
+	}
+#endif
 	if (!g_isle) {
 		return SDL_APP_CONTINUE;
 	}
