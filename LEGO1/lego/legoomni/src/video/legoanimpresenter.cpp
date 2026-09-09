@@ -3,6 +3,7 @@
 #include "3dmanager/lego3dmanager.h"
 #include "anim/legoanim.h"
 #include "define.h"
+#include "extensions/thirdpersoncamera.h"
 #include "legoanimactor.h"
 #include "legoanimationmanager.h"
 #include "legoanimmmpresenter.h"
@@ -35,6 +36,8 @@ DECOMP_SIZE_ASSERT(LegoLoopingAnimPresenter, 0xc0)
 DECOMP_SIZE_ASSERT(LegoLocomotionAnimPresenter, 0xd8)
 DECOMP_SIZE_ASSERT(LegoHideAnimPresenter, 0xc4)
 DECOMP_SIZE_ASSERT(LegoHideAnimStruct, 0x08)
+
+using namespace Extensions;
 
 // FUNCTION: LEGO1 0x10068420
 // FUNCTION: BETA10 0x1004e5f0
@@ -665,6 +668,11 @@ void LegoAnimPresenter::PutFrame()
 		ApplyTransformWithVisibilityAndCam(m_anim, time, m_transform);
 
 		if (m_ptAtCamROI != NULL && m_currentWorld != NULL && m_currentWorld->GetCameraController() != NULL) {
+			Mx3DPointFloat target;
+			if (!Extension<ThirdPersonCameraExt>::Call(TP::HandlePtAtCamTarget, target).value_or(FALSE)) {
+				target = m_currentWorld->GetCameraController()->GetWorldLocation();
+			}
+
 			for (MxS32 i = 0; i < m_ptAtCamCount; i++) {
 				if (m_ptAtCamROI[i] != NULL) {
 					MxMatrix mat(m_ptAtCamROI[i]->GetLocal2World());
@@ -680,7 +688,7 @@ void LegoAnimPresenter::PutFrame()
 
 					up = und;
 
-					up -= m_currentWorld->GetCameraController()->GetWorldLocation();
+					up -= target;
 					dir /= dirsqr;
 					pos.EqualsCross(dir, up);
 					pos.Unitize();
@@ -1302,6 +1310,11 @@ void LegoLoopingAnimPresenter::PutFrame()
 	ApplyTransformWithVisibilityAndCam(m_anim, time, m_transform);
 
 	if (m_ptAtCamROI != NULL && m_currentWorld != NULL && m_currentWorld->GetCameraController() != NULL) {
+		Mx3DPointFloat target;
+		if (!Extension<ThirdPersonCameraExt>::Call(TP::HandlePtAtCamTarget, target).value_or(FALSE)) {
+			target = m_currentWorld->GetCameraController()->GetWorldLocation();
+		}
+
 		for (MxS32 i = 0; i < m_ptAtCamCount; i++) {
 			if (m_ptAtCamROI[i] != NULL) {
 				MxMatrix mat(m_ptAtCamROI[i]->GetLocal2World());
@@ -1317,7 +1330,7 @@ void LegoLoopingAnimPresenter::PutFrame()
 
 				up = und;
 
-				up -= m_currentWorld->GetCameraController()->GetWorldLocation();
+				up -= target;
 				dir /= dirsqr;
 				pos.EqualsCross(dir, up);
 				pos.Unitize();
