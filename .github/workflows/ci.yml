@@ -100,7 +100,7 @@ jobs:
         run: |
           brew update
           brew uninstall cmake || true
-          brew install cmake ninja llvm ${{ !matrix.qt-action && 'qt6' || '' }}
+          brew install cmake ninja ${{ matrix.clang-tidy && 'llvm' || '' }} ${{ !matrix.qt-action && 'qt6' || '' }}
           echo "LLVM_ROOT=$(brew --prefix llvm)/bin" >> $GITHUB_ENV
       
       - name: Use latest Xcode
