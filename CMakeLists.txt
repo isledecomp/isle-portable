@@ -361,9 +361,7 @@ target_link_directories(DirectX5::DirectX5 INTERFACE "${CMAKE_SOURCE_DIR}/3rdpar
 add_library(Vec::Vec INTERFACE IMPORTED)
 target_include_directories(Vec::Vec INTERFACE "${CMAKE_SOURCE_DIR}/3rdparty/vec")
 
-add_library(lego1
-  LEGO1/main.cpp
-)
+add_library(lego1)
 target_include_directories(lego1 PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1")
 target_precompile_headers(lego1 PRIVATE "<lego1_pch.h>")
 set_property(TARGET lego1 PROPERTY DEFINE_SYMBOL "LEGO1_DLL")
@@ -388,22 +386,13 @@ list(APPEND isle_targets lego1)
 
 # tglrl sources
 target_sources(lego1 PRIVATE
-  LEGO1/tgl/d3drm/camera.cpp
-  LEGO1/tgl/d3drm/device.cpp
-  LEGO1/tgl/d3drm/group.cpp
-  LEGO1/tgl/d3drm/light.cpp
-  LEGO1/tgl/d3drm/mesh.cpp
-  LEGO1/tgl/d3drm/meshbuilder.cpp
-  LEGO1/tgl/d3drm/renderer.cpp
-  LEGO1/tgl/d3drm/texture.cpp
-  LEGO1/tgl/d3drm/view.cpp
+  LEGO1/tgl/d3drm/tglrl40.cpp
 )
 target_include_directories(lego1 PUBLIC "${CMAKE_SOURCE_DIR}/LEGO1")
 
 # realtime sources
 target_sources(lego1 PRIVATE
   LEGO1/realtime/orientableroi.cpp
-  LEGO1/realtime/realtime.cpp
   LEGO1/realtime/realtimeview.cpp
 )
 target_include_directories(lego1 PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1")
@@ -411,10 +400,8 @@ target_link_libraries(lego1 PRIVATE Vec::Vec)
 
 # viewmanager sources
 target_sources(lego1 PRIVATE
-  LEGO1/viewmanager/viewlod.cpp
   LEGO1/viewmanager/viewlodlist.cpp
   LEGO1/viewmanager/viewmanager.cpp
-  LEGO1/viewmanager/viewroi.cpp
 )
 target_include_directories(lego1 PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1")
 target_link_libraries(lego1 PRIVATE Vec::Vec)
@@ -441,8 +428,6 @@ target_link_libraries(lego1 PRIVATE Vec::Vec)
 
 # geom sources
 target_sources(lego1 PRIVATE
-  LEGO1/lego/sources/geom/legoedge.cpp
-  LEGO1/lego/sources/geom/legoorientededge.cpp
   LEGO1/lego/sources/geom/legoweedge.cpp
   LEGO1/lego/sources/geom/legowegedge.cpp
 )
@@ -461,6 +446,7 @@ target_include_directories(lego1 PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include
 # anim sources
 target_sources(lego1 PRIVATE
   LEGO1/lego/sources/anim/legoanim.cpp
+  LEGO1/lego/sources/anim/legoanimscene.cpp
 )
 target_include_directories(lego1 PRIVATE "${CMAKE_SOURCE_DIR}/LEGO1/omni/include" "${CMAKE_SOURCE_DIR}/LEGO1" "${CMAKE_SOURCE_DIR}/LEGO1/lego/sources")
 
@@ -524,8 +510,6 @@ target_sources(lego1 PRIVATE
   LEGO1/omni/src/event/mxeventmanager.cpp
   LEGO1/omni/src/event/mxeventpresenter.cpp
   LEGO1/omni/src/main/mxmain.cpp
-  LEGO1/omni/src/main/mxomnicreateflags.cpp
-  LEGO1/omni/src/main/mxomnicreateparam.cpp
   LEGO1/omni/src/notify/mxactionnotificationparam.cpp
   LEGO1/omni/src/notify/mxnotificationmanager.cpp
   LEGO1/omni/src/notify/mxnotificationparam.cpp
@@ -543,7 +527,6 @@ target_sources(lego1 PRIVATE
   LEGO1/omni/src/stream/mxstreamer.cpp
   LEGO1/omni/src/system/mxautolock.cpp
   LEGO1/omni/src/system/mxcriticalsection.cpp
-  LEGO1/omni/src/system/mxscheduler.cpp
   LEGO1/omni/src/system/mxsemaphore.cpp
   LEGO1/omni/src/system/mxthread.cpp
   LEGO1/omni/src/system/mxticklethread.cpp
@@ -574,12 +557,10 @@ target_include_directories(lego1 PUBLIC $<BUILD_INTERFACE:$<TARGET_PROPERTY:mini
 target_sources(lego1 PRIVATE
   LEGO1/define.cpp
   LEGO1/lego/legoomni/src/actors/act2actor.cpp
-  LEGO1/lego/legoomni/src/actors/act2genactor.cpp
   LEGO1/lego/legoomni/src/actors/act3actors.cpp
   LEGO1/lego/legoomni/src/actors/act3ammo.cpp
   LEGO1/lego/legoomni/src/actors/ambulance.cpp
   LEGO1/lego/legoomni/src/actors/bike.cpp
-  LEGO1/lego/legoomni/src/actors/buildingentity.cpp
   LEGO1/lego/legoomni/src/actors/buildings.cpp
   LEGO1/lego/legoomni/src/actors/bumpbouy.cpp
   LEGO1/lego/legoomni/src/actors/doors.cpp
@@ -606,7 +587,6 @@ target_sources(lego1 PRIVATE
   LEGO1/lego/legoomni/src/build/legocarbuild.cpp
   LEGO1/lego/legoomni/src/build/legocarbuildpresenter.cpp
   LEGO1/lego/legoomni/src/common/legoactioncontrolpresenter.cpp
-  LEGO1/lego/legoomni/src/common/legoactors.cpp
   LEGO1/lego/legoomni/src/common/legoanimationmanager.cpp
   LEGO1/lego/legoomni/src/common/legoanimmmpresenter.cpp
   LEGO1/lego/legoomni/src/common/legobuildingmanager.cpp
@@ -615,7 +595,6 @@ target_sources(lego1 PRIVATE
   LEGO1/lego/legoomni/src/common/legoobjectfactory.cpp
   LEGO1/lego/legoomni/src/common/legophoneme.cpp
   LEGO1/lego/legoomni/src/common/legoplantmanager.cpp
-  LEGO1/lego/legoomni/src/common/legoplants.cpp
   LEGO1/lego/legoomni/src/common/legostate.cpp
   LEGO1/lego/legoomni/src/common/legotextureinfo.cpp
   LEGO1/lego/legoomni/src/common/legoutils.cpp
@@ -633,7 +612,6 @@ target_sources(lego1 PRIVATE
   LEGO1/lego/legoomni/src/entity/legocameracontroller.cpp
   LEGO1/lego/legoomni/src/entity/legoentity.cpp
   LEGO1/lego/legoomni/src/entity/legoentitypresenter.cpp
-  LEGO1/lego/legoomni/src/entity/legolocations.cpp
   LEGO1/lego/legoomni/src/entity/legonavcontroller.cpp
   LEGO1/lego/legoomni/src/entity/legopovcontroller.cpp
   LEGO1/lego/legoomni/src/entity/legoworld.cpp
@@ -648,8 +626,6 @@ target_sources(lego1 PRIVATE
   LEGO1/lego/legoomni/src/paths/legopathcontroller.cpp
   LEGO1/lego/legoomni/src/paths/legopathpresenter.cpp
   LEGO1/lego/legoomni/src/paths/legopathstruct.cpp
-  LEGO1/lego/legoomni/src/race/carrace.cpp
-  LEGO1/lego/legoomni/src/race/jetskirace.cpp
   LEGO1/lego/legoomni/src/race/legorace.cpp
   LEGO1/lego/legoomni/src/race/legoraceactor.cpp
   LEGO1/lego/legoomni/src/race/legoracemap.cpp

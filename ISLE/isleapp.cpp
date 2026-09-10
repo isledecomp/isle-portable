@@ -2,9 +2,13 @@
 
 #include "isleapp.h"
 
+#include "realtime/matrix4d.inl.h"
+#include "realtime/vectorlength.inl.h"
+#include "realtime/orientableroi.h"
+
+#include "legoanimationmanager.h"
 #include "3dmanager/lego3dmanager.h"
 #include "decomp.h"
-#include "legoanimationmanager.h"
 #include "legobuildingmanager.h"
 #include "legogamestate.h"
 #include "legoinputmanager.h"
@@ -33,7 +37,6 @@
 #include "res/no_bmp.h"
 #include "res/resource.h"
 #include "roi/legoroi.h"
-#include "tgl/d3drm/impl.h"
 #include "viewmanager/viewmanager.h"
 
 #include <array>
@@ -98,6 +101,24 @@
 
 DECOMP_SIZE_ASSERT(IsleApp, 0x8c)
 
+enum {
+	c_defaultWidth = 640,
+	c_defaultHeight = 480,
+	c_defaultDepth = 16,
+	c_frameDelta = 10,
+	c_startupDelay = 200,
+	c_registryBufferSize = 256,
+	c_configBufferSize = 1024,
+	c_mediaPathBufferSize = 256,
+	c_videoTickleInterval = 10,
+	c_directSoundRetries = 20,
+	c_directSoundRetryDelay = 500,
+	c_millisecondsPerSecond = 1000,
+	c_defaultPartsThreshold = 100,
+	c_bitDepth8 = 8,
+	c_bitDepth16 = 16
+};
+
 // GLOBAL: ISLE 0x410030
 IsleApp* g_isle = NULL;
 
@@ -119,13 +140,13 @@ MxS32 g_rmDisabled = FALSE;
 MxS32 g_waitingForTargetDepth = TRUE;
 
 // GLOBAL: ISLE 0x410058
-MxS32 g_targetWidth = 640;
+MxS32 g_targetWidth = c_defaultWidth;
 
 // GLOBAL: ISLE 0x41005c
-MxS32 g_targetHeight = 480;
+MxS32 g_targetHeight = c_defaultHeight;
 
 // GLOBAL: ISLE 0x410060
-MxS32 g_targetDepth = 16;
+MxS32 g_targetDepth = c_defaultDepth;
 
 // GLOBAL: ISLE 0x410064
 MxS32 g_reqEnableRMDevice = FALSE;
@@ -176,7 +197,7 @@ IsleApp::IsleApp()
 #endif
 	m_islandTexture = 1;
 	m_gameStarted = FALSE;
-	m_frameDelta = 10;
+	m_frameDelta = c_frameDelta;
 	m_windowActive = TRUE;
 
 #ifdef COMPAT_MODE
@@ -300,7 +321,7 @@ MxS32 IsleApp::SetupLegoOmni()
 
 	if (!failure) {
 		VariableTable()->SetVariable("ACTOR_01", "");
-		TickleManager()->SetClientTickleInterval(VideoManager(), 10);
+		TickleManager()->SetClientTickleInterval(VideoManager(), c_videoTickleInterval);
 		result = TRUE;
 	}
 
@@ -1141,7 +1162,8 @@ MxResult IsleApp::SetupWindow()
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to open SDL_IOStream for icon: %s", SDL_GetError());
 	}
 
-	if (!SetupLegoOmni()) {
+	BOOL omniReady = SetupLegoOmni();
+	if (!omniReady) {
 		return FAILURE;
 	}
 
@@ -1166,7 +1188,7 @@ MxResult IsleApp::SetupWindow()
 		iVar10 = 2;
 		break;
 	default:
-		iVar10 = 100;
+		iVar10 = c_defaultPartsThreshold;
 	}
 
 	MxS32 uVar1 = (m_islandTexture == 0);
@@ -1371,10 +1393,10 @@ bool IsleApp::LoadConfig()
 
 	MxS32 bitDepth = iniparser_getint(dict, "isle:Display Bit Depth", -1);
 	if (bitDepth != -1) {
-		if (bitDepth == 8) {
+		if (bitDepth == c_bitDepth8) {
 			m_using8bit = TRUE;
 		}
-		else if (bitDepth == 16) {
+		else if (bitDepth == c_bitDepth16) {
 			m_using16bit = TRUE;
 		}
 	}
@@ -1708,11 +1730,11 @@ IDirect3DRMMiniwinDevice* GetD3DRMMiniwinDevice()
 	if (!lego3DView) {
 		return nullptr;
 	}
-	TglImpl::DeviceImpl* tgl_device = (TglImpl::DeviceImpl*) lego3DView->GetDevice();
-	if (!tgl_device) {
+	Tgl::Device* tglDevice = lego3DView->GetDevice();
+	if (!tglDevice) {
 		return nullptr;
 	}
-	IDirect3DRMDevice2* d3drmdev = tgl_device->ImplementationData();
+	IDirect3DRMDevice2* d3drmdev = *(IDirect3DRMDevice2**) tglDevice->ImplementationDataPtr();
 	if (!d3drmdev) {
 		return nullptr;
 	}

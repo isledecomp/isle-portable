@@ -1,4 +1,3 @@
-
 // For LEGO1 symbols only
 
 // aka `operator new`
@@ -571,6 +570,9 @@
 // LIBRARY: LEGO1 0x100d21f0
 // _strstr
 
+// GLOBAL: LEGO1 0x10097b16
+// ___from_strstr_to_strchr
+
 // LIBRARY: LEGO1 0x100d2270
 // __beginthreadex
 
@@ -599,7 +601,7 @@
 // __FPinit
 
 // GLOBAL: LEGO1 0x100fc8f0
-// __iob
+// _iob
 
 // GLOBAL: LEGO1 0x100fcb70
 // __cflush
@@ -754,6 +756,12 @@
 
 // GLOBAL: LEGO1 0x10109718
 // __pRawDllMain
+
+// GLOBAL: LEGO1 0x1010971c
+// ___onexitend
+
+// GLOBAL: LEGO1 0x10109720
+// ___onexitbegin
 
 // GLOBAL: LEGO1 0x10109724
 // ___piob
@@ -1049,10 +1057,12 @@
 // LIBRARY: BETA10 0x10100fe0
 // CrtMessageWindow
 
-// Cannot be handled right now due to anonymous pointer in struct.
-// We can annotate it on the original side, but we have no symbol on the recomp side.
-// We would need a way of annotating "the pointer at c_dfDIKeyboard+0x14 has orig address 0x10097f80".
-// // GLOBAL: LEGO1 0x10098f80
+// The rgodf member points at each image's own copy of the keyboard object
+// data, so datacmp cannot compare the variable and skips it through
+// report/ignore-variables in reccmp-project.yml.
+// https://github.com/isledecomp/reccmp/issues/226
+
+// GLOBAL: LEGO1 0x10098f80
 // c_dfDIKeyboard
 
 /// Globals from libraries without symbols

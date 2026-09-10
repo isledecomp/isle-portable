@@ -12,6 +12,13 @@ MxSemaphore::MxSemaphore()
 	m_semaphore = NULL;
 }
 
+// FUNCTION: LEGO1 0x100c87e0
+// FUNCTION: BETA10 0x101592a9
+MxSemaphore::~MxSemaphore()
+{
+	SDL_DestroySemaphore(m_semaphore);
+}
+
 // FUNCTION: LEGO1 0x100c8800
 // FUNCTION: BETA10 0x101592d5
 MxResult MxSemaphore::Init(MxU32 p_initialCount, MxU32 p_maxCount)

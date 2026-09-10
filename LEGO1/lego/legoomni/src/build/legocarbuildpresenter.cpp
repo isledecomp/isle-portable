@@ -304,12 +304,13 @@ MxResult LegoCarBuildAnimPresenter::Serialize(LegoStorage* p_storage)
 		}
 	}
 	else if (p_storage->IsWriteMode()) {
-		p_storage->WriteS16(m_placedPartCount);
-		p_storage->WriteFloat(m_shelfFrame);
+		LegoStorage* storage = p_storage;
+		storage->WriteS16(m_placedPartCount);
+		storage->WriteFloat(m_shelfFrame);
 		for (MxS16 i = 0; i < m_numberOfParts; i++) {
-			p_storage->WriteString(m_parts[i].m_name);
-			p_storage->WriteString(m_parts[i].m_wiredName);
-			p_storage->WriteS16(m_parts[i].m_objectId);
+			storage->WriteString(m_parts[i].m_name);
+			storage->WriteString(m_parts[i].m_wiredName);
+			storage->WriteS16(m_parts[i].m_objectId);
 		}
 	}
 
@@ -644,6 +645,12 @@ MxBool LegoCarBuildAnimPresenter::StringEqualsShelf(const LegoChar* p_string)
 	return SDL_strncasecmp(p_string, "SHELF", strlen("SHELF")) == 0;
 }
 
+// FUNCTION: BETA10 0x1007266c
+MxBool LegoCarBuildAnimPresenter::StringEqualsView(const LegoChar* p_string)
+{
+	return SDL_strcasecmp(p_string, "VIEW") == 0;
+}
+
 // FUNCTION: LEGO1 0x10079c30
 // FUNCTION: BETA10 0x100726a6
 MxBool LegoCarBuildAnimPresenter::IsNextPartToPlace(const LegoChar* p_name)
@@ -701,7 +708,7 @@ const LegoChar* LegoCarBuildAnimPresenter::GetWiredNameByPartName(const LegoChar
 void LegoCarBuildAnimPresenter::SetPartObjectIdByName(const LegoChar* p_name, MxS16 p_objectId)
 {
 	for (MxS16 i = 0; i < m_numberOfParts; i++) {
-		if (SDL_strcasecmp(p_name, m_parts[i].m_name) == 0) {
+		if (SDL_strcasecmp(m_parts[i].m_name, p_name) == 0) {
 			m_parts[i].m_objectId = p_objectId;
 			return;
 		}

@@ -29,6 +29,7 @@
 #include "mxutilities.h"
 
 #include <SDL3/SDL_stdinc.h>
+#include <assert.h>
 #include <stdio.h>
 
 DECOMP_SIZE_ASSERT(LegoWorldPresenter, 0x54)
@@ -146,6 +147,8 @@ MxResult LegoWorldPresenter::StartAction(MxStreamController* p_controller, MxDSA
 void LegoWorldPresenter::ReadyTickle()
 {
 	m_entity = (LegoEntity*) MxPresenter::CreateEntity("LegoWorld");
+	assert(m_entity);
+
 	if (m_entity) {
 		m_entity->Create(*m_action);
 		Lego()->AddWorld((LegoWorld*) m_entity);
@@ -229,6 +232,8 @@ MxResult LegoWorldPresenter::LoadWorld(char* p_worldName, LegoWorld* p_world)
 		}
 
 		buff = new MxU8[size];
+		assert(buff);
+
 		if (SDL_ReadIO(wdbFile, buff, size) != size) {
 			return FAILURE;
 		}
@@ -249,6 +254,8 @@ MxResult LegoWorldPresenter::LoadWorld(char* p_worldName, LegoWorld* p_world)
 		}
 
 		buff = new MxU8[size];
+		assert(buff);
+
 		if (SDL_ReadIO(wdbFile, buff, size) != size) {
 			return FAILURE;
 		}
@@ -271,7 +278,7 @@ MxResult LegoWorldPresenter::LoadWorld(char* p_worldName, LegoWorld* p_world)
 		}
 	}
 
-	ModelDbPartListCursor cursor(worlds[i].m_partList);
+	ModelDbPartListCursor cursor(worlds[i].m_partlist);
 	ModelDbPart* part;
 
 	while (cursor.Next(part)) {
@@ -286,35 +293,35 @@ MxResult LegoWorldPresenter::LoadWorld(char* p_worldName, LegoWorld* p_world)
 	}
 
 	for (j = 0; j < worlds[i].m_numModels; j++) {
-		if (!SDL_strncasecmp(worlds[i].m_models[j].m_modelName, "isle", 4)) {
+		if (!SDL_strncasecmp(worlds[i].m_modarr[j].m_modelName, "isle", 4)) {
 			switch (g_legoWorldPresenterQuality) {
 			case 0:
-				if (SDL_strcasecmp(worlds[i].m_models[j].m_modelName, "isle_lo")) {
+				if (SDL_strcasecmp(worlds[i].m_modarr[j].m_modelName, "isle_lo")) {
 					continue;
 				}
 				break;
 			case 1:
-				if (SDL_strcasecmp(worlds[i].m_models[j].m_modelName, "isle")) {
+				if (SDL_strcasecmp(worlds[i].m_modarr[j].m_modelName, "isle")) {
 					continue;
 				}
 				break;
 			case 2:
-				if (SDL_strcasecmp(worlds[i].m_models[j].m_modelName, "isle_hi")) {
+				if (SDL_strcasecmp(worlds[i].m_modarr[j].m_modelName, "isle_hi")) {
 					continue;
 				}
 			}
 		}
-		else if (g_legoWorldPresenterQuality <= 1 && !SDL_strncasecmp(worlds[i].m_models[j].m_modelName, "haus", 4)) {
-			if (worlds[i].m_models[j].m_modelName[4] == '3') {
-				if (LoadWorldModel(worlds[i].m_models[j], wdbFile, p_world) != SUCCESS) {
+		else if (g_legoWorldPresenterQuality <= 1 && !SDL_strncasecmp(worlds[i].m_modarr[j].m_modelName, "haus", 4)) {
+			if (worlds[i].m_modarr[j].m_modelName[4] == '3') {
+				if (LoadWorldModel(worlds[i].m_modarr[j], wdbFile, p_world) != SUCCESS) {
 					return FAILURE;
 				}
 
-				if (LoadWorldModel(worlds[i].m_models[j - 2], wdbFile, p_world) != SUCCESS) {
+				if (LoadWorldModel(worlds[i].m_modarr[j - 2], wdbFile, p_world) != SUCCESS) {
 					return FAILURE;
 				}
 
-				if (LoadWorldModel(worlds[i].m_models[j - 1], wdbFile, p_world) != SUCCESS) {
+				if (LoadWorldModel(worlds[i].m_modarr[j - 1], wdbFile, p_world) != SUCCESS) {
 					return FAILURE;
 				}
 			}
@@ -322,7 +329,7 @@ MxResult LegoWorldPresenter::LoadWorld(char* p_worldName, LegoWorld* p_world)
 			continue;
 		}
 
-		if (LoadWorldModel(worlds[i].m_models[j], wdbFile, p_world) != SUCCESS) {
+		if (LoadWorldModel(worlds[i].m_modarr[j], wdbFile, p_world) != SUCCESS) {
 			return FAILURE;
 		}
 	}
@@ -337,6 +344,7 @@ MxResult LegoWorldPresenter::LoadWorldPart(ModelDbPart& p_part, SDL_IOStream* p_
 {
 	MxResult result;
 	MxU8* buff = new MxU8[p_part.m_partDataLength];
+	assert(buff);
 
 	SDL_SeekIO(p_wdbFile, p_part.m_partDataOffset, SDL_IO_SEEK_SET);
 	if (SDL_ReadIO(p_wdbFile, buff, p_part.m_partDataLength) != p_part.m_partDataLength) {
@@ -362,6 +370,7 @@ MxResult LegoWorldPresenter::LoadWorldPart(ModelDbPart& p_part, SDL_IOStream* p_
 MxResult LegoWorldPresenter::LoadWorldModel(ModelDbModel& p_model, SDL_IOStream* p_wdbFile, LegoWorld* p_world)
 {
 	MxU8* buff = new MxU8[p_model.m_modelDataLength];
+	assert(buff);
 
 	SDL_SeekIO(p_wdbFile, p_model.m_modelDataOffset, SDL_IO_SEEK_SET);
 	if (SDL_ReadIO(p_wdbFile, buff, p_model.m_modelDataLength) != p_model.m_modelDataLength) {
@@ -390,6 +399,7 @@ MxResult LegoWorldPresenter::LoadWorldModel(ModelDbModel& p_model, SDL_IOStream*
 		LegoActorPresenter presenter;
 		presenter.SetAction(&action);
 		LegoEntity* entity = (LegoEntity*) presenter.CreateEntity("LegoActor");
+		assert(entity);
 		presenter.SetInternalEntity(entity);
 		presenter.SetEntityLocation(p_model.m_location, p_model.m_direction, p_model.m_up);
 		entity->Create(action);
@@ -398,6 +408,7 @@ MxResult LegoWorldPresenter::LoadWorldModel(ModelDbModel& p_model, SDL_IOStream*
 		LegoEntityPresenter presenter;
 		presenter.SetAction(&action);
 		createdEntity = (LegoEntity*) presenter.CreateEntity("LegoEntity");
+		assert(createdEntity);
 		presenter.SetInternalEntity(createdEntity);
 		presenter.SetEntityLocation(p_model.m_location, p_model.m_direction, p_model.m_up);
 		createdEntity->Create(action);
@@ -407,12 +418,12 @@ MxResult LegoWorldPresenter::LoadWorldModel(ModelDbModel& p_model, SDL_IOStream*
 
 	if (createdEntity != NULL) {
 		action.SetLocation(Mx3DPointFloat(0.0, 0.0, 0.0));
-		action.SetUp(Mx3DPointFloat(0.0, 0.0, 1.0));
-		action.SetDirection(Mx3DPointFloat(0.0, 1.0, 0.0));
+		action.SetDirection(Mx3DPointFloat(0.0, 0.0, 1.0));
+		action.SetUp(Mx3DPointFloat(0.0, 1.0, 0.0));
 	}
 
 	modelPresenter.SetAction(&action);
-	modelPresenter.CreateROI(chunk, createdEntity, p_model.m_visible, p_world);
+	modelPresenter.CreateROI(&chunk, createdEntity, p_model.m_visible, p_world);
 	delete[] buff;
 
 	return SUCCESS;
@@ -437,6 +448,7 @@ void LegoWorldPresenter::AdvanceSerialAction(MxPresenter* p_presenter)
 	if (!p_presenter->IsA("LegoAnimPresenter") && !p_presenter->IsA("MxControlPresenter") &&
 		!p_presenter->IsA("MxCompositePresenter")) {
 		p_presenter->SendToCompositePresenter(Lego());
+		assert(m_entity);
 		((LegoWorld*) m_entity)->Add(p_presenter);
 	}
 }
@@ -456,9 +468,11 @@ void LegoWorldPresenter::ParseExtra()
 		char output[1024];
 		output[0] = '\0';
 		if (KeyValueStringParse(output, g_strWORLD, extraCopy)) {
-			char* worldKey = strtok(output, g_parseExtraTokens);
-			LoadWorld(worldKey, static_cast<LegoWorld*>(m_entity));
-			static_cast<LegoWorld*>(m_entity)->SetWorldId(Lego()->GetWorldId(worldKey));
+			char* token = strtok(output, g_parseExtraTokens);
+			assert(token);
+
+			LoadWorld(token, (LegoWorld*) m_entity);
+			((LegoWorld*) m_entity)->SetWorldId(Lego()->GetWorldId(token));
 		}
 	}
 }

@@ -117,12 +117,12 @@ void Catalog::FreeAnimInfo(AnimInfo* p_anims, uint16_t p_count)
 	}
 
 	for (uint16_t i = 0; i < p_count; i++) {
-		delete[] p_anims[i].m_name;
-		if (p_anims[i].m_models) {
+		delete[] p_anims[i].animName;
+		if (p_anims[i].models) {
 			for (uint8_t j = 0; j < p_anims[i].m_modelCount; j++) {
-				delete[] p_anims[i].m_models[j].m_name;
+				delete[] p_anims[i].models[j].modelName;
 			}
-			delete[] p_anims[i].m_models;
+			delete[] p_anims[i].models;
 		}
 	}
 	delete[] p_anims;
@@ -189,8 +189,8 @@ bool Catalog::ParseDTAFile(int8_t p_worldId, AnimInfo*& p_outAnims, uint16_t& p_
 		int vehicleCount = 0;
 		for (uint8_t m = 0; m < anims[i].m_modelCount && vehicleCount < 3; m++) {
 			MxU32 vehicleIdx;
-			if (AnimationManager()->FindVehicle(anims[i].m_models[m].m_name, vehicleIdx) &&
-				anims[i].m_models[m].m_unk0x2c) {
+			if (AnimationManager()->FindVehicle(anims[i].models[m].modelName, vehicleIdx) &&
+				anims[i].models[m].m_unk0x2c) {
 				anims[i].m_unk0x2a[vehicleCount++] = (MxS8) vehicleIdx;
 			}
 		}
@@ -213,7 +213,7 @@ void Catalog::BuildEntries(const WorldAnimData& p_world)
 
 	for (uint16_t i = 0; i < p_world.animCount; i++) {
 		const AnimInfo& animInfo = p_world.anims[i];
-		if (!animInfo.m_name || animInfo.m_objectId == 0) {
+		if (!animInfo.animName || animInfo.m_objectId == 0) {
 			continue;
 		}
 
@@ -227,8 +227,8 @@ void Catalog::BuildEntries(const WorldAnimData& p_world)
 		// Compute performerMask by matching models against g_actorInfoInit[].m_name
 		entry.performerMask = 0;
 		for (uint8_t m = 0; m < entry.modelCount; m++) {
-			if (animInfo.m_models && animInfo.m_models[m].m_name) {
-				int8_t charIdx = GetCharacterIndex(animInfo.m_models[m].m_name);
+			if (animInfo.models && animInfo.models[m].modelName) {
+				int8_t charIdx = GetCharacterIndex(animInfo.models[m].modelName);
 				if (charIdx >= 0) {
 					entry.performerMask |= (uint64_t(1) << charIdx);
 				}
@@ -552,7 +552,7 @@ void Catalog::LoadWorldParts()
 
 	for (MxS32 i = 0; i < numWorlds; i++) {
 		// Load parts from all worlds (skip check: Lookup returns non-null if already registered)
-		ModelDbPartListCursor cursor(worlds[i].m_partList);
+		ModelDbPartListCursor cursor(worlds[i].m_partlist);
 		ModelDbPart* part;
 
 		while (cursor.Next(part)) {
@@ -583,7 +583,7 @@ void Catalog::LoadWorldParts()
 
 		// Load models whose LODs aren't registered yet
 		for (MxS32 j = 0; j < worlds[i].m_numModels; j++) {
-			ModelDbModel& model = worlds[i].m_models[j];
+			ModelDbModel& model = worlds[i].m_modarr[j];
 			if (!model.m_modelName) {
 				continue;
 			}

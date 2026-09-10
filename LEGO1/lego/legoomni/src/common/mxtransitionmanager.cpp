@@ -36,6 +36,7 @@ MxTransitionManager::MxTransitionManager()
 }
 
 // FUNCTION: LEGO1 0x1004ba00
+// FUNCTION: BETA10 0x100ec34c
 MxTransitionManager::~MxTransitionManager()
 {
 	delete[] m_copyBuffer;
@@ -49,6 +50,7 @@ MxTransitionManager::~MxTransitionManager()
 }
 
 // FUNCTION: LEGO1 0x1004baa0
+// FUNCTION: BETA10 0x100ec3d1
 MxResult MxTransitionManager::GetDDrawSurfaceFromVideoManager() // vtable+0x14
 {
 	LegoVideoManager* videoManager = VideoManager();
@@ -57,6 +59,7 @@ MxResult MxTransitionManager::GetDDrawSurfaceFromVideoManager() // vtable+0x14
 }
 
 // FUNCTION: LEGO1 0x1004bac0
+// FUNCTION: BETA10 0x100ec402
 MxResult MxTransitionManager::Tickle()
 {
 	Uint64 time = m_animationSpeed + m_systemTime;
@@ -203,6 +206,7 @@ void MxTransitionManager::DissolveTransition()
 	}
 
 	// Run one tick of the animation
+	MxS32 col;
 	DDSURFACEDESC ddsd;
 	memset(&ddsd, 0, sizeof(ddsd));
 	ddsd.dwSize = sizeof(ddsd);
@@ -216,7 +220,7 @@ void MxTransitionManager::DissolveTransition()
 	if (res == DD_OK) {
 		SubmitCopyRect(&ddsd);
 
-		for (MxS32 col = 0; col < 640; col++) {
+		for (col = 0; col < 640; col++) {
 			// Select 16 columns on each tick
 			if (m_animationTimer * 16 > m_columnOrder[col]) {
 				continue;
@@ -578,6 +582,8 @@ void MxTransitionManager::SubmitCopyRect(LPDDSURFACEDESC p_ddsc)
 // FUNCTION: LEGO1 0x1004c580
 void MxTransitionManager::SetupCopyRect(LPDDSURFACEDESC p_ddsc)
 {
+	MxS32 i;
+	MxS32 y;
 	// Check if the copy rect is setup
 	if (m_copyFlags.m_bit0 == FALSE || m_waitIndicator == NULL) {
 		return;
@@ -589,24 +595,29 @@ void MxTransitionManager::SetupCopyRect(LPDDSURFACEDESC p_ddsc)
 	// Check if wait indicator has started
 	if (m_waitIndicator->GetCurrentTickleState() >= MxPresenter::e_streaming) {
 		// Setup the copy rect
-		MxU32 copyPitch = (p_ddsc->ddpfPixelFormat.dwRGBBitCount / 8) *
-						  (m_copyRect.right - m_copyRect.left + 1); // This uses m_copyRect, seemingly erroneously
 		MxU32 bytesPerPixel = p_ddsc->ddpfPixelFormat.dwRGBBitCount / 8;
+		MxS32 copyPitch = (p_ddsc->ddpfPixelFormat.dwRGBBitCount / 8) *
+						  (m_copyRect.right - m_copyRect.left + 1); // This uses m_copyRect, seemingly erroneously
 
-		m_copyRect.left = m_waitIndicator->GetLocation().GetX();
-		m_copyRect.top = m_waitIndicator->GetLocation().GetY();
+		MxPoint32 loc;
+		loc = m_waitIndicator->GetLocation();
+		y = loc.GetY();
 
 		MxS32 height = m_waitIndicator->GetHeight();
 		MxS32 width = m_waitIndicator->GetWidth();
+		MxU32 x = loc.GetX();
 
-		m_copyRect.right = m_copyRect.left + width - 1;
-		m_copyRect.bottom = m_copyRect.top + height - 1;
+		m_copyRect.left = x;
+		m_copyRect.top = y;
+		m_copyRect.right = x + width - 1;
+		m_copyRect.bottom = y + height - 1;
 
 		// Allocate the copy buffer
 		const MxU8* src =
 			(const MxU8*) p_ddsc->lpSurface + m_copyRect.top * p_ddsc->lPitch + bytesPerPixel * m_copyRect.left;
 
-		m_copyBuffer = new MxU8[bytesPerPixel * width * height];
+		m_copyBuffer = new MxU8
+			[(m_copyRect.bottom - m_copyRect.top + 1) * (m_copyRect.right - m_copyRect.left + 1) * bytesPerPixel];
 		if (!m_copyBuffer) {
 			return;
 		}
@@ -614,7 +625,7 @@ void MxTransitionManager::SetupCopyRect(LPDDSURFACEDESC p_ddsc)
 		// Copy into the copy buffer
 		MxU8* dst = m_copyBuffer;
 
-		for (MxS32 i = 0; i < (m_copyRect.bottom - m_copyRect.top + 1); i++) {
+		for (i = 0; i < (m_copyRect.bottom - m_copyRect.top + 1); i++) {
 			memcpy(dst, src, copyPitch);
 			src += p_ddsc->lPitch;
 			dst += copyPitch;
@@ -623,27 +634,25 @@ void MxTransitionManager::SetupCopyRect(LPDDSURFACEDESC p_ddsc)
 
 	// Setup display surface
 	if ((m_waitIndicator->GetAction()->GetFlags() & MxDSAction::c_bit5) != 0) {
-		MxDisplaySurface* displaySurface = VideoManager()->GetDisplaySurface();
-		displaySurface->VTable0x2c(
+		VideoManager()->GetDisplaySurface()->VTable0x2c(
 			p_ddsc,
 			m_waitIndicator->GetBitmap(),
 			0,
 			0,
-			m_waitIndicator->GetLocation().GetX(),
-			m_waitIndicator->GetLocation().GetY(),
+			m_waitIndicator->GetX(),
+			m_waitIndicator->GetY(),
 			m_waitIndicator->GetWidth(),
 			m_waitIndicator->GetHeight()
 		);
 	}
 	else {
-		MxDisplaySurface* displaySurface = VideoManager()->GetDisplaySurface();
-		displaySurface->VTable0x24(
+		VideoManager()->GetDisplaySurface()->VTable0x24(
 			p_ddsc,
 			m_waitIndicator->GetBitmap(),
 			0,
 			0,
-			m_waitIndicator->GetLocation().GetX(),
-			m_waitIndicator->GetLocation().GetY(),
+			m_waitIndicator->GetX(),
+			m_waitIndicator->GetY(),
 			m_waitIndicator->GetWidth(),
 			m_waitIndicator->GetHeight()
 		);

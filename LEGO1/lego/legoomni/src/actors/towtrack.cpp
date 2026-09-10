@@ -31,6 +31,14 @@ DECOMP_SIZE_ASSERT(TowTrackMissionState, 0x28)
 // Flags used in isle.cpp
 extern MxU32 g_isleFlags;
 
+// GLOBAL: LEGO1 0x100f43b0
+// STRING: LEGO1 0x100f43a4
+const char* g_varTOWSPEED = "towSPEED";
+
+// GLOBAL: LEGO1 0x100f43b4
+// STRING: LEGO1 0x100f439c
+const char* g_varTOWFUEL = "towFUEL";
+
 // FUNCTION: LEGO1 0x1004c720
 TowTrack::TowTrack()
 {
@@ -150,6 +158,7 @@ MxLong TowTrack::Notify(MxParam& p_param)
 }
 
 // FUNCTION: LEGO1 0x1004cd30
+// FUNCTION: BETA10 0x100f6f02
 MxLong TowTrack::HandleEndAnim(LegoEndAnimNotificationParam& p_param)
 {
 	return 1;
@@ -174,8 +183,8 @@ MxLong TowTrack::HandleEndAction(MxEndActionNotificationParam& p_param)
 			m_lastAction = IsleScript::c_noneIsle;
 		}
 		else if (objectId == IsleScript::c_wrt060bm_RunAnim) {
-			if (m_actorId < LegoActor::c_pepper || m_actorId > LegoActor::c_laura) {
-				m_actorId = LegoActor::c_laura;
+			if (m_actorId < LegoActor::e_pepper || m_actorId > LegoActor::e_laura) {
+				m_actorId = LegoActor::e_laura;
 			}
 
 			switch (1 + SDL_rand(m_actorId != 4 ? 4 : 3)) {
@@ -199,24 +208,24 @@ MxLong TowTrack::HandleEndAction(MxEndActionNotificationParam& p_param)
 			HandleClick();
 		}
 		else if (objectId == IsleScript::c_wgs083nu_RunAnim) {
-			if (m_actorId < LegoActor::c_pepper || m_actorId > LegoActor::c_laura) {
-				m_actorId = LegoActor::c_laura;
+			if (m_actorId < LegoActor::e_pepper || m_actorId > LegoActor::e_laura) {
+				m_actorId = LegoActor::e_laura;
 			}
 
 			switch (m_actorId) {
-			case c_pepper:
+			case e_pepper:
 				PlayActorAnimation(IsleScript::c_wgs085nu_RunAnim);
 				break;
-			case c_mama:
+			case e_mama:
 				PlayActorAnimation(IsleScript::c_wgs086nu_RunAnim);
 				break;
-			case c_papa:
+			case e_papa:
 				PlayActorAnimation(IsleScript::c_wgs088nu_RunAnim);
 				break;
-			case c_nick:
+			case e_nick:
 				PlayActorAnimation(IsleScript::c_wgs087nu_RunAnim);
 				break;
-			case c_laura:
+			case e_laura:
 				PlayActorAnimation(IsleScript::c_wgs089nu_RunAnim);
 				break;
 			}
@@ -228,24 +237,24 @@ MxLong TowTrack::HandleEndAction(MxEndActionNotificationParam& p_param)
 			AnimationManager()->EnableCamAnims(TRUE);
 		}
 		else if (objectId == IsleScript::c_wgs090nu_RunAnim) {
-			if (m_actorId < LegoActor::c_pepper || m_actorId > LegoActor::c_laura) {
-				m_actorId = LegoActor::c_laura;
+			if (m_actorId < LegoActor::e_pepper || m_actorId > LegoActor::e_laura) {
+				m_actorId = LegoActor::e_laura;
 			}
 
 			switch (m_actorId) {
-			case c_pepper:
+			case e_pepper:
 				PlayActorAnimation(IsleScript::c_wgs091nu_RunAnim);
 				break;
-			case c_mama:
+			case e_mama:
 				PlayActorAnimation(IsleScript::c_wgs092nu_RunAnim);
 				break;
-			case c_papa:
+			case e_papa:
 				PlayActorAnimation(IsleScript::c_wgs094nu_RunAnim);
 				break;
-			case c_nick:
+			case e_nick:
 				PlayActorAnimation(IsleScript::c_wgs093nu_RunAnim);
 				break;
-			case c_laura:
+			case e_laura:
 				PlayActorAnimation(IsleScript::c_wgs095nu_RunAnim);
 				break;
 			}
@@ -253,24 +262,24 @@ MxLong TowTrack::HandleEndAction(MxEndActionNotificationParam& p_param)
 			m_state->UpdateScore(LegoState::e_blue, m_actorId);
 		}
 		else if (objectId == IsleScript::c_wgs097nu_RunAnim) {
-			if (m_actorId < LegoActor::c_pepper || m_actorId > LegoActor::c_laura) {
-				m_actorId = LegoActor::c_laura;
+			if (m_actorId < LegoActor::e_pepper || m_actorId > LegoActor::e_laura) {
+				m_actorId = LegoActor::e_laura;
 			}
 
 			switch (m_actorId) {
-			case c_pepper:
+			case e_pepper:
 				PlayActorAnimation(IsleScript::c_wgs098nu_RunAnim);
 				break;
-			case c_mama:
+			case e_mama:
 				PlayActorAnimation(IsleScript::c_wgs099nu_RunAnim);
 				break;
-			case c_papa:
+			case e_papa:
 				PlayActorAnimation(IsleScript::c_wgs101nu_RunAnim);
 				break;
-			case c_nick:
+			case e_nick:
 				PlayActorAnimation(IsleScript::c_wgs100nu_RunAnim);
 				break;
-			case c_laura:
+			case e_laura:
 				PlayActorAnimation(IsleScript::c_wgs102nu_RunAnim);
 				break;
 			}
@@ -292,6 +301,7 @@ MxLong TowTrack::HandleEndAction(MxEndActionNotificationParam& p_param)
 // FUNCTION: BETA10 0x100f74c0
 MxLong TowTrack::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 {
+	MxLong time;
 	MxDSAction action;
 
 	// 0x168 corresponds to the path at the gas station
@@ -303,12 +313,14 @@ MxLong TowTrack::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 		return 0;
 	}
 
-	if (m_state->m_state == TowTrackMissionState::e_hookedUp &&
+	MxU32 state = m_state->m_state;
+
+	if (state == TowTrackMissionState::e_hookedUp &&
 		((p_param.GetTrigger() == LegoPathStruct::c_camAnim && (p_param.GetData() == 9 || p_param.GetData() == 8)) ||
 		 (p_param.GetTrigger() == LegoPathStruct::c_missionFinalWaypoint && p_param.GetData() == 0x169))) {
 		m_state->m_state = TowTrackMissionState::e_none;
 
-		MxLong time = Timer()->GetTime() - m_state->m_startTime;
+		time = Timer()->GetTime() - m_state->m_startTime;
 		Leave();
 
 		if (time < 200000) {
@@ -321,7 +333,7 @@ MxLong TowTrack::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 			PlayFinalAnimation(IsleScript::c_wgs097nu_RunAnim);
 		}
 	}
-	else if (m_state->m_state == TowTrackMissionState::e_started && p_param.GetTrigger() == LegoPathStruct::c_camAnim && p_param.GetData() == 0x37) {
+	else if (state == TowTrackMissionState::e_started && p_param.GetTrigger() == LegoPathStruct::c_camAnim && p_param.GetData() == 0x37) {
 		m_state->m_state = TowTrackMissionState::e_hookingUp;
 		StopActions();
 
@@ -332,7 +344,7 @@ MxLong TowTrack::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 		Leave();
 		PlayFinalAnimation(IsleScript::c_wrt060bm_RunAnim);
 	}
-	else if (p_param.GetTrigger() == LegoPathStruct::c_missionFinalWaypoint && m_state->m_state == TowTrackMissionState::e_started) {
+	else if (p_param.GetTrigger() == LegoPathStruct::c_missionFinalWaypoint && state == TowTrackMissionState::e_started) {
 		if (p_param.GetData() == 0x15f) {
 			if (m_treeBlockageTriggered == 0) {
 				m_treeBlockageTriggered = 1;
@@ -346,17 +358,17 @@ MxLong TowTrack::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 			}
 
 			if (!m_state->m_takingTooLong && m_lastAction == IsleScript::c_noneIsle) {
-				if (m_actorId < LegoActor::c_pepper || m_actorId > LegoActor::c_laura) {
-					m_actorId = LegoActor::c_laura;
+				if (m_actorId < LegoActor::e_pepper || m_actorId > LegoActor::e_laura) {
+					m_actorId = LegoActor::e_laura;
 				}
 
 				IsleScript::Script objectId;
 
 				switch (m_actorId) {
-				case c_pepper:
+				case e_pepper:
 					objectId = IsleScript::c_wns034na_PlayWav;
 					break;
-				case c_mama:
+				case e_mama:
 					switch (1 + SDL_rand(2)) {
 					case 1:
 						objectId = IsleScript::c_wns037na_PlayWav;
@@ -366,7 +378,7 @@ MxLong TowTrack::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 						break;
 					}
 					break;
-				case c_papa:
+				case e_papa:
 					switch (1 + SDL_rand(2)) {
 					case 1:
 						objectId = IsleScript::c_wns041na_PlayWav;
@@ -376,7 +388,7 @@ MxLong TowTrack::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 						break;
 					}
 					break;
-				case c_nick:
+				case e_nick:
 					switch (1 + SDL_rand(2)) {
 					case 1:
 						objectId = IsleScript::c_wns039na_PlayWav;
@@ -386,7 +398,7 @@ MxLong TowTrack::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 						break;
 					}
 					break;
-				case c_laura:
+				case e_laura:
 					switch (1 + SDL_rand(2)) {
 					case 1:
 						objectId = IsleScript::c_wns043na_PlayWav;

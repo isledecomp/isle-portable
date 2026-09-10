@@ -74,7 +74,7 @@ typedef struct _ISLE_MMCKINFO {
 } ISLE_MMCKINFO;
 
 // SIZE 0x48
-class MXIOINFO {
+class MXIOINFO : public ISLE_MMIOINFO {
 public:
 	MXIOINFO();
 	~MXIOINFO();
@@ -93,8 +93,7 @@ public:
 
 	// NOTE: In MXIOINFO, the `hmmio` member of MMIOINFO is used like
 	// an HFILE (int) instead of an HMMIO (WORD).
-	ISLE_MMIOINFO m_info;
-	// [library:filesystem] This handle is always used instead of the `hmmio` member in m_info.
+	// [library:filesystem] This handle is always used instead of the `hmmio` member.
 	SDL_IOStream* m_file;
 };
 

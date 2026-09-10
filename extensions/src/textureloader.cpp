@@ -5,7 +5,7 @@
 #include "misc.h"
 #include "mxdirectx/mxdirect3d.h"
 #include "mxmain.h"
-#include "tgl/d3drm/impl.h"
+#include "tgl/d3drm/tglimpl.h"
 
 using namespace Extensions;
 

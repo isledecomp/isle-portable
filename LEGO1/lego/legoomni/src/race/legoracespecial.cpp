@@ -1,6 +1,6 @@
 #include "legoracespecial.h"
 
-#include "geom/legoorientededge.h"
+#include "geom/legowegedge.h"
 #include "legonavcontroller.h"
 #include "legopathboundary.h"
 #include "legopathcontroller.h"
@@ -16,28 +16,16 @@
 DECOMP_SIZE_ASSERT(LegoCarRaceActor, 0x1a0)
 DECOMP_SIZE_ASSERT(LegoJetskiRaceActor, 0x1a8)
 
-// GLOBAL: LEGO1 0x100f0c68
-// STRING: LEGO1 0x100f0c5c
-// GLOBAL: BETA10 0x101f5b04
-// STRING: BETA10 0x101f5b14
-const char* g_raceState = "RACE_STATE";
+// GLOBAL: LEGO1 0x100f7aec
+MxFloat LegoCarRaceActor::g_maxSpeed = 8.0f;
 
 // GLOBAL: LEGO1 0x100f7af0
 // STRING: LEGO1 0x100f7ae4
 const char* g_fuel = "FUEL";
 
-// GLOBAL: LEGO1 0x100f0c6c
-// STRING: LEGO1 0x100f0c54
-// GLOBAL: BETA10 0x101f5b08
-// STRING: BETA10 0x101f5b20
-const char* g_racing = "RACING";
-
-// GLOBAL: LEGO1 0x100f7aec
-MxFloat LegoCarRaceActor::g_maxSpeed = 8.0f;
-
 // GLOBAL: LEGO1 0x100da044
 // GLOBAL: BETA10 0x101be9fc
-MxFloat g_maxWorldSpeed = 8.0f;
+const MxFloat g_maxWorldSpeed = 8.0f;
 
 // FUNCTION: LEGO1 0x10080350
 // FUNCTION: BETA10 0x100cd6b0
@@ -95,8 +83,9 @@ void LegoCarRaceActor::UpdateWorldSpeed(float p_time)
 	}
 
 	MxFloat deltaSpeed = maxSpeed - m_worldSpeed;
-	MxFloat changeInSpeed = (p_time - m_lastAcceleration) * m_acceleration;
+	MxFloat changeInSpeed = p_time - m_lastAcceleration;
 	m_lastAcceleration = p_time;
+	changeInSpeed *= m_acceleration;
 
 	if (deltaSpeed < 0.0f) {
 		changeInSpeed = -changeInSpeed;
@@ -118,6 +107,7 @@ MxS32 LegoCarRaceActor::HandleJump(LegoPathBoundary* p_boundary, LegoEdge* p_edg
 	Mx3DPointFloat targetPosition;
 	Mx3DPointFloat destEdgeUnknownVector;
 	Mx3DPointFloat targetDirection;
+	MxS32 i;
 
 	if (m_actorState == c_ready) {
 		m_boundary = NULL;
@@ -202,7 +192,7 @@ MxS32 LegoCarRaceActor::HandleJump(LegoPathBoundary* p_boundary, LegoEdge* p_edg
 		}
 		else {
 			// This `for` loop does not exist in BETA10
-			for (MxS32 i = 0; i < 10; i++) {
+			for (i = 0; i < 10; i++) {
 				if (LegoPathController::GetControlEdgeB(i) == p_edge &&
 					LegoPathController::GetControlBoundaryB(i) == m_boundary) {
 					return 0;
@@ -267,7 +257,9 @@ MxResult LegoCarRaceActor::CalculateSpline()
 		Mx3DPointFloat endDirection;
 
 		d->GetFaceNormal(*b, startEdgeNormal);
-		m_destEdge->GetFaceNormal(*m_boundary, endEdgeNormal);
+		d = m_destEdge;
+		b = m_boundary;
+		d->GetFaceNormal(*b, endEdgeNormal);
 
 		startDirection.EqualsCross(startEdgeNormal, *m_boundary->GetUp());
 		endDirection.EqualsCross(*m_boundary->GetUp(), endEdgeNormal);
@@ -456,9 +448,9 @@ MxU32 LegoCarRaceActor::CheckPresenterAndActorIntersections(
 						if (co) {
 							assert(co->size() == 2);
 
-							LegoROI* firstROI = (LegoROI*) co->front();
+							roi = (LegoROI*) co->front();
 
-							if (firstROI->Intersect(
+							if (roi->Intersect(
 									p_rayOrigin,
 									p_rayDirection,
 									p_rayLength,
@@ -476,9 +468,9 @@ MxU32 LegoCarRaceActor::CheckPresenterAndActorIntersections(
 								}
 							}
 
-							LegoROI* lastROI = (LegoROI*) co->back();
+							roi = (LegoROI*) co->back();
 
-							if (lastROI->Intersect(
+							if (roi->Intersect(
 									p_rayOrigin,
 									p_rayDirection,
 									p_rayLength,

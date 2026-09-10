@@ -281,7 +281,7 @@ void CharacterCustomizer::ApplyHatVariant(LegoROI* p_rootROI, uint8_t p_actorInf
 		lodList->Release();
 		lodList = dupLodList;
 
-		if (childROI->GetLodLevel() >= 0) {
+		if (childROI->GetToken() >= 0) {
 			VideoManager()->Get3DManager()->GetLego3DView()->GetViewManager()->RemoveROIDetailFromScene(childROI);
 		}
 
@@ -335,20 +335,20 @@ bool CharacterCustomizer::ResolveClickChangeType(uint8_t& p_changeType, int& p_p
 	p_partIndex = -1;
 
 	switch (GameState()->GetActorId()) {
-	case LegoActor::c_pepper:
+	case LegoActor::e_pepper:
 		if (GameState()->GetCurrentAct() == LegoGameState::e_act2 ||
 			GameState()->GetCurrentAct() == LegoGameState::e_act3) {
 			return false;
 		}
 		p_changeType = CHANGE_VARIANT;
 		break;
-	case LegoActor::c_mama:
+	case LegoActor::e_mama:
 		p_changeType = CHANGE_SOUND;
 		break;
-	case LegoActor::c_papa:
+	case LegoActor::e_papa:
 		p_changeType = CHANGE_MOVE;
 		break;
-	case LegoActor::c_nick:
+	case LegoActor::e_nick:
 		p_changeType = CHANGE_COLOR;
 		if (p_clickedROI) {
 			p_partIndex = MapClickedPartIndex(p_clickedROI->GetName());
@@ -357,10 +357,10 @@ bool CharacterCustomizer::ResolveClickChangeType(uint8_t& p_changeType, int& p_p
 			return false;
 		}
 		break;
-	case LegoActor::c_laura:
+	case LegoActor::e_laura:
 		p_changeType = CHANGE_MOOD;
 		break;
-	case LegoActor::c_brickster:
+	case LegoActor::e_brickster:
 		return false;
 	default:
 		return false;

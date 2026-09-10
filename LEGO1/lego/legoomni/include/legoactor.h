@@ -3,6 +3,8 @@
 
 #include "decomp.h"
 #include "legoentity.h"
+#include "realtime/matrix4d.inl.h"
+#include "realtime/vectorlength.inl.h"
 #include "mxgeometry/mxmatrix.h"
 
 class LegoCacheSound;
@@ -13,13 +15,13 @@ class LegoCacheSound;
 class LegoActor : public LegoEntity {
 public:
 	enum {
-		c_none = 0,
-		c_pepper,
-		c_mama,
-		c_papa,
-		c_nick,
-		c_laura,
-		c_brickster
+		e_none = 0,
+		e_pepper,
+		e_mama,
+		e_papa,
+		e_nick,
+		e_laura,
+		e_brickster
 	};
 
 	LegoActor();

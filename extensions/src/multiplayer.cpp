@@ -170,26 +170,26 @@ MxBool MultiplayerExt::HandleEntityNotify(LegoEntity* p_entity)
 	// mirroring the logic in LegoEntity::Notify().
 	MxU8 changeType;
 	switch (GameState()->GetActorId()) {
-	case LegoActor::c_pepper:
+	case LegoActor::e_pepper:
 		if (GameState()->GetCurrentAct() == LegoGameState::e_act2 ||
 			GameState()->GetCurrentAct() == LegoGameState::e_act3) {
 			return FALSE;
 		}
 		changeType = Multiplayer::CHANGE_VARIANT;
 		break;
-	case LegoActor::c_mama:
+	case LegoActor::e_mama:
 		changeType = Multiplayer::CHANGE_SOUND;
 		break;
-	case LegoActor::c_papa:
+	case LegoActor::e_papa:
 		changeType = Multiplayer::CHANGE_MOVE;
 		break;
-	case LegoActor::c_nick:
+	case LegoActor::e_nick:
 		changeType = Multiplayer::CHANGE_COLOR;
 		break;
-	case LegoActor::c_laura:
+	case LegoActor::e_laura:
 		changeType = Multiplayer::CHANGE_MOOD;
 		break;
-	case LegoActor::c_brickster:
+	case LegoActor::e_brickster:
 		changeType = Multiplayer::CHANGE_DECREMENT;
 		break;
 	default:

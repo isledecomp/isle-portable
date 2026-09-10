@@ -38,6 +38,7 @@
 
 #include <SDL3/SDL_log.h>
 #include <SDL3/SDL_stdinc.h>
+#include <assert.h>
 
 DECOMP_SIZE_ASSERT(LegoOmni, 0x140)
 DECOMP_SIZE_ASSERT(LegoOmni::WorldContainer, 0x1c)
@@ -418,6 +419,7 @@ LegoOmni* LegoOmni::GetInstance()
 // FUNCTION: LEGO1 0x1005ad20
 void LegoOmni::AddWorld(LegoWorld* p_world)
 {
+	assert(p_world);
 	m_worldList->Append(p_world);
 
 	Extension<SiLoaderExt>::Call(SI::HandleWorld, p_world);
@@ -527,7 +529,9 @@ LegoROI* LegoOmni::FindROI(const char* p_name)
 		((LegoVideoManager*) m_videoManager)->Get3DManager()->GetLego3DView()->GetViewManager()->GetROIs();
 
 	if (p_name != NULL && *p_name != '\0' && rois.size() > 0) {
-		for (CompoundObject::const_iterator it = rois.begin(); it != rois.end(); it++) {
+		CompoundObject::const_iterator it;
+
+		for (it = rois.begin(); it != rois.end(); it++) {
 			LegoROI* roi = (LegoROI*) *it;
 			const char* name = roi->GetName();
 
@@ -671,6 +675,7 @@ void LegoOmni::Disable(MxBool p_disable, MxU16 p_flags)
 }
 
 // FUNCTION: LEGO1 0x1005b560
+// FUNCTION: BETA10 0x1008efb9
 void LegoOmni::CreateBackgroundAudio()
 {
 	if (m_bkgAudioManager) {

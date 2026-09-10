@@ -527,15 +527,15 @@ void NetworkManager::EnforceDisableNPCs()
 	// that are spawned by camera path triggers via FUN_10064380.
 	// PurgeExtra(TRUE) deliberately skips mama/papa, so we purge manually.
 	for (MxS32 i = 0; i < (MxS32) sizeOfArray(am->m_extras); i++) {
-		if (am->m_extras[i].m_roi != nullptr) {
-			LegoPathActor* actor = CharacterManager()->GetExtraActor(am->m_extras[i].m_roi->GetName());
+		if (am->m_extras[i].roi != nullptr) {
+			LegoPathActor* actor = CharacterManager()->GetExtraActor(am->m_extras[i].roi->GetName());
 			if (actor != nullptr && actor->GetController() != nullptr) {
 				actor->GetController()->RemoveActor(actor);
 				actor->SetController(nullptr);
 			}
 
-			CharacterManager()->ReleaseActor(am->m_extras[i].m_roi);
-			am->m_extras[i].m_roi = nullptr;
+			CharacterManager()->ReleaseActor(am->m_extras[i].roi);
+			am->m_extras[i].roi = nullptr;
 			am->m_extras[i].m_characterId = -1;
 			am->m_unk0x414--;
 		}
@@ -2231,7 +2231,7 @@ static void BuildAnimationJson(
 	p_json += "{\"animIndex\":";
 	p_json += std::to_string(p_info.animIndex);
 	p_json += ",\"name\":";
-	JsonAppendString(p_json, p_animInfo->m_name ? p_animInfo->m_name : "");
+	JsonAppendString(p_json, p_animInfo->animName ? p_animInfo->animName : "");
 	p_json += ",\"category\":";
 	p_json += std::to_string(static_cast<uint8_t>(p_info.entry->category));
 	p_json += ",\"eligible\":";

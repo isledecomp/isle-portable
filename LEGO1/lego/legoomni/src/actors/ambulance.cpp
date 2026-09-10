@@ -25,6 +25,7 @@
 #include "scripts.h"
 
 #include <SDL3/SDL_stdinc.h>
+#include <assert.h>
 #include <stdio.h>
 
 using namespace Extensions;
@@ -34,6 +35,14 @@ DECOMP_SIZE_ASSERT(AmbulanceMissionState, 0x24)
 
 // Flags used in isle.cpp
 extern MxU32 g_isleFlags;
+
+// GLOBAL: LEGO1 0x100f39b8
+// STRING: LEGO1 0x100f39ac
+const char* g_varAMBULSPEED = "ambulSPEED";
+
+// GLOBAL: LEGO1 0x100f39bc
+// STRING: LEGO1 0x100f39a0
+const char* g_varAMBULFUEL = "ambulFUEL";
 
 // FUNCTION: LEGO1 0x10035ee0
 // FUNCTION: BETA10 0x10022820
@@ -331,22 +340,22 @@ MxLong Ambulance::HandlePathStruct(LegoPathStructNotificationParam& p_param)
 
 		Leave();
 
-		if (m_actorId < LegoActor::c_pepper || m_actorId > LegoActor::c_laura) {
-			m_actorId = LegoActor::c_laura;
+		if (m_actorId < LegoActor::e_pepper || m_actorId > LegoActor::e_laura) {
+			m_actorId = LegoActor::e_laura;
 		}
 
 		switch (m_actorId) {
-		case c_pepper:
+		case e_pepper:
 			PlayAnimation(IsleScript::c_hpz049bd_RunAnim);
 			break;
-		case c_mama:
+		case e_mama:
 			PlayAnimation(IsleScript::c_hpz047pe_RunAnim);
 			break;
-		case c_papa:
+		case e_papa:
 			PlayAnimation(IsleScript::c_hpz050bd_RunAnim);
 			break;
-		case c_nick:
-		case c_laura:
+		case e_nick:
+		case e_laura:
 			PlayAnimation(IsleScript::c_hpz048pe_RunAnim);
 			break;
 		}
@@ -377,6 +386,8 @@ MxLong Ambulance::HandleClick()
 	if (((Act1State*) GameState()->GetState("Act1State"))->m_state != Act1State::e_ambulance) {
 		return 1;
 	}
+
+	assert(m_state);
 
 	if (m_state->m_state == AmbulanceMissionState::e_prepareAmbulance) {
 		return 1;
