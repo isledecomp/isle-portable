@@ -42,6 +42,7 @@ public:
 		float p_deltaTime
 	);
 	static MxBool HandleWorldEnable(LegoWorld* p_world, MxBool p_enable);
+	static MxBool HandlePtAtCamTarget(Vector3& p_target);
 
 	static MxBool HandleROIClick(LegoROI* p_rootROI, LegoEventNotificationParam& p_param);
 	static MxBool IsClonedCharacter(const char* p_name);
@@ -73,6 +74,7 @@ constexpr auto HandleTouchInput = &ThirdPersonCameraExt::HandleTouchInput;
 constexpr auto HandleNavOverride = &ThirdPersonCameraExt::HandleNavOverride;
 constexpr auto HandleROIClick = &ThirdPersonCameraExt::HandleROIClick;
 constexpr auto IsClonedCharacter = &ThirdPersonCameraExt::IsClonedCharacter;
+constexpr auto HandlePtAtCamTarget = &ThirdPersonCameraExt::HandlePtAtCamTarget;
 #else
 constexpr decltype(&ThirdPersonCameraExt::HandleCreate) HandleCreate = nullptr;
 constexpr decltype(&ThirdPersonCameraExt::HandleWorldEnable) HandleWorldEnable = nullptr;
@@ -85,6 +87,7 @@ constexpr decltype(&ThirdPersonCameraExt::HandleTouchInput) HandleTouchInput = n
 constexpr decltype(&ThirdPersonCameraExt::HandleNavOverride) HandleNavOverride = nullptr;
 constexpr decltype(&ThirdPersonCameraExt::HandleROIClick) HandleROIClick = nullptr;
 constexpr decltype(&ThirdPersonCameraExt::IsClonedCharacter) IsClonedCharacter = nullptr;
+constexpr decltype(&ThirdPersonCameraExt::HandlePtAtCamTarget) HandlePtAtCamTarget = nullptr;
 #endif
 } // namespace TP
 

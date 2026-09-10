@@ -222,6 +222,16 @@ MxBool ThirdPersonCameraExt::HandleNavOverride(
 	return s_camera->HandleCameraRelativeMovement(p_nav, p_curPos, p_curDir, p_newPos, p_newDir, p_deltaTime);
 }
 
+MxBool ThirdPersonCameraExt::HandlePtAtCamTarget(Vector3& p_target)
+{
+	if (!s_camera || !s_camera->IsActive() || !s_camera->GetPlayerROI()) {
+		return FALSE;
+	}
+
+	p_target = s_camera->GetPlayerROI()->GetWorldPosition();
+	return TRUE;
+}
+
 MxBool ThirdPersonCameraExt::HandleROIClick(LegoROI* p_rootROI, LegoEventNotificationParam& p_param)
 {
 	if (!s_camera) {
