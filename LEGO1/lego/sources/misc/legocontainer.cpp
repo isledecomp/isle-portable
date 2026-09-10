@@ -1,9 +1,10 @@
 #include "legocontainer.h"
+#include "realtime/matrix4d.inl.h"
 
 #include "lego/legoomni/include/legovideomanager.h"
 #include "lego/legoomni/include/misc.h"
 #include "mxdirectx/mxdirect3d.h"
-#include "tgl/d3drm/impl.h"
+#include "tgl/d3drm/tglimpl.h"
 
 DECOMP_SIZE_ASSERT(LegoContainerInfo<LegoTexture>, 0x10);
 // DECOMP_SIZE_ASSERT(LegoContainer<LegoTexture>, 0x18);
@@ -17,7 +18,7 @@ LegoTextureContainer::~LegoTextureContainer()
 // FUNCTION: LEGO1 0x100998e0
 LegoTextureInfo* LegoTextureContainer::GetCached(LegoTextureInfo* p_textureInfo)
 {
-	DDSURFACEDESC desc, newDesc;
+	DDSURFACEDESC desc;
 	DWORD width, height;
 	memset(&desc, 0, sizeof(desc));
 	desc.dwSize = sizeof(desc);
@@ -27,18 +28,20 @@ LegoTextureInfo* LegoTextureContainer::GetCached(LegoTextureInfo* p_textureInfo)
 		height = desc.dwHeight;
 	}
 
+	DDSURFACEDESC newDesc;
 	for (LegoCachedTextureList::iterator it = m_cached.begin(); it != m_cached.end(); it++) {
 		if ((*it).second == FALSE && (*it).first->m_texture->AddRef() != 0 && (*it).first->m_texture->Release() == 1) {
 			if (!strcmp((*it).first->m_name, p_textureInfo->m_name)) {
-				LPDIRECTDRAWSURFACE surface = (*it).first->m_surface;
+				LegoTextureInfo* cached = (*it).first;
+				LPDIRECTDRAWSURFACE surface = cached->m_surface;
 				memset(&newDesc, 0, sizeof(newDesc));
 				newDesc.dwSize = sizeof(newDesc);
 
 				if (surface->GetSurfaceDesc(&newDesc) == DD_OK) {
 					if (newDesc.dwWidth == width && newDesc.dwHeight == height) {
 						(*it).second = TRUE;
-						(*it).first->m_texture->AddRef();
-						return (*it).first;
+						cached->m_texture->AddRef();
+						return cached;
 					}
 				}
 			}
@@ -63,8 +66,8 @@ LegoTextureInfo* LegoTextureContainer::GetCached(LegoTextureInfo* p_textureInfo)
 	if (VideoManager()->GetDirect3D()->DirectDraw()->CreateSurface(&newDesc, &textureInfo->m_surface, NULL) == DD_OK) {
 		RECT rect;
 		rect.left = 0;
-		rect.right = newDesc.dwWidth - 1;
 		rect.top = 0;
+		rect.right = newDesc.dwWidth - 1;
 		rect.bottom = newDesc.dwHeight - 1;
 
 		textureInfo->m_surface->SetPalette(textureInfo->m_palette);
@@ -85,7 +88,8 @@ LegoTextureInfo* LegoTextureContainer::GetCached(LegoTextureInfo* p_textureInfo)
 			}
 			else {
 				textureInfo->m_texture->SetAppData((LPD3DRM_APPDATA) textureInfo);
-				m_cached.push_back(LegoCachedTexture(textureInfo, TRUE));
+				LegoCachedTexture entry(textureInfo, TRUE);
+				m_cached.push_back(entry);
 
 				textureInfo->m_texture->AddRef();
 

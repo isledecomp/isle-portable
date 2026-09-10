@@ -169,9 +169,9 @@ void ScenePlayer::SetupROIs(const AnimInfo* p_animInfo)
 			// Check if this is a vehicle actor via ModelInfo flag
 			bool isVehicleActor = false;
 			for (uint8_t m = 0; m < p_animInfo->m_modelCount; m++) {
-				if (p_animInfo->m_models[m].m_name &&
-					!SDL_strcasecmp(lowered.c_str(), p_animInfo->m_models[m].m_name) &&
-					p_animInfo->m_models[m].m_unk0x2c) {
+				if (p_animInfo->models[m].modelName &&
+					!SDL_strcasecmp(lowered.c_str(), p_animInfo->models[m].modelName) &&
+					p_animInfo->models[m].m_unk0x2c) {
 					isVehicleActor = true;
 					break;
 				}

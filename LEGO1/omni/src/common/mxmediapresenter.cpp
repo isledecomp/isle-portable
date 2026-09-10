@@ -180,6 +180,7 @@ void MxMediaPresenter::EndAction()
 }
 
 // FUNCTION: LEGO1 0x100b5d10
+// FUNCTION: BETA10 0x10136415
 MxResult MxMediaPresenter::Tickle()
 {
 	AUTOLOCK(m_criticalSection);
@@ -190,6 +191,7 @@ MxResult MxMediaPresenter::Tickle()
 }
 
 // FUNCTION: LEGO1 0x100b5d90
+// FUNCTION: BETA10 0x1013649f
 void MxMediaPresenter::StreamingTickle()
 {
 	if (!m_currentChunk) {
@@ -214,6 +216,7 @@ void MxMediaPresenter::StreamingTickle()
 }
 
 // FUNCTION: LEGO1 0x100b5e10
+// FUNCTION: BETA10 0x10136597
 void MxMediaPresenter::RepeatingTickle()
 {
 	if (IsEnabled() && !m_currentChunk) {
@@ -224,13 +227,13 @@ void MxMediaPresenter::RepeatingTickle()
 		}
 
 		if (m_currentChunk) {
-			MxLong time = m_currentChunk->GetTime();
-			if (time <= m_action->GetElapsedTime() % m_action->GetLoopCount()) {
+			if (m_currentChunk->GetTime() <= m_action->GetElapsedTime() % m_action->GetLoopCount()) {
 				ProgressTickleState(e_freezing);
 			}
 		}
 		else {
-			if (m_action->GetElapsedTime() >= m_action->GetStartTime() + m_action->GetDuration()) {
+			MxDSAction* action = m_action;
+			if (action->GetElapsedTime() >= action->GetStartTime() + action->GetDuration()) {
 				ProgressTickleState(e_freezing);
 			}
 		}
@@ -238,6 +241,7 @@ void MxMediaPresenter::RepeatingTickle()
 }
 
 // FUNCTION: LEGO1 0x100b5ef0
+// FUNCTION: BETA10 0x101366c0
 void MxMediaPresenter::DoneTickle()
 {
 	ProgressTickleState(e_idle);
@@ -248,15 +252,14 @@ void MxMediaPresenter::DoneTickle()
 // FUNCTION: BETA10 0x101366e9
 void MxMediaPresenter::LoopChunk(MxStreamChunk* p_chunk)
 {
-	MxStreamChunk* chunk = new MxStreamChunk;
+	MxStreamChunk* clone = new MxStreamChunk;
 
-	MxU32 length = p_chunk->GetLength();
-	chunk->SetLength(length);
-	chunk->SetData(new MxU8[length]);
-	chunk->SetTime(p_chunk->GetTime());
+	clone->SetLength(p_chunk->GetLength());
+	clone->SetData(new MxU8[clone->GetLength()]);
+	clone->SetTime(p_chunk->GetTime());
 
-	memcpy(chunk->GetData(), p_chunk->GetData(), chunk->GetLength());
-	m_loopingChunks->Append(chunk);
+	memcpy(clone->GetData(), p_chunk->GetData(), clone->GetLength());
+	m_loopingChunks->Append(clone);
 }
 
 // FUNCTION: LEGO1 0x100b6030

@@ -38,7 +38,10 @@ using namespace Extensions;
 
 // GLOBAL: LEGO1 0x100d9924
 // GLOBAL: BETA10 0x101bfb3c
-const char* g_infoman = "infoman";
+const char* const g_infoman = "infoman";
+
+// GLOBAL: LEGO1 0x100f7960
+MxU8 g_unk0x100f7960[] = {1, 2, 3, 4};
 
 // GLOBAL: LEGO1 0x100f7964
 MxLong g_checkboxBlinkTimer = 0;
@@ -52,10 +55,10 @@ RegistrationBook::RegistrationBook() : m_registerDialogueTimer(0x80000000), m_un
 	memset(m_alphabet, 0, sizeof(m_alphabet));
 	memset(m_intAlphabet, 0, sizeof(m_intAlphabet));
 	memset(m_name, 0, sizeof(m_name));
-	m_newName.m_cursorPos = 0;
+	m_cursorPos = 0;
 
 	memset(m_checkmark, 0, sizeof(m_checkmark));
-	memset(&m_newName, -1, sizeof(m_newName) - 2);
+	memset(m_letters, -1, sizeof(m_letters));
 
 	m_vehiclesToPosition = 0;
 	m_infocenterState = NULL;
@@ -201,40 +204,40 @@ MxLong RegistrationBook::HandleKeyPress(SDL_Keycode p_key)
 			BackgroundAudioManager()->RaiseVolume();
 		}
 	}
-	else if (key != SDLK_BACKSPACE && m_newName.m_cursorPos < 7) {
-		m_name[0][m_newName.m_cursorPos] = (*intoAlphabet)->Clone();
+	else if (key != SDLK_BACKSPACE && m_cursorPos < 7) {
+		m_name[0][m_cursorPos] = (*intoAlphabet)->Clone();
+		assert(m_name[0][m_cursorPos]);
 
-		if (m_name[0][m_newName.m_cursorPos] != NULL) {
+		if (m_name[0][m_cursorPos] != NULL) {
 			(*intoAlphabet)->GetAction()->SetUnknown24((*intoAlphabet)->GetAction()->GetUnknown24() + 1);
-			m_name[0][m_newName.m_cursorPos]->Enable(TRUE);
-			m_name[0][m_newName.m_cursorPos]->SetTickleState(MxPresenter::e_repeating);
-			m_name[0][m_newName.m_cursorPos]->SetPosition(m_newName.m_cursorPos * 23 + 343, 121);
+			m_name[0][m_cursorPos]->Enable(TRUE);
+			m_name[0][m_cursorPos]->SetTickleState(MxPresenter::e_repeating);
+			m_name[0][m_cursorPos]->SetPosition(m_cursorPos * 23 + 343, 121);
 
-			if (m_newName.m_cursorPos == 0) {
+			if (m_cursorPos == 0) {
 				m_checkmark[0]->Enable(TRUE);
 			}
 
-			m_newName.m_letters[m_newName.m_cursorPos] =
-				key >= SDLK_A && key <= SDLK_Z
-					? key - SDLK_A
-					: (intoAlphabet - m_intAlphabet) + sizeOfArray(m_alphabet) - m_intAlphabetOffset;
-			m_newName.m_cursorPos++;
+			m_letters[m_cursorPos] = key >= SDLK_A && key <= SDLK_Z ? key - SDLK_A
+																	: (intoAlphabet - m_intAlphabet) +
+																		  sizeOfArray(m_alphabet) - m_intAlphabetOffset;
+			m_cursorPos++;
 		}
 	}
 	else {
-		if (key == SDLK_BACKSPACE && m_newName.m_cursorPos > 0) {
-			m_newName.m_cursorPos--;
+		if (key == SDLK_BACKSPACE && m_cursorPos > 0) {
+			m_cursorPos--;
 
-			m_name[0][m_newName.m_cursorPos]->Enable(FALSE);
+			m_name[0][m_cursorPos]->Enable(FALSE);
 
-			delete m_name[0][m_newName.m_cursorPos];
-			m_name[0][m_newName.m_cursorPos] = NULL;
+			delete m_name[0][m_cursorPos];
+			m_name[0][m_cursorPos] = NULL;
 
-			if (m_newName.m_cursorPos == 0) {
+			if (m_cursorPos == 0) {
 				m_checkmark[0]->Enable(FALSE);
 			}
 
-			m_newName.m_letters[m_newName.m_cursorPos] = -1;
+			m_letters[m_cursorPos] = -1;
 		}
 	}
 
@@ -265,10 +268,10 @@ MxLong RegistrationBook::HandleControl(LegoControlManagerNotificationParam& p_pa
 				DeleteObjects(&m_atomId, RegbookScript::c_iic006in_RunAnim, RegbookScript::c_iic008in_PlayWav);
 
 				if (GameState()->GetCurrentAct() == LegoGameState::e_act1) {
-					m_infocenterState->m_state = InfocenterState::e_backToInfoAct1;
+					m_infocenterState->m_step = InfocenterState::e_backToInfoAct1;
 				}
 				else {
-					m_infocenterState->m_state = InfocenterState::e_notRegistered;
+					m_infocenterState->m_step = InfocenterState::e_notRegistered;
 				}
 
 				TransitionManager()->StartTransition(MxTransitionManager::e_mosaic, 50, FALSE, FALSE);
@@ -318,8 +321,8 @@ void RegistrationBook::LoadSave(MxS16 p_checkMarkIndex)
 
 	// The first checkmark searches for the name and is -1 if not found, while all other checkmarks start at 1
 	// TODO: structure incorrect
-	MxS16 player = p_checkMarkIndex == 0 ? GameState()->FindPlayer(*(LegoGameState::Username*) &m_newName.m_letters)
-										 : p_checkMarkIndex - 1;
+	MxS16 player =
+		p_checkMarkIndex == 0 ? GameState()->FindPlayer(*(LegoGameState::Username*) &m_letters) : p_checkMarkIndex - 1;
 
 	switch (player) {
 	case 0: // Current save
@@ -337,7 +340,7 @@ void RegistrationBook::LoadSave(MxS16 p_checkMarkIndex)
 		m_awaitLoad = TRUE;
 
 		// TOOD: structure incorrect
-		GameState()->AddPlayer(*(LegoGameState::Username*) &m_newName.m_letters);
+		GameState()->AddPlayer(*(LegoGameState::Username*) &m_letters);
 		GameState()->Save(0);
 
 		WriteInfocenterLetters(0);
@@ -361,7 +364,7 @@ void RegistrationBook::LoadSave(MxS16 p_checkMarkIndex)
 
 	EmitGameEvent(e_saveStateChanged);
 
-	m_infocenterState->m_state = InfocenterState::e_selectedSave;
+	m_infocenterState->m_step = InfocenterState::e_selectedSave;
 	if (m_vehiclesToPosition == 0 && !m_awaitLoad) {
 		DeleteObjects(&m_atomId, RegbookScript::c_iic006in_RunAnim, RegbookScript::c_iic008in_PlayWav);
 		TransitionManager()->StartTransition(MxTransitionManager::e_mosaic, 50, FALSE, FALSE);
@@ -372,7 +375,8 @@ void RegistrationBook::LoadSave(MxS16 p_checkMarkIndex)
 void RegistrationBook::WriteInfocenterLetters(MxS16 p_user)
 {
 	for (MxS16 i = 0; i < 7; i++) {
-		delete m_infocenterState->GetNameLetter(i);
+		MxStillPresenter* letter = m_infocenterState->GetNameLetter(i);
+		delete letter;
 		m_infocenterState->SetNameLetter(i, m_name[p_user][i]);
 		m_name[p_user][i] = NULL;
 	}
@@ -531,12 +535,11 @@ void RegistrationBook::ReadyWorld()
 #ifdef BETA10
 	InfocenterState* infocenterState = (InfocenterState*) GameState()->GetState("InfocenterState");
 	assert(infocenterState);
-
-	if (infocenterState->HasRegistered())
 #else
-	if (m_infocenterState->HasRegistered())
+	InfocenterState* infocenterState = m_infocenterState;
 #endif
-	{
+
+	if (infocenterState->HasRegistered()) {
 		PlayAction(RegbookScript::c_iic008in_PlayWav);
 
 		LegoROI* infoman = FindROI(g_infoman);
@@ -680,8 +683,10 @@ MxBool RegistrationBook::CreateSurface()
 	MxStillPresenter* presenter;
 
 	if (presenters) {
-		if (presenters->begin() != presenters->end()) {
-			presenter = (MxStillPresenter*) presenters->front();
+		MxCompositePresenterList::iterator it = presenters->begin();
+
+		if (it != presenters->end()) {
+			presenter = (MxStillPresenter*) *it;
 		}
 		else {
 			presenter = NULL;

@@ -10,6 +10,7 @@
 #include "mxwavepresenter.h"
 
 #include <SDL3/SDL_log.h>
+#include <assert.h>
 
 DECOMP_SIZE_ASSERT(MxSoundManager, 0x3c);
 
@@ -206,15 +207,17 @@ MxPresenter* MxSoundManager::FindPresenter(const MxAtomId& p_atomId, MxU32 p_obj
 }
 
 // FUNCTION: LEGO1 0x100aecf0
-float MxSoundManager::GetAttenuation(MxU32 p_volume)
+float MxSoundManager::GetAttenuation(MxU32 p_percent)
 {
+	assert((p_percent >= 0) && (p_percent <= 100));
+
 	// [library:audio] Convert DSOUND attenutation units to linear miniaudio volume
 
-	if (p_volume == 0) {
+	if (p_percent == 0) {
 		return 0.0f;
 	}
 
-	return ma_volume_db_to_linear((float) g_volumeAttenuation[p_volume - 1] / 100.0f);
+	return ma_volume_db_to_linear((float) g_volumeAttenuation[p_percent - 1] / 100.0f);
 }
 
 // FUNCTION: LEGO1 0x100aed10

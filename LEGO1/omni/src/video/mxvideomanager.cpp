@@ -322,6 +322,7 @@ void MxVideoManager::Destroy()
 }
 
 // FUNCTION: LEGO1 0x100bea60
+// FUNCTION: BETA10 0x1012d87f
 void MxVideoManager::InvalidateRect(MxRect32& p_rect)
 {
 	ENTER(m_criticalSection);
@@ -361,6 +362,7 @@ MxResult MxVideoManager::Tickle()
 }
 
 // FUNCTION: LEGO1 0x100bebe0
+// FUNCTION: BETA10 0x1012da05
 MxResult MxVideoManager::RealizePalette(MxPalette* p_palette)
 {
 	PALETTEENTRY paletteEntries[256];

@@ -20,6 +20,7 @@
 #include "roi/legoroi.h"
 
 #include <SDL3/SDL_stdinc.h>
+#include <assert.h>
 
 DECOMP_SIZE_ASSERT(LegoModelPresenter, 0x6c)
 
@@ -198,7 +199,7 @@ done:
 // FUNCTION: LEGO1 0x1007ff70
 // FUNCTION: BETA10 0x10099061
 MxResult LegoModelPresenter::CreateROI(
-	MxDSChunk& p_chunk,
+	MxDSChunk* p_chunk,
 	LegoEntity* p_entity,
 	MxBool p_roiVisible,
 	LegoWorld* p_world
@@ -206,9 +207,10 @@ MxResult LegoModelPresenter::CreateROI(
 {
 	MxResult result = SUCCESS;
 
+	assert(p_chunk);
 	ParseExtra();
 
-	if (m_roi == NULL && (result = CreateROI(&p_chunk)) == SUCCESS && p_entity != NULL) {
+	if (m_roi == NULL && (result = CreateROI(p_chunk)) == SUCCESS && p_entity != NULL) {
 		VideoManager()->Get3DManager()->Add(*m_roi);
 		VideoManager()->Get3DManager()->Moved(*m_roi);
 	}
@@ -222,7 +224,7 @@ MxResult LegoModelPresenter::CreateROI(
 		p_entity->ClearFlag(LegoEntity::c_managerOwned);
 	}
 	else {
-		p_world->GetROIList().push_back(m_roi);
+		p_world->GetROIList()->push_back(m_roi);
 	}
 
 	return result;
@@ -302,6 +304,7 @@ void LegoModelPresenter::ParseExtra()
 
 		if (KeyValueStringParse(output, g_strAUTO_CREATE, extraCopy) != 0) {
 			char* token = strtok(output, g_parseExtraTokens);
+			assert(token);
 
 			if (m_roi == NULL) {
 				m_roi = CharacterManager()->GetActorROI(token, FALSE);
@@ -310,12 +313,13 @@ void LegoModelPresenter::ParseExtra()
 		}
 		else if (KeyValueStringParse(output, g_strDB_CREATE, extraCopy) != 0 && m_roi == NULL) {
 			LegoWorld* currentWorld = CurrentWorld();
-			list<LegoROI*>& roiList = currentWorld->GetROIList();
+			list<LegoROI*>* rl = currentWorld->GetROIList();
+			assert(rl);
 
-			for (list<LegoROI*>::iterator it = roiList.begin(); it != roiList.end(); it++) {
+			for (list<LegoROI*>::iterator it = rl->begin(); it != rl->end(); it++) {
 				if (!SDL_strcasecmp((*it)->GetName(), output)) {
 					m_roi = *it;
-					roiList.erase(it);
+					rl->erase(it);
 
 					m_addedToView = TRUE;
 					VideoManager()->Get3DManager()->Add(*m_roi);
@@ -323,6 +327,8 @@ void LegoModelPresenter::ParseExtra()
 					break;
 				}
 			}
+
+			assert(m_roi);
 		}
 	}
 }

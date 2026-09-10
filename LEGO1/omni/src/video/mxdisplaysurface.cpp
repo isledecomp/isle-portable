@@ -124,6 +124,7 @@ MxU8 MxDisplaySurface::CountContiguousBitsSetTo1(MxU32 p_param)
 }
 
 // FUNCTION: LEGO1 0x100ba790
+// FUNCTION: BETA10 0x1013f759
 MxResult MxDisplaySurface::Init(
 	MxVideoParam& p_videoParam,
 	LPDIRECTDRAWSURFACE p_ddSurface1,
@@ -150,10 +151,11 @@ MxResult MxDisplaySurface::Init(
 }
 
 // FUNCTION: LEGO1 0x100ba7f0
+// FUNCTION: BETA10 0x1013f7f1
 MxResult MxDisplaySurface::Create(MxVideoParam& p_videoParam)
 {
-	DDSURFACEDESC ddsd;
 	MxResult result = FAILURE;
+	DDSURFACEDESC ddsd;
 	LPDIRECTDRAW lpDirectDraw = MVideoManager()->GetDirectDraw();
 	HWND hWnd = MxOmni::GetInstance()->GetWindowHandle();
 
@@ -242,10 +244,13 @@ MxResult MxDisplaySurface::Create(MxVideoParam& p_videoParam)
 		ddsd.dwFlags = DDSD_HEIGHT | DDSD_WIDTH | DDSD_CAPS;
 		ddsd.dwWidth = m_videoParam.GetRect().GetWidth();
 		ddsd.dwHeight = m_videoParam.GetRect().GetHeight();
-		ddsd.ddsCaps.dwCaps = DDSCAPS_VIDEOMEMORY | DDSCAPS_3DDEVICE | DDSCAPS_OFFSCREENPLAIN;
+		ddsd.ddsCaps.dwCaps = DDSCAPS_3DDEVICE | DDSCAPS_OFFSCREENPLAIN;
 
-		if (!m_videoParam.Flags().GetBackBuffers()) {
-			ddsd.ddsCaps.dwCaps = DDSCAPS_3DDEVICE | DDSCAPS_SYSTEMMEMORY | DDSCAPS_OFFSCREENPLAIN;
+		if (m_videoParam.Flags().GetBackBuffers()) {
+			ddsd.ddsCaps.dwCaps |= DDSCAPS_VIDEOMEMORY;
+		}
+		else {
+			ddsd.ddsCaps.dwCaps |= DDSCAPS_SYSTEMMEMORY;
 		}
 
 		if (lpDirectDraw->CreateSurface(&ddsd, &m_ddSurface2, NULL)) {
@@ -275,6 +280,7 @@ done:
 }
 
 // FUNCTION: LEGO1 0x100baa90
+// FUNCTION: BETA10 0x1013fd5c
 void MxDisplaySurface::Destroy()
 {
 	if (m_initialized) {
@@ -474,12 +480,14 @@ void MxDisplaySurface::VTable0x28(
 		hr = tempSurface->Lock(NULL, &tempDesc, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
 	}
 
+	MxU8* data;
+
 	if (hr != DD_OK) {
 		tempSurface->Release();
 		return;
 	}
 
-	MxU8* data = p_bitmap->GetStart(p_left, p_top);
+	data = p_bitmap->GetStart(p_left, p_top);
 
 	MxS32 bytesPerPixel = tempDesc.ddpfPixelFormat.dwRGBBitCount / 8;
 	MxU8* surface = (MxU8*) tempDesc.lpSurface;
@@ -641,6 +649,7 @@ void MxDisplaySurface::VTable0x30(
 }
 
 // FUNCTION: LEGO1 0x100bba50
+// FUNCTION: BETA10 0x10141498
 void MxDisplaySurface::Display(MxS32 p_left, MxS32 p_top, MxS32 p_left2, MxS32 p_top2, MxS32 p_width, MxS32 p_height)
 {
 	if (m_videoParam.Flags().GetEnabled()) {
@@ -665,10 +674,10 @@ void MxDisplaySurface::Display(MxS32 p_left, MxS32 p_top, MxS32 p_left2, MxS32 p
 			p_left2 += m_videoParam.GetRect().GetLeft() + point.GetX();
 			p_top2 += m_videoParam.GetRect().GetTop() + point.GetY();
 
+			DDBLTFX data;
 			MxRect32 a(MxPoint32(p_left, p_top), MxSize32(p_width + 1, p_height + 1));
 			MxRect32 b(MxPoint32(p_left2, p_top2), MxSize32(p_width + 1, p_height + 1));
 
-			DDBLTFX data;
 			memset(&data, 0, sizeof(data));
 			data.dwSize = sizeof(data);
 			data.dwDDFX = DDBLTFX_NOTEARING;
@@ -682,6 +691,7 @@ void MxDisplaySurface::Display(MxS32 p_left, MxS32 p_top, MxS32 p_left2, MxS32 p
 }
 
 // FUNCTION: LEGO1 0x100bbc10
+// FUNCTION: BETA10 0x101416a6
 void MxDisplaySurface::GetDC(HDC* p_hdc)
 {
 	if (m_ddSurface2 && !m_ddSurface2->GetDC(p_hdc)) {
@@ -692,6 +702,7 @@ void MxDisplaySurface::GetDC(HDC* p_hdc)
 }
 
 // FUNCTION: LEGO1 0x100bbc40
+// FUNCTION: BETA10 0x10141700
 void MxDisplaySurface::ReleaseDC(HDC p_hdc)
 {
 	if (m_ddSurface2 && p_hdc) {

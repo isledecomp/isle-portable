@@ -160,11 +160,21 @@ void WorldStateSync::HandleWorldEventRequest(const WorldEventRequestMsg& p_msg)
 	BroadcastWorldEvent(p_msg.entityType, p_msg.changeType, p_msg.entityIndex);
 }
 
+static LegoEntity* InfoEntity(const LegoPlantInfo& p_info)
+{
+	return p_info.m_entity;
+}
+
+static LegoEntity* InfoEntity(const LegoBuildingInfo& p_info)
+{
+	return p_info.entity;
+}
+
 template <typename TInfo>
 static int FindEntityIndex(TInfo* p_infoArray, MxS32 p_count, LegoEntity* p_entity)
 {
 	for (MxS32 i = 0; i < p_count; i++) {
-		if (p_infoArray[i].m_entity == p_entity) {
+		if (InfoEntity(p_infoArray[i]) == p_entity) {
 			return i;
 		}
 	}
@@ -402,13 +412,13 @@ void WorldStateSync::ApplyWorldEvent(uint8_t p_entityType, uint8_t p_changeType,
 
 		LegoBuildingInfo* info = &buildingInfo[p_entityIndex];
 
-		if (info->m_entity != nullptr) {
-			if (!DispatchEntitySwitch(info->m_entity, p_changeType)) {
+		if (info->entity != nullptr) {
+			if (!DispatchEntitySwitch(info->entity, p_changeType)) {
 				if (p_changeType == CHANGE_COLOR) {
-					info->m_entity->SwitchColor(info->m_entity->GetROI());
+					info->entity->SwitchColor(info->entity->GetROI());
 				}
 				else if (p_changeType == CHANGE_DECREMENT) {
-					BuildingManager()->DecrementCounter(info->m_entity);
+					BuildingManager()->DecrementCounter(info->entity);
 				}
 			}
 		}

@@ -24,7 +24,7 @@ public:
 
 	ma_engine* GetEngine() { return m_engine; }
 
-	float GetAttenuation(MxU32 p_volume);
+	float GetAttenuation(MxU32 p_percent);
 
 	MxPresenter* FindPresenter(const MxAtomId& p_atomId, MxU32 p_objectId);
 

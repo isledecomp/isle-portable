@@ -143,7 +143,7 @@ void LegoWorld::Destroy(MxBool p_fromDestructor)
 		m_objects.erase(it);
 
 		if (object->IsA("MxPresenter")) {
-			MxPresenter* presenter = (MxPresenter*) object;
+			presenter = (MxPresenter*) object;
 			MxDSAction* action = presenter->GetAction();
 
 			if (action) {
@@ -382,6 +382,7 @@ void LegoWorld::RemovePresenterFromBoundaries(LegoAnimPresenter* p_presenter)
 }
 
 // FUNCTION: LEGO1 0x1001ff80
+// FUNCTION: BETA10 0x100da749
 void LegoWorld::AddPath(LegoPathController* p_controller)
 {
 	p_controller->SetWorld(this);
@@ -407,6 +408,7 @@ LegoPathBoundary* LegoWorld::FindPathBoundary(const char* p_name)
 }
 
 // FUNCTION: LEGO1 0x10020120
+// FUNCTION: BETA10 0x100da842
 MxResult LegoWorld::GetCurrPathInfo(LegoPathBoundary** p_boundaries, MxS32& p_numL)
 {
 	LegoPathControllerListCursor cursor(&m_pathControllerList);
@@ -791,7 +793,7 @@ void LegoWorld::Enable(MxBool p_enable)
 			}
 		}
 
-		for (MxCoreSet::iterator it = m_objects.begin(); it != m_objects.end(); it++) {
+		for (it = m_objects.begin(); it != m_objects.end(); it++) {
 			if ((*it)->IsA("LegoActionControlPresenter") ||
 				((*it)->IsA("MxPresenter") && ((MxPresenter*) *it)->IsEnabled())) {
 				m_disabledObjects.insert(*it);

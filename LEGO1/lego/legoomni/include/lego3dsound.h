@@ -17,7 +17,7 @@ public:
 
 	void Init();
 	MxResult Create(ma_sound* p_sound, const char* p_name, MxS32 p_volume);
-	void Destroy();
+	virtual void Destroy();
 	MxU32 UpdatePosition(ma_sound* p_sound);
 	void FUN_10011a60(ma_sound* p_sound, const char* p_name);
 	void Reset();

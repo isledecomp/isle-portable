@@ -4,6 +4,8 @@
 #include "decomp.h"
 #include "define.h"
 #include "extensions/thirdpersoncamera.h"
+#include "realtime/matrix4d.inl.h"
+#include "realtime/vectorlength.inl.h"
 #include "islepathactor.h"
 #include "legoanimationmanager.h"
 #include "legoanimpresenter.h"
@@ -20,6 +22,8 @@
 #include "mxstreamer.h"
 #include "mxtimer.h"
 #include "mxutilities.h"
+
+#include <assert.h>
 
 using namespace Extensions;
 
@@ -113,6 +117,7 @@ MxResult LegoAnimMMPresenter::StartAction(MxStreamController* p_controller, MxDS
 		result = SUCCESS;
 	}
 
+	assert(result == SUCCESS);
 	return result;
 }
 
@@ -228,6 +233,7 @@ MxLong LegoAnimMMPresenter::Notify(MxParam& p_param)
 }
 
 // FUNCTION: LEGO1 0x1004b360
+// FUNCTION: BETA10 0x1004c560
 void LegoAnimMMPresenter::AdvanceSerialAction(MxPresenter* p_presenter)
 {
 	if (m_presenter == p_presenter && ((MxU8) p_presenter->GetCurrentTickleState() == MxPresenter::e_streaming ||
@@ -252,6 +258,7 @@ void LegoAnimMMPresenter::ParseExtra()
 		char output[1024];
 		if (KeyValueStringParse(output, g_strANIMMAN_ID, extraCopy)) {
 			char* token = strtok(output, g_parseExtraTokens);
+			assert(token);
 			m_animmanId = atoi(token);
 			m_tranInfo = AnimationManager()->GetTranInfo(m_animmanId);
 
@@ -321,6 +328,8 @@ MxBool LegoAnimMMPresenter::FUN_1004b530(MxLong p_time)
 	if (m_presenter != NULL) {
 		m_presenter->GetTransforms(m_unk0x68, 0);
 		m_roiMap = m_presenter->GetROIMap(m_roiMapSize);
+		assert(m_roiMap);
+		assert(m_roiMapSize);
 		m_roiMapSize++;
 	}
 

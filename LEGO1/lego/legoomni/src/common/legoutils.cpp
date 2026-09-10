@@ -34,6 +34,7 @@
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_process.h>
 #include <SDL3/SDL_stdinc.h>
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <vec.h>
@@ -48,6 +49,9 @@ LegoROI* PickROI(MxLong p_x, MxLong p_y)
 	Lego3DView* view = videoManager->Get3DManager()->GetLego3DView();
 	return (LegoROI*) view->Pick(p_x, p_y);
 }
+
+// GLOBAL: LEGO1 0x100f407c
+undefined4 g_unk0x100f407c = 2;
 
 // FUNCTION: LEGO1 0x1003dd90
 // FUNCTION: BETA10 0x100d3449
@@ -185,20 +189,20 @@ void CalculateViewFromAnimation(LegoAnimPresenter* p_presenter)
 {
 	MxMatrix viewMatrix;
 	LegoTreeNode* rootNode = p_presenter->GetAnimation()->GetRoot();
-	LegoAnimNodeData* camData = NULL;
+	LegoAnimNodeData* cameraData = NULL;
 	LegoAnimNodeData* targetData = NULL;
 	MxS16 nodesCount = CountTotalTreeNodes(rootNode);
 
 	MxFloat fov;
 	for (MxS16 i = 0; i < nodesCount; i++) {
-		if (camData && targetData) {
+		if (cameraData && targetData) {
 			break;
 		}
 
 		LegoAnimNodeData* data = (LegoAnimNodeData*) GetTreeNode(rootNode, i)->GetData();
 
 		if (!SDL_strncasecmp(data->GetName(), "CAM", strlen("CAM"))) {
-			camData = data;
+			cameraData = data;
 			fov = atof(&data->GetName()[strlen(data->GetName()) - 2]);
 		}
 		else if (!SDL_strcasecmp(data->GetName(), "TARGET")) {
@@ -211,7 +215,10 @@ void CalculateViewFromAnimation(LegoAnimPresenter* p_presenter)
 	matrixCam.SetIdentity();
 	matrixTarget.SetIdentity();
 
-	camData->CreateLocalTransform(0.0f, matrixCam);
+	assert(cameraData);
+	assert(targetData);
+
+	cameraData->CreateLocalTransform(0.0f, matrixCam);
 	targetData->CreateLocalTransform(0.0f, matrixTarget);
 
 	Mx3DPointFloat dir;
@@ -233,6 +240,7 @@ void CalculateViewFromAnimation(LegoAnimPresenter* p_presenter)
 }
 
 // FUNCTION: LEGO1 0x1003e300
+// FUNCTION: BETA10 0x100d3e50
 Extra::ActionType MatchActionString(const char* p_str)
 {
 	Extra::ActionType result = Extra::ActionType::e_unknown;
@@ -390,7 +398,9 @@ void NotifyEntity(const char* p_filename, MxS32 p_entityId, LegoEntity* p_sender
 // FUNCTION: LEGO1 0x1003eab0
 void SetCameraControllerFromIsle()
 {
-	InputManager()->SetCamera(FindWorld(*g_isleScript, IsleScript::c__Isle)->GetCameraController());
+	Isle* isle = (Isle*) FindWorld(*g_isleScript, IsleScript::c__Isle);
+	assert(isle);
+	InputManager()->SetCamera(isle->GetCameraController());
 }
 
 // FUNCTION: LEGO1 0x1003eae0
@@ -405,7 +415,7 @@ void ConvertHSVToRGB(float p_h, float p_s, float p_v, float* p_rOut, float* p_gO
 
 	double sDbl = p_s;
 
-	if (p_s > 0.5f) {
+	if (p_s > 0.5) {
 		calc = (1.0f - p_v) * p_s + p_v;
 	}
 	else {
@@ -461,6 +471,81 @@ void ConvertHSVToRGB(float p_h, float p_s, float p_v, float* p_rOut, float* p_gO
 	default:
 		return;
 	}
+}
+
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+
+// FUNCTION: BETA10 0x100d4801
+void ConvertRGBToHSV(float p_r, float p_g, float p_b, float* p_hOut, float* p_sOut, float* p_vOut)
+{
+	double h, min, delta, s, max, gc, l, rc, bc;
+
+	h = 0.0;
+	l = 0.0;
+	s = 0.0;
+
+	max = MAX(max = MAX(p_g, p_r), p_b);
+
+	if ((l = ((min = MIN(p_b, min = MIN(p_r, p_g))) + max) / 2.0) <= 0.0) {
+		l = 0.0;
+		goto done;
+	}
+
+	delta = max - min;
+	s = delta;
+
+	if (s > 0.0) {
+		if (l > 0.5) {
+			s = s / (2.0 - max - min);
+		}
+		else {
+			s = s / (min + max);
+		}
+	}
+	else {
+		goto done;
+	}
+
+	rc = (max - p_r) / delta;
+	gc = (max - p_g) / delta;
+	bc = (max - p_b) / delta;
+
+	if (max == p_r) {
+		h = (min == p_g) ? bc + 5.0 : 1.0 - gc;
+	}
+	else if (max == p_g) {
+		h = (min == p_b) ? rc + 1.0 : 3.0 - bc;
+	}
+	else {
+		h = (min == p_r) ? gc + 3.0 : 5.0 - rc;
+	}
+
+	h = h * (1.0 / 6.0); // BETA10 (1996) still divides: h = h / 6.0;
+
+done:
+	if (h < 0.0) {
+		h += 1.0;
+	}
+	if (h > 1.0) {
+		h -= 1.0;
+	}
+	if (l < 0.0) {
+		l = 0.0;
+	}
+	if (l > 1.0) {
+		l = 1.0;
+	}
+	if (s < 0.0) {
+		s = 0.0;
+	}
+	if (s > 1.0) {
+		s = 1.0;
+	}
+
+	*p_hOut = h;
+	*p_sOut = l;
+	*p_vOut = s;
 }
 
 // FUNCTION: LEGO1 0x1003ecc0
@@ -740,8 +825,8 @@ void WriteDefaultTexture(LegoStorage* p_storage, const char* p_name)
 					memcpy(image->GetBits(), desc.lpSurface, desc.dwWidth * desc.dwHeight);
 				}
 				else {
-					MxU8* surface = (MxU8*) desc.lpSurface;
 					LegoU8* bits = image->GetBits();
+					MxU8* surface = (MxU8*) desc.lpSurface;
 
 					for (MxS32 i = 0; i < desc.dwHeight; i++) {
 						memcpy(bits, surface, desc.dwWidth);

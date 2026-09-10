@@ -8,6 +8,7 @@
 #include "misc.h"
 #include "mxmain.h"
 
+#include <assert.h>
 #include <vec.h>
 
 DECOMP_SIZE_ASSERT(Lego3DSound, 0x30)
@@ -106,6 +107,7 @@ MxResult Lego3DSound::Create(ma_sound* p_sound, const char* p_name, MxS32 p_volu
 }
 
 // FUNCTION: LEGO1 0x10011880
+// FUNCTION: BETA10 0x1003997e
 void Lego3DSound::Destroy()
 {
 	m_sound = NULL;
@@ -129,6 +131,8 @@ void Lego3DSound::Destroy()
 // FUNCTION: BETA10 0x10039a2a
 MxU32 Lego3DSound::UpdatePosition(ma_sound* p_sound)
 {
+	assert(p_sound);
+
 	MxU32 updated = FALSE;
 
 	if (m_positionROI != NULL) {
@@ -223,6 +227,8 @@ void Lego3DSound::FUN_10011a60(ma_sound* p_sound, const char* p_name)
 		else {
 			BindSlot(m_positionROI, m_roi);
 		}
+
+		assert(m_positionROI);
 
 		if (m_sound != NULL) {
 			ma_sound_set_spatialization_enabled(m_sound, MA_TRUE);

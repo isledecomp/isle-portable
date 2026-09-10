@@ -3,6 +3,7 @@
 
 #include "lego1_export.h"
 #include "mxdsobject.h"
+#include "realtime/vector3d.inl.h"
 #include "mxgeometry/mxgeometry3d.h"
 #include "mxtypes.h"
 

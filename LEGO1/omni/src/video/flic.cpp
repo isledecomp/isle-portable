@@ -159,15 +159,16 @@ void WritePixelPairs(
 	short is_odd = p_count & 1;
 	p_count >>= 1;
 
-	BYTE* dst = ((p_bitmapHeader->biWidth + 3) & -4) * p_row + p_column + p_pixelData;
+	p_pixelData += ((p_bitmapHeader->biWidth + 3) & -4) * p_row + p_column;
+	BYTE* pixel = (BYTE*) &p_pixel;
+	BYTE lo = *pixel;
 	while (--p_count >= 0) {
-		memcpy(dst, &p_pixel, sizeof(WORD));
-		dst += sizeof(WORD);
+		memcpy(p_pixelData, &p_pixel, sizeof(WORD));
+		p_pixelData += 2;
 	}
 
 	if (is_odd) {
-		BYTE* dst_byte = (BYTE*) dst;
-		*dst_byte = p_pixel;
+		*p_pixelData = lo;
 	}
 }
 
@@ -324,10 +325,11 @@ void DecodeLC(LPBITMAPINFOHEADER p_bitmapHeader, BYTE* p_pixelData, BYTE* p_data
 	short row = p_flcHeader->height - (*word_data + yofs) - 1;
 
 	word_data++;
+	short column;
 	short lines = *word_data;
 
 	while (--lines >= 0) {
-		short column = xofs;
+		column = xofs;
 		BYTE packets = *data++;
 
 		while (packets > 0) {

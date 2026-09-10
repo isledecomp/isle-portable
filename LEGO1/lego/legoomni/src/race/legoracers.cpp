@@ -174,7 +174,7 @@ MxLong g_timeLastJetskiSoundPlayed = 0;
 // FUNCTION: BETA10 0x100cad10
 LegoRaceCar::LegoRaceCar()
 {
-	m_kickState = LEGORACECAR_NONE;
+	m_userState = LEGORACECAR_NONE;
 	m_skelKick1Anim = 0;
 	m_skelKick2Anim = 0;
 	m_unk0x5c.Clear();
@@ -304,11 +304,11 @@ void LegoRaceCar::KickCamera(float p_param)
 	LegoAnimActorStruct* a; // called `a` in BETA10
 	float deltaTime;
 
-	if (m_kickState == LEGORACECAR_KICK1) {
+	if (m_userState == LEGORACECAR_KICK1) {
 		a = m_skelKick1Anim;
 	}
 	else {
-		assert(m_kickState == LEGORACECAR_KICK2);
+		assert(m_userState == LEGORACECAR_KICK2);
 		a = m_skelKick2Anim;
 	}
 
@@ -317,8 +317,8 @@ void LegoRaceCar::KickCamera(float p_param)
 	if (a->GetAnimTreePtr()) {
 		deltaTime = p_param - m_kickStart;
 
-		if (a->GetDuration() <= deltaTime || deltaTime < 0.0) {
-			if (m_kickState == LEGORACECAR_KICK1) {
+		if (a->GetDuration() <= deltaTime || deltaTime < 0.0f) {
+			if (m_userState == LEGORACECAR_KICK1) {
 				LegoOrientedEdge** edges = m_kick1B->GetEdges();
 				m_destEdge = edges[2];
 				m_boundary = m_kick1B;
@@ -329,7 +329,7 @@ void LegoRaceCar::KickCamera(float p_param)
 				m_boundary = m_kick2B;
 			}
 
-			m_kickState = LEGORACECAR_NONE;
+			m_userState = LEGORACECAR_NONE;
 		}
 		else if (a->GetAnimTreePtr()->GetCamAnim()) {
 			MxMatrix transformationMatrix;
@@ -373,12 +373,12 @@ MxU32 LegoRaceCar::HandleSkeletonKicks(float p_param1)
 	for (MxS32 i = 0; i < sizeOfArray(g_skeletonKickPhases); i++) {
 		if (m_boundary == current->m_edgeRef->m_b && current->m_lower <= skeletonCurAnimPhase &&
 			skeletonCurAnimPhase <= current->m_upper) {
-			m_kickState = current->m_kickState;
+			m_userState = current->m_kickState;
 		}
 		current = &current[1];
 	}
 
-	if (m_kickState != LEGORACECAR_KICK1 && m_kickState != LEGORACECAR_KICK2) {
+	if (m_userState != LEGORACECAR_KICK1 && m_userState != LEGORACECAR_KICK2) {
 		MxTrace(
 			// STRING: BETA10 0x101f64c8
 			"Got kicked in boundary %s %d %g:%g %g\n",
@@ -401,14 +401,14 @@ MxU32 LegoRaceCar::HandleSkeletonKicks(float p_param1)
 // FUNCTION: BETA10 0x100cb88a
 void LegoRaceCar::Animate(float p_time)
 {
-	if (m_userNavFlag && (m_kickState == LEGORACECAR_KICK1 || m_kickState == LEGORACECAR_KICK2)) {
+	if (m_userNavFlag && (m_userState == LEGORACECAR_KICK1 || m_userState == LEGORACECAR_KICK2)) {
 		KickCamera(p_time);
 		return;
 	}
 
 	LegoCarRaceActor::Animate(p_time);
 
-	if (m_userNavFlag && m_kickState == LEGORACECAR_NEAR_SKELETON) {
+	if (m_userNavFlag && m_userState == LEGORACECAR_NEAR_SKELETON) {
 		if (HandleSkeletonKicks(p_time)) {
 			return;
 		}
@@ -556,13 +556,13 @@ MxResult LegoRaceCar::CalculateSpline()
 				}
 			}
 
-			if (m_kickState == LEGORACECAR_NEAR_SKELETON) {
+			if (m_userState == LEGORACECAR_NEAR_SKELETON) {
 				if (!onSkeletonBoundary) {
-					m_kickState = LEGORACECAR_NONE;
+					m_userState = LEGORACECAR_NONE;
 				}
 			}
 			else {
-				m_kickState = LEGORACECAR_NEAR_SKELETON;
+				m_userState = LEGORACECAR_NEAR_SKELETON;
 			}
 		}
 	}
