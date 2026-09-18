@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SDL3/SDL_events.h>
+#include <SDL3/SDL_keycode.h>
 
 namespace Extensions
 {
@@ -13,7 +14,7 @@ class InputHandler {
 public:
 	InputHandler();
 
-	void HandleSDLEvent(SDL_Event* p_event, OrbitCamera& p_orbit, bool p_active);
+	void HandleSDLEvent(SDL_Event* p_event, OrbitCamera& p_orbit, bool p_active, bool p_mouseLookEngaged);
 
 	bool TryClaimFinger(const SDL_TouchFingerEvent& p_event);
 	bool TryReleaseFinger(SDL_FingerID p_id);
@@ -38,6 +39,13 @@ public:
 	static constexpr float TOUCH_YAW_PITCH_SCALE = 2.0f;
 	static constexpr float PINCH_ZOOM_SCALE = 6.0f;
 
+	static float s_mouseSensitivityX;
+	static float s_mouseSensitivityY;
+	static bool s_invertY;
+	static bool s_alwaysOnMouseLook;
+	static SDL_Keycode s_toggleKey;
+	static int s_toggleMouseButton;
+
 private:
 	struct TouchState {
 		SDL_FingerID id[2];
@@ -53,6 +61,8 @@ private:
 	bool m_rightButtonHeld;
 	bool m_leftButtonHeld;
 	Uint64 m_leftButtonDownTime;
+	// Saved cursor position for the original hold-RMB look mode, so the cursor
+	// can be restored where it was when the button is released.
 	float m_savedMouseX;
 	float m_savedMouseY;
 };

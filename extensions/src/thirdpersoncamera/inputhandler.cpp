@@ -8,6 +8,13 @@
 
 using namespace Extensions::ThirdPersonCamera;
 
+float InputHandler::s_mouseSensitivityX = InputHandler::MOUSE_SENSITIVITY;
+float InputHandler::s_mouseSensitivityY = InputHandler::MOUSE_SENSITIVITY;
+bool InputHandler::s_invertY = false;
+bool InputHandler::s_alwaysOnMouseLook = false;
+SDL_Keycode InputHandler::s_toggleKey = SDLK_TAB;
+int InputHandler::s_toggleMouseButton = 0;
+
 InputHandler::InputHandler()
 	: m_touch{}, m_wantsAutoDisable(false), m_wantsAutoEnable(false), m_rightButtonHeld(false), m_leftButtonHeld(false),
 	  m_leftButtonDownTime(0), m_savedMouseX(0.0f), m_savedMouseY(0.0f)
@@ -90,7 +97,7 @@ void InputHandler::SuppressGestures()
 	m_touch.gesturePinchDist = 0.0f;
 }
 
-void InputHandler::HandleSDLEvent(SDL_Event* p_event, OrbitCamera& p_orbit, bool p_active)
+void InputHandler::HandleSDLEvent(SDL_Event* p_event, OrbitCamera& p_orbit, bool p_active, bool p_mouseLookEngaged)
 {
 	switch (p_event->type) {
 	case SDL_EVENT_MOUSE_WHEEL:
@@ -112,9 +119,10 @@ void InputHandler::HandleSDLEvent(SDL_Event* p_event, OrbitCamera& p_orbit, bool
 		if (!p_active) {
 			break;
 		}
-		if (m_rightButtonHeld) {
-			p_orbit.AdjustYaw(-p_event->motion.xrel * MOUSE_SENSITIVITY);
-			p_orbit.AdjustPitch(p_event->motion.yrel * MOUSE_SENSITIVITY);
+		// Always-on mode.
+		if (s_alwaysOnMouseLook ? p_mouseLookEngaged : m_rightButtonHeld) {
+			p_orbit.AdjustYaw(-p_event->motion.xrel * s_mouseSensitivityX);
+			p_orbit.AdjustPitch((s_invertY ? -1.0f : 1.0f) * p_event->motion.yrel * s_mouseSensitivityY);
 			p_orbit.ClampPitch();
 		}
 		break;
@@ -123,17 +131,20 @@ void InputHandler::HandleSDLEvent(SDL_Event* p_event, OrbitCamera& p_orbit, bool
 	case SDL_EVENT_MOUSE_BUTTON_UP: {
 		if (p_event->button.button == SDL_BUTTON_RIGHT) {
 			m_rightButtonHeld = p_event->button.down;
-			SDL_Window* window = SDL_GetWindowFromID(p_event->button.windowID);
-			if (window) {
-				if (m_rightButtonHeld) {
-					if (p_active) {
-						SDL_GetMouseState(&m_savedMouseX, &m_savedMouseY);
-						SDL_SetWindowRelativeMouseMode(window, true);
+			// Original mode.
+			if (!s_alwaysOnMouseLook) {
+				SDL_Window* window = SDL_GetWindowFromID(p_event->button.windowID);
+				if (window) {
+					if (m_rightButtonHeld) {
+						if (p_active) {
+							SDL_GetMouseState(&m_savedMouseX, &m_savedMouseY);
+							SDL_SetWindowRelativeMouseMode(window, true);
+						}
 					}
-				}
-				else if (SDL_GetWindowRelativeMouseMode(window)) {
-					SDL_SetWindowRelativeMouseMode(window, false);
-					SDL_WarpMouseInWindow(window, m_savedMouseX, m_savedMouseY);
+					else if (SDL_GetWindowRelativeMouseMode(window)) {
+						SDL_SetWindowRelativeMouseMode(window, false);
+						SDL_WarpMouseInWindow(window, m_savedMouseX, m_savedMouseY);
+					}
 				}
 			}
 		}
