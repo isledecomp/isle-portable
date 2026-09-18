@@ -24,6 +24,11 @@
 #include "roi/legoroi.h"
 
 #include <SDL3/SDL_stdinc.h>
+#include <SDL3/SDL_events.h>
+#include <SDL3/SDL_keyboard.h>
+#include <SDL3/SDL_keycode.h>
+#include <SDL3/SDL_mouse.h>
+#include <SDL3/SDL_video.h>
 
 using namespace Extensions;
 using namespace Extensions::Common;
@@ -40,8 +45,42 @@ static void ReaddROI(LegoROI& p_roi)
 Controller::Controller()
 	: m_animator(CharacterAnimatorConfig{/*.saveExtraAnimTransform=*/true, /*.propSuffix=*/0}), m_enabled(false),
 	  m_active(false), m_pendingWorldTransition(false), m_animPlaying(false), m_animLockDisplay(false),
-	  m_lmbForwardEngaged(false), m_playerROI(nullptr)
+	  m_lmbForwardEngaged(false), m_playerROI(nullptr), m_mouseLookEnabled(true), m_window(nullptr)
 {
+}
+
+void Controller::ToggleMouseLook()
+{
+	m_mouseLookEnabled = !m_mouseLookEnabled;
+	UpdateMouseCapture();
+}
+
+void Controller::UpdateMouseCapture()
+{
+	if (!InputHandler::s_alwaysOnMouseLook) {
+		return;
+	}
+
+	if (!m_window) {
+		m_window = SDL_GetKeyboardFocus();
+	}
+	if (!m_window) {
+		return;
+	}
+
+	bool want = m_enabled && m_active && m_mouseLookEnabled;
+	if (want == SDL_GetWindowRelativeMouseMode(m_window)) {
+		return;
+	}
+
+	SDL_SetWindowRelativeMouseMode(m_window, want);
+	if (!want) {
+		// Drop the freed cursor in the middle of the window so it's easy to
+		// find.
+		int w = 0, h = 0;
+		SDL_GetWindowSize(m_window, &w, &h);
+		SDL_WarpMouseInWindow(m_window, w / 2.0f, h / 2.0f);
+	}
 }
 
 void Controller::Enable()
@@ -91,6 +130,10 @@ void Controller::Deactivate()
 	m_animator.ClearRideAnimation();
 	m_animator.ClearAll();
 	m_orbit.ResetOrbitState();
+
+	// Release the captured cursor immediately when the camera stops driving the
+	// view.
+	UpdateMouseCapture();
 }
 
 void Controller::OnActorEnter(IslePathActor* p_actor)
@@ -208,6 +251,11 @@ void Controller::OnCamAnimEnd(LegoPathActor* p_actor)
 
 void Controller::Tick(float p_deltaTime)
 {
+	// Keep the OS cursor capture in sync with the camera's active state every
+	// frame, so it engages when roaming the island and releases in
+	// menus/restricted areas.
+	UpdateMouseCapture();
+
 	if (IsRestrictedArea(GameState()->m_currentArea)) {
 		return;
 	}
@@ -424,7 +472,20 @@ MxBool Controller::HandleCameraRelativeMovement(
 
 void Controller::HandleSDLEventImpl(SDL_Event* p_event)
 {
-	m_input.HandleSDLEvent(p_event, m_orbit, m_active);
+	if (InputHandler::s_alwaysOnMouseLook) {
+		if (p_event->type == SDL_EVENT_KEY_DOWN && !p_event->key.repeat &&
+			InputHandler::s_toggleKey != SDLK_UNKNOWN && p_event->key.key == InputHandler::s_toggleKey) {
+			ToggleMouseLook();
+			return;
+		}
+		if (p_event->type == SDL_EVENT_MOUSE_BUTTON_DOWN && InputHandler::s_toggleMouseButton != 0 &&
+			p_event->button.button == InputHandler::s_toggleMouseButton) {
+			ToggleMouseLook();
+			return;
+		}
+	}
+
+	m_input.HandleSDLEvent(p_event, m_orbit, m_active, m_active && m_mouseLookEnabled);
 }
 
 MxBool Controller::HandleFirstPersonForward(

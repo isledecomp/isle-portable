@@ -17,10 +17,61 @@
 #include "realtime/vector.h"
 #include "roi/legoroi.h"
 
+#include <string>
+
 #include <SDL3/SDL_stdinc.h>
+#include <SDL3/SDL_keyboard.h>
+#include <SDL3/SDL_keycode.h>
+#include <SDL3/SDL_log.h>
+#include <SDL3/SDL_mouse.h>
 
 using namespace Extensions;
 using namespace Extensions::Common;
+
+namespace
+{
+// Parse a "toggle key" config value into either a keyboard key or a mouse
+// button. Keyboard values use SDL key names as returned by SDL_GetKeyName
+// (case-sensitive, e.g. "Tab", "Space", "Escape", "F1", "Left Alt", "Q").
+// SDL has no name for mouse buttons, so those use the fixed names below
+// (case-insensitive): "Mouse Left", "Mouse Right", "Mouse Middle",
+// "Mouse X1", "Mouse X2".
+void ParseToggleBinding(const std::string& p_value)
+{
+	SDL_Keycode key = SDL_GetKeyFromName(p_value.c_str());
+	if (key != SDLK_UNKNOWN) {
+		ThirdPersonCamera::InputHandler::s_toggleKey = key;
+		ThirdPersonCamera::InputHandler::s_toggleMouseButton = 0;
+		return;
+	}
+
+	struct MouseName {
+		const char* name;
+		int button;
+	};
+	static const MouseName mouseNames[] = {
+		{"Mouse Left", SDL_BUTTON_LEFT},
+		{"Mouse Right", SDL_BUTTON_RIGHT},
+		{"Mouse Middle", SDL_BUTTON_MIDDLE},
+		{"Mouse X1", SDL_BUTTON_X1},
+		{"Mouse X2", SDL_BUTTON_X2},
+	};
+
+	for (const MouseName& mouse : mouseNames) {
+		if (SDL_strcasecmp(p_value.c_str(), mouse.name) == 0) {
+			ThirdPersonCamera::InputHandler::s_toggleMouseButton = mouse.button;
+			ThirdPersonCamera::InputHandler::s_toggleKey = SDLK_UNKNOWN;
+			return;
+		}
+	}
+
+	SDL_LogWarn(
+		SDL_LOG_CATEGORY_APPLICATION,
+		"third person camera: unrecognized toggle key \"%s\"; keeping default",
+		p_value.c_str()
+	);
+}
+} // namespace
 
 std::map<std::string, std::string> ThirdPersonCameraExt::options;
 bool ThirdPersonCameraExt::enabled = false;
@@ -58,6 +109,41 @@ static Extensions::ThirdPersonCamera::TickleAdapter* s_tickleAdapter = nullptr;
 
 void ThirdPersonCameraExt::Initialize()
 {
+	// Apply a positive float option to a sensitivity axis, leaving it untouched
+	// if the option is absent, empty, or not a positive number.
+	auto applySensitivity = [](const char* p_key, float& p_target) {
+		auto it = options.find(p_key);
+		if (it != options.end() && !it->second.empty()) {
+			float value = (float) SDL_atof(it->second.c_str());
+			if (value > 0.0f) {
+				p_target = value;
+			}
+		}
+	};
+
+	// "sensitivity" sets both axes; "sensitivity x"/"sensitivity y" override
+	// per-axis.
+	applySensitivity("third person camera:sensitivity", ThirdPersonCamera::InputHandler::s_mouseSensitivityX);
+	ThirdPersonCamera::InputHandler::s_mouseSensitivityY = ThirdPersonCamera::InputHandler::s_mouseSensitivityX;
+	applySensitivity("third person camera:sensitivity x", ThirdPersonCamera::InputHandler::s_mouseSensitivityX);
+	applySensitivity("third person camera:sensitivity y", ThirdPersonCamera::InputHandler::s_mouseSensitivityY);
+
+	auto invertIt = options.find("third person camera:invert y");
+	if (invertIt != options.end()) {
+		ThirdPersonCamera::InputHandler::s_invertY = (invertIt->second == "true" || invertIt->second == "1");
+	}
+
+	auto alwaysOnIt = options.find("third person camera:always on mouse look");
+	if (alwaysOnIt != options.end()) {
+		ThirdPersonCamera::InputHandler::s_alwaysOnMouseLook =
+			(alwaysOnIt->second == "true" || alwaysOnIt->second == "1");
+	}
+
+	auto toggleIt = options.find("third person camera:toggle key");
+	if (toggleIt != options.end() && !toggleIt->second.empty()) {
+		ParseToggleBinding(toggleIt->second);
+	}
+
 	if (!s_camera) {
 		s_camera = new ThirdPersonCamera::Controller();
 	}

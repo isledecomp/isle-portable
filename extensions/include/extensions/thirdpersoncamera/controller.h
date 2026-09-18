@@ -16,6 +16,7 @@ class LegoPathActor;
 class LegoROI;
 class LegoWorld;
 class Vector3;
+struct SDL_Window;
 
 namespace Extensions
 {
@@ -91,6 +92,10 @@ public:
 
 	void HandleSDLEventImpl(SDL_Event* p_event);
 
+	void ToggleMouseLook();
+	bool IsMouseLookEnabled() const { return m_mouseLookEnabled; }
+	void UpdateMouseCapture();
+
 	bool ConsumeAutoDisable() { return m_input.ConsumeAutoDisable(); }
 	bool ConsumeAutoEnable() { return m_input.ConsumeAutoEnable(); }
 
@@ -145,6 +150,8 @@ private:
 	std::function<void()> m_animStopCallback;
 	bool m_lmbForwardEngaged;
 	LegoROI* m_playerROI;
+	bool m_mouseLookEnabled;
+	SDL_Window* m_window;
 };
 
 } // namespace ThirdPersonCamera
