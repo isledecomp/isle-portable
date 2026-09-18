@@ -280,7 +280,7 @@ if (DOWNLOAD_DEPENDENCIES)
   FetchContent_Declare(
     iniparser
     GIT_REPOSITORY "https://gitlab.com/iniparser/iniparser.git"
-    GIT_TAG "main"
+    GIT_TAG "v4.2.6"
     UPDATE_DISCONNECTED TRUE
     EXCLUDE_FROM_ALL
   )
