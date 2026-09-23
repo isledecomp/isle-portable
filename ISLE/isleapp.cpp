@@ -1008,6 +1008,10 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 
 void SDL_AppQuit(void* appstate, SDL_AppResult result)
 {
+	if (Lego() && InputManager()) {
+		InputManager()->StopAutoDragTimer();
+	}
+
 	if (window) {
 		SDL_DestroyWindow(window);
 		window = NULL;

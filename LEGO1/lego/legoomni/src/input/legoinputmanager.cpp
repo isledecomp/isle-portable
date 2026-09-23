@@ -83,6 +83,8 @@ MxResult LegoInputManager::Create(HWND p_hwnd)
 // FUNCTION: BETA10 0x10088e8f
 void LegoInputManager::Destroy()
 {
+	StopAutoDragTimer();
+
 	if (m_keyboardNotifyList) {
 		delete m_keyboardNotifyList;
 	}
@@ -549,6 +551,7 @@ static Uint32 SDLCALL LegoInputManagerTimerCallback(void* userdata, SDL_TimerID 
 // FUNCTION: BETA10 0x10089fc5
 void LegoInputManager::StartAutoDragTimer()
 {
+	StopAutoDragTimer();
 	m_autoDragTimerID = SDL_AddTimer(m_autoDragTime, LegoInputManagerTimerCallback, this);
 }
 
