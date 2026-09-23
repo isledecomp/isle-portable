@@ -370,6 +370,16 @@ static void ShowFatalError(const char* p_message)
 	Any_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "LEGO® Island Error", p_message, NULL);
 }
 
+static void ShowStartupError()
+{
+	ShowFatalError(
+		g_startupError[0] != '\0'
+			? g_startupError
+			: "\"LEGO® Island\" failed to start.\nPlease quit all other applications and try again."
+			  "\nFailed to initialize; see logs for details"
+	);
+}
+
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 {
 	*appstate = NULL;
@@ -451,12 +461,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 
 	// Create window
 	if (g_isle->SetupWindow() != SUCCESS) {
-		ShowFatalError(
-			g_startupError[0] != '\0'
-				? g_startupError
-				: "\"LEGO® Island\" failed to start.\nPlease quit all other applications and try again."
-				  "\nFailed to initialize; see logs for details"
-		);
+		ShowStartupError();
 		return SDL_APP_FAILURE;
 	}
 
@@ -489,8 +494,7 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 	}
 
 	if (!g_isle->Tick()) {
-		ShowFatalError("\"LEGO® Island\" failed to start.\nPlease quit all other applications and try again."
-					   "\nFailed to initialize; see logs for details");
+		ShowStartupError();
 		return SDL_APP_FAILURE;
 	}
 
@@ -508,8 +512,7 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 
 		if (g_mousedown && g_mousemoved && g_isle) {
 			if (!g_isle->Tick()) {
-				ShowFatalError("\"LEGO® Island\" failed to start.\nPlease quit all other applications and try again."
-							   "\nFailed to initialize; see logs for details");
+				ShowStartupError();
 				return SDL_APP_FAILURE;
 			}
 		}
@@ -1528,6 +1531,14 @@ inline bool IsleApp::Tick()
 		stream = Streamer()->Open("\\lego\\scripts\\nocd", MxStreamer::e_diskStream);
 		if (!stream) {
 			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to open NOCD.si: Streamer failed to load");
+#ifdef __EMSCRIPTEN__
+			SDL_strlcpy(
+				g_startupError,
+				"\"LEGO® Island\" failed to start.\nThe game data could not be downloaded. Please check your internet "
+				"connection and reload the page.",
+				sizeof(g_startupError)
+			);
+#endif
 			return false;
 		}
 
