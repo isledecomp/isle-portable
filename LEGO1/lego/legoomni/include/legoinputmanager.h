@@ -123,7 +123,7 @@ public:
 	LEGO1_EXPORT MxResult GetJoystick();
 	MxResult GetJoystickState(MxU32* p_joystickX, MxU32* p_joystickY, MxU32* p_povPosition);
 	void StartAutoDragTimer();
-	void StopAutoDragTimer();
+	LEGO1_EXPORT void StopAutoDragTimer();
 	void EnableInputProcessing();
 	void SetCamera(LegoCameraController* p_camera);
 	void ClearCamera();
