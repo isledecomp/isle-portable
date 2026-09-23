@@ -144,7 +144,9 @@ LONG SetWindowLong(HWND hWnd, int nIndex, LONG dwNewLong)
 	SDL_Window* sdlWindow = reinterpret_cast<SDL_Window*>(hWnd);
 	if (nIndex == GWL_STYLE) {
 		SDL_SetWindowBordered(sdlWindow, (dwNewLong & WS_CAPTION) != 0);
+#ifndef __EMSCRIPTEN__
 		SDL_SetWindowResizable(sdlWindow, (dwNewLong & WS_THICKFRAME) != 0);
+#endif
 
 		return dwNewLong;
 	}
