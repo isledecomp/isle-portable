@@ -788,8 +788,14 @@ if (ISLE_BUILD_APP)
     endif()
     target_compile_definitions(isle PRIVATE "ISLE_EMSCRIPTEN_HOST=\"${ISLE_EMSCRIPTEN_HOST}\"")
     add_dependencies(isle emscripten_version)
-    target_link_options(isle PRIVATE --post-js ${ISLE_EMSCRIPTEN_VERSION_DIR}/version.js)
-    set_property(TARGET isle PROPERTY LINK_DEPENDS ${ISLE_EMSCRIPTEN_VERSION_DIR}/version.js)
+    target_link_options(isle PRIVATE
+      --pre-js ${CMAKE_SOURCE_DIR}/ISLE/emscripten/stacktracelimit.js
+      --post-js ${ISLE_EMSCRIPTEN_VERSION_DIR}/version.js
+    )
+    set_property(TARGET isle PROPERTY LINK_DEPENDS
+      ${CMAKE_SOURCE_DIR}/ISLE/emscripten/stacktracelimit.js
+      ${ISLE_EMSCRIPTEN_VERSION_DIR}/version.js
+    )
     add_custom_command(TARGET isle POST_BUILD
       COMMAND ${LLVM_OBJCOPY_BIN} --remove-section=sourceMappingURL
         --add-section=sourceMappingURL=${ISLE_EMSCRIPTEN_VERSION_DIR}/sourceMappingURL
