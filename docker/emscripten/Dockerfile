@@ -12,24 +12,24 @@ RUN wget https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cm
     /tmp/cmake.sh --skip-license --prefix=/usr/local && \
     rm /tmp/cmake.sh
 
-RUN chown -R emscripten:emscripten /src
+RUN chown -R ubuntu:ubuntu /src
 
-USER emscripten
+USER ubuntu
 
 COPY ISLE/emscripten/emscripten.patch /tmp/
 RUN cd /emsdk/upstream/emscripten && \
     git apply --check /tmp/emscripten.patch && \
     git apply /tmp/emscripten.patch
 
-COPY --chown=emscripten:emscripten 3rdparty/ ./3rdparty/
-COPY --chown=emscripten:emscripten LEGO1/ ./LEGO1/
-COPY --chown=emscripten:emscripten ISLE/ ./ISLE/
-COPY --chown=emscripten:emscripten miniwin/ ./miniwin/
-COPY --chown=emscripten:emscripten util/ ./util/
-COPY --chown=emscripten:emscripten CMake/ ./CMake/
-COPY --chown=emscripten:emscripten packaging/ ./packaging/
-COPY --chown=emscripten:emscripten extensions/ ./extensions/
-COPY --chown=emscripten:emscripten CMakeLists.txt .
+COPY --chown=ubuntu:ubuntu 3rdparty/ ./3rdparty/
+COPY --chown=ubuntu:ubuntu LEGO1/ ./LEGO1/
+COPY --chown=ubuntu:ubuntu ISLE/ ./ISLE/
+COPY --chown=ubuntu:ubuntu miniwin/ ./miniwin/
+COPY --chown=ubuntu:ubuntu util/ ./util/
+COPY --chown=ubuntu:ubuntu CMake/ ./CMake/
+COPY --chown=ubuntu:ubuntu packaging/ ./packaging/
+COPY --chown=ubuntu:ubuntu extensions/ ./extensions/
+COPY --chown=ubuntu:ubuntu CMakeLists.txt .
 
 RUN emcmake cmake -S . -B build -DISLE_BUILD_CONFIG=OFF -DCMAKE_BUILD_TYPE=Release && \
     emmake cmake --build build -j 32
