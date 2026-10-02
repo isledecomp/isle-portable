@@ -52,6 +52,7 @@ public:
 	void PlayNextVoiceOver(MxS8 p_voiceOverType);
 	void FindPath(MxU32 p_location);
 	LegoEntity* GetNextEntity(MxBool* p_isBuilding);
+	void ResetShotTarget();
 
 	// SYNTHETIC: LEGO1 0x1001a0a0
 	// Act2Actor::`scalar deleting destructor'

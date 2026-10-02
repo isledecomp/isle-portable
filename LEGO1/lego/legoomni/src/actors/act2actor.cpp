@@ -913,3 +913,13 @@ void Act2Actor::ClearMaps()
 	m_shootAnim = NULL;
 	LegoAnimActor::ClearMaps();
 }
+
+void Act2Actor::ResetShotTarget()
+{
+	if (g_playedShootSound) {
+		m_shootAnimEnd = 0;
+	}
+	else {
+		m_nextEntity = NULL;
+	}
+}
