@@ -92,27 +92,16 @@ void OpenGL1Renderer::SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE fr
 	memcpy(&m_projection, projection, sizeof(D3DRMMATRIX4D));
 }
 
-struct TextureDestroyContextGL {
-	OpenGL1Renderer* renderer;
-	Uint32 textureId;
-};
-
 void OpenGL1Renderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture)
 {
-	auto* ctx = new TextureDestroyContextGL{this, id};
-	texture->AddDestroyCallback(
-		[](IDirect3DRMObject* obj, void* arg) {
-			auto* ctx = static_cast<TextureDestroyContextGL*>(arg);
-			auto& cache = ctx->renderer->m_textures[ctx->textureId];
-			if (cache.glTextureId != 0) {
-				GL11_DestroyTexture(cache.glTextureId);
-				cache.glTextureId = 0;
-				cache.texture = nullptr;
-			}
-			delete ctx;
-		},
-		ctx
-	);
+	RegisterDestroyCallback(texture, id, [](Direct3DRMRenderer* renderer, Uint32 textureId) {
+		auto& cache = static_cast<OpenGL1Renderer*>(renderer)->m_textures[textureId];
+		if (cache.glTextureId != 0) {
+			GL11_DestroyTexture(cache.glTextureId);
+			cache.glTextureId = 0;
+			cache.texture = nullptr;
+		}
+	});
 }
 
 static int NextPowerOfTwo(int v)
@@ -270,24 +259,13 @@ GLMeshCacheEntry GLUploadMesh(const MeshGroup& meshGroup, bool useVBOs)
 	return cache;
 }
 
-struct GLMeshDestroyContext {
-	OpenGL1Renderer* renderer;
-	Uint32 id;
-};
-
 void OpenGL1Renderer::AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh)
 {
-	auto* ctx = new GLMeshDestroyContext{this, id};
-	mesh->AddDestroyCallback(
-		[](IDirect3DRMObject*, void* arg) {
-			auto* ctx = static_cast<GLMeshDestroyContext*>(arg);
-			auto& cache = ctx->renderer->m_meshs[ctx->id];
-			cache.meshGroup = nullptr;
-			GL11_DestroyMesh(cache);
-			delete ctx;
-		},
-		ctx
-	);
+	RegisterDestroyCallback(mesh, id, [](Direct3DRMRenderer* renderer, Uint32 meshId) {
+		auto& cache = static_cast<OpenGL1Renderer*>(renderer)->m_meshs[meshId];
+		cache.meshGroup = nullptr;
+		GL11_DestroyMesh(cache);
+	});
 }
 
 Uint32 OpenGL1Renderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup)

@@ -30,6 +30,29 @@
 #include "d3drmrenderer_glide.h"
 #endif
 
+Direct3DRMRenderer::~Direct3DRMRenderer()
+{
+	for (DestroyCallbackContext* ctx : m_destroyCallbacks) {
+		ctx->object->DeleteDestroyCallback(OnObjectDestroyed, ctx);
+		delete ctx;
+	}
+}
+
+void Direct3DRMRenderer::RegisterDestroyCallback(IDirect3DRMObject* object, Uint32 id, DestroyCallback callback)
+{
+	auto* ctx = new DestroyCallbackContext{this, object, id, callback};
+	m_destroyCallbacks.insert(ctx);
+	object->AddDestroyCallback(OnObjectDestroyed, ctx);
+}
+
+void Direct3DRMRenderer::OnObjectDestroyed(IDirect3DRMObject* object, void* arg)
+{
+	auto* ctx = static_cast<DestroyCallbackContext*>(arg);
+	ctx->renderer->m_destroyCallbacks.erase(ctx);
+	ctx->callback(ctx->renderer, ctx->id);
+	delete ctx;
+}
+
 void Miniwin_SetupWindowCreateProperties(SDL_PropertiesID props)
 {
 #if (defined(USE_OPENGL1) || defined(USE_OPENGLES2) || defined(USE_OPENGLES3)) && !defined(__3DS__) &&                 \

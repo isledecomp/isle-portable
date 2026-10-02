@@ -427,27 +427,17 @@ void Direct3DRMSDL3GPURenderer::WaitForPendingUpload()
 	}
 }
 
-struct SDLTextureDestroyContext {
-	Direct3DRMSDL3GPURenderer* renderer;
-	Uint32 id;
-};
-
 void Direct3DRMSDL3GPURenderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture)
 {
-	auto* ctx = new SDLTextureDestroyContext{this, id};
-	texture->AddDestroyCallback(
-		[](IDirect3DRMObject*, void* arg) {
-			auto* ctx = static_cast<SDLTextureDestroyContext*>(arg);
-			auto& cache = ctx->renderer->m_textures[ctx->id];
-			if (cache.gpuTexture) {
-				SDL_ReleaseGPUTexture(ctx->renderer->m_device, cache.gpuTexture);
-				cache.gpuTexture = nullptr;
-				cache.texture = nullptr;
-			}
-			delete ctx;
-		},
-		ctx
-	);
+	RegisterDestroyCallback(texture, id, [](Direct3DRMRenderer* renderer, Uint32 textureId) {
+		auto* self = static_cast<Direct3DRMSDL3GPURenderer*>(renderer);
+		auto& cache = self->m_textures[textureId];
+		if (cache.gpuTexture) {
+			SDL_ReleaseGPUTexture(self->m_device, cache.gpuTexture);
+			cache.gpuTexture = nullptr;
+			cache.texture = nullptr;
+		}
+	});
 }
 
 SDL_GPUTexture* Direct3DRMSDL3GPURenderer::CreateTextureFromSurface(SDL_Surface* surface)
@@ -641,25 +631,15 @@ SDL3MeshCache Direct3DRMSDL3GPURenderer::UploadMesh(const MeshGroup& meshGroup)
 	return {&meshGroup, meshGroup.version, vertexBuffer, indexBuffer, finalIndices.size()};
 }
 
-struct SDLMeshDestroyContext {
-	Direct3DRMSDL3GPURenderer* renderer;
-	Uint32 id;
-};
-
 void Direct3DRMSDL3GPURenderer::AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh)
 {
-	auto* ctx = new SDLMeshDestroyContext{this, id};
-	mesh->AddDestroyCallback(
-		[](IDirect3DRMObject*, void* arg) {
-			auto* ctx = static_cast<SDLMeshDestroyContext*>(arg);
-			auto& cache = ctx->renderer->m_meshs[ctx->id];
-			SDL_ReleaseGPUBuffer(ctx->renderer->m_device, cache.vertexBuffer);
-			SDL_ReleaseGPUBuffer(ctx->renderer->m_device, cache.indexBuffer);
-			cache.meshGroup = nullptr;
-			delete ctx;
-		},
-		ctx
-	);
+	RegisterDestroyCallback(mesh, id, [](Direct3DRMRenderer* renderer, Uint32 meshId) {
+		auto* self = static_cast<Direct3DRMSDL3GPURenderer*>(renderer);
+		auto& cache = self->m_meshs[meshId];
+		SDL_ReleaseGPUBuffer(self->m_device, cache.vertexBuffer);
+		SDL_ReleaseGPUBuffer(self->m_device, cache.indexBuffer);
+		cache.meshGroup = nullptr;
+	});
 }
 
 Uint32 Direct3DRMSDL3GPURenderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup)

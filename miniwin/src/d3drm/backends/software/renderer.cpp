@@ -634,28 +634,17 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 	}
 }
 
-struct CacheDestroyContext {
-	Direct3DRMSoftwareRenderer* renderer;
-	Uint32 id;
-};
-
 void Direct3DRMSoftwareRenderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture)
 {
-	auto* ctx = new CacheDestroyContext{this, id};
-	texture->AddDestroyCallback(
-		[](IDirect3DRMObject* obj, void* arg) {
-			auto* ctx = static_cast<CacheDestroyContext*>(arg);
-			auto& cacheEntry = ctx->renderer->m_textures[ctx->id];
-			if (cacheEntry.cached) {
-				SDL_UnlockSurface(cacheEntry.cached);
-				SDL_DestroySurface(cacheEntry.cached);
-				cacheEntry.cached = nullptr;
-				cacheEntry.texture = nullptr;
-			}
-			delete ctx;
-		},
-		ctx
-	);
+	RegisterDestroyCallback(texture, id, [](Direct3DRMRenderer* renderer, Uint32 textureId) {
+		auto& cacheEntry = static_cast<Direct3DRMSoftwareRenderer*>(renderer)->m_textures[textureId];
+		if (cacheEntry.cached) {
+			SDL_UnlockSurface(cacheEntry.cached);
+			SDL_DestroySurface(cacheEntry.cached);
+			cacheEntry.cached = nullptr;
+			cacheEntry.texture = nullptr;
+		}
+	});
 }
 
 Uint32 Direct3DRMSoftwareRenderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUI, float scaleX, float scaleY)
@@ -724,20 +713,14 @@ MeshCache UploadMesh(const MeshGroup& meshGroup)
 
 void Direct3DRMSoftwareRenderer::AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh)
 {
-	auto* ctx = new CacheDestroyContext{this, id};
-	mesh->AddDestroyCallback(
-		[](IDirect3DRMObject* obj, void* arg) {
-			auto* ctx = static_cast<CacheDestroyContext*>(arg);
-			auto& cacheEntry = ctx->renderer->m_meshs[ctx->id];
-			if (cacheEntry.meshGroup) {
-				cacheEntry.meshGroup = nullptr;
-				cacheEntry.vertices.clear();
-				cacheEntry.indices.clear();
-			}
-			delete ctx;
-		},
-		ctx
-	);
+	RegisterDestroyCallback(mesh, id, [](Direct3DRMRenderer* renderer, Uint32 meshId) {
+		auto& cacheEntry = static_cast<Direct3DRMSoftwareRenderer*>(renderer)->m_meshs[meshId];
+		if (cacheEntry.meshGroup) {
+			cacheEntry.meshGroup = nullptr;
+			cacheEntry.vertices.clear();
+			cacheEntry.indices.clear();
+		}
+	});
 }
 
 Uint32 Direct3DRMSoftwareRenderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup)
