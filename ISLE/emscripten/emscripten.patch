@@ -46,7 +46,7 @@ index 7e68b6e..f024a99 100644
      dbg(`pthread_create: transferredCanvasNames="${transferredCanvasNames}"`);
  #endif
 diff --git a/src/lib/libwasmfs_fetch.js b/src/lib/libwasmfs_fetch.js
-index 477a8eb..ad95f5e 100644
+index 477a8eb..9db1e19 100644
 --- a/src/lib/libwasmfs_fetch.js
 +++ b/src/lib/libwasmfs_fetch.js
 @@ -6,6 +6,7 @@
@@ -128,15 +128,24 @@ index 477a8eb..ad95f5e 100644
        if (!response.ok) {
          throw response;
        }
-@@ -102,6 +82,18 @@ addToLibrary({
+@@ -102,8 +82,34 @@ addToLibrary({
        // Use the new .bytes() method to save a bit of code size when all target environments have it. https://developer.mozilla.org/en-US/docs/Web/API/Response/bytes
        var bytes = await response['bytes']();
  #endif
++      var bytesStart = start;
++      var size = bytes.length;
++      if (response.status == 206) {
++        var contentRange = /^bytes (\d+)-\d+\/(\d+)$/.exec(response.headers.get('Content-Range') || '');
++        if (!contentRange || +contentRange[1] != start) {
++          throw response;
++        }
++        size = +contentRange[2];
++      } else {
++        bytesStart = 0;
++        firstChunk = 0;
++        lastChunk = Math.max(0, Math.ceil(size / chunkSize) - 1);
++      }
 +      if (!(file in wasmFS$JSMemoryRanges)) {
-+        var size = Math.max(
-+          parseInt(response.headers.get('Content-Range').split('/')[1], 10),
-+          bytes.length
-+        );
 +        wasmFS$JSMemoryRanges[file] = {
 +          size,
 +          chunks: [],
@@ -144,10 +153,18 @@ index 477a8eb..ad95f5e 100644
 +        };
 +      }
 +
++      var fileInfo = wasmFS$JSMemoryRanges[file];
        for (i = firstChunk; i <= lastChunk; i++) {
-         wasmFS$JSMemoryRanges[file].chunks[i] = bytes.slice(i*chunkSize-start,(i+1)*chunkSize-start);
+-        wasmFS$JSMemoryRanges[file].chunks[i] = bytes.slice(i*chunkSize-start,(i+1)*chunkSize-start);
++        var chunk = bytes.slice(i*chunkSize-bytesStart,(i+1)*chunkSize-bytesStart);
++        if (chunk.length < Math.min(chunkSize, fileInfo.size-i*chunkSize)) {
++          throw response;
++        }
++        fileInfo.chunks[i] = chunk;
        }
-@@ -156,14 +148,31 @@ addToLibrary({
+     }
+ 
+@@ -156,14 +162,31 @@ addToLibrary({
          return readLength;
        },
        getSize: async (file) => {
