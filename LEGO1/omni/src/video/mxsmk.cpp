@@ -42,6 +42,11 @@ MxResult MxSmk::LoadFrame(
 	MxRect32List* p_list
 )
 {
+	if (p_mxSmk->m_smk == NULL) {
+		p_paletteChanged = FALSE;
+		return FAILURE;
+	}
+
 	p_bitmapInfo->m_bmiHeader.biHeight = -MxBitmap::HeightAbs(p_bitmapInfo->m_bmiHeader.biHeight);
 
 	unsigned long w, h;

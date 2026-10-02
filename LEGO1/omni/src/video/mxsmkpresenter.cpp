@@ -59,7 +59,7 @@ void MxSmkPresenter::CreateBitmap()
 		delete m_frameBitmap;
 	}
 
-	unsigned long w, h;
+	unsigned long w = 0, h = 0;
 	smk_info_video(m_mxSmk.m_smk, &w, &h, NULL);
 
 	m_frameBitmap = new MxBitmap;
