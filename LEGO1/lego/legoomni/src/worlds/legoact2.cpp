@@ -584,6 +584,9 @@ void LegoAct2::Enable(MxBool p_enable)
 		m_transformOnDisable = m_pepper->GetLocal2World();
 		m_boundaryOnDisable = ((LegoPathActor*) m_pepper->GetEntity())->GetBoundary();
 
+		if (m_ambulanceActor) {
+			m_ambulanceActor->ResetShotTarget();
+		}
 		DisableAnimations();
 		BackgroundAudioManager()->Stop();
 		UninitBricks();
