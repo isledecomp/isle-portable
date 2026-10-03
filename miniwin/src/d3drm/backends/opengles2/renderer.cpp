@@ -438,27 +438,16 @@ void OpenGLES2Renderer::SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE 
 	memcpy(&m_projection, projection, sizeof(D3DRMMATRIX4D));
 }
 
-struct TextureDestroyContextGLS2 {
-	OpenGLES2Renderer* renderer;
-	Uint32 textureId;
-};
-
 void OpenGLES2Renderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture)
 {
-	auto* ctx = new TextureDestroyContextGLS2{this, id};
-	texture->AddDestroyCallback(
-		[](IDirect3DRMObject* obj, void* arg) {
-			auto* ctx = static_cast<TextureDestroyContextGLS2*>(arg);
-			auto& cache = ctx->renderer->m_textures[ctx->textureId];
-			if (cache.glTextureId != 0) {
-				glDeleteTextures(1, &cache.glTextureId);
-				cache.glTextureId = 0;
-				cache.texture = nullptr;
-			}
-			delete ctx;
-		},
-		ctx
-	);
+	RegisterDestroyCallback(texture, id, [](Direct3DRMRenderer* renderer, Uint32 textureId) {
+		auto& cache = static_cast<OpenGLES2Renderer*>(renderer)->m_textures[textureId];
+		if (cache.glTextureId != 0) {
+			glDeleteTextures(1, &cache.glTextureId);
+			cache.glTextureId = 0;
+			cache.texture = nullptr;
+		}
+	});
 }
 
 Uint32 OpenGLES2Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUI, float scaleX, float scaleY)
@@ -505,27 +494,16 @@ Uint32 OpenGLES2Renderer::GetTextureId(IDirect3DRMTexture* iTexture, bool isUI, 
 	return (Uint32) (m_textures.size() - 1);
 }
 
-struct GLES2MeshDestroyContext {
-	OpenGLES2Renderer* renderer;
-	Uint32 id;
-};
-
 void OpenGLES2Renderer::AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh)
 {
-	auto* ctx = new GLES2MeshDestroyContext{this, id};
-	mesh->AddDestroyCallback(
-		[](IDirect3DRMObject*, void* arg) {
-			auto* ctx = static_cast<GLES2MeshDestroyContext*>(arg);
-			auto& cache = ctx->renderer->m_meshs[ctx->id];
-			cache.meshGroup = nullptr;
-			glDeleteBuffers(1, &cache.vboPositions);
-			glDeleteBuffers(1, &cache.vboNormals);
-			glDeleteBuffers(1, &cache.vboTexcoords);
-			glDeleteBuffers(1, &cache.ibo);
-			delete ctx;
-		},
-		ctx
-	);
+	RegisterDestroyCallback(mesh, id, [](Direct3DRMRenderer* renderer, Uint32 meshId) {
+		auto& cache = static_cast<OpenGLES2Renderer*>(renderer)->m_meshs[meshId];
+		cache.meshGroup = nullptr;
+		glDeleteBuffers(1, &cache.vboPositions);
+		glDeleteBuffers(1, &cache.vboNormals);
+		glDeleteBuffers(1, &cache.vboTexcoords);
+		glDeleteBuffers(1, &cache.ibo);
+	});
 }
 
 Uint32 OpenGLES2Renderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup)

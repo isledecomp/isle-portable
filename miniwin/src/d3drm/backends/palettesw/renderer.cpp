@@ -914,34 +914,23 @@ void Direct3DRMPaletteSWRenderer::DrawTriangleProjected(
 	}
 }
 
-struct PalCacheDestroyContext {
-	Direct3DRMPaletteSWRenderer* renderer;
-	Uint32 id;
-};
-
 void Direct3DRMPaletteSWRenderer::AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture)
 {
-	auto* ctx = new PalCacheDestroyContext{this, id};
-	texture->AddDestroyCallback(
-		[](IDirect3DRMObject* obj, void* arg) {
-			auto* ctx = static_cast<PalCacheDestroyContext*>(arg);
-			auto& cacheEntry = ctx->renderer->m_textures[ctx->id];
-			if (cacheEntry.cached) {
-				// Only free surfaces we own (3D texture duplicates).
-				// UI textures point to the original surface — don't free those.
-				auto* origTexture = static_cast<Direct3DRMTextureImpl*>(cacheEntry.texture);
-				auto* origSurface = static_cast<DirectDrawSurfaceImpl*>(origTexture->m_surface);
-				if (cacheEntry.cached != origSurface->m_surface) {
-					SDL_UnlockSurface(cacheEntry.cached);
-					SDL_DestroySurface(cacheEntry.cached);
-				}
-				cacheEntry.cached = nullptr;
-				cacheEntry.texture = nullptr;
+	RegisterDestroyCallback(texture, id, [](Direct3DRMRenderer* renderer, Uint32 textureId) {
+		auto& cacheEntry = static_cast<Direct3DRMPaletteSWRenderer*>(renderer)->m_textures[textureId];
+		if (cacheEntry.cached) {
+			// Only free surfaces we own (3D texture duplicates).
+			// UI textures point to the original surface — don't free those.
+			auto* origTexture = static_cast<Direct3DRMTextureImpl*>(cacheEntry.texture);
+			auto* origSurface = static_cast<DirectDrawSurfaceImpl*>(origTexture->m_surface);
+			if (cacheEntry.cached != origSurface->m_surface) {
+				SDL_UnlockSurface(cacheEntry.cached);
+				SDL_DestroySurface(cacheEntry.cached);
 			}
-			delete ctx;
-		},
-		ctx
-	);
+			cacheEntry.cached = nullptr;
+			cacheEntry.texture = nullptr;
+		}
+	});
 }
 
 // Build a 256-byte remap table from a texture's own palette to the game
@@ -1115,20 +1104,14 @@ static PaletteMeshCache PalUploadMesh(const MeshGroup& meshGroup)
 
 void Direct3DRMPaletteSWRenderer::AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh)
 {
-	auto* ctx = new PalCacheDestroyContext{this, id};
-	mesh->AddDestroyCallback(
-		[](IDirect3DRMObject* obj, void* arg) {
-			auto* ctx = static_cast<PalCacheDestroyContext*>(arg);
-			auto& cacheEntry = ctx->renderer->m_meshes[ctx->id];
-			if (cacheEntry.meshGroup) {
-				cacheEntry.meshGroup = nullptr;
-				cacheEntry.vertices.clear();
-				cacheEntry.indices.clear();
-			}
-			delete ctx;
-		},
-		ctx
-	);
+	RegisterDestroyCallback(mesh, id, [](Direct3DRMRenderer* renderer, Uint32 meshId) {
+		auto& cacheEntry = static_cast<Direct3DRMPaletteSWRenderer*>(renderer)->m_meshes[meshId];
+		if (cacheEntry.meshGroup) {
+			cacheEntry.meshGroup = nullptr;
+			cacheEntry.vertices.clear();
+			cacheEntry.indices.clear();
+		}
+	});
 }
 
 Uint32 Direct3DRMPaletteSWRenderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* meshGroup)

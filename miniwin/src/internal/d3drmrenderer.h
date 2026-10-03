@@ -8,6 +8,7 @@
 #include "structs.h"
 
 #include <SDL3/SDL.h>
+#include <unordered_set>
 
 #define NO_TEXTURE_ID 0xffffffff
 
@@ -29,6 +30,7 @@ struct Plane {
 
 class Direct3DRMRenderer : public IDirect3DDevice2 {
 public:
+	~Direct3DRMRenderer() override;
 	virtual void PushLights(const SceneLight* vertices, size_t count) = 0;
 	virtual void SetProjection(const D3DRMMATRIX4D& projection, D3DVALUE front, D3DVALUE back) = 0;
 	virtual void SetFrustumPlanes(const Plane* frustumPlanes) = 0;
@@ -59,9 +61,23 @@ public:
 	virtual bool UsesPalettedSurfaces() const { return false; }
 
 protected:
+	using DestroyCallback = void (*)(Direct3DRMRenderer* renderer, Uint32 id);
+	void RegisterDestroyCallback(IDirect3DRMObject* object, Uint32 id, DestroyCallback callback);
+
 	int m_width, m_height;
 	int m_virtualWidth, m_virtualHeight;
 	ViewportTransform m_viewportTransform;
+
+private:
+	struct DestroyCallbackContext {
+		Direct3DRMRenderer* renderer;
+		IDirect3DRMObject* object;
+		Uint32 id;
+		DestroyCallback callback;
+	};
+	static void OnObjectDestroyed(IDirect3DRMObject* object, void* arg);
+
+	std::unordered_set<DestroyCallbackContext*> m_destroyCallbacks;
 };
 
 Direct3DRMRenderer* CreateDirect3DRMRenderer(
