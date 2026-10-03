@@ -133,6 +133,33 @@ MxS32 g_closed = FALSE;
 
 static char g_startupError[1024] = "";
 
+#ifdef __EMSCRIPTEN__
+static SDL_Mutex* g_gameStateMutex = NULL;
+
+struct GameStateLock {
+	GameStateLock() { SDL_LockMutex(g_gameStateMutex); }
+	~GameStateLock() { SDL_UnlockMutex(g_gameStateMutex); }
+};
+
+static void SaveOnTerminate()
+{
+	Uint64 deadline = SDL_GetTicks() + 1500;
+	while (!SDL_TryLockMutex(g_gameStateMutex)) {
+		if (SDL_GetTicks() >= deadline) {
+			return;
+		}
+
+		emscripten_current_thread_process_queued_calls();
+	}
+
+	if (g_isle && g_isle->GetGameStarted()) {
+		GameState()->Save(0);
+	}
+
+	SDL_UnlockMutex(g_gameStateMutex);
+}
+#endif
+
 // GLOBAL: ISLE 0x410050
 MxS32 g_rmDisabled = FALSE;
 
@@ -469,10 +496,11 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 	*appstate = g_isle->GetWindowHandle();
 
 #ifdef __EMSCRIPTEN__
+	g_gameStateMutex = SDL_CreateMutex();
 	SDL_AddEventWatch(
 		[](void* userdata, SDL_Event* event) -> bool {
 			if (event->type == SDL_EVENT_TERMINATING && g_isle && g_isle->GetGameStarted()) {
-				GameState()->Save(0);
+				SaveOnTerminate();
 				return false;
 			}
 
@@ -489,6 +517,9 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char** argv)
 
 SDL_AppResult SDL_AppIterate(void* appstate)
 {
+#ifdef __EMSCRIPTEN__
+	GameStateLock lock;
+#endif
 	if (g_closed) {
 		return SDL_APP_SUCCESS;
 	}
@@ -542,6 +573,8 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 	if (emscripten_is_main_browser_thread()) {
 		return SDL_APP_CONTINUE;
 	}
+
+	GameStateLock lock;
 #endif
 	if (!g_isle) {
 		return SDL_APP_CONTINUE;
