@@ -37,6 +37,11 @@ Motocycle::Motocycle()
 	m_fuel = 1.0;
 }
 
+Motocycle::~Motocycle()
+{
+	ControlManager()->Unregister(this);
+}
+
 // FUNCTION: LEGO1 0x10035a40
 MxResult Motocycle::Create(MxDSAction& p_dsAction)
 {
