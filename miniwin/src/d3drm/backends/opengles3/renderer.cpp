@@ -201,6 +201,12 @@ Direct3DRMRenderer* OpenGLES3Renderer::Create(
 
 	GLuint vs = CompileShader(GL_VERTEX_SHADER, vertexShaderSource);
 	GLuint fs = CompileShader(GL_FRAGMENT_SHADER, fragmentShaderSource);
+	if (!vs || !fs) {
+		glDeleteShader(vs);
+		glDeleteShader(fs);
+		SDL_GL_DestroyContext(context);
+		return nullptr;
+	}
 
 	GLuint shaderProgram = glCreateProgram();
 	glAttachShader(shaderProgram, vs);
