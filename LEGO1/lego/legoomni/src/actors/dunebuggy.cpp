@@ -48,6 +48,11 @@ DuneBuggy::DuneBuggy()
 	m_fuel = 1.0;
 }
 
+DuneBuggy::~DuneBuggy()
+{
+	ControlManager()->Unregister(this);
+}
+
 // FUNCTION: LEGO1 0x10067e30
 MxResult DuneBuggy::Create(MxDSAction& p_dsAction)
 {

@@ -47,6 +47,11 @@ Jetski::Jetski()
 	m_canRotate = 1;
 }
 
+Jetski::~Jetski()
+{
+	ControlManager()->Unregister(this);
+}
+
 // FUNCTION: LEGO1 0x1007e630
 MxResult Jetski::Create(MxDSAction& p_dsAction)
 {

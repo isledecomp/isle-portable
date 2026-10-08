@@ -26,6 +26,11 @@ Bike::Bike()
 	m_canRotate = 1;
 }
 
+Bike::~Bike()
+{
+	ControlManager()->Unregister(this);
+}
+
 // FUNCTION: LEGO1 0x100768f0
 MxResult Bike::Create(MxDSAction& p_dsAction)
 {

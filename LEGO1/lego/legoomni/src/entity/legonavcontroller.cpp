@@ -2039,6 +2039,7 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 						}
 
 						g_switchAct = FALSE;
+						return 1;
 					}
 					else {
 						MxDSAction action;
