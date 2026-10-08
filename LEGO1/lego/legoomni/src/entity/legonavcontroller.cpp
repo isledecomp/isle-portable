@@ -4,6 +4,7 @@
 #include "act3.h"
 #include "extensions/thirdpersoncamera.h"
 #include "infocenter.h"
+#include "islepathactor.h"
 #include "legoanimationmanager.h"
 #include "legocameracontroller.h"
 #include "legocharactermanager.h"
@@ -1981,6 +1982,11 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 					if (g_switchAct && key >= SDLK_1 && key <= SDLK_5) {
 						switch (GameState()->GetCurrentAct()) {
 						case LegoGameState::e_act1:
+							if (UserActor() && UserActor()->IsA("IslePathActor") &&
+								UserActor()->GetActorId() != GameState()->GetActorId()) {
+								((IslePathActor*) UserActor())->Exit();
+							}
+
 							GameState()->m_currentArea = LegoGameState::e_isle;
 							break;
 						case LegoGameState::e_act2:
