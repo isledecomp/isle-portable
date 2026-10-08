@@ -238,6 +238,7 @@ void MxDiskStreamProvider::PerformWork()
 		AUTOLOCK(m_criticalSection);
 
 		if (!m_list.PopFront(streamingAction)) {
+			streamingAction = NULL;
 			goto done;
 		}
 	}
