@@ -4,6 +4,7 @@ services:
     ports:
       - "6931:6931"
     volumes:
+      # TODO: replace ASSETS_PATH with the path to your mounted ISO
       - ${ASSETS_PATH}:/assets
 
   caddy:
