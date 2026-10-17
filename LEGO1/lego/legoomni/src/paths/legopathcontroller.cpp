@@ -239,14 +239,17 @@ MxResult LegoPathController::PlaceActor(
 		return FAILURE;
 	}
 
+	LegoPathBoundary* pBoundary = GetPathBoundary(p_name);
+
+	if (pBoundary == NULL) {
+		return FAILURE;
+	}
+
 	if (p_actor->GetController() != NULL) {
 		p_actor->GetController()->RemoveActor(p_actor);
 		p_actor->SetController(NULL);
 	}
 
-	LegoPathBoundary* pBoundary = GetPathBoundary(p_name);
-
-	assert(pBoundary);
 	assert(p_src < pBoundary->GetNumEdges() && p_dest < pBoundary->GetNumEdges());
 
 	LegoEdge* pSrcE = pBoundary->GetEdges()[p_src];
