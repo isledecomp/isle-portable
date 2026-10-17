@@ -60,6 +60,10 @@ MxDiskStreamController::~MxDiskStreamController()
 		FUN_100c7cb0((MxDSStreamingAction*) object);
 	}
 
+	for (list<MxDSBuffer*>::iterator it = m_list0x74.begin(); it != m_list0x74.end(); it++) {
+		(*it)->ReleaseSourceBuffer();
+	}
+
 	while (!m_list0x74.empty()) {
 		MxDSBuffer* buffer = m_list0x74.front();
 		m_list0x74.pop_front();
