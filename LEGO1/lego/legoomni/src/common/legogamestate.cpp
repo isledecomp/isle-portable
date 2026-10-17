@@ -1191,6 +1191,9 @@ void LegoGameState::RegisterState(LegoState* p_state)
 // FUNCTION: LEGO1 0x1003bd00
 void LegoGameState::Init()
 {
+	Lego()->RemoveWorld(*g_act2mainScript, 0);
+	Lego()->RemoveWorld(*g_act3Script, 0);
+
 	m_bgColorVar->SetValue("set 56 54 68");
 	m_bgColorVar->SetLightColor();
 	m_tempColorVar->SetValue("set 56 54 68");
