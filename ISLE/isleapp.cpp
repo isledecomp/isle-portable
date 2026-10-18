@@ -880,6 +880,11 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 
 		float x = event->tfinger.x * g_targetWidth;
 		float y = event->tfinger.y * g_targetHeight;
+		bool emulateMouse = true;
+#ifdef __EMSCRIPTEN__
+		Emscripten_ClampToRenderArea(x, y);
+		emulateMouse = Emscripten_DidTouchStartInRenderArea(event);
+#endif
 
 		if (InputManager()) {
 			MxU8 modifier = LegoEventNotificationParam::c_lButtonState;
@@ -887,7 +892,9 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 				modifier |= LegoEventNotificationParam::c_motionHandled;
 			}
 
-			InputManager()->QueueEvent(c_notificationMouseMove, modifier, x, y, 0);
+			if (emulateMouse) {
+				InputManager()->QueueEvent(c_notificationMouseMove, modifier, x, y, 0);
+			}
 		}
 
 		g_lastMouseX = x;
@@ -918,10 +925,18 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 
 		float x = event->tfinger.x * g_targetWidth;
 		float y = event->tfinger.y * g_targetHeight;
+		bool emulateMouse = true;
+#ifdef __EMSCRIPTEN__
+		Emscripten_ClampToRenderArea(x, y);
+		emulateMouse = Emscripten_DidTouchStartInRenderArea(event);
+#endif
 
 		if (InputManager()) {
 			InputManager()->HandleTouchEvent(event, g_isle->GetTouchScheme());
-			InputManager()->QueueEvent(c_notificationButtonDown, LegoEventNotificationParam::c_lButtonState, x, y, 0);
+			if (emulateMouse) {
+				InputManager()
+					->QueueEvent(c_notificationButtonDown, LegoEventNotificationParam::c_lButtonState, x, y, 0);
+			}
 		}
 
 		g_lastMouseX = x;
@@ -953,12 +968,19 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 
 		float x = event->tfinger.x * g_targetWidth;
 		float y = event->tfinger.y * g_targetHeight;
+		bool emulateMouse = true;
+#ifdef __EMSCRIPTEN__
+		Emscripten_ClampToRenderArea(x, y);
+		emulateMouse = Emscripten_DidTouchStartInRenderArea(event);
+#endif
 
 		g_isle->DetectDoubleTap(event->tfinger);
 
 		if (InputManager()) {
 			InputManager()->HandleTouchEvent(event, g_isle->GetTouchScheme());
-			InputManager()->QueueEvent(c_notificationButtonUp, 0, x, y, 0);
+			if (emulateMouse) {
+				InputManager()->QueueEvent(c_notificationButtonUp, 0, x, y, 0);
+			}
 		}
 		break;
 	}
