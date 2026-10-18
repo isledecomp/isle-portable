@@ -197,7 +197,7 @@ set(miniwin_shaders_DEPENDS
 
 if(ISLE_COMPILE_SHADERS)
   set(compiled_bindir "${CMAKE_CURRENT_BINARY_DIR}/shaders/compiled")
-  set(generated_dirs "${compiled_bindir}/dxil" "${compiled_bindir}/msl" "${compiled_bindir}/spirv")
+  set(generated_dirs "${compiled_bindir}/dxbc" "${compiled_bindir}/dxbc_d3d11" "${compiled_bindir}/dxil" "${compiled_bindir}/msl" "${compiled_bindir}/spirv")
 
   add_custom_command(OUTPUT ${generated_dirs}
     COMMAND "${CMAKE_COMMAND}" -E make_directory ${generated_dirs}
@@ -233,6 +233,8 @@ foreach(shader_src IN LISTS miniwin_shaders)
     message(FATAL_ERROR "Unknown stage (${src_stage_ext})")
   endif()
   set(dxbc "${compiled_bindir}/dxbc/${filename_wle}.dxbc")
+  set(dxbc_d3d11_hlsl "${compiled_bindir}/dxbc_d3d11/${filename_wle}.hlsl")
+  set(dxbc_d3d11 "${compiled_bindir}/dxbc_d3d11/${filename_wle}.dxbc")
   set(dxil "${compiled_bindir}/dxil/${filename_wle}.dxil")
   set(msl "${compiled_bindir}/msl/${filename_wle}.msl")
   set(spirv "${compiled_bindir}/spirv/${filename_wle}.spv")
@@ -244,6 +246,15 @@ foreach(shader_src IN LISTS miniwin_shaders)
         -s "${src_format}" -d "DXBC" -t "${shader_stage}"
         -I "${shader_src_dir}"
       DEPENDS create-generated-shader-directories "${shader_src}" ${miniwin_shaders_DEPENDS})
+    add_custom_command(OUTPUT "${dxbc_d3d11_hlsl}"
+      COMMAND "${SDL_SHADERCROSS_BIN}" "${shader_src}" -o "${dxbc_d3d11_hlsl}"
+        -s "${src_format}" -d "HLSL" -t "${shader_stage}" --pssl -DNO_REGISTER_SPACE
+        -I "${shader_src_dir}"
+      DEPENDS create-generated-shader-directories "${shader_src}" ${miniwin_shaders_DEPENDS})
+    add_custom_command(OUTPUT "${dxbc_d3d11}"
+      COMMAND Python3::Interpreter "${py_gencshadersource}" "dxbc" "--stage" "${shader_stage}"
+        "--input" "${dxbc_d3d11_hlsl}" "--output" "${dxbc_d3d11}"
+      DEPENDS "${py_gencshadersource}" "${dxbc_d3d11_hlsl}")
     add_custom_command(OUTPUT "${dxil}"
       COMMAND "${SDL_SHADERCROSS_BIN}" "${shader_src}" -o "${dxil}"
         -s "${src_format}" -d "DXIL" -t "${shader_stage}"
@@ -262,8 +273,8 @@ foreach(shader_src IN LISTS miniwin_shaders)
     add_custom_command(OUTPUT "${shader_header}"
       COMMAND Python3::Interpreter "${py_gencshadersource}" "header" "--output" "${shader_header}"
         "--stage" "${shader_stage}" "--variable" "${shader_variable}"
-        "--dxbc" "${dxbc}" "--dxil" "${dxil}" "--msl" "${msl}" "--spirv" "${spirv}"
-      DEPENDS "${py_gencshadersource}" "${dxbc}" "${dxil}" "${msl}" "${spirv}")
+        "--dxbc" "${dxbc}" "--dxbc-d3d11" "${dxbc_d3d11}" "--dxil" "${dxil}" "--msl" "${msl}" "--spirv" "${spirv}"
+      DEPENDS "${py_gencshadersource}" "${dxbc}" "${dxbc_d3d11}" "${dxil}" "${msl}" "${spirv}")
   endif()
   target_sources(miniwin PRIVATE "${shader_header}")
   list(APPEND shader_names "${shader_name}")

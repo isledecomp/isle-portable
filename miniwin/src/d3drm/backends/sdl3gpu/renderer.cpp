@@ -100,8 +100,7 @@ static SDL_GPUGraphicsPipeline* InitializeGraphicsPipeline(
 	bool depthWrite
 )
 {
-	const SDL_GPUShaderCreateInfo* vertexCreateInfo =
-		GetVertexShaderCode(VertexShaderId::PositionColor, SDL_GetGPUShaderFormats(device));
+	const SDL_GPUShaderCreateInfo* vertexCreateInfo = GetVertexShaderCode(VertexShaderId::PositionColor, device);
 	if (!vertexCreateInfo) {
 		return nullptr;
 	}
@@ -110,8 +109,7 @@ static SDL_GPUGraphicsPipeline* InitializeGraphicsPipeline(
 		return nullptr;
 	}
 
-	const SDL_GPUShaderCreateInfo* fragmentCreateInfo =
-		GetFragmentShaderCode(FragmentShaderId::SolidColor, SDL_GetGPUShaderFormats(device));
+	const SDL_GPUShaderCreateInfo* fragmentCreateInfo = GetFragmentShaderCode(FragmentShaderId::SolidColor, device);
 	if (!fragmentCreateInfo) {
 		return nullptr;
 	}

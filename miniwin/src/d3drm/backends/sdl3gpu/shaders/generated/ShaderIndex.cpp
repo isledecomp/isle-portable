@@ -37,6 +37,19 @@ static const SDL_GPUShaderCreateInfo VertexShaderDXBCCodes[] = {
     /* num_uniform_buffers */   1,
   },
 };
+static const SDL_GPUShaderCreateInfo VertexShaderDXBCD3D11Codes[] = {
+  {
+    /* code_size */             sizeof(PositionColor_vert_dxbc_d3d11),
+    /* code */                  PositionColor_vert_dxbc_d3d11,
+    /* entrypoint */            "main",
+    /* format */                SDL_GPU_SHADERFORMAT_DXBC,
+    /* stage */                 SDL_GPU_SHADERSTAGE_VERTEX,
+    /* num_samplers */          0,
+    /* num_storage_textures */  0,
+    /* num_storage_buffers */   0,
+    /* num_uniform_buffers */   1,
+  },
+};
 #endif
 
 #if defined(SDL_PLATFORM_APPLE)
@@ -97,6 +110,19 @@ static const SDL_GPUShaderCreateInfo FragmentShaderDXBCCodes[] = {
     /* num_uniform_buffers */   1,
   },
 };
+static const SDL_GPUShaderCreateInfo FragmentShaderDXBCD3D11Codes[] = {
+  {
+    /* code_size */             sizeof(SolidColor_frag_dxbc_d3d11),
+    /* code */                  SolidColor_frag_dxbc_d3d11,
+    /* entrypoint */            "main",
+    /* format */                SDL_GPU_SHADERFORMAT_DXBC,
+    /* stage */                 SDL_GPU_SHADERSTAGE_FRAGMENT,
+    /* num_samplers */          1,
+    /* num_storage_textures */  0,
+    /* num_storage_buffers */   0,
+    /* num_uniform_buffers */   1,
+  },
+};
 #endif
 
 #if defined(SDL_PLATFORM_APPLE)
@@ -129,13 +155,18 @@ static const SDL_GPUShaderCreateInfo FragmentShaderSPIRVCodes[] = {
   },
 };
 
-const SDL_GPUShaderCreateInfo* GetVertexShaderCode(VertexShaderId id, SDL_GPUShaderFormat formats) {
+const SDL_GPUShaderCreateInfo* GetVertexShaderCode(VertexShaderId id, SDL_GPUDevice* device) {
+  SDL_GPUShaderFormat formats = SDL_GetGPUShaderFormats(device);
 #if defined(SDL_PLATFORM_WINDOWS)
   if (formats & SDL_GPU_SHADERFORMAT_DXIL) {
     SDL_assert(id < SDL_arraysize(VertexShaderDXILCodes));
     return &VertexShaderDXILCodes[id];
   }
   if (formats & SDL_GPU_SHADERFORMAT_DXBC) {
+    if (SDL_strcmp(SDL_GetGPUDeviceDriver(device), "direct3d11") == 0) {
+      SDL_assert(id < SDL_arraysize(VertexShaderDXBCD3D11Codes));
+      return &VertexShaderDXBCD3D11Codes[id];
+    }
     SDL_assert(id < SDL_arraysize(VertexShaderDXBCCodes));
     return &VertexShaderDXBCCodes[id];
   }
@@ -154,13 +185,18 @@ const SDL_GPUShaderCreateInfo* GetVertexShaderCode(VertexShaderId id, SDL_GPUSha
   return nullptr;
 }
 
-const SDL_GPUShaderCreateInfo* GetFragmentShaderCode(FragmentShaderId id, SDL_GPUShaderFormat formats) {
+const SDL_GPUShaderCreateInfo* GetFragmentShaderCode(FragmentShaderId id, SDL_GPUDevice* device) {
+  SDL_GPUShaderFormat formats = SDL_GetGPUShaderFormats(device);
 #if defined(SDL_PLATFORM_WINDOWS)
   if (formats & SDL_GPU_SHADERFORMAT_DXIL) {
     SDL_assert(id < SDL_arraysize(FragmentShaderDXILCodes));
     return &FragmentShaderDXILCodes[id];
   }
   if (formats & SDL_GPU_SHADERFORMAT_DXBC) {
+    if (SDL_strcmp(SDL_GetGPUDeviceDriver(device), "direct3d11") == 0) {
+      SDL_assert(id < SDL_arraysize(FragmentShaderDXBCD3D11Codes));
+      return &FragmentShaderDXBCD3D11Codes[id];
+    }
     SDL_assert(id < SDL_arraysize(FragmentShaderDXBCCodes));
     return &FragmentShaderDXBCCodes[id];
   }
