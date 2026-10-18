@@ -47,7 +47,8 @@ public:
 		DWORD height,
 		DWORD msaaSamples,
 		float anisotropic,
-		D3DLightingModel lightingModel
+		D3DLightingModel lightingModel,
+		D3DRenderStyle renderStyle
 	);
 	OpenGLES3Renderer(
 		DWORD width,
@@ -55,6 +56,7 @@ public:
 		DWORD msaaSamples,
 		float anisotropic,
 		D3DLightingModel lightingModel,
+		D3DRenderStyle renderStyle,
 		SDL_GLContext context,
 		GLuint shaderProgram
 	);
@@ -101,6 +103,9 @@ private:
 	uint32_t m_msaa;
 	float m_anisotropic;
 	D3DLightingModel m_lightingModel;
+	D3DRenderStyle m_renderStyle;
+	int m_windowWidth;
+	int m_windowHeight;
 	GLuint m_fbo = 0;
 	GLuint m_resolveFBO = 0;
 	GLuint m_colorTarget = 0;
@@ -123,13 +128,21 @@ private:
 	GLint m_worldMatrixLoc;
 	GLint m_cameraPosLoc;
 	GLint m_lightingModelLoc;
+	GLint m_affineColorLoc;
+	GLint m_flatLoc;
 	ViewportTransform m_viewportTransform;
 };
 
 inline static void OpenGLES3Renderer_EnumDevice(const IDirect3DMiniwin* d3d, LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
-	Direct3DRMRenderer* device =
-		OpenGLES3Renderer::Create(640, 480, d3d->GetMSAASamples(), d3d->GetAnisotropic(), d3d->GetLightingModel());
+	Direct3DRMRenderer* device = OpenGLES3Renderer::Create(
+		640,
+		480,
+		d3d->GetMSAASamples(),
+		d3d->GetAnisotropic(),
+		d3d->GetLightingModel(),
+		d3d->GetRenderStyle()
+	);
 	if (!device) {
 		return;
 	}

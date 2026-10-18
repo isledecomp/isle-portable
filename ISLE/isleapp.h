@@ -119,6 +119,7 @@ private:
 	MxU32 m_msaaSamples;
 	MxFloat m_anisotropic;
 	MxU32 m_lightingModel;
+	MxU32 m_renderStyle;
 	MxBool m_activeInBackground;
 };
 

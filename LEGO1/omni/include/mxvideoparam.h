@@ -62,6 +62,9 @@ public:
 	void SetLightingModel(MxU32 p_lightingModel) { m_lightingModel = p_lightingModel; }
 	MxU32 GetLightingModel() { return m_lightingModel; }
 
+	void SetRenderStyle(MxU32 p_renderStyle) { m_renderStyle = p_renderStyle; }
+	MxU32 GetRenderStyle() { return m_renderStyle; }
+
 private:
 	MxRect32 m_rect;           // 0x00
 	MxPalette* m_palette;      // 0x10
@@ -72,6 +75,7 @@ private:
 	MxU32 m_msaaSamples;
 	MxFloat m_anisotropic;
 	MxU32 m_lightingModel;
+	MxU32 m_renderStyle;
 };
 
 #endif // MXVIDEOPARAM_H

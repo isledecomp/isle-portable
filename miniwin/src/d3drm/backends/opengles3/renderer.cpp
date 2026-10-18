@@ -56,7 +56,8 @@ Direct3DRMRenderer* OpenGLES3Renderer::Create(
 	DWORD height,
 	DWORD msaaSamples,
 	float anisotropic,
-	D3DLightingModel lightingModel
+	D3DLightingModel lightingModel,
+	D3DRenderStyle renderStyle
 )
 {
 	// We have to reset the attributes here after having enumerated the
@@ -113,10 +114,14 @@ Direct3DRMRenderer* OpenGLES3Renderer::Create(
 		uniform int u_lightingModel;
 		uniform float u_shininess;
 		uniform vec4 u_color;
+		uniform bool u_affineColor;
 
 		out vec4 v_color;
 		out vec3 v_specular;
 		out vec2 v_texCoord;
+		out float v_w;
+		flat out vec4 v_flatColor;
+		flat out vec3 v_flatSpecular;
 
 		void main() {
 			vec4 viewPos = u_modelViewMatrix * vec4(a_position, 1.0);
@@ -171,29 +176,52 @@ Direct3DRMRenderer* OpenGLES3Renderer::Create(
 			v_color = vec4(clamp(diffuse * u_color.rgb, 0.0, 1.0), u_color.a);
 			v_specular = clamp(specular, 0.0, 1.0);
 			v_texCoord = a_texCoord;
+
+			v_flatColor = v_color;
+			v_flatSpecular = v_specular;
+			v_w = 1.0;
+			if (u_affineColor) {
+				v_w = gl_Position.w;
+				v_color *= v_w;
+				v_specular *= v_w;
+			}
 		}
 	)";
 
 	const char* fragmentShaderSource = R"(#version 300 es
 		precision mediump float;
 
-		in vec4 v_color;
-		in vec3 v_specular;
+		in highp vec4 v_color;
+		in highp vec3 v_specular;
 		in vec2 v_texCoord;
+		in highp float v_w;
+		flat in vec4 v_flatColor;
+		flat in vec3 v_flatSpecular;
 
 		uniform bool u_useTexture;
+		uniform bool u_affineColor;
+		uniform bool u_flat;
 		uniform sampler2D u_texture;
 
 		out vec4 fragColor;
 
 		void main() {
 			vec4 finalColor = v_color;
+			vec3 specular = v_specular;
+			if (u_flat) {
+				finalColor = v_flatColor;
+				specular = v_flatSpecular;
+			}
+			else if (u_affineColor) {
+				finalColor = v_color / v_w;
+				specular = v_specular / v_w;
+			}
 			if (u_useTexture) {
 				vec4 texel = texture(u_texture, v_texCoord);
 				finalColor.rgb = texel.rgb * finalColor.rgb;
 				finalColor.a = texel.a;
 			}
-			finalColor.rgb = clamp(finalColor.rgb + v_specular, 0.0, 1.0);
+			finalColor.rgb = clamp(finalColor.rgb + specular, 0.0, 1.0);
 
 			fragColor = finalColor;
 		}
@@ -218,7 +246,16 @@ Direct3DRMRenderer* OpenGLES3Renderer::Create(
 	glDeleteShader(vs);
 	glDeleteShader(fs);
 
-	return new OpenGLES3Renderer(width, height, msaaSamples, anisotropic, lightingModel, context, shaderProgram);
+	return new OpenGLES3Renderer(
+		width,
+		height,
+		msaaSamples,
+		anisotropic,
+		lightingModel,
+		renderStyle,
+		context,
+		shaderProgram
+	);
 }
 
 GLES3MeshCacheEntry OpenGLES3Renderer::GLES3UploadMesh(const MeshGroup& meshGroup, bool forceUV)
@@ -245,6 +282,12 @@ GLES3MeshCacheEntry OpenGLES3Renderer::GLES3UploadMesh(const MeshGroup& meshGrou
 		std::transform(meshGroup.indices.begin(), meshGroup.indices.end(), cache.indices.begin(), [](DWORD index) {
 			return static_cast<uint16_t>(index);
 		});
+	}
+
+	if (cache.flat && m_renderStyle == D3DRenderStyle::Pixelated) {
+		for (size_t i = 0; i + 2 < cache.indices.size(); i += 3) {
+			std::rotate(cache.indices.begin() + i, cache.indices.begin() + i + 1, cache.indices.begin() + i + 3);
+		}
 	}
 
 	std::vector<TexCoord> texcoords;
@@ -318,6 +361,12 @@ bool OpenGLES3Renderer::UploadTexture(SDL_Surface* source, GLuint& outTexId, boo
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	}
+	else if (m_renderStyle == D3DRenderStyle::Pixelated) {
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	}
 	else {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -342,12 +391,18 @@ OpenGLES3Renderer::OpenGLES3Renderer(
 	DWORD msaaSamples,
 	float anisotropic,
 	D3DLightingModel lightingModel,
+	D3DRenderStyle renderStyle,
 	SDL_GLContext context,
 	GLuint shaderProgram
 )
 	: m_context(context), m_shaderProgram(shaderProgram), m_msaa(msaaSamples), m_anisotropic(anisotropic),
-	  m_lightingModel(lightingModel)
+	  m_lightingModel(lightingModel), m_renderStyle(renderStyle)
 {
+	if (m_renderStyle == D3DRenderStyle::Pixelated) {
+		m_msaa = 1;
+		m_anisotropic = 0.0f;
+	}
+
 	glGenFramebuffers(1, &m_fbo);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 
@@ -385,6 +440,7 @@ OpenGLES3Renderer::OpenGLES3Renderer(
 	);
 
 	SDL_Log("Lighting model: %s", m_lightingModel == D3DLightingModel::DirectX8 ? "DirectX 8" : "DirectX 5");
+	SDL_Log("Render style: %s", m_renderStyle == D3DRenderStyle::Pixelated ? "Pixelated" : "Smooth");
 
 	m_virtualWidth = width;
 	m_virtualHeight = height;
@@ -432,6 +488,8 @@ OpenGLES3Renderer::OpenGLES3Renderer(
 	m_worldMatrixLoc = glGetUniformLocation(m_shaderProgram, "u_worldMatrix");
 	m_cameraPosLoc = glGetUniformLocation(m_shaderProgram, "u_cameraPos");
 	m_lightingModelLoc = glGetUniformLocation(m_shaderProgram, "u_lightingModel");
+	m_affineColorLoc = glGetUniformLocation(m_shaderProgram, "u_affineColor");
+	m_flatLoc = glGetUniformLocation(m_shaderProgram, "u_flat");
 
 	m_uiMesh.vertices = {
 		{{0.0f, 0.0f, 0.0f}, {0, 0, -1}, {0.0f, 0.0f}},
@@ -444,6 +502,7 @@ OpenGLES3Renderer::OpenGLES3Renderer(
 
 	glUseProgram(m_shaderProgram);
 	glUniform1i(m_lightingModelLoc, static_cast<GLint>(m_lightingModel));
+	glUniform1i(m_affineColorLoc, m_renderStyle == D3DRenderStyle::Pixelated);
 }
 
 OpenGLES3Renderer::~OpenGLES3Renderer()
@@ -584,6 +643,7 @@ HRESULT OpenGLES3Renderer::BeginFrame()
 	m_dirty = true;
 
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+	glViewport(0, 0, m_width, m_height);
 
 	glEnable(GL_CULL_FACE);
 	glDisable(GL_BLEND);
@@ -618,6 +678,7 @@ HRESULT OpenGLES3Renderer::BeginFrame()
 	}
 	glUniform1i(m_lightCountLoc, lightCount);
 	glUniform1i(m_lightingModelLoc, static_cast<GLint>(m_lightingModel));
+	glUniform1i(m_affineColorLoc, m_renderStyle == D3DRenderStyle::Pixelated);
 	return DD_OK;
 }
 
@@ -663,6 +724,7 @@ void OpenGLES3Renderer::SubmitDraw(
 	);
 
 	glUniform1f(m_shinLoc, appearance.shininess);
+	glUniform1i(m_flatLoc, mesh.flat && m_renderStyle == D3DRenderStyle::Pixelated);
 
 	if (appearance.textureId != NO_TEXTURE_ID) {
 		glUniform1i(m_useTextureLoc, 1);
@@ -693,9 +755,27 @@ HRESULT OpenGLES3Renderer::FinalizeFrame()
 void OpenGLES3Renderer::Resize(int width, int height, const ViewportTransform& viewportTransform)
 {
 	SDL_GL_MakeCurrent(DDWindow, m_context);
+	m_windowWidth = width;
+	m_windowHeight = height;
 	m_width = width;
 	m_height = height;
 	m_viewportTransform = viewportTransform;
+	if (m_renderStyle == D3DRenderStyle::Pixelated) {
+		float aspect = static_cast<float>(width) / height;
+		float virtualAspect = static_cast<float>(m_virtualWidth) / m_virtualHeight;
+		if (aspect > virtualAspect) {
+			m_height = std::min(height, m_virtualHeight);
+			m_width = static_cast<int>(m_height * aspect);
+		}
+		else {
+			m_width = std::min(width, m_virtualWidth);
+			m_height = static_cast<int>(m_width / aspect);
+		}
+		m_viewportTransform.scale =
+			std::min(static_cast<float>(m_width) / m_virtualWidth, static_cast<float>(m_height) / m_virtualHeight);
+		m_viewportTransform.offsetX = (m_width - (m_virtualWidth * m_viewportTransform.scale)) / 2.0f;
+		m_viewportTransform.offsetY = (m_height - (m_virtualHeight * m_viewportTransform.scale)) / 2.0f;
+	}
 	if (m_renderedImage) {
 		SDL_DestroySurface(m_renderedImage);
 	}
@@ -720,10 +800,10 @@ void OpenGLES3Renderer::Resize(int width, int height, const ViewportTransform& v
 	glGenRenderbuffers(1, &m_colorTarget);
 	glBindRenderbuffer(GL_RENDERBUFFER, m_colorTarget);
 	if (m_msaa > 1) {
-		glRenderbufferStorageMultisample(GL_RENDERBUFFER, m_msaa, GL_RGBA8, width, height);
+		glRenderbufferStorageMultisample(GL_RENDERBUFFER, m_msaa, GL_RGBA8, m_width, m_height);
 	}
 	else {
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, width, height);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, m_width, m_height);
 	}
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, m_colorTarget);
 
@@ -731,10 +811,10 @@ void OpenGLES3Renderer::Resize(int width, int height, const ViewportTransform& v
 	glGenRenderbuffers(1, &m_depthTarget);
 	glBindRenderbuffer(GL_RENDERBUFFER, m_depthTarget);
 	if (m_msaa > 1) {
-		glRenderbufferStorageMultisample(GL_RENDERBUFFER, m_msaa, GL_DEPTH_COMPONENT24, width, height);
+		glRenderbufferStorageMultisample(GL_RENDERBUFFER, m_msaa, GL_DEPTH_COMPONENT24, m_width, m_height);
 	}
 	else {
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, m_width, m_height);
 	}
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_depthTarget);
 	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -746,7 +826,7 @@ void OpenGLES3Renderer::Resize(int width, int height, const ViewportTransform& v
 		glBindFramebuffer(GL_FRAMEBUFFER, m_resolveFBO);
 		glGenRenderbuffers(1, &m_resolveColor);
 		glBindRenderbuffer(GL_RENDERBUFFER, m_resolveColor);
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, width, height);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, m_width, m_height);
 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, m_resolveColor);
 		GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		if (status != GL_FRAMEBUFFER_COMPLETE) {
@@ -765,6 +845,7 @@ void OpenGLES3Renderer::Clear(float r, float g, float b)
 	m_dirty = true;
 
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+	glViewport(0, 0, m_width, m_height);
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
@@ -792,7 +873,18 @@ void OpenGLES3Renderer::Flip()
 	glClear(GL_COLOR_BUFFER_BIT);
 	glDisable(GL_SCISSOR_TEST);
 
-	glBlitFramebuffer(0, 0, m_width, m_height, 0, 0, m_width, m_height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	glBlitFramebuffer(
+		0,
+		0,
+		m_width,
+		m_height,
+		0,
+		0,
+		m_windowWidth,
+		m_windowHeight,
+		GL_COLOR_BUFFER_BIT,
+		m_renderStyle == D3DRenderStyle::Pixelated ? GL_LINEAR : GL_NEAREST
+	);
 
 	SDL_GL_SwapWindow(DDWindow);
 	m_dirty = false;
@@ -804,6 +896,7 @@ void OpenGLES3Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, c
 	m_dirty = true;
 
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+	glViewport(0, 0, m_width, m_height);
 
 	glDisable(GL_DEPTH_TEST);
 	glDepthMask(GL_FALSE);
@@ -817,6 +910,7 @@ void OpenGLES3Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, c
 
 	glUniform4f(m_colorLoc, color.r, color.g, color.b, color.a);
 	glUniform1f(m_shinLoc, 0.0f);
+	glUniform1i(m_flatLoc, 0);
 
 	SDL_Rect expandedDstRect;
 	if (textureId != NO_TEXTURE_ID) {

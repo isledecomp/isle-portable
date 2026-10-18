@@ -36,17 +36,25 @@ struct GLES2MeshCacheEntry {
 	GLuint vboPositions;
 	GLuint vboNormals;
 	GLuint vboTexcoords;
+	GLuint vboLightPositions;
 	GLuint ibo;
 };
 
 class OpenGLES2Renderer : public Direct3DRMRenderer {
 public:
-	static Direct3DRMRenderer* Create(DWORD width, DWORD height, float anisotropic, D3DLightingModel lightingModel);
+	static Direct3DRMRenderer* Create(
+		DWORD width,
+		DWORD height,
+		float anisotropic,
+		D3DLightingModel lightingModel,
+		D3DRenderStyle renderStyle
+	);
 	OpenGLES2Renderer(
 		DWORD width,
 		DWORD height,
 		float anisotropic,
 		D3DLightingModel lightingModel,
+		D3DRenderStyle renderStyle,
 		SDL_GLContext context,
 		GLuint shaderProgram
 	);
@@ -91,6 +99,9 @@ private:
 	SDL_GLContext m_context;
 	float m_anisotropic;
 	D3DLightingModel m_lightingModel;
+	D3DRenderStyle m_renderStyle;
+	int m_windowWidth;
+	int m_windowHeight;
 	GLuint m_fbo;
 	GLuint m_colorTarget = 0;
 	GLuint m_depthTarget = 0;
@@ -99,6 +110,7 @@ private:
 	GLint m_posLoc;
 	GLint m_normLoc;
 	GLint m_texLoc;
+	GLint m_lightPosLoc;
 	GLint m_colorLoc;
 	GLint m_shinLoc;
 	GLint m_lightCountLoc;
@@ -111,12 +123,15 @@ private:
 	GLint m_worldMatrixLoc;
 	GLint m_cameraPosLoc;
 	GLint m_lightingModelLoc;
+	GLint m_affineColorLoc;
+	GLint m_flatLoc;
 	ViewportTransform m_viewportTransform;
 };
 
 inline static void OpenGLES2Renderer_EnumDevice(const IDirect3DMiniwin* d3d, LPD3DENUMDEVICESCALLBACK cb, void* ctx)
 {
-	Direct3DRMRenderer* device = OpenGLES2Renderer::Create(640, 480, d3d->GetAnisotropic(), d3d->GetLightingModel());
+	Direct3DRMRenderer* device =
+		OpenGLES2Renderer::Create(640, 480, d3d->GetAnisotropic(), d3d->GetLightingModel(), d3d->GetRenderStyle());
 	if (!device) {
 		return;
 	}

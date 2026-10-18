@@ -54,7 +54,8 @@ Direct3DRMRenderer* OpenGLES2Renderer::Create(
 	DWORD width,
 	DWORD height,
 	float anisotropic,
-	D3DLightingModel lightingModel
+	D3DLightingModel lightingModel,
+	D3DRenderStyle renderStyle
 )
 {
 	// We have to reset the attributes here after having enumerated the
@@ -98,6 +99,7 @@ Direct3DRMRenderer* OpenGLES2Renderer::Create(
 		attribute vec3 a_position;
 		attribute vec3 a_normal;
 		attribute vec2 a_texCoord;
+		attribute vec3 a_lightPosition;
 
 		uniform mat4 u_modelViewMatrix;
 		uniform mat3 u_normalMatrix;
@@ -109,16 +111,19 @@ Direct3DRMRenderer* OpenGLES2Renderer::Create(
 		uniform int u_lightingModel;
 		uniform float u_shininess;
 		uniform vec4 u_color;
+		uniform bool u_affineColor;
+		uniform bool u_flat;
 
 		varying vec4 v_color;
 		varying vec3 v_specular;
 		varying vec2 v_texCoord;
+		varying float v_w;
 
 		void main() {
 			vec4 viewPos = u_modelViewMatrix * vec4(a_position, 1.0);
 			gl_Position = u_projectionMatrix * viewPos;
 
-			vec3 worldPos = (u_worldMatrix * vec4(a_position, 1.0)).xyz;
+			vec3 worldPos = (u_worldMatrix * vec4(u_flat ? a_lightPosition : a_position, 1.0)).xyz;
 			vec3 normal = normalize(u_normalMatrix * a_normal);
 
 			vec3 modelOrigin = u_worldMatrix[3].xyz;
@@ -171,6 +176,13 @@ Direct3DRMRenderer* OpenGLES2Renderer::Create(
 			v_color = vec4(clamp(diffuse * u_color.rgb, 0.0, 1.0), u_color.a);
 			v_specular = clamp(specular, 0.0, 1.0);
 			v_texCoord = a_texCoord;
+
+			v_w = 1.0;
+			if (u_affineColor) {
+				v_w = gl_Position.w;
+				v_color *= v_w;
+				v_specular *= v_w;
+			}
 		}
 	)";
 
@@ -180,18 +192,25 @@ Direct3DRMRenderer* OpenGLES2Renderer::Create(
 		varying vec4 v_color;
 		varying vec3 v_specular;
 		varying vec2 v_texCoord;
+		varying float v_w;
 
 		uniform int u_useTexture;
+		uniform bool u_affineColor;
 		uniform sampler2D u_texture;
 
 		void main() {
 			vec4 finalColor = v_color;
+			vec3 specular = v_specular;
+			if (u_affineColor) {
+				finalColor = v_color / v_w;
+				specular = v_specular / v_w;
+			}
 			if (u_useTexture != 0) {
 				vec4 texel = texture2D(u_texture, v_texCoord);
 				finalColor.rgb = texel.rgb * finalColor.rgb;
 				finalColor.a = texel.a;
 			}
-			finalColor.rgb = clamp(finalColor.rgb + v_specular, 0.0, 1.0);
+			finalColor.rgb = clamp(finalColor.rgb + specular, 0.0, 1.0);
 
 			gl_FragColor = finalColor;
 		}
@@ -212,14 +231,15 @@ Direct3DRMRenderer* OpenGLES2Renderer::Create(
 	glBindAttribLocation(shaderProgram, 0, "a_position");
 	glBindAttribLocation(shaderProgram, 1, "a_normal");
 	glBindAttribLocation(shaderProgram, 2, "a_texCoord");
+	glBindAttribLocation(shaderProgram, 3, "a_lightPosition");
 	glLinkProgram(shaderProgram);
 	glDeleteShader(vs);
 	glDeleteShader(fs);
 
-	return new OpenGLES2Renderer(width, height, anisotropic, lightingModel, context, shaderProgram);
+	return new OpenGLES2Renderer(width, height, anisotropic, lightingModel, renderStyle, context, shaderProgram);
 }
 
-GLES2MeshCacheEntry GLES2UploadMesh(const MeshGroup& meshGroup, bool forceUV = false)
+GLES2MeshCacheEntry GLES2UploadMesh(const MeshGroup& meshGroup, bool pixelated, bool forceUV = false)
 {
 	GLES2MeshCacheEntry cache{&meshGroup, meshGroup.version};
 
@@ -243,6 +263,24 @@ GLES2MeshCacheEntry GLES2UploadMesh(const MeshGroup& meshGroup, bool forceUV = f
 		std::transform(meshGroup.indices.begin(), meshGroup.indices.end(), cache.indices.begin(), [](DWORD index) {
 			return static_cast<uint16_t>(index);
 		});
+	}
+
+	std::vector<D3DVECTOR> lightPositions;
+	if (cache.flat && pixelated && cache.indices.size() <= 0x10000) {
+		std::vector<D3DRMVERTEX> expanded;
+		expanded.reserve(cache.indices.size());
+		lightPositions.reserve(cache.indices.size());
+		for (size_t i = 0; i + 2 < cache.indices.size(); i += 3) {
+			const D3DVECTOR& first = vertices[cache.indices[i]].position;
+			for (size_t j = 0; j < 3; ++j) {
+				expanded.push_back(vertices[cache.indices[i + j]]);
+				lightPositions.push_back(first);
+			}
+		}
+		vertices = std::move(expanded);
+		for (size_t i = 0; i < cache.indices.size(); ++i) {
+			cache.indices[i] = static_cast<uint16_t>(i);
+		}
 	}
 
 	std::vector<TexCoord> texcoords;
@@ -271,6 +309,13 @@ GLES2MeshCacheEntry GLES2UploadMesh(const MeshGroup& meshGroup, bool forceUV = f
 		glGenBuffers(1, &cache.vboTexcoords);
 		glBindBuffer(GL_ARRAY_BUFFER, cache.vboTexcoords);
 		glBufferData(GL_ARRAY_BUFFER, texcoords.size() * sizeof(TexCoord), texcoords.data(), GL_STATIC_DRAW);
+	}
+
+	cache.vboLightPositions = 0;
+	if (!lightPositions.empty()) {
+		glGenBuffers(1, &cache.vboLightPositions);
+		glBindBuffer(GL_ARRAY_BUFFER, cache.vboLightPositions);
+		glBufferData(GL_ARRAY_BUFFER, lightPositions.size() * sizeof(D3DVECTOR), lightPositions.data(), GL_STATIC_DRAW);
 	}
 
 	glGenBuffers(1, &cache.ibo);
@@ -305,6 +350,12 @@ bool OpenGLES2Renderer::UploadTexture(SDL_Surface* source, GLuint& outTexId, boo
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	}
+	else if (m_renderStyle == D3DRenderStyle::Pixelated) {
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	}
 	else {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -328,11 +379,17 @@ OpenGLES2Renderer::OpenGLES2Renderer(
 	DWORD height,
 	float anisotropic,
 	D3DLightingModel lightingModel,
+	D3DRenderStyle renderStyle,
 	SDL_GLContext context,
 	GLuint shaderProgram
 )
-	: m_context(context), m_shaderProgram(shaderProgram), m_anisotropic(anisotropic), m_lightingModel(lightingModel)
+	: m_context(context), m_shaderProgram(shaderProgram), m_anisotropic(anisotropic), m_lightingModel(lightingModel),
+	  m_renderStyle(renderStyle)
 {
+	if (m_renderStyle == D3DRenderStyle::Pixelated) {
+		m_anisotropic = 0.0f;
+	}
+
 	glGenFramebuffers(1, &m_fbo);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 
@@ -353,6 +410,7 @@ OpenGLES2Renderer::OpenGLES2Renderer(
 	);
 
 	SDL_Log("Lighting model: %s", m_lightingModel == D3DLightingModel::DirectX8 ? "DirectX 8" : "DirectX 5");
+	SDL_Log("Render style: %s", m_renderStyle == D3DRenderStyle::Pixelated ? "Pixelated" : "Smooth");
 
 	m_virtualWidth = width;
 	m_virtualHeight = height;
@@ -383,6 +441,7 @@ OpenGLES2Renderer::OpenGLES2Renderer(
 	m_posLoc = glGetAttribLocation(m_shaderProgram, "a_position");
 	m_normLoc = glGetAttribLocation(m_shaderProgram, "a_normal");
 	m_texLoc = glGetAttribLocation(m_shaderProgram, "a_texCoord");
+	m_lightPosLoc = glGetAttribLocation(m_shaderProgram, "a_lightPosition");
 	m_colorLoc = glGetUniformLocation(m_shaderProgram, "u_color");
 	m_shinLoc = glGetUniformLocation(m_shaderProgram, "u_shininess");
 	m_lightCountLoc = glGetUniformLocation(m_shaderProgram, "u_lightCount");
@@ -400,6 +459,8 @@ OpenGLES2Renderer::OpenGLES2Renderer(
 	m_worldMatrixLoc = glGetUniformLocation(m_shaderProgram, "u_worldMatrix");
 	m_cameraPosLoc = glGetUniformLocation(m_shaderProgram, "u_cameraPos");
 	m_lightingModelLoc = glGetUniformLocation(m_shaderProgram, "u_lightingModel");
+	m_affineColorLoc = glGetUniformLocation(m_shaderProgram, "u_affineColor");
+	m_flatLoc = glGetUniformLocation(m_shaderProgram, "u_flat");
 
 	m_uiMesh.vertices = {
 		{{0.0f, 0.0f, 0.0f}, {0, 0, -1}, {0.0f, 0.0f}},
@@ -408,10 +469,12 @@ OpenGLES2Renderer::OpenGLES2Renderer(
 		{{0.0f, 1.0f, 0.0f}, {0, 0, -1}, {0.0f, 1.0f}}
 	};
 	m_uiMesh.indices = {0, 1, 2, 0, 2, 3};
-	m_uiMeshCache = GLES2UploadMesh(m_uiMesh, true);
+	m_uiMeshCache = GLES2UploadMesh(m_uiMesh, false, true);
 
 	glUseProgram(m_shaderProgram);
 	glUniform1i(m_lightingModelLoc, static_cast<GLint>(m_lightingModel));
+	glUniform1i(m_affineColorLoc, m_renderStyle == D3DRenderStyle::Pixelated);
+	glUniform1i(m_flatLoc, 0);
 }
 
 OpenGLES2Renderer::~OpenGLES2Renderer()
@@ -508,6 +571,7 @@ void OpenGLES2Renderer::AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh)
 		glDeleteBuffers(1, &cache.vboPositions);
 		glDeleteBuffers(1, &cache.vboNormals);
 		glDeleteBuffers(1, &cache.vboTexcoords);
+		glDeleteBuffers(1, &cache.vboLightPositions);
 		glDeleteBuffers(1, &cache.ibo);
 	});
 }
@@ -518,13 +582,13 @@ Uint32 OpenGLES2Renderer::GetMeshId(IDirect3DRMMesh* mesh, const MeshGroup* mesh
 		auto& cache = m_meshs[i];
 		if (cache.meshGroup == meshGroup) {
 			if (cache.version != meshGroup->version) {
-				cache = std::move(GLES2UploadMesh(*meshGroup));
+				cache = std::move(GLES2UploadMesh(*meshGroup, m_renderStyle == D3DRenderStyle::Pixelated));
 			}
 			return i;
 		}
 	}
 
-	auto newCache = GLES2UploadMesh(*meshGroup);
+	auto newCache = GLES2UploadMesh(*meshGroup, m_renderStyle == D3DRenderStyle::Pixelated);
 
 	for (Uint32 i = 0; i < m_meshs.size(); ++i) {
 		auto& cache = m_meshs[i];
@@ -546,6 +610,7 @@ HRESULT OpenGLES2Renderer::BeginFrame()
 	m_dirty = true;
 
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+	glViewport(0, 0, m_width, m_height);
 
 	glEnable(GL_CULL_FACE);
 	glDisable(GL_BLEND);
@@ -580,6 +645,7 @@ HRESULT OpenGLES2Renderer::BeginFrame()
 	}
 	glUniform1i(m_lightCountLoc, lightCount);
 	glUniform1i(m_lightingModelLoc, static_cast<GLint>(m_lightingModel));
+	glUniform1i(m_affineColorLoc, m_renderStyle == D3DRenderStyle::Pixelated);
 	return DD_OK;
 }
 
@@ -653,11 +719,19 @@ void OpenGLES2Renderer::SubmitDraw(
 		glVertexAttribPointer(m_texLoc, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
 	}
 
+	if (mesh.vboLightPositions) {
+		glBindBuffer(GL_ARRAY_BUFFER, mesh.vboLightPositions);
+		glEnableVertexAttribArray(m_lightPosLoc);
+		glVertexAttribPointer(m_lightPosLoc, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+	}
+	glUniform1i(m_flatLoc, mesh.vboLightPositions != 0);
+
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ibo);
 	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh.indices.size()), GL_UNSIGNED_SHORT, nullptr);
 
 	glDisableVertexAttribArray(m_normLoc);
 	glDisableVertexAttribArray(m_texLoc);
+	glDisableVertexAttribArray(m_lightPosLoc);
 }
 
 HRESULT OpenGLES2Renderer::FinalizeFrame()
@@ -671,9 +745,27 @@ HRESULT OpenGLES2Renderer::FinalizeFrame()
 void OpenGLES2Renderer::Resize(int width, int height, const ViewportTransform& viewportTransform)
 {
 	SDL_GL_MakeCurrent(DDWindow, m_context);
+	m_windowWidth = width;
+	m_windowHeight = height;
 	m_width = width;
 	m_height = height;
 	m_viewportTransform = viewportTransform;
+	if (m_renderStyle == D3DRenderStyle::Pixelated) {
+		float aspect = static_cast<float>(width) / height;
+		float virtualAspect = static_cast<float>(m_virtualWidth) / m_virtualHeight;
+		if (aspect > virtualAspect) {
+			m_height = std::min(height, m_virtualHeight);
+			m_width = static_cast<int>(m_height * aspect);
+		}
+		else {
+			m_width = std::min(width, m_virtualWidth);
+			m_height = static_cast<int>(m_width / aspect);
+		}
+		m_viewportTransform.scale =
+			std::min(static_cast<float>(m_width) / m_virtualWidth, static_cast<float>(m_height) / m_virtualHeight);
+		m_viewportTransform.offsetX = (m_width - (m_virtualWidth * m_viewportTransform.scale)) / 2.0f;
+		m_viewportTransform.offsetY = (m_height - (m_virtualHeight * m_viewportTransform.scale)) / 2.0f;
+	}
 	if (m_renderedImage) {
 		SDL_DestroySurface(m_renderedImage);
 	}
@@ -693,11 +785,12 @@ void OpenGLES2Renderer::Resize(int width, int height, const ViewportTransform& v
 	// Create color texture
 	glGenTextures(1, &m_colorTarget);
 	glBindTexture(GL_TEXTURE_2D, m_colorTarget);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_width, m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+	GLint presentFilter = m_renderStyle == D3DRenderStyle::Pixelated ? GL_LINEAR : GL_NEAREST;
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, presentFilter);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, presentFilter);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_colorTarget, 0);
 
 	// Create depth renderbuffer
@@ -705,13 +798,13 @@ void OpenGLES2Renderer::Resize(int width, int height, const ViewportTransform& v
 	glBindRenderbuffer(GL_RENDERBUFFER, m_depthTarget);
 
 	if (SDL_GL_ExtensionSupported("GL_OES_depth24")) {
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24_OES, width, height);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24_OES, m_width, m_height);
 	}
 	else if (SDL_GL_ExtensionSupported("GL_OES_depth32")) {
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32_OES, width, height);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32_OES, m_width, m_height);
 	}
 	else {
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, width, height);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, m_width, m_height);
 	}
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_depthTarget);
 	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -730,6 +823,7 @@ void OpenGLES2Renderer::Clear(float r, float g, float b)
 	m_dirty = true;
 
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+	glViewport(0, 0, m_width, m_height);
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
@@ -745,6 +839,7 @@ void OpenGLES2Renderer::Flip()
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(0, 0, m_windowWidth, m_windowHeight);
 
 	glDisable(GL_DEPTH_TEST);
 	glFrontFace(GL_CCW);
@@ -752,6 +847,7 @@ void OpenGLES2Renderer::Flip()
 
 	glUniform4f(m_colorLoc, 1.0f, 1.0f, 1.0f, 1.0f);
 	glUniform1f(m_shinLoc, 0.0f);
+	glUniform1i(m_flatLoc, 0);
 
 	float ambient[] = {1.0f, 1.0f, 1.0f, 1.0f};
 	float blank[] = {0.0f, 0.0f, 0.0f, 0.0f};
@@ -810,6 +906,7 @@ void OpenGLES2Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, c
 	m_dirty = true;
 
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+	glViewport(0, 0, m_width, m_height);
 
 	glDisable(GL_DEPTH_TEST);
 	glDepthMask(GL_FALSE);
@@ -823,6 +920,7 @@ void OpenGLES2Renderer::Draw2DImage(Uint32 textureId, const SDL_Rect& srcRect, c
 
 	glUniform4f(m_colorLoc, color.r, color.g, color.b, color.a);
 	glUniform1f(m_shinLoc, 0.0f);
+	glUniform1i(m_flatLoc, 0);
 
 	SDL_Rect expandedDstRect;
 	if (textureId != NO_TEXTURE_ID) {
