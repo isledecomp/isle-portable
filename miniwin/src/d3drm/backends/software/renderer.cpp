@@ -30,8 +30,11 @@ static const float SW_BLOCK_INV[PERSP_STEP + 1] = {
 	1.0f / 8.0f,
 };
 
-Direct3DRMSoftwareRenderer::Direct3DRMSoftwareRenderer(DWORD width, DWORD height)
+Direct3DRMSoftwareRenderer::Direct3DRMSoftwareRenderer(DWORD width, DWORD height, D3DLightingModel lightingModel)
+	: m_lightingModel(lightingModel)
 {
+	SDL_Log("Lighting model: %s", m_lightingModel == D3DLightingModel::DirectX8 ? "DirectX 8" : "DirectX 5");
+
 	m_virtualWidth = width;
 	m_virtualHeight = height;
 
@@ -139,6 +142,10 @@ static SWLitVertex SplitEdge(SWLitVertex a, const SWLitVertex& b, float plane)
 	a.color.b = static_cast<Uint8>(a.color.b + t * (b.color.b - a.color.b));
 	a.color.a = static_cast<Uint8>(a.color.a + t * (b.color.a - a.color.a));
 
+	a.specular.r = static_cast<Uint8>(a.specular.r + t * (b.specular.r - a.specular.r));
+	a.specular.g = static_cast<Uint8>(a.specular.g + t * (b.specular.g - a.specular.g));
+	a.specular.b = static_cast<Uint8>(a.specular.b + t * (b.specular.b - a.specular.b));
+
 	return a;
 }
 
@@ -223,24 +230,32 @@ inline static void BlendRGBA(Uint8* p, int r, int g, int b, int a)
 	p[3] = static_cast<Uint8>(outA > 255 ? 255 : outA);
 }
 
-SDL_Color Direct3DRMSoftwareRenderer::ApplyLighting(
+void Direct3DRMSoftwareRenderer::ApplyLighting(
 	const D3DVECTOR& position,
 	const D3DVECTOR& oNormal,
-	const Appearance& appearance
+	const Appearance& appearance,
+	SDL_Color& color,
+	SDL_Color& specular
 )
 {
-	FColor specular = {0, 0, 0, 0};
+	FColor spec = {0, 0, 0, 0};
 	FColor diffuse = {m_ambientR, m_ambientG, m_ambientB, 0};
 
 	D3DVECTOR normal = Normalize(TransformNormal(oNormal, m_normalMatrix));
 
-	bool haveViewVec = false;
-	D3DVECTOR viewVec;
+	bool haveWorldPos = false;
+	D3DVECTOR worldPos;
 
-	for (const auto& light : m_preparedLights) {
+	for (size_t i = 0; i < m_preparedLights.size(); ++i) {
+		const PreparedLight& light = m_preparedLights[i];
+
 		D3DVECTOR lightVec;
 		if (light.positional) {
-			lightVec = Normalize({light.vec.x - position.x, light.vec.y - position.y, light.vec.z - position.z});
+			if (!haveWorldPos) {
+				worldPos = TransformPoint(position, m_worldMatrix);
+				haveWorldPos = true;
+			}
+			lightVec = Normalize({light.vec.x - worldPos.x, light.vec.y - worldPos.y, light.vec.z - worldPos.z});
 		}
 		else {
 			lightVec = light.vec;
@@ -248,34 +263,33 @@ SDL_Color Direct3DRMSoftwareRenderer::ApplyLighting(
 
 		float dotNL = DotProduct(normal, lightVec);
 		if (dotNL > 0.0f) {
-			// Diffuse contribution
 			diffuse.r += dotNL * light.color.r;
 			diffuse.g += dotNL * light.color.g;
 			diffuse.b += dotNL * light.color.b;
 
-			// Specular
-			if (appearance.shininess > 0.0f && !light.positional) {
-				if (!haveViewVec) {
-					viewVec = Normalize({-position.x, -position.y, -position.z});
-					haveViewVec = true;
+			if (m_specular) {
+				float dotNH = DotProduct(normal, m_halfway[i]);
+				if (dotNH > 0.0f) {
+					float power = std::pow(dotNH, appearance.shininess);
+					spec.r += power * light.color.r;
+					spec.g += power * light.color.g;
+					spec.b += power * light.color.b;
 				}
-				D3DVECTOR H = Normalize({lightVec.x + viewVec.x, lightVec.y + viewVec.y, lightVec.z + viewVec.z});
-
-				float dotNH = std::max(DotProduct(normal, H), 0.0f);
-				float spec = std::pow(dotNH, appearance.shininess);
-
-				specular.r += spec * light.color.r;
-				specular.g += spec * light.color.g;
-				specular.b += spec * light.color.b;
 			}
 		}
 	}
 
-	return SDL_Color{
-		static_cast<Uint8>(std::min(255.0f, diffuse.r * appearance.color.r + specular.r * 255.0f)),
-		static_cast<Uint8>(std::min(255.0f, diffuse.g * appearance.color.g + specular.g * 255.0f)),
-		static_cast<Uint8>(std::min(255.0f, diffuse.b * appearance.color.b + specular.b * 255.0f)),
+	color = SDL_Color{
+		static_cast<Uint8>(std::min(255.0f, diffuse.r * appearance.color.r)),
+		static_cast<Uint8>(std::min(255.0f, diffuse.g * appearance.color.g)),
+		static_cast<Uint8>(std::min(255.0f, diffuse.b * appearance.color.b)),
 		appearance.color.a
+	};
+	specular = SDL_Color{
+		static_cast<Uint8>(std::min(255.0f, spec.r * 255.0f)),
+		static_cast<Uint8>(std::min(255.0f, spec.g * 255.0f)),
+		static_cast<Uint8>(std::min(255.0f, spec.b * 255.0f)),
+		0
 	};
 }
 
@@ -295,12 +309,13 @@ inline bool IsBackface(const D3DVECTOR& v0, const D3DVECTOR& v1, const D3DVECTOR
 struct SWVertexXY {
 	float x, y, z;
 	float r, g, b;
+	float sr, sg, sb;
 	float u_over_w, v_over_w, one_over_w;
 };
 
 // Interpolated values along a triangle edge, stepped once per scanline.
 struct SWEdge {
-	float x, z, r, g, b, uw, vw, ow;
+	float x, z, r, g, b, sr, sg, sb, uw, vw, ow;
 };
 
 inline static void SWSetupEdge(const SWVertexXY& a, const SWVertexXY& b, int startY, SWEdge& e, SWEdge& step)
@@ -313,6 +328,9 @@ inline static void SWSetupEdge(const SWVertexXY& a, const SWVertexXY& b, int sta
 	e.r = a.r + t0 * (b.r - a.r);
 	e.g = a.g + t0 * (b.g - a.g);
 	e.b = a.b + t0 * (b.b - a.b);
+	e.sr = a.sr + t0 * (b.sr - a.sr);
+	e.sg = a.sg + t0 * (b.sg - a.sg);
+	e.sb = a.sb + t0 * (b.sb - a.sb);
 	e.uw = a.u_over_w + t0 * (b.u_over_w - a.u_over_w);
 	e.vw = a.v_over_w + t0 * (b.v_over_w - a.v_over_w);
 	e.ow = a.one_over_w + t0 * (b.one_over_w - a.one_over_w);
@@ -321,6 +339,9 @@ inline static void SWSetupEdge(const SWVertexXY& a, const SWVertexXY& b, int sta
 	step.r = (b.r - a.r) * invDy;
 	step.g = (b.g - a.g) * invDy;
 	step.b = (b.b - a.b) * invDy;
+	step.sr = (b.sr - a.sr) * invDy;
+	step.sg = (b.sg - a.sg) * invDy;
+	step.sb = (b.sb - a.sb) * invDy;
 	step.uw = (b.u_over_w - a.u_over_w) * invDy;
 	step.vw = (b.v_over_w - a.v_over_w) * invDy;
 	step.ow = (b.one_over_w - a.one_over_w) * invDy;
@@ -333,6 +354,9 @@ inline static void SWStepEdge(SWEdge& e, const SWEdge& s)
 	e.r += s.r;
 	e.g += s.g;
 	e.b += s.b;
+	e.sr += s.sr;
+	e.sg += s.sg;
+	e.sb += s.sb;
 	e.uw += s.uw;
 	e.vw += s.vw;
 	e.ow += s.ow;
@@ -395,11 +419,34 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 	ProjectVertex(v1.position, p1);
 	ProjectVertex(v2.position, p2);
 
-	SWVertexXY verts[3] = {
-		{p0.x, p0.y, p0.z, (float) v0.color.r, (float) v0.color.g, (float) v0.color.b, 0, 0, 0},
-		{p1.x, p1.y, p1.z, (float) v1.color.r, (float) v1.color.g, (float) v1.color.b, 0, 0, 0},
-		{p2.x, p2.y, p2.z, (float) v2.color.r, (float) v2.color.g, (float) v2.color.b, 0, 0, 0},
-	};
+	SWVertexXY verts[3];
+	const SWLitVertex* lit[3] = {&v0, &v1, &v2};
+	const D3DRMVECTOR4D* projected[3] = {&p0, &p1, &p2};
+	bool hasSpecular = false;
+	for (int i = 0; i < 3; ++i) {
+		const SDL_Color& c = lit[i]->color;
+		const SDL_Color& sp = lit[i]->specular;
+		SWVertexXY& vx = verts[i];
+		vx.x = projected[i]->x;
+		vx.y = projected[i]->y;
+		vx.z = projected[i]->z;
+		if (texels) {
+			vx.r = c.r;
+			vx.g = c.g;
+			vx.b = c.b;
+			vx.sr = sp.r;
+			vx.sg = sp.g;
+			vx.sb = sp.b;
+			hasSpecular |= (sp.r | sp.g | sp.b) != 0;
+		}
+		else {
+			vx.r = std::min(255, c.r + sp.r);
+			vx.g = std::min(255, c.g + sp.g);
+			vx.b = std::min(255, c.b + sp.b);
+			vx.sr = vx.sg = vx.sb = 0.0f;
+		}
+		vx.u_over_w = vx.v_over_w = vx.one_over_w = 0.0f;
+	}
 
 	if (texels) {
 		verts[0].u_over_w = v0.texCoord.u / p0.w;
@@ -489,6 +536,19 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 		int gStep = static_cast<int>((rg - lg) * invSpan * 256.0f);
 		int bStep = static_cast<int>((rb - lb) * invSpan * 256.0f);
 
+		int srFix = 0, sgFix = 0, sbFix = 0;
+		int srStep = 0, sgStep = 0, sbStep = 0;
+		if (hasSpecular) {
+			float lsr = SWClampChannel(left.sr), lsg = SWClampChannel(left.sg), lsb = SWClampChannel(left.sb);
+			float rsr = SWClampChannel(right.sr), rsg = SWClampChannel(right.sg), rsb = SWClampChannel(right.sb);
+			srFix = static_cast<int>((lsr + startT * (rsr - lsr)) * 256.0f);
+			sgFix = static_cast<int>((lsg + startT * (rsg - lsg)) * 256.0f);
+			sbFix = static_cast<int>((lsb + startT * (rsb - lsb)) * 256.0f);
+			srStep = static_cast<int>((rsr - lsr) * invSpan * 256.0f);
+			sgStep = static_cast<int>((rsg - lsg) * invSpan * 256.0f);
+			sbStep = static_cast<int>((rsb - lsb) * invSpan * 256.0f);
+		}
+
 		Uint8* row = pixels + y * pitch;
 		float* zPtr = &m_zBuffer[y * m_width + startX];
 
@@ -535,6 +595,11 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 								int cr = ((rFix >> 8) * t[0] + 127) / 255;
 								int cg = ((gFix >> 8) * t[1] + 127) / 255;
 								int cb = ((bFix >> 8) * t[2] + 127) / 255;
+								if (hasSpecular) {
+									cr = std::min(255, cr + (srFix >> 8));
+									cg = std::min(255, cg + (sgFix >> 8));
+									cb = std::min(255, cb + (sbFix >> 8));
+								}
 								Uint8* p = row + x * 4;
 								if (ta == 255) {
 									*zPtr = z;
@@ -554,6 +619,11 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 						bFix += bStep;
 						uFix += uStepFix;
 						vFix += vStepFix;
+						if (hasSpecular) {
+							srFix += srStep;
+							sgFix += sgStep;
+							sbFix += sbStep;
+						}
 						++zPtr;
 					}
 				}
@@ -578,6 +648,11 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 								int cr = ((rFix >> 8) * t[0] + 127) / 255;
 								int cg = ((gFix >> 8) * t[1] + 127) / 255;
 								int cb = ((bFix >> 8) * t[2] + 127) / 255;
+								if (hasSpecular) {
+									cr = std::min(255, cr + (srFix >> 8));
+									cg = std::min(255, cg + (sgFix >> 8));
+									cb = std::min(255, cb + (sbFix >> 8));
+								}
 								Uint8* p = row + x * 4;
 								if (ta == 255) {
 									*zPtr = z;
@@ -597,6 +672,11 @@ void Direct3DRMSoftwareRenderer::DrawTriangleProjected(
 						bFix += bStep;
 						uAff += uAffStep;
 						vAff += vAffStep;
+						if (hasSpecular) {
+							srFix += srStep;
+							sgFix += sgStep;
+							sbFix += sbStep;
+						}
 						++zPtr;
 					}
 				}
@@ -778,6 +858,28 @@ void Direct3DRMSoftwareRenderer::SubmitDraw(
 )
 {
 	memcpy(m_normalMatrix, normalMatrix, sizeof(Matrix3x3));
+	memcpy(m_worldMatrix, worldMatrix, sizeof(D3DRMMATRIX4D));
+
+	m_specular = m_lightingModel == D3DLightingModel::DirectX5 && appearance.shininess > 0.0f;
+	if (m_specular) {
+		D3DVECTOR modelOrigin = {worldMatrix[3][0], worldMatrix[3][1], worldMatrix[3][2]};
+		D3DVECTOR cameraPos = {
+			-(viewMatrix[3][0] * viewMatrix[0][0] + viewMatrix[3][1] * viewMatrix[0][1] +
+			  viewMatrix[3][2] * viewMatrix[0][2]),
+			-(viewMatrix[3][0] * viewMatrix[1][0] + viewMatrix[3][1] * viewMatrix[1][1] +
+			  viewMatrix[3][2] * viewMatrix[1][2]),
+			-(viewMatrix[3][0] * viewMatrix[2][0] + viewMatrix[3][1] * viewMatrix[2][1] +
+			  viewMatrix[3][2] * viewMatrix[2][2])
+		};
+		D3DVECTOR camDir = Normalize(Subtract(cameraPos, modelOrigin));
+
+		m_halfway.resize(m_preparedLights.size());
+		for (size_t i = 0; i < m_preparedLights.size(); ++i) {
+			const PreparedLight& light = m_preparedLights[i];
+			D3DVECTOR towardLight = light.positional ? Normalize(Subtract(light.vec, modelOrigin)) : light.vec;
+			m_halfway[i] = Normalize({camDir.x + towardLight.x, camDir.y + towardLight.y, camDir.z + towardLight.z});
+		}
+	}
 
 	auto& mesh = m_meshs[meshId];
 	const size_t vertexCount = mesh.vertices.size();
@@ -792,6 +894,7 @@ void Direct3DRMSoftwareRenderer::SubmitDraw(
 	// vertices of triangles that survive backface culling.  Shared vertices
 	// previously got re-lit for every triangle that used them.
 	m_vertexColors.resize(vertexCount);
+	m_vertexSpeculars.resize(vertexCount);
 	m_vertexLit.assign(vertexCount, 0);
 
 	const bool flat = appearance.flat;
@@ -814,31 +917,52 @@ void Direct3DRMSoftwareRenderer::SubmitDraw(
 
 		if (!m_vertexLit[i0]) {
 			m_vertexLit[i0] = 1;
-			m_vertexColors[i0] = ApplyLighting(p0, mesh.vertices[i0].normal, appearance);
+			ApplyLighting(
+				mesh.vertices[i0].position,
+				mesh.vertices[i0].normal,
+				appearance,
+				m_vertexColors[i0],
+				m_vertexSpeculars[i0]
+			);
 		}
 		SDL_Color c0 = m_vertexColors[i0];
-		SDL_Color c1, c2;
+		SDL_Color s0 = m_vertexSpeculars[i0];
+		SDL_Color c1, c2, s1, s2;
 		if (flat) {
-			c1 = c0;
-			c2 = c0;
+			c1 = c2 = c0;
+			s1 = s2 = s0;
 		}
 		else {
 			if (!m_vertexLit[i1]) {
 				m_vertexLit[i1] = 1;
-				m_vertexColors[i1] = ApplyLighting(p1, mesh.vertices[i1].normal, appearance);
+				ApplyLighting(
+					mesh.vertices[i1].position,
+					mesh.vertices[i1].normal,
+					appearance,
+					m_vertexColors[i1],
+					m_vertexSpeculars[i1]
+				);
 			}
 			if (!m_vertexLit[i2]) {
 				m_vertexLit[i2] = 1;
-				m_vertexColors[i2] = ApplyLighting(p2, mesh.vertices[i2].normal, appearance);
+				ApplyLighting(
+					mesh.vertices[i2].position,
+					mesh.vertices[i2].normal,
+					appearance,
+					m_vertexColors[i2],
+					m_vertexSpeculars[i2]
+				);
 			}
 			c1 = m_vertexColors[i1];
 			c2 = m_vertexColors[i2];
+			s1 = m_vertexSpeculars[i1];
+			s2 = m_vertexSpeculars[i2];
 		}
 
 		SWLitVertex tri[3] = {
-			{p0, mesh.vertices[i0].texCoord, c0},
-			{p1, mesh.vertices[i1].texCoord, c1},
-			{p2, mesh.vertices[i2].texCoord, c2},
+			{p0, mesh.vertices[i0].texCoord, c0, s0},
+			{p1, mesh.vertices[i1].texCoord, c1, s1},
+			{p2, mesh.vertices[i2].texCoord, c2, s2},
 		};
 		DrawTriangleClipped(tri, appearance);
 	}

@@ -7,6 +7,11 @@ enum class D3DLightingModel : DWORD {
 	DirectX8 = 1,
 };
 
+enum class D3DRenderStyle : DWORD {
+	Smooth = 0,
+	Pixelated = 1,
+};
+
 struct IDirect3DMiniwin : virtual public IUnknown {
 	virtual HRESULT RequestMSAA(DWORD msaaSamples) = 0;
 	virtual DWORD GetMSAASamples() const = 0;
@@ -14,4 +19,6 @@ struct IDirect3DMiniwin : virtual public IUnknown {
 	virtual float GetAnisotropic() const = 0;
 	virtual HRESULT RequestLightingModel(D3DLightingModel lightingModel) = 0;
 	virtual D3DLightingModel GetLightingModel() const = 0;
+	virtual HRESULT RequestRenderStyle(D3DRenderStyle renderStyle) = 0;
+	virtual D3DRenderStyle GetRenderStyle() const = 0;
 };

@@ -65,6 +65,12 @@ struct DirectDrawImpl : public IDirectDraw2, public IDirect3D2, public IDirect3D
 		return DD_OK;
 	}
 	D3DLightingModel GetLightingModel() const override { return m_lightingModel; }
+	HRESULT RequestRenderStyle(D3DRenderStyle renderStyle) override
+	{
+		m_renderStyle = renderStyle;
+		return DD_OK;
+	}
+	D3DRenderStyle GetRenderStyle() const override { return m_renderStyle; }
 
 private:
 	FrameBufferImpl* m_frameBuffer = nullptr;
@@ -74,6 +80,7 @@ private:
 	DWORD m_msaaSamples = 0;
 	float m_anisotropic = 0.0f;
 	D3DLightingModel m_lightingModel = D3DLightingModel::DirectX5;
+	D3DRenderStyle m_renderStyle = D3DRenderStyle::Smooth;
 };
 
 HRESULT DirectDrawEnumerate(LPDDENUMCALLBACKA cb, void* context);

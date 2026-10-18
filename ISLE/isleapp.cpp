@@ -277,6 +277,7 @@ IsleApp::IsleApp()
 	m_msaaSamples = 0;
 	m_anisotropic = 16.0f;
 	m_lightingModel = 0;
+	m_renderStyle = 0;
 	m_activeInBackground = FALSE;
 }
 
@@ -1371,6 +1372,7 @@ bool IsleApp::LoadConfig()
 		iniparser_set(dict, "isle:MSAA", SDL_itoa(m_msaaSamples, buf, 10));
 		iniparser_set(dict, "isle:Anisotropic", SDL_itoa(m_anisotropic, buf, 10));
 		iniparser_set(dict, "isle:Lighting Model", SDL_itoa(m_lightingModel, buf, 10));
+		iniparser_set(dict, "isle:Render Style", SDL_itoa(m_renderStyle, buf, 10));
 		iniparser_set(dict, "isle:Active in background", m_activeInBackground ? "true" : "false");
 
 #ifdef EXTENSIONS
@@ -1463,6 +1465,7 @@ bool IsleApp::LoadConfig()
 	m_videoParam.SetMSAASamples((m_msaaSamples = iniparser_getint(dict, "isle:MSAA", m_msaaSamples)));
 	m_videoParam.SetAnisotropic((m_anisotropic = iniparser_getdouble(dict, "isle:Anisotropic", m_anisotropic)));
 	m_videoParam.SetLightingModel((m_lightingModel = iniparser_getint(dict, "isle:Lighting Model", m_lightingModel)));
+	m_videoParam.SetRenderStyle((m_renderStyle = iniparser_getint(dict, "isle:Render Style", m_renderStyle)));
 	m_activeInBackground = iniparser_getboolean(dict, "isle:Active in Background", m_activeInBackground);
 
 	const char* deviceId = iniparser_getstring(dict, "isle:3D Device ID", NULL);

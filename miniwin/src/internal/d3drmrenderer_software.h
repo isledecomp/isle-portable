@@ -31,11 +31,12 @@ struct SWLitVertex {
 	D3DVECTOR position;
 	TexCoord texCoord;
 	SDL_Color color;
+	SDL_Color specular;
 };
 
 class Direct3DRMSoftwareRenderer : public Direct3DRMRenderer {
 public:
-	Direct3DRMSoftwareRenderer(DWORD width, DWORD height);
+	Direct3DRMSoftwareRenderer(DWORD width, DWORD height, D3DLightingModel lightingModel);
 	~Direct3DRMSoftwareRenderer() override;
 	void PushLights(const SceneLight* vertices, size_t count) override;
 	Uint32 GetTextureId(IDirect3DRMTexture* texture, bool isUI, float scaleX, float scaleY) override;
@@ -71,7 +72,13 @@ private:
 	);
 	void DrawTriangleClipped(const SWLitVertex (&v)[3], const Appearance& appearance);
 	void ProjectVertex(const D3DVECTOR& v, D3DRMVECTOR4D& p) const;
-	SDL_Color ApplyLighting(const D3DVECTOR& position, const D3DVECTOR& normal, const Appearance& appearance);
+	void ApplyLighting(
+		const D3DVECTOR& position,
+		const D3DVECTOR& normal,
+		const Appearance& appearance,
+		SDL_Color& color,
+		SDL_Color& specular
+	);
 	void AddTextureDestroyCallback(Uint32 id, IDirect3DRMTexture* texture);
 	void AddMeshDestroyCallback(Uint32 id, IDirect3DRMMesh* mesh);
 
@@ -83,12 +90,16 @@ private:
 		bool positional;
 	};
 
+	D3DLightingModel m_lightingModel;
+
 	SDL_Surface* m_renderedImage = nullptr;
 	SDL_Palette* m_palette;
 	SDL_Texture* m_uploadBuffer = nullptr;
 	SDL_Renderer* m_renderer;
 	const SDL_PixelFormatDetails* m_format;
 	std::vector<PreparedLight> m_preparedLights;
+	std::vector<D3DVECTOR> m_halfway;
+	bool m_specular = false;
 	float m_ambientR = 0.0f;
 	float m_ambientG = 0.0f;
 	float m_ambientB = 0.0f;
@@ -97,10 +108,12 @@ private:
 	D3DVALUE m_front;
 	D3DVALUE m_back;
 	Matrix3x3 m_normalMatrix;
+	D3DRMMATRIX4D m_worldMatrix;
 	D3DRMMATRIX4D m_projection;
 	std::vector<float> m_zBuffer;
 	std::vector<D3DVECTOR> m_transformedPositions;
 	std::vector<SDL_Color> m_vertexColors; // per-vertex lighting cache for the current draw
+	std::vector<SDL_Color> m_vertexSpeculars;
 	std::vector<Uint8> m_vertexLit;
 	Plane m_frustumPlanes[6];
 };

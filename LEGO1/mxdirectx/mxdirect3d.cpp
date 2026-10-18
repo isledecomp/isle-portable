@@ -84,6 +84,7 @@ BOOL MxDirect3D::Create(
 			miniwind3d->RequestMSAA(videoParam->GetMSAASamples());
 			miniwind3d->RequestAnisotropic(videoParam->GetAnisotropic());
 			miniwind3d->RequestLightingModel(static_cast<D3DLightingModel>(videoParam->GetLightingModel()));
+			miniwind3d->RequestRenderStyle(static_cast<D3DRenderStyle>(videoParam->GetRenderStyle()));
 		}
 	}
 
