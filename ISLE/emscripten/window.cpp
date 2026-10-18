@@ -97,11 +97,19 @@ void Emscripten_ConvertEventToRenderCoordinates(SDL_Event* event)
 		const float heightRatio = (g_targetHeight * scale) / g_fullHeight;
 		event->tfinger.x = (event->tfinger.x * g_targetWidth - (g_targetWidth * (1.0f - widthRatio) / 2.0f)) /
 						   widthRatio / g_targetWidth;
-		event->tfinger.x = SDL_clamp(event->tfinger.x, 0, 1);
 		event->tfinger.y = (event->tfinger.y * g_targetHeight - (g_targetHeight * (1.0f - heightRatio) / 2.0f)) /
 						   heightRatio / g_targetHeight;
-		event->tfinger.y = SDL_clamp(event->tfinger.y, 0, 1);
 		break;
 	}
 	}
+}
+
+void Emscripten_ClampToRenderArea(float& p_x, float& p_y)
+{
+	if (!g_scaleAspect) {
+		return;
+	}
+
+	p_x = SDL_clamp(p_x, 0, g_targetWidth);
+	p_y = SDL_clamp(p_y, 0, g_targetHeight);
 }
