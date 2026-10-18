@@ -97,6 +97,14 @@ public:
 		m_sourceBuffer->AddRef(NULL);
 	}
 
+	void ReleaseSourceBuffer()
+	{
+		if (m_sourceBuffer) {
+			m_sourceBuffer->ReleaseRef(NULL);
+			m_sourceBuffer = NULL;
+		}
+	}
+
 	// SYNTHETIC: LEGO1 0x100c6510
 	// SYNTHETIC: BETA10 0x10158530
 	// MxDSBuffer::`scalar deleting destructor'

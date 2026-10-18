@@ -35,9 +35,7 @@ MxDSBuffer::MxDSBuffer()
 // FUNCTION: BETA10 0x10156ff7
 MxDSBuffer::~MxDSBuffer()
 {
-	if (m_sourceBuffer) {
-		m_sourceBuffer->ReleaseRef(NULL);
-	}
+	ReleaseSourceBuffer();
 
 	if (m_pBuffer != NULL) {
 		switch (m_mode) {
