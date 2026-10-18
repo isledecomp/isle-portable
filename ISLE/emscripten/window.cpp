@@ -5,11 +5,13 @@
 #include <SDL3/SDL_log.h>
 #include <algorithm>
 #include <emscripten/html5.h>
+#include <set>
 
 double g_fullWidth;
 double g_fullHeight;
 bool g_scaleAspect = true;
 bool g_originalResolution = true;
+std::set<SDL_FingerID> g_fingersOutsideRenderArea;
 
 extern MxS32 g_targetWidth;
 extern MxS32 g_targetHeight;
@@ -112,4 +114,27 @@ void Emscripten_ClampToRenderArea(float& p_x, float& p_y)
 
 	p_x = SDL_clamp(p_x, 0, g_targetWidth);
 	p_y = SDL_clamp(p_y, 0, g_targetHeight);
+}
+
+bool Emscripten_DidTouchStartInRenderArea(const SDL_Event* p_event)
+{
+	const SDL_TouchFingerEvent& finger = p_event->tfinger;
+
+	switch (p_event->type) {
+	case SDL_EVENT_FINGER_DOWN:
+		if (g_scaleAspect && (finger.x < 0 || finger.x > 1 || finger.y < 0 || finger.y > 1)) {
+			g_fingersOutsideRenderArea.insert(finger.fingerID);
+			return false;
+		}
+
+		g_fingersOutsideRenderArea.erase(finger.fingerID);
+		return true;
+	case SDL_EVENT_FINGER_MOTION:
+		return !g_fingersOutsideRenderArea.count(finger.fingerID);
+	case SDL_EVENT_FINGER_UP:
+	case SDL_EVENT_FINGER_CANCELED:
+		return !g_fingersOutsideRenderArea.erase(finger.fingerID);
+	default:
+		return true;
+	}
 }
