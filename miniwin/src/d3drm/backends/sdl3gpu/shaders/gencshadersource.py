@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
 import argparse
+import ctypes
 import dataclasses
 import enum
 import itertools
 import json
+import sys
 from pathlib import Path
 
 
@@ -35,6 +37,44 @@ STR_TO_SHADERSTAGE = {
     "vertex": ShaderStage.VERTEX,
     "fragment": ShaderStage.FRAGMENT,
 }
+
+STR_TO_D3D11_PROFILE = {
+    "vertex": "vs_5_0",
+    "fragment": "ps_5_0",
+}
+
+
+def load_d3dcompiler() -> ctypes.CDLL:
+    if sys.platform == "win32":
+        return ctypes.WinDLL("d3dcompiler_47.dll")
+    if sys.platform == "darwin":
+        return ctypes.CDLL("libvkd3d-utils.1.dylib")
+    return ctypes.CDLL("libvkd3d-utils.so.1")
+
+def read_blob(blob: ctypes.c_void_p) -> bytes:
+    functype = ctypes.WINFUNCTYPE if sys.platform == "win32" else ctypes.CFUNCTYPE
+    vtable = ctypes.cast(blob, ctypes.POINTER(ctypes.POINTER(ctypes.c_void_p))).contents
+    release = functype(ctypes.c_ulong, ctypes.c_void_p)(vtable[2])
+    get_buffer_pointer = functype(ctypes.c_void_p, ctypes.c_void_p)(vtable[3])
+    get_buffer_size = functype(ctypes.c_size_t, ctypes.c_void_p)(vtable[4])
+    data = ctypes.string_at(get_buffer_pointer(blob), get_buffer_size(blob))
+    release(blob)
+    return data
+
+def compile_dxbc(source: bytes, profile: str) -> bytes:
+    d3dcompile = load_d3dcompiler().D3DCompile
+    d3dcompile.restype = ctypes.c_int32
+    d3dcompile.argtypes = [
+        ctypes.c_char_p, ctypes.c_size_t, ctypes.c_char_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_char_p,
+        ctypes.c_char_p, ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_void_p), ctypes.POINTER(ctypes.c_void_p),
+    ]
+    code = ctypes.c_void_p()
+    errors = ctypes.c_void_p()
+    result = d3dcompile(source, len(source), None, None, None, b"main", profile.encode(), 0, 0, ctypes.byref(code), ctypes.byref(errors))
+    message = read_blob(errors).decode(errors="replace") if errors else ""
+    if result < 0:
+        raise RuntimeError(f"D3DCompile failed (0x{result & 0xffffffff:08x}): {message}")
+    return read_blob(code)
 
 
 def write_generated_warning(f: "io") -> None:
@@ -84,6 +124,7 @@ def main() -> None:
     header_parser.add_argument("--stage", choices=("vertex", "fragment"), required=True)
     header_parser.add_argument("--variable", required=True)
     header_parser.add_argument("--dxbc", type=Path, required=True)
+    header_parser.add_argument("--dxbc-d3d11", type=Path, required=True)
     header_parser.add_argument("--dxil", type=Path, required=True)
     header_parser.add_argument("--msl", type=Path, required=True)
     header_parser.add_argument("--spirv", type=Path, required=True)
@@ -99,6 +140,12 @@ def main() -> None:
     index_parser.add_argument("--shader-stages", nargs="+", type=str, choices=("vertex", "fragment"), required=True)
     index_parser.add_argument("--shader-jsons", nargs="+", type=Path, required=True)
     index_parser.set_defaults(subparser="index")
+
+    dxbc_parser = subparsers.add_parser("dxbc")
+    dxbc_parser.add_argument("--stage", choices=("vertex", "fragment"), required=True)
+    dxbc_parser.add_argument("--input", type=Path, required=True)
+    dxbc_parser.add_argument("--output", type=Path, required=True)
+    dxbc_parser.set_defaults(subparser="dxbc")
 
     args = parser.parse_args()
     if args.subparser == "header":
@@ -118,6 +165,7 @@ def main() -> None:
             f.write("#if defined(SDL_PLATFORM_WINDOWS)\n")
             write_uint8_array(f=f, data=args.dxil.read_bytes(), variable=variable + "_dxil")
             write_uint8_array(f=f, data=args.dxbc.read_bytes(), variable=variable + "_dxbc")
+            write_uint8_array(f=f, data=args.dxbc_d3d11.read_bytes(), variable=variable + "_dxbc_d3d11")
             f.write("#endif\n")
             f.write("\n")
             f.write("// MSL only makes sense on Apple platforms\n")
@@ -160,7 +208,7 @@ def main() -> None:
                 if not shader_metadatas:
                     continue
                 capitalized_stage = str_stage.capitalize()
-                f.write(f"const SDL_GPUShaderCreateInfo* Get{capitalized_stage}ShaderCode({capitalized_stage}ShaderId id, SDL_GPUShaderFormat formats);\n\n")
+                f.write(f"const SDL_GPUShaderCreateInfo* Get{capitalized_stage}ShaderCode({capitalized_stage}ShaderId id, SDL_GPUDevice* device);\n\n")
         with args.output.open("w", newline="\n") as f:
             f.write("// clang-format off\n")
             f.write("\n")
@@ -185,6 +233,10 @@ def main() -> None:
                 for shader_metadata in shader_metadatas:
                     write_gpushadercreateinfo(f, shader_metadata, entrypoint="main", suffix="_dxbc", format=ShaderFormat.DXBC, stage=stage)
                 f.write(f"}};\n")
+                f.write(f"static const SDL_GPUShaderCreateInfo {capitalized_stage}ShaderDXBCD3D11Codes[] = {{\n")
+                for shader_metadata in shader_metadatas:
+                    write_gpushadercreateinfo(f, shader_metadata, entrypoint="main", suffix="_dxbc_d3d11", format=ShaderFormat.DXBC, stage=stage)
+                f.write(f"}};\n")
                 f.write("#endif\n")
                 f.write("\n")
                 f.write("#if defined(SDL_PLATFORM_APPLE)\n")
@@ -203,13 +255,18 @@ def main() -> None:
                     continue
                 capitalized_stage = stage.capitalize()
                 f.write("\n")
-                f.write(f"const SDL_GPUShaderCreateInfo* Get{capitalized_stage}ShaderCode({capitalized_stage}ShaderId id, SDL_GPUShaderFormat formats) {{\n")
+                f.write(f"const SDL_GPUShaderCreateInfo* Get{capitalized_stage}ShaderCode({capitalized_stage}ShaderId id, SDL_GPUDevice* device) {{\n")
+                f.write(f"  SDL_GPUShaderFormat formats = SDL_GetGPUShaderFormats(device);\n")
                 f.write(f"#if defined(SDL_PLATFORM_WINDOWS)\n")
                 f.write(f"  if (formats & SDL_GPU_SHADERFORMAT_DXIL) {{\n")
                 f.write(f"    SDL_assert(id < SDL_arraysize({capitalized_stage}ShaderDXILCodes));\n")
                 f.write(f"    return &{capitalized_stage}ShaderDXILCodes[id];\n")
                 f.write(f"  }}\n")
                 f.write(f"  if (formats & SDL_GPU_SHADERFORMAT_DXBC) {{\n")
+                f.write(f"    if (SDL_strcmp(SDL_GetGPUDeviceDriver(device), \"direct3d11\") == 0) {{\n")
+                f.write(f"      SDL_assert(id < SDL_arraysize({capitalized_stage}ShaderDXBCD3D11Codes));\n")
+                f.write(f"      return &{capitalized_stage}ShaderDXBCD3D11Codes[id];\n")
+                f.write(f"    }}\n")
                 f.write(f"    SDL_assert(id < SDL_arraysize({capitalized_stage}ShaderDXBCCodes));\n")
                 f.write(f"    return &{capitalized_stage}ShaderDXBCCodes[id];\n")
                 f.write(f"  }}\n")
@@ -227,6 +284,8 @@ def main() -> None:
                 f.write(f"  SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, \"Could not find {stage} shader code for id=%d and formats=0x%x\", id, formats);\n")
                 f.write(f"  return nullptr;\n")
                 f.write(f"}}\n")
+    elif args.subparser == "dxbc":
+        args.output.write_bytes(compile_dxbc(args.input.read_bytes(), STR_TO_D3D11_PROFILE[args.stage]))
     else:
         parser.error("Invalid arguments")
 
