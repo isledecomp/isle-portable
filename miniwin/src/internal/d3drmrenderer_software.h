@@ -36,6 +36,7 @@ struct SWLitVertex {
 
 class Direct3DRMSoftwareRenderer : public Direct3DRMRenderer {
 public:
+	static Direct3DRMRenderer* Create(DWORD width, DWORD height, D3DLightingModel lightingModel);
 	Direct3DRMSoftwareRenderer(DWORD width, DWORD height, D3DLightingModel lightingModel);
 	~Direct3DRMSoftwareRenderer() override;
 	void PushLights(const SceneLight* vertices, size_t count) override;
