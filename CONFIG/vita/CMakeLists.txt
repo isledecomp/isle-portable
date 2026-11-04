@@ -69,5 +69,17 @@ vita_create_self(isle-config.self isle-config
   REL_OPTIMIZE
 )
 
+include(ExternalProject)
+ExternalProject_Add(psp2cxml_tool
+  GIT_REPOSITORY https://github.com/Princess-of-Sleeping/psp2cxml-tool
+  CMAKE_ARGS
+    -DCMAKE_BUILD_TYPE=Release
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+  INSTALL_COMMAND ""
+  UPDATE_DISCONNECTED TRUE
+)
+ExternalProject_Get_Property(psp2cxml_tool BINARY_DIR)
+set(PSP2CXML_EXECUTABLE ${BINARY_DIR}/psp2cxml-tool)
+
 include(${scepaf_external_SOURCE_DIR}/rco.cmake)
 make_rco(cxml/config_plugin.xml config_plugin.rco)
