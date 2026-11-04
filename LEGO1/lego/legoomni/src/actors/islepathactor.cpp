@@ -20,6 +20,19 @@
 
 using namespace Extensions;
 
+static void BindPreviousActor(LegoPathActor*& p_slot, LegoPathActor* p_actor)
+{
+	if (p_slot != NULL && p_slot->IsA("IslePathActor")) {
+		((IslePathActor*) p_slot)->UnregisterSlotRef(reinterpret_cast<IslePathActor**>(&p_slot));
+	}
+
+	p_slot = p_actor;
+
+	if (p_slot != NULL && p_slot->IsA("IslePathActor")) {
+		((IslePathActor*) p_slot)->RegisterSlotRef(reinterpret_cast<IslePathActor**>(&p_slot));
+	}
+}
+
 // SIZE 0x38
 struct SpawnLocation {
 	SpawnLocation() {}
@@ -100,6 +113,9 @@ void IslePathActor::Destroy(MxBool p_fromDestructor)
 	if (!p_fromDestructor) {
 		LegoPathActor::Destroy(FALSE);
 	}
+	else {
+		BindPreviousActor(m_previousActor, NULL);
+	}
 }
 
 // FUNCTION: LEGO1 0x1001a2c0
@@ -141,7 +157,7 @@ void IslePathActor::Enter()
 	m_roi->SetVisibility(FALSE);
 	if (UserActor() != this) {
 		m_previousVel = NavController()->GetMaxLinearVel();
-		m_previousActor = UserActor();
+		BindPreviousActor(m_previousActor, UserActor());
 		if (m_previousActor) {
 			m_previousActor->ResetWorldTransform(FALSE);
 			m_previousActor->SetUserNavFlag(FALSE);
