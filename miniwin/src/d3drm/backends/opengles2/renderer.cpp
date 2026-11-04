@@ -23,6 +23,10 @@
 static GLuint CompileShader(GLenum type, const char* source)
 {
 	GLuint shader = glCreateShader(type);
+	if (!shader || !glIsShader(shader)) {
+		SDL_Log("CompileShader: glCreateShader failed");
+		return 0;
+	}
 	glShaderSource(shader, 1, &source, nullptr);
 	glCompileShader(shader);
 	GLint success;

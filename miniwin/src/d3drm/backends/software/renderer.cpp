@@ -10,6 +10,9 @@
 #include <cmath>
 #include <cstring>
 #include <limits>
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
 
 // Perspective-correct UVs are computed exactly every PERSP_STEP pixels and
 // interpolated affinely in between.  8 pixels keeps the error well below a
@@ -29,6 +32,34 @@ static const float SW_BLOCK_INV[PERSP_STEP + 1] = {
 	1.0f / 7.0f,
 	1.0f / 8.0f,
 };
+
+Direct3DRMRenderer* Direct3DRMSoftwareRenderer::Create(DWORD width, DWORD height, D3DLightingModel lightingModel)
+{
+#ifdef __EMSCRIPTEN__
+	const char* canvasId = SDL_GetStringProperty(
+		SDL_GetWindowProperties(DDWindow),
+		SDL_PROP_WINDOW_EMSCRIPTEN_CANVAS_ID_STRING,
+		"#canvas"
+	);
+	int canDraw = MAIN_THREAD_EM_ASM_INT(
+		{
+			try {
+				var canvas = document.querySelector(UTF8ToString($0));
+				return canvas && canvas.getContext('2d') ? 1 : 0;
+			}
+			catch (e) {
+				return 0;
+			}
+		},
+		canvasId
+	);
+	if (!canDraw) {
+		SDL_Log("Software renderer: no 2D context for canvas %s", canvasId);
+		return nullptr;
+	}
+#endif
+	return new Direct3DRMSoftwareRenderer(width, height, lightingModel);
+}
 
 Direct3DRMSoftwareRenderer::Direct3DRMSoftwareRenderer(DWORD width, DWORD height, D3DLightingModel lightingModel)
 	: m_lightingModel(lightingModel)

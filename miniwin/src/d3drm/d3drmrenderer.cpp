@@ -76,7 +76,7 @@ Direct3DRMRenderer* CreateDirect3DRMRenderer(
 #endif
 #ifdef USE_SOFTWARE_RENDER
 	if (SDL_memcmp(guid, &SOFTWARE_GUID, sizeof(GUID)) == 0) {
-		return new Direct3DRMSoftwareRenderer(DDSDesc.dwWidth, DDSDesc.dwHeight, d3d->GetLightingModel());
+		return Direct3DRMSoftwareRenderer::Create(DDSDesc.dwWidth, DDSDesc.dwHeight, d3d->GetLightingModel());
 	}
 #endif
 #ifdef USE_OPENGLES3
