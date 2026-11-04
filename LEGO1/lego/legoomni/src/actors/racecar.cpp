@@ -44,6 +44,12 @@ MxLong RaceCar::HandleClick()
 		return 1;
 	}
 
+	if (UserActor()) {
+		if (UserActor()->GetActorId() != GameState()->GetActorId()) {
+			((IslePathActor*) UserActor())->Exit();
+		}
+	}
+
 	Isle* isle = (Isle*) FindWorld(*g_isleScript, IsleScript::c__Isle);
 	isle->SetDestLocation(LegoGameState::Area::e_carrace);
 	TransitionManager()->StartTransition(MxTransitionManager::e_mosaic, 50, FALSE, FALSE);
