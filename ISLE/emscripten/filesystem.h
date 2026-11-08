@@ -12,5 +12,6 @@ inline static const char* Emscripten_streamHost = ISLE_EMSCRIPTEN_HOST;
 
 bool Emscripten_SetupConfig(const char* p_iniConfig);
 void Emscripten_SetupFilesystem();
+void Emscripten_ClearDroppedFiles();
 
 #endif // EMSCRIPTEN_FILESYSTEM_H
