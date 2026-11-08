@@ -4,6 +4,8 @@
 #include "act3.h"
 #include "extensions/thirdpersoncamera.h"
 #include "infocenter.h"
+#include "isle.h"
+#include "isle_actions.h"
 #include "islepathactor.h"
 #include "legoanimationmanager.h"
 #include "legocameracontroller.h"
@@ -1980,8 +1982,19 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 					}
 
 					if (g_switchAct && key >= SDLK_1 && key <= SDLK_5) {
+						LegoGameState::Area endingPreviousArea = LegoGameState::e_act3script;
+
 						switch (GameState()->GetCurrentAct()) {
 						case LegoGameState::e_act1:
+							if (key == SDLK_4 || key == SDLK_5) {
+								Isle* isle = (Isle*) FindWorld(*g_isleScript, IsleScript::c__Isle);
+
+								if (isle != NULL) {
+									isle->SwitchToInfocenter();
+									endingPreviousArea = LegoGameState::e_isle;
+								}
+							}
+
 							if (UserActor() && UserActor()->IsA("IslePathActor") &&
 								UserActor()->GetActorId() != GameState()->GetActorId()) {
 								((IslePathActor*) UserActor())->Exit();
@@ -2018,7 +2031,7 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 
 							GameState()->SetCurrentAct(LegoGameState::e_act3);
 							act3State->m_state = Act3State::e_goodEnding;
-							GameState()->m_currentArea = LegoGameState::e_act3script;
+							GameState()->m_currentArea = endingPreviousArea;
 							GameState()->SwitchArea(LegoGameState::e_infomain);
 							break;
 						}
@@ -2032,7 +2045,7 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 
 							GameState()->SetCurrentAct(LegoGameState::e_act3);
 							act3State->m_state = Act3State::e_badEnding;
-							GameState()->m_currentArea = LegoGameState::e_act3script;
+							GameState()->m_currentArea = endingPreviousArea;
 							GameState()->SwitchArea(LegoGameState::e_infomain);
 							break;
 						}
