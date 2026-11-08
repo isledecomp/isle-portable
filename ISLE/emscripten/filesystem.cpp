@@ -136,3 +136,21 @@ void Emscripten_SetupFilesystem()
 		}
 	}
 }
+
+static SDL_EnumerationResult SDLCALL RemoveDroppedFile(void* p_userdata, const char* p_dirname, const char* p_fname)
+{
+	MxString path = MxString(p_dirname) + p_fname;
+	SDL_PathInfo info;
+
+	if (SDL_GetPathInfo(path.GetData(), &info) && info.type == SDL_PATHTYPE_DIRECTORY) {
+		SDL_EnumerateDirectory(path.GetData(), RemoveDroppedFile, NULL);
+	}
+
+	SDL_RemovePath(path.GetData());
+	return SDL_ENUM_CONTINUE;
+}
+
+void Emscripten_ClearDroppedFiles()
+{
+	SDL_EnumerateDirectory("/tmp/filedrop", RemoveDroppedFile, NULL);
+}

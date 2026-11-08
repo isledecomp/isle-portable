@@ -392,6 +392,9 @@ static void ShowFatalError(const char* p_message)
 		g_isle = NULL;
 	}
 	if (window) {
+#ifdef __EMSCRIPTEN__
+		Emscripten_ClearDroppedFiles();
+#endif
 		SDL_DestroyWindow(window);
 		window = NULL;
 	}
@@ -1072,6 +1075,9 @@ void SDL_AppQuit(void* appstate, SDL_AppResult result)
 	}
 
 	if (window) {
+#ifdef __EMSCRIPTEN__
+		Emscripten_ClearDroppedFiles();
+#endif
 		SDL_DestroyWindow(window);
 		window = NULL;
 	}
