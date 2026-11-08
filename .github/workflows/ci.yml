@@ -112,6 +112,8 @@ jobs:
       - name: Setup Emscripten
         uses: emscripten-core/setup-emsdk@v15
         if: ${{ matrix.emsdk }}
+        with:
+          version: 6.0.10
 
       - name: Setup ninja
         if: ${{ matrix.msvc }}
