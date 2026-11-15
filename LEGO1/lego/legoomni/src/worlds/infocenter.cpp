@@ -526,7 +526,9 @@ void Infocenter::ReadyWorld()
 		}
 
 		LegoAct2State* act2State = (LegoAct2State*) GameState()->GetState("LegoAct2State");
+#ifdef BETA10
 		assert(act2State);
+#endif
 		GameState()->FindLoadedAct();
 
 		if (act2State && act2State->GetState() == LegoAct2State::c_badEnding) {
@@ -572,7 +574,9 @@ void Infocenter::ReadyWorld()
 		}
 
 		Act3State* act3State = (Act3State*) GameState()->GetState("Act3State");
+#ifdef BETA10
 		assert(act3State);
+#endif
 		GameState()->FindLoadedAct();
 
 		if (act3State && act3State->GetState() == Act3State::e_badEnding) {

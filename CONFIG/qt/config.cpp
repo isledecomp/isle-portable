@@ -163,7 +163,7 @@ bool CConfigApp::ReadRegisterSettings()
 		}
 	}
 	if (tmp != 0) {
-		m_device_enumerator->FUN_1009d210();
+		m_device_enumerator->FilterUnsupportedDevices();
 		tmp = m_device_enumerator->GetBestDevice();
 		m_device_enumerator->GetDevice(tmp, m_driver, m_device);
 	}
