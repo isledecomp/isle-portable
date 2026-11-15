@@ -42,9 +42,9 @@ jobs:
           - { name: 'MSVC (x64)',          os: 'windows-latest', generator: 'Ninja',                 dx5: false, config: true,  msvc: true,  werror: false,  clang-tidy: false,   vc-arch: 'amd64' }
           - { name: 'MSVC (arm64)',        os: 'windows-latest', generator: 'Ninja',                 dx5: false, config: false, msvc: true,  werror: false,  clang-tidy: false,  vc-arch: 'amd64_arm64' }
           - { name: 'msys2 mingw64',       os: 'windows-latest', generator: 'Ninja',                 dx5: false, config: true,  mingw: true, werror: true,   clang-tidy: true,   msystem: 'mingw64', msys-env: 'mingw-w64-x86_64', shell: 'msys2 {0}' }
-          - { name: 'macOS',               os: 'macos-latest',   generator: 'Ninja',                 dx5: false, config: true,  brew: true,  qt-action: true, qt-version: '6.9.*', werror: true,   clang-tidy: false,  cmake-args: '-DCMAKE_OSX_DEPLOYMENT_TARGET=12.0' }
-          - { name: 'macOS (Intel)',       os: 'macos-15-intel', generator: 'Ninja',                 dx5: false, config: true,  brew: true,  qt-action: true, qt-version: '6.9.*', werror: true,   clang-tidy: false,  cmake-args: '-DCMAKE_OSX_DEPLOYMENT_TARGET=12.0' }
-          - { name: 'iOS',                 os: 'macos-15',       generator: 'Xcode',                 dx5: false, config: false, brew: true,  werror: true,   clang-tidy: false,  cmake-args: '-DCMAKE_SYSTEM_NAME=iOS', ios: true }
+          - { name: 'macOS',               os: 'macos-latest',   generator: 'Ninja',                 dx5: false, config: true,  get-cmake: true,  qt-action: true, qt-version: '6.9.*', werror: true,   clang-tidy: false,  cmake-args: '-DCMAKE_OSX_DEPLOYMENT_TARGET=12.0' }
+          - { name: 'macOS (Intel)',       os: 'macos-15-intel', generator: 'Ninja',                 dx5: false, config: true,  get-cmake: true,  qt-action: true, qt-version: '6.9.*', werror: true,   clang-tidy: false,  cmake-args: '-DCMAKE_OSX_DEPLOYMENT_TARGET=12.0' }
+          - { name: 'iOS',                 os: 'macos-15',       generator: 'Xcode',                 dx5: false, config: false, get-cmake: true,  werror: true,   clang-tidy: false,  cmake-args: '-DCMAKE_SYSTEM_NAME=iOS', ios: true }
           - { name: 'Emscripten',          os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, emsdk: true, werror: true,   clang-tidy: false,  cmake-wrapper: 'emcmake' }
           - { name: 'Nintendo 3DS',        os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, n3ds: true,  werror: true,   clang-tidy: false,  container: 'devkitpro/devkitarm:latest', cmake-args: '-DCMAKE_TOOLCHAIN_FILE=/opt/devkitpro/cmake/3DS.cmake' }
           - { name: 'Nintendo Switch',     os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: false, nx: true,    werror: true,   clang-tidy: false,  container: 'devkitpro/devkita64:latest', cmake-args: '-DCMAKE_TOOLCHAIN_FILE=/opt/devkitpro/cmake/Switch.cmake' }
@@ -95,13 +95,9 @@ jobs:
             libxcursor-dev libwayland-dev libxkbcommon-dev wayland-protocols libgl1-mesa-dev qt6-base-dev \
             libasound2-dev qt6-xdgdesktopportal-platformtheme libxss-dev libxtst-dev
 
-      - name: Install macOS dependencies (brew)
-        if: ${{ matrix.brew }}
-        run: |
-          brew update
-          brew uninstall cmake || true
-          brew install cmake ninja ${{ matrix.clang-tidy && 'llvm' || '' }} ${{ !matrix.qt-action && 'qt6' || '' }}
-          echo "LLVM_ROOT=$(brew --prefix llvm)/bin" >> $GITHUB_ENV
+      - name: Get CMake and Ninja (macOS)
+        if: ${{ matrix.get-cmake }}
+        uses: lukka/get-cmake@latest
       
       - name: Use latest Xcode
         if: ${{ matrix.ios }}
