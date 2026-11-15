@@ -146,7 +146,7 @@ CMainDialog::~CMainDialog()
 bool CMainDialog::OnInitDialog()
 {
 	LegoDeviceEnumerate* enumerator = currentConfigApp->m_device_enumerator;
-	enumerator->FUN_1009d210();
+	enumerator->FilterUnsupportedDevices();
 	m_modified = currentConfigApp->ReadRegisterSettings();
 	int driver_i = 0;
 	int device_i = 0;

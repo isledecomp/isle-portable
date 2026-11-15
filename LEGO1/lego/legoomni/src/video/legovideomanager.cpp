@@ -131,7 +131,7 @@ MxResult LegoVideoManager::Create(MxVideoParam& p_videoParam, MxU32 p_frequencyM
 	}
 
 	if (r < 0) {
-		deviceEnumerate.FUN_1009d210();
+		deviceEnumerate.FilterUnsupportedDevices();
 		r = deviceEnumerate.GetBestDevice();
 		assert(r >= 0);
 		r = deviceEnumerate.GetDevice(r, pdd, pd3d);
@@ -425,7 +425,7 @@ void LegoVideoManager::DrawFPS()
 		int width = 64; // Big enough for 9999.99
 		int height = 16;
 
-		m_unk0x528 = m_displaySurface->FUN_100bc8b0(width, height);
+		m_unk0x528 = m_displaySurface->CreateOffscreenSurface(width, height);
 		SetRect(&m_fpsRect, 0, 0, width, height);
 
 		if (m_unk0x528 == NULL) {

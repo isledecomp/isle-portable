@@ -93,7 +93,9 @@ MxResult ModelDbPart::Read(SDL_IOStream* p_file)
 MxResult ReadModelDbWorlds(SDL_IOStream* dbf, ModelDbWorld*& newworld, MxS32& p_numWorlds)
 {
 	assert(dbf);
+#ifdef BETA10
 	assert(newworld);
+#endif
 
 	newworld = NULL;
 	p_numWorlds = 0;
