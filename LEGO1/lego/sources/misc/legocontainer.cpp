@@ -121,6 +121,10 @@ void LegoTextureContainer::EraseCached(LegoTextureInfo* p_textureInfo)
 	for (LegoCachedTextureList::iterator it = m_cached.begin(); it != m_cached.end(); it++) {
 #endif
 		if ((*it).first == p_textureInfo) {
+			if ((*it).second == FALSE) {
+				return;
+			}
+
 			(*it).second = FALSE;
 
 			if (p_textureInfo->m_texture->Release() == 1) {
