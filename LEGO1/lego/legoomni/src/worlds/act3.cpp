@@ -653,7 +653,7 @@ MxLong Act3::Notify(MxParam& p_param)
 			}
 			break;
 		case c_notificationEndAnim:
-			if (m_state->m_state == Act3State::e_ready) {
+			if (m_state->m_state == Act3State::e_ready && m_copter != NULL) {
 				assert(m_copter && m_brickster && m_cop1 && m_cop2);
 				m_soundList.RemoveByObjectIdOrFirst(0);
 				m_state->m_state = Act3State::e_initial;
