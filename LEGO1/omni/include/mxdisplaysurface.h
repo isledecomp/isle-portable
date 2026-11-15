@@ -96,7 +96,7 @@ public:
 	LPDIRECTDRAWSURFACE GetDirectDrawSurface1() { return m_ddSurface1; }
 	LPDIRECTDRAWSURFACE GetDirectDrawSurface2() { return m_ddSurface2; }
 	MxVideoParam& GetVideoParam() { return m_videoParam; }
-	LPDIRECTDRAWSURFACE FUN_100bc8b0(MxS32 p_width, MxS32 p_height);
+	LPDIRECTDRAWSURFACE CreateOffscreenSurface(MxS32 p_width, MxS32 p_height);
 
 private:
 	MxU8 CountTotalBitsSetTo1(MxU32 p_param);

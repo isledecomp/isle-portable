@@ -15,8 +15,8 @@ public:
 	int FormatDeviceName(char* p_buffer, const MxDriver* p_ddInfo, const Direct3DDeviceInfo* p_d3dInfo) const;
 	int BETA_1011cc65(int p_idx, char* p_buffer);
 	int GetBestDevice();
-	int FUN_1009d210();
-	unsigned char FUN_1009d3d0(Direct3DDeviceInfo& p_device);
+	int FilterUnsupportedDevices();
+	unsigned char DeviceSupportsRequiredCaps(Direct3DDeviceInfo& p_device);
 
 	// SYNTHETIC: BETA10 0x100d8d10
 	// LegoDeviceEnumerate::LegoDeviceEnumerate
