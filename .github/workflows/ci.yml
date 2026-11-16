@@ -37,7 +37,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: 'Linux',               os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: true,  linux: true, werror: true,   clang-tidy: true, build-assets: true }
+          - { name: 'Linux',               os: 'ubuntu-24.04',   generator: 'Ninja',                 dx5: false, config: true,  linux: true, werror: true,   clang-tidy: true, build-assets: true }
           - { name: 'MSVC (x86)',          os: 'windows-latest', generator: 'Ninja',                 dx5: true,  config: false, msvc: true,  werror: false,  clang-tidy: false,  vc-arch: 'amd64_x86' }
           - { name: 'MSVC (x64)',          os: 'windows-latest', generator: 'Ninja',                 dx5: false, config: true,  msvc: true,  werror: false,  clang-tidy: false,   vc-arch: 'amd64' }
           - { name: 'MSVC (arm64)',        os: 'windows-latest', generator: 'Ninja',                 dx5: false, config: false, msvc: true,  werror: false,  clang-tidy: false,  vc-arch: 'amd64_arm64' }
@@ -117,11 +117,19 @@ jobs:
       
       - name: Setup vitasdk
         if: ${{ matrix.vita }}
+        env:
+          VDPM_COMMIT: 29b0e4a85a87fd0da676c0b46b6c263add6364c2
+          VITASDK_CHANNEL: '2026.08'
+          VITASDK_CHANNEL_COMMIT: 9ad04ce7203b197c5e3fbaa4dc29e332d7360e66
         run: |
           git clone https://github.com/vitasdk/vdpm
           cd vdpm
+          git -c advice.detachedHead=false checkout "$VDPM_COMMIT"
+          curl -fsSLO "https://raw.githubusercontent.com/vitasdk/vitasdk.github.io/$VITASDK_CHANNEL_COMMIT/channels/$VITASDK_CHANNEL.json"
+          curl -fsSLO "https://raw.githubusercontent.com/vitasdk/vitasdk.github.io/$VITASDK_CHANNEL_COMMIT/channels/$VITASDK_CHANNEL.json.sig"
           export VITASDK=$HOME/vitasdk
           export VDPM_NONINTERACTIVE=1
+          export VITASDK_CHANNEL_MANIFEST="$PWD/$VITASDK_CHANNEL.json"
           ./bootstrap-vitasdk.sh
           "$VITASDK/bin/vdpm" install taihen
           echo "VITASDK=$VITASDK" >> $GITHUB_ENV
@@ -233,6 +241,21 @@ jobs:
             --output appimage && \
           mv *.AppImage dist/
 
+      - name: Check AppImage compatibility
+        if: ${{ matrix.linux }}
+        run: |
+          cd build/packaging/linux/appimage/AppDir/usr
+          glibc=$(find bin lib plugins -type f -exec objdump -T {} + 2>/dev/null | grep -o 'GLIBC_2\.[0-9]*' | sort -uV | tail -n 1)
+          echo "Highest glibc version required: $glibc"
+          if [ -z "$glibc" ] || [ "$(printf '%s\n%s\n' "$glibc" GLIBC_2.39 | sort -V | tail -n 1)" != GLIBC_2.39 ]; then
+            echo "The AppImage must not require a glibc newer than GLIBC_2.39"
+            exit 1
+          fi
+          if find bin lib plugins -type f -exec readelf -n {} + 2>/dev/null | grep -q 'ISA needed:.*x86-64-v[234]'; then
+            echo "The AppImage requires a CPU newer than baseline x86-64"
+            exit 1
+          fi
+
       - name: Package (3DS)
         if: ${{ matrix.n3ds }}
         run: |
@@ -326,6 +349,8 @@ jobs:
     container:
       image: ghcr.io/flathub-infra/flatpak-github-actions:kde-6.8
       options: --privileged
+      volumes:
+        - /var/lib/flatpak
 
     steps:
       - uses: actions/checkout@v6
