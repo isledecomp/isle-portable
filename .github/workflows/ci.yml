@@ -37,7 +37,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: 'Linux',               os: 'ubuntu-latest',  generator: 'Ninja',                 dx5: false, config: true,  linux: true, werror: true,   clang-tidy: true, build-assets: true }
+          - { name: 'Linux',               os: 'ubuntu-24.04',   generator: 'Ninja',                 dx5: false, config: true,  linux: true, werror: true,   clang-tidy: true, build-assets: true }
           - { name: 'MSVC (x86)',          os: 'windows-latest', generator: 'Ninja',                 dx5: true,  config: false, msvc: true,  werror: false,  clang-tidy: false,  vc-arch: 'amd64_x86' }
           - { name: 'MSVC (x64)',          os: 'windows-latest', generator: 'Ninja',                 dx5: false, config: true,  msvc: true,  werror: false,  clang-tidy: false,   vc-arch: 'amd64' }
           - { name: 'MSVC (arm64)',        os: 'windows-latest', generator: 'Ninja',                 dx5: false, config: false, msvc: true,  werror: false,  clang-tidy: false,  vc-arch: 'amd64_arm64' }
@@ -232,6 +232,21 @@ jobs:
             --appdir packaging/linux/appimage/AppDir \
             --output appimage && \
           mv *.AppImage dist/
+
+      - name: Check AppImage compatibility
+        if: ${{ matrix.linux }}
+        run: |
+          cd build/packaging/linux/appimage/AppDir/usr
+          glibc=$(find bin lib plugins -type f -exec objdump -T {} + 2>/dev/null | grep -o 'GLIBC_2\.[0-9]*' | sort -uV | tail -n 1)
+          echo "Highest glibc version required: $glibc"
+          if [ -z "$glibc" ] || [ "$(printf '%s\n%s\n' "$glibc" GLIBC_2.39 | sort -V | tail -n 1)" != GLIBC_2.39 ]; then
+            echo "The AppImage must not require a glibc newer than GLIBC_2.39"
+            exit 1
+          fi
+          if find bin lib plugins -type f -exec readelf -n {} + 2>/dev/null | grep -q 'ISA needed:.*x86-64-v[234]'; then
+            echo "The AppImage requires a CPU newer than baseline x86-64"
+            exit 1
+          fi
 
       - name: Package (3DS)
         if: ${{ matrix.n3ds }}
