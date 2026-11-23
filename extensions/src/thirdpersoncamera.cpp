@@ -300,12 +300,26 @@ MxBool ThirdPersonCameraExt::HandleNavOverride(
 
 	if (!s_camera->IsActive()) {
 		if (s_camera->IsLmbForwardEngaged()) {
+			CancelPendingClick();
 			return s_camera->HandleFirstPersonForward(p_nav, p_curPos, p_curDir, p_newPos, p_newDir, p_deltaTime);
 		}
 		return FALSE;
 	}
 
+	if (s_camera->IsLmbHeldForMovement()) {
+		CancelPendingClick();
+	}
+
 	return s_camera->HandleCameraRelativeMovement(p_nav, p_curPos, p_curDir, p_newPos, p_newDir, p_deltaTime);
+}
+
+void ThirdPersonCameraExt::CancelPendingClick()
+{
+	LegoInputManager* inputManager = InputManager();
+	if (inputManager) {
+		inputManager->StopAutoDragTimer();
+		inputManager->m_unk0x81 = FALSE;
+	}
 }
 
 MxBool ThirdPersonCameraExt::HandlePtAtCamTarget(Vector3& p_target)
