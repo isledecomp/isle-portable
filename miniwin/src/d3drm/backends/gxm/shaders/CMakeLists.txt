@@ -7,7 +7,7 @@ find_program(PSP2SHADERPERF NAMES ${CMAKE_CURRENT_SOURCE_DIR}/psp2shaderperf.exe
 
 list(APPEND CGC_COMMON_FLAGS "-Wperf" "-cache" "-cachedir" "${CMAKE_CURRENT_BINARY_DIR}/cache" "-W4" "-Wsuppress=5206,5203")
 
-make_directory("${CMAKE_CURRENT_BINARY_DIR}/cache")
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/cache")
 
 # compile .cg to .gxp if psp2cgc is found
 macro(COMPILE_SHADER INPUT_CG OUTPUT_GXP PROFILE)
