@@ -894,7 +894,7 @@ if (ISLE_BUILD_CONFIG)
     # The static freetype and harfbuzz depend on each other and on brotli/bz2/graphite2,
     # which Qt's link interface does not carry; resolve them at the end of the link line
     string(APPEND CMAKE_CXX_STANDARD_LIBRARIES
-      " -Wl,--start-group -lfreetype -lharfbuzz -lgraphite2 -lbrotlidec -lbrotlicommon -lbz2 -Wl,--end-group -lrpcrt4"
+      " -Wl,--start-group -lfreetype -lharfbuzz -lgraphite2 -lbrotlidec -lbrotlicommon -lbz2 -Wl,--end-group -lrpcrt4 -lws2_32 -lcrypt32 -lbcrypt"
     )
   endif()
   find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
