@@ -123,9 +123,9 @@ void Direct3DRMViewportImpl::CollectLightsFromFrame(
 		D3DCOLOR color = light->GetColor();
 		SceneLight extracted;
 		extracted.color = {
-			((color >> 0) & 0xFF) / 255.0f,
-			((color >> 8) & 0xFF) / 255.0f,
 			((color >> 16) & 0xFF) / 255.0f,
+			((color >> 8) & 0xFF) / 255.0f,
+			((color >> 0) & 0xFF) / 255.0f,
 			((color >> 24) & 0xFF) / 255.0f
 		};
 
