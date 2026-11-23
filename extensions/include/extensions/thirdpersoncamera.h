@@ -55,6 +55,8 @@ public:
 	static bool enabled;
 
 private:
+	static void CancelPendingClick();
+
 	static ThirdPersonCamera::Controller* s_camera;
 	static bool s_registered;
 	static bool s_inIsleWorld;

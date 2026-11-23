@@ -355,9 +355,11 @@ MxBool LegoInputManager::ProcessOneEvent(LegoEventNotificationParam& p_param)
 	}
 	else {
 		if (!Lego()->IsPaused()) {
-			if ((p_param.GetModifier() & LegoEventNotificationParam::c_rButtonState) &&
-				!(p_param.GetModifier() & LegoEventNotificationParam::c_lButtonState) &&
+			if (p_param.GetNotification() != c_notificationTimer &&
+				(p_param.GetModifier() & LegoEventNotificationParam::c_rButtonState) &&
 				Extension<ThirdPersonCameraExt>::Call(TP::IsThirdPersonCameraActive).value_or(FALSE)) {
+				StopAutoDragTimer();
+				m_unk0x81 = FALSE;
 				return FALSE;
 			}
 
@@ -515,7 +517,7 @@ MxBool LegoInputManager::FUN_1005cdf0(LegoEventNotificationParam& p_param)
 		}
 		break;
 	case c_notificationTimer:
-		if (p_param.GetModifier() == m_autoDragTimerID) {
+		if (p_param.GetModifier() == (MxU8) m_autoDragTimerID) {
 			StopAutoDragTimer();
 
 			if (m_unk0x81) {
@@ -544,6 +546,7 @@ static Uint32 SDLCALL LegoInputManagerTimerCallback(void* userdata, SDL_TimerID 
 	event.user.code = WM_TIMER;
 	event.user.data1 = (void*) (uintptr_t) timerID;
 	event.user.data2 = NULL;
+	SDL_PushEvent(&event);
 	return interval;
 }
 

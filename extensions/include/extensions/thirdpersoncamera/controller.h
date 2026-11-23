@@ -100,6 +100,7 @@ public:
 	bool ConsumeAutoEnable() { return m_input.ConsumeAutoEnable(); }
 
 	bool IsLeftButtonHeld() const { return m_input.IsLeftButtonHeld(); }
+	bool IsLmbHeldForMovement() const { return m_input.IsLmbHeldForMovement(); }
 	bool IsLmbForwardEngaged() const { return m_lmbForwardEngaged; }
 	void SetLmbForwardEngaged(bool p_lmbForwardEngaged) { m_lmbForwardEngaged = p_lmbForwardEngaged; }
 
