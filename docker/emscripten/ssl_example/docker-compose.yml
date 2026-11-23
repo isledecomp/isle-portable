@@ -6,6 +6,10 @@ services:
     volumes:
       # TODO: replace ASSETS_PATH with the path to your mounted ISO
       - ${ASSETS_PATH}:/assets
+      # TODO: replace '/path/to/save-editor.bin' with the path to your
+      # save-editor.bin. This file must be generated according to
+      # https://github.com/isledecomp/isle.pizza#quick-start
+      - /path/to/save-editor.bin:/app/save-editor.bin:ro
 
   caddy:
     image: caddy:latest
