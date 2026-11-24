@@ -753,3 +753,30 @@ void LegoOmni::LoadSiLoader()
 {
 	Extension<SiLoaderExt>::Call(SI::Load);
 }
+
+MxBool LegoOmni::IsWorldLoading()
+{
+	if (m_videoManager) {
+		MxPresenterListCursor presenterCursor(m_videoManager->GetPresenters());
+		MxPresenter* presenter;
+
+		while (presenterCursor.Next(presenter)) {
+			if (presenter->IsA("LegoWorldPresenter")) {
+				return TRUE;
+			}
+		}
+	}
+
+	if (m_worldList) {
+		LegoWorldListCursor worldCursor(m_worldList);
+		LegoWorld* world;
+
+		while (worldCursor.Next(world)) {
+			if (!world->GetWorldStarted()) {
+				return TRUE;
+			}
+		}
+	}
+
+	return FALSE;
+}
