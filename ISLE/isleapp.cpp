@@ -285,9 +285,7 @@ IsleApp::IsleApp()
 IsleApp::~IsleApp()
 {
 	if (LegoOmni::GetInstance()) {
-		if (m_gameStarted) {
-			Close();
-		}
+		Close();
 		MxOmni::DestroyInstance();
 	}
 
@@ -388,6 +386,7 @@ void IsleApp::SetupVideoFlags(
 static void ShowFatalError(const char* p_message)
 {
 	if (g_isle) {
+		MxOmni::DestroyInstance();
 		delete g_isle;
 		g_isle = NULL;
 	}
@@ -399,6 +398,20 @@ static void ShowFatalError(const char* p_message)
 		window = NULL;
 	}
 	Any_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "LEGO® Island Error", p_message, NULL);
+}
+
+static void FinishLoadingWorlds()
+{
+	if (!Lego() || !Lego()->IsWorldLoading()) {
+		return;
+	}
+
+	Lego()->Resume();
+
+	do {
+		Timer()->GetRealTime();
+		TickleManager()->Tickle();
+	} while (Lego()->IsWorldLoading());
 }
 
 static void ShowStartupError()
@@ -644,6 +657,7 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 	case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
 	case SDL_EVENT_QUIT:
 		if (!g_closed) {
+			FinishLoadingWorlds();
 			delete g_isle;
 			g_isle = NULL;
 			g_closed = TRUE;

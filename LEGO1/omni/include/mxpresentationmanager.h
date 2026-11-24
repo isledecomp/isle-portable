@@ -25,6 +25,8 @@ public:
 
 	MxResult Init();
 
+	MxPresenterList* GetPresenters() { return m_presenters; }
+
 	// SYNTHETIC: LEGO1 0x100b8540
 	// SYNTHETIC: BETA10 0x10144db0
 	// MxPresentationManager::`scalar deleting destructor'
