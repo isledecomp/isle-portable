@@ -1990,8 +1990,15 @@ MxLong LegoNavController::Notify(MxParam& p_param)
 								Isle* isle = (Isle*) FindWorld(*g_isleScript, IsleScript::c__Isle);
 
 								if (isle != NULL) {
-									isle->SwitchToInfocenter();
-									endingPreviousArea = LegoGameState::e_isle;
+									LegoWorld* world = CurrentWorld();
+
+									if (world == isle) {
+										isle->SwitchToInfocenter();
+										endingPreviousArea = LegoGameState::e_isle;
+									}
+									else if (world != NULL && !world->IsA("Infocenter") && world->Escape()) {
+										endingPreviousArea = GameState()->m_currentArea;
+									}
 								}
 							}
 
